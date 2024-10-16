@@ -1,0 +1,20 @@
+[submodule "third_party/DiligentCore"]
+	path = third_party/DiligentCore
+	url = https://github.com/DiligentGraphics/DiligentCore.git
+	branch = master
+[submodule "third_party/DiligentTools"]
+	path = third_party/DiligentTools
+	url = https://github.com/DiligentGraphics/DiligentTools.git
+	branch = master
+[submodule "third_party/SDL"]
+	path = third_party/SDL
+	url = https://github.com/Admenri/SDL.git
+	branch = main
+[submodule "third_party/physfs"]
+	path = third_party/physfs
+	url = https://github.com/Admenri/physfs.git
+	branch = main
+[submodule "third_party/freetype"]
+	path = third_party/freetype
+	url = https://github.com/freetype/freetype.git
+	branch = master
