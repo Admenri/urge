@@ -147,9 +147,7 @@ PipelineInstance_Base::PipelineInstance_Base(
   ps.name = "base_ps";
 
   std::vector<ShaderResourceVariableDesc> vars = {
-      {SHADER_TYPE_VERTEX, "SelfUniform",
-       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-      {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
   SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
@@ -157,7 +155,7 @@ PipelineInstance_Base::PipelineInstance_Base(
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
-      {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc},
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
   };
 
   CreateUniformBuffer(device, sizeof(UniformParams), "Base uniform buffer",
@@ -178,7 +176,7 @@ RefCntAutoPtr<IBuffer> PipelineInstance_Base::GetUniformBuffer() {
 
 void PipelineInstance_Base::SetTexture(ITextureView* view) {
   RenderPipelineBase::CurrentState()
-      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
       ->Set(view);
 }
 

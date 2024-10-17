@@ -414,9 +414,8 @@ int SDL_main(int argc, char* argv[]) {
       scissor.right = 800;
       scissor.top = 0;
       scissor.bottom = 600;
-      dev->context()->SetScissorRects(1, &scissor,
-                                      dev->swapchain()->GetDesc().Width,
-                                      dev->swapchain()->GetDesc().Height * 2);
+      dev->context()->SetScissorRects(1, &scissor, 1,
+                                      scissor.bottom + scissor.left);
 
       quad->SetPosition({100, 100, 200, 200});
       quad->SetTexcoord({0, 0, 300, 300});

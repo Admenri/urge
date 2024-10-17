@@ -6,6 +6,7 @@
 
 #undef ENGINE_DLL
 
+#include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
 #include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
 #include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
@@ -46,6 +47,16 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
     Win32NativeWindow Window{win_handle};
     pFactoryD3D12->CreateSwapChainD3D12(
         device, context, SCDesc, FullScreenModeDesc{}, Window, &swapchain);
+  } else if (backend == RendererBackend::kD3D11) {
+#if ENGINE_DLL
+    auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+#endif
+    EngineD3D11CreateInfo EngineCI;
+    auto* pFactory = GetEngineFactoryD3D11();
+    pFactory->CreateDeviceAndContextsD3D11(EngineCI, &device, &context);
+    Win32NativeWindow Window{win_handle};
+    pFactory->CreateSwapChainD3D11(device, context, SCDesc,
+                                   FullScreenModeDesc{}, Window, &swapchain);
   } else if (backend == RendererBackend::kVulkan) {
 #if ENGINE_DLL
     auto GetEngineFactoryVk = LoadGraphicsEngineVk();
