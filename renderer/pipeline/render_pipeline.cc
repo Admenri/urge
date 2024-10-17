@@ -7,7 +7,7 @@
 namespace renderer {
 
 #include "renderer/hlsl/base_ps.hlsl.xxd"
-#include "renderer/hlsl/base_vs.hlsl.xxd" 
+#include "renderer/hlsl/base_vs.hlsl.xxd"
 
 static void MakeColorBlend(BlendType type, RenderTargetBlendDesc& blend) {
   switch (type) {
@@ -51,17 +51,16 @@ static void MakeColorBlend(BlendType type, RenderTargetBlendDesc& blend) {
 }
 
 RenderPipelineBase::RenderPipelineBase(RefCntAutoPtr<IRenderDevice> device)
-    : device_(device) {}
+    : device_(device), current_state_(nullptr) {}
 
 PipelineState* RenderPipelineBase::GetPSOFor(BlendType color_blend) {
-  auto iter = pipeline_.find(color_blend);
-  if (iter != pipeline_.end()) {
-    current_srb_ = iter->second.srb;
-    return &iter->second;
-  }
+  current_state_ = nullptr;
 
-  current_srb_ = nullptr;
-  return nullptr;
+  auto iter = pipeline_.find(color_blend);
+  if (iter != pipeline_.end())
+    current_state_ = &iter->second;
+
+  return current_state_;
 }
 
 void RenderPipelineBase::BuildGraphicsPipeline(
@@ -178,8 +177,8 @@ RefCntAutoPtr<IBuffer> PipelineInstance_Base::GetUniformBuffer() {
 }
 
 void PipelineInstance_Base::SetTexture(ITextureView* view) {
-  RenderPipelineBase::GetCurrentSRB()
-      ->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")
       ->Set(view);
 }
 

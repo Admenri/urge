@@ -11,11 +11,17 @@ QuadArray::QuadArray(RefCntAutoPtr<IRenderDevice> device,
     : device_(device), indices_(indices), quad_size_(0), buffer_size_(0) {}
 
 void QuadArray::Resize(size_t size) {
+  if (quad_size_ == size)
+    return;
+
   vertices_.resize(size * 4);
   quad_size_ = size;
 }
 
 void QuadArray::Clear() {
+  if (!quad_size_)
+    return;
+
   vertices_.clear();
   quad_size_ = 0;
 }
@@ -26,6 +32,8 @@ void QuadArray::Update(RefCntAutoPtr<IDeviceContext> context) {
 
   size_t update_buffer_size = quad_size_ * sizeof(VertexType) * 4;
   if (update_buffer_size > buffer_size_) {
+    buffer_size_ = update_buffer_size;
+
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name = "Quad array vertex buffer";
     VertBuffDesc.Usage = USAGE_DYNAMIC;
@@ -33,7 +41,6 @@ void QuadArray::Update(RefCntAutoPtr<IDeviceContext> context) {
     VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
     VertBuffDesc.Size = buffer_size_;
     device_->CreateBuffer(VertBuffDesc, nullptr, &buffer_);
-    buffer_size_ = update_buffer_size;
   }
 
   {

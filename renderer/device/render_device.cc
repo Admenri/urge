@@ -8,6 +8,7 @@
 
 #include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
+#include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
 
 namespace renderer {
 
@@ -45,6 +46,15 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
     Win32NativeWindow Window{win_handle};
     pFactoryD3D12->CreateSwapChainD3D12(
         device, context, SCDesc, FullScreenModeDesc{}, Window, &swapchain);
+  } else if (backend == RendererBackend::kVulkan) {
+#if ENGINE_DLL
+    auto GetEngineFactoryVk = LoadGraphicsEngineVk();
+#endif
+    EngineVkCreateInfo EngineCI;
+    auto* pFactory = GetEngineFactoryVk();
+    pFactory->CreateDeviceAndContextsVk(EngineCI, &device, &context);
+    Win32NativeWindow Window{win_handle};
+    pFactory->CreateSwapChainVk(device, context, SCDesc, Window, &swapchain);
   }
 
   std::unique_ptr<RenderDevice> self(new RenderDevice);

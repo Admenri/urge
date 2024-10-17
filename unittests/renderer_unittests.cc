@@ -2,6 +2,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#undef ENGINE_DLL
+
 #include "BasicMath.hpp"
 #include "Common/interface/RefCntAutoPtr.hpp"
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
@@ -336,7 +338,11 @@ void Render(RefCntAutoPtr<ISwapChain> swapchain,
   context->Draw(drawAttrs);
 }
 
+int native_test(int argc, char* argv[]);
+
 int SDL_main(int argc, char* argv[]) {
+  // return native_test(argc, argv);
+
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO);
 
   {
@@ -361,8 +367,9 @@ int SDL_main(int argc, char* argv[]) {
 
     TextureLoadInfo loadInfo;
     loadInfo.IsSRGB = true;
-    RefCntAutoPtr<ITexture> tex;
+    RefCntAutoPtr<ITexture> tex, tex2;
     CreateTextureFromFile("test.png", loadInfo, dev->device(), &tex);
+    CreateTextureFromFile("bg.png", loadInfo, dev->device(), &tex2);
 
     while (true) {
       SDL_Event e;
@@ -399,17 +406,29 @@ int SDL_main(int argc, char* argv[]) {
       }
 
       shader.SetTexture(tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-
       dev->context()->CommitShaderResources(
           pipeline->srb, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-      quad->SetPosition({10, 10, 300, 300});
+      Rect scissor;
+      scissor.left = 0;
+      scissor.right = 800;
+      scissor.top = 0;
+      scissor.bottom = 600;
+      dev->context()->SetScissorRects(1, &scissor,
+                                      dev->swapchain()->GetDesc().Width,
+                                      dev->swapchain()->GetDesc().Height * 2);
+
+      quad->SetPosition({100, 100, 200, 200});
       quad->SetTexcoord({0, 0, 300, 300});
       quad->Draw(dev->context());
 
-      quad->SetPosition({100, 100, 300, 300});
+      quad->SetPosition({0, 0, 100, 100});
       quad->SetTexcoord({0, 0, 300, 300});
       quad->Draw(dev->context());
+
+      shader.SetTexture(tex2->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+      dev->context()->CommitShaderResources(
+          pipeline->srb, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       auto* vertices = quads->vertices().data();
       renderer::GeometryVertexLayout::SetTexPos(vertices, {0, 0, 100, 100},
@@ -453,14 +472,12 @@ int native_test(int argc, char* argv[]) {
   }
 
   if (!use_d3d) {
-    auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
     auto* factory = GetEngineFactoryOpenGL();
     EngineGLCreateInfo EngineCI;
     EngineCI.Window.hWnd = win_handle;
     factory->CreateDeviceAndSwapChainGL(EngineCI, &device, &context, SCDesc,
                                         &swapchain);
   } else {
-    auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
     EngineD3D12CreateInfo EngineCI;
     auto* pFactoryD3D12 = GetEngineFactoryD3D12();
     pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &device, &context);

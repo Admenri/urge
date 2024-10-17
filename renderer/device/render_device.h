@@ -25,6 +25,7 @@ class RenderDevice {
   enum class RendererBackend {
     kOpenGL = 0,
     kD3D12,
+    kVulkan,
   };
 
   struct PipelineStorage {

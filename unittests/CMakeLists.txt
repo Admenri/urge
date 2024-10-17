@@ -9,5 +9,6 @@ target_link_libraries(renderer_unittests PUBLIC
   Diligent-GraphicsEngine
   Diligent-GraphicsEngineOpenGL-static
   Diligent-GraphicsEngineD3D12-static
+  Diligent-GraphicsEngineVk-static
   Diligent-TextureLoader
 )

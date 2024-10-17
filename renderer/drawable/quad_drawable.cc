@@ -68,13 +68,13 @@ void QuadDrawable::SetColor(const base::Vec4& color, int index) {
 
 void QuadDrawable::Draw(RefCntAutoPtr<IDeviceContext> context) {
   if (need_update_) {
+    need_update_ = false;
+
     VertexInput::Data* vertices = nullptr;
     context->MapBuffer(buffer_handle_, MAP_WRITE, MAP_FLAG_DISCARD,
                        (PVoid&)vertices);
     memcpy(vertices, raw_data_, sizeof(VertexInput::Data) * 4);
     context->UnmapBuffer(buffer_handle_, MAP_WRITE);
-
-    need_update_ = false;
   }
 
   context->SetIndexBuffer(indices_->GetBufferHandle(), 0,

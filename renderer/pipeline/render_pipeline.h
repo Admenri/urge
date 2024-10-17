@@ -66,14 +66,14 @@ class RenderPipelineBase {
       const std::vector<ImmutableSamplerDesc>& samplers,
       StaticVariablesBlockFunc set_static_variables_func,
       const std::string& pipeline_name,
-      TEXTURE_FORMAT target_format = TEX_FORMAT_RGBA8_UNORM);
+      TEXTURE_FORMAT target_format = TEX_FORMAT_RGBA8_UNORM_SRGB);
 
-  RefCntAutoPtr<IShaderResourceBinding> GetCurrentSRB() { return current_srb_; }
+  PipelineState* CurrentState() { return current_state_; }
 
  private:
   RefCntAutoPtr<IRenderDevice> device_;
-  RefCntAutoPtr<IShaderResourceBinding> current_srb_;
   std::unordered_map<BlendType, PipelineState> pipeline_;
+  PipelineState* current_state_;
 };
 
 class PipelineInstance_Base : public RenderPipelineBase {
