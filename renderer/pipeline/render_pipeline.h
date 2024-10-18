@@ -32,8 +32,8 @@ enum class BlendType {
 
 using ShaderCreateParams = struct {
   std::string source;
-  std::string name = "vs";
-  std::string entry = "main";
+  std::string name;
+  std::string entry;
 };
 
 using PipelineState = struct {
@@ -78,7 +78,7 @@ class RenderPipelineBase {
 
 class PipelineInstance_Base : public RenderPipelineBase {
  public:
-  using UniformParams = struct {
+  using VSUniform = struct {
     float projMat[16];
     base::Vec2 transOffset;
     base::Vec2 texSize;
@@ -86,11 +86,36 @@ class PipelineInstance_Base : public RenderPipelineBase {
 
   PipelineInstance_Base(RefCntAutoPtr<IRenderDevice> device);
 
-  RefCntAutoPtr<IBuffer> GetUniformBuffer();
+  RefCntAutoPtr<IBuffer> GetVSUniform();
   void SetTexture(ITextureView* view);
 
  private:
-  RefCntAutoPtr<IBuffer> uniform_buffer_;
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
+class PipelineInstance_Blt : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+  };
+
+  using PSUniform = struct {
+    base::Vec4 offsetScale;
+    float opacity;
+  };
+
+  PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+  RefCntAutoPtr<IBuffer> GetPSUniform();
+  void SetTexture(ITextureView* view);
+  void SetDstTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+  RefCntAutoPtr<IBuffer> ps_uniform_;
 };
 
 }  // namespace renderer

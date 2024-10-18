@@ -46,7 +46,9 @@ target_link_libraries(engine_renderer PUBLIC
   engine_base
 
   Diligent-GraphicsEngine
-  Diligent-GraphicsEngineOpenGL-shared
-  Diligent-GraphicsEngineD3D12-shared
+  Diligent-GraphicsEngineOpenGL-static
+  Diligent-GraphicsEngineD3D12-static
+  Diligent-GraphicsEngineD3D11-static
+  Diligent-GraphicsEngineVk-static
   Diligent-TextureLoader
 )

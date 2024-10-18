@@ -395,8 +395,8 @@ int SDL_main(int argc, char* argv[]) {
       dev->context()->SetPipelineState(pipeline->pso);
 
       {
-        MapHelper<renderer::PipelineInstance_Base::UniformParams> CBConstants(
-            dev->context(), shader.GetUniformBuffer(), MAP_WRITE,
+        MapHelper<renderer::PipelineInstance_Base::VSUniform> CBConstants(
+            dev->context(), shader.GetVSUniform(), MAP_WRITE,
             MAP_FLAG_DISCARD);
         MakeProjectionMatrix(CBConstants->projMat, widget->GetSize(),
                              dev->device()->GetDeviceInfo().IsGLDevice());

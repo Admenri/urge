@@ -69,6 +69,7 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
   }
 
   std::unique_ptr<RenderDevice> self(new RenderDevice);
+  self->render_window_ = render_window;
   self->device_ = device;
   self->context_ = context;
   self->swapchain_ = swapchain;
@@ -76,10 +77,30 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
   self->pipelines_.reset(new PipelineStorage(device));
   self->quad_index_buffer_ = new QuadArrayIndices(device);
   self->quad_index_buffer_->EnsureSize(context, 2 << 10);
+  self->common_quad_.reset(new QuadDrawable(device, self->quad_index_buffer_));
 
   context->WaitForIdle();
 
   return self;
+}
+
+RefCntAutoPtr<ITexture> RenderDevice::MakeGenericFramebuffer(
+    const base::Vec2i& size) {
+  TextureDesc TexDesc;
+  TexDesc.Type = RESOURCE_DIM_TEX_2D;
+  TexDesc.Format = TEX_FORMAT_RGBA8_UNORM_SRGB;
+  TexDesc.Usage = USAGE_DYNAMIC;
+  TexDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+  TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+  TexDesc.Width = std::max<uint32_t>(
+      size.x, generic_framebuffer_ ? generic_framebuffer_->GetDesc().Width : 0);
+  TexDesc.Height = std::max<uint32_t>(
+      size.y,
+      generic_framebuffer_ ? generic_framebuffer_->GetDesc().Height : 0);
+
+  device()->CreateTexture(TexDesc, nullptr, &generic_framebuffer_);
+
+  return generic_framebuffer_;
 }
 
 }  // namespace renderer
