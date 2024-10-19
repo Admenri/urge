@@ -20,6 +20,12 @@ void BindingUnittests::RunBindingMain() {
       new content::Bitmap(binding_->graphics(), binding_->io(), "bg.png");
 
   bmp2->Blt({100, 200}, bmp, {100, 100, 400, 400}, 255);
+  bmp2->SetPixel({10, 10}, new content::Color(255, 255, 255));
+
+  bmp2->GradientFillRect({30, 30, 150, 150}, new content::Color(255, 0, 0),
+                         new content::Color(0, 0, 255));
+
+  bmp2->DrawText({100, 100, 100, 100}, "test draw text");
 
   auto* surf = bmp2->SurfaceRequired();
   IMG_SavePNG(surf, "out.png");

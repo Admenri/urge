@@ -8,6 +8,8 @@ namespace renderer {
 
 #include "renderer/hlsl/base_ps.hlsl.xxd"
 #include "renderer/hlsl/base_vs.hlsl.xxd"
+#include "renderer/hlsl/basecolor_ps.hlsl.xxd"
+#include "renderer/hlsl/basecolor_vs.hlsl.xxd"
 #include "renderer/hlsl/blt_ps.hlsl.xxd"
 
 static void MakeColorBlend(BlendType type, RenderTargetBlendDesc& blend) {
@@ -243,6 +245,36 @@ void PipelineInstance_Blt::SetDstTexture(ITextureView* view) {
   RenderPipelineBase::CurrentState()
       ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_DstTexture")
       ->Set(view);
+}
+
+PipelineInstance_Color::PipelineInstance_Color(
+    RefCntAutoPtr<IRenderDevice> device)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source =
+      std::string((const char*)basecolor_vs_hlsl, basecolor_vs_hlsl_len);
+  vs.name = "basecolor_vs";
+  vs.entry = "main";
+
+  ps.source =
+      std::string((const char*)basecolor_ps_hlsl, basecolor_ps_hlsl_len);
+  ps.name = "basecolor_ps";
+  ps.entry = "main";
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "Basecolor vs uniform buffer",
+                      &vs_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), {}, {},
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+      },
+      "basecolor_pso");
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Color::GetVSUniform() {
+  return vs_uniform_;
 }
 
 }  // namespace renderer

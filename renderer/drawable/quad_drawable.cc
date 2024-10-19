@@ -35,6 +35,7 @@ void QuadArrayIndices::EnsureSize(RefCntAutoPtr<IDeviceContext> context,
   IBData.DataSize = buffer_.size() * sizeof(uint16_t);
   IBData.pContext = context;
 
+  handle_.Release();
   device_->CreateBuffer(VertBuffDesc, &IBData, &handle_);
 }
 

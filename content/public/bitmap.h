@@ -14,22 +14,23 @@
 
 #include "base/math/rectangle.h"
 #include "base/memory/ref_counted.h"
+#include "content/common/content_utils.h"
 #include "content/public/disposable.h"
 #include "content/public/graphics.h"
 #include "content/public/utility.h"
 
 namespace content {
 
+enum class TextAlign {
+  Left = 0,
+  Center,
+  Right,
+};
+
 class Bitmap : public base::RefCounted<Bitmap>,
                public GraphicsElement,
                public Disposable {
  public:
-  using TextAlign = enum {
-    Left = 0,
-    Center,
-    Right,
-  };
-
   Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size);
   Bitmap(scoped_refptr<Graphics> host,
          filesystem::Filesystem* io,
@@ -41,10 +42,7 @@ class Bitmap : public base::RefCounted<Bitmap>,
 
   scoped_refptr<Bitmap> Clone();
 
-  base::Vec2i GetSize() const {
-    return base::Vec2i(texture_->GetDesc().Width, texture_->GetDesc().Height);
-  }
-
+  base::Vec2i GetSize() const;
   scoped_refptr<Rect> GetRect() { return new Rect(GetSize()); }
 
   void Blt(const base::Vec2i& pos,
@@ -100,6 +98,7 @@ class Bitmap : public base::RefCounted<Bitmap>,
 
   Diligent::RefCntAutoPtr<Diligent::ITexture> texture_;
   Diligent::RefCntAutoPtr<Diligent::ITexture> read_cache_;
+  Diligent::RefCntAutoPtr<Diligent::ITexture> text_cache_;
 
   scoped_refptr<Font> font_;
   base::RepeatingClosureList observers_;

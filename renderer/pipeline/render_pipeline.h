@@ -118,6 +118,21 @@ class PipelineInstance_Blt : public RenderPipelineBase {
   RefCntAutoPtr<IBuffer> ps_uniform_;
 };
 
+class PipelineInstance_Color : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+  };
+
+  PipelineInstance_Color(RefCntAutoPtr<IRenderDevice> device);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
 }  // namespace renderer
 
 #endif  //! RENDERER_PIPELINE_RENDER_PIPELINE_H_

@@ -53,9 +53,10 @@ class RenderDevice {
   struct PipelineStorage {
     PipelineInstance_Base base;
     PipelineInstance_Blt blt;
+    PipelineInstance_Color color;
 
     PipelineStorage(RefCntAutoPtr<IRenderDevice> device)
-        : base(device), blt(device) {}
+        : base(device), blt(device), color(device) {}
   };
 
   ~RenderDevice();

@@ -16,6 +16,7 @@ set(CORE_CONTENT_SRC
   config/engine_config.h
   public/bitmap.cc
   public/bitmap.h
+  public/disposable.cc
   public/disposable.h
   public/drawable.cc
   public/drawable.h

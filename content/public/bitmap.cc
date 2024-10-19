@@ -50,6 +50,18 @@ uint16_t utf8_to_ucs2(const char* _input, const char** end_ptr) {
   return -1;
 }
 
+Diligent::TextureDesc MakeTextureDesc() {
+  Diligent::TextureDesc TexDesc;
+  TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
+  TexDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB;
+  TexDesc.Usage = Diligent::USAGE_DEFAULT;
+  TexDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
+  TexDesc.BindFlags =
+      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
+
+  return TexDesc;
+}
+
 }  // namespace
 
 Bitmap::Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size)
@@ -63,20 +75,17 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size)
                           size.y);
   }
 
-  uint32_t size_limit = 8192;
+  uint32_t size_limit = host->renderer()
+                            ->device()
+                            ->GetAdapterInfo()
+                            .Texture.MaxTexture2DDimension;
   if (surface_buffer_->w > size_limit || surface_buffer_->h > size_limit) {
     throw base::Exception(base::Exception::RendererError,
                           "Unable to load large image: (%dx%d)",
                           surface_buffer_->w, surface_buffer_->h);
   }
 
-  Diligent::TextureDesc TexDesc;
-  TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
-  TexDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB;
-  TexDesc.Usage = Diligent::USAGE_DYNAMIC;
-  TexDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
-  TexDesc.BindFlags =
-      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
+  Diligent::TextureDesc TexDesc = MakeTextureDesc();
   TexDesc.Width = size.x;
   TexDesc.Height = size.y;
 
@@ -105,7 +114,10 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host,
                           SDL_GetError());
   }
 
-  uint32_t size_limit = 8192;
+  uint32_t size_limit = host->renderer()
+                            ->device()
+                            ->GetAdapterInfo()
+                            .Texture.MaxTexture2DDimension;
   if (surface_buffer_->w > size_limit || surface_buffer_->h > size_limit) {
     throw base::Exception(base::Exception::RendererError,
                           "Unable to load large image: (%dx%d)",
@@ -121,13 +133,7 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host,
 
   size_t img_size = surface_buffer_->w * surface_buffer_->h * 4;
 
-  Diligent::TextureDesc TexDesc;
-  TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
-  TexDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB;
-  TexDesc.Usage = Diligent::USAGE_DYNAMIC;
-  TexDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
-  TexDesc.BindFlags =
-      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
+  Diligent::TextureDesc TexDesc = MakeTextureDesc();
   TexDesc.Width = surface_buffer_->w;
   TexDesc.Height = surface_buffer_->h;
 
@@ -157,6 +163,10 @@ scoped_refptr<Bitmap> Bitmap::Clone() {
   *new_bitmap->font_ = *font_;
 
   return new_bitmap;
+}
+
+base::Vec2i Bitmap::GetSize() const {
+  return base::Vec2i(texture_->GetDesc().Width, texture_->GetDesc().Height);
 }
 
 void Bitmap::Blt(const base::Vec2i& pos,
@@ -281,6 +291,41 @@ void Bitmap::FillRect(const base::Rect& rect, scoped_refptr<Color> color) {
   if (rect.width <= 0 || rect.height <= 0)
     return;
 
+  auto* RTV = texture_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  screen()->renderer()->context()->SetRenderTargets(
+      1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  auto& shader = screen()->renderer()->GetPipelines()->color;
+  auto* pipeline = shader.GetPSOFor(renderer::BlendType::NoBlend);
+  screen()->renderer()->context()->SetPipelineState(pipeline->pso);
+  screen()->renderer()->context()->CommitShaderResources(
+      pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  Diligent::Rect scissor;
+  scissor.left = 0;
+  scissor.right = GetSize().x;
+  scissor.top = 0;
+  scissor.bottom = GetSize().y;
+  screen()->renderer()->context()->SetScissorRects(
+      1, &scissor, 1, scissor.bottom + scissor.left);
+
+  {
+    Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform> Constants(
+        screen()->renderer()->context(), shader.GetVSUniform(),
+        Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+    renderer::MakeProjectionMatrix(
+        Constants->projMat, GetSize(),
+        screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
+    Constants->transOffset = base::Vec2i(0);
+  }
+
+  auto* quad = screen()->renderer()->common_quad();
+  quad->SetPosition(rect);
+  quad->SetColor(color->AsBase());
+  quad->Draw(screen()->renderer()->context());
+
+  screen()->renderer()->context()->Flush();
+
   NeedUpdateSurface();
 }
 
@@ -293,6 +338,51 @@ void Bitmap::GradientFillRect(const base::Rect& rect,
   if (rect.width <= 0 || rect.height <= 0)
     return;
 
+  auto* RTV = texture_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  screen()->renderer()->context()->SetRenderTargets(
+      1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  auto& shader = screen()->renderer()->GetPipelines()->color;
+  auto* pipeline = shader.GetPSOFor(renderer::BlendType::NoBlend);
+  screen()->renderer()->context()->SetPipelineState(pipeline->pso);
+  screen()->renderer()->context()->CommitShaderResources(
+      pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  Diligent::Rect scissor;
+  scissor.left = 0;
+  scissor.right = GetSize().x;
+  scissor.top = 0;
+  scissor.bottom = GetSize().y;
+  screen()->renderer()->context()->SetScissorRects(
+      1, &scissor, 1, scissor.bottom + scissor.left);
+
+  {
+    Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform> Constants(
+        screen()->renderer()->context(), shader.GetVSUniform(),
+        Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+    renderer::MakeProjectionMatrix(
+        Constants->projMat, GetSize(),
+        screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
+    Constants->transOffset = base::Vec2i(0);
+  }
+
+  auto* quad = screen()->renderer()->common_quad();
+  quad->SetPosition(rect);
+  if (vertical) {
+    quad->SetColor(color1->AsBase(), 0);
+    quad->SetColor(color1->AsBase(), 1);
+    quad->SetColor(color2->AsBase(), 2);
+    quad->SetColor(color2->AsBase(), 3);
+  } else {
+    quad->SetColor(color1->AsBase(), 0);
+    quad->SetColor(color2->AsBase(), 1);
+    quad->SetColor(color2->AsBase(), 2);
+    quad->SetColor(color1->AsBase(), 3);
+  }
+
+  quad->Draw(screen()->renderer()->context());
+  screen()->renderer()->context()->Flush();
+
   NeedUpdateSurface();
 }
 
@@ -302,6 +392,41 @@ void Bitmap::Clear() {
 
 void Bitmap::ClearRect(const base::Rect& rect) {
   CheckIsDisposed();
+
+  auto* RTV = texture_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  screen()->renderer()->context()->SetRenderTargets(
+      1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  auto& shader = screen()->renderer()->GetPipelines()->color;
+  auto* pipeline = shader.GetPSOFor(renderer::BlendType::NoBlend);
+  screen()->renderer()->context()->SetPipelineState(pipeline->pso);
+  screen()->renderer()->context()->CommitShaderResources(
+      pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  Diligent::Rect scissor;
+  scissor.left = 0;
+  scissor.right = GetSize().x;
+  scissor.top = 0;
+  scissor.bottom = GetSize().y;
+  screen()->renderer()->context()->SetScissorRects(
+      1, &scissor, 1, scissor.bottom + scissor.left);
+
+  {
+    Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform> Constants(
+        screen()->renderer()->context(), shader.GetVSUniform(),
+        Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+    renderer::MakeProjectionMatrix(
+        Constants->projMat, GetSize(),
+        screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
+    Constants->transOffset = base::Vec2i(0);
+  }
+
+  auto* quad = screen()->renderer()->common_quad();
+  quad->SetPosition(rect);
+  quad->SetColor(base::Vec4(0));
+  quad->Draw(screen()->renderer()->context());
+
+  screen()->renderer()->context()->Flush();
 
   NeedUpdateSurface();
 }
@@ -337,7 +462,7 @@ void Bitmap::SetPixel(const base::Vec2i& pos, scoped_refptr<Color> color) {
 
   Diligent::Box DstBox(pos.x, pos.x + 1, pos.y, pos.y + 1);
   screen()->renderer()->context()->UpdateTexture(
-      texture_, texture_->GetDesc().MipLevels, 0, DstBox, TexSubData,
+      texture_, 0, 0, DstBox, TexSubData,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -378,12 +503,117 @@ void Bitmap::DrawText(const base::Rect& rect,
                       TextAlign align) {
   CheckIsDisposed();
 
-  return;
-
   font_->EnsureLoadFont();
   uint8_t fopacity;
   auto* txt_surf = font_->RenderText(str, &fopacity);
   if (txt_surf) {
+    // Update text cache
+    if (!text_cache_ || text_cache_->GetDesc().Width < txt_surf->w ||
+        text_cache_->GetDesc().Height < txt_surf->h) {
+      Diligent::TextureDesc TexDesc = MakeTextureDesc();
+      TexDesc.Width = std::max<uint32_t>(
+          text_cache_ ? text_cache_->GetDesc().Width : 0, txt_surf->w);
+      TexDesc.Height = std::max<uint32_t>(
+          text_cache_ ? text_cache_->GetDesc().Height : 0, txt_surf->h);
+      screen()->renderer()->device()->CreateTexture(TexDesc, nullptr,
+                                                    &text_cache_);
+    }
+
+    // Calculate position
+    int align_x = rect.x, align_y = rect.y + (rect.height - txt_surf->h) / 2;
+    switch (align) {
+      default:
+      case TextAlign::Left:
+        break;
+      case TextAlign::Center:
+        align_x += (rect.width - txt_surf->w) / 2;
+        break;
+      case TextAlign::Right:
+        align_x += rect.width - txt_surf->w;
+        break;
+    }
+
+    float zoom_x = static_cast<float>(rect.width) / txt_surf->w;
+    zoom_x = std::min(zoom_x, 1.0f);
+    base::Rect pos(align_x, align_y, txt_surf->w * zoom_x, txt_surf->h);
+
+    // Upload text raster data
+    Diligent::TextureSubResData TexSubData(txt_surf->pixels, txt_surf->pitch);
+    Diligent::Box DstBox(0, txt_surf->w, 0, txt_surf->h);
+    screen()->renderer()->context()->UpdateTexture(
+        text_cache_, 0, 0, DstBox, TexSubData,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // Draw text on target
+    auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(pos.Size());
+
+    Diligent::Box SrcBox(pos.x, pos.x + pos.width, pos.y, pos.y + pos.height);
+    Diligent::CopyTextureAttribs CopyTexAttr(
+        texture_, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, dst_tex,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    CopyTexAttr.pSrcBox = &SrcBox;
+    screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+
+    base::Vec4 offset_scale(
+        0, 0,
+        static_cast<float>(text_cache_->GetDesc().Width * zoom_x) /
+            dst_tex->GetDesc().Width,
+        static_cast<float>(text_cache_->GetDesc().Height) /
+            dst_tex->GetDesc().Height);
+
+    auto* RTV = texture_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+    screen()->renderer()->context()->SetRenderTargets(
+        1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    auto& shader = screen()->renderer()->GetPipelines()->blt;
+    auto* pipeline = shader.GetPSOFor(renderer::BlendType::NoBlend);
+    screen()->renderer()->context()->SetPipelineState(pipeline->pso);
+
+    auto* src_texture_view =
+        text_cache_->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+    auto* dst_texture_view =
+        dst_tex->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+    shader.SetTexture(src_texture_view);
+    shader.SetDstTexture(dst_texture_view);
+    screen()->renderer()->context()->CommitShaderResources(
+        pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    Diligent::Rect scissor;
+    scissor.left = 0;
+    scissor.right = GetSize().x;
+    scissor.top = 0;
+    scissor.bottom = GetSize().y;
+    screen()->renderer()->context()->SetScissorRects(
+        1, &scissor, 1, scissor.bottom + scissor.left);
+
+    {
+      Diligent::MapHelper<renderer::PipelineInstance_Blt::VSUniform> Constants(
+          screen()->renderer()->context(), shader.GetVSUniform(),
+          Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+      renderer::MakeProjectionMatrix(
+          Constants->projMat, GetSize(),
+          screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
+      Constants->texSize = base::MakeInvert(base::Vec2i(
+          text_cache_->GetDesc().Width, text_cache_->GetDesc().Height));
+      Constants->transOffset = base::Vec2i(0);
+    }
+
+    {
+      Diligent::MapHelper<renderer::PipelineInstance_Blt::PSUniform> Constants(
+          screen()->renderer()->context(), shader.GetPSUniform(),
+          Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+      Constants->offsetScale = offset_scale;
+      Constants->opacity = fopacity / 255.0f;
+    }
+
+    auto* quad = screen()->renderer()->common_quad();
+    quad->SetPosition(pos);
+    quad->SetTexcoord(base::Vec2(txt_surf->w, txt_surf->h));
+    quad->Draw(screen()->renderer()->context());
+
+    screen()->renderer()->context()->Flush();
+    SDL_DestroySurface(txt_surf);
   }
 
   NeedUpdateSurface();
@@ -468,10 +698,9 @@ void Bitmap::UpdateSurface() {
   if (surface_buffer_ && surface_buffer_->pixels) {
     Diligent::TextureSubResData TexSubData(surface_buffer_->pixels,
                                            surface_buffer_->pitch);
-
     Diligent::Box DstBox(0, surface_buffer_->w, 0, surface_buffer_->h);
     screen()->renderer()->context()->UpdateTexture(
-        texture_, texture_->GetDesc().MipLevels, 0, DstBox, TexSubData,
+        texture_, 0, 0, DstBox, TexSubData,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   }

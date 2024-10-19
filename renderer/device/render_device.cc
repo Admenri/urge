@@ -98,6 +98,7 @@ RefCntAutoPtr<ITexture> RenderDevice::MakeGenericFramebuffer(
       size.y,
       generic_framebuffer_ ? generic_framebuffer_->GetDesc().Height : 0);
 
+  generic_framebuffer_.Release();
   device()->CreateTexture(TexDesc, nullptr, &generic_framebuffer_);
 
   return generic_framebuffer_;

@@ -40,6 +40,8 @@ void QuadArray::Update(RefCntAutoPtr<IDeviceContext> context) {
     VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
     VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
     VertBuffDesc.Size = buffer_size_;
+
+    buffer_.Release();
     device_->CreateBuffer(VertBuffDesc, nullptr, &buffer_);
   }
 

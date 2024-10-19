@@ -1,6 +1,7 @@
 
 #include <iostream>
 
+#include "base/exception/exception.h"
 #include "binding/unittests/binding_unittests.h"
 #include "components/filesystem/filesystem.h"
 #include "content/worker/worker_scheduler.h"

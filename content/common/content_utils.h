@@ -10,21 +10,31 @@
 #include <iostream>
 #include <sstream>
 
+#define CONTENT_EXPORT
+
 namespace content {
 
-// Set engine RGSS kernel adapt version
-enum class APIVersion : int {
+// Set engine kernel adapt version.
+// Compat with RGSS-based content diff.
+enum class APIVersion : int32_t {
   Null = 0,
   RGSS1 = 1,
   RGSS2 = 2,
   RGSS3 = 3,
 };
 
+// Content task scheduler data structure.
+// Switch fibers for compating with Emscripten platform's event loop.
 struct CoroutineContext {
+  // Main fiber controller
   fiber_t* primary_fiber;
+
+  // Binding fiber controller
   fiber_t* main_loop_fiber;
 };
 
+// Content layer universal output interface.
+// For content debug commands using.
 class Debug {
  public:
   Debug() = default;

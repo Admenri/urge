@@ -8,18 +8,22 @@
 #include "base/bind/callback_list.h"
 #include "base/buildflags/build.h"
 #include "base/containers/linked_list.h"
-#include "base/exception/exception.h"
+#include "content/common/content_utils.h"
 
 namespace content {
 
 class Disposable;
 
+// Collection, disposed all pooling object when finally.
+// There's the parent container class defination.
 class DisposableCollection {
  public:
   virtual void AddDisposable(Disposable* child) = 0;
   virtual void RemoveDisposable(Disposable* child) = 0;
 };
 
+// Collection, disposed all pooling object when finally.
+// Child defination.
 class Disposable {
  public:
   Disposable(DisposableCollection* collection)
@@ -36,30 +40,14 @@ class Disposable {
   Disposable(const Disposable&) = delete;
   Disposable& operator=(const Disposable&) = delete;
 
-  void Dispose() {
-    if (is_disposed_)
-      return;
+ public:
+  CONTENT_EXPORT bool IsDisposed() const { return is_disposed_; }
+  CONTENT_EXPORT void Dispose();
 
-    OnObjectDisposed();
-    is_disposed_ = true;
-    observers_.Notify();
-  }
-
-  inline bool IsDisposed() const { return is_disposed_; }
-
-  base::CallbackListSubscription AddDisposeObserver(
-      base::OnceClosure observer) {
-    return observers_.Add(std::move(observer));
-  }
-
-  inline void CheckIsDisposed() const {
-    if (is_disposed_) {
-      throw base::Exception(base::Exception::ContentError,
-                            "Disposed object: %s", DisposedObjectName().data());
-    }
-  }
-
-  inline base::LinkNode<Disposable>* disposable_link() { return &link_; }
+ public:
+  base::CallbackListSubscription AddDisposeObserver(base::OnceClosure observer);
+  void CheckIsDisposed() const;
+  base::LinkNode<Disposable>* disposable_link() { return &link_; }
 
  protected:
   virtual void OnObjectDisposed() = 0;
