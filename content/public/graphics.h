@@ -6,7 +6,6 @@
 #define CONTENT_PUBLIC_GRAPHICS_H_
 
 #include "components/filesystem/filesystem.h"
-#include "components/fpslimiter/fpslimiter.h"
 #include "content/common/content_utils.h"
 #include "content/public/disposable.h"
 #include "content/public/drawable.h"
@@ -25,6 +24,7 @@ class GraphicsHost {
 
   virtual renderer::RenderDevice* renderer() = 0;
   virtual APIVersion api_version() = 0;
+  virtual Diligent::TEXTURE_FORMAT tex_format() = 0;
 };
 
 class Graphics final : public base::RefCounted<Graphics>,
@@ -45,40 +45,41 @@ class Graphics final : public base::RefCounted<Graphics>,
   bool ExecuteEventMainLoop();
 
  public:
-  base::Vec2i GetSize() const { return resolution_; }
-  int GetBrightness() const;
-  void SetBrightness(int brightness);
-  void SetFrameRate(int rate);
-  int GetFrameRate() const;
-  void SetFrameCount(int64_t count);
-  int GetFrameCount() const;
-  bool GetFullscreen();
-  void SetFullscreen(bool fullscreen);
-  void SetDrawableOffset(const base::Vec2i& offset);
-  base::Vec2i GetDrawableOffset();
-  void ResetFrame();
+  CONTENT_EXPORT base::Vec2i GetSize() const { return resolution_; }
+  CONTENT_EXPORT int GetBrightness() const;
+  CONTENT_EXPORT void SetBrightness(int brightness);
+  CONTENT_EXPORT void SetFrameRate(int rate);
+  CONTENT_EXPORT int GetFrameRate() const;
+  CONTENT_EXPORT void SetFrameCount(uint64_t count);
+  CONTENT_EXPORT uint64_t GetFrameCount() const;
+  CONTENT_EXPORT bool GetFullscreen();
+  CONTENT_EXPORT void SetFullscreen(bool fullscreen);
+  CONTENT_EXPORT void SetDrawableOffset(const base::Vec2i& offset);
+  CONTENT_EXPORT base::Vec2i GetDrawableOffset();
+  CONTENT_EXPORT void ResetFrame();
 
-  void Update();
-  void Reset();
-  void Wait(int duration);
+  CONTENT_EXPORT void Update();
+  CONTENT_EXPORT void Reset();
+  CONTENT_EXPORT void Wait(int duration);
 
-  scoped_refptr<Bitmap> SnapToBitmap();
+  CONTENT_EXPORT scoped_refptr<Bitmap> SnapToBitmap();
 
-  void FadeOut(int duration);
-  void FadeIn(int duration);
+  CONTENT_EXPORT void FadeOut(int duration);
+  CONTENT_EXPORT void FadeIn(int duration);
 
-  void Freeze();
-  void Transition(int duration = 10,
-                  scoped_refptr<Bitmap> trans_bitmap = nullptr,
-                  int vague = 40);
+  CONTENT_EXPORT void Freeze();
+  CONTENT_EXPORT void Transition(int duration = 10,
+                                 scoped_refptr<Bitmap> trans_bitmap = nullptr,
+                                 int vague = 40);
 
-  void ResizeScreen(const base::Vec2i& resolution);
-  void ResizeWindow(int width, int height);
+  CONTENT_EXPORT void ResizeScreen(const base::Vec2i& resolution);
+  CONTENT_EXPORT void ResizeWindow(int width, int height);
 
   ScopedFontData* font_manager() { return static_font_manager_.get(); }
 
   renderer::RenderDevice* renderer() override { return renderer_.get(); }
   APIVersion api_version() override { return api_version_; }
+  Diligent::TEXTURE_FORMAT tex_format() override;
 
  protected:
   void AddDisposable(Disposable* disp) override;
@@ -89,6 +90,10 @@ class Graphics final : public base::RefCounted<Graphics>,
   void FrameProcessInternal();
   int DetermineRepeatNumberInternal(double delta_rate);
   void UpdateWindowViewportInternal();
+
+  void EncodeDrawableFrameInternal();
+  void PresentScreenBufferInternal(
+      Diligent::RefCntAutoPtr<Diligent::ITexture> screen_frame);
 
   std::unique_ptr<renderer::RenderDevice> renderer_;
   APIVersion api_version_;

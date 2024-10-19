@@ -16,9 +16,18 @@
 #include "renderer/pipeline/render_pipeline.h"
 #include "ui/widget/widget.h"
 
+#include <algorithm>
+
 namespace renderer {
 
 using namespace Diligent;
+
+inline void ClampBox(Box* box, const base::Vec2i& size) {
+  box->MinX = std::clamp<uint32_t>(box->MinX, 0, size.x);
+  box->MaxX = std::clamp<uint32_t>(box->MaxX, 0, size.x);
+  box->MinY = std::clamp<uint32_t>(box->MinY, 0, size.y);
+  box->MaxY = std::clamp<uint32_t>(box->MaxY, 0, size.y);
+}
 
 inline void MakeProjectionMatrix(float* out,
                                  const base::Vec2& size,
@@ -32,11 +41,10 @@ inline void MakeProjectionMatrix(float* out,
 
   memset(out, 0, sizeof(float) * 16);
   out[0] = aa;
-  out[5] = bb;
-  out[10] = cc;
-
   out[3] = dd;
+  out[5] = bb;
   out[7] = ee;
+  out[10] = cc;
   out[11] = ff;
   out[15] = 1.0f;
 }
@@ -54,9 +62,17 @@ class RenderDevice {
     PipelineInstance_Base base;
     PipelineInstance_Blt blt;
     PipelineInstance_Color color;
+    PipelineInstance_BaseSprite basesprite;
+    PipelineInstance_Sprite sprite;
+    PipelineInstance_Viewport viewport;
 
     PipelineStorage(RefCntAutoPtr<IRenderDevice> device)
-        : base(device), blt(device), color(device) {}
+        : base(device),
+          blt(device),
+          color(device),
+          basesprite(device),
+          sprite(device),
+          viewport(device) {}
   };
 
   ~RenderDevice();
@@ -82,7 +98,8 @@ class RenderDevice {
 
   QuadDrawable* common_quad() { return common_quad_.get(); }
 
-  RefCntAutoPtr<ITexture> MakeGenericFramebuffer(const base::Vec2i& size);
+  RefCntAutoPtr<ITexture> MakeGenericFramebuffer(const base::Vec2i& size,
+                                                 TEXTURE_FORMAT texfmt);
 
  private:
   RenderDevice() = default;

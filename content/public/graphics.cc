@@ -4,7 +4,6 @@
 
 #include "content/public/graphics.h"
 
-#include "components/fpslimiter/fpslimiter.h"
 #include "content/public/bitmap.h"
 #include "content/public/disposable.h"
 #include "content/public/input.h"
@@ -35,11 +34,10 @@ Graphics::Graphics(CoroutineContext* cc,
       cc_(cc) {
   // Initialize root viewport
   viewport_rect().rect = initial_resolution;
-  viewport_rect().has_scissor = false;
 
   // Create render device
   renderer_ = renderer::RenderDevice::Create(
-      window, renderer::RenderDevice::RendererBackend::kD3D12);
+      window, renderer::RenderDevice::RendererBackend::kD3D11);
 
   // Create renderer buffer
   screen_quad_ = std::make_unique<renderer::QuadDrawable>(
@@ -76,8 +74,13 @@ bool Graphics::ExecuteEventMainLoop() {
       delta_time / static_cast<double>(desired_delta_time_);
   const int repeat_time = DetermineRepeatNumberInternal(delta_rate);
 
-  for (int i = 0; i < repeat_time; ++i)
+  for (int i = 0; i < repeat_time; ++i) {
+    cc_->frame_skip_require = !(i >= repeat_time - 1);
     fiber_switch(cc_->main_loop_fiber);
+  }
+
+  PresentScreenBufferInternal(screen_buffer_);
+  renderer()->swapchain()->Present();
 
   return true;
 }
@@ -141,17 +144,9 @@ void Graphics::FadeIn(int duration) {
 }
 
 void Graphics::Update() {
-  if (!frozen_) {
+  if (!frozen_ && !cc_->frame_skip_require) {
     // Setup render frame
-
-    auto* RTV = renderer()->swapchain()->GetCurrentBackBufferRTV();
-    float ClearColor[] = {1, 1, 1, 1};
-    renderer()->context()->SetRenderTargets(
-        1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    renderer()->context()->ClearRenderTarget(
-        RTV, ClearColor, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    renderer()->swapchain()->Present();
+    EncodeDrawableFrameInternal();
   }
 
   // Process frame delay
@@ -208,11 +203,11 @@ int Graphics::GetFrameRate() const {
   return frame_rate_;
 }
 
-void Graphics::SetFrameCount(int64_t count) {
+void Graphics::SetFrameCount(uint64_t count) {
   frame_count_ = count;
 }
 
-int Graphics::GetFrameCount() const {
+uint64_t Graphics::GetFrameCount() const {
   return frame_count_;
 }
 
@@ -250,8 +245,8 @@ void Graphics::RebuildScreenBufferInternal(const base::Vec2i& resolution) {
 
   Diligent::TextureDesc TexDesc;
   TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
-  TexDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB;
-  TexDesc.Usage = Diligent::USAGE_DYNAMIC;
+  TexDesc.Format = tex_format();
+  TexDesc.Usage = Diligent::USAGE_DEFAULT;
   TexDesc.CPUAccessFlags = Diligent::CPU_ACCESS_NONE;
   TexDesc.BindFlags =
       Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
@@ -291,6 +286,10 @@ int Graphics::DetermineRepeatNumberInternal(double delta_rate) {
   return 0;
 };
 
+Diligent::TEXTURE_FORMAT Graphics::tex_format() {
+  return Diligent::TEXTURE_FORMAT::TEX_FORMAT_RGBA8_UNORM;
+}
+
 void Graphics::AddDisposable(Disposable* disp) {
   disposable_elements_.Append(disp->disposable_link());
 }
@@ -320,6 +319,94 @@ void Graphics::UpdateWindowViewportInternal() {
 
   display_viewport_.x = (window_size.x - display_viewport_.width) / 2.0f;
   display_viewport_.y = (window_size.y - display_viewport_.height) / 2.0f;
+}
+
+void Graphics::EncodeDrawableFrameInternal() {
+  DrawableParent::PrepareComposite();
+
+  auto* RTV =
+      screen_buffer_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  renderer()->context()->SetRenderTargets(
+      1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  float ClearColor[4] = {0, 0, 0, 1};
+  renderer()->context()->ClearRenderTarget(
+      RTV, ClearColor, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  CompositeTargetInfo target_info;
+  target_info.render_target = RTV;
+  target_info.viewport_size = base::Vec2i(screen_buffer_->GetDesc().Width,
+                                          screen_buffer_->GetDesc().Height);
+  target_info.scissor_region = target_info.viewport_size;
+
+  Diligent::Rect scissor;
+  scissor.right = resolution_.x;
+  scissor.bottom = resolution_.y;
+  renderer()->context()->SetScissorRects(1, &scissor, 1,
+                                         scissor.bottom + scissor.left);
+
+  DrawableParent::Composite(&target_info);
+}
+
+void Graphics::PresentScreenBufferInternal(
+    Diligent::RefCntAutoPtr<Diligent::ITexture> screen_frame) {
+  base::WeakPtr<ui::Widget> window = renderer_->window();
+  UpdateWindowViewportInternal();
+
+  // Flip screen for Y
+  base::Rect target_rect;
+  window->GetMouseState().resolution = resolution_;
+  {
+    target_rect = display_viewport_;
+    if (renderer()->device()->GetDeviceInfo().IsGLDevice()) {
+      target_rect.y = display_viewport_.y + display_viewport_.height;
+      target_rect.height = -display_viewport_.height;
+    }
+
+    window->GetMouseState().screen_offset = display_viewport_.Position();
+    window->GetMouseState().screen = display_viewport_.Size();
+  }
+
+  // Draw to screen
+  auto* RTV = renderer()->swapchain()->GetCurrentBackBufferRTV();
+  float ClearColor[] = {0, 0, 0, 1};
+  renderer()->context()->SetRenderTargets(
+      1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  renderer()->context()->ClearRenderTarget(
+      RTV, ClearColor, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  auto& shader = renderer()->GetPipelines()->base;
+  auto* pipeline = shader.GetPSOFor(renderer::BlendType::Normal);
+  renderer()->context()->SetPipelineState(pipeline->pso);
+
+  {
+    Diligent::MapHelper<renderer::PipelineInstance_Base::VSUniform> CBConstants(
+        renderer()->context(), shader.GetVSUniform(), Diligent::MAP_WRITE,
+        Diligent::MAP_FLAG_DISCARD);
+    renderer::MakeProjectionMatrix(
+        CBConstants->projMat,
+        base::Vec2i(RTV->GetTexture()->GetDesc().Width,
+                    RTV->GetTexture()->GetDesc().Height),
+        renderer()->device()->GetDeviceInfo().IsGLDevice());
+    CBConstants->texSize = base::MakeInvert(base::Vec2(
+        screen_frame->GetDesc().Width, screen_frame->GetDesc().Height));
+    CBConstants->transOffset = base::Vec2i(0);
+  }
+
+  shader.SetTexture(
+      screen_frame->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  renderer()->context()->CommitShaderResources(
+      pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  Diligent::Rect scissor;
+  scissor.right = RTV->GetTexture()->GetDesc().Width;
+  scissor.bottom = RTV->GetTexture()->GetDesc().Height;
+  renderer()->context()->SetScissorRects(1, &scissor, 1,
+                                         scissor.bottom + scissor.left);
+
+  screen_quad_->SetPosition(target_rect);
+  screen_quad_->SetTexcoord(base::Vec2(resolution_));
+  screen_quad_->Draw(renderer()->context());
 }
 
 }  // namespace content

@@ -105,11 +105,11 @@ class TransformMatrix {
         origin_.x * sxs - origin_.y * syc + position_.y + viewport_offset_.y;
 
     transform_matrix_[0] = sxc;
-    transform_matrix_[1] = -sxs;
-    transform_matrix_[4] = sys;
+    transform_matrix_[1] = sys;
+    transform_matrix_[3] = tx;
+    transform_matrix_[4] = -sxs;
     transform_matrix_[5] = syc;
-    transform_matrix_[12] = tx;
-    transform_matrix_[13] = ty;
+    transform_matrix_[7] = ty;
   }
 
   Vec2 position_;

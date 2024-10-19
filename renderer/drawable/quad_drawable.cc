@@ -41,7 +41,7 @@ void QuadArrayIndices::EnsureSize(RefCntAutoPtr<IDeviceContext> context,
 
 QuadDrawable::QuadDrawable(RefCntAutoPtr<IRenderDevice> device,
                            scoped_refptr<QuadArrayIndices> indices)
-    : raw_data_(), indices_(indices), need_update_(false) {
+    : raw_data_(), indices_(indices) {
   BufferDesc VertBuffDesc;
   VertBuffDesc.Name = "Single quad vertex buffer";
   VertBuffDesc.Usage = USAGE_DYNAMIC;
@@ -54,29 +54,22 @@ QuadDrawable::QuadDrawable(RefCntAutoPtr<IRenderDevice> device,
 
 void QuadDrawable::SetPosition(const base::RectF& pos) {
   VertexInput::SetPosition(raw_data_, pos);
-  need_update_ = true;
 }
 
 void QuadDrawable::SetTexcoord(const base::RectF& tex) {
   VertexInput::SetTexcoord(raw_data_, tex);
-  need_update_ = true;
 }
 
 void QuadDrawable::SetColor(const base::Vec4& color, int index) {
   VertexInput::SetColor(raw_data_, color, index);
-  need_update_ = true;
 }
 
 void QuadDrawable::Draw(RefCntAutoPtr<IDeviceContext> context) {
-  if (need_update_) {
-    need_update_ = false;
-
-    VertexInput::Data* vertices = nullptr;
-    context->MapBuffer(buffer_handle_, MAP_WRITE, MAP_FLAG_DISCARD,
-                       (PVoid&)vertices);
-    memcpy(vertices, raw_data_, sizeof(VertexInput::Data) * 4);
-    context->UnmapBuffer(buffer_handle_, MAP_WRITE);
-  }
+  VertexInput::Data* vertices = nullptr;
+  context->MapBuffer(buffer_handle_, MAP_WRITE, MAP_FLAG_DISCARD,
+                     (PVoid&)vertices);
+  memcpy(vertices, raw_data_, sizeof(VertexInput::Data) * 4);
+  context->UnmapBuffer(buffer_handle_, MAP_WRITE);
 
   context->SetIndexBuffer(indices_->GetBufferHandle(), 0,
                           RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

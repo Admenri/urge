@@ -6,7 +6,7 @@
 
 namespace content {
 
-EngineWorker::EngineWorker() {}
+EngineWorker::EngineWorker() : io_(nullptr) {}
 
 EngineWorker::~EngineWorker() {}
 
@@ -24,13 +24,14 @@ void EngineWorker::InitEngineMain(scoped_refptr<CoreConfigure> config,
       new ScopedFontData(io, config_->default_font_path()));
 
   // Init kernel coroutine context
-  cc_.primary_fiber = fiber_create(nullptr, 0, nullptr, nullptr);
-  cc_.main_loop_fiber =
-      fiber_create(cc_.primary_fiber, 0, EngineMainLoopFunc, this);
+  cc_.reset(new CoroutineContext);
+  cc_->primary_fiber = fiber_create(nullptr, 0, nullptr, nullptr);
+  cc_->main_loop_fiber =
+      fiber_create(cc_->primary_fiber, 0, EngineMainLoopFunc, this);
 
   // Init Modules
   graphics_ =
-      new Graphics(&cc_, window_->AsWeakPtr(), std::move(default_font),
+      new Graphics(cc_.get(), window_->AsWeakPtr(), std::move(default_font),
                    config_->initial_resolution(), config_->content_version());
   input_ = new Input(window_->AsWeakPtr(), config_->content_version());
   mouse_ = new Mouse(window_->AsWeakPtr());
@@ -59,7 +60,7 @@ void EngineWorker::EngineMainLoopFunc(fiber_t* current_coroutine) {
   self->binding_engine_.reset();
 
   // Switch fiber
-  fiber_switch(self->cc_.primary_fiber);
+  fiber_switch(self->cc_->primary_fiber);
 }
 
 }  // namespace content

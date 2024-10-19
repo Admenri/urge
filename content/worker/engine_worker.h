@@ -47,7 +47,7 @@ class EngineWorker : public base::RefCounted<EngineWorker> {
   scoped_refptr<CoreConfigure> config_;
   filesystem::Filesystem* io_;
 
-  CoroutineContext cc_;
+  std::unique_ptr<CoroutineContext> cc_;
 
   std::unique_ptr<ui::Widget> window_;
   scoped_refptr<Graphics> graphics_;

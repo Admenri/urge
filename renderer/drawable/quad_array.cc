@@ -45,19 +45,18 @@ void QuadArray::Update(RefCntAutoPtr<IDeviceContext> context) {
     device_->CreateBuffer(VertBuffDesc, nullptr, &buffer_);
   }
 
-  {
-    VertexType* vertices = nullptr;
-    context->MapBuffer(buffer_, MAP_WRITE, MAP_FLAG_DISCARD, (PVoid&)vertices);
-    memcpy(vertices, vertices_.data(), update_buffer_size);
-    context->UnmapBuffer(buffer_, MAP_WRITE);
-  }
-
   indices_->EnsureSize(context, quad_size_);
 }
 
 void QuadArray::Draw(RefCntAutoPtr<IDeviceContext> context,
                      size_t offset,
                      size_t count) {
+  size_t update_buffer_size = quad_size_ * sizeof(VertexType) * 4;
+  VertexType* vertices = nullptr;
+  context->MapBuffer(buffer_, MAP_WRITE, MAP_FLAG_DISCARD, (PVoid&)vertices);
+  memcpy(vertices, vertices_.data(), update_buffer_size);
+  context->UnmapBuffer(buffer_, MAP_WRITE);
+
   context->SetVertexBuffers(0, 1, &buffer_, nullptr,
                             RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   context->SetIndexBuffer(indices_->GetBufferHandle(), 0,

@@ -11,6 +11,9 @@ namespace renderer {
 #include "renderer/hlsl/basecolor_ps.hlsl.xxd"
 #include "renderer/hlsl/basecolor_vs.hlsl.xxd"
 #include "renderer/hlsl/blt_ps.hlsl.xxd"
+#include "renderer/hlsl/sprite_ps.hlsl.xxd"
+#include "renderer/hlsl/transform_vs.hlsl.xxd"
+#include "renderer/hlsl/viewport_ps.hlsl.xxd"
 
 static void MakeColorBlend(BlendType type, RenderTargetBlendDesc& blend) {
   switch (type) {
@@ -139,6 +142,11 @@ void RenderPipelineBase::BuildGraphicsPipeline(
   }
 }
 
+/// <summary>
+/// Base shader pipeline
+/// </summary>
+/// <param name="device"></param>
+
 PipelineInstance_Base::PipelineInstance_Base(
     RefCntAutoPtr<IRenderDevice> device)
     : RenderPipelineBase(device) {
@@ -163,8 +171,7 @@ PipelineInstance_Base::PipelineInstance_Base(
       {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
   };
 
-  CreateUniformBuffer(device, sizeof(VSUniform), "Base vs uniform buffer",
-                      &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(VSUniform), "base.vs.ubo", &vs_uniform_);
 
   RenderPipelineBase::BuildGraphicsPipeline(
       vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
@@ -184,6 +191,11 @@ void PipelineInstance_Base::SetTexture(ITextureView* view) {
       ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
       ->Set(view);
 }
+
+/// <summary>
+/// Blt shader pipeline
+/// </summary>
+/// <param name="device"></param>
 
 PipelineInstance_Blt::PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device)
     : RenderPipelineBase(device) {
@@ -211,10 +223,8 @@ PipelineInstance_Blt::PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device)
       {SHADER_TYPE_PIXEL, "u_DstTexture", SamLinearClampDesc},
   };
 
-  CreateUniformBuffer(device, sizeof(VSUniform), "Blt vs uniform buffer",
-                      &vs_uniform_);
-  CreateUniformBuffer(device, sizeof(PSUniform), "Blt ps uniform buffer",
-                      &ps_uniform_);
+  CreateUniformBuffer(device, sizeof(VSUniform), "blt.vs.ubo", &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(PSUniform), "blt.ps.ubo", &ps_uniform_);
 
   RenderPipelineBase::BuildGraphicsPipeline(
       vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
@@ -247,6 +257,11 @@ void PipelineInstance_Blt::SetDstTexture(ITextureView* view) {
       ->Set(view);
 }
 
+/// <summary>
+/// Color shader pipeline
+/// </summary>
+/// <param name="device"></param>
+
 PipelineInstance_Color::PipelineInstance_Color(
     RefCntAutoPtr<IRenderDevice> device)
     : RenderPipelineBase(device) {
@@ -261,7 +276,7 @@ PipelineInstance_Color::PipelineInstance_Color(
   ps.name = "basecolor_ps";
   ps.entry = "main";
 
-  CreateUniformBuffer(device, sizeof(VSUniform), "Basecolor vs uniform buffer",
+  CreateUniformBuffer(device, sizeof(VSUniform), "basecolor.vs.ubo",
                       &vs_uniform_);
 
   RenderPipelineBase::BuildGraphicsPipeline(
@@ -275,6 +290,175 @@ PipelineInstance_Color::PipelineInstance_Color(
 
 RefCntAutoPtr<IBuffer> PipelineInstance_Color::GetVSUniform() {
   return vs_uniform_;
+}
+
+/// <summary>
+/// Sprite shader pipeline
+/// </summary>
+/// <param name="device"></param>
+
+PipelineInstance_Sprite::PipelineInstance_Sprite(
+    RefCntAutoPtr<IRenderDevice> device)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source =
+      std::string((const char*)transform_vs_hlsl, transform_vs_hlsl_len);
+  vs.name = "transform_vs";
+  vs.entry = "main";
+
+  ps.source = std::string((const char*)sprite_ps_hlsl, sprite_ps_hlsl_len);
+  ps.name = "sprite_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "sprite.vs.ubo", &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(PSUniform), "sprite.ps.ubo", &ps_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+        pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
+            ->Set(ps_uniform_);
+      },
+      "blt_pso");
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Sprite::GetVSUniform() {
+  return vs_uniform_;
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Sprite::GetPSUniform() {
+  return ps_uniform_;
+}
+
+void PipelineInstance_Sprite::SetTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Base sprite shader pipeline
+/// </summary>
+/// <param name="device"></param>
+
+PipelineInstance_BaseSprite::PipelineInstance_BaseSprite(
+    RefCntAutoPtr<IRenderDevice> device)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source =
+      std::string((const char*)transform_vs_hlsl, transform_vs_hlsl_len);
+  vs.name = "transform_vs";
+  vs.entry = "main";
+
+  ps.source = std::string((const char*)base_ps_hlsl, base_ps_hlsl_len);
+  ps.name = "base_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "basesprite.vs.ubo",
+                      &vs_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+      },
+      "base_pso");
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_BaseSprite::GetVSUniform() {
+  return vs_uniform_;
+}
+
+void PipelineInstance_BaseSprite::SetTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Viewport shader pipeline
+/// </summary>
+/// <param name="device"></param>
+
+PipelineInstance_Viewport::PipelineInstance_Viewport(
+    RefCntAutoPtr<IRenderDevice> device)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
+  vs.name = "base_vs";
+  vs.entry = "main";
+
+  ps.source = std::string((const char*)viewport_ps_hlsl, viewport_ps_hlsl_len);
+  ps.name = "viewport_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "viewport.vs.ubo",
+                      &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(PSUniform), "viewport.ps.ubo",
+                      &ps_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+        pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
+            ->Set(ps_uniform_);
+      },
+      "blt_pso");
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Viewport::GetVSUniform() {
+  return vs_uniform_;
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Viewport::GetPSUniform() {
+  return ps_uniform_;
+}
+
+void PipelineInstance_Viewport::SetTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
+      ->Set(view);
 }
 
 }  // namespace renderer

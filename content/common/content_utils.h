@@ -31,6 +31,21 @@ struct CoroutineContext {
 
   // Binding fiber controller
   fiber_t* main_loop_fiber;
+
+  // Frame render skip count
+  bool frame_skip_require;
+
+  CoroutineContext()
+      : primary_fiber(nullptr),
+        main_loop_fiber(nullptr),
+        frame_skip_require(false) {}
+
+  ~CoroutineContext() {
+    if (main_loop_fiber)
+      fiber_delete(main_loop_fiber);
+    if (primary_fiber)
+      fiber_delete(primary_fiber);
+  }
 };
 
 // Content layer universal output interface.

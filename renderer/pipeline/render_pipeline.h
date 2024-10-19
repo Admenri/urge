@@ -87,6 +87,7 @@ class PipelineInstance_Base : public RenderPipelineBase {
   PipelineInstance_Base(RefCntAutoPtr<IRenderDevice> device);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
+
   void SetTexture(ITextureView* view);
 
  private:
@@ -110,6 +111,7 @@ class PipelineInstance_Blt : public RenderPipelineBase {
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
   RefCntAutoPtr<IBuffer> GetPSUniform();
+
   void SetTexture(ITextureView* view);
   void SetDstTexture(ITextureView* view);
 
@@ -131,6 +133,78 @@ class PipelineInstance_Color : public RenderPipelineBase {
 
  private:
   RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
+class PipelineInstance_Sprite : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    float transformMat[16];
+    base::Vec2 texSize;
+  };
+
+  using PSUniform = struct {
+    base::Vec2 texSize;
+    base::Vec4 color;
+    base::Vec4 tone;
+    float opacity;
+    float bushDepth;
+    float bushOpacity;
+  };
+
+  PipelineInstance_Sprite(RefCntAutoPtr<IRenderDevice> device);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+  RefCntAutoPtr<IBuffer> GetPSUniform();
+
+  void SetTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+  RefCntAutoPtr<IBuffer> ps_uniform_;
+};
+
+class PipelineInstance_BaseSprite : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    float transformMat[16];
+    base::Vec2 texSize;
+  };
+
+  PipelineInstance_BaseSprite(RefCntAutoPtr<IRenderDevice> device);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+
+  void SetTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
+class PipelineInstance_Viewport : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+  };
+
+  using PSUniform = struct {
+    base::Vec4 color;
+    base::Vec4 tone;
+  };
+
+  PipelineInstance_Viewport(RefCntAutoPtr<IRenderDevice> device);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+  RefCntAutoPtr<IBuffer> GetPSUniform();
+
+  void SetTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+  RefCntAutoPtr<IBuffer> ps_uniform_;
 };
 
 }  // namespace renderer

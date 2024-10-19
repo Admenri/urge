@@ -40,44 +40,45 @@ class Bitmap : public base::RefCounted<Bitmap>,
   Bitmap(const Bitmap&) = delete;
   Bitmap& operator=(const Bitmap&) = delete;
 
-  scoped_refptr<Bitmap> Clone();
+  CONTENT_EXPORT scoped_refptr<Bitmap> Clone();
+  CONTENT_EXPORT base::Vec2i GetSize() const;
+  CONTENT_EXPORT scoped_refptr<Rect> GetRect() { return new Rect(GetSize()); }
 
-  base::Vec2i GetSize() const;
-  scoped_refptr<Rect> GetRect() { return new Rect(GetSize()); }
+  CONTENT_EXPORT void Blt(const base::Vec2i& pos,
+                          scoped_refptr<Bitmap> src_bitmap,
+                          const base::Rect& src_rect,
+                          int opacity = 255);
+  CONTENT_EXPORT void StretchBlt(const base::Rect& dest_rect,
+                                 scoped_refptr<Bitmap> src_bitmap,
+                                 const base::Rect& src_rect,
+                                 int opacity = 255);
 
-  void Blt(const base::Vec2i& pos,
-           scoped_refptr<Bitmap> src_bitmap,
-           const base::Rect& src_rect,
-           int opacity = 255);
-  void StretchBlt(const base::Rect& dest_rect,
-                  scoped_refptr<Bitmap> src_bitmap,
-                  const base::Rect& src_rect,
-                  int opacity = 255);
+  CONTENT_EXPORT void FillRect(const base::Rect& rect,
+                               scoped_refptr<Color> color);
 
-  void FillRect(const base::Rect& rect, scoped_refptr<Color> color);
+  CONTENT_EXPORT void GradientFillRect(const base::Rect& rect,
+                                       scoped_refptr<Color> color1,
+                                       scoped_refptr<Color> color2,
+                                       bool vertical = false);
 
-  void GradientFillRect(const base::Rect& rect,
-                        scoped_refptr<Color> color1,
-                        scoped_refptr<Color> color2,
-                        bool vertical = false);
+  CONTENT_EXPORT void Clear();
+  CONTENT_EXPORT void ClearRect(const base::Rect& rect);
 
-  void Clear();
-  void ClearRect(const base::Rect& rect);
+  CONTENT_EXPORT scoped_refptr<Color> GetPixel(const base::Vec2i& pos);
+  CONTENT_EXPORT void SetPixel(const base::Vec2i& pos,
+                               scoped_refptr<Color> color);
 
-  scoped_refptr<Color> GetPixel(const base::Vec2i& pos);
-  void SetPixel(const base::Vec2i& pos, scoped_refptr<Color> color);
+  CONTENT_EXPORT void HueChange(int hue);
+  CONTENT_EXPORT void Blur();
+  CONTENT_EXPORT void RadialBlur(int angle, int division);
 
-  void HueChange(int hue);
-  void Blur();
-  void RadialBlur(int angle, int division);
+  CONTENT_EXPORT void DrawText(const base::Rect& rect,
+                               const std::string& str,
+                               TextAlign align = TextAlign::Left);
+  CONTENT_EXPORT scoped_refptr<Rect> TextSize(const std::string& str);
 
-  void DrawText(const base::Rect& rect,
-                const std::string& str,
-                TextAlign align = TextAlign::Left);
-  scoped_refptr<Rect> TextSize(const std::string& str);
-
-  scoped_refptr<Font> GetFont() const;
-  void SetFont(scoped_refptr<Font> font);
+  CONTENT_EXPORT scoped_refptr<Font> GetFont() const;
+  CONTENT_EXPORT void SetFont(scoped_refptr<Font> font);
 
   SDL_Surface* SurfaceRequired();
   void UpdateSurface();

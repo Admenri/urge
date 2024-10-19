@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Admenri"
-            VALUE "FileDescription", "Ruby Game Universal Runtime"
+            VALUE "FileDescription", "Universal Ruby Game Engine (URGE) Runtime"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Game.exe"
-            VALUE "LegalCopyright", "Admenri"
+            VALUE "LegalCopyright", "Admenri & Adev"
             VALUE "OriginalFilename", "Game.exe"
-            VALUE "ProductName", "Ruby Game Universal Runtime"
+            VALUE "ProductName", "Universal Ruby Game Engine (URGE) Runtime"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

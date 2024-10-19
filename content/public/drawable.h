@@ -12,6 +12,17 @@
 
 namespace content {
 
+struct CompositeTargetInfo {
+  // Viewport size
+  base::Vec2i viewport_size;
+
+  // Current render target state
+  Diligent::ITextureView* render_target;
+
+  // Stack storaged scissor region data
+  base::Rect scissor_region;
+};
+
 class Drawable;
 
 class DrawableParent {
@@ -19,9 +30,6 @@ class DrawableParent {
   struct ViewportInfo {
     base::Rect rect;
     base::Vec2i origin;
-
-    // Did viewport container has scissor area?
-    bool has_scissor = true;
 
     // Compute viewport offset
     base::Vec2i GetRealOffset() const { return rect.Position() - origin; }
@@ -38,7 +46,7 @@ class DrawableParent {
 
   // Composite screen
   void PrepareComposite();
-  void Composite();
+  void Composite(CompositeTargetInfo* target_info);
 
   // Viewport rect
   void NotifyViewportRectChanged();
@@ -91,7 +99,7 @@ class Drawable {
 
  protected:
   virtual void PrepareDraw() {}
-  virtual void OnDraw() = 0;
+  virtual void OnDraw(CompositeTargetInfo* target_info) = 0;
   virtual void CheckObjectDisposed() const = 0;
   virtual void OnParentViewportRectChanged(
       const DrawableParent::ViewportInfo&) {}

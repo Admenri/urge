@@ -50,10 +50,10 @@ uint16_t utf8_to_ucs2(const char* _input, const char** end_ptr) {
   return -1;
 }
 
-Diligent::TextureDesc MakeTextureDesc() {
+Diligent::TextureDesc MakeTextureDesc(Diligent::TEXTURE_FORMAT texfmt) {
   Diligent::TextureDesc TexDesc;
   TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
-  TexDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB;
+  TexDesc.Format = texfmt;
   TexDesc.Usage = Diligent::USAGE_DEFAULT;
   TexDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
   TexDesc.BindFlags =
@@ -85,7 +85,7 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size)
                           surface_buffer_->w, surface_buffer_->h);
   }
 
-  Diligent::TextureDesc TexDesc = MakeTextureDesc();
+  Diligent::TextureDesc TexDesc = MakeTextureDesc(host->tex_format());
   TexDesc.Width = size.x;
   TexDesc.Height = size.y;
 
@@ -133,7 +133,7 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host,
 
   size_t img_size = surface_buffer_->w * surface_buffer_->h * 4;
 
-  Diligent::TextureDesc TexDesc = MakeTextureDesc();
+  Diligent::TextureDesc TexDesc = MakeTextureDesc(host->tex_format());
   TexDesc.Width = surface_buffer_->w;
   TexDesc.Height = surface_buffer_->h;
 
@@ -208,10 +208,12 @@ void Bitmap::StretchBlt(const base::Rect& dest_rect,
 
   base::Vec2i size = GetSize();
   base::Vec2i src_size = src_bitmap->GetSize();
-  auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(dest_rect.Size());
+  auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(
+      dest_rect.Size(), screen()->tex_format());
 
   Diligent::Box SrcBox(dest_rect.x, dest_rect.x + dest_rect.width, dest_rect.y,
                        dest_rect.y + dest_rect.height);
+  renderer::ClampBox(&SrcBox, size);
   Diligent::CopyTextureAttribs CopyTexAttr(
       texture_, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, dst_tex,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -479,6 +481,8 @@ void Bitmap::HueChange(int hue) {
     hue += 359;
   hue %= 359;
 
+  // TODO:
+
   NeedUpdateSurface();
 }
 
@@ -510,7 +514,7 @@ void Bitmap::DrawText(const base::Rect& rect,
     // Update text cache
     if (!text_cache_ || text_cache_->GetDesc().Width < txt_surf->w ||
         text_cache_->GetDesc().Height < txt_surf->h) {
-      Diligent::TextureDesc TexDesc = MakeTextureDesc();
+      Diligent::TextureDesc TexDesc = MakeTextureDesc(screen()->tex_format());
       TexDesc.Width = std::max<uint32_t>(
           text_cache_ ? text_cache_->GetDesc().Width : 0, txt_surf->w);
       TexDesc.Height = std::max<uint32_t>(
@@ -537,6 +541,10 @@ void Bitmap::DrawText(const base::Rect& rect,
     zoom_x = std::min(zoom_x, 1.0f);
     base::Rect pos(align_x, align_y, txt_surf->w * zoom_x, txt_surf->h);
 
+    screen()->renderer()->context()->SetRenderTargets(
+        0, nullptr, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
     // Upload text raster data
     Diligent::TextureSubResData TexSubData(txt_surf->pixels, txt_surf->pitch);
     Diligent::Box DstBox(0, txt_surf->w, 0, txt_surf->h);
@@ -546,9 +554,11 @@ void Bitmap::DrawText(const base::Rect& rect,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Draw text on target
-    auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(pos.Size());
+    auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(
+        pos.Size(), screen()->tex_format());
 
     Diligent::Box SrcBox(pos.x, pos.x + pos.width, pos.y, pos.y + pos.height);
+    renderer::ClampBox(&SrcBox, GetSize());
     Diligent::CopyTextureAttribs CopyTexAttr(
         texture_, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, dst_tex,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

@@ -55,7 +55,6 @@ class QuadDrawable {
   VertexInput::Data raw_data_[4];
   scoped_refptr<QuadArrayIndices> indices_;
   RefCntAutoPtr<IBuffer> buffer_handle_;
-  bool need_update_;
 };
 
 }  // namespace renderer

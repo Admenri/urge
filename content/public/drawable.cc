@@ -36,13 +36,13 @@ void DrawableParent::PrepareComposite() {
   }
 }
 
-void DrawableParent::Composite() {
+void DrawableParent::Composite(CompositeTargetInfo* target_info) {
   if (drawables_.empty())
     return;
 
   for (auto it = drawables_.tail(); it != drawables_.end(); it = it->previous())
     if (it->value()->visible_)
-      it->value()->OnDraw();
+      it->value()->OnDraw(target_info);
 }
 
 void DrawableParent::NotifyViewportRectChanged() {

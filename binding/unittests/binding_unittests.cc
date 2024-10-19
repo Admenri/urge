@@ -4,6 +4,9 @@
 
 #include "binding/unittests/binding_unittests.h"
 
+#include "content/public/sprite.h"
+#include "content/public/viewport.h"
+
 #include "SDL3_image/SDL_image.h"
 
 namespace binding {
@@ -30,7 +33,21 @@ void BindingUnittests::RunBindingMain() {
   auto* surf = bmp2->SurfaceRequired();
   IMG_SavePNG(surf, "out.png");
 
+  scoped_refptr<content::Viewport> vp =
+      new content::Viewport(binding_->graphics(), {50, 50, 400, 400});
+  vp->SetTone(new content::Tone(-68, -68, 0, 68));
+
+  scoped_refptr<content::Sprite> spr =
+      new content::Sprite(binding_->graphics(), vp);
+  spr->SetBitmap(bmp2);
+  spr->SetX(100);
+  spr->SetY(100);
+  spr->SetOX(bmp2->GetSize().x / 2);
+  spr->SetOY(bmp2->GetSize().y / 2);
+  spr->SetWaveAmp(10);
+
   while (true) {
+    spr->Update();
     binding_->graphics()->Update();
   }
 }

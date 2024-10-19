@@ -85,21 +85,27 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
 }
 
 RefCntAutoPtr<ITexture> RenderDevice::MakeGenericFramebuffer(
-    const base::Vec2i& size) {
-  TextureDesc TexDesc;
-  TexDesc.Type = RESOURCE_DIM_TEX_2D;
-  TexDesc.Format = TEX_FORMAT_RGBA8_UNORM_SRGB;
-  TexDesc.Usage = USAGE_DYNAMIC;
-  TexDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-  TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
-  TexDesc.Width = std::max<uint32_t>(
-      size.x, generic_framebuffer_ ? generic_framebuffer_->GetDesc().Width : 0);
-  TexDesc.Height = std::max<uint32_t>(
-      size.y,
-      generic_framebuffer_ ? generic_framebuffer_->GetDesc().Height : 0);
+    const base::Vec2i& size,
+    TEXTURE_FORMAT texfmt) {
+  if (!generic_framebuffer_ || generic_framebuffer_->GetDesc().Width < size.x ||
+      generic_framebuffer_->GetDesc().Height < size.y ||
+      generic_framebuffer_->GetDesc().Format != texfmt) {
+    TextureDesc TexDesc;
+    TexDesc.Type = RESOURCE_DIM_TEX_2D;
+    TexDesc.Format = texfmt;
+    TexDesc.Usage = USAGE_DEFAULT;
+    TexDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+    TexDesc.Width = std::max<uint32_t>(
+        size.x,
+        generic_framebuffer_ ? generic_framebuffer_->GetDesc().Width : 0);
+    TexDesc.Height = std::max<uint32_t>(
+        size.y,
+        generic_framebuffer_ ? generic_framebuffer_->GetDesc().Height : 0);
 
-  generic_framebuffer_.Release();
-  device()->CreateTexture(TexDesc, nullptr, &generic_framebuffer_);
+    generic_framebuffer_.Release();
+    device()->CreateTexture(TexDesc, nullptr, &generic_framebuffer_);
+  }
 
   return generic_framebuffer_;
 }
