@@ -1,6 +1,6 @@
 
 cbuffer PSConstants {
-  float2 u_TexSize;
+  float2 u_VSTexSize;
   float4 u_Color;
   float4 u_Tone;
   float u_Opacity;
@@ -37,7 +37,7 @@ void main(in PSInput PSIn, out PSOutput PSOut) {
   frag.rgb = lerp(frag.rgb, u_Color.rgb, u_Color.a);
 
   /* Bush depth alpha */
-  float currentPos = PSIn.UV.y / u_TexSize.y;
+  float currentPos = PSIn.UV.y / u_VSTexSize.y;
   float underBush = (u_BushDepth > currentPos) ? 1.0 : 0.0;
   frag.a *= clamp(u_BushOpacity + underBush, 0.0, 1.0);
 

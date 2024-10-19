@@ -74,7 +74,6 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
   self->context_ = context;
   self->swapchain_ = swapchain;
 
-  self->pipelines_.reset(new PipelineStorage(device));
   self->quad_index_buffer_ = new QuadArrayIndices(device);
   self->quad_index_buffer_->EnsureSize(context, 2 << 10);
   self->common_quad_.reset(new QuadDrawable(device, self->quad_index_buffer_));
@@ -82,6 +81,11 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
   context->WaitForIdle();
 
   return self;
+}
+
+void RenderDevice::InitializePipelines(TEXTURE_FORMAT render_target_format) {
+  pipelines_.reset(new PipelineStorage(device_, render_target_format));
+  context_->WaitForIdle();
 }
 
 RefCntAutoPtr<ITexture> RenderDevice::MakeGenericFramebuffer(

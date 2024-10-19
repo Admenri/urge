@@ -66,13 +66,14 @@ class RenderDevice {
     PipelineInstance_Sprite sprite;
     PipelineInstance_Viewport viewport;
 
-    PipelineStorage(RefCntAutoPtr<IRenderDevice> device)
-        : base(device),
-          blt(device),
-          color(device),
-          basesprite(device),
-          sprite(device),
-          viewport(device) {}
+    PipelineStorage(RefCntAutoPtr<IRenderDevice> device,
+                    TEXTURE_FORMAT target_fmt)
+        : base(device, target_fmt),
+          blt(device, target_fmt),
+          color(device, target_fmt),
+          basesprite(device, target_fmt),
+          sprite(device, target_fmt),
+          viewport(device, target_fmt) {}
   };
 
   ~RenderDevice();
@@ -90,6 +91,7 @@ class RenderDevice {
   RefCntAutoPtr<IDeviceContext> context() { return context_; }
   RefCntAutoPtr<ISwapChain> swapchain() { return swapchain_; }
 
+  void InitializePipelines(TEXTURE_FORMAT render_target_format);
   PipelineStorage* GetPipelines() { return pipelines_.get(); }
 
   scoped_refptr<QuadArrayIndices> quad_index_buffer() {

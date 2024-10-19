@@ -37,7 +37,10 @@ Graphics::Graphics(CoroutineContext* cc,
 
   // Create render device
   renderer_ = renderer::RenderDevice::Create(
-      window, renderer::RenderDevice::RendererBackend::kD3D11);
+      window, renderer::RenderDevice::RendererBackend::kVulkan);
+
+  // Preload pipelines
+  renderer_->InitializePipelines(tex_format());
 
   // Create renderer buffer
   screen_quad_ = std::make_unique<renderer::QuadDrawable>(
@@ -287,7 +290,7 @@ int Graphics::DetermineRepeatNumberInternal(double delta_rate) {
 };
 
 Diligent::TEXTURE_FORMAT Graphics::tex_format() {
-  return Diligent::TEXTURE_FORMAT::TEX_FORMAT_RGBA8_UNORM;
+  return renderer_->swapchain()->GetDesc().ColorBufferFormat;
 }
 
 void Graphics::AddDisposable(Disposable* disp) {

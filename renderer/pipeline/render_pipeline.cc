@@ -148,7 +148,8 @@ void RenderPipelineBase::BuildGraphicsPipeline(
 /// <param name="device"></param>
 
 PipelineInstance_Base::PipelineInstance_Base(
-    RefCntAutoPtr<IRenderDevice> device)
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
     : RenderPipelineBase(device) {
   ShaderCreateParams vs, ps;
   vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
@@ -179,7 +180,7 @@ PipelineInstance_Base::PipelineInstance_Base(
         pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
             ->Set(vs_uniform_);
       },
-      "base_pso");
+      "base.pso", texfmt);
 }
 
 RefCntAutoPtr<IBuffer> PipelineInstance_Base::GetVSUniform() {
@@ -197,7 +198,8 @@ void PipelineInstance_Base::SetTexture(ITextureView* view) {
 /// </summary>
 /// <param name="device"></param>
 
-PipelineInstance_Blt::PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device)
+PipelineInstance_Blt::PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device,
+                                           TEXTURE_FORMAT texfmt)
     : RenderPipelineBase(device) {
   ShaderCreateParams vs, ps;
   vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
@@ -234,7 +236,7 @@ PipelineInstance_Blt::PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device)
         pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
             ->Set(ps_uniform_);
       },
-      "blt_pso");
+      "blt.pso", texfmt);
 }
 
 RefCntAutoPtr<IBuffer> PipelineInstance_Blt::GetVSUniform() {
@@ -263,7 +265,8 @@ void PipelineInstance_Blt::SetDstTexture(ITextureView* view) {
 /// <param name="device"></param>
 
 PipelineInstance_Color::PipelineInstance_Color(
-    RefCntAutoPtr<IRenderDevice> device)
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
     : RenderPipelineBase(device) {
   ShaderCreateParams vs, ps;
   vs.source =
@@ -285,7 +288,7 @@ PipelineInstance_Color::PipelineInstance_Color(
         pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
             ->Set(vs_uniform_);
       },
-      "basecolor_pso");
+      "basecolor.pso", texfmt);
 }
 
 RefCntAutoPtr<IBuffer> PipelineInstance_Color::GetVSUniform() {
@@ -298,7 +301,8 @@ RefCntAutoPtr<IBuffer> PipelineInstance_Color::GetVSUniform() {
 /// <param name="device"></param>
 
 PipelineInstance_Sprite::PipelineInstance_Sprite(
-    RefCntAutoPtr<IRenderDevice> device)
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
     : RenderPipelineBase(device) {
   ShaderCreateParams vs, ps;
   vs.source =
@@ -333,7 +337,7 @@ PipelineInstance_Sprite::PipelineInstance_Sprite(
         pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
             ->Set(ps_uniform_);
       },
-      "blt_pso");
+      "sprite.pso", texfmt);
 }
 
 RefCntAutoPtr<IBuffer> PipelineInstance_Sprite::GetVSUniform() {
@@ -356,7 +360,8 @@ void PipelineInstance_Sprite::SetTexture(ITextureView* view) {
 /// <param name="device"></param>
 
 PipelineInstance_BaseSprite::PipelineInstance_BaseSprite(
-    RefCntAutoPtr<IRenderDevice> device)
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
     : RenderPipelineBase(device) {
   ShaderCreateParams vs, ps;
   vs.source =
@@ -389,7 +394,7 @@ PipelineInstance_BaseSprite::PipelineInstance_BaseSprite(
         pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
             ->Set(vs_uniform_);
       },
-      "base_pso");
+      "basesprite.pso", texfmt);
 }
 
 RefCntAutoPtr<IBuffer> PipelineInstance_BaseSprite::GetVSUniform() {
@@ -408,7 +413,8 @@ void PipelineInstance_BaseSprite::SetTexture(ITextureView* view) {
 /// <param name="device"></param>
 
 PipelineInstance_Viewport::PipelineInstance_Viewport(
-    RefCntAutoPtr<IRenderDevice> device)
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
     : RenderPipelineBase(device) {
   ShaderCreateParams vs, ps;
   vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
@@ -444,7 +450,7 @@ PipelineInstance_Viewport::PipelineInstance_Viewport(
         pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
             ->Set(ps_uniform_);
       },
-      "blt_pso");
+      "viewport.pso", texfmt);
 }
 
 RefCntAutoPtr<IBuffer> PipelineInstance_Viewport::GetVSUniform() {

@@ -66,7 +66,7 @@ class RenderPipelineBase {
       const std::vector<ImmutableSamplerDesc>& samplers,
       StaticVariablesBlockFunc set_static_variables_func,
       const std::string& pipeline_name,
-      TEXTURE_FORMAT target_format = TEX_FORMAT_RGBA8_UNORM_SRGB);
+      TEXTURE_FORMAT target_format);
 
   PipelineState* CurrentState() { return current_state_; }
 
@@ -84,7 +84,8 @@ class PipelineInstance_Base : public RenderPipelineBase {
     base::Vec2 texSize;
   };
 
-  PipelineInstance_Base(RefCntAutoPtr<IRenderDevice> device);
+  PipelineInstance_Base(RefCntAutoPtr<IRenderDevice> device,
+                        TEXTURE_FORMAT texfmt);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
 
@@ -107,7 +108,8 @@ class PipelineInstance_Blt : public RenderPipelineBase {
     float opacity;
   };
 
-  PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device);
+  PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device,
+                       TEXTURE_FORMAT texfmt);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
   RefCntAutoPtr<IBuffer> GetPSUniform();
@@ -127,7 +129,8 @@ class PipelineInstance_Color : public RenderPipelineBase {
     base::Vec2 transOffset;
   };
 
-  PipelineInstance_Color(RefCntAutoPtr<IRenderDevice> device);
+  PipelineInstance_Color(RefCntAutoPtr<IRenderDevice> device,
+                         TEXTURE_FORMAT texfmt);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
 
@@ -152,7 +155,8 @@ class PipelineInstance_Sprite : public RenderPipelineBase {
     float bushOpacity;
   };
 
-  PipelineInstance_Sprite(RefCntAutoPtr<IRenderDevice> device);
+  PipelineInstance_Sprite(RefCntAutoPtr<IRenderDevice> device,
+                          TEXTURE_FORMAT texfmt);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
   RefCntAutoPtr<IBuffer> GetPSUniform();
@@ -172,7 +176,8 @@ class PipelineInstance_BaseSprite : public RenderPipelineBase {
     base::Vec2 texSize;
   };
 
-  PipelineInstance_BaseSprite(RefCntAutoPtr<IRenderDevice> device);
+  PipelineInstance_BaseSprite(RefCntAutoPtr<IRenderDevice> device,
+                              TEXTURE_FORMAT texfmt);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
 
@@ -195,7 +200,8 @@ class PipelineInstance_Viewport : public RenderPipelineBase {
     base::Vec4 tone;
   };
 
-  PipelineInstance_Viewport(RefCntAutoPtr<IRenderDevice> device);
+  PipelineInstance_Viewport(RefCntAutoPtr<IRenderDevice> device,
+                            TEXTURE_FORMAT texfmt);
 
   RefCntAutoPtr<IBuffer> GetVSUniform();
   RefCntAutoPtr<IBuffer> GetPSUniform();
