@@ -33,6 +33,10 @@ void BindingUnittests::RunBindingMain() {
   auto* surf = bmp2->SurfaceRequired();
   IMG_SavePNG(surf, "out.png");
 
+  scoped_refptr<content::Sprite> spr2 =
+      new content::Sprite(binding_->graphics());
+  spr2->SetBitmap(bmp);
+
   scoped_refptr<content::Viewport> vp =
       new content::Viewport(binding_->graphics(), {50, 50, 400, 400});
   vp->SetTone(new content::Tone(-68, -68, 0, 68));
@@ -40,13 +44,10 @@ void BindingUnittests::RunBindingMain() {
   scoped_refptr<content::Sprite> spr =
       new content::Sprite(binding_->graphics(), vp);
   spr->SetBitmap(bmp2);
-  spr->SetX(100);
-  spr->SetY(100);
-  spr->SetOX(bmp2->GetSize().x / 2);
-  spr->SetOY(bmp2->GetSize().y / 2);
   spr->SetWaveAmp(10);
 
   while (true) {
+    spr2->Update();
     spr->Update();
     binding_->graphics()->Update();
   }

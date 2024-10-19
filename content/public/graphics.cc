@@ -37,7 +37,7 @@ Graphics::Graphics(CoroutineContext* cc,
 
   // Create render device
   renderer_ = renderer::RenderDevice::Create(
-      window, renderer::RenderDevice::RendererBackend::kVulkan);
+      window, renderer::RenderDevice::RendererBackend::kD3D12);
 
   // Preload pipelines
   renderer_->InitializePipelines(tex_format());

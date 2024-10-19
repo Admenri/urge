@@ -115,20 +115,23 @@ void Viewport::OnDraw(CompositeTargetInfo* target_info) {
   if (Flashable::IsFlashing() && Flashable::EmptyFlashing())
     return;
 
+  // Push and set scissor stack
   base::Rect scissor_state_cache;
   std::swap(target_info->scissor_region, scissor_state_cache);
-
   target_info->scissor_region =
       base::MakeIntersect(viewport_rect().rect, scissor_state_cache);
 
-  Diligent::Rect scissor;
-  scissor.left = target_info->scissor_region.x;
-  scissor.right = scissor.left + target_info->scissor_region.width;
-  scissor.top = target_info->scissor_region.y;
-  scissor.bottom = scissor.top + target_info->scissor_region.height;
-  screen()->renderer()->context()->SetScissorRects(
-      1, &scissor, 1, scissor.bottom + scissor.left);
+  {
+    Diligent::Rect scissor;
+    scissor.left = target_info->scissor_region.x;
+    scissor.right = scissor.left + target_info->scissor_region.width;
+    scissor.top = target_info->scissor_region.y;
+    scissor.bottom = scissor.top + target_info->scissor_region.height;
+    screen()->renderer()->context()->SetScissorRects(
+        1, &scissor, 1, scissor.bottom + scissor.left);
+  }
 
+  // Execute children draw command
   DrawableParent::Composite(target_info);
 
   if (Flashable::IsFlashing() || color_->IsValid() || tone_->IsValid()) {
@@ -146,6 +149,18 @@ void Viewport::OnDraw(CompositeTargetInfo* target_info) {
                         target_color, tone_->AsBase());
   }
 
+  // Resume parent scissor setting
+  {
+    Diligent::Rect scissor;
+    scissor.left = scissor_state_cache.x;
+    scissor.right = scissor.left + scissor_state_cache.width;
+    scissor.top = scissor_state_cache.y;
+    scissor.bottom = scissor.top + scissor_state_cache.height;
+    screen()->renderer()->context()->SetScissorRects(
+        1, &scissor, 1, scissor.bottom + scissor.left);
+  }
+
+  // Pop scissor stack
   std::swap(target_info->scissor_region, scissor_state_cache);
 }
 
