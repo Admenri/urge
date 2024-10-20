@@ -213,6 +213,58 @@ class PipelineInstance_Viewport : public RenderPipelineBase {
   RefCntAutoPtr<IBuffer> ps_uniform_;
 };
 
+class PipelineInstance_AlphaTrans : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+  };
+
+  using PSUniform = struct { float progress; };
+
+  PipelineInstance_AlphaTrans(RefCntAutoPtr<IRenderDevice> device,
+                              TEXTURE_FORMAT texfmt);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+  RefCntAutoPtr<IBuffer> GetPSUniform();
+
+  void SetFrozenTexture(ITextureView* view);
+  void SetCurrentTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+  RefCntAutoPtr<IBuffer> ps_uniform_;
+};
+
+class PipelineInstance_VagueTrans : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+  };
+
+  using PSUniform = struct {
+    float progress;
+    float vague;
+  };
+
+  PipelineInstance_VagueTrans(RefCntAutoPtr<IRenderDevice> device,
+                              TEXTURE_FORMAT texfmt);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+  RefCntAutoPtr<IBuffer> GetPSUniform();
+
+  void SetFrozenTexture(ITextureView* view);
+  void SetCurrentTexture(ITextureView* view);
+  void SetTransTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+  RefCntAutoPtr<IBuffer> ps_uniform_;
+};
+
 }  // namespace renderer
 
 #endif  //! RENDERER_PIPELINE_RENDER_PIPELINE_H_

@@ -91,7 +91,8 @@ class Graphics final : public base::RefCounted<Graphics>,
   int DetermineRepeatNumberInternal(double delta_rate);
   void UpdateWindowViewportInternal();
 
-  void EncodeDrawableFrameInternal();
+  void EncodeDrawableFrameInternal(
+      Diligent::RefCntAutoPtr<Diligent::ITexture> screen_frame);
   void PresentScreenBufferInternal(
       Diligent::RefCntAutoPtr<Diligent::ITexture> screen_frame);
 
@@ -99,6 +100,7 @@ class Graphics final : public base::RefCounted<Graphics>,
   APIVersion api_version_;
 
   Diligent::RefCntAutoPtr<Diligent::ITexture> screen_buffer_;
+  Diligent::RefCntAutoPtr<Diligent::ITexture> transition_snapshot_;
   Diligent::RefCntAutoPtr<Diligent::ITexture> frozen_snapshot_;
   std::unique_ptr<renderer::QuadDrawable> screen_quad_;
 
@@ -113,7 +115,6 @@ class Graphics final : public base::RefCounted<Graphics>,
   int brightness_;
   uint64_t frame_count_;
   int frame_rate_;
-  bool vsync_;
 
   double elapsed_time_;
   double smooth_delta_time_;

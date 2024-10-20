@@ -33,9 +33,13 @@ void BindingUnittests::RunBindingMain() {
   auto* surf = bmp2->SurfaceRequired();
   IMG_SavePNG(surf, "out.png");
 
+  binding_->graphics()->ResizeScreen({800, 600});
+
   scoped_refptr<content::Sprite> spr2 =
       new content::Sprite(binding_->graphics());
   spr2->SetBitmap(bmp);
+
+  binding_->graphics()->Freeze();
 
   scoped_refptr<content::Viewport> vp =
       new content::Viewport(binding_->graphics(), {50, 50, 400, 400});
@@ -45,6 +49,8 @@ void BindingUnittests::RunBindingMain() {
       new content::Sprite(binding_->graphics(), vp);
   spr->SetBitmap(bmp2);
   spr->SetWaveAmp(10);
+
+  binding_->graphics()->Transition(120);
 
   while (true) {
     spr2->Update();

@@ -6,6 +6,7 @@
 
 namespace renderer {
 
+#include "renderer/hlsl/alphatrans_ps.hlsl.xxd"
 #include "renderer/hlsl/base_ps.hlsl.xxd"
 #include "renderer/hlsl/base_vs.hlsl.xxd"
 #include "renderer/hlsl/basecolor_ps.hlsl.xxd"
@@ -13,6 +14,7 @@ namespace renderer {
 #include "renderer/hlsl/blt_ps.hlsl.xxd"
 #include "renderer/hlsl/sprite_ps.hlsl.xxd"
 #include "renderer/hlsl/transform_vs.hlsl.xxd"
+#include "renderer/hlsl/vaguetrans_ps.hlsl.xxd"
 #include "renderer/hlsl/viewport_ps.hlsl.xxd"
 
 static void MakeColorBlend(BlendType type, RenderTargetBlendDesc& blend) {
@@ -143,7 +145,7 @@ void RenderPipelineBase::BuildGraphicsPipeline(
 }
 
 /// <summary>
-/// Base shader pipeline
+/// Base
 /// </summary>
 /// <param name="device"></param>
 
@@ -194,7 +196,7 @@ void PipelineInstance_Base::SetTexture(ITextureView* view) {
 }
 
 /// <summary>
-/// Blt shader pipeline
+/// Blt
 /// </summary>
 /// <param name="device"></param>
 
@@ -260,7 +262,7 @@ void PipelineInstance_Blt::SetDstTexture(ITextureView* view) {
 }
 
 /// <summary>
-/// Color shader pipeline
+/// Vertex Color
 /// </summary>
 /// <param name="device"></param>
 
@@ -296,7 +298,7 @@ RefCntAutoPtr<IBuffer> PipelineInstance_Color::GetVSUniform() {
 }
 
 /// <summary>
-/// Sprite shader pipeline
+/// Sprite
 /// </summary>
 /// <param name="device"></param>
 
@@ -355,7 +357,7 @@ void PipelineInstance_Sprite::SetTexture(ITextureView* view) {
 }
 
 /// <summary>
-/// Base sprite shader pipeline
+/// Base Sprite
 /// </summary>
 /// <param name="device"></param>
 
@@ -408,7 +410,7 @@ void PipelineInstance_BaseSprite::SetTexture(ITextureView* view) {
 }
 
 /// <summary>
-/// Viewport shader pipeline
+/// Viewport
 /// </summary>
 /// <param name="device"></param>
 
@@ -464,6 +466,159 @@ RefCntAutoPtr<IBuffer> PipelineInstance_Viewport::GetPSUniform() {
 void PipelineInstance_Viewport::SetTexture(ITextureView* view) {
   RenderPipelineBase::CurrentState()
       ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Alpha Transition
+/// </summary>
+/// <param name="device"></param>
+/// <param name="texfmt"></param>
+
+PipelineInstance_AlphaTrans::PipelineInstance_AlphaTrans(
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
+  vs.name = "base_vs";
+  vs.entry = "main";
+
+  ps.source =
+      std::string((const char*)alphatrans_ps_hlsl, alphatrans_ps_hlsl_len);
+  ps.name = "alphatrans_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_FrozenTexture",
+       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {SHADER_TYPE_PIXEL, "u_CurrentTexture",
+       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_FrozenTexture", SamLinearClampDesc},
+      {SHADER_TYPE_PIXEL, "u_CurrentTexture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "alphatrans.vs.ubo",
+                      &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(PSUniform), "alphatrans.ps.ubo",
+                      &ps_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+        pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
+            ->Set(ps_uniform_);
+      },
+      "alphatrans.pso", texfmt);
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_AlphaTrans::GetVSUniform() {
+  return vs_uniform_;
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_AlphaTrans::GetPSUniform() {
+  return ps_uniform_;
+}
+
+void PipelineInstance_AlphaTrans::SetFrozenTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_FrozenTexture")
+      ->Set(view);
+}
+
+void PipelineInstance_AlphaTrans::SetCurrentTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_CurrentTexture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Vague Transition
+/// </summary>
+/// <param name="device"></param>
+/// <param name="texfmt"></param>
+
+PipelineInstance_VagueTrans::PipelineInstance_VagueTrans(
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
+  vs.name = "base_vs";
+  vs.entry = "main";
+
+  ps.source =
+      std::string((const char*)vaguetrans_ps_hlsl, vaguetrans_ps_hlsl_len);
+  ps.name = "vaguetrans_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_FrozenTexture",
+       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {SHADER_TYPE_PIXEL, "u_CurrentTexture",
+       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {SHADER_TYPE_PIXEL, "u_TransTexture",
+       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_FrozenTexture", SamLinearClampDesc},
+      {SHADER_TYPE_PIXEL, "u_CurrentTexture", SamLinearClampDesc},
+      {SHADER_TYPE_PIXEL, "u_TransTexture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "vaguetrans.vs.ubo",
+                      &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(PSUniform), "vaguetrans.ps.ubo",
+                      &ps_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+        pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
+            ->Set(ps_uniform_);
+      },
+      "vaguetrans.pso", texfmt);
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_VagueTrans::GetVSUniform() {
+  return vs_uniform_;
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_VagueTrans::GetPSUniform() {
+  return ps_uniform_;
+}
+
+void PipelineInstance_VagueTrans::SetFrozenTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_FrozenTexture")
+      ->Set(view);
+}
+
+void PipelineInstance_VagueTrans::SetCurrentTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_CurrentTexture")
+      ->Set(view);
+}
+
+void PipelineInstance_VagueTrans::SetTransTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_TransTexture")
       ->Set(view);
 }
 

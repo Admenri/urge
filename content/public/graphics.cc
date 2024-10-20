@@ -26,7 +26,6 @@ Graphics::Graphics(CoroutineContext* cc,
       brightness_(255),
       frame_count_(0),
       frame_rate_(api_diff >= APIVersion ::RGSS2 ? 60 : 40),
-      vsync_(0),
       elapsed_time_(0),
       smooth_delta_time_(1),
       last_count_time_(SDL_GetPerformanceCounter()),
@@ -54,7 +53,6 @@ Graphics::~Graphics() {
   screen_quad_.reset();
   screen_buffer_.Release();
   frozen_snapshot_.Release();
-
   renderer_.reset();
 }
 
@@ -105,6 +103,9 @@ void Graphics::Wait(int duration) {
 scoped_refptr<Bitmap> Graphics::SnapToBitmap() {
   scoped_refptr<Bitmap> snap = new Bitmap(this, resolution_);
 
+  EncodeDrawableFrameInternal(snap->GetHandle());
+  renderer()->context()->Flush();
+
   return snap;
 }
 
@@ -116,6 +117,7 @@ void Graphics::FadeOut(int duration) {
     SetBrightness(current_brightness -
                   current_brightness * (i / static_cast<float>(duration)));
     if (frozen_) {
+      // Draw last frame to screen
       FrameProcessInternal();
     } else {
       Update();
@@ -136,6 +138,7 @@ void Graphics::FadeIn(int duration) {
                   diff * (i / static_cast<float>(duration)));
 
     if (frozen_) {
+      // Draw last frame to screen
       FrameProcessInternal();
     } else {
       Update();
@@ -149,7 +152,9 @@ void Graphics::FadeIn(int duration) {
 void Graphics::Update() {
   if (!frozen_ && !cc_->frame_skip_require) {
     // Setup render frame
-    EncodeDrawableFrameInternal();
+    EncodeDrawableFrameInternal(screen_buffer_);
+
+    // Fallthrough to present screen buffer
   }
 
   // Process frame delay
@@ -181,6 +186,11 @@ void Graphics::Freeze() {
   if (frozen_)
     return;
 
+  // Get frozen scene snapshot for transition
+  EncodeDrawableFrameInternal(frozen_snapshot_);
+  renderer()->context()->Flush();
+
+  // Set forzen flag for blocking frame update
   frozen_ = true;
 }
 
@@ -190,8 +200,104 @@ void Graphics::Transition(int duration,
   if (!frozen_)
     return;
 
+  // Fix screen attribute
   SetBrightness(255);
   vague = std::clamp<int>(vague, 1, 256);
+
+  // Get current scene snapshot for transition
+  EncodeDrawableFrameInternal(transition_snapshot_);
+
+  // Start transition
+  auto* frozen_texture =
+      frozen_snapshot_->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+  auto* current_texture = transition_snapshot_->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+
+  for (int i = 0; i < duration; ++i) {
+    float progress = i * (1.0f / duration);
+
+    auto* RTV =
+        screen_buffer_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+    renderer()->context()->SetRenderTargets(
+        1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    if (IsObjectValid(trans_bitmap.get())) {
+      auto* trans_texture = trans_bitmap->GetHandle()->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+
+      auto& shader = renderer()->GetPipelines()->vaguetrans;
+      auto* pipeline = shader.GetPSOFor(renderer::BlendType::NoBlend);
+      renderer()->context()->SetPipelineState(pipeline->pso);
+
+      {
+        Diligent::MapHelper<renderer::PipelineInstance_VagueTrans::VSUniform>
+            Constants(renderer()->context(), shader.GetVSUniform(),
+                      Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+        renderer::MakeProjectionMatrix(
+            Constants->projMat, resolution_,
+            renderer()->device()->GetDeviceInfo().IsGLDevice());
+        Constants->texSize = base::MakeInvert(resolution_);
+        Constants->transOffset = base::Vec2i(0);
+      }
+
+      {
+        Diligent::MapHelper<renderer::PipelineInstance_VagueTrans::PSUniform>
+            Constants(renderer()->context(), shader.GetPSUniform(),
+                      Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+        Constants->progress = progress;
+        Constants->vague = vague / 256.0f;
+      }
+
+      shader.SetFrozenTexture(frozen_texture);
+      shader.SetCurrentTexture(current_texture);
+      shader.SetTransTexture(trans_texture);
+      renderer()->context()->CommitShaderResources(
+          pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    } else {
+      auto& shader = renderer()->GetPipelines()->alphatrans;
+      auto* pipeline = shader.GetPSOFor(renderer::BlendType::NoBlend);
+      renderer()->context()->SetPipelineState(pipeline->pso);
+
+      {
+        Diligent::MapHelper<renderer::PipelineInstance_AlphaTrans::VSUniform>
+            Constants(renderer()->context(), shader.GetVSUniform(),
+                      Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+        renderer::MakeProjectionMatrix(
+            Constants->projMat, resolution_,
+            renderer()->device()->GetDeviceInfo().IsGLDevice());
+        Constants->texSize = base::MakeInvert(resolution_);
+        Constants->transOffset = base::Vec2i(0);
+      }
+
+      {
+        Diligent::MapHelper<renderer::PipelineInstance_AlphaTrans::PSUniform>
+            Constants(renderer()->context(), shader.GetPSUniform(),
+                      Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+        Constants->progress = progress;
+      }
+
+      shader.SetFrozenTexture(frozen_texture);
+      shader.SetCurrentTexture(current_texture);
+      renderer()->context()->CommitShaderResources(
+          pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }
+
+    {
+      Diligent::Rect scissor;
+      scissor.right = resolution_.x;
+      scissor.bottom = resolution_.y;
+      renderer()->context()->SetScissorRects(1, &scissor, 1,
+                                             scissor.bottom + scissor.left);
+    }
+
+    auto* quad = renderer()->common_quad();
+    quad->SetPosition(base::Vec2(resolution_));
+    quad->SetTexcoord(base::Vec2(resolution_));
+    quad->Draw(renderer()->context());
+
+    // Present to screen
+    FrameProcessInternal();
+  }
 
   // Transition process complete
   frozen_ = false;
@@ -200,6 +306,7 @@ void Graphics::Transition(int duration,
 void Graphics::SetFrameRate(int rate) {
   rate = std::max(rate, 1);
   frame_rate_ = rate;
+  desired_delta_time_ = SDL_GetPerformanceFrequency() / frame_rate_;
 }
 
 int Graphics::GetFrameRate() const {
@@ -215,7 +322,7 @@ uint64_t Graphics::GetFrameCount() const {
 }
 
 void Graphics::ResetFrame() {
-  frame_count_ = 0;
+  last_count_time_ = SDL_GetPerformanceCounter();
 }
 
 void Graphics::ResizeWindow(int width, int height) {
@@ -256,11 +363,17 @@ void Graphics::RebuildScreenBufferInternal(const base::Vec2i& resolution) {
   TexDesc.Width = resolution_.x;
   TexDesc.Height = resolution_.y;
 
-  TexDesc.Name = "Screen framebuffer";
+  screen_buffer_.Release();
+  TexDesc.Name = "screen.framebuffer";
   renderer()->device()->CreateTexture(TexDesc, nullptr, &screen_buffer_);
 
-  TexDesc.Name = "Frozen framebuffer";
+  frozen_snapshot_.Release();
+  TexDesc.Name = "frozen.framebuffer";
   renderer()->device()->CreateTexture(TexDesc, nullptr, &frozen_snapshot_);
+
+  transition_snapshot_.Release();
+  TexDesc.Name = "transition.framebuffer";
+  renderer()->device()->CreateTexture(TexDesc, nullptr, &transition_snapshot_);
 }
 
 void Graphics::FrameProcessInternal() {
@@ -324,31 +437,40 @@ void Graphics::UpdateWindowViewportInternal() {
   display_viewport_.y = (window_size.y - display_viewport_.height) / 2.0f;
 }
 
-void Graphics::EncodeDrawableFrameInternal() {
+void Graphics::EncodeDrawableFrameInternal(
+    Diligent::RefCntAutoPtr<Diligent::ITexture> screen_frame) {
+  // Notify composite
   DrawableParent::PrepareComposite();
 
+  // Bind framebuffer
   auto* RTV =
-      screen_buffer_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+      screen_frame->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
   renderer()->context()->SetRenderTargets(
       1, &RTV, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+  // Set background color
   float ClearColor[4] = {0, 0, 0, 1};
   renderer()->context()->ClearRenderTarget(
       RTV, ClearColor, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   CompositeTargetInfo target_info;
   target_info.render_target = RTV;
-  target_info.viewport_size = base::Vec2i(screen_buffer_->GetDesc().Width,
-                                          screen_buffer_->GetDesc().Height);
+  target_info.viewport_size = base::Vec2i(screen_frame->GetDesc().Width,
+                                          screen_frame->GetDesc().Height);
   target_info.scissor_region = target_info.viewport_size;
 
-  Diligent::Rect scissor;
-  scissor.right = resolution_.x;
-  scissor.bottom = resolution_.y;
-  renderer()->context()->SetScissorRects(1, &scissor, 1,
-                                         scissor.bottom + scissor.left);
+  {
+    Diligent::Rect scissor;
+    scissor.right = resolution_.x;
+    scissor.bottom = resolution_.y;
+    renderer()->context()->SetScissorRects(1, &scissor, 1,
+                                           scissor.bottom + scissor.left);
+  }
 
+  // Composite frame
   DrawableParent::Composite(&target_info);
+
+  // Apply brightness effect
 }
 
 void Graphics::PresentScreenBufferInternal(
