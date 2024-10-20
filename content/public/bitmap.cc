@@ -79,7 +79,7 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size)
                             ->device()
                             ->GetAdapterInfo()
                             .Texture.MaxTexture2DDimension;
-  if (surface_buffer_->w > size_limit || surface_buffer_->h > size_limit) {
+  if (size.x > size_limit || size.y > size_limit) {
     throw base::Exception(base::Exception::RendererError,
                           "Unable to load large image: (%dx%d)",
                           surface_buffer_->w, surface_buffer_->h);

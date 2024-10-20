@@ -266,6 +266,25 @@ class PipelineInstance_VagueTrans : public RenderPipelineBase {
   RefCntAutoPtr<IBuffer> ps_uniform_;
 };
 
+class PipelineInstance_BaseAlpha : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+  };
+
+  PipelineInstance_BaseAlpha(RefCntAutoPtr<IRenderDevice> device,
+                             TEXTURE_FORMAT texfmt);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+
+  void SetTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
 }  // namespace renderer
 
 #endif  //! RENDERER_PIPELINE_RENDER_PIPELINE_H_

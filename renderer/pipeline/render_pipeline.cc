@@ -9,6 +9,8 @@ namespace renderer {
 #include "renderer/hlsl/alphatrans_ps.hlsl.xxd"
 #include "renderer/hlsl/base_ps.hlsl.xxd"
 #include "renderer/hlsl/base_vs.hlsl.xxd"
+#include "renderer/hlsl/basealpha_ps.hlsl.xxd"
+#include "renderer/hlsl/basealpha_vs.hlsl.xxd"
 #include "renderer/hlsl/basecolor_ps.hlsl.xxd"
 #include "renderer/hlsl/basecolor_vs.hlsl.xxd"
 #include "renderer/hlsl/blt_ps.hlsl.xxd"
@@ -619,6 +621,61 @@ void PipelineInstance_VagueTrans::SetCurrentTexture(ITextureView* view) {
 void PipelineInstance_VagueTrans::SetTransTexture(ITextureView* view) {
   RenderPipelineBase::CurrentState()
       ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_TransTexture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Base Alpha
+/// </summary>
+/// <param name="device"></param>
+/// <param name="texfmt"></param>
+
+PipelineInstance_BaseAlpha::PipelineInstance_BaseAlpha(
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source =
+      std::string((const char*)basealpha_vs_hlsl, basealpha_vs_hlsl_len);
+  vs.name = "basealpha_vs";
+  vs.entry = "main";
+
+  ps.source =
+      std::string((const char*)basealpha_ps_hlsl, basealpha_ps_hlsl_len);
+  ps.name = "basealpha_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "base.alpha.vs.ubo",
+                      &vs_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+      },
+      "basealpha.pso", texfmt);
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_BaseAlpha::GetVSUniform() {
+  return vs_uniform_;
+}
+
+void PipelineInstance_BaseAlpha::SetTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
       ->Set(view);
 }
 

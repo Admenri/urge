@@ -25,72 +25,72 @@ class Plane : public base::RefCounted<Plane>,
   Plane(const Plane&) = delete;
   Plane& operator=(const Plane&) = delete;
 
-  void SetBitmap(scoped_refptr<Bitmap> bitmap);
-  scoped_refptr<Bitmap> GetBitmap() const {
+  CONTENT_EXPORT void SetBitmap(scoped_refptr<Bitmap> bitmap);
+  CONTENT_EXPORT scoped_refptr<Bitmap> GetBitmap() const {
     CheckIsDisposed();
     return bitmap_;
   }
 
-  void SetOX(int ox);
-  int GetOX() const {
+  CONTENT_EXPORT void SetOX(int ox);
+  CONTENT_EXPORT int GetOX() const {
     CheckIsDisposed();
     return ox_;
   }
 
-  void SetOY(int oy);
-  int GetOY() const {
+  CONTENT_EXPORT void SetOY(int oy);
+  CONTENT_EXPORT int GetOY() const {
     CheckIsDisposed();
     return oy_;
   }
 
-  void SetZoomX(double zoom_x);
-  double GetZoomX() const {
+  CONTENT_EXPORT void SetZoomX(double zoom_x);
+  CONTENT_EXPORT double GetZoomX() const {
     CheckIsDisposed();
     return zoom_x_;
   }
 
-  void SetZoomY(double zoom_y);
-  double GetZoomY() const {
+  CONTENT_EXPORT void SetZoomY(double zoom_y);
+  CONTENT_EXPORT double GetZoomY() const {
     CheckIsDisposed();
     return zoom_y_;
   }
 
-  void SetOpacity(int opacity) {
+  CONTENT_EXPORT void SetOpacity(int opacity) {
     CheckIsDisposed();
     opacity_ = opacity;
   }
 
-  int GetOpacity() const {
+  CONTENT_EXPORT int GetOpacity() const {
     CheckIsDisposed();
     return opacity_;
   }
 
-  void SetBlendType(renderer::BlendType blend_type) {
+  CONTENT_EXPORT void SetBlendType(renderer::BlendType blend_type) {
     CheckIsDisposed();
     blend_type_ = blend_type;
   }
 
-  renderer::BlendType GetBlendType() const {
+  CONTENT_EXPORT renderer::BlendType GetBlendType() const {
     CheckIsDisposed();
     return blend_type_;
   }
 
-  void SetColor(scoped_refptr<Color> color) {
+  CONTENT_EXPORT void SetColor(scoped_refptr<Color> color) {
     CheckIsDisposed();
     *color_ = *color;
   }
 
-  scoped_refptr<Color> GetColor() const {
+  CONTENT_EXPORT scoped_refptr<Color> GetColor() const {
     CheckIsDisposed();
     return color_;
   }
 
-  void SetTone(scoped_refptr<Tone> tone) {
+  CONTENT_EXPORT void SetTone(scoped_refptr<Tone> tone) {
     CheckIsDisposed();
     *tone_ = *tone;
   }
 
-  scoped_refptr<Tone> GetTone() const {
+  CONTENT_EXPORT scoped_refptr<Tone> GetTone() const {
     CheckIsDisposed();
     return tone_;
   }

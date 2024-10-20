@@ -7,6 +7,7 @@
 #include "content/public/plane.h"
 #include "content/public/sprite.h"
 #include "content/public/viewport.h"
+#include "content/public/window2.h"
 
 #include "SDL3_image/SDL_image.h"
 
@@ -22,6 +23,8 @@ void BindingUnittests::RunBindingMain() {
       new content::Bitmap(binding_->graphics(), binding_->io(), "test.png");
   scoped_refptr<content::Bitmap> bmp2 =
       new content::Bitmap(binding_->graphics(), binding_->io(), "bg.png");
+  scoped_refptr<content::Bitmap> winskin =
+      new content::Bitmap(binding_->graphics(), binding_->io(), "Window.png");
 
   bmp2->Blt({100, 200}, bmp, {100, 100, 400, 400}, 255);
   bmp2->SetPixel({10, 10}, new content::Color(255, 255, 255));
@@ -51,6 +54,15 @@ void BindingUnittests::RunBindingMain() {
   spr->SetWaveAmp(10);
 
   binding_->graphics()->Transition(120);
+
+  scoped_refptr<content::Window2> win2 =
+      new content::Window2(binding_->graphics(), vp);
+  win2->SetWindowskin(winskin);
+  win2->SetX(100);
+  win2->SetY(100);
+  win2->SetWidth(200);
+  win2->SetHeight(200);
+  win2->SetContents(bmp);
 
   int x = 0;
   while (true) {

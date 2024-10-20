@@ -30,144 +30,144 @@ class Sprite : public base::RefCounted<Sprite>,
   Sprite(const Sprite&) = delete;
   Sprite& operator=(const Sprite&) = delete;
 
-  int GetWidth() const {
+  CONTENT_EXPORT int GetWidth() const {
     CheckIsDisposed();
     return src_rect_->GetWidth();
   }
 
-  int GetHeight() const {
+  CONTENT_EXPORT int GetHeight() const {
     CheckIsDisposed();
     return src_rect_->GetHeight();
   }
 
-  void SetBitmap(scoped_refptr<Bitmap> bitmap);
-  scoped_refptr<Bitmap> GetBitmap() {
+  CONTENT_EXPORT void SetBitmap(scoped_refptr<Bitmap> bitmap);
+  CONTENT_EXPORT scoped_refptr<Bitmap> GetBitmap() {
     CheckIsDisposed();
     return bitmap_;
   }
 
-  void SetSrcRect(scoped_refptr<Rect> rect);
-  scoped_refptr<Rect> GetSrcRect() {
+  CONTENT_EXPORT void SetSrcRect(scoped_refptr<Rect> rect);
+  CONTENT_EXPORT scoped_refptr<Rect> GetSrcRect() {
     CheckIsDisposed();
     return src_rect_;
   }
 
-  void SetMirror(bool mirror);
-  bool GetMirror() const {
+  CONTENT_EXPORT void SetMirror(bool mirror);
+  CONTENT_EXPORT bool GetMirror() const {
     CheckIsDisposed();
     return mirror_;
   }
 
-  void SetOpacity(int opacity) {
+  CONTENT_EXPORT void SetOpacity(int opacity) {
     CheckIsDisposed();
 
     opacity = std::clamp(opacity, 0, 255);
     opacity_ = opacity;
   }
 
-  int GetOpacity() const {
+  CONTENT_EXPORT int GetOpacity() const {
     CheckIsDisposed();
     return opacity_;
   }
 
-  void SetBlendType(renderer::BlendType blend_type) {
+  CONTENT_EXPORT void SetBlendType(renderer::BlendType blend_type) {
     CheckIsDisposed();
     blend_mode_ = blend_type;
   }
 
-  renderer::BlendType GetBlendType() const {
+  CONTENT_EXPORT renderer::BlendType GetBlendType() const {
     CheckIsDisposed();
     return blend_mode_;
   }
 
   /* Bush depth & opacity */
-  void SetBushDepth(int depth) {
+  CONTENT_EXPORT void SetBushDepth(int depth) {
     CheckIsDisposed();
     bush_.depth = depth;
   }
 
-  int GetBushDepth() {
+  CONTENT_EXPORT int GetBushDepth() {
     CheckIsDisposed();
     return bush_.depth;
   }
 
-  void SetBushOpacity(int bushOpacity) {
+  CONTENT_EXPORT void SetBushOpacity(int bushOpacity) {
     CheckIsDisposed();
     bush_.opacity = bushOpacity;
   }
 
-  int GetBushOpacity() {
+  CONTENT_EXPORT int GetBushOpacity() {
     CheckIsDisposed();
     return bush_.opacity;
   }
 
   /* Wave emit */
-  void SetWaveAmp(int wave_amp) {
+  CONTENT_EXPORT void SetWaveAmp(int wave_amp) {
     CheckIsDisposed();
     wave_.amp = wave_amp;
   }
 
-  int GetWaveAmp() {
+  CONTENT_EXPORT int GetWaveAmp() {
     CheckIsDisposed();
     return wave_.amp;
   }
 
-  void SetWaveLength(int length) {
+  CONTENT_EXPORT void SetWaveLength(int length) {
     CheckIsDisposed();
     wave_.length = length;
   }
 
-  int GetWaveLength() {
+  CONTENT_EXPORT int GetWaveLength() {
     CheckIsDisposed();
     return wave_.length;
   }
 
-  void SetWaveSpeed(int speed) {
+  CONTENT_EXPORT void SetWaveSpeed(int speed) {
     CheckIsDisposed();
     wave_.speed = speed;
   }
 
-  int GetWaveSpeed() {
+  CONTENT_EXPORT int GetWaveSpeed() {
     CheckIsDisposed();
     return wave_.speed;
   }
 
-  void SetWavePhase(float phase) {
+  CONTENT_EXPORT void SetWavePhase(float phase) {
     CheckIsDisposed();
     wave_.phase = phase;
   }
 
-  float GetWavePhase() {
+  CONTENT_EXPORT float GetWavePhase() {
     CheckIsDisposed();
     return wave_.phase;
   }
 
-  scoped_refptr<Color> GetColor() const {
+  CONTENT_EXPORT scoped_refptr<Color> GetColor() const {
     CheckIsDisposed();
     return color_;
   }
 
-  void SetColor(scoped_refptr<Color> color) {
+  CONTENT_EXPORT void SetColor(scoped_refptr<Color> color) {
     CheckIsDisposed();
     *color_ = *color;
   }
 
-  scoped_refptr<Tone> GetTone() const {
+  CONTENT_EXPORT scoped_refptr<Tone> GetTone() const {
     CheckIsDisposed();
     return tone_;
   }
 
-  void SetTone(scoped_refptr<Tone> tone) {
+  CONTENT_EXPORT void SetTone(scoped_refptr<Tone> tone) {
     CheckIsDisposed();
     *tone_ = *tone;
   }
 
-  int GetX() const {
+  CONTENT_EXPORT int GetX() const {
     CheckIsDisposed();
     return transform_.GetPosition().x;
   }
 
-  void SetX(int v) {
+  CONTENT_EXPORT void SetX(int v) {
     CheckIsDisposed();
     const base::Vec2& i = transform_.GetPosition();
     if (i.x == v)
@@ -175,12 +175,12 @@ class Sprite : public base::RefCounted<Sprite>,
     transform_.SetPosition(base::Vec2((float)v, i.y));
   }
 
-  int GetY() const {
+  CONTENT_EXPORT int GetY() const {
     CheckIsDisposed();
     return transform_.GetPosition().y;
   }
 
-  void SetY(int v) {
+  CONTENT_EXPORT void SetY(int v) {
     CheckIsDisposed();
     const base::Vec2& i = transform_.GetPosition();
     if (i.y == v)
@@ -190,12 +190,12 @@ class Sprite : public base::RefCounted<Sprite>,
       Drawable::SetSpriteY(v);
   }
 
-  int GetOX() const {
+  CONTENT_EXPORT int GetOX() const {
     CheckIsDisposed();
     return transform_.GetOrigin().x;
   }
 
-  void SetOX(int v) {
+  CONTENT_EXPORT void SetOX(int v) {
     CheckIsDisposed();
     const base::Vec2& i = transform_.GetOrigin();
     if (i.x == v)
@@ -203,12 +203,12 @@ class Sprite : public base::RefCounted<Sprite>,
     transform_.SetOrigin(base::Vec2((float)v, i.y));
   }
 
-  int GetOY() const {
+  CONTENT_EXPORT int GetOY() const {
     CheckIsDisposed();
     return transform_.GetOrigin().y;
   }
 
-  void SetOY(int v) {
+  CONTENT_EXPORT void SetOY(int v) {
     CheckIsDisposed();
     const base::Vec2& i = transform_.GetOrigin();
     if (i.y == v)
@@ -216,12 +216,12 @@ class Sprite : public base::RefCounted<Sprite>,
     transform_.SetOrigin(base::Vec2(i.x, (float)v));
   }
 
-  float GetZoomX() const {
+  CONTENT_EXPORT float GetZoomX() const {
     CheckIsDisposed();
     return transform_.GetScale().x;
   }
 
-  void SetZoomX(float v) {
+  CONTENT_EXPORT void SetZoomX(float v) {
     CheckIsDisposed();
     const base::Vec2& i = transform_.GetScale();
     if (i.x == v)
@@ -229,12 +229,12 @@ class Sprite : public base::RefCounted<Sprite>,
     transform_.SetScale(base::Vec2(v, i.y));
   }
 
-  float GetZoomY() const {
+  CONTENT_EXPORT float GetZoomY() const {
     CheckIsDisposed();
     return transform_.GetScale().y;
   }
 
-  void SetZoomY(float v) {
+  CONTENT_EXPORT void SetZoomY(float v) {
     CheckIsDisposed();
     const base::Vec2& i = transform_.GetScale();
     if (i.y == v)
@@ -242,19 +242,19 @@ class Sprite : public base::RefCounted<Sprite>,
     transform_.SetScale(base::Vec2(i.x, v));
   }
 
-  float GetAngle() const {
+  CONTENT_EXPORT float GetAngle() const {
     CheckIsDisposed();
     return transform_.GetRotation();
   }
 
-  void SetAngle(float v) {
+  CONTENT_EXPORT void SetAngle(float v) {
     CheckIsDisposed();
     if (transform_.GetRotation() == v)
       return;
     transform_.SetRotation(v);
   }
 
-  void Update() override;
+  CONTENT_EXPORT void Update() override;
 
  private:
   void InitAttributeInternal();

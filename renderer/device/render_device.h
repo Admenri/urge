@@ -67,6 +67,7 @@ class RenderDevice {
     PipelineInstance_Viewport viewport;
     PipelineInstance_AlphaTrans alphatrans;
     PipelineInstance_VagueTrans vaguetrans;
+    PipelineInstance_BaseAlpha basealpha;
 
     PipelineStorage(RefCntAutoPtr<IRenderDevice> device,
                     TEXTURE_FORMAT target_fmt)
@@ -77,7 +78,8 @@ class RenderDevice {
           sprite(device, target_fmt),
           viewport(device, target_fmt),
           alphatrans(device, target_fmt),
-          vaguetrans(device, target_fmt) {}
+          vaguetrans(device, target_fmt),
+          basealpha(device, target_fmt) {}
   };
 
   ~RenderDevice();

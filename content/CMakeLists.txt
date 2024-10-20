@@ -43,6 +43,10 @@ set(CORE_CONTENT_SRC
   public/utility.h
   public/viewport.cc
   public/viewport.h
+  public/window.cc
+  public/window.h
+  public/window2.cc
+  public/window2.h
   worker/engine_worker.cc
   worker/engine_worker.h
   worker/worker_scheduler.cc
