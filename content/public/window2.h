@@ -248,7 +248,6 @@ class Window2 : public base::RefCounted<Window2>,
   bool cursor_step_need_update_ = false;
   bool arrows_quad_need_update_ = true;
   bool cursor_quad_need_update_ = true;
-  bool cursor_data_need_update_ = true;
 
   size_t base_bg_tile_count_ = 0;
   size_t base_frame_tile_count_ = 0;

@@ -251,8 +251,7 @@ void Sprite::UpdateWaveQuadsInternal() {
   float zoomY = transform_.GetScale().y;
 
   if (wave_.amp < -(width / 2)) {
-    wave_quads_->Resize(0);
-    wave_quads_->Update(screen()->renderer()->context());
+    wave_quads_->Clear();
     return;
   }
 
@@ -268,7 +267,8 @@ void Sprite::UpdateWaveQuadsInternal() {
   /* Final chunk length */
   int lastLength = (visibleLength - firstLength) % 8;
 
-  wave_quads_->Resize(!!firstLength + chunks + !!lastLength);
+  wave_quads_->Resize(screen()->renderer()->context(),
+                      !!firstLength + chunks + !!lastLength);
   renderer::GeometryVertexLayout::Data* vert = wave_quads_->vertices().data();
 
   float phase = (wave_.phase * (float)M_PI) / 180.0f;
@@ -282,8 +282,6 @@ void Sprite::UpdateWaveQuadsInternal() {
   if (lastLength > 0)
     emitWaveChunk(vert, phase, width, zoomY, firstLength + chunks * 8,
                   lastLength);
-
-  wave_quads_->Update(screen()->renderer()->context());
 }
 
 void Sprite::UpdateVisibilityInternal() {

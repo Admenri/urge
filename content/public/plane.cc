@@ -25,7 +25,6 @@ Plane::Plane(scoped_refptr<Graphics> screen, scoped_refptr<Viewport> viewport)
       tone_(new Tone()) {
   quad_array_ = std::make_unique<renderer::QuadArray>(
       screen->renderer()->device(), screen->renderer()->quad_index_buffer());
-  quad_array_->Resize(1);
 
   OnParentViewportRectChanged(parent_rect());
 }
@@ -184,7 +183,7 @@ void Plane::UpdateQuadArray() {
   const int tile_y =
       std::ceil((parent_rect().rect.height + wrap_oy - item_y) / item_y) + 1;
 
-  quad_array_->Resize(tile_x * tile_y);
+  quad_array_->Resize(screen()->renderer()->context(), tile_x * tile_y);
 
   for (int y = 0; y < tile_y; ++y) {
     for (int x = 0; x < tile_x; ++x) {
@@ -199,8 +198,6 @@ void Plane::UpdateQuadArray() {
                                                   base::Vec2(item_x, item_y));
     }
   }
-
-  quad_array_->Update(screen()->renderer()->context());
 }
 
 }  // namespace content

@@ -20,9 +20,8 @@ class QuadArray {
   QuadArray(const QuadArray&) = delete;
   QuadArray& operator=(const QuadArray&) = delete;
 
-  void Resize(size_t size);
   void Clear();
-  void Update(RefCntAutoPtr<IDeviceContext> context);
+  void Resize(RefCntAutoPtr<IDeviceContext> context, size_t size);
   void Draw(RefCntAutoPtr<IDeviceContext> context, size_t offset, size_t count);
   void Draw(RefCntAutoPtr<IDeviceContext> context) {
     Draw(context, 0, quad_size_);

@@ -15,10 +15,10 @@ namespace renderer {
 
 class GeometryVertexLayout {
  public:
-  using Data = struct {
+  struct Data {
     base::Vec4 position;
     base::Vec2 texcoord;
-    base::Vec4 color;
+    base::Vec4 color{0, 0, 0, 1};
   };
 
   static std::vector<Diligent::LayoutElement> GetLayout();

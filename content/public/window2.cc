@@ -366,7 +366,6 @@ void Window2::PrepareDraw() {
       for (size_t i = 0; i < renderer_data_->cursor_quads->count(); ++i)
         renderer::GeometryVertexLayout::SetColor(
             &renderer_data_->cursor_quads->vertices()[i * 4], color);
-      cursor_data_need_update_ = true;
     }
   }
 
@@ -378,13 +377,7 @@ void Window2::PrepareDraw() {
       renderer_data_->content_quad->SetPosition(contents_rect);
       renderer_data_->content_quad->SetColor(
           base::Vec4(0, 0, 0, static_cast<float>(contents_opacity_) / 255.0f));
-      cursor_data_need_update_ = true;
     }
-  }
-
-  if (cursor_data_need_update_) {
-    cursor_data_need_update_ = false;
-    renderer_data_->cursor_quads->Update(screen()->renderer()->context());
   }
 }
 
@@ -598,9 +591,6 @@ void Window2::InitWindow() {
   renderer_data_->base_tex_quad_array =
       std::make_unique<renderer::QuadArray>(dec, indices);
 
-  renderer_data_->cursor_quads->Resize(1);
-  renderer_data_->arrows_quads->Resize(5);
-
   pause_vertex_ = nullptr;
   contents_quad_need_update_ = true;
 
@@ -641,7 +631,8 @@ void Window2::CalcBaseQuadArrayInternal() {
   quad_count += base_frame_tile_count_;
 
   /* Set vertex data */
-  renderer_data_->base_tex_quad_array->Resize(quad_count);
+  renderer_data_->base_tex_quad_array->Resize(screen()->renderer()->context(),
+                                              quad_count);
 
   /* Fill vertex data */
   renderer::GeometryVertexLayout::Data* vertex =
@@ -687,9 +678,6 @@ void Window2::CalcBaseQuadArrayInternal() {
     i += BuildTileV<renderer::GeometryVertexLayout::Data>(
         &vertex[i * 4], border_src.right, frame_size.y, rect_.width - 16, 16);
   }
-
-  /* Update vertex buffer data */
-  renderer_data_->base_tex_quad_array->Update(screen()->renderer()->context());
 }
 
 void Window2::UpdateBaseTextureInternal() {
@@ -841,7 +829,7 @@ void Window2::CalcArrowsQuadArrayInternal() {
   };
 
   size_t i = 0;
-  renderer_data_->arrows_quads->Resize(5);
+  renderer_data_->arrows_quads->Resize(screen()->renderer()->context(), 6);
   renderer::GeometryVertexLayout::Data* vert =
       renderer_data_->arrows_quads->vertices().data();
 
@@ -863,15 +851,13 @@ void Window2::CalcArrowsQuadArrayInternal() {
 
   pause_vertex_ = nullptr;
   if (pause_) {
-    const base::Rect pausePos(arrow_size.x, rect_.height - 16, 16, 16);
     pause_vertex_ = &vert[i * 4];
-
-    i += renderer::GeometryVertexLayout::SetTexPos(&vert[i * 4], pause_src[0],
+    const base::Rect pausePos(arrow_size.x, rect_.height - 16, 16, 16);
+    i += renderer::GeometryVertexLayout::SetTexPos(pause_vertex_, pause_src[0],
                                                    pausePos);
   }
 
   arrows_quad_count_ = i;
-  renderer_data_->arrows_quads->Update(screen()->renderer()->context());
 }
 
 void Window2::UpdateInternal() {
@@ -913,7 +899,6 @@ void Window2::UpdatePauseStepInternal() {
     renderer::GeometryVertexLayout::SetColor(
         pause_vertex_,
         base::Vec4(0, 0, 0, pause_alpha[pause_alpha_index_] / 255.0f));
-    renderer_data_->arrows_quads->Update(screen()->renderer()->context());
   }
 }
 
@@ -923,7 +908,6 @@ void Window2::UpdateCursorQuadsInternal() {
 
   if (rect.width == 0 || rect.height == 0) {
     renderer_data_->cursor_quads->Clear();
-    cursor_data_need_update_ = true;
     return;
   }
 
@@ -963,7 +947,7 @@ void Window2::UpdateCursorQuadsInternal() {
   if (drawBg)
     quads += 1;
 
-  renderer_data_->cursor_quads->Resize(quads);
+  renderer_data_->cursor_quads->Resize(screen()->renderer()->context(), quads);
   renderer::GeometryVertexLayout::Data* vert =
       renderer_data_->cursor_quads->vertices().data();
   size_t i = 0;
@@ -994,8 +978,6 @@ void Window2::UpdateCursorQuadsInternal() {
   if (drawBg)
     renderer::GeometryVertexLayout::SetTexPos(&vert[i * 4], src.background,
                                               bgPos);
-
-  cursor_data_need_update_ = true;
 }
 
 }  // namespace content

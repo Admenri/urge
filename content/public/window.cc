@@ -321,20 +321,6 @@ void Window::OnDraw(CompositeTargetInfo* target_info) {
     return;
 
   base::Vec2i offset = rect_.Position() + parent_rect().GetRealOffset();
-  base::Rect clip_rect(offset, rect_.Size());
-
-  {
-    auto intersect =
-        base::MakeIntersect(clip_rect, target_info->scissor_region);
-
-    Diligent::Rect scissor;
-    scissor.left = intersect.x;
-    scissor.right = scissor.left + intersect.width;
-    scissor.top = intersect.y;
-    scissor.bottom = scissor.top + intersect.height;
-    screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
-  }
 
   auto& shader = screen()->renderer()->GetPipelines()->basealpha;
   auto* pso_state = shader.GetPSOFor(renderer::BlendType::Normal);
@@ -345,7 +331,7 @@ void Window::OnDraw(CompositeTargetInfo* target_info) {
         Constants(screen()->renderer()->context(), shader.GetVSUniform(),
                   Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
     renderer::MakeProjectionMatrix(
-        Constants->projMat, rect_.Size(),
+        Constants->projMat, target_info->viewport_size,
         screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
     Constants->texSize = base::MakeInvert(rect_.Size());
     Constants->transOffset = offset;
@@ -357,17 +343,6 @@ void Window::OnDraw(CompositeTargetInfo* target_info) {
       pso_state->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   renderer_data_->base_quad->Draw(screen()->renderer()->context());
-
-  // Pop scissor
-  {
-    Diligent::Rect scissor;
-    scissor.left = target_info->scissor_region.x;
-    scissor.right = scissor.left + target_info->scissor_region.width;
-    scissor.top = target_info->scissor_region.y;
-    scissor.bottom = scissor.top + target_info->scissor_region.height;
-    screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
-  }
 }
 
 void Window::OnParentViewportRectChanged(
@@ -394,7 +369,7 @@ void Window::InitWindow() {
       std::make_unique<renderer::QuadArray>(dec, indices);
   renderer_data_->base_tex_quad_array =
       std::make_unique<renderer::QuadArray>(dec, indices);
-  renderer_data_->controls_quads->Resize(14);
+  renderer_data_->controls_quads->Resize(screen()->renderer()->context(), 14);
 }
 
 void Window::ResetBaseTexQuadsInternal() {
@@ -422,7 +397,8 @@ void Window::ResetBaseTexQuadsInternal() {
   count += QuadTileCount(32, rect_.height - 16) * 2;
   count += 4;
 
-  renderer_data_->base_tex_quad_array->Resize(count);
+  renderer_data_->base_tex_quad_array->Resize(screen()->renderer()->context(),
+                                              count);
   auto* vert = renderer_data_->base_tex_quad_array->vertices().data();
 
   int i = 0;
@@ -456,7 +432,6 @@ void Window::ResetBaseTexQuadsInternal() {
       &vert[i * 4], kCornersSrc.bottom_left, corner_rects.bottom_left);
   i += renderer::GeometryVertexLayout::SetTexPos(
       &vert[i * 4], kCornersSrc.bottom_right, corner_rects.bottom_right);
-  renderer_data_->base_tex_quad_array->Update(screen()->renderer()->context());
 }
 
 void Window::UpdateBaseTexInternal() {
@@ -503,9 +478,11 @@ void Window::UpdateBaseTexInternal() {
 
   {
     auto& shader = screen()->renderer()->GetPipelines()->basealpha;
+    auto* pso_state = shader.GetPSOFor(renderer::BlendType::Normal);
+    screen()->renderer()->context()->SetPipelineState(pso_state->pso);
 
     {
-      Diligent::MapHelper<renderer::PipelineInstance_Viewport::VSUniform>
+      Diligent::MapHelper<renderer::PipelineInstance_BaseAlpha::VSUniform>
           Constants(screen()->renderer()->context(), shader.GetVSUniform(),
                     Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
       renderer::MakeProjectionMatrix(
@@ -515,35 +492,12 @@ void Window::UpdateBaseTexInternal() {
       Constants->transOffset = base::Vec2i(0);
     }
 
-    {
-      auto* pso_state = shader.GetPSOFor(renderer::BlendType::NoBlend);
-      screen()->renderer()->context()->SetPipelineState(pso_state->pso);
+    shader.SetTexture(windowskin_->GetHandle()->GetDefaultView(
+        Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+    screen()->renderer()->context()->CommitShaderResources(
+        pso_state->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-      shader.SetTexture(windowskin_->GetHandle()->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-      screen()->renderer()->context()->CommitShaderResources(
-          pso_state->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-      /* Draw stretch layer */
-      renderer_data_->base_tex_quad_array->Draw(screen()->renderer()->context(),
-                                                0, background_quads_count_);
-    }
-
-    {
-      auto* pso_state = shader.GetPSOFor(renderer::BlendType::Normal);
-      screen()->renderer()->context()->SetPipelineState(pso_state->pso);
-
-      shader.SetTexture(windowskin_->GetHandle()->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-      screen()->renderer()->context()->CommitShaderResources(
-          pso_state->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-      /* Draw frame */
-      renderer_data_->base_tex_quad_array->Draw(
-          screen()->renderer()->context(), background_quads_count_,
-          renderer_data_->base_tex_quad_array->count() -
-              background_quads_count_);
-    }
+    renderer_data_->base_tex_quad_array->Draw(screen()->renderer()->context());
   }
 }
 
@@ -640,18 +594,15 @@ void Window::UpdateControlsQuadsInternal() {
         base::RectF((rect_.width - 16) / 2, rect_.height - 16, 16, 16));
   }
 
-  renderer_data_->controls_quads->Update(screen()->renderer()->context());
   controls_quad_count = i;
 }
 
 void Window::UpdateControlsInternal() {
-  bool update_buffer = false;
   if (active_ && cursor_vertex_) {
     float alpha = kCursorAniAlpha[cursor_alpha_index_] / 255.0f;
     for (int i = 0; i < 9; ++i)
       renderer::GeometryVertexLayout::SetColor(cursor_vertex_ + 4 * i,
                                                base::Vec4(0, 0, 0, alpha));
-    update_buffer = true;
   }
 
   if (pause_ && pause_vertex_) {
@@ -660,11 +611,7 @@ void Window::UpdateControlsInternal() {
     renderer::GeometryVertexLayout::SetColor(pause_vertex_,
                                              base::Vec4(0, 0, 0, alpha));
     renderer::GeometryVertexLayout::SetTexcoord(pause_vertex_, frameRect);
-    update_buffer = true;
   }
-
-  if (update_buffer)
-    renderer_data_->controls_quads->Update(screen()->renderer()->context());
 }
 
 void Window::CursorRectChangedInternal() {
@@ -698,10 +645,11 @@ void Window::CompositeControls(CompositeTargetInfo* target_info) {
 
   auto& shader = screen()->renderer()->GetPipelines()->basealpha;
   auto* pso_state = shader.GetPSOFor(renderer::BlendType::Normal);
+  screen()->renderer()->context()->SetPipelineState(pso_state->pso);
 
   float proj_mat[16];
   renderer::MakeProjectionMatrix(
-      proj_mat, rect_.Size(),
+      proj_mat, target_info->viewport_size,
       screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
 
   if (IsObjectValid(windowskin_.get())) {
