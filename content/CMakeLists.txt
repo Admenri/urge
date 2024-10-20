@@ -29,6 +29,8 @@ set(CORE_CONTENT_SRC
   public/input.h
   public/mouse.cc
   public/mouse.h
+  public/plane.cc
+  public/plane.h
   public/serializable.cc
   public/serializable.h
   public/sprite.cc

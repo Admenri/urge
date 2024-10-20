@@ -2,6 +2,7 @@
 cbuffer PSConstants {
   float4 u_Color;
   float4 u_Tone;
+  float u_Opacity;
 };
 
 Texture2D u_Texture;
@@ -25,6 +26,9 @@ void main(in PSInput PSIn, out PSOutput PSOut) {
   float luma = dot(frag.rgb, lumaF);
   frag.rgb = lerp(frag.rgb, float3(luma, luma, luma), u_Tone.w);
   frag.rgb += u_Tone.rgb;
+
+  /* Opacity */
+  frag.a *= u_Opacity;
 
   /* Color */
   frag.rgb = lerp(frag.rgb, u_Color.rgb, u_Color.a);

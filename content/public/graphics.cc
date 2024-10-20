@@ -164,6 +164,10 @@ void Graphics::Update() {
 void Graphics::ResizeScreen(const base::Vec2i& resolution) {
   if (!(resolution_ == resolution))
     RebuildScreenBufferInternal(resolution);
+
+  viewport_rect().rect.width = resolution_.x;
+  viewport_rect().rect.height = resolution_.y;
+  DrawableParent::NotifyViewportRectChanged();
 }
 
 void Graphics::Reset() {

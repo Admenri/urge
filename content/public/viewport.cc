@@ -245,6 +245,7 @@ void Viewport::ApplyViewportEffect(Diligent::ITextureView* target_buffer,
                   Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
     Constants->color = color;
     Constants->tone = tone;
+    Constants->opacity = 1.0f;
   }
 
   shader.SetTexture(intermediate_cache->GetDefaultView(

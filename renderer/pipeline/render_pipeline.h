@@ -198,6 +198,7 @@ class PipelineInstance_Viewport : public RenderPipelineBase {
   using PSUniform = struct {
     base::Vec4 color;
     base::Vec4 tone;
+    float opacity;
   };
 
   PipelineInstance_Viewport(RefCntAutoPtr<IRenderDevice> device,

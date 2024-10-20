@@ -4,6 +4,7 @@
 
 #include "binding/unittests/binding_unittests.h"
 
+#include "content/public/plane.h"
 #include "content/public/sprite.h"
 #include "content/public/viewport.h"
 
@@ -35,8 +36,7 @@ void BindingUnittests::RunBindingMain() {
 
   binding_->graphics()->ResizeScreen({800, 600});
 
-  scoped_refptr<content::Sprite> spr2 =
-      new content::Sprite(binding_->graphics());
+  scoped_refptr<content::Plane> spr2 = new content::Plane(binding_->graphics());
   spr2->SetBitmap(bmp);
 
   binding_->graphics()->Freeze();
@@ -52,8 +52,11 @@ void BindingUnittests::RunBindingMain() {
 
   binding_->graphics()->Transition(120);
 
+  int x = 0;
   while (true) {
-    spr2->Update();
+    spr2->SetOX(x);
+    spr2->SetOY(x);
+    x += 5;
     spr->Update();
     binding_->graphics()->Update();
   }
