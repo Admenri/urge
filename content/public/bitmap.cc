@@ -213,6 +213,9 @@ void Bitmap::StretchBlt(const base::Rect& dest_rect,
   auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(
       dest_rect.Size(), screen()->tex_format());
 
+  screen()->renderer()->context()->SetRenderTargets(
+      0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
   renderer::CopyTexture(screen()->renderer()->context(), texture_, dest_rect,
                         dst_tex, base::Vec2i());
 
