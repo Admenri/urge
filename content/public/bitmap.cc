@@ -90,7 +90,16 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size)
   TexDesc.Width = size.x;
   TexDesc.Height = size.y;
 
-  host->renderer()->device()->CreateTexture(TexDesc, nullptr, &texture_);
+  surface_buffer_ = SDL_CreateSurface(size.x, size.y, SDL_PIXELFORMAT_ABGR8888);
+
+  Diligent::TextureData TexData;
+  Diligent::TextureSubResData TexSubData(surface_buffer_->pixels,
+                                         surface_buffer_->pitch);
+  TexData.pContext = screen()->renderer()->context();
+  TexData.NumSubresources = 1;
+  TexData.pSubResources = &TexSubData;
+
+  host->renderer()->device()->CreateTexture(TexDesc, &TexData, &texture_);
 }
 
 Bitmap::Bitmap(scoped_refptr<Graphics> host,
@@ -147,9 +156,6 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host,
   TexData.pSubResources = &TexSubData;
 
   host->renderer()->device()->CreateTexture(TexDesc, &TexData, &texture_);
-
-  SDL_DestroySurface(surface_buffer_);
-  surface_buffer_ = nullptr;
 }
 
 Bitmap::~Bitmap() {
@@ -497,6 +503,8 @@ void Bitmap::DrawText(const base::Rect& rect,
                       const std::string& str,
                       TextAlign align) {
   CheckIsDisposed();
+
+  return;
 
   font_->EnsureLoadFont();
   uint8_t fopacity;

@@ -475,7 +475,7 @@ void Graphics::EncodeDrawableFrameInternal(
   DrawableParent::Composite(&target_info);
 
   // Apply brightness effect
-  if (brightness_ != 255) {
+  if (brightness_ < 255) {
     auto& shader = renderer()->GetPipelines()->color;
     auto* pipeline = shader.GetPSOFor(renderer::BlendType::Normal);
     renderer()->context()->SetPipelineState(pipeline->pso);
@@ -503,7 +503,7 @@ void Graphics::EncodeDrawableFrameInternal(
 
     auto* quad = renderer()->common_quad();
     quad->SetPosition(base::Vec2(resolution_));
-    quad->SetColor(base::Vec4(0, 0, 0, 1.0f - brightness_ / 255.0f));
+    quad->SetColor(base::Vec4(0, 0, 0, (255 - brightness_) / 255.0f));
     quad->Draw(renderer()->context());
   }
 }

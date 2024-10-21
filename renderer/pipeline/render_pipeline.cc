@@ -170,8 +170,8 @@ PipelineInstance_Base::PipelineInstance_Base(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -222,8 +222,8 @@ PipelineInstance_Blt::PipelineInstance_Blt(RefCntAutoPtr<IRenderDevice> device,
        SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -324,8 +324,8 @@ PipelineInstance_Sprite::PipelineInstance_Sprite(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -383,8 +383,8 @@ PipelineInstance_BaseSprite::PipelineInstance_BaseSprite(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -435,8 +435,8 @@ PipelineInstance_Viewport::PipelineInstance_Viewport(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -500,8 +500,8 @@ PipelineInstance_AlphaTrans::PipelineInstance_AlphaTrans(
        SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -574,8 +574,8 @@ PipelineInstance_VagueTrans::PipelineInstance_VagueTrans(
        SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -651,8 +651,8 @@ PipelineInstance_BaseAlpha::PipelineInstance_BaseAlpha(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -704,8 +704,8 @@ PipelineInstance_Tilemap::PipelineInstance_Tilemap(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
@@ -757,8 +757,8 @@ PipelineInstance_Tilemap2::PipelineInstance_Tilemap2(
       {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
-                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_POINT,     FILTER_TYPE_POINT,
+                                 FILTER_TYPE_POINT,     TEXTURE_ADDRESS_CLAMP,
                                  TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
 
   std::vector<ImmutableSamplerDesc> samplers = {
