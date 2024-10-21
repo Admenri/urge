@@ -442,6 +442,7 @@ void Window::UpdateBaseTexInternal() {
 
   {
     Diligent::TextureDesc TexDesc;
+    TexDesc.Name = "WindowXP base texture";
     TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
     TexDesc.Format = screen()->tex_format();
     TexDesc.Usage = Diligent::USAGE_DEFAULT;

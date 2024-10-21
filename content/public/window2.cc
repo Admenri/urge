@@ -75,11 +75,7 @@ Window2::Window2(scoped_refptr<Graphics> screen,
   InitWindow();
 }
 
-Window2::Window2(scoped_refptr<Graphics> screen,
-                 int x,
-                 int y,
-                 int width,
-                 int height)
+Window2::Window2(scoped_refptr<Graphics> screen, const base::Rect& rect)
     : GraphicsElement(screen.get()),
       Disposable(screen.get()),
       ViewportChild(screen,
@@ -88,7 +84,7 @@ Window2::Window2(scoped_refptr<Graphics> screen,
                     (screen->api_version() >= APIVersion::RGSS3
                          ? std::numeric_limits<int>::max()
                          : 0)),
-      rect_(x, y, width, height) {
+      rect_(rect) {
   InitWindow();
 }
 
@@ -412,7 +408,7 @@ void Window2::OnDraw(CompositeTargetInfo* target_info) {
       screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
 
   if (windowskin_valid) {
-    if (opacity_ > 0) {
+    if (opacity_ > 0 && base_texture_) {
       {
         Diligent::MapHelper<renderer::PipelineInstance_BaseAlpha::VSUniform>
             Constants(screen()->renderer()->context(), shader.GetVSUniform(),
@@ -688,6 +684,7 @@ void Window2::UpdateBaseTextureInternal() {
 
   {
     Diligent::TextureDesc TexDesc;
+    TexDesc.Name = "WindowVX base texture";
     TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
     TexDesc.Format = screen()->tex_format();
     TexDesc.Usage = Diligent::USAGE_DEFAULT;

@@ -86,6 +86,7 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host, const base::Vec2i& size)
   }
 
   Diligent::TextureDesc TexDesc = MakeTextureDesc(host->tex_format());
+  TexDesc.Name = "Bitmap texture";
   TexDesc.Width = size.x;
   TexDesc.Height = size.y;
 
@@ -134,6 +135,7 @@ Bitmap::Bitmap(scoped_refptr<Graphics> host,
   size_t img_size = surface_buffer_->w * surface_buffer_->h * 4;
 
   Diligent::TextureDesc TexDesc = MakeTextureDesc(host->tex_format());
+  TexDesc.Name = "Bitmap texture";
   TexDesc.Width = surface_buffer_->w;
   TexDesc.Height = surface_buffer_->h;
 
@@ -515,10 +517,13 @@ void Bitmap::DrawText(const base::Rect& rect,
     if (!text_cache_ || text_cache_->GetDesc().Width < txt_surf->w ||
         text_cache_->GetDesc().Height < txt_surf->h) {
       Diligent::TextureDesc TexDesc = MakeTextureDesc(screen()->tex_format());
+      TexDesc.Name = "Text cache texture";
       TexDesc.Width = std::max<uint32_t>(
           text_cache_ ? text_cache_->GetDesc().Width : 0, txt_surf->w);
       TexDesc.Height = std::max<uint32_t>(
           text_cache_ ? text_cache_->GetDesc().Height : 0, txt_surf->h);
+
+      text_cache_.Release();
       screen()->renderer()->device()->CreateTexture(TexDesc, nullptr,
                                                     &text_cache_);
     }
@@ -666,6 +671,7 @@ SDL_Surface* Bitmap::SurfaceRequired() {
 
   if (!read_cache_) {
     Diligent::TextureDesc TexDesc = texture_->GetDesc();
+    TexDesc.Name = "Bitmap read stage buffer";
     TexDesc.Usage = Diligent::USAGE_STAGING;
     TexDesc.BindFlags = Diligent::BIND_NONE;
     TexDesc.CPUAccessFlags = Diligent::CPU_ACCESS_READ;

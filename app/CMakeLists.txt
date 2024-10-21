@@ -9,8 +9,7 @@ set(RGU_DEP_LIBS
   engine_base
   engine_content
   engine_ui
-
-  binding_unittests
+  binding_mri
 )
 
 add_compile_definitions(NOMINMAX)

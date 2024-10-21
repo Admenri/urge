@@ -23,11 +23,7 @@ class Window2 : public base::RefCounted<Window2>,
  public:
   Window2(scoped_refptr<Graphics> screen,
           scoped_refptr<Viewport> viewport = nullptr);
-  Window2(scoped_refptr<Graphics> screen,
-          int x = 0,
-          int y = 0,
-          int width = 0,
-          int height = 0);
+  Window2(scoped_refptr<Graphics> screen, const base::Rect& rect);
   ~Window2() override;
 
   Window2(const Window2&) = delete;

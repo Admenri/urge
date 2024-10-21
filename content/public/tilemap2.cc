@@ -771,6 +771,7 @@ void Tilemap2::BeforeTilemapComposite() {
 void Tilemap2::CreateTileAtlasInternal() {
   {
     Diligent::TextureDesc TexDesc;
+    TexDesc.Name = "TilemapVX atlas texture";
     TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
     TexDesc.Format = screen()->tex_format();
     TexDesc.Usage = Diligent::USAGE_DEFAULT;

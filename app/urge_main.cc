@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "base/exception/exception.h"
-#include "binding/unittests/binding_unittests.h"
+#include "binding/mri/mri_main.h"
 #include "components/filesystem/filesystem.h"
 #include "content/worker/worker_scheduler.h"
 #include "ui/widget/widget.h"
@@ -58,8 +58,10 @@ int SDL_main(int argc, char** argv) {
   config->LoadConfigure(inifile, app);
 
   config->executable_file() = app;
-  for (auto& it : config->load_paths())
+  for (auto& it : config->load_paths()) {
+    content::Debug() << "[LoadPath] " << it;
     io->AddLoadPath(it);
+  }
 
   std::unique_ptr<ui::Widget> widget = std::make_unique<ui::Widget>();
   ui::Widget::InitParams window_params;
@@ -77,7 +79,7 @@ int SDL_main(int argc, char** argv) {
   TTF_Init();
 
   content::ContentParams params;
-  params.binding = std::make_unique<binding::BindingUnittests>();
+  params.binding = std::make_unique<binding::BindingEngineMri>();
   params.config = config;
   params.file_io = io.get();
   params.window = std::move(widget);

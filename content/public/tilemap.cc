@@ -362,6 +362,7 @@ void Tilemap::MakeAtlasInternal() {
 
   {
     Diligent::TextureDesc TexDesc;
+    TexDesc.Name = "TilemapXP atlas texture";
     TexDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
     TexDesc.Format = screen()->tex_format();
     TexDesc.Usage = Diligent::USAGE_DEFAULT;

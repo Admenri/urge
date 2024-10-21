@@ -95,6 +95,7 @@ RefCntAutoPtr<ITexture> RenderDevice::MakeGenericFramebuffer(
       generic_framebuffer_->GetDesc().Height < size.y ||
       generic_framebuffer_->GetDesc().Format != texfmt) {
     TextureDesc TexDesc;
+    TexDesc.Name = "Global generic texture";
     TexDesc.Type = RESOURCE_DIM_TEX_2D;
     TexDesc.Format = texfmt;
     TexDesc.Usage = USAGE_DEFAULT;
