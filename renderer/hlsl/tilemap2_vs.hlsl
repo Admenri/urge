@@ -30,7 +30,7 @@ float posInArea(float2 pos, float4 area) {
 }
 
 void main(in VSInput VSIn, out PSInput PSIn) {
-  float2 tex = VSIn.Pos.xy;
+  float2 tex = VSIn.UV;
   float addition = 0.0;
 
   // Regular area
@@ -41,10 +41,10 @@ void main(in VSInput VSIn, out PSInput PSIn) {
   tex.x += u_AutotileAnimationOffset.x * addition;
 
   // Waterfall area
-  addition = posInArea(tex, kWaterfallArea * u_TileSize) -
-             posInArea(tex, kWaterfallAutotileArea * u_TileSize);
+  addition =
+      posInArea(tex, kWaterfallArea) - posInArea(tex, kWaterfallAutotileArea);
   tex.y += u_AutotileAnimationOffset.y * addition;
 
   PSIn.Pos = mul(u_ProjMat, VSIn.Pos + float4(u_TransOffset, 0.0, 0.0));
-  PSIn.UV = float2(tex.x * VSIn.UV.x, tex.y * VSIn.UV.y);
+  PSIn.UV = float2(tex.x * u_TexSize.x, tex.y * u_TexSize.y);
 }

@@ -419,6 +419,7 @@ void Tilemap::MakeAtlasInternal() {
       for (int i = 0; i < 4; ++i) {
         Diligent::Box SrcBox(tile_size_ * i, tile_size_ * i + tile_size_, 0,
                              tile_size_);
+        renderer::ClampBox(&SrcBox, it.bitmap->GetSize());
         Diligent::CopyTextureAttribs CopyTexAttr(
             it.bitmap->GetHandle(),
             Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,
@@ -436,6 +437,7 @@ void Tilemap::MakeAtlasInternal() {
     }
 
     Diligent::Box SrcBox(0, autotile_size.x, 0, autotile_size.y);
+    renderer::ClampBox(&SrcBox, it.bitmap->GetSize());
     Diligent::CopyTextureAttribs CopyTexAttr(
         it.bitmap->GetHandle(),
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,
@@ -458,6 +460,7 @@ void Tilemap::MakeAtlasInternal() {
   dst_rect.y = 0;
 
   Diligent::Box SrcBox(0, tileset_size.x, 0, tileset_size.y);
+  renderer::ClampBox(&SrcBox, tileset_->GetSize());
   Diligent::CopyTextureAttribs CopyTexAttr(
       tileset_->GetHandle(),
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,

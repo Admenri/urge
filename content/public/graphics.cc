@@ -475,6 +475,37 @@ void Graphics::EncodeDrawableFrameInternal(
   DrawableParent::Composite(&target_info);
 
   // Apply brightness effect
+  if (brightness_ != 255) {
+    auto& shader = renderer()->GetPipelines()->color;
+    auto* pipeline = shader.GetPSOFor(renderer::BlendType::Normal);
+    renderer()->context()->SetPipelineState(pipeline->pso);
+
+    renderer()->context()->CommitShaderResources(
+        pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    {
+      Diligent::Rect scissor;
+      scissor.right = resolution_.x;
+      scissor.bottom = resolution_.y;
+      renderer()->context()->SetScissorRects(1, &scissor, 1,
+                                             scissor.bottom + scissor.left);
+    }
+
+    {
+      Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform>
+          Constants(renderer()->context(), shader.GetVSUniform(),
+                    Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+      renderer::MakeProjectionMatrix(
+          Constants->projMat, resolution_,
+          renderer()->device()->GetDeviceInfo().IsGLDevice());
+      Constants->transOffset = base::Vec2i(0);
+    }
+
+    auto* quad = renderer()->common_quad();
+    quad->SetPosition(base::Vec2(resolution_));
+    quad->SetColor(base::Vec4(0, 0, 0, 1.0f - brightness_ / 255.0f));
+    quad->Draw(renderer()->context());
+  }
 }
 
 void Graphics::PresentScreenBufferInternal(

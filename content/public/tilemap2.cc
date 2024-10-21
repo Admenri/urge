@@ -815,6 +815,7 @@ void Tilemap2::CreateTileAtlasInternal() {
 
     Diligent::Box SrcBox(src_rect.x, src_rect.x + src_rect.width, src_rect.y,
                          src_rect.y + src_rect.height);
+    renderer::ClampBox(&SrcBox, atlas_bitmap->GetSize());
     Diligent::CopyTextureAttribs CopyTexAttr(
         atlas_bitmap->GetHandle(),
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,

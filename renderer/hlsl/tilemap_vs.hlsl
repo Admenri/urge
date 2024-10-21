@@ -21,7 +21,7 @@ struct PSInput {
 static const float2 kAutotileArea = float2(3.0, 28.0);
 
 void main(in VSInput VSIn, out PSInput PSIn) {
-  float2 tex = VSIn.Pos.xy;
+  float2 tex = VSIn.UV;
 
   // Animated area
   float addition = (tex.x <= kAutotileArea.x * u_TileSize &&
@@ -31,5 +31,5 @@ void main(in VSInput VSIn, out PSInput PSIn) {
   tex.x += 3.0 * u_TileSize * u_AnimateIndex * addition;
 
   PSIn.Pos = mul(u_ProjMat, VSIn.Pos + float4(u_TransOffset, 0.0, 0.0));
-  PSIn.UV = float2(tex.x * VSIn.UV.x, tex.y * VSIn.UV.y);
+  PSIn.UV = float2(tex.x * u_TexSize.x, tex.y * u_TexSize.y);
 }

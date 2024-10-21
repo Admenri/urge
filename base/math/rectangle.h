@@ -59,6 +59,8 @@ class Rect {
            (y + height >= other.y + other.height);
   }
 
+  friend std::ostream& operator<<(std::ostream& os, const Rect& value);
+
  public:
   int x, y, width, height;
 };
@@ -110,6 +112,8 @@ class RectF {
            (x + width >= other.x + other.width) &&
            (y + height >= other.y + other.height);
   }
+
+  friend std::ostream& operator<<(std::ostream& os, const RectF& value);
 
  public:
   float x, y, width, height;
