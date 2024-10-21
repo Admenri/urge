@@ -44,6 +44,54 @@ inline int16_t TableGetFlag(scoped_refptr<content::Table> t, int x) {
   return t->At(x);
 }
 
+class TilemapFlashLayer {
+ public:
+  TilemapFlashLayer(int tile_size,
+                    Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
+                    scoped_refptr<renderer::QuadArrayIndices> indices);
+  ~TilemapFlashLayer() {}
+
+  TilemapFlashLayer(const TilemapFlashLayer&) = delete;
+  TilemapFlashLayer& operator=(const TilemapFlashLayer&) = delete;
+
+  scoped_refptr<Table> GetFlashData() const { return flashdata_; }
+  void SetFlashData(scoped_refptr<Table> data) {
+    if (data == flashdata_)
+      return;
+
+    flashdata_ = data;
+    buffer_need_update_ = true;
+
+    observer_ = data->AddObserver(base::BindRepeating(
+        &TilemapFlashLayer::SetUpdateBuffer, base::Unretained(this)));
+  }
+
+  void SetViewport(const base::Rect& viewport) {
+    flash_viewport_ = viewport;
+    buffer_need_update_ = true;
+  }
+
+  void BeforeComposite(
+      Diligent::RefCntAutoPtr<Diligent::IDeviceContext> context);
+  void Composite(CompositeTargetInfo* target_info,
+                 GraphicsHost* screen,
+                 const base::Vec2i offset,
+                 float alpha);
+
+ private:
+  void SetUpdateBuffer() { buffer_need_update_ = true; }
+  bool SampleFlashColor(base::Vec4& out, int x, int y) const;
+  void UpdateBuffer(Diligent::RefCntAutoPtr<Diligent::IDeviceContext> context);
+
+  scoped_refptr<Table> flashdata_;
+  std::unique_ptr<renderer::QuadArray> quads_;
+  base::Rect flash_viewport_;
+  bool buffer_need_update_ = false;
+  int tile_size_;
+
+  base::CallbackListSubscription observer_;
+};
+
 }  // namespace content
 
 #endif  // !CONTENT_COMMON_TILEUTILS_H_

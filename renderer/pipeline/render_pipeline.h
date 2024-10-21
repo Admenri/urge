@@ -285,6 +285,48 @@ class PipelineInstance_BaseAlpha : public RenderPipelineBase {
   RefCntAutoPtr<IBuffer> vs_uniform_;
 };
 
+class PipelineInstance_Tilemap : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+    float animateIndex;
+    float tileSize;
+  };
+
+  PipelineInstance_Tilemap(RefCntAutoPtr<IRenderDevice> device,
+                           TEXTURE_FORMAT texfmt);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+
+  void SetTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
+class PipelineInstance_Tilemap2 : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+    base::Vec2 autotileAnimationOffset;
+    float tileSize;
+  };
+
+  PipelineInstance_Tilemap2(RefCntAutoPtr<IRenderDevice> device,
+                            TEXTURE_FORMAT texfmt);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+
+  void SetTexture(ITextureView* view);
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+};
+
 }  // namespace renderer
 
 #endif  //! RENDERER_PIPELINE_RENDER_PIPELINE_H_

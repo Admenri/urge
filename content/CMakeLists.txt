@@ -37,6 +37,10 @@ set(CORE_CONTENT_SRC
   public/sprite.h
   public/table.cc
   public/table.h
+  public/tilemap.cc
+  public/tilemap.h
+  public/tilemap2.cc
+  public/tilemap2.h
   public/touch.cc
   public/touch.h
   public/utility.cc

@@ -15,6 +15,8 @@ namespace renderer {
 #include "renderer/hlsl/basecolor_vs.hlsl.xxd"
 #include "renderer/hlsl/blt_ps.hlsl.xxd"
 #include "renderer/hlsl/sprite_ps.hlsl.xxd"
+#include "renderer/hlsl/tilemap2_vs.hlsl.xxd"
+#include "renderer/hlsl/tilemap_vs.hlsl.xxd"
 #include "renderer/hlsl/transform_vs.hlsl.xxd"
 #include "renderer/hlsl/vaguetrans_ps.hlsl.xxd"
 #include "renderer/hlsl/viewport_ps.hlsl.xxd"
@@ -674,6 +676,112 @@ RefCntAutoPtr<IBuffer> PipelineInstance_BaseAlpha::GetVSUniform() {
 }
 
 void PipelineInstance_BaseAlpha::SetTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Tilemap
+/// </summary>
+/// <param name="device"></param>
+/// <param name="texfmt"></param>
+
+PipelineInstance_Tilemap::PipelineInstance_Tilemap(
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source = std::string((const char*)tilemap_vs_hlsl, tilemap_vs_hlsl_len);
+  vs.name = "tilemap_vs";
+  vs.entry = "main";
+
+  ps.source = std::string((const char*)base_ps_hlsl, base_ps_hlsl_len);
+  ps.name = "base_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "tilemap.vs.ubo",
+                      &vs_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+      },
+      "tilemap.pso", texfmt);
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Tilemap::GetVSUniform() {
+  return vs_uniform_;
+}
+
+void PipelineInstance_Tilemap::SetTexture(ITextureView* view) {
+  RenderPipelineBase::CurrentState()
+      ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
+      ->Set(view);
+}
+
+/// <summary>
+/// Tilemap2
+/// </summary>
+/// <param name="device"></param>
+/// <param name="texfmt"></param>
+
+PipelineInstance_Tilemap2::PipelineInstance_Tilemap2(
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source = std::string((const char*)tilemap2_vs_hlsl, tilemap2_vs_hlsl_len);
+  vs.name = "tilemap2_vs";
+  vs.entry = "main";
+
+  ps.source = std::string((const char*)base_ps_hlsl, base_ps_hlsl_len);
+  ps.name = "base_ps";
+  ps.entry = "main";
+
+  std::vector<ShaderResourceVariableDesc> vars = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  SamplerDesc SamLinearClampDesc{FILTER_TYPE_LINEAR,    FILTER_TYPE_LINEAR,
+                                 FILTER_TYPE_LINEAR,    TEXTURE_ADDRESS_CLAMP,
+                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
+
+  std::vector<ImmutableSamplerDesc> samplers = {
+      {SHADER_TYPE_PIXEL, "u_Texture", SamLinearClampDesc},
+  };
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "tilemap2.vs.ubo",
+                      &vs_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), vars, samplers,
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+      },
+      "tilemap2.pso", texfmt);
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Tilemap2::GetVSUniform() {
+  return vs_uniform_;
+}
+
+void PipelineInstance_Tilemap2::SetTexture(ITextureView* view) {
   RenderPipelineBase::CurrentState()
       ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
       ->Set(view);
