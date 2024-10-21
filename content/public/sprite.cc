@@ -149,7 +149,6 @@ void Sprite::OnDraw(CompositeTargetInfo* target_info) {
     shader.SetTexture(
         bitmap_texture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
-    auto invert_size = base::MakeInvert(bitmap_size);
     {
       Diligent::MapHelper<renderer::PipelineInstance_Sprite::VSUniform>
           Constants(screen()->renderer()->context(), shader.GetVSUniform(),
@@ -159,19 +158,19 @@ void Sprite::OnDraw(CompositeTargetInfo* target_info) {
           screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
       memcpy(Constants->transformMat, transform_.GetMatrixDataUnsafe(),
              sizeof(float) * 16);
-      Constants->texSize = invert_size;
+      Constants->texSize = base::MakeInvert(bitmap_size);
     }
 
     {
       Diligent::MapHelper<renderer::PipelineInstance_Sprite::PSUniform>
           Constants(screen()->renderer()->context(), shader.GetPSUniform(),
                     Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
-      Constants->texSize = invert_size;
       Constants->color = color_->AsBase();
       Constants->tone = tone_->AsBase();
       Constants->opacity = opacity_ / 255.0f;
       Constants->bushDepth = static_cast<float>(
           src_rect_->GetY() + src_rect_->GetHeight() - bush_.depth);
+      Constants->bushPos = 1.0f / bitmap_size.y;
       Constants->bushOpacity = bush_.opacity / 255.0f;
     }
   } else {
@@ -202,7 +201,7 @@ void Sprite::OnDraw(CompositeTargetInfo* target_info) {
     wave_quads_->Draw(screen()->renderer()->context());
   else
     drawable_quad_->Draw(screen()->renderer()->context());
-}
+}  // namespace content
 
 void Sprite::OnParentViewportRectChanged(
     const DrawableParent::ViewportInfo& viewport_rect) {

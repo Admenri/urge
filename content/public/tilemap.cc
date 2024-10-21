@@ -416,19 +416,11 @@ void Tilemap::MakeAtlasInternal() {
       // Single animated tile
       it.type = AutotileType::SingleAnimated;
 
-      for (int i = 0; i < 4; ++i) {
-        Diligent::Box SrcBox(tile_size_ * i, tile_size_ * i + tile_size_, 0,
-                             tile_size_);
-        renderer::ClampBox(&SrcBox, it.bitmap->GetSize());
-        Diligent::CopyTextureAttribs CopyTexAttr(
-            it.bitmap->GetHandle(),
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        CopyTexAttr.pSrcBox = &SrcBox;
-        CopyTexAttr.DstX = tile_size_ * i * 3;
-        CopyTexAttr.DstY = 0;
-        screen()->renderer()->context()->CopyTexture(CopyTexAttr);
-      }
+      for (int i = 0; i < 4; ++i)
+        renderer::CopyTexture(
+            screen()->renderer()->context(), it.bitmap->GetHandle(),
+            base::Rect(tile_size_ * i, 0, tile_size_, tile_size_),
+            atlas_texture_, base::Vec2i(tile_size_ * i * 3, 0));
 
       ++offset;
       continue;
@@ -436,16 +428,9 @@ void Tilemap::MakeAtlasInternal() {
       NOTREACHED();
     }
 
-    Diligent::Box SrcBox(0, autotile_size.x, 0, autotile_size.y);
-    renderer::ClampBox(&SrcBox, it.bitmap->GetSize());
-    Diligent::CopyTextureAttribs CopyTexAttr(
-        it.bitmap->GetHandle(),
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    CopyTexAttr.pSrcBox = &SrcBox;
-    CopyTexAttr.DstX = dst_pos.x;
-    CopyTexAttr.DstY = dst_pos.y;
-    screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+    renderer::CopyTexture(screen()->renderer()->context(),
+                          it.bitmap->GetHandle(), autotile_size, atlas_texture_,
+                          dst_pos.Position());
 
     ++offset;
   }
@@ -459,16 +444,8 @@ void Tilemap::MakeAtlasInternal() {
   dst_rect.x = 12 * tile_size_;
   dst_rect.y = 0;
 
-  Diligent::Box SrcBox(0, tileset_size.x, 0, tileset_size.y);
-  renderer::ClampBox(&SrcBox, tileset_->GetSize());
-  Diligent::CopyTextureAttribs CopyTexAttr(
-      tileset_->GetHandle(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  CopyTexAttr.pSrcBox = &SrcBox;
-  CopyTexAttr.DstX = dst_rect.x;
-  CopyTexAttr.DstY = dst_rect.y;
-  screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+  renderer::CopyTexture(screen()->renderer()->context(), tileset_->GetHandle(),
+                        tileset_size, atlas_texture_, dst_rect.Position());
 }
 
 void Tilemap::UpdateViewportInternal(

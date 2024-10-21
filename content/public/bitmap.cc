@@ -213,14 +213,8 @@ void Bitmap::StretchBlt(const base::Rect& dest_rect,
   auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(
       dest_rect.Size(), screen()->tex_format());
 
-  Diligent::Box SrcBox(dest_rect.x, dest_rect.x + dest_rect.width, dest_rect.y,
-                       dest_rect.y + dest_rect.height);
-  renderer::ClampBox(&SrcBox, size);
-  Diligent::CopyTextureAttribs CopyTexAttr(
-      texture_, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, dst_tex,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  CopyTexAttr.pSrcBox = &SrcBox;
-  screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+  renderer::CopyTexture(screen()->renderer()->context(), texture_, dest_rect,
+                        dst_tex, base::Vec2i());
 
   /*
    * (texCoord - src_offset) * src_dst_factor
@@ -253,9 +247,7 @@ void Bitmap::StretchBlt(const base::Rect& dest_rect,
       pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::Rect scissor;
-  scissor.left = 0;
   scissor.right = size.x;
-  scissor.top = 0;
   scissor.bottom = size.y;
   screen()->renderer()->context()->SetScissorRects(
       1, &scissor, 1, scissor.bottom + scissor.left);
@@ -306,9 +298,7 @@ void Bitmap::FillRect(const base::Rect& rect, scoped_refptr<Color> color) {
       pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::Rect scissor;
-  scissor.left = 0;
   scissor.right = GetSize().x;
-  scissor.top = 0;
   scissor.bottom = GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
       1, &scissor, 1, scissor.bottom + scissor.left);
@@ -353,9 +343,7 @@ void Bitmap::GradientFillRect(const base::Rect& rect,
       pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::Rect scissor;
-  scissor.left = 0;
   scissor.right = GetSize().x;
-  scissor.top = 0;
   scissor.bottom = GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
       1, &scissor, 1, scissor.bottom + scissor.left);
@@ -408,9 +396,7 @@ void Bitmap::ClearRect(const base::Rect& rect) {
       pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::Rect scissor;
-  scissor.left = 0;
   scissor.right = GetSize().x;
-  scissor.top = 0;
   scissor.bottom = GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
       1, &scissor, 1, scissor.bottom + scissor.left);
@@ -562,13 +548,8 @@ void Bitmap::DrawText(const base::Rect& rect,
     auto dst_tex = screen()->renderer()->MakeGenericFramebuffer(
         pos.Size(), screen()->tex_format());
 
-    Diligent::Box SrcBox(pos.x, pos.x + pos.width, pos.y, pos.y + pos.height);
-    renderer::ClampBox(&SrcBox, GetSize());
-    Diligent::CopyTextureAttribs CopyTexAttr(
-        texture_, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, dst_tex,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    CopyTexAttr.pSrcBox = &SrcBox;
-    screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+    renderer::CopyTexture(screen()->renderer()->context(), texture_, pos,
+                          dst_tex, base::Vec2i());
 
     base::Vec4 offset_scale(
         0, 0,
@@ -595,9 +576,7 @@ void Bitmap::DrawText(const base::Rect& rect,
         pipeline->srb, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     Diligent::Rect scissor;
-    scissor.left = 0;
     scissor.right = GetSize().x;
-    scissor.top = 0;
     scissor.bottom = GetSize().y;
     screen()->renderer()->context()->SetScissorRects(
         1, &scissor, 1, scissor.bottom + scissor.left);

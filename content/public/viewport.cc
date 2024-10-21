@@ -206,17 +206,9 @@ void Viewport::ApplyViewportEffect(Diligent::ITextureView* target_buffer,
   screen()->renderer()->context()->SetRenderTargets(
       0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  auto target_size = base::Vec2i(target_buffer->GetTexture()->GetDesc().Width,
-                                 target_buffer->GetTexture()->GetDesc().Height);
-  Diligent::Box SrcBox(blend_area.x, blend_area.x + blend_area.width,
-                       blend_area.y, blend_area.y + blend_area.height);
-  renderer::ClampBox(&SrcBox, target_size);
-  Diligent::CopyTextureAttribs CopyTexAttr(
-      target_buffer->GetTexture(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, intermediate_cache,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  CopyTexAttr.pSrcBox = &SrcBox;
-  screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+  renderer::CopyTexture(screen()->renderer()->context(),
+                        target_buffer->GetTexture(), blend_area,
+                        intermediate_cache, base::Vec2i());
 
   screen()->renderer()->context()->SetRenderTargets(
       1, &target_buffer, nullptr,
@@ -231,7 +223,9 @@ void Viewport::ApplyViewportEffect(Diligent::ITextureView* target_buffer,
         Constants(screen()->renderer()->context(), shader.GetVSUniform(),
                   Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
     renderer::MakeProjectionMatrix(
-        Constants->projMat, target_size,
+        Constants->projMat,
+        base::Vec2i(target_buffer->GetTexture()->GetDesc().Width,
+                    target_buffer->GetTexture()->GetDesc().Height),
         screen()->renderer()->device()->GetDeviceInfo().IsGLDevice());
     Constants->texSize =
         base::MakeInvert(base::Vec2i(intermediate_cache->GetDesc().Width,

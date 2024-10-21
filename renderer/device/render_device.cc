@@ -115,4 +115,48 @@ RefCntAutoPtr<ITexture> RenderDevice::MakeGenericFramebuffer(
   return generic_framebuffer_;
 }
 
+void CopyTexture(IDeviceContext* context,
+                 ITexture* src,
+                 const base::Rect& src_region,
+                 ITexture* dst,
+                 const base::Vec2i& dst_pos) {
+  base::Rect tmp_src = src_region;
+  base::Rect tex_size(0, 0, src->GetDesc().Width, src->GetDesc().Height);
+
+  auto result_src = base::MakeIntersect(tmp_src, tex_size);
+
+  if (!result_src.width || !result_src.height)
+    return;
+
+  Diligent::Box SrcBox(result_src.x, result_src.x + result_src.width,
+                       result_src.y, result_src.y + result_src.height);
+  Diligent::CopyTextureAttribs CopyTexAttr(
+      src, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, dst,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  CopyTexAttr.pSrcBox = &SrcBox;
+  CopyTexAttr.DstX = dst_pos.x;
+  CopyTexAttr.DstY = dst_pos.y;
+  context->CopyTexture(CopyTexAttr);
+}
+
+void MakeProjectionMatrix(float* out,
+                          const base::Vec2& size,
+                          bool origin_bottom) {
+  const float aa = 2.0f / size.x;
+  const float bb = (origin_bottom ? 2.0f : -2.0f) / size.y;
+  const float cc = origin_bottom ? 2.0f : 1.0f;
+  const float dd = -1.0f;
+  const float ee = origin_bottom ? -1.0f : 1.0f;
+  const float ff = origin_bottom ? -1.0f : 0.0f;
+
+  memset(out, 0, sizeof(float) * 16);
+  out[0] = aa;
+  out[3] = dd;
+  out[5] = bb;
+  out[7] = ee;
+  out[10] = cc;
+  out[11] = ff;
+  out[15] = 1.0f;
+}
+
 }  // namespace renderer

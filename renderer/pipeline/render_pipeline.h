@@ -147,11 +147,11 @@ class PipelineInstance_Sprite : public RenderPipelineBase {
   };
 
   using PSUniform = struct {
-    base::Vec2 texSize;
     base::Vec4 color;
     base::Vec4 tone;
     float opacity;
     float bushDepth;
+    float bushPos;
     float bushOpacity;
   };
 

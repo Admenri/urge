@@ -813,17 +813,9 @@ void Tilemap2::CreateTileAtlasInternal() {
         atlas_info.dst.x * tile_size_, atlas_info.dst.y * tile_size_,
         atlas_info.src.size.x * tile_size_, atlas_info.src.size.y * tile_size_);
 
-    Diligent::Box SrcBox(src_rect.x, src_rect.x + src_rect.width, src_rect.y,
-                         src_rect.y + src_rect.height);
-    renderer::ClampBox(&SrcBox, atlas_bitmap->GetSize());
-    Diligent::CopyTextureAttribs CopyTexAttr(
-        atlas_bitmap->GetHandle(),
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION, atlas_texture_,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    CopyTexAttr.pSrcBox = &SrcBox;
-    CopyTexAttr.DstX = dst_rect.x;
-    CopyTexAttr.DstY = dst_rect.y;
-    screen()->renderer()->context()->CopyTexture(CopyTexAttr);
+    renderer::CopyTexture(screen()->renderer()->context(),
+                          atlas_bitmap->GetHandle(), src_rect, atlas_texture_,
+                          dst_rect.Position());
   }
 
   /* shadow set atlas */

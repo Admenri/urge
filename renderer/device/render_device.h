@@ -22,32 +22,15 @@ namespace renderer {
 
 using namespace Diligent;
 
-inline void ClampBox(Box* box, const base::Vec2i& size) {
-  box->MinX = std::clamp<uint32_t>(box->MinX, 0, size.x);
-  box->MaxX = std::clamp<uint32_t>(box->MaxX, 0, size.x);
-  box->MinY = std::clamp<uint32_t>(box->MinY, 0, size.y);
-  box->MaxY = std::clamp<uint32_t>(box->MaxY, 0, size.y);
-}
+void CopyTexture(IDeviceContext* context,
+                 ITexture* src,
+                 const base::Rect& src_region,
+                 ITexture* dst,
+                 const base::Vec2i& dst_pos);
 
-inline void MakeProjectionMatrix(float* out,
-                                 const base::Vec2& size,
-                                 bool origin_bottom) {
-  const float aa = 2.0f / size.x;
-  const float bb = (origin_bottom ? 2.0f : -2.0f) / size.y;
-  const float cc = origin_bottom ? 2.0f : 1.0f;
-  const float dd = -1.0f;
-  const float ee = origin_bottom ? -1.0f : 1.0f;
-  const float ff = origin_bottom ? -1.0f : 0.0f;
-
-  memset(out, 0, sizeof(float) * 16);
-  out[0] = aa;
-  out[3] = dd;
-  out[5] = bb;
-  out[7] = ee;
-  out[10] = cc;
-  out[11] = ff;
-  out[15] = 1.0f;
-}
+void MakeProjectionMatrix(float* out,
+                          const base::Vec2& size,
+                          bool origin_bottom);
 
 class RenderDevice {
  public:

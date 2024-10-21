@@ -119,17 +119,7 @@ class RectF {
   float x, y, width, height;
 };
 
-inline base::Rect MakeIntersect(const base::Rect& value1,
-                                const base::Rect& value2) {
-  SDL_Rect r1 = {value1.x, value1.y, value1.width, value1.height};
-  SDL_Rect r2 = {value2.x, value2.y, value2.width, value2.height};
-
-  SDL_Rect result;
-  if (!SDL_GetRectIntersection(&r1, &r2, &result))
-    result.w = result.h = 0;
-
-  return base::Rect(result.x, result.y, result.w, result.h);
-}
+base::Rect MakeIntersect(const base::Rect& A, const base::Rect& B);
 
 }  // namespace base
 
