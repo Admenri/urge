@@ -36,7 +36,7 @@ Graphics::Graphics(CoroutineContext* cc,
 
   // Create render device
   renderer_ = renderer::RenderDevice::Create(
-      window, renderer::RenderDevice::RendererBackend::kD3D12);
+      window, renderer::RenderDevice::RendererBackend::kOpenGL);
 
   // Preload pipelines
   renderer_->InitializePipelines(tex_format());
@@ -104,7 +104,6 @@ scoped_refptr<Bitmap> Graphics::SnapToBitmap() {
   scoped_refptr<Bitmap> snap = new Bitmap(this, resolution_);
 
   EncodeDrawableFrameInternal(snap->GetHandle());
-  renderer()->context()->Flush();
 
   return snap;
 }
@@ -190,7 +189,6 @@ void Graphics::Freeze() {
 
   // Get frozen scene snapshot for transition
   EncodeDrawableFrameInternal(frozen_snapshot_);
-  renderer()->context()->Flush();
 
   // Set forzen flag for blocking frame update
   frozen_ = true;

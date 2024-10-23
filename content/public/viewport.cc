@@ -93,8 +93,6 @@ void Viewport::SnapToBitmap(scoped_refptr<Bitmap> target) {
       1, &scissor, 1, scissor.bottom + scissor.top);
 
   DrawableParent::Composite(&target_info);
-
-  screen()->renderer()->context()->Flush();
 }
 
 void Viewport::SetViewport(scoped_refptr<Viewport> viewport) {

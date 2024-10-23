@@ -10,14 +10,29 @@
 #include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
 #include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
+#include "Primitives/interface/DebugOutput.h"
 
 namespace renderer {
+
+void DILIGENT_CALL_TYPE
+DebugMessageOutputFunc(enum DEBUG_MESSAGE_SEVERITY Severity,
+                       const Char* Message,
+                       const Char* Function,
+                       const Char* File,
+                       int Line) {
+  if (Severity >= DEBUG_MESSAGE_SEVERITY::DEBUG_MESSAGE_SEVERITY_ERROR)
+    printf("Function: %s, Info: %s", Function, Message);
+}
 
 RenderDevice::~RenderDevice() {}
 
 std::unique_ptr<RenderDevice> RenderDevice::Create(
     base::WeakPtr<ui::Widget> render_window,
     RendererBackend backend) {
+  // Set debug output
+  SetDebugMessageCallback(DebugMessageOutputFunc);
+
+  // Set window target
   SDL_PropertiesID win_prop =
       SDL_GetWindowProperties(render_window->AsSDLWindow());
   void* win_handle = SDL_GetPointerProperty(

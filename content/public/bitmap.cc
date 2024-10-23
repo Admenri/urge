@@ -285,8 +285,6 @@ void Bitmap::StretchBlt(const base::Rect& dest_rect,
   quad->SetTexcoord(src_rect);
   quad->Draw(screen()->renderer()->context());
 
-  screen()->renderer()->context()->Flush();
-
   NeedUpdateSurface();
 }
 
@@ -326,8 +324,6 @@ void Bitmap::FillRect(const base::Rect& rect, scoped_refptr<Color> color) {
   quad->SetPosition(rect);
   quad->SetColor(color->AsBase());
   quad->Draw(screen()->renderer()->context());
-
-  screen()->renderer()->context()->Flush();
 
   NeedUpdateSurface();
 }
@@ -382,7 +378,6 @@ void Bitmap::GradientFillRect(const base::Rect& rect,
   }
 
   quad->Draw(screen()->renderer()->context());
-  screen()->renderer()->context()->Flush();
 
   NeedUpdateSurface();
 }
@@ -424,8 +419,6 @@ void Bitmap::ClearRect(const base::Rect& rect) {
   quad->SetPosition(rect);
   quad->SetColor(base::Vec4(0));
   quad->Draw(screen()->renderer()->context());
-
-  screen()->renderer()->context()->Flush();
 
   NeedUpdateSurface();
 }
@@ -615,7 +608,6 @@ void Bitmap::DrawText(const base::Rect& rect,
     quad->SetTexcoord(base::Vec2(txt_surf->w, txt_surf->h));
     quad->Draw(screen()->renderer()->context());
 
-    screen()->renderer()->context()->Flush();
     SDL_DestroySurface(txt_surf);
   }
 
