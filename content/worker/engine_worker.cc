@@ -30,9 +30,10 @@ void EngineWorker::InitEngineMain(scoped_refptr<CoreConfigure> config,
       fiber_create(cc_->primary_fiber, 0, EngineMainLoopFunc, this);
 
   // Init Modules
-  graphics_ =
-      new Graphics(cc_.get(), window_->AsWeakPtr(), std::move(default_font),
-                   config_->initial_resolution(), config_->content_version());
+  graphics_ = new Graphics(
+      cc_.get(), window_->AsWeakPtr(), std::move(default_font),
+      config_->initial_resolution(), config_->content_version(),
+      (renderer::RenderDevice::RendererBackend)config_->renderer_backend());
   input_ = new Input(window_->AsWeakPtr(), config_->content_version());
   mouse_ = new Mouse(window_->AsWeakPtr());
   touch_ = new Touch(window_->AsWeakPtr());

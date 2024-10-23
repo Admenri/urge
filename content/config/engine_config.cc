@@ -86,11 +86,7 @@ bool CoreConfigure::LoadConfigure(SDL_IOStream* filestream,
   ReplaceStringWidth(game_scripts_, '\\', '/');
 
   /* Core config */
-  disable_menu_ = reader.GetBoolean("Kernel", "DisableMenu", false);
-  disable_reset_ = reader.GetBoolean("Kernel", "DisableReset", false);
-  async_renderer_ = reader.GetBoolean("Kernel", "AsyncRenderer", true);
-  disable_audio_ = reader.GetBoolean("Kernel", "DisableAudio", false);
-  rgss_version_ = (APIVersion)reader.GetInteger("Kernel", "RGSSVerison", 0);
+  rgss_version_ = (APIVersion)reader.GetInteger("Engine", "RGSSVerison", 0);
   if (rgss_version_ == APIVersion::Null) {
     if (!game_scripts_.empty()) {
       rgss_version_ = APIVersion::RGSS1;
@@ -110,18 +106,20 @@ bool CoreConfigure::LoadConfigure(SDL_IOStream* filestream,
   }
 
   initial_resolution_ = base::Vec2i(
-      reader.GetInteger("Game", "ScreenWidth",
+      reader.GetInteger("Engine", "ScreenWidth",
                         rgss_version_ >= APIVersion::RGSS2 ? 544 : 640),
-      reader.GetInteger("Game", "ScreenHeight",
+      reader.GetInteger("Engine", "ScreenHeight",
                         rgss_version_ >= APIVersion::RGSS2 ? 416 : 480));
 
-  int size = reader.GetInteger("Game", "LoadPathListSize", 0);
+  int size = reader.GetInteger("Engine", "LoadPathListSize", 0);
   for (int i = 0; i < size; ++i)
     load_paths_.push_back(reader.Get(
-        "Game", "LoadPath" + std::to_string(i + 1), std::string()));
+        "Engine", "LoadPath" + std::to_string(i + 1), std::string()));
 
   default_font_path_ =
-      reader.Get("Game", "DefaultFontPath", "Fonts/Default.ttf");
+      reader.Get("Engine", "DefaultFontPath", "Fonts/Default.ttf");
+
+  renderer_backend_ = reader.GetInteger("Engine", "GraphicsAPI", 0);
 
   return true;
 }

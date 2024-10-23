@@ -36,7 +36,8 @@ class Graphics final : public base::RefCounted<Graphics>,
            base::WeakPtr<ui::Widget> window,
            std::unique_ptr<ScopedFontData> default_font,
            const base::Vec2i& initial_resolution,
-           APIVersion api_diff);
+           APIVersion api_diff,
+           renderer::RenderDevice::RendererBackend graphics_api);
   ~Graphics() override;
 
   Graphics(const Graphics&) = delete;

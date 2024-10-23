@@ -17,7 +17,8 @@ Graphics::Graphics(CoroutineContext* cc,
                    base::WeakPtr<ui::Widget> window,
                    std::unique_ptr<ScopedFontData> default_font,
                    const base::Vec2i& initial_resolution,
-                   APIVersion api_diff)
+                   APIVersion api_diff,
+                   renderer::RenderDevice::RendererBackend graphics_api)
     : api_version_(api_diff),
       window_size_(window->GetSize()),
       static_font_manager_(std::move(default_font)),
@@ -35,8 +36,7 @@ Graphics::Graphics(CoroutineContext* cc,
   viewport_rect().rect = initial_resolution;
 
   // Create render device
-  renderer_ = renderer::RenderDevice::Create(
-      window, renderer::RenderDevice::RendererBackend::kOpenGL);
+  renderer_ = renderer::RenderDevice::Create(window, graphics_api);
 
   // Preload pipelines
   renderer_->InitializePipelines(tex_format());

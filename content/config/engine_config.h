@@ -34,13 +34,10 @@ class CoreConfigure : public base::RefCounted<CoreConfigure> {
   inline bool& game_battle_test() { return game_battle_test_; }
 
   inline APIVersion& content_version() { return rgss_version_; }
-  inline bool& disable_audio() { return disable_audio_; }
-  inline bool& async_renderer() { return async_renderer_; }
-  inline bool& disable_menu() { return disable_menu_; }
-  inline bool& disable_reset() { return disable_reset_; }
   inline base::Vec2i& initial_resolution() { return initial_resolution_; }
   inline std::vector<std::string>& load_paths() { return load_paths_; }
   inline std::string& default_font_path() { return default_font_path_; }
+  inline int32_t& renderer_backend() { return renderer_backend_; }
 
  private:
   std::vector<std::string> args_;
@@ -53,13 +50,10 @@ class CoreConfigure : public base::RefCounted<CoreConfigure> {
   bool game_battle_test_;
 
   APIVersion rgss_version_;
-  bool disable_audio_;
-  bool async_renderer_;
-  bool disable_menu_;
-  bool disable_reset_;
   base::Vec2i initial_resolution_;
   std::vector<std::string> load_paths_;
   std::string default_font_path_;
+  int32_t renderer_backend_;
 };
 
 }  // namespace content
