@@ -150,12 +150,8 @@ void Graphics::FadeIn(int duration) {
 }
 
 void Graphics::Update() {
-  if (!frozen_ && !cc_->frame_skip_require) {
-    // Setup render frame
+  if (!frozen_ && !cc_->frame_skip_require)
     EncodeDrawableFrameInternal(screen_buffer_);
-
-    // Fallthrough to present screen buffer
-  }
 
   // Process frame delay
   FrameProcessInternal();
@@ -291,7 +287,7 @@ void Graphics::Transition(int duration,
       scissor.right = resolution_.x;
       scissor.bottom = resolution_.y;
       renderer()->context()->SetScissorRects(1, &scissor, 1,
-                                             scissor.bottom + scissor.left);
+                                             scissor.bottom + scissor.top);
     }
 
     auto* quad = renderer()->common_quad();
@@ -468,7 +464,7 @@ void Graphics::EncodeDrawableFrameInternal(
     scissor.right = resolution_.x;
     scissor.bottom = resolution_.y;
     renderer()->context()->SetScissorRects(1, &scissor, 1,
-                                           scissor.bottom + scissor.left);
+                                           scissor.bottom + scissor.top);
   }
 
   // Composite frame
@@ -488,7 +484,7 @@ void Graphics::EncodeDrawableFrameInternal(
       scissor.right = resolution_.x;
       scissor.bottom = resolution_.y;
       renderer()->context()->SetScissorRects(1, &scissor, 1,
-                                             scissor.bottom + scissor.left);
+                                             scissor.bottom + scissor.top);
     }
 
     {
@@ -562,7 +558,7 @@ void Graphics::PresentScreenBufferInternal(
   scissor.right = RTV->GetTexture()->GetDesc().Width;
   scissor.bottom = RTV->GetTexture()->GetDesc().Height;
   renderer()->context()->SetScissorRects(1, &scissor, 1,
-                                         scissor.bottom + scissor.left);
+                                         scissor.bottom + scissor.top);
 
   screen_quad_->SetPosition(target_rect);
   screen_quad_->SetTexcoord(base::Vec2(resolution_));

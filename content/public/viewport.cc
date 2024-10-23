@@ -90,7 +90,7 @@ void Viewport::SnapToBitmap(scoped_refptr<Bitmap> target) {
   scissor.right = target->GetSize().x;
   scissor.bottom = target->GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
-      1, &scissor, 1, scissor.bottom + scissor.left);
+      1, &scissor, 1, scissor.bottom + scissor.top);
 
   DrawableParent::Composite(&target_info);
 
@@ -128,7 +128,7 @@ void Viewport::OnDraw(CompositeTargetInfo* target_info) {
     scissor.top = target_info->scissor_region.y;
     scissor.bottom = scissor.top + target_info->scissor_region.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 
   // Execute children draw command
@@ -157,7 +157,7 @@ void Viewport::OnDraw(CompositeTargetInfo* target_info) {
     scissor.top = scissor_state_cache.y;
     scissor.bottom = scissor.top + scissor_state_cache.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 
   // Pop scissor stack

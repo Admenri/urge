@@ -394,7 +394,7 @@ void Window2::OnDraw(CompositeTargetInfo* target_info) {
     scissor.top = intersect.y;
     scissor.bottom = scissor.top + intersect.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 
   /* Stretch background & frame */
@@ -463,7 +463,7 @@ void Window2::OnDraw(CompositeTargetInfo* target_info) {
       scissor.top = intersect.y;
       scissor.bottom = scissor.top + intersect.height;
       screen()->renderer()->context()->SetScissorRects(
-          1, &scissor, 1, scissor.bottom + scissor.left);
+          1, &scissor, 1, scissor.bottom + scissor.top);
     }
 
     /* Cursor draw */
@@ -513,7 +513,7 @@ void Window2::OnDraw(CompositeTargetInfo* target_info) {
         scissor.top = intersect.y;
         scissor.bottom = scissor.top + intersect.height;
         screen()->renderer()->context()->SetScissorRects(
-            1, &scissor, 1, scissor.bottom + scissor.left);
+            1, &scissor, 1, scissor.bottom + scissor.top);
       }
 
       base::Vec2i content_trans = padding_trans_rect.Position();
@@ -545,7 +545,7 @@ void Window2::OnDraw(CompositeTargetInfo* target_info) {
     scissor.top = target_info->scissor_region.y;
     scissor.bottom = scissor.top + target_info->scissor_region.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 }
 
@@ -716,7 +716,7 @@ void Window2::UpdateBaseTextureInternal() {
     scissor.right = rect_.width;
     scissor.bottom = rect_.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 
   {

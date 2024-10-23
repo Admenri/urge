@@ -259,7 +259,7 @@ void Bitmap::StretchBlt(const base::Rect& dest_rect,
   scissor.right = size.x;
   scissor.bottom = size.y;
   screen()->renderer()->context()->SetScissorRects(
-      1, &scissor, 1, scissor.bottom + scissor.left);
+      1, &scissor, 1, scissor.bottom + scissor.top);
 
   {
     Diligent::MapHelper<renderer::PipelineInstance_Blt::VSUniform> Constants(
@@ -310,7 +310,7 @@ void Bitmap::FillRect(const base::Rect& rect, scoped_refptr<Color> color) {
   scissor.right = GetSize().x;
   scissor.bottom = GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
-      1, &scissor, 1, scissor.bottom + scissor.left);
+      1, &scissor, 1, scissor.bottom + scissor.top);
 
   {
     Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform> Constants(
@@ -355,7 +355,7 @@ void Bitmap::GradientFillRect(const base::Rect& rect,
   scissor.right = GetSize().x;
   scissor.bottom = GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
-      1, &scissor, 1, scissor.bottom + scissor.left);
+      1, &scissor, 1, scissor.bottom + scissor.top);
 
   {
     Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform> Constants(
@@ -408,7 +408,7 @@ void Bitmap::ClearRect(const base::Rect& rect) {
   scissor.right = GetSize().x;
   scissor.bottom = GetSize().y;
   screen()->renderer()->context()->SetScissorRects(
-      1, &scissor, 1, scissor.bottom + scissor.left);
+      1, &scissor, 1, scissor.bottom + scissor.top);
 
   {
     Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform> Constants(
@@ -504,8 +504,6 @@ void Bitmap::DrawText(const base::Rect& rect,
                       TextAlign align) {
   CheckIsDisposed();
 
-  return;
-
   font_->EnsureLoadFont();
   uint8_t fopacity;
   auto* txt_surf = font_->RenderText(str, &fopacity);
@@ -590,7 +588,7 @@ void Bitmap::DrawText(const base::Rect& rect,
     scissor.right = GetSize().x;
     scissor.bottom = GetSize().y;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
 
     {
       Diligent::MapHelper<renderer::PipelineInstance_Blt::VSUniform> Constants(

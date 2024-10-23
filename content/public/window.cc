@@ -474,7 +474,7 @@ void Window::UpdateBaseTexInternal() {
     scissor.right = rect_.width;
     scissor.bottom = rect_.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 
   {
@@ -641,7 +641,7 @@ void Window::CompositeControls(CompositeTargetInfo* target_info) {
     scissor.top = intersect.y;
     scissor.bottom = scissor.top + intersect.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 
   auto& shader = screen()->renderer()->GetPipelines()->basealpha;
@@ -683,7 +683,7 @@ void Window::CompositeControls(CompositeTargetInfo* target_info) {
       scissor.top = intersect.y;
       scissor.bottom = scissor.top + intersect.height;
       screen()->renderer()->context()->SetScissorRects(
-          1, &scissor, 1, scissor.bottom + scissor.left);
+          1, &scissor, 1, scissor.bottom + scissor.top);
     }
 
     {
@@ -711,7 +711,7 @@ void Window::CompositeControls(CompositeTargetInfo* target_info) {
     scissor.top = target_info->scissor_region.y;
     scissor.bottom = scissor.top + target_info->scissor_region.height;
     screen()->renderer()->context()->SetScissorRects(
-        1, &scissor, 1, scissor.bottom + scissor.left);
+        1, &scissor, 1, scissor.bottom + scissor.top);
   }
 }
 
