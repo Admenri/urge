@@ -14,6 +14,7 @@ namespace renderer {
 #include "renderer/hlsl/basecolor_ps.hlsl.xxd"
 #include "renderer/hlsl/basecolor_vs.hlsl.xxd"
 #include "renderer/hlsl/blt_ps.hlsl.xxd"
+#include "renderer/hlsl/flat_ps.hlsl.xxd"
 #include "renderer/hlsl/sprite_ps.hlsl.xxd"
 #include "renderer/hlsl/tilemap2_vs.hlsl.xxd"
 #include "renderer/hlsl/tilemap_vs.hlsl.xxd"
@@ -785,6 +786,47 @@ void PipelineInstance_Tilemap2::SetTexture(ITextureView* view) {
   RenderPipelineBase::CurrentState()
       ->srb->GetVariableByName(SHADER_TYPE_PIXEL, "u_Texture")
       ->Set(view);
+}
+
+/// <summary>
+/// Flat
+/// </summary>
+/// <param name="device"></param>
+/// <param name="texfmt"></param>
+
+PipelineInstance_Flat::PipelineInstance_Flat(
+    RefCntAutoPtr<IRenderDevice> device,
+    TEXTURE_FORMAT texfmt)
+    : RenderPipelineBase(device) {
+  ShaderCreateParams vs, ps;
+  vs.source = std::string((const char*)base_vs_hlsl, base_vs_hlsl_len);
+  vs.name = "base_vs";
+  vs.entry = "main";
+
+  ps.source = std::string((const char*)flat_ps_hlsl, flat_ps_hlsl_len);
+  ps.name = "flat_ps";
+  ps.entry = "main";
+
+  CreateUniformBuffer(device, sizeof(VSUniform), "flat.vs.ubo", &vs_uniform_);
+  CreateUniformBuffer(device, sizeof(VSUniform), "flat.ps.ubo", &ps_uniform_);
+
+  RenderPipelineBase::BuildGraphicsPipeline(
+      vs, ps, GeometryVertexLayout::GetLayout(), {}, {},
+      [&](IPipelineState* pso) {
+        pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")
+            ->Set(vs_uniform_);
+        pso->GetStaticVariableByName(SHADER_TYPE_PIXEL, "PSConstants")
+            ->Set(ps_uniform_);
+      },
+      "flat.pso", texfmt);
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Flat::GetVSUniform() {
+  return vs_uniform_;
+}
+
+RefCntAutoPtr<IBuffer> PipelineInstance_Flat::GetPSUniform() {
+  return ps_uniform_;
 }
 
 }  // namespace renderer

@@ -13,5 +13,5 @@ set(RGU_DEP_LIBS
 )
 
 add_compile_definitions(NOMINMAX)
-add_executable(urge-console urge_main.cc resources/app.rc)
-target_link_libraries(urge-console PUBLIC ${RGU_DEP_LIBS})
+add_executable(rge_console urge_main.cc resources/app.rc)
+target_link_libraries(rge_console PUBLIC ${RGU_DEP_LIBS})

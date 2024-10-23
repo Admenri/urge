@@ -126,6 +126,7 @@ void Graphics::FadeOut(int duration) {
 
   /* Set final brightness */
   SetBrightness(0);
+  Update();
 }
 
 void Graphics::FadeIn(int duration) {
@@ -147,6 +148,7 @@ void Graphics::FadeIn(int duration) {
 
   /* Set final brightness */
   SetBrightness(255);
+  Update();
 }
 
 void Graphics::Update() {
@@ -472,7 +474,7 @@ void Graphics::EncodeDrawableFrameInternal(
 
   // Apply brightness effect
   if (brightness_ < 255) {
-    auto& shader = renderer()->GetPipelines()->color;
+    auto& shader = renderer()->GetPipelines()->flat;
     auto* pipeline = shader.GetPSOFor(renderer::BlendType::Normal);
     renderer()->context()->SetPipelineState(pipeline->pso);
 
@@ -488,18 +490,24 @@ void Graphics::EncodeDrawableFrameInternal(
     }
 
     {
-      Diligent::MapHelper<renderer::PipelineInstance_Color::VSUniform>
-          Constants(renderer()->context(), shader.GetVSUniform(),
-                    Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
+      Diligent::MapHelper<renderer::PipelineInstance_Flat::VSUniform> Constants(
+          renderer()->context(), shader.GetVSUniform(), Diligent::MAP_WRITE,
+          Diligent::MAP_FLAG_DISCARD);
       renderer::MakeProjectionMatrix(
           Constants->projMat, resolution_,
           renderer()->device()->GetDeviceInfo().IsGLDevice());
       Constants->transOffset = base::Vec2i(0);
     }
 
+    {
+      Diligent::MapHelper<renderer::PipelineInstance_Flat::PSUniform> Constants(
+          renderer()->context(), shader.GetPSUniform(), Diligent::MAP_WRITE,
+          Diligent::MAP_FLAG_DISCARD);
+      Constants->color = base::Vec4(0, 0, 0, (255 - brightness_) / 255.0f);
+    }
+
     auto* quad = renderer()->common_quad();
     quad->SetPosition(base::Vec2(resolution_));
-    quad->SetColor(base::Vec4(0, 0, 0, (255 - brightness_) / 255.0f));
     quad->Draw(renderer()->context());
   }
 }

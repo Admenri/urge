@@ -327,6 +327,27 @@ class PipelineInstance_Tilemap2 : public RenderPipelineBase {
   RefCntAutoPtr<IBuffer> vs_uniform_;
 };
 
+class PipelineInstance_Flat : public RenderPipelineBase {
+ public:
+  using VSUniform = struct {
+    float projMat[16];
+    base::Vec2 transOffset;
+    base::Vec2 texSize;
+  };
+
+  using PSUniform = struct { base::Vec4 color; };
+
+  PipelineInstance_Flat(RefCntAutoPtr<IRenderDevice> device,
+                        TEXTURE_FORMAT texfmt);
+
+  RefCntAutoPtr<IBuffer> GetVSUniform();
+  RefCntAutoPtr<IBuffer> GetPSUniform();
+
+ private:
+  RefCntAutoPtr<IBuffer> vs_uniform_;
+  RefCntAutoPtr<IBuffer> ps_uniform_;
+};
+
 }  // namespace renderer
 
 #endif  //! RENDERER_PIPELINE_RENDER_PIPELINE_H_

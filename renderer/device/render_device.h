@@ -53,6 +53,7 @@ class RenderDevice {
     PipelineInstance_BaseAlpha basealpha;
     PipelineInstance_Tilemap tilemap;
     PipelineInstance_Tilemap2 tilemap2;
+    PipelineInstance_Flat flat;
 
     PipelineStorage(RefCntAutoPtr<IRenderDevice> device,
                     TEXTURE_FORMAT target_fmt)
@@ -66,7 +67,8 @@ class RenderDevice {
           vaguetrans(device, target_fmt),
           basealpha(device, target_fmt),
           tilemap(device, target_fmt),
-          tilemap2(device, target_fmt) {}
+          tilemap2(device, target_fmt),
+          flat(device, target_fmt) {}
   };
 
   ~RenderDevice();
