@@ -44,6 +44,8 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
 
   SwapChainDesc SCDesc;
   if (backend == RendererBackend::kOpenGL) {
+    printf("[Renderer] GraphicsAPI: OpenGL\n");
+
 #if ENGINE_DLL
     auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #endif
@@ -53,16 +55,21 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
     factory->CreateDeviceAndSwapChainGL(EngineCI, &device, &context, SCDesc,
                                         &swapchain);
   } else if (backend == RendererBackend::kD3D12) {
+    printf("[Renderer] GraphicsAPI: D3D12\n");
+
 #if ENGINE_DLL
     auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #endif
     EngineD3D12CreateInfo EngineCI;
+    EngineCI.GPUDescriptorHeapDynamicSize[0] = 0xffff;
     auto* pFactoryD3D12 = GetEngineFactoryD3D12();
     pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &device, &context);
     Win32NativeWindow Window{win_handle};
     pFactoryD3D12->CreateSwapChainD3D12(
         device, context, SCDesc, FullScreenModeDesc{}, Window, &swapchain);
   } else if (backend == RendererBackend::kD3D11) {
+    printf("[Renderer] GraphicsAPI: D3D11\n");
+
 #if ENGINE_DLL
     auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #endif
@@ -73,6 +80,8 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
     pFactory->CreateSwapChainD3D11(device, context, SCDesc,
                                    FullScreenModeDesc{}, Window, &swapchain);
   } else if (backend == RendererBackend::kVulkan) {
+    printf("[Renderer] GraphicsAPI: Vulkan\n");
+
 #if ENGINE_DLL
     auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #endif
@@ -92,6 +101,10 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
   self->quad_index_buffer_ = new QuadArrayIndices(device);
   self->quad_index_buffer_->EnsureSize(context, 2 << 10);
   self->common_quad_.reset(new QuadDrawable(device, self->quad_index_buffer_));
+
+  printf("[Renderer] Adapter: %s\n", device->GetAdapterInfo().Description);
+  printf("[Renderer] MaxTexture Size: %d\n",
+         device->GetAdapterInfo().Texture.MaxTexture2DDimension);
 
   context->WaitForIdle();
 
