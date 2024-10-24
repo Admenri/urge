@@ -21,7 +21,7 @@ DebugMessageOutputFunc(enum DEBUG_MESSAGE_SEVERITY Severity,
                        const Char* File,
                        int Line) {
   if (Severity >= DEBUG_MESSAGE_SEVERITY::DEBUG_MESSAGE_SEVERITY_ERROR)
-    printf("Function: %s, Info: %s", Function, Message);
+    printf("[Renderer] Function: %s, Info: %s\n", Function, Message);
 }
 
 RenderDevice::~RenderDevice() {}

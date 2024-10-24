@@ -390,7 +390,7 @@ int Graphics::DetermineRepeatNumberInternal(double delta_rate) {
 
   if (smooth_delta_time_ >= 0.9) {
     elapsed_time_ = 0;
-    return std::round(elapsed_time_);
+    return std::round(smooth_delta_time_);
   } else {
     elapsed_time_ += delta_rate;
     if (elapsed_time_ >= 1) {
