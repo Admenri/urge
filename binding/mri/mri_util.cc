@@ -34,8 +34,19 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
       break;
     }
 
-    VALUE arg_element = argv[count];
+    /*
+     * o -> VALUE
+     * i -> int32
+     * u -> uint32
+     * l -> int64
+     * p -> uint64
+     * s -> std::string
+     * f -> double
+     * b -> bool
+     * n -> std::string
+     */
 
+    VALUE arg_element = argv[count];
     switch (*ch) {
       case 'o': {
         VALUE* ptr = va_arg(args_iter, VALUE*);
@@ -104,15 +115,6 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
 
         std::string* ptr = va_arg(args_iter, std::string*);
         *ptr = std::string(RSTRING_PTR(str), RSTRING_LEN(str));
-      }
-        ++count;
-        break;
-      case 'z': {
-        if (!RB_TYPE_P(arg_element, RUBY_T_STRING))
-          rb_raise(rb_eTypeError, "Argument %d: Expected string", count);
-
-        VALUE* ptr = va_arg(args_iter, VALUE*);
-        *ptr = arg_element;
       }
         ++count;
         break;

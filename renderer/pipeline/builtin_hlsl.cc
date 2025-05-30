@@ -872,7 +872,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4x4, float4x4 }
 //   { Texture2D }
 //
-// defination:
+// macros:
 //   CONVERT_PS_OUTPUT_TO_GAMMA
 ///
 

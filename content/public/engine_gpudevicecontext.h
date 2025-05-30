@@ -12,6 +12,8 @@
 #include "content/public/engine_gpubox.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpucommandlist.h"
+#include "content/public/engine_gpufence.h"
+#include "content/public/engine_gpupipelinestate.h"
 #include "content/public/engine_gpuquery.h"
 #include "content/public/engine_gpuresourcebinding.h"
 #include "content/public/engine_gputexture.h"

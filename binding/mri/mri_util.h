@@ -196,10 +196,10 @@ MRI_METHOD(MriReturnInt) {
 }
 
 #define MRI_FROM_BOOL(v) (v != Qfalse)
-#define MRI_FROM_STRING(v) std::string(RSTRING_PTR(v))
+#define MRI_FROM_STRING(v) (std::string(RSTRING_PTR(v), RSTRING_LEN(v)))
 
 #define MRI_BOOL_VALUE(v) ((v) ? Qtrue : Qfalse)
-#define MRI_STRING_VALUE(v) rb_utf8_str_new(v.c_str(), v.size())
+#define MRI_STRING_VALUE(v) rb_utf8_str_new(v.c_str(), (long)v.size())
 
 ///
 /// Method Define Template
@@ -282,10 +282,201 @@ void MriInitSerializableBinding(VALUE klass) {
     return result;                                                          \
   }
 
-#define MRI_DECLARE_OBJECT_COMPARE(ty)          \
+#define MRI_DECLARE_OBJECT_COMPARE(klass, ty)   \
   MriDefineMethod(klass, "==", ty##_equal_to);  \
   MriDefineMethod(klass, "===", ty##_equal_to); \
   MriDefineMethod(klass, "eql?", ty##_equal_to);
+
+///
+/// Array object to CXX data
+///
+
+template <typename Ty>
+inline std::vector<Ty> RBARRAY2CXX(VALUE ary) {
+  static_assert(false, "unsupport vector type.");
+  return {};
+}
+
+template <typename Ty>
+inline std::vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
+                                                  const rb_data_type_t& type) {
+  std::vector<scoped_refptr<Ty>> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(MriCheckStructData<Ty>(rb_ary_entry(ary, i), type));
+  return result;
+}
+
+template <typename Ty>
+inline std::vector<Ty> RBARRAY2CXX(VALUE ary, std::function<Ty(VALUE)> cvt_fn) {
+  std::vector<Ty> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(cvt_fn(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <typename Ty>
+inline std::vector<Ty> RBARRAY2CXX_CONST(VALUE ary) {
+  std::vector<Ty> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back((Ty)NUM2INT(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<int32_t> RBARRAY2CXX(VALUE ary) {
+  std::vector<int32_t> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(NUM2INT(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<uint32_t> RBARRAY2CXX(VALUE ary) {
+  std::vector<uint32_t> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(NUM2UINT(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<int64_t> RBARRAY2CXX(VALUE ary) {
+  std::vector<int64_t> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(NUM2LL(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<uint64_t> RBARRAY2CXX(VALUE ary) {
+  std::vector<uint64_t> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(NUM2LL(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<bool> RBARRAY2CXX(VALUE ary) {
+  std::vector<bool> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(MRI_FROM_BOOL(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<float> RBARRAY2CXX(VALUE ary) {
+  std::vector<float> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back((float)RFLOAT_VALUE(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<double> RBARRAY2CXX(VALUE ary) {
+  std::vector<double> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(RFLOAT_VALUE(rb_ary_entry(ary, i)));
+  return result;
+}
+
+template <>
+inline std::vector<std::string> RBARRAY2CXX(VALUE ary) {
+  std::vector<std::string> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back(MRI_FROM_STRING(rb_ary_entry(ary, i)));
+  return result;
+}
+
+///
+/// CXX data to Array object
+///
+
+template <typename Ty>
+inline VALUE CXX2RBARRAY(const std::vector<Ty>& ary) {
+  static_assert(false, "unsupport vector type.");
+  return Qnil;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<int32_t>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, INT2NUM(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<uint32_t>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, UINT2NUM(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<int64_t>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, LL2NUM(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<uint64_t>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, ULL2NUM(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<bool>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, MRI_BOOL_VALUE(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<float>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, DBL2NUM(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<double>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, DBL2NUM(it));
+  return result;
+}
+
+template <>
+inline VALUE CXX2RBARRAY(const std::vector<std::string>& ary) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, MRI_STRING_VALUE(it));
+  return result;
+}
+
+template <typename Ty>
+inline VALUE CXX2RBARRAY(const std::vector<scoped_refptr<Ty>>& ary,
+                         const rb_data_type_t& type) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, MriWrapObject<Ty>(it, type));
+  return result;
+}
+
+template <typename Ty>
+inline VALUE CXX2RBARRAY(const std::vector<Ty>& ary,
+                         std::function<Ty(VALUE)> cvt_fn) {
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, cvt_fn(it));
+  return result;
+}
 
 }  // namespace binding
 

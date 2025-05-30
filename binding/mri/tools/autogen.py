@@ -30,6 +30,7 @@ if __name__ == "__main__":
       idl_parser = bgen.api_parser.APIParser()
       idl_parser.parse(file_content)
       for klass in idl_parser.classes:
+        klass['filename'] = filepath
         template_classes.append(klass)
 
   with open(os.path.join(idl_dir, "export_apis.json"), "w", encoding="utf-8") as f:
@@ -39,10 +40,12 @@ if __name__ == "__main__":
     os.remove(os.path.join(out_dir, filepath))
 
   for klass in template_classes:
-    generator = bgen.MriBindGen()
+    generator = bgen.MriBindingGen()
     generator.setup(klass)
 
-    with open(os.path.join(out_dir, generator.file_name + ".h"), "w", encoding="utf-8") as f:
-      f.write(generator.gen_header())
-    with open(os.path.join(out_dir, generator.file_name + ".cc"), "w", encoding="utf-8") as f:
-      f.write(generator.gen_source())
+    source, filename = generator.generate_header()
+    with open(os.path.join(out_dir, filename), "w", encoding="utf-8") as f:
+      f.write(source)
+    source, filename = generator.generate_body()
+    with open(os.path.join(out_dir, filename), "w", encoding="utf-8") as f:
+      f.write(source)
