@@ -27,6 +27,7 @@ set(ENGINE_BASE_SRC
   math/rectangle.h
   math/vector.cc
   math/vector.h
+  memory/allocator.h
   memory/atomic_flag.cc
   memory/atomic_flag.h
   memory/atomic_ref_count.h
@@ -51,6 +52,7 @@ set(ENGINE_BASE_SRC
 add_library(engine_base STATIC ${ENGINE_BASE_SRC})
 target_link_libraries(engine_base
  PUBLIC
+  mimalloc-static
   spdlog::spdlog
 )
 

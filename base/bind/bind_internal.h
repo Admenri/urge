@@ -69,6 +69,7 @@
 #include "base/buildflags/build.h"
 #include "base/buildflags/compiler_specific.h"
 #include "base/debug/logging.h"
+#include "base/memory/allocator.h"
 #include "base/memory/raw_scoped_refptr_mismatch_checker.h"
 #include "base/memory/weak_ptr.h"
 #include "base/template_util.h"
@@ -831,15 +832,16 @@ struct BindState final : BindStateBase {
     // IsCancellable is std::false_type if
     // CallbackCancellationTraits<>::IsCancelled returns always false.
     // Otherwise, it's std::true_type.
-    return new BindState(IsCancellable{}, invoke_func,
-                         std::forward<ForwardFunctor>(functor),
-                         std::forward<ForwardBoundArgs>(bound_args)...);
+    return Allocator::New<BindState>(
+        IsCancellable{}, invoke_func, std::forward<ForwardFunctor>(functor),
+        std::forward<ForwardBoundArgs>(bound_args)...);
   }
 
   Functor functor_;
   std::tuple<BoundArgs...> bound_args_;
 
  private:
+  friend struct Allocator;
   static constexpr bool is_nested_callback =
       MakeFunctorTraits<Functor>::is_callback;
 
@@ -883,7 +885,7 @@ struct BindState final : BindStateBase {
   ~BindState() = default;
 
   static void Destroy(const BindStateBase* self) {
-    delete static_cast<const BindState*>(self);
+    Allocator::Delete(static_cast<const BindState*>(self));
   }
 };
 

@@ -151,6 +151,9 @@ add_subdirectory(third_party/av1player)
 ## Webm
 add_subdirectory(third_party/webm)
 
+## Mimalloc
+add_subdirectory(third_party/mimalloc)
+
 ## Private crypto
 set(ENABLE_ADMENRI_BUILD_VERSION False)
 set(ADMENRI_BUILD_BUNDLE_DIR ${PROJECT_SOURCE_DIR}/admenri)

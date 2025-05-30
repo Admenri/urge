@@ -36,13 +36,6 @@ bool ThreadWorker::PostTask(OnceClosure task) {
   return (*task_queue_)->enqueue(std::move(task));
 }
 
-bool ThreadWorker::PostTask(ThreadWorker* worker, OnceClosure task) {
-  if (worker)
-    return worker->PostTask(std::move(task));
-  std::move(task).Run();
-  return true;
-}
-
 void ThreadWorker::WaitWorkerSynchronize() {
   Semaphore semaphore;
   OnceClosure required_task = base::BindOnce(
@@ -51,19 +44,8 @@ void ThreadWorker::WaitWorkerSynchronize() {
   semaphore.Acquire();
 }
 
-void ThreadWorker::WaitWorkerSynchronize(ThreadWorker* worker) {
-  if (worker)
-    return worker->WaitWorkerSynchronize();
-}
-
 bool ThreadWorker::RunsTasksInCurrentSequence() {
   return thread_.get_id() == std::this_thread::get_id();
-}
-
-bool ThreadWorker::RunsTasksInCurrentSequence(ThreadWorker* worker) {
-  if (worker)
-    return worker->RunsTasksInCurrentSequence();
-  return true;
 }
 
 bool ThreadWorker::DeleteOrReleaseSoonInternal(void (*deleter)(const void*),

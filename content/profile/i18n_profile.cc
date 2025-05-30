@@ -6,6 +6,15 @@
 
 #include "rapidxml/rapidxml.hpp"
 
+#if defined(RAPIDXML_NO_EXCEPTIONS)
+
+void rapidxml::parse_error_handler(const char* what, void* where) {
+  LOG(ERROR) << what << where;
+  std::abort();
+}
+
+#endif  // RAPIDXML_NO_EXCEPTIONS
+
 namespace content {
 
 I18NProfile::I18NProfile(SDL_IOStream* xml_stream) {

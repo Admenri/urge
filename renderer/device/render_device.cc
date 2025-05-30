@@ -8,6 +8,7 @@
 #include "SDL3/SDL_loadso.h"
 #include "SDL3/SDL_video.h"
 #include "magic_enum/magic_enum.hpp"
+#include "mimalloc.h"
 
 #include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
 #include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
@@ -44,6 +45,27 @@ namespace renderer {
 
 namespace {
 
+struct HookMemoryAllocator : public Diligent::IMemoryAllocator {
+  void* Allocate(size_t Size,
+                 const Diligent::Char* dbgDescription,
+                 const char* dbgFileName,
+                 const Diligent::Int32 dbgLineNumber) override {
+    return mi_malloc(Size);
+  }
+
+  void Free(void* Ptr) override { mi_free(Ptr); }
+
+  void* AllocateAligned(size_t Size,
+                        size_t Alignment,
+                        const Diligent::Char* dbgDescription,
+                        const char* dbgFileName,
+                        const Diligent::Int32 dbgLineNumber) override {
+    return mi_malloc_aligned(Size, Alignment);
+  }
+
+  void FreeAligned(void* Ptr) override { mi_free(Ptr); }
+};
+
 void DILIGENT_CALL_TYPE
 DebugMessageOutputFunc(Diligent::DEBUG_MESSAGE_SEVERITY Severity,
                        const Diligent::Char* Message,
@@ -69,6 +91,8 @@ DebugMessageOutputFunc(Diligent::DEBUG_MESSAGE_SEVERITY Severity,
       break;
   }
 }
+
+HookMemoryAllocator g_raw_memory_allocator;
 
 }  // namespace
 
@@ -150,6 +174,10 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   Diligent::FullScreenModeDesc fullscreen_mode_desc;
 #endif
 
+  // Hook raw memory allocator
+  engine_create_info.pRawMemAllocator = &g_raw_memory_allocator;
+
+  // Setup primary swapchain
   swap_chain_desc.ColorBufferFormat = Diligent::TEX_FORMAT_RGBA8_UNORM;
   swap_chain_desc.PreTransform = Diligent::SURFACE_TRANSFORM_OPTIMAL;
   swap_chain_desc.IsPrimary = Diligent::True;

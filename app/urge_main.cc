@@ -9,6 +9,7 @@
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "mimalloc.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
@@ -29,6 +30,9 @@ int main(int argc, char* argv[]) {
 #if defined(OS_WIN)
   ::SetConsoleOutputCP(CP_UTF8);
 #endif  //! defined(OS_WIN)
+
+  // Hook SDL memory function
+  SDL_SetMemoryFunctions(mi_malloc, mi_calloc, mi_realloc, mi_free);
 
 #if defined(OS_ANDROID)
   // Get GAME_PATH string field from JNI (MainActivity.java)
