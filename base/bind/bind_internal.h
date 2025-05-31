@@ -841,7 +841,7 @@ struct BindState final : BindStateBase {
   std::tuple<BoundArgs...> bound_args_;
 
  private:
-  friend struct Allocator;
+  friend struct base::Allocator;
   static constexpr bool is_nested_callback =
       MakeFunctorTraits<Functor>::is_callback;
 

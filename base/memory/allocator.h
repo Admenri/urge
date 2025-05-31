@@ -86,8 +86,62 @@ OwnedPtr<T> MakeOwnedPtr(Args&&... args) {
   return OwnedPtr<T>(obj);
 }
 
-template <typename Ty>
-using STLAllocator = mi_stl_allocator<Ty>;
+template <typename T>
+class STLAllocator {
+ public:
+  using value_type = T;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using reference = T&;
+  using const_reference = const T&;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+
+  using propagate_on_container_move_assignment = std::true_type;
+  using is_always_equal = std::true_type;
+
+  constexpr STLAllocator() noexcept = default;
+  constexpr STLAllocator(const STLAllocator&) noexcept = default;
+
+  template <typename U>
+  constexpr STLAllocator(const STLAllocator<U>&) noexcept {}
+
+  ~STLAllocator() noexcept = default;
+
+  STLAllocator& operator=(const STLAllocator&) noexcept = default;
+
+  [[nodiscard]] T* allocate(size_type n) {
+    return static_cast<T*>(mi_malloc(n * sizeof(T)));
+  }
+
+  void deallocate(T* p, size_type) noexcept { mi_free(p); }
+
+  constexpr size_type max_size() const noexcept {
+    return (size_type(-1) / sizeof(value_type));
+  }
+
+  template <typename U, typename... Args>
+  void construct(U* p, Args&&... args) {
+    ::new (static_cast<void*>(p)) U(std::forward<Args>(args)...);
+  }
+
+  template <typename U>
+  void destroy(U* p) noexcept {
+    p->~U();
+  }
+};
+
+template <typename T, typename U>
+constexpr bool operator==(const STLAllocator<T>&,
+                          const STLAllocator<U>&) noexcept {
+  return true;
+}
+
+template <typename T, typename U>
+constexpr bool operator!=(const STLAllocator<T>&,
+                          const STLAllocator<U>&) noexcept {
+  return false;
+}
 
 template <typename Ty>
 using Vector = std::vector<Ty, STLAllocator<Ty>>;
