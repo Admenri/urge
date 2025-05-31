@@ -43,6 +43,7 @@
 #include "base/buildflags/build.h"
 #include "base/buildflags/compiler_specific.h"
 #include "base/debug/logging.h"
+#include "base/memory/allocator.h"
 #include "base/memory/atomic_ref_count.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/template_util.h"
@@ -385,7 +386,7 @@ class RefCounted : public subtle::RefCountedBase {
   friend struct DefaultRefCountedTraits<T>;
   template <typename U>
   static void DeleteInternal(const U* x) {
-    delete x;
+    Allocator::Delete(x);
   }
 };
 
@@ -456,7 +457,7 @@ class RefCountedThreadSafe : public subtle::RefCountedThreadSafeBase {
   friend struct DefaultRefCountedThreadSafeTraits<T>;
   template <typename U>
   static void DeleteInternal(const U* x) {
-    delete x;
+    Allocator::Delete(x);
   }
 
   void AddRefImpl(subtle::StartRefCountFromZeroTag) const {

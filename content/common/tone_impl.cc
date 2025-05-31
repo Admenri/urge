@@ -10,7 +10,7 @@ namespace content {
 
 scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
                               ExceptionState& exception_state) {
-  return new ToneImpl(base::Vec4(0));
+  return base::MakeRefCounted<ToneImpl>(base::Vec4(0));
 }
 
 scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
@@ -19,7 +19,7 @@ scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
                               float blue,
                               float gray,
                               ExceptionState& exception_state) {
-  return new ToneImpl(base::Vec4(red, green, blue, gray));
+  return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, gray));
 }
 
 scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
@@ -27,13 +27,13 @@ scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
                               float green,
                               float blue,
                               ExceptionState& exception_state) {
-  return new ToneImpl(base::Vec4(red, green, blue, 0.0f));
+  return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, 0.0f));
 }
 
 scoped_refptr<Tone> Tone::Copy(ExecutionContext* execution_context,
                                scoped_refptr<Tone> other,
                                ExceptionState& exception_state) {
-  return new ToneImpl(*static_cast<ToneImpl*>(other.get()));
+  return base::MakeRefCounted<ToneImpl>(*static_cast<ToneImpl*>(other.get()));
 }
 
 scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
@@ -51,7 +51,7 @@ scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
   const float blue = static_cast<float>(*(ptr + 2));
   const float gray = static_cast<float>(*(ptr + 3));
 
-  return new ToneImpl(base::Vec4(red, green, blue, gray));
+  return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, gray));
 }
 
 std::string Tone::Serialize(ExecutionContext* execution_context,

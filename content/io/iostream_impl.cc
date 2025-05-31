@@ -20,7 +20,7 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
     return nullptr;
   }
 
-  return new IOStreamImpl(stream, std::string());
+  return base::MakeRefCounted<IOStreamImpl>(stream, std::string());
 }
 
 scoped_refptr<IOStream> IOStream::FromIOSystem(
@@ -37,7 +37,7 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
     return nullptr;
   }
 
-  return new IOStreamImpl(stream, std::string());
+  return base::MakeRefCounted<IOStreamImpl>(stream, std::string());
 }
 
 scoped_refptr<IOStream> IOStream::FromMemory(
@@ -52,7 +52,7 @@ scoped_refptr<IOStream> IOStream::FromMemory(
     return nullptr;
   }
 
-  return new IOStreamImpl(stream, std::move(new_buffer));
+  return base::MakeRefCounted<IOStreamImpl>(stream, std::move(new_buffer));
 }
 
 IOStreamImpl::IOStreamImpl(SDL_IOStream* stream, std::string buffer)

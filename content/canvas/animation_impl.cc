@@ -39,8 +39,9 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
     return nullptr;
   }
 
-  return new ImageAnimationImpl(execution_context->graphics, animation_data,
-                                execution_context->io_service);
+  return base::MakeRefCounted<ImageAnimationImpl>(
+      execution_context->graphics, animation_data,
+      execution_context->io_service);
 }
 
 scoped_refptr<ImageAnimation> ImageAnimation::New(
@@ -64,8 +65,9 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
     return nullptr;
   }
 
-  return new ImageAnimationImpl(execution_context->graphics, memory_animation,
-                                execution_context->io_service);
+  return base::MakeRefCounted<ImageAnimationImpl>(
+      execution_context->graphics, memory_animation,
+      execution_context->io_service);
 }
 
 ImageAnimationImpl::ImageAnimationImpl(RenderScreenImpl* parent,
@@ -116,7 +118,8 @@ std::vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
     std::memcpy(duplicate_surface->pixels, origin_surface->pixels,
                 origin_surface->pitch * origin_surface->h);
 
-    result.push_back(new SurfaceImpl(screen(), duplicate_surface, io_service_));
+    result.push_back(base::MakeRefCounted<SurfaceImpl>(
+        screen(), duplicate_surface, io_service_));
   }
 
   return result;

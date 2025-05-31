@@ -546,8 +546,9 @@ scoped_refptr<Tilemap> Tilemap::New(ExecutionContext* execution_context,
                                     scoped_refptr<Viewport> viewport,
                                     int32_t tilesize,
                                     ExceptionState& exception_state) {
-  return new TilemapImpl(execution_context->graphics,
-                         ViewportImpl::From(viewport), std::max(16, tilesize));
+  return base::MakeRefCounted<TilemapImpl>(execution_context->graphics,
+                                           ViewportImpl::From(viewport),
+                                           std::max(16, tilesize));
 }
 
 TilemapImpl::TilemapImpl(RenderScreenImpl* screen,
@@ -600,7 +601,8 @@ void TilemapImpl::Update(ExceptionState& exception_state) {
 
 scoped_refptr<TilemapAutotile> TilemapImpl::Autotiles(
     ExceptionState& exception_state) {
-  return new TilemapAutotileImpl(weak_ptr_factory_.GetWeakPtr());
+  return base::MakeRefCounted<TilemapAutotileImpl>(
+      weak_ptr_factory_.GetWeakPtr());
 }
 
 scoped_refptr<Viewport> TilemapImpl::Get_Viewport(

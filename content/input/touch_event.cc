@@ -14,7 +14,7 @@ std::vector<scoped_refptr<TouchEvent>> TouchEvent::Update(
 
   std::vector<scoped_refptr<TouchEvent>> filtered_events;
   for (auto& it : raw_events)
-    filtered_events.push_back(new TouchEventImpl(it));
+    filtered_events.push_back(base::MakeRefCounted<TouchEventImpl>(it));
 
   return filtered_events;
 }

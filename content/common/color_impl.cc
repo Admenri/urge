@@ -10,7 +10,7 @@ namespace content {
 
 scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
                                 ExceptionState& exception_state) {
-  return new ColorImpl(base::Vec4(0));
+  return base::MakeRefCounted<ColorImpl>(base::Vec4(0));
 }
 
 scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
@@ -19,7 +19,7 @@ scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
                                 float blue,
                                 float alpha,
                                 ExceptionState& exception_state) {
-  return new ColorImpl(base::Vec4(red, green, blue, alpha));
+  return base::MakeRefCounted<ColorImpl>(base::Vec4(red, green, blue, alpha));
 }
 
 scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
@@ -27,13 +27,13 @@ scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
                                 float green,
                                 float blue,
                                 ExceptionState& exception_state) {
-  return new ColorImpl(base::Vec4(red, green, blue, 255.0f));
+  return base::MakeRefCounted<ColorImpl>(base::Vec4(red, green, blue, 255.0f));
 }
 
 scoped_refptr<Color> Color::Copy(ExecutionContext* execution_context,
                                  scoped_refptr<Color> other,
                                  ExceptionState& exception_state) {
-  return new ColorImpl(*static_cast<ColorImpl*>(other.get()));
+  return base::MakeRefCounted<ColorImpl>(*static_cast<ColorImpl*>(other.get()));
 }
 
 scoped_refptr<Color> Color::Deserialize(ExecutionContext* execution_context,
@@ -51,7 +51,7 @@ scoped_refptr<Color> Color::Deserialize(ExecutionContext* execution_context,
   const float blue = static_cast<float>(*(ptr + 2));
   const float alpha = static_cast<float>(*(ptr + 3));
 
-  return new ColorImpl(base::Vec4(red, green, blue, alpha));
+  return base::MakeRefCounted<ColorImpl>(base::Vec4(red, green, blue, alpha));
 }
 
 std::string Color::Serialize(ExecutionContext* execution_context,

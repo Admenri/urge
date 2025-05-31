@@ -872,7 +872,7 @@ scoped_refptr<Rect> RenderScreenImpl::GetWindowRect(
   base::Rect window_rect;
   SDL_GetWindowPosition(window, &window_rect.x, &window_rect.y);
   SDL_GetWindowSize(window, &window_rect.width, &window_rect.height);
-  return new RectImpl(window_rect);
+  return base::MakeRefCounted<RectImpl>(window_rect);
 }
 
 uint32_t RenderScreenImpl::GetDisplayID(ExceptionState& exception_state) {

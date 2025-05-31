@@ -620,22 +620,25 @@ void GPURenderWindowQuadsInternal(renderer::RenderDevice* device,
 
 scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
                                     ExceptionState& exception_state) {
-  return new Window2Impl(execution_context->graphics, nullptr, base::Rect(), 2);
+  return base::MakeRefCounted<Window2Impl>(execution_context->graphics, nullptr,
+                                           base::Rect(), 2);
 }
 
 scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
                                     scoped_refptr<Viewport> viewport,
                                     ExceptionState& exception_state) {
-  return new Window2Impl(execution_context->graphics,
-                         ViewportImpl::From(viewport), base::Rect(), 2);
+  return base::MakeRefCounted<Window2Impl>(execution_context->graphics,
+                                           ViewportImpl::From(viewport),
+                                           base::Rect(), 2);
 }
 
 scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
                                     scoped_refptr<Viewport> viewport,
                                     int32_t scale,
                                     ExceptionState& exception_state) {
-  return new Window2Impl(execution_context->graphics,
-                         ViewportImpl::From(viewport), base::Rect(), scale);
+  return base::MakeRefCounted<Window2Impl>(execution_context->graphics,
+                                           ViewportImpl::From(viewport),
+                                           base::Rect(), scale);
 }
 
 scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
@@ -644,8 +647,8 @@ scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
                                     int32_t width,
                                     int32_t height,
                                     ExceptionState& exception_state) {
-  return new Window2Impl(execution_context->graphics, nullptr,
-                         base::Rect(x, y, width, height), 2);
+  return base::MakeRefCounted<Window2Impl>(execution_context->graphics, nullptr,
+                                           base::Rect(x, y, width, height), 2);
 }
 
 scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
@@ -655,8 +658,9 @@ scoped_refptr<Window2> Window2::New(ExecutionContext* execution_context,
                                     int32_t height,
                                     int32_t scale,
                                     ExceptionState& exception_state) {
-  return new Window2Impl(execution_context->graphics, nullptr,
-                         base::Rect(x, y, width, height), scale);
+  return base::MakeRefCounted<Window2Impl>(execution_context->graphics, nullptr,
+                                           base::Rect(x, y, width, height),
+                                           scale);
 }
 
 Window2Impl::Window2Impl(RenderScreenImpl* screen,
@@ -673,10 +677,10 @@ Window2Impl::Window2Impl(RenderScreenImpl* screen,
                     rgss3_style_ ? std::numeric_limits<int64_t>::max() : 0)),
       scale_(scale),
       viewport_(parent),
-      cursor_rect_(new RectImpl(base::Rect())),
+      cursor_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
       bound_(bound),
       back_opacity_(rgss3_style_ ? 192 : 255),
-      tone_(new ToneImpl(base::Vec4())) {
+      tone_(base::MakeRefCounted<ToneImpl>(base::Vec4())) {
   node_.RegisterEventHandler(base::BindRepeating(
       &Window2Impl::DrawableNodeHandlerInternal, base::Unretained(this)));
 

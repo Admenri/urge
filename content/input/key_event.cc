@@ -14,7 +14,7 @@ std::vector<scoped_refptr<KeyEvent>> KeyEvent::Update(
 
   std::vector<scoped_refptr<KeyEvent>> filtered_events;
   for (auto& it : raw_events)
-    filtered_events.push_back(new KeyEventImpl(it));
+    filtered_events.push_back(base::MakeRefCounted<KeyEventImpl>(it));
 
   return filtered_events;
 }

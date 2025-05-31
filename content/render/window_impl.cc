@@ -495,8 +495,9 @@ scoped_refptr<Window> Window::New(ExecutionContext* execution_context,
                                   scoped_refptr<Viewport> viewport,
                                   int32_t scale,
                                   ExceptionState& exception_state) {
-  return new WindowImpl(execution_context->graphics,
-                        ViewportImpl::From(viewport), std::max(1, scale));
+  return base::MakeRefCounted<WindowImpl>(execution_context->graphics,
+                                          ViewportImpl::From(viewport),
+                                          std::max(1, scale));
 }
 
 WindowImpl::WindowImpl(RenderScreenImpl* screen,
@@ -512,7 +513,7 @@ WindowImpl::WindowImpl(RenderScreenImpl* screen,
                     SortKey(2)),
       scale_(scale),
       viewport_(parent),
-      cursor_rect_(new RectImpl(base::Rect())) {
+      cursor_rect_(base::MakeRefCounted<RectImpl>(base::Rect())) {
   background_node_.RegisterEventHandler(base::BindRepeating(
       &WindowImpl::BackgroundNodeHandlerInternal, base::Unretained(this)));
   control_node_.RegisterEventHandler(base::BindRepeating(

@@ -134,8 +134,8 @@ void GPUOnViewportRenderingInternal(renderer::RenderDevice* device,
 scoped_refptr<Plane> Plane::New(ExecutionContext* execution_context,
                                 scoped_refptr<Viewport> viewport,
                                 ExceptionState& exception_state) {
-  return new PlaneImpl(execution_context->graphics,
-                       ViewportImpl::From(viewport));
+  return base::MakeRefCounted<PlaneImpl>(execution_context->graphics,
+                                         ViewportImpl::From(viewport));
 }
 
 PlaneImpl::PlaneImpl(RenderScreenImpl* screen,
@@ -146,10 +146,10 @@ PlaneImpl::PlaneImpl(RenderScreenImpl* screen,
                    : screen->GetDrawableController(),
             SortKey()),
       viewport_(parent),
-      src_rect_(new RectImpl(base::Rect())),
+      src_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
       scale_(1.0f),
-      color_(new ColorImpl(base::Vec4())),
-      tone_(new ToneImpl(base::Vec4())) {
+      color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      tone_(base::MakeRefCounted<ToneImpl>(base::Vec4())) {
   node_.RegisterEventHandler(base::BindRepeating(
       &PlaneImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
 

@@ -89,7 +89,7 @@ scoped_refptr<SpineSprite> SpineSprite::New(
       std::make_unique<spine::AnimationStateData>(skeleton_data_ptr);
   animation_state_data->setDefaultMix(default_mix);
 
-  return new SpineSpriteImpl(
+  return base::MakeRefCounted<SpineSpriteImpl>(
       execution_context->graphics, std::move(atlas), std::move(texture_loader),
       std::unique_ptr<spine::SkeletonData>(skeleton_data_ptr),
       std::move(animation_state_data));
@@ -419,7 +419,8 @@ void SpineSpriteImpl::callback(spine::AnimationState* state,
                                spine::EventType type,
                                spine::TrackEntry* entry,
                                spine::Event* event) {
-  queued_event_.push_back(new SpineEventImpl(type, event, entry));
+  queued_event_.push_back(
+      base::MakeRefCounted<SpineEventImpl>(type, event, entry));
 }
 
 }  // namespace content

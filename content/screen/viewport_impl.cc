@@ -192,15 +192,16 @@ void GPUFrameBeginRenderPassInternal(renderer::RenderDevice* device,
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       ExceptionState& exception_state) {
-  return new ViewportImpl(execution_context->graphics, nullptr,
-                          execution_context->graphics->GetResolution());
+  return base::MakeRefCounted<ViewportImpl>(
+      execution_context->graphics, nullptr,
+      execution_context->graphics->GetResolution());
 }
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       scoped_refptr<Rect> rect,
                                       ExceptionState& exception_state) {
-  return new ViewportImpl(execution_context->graphics, nullptr,
-                          RectImpl::From(rect)->AsBaseRect());
+  return base::MakeRefCounted<ViewportImpl>(
+      execution_context->graphics, nullptr, RectImpl::From(rect)->AsBaseRect());
 }
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
@@ -209,8 +210,8 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       int32_t width,
                                       int32_t height,
                                       ExceptionState& exception_state) {
-  return new ViewportImpl(execution_context->graphics, nullptr,
-                          base::Rect(x, y, width, height));
+  return base::MakeRefCounted<ViewportImpl>(
+      execution_context->graphics, nullptr, base::Rect(x, y, width, height));
 }
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
@@ -218,8 +219,9 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       scoped_refptr<Rect> rect,
                                       ExceptionState& exception_state) {
   scoped_refptr<RectImpl> region = RectImpl::From(rect);
-  return new ViewportImpl(execution_context->graphics,
-                          ViewportImpl::From(parent), region->AsBaseRect());
+  return base::MakeRefCounted<ViewportImpl>(execution_context->graphics,
+                                            ViewportImpl::From(parent),
+                                            region->AsBaseRect());
 }
 
 ViewportImpl::ViewportImpl(RenderScreenImpl* screen,
@@ -230,9 +232,9 @@ ViewportImpl::ViewportImpl(RenderScreenImpl* screen,
       node_(parent ? parent->GetDrawableController()
                    : screen->GetDrawableController(),
             SortKey()),
-      rect_(new RectImpl(region)),
-      color_(new ColorImpl(base::Vec4())),
-      tone_(new ToneImpl(base::Vec4())) {
+      rect_(base::MakeRefCounted<RectImpl>(region)),
+      color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      tone_(base::MakeRefCounted<ToneImpl>(base::Vec4())) {
   node_.RegisterEventHandler(base::BindRepeating(
       &ViewportImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
 

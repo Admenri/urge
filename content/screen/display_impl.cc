@@ -14,20 +14,20 @@ std::vector<scoped_refptr<Display>> Display::GetAll(
 
   std::vector<scoped_refptr<Display>> result;
   for (int32_t i = 0; i < count; ++i)
-    result.push_back(new DisplayImpl(displays[i]));
+    result.push_back(base::MakeRefCounted<DisplayImpl>(displays[i]));
 
   return result;
 }
 
 scoped_refptr<Display> Display::GetPrimary(ExecutionContext* execution_context,
                                            ExceptionState& exception_state) {
-  return new DisplayImpl(SDL_GetPrimaryDisplay());
+  return base::MakeRefCounted<DisplayImpl>(SDL_GetPrimaryDisplay());
 }
 
 scoped_refptr<Display> Display::GetFromID(ExecutionContext* execution_context,
                                           uint32_t display_id,
                                           ExceptionState& exception_state) {
-  return new DisplayImpl(display_id);
+  return base::MakeRefCounted<DisplayImpl>(display_id);
 }
 
 DisplayImpl::DisplayImpl(SDL_DisplayID display)

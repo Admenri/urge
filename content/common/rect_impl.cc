@@ -8,7 +8,7 @@ namespace content {
 
 scoped_refptr<Rect> Rect::New(ExecutionContext* execution_context,
                               ExceptionState& exception_state) {
-  return new RectImpl(base::Rect());
+  return base::MakeRefCounted<RectImpl>(base::Rect());
 }
 
 scoped_refptr<Rect> Rect::New(ExecutionContext* execution_context,
@@ -17,13 +17,13 @@ scoped_refptr<Rect> Rect::New(ExecutionContext* execution_context,
                               int32_t width,
                               int32_t height,
                               ExceptionState& exception_state) {
-  return new RectImpl(base::Rect(x, y, width, height));
+  return base::MakeRefCounted<RectImpl>(base::Rect(x, y, width, height));
 }
 
 scoped_refptr<Rect> Rect::Copy(ExecutionContext* execution_context,
                                scoped_refptr<Rect> other,
                                ExceptionState& exception_state) {
-  return new RectImpl(*static_cast<RectImpl*>(other.get()));
+  return base::MakeRefCounted<RectImpl>(*static_cast<RectImpl*>(other.get()));
 }
 
 scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
@@ -36,9 +36,8 @@ scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
   }
 
   const int32_t* ptr = reinterpret_cast<const int32_t*>(data.data());
-  RectImpl* impl =
-      new RectImpl(base::Rect(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3)));
-  return impl;
+  return base::MakeRefCounted<RectImpl>(
+      base::Rect(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3)));
 }
 
 std::string Rect::Serialize(ExecutionContext* execution_context,

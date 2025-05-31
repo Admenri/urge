@@ -157,8 +157,9 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
   auto result = player->load(stream, 0, false);
 
   if (result == uvpx::Player::LoadResult::Success)
-    return new VideoDecoderImpl(execution_context->graphics, std::move(player),
-                                execution_context->io_service);
+    return base::MakeRefCounted<VideoDecoderImpl>(
+        execution_context->graphics, std::move(player),
+        execution_context->io_service);
 
   exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                              "Failed to load video decoder.");

@@ -16,7 +16,7 @@ std::vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
 
   std::vector<scoped_refptr<TextInputEvent>> filtered_events;
   for (auto& it : raw_events)
-    filtered_events.push_back(new TextInputEventImpl(it));
+    filtered_events.push_back(base::MakeRefCounted<TextInputEventImpl>(it));
 
   return filtered_events;
 }

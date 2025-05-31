@@ -467,9 +467,9 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return new CanvasImpl(execution_context->graphics,
-                        execution_context->canvas_scheduler, surface_duplicate,
-                        execution_context->font_context, "SurfaceDataBitmap");
+  return base::MakeRefCounted<CanvasImpl>(
+      execution_context->graphics, execution_context->canvas_scheduler,
+      surface_duplicate, execution_context->font_context, "SurfaceDataBitmap");
 }
 
 scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
@@ -492,9 +492,9 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return new CanvasImpl(execution_context->graphics,
-                        execution_context->canvas_scheduler, memory_texture,
-                        execution_context->font_context, "IOBitmap");
+  return base::MakeRefCounted<CanvasImpl>(
+      execution_context->graphics, execution_context->canvas_scheduler,
+      memory_texture, execution_context->font_context, "IOBitmap");
 }
 
 scoped_refptr<Bitmap> Bitmap::Copy(ExecutionContext* execution_context,
@@ -537,9 +537,9 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
   std::memcpy(surface->pixels, raw_data + sizeof(uint32_t) * 2,
               surface->pitch * surface->h);
 
-  return new CanvasImpl(execution_context->graphics,
-                        execution_context->canvas_scheduler, surface,
-                        execution_context->font_context, "MemoryData");
+  return base::MakeRefCounted<CanvasImpl>(
+      execution_context->graphics, execution_context->canvas_scheduler, surface,
+      execution_context->font_context, "MemoryData");
 }
 
 std::string Bitmap::Serialize(ExecutionContext* execution_context,
@@ -580,8 +580,8 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
     return nullptr;
   }
 
-  return new CanvasImpl(screen, scheduler, empty_surface, font_data,
-                        "SizeBitmap");
+  return base::MakeRefCounted<CanvasImpl>(screen, scheduler, empty_surface,
+                                          font_data, "SizeBitmap");
 }
 
 scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
@@ -614,7 +614,8 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
     return nullptr;
   }
 
-  return new CanvasImpl(screen, scheduler, memory_texture, font_data, filename);
+  return base::MakeRefCounted<CanvasImpl>(screen, scheduler, memory_texture,
+                                          font_data, filename);
 }
 
 CanvasImpl::CanvasImpl(RenderScreenImpl* screen,
@@ -626,7 +627,7 @@ CanvasImpl::CanvasImpl(RenderScreenImpl* screen,
       scheduler_(scheduler),
       canvas_cache_(nullptr),
       name_(debug_name),
-      font_(new FontImpl(font_data)),
+      font_(base::MakeRefCounted<FontImpl>(font_data)),
       parent_(screen) {
   // Add link in scheduler node
   scheduler->children_.Append(this);
@@ -765,7 +766,7 @@ scoped_refptr<Rect> CanvasImpl::GetRect(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return nullptr;
 
-  return new RectImpl(texture_->size);
+  return base::MakeRefCounted<RectImpl>(texture_->size);
 }
 
 void CanvasImpl::Blt(int32_t x,
@@ -963,7 +964,8 @@ scoped_refptr<Color> CanvasImpl::GetPixel(int32_t x,
   SDL_GetRGBA(*reinterpret_cast<uint32_t*>(pixel), pixel_detail, nullptr,
               &color[0], &color[1], &color[2], &color[3]);
 
-  return new ColorImpl(base::Vec4(color[0], color[1], color[2], color[3]));
+  return base::MakeRefCounted<ColorImpl>(
+      base::Vec4(color[0], color[1], color[2], color[3]));
 }
 
 void CanvasImpl::SetPixel(int32_t x,
@@ -1114,7 +1116,7 @@ scoped_refptr<Rect> CanvasImpl::TextSize(const std::string& str,
 
   int32_t w, h;
   TTF_GetStringSize(font, str.c_str(), str.size(), &w, &h);
-  return new RectImpl(base::Rect(0, 0, w, h));
+  return base::MakeRefCounted<RectImpl>(base::Rect(0, 0, w, h));
 }
 
 scoped_refptr<Surface> CanvasImpl::GetSurface(ExceptionState& exception_state) {
@@ -1122,7 +1124,8 @@ scoped_refptr<Surface> CanvasImpl::GetSurface(ExceptionState& exception_state) {
     return nullptr;
 
   SDL_Surface* surface = RequireMemorySurface();
-  return new SurfaceImpl(parent_, surface, scheduler_->io_service_);
+  return base::MakeRefCounted<SurfaceImpl>(parent_, surface,
+                                           scheduler_->io_service_);
 }
 
 void CanvasImpl::OnObjectDisposed() {

@@ -9,14 +9,14 @@ namespace content {
 scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
                                 uint32_t xsize,
                                 ExceptionState& exception_state) {
-  return new TableImpl(xsize, 1, 1);
+  return base::MakeRefCounted<TableImpl>(xsize, 1, 1);
 }
 
 scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
                                 uint32_t xsize,
                                 uint32_t ysize,
                                 ExceptionState& exception_state) {
-  return new TableImpl(xsize, ysize, 1);
+  return base::MakeRefCounted<TableImpl>(xsize, ysize, 1);
 }
 
 scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
@@ -24,13 +24,13 @@ scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
                                 uint32_t ysize,
                                 uint32_t zsize,
                                 ExceptionState& exception_state) {
-  return new TableImpl(xsize, ysize, zsize);
+  return base::MakeRefCounted<TableImpl>(xsize, ysize, zsize);
 }
 
 scoped_refptr<Table> Table::Copy(ExecutionContext* execution_context,
                                  scoped_refptr<Table> other,
                                  ExceptionState& exception_state) {
-  return new TableImpl(*static_cast<TableImpl*>(other.get()));
+  return base::MakeRefCounted<TableImpl>(*static_cast<TableImpl*>(other.get()));
 }
 
 scoped_refptr<Table> Table::Deserialize(ExecutionContext* execution_context,
@@ -43,7 +43,8 @@ scoped_refptr<Table> Table::Deserialize(ExecutionContext* execution_context,
   uint32_t zsize = *(raw_ptr + 3);
   uint32_t data_size = *(raw_ptr + 4);
 
-  scoped_refptr<TableImpl> impl = new TableImpl(xsize, ysize, zsize);
+  scoped_refptr<TableImpl> impl =
+      base::MakeRefCounted<TableImpl>(xsize, ysize, zsize);
   if (data_size != impl->x_size_ * impl->y_size_ * impl->z_size_) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Invalid table serialize data.");

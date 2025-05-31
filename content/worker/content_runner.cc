@@ -57,13 +57,15 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       total_delta_(0),
       frame_count_(0) {
   // Create engine objects
-  graphics_impl_ = new RenderScreenImpl(
+  graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
       window, render_worker, profile, i18n_profile, io_service, font_context,
       profile->resolution, profile->frame_rate);
-  keyboard_impl_ = new KeyboardControllerImpl(window, profile, i18n_profile);
-  audio_impl_ = new AudioImpl(profile, io_service, i18n_profile);
-  mouse_impl_ = new MouseImpl(window);
-  engine_impl_ = new MiscSystem(window, io_service);
+  keyboard_impl_ = base::MakeRefCounted<KeyboardControllerImpl>(window, profile,
+                                                                i18n_profile);
+  audio_impl_ =
+      base::MakeRefCounted<AudioImpl>(profile, io_service, i18n_profile);
+  mouse_impl_ = base::MakeRefCounted<MouseImpl>(window);
+  engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
 
   // Create event router
   event_controller_.reset(new EventController(window));

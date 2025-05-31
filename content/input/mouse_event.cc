@@ -14,7 +14,7 @@ std::vector<scoped_refptr<MouseEvent>> MouseEvent::Update(
 
   std::vector<scoped_refptr<MouseEvent>> filtered_events;
   for (auto& it : raw_events)
-    filtered_events.push_back(new MouseEventImpl(it));
+    filtered_events.push_back(base::MakeRefCounted<MouseEventImpl>(it));
 
   return filtered_events;
 }

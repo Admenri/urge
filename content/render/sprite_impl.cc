@@ -236,8 +236,8 @@ void GPUOnSpriteRenderingInternal(renderer::RenderDevice* device,
 scoped_refptr<Sprite> Sprite::New(ExecutionContext* execution_context,
                                   scoped_refptr<Viewport> viewport,
                                   ExceptionState& exception_state) {
-  return new SpriteImpl(execution_context->graphics,
-                        ViewportImpl::From(viewport));
+  return base::MakeRefCounted<SpriteImpl>(execution_context->graphics,
+                                          ViewportImpl::From(viewport));
 }
 
 SpriteImpl::SpriteImpl(RenderScreenImpl* screen,
@@ -248,9 +248,9 @@ SpriteImpl::SpriteImpl(RenderScreenImpl* screen,
                    : screen->GetDrawableController(),
             SortKey()),
       viewport_(parent),
-      src_rect_(new RectImpl(base::Rect())),
-      color_(new ColorImpl(base::Vec4())),
-      tone_(new ToneImpl(base::Vec4())) {
+      src_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
+      color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      tone_(base::MakeRefCounted<ToneImpl>(base::Vec4())) {
   node_.RegisterEventHandler(base::BindRepeating(
       &SpriteImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
   node_.SetupBatchable(this);

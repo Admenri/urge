@@ -26,8 +26,8 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return new SurfaceImpl(execution_context->graphics, surface_data,
-                         execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(
+      execution_context->graphics, surface_data, execution_context->io_service);
 }
 
 scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
@@ -56,8 +56,8 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return new SurfaceImpl(execution_context->graphics, surface_data,
-                         execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(
+      execution_context->graphics, surface_data, execution_context->io_service);
 }
 
 scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
@@ -87,8 +87,8 @@ scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
   std::memcpy(surface_data->pixels, raw_data + 2,
               surface_data->pitch * surface_data->h);
 
-  return new SurfaceImpl(execution_context->graphics, surface_data,
-                         execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(
+      execution_context->graphics, surface_data, execution_context->io_service);
 }
 
 scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
@@ -111,8 +111,9 @@ scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return new SurfaceImpl(execution_context->graphics, memory_texture,
-                         execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context->graphics,
+                                           memory_texture,
+                                           execution_context->io_service);
 }
 
 scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
@@ -134,8 +135,8 @@ scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return new SurfaceImpl(execution_context->graphics, dst_surf,
-                         execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(
+      execution_context->graphics, dst_surf, execution_context->io_service);
 }
 
 scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
@@ -166,8 +167,8 @@ scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
   std::memcpy(surface->pixels, raw_data + sizeof(uint32_t) * 2,
               surface->pitch * surface->h);
 
-  return new SurfaceImpl(execution_context->graphics, surface,
-                         execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context->graphics, surface,
+                                           execution_context->io_service);
 }
 
 std::string Surface::Serialize(ExecutionContext* execution_context,
@@ -230,7 +231,8 @@ scoped_refptr<Rect> SurfaceImpl::GetRect(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return nullptr;
 
-  return new RectImpl(base::Rect(0, 0, surface_->w, surface_->h));
+  return base::MakeRefCounted<RectImpl>(
+      base::Rect(0, 0, surface_->w, surface_->h));
 }
 
 void SurfaceImpl::Blt(int32_t x,
@@ -369,7 +371,8 @@ scoped_refptr<Color> SurfaceImpl::GetPixel(int32_t x,
   SDL_GetRGBA(*reinterpret_cast<uint32_t*>(pixel), pixel_detail, nullptr,
               &color[0], &color[1], &color[2], &color[3]);
 
-  return new ColorImpl(base::Vec4(color[0], color[1], color[2], color[3]));
+  return base::MakeRefCounted<ColorImpl>(
+      base::Vec4(color[0], color[1], color[2], color[3]));
 }
 
 void SurfaceImpl::SetPixel(int32_t x,

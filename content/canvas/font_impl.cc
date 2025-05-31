@@ -38,13 +38,14 @@ scoped_refptr<Font> Font::New(ExecutionContext* execution_context,
                               const std::string& name,
                               uint32_t size,
                               ExceptionState& exception_state) {
-  return new FontImpl(name, size, execution_context->font_context);
+  return base::MakeRefCounted<FontImpl>(name, size,
+                                        execution_context->font_context);
 }
 
 scoped_refptr<Font> Font::Copy(ExecutionContext* execution_context,
                                scoped_refptr<Font> other,
                                ExceptionState& exception_state) {
-  return new FontImpl(*static_cast<FontImpl*>(other.get()));
+  return base::MakeRefCounted<FontImpl>(*static_cast<FontImpl*>(other.get()));
 }
 
 bool Font::IsExisted(ExecutionContext* execution_context,
@@ -219,8 +220,8 @@ FontImpl::FontImpl(ScopedFontData* parent)
       outline_(parent->default_outline),
       shadow_(parent->default_shadow),
       solid_(parent->default_solid),
-      color_(new ColorImpl(base::Vec4())),
-      out_color_(new ColorImpl(base::Vec4())),
+      color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      out_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       parent_(parent),
       font_(nullptr) {
   ExceptionState exception_state;
@@ -238,8 +239,8 @@ FontImpl::FontImpl(const std::string& name,
       outline_(parent->default_outline),
       shadow_(parent->default_shadow),
       solid_(parent->default_solid),
-      color_(new ColorImpl(base::Vec4())),
-      out_color_(new ColorImpl(base::Vec4())),
+      color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      out_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       parent_(parent),
       font_(nullptr) {
   ExceptionState exception_state;
@@ -255,8 +256,8 @@ FontImpl::FontImpl(const FontImpl& other)
       outline_(other.outline_),
       shadow_(other.shadow_),
       solid_(other.solid_),
-      color_(new ColorImpl(base::Vec4())),
-      out_color_(new ColorImpl(base::Vec4())),
+      color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      out_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       parent_(other.parent_),
       font_(nullptr) {
   ExceptionState exception_state;

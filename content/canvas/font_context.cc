@@ -21,8 +21,10 @@ std::pair<int64_t, void*> ReadFontToMemory(SDL_IOStream* io) {
 
 ScopedFontData::ScopedFontData(filesystem::IOService* io,
                                const std::string& default_font_name)
-    : default_color(new ColorImpl(base::Vec4(255.0f, 255.0f, 255.0f, 255.0f))),
-      default_out_color(new ColorImpl(base::Vec4(0, 0, 0, 255.0f))) {
+    : default_color(base::MakeRefCounted<ColorImpl>(
+          base::Vec4(255.0f, 255.0f, 255.0f, 255.0f))),
+      default_out_color(
+          base::MakeRefCounted<ColorImpl>(base::Vec4(0, 0, 0, 255.0f))) {
   // Get font load dir and default font
   std::string filename = default_font_name;
   std::string dir("."), file;

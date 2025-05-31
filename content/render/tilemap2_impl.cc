@@ -607,8 +607,8 @@ scoped_refptr<Tilemap2> Tilemap2::New(ExecutionContext* execution_context,
                                       scoped_refptr<Viewport> viewport,
                                       int32_t tilesize,
                                       ExceptionState& exception_state) {
-  return new Tilemap2Impl(execution_context->graphics,
-                          ViewportImpl::From(viewport), tilesize);
+  return base::MakeRefCounted<Tilemap2Impl>(
+      execution_context->graphics, ViewportImpl::From(viewport), tilesize);
 }
 
 Tilemap2Impl::Tilemap2Impl(RenderScreenImpl* screen,
@@ -678,7 +678,8 @@ void Tilemap2Impl::Update(ExceptionState& exception_state) {
 
 scoped_refptr<TilemapBitmap> Tilemap2Impl::Bitmaps(
     ExceptionState& exception_state) {
-  return new TilemapBitmapImpl(weak_ptr_factory_.GetWeakPtr());
+  return base::MakeRefCounted<TilemapBitmapImpl>(
+      weak_ptr_factory_.GetWeakPtr());
 }
 
 scoped_refptr<Table> Tilemap2Impl::Get_MapData(
