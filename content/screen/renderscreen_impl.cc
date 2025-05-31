@@ -91,12 +91,12 @@ void GPUCreateGraphicsHostInternal(RenderGraphicsAgent* agent,
   agent->context = std::move(render_context);
 
   // Create global canvas scheduler
-  agent->canvas_scheduler = CanvasScheduler::MakeInstance(
+  agent->canvas_scheduler = base::MakeOwnedPtr<CanvasScheduler>(
       render_worker, agent->device.get(), agent->context.get(), io_service);
 
   // Create global sprite batch scheduler
   if (agent->device->GetPipelines()->sprite.storage_buffer_support)
-    agent->sprite_batch = SpriteBatch::Make(agent->device.get());
+    agent->sprite_batch = base::MakeOwnedPtr<SpriteBatch>(agent->device.get());
 
   // Get pipeline manager
   auto* pipelines = agent->device->GetPipelines();
@@ -119,8 +119,8 @@ void GPUCreateGraphicsHostInternal(RenderGraphicsAgent* agent,
           .ComponentType == Diligent::COMPONENT_TYPE_UNORM_SRGB;
 
   // Create screen present pipeline
-  agent->present_pipeline.reset(new renderer::Pipeline_Present(
-      **agent->device, swapchain_desc.ColorBufferFormat, srgb_framebuffer));
+  agent->present_pipeline = base::MakeOwnedPtr<renderer::Pipeline_Present>(
+      **agent->device, swapchain_desc.ColorBufferFormat, srgb_framebuffer);
 
   // Get renderer info
   Diligent::GraphicsAdapterInfo adapter_info =
@@ -132,9 +132,9 @@ void GPUCreateGraphicsHostInternal(RenderGraphicsAgent* agent,
   agent->renderer_info.description = adapter_info.Description;
 
   struct {
-    std::string device;
-    std::string vendor;
-    std::string description;
+    base::String device;
+    base::String vendor;
+    base::String description;
   } renderer_info_;
 
   // Create screen buffer
@@ -163,9 +163,9 @@ void GPUPresentScreenBufferInternal(
 
   auto& pipeline_set = *agent->present_pipeline;
   auto* pipeline = pipeline_set.GetPipeline(renderer::BlendType::NO_BLEND);
-  std::unique_ptr<renderer::QuadBatch> present_quads =
+  base::OwnedPtr<renderer::QuadBatch> present_quads =
       renderer::QuadBatch::Make(**agent->device);
-  std::unique_ptr<renderer::Binding_Base> present_binding =
+  base::OwnedPtr<renderer::Binding_Base> present_binding =
       pipeline_set.CreateBinding();
   RRefPtr<Diligent::IBuffer> present_uniform;
   RRefPtr<Diligent::ISampler> present_sampler;
@@ -724,22 +724,22 @@ void RenderScreenImpl::Freeze(ExceptionState& exception_state) {
 }
 
 void RenderScreenImpl::Transition(ExceptionState& exception_state) {
-  Transition(10, std::string(), 40, exception_state);
+  Transition(10, base::String(), 40, exception_state);
 }
 
 void RenderScreenImpl::Transition(uint32_t duration,
                                   ExceptionState& exception_state) {
-  Transition(duration, std::string(), 40, exception_state);
+  Transition(duration, base::String(), 40, exception_state);
 }
 
 void RenderScreenImpl::Transition(uint32_t duration,
-                                  const std::string& filename,
+                                  const base::String& filename,
                                   ExceptionState& exception_state) {
   Transition(duration, filename, 40, exception_state);
 }
 
 void RenderScreenImpl::Transition(uint32_t duration,
-                                  const std::string& filename,
+                                  const base::String& filename,
                                   uint32_t vague,
                                   ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> transition_mapping = nullptr;
@@ -850,7 +850,7 @@ void RenderScreenImpl::Reset(ExceptionState& exception_state) {
   FrameReset(exception_state);
 }
 
-void RenderScreenImpl::PlayMovie(const std::string& filename,
+void RenderScreenImpl::PlayMovie(const base::String& filename,
                                  ExceptionState& exception_state) {
   exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                              "Unimplement: Graphics.play_movie");
@@ -992,11 +992,11 @@ void RenderScreenImpl::Put_Oy(const int32_t& value,
                                      resolution_, -origin_));
 }
 
-std::string RenderScreenImpl::Get_WindowTitle(ExceptionState& exception_state) {
+base::String RenderScreenImpl::Get_WindowTitle(ExceptionState& exception_state) {
   return SDL_GetWindowTitle(window_->AsSDLWindow());
 }
 
-void RenderScreenImpl::Put_WindowTitle(const std::string& value,
+void RenderScreenImpl::Put_WindowTitle(const base::String& value,
                                        ExceptionState& exception_state) {
   SDL_SetWindowTitle(window_->AsSDLWindow(), value.c_str());
 }

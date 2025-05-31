@@ -19,14 +19,14 @@ namespace content {
 
 struct SpriteAgent {
   renderer::Quad quad;
-  std::vector<renderer::Quad> wave_cache;
+  base::Vector<renderer::Quad> wave_cache;
 
   uint32_t instance_offset = 0;
   uint32_t instance_count = 0;
 
   // Enable if storage buffer is not supported
-  std::unique_ptr<renderer::Binding_Sprite> single_binding;
-  std::unique_ptr<renderer::QuadBatch> single_vertex;
+  base::OwnedPtr<renderer::Binding_Sprite> single_binding;
+  base::OwnedPtr<renderer::QuadBatch> single_vertex;
   RRefPtr<Diligent::IBuffer> single_uniform;
   uint32_t single_wave_quad_count = 0;
 };
@@ -47,7 +47,7 @@ class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
   SpriteImpl(const SpriteImpl&) = delete;
   SpriteImpl& operator=(const SpriteImpl&) = delete;
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -85,7 +85,7 @@ class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Sprite"; }
+  base::String DisposedObjectName() override { return "Sprite"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

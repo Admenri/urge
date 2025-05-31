@@ -252,7 +252,7 @@ scoped_refptr<ViewportImpl> ViewportImpl::From(scoped_refptr<Viewport> host) {
   return static_cast<ViewportImpl*>(host.get());
 }
 
-void ViewportImpl::SetLabel(const std::string& label,
+void ViewportImpl::SetLabel(const base::String& label,
                             ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }

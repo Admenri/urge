@@ -112,7 +112,7 @@ void GPUDestroyRendererDataInternal(SpineRendererAgent* agent) {
 void GPUUploadVerticesDataInternal(
     renderer::RenderContext* context,
     SpineRendererAgent* agent,
-    std::vector<renderer::SpineVertex> vertices_data) {
+    base::Vector<renderer::SpineVertex> vertices_data) {
   agent->vertex_batch->QueueWrite(**context, vertices_data.data(),
                                   vertices_data.size());
 }
@@ -174,7 +174,7 @@ void DiligentTextureLoader::load(AtlasPage& page, const String& path) {
   io_service_->OpenRead(
       path.buffer(),
       base::BindRepeating(
-          [](SDL_Surface** surf, SDL_IOStream* io, const std::string& ext) {
+          [](SDL_Surface** surf, SDL_IOStream* io, const base::String& ext) {
             *surf = IMG_LoadTyped_IO(io, true, ext.c_str());
             return !!*surf;
           },
@@ -213,7 +213,7 @@ DiligentRenderer::DiligentRenderer(renderer::RenderDevice* device,
     : device_(device),
       worker_(worker),
       agent_(new SpineRendererAgent),
-      skeleton_renderer_(std::make_unique<SkeletonRenderer>()),
+      skeleton_renderer_(base::MakeOwnedPtr<SkeletonRenderer>()),
       pending_commands_(nullptr) {
   base::ThreadWorker::PostTask(
       worker_, base::BindOnce(&GPUCreateRendererDataInternal, device, agent_));
@@ -222,13 +222,6 @@ DiligentRenderer::DiligentRenderer(renderer::RenderDevice* device,
 DiligentRenderer::~DiligentRenderer() {
   base::ThreadWorker::PostTask(
       worker_, base::BindOnce(&GPUDestroyRendererDataInternal, agent_));
-}
-
-std::unique_ptr<DiligentRenderer> DiligentRenderer::Create(
-    renderer::RenderDevice* device,
-    base::ThreadWorker* worker) {
-  return std::unique_ptr<DiligentRenderer>(
-      new DiligentRenderer(device, worker));
 }
 
 void DiligentRenderer::Update(renderer::RenderContext* context,

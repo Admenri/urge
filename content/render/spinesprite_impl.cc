@@ -8,8 +8,8 @@ namespace content {
 
 scoped_refptr<SpineSprite> SpineSprite::New(
     ExecutionContext* execution_context,
-    const std::string& atlas_filename,
-    const std::string& skeleton_filename,
+    const base::String& atlas_filename,
+    const base::String& skeleton_filename,
     float default_mix,
     ExceptionState& exception_state) {
   auto* screen = execution_context->graphics;
@@ -33,11 +33,11 @@ scoped_refptr<SpineSprite> SpineSprite::New(
 
   // Read all data in memory
   int64_t atlas_size = SDL_GetIOSize(atlas_stream);
-  std::string atlas_data(atlas_size, 0);
+  base::String atlas_data(atlas_size, 0);
   SDL_ReadIO(atlas_stream, atlas_data.data(), atlas_size);
 
   int64_t skeleton_size = SDL_GetIOSize(skeleton_stream);
-  std::string skeleton_data(skeleton_size, 0);
+  base::String skeleton_data(skeleton_size, 0);
   SDL_ReadIO(skeleton_stream, skeleton_data.data(), skeleton_size);
 
   // Get directory from atlas path
@@ -51,20 +51,20 @@ scoped_refptr<SpineSprite> SpineSprite::New(
     last_slash++; /* Never drop starting slash. */
   int32_t dir_length =
       static_cast<int32_t>(last_slash ? last_slash - atlas_path : 0);
-  std::string dir(dir_length + 1, 0);
+  base::String dir(dir_length + 1, 0);
   std::memcpy(dir.data(), atlas_path, dir_length);
   dir[dir_length] = '\0';
 
   // Loading spine componnets
   spine::Bone::setYDown(true);
-  std::unique_ptr<spine::DiligentTextureLoader> texture_loader =
-      std::make_unique<spine::DiligentTextureLoader>(
+  base::OwnedPtr<spine::DiligentTextureLoader> texture_loader =
+      base::MakeOwnedPtr<spine::DiligentTextureLoader>(
           screen->GetDevice(), screen->GetRenderRunner(), io_service);
-  std::unique_ptr<spine::Atlas> atlas =
-      std::make_unique<spine::Atlas>(atlas_data.data(), atlas_data.size(),
-                                     dir.c_str(), texture_loader.get(), true);
+  base::OwnedPtr<spine::Atlas> atlas =
+      base::MakeOwnedPtr<spine::Atlas>(atlas_data.data(), atlas_data.size(),
+                                       dir.c_str(), texture_loader.get(), true);
 
-  std::string skeleton_loading_error;
+  base::String skeleton_loading_error;
   spine::SkeletonData* skeleton_data_ptr = nullptr;
   if (skeleton_filename.substr(skeleton_filename.size() - 4) == "json") {
     spine::SkeletonJson json_loader(atlas.get());
@@ -85,13 +85,13 @@ scoped_refptr<SpineSprite> SpineSprite::New(
     return nullptr;
   }
 
-  std::unique_ptr<spine::AnimationStateData> animation_state_data =
-      std::make_unique<spine::AnimationStateData>(skeleton_data_ptr);
+  base::OwnedPtr<spine::AnimationStateData> animation_state_data =
+      base::MakeOwnedPtr<spine::AnimationStateData>(skeleton_data_ptr);
   animation_state_data->setDefaultMix(default_mix);
 
   return base::MakeRefCounted<SpineSpriteImpl>(
       execution_context->graphics, std::move(atlas), std::move(texture_loader),
-      std::unique_ptr<spine::SkeletonData>(skeleton_data_ptr),
+      base::OwnedPtr<spine::SkeletonData>(skeleton_data_ptr),
       std::move(animation_state_data));
 }
 
@@ -114,7 +114,7 @@ SpineEvent::Type SpineEventImpl::GetType(ExceptionState& exception_state) {
   return static_cast<SpineEvent::Type>(type_);
 }
 
-std::string SpineEventImpl::GetName(ExceptionState& exception_state) {
+base::String SpineEventImpl::GetName(ExceptionState& exception_state) {
   return name_;
 }
 
@@ -134,7 +134,7 @@ float SpineEventImpl::GetFloatValue(ExceptionState& exception_state) {
   return float_value_;
 }
 
-std::string SpineEventImpl::GetStringValue(ExceptionState& exception_state) {
+base::String SpineEventImpl::GetStringValue(ExceptionState& exception_state) {
   return string_value_;
 }
 
@@ -148,10 +148,10 @@ float SpineEventImpl::GetBalance(ExceptionState& exception_state) {
 
 SpineSpriteImpl::SpineSpriteImpl(
     RenderScreenImpl* screen,
-    std::unique_ptr<spine::Atlas> atlas,
-    std::unique_ptr<spine::DiligentTextureLoader> texture_loader,
-    std::unique_ptr<spine::SkeletonData> skeleton_data,
-    std::unique_ptr<spine::AnimationStateData> animation_state_data)
+    base::OwnedPtr<spine::Atlas> atlas,
+    base::OwnedPtr<spine::DiligentTextureLoader> texture_loader,
+    base::OwnedPtr<spine::SkeletonData> skeleton_data,
+    base::OwnedPtr<spine::AnimationStateData> animation_state_data)
     : GraphicsChild(screen),
       Disposable(screen),
       node_(screen->GetDrawableController(), SortKey()),
@@ -164,13 +164,13 @@ SpineSpriteImpl::SpineSpriteImpl(
   node_.RegisterEventHandler(base::BindRepeating(
       &SpineSpriteImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
 
-  skeleton_ = std::make_unique<spine::Skeleton>(skeleton_data_.get());
+  skeleton_ = base::MakeOwnedPtr<spine::Skeleton>(skeleton_data_.get());
   animation_state_ =
-      std::make_unique<spine::AnimationState>(animation_state_data_.get());
+      base::MakeOwnedPtr<spine::AnimationState>(animation_state_data_.get());
   animation_state_->setListener(this);
 
-  renderer_ = spine::DiligentRenderer::Create(screen->GetDevice(),
-                                              screen->GetRenderRunner());
+  renderer_ = base::MakeOwnedPtr<spine::DiligentRenderer>(
+      screen->GetDevice(), screen->GetRenderRunner());
 }
 
 SpineSpriteImpl::~SpineSpriteImpl() {
@@ -178,7 +178,7 @@ SpineSpriteImpl::~SpineSpriteImpl() {
   Dispose(exception_state);
 }
 
-void SpineSpriteImpl::SetLabel(const std::string& label,
+void SpineSpriteImpl::SetLabel(const base::String& label,
                                ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }
@@ -191,7 +191,7 @@ bool SpineSpriteImpl::IsDisposed(ExceptionState& exception_state) {
   return Disposable::IsDisposed(exception_state);
 }
 
-std::vector<scoped_refptr<SpineEvent>> SpineSpriteImpl::Update(
+base::Vector<scoped_refptr<SpineEvent>> SpineSpriteImpl::Update(
     ExceptionState& exception_state) {
   // Update delta time
   uint64_t now = SDL_GetPerformanceCounter();
@@ -212,7 +212,7 @@ std::vector<scoped_refptr<SpineEvent>> SpineSpriteImpl::Update(
 }
 
 void SpineSpriteImpl::SetAnimation(int32_t track_index,
-                                   const std::string& name,
+                                   const base::String& name,
                                    bool loop,
                                    ExceptionState& exception_state) {
   if (!animation_state_->setAnimation(track_index, name.c_str(), loop))
@@ -237,9 +237,9 @@ void SpineSpriteImpl::ClearAnimation(int32_t track_index,
   animation_state_->clearTrack(track_index);
 }
 
-void SpineSpriteImpl::SetSkin(const std::vector<std::string>& skin_array,
+void SpineSpriteImpl::SetSkin(const base::Vector<base::String>& skin_array,
                               ExceptionState& exception_state) {
-  auto new_skin_set = std::make_unique<spine::Skin>("new_skin");
+  auto new_skin_set = base::MakeOwnedPtr<spine::Skin>("new_skin");
 
   for (const auto& skin_name : skin_array) {
     auto* skin = skeleton_data_->findSkin(skin_name.c_str());
@@ -255,7 +255,7 @@ void SpineSpriteImpl::SetSkin(const std::vector<std::string>& skin_array,
   skin_ = std::move(new_skin_set);
 }
 
-void SpineSpriteImpl::SetBonePosition(const std::string& bone_name,
+void SpineSpriteImpl::SetBonePosition(const base::String& bone_name,
                                       float x,
                                       float y,
                                       ExceptionState& exception_state) {

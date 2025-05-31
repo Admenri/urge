@@ -45,12 +45,12 @@ class URGE_RUNTIME_API Graphics : public base::RefCounted<Graphics> {
 
   /*--urge(name:transition)--*/
   virtual void Transition(uint32_t duration,
-                          const std::string& filename,
+                          const base::String& filename,
                           ExceptionState& exception_state) = 0;
 
   /*--urge(name:transition)--*/
   virtual void Transition(uint32_t duration,
-                          const std::string& filename,
+                          const base::String& filename,
                           uint32_t vague,
                           ExceptionState& exception_state) = 0;
 
@@ -82,7 +82,7 @@ class URGE_RUNTIME_API Graphics : public base::RefCounted<Graphics> {
   virtual void Reset(ExceptionState& exception_state) = 0;
 
   /*--urge(name:play_movie)--*/
-  virtual void PlayMovie(const std::string& filename,
+  virtual void PlayMovie(const base::String& filename,
                          ExceptionState& exception_state) = 0;
 
   /*--urge(name:move_window)--*/
@@ -137,7 +137,7 @@ class URGE_RUNTIME_API Graphics : public base::RefCounted<Graphics> {
   URGE_EXPORT_ATTRIBUTE(Oy, int32_t);
 
   /*--urge(name:window_title)--*/
-  URGE_EXPORT_ATTRIBUTE(WindowTitle, std::string);
+  URGE_EXPORT_ATTRIBUTE(WindowTitle, base::String);
 };
 
 }  // namespace content

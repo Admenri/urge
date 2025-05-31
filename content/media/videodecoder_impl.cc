@@ -47,7 +47,7 @@ void GPUDestroyYUVFramesInternal(VideoDecoderAgent* agent) {
 void GPURenderYUVInternal(renderer::RenderDevice* device,
                           renderer::RenderContext* context,
                           VideoDecoderAgent* agent,
-                          std::unique_ptr<uvpx::Frame> data,
+                          base::OwnedPtr<uvpx::Frame> data,
                           TextureAgent* target) {
   // Update yuv planes
   Diligent::Box dest_box;
@@ -141,7 +141,7 @@ void GPURenderYUVInternal(renderer::RenderDevice* device,
 
 scoped_refptr<VideoDecoder> VideoDecoder::New(
     ExecutionContext* execution_context,
-    const std::string& filename,
+    const base::String& filename,
     ExceptionState& exception_state) {
   auto* io_service = execution_context->io_service;
   filesystem::IOState io_state;
@@ -152,8 +152,8 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
     return nullptr;
   }
 
-  std::unique_ptr<uvpx::Player> player =
-      std::make_unique<uvpx::Player>(uvpx::Player::defaultConfig());
+  base::OwnedPtr<uvpx::Player> player =
+      base::MakeOwnedPtr<uvpx::Player>(uvpx::Player::defaultConfig());
   auto result = player->load(stream, 0, false);
 
   if (result == uvpx::Player::LoadResult::Success)
@@ -167,7 +167,7 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
 }
 
 VideoDecoderImpl::VideoDecoderImpl(RenderScreenImpl* parent,
-                                   std::unique_ptr<uvpx::Player> player,
+                                   base::OwnedPtr<uvpx::Player> player,
                                    filesystem::IOService* io_service)
     : GraphicsChild(parent),
       Disposable(parent),
@@ -287,7 +287,7 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
       return;
     }
 
-    std::unique_ptr<uvpx::Frame> frame_data = std::make_unique<uvpx::Frame>();
+    base::OwnedPtr<uvpx::Frame> frame_data = base::MakeOwnedPtr<uvpx::Frame>();
     yuv->copyData(frame_data.get());
     player_->unlockRead();
 

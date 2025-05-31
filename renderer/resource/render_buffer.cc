@@ -22,9 +22,9 @@ static std::array<QuadIndexCache::IndexFormat, 6> kQuadrangleDrawIndices = {
     0, 1, 2, 2, 3, 0,
 };
 
-std::unique_ptr<QuadIndexCache> renderer::QuadIndexCache::Make(
+base::OwnedPtr<QuadIndexCache> renderer::QuadIndexCache::Make(
     RRefPtr<Diligent::IRenderDevice> device) {
-  return std::unique_ptr<QuadIndexCache>(new QuadIndexCache(device));
+  return base::MakeOwnedPtr<QuadIndexCache>(device);
 }
 
 QuadIndexCache::QuadIndexCache(RRefPtr<Diligent::IRenderDevice> device)

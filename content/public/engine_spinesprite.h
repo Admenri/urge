@@ -23,13 +23,13 @@ class URGE_RUNTIME_API SpineSprite : public base::RefCounted<SpineSprite> {
 
   /*--urge(name:initialize,optional:default_mix=0.0f)--*/
   static scoped_refptr<SpineSprite> New(ExecutionContext* execution_context,
-                                        const std::string& atlas_filename,
-                                        const std::string& skeleton_filename,
+                                        const base::String& atlas_filename,
+                                        const base::String& skeleton_filename,
                                         float default_mix,
                                         ExceptionState& exception_state);
 
   /*--urge(name:set_label)--*/
-  virtual void SetLabel(const std::string& label,
+  virtual void SetLabel(const base::String& label,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:dispose)--*/
@@ -39,12 +39,12 @@ class URGE_RUNTIME_API SpineSprite : public base::RefCounted<SpineSprite> {
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
   /*--urge(name:update)--*/
-  virtual std::vector<scoped_refptr<SpineEvent>> Update(
+  virtual base::Vector<scoped_refptr<SpineEvent>> Update(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_animation,optional:loop=true)--*/
   virtual void SetAnimation(int32_t track_index,
-                            const std::string& name,
+                            const base::String& name,
                             bool loop,
                             ExceptionState& exception_state) = 0;
 
@@ -58,11 +58,11 @@ class URGE_RUNTIME_API SpineSprite : public base::RefCounted<SpineSprite> {
                               ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_skin)--*/
-  virtual void SetSkin(const std::vector<std::string>& skin_array,
+  virtual void SetSkin(const base::Vector<base::String>& skin_array,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_bone_position)--*/
-  virtual void SetBonePosition(const std::string& bone_name,
+  virtual void SetBonePosition(const base::String& bone_name,
                                float x,
                                float y,
                                ExceptionState& exception_state) = 0;

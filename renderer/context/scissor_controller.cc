@@ -6,9 +6,9 @@
 
 namespace renderer {
 
-std::unique_ptr<ScissorController> ScissorController::Create(
+base::OwnedPtr<ScissorController> ScissorController::Create(
     Diligent::IDeviceContext* context) {
-  return std::unique_ptr<ScissorController>(new ScissorController(context));
+  return base::MakeOwnedPtr<ScissorController>(context);
 }
 
 ScissorController::ScissorController(Diligent::IDeviceContext* context)

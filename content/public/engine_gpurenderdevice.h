@@ -380,16 +380,16 @@ class URGE_RUNTIME_API GPURenderDevice
       BufferMode mode,
       uint32_t element_by_stride,
       uint64_t immediate_context_mask,
-      const std::string& buffer_data,
+      const base::String& buffer_data,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_shader)--*/
   virtual scoped_refptr<GPUShader> CreateShader(
-      const std::string& source,
-      const std::string& entry_point,
+      const base::String& source,
+      const base::String& entry_point,
       ShaderType type,
       bool combined_texture_samplers,
-      const std::string& combined_sampler_suffix,
+      const base::String& combined_sampler_suffix,
       ShaderSourceLanguage language,
       ExceptionState& exception_state) = 0;
 
@@ -421,7 +421,7 @@ class URGE_RUNTIME_API GPURenderDevice
       Usage usage,
       CPUAccessFlags cpu_access,
       uint64_t immediate_context_mask,
-      const std::vector<scoped_refptr<GPUTextureSubResData>>& subresources,
+      const base::Vector<scoped_refptr<GPUTextureSubResData>>& subresources,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_sampler)--*/
@@ -436,10 +436,10 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_graphics_pipeline_state)--*/
   virtual scoped_refptr<GPUPipelineState> CreateGraphicsPipelineState(
-      const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+      const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
       bool alpha_to_coverage_enable,
       bool independent_blend_enable,
-      const std::vector<scoped_refptr<GPUBlendState>>& rtv_blend_states,
+      const base::Vector<scoped_refptr<GPUBlendState>>& rtv_blend_states,
       FillMode fill_mode,
       CullMode cull_mode,
       bool front_counter_clockwise,
@@ -451,12 +451,12 @@ class URGE_RUNTIME_API GPURenderDevice
       bool stencil_enable,
       uint8_t stencil_read_mask,
       uint8_t stencil_write_mask,
-      const std::vector<scoped_refptr<GPULayoutElement>>& input_layouts,
+      const base::Vector<scoped_refptr<GPULayoutElement>>& input_layouts,
       uint32_t sample_mask,
       PrimitiveTopology primitive_topology,
       uint8_t viewports_num,
       uint8_t render_targets_num,
-      const std::vector<TextureFormat>& rtv_formats,
+      const base::Vector<TextureFormat>& rtv_formats,
       TextureFormat dsv_format,
       bool readonly_dsv,
       scoped_refptr<GPUShader> vertex_shader,
@@ -469,7 +469,7 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_compute_pipeline_state)--*/
   virtual scoped_refptr<GPUPipelineState> CreateComputePipelineState(
-      const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+      const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
       scoped_refptr<GPUShader> compute_shader,
       uint64_t immediate_context_mask,
       ExceptionState& exception_state) = 0;
@@ -486,11 +486,11 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_pipeline_signature)--*/
   virtual scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
-      const std::vector<scoped_refptr<GPUPipelineResource>>& resources,
-      const std::vector<scoped_refptr<GPUImmutableSampler>>& samplers,
+      const base::Vector<scoped_refptr<GPUPipelineResource>>& resources,
+      const base::Vector<scoped_refptr<GPUImmutableSampler>>& samplers,
       uint8_t binding_index,
       bool use_combined_texture_samplers,
-      const std::string& combined_sampler_suffix,
+      const base::String& combined_sampler_suffix,
       ExceptionState& exception_state) = 0;
 };
 

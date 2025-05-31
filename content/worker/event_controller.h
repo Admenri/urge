@@ -73,7 +73,7 @@ class EventController {
 
     TextInputEvent::Type type;
 
-    std::string text;
+    base::String text;
     int32_t select_start;
     int32_t select_length;
   };
@@ -88,32 +88,32 @@ class EventController {
 
   void DispatchEvent(SDL_Event* event);
 
-  inline void PollKeyEvents(std::vector<KeyEventData>& out) {
+  inline void PollKeyEvents(base::Vector<KeyEventData>& out) {
     out = key_events_;
     key_events_.clear();
   }
 
-  inline void PollMouseEvents(std::vector<MouseEventData>& out) {
+  inline void PollMouseEvents(base::Vector<MouseEventData>& out) {
     out = mouse_events_;
     mouse_events_.clear();
   }
 
-  inline void PollTouchEvents(std::vector<TouchEventData>& out) {
+  inline void PollTouchEvents(base::Vector<TouchEventData>& out) {
     out = touch_events_;
     touch_events_.clear();
   }
 
-  inline void PollTextInputEvents(std::vector<TextInputEventData>& out) {
+  inline void PollTextInputEvents(base::Vector<TextInputEventData>& out) {
     out = text_input_events_;
     text_input_events_.clear();
   }
 
  private:
   base::WeakPtr<ui::Widget> window_;
-  std::vector<KeyEventData> key_events_;
-  std::vector<MouseEventData> mouse_events_;
-  std::vector<TouchEventData> touch_events_;
-  std::vector<TextInputEventData> text_input_events_;
+  base::Vector<KeyEventData> key_events_;
+  base::Vector<MouseEventData> mouse_events_;
+  base::Vector<TouchEventData> touch_events_;
+  base::Vector<TextInputEventData> text_input_events_;
 };
 
 }  // namespace content

@@ -24,7 +24,7 @@ class CanvasScheduler;
 // used for async thread task runner.
 struct TextureAgent {
   // Debug name
-  std::string name;
+  base::String name;
 
   // Bitmap texture data
   base::Vec2i size;
@@ -41,7 +41,7 @@ struct TextureAgent {
 
   // Filter effect intermediate layer
   RRefPtr<Diligent::ITexture> effect_layer;
-  std::unique_ptr<renderer::Binding_BitmapFilter> hue_binding;
+  base::OwnedPtr<renderer::Binding_BitmapFilter> hue_binding;
 };
 
 constexpr int32_t kBlockMaxSize = 4096;
@@ -54,7 +54,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
              CanvasScheduler* scheduler,
              SDL_Surface* memory_surface,
              ScopedFontData* font_data,
-             const std::string& debug_name);
+             const base::String& debug_name);
   ~CanvasImpl() override;
 
   CanvasImpl(const CanvasImpl&) = delete;
@@ -69,13 +69,13 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   static scoped_refptr<CanvasImpl> Create(CanvasScheduler* scheduler,
                                           RenderScreenImpl* screen,
                                           ScopedFontData* font_data,
-                                          const std::string& filename,
+                                          const base::String& filename,
                                           ExceptionState& exception_state);
 
   static scoped_refptr<CanvasImpl> FromBitmap(scoped_refptr<Bitmap> host);
 
   // For debugging usage
-  std::string GetCanvasName() const { return name_; }
+  base::String GetCanvasName() const { return name_; }
 
   // Synchronize pending commands and fetch texture to buffer.
   // Read buffer for surface pixels data.
@@ -173,23 +173,23 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                 int32_t y,
                 uint32_t width,
                 uint32_t height,
-                const std::string& str,
+                const base::String& str,
                 int32_t align,
                 ExceptionState& exception_state) override;
   void DrawText(int32_t x,
                 int32_t y,
                 uint32_t width,
                 uint32_t height,
-                const std::string& str,
+                const base::String& str,
                 ExceptionState& exception_state) override;
   void DrawText(scoped_refptr<Rect> rect,
-                const std::string& str,
+                const base::String& str,
                 int32_t align,
                 ExceptionState& exception_state) override;
   void DrawText(scoped_refptr<Rect> rect,
-                const std::string& str,
+                const base::String& str,
                 ExceptionState& exception_state) override;
-  scoped_refptr<Rect> TextSize(const std::string& str,
+  scoped_refptr<Rect> TextSize(const base::String& str,
                                ExceptionState& exception_state) override;
 
   scoped_refptr<Surface> GetSurface(ExceptionState& exception_state) override;
@@ -198,7 +198,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Bitmap"; }
+  base::String DisposedObjectName() override { return "Bitmap"; }
   void BlitTextureInternal(const base::Rect& dst_rect,
                            CanvasImpl* src_texture,
                            const base::Rect& src_rect,
@@ -260,7 +260,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
   struct CommandBlock {
     uint32_t usage = 0;
-    std::vector<uint8_t> memory;
+    base::Vector<uint8_t> memory;
   };
 
   template <typename Ty>
@@ -316,11 +316,11 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   CanvasScheduler* scheduler_;
   TextureAgent* texture_;
   SDL_Surface* canvas_cache_;
-  std::string name_;
+  base::String name_;
 
   Command* commands_ = nullptr;
   Command* last_command_ = nullptr;
-  std::vector<CommandBlock> blocks_;
+  base::Vector<CommandBlock> blocks_;
   uint32_t current_block_ = 0;
 
   base::RepeatingClosureList observers_;

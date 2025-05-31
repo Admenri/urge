@@ -163,7 +163,7 @@ PlaneImpl::~PlaneImpl() {
   Dispose(exception_state);
 }
 
-void PlaneImpl::SetLabel(const std::string& label,
+void PlaneImpl::SetLabel(const base::String& label,
                          ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }

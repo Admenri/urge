@@ -12,7 +12,7 @@ namespace binding {
 namespace {
 
 struct BindingSet {
-  std::string name;
+  base::String name;
   int key_id;
 };
 
@@ -27,10 +27,10 @@ const BindingSet kKeyboardBindings[] = {
     {"F5", 25},    {"F6", 26},   {"F7", 27},   {"F8", 28}, {"F9", 29},
 };
 
-std::string GetButtonSymbol(int argc, VALUE* argv) {
+base::String GetButtonSymbol(int argc, VALUE* argv) {
   MriCheckArgc(argc, 1);
 
-  std::string sym;
+  base::String sym;
   if (FIXNUM_P(*argv)) {
     int key_id = FIX2INT(*argv);
     for (int i = 0; i < std::size(kKeyboardBindings); ++i)
@@ -47,7 +47,7 @@ std::string GetButtonSymbol(int argc, VALUE* argv) {
 
 MRI_METHOD(input_is_pressed) {
   scoped_refptr<content::Input> input = MriGetGlobalModules()->Input;
-  std::string key = GetButtonSymbol(argc, argv);
+  base::String key = GetButtonSymbol(argc, argv);
   content::ExceptionState exception_state;
   bool v = input->IsPressed(key, exception_state);
   MriProcessException(exception_state);
@@ -56,7 +56,7 @@ MRI_METHOD(input_is_pressed) {
 
 MRI_METHOD(input_is_triggered) {
   scoped_refptr<content::Input> input = MriGetGlobalModules()->Input;
-  std::string key = GetButtonSymbol(argc, argv);
+  base::String key = GetButtonSymbol(argc, argv);
   content::ExceptionState exception_state;
   bool v = input->IsTriggered(key, exception_state);
   MriProcessException(exception_state);
@@ -65,7 +65,7 @@ MRI_METHOD(input_is_triggered) {
 
 MRI_METHOD(input_is_repeated) {
   scoped_refptr<content::Input> input = MriGetGlobalModules()->Input;
-  std::string key = GetButtonSymbol(argc, argv);
+  base::String key = GetButtonSymbol(argc, argv);
   content::ExceptionState exception_state;
   bool v = input->IsRepeated(key, exception_state);
   MriProcessException(exception_state);
@@ -87,7 +87,7 @@ void ApplyInputPatch() {
 }
 
 struct MouseButtonSet {
-  std::string name;
+  base::String name;
   int button_id;
 };
 

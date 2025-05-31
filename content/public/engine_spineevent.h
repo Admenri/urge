@@ -33,7 +33,7 @@ class URGE_RUNTIME_API SpineEvent : public base::RefCounted<SpineEvent> {
   virtual Type GetType(ExceptionState& exception_state) = 0;
 
   /*--urge(name:name)--*/
-  virtual std::string GetName(ExceptionState& exception_state) = 0;
+  virtual base::String GetName(ExceptionState& exception_state) = 0;
 
   /*--urge(name:track_index)--*/
   virtual int32_t GetTrackIndex(ExceptionState& exception_state) = 0;
@@ -48,7 +48,7 @@ class URGE_RUNTIME_API SpineEvent : public base::RefCounted<SpineEvent> {
   virtual float GetFloatValue(ExceptionState& exception_state) = 0;
 
   /*--urge(name:string_value)--*/
-  virtual std::string GetStringValue(ExceptionState& exception_state) = 0;
+  virtual base::String GetStringValue(ExceptionState& exception_state) = 0;
 
   /*--urge(name:volume)--*/
   virtual float GetVolume(ExceptionState& exception_state) = 0;

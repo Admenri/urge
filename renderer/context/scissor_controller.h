@@ -11,6 +11,7 @@
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
 
 #include "base/math/rectangle.h"
+#include "base/memory/allocator.h"
 
 namespace renderer {
 
@@ -21,7 +22,7 @@ class ScissorController {
   ScissorController(const ScissorController&) = delete;
   ScissorController& operator=(const ScissorController&) = delete;
 
-  static std::unique_ptr<ScissorController> Create(
+  static base::OwnedPtr<ScissorController> Create(
       Diligent::IDeviceContext* context);
 
   void Push(const base::Rect& scissor);
@@ -31,11 +32,12 @@ class ScissorController {
   void Apply(const base::Rect& scissor);
 
  private:
+  friend struct base::Allocator;
   ScissorController(Diligent::IDeviceContext* context);
 
   Diligent::IDeviceContext* context_;
   base::Rect current_;
-  std::stack<base::Rect> stack_;
+  base::Stack<base::Rect> stack_;
 };
 
 }  // namespace renderer

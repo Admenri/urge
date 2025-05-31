@@ -6,28 +6,15 @@
 
 namespace content {
 
-SpriteBatch::SpriteBatch(renderer::RenderDevice* device,
-                         std::unique_ptr<renderer::Binding_Sprite> binding,
-                         std::unique_ptr<renderer::QuadBatch> vertex_batch,
-                         std::unique_ptr<SpriteBatchBuffer> uniform_batch)
+SpriteBatch::SpriteBatch(renderer::RenderDevice* device)
     : device_(device),
       current_texture_(nullptr),
       last_batch_index_(-1),
-      binding_(std::move(binding)),
-      vertex_batch_(std::move(vertex_batch)),
-      uniform_batch_(std::move(uniform_batch)) {}
+      binding_(device->GetPipelines()->sprite.CreateBinding()),
+      vertex_batch_(renderer::QuadBatch::Make(**device)),
+      uniform_batch_(SpriteBatchBuffer::Make(**device)) {}
 
-SpriteBatch::~SpriteBatch() {}
-
-std::unique_ptr<SpriteBatch> SpriteBatch::Make(renderer::RenderDevice* device) {
-  auto binding = device->GetPipelines()->sprite.CreateBinding();
-  auto vertex_batch = renderer::QuadBatch::Make(**device);
-  auto uniform_batch = SpriteBatchBuffer::Make(**device);
-
-  return std::unique_ptr<SpriteBatch>(
-      new SpriteBatch(device, std::move(binding), std::move(vertex_batch),
-                      std::move(uniform_batch)));
-}
+SpriteBatch::~SpriteBatch() = default;
 
 void SpriteBatch::BeginBatch(TextureAgent* texture) {
   current_texture_ = texture;

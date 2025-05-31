@@ -48,7 +48,7 @@ class URGE_RUNTIME_API Viewport : public base::RefCounted<Viewport> {
                                      ExceptionState& exception_state);
 
   /*--urge(name:set_label)--*/
-  virtual void SetLabel(const std::string& label,
+  virtual void SetLabel(const base::String& label,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:dispose)--*/

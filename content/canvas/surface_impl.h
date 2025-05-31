@@ -67,13 +67,13 @@ class SurfaceImpl : public Surface, public Disposable {
                 int32_t y,
                 scoped_refptr<Color> color,
                 ExceptionState& exception_state) override;
-  std::string DumpData(ExceptionState& exception_state) override;
-  void SavePNG(const std::string& filename,
+  base::String DumpData(ExceptionState& exception_state) override;
+  void SavePNG(const base::String& filename,
                ExceptionState& exception_state) override;
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Surface"; }
+  base::String DisposedObjectName() override { return "Surface"; }
 
   SDL_Surface* surface_;
   filesystem::IOService* io_service_;

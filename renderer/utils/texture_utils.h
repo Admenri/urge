@@ -11,13 +11,14 @@
 #include "Graphics/GraphicsEngine/interface/Texture.h"
 
 #include "base/math/rectangle.h"
+#include "base/memory/allocator.h"
 
 namespace renderer {
 
 void CreateTexture2D(
     Diligent::IRenderDevice* device,
     Diligent::ITexture** texture,
-    const std::string& name,
+    const base::String& name,
     const base::Vec2i& size,
     Diligent::USAGE usage = Diligent::USAGE_DEFAULT,
     Diligent::BIND_FLAGS bind_flags = Diligent::BIND_SHADER_RESOURCE,
@@ -28,7 +29,7 @@ void CreateTexture2D(
 void CreateTexture2D(
     Diligent::IRenderDevice* device,
     Diligent::ITexture** texture,
-    const std::string& name,
+    const base::String& name,
     SDL_Surface* data,
     Diligent::USAGE usage = Diligent::USAGE_DEFAULT,
     Diligent::BIND_FLAGS bind_flags = Diligent::BIND_SHADER_RESOURCE,

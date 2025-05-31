@@ -64,18 +64,18 @@ bool CheckValidUTF8(const char* string) {
   return true;
 }
 
-void ReplaceStringWidth(std::string& str, char before, char after) {
+void ReplaceStringWidth(base::String& str, char before, char after) {
   for (size_t i = 0; i < str.size(); ++i)
     if (str[i] == before)
       str[i] = after;
 }
 
-base::Vec2i GetVec2iFromString(std::string in,
+base::Vec2i GetVec2iFromString(base::String in,
                                const base::Vec2i& default_value) {
   size_t sep = in.find("|");
-  if (sep != std::string::npos) {
-    int32_t num1 = std::stoi(in.substr(0, sep));
-    int32_t num2 = std::stoi(in.substr(sep + 1));
+  if (sep != base::String::npos) {
+    int32_t num1 = std::stoi(in.substr(0, sep).c_str());
+    int32_t num2 = std::stoi(in.substr(sep + 1).c_str());
     return base::Vec2i(num1, num2);
   }
 
@@ -100,7 +100,7 @@ char* IniStreamReader(char* str, int32_t num, void* stream) {
 }
 
 #if defined(OS_WIN)
-std::string ANSIFromUtf8(const std::string& asciiStr) {
+base::String ANSIFromUtf8(const base::String& asciiStr) {
   if (asciiStr.empty()) {
     return "";
   }
@@ -113,7 +113,7 @@ std::string ANSIFromUtf8(const std::string& asciiStr) {
                              std::to_string(GetLastError()));
   }
 
-  std::vector<wchar_t> wstr(wcharsCount);
+  base::Vector<wchar_t> wstr(wcharsCount);
   if (MultiByteToWideChar(CP_ACP, 0, asciiStr.c_str(), -1, &wstr[0],
                           wcharsCount) == 0) {
     throw std::runtime_error("MultiByteToWideChar failed: " +
@@ -128,37 +128,32 @@ std::string ANSIFromUtf8(const std::string& asciiStr) {
                              std::to_string(GetLastError()));
   }
 
-  std::vector<char> utf8str(utf8Count);
+  base::Vector<char> utf8str(utf8Count);
   if (WideCharToMultiByte(CP_UTF8, 0, &wstr[0], -1, &utf8str[0], utf8Count,
                           NULL, NULL) == 0) {
     throw std::runtime_error("WideCharToMultiByte failed: " +
                              std::to_string(GetLastError()));
   }
 
-  return std::string(&utf8str[0]);
+  return base::String(&utf8str[0]);
 }
 #endif
 
 }  // namespace
 
-ContentProfile::ContentProfile(const std::string& app, SDL_IOStream* stream)
+ContentProfile::ContentProfile(const base::String& app, SDL_IOStream* stream)
     : program_name(app), ini_stream_(stream) {}
 
 ContentProfile::~ContentProfile() = default;
-
-std::unique_ptr<ContentProfile> ContentProfile::MakeFrom(const std::string& app,
-                                                         SDL_IOStream* stream) {
-  return std::unique_ptr<ContentProfile>(new ContentProfile(app, stream));
-}
 
 void ContentProfile::LoadCommandLine(int32_t argc, char** argv) {
   for (int32_t i = 0; i < argc; ++i)
     args.push_back(argv[i]);
 
   for (int32_t i = 0; i < argc; i++) {
-    if (std::string(argv[i]) == "test" || std::string(argv[i]) == "debug")
+    if (base::String(argv[i]) == "test" || base::String(argv[i]) == "debug")
       game_debug = true;
-    if (std::string(argv[i]) == "btest")
+    if (base::String(argv[i]) == "btest")
       game_battle_test = true;
   }
 
@@ -168,10 +163,10 @@ void ContentProfile::LoadCommandLine(int32_t argc, char** argv) {
     LOG(INFO) << "[App] Running battle test.";
 }
 
-bool ContentProfile::LoadConfigure(const std::string& app) {
-  std::unique_ptr<INIReader> reader(new INIReader);
+bool ContentProfile::LoadConfigure(const base::String& app) {
+  base::OwnedPtr<INIReader> reader = base::MakeOwnedPtr<INIReader>();
   if (ini_stream_) {
-    reader = std::make_unique<INIReader>(ini_stream_, IniStreamReader);
+    reader = base::MakeOwnedPtr<INIReader>(ini_stream_, IniStreamReader);
     if (reader->ParseError())
       return false;
   } else {
@@ -179,7 +174,7 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
   }
 
   // RGSS part
-  window_title = reader->Get("Game", "Title", window_title);
+  window_title = reader->Get("Game", "Title", window_title.c_str());
   if (!CheckValidUTF8(window_title.c_str())) {
 #if defined(OS_WIN)
     LOG(INFO) << "[Profile] Non-UTF8 title was detected, try convert to ANSI.";
@@ -190,7 +185,7 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
 #endif
   }
 
-  script_path = reader->Get("Game", "Scripts", script_path);
+  script_path = reader->Get("Game", "Scripts", script_path.c_str());
   ReplaceStringWidth(script_path, '\\', '/');
 
   // Engine part
@@ -215,10 +210,11 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
   }
 
   default_font_path =
-      reader->Get("Engine", "DefaultFontPath", default_font_path);
+      reader->Get("Engine", "DefaultFontPath", default_font_path.c_str());
   ReplaceStringWidth(default_font_path, '\\', '/');
-  driver_backend = reader->Get("Engine", "GraphicsAPI", driver_backend);
-  i18n_xml_path = reader->Get("Engine", "I18nXMLPath", app + ".xml");
+  driver_backend = reader->Get("Engine", "GraphicsAPI", driver_backend.c_str());
+  i18n_xml_path =
+      reader->Get("Engine", "I18nXMLPath", base::String(app + ".xml").c_str());
   disable_audio = reader->GetBoolean("Engine", "DisableAudio", disable_audio);
 
   disable_settings =
@@ -232,10 +228,10 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
   if (api_version >= APIVersion::RGSS2)
     resolution = base::Vec2i(544, 416);
 
-  resolution =
-      GetVec2iFromString(reader->Get("Engine", "Resolution", ""), resolution);
-  window_size =
-      GetVec2iFromString(reader->Get("Engine", "WindowSize", ""), resolution);
+  resolution = GetVec2iFromString(
+      reader->Get("Engine", "Resolution", "").c_str(), resolution);
+  window_size = GetVec2iFromString(
+      reader->Get("Engine", "WindowSize", "").c_str(), resolution);
 
   frame_rate = (api_version == APIVersion::RGSS1) ? 40 : 60;
   frame_rate = reader->GetInteger("Engine", "FrameRate", frame_rate);
@@ -250,7 +246,7 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
       reader->GetBoolean("Engine", "BackgroundRunning", background_running);
 
   disable_ime = reader->GetBoolean("Platform", "DisableIME", disable_ime);
-  orientation = reader->Get("Platform", "Orientations", orientation);
+  orientation = reader->Get("Platform", "Orientations", orientation.c_str());
 
   if (ini_stream_)
     SDL_CloseIO(ini_stream_);

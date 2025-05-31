@@ -20,8 +20,8 @@ class DisplayImpl : public Display {
   DisplayImpl& operator=(const DisplayImpl&) = delete;
 
  public:
-  std::string GetName(ExceptionState& exception_state) override;
-  std::string GetFormat(ExceptionState& exception_state) override;
+  base::String GetName(ExceptionState& exception_state) override;
+  base::String GetFormat(ExceptionState& exception_state) override;
   int32_t GetWidth(ExceptionState& exception_state) override;
   int32_t GetHeight(ExceptionState& exception_state) override;
   float GetContentScale(ExceptionState& exception_state) override;

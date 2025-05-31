@@ -10,8 +10,8 @@ namespace content {
 
 scoped_refptr<IOStream> IOStream::FromFileSystem(
     ExecutionContext* execution_context,
-    const std::string& filename,
-    const std::string& mode,
+    const base::String& filename,
+    const base::String& mode,
     ExceptionState& exception_state) {
   auto* stream = SDL_IOFromFile(filename.c_str(), mode.c_str());
   if (!stream) {
@@ -20,12 +20,12 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(stream, std::string());
+  return base::MakeRefCounted<IOStreamImpl>(stream, base::String());
 }
 
 scoped_refptr<IOStream> IOStream::FromIOSystem(
     ExecutionContext* execution_context,
-    const std::string& filename,
+    const base::String& filename,
     ExceptionState& exception_state) {
   filesystem::IOState io_state;
   auto* stream =
@@ -37,14 +37,14 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(stream, std::string());
+  return base::MakeRefCounted<IOStreamImpl>(stream, base::String());
 }
 
 scoped_refptr<IOStream> IOStream::FromMemory(
     ExecutionContext* execution_context,
-    const std::string& buffer,
+    const base::String& buffer,
     ExceptionState& exception_state) {
-  std::string new_buffer = buffer;
+  base::String new_buffer = buffer;
   auto* stream = SDL_IOFromConstMem(new_buffer.data(), new_buffer.size());
   if (!stream) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -55,7 +55,7 @@ scoped_refptr<IOStream> IOStream::FromMemory(
   return base::MakeRefCounted<IOStreamImpl>(stream, std::move(new_buffer));
 }
 
-IOStreamImpl::IOStreamImpl(SDL_IOStream* stream, std::string buffer)
+IOStreamImpl::IOStreamImpl(SDL_IOStream* stream, base::String buffer)
     : Disposable(nullptr), stream_(stream), buffer_(std::move(buffer)) {}
 
 IOStreamImpl::~IOStreamImpl() {
@@ -105,18 +105,18 @@ int64_t IOStreamImpl::Tell(ExceptionState& exception_state) {
   return SDL_TellIO(stream_);
 }
 
-std::string IOStreamImpl::Read(int64_t size, ExceptionState& exception_state) {
+base::String IOStreamImpl::Read(int64_t size, ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
-    return std::string();
+    return base::String();
 
-  std::string buffer(size, 0);
+  base::String buffer(size, 0);
   size_t read_size = SDL_ReadIO(stream_, buffer.data(), size);
   buffer.resize(read_size);
 
   return buffer;
 }
 
-int64_t IOStreamImpl::Write(const std::string& buffer,
+int64_t IOStreamImpl::Write(const base::String& buffer,
                             ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return 0;

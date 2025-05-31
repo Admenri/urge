@@ -31,7 +31,7 @@ class URGE_RUNTIME_API VideoDecoder : public base::RefCounted<VideoDecoder> {
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<VideoDecoder> New(ExecutionContext* execution_context,
-                                         const std::string& filename,
+                                         const base::String& filename,
                                          ExceptionState& exception_state);
 
   /*--urge(name:dispose)--*/

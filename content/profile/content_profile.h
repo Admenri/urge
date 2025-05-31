@@ -5,13 +5,12 @@
 #ifndef CONTENT_PROFILE_CONTENT_PROFILE_H_
 #define CONTENT_PROFILE_CONTENT_PROFILE_H_
 
-#include <memory>
 #include <string>
-#include <vector>
 
 #include "SDL3/SDL_iostream.h"
 
 #include "base/math/vector.h"
+#include "base/memory/allocator.h"
 
 namespace content {
 
@@ -24,30 +23,28 @@ class ContentProfile {
     RGSS3,
   };
 
+  ContentProfile(const base::String& app, SDL_IOStream* stream);
   ~ContentProfile();
 
   ContentProfile(const ContentProfile&) = delete;
   ContentProfile& operator=(const ContentProfile&) = delete;
 
-  static std::unique_ptr<ContentProfile> MakeFrom(const std::string& app,
-                                                  SDL_IOStream* stream);
-
   void LoadCommandLine(int32_t argc, char** argv);
-  bool LoadConfigure(const std::string& app);
+  bool LoadConfigure(const base::String& app);
 
-  std::vector<std::string> args;
-  std::string program_name;
+  base::Vector<base::String> args;
+  base::String program_name;
 
-  std::string window_title = "Engine Widget";
-  std::string script_path = "Data/Scripts.rxdata";
+  base::String window_title = "Engine Widget";
+  base::String script_path = "Data/Scripts.rxdata";
 
   bool game_debug = false;
   bool game_battle_test = false;
 
   APIVersion api_version = APIVersion::UNKNOWN;
-  std::string default_font_path = "Fonts/Default.ttf";
-  std::string driver_backend = "UNDEFINED";
-  std::string i18n_xml_path;
+  base::String default_font_path = "Fonts/Default.ttf";
+  base::String driver_backend = "UNDEFINED";
+  base::String i18n_xml_path;
   bool disable_audio = false;
 
   bool disable_settings = false;
@@ -66,11 +63,9 @@ class ContentProfile {
   bool background_running = true;
 
   bool disable_ime = false;
-  std::string orientation = "LandscapeLeft LandscapeRight";
+  base::String orientation = "LandscapeLeft LandscapeRight";
 
  private:
-  ContentProfile(const std::string& app, SDL_IOStream* stream);
-
   SDL_IOStream* ini_stream_;
 };
 

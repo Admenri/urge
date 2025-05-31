@@ -6,6 +6,8 @@
 
 #include "rapidxml/rapidxml.hpp"
 
+#include "base/memory/allocator.h"
+
 #if defined(RAPIDXML_NO_EXCEPTIONS)
 
 void rapidxml::parse_error_handler(const char* what, void* where) {
@@ -30,8 +32,8 @@ I18NProfile::I18NProfile(SDL_IOStream* xml_stream) {
       stream_buf[stream_size] = '\0';
       SDL_ReadIO(xml_stream, stream_buf, stream_size);
 
-      std::unique_ptr xml_document =
-          std::make_unique<rapidxml::xml_document<>>();
+      base::OwnedPtr<rapidxml::xml_document<>> xml_document =
+          base::MakeOwnedPtr<rapidxml::xml_document<>>();
       xml_document->parse<rapidxml::parse_default>(stream_buf);
 
       rapidxml::xml_node<>* root =
@@ -46,7 +48,7 @@ I18NProfile::I18NProfile(SDL_IOStream* xml_stream) {
           if (attr) {
             // Insert i18n translation
             i18n_translation_.emplace(std::stoi(attr->value()),
-                                      std::string(iter->value()));
+                                      base::String(iter->value()));
           }
         }
       }
@@ -60,13 +62,8 @@ I18NProfile::I18NProfile(SDL_IOStream* xml_stream) {
 
 I18NProfile::~I18NProfile() = default;
 
-std::unique_ptr<I18NProfile> I18NProfile::MakeForStream(
-    SDL_IOStream* xml_stream) {
-  return std::unique_ptr<I18NProfile>(new I18NProfile(xml_stream));
-}
-
-std::string I18NProfile::GetI18NString(int32_t ids,
-                                       const std::string& default_value) {
+base::String I18NProfile::GetI18NString(int32_t ids,
+                                       const base::String& default_value) {
   auto iter = i18n_translation_.find(ids);
   if (iter != i18n_translation_.end())
     return iter->second;

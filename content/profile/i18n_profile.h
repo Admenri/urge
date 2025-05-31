@@ -14,20 +14,17 @@ namespace content {
 
 class I18NProfile {
  public:
+  I18NProfile(SDL_IOStream* xml_stream);
   ~I18NProfile();
 
   I18NProfile(const I18NProfile&) = delete;
   I18NProfile& operator=(const I18NProfile&) = delete;
 
-  static std::unique_ptr<I18NProfile> MakeForStream(SDL_IOStream* xml_stream);
-
-  std::string GetI18NString(int32_t ids, const std::string& default_value);
+  base::String GetI18NString(int32_t ids, const base::String& default_value);
 
  private:
-  I18NProfile(SDL_IOStream* xml_stream);
-
-  std::string i18n_xml_path_;
-  std::unordered_map<int32_t, std::string> i18n_translation_;
+  base::String i18n_xml_path_;
+  std::unordered_map<int32_t, base::String> i18n_translation_;
 };
 
 }  // namespace content

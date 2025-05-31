@@ -19,8 +19,8 @@
   static void Put_##name(ExecutionContext*, const type&, ExceptionState&)
 #define URGE_EXPORT_SERIALIZABLE(type)                                         \
   static scoped_refptr<type> Deserialize(ExecutionContext*,                    \
-                                         const std::string&, ExceptionState&); \
-  static std::string Serialize(ExecutionContext*, scoped_refptr<type>,         \
+                                         const base::String&, ExceptionState&); \
+  static base::String Serialize(ExecutionContext*, scoped_refptr<type>,         \
                                ExceptionState&)
 #define URGE_EXPORT_COMPARABLE(type) \
   virtual bool CompareWithOther(scoped_refptr<type>, ExceptionState&) = 0;

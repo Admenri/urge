@@ -23,11 +23,11 @@
 namespace content {
 
 struct RenderGraphicsAgent {
-  std::unique_ptr<renderer::RenderDevice> device;
-  std::unique_ptr<renderer::RenderContext> context;
+  base::OwnedPtr<renderer::RenderDevice> device;
+  base::OwnedPtr<renderer::RenderContext> context;
 
-  std::unique_ptr<CanvasScheduler> canvas_scheduler;
-  std::unique_ptr<SpriteBatch> sprite_batch;
+  base::OwnedPtr<CanvasScheduler> canvas_scheduler;
+  base::OwnedPtr<SpriteBatch> sprite_batch;
 
   RRefPtr<Diligent::ITexture> screen_buffer;
   RRefPtr<Diligent::ITexture> frozen_buffer;
@@ -35,20 +35,20 @@ struct RenderGraphicsAgent {
   RRefPtr<Diligent::IBuffer> root_transform;
   RRefPtr<Diligent::IBuffer> world_transform;
 
-  std::unique_ptr<renderer::QuadBatch> effect_quads;
-  std::unique_ptr<renderer::Binding_Color> effect_binding;
+  base::OwnedPtr<renderer::QuadBatch> effect_quads;
+  base::OwnedPtr<renderer::Binding_Color> effect_binding;
 
-  std::unique_ptr<renderer::QuadBatch> transition_quads;
-  std::unique_ptr<renderer::Binding_AlphaTrans> transition_binding_alpha;
-  std::unique_ptr<renderer::Binding_VagueTrans> transition_binding_vague;
+  base::OwnedPtr<renderer::QuadBatch> transition_quads;
+  base::OwnedPtr<renderer::Binding_AlphaTrans> transition_binding_alpha;
+  base::OwnedPtr<renderer::Binding_VagueTrans> transition_binding_vague;
 
   Diligent::ITexture** present_target = nullptr;
-  std::unique_ptr<renderer::Pipeline_Present> present_pipeline;
+  base::OwnedPtr<renderer::Pipeline_Present> present_pipeline;
 
   struct {
-    std::string device;
-    std::string vendor;
-    std::string description;
+    base::String device;
+    base::String vendor;
+    base::String description;
   } renderer_info;
 };
 
@@ -129,10 +129,10 @@ class RenderScreenImpl : public Graphics, public DisposableCollection {
   void Transition(ExceptionState& exception_state) override;
   void Transition(uint32_t duration, ExceptionState& exception_state) override;
   void Transition(uint32_t duration,
-                  const std::string& filename,
+                  const base::String& filename,
                   ExceptionState& exception_state) override;
   void Transition(uint32_t duration,
-                  const std::string& filename,
+                  const base::String& filename,
                   uint32_t vague,
                   ExceptionState& exception_state) override;
   void TransitionWithBitmap(uint32_t duration,
@@ -147,7 +147,7 @@ class RenderScreenImpl : public Graphics, public DisposableCollection {
                     uint32_t height,
                     ExceptionState& exception_state) override;
   void Reset(ExceptionState& exception_state) override;
-  void PlayMovie(const std::string& filename,
+  void PlayMovie(const base::String& filename,
                  ExceptionState& exception_state) override;
   void MoveWindow(int32_t x,
                   int32_t y,
@@ -169,7 +169,7 @@ class RenderScreenImpl : public Graphics, public DisposableCollection {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(BackgroundRunning, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Ox, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
-  URGE_DECLARE_OVERRIDE_ATTRIBUTE(WindowTitle, std::string);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(WindowTitle, base::String);
 
  private:
   void FrameProcessInternal(Diligent::ITexture** present_target);

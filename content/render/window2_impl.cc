@@ -101,7 +101,7 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
         quad_count += horizon_frame_tiles * 2 + vertical_frame_tiles * 2;
       }
 
-      std::vector<renderer::Quad> quads;
+      base::Vector<renderer::Quad> quads;
       quads.resize(quad_count);
       renderer::Quad* quad_ptr = quads.data();
 
@@ -226,9 +226,9 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
         device->GetQuadIndex()->Allocate(quads.size() + 20);
 
         // Create binding
-        std::unique_ptr<renderer::Binding_Flat> flat_binding =
+        base::OwnedPtr<renderer::Binding_Flat> flat_binding =
             device->GetPipelines()->viewport.CreateBinding();
-        std::unique_ptr<renderer::Binding_Base> base_binding =
+        base::OwnedPtr<renderer::Binding_Base> base_binding =
             device->GetPipelines()->base.CreateBinding();
 
         // Setup uniform params
@@ -305,7 +305,7 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
 
   // Render background and controls
   {
-    std::vector<renderer::Quad> quads;
+    base::Vector<renderer::Quad> quads;
     // Background + Pause Anime + Arrows + Cursor + Contents
     quads.resize(1 + 1 + 4 + 9 + 1);
 
@@ -702,7 +702,7 @@ Window2Impl::~Window2Impl() {
   Dispose(exception_state);
 }
 
-void Window2Impl::SetLabel(const std::string& label,
+void Window2Impl::SetLabel(const base::String& label,
                            ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }

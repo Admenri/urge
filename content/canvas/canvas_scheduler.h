@@ -18,12 +18,10 @@ class CanvasScheduler {
  public:
   // All bitmap/canvas draw command will be encoded on this worker.
   // If worker set to null, it will be executed immediately on caller thread.
-  static std::unique_ptr<CanvasScheduler> MakeInstance(
-      base::ThreadWorker* worker,
-      renderer::RenderDevice* device,
-      renderer::RenderContext* context,
-      filesystem::IOService* io_service);
-
+  CanvasScheduler(base::ThreadWorker* worker,
+                  renderer::RenderDevice* device,
+                  renderer::RenderContext* context,
+                  filesystem::IOService* io_service);
   ~CanvasScheduler();
 
   CanvasScheduler(const CanvasScheduler&) = delete;
@@ -52,10 +50,6 @@ class CanvasScheduler {
 
  private:
   friend class CanvasImpl;
-  CanvasScheduler(base::ThreadWorker* worker,
-                  renderer::RenderDevice* device,
-                  renderer::RenderContext* context,
-                  filesystem::IOService* io_service);
 
   base::LinkedList<CanvasImpl> children_;
 
@@ -64,10 +58,10 @@ class CanvasScheduler {
   base::ThreadWorker* render_worker_;
   filesystem::IOService* io_service_;
 
-  std::unique_ptr<renderer::Binding_Base> generic_base_binding_;
-  std::unique_ptr<renderer::Binding_Color> generic_color_binding_;
+  base::OwnedPtr<renderer::Binding_Base> generic_base_binding_;
+  base::OwnedPtr<renderer::Binding_Color> generic_color_binding_;
 
-  std::unique_ptr<renderer::QuadBatch> common_quad_batch_;
+  base::OwnedPtr<renderer::QuadBatch> common_quad_batch_;
 };
 
 }  // namespace content

@@ -6,13 +6,13 @@
 
 namespace content {
 
-std::vector<scoped_refptr<Display>> Display::GetAll(
+base::Vector<scoped_refptr<Display>> Display::GetAll(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
   int32_t count;
   SDL_DisplayID* displays = SDL_GetDisplays(&count);
 
-  std::vector<scoped_refptr<Display>> result;
+  base::Vector<scoped_refptr<Display>> result;
   for (int32_t i = 0; i < count; ++i)
     result.push_back(base::MakeRefCounted<DisplayImpl>(displays[i]));
 
@@ -35,11 +35,11 @@ DisplayImpl::DisplayImpl(SDL_DisplayID display)
 
 DisplayImpl::~DisplayImpl() = default;
 
-std::string DisplayImpl::GetName(ExceptionState& exception_state) {
+base::String DisplayImpl::GetName(ExceptionState& exception_state) {
   return SDL_GetDisplayName(display_);
 }
 
-std::string DisplayImpl::GetFormat(ExceptionState& exception_state) {
+base::String DisplayImpl::GetFormat(ExceptionState& exception_state) {
   return SDL_GetPixelFormatName(mode_->format);
 }
 

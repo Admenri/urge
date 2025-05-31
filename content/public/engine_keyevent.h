@@ -26,7 +26,7 @@ class URGE_RUNTIME_API KeyEvent : public base::RefCounted<KeyEvent> {
   };
 
   /*--urge(name:update)--*/
-  static std::vector<scoped_refptr<KeyEvent>> Update(
+  static base::Vector<scoped_refptr<KeyEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 

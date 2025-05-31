@@ -15,7 +15,7 @@ namespace content {
 class KeyboardControllerImpl : public Input {
  public:
   struct KeyBinding {
-    std::string sym;
+    base::String sym;
     SDL_Scancode scancode;
 
     bool operator==(const KeyBinding& other) {
@@ -23,7 +23,7 @@ class KeyboardControllerImpl : public Input {
     }
   };
 
-  using KeySymMap = std::vector<KeyBinding>;
+  using KeySymMap = base::Vector<KeyBinding>;
   using KeyState = struct {
     bool pressed;
     bool trigger;
@@ -44,11 +44,11 @@ class KeyboardControllerImpl : public Input {
 
  public:
   void Update(ExceptionState& exception_state) override;
-  bool IsPressed(const std::string& sym,
+  bool IsPressed(const base::String& sym,
                  ExceptionState& exception_state) override;
-  bool IsTriggered(const std::string& sym,
+  bool IsTriggered(const base::String& sym,
                    ExceptionState& exception_state) override;
-  bool IsRepeated(const std::string& sym,
+  bool IsRepeated(const base::String& sym,
                   ExceptionState& exception_state) override;
   int32_t Dir4(ExceptionState& exception_state) override;
   int32_t Dir8(ExceptionState& exception_state) override;
@@ -56,20 +56,20 @@ class KeyboardControllerImpl : public Input {
   bool KeyPressed(int32_t scancode, ExceptionState& exception_state) override;
   bool KeyTriggered(int32_t scancode, ExceptionState& exception_state) override;
   bool KeyRepeated(int32_t scancode, ExceptionState& exception_state) override;
-  std::string GetKeyName(int32_t scancode,
+  base::String GetKeyName(int32_t scancode,
                          ExceptionState& exception_state) override;
-  std::vector<int32_t> GetKeysFromFlag(
-      const std::string& flag,
+  base::Vector<int32_t> GetKeysFromFlag(
+      const base::String& flag,
       ExceptionState& exception_state) override;
-  void SetKeysFromFlag(const std::string& flag,
-                       const std::vector<int32_t>& keys,
+  void SetKeysFromFlag(const base::String& flag,
+                       const base::Vector<int32_t>& keys,
                        ExceptionState& exception_state) override;
 
-  std::vector<int32_t> GetRecentPressed(
+  base::Vector<int32_t> GetRecentPressed(
       ExceptionState& exception_state) override;
-  std::vector<int32_t> GetRecentTriggered(
+  base::Vector<int32_t> GetRecentTriggered(
       ExceptionState& exception_state) override;
-  std::vector<int32_t> GetRecentRepeated(
+  base::Vector<int32_t> GetRecentRepeated(
       ExceptionState& exception_state) override;
 
   bool Emulate(int32_t scancode,

@@ -5,8 +5,6 @@
 #ifndef RENDERER_PIPELINE_RENDER_BINDING_H_
 #define RENDERER_PIPELINE_RENDER_BINDING_H_
 
-#include <memory>
-
 #include "Common/interface/RefCntAutoPtr.hpp"
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include "Graphics/GraphicsEngine/interface/PipelineState.h"
@@ -16,6 +14,7 @@
 
 #include "base/math/rectangle.h"
 #include "base/math/vector.h"
+#include "base/memory/allocator.h"
 
 namespace renderer {
 
@@ -32,8 +31,8 @@ class RenderBindingBase {
   RenderBindingBase& operator=(const RenderBindingBase&) = delete;
 
   template <typename Ty>
-  static std::unique_ptr<Ty> Create(ShaderBinding binding) {
-    return std::unique_ptr<Ty>(new Ty(binding));
+  static base::OwnedPtr<Ty> Create(ShaderBinding binding) {
+    return base::MakeOwnedPtr<Ty>(binding);
   }
 
   // Raw ptr access
@@ -59,7 +58,7 @@ class Binding_Base : public RenderBindingBase {
   ShaderVariable u_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_Base(ShaderBinding binding);
 };
 
@@ -68,7 +67,7 @@ class Binding_Color : public RenderBindingBase {
   ShaderVariable u_transform;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_Color(ShaderBinding binding);
 };
 
@@ -84,7 +83,7 @@ class Binding_Flat : public RenderBindingBase {
   ShaderVariable u_params;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_Flat(ShaderBinding binding);
 };
 
@@ -107,7 +106,7 @@ class Binding_Sprite : public RenderBindingBase {
   ShaderVariable u_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_Sprite(ShaderBinding binding);
 };
 
@@ -117,7 +116,7 @@ class Binding_AlphaTrans : public RenderBindingBase {
   ShaderVariable u_current_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_AlphaTrans(ShaderBinding binding);
 };
 
@@ -128,7 +127,7 @@ class Binding_VagueTrans : public RenderBindingBase {
   ShaderVariable u_trans_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_VagueTrans(ShaderBinding binding);
 };
 
@@ -144,7 +143,7 @@ class Binding_Tilemap : public RenderBindingBase {
   ShaderVariable u_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_Tilemap(ShaderBinding binding);
 };
 
@@ -160,7 +159,7 @@ class Binding_Tilemap2 : public RenderBindingBase {
   ShaderVariable u_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_Tilemap2(ShaderBinding binding);
 };
 
@@ -169,7 +168,7 @@ class Binding_BitmapFilter : public RenderBindingBase {
   ShaderVariable u_texture;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_BitmapFilter(ShaderBinding binding);
 };
 
@@ -180,7 +179,7 @@ class Binding_YUV : public RenderBindingBase {
   ShaderVariable u_texture_v;
 
  private:
-  friend class RenderBindingBase;
+  friend struct base::Allocator;
   Binding_YUV(ShaderBinding binding);
 };
 

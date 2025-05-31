@@ -30,7 +30,12 @@
 #ifndef BASE_MEMORY_ALLOCATOR_H_
 #define BASE_MEMORY_ALLOCATOR_H_
 
+#include <list>
+#include <memory>
+#include <stack>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 #include "mimalloc.h"
 
@@ -61,6 +66,40 @@ struct Allocator {
     }
   }
 };
+
+template <typename _Ty>
+struct AllocatorDelete {
+  constexpr AllocatorDelete() noexcept = default;
+
+  template <typename _Ty2>
+  inline AllocatorDelete(const AllocatorDelete<_Ty2>&) noexcept {}
+
+  inline void operator()(_Ty* _Ptr) const noexcept { Allocator::Delete(_Ptr); }
+};
+
+template <typename Ty>
+using OwnedPtr = std::unique_ptr<Ty, AllocatorDelete<Ty>>;
+
+template <typename T, typename... Args>
+OwnedPtr<T> MakeOwnedPtr(Args&&... args) {
+  T* obj = Allocator::New<T>(std::forward<Args>(args)...);
+  return OwnedPtr<T>(obj);
+}
+
+template <typename Ty>
+using STLAllocator = mi_stl_allocator<Ty>;
+
+template <typename Ty>
+using Vector = std::vector<Ty, STLAllocator<Ty>>;
+
+template <typename Ty>
+using List = std::list<Ty, STLAllocator<Ty>>;
+
+template <typename Ty>
+using Stack = std::stack<Ty, std::deque<Ty, STLAllocator<Ty>>>;
+
+using String =
+    std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
 
 }  // namespace base
 

@@ -41,7 +41,7 @@ class AudioImpl : public Audio {
  public:
   void SetupMIDI(ExceptionState& exception_state) override;
 
-  void BGMPlay(const std::string& filename,
+  void BGMPlay(const base::String& filename,
                int32_t volume,
                int32_t pitch,
                int32_t pos,
@@ -50,7 +50,7 @@ class AudioImpl : public Audio {
   void BGMFade(int32_t time, ExceptionState& exception_state) override;
   int32_t BGMPos(ExceptionState& exception_state) override;
 
-  void BGSPlay(const std::string& filename,
+  void BGSPlay(const base::String& filename,
                int32_t volume,
                int32_t pitch,
                int32_t pos,
@@ -59,14 +59,14 @@ class AudioImpl : public Audio {
   void BGSFade(int32_t time, ExceptionState& exception_state) override;
   int32_t BGSPos(ExceptionState& exception_state) override;
 
-  void MEPlay(const std::string& filename,
+  void MEPlay(const base::String& filename,
               int32_t volume,
               int32_t pitch,
               ExceptionState& exception_state) override;
   void MEStop(ExceptionState& exception_state) override;
   void MEFade(int32_t time, ExceptionState& exception_state) override;
 
-  void SEPlay(const std::string& filename,
+  void SEPlay(const base::String& filename,
               int32_t volume,
               int32_t pitch,
               ExceptionState& exception_state) override;
@@ -76,8 +76,8 @@ class AudioImpl : public Audio {
 
  private:
   struct SlotInfo {
-    std::unique_ptr<SoLoud::Wav> source;
-    std::string filename;
+    base::OwnedPtr<SoLoud::Wav> source;
+    base::String filename;
     SoLoud::handle play_handle = 0;
   };
 
@@ -86,7 +86,7 @@ class AudioImpl : public Audio {
   void MeMonitorInternal();
 
   void PlaySlotInternal(SlotInfo* slot,
-                        const std::string& filename,
+                        const base::String& filename,
                         int32_t volume = 100,
                         int32_t pitch = 100,
                         double pos = 0,
@@ -95,7 +95,7 @@ class AudioImpl : public Audio {
   void FadeSlotInternal(SlotInfo* slot, int32_t time);
   void GetSlotPosInternal(SlotInfo* slot, double* out);
 
-  void EmitSoundInternal(const std::string& filename,
+  void EmitSoundInternal(const base::String& filename,
                          int32_t volume = 100,
                          int32_t pitch = 100);
   void StopEmitInternal();
@@ -113,13 +113,13 @@ class AudioImpl : public Audio {
   SlotInfo bgm_;
   SlotInfo bgs_;
   SlotInfo me_;
-  std::unordered_map<std::string, std::unique_ptr<SoLoud::Wav>> se_cache_;
+  std::unordered_map<base::String, base::OwnedPtr<SoLoud::Wav>> se_cache_;
   std::queue<SoLoud::handle> se_queue_;
 
-  std::unique_ptr<std::thread> me_watcher_;
+  base::OwnedPtr<std::thread> me_watcher_;
   std::atomic_bool quit_flag_;
 
-  std::unique_ptr<base::ThreadWorker> audio_runner_;
+  base::OwnedPtr<base::ThreadWorker> audio_runner_;
 };
 
 }  // namespace content

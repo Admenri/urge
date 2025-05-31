@@ -60,7 +60,7 @@ class TableImpl : public Table, public ValueNotification {
   friend class Table;
 
   uint32_t x_size_, y_size_, z_size_;
-  std::vector<int16_t> data_;
+  base::Vector<int16_t> data_;
 };
 
 }  // namespace content

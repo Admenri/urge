@@ -119,12 +119,12 @@ void Widget::SetFullscreen(bool fullscreen) {
   SDL_SetWindowFullscreen(window_, fullscreen);
 }
 
-void Widget::SetTitle(const std::string& window_title) {
+void Widget::SetTitle(const base::String& window_title) {
   SDL_SetWindowTitle(window_, window_title.c_str());
 }
 
-std::string Widget::GetTitle() const {
-  return std::string(SDL_GetWindowTitle(window_));
+base::String Widget::GetTitle() const {
+  return base::String(SDL_GetWindowTitle(window_));
 }
 
 bool Widget::IsFullscreen() const {
@@ -151,8 +151,8 @@ void Widget::EmulateKeyState(::SDL_Scancode scancode, bool pressed) {
   key_states_[scancode] = pressed;
 }
 
-std::string Widget::FetchInputText() {
-  std::string output;
+base::String Widget::FetchInputText() {
+  base::String output;
   text_lock_.lock();
   output = text_buffer_;
   text_buffer_.clear();

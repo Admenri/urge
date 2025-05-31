@@ -22,44 +22,44 @@ class URGE_RUNTIME_API URGE : public base::RefCounted<URGE> {
   virtual ~URGE() = default;
 
   /*--urge(name:platform)--*/
-  virtual std::string GetPlatform(ExceptionState& exception_state) = 0;
+  virtual base::String GetPlatform(ExceptionState& exception_state) = 0;
 
   /*--urge(name:open_url)--*/
-  virtual void OpenURL(const std::string& path,
+  virtual void OpenURL(const base::String& path,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:gets)--*/
-  virtual std::string Gets(ExceptionState& exception_state) = 0;
+  virtual base::String Gets(ExceptionState& exception_state) = 0;
 
   /*--urge(name:puts)--*/
-  virtual void Puts(const std::string& message,
+  virtual void Puts(const base::String& message,
                     ExceptionState& exception_state) = 0;
 
   /*--urge(name:alert)--*/
-  virtual void Alert(const std::string& message,
+  virtual void Alert(const base::String& message,
                      ExceptionState& exception_state) = 0;
 
   /*--urge(name:confirm)--*/
-  virtual bool Confirm(const std::string& message,
+  virtual bool Confirm(const base::String& message,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:add_load_path)--*/
-  virtual bool AddLoadPath(const std::string& new_path,
-                           const std::string& mount_point,
+  virtual bool AddLoadPath(const base::String& new_path,
+                           const base::String& mount_point,
                            bool append_to_path,
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:remove_load_path)--*/
-  virtual bool RemoveLoadPath(const std::string& old_path,
+  virtual bool RemoveLoadPath(const base::String& old_path,
                               ExceptionState& exception_state) = 0;
 
   /*--urge(name:file_exist?)--*/
-  virtual bool IsFileExisted(const std::string& filepath,
+  virtual bool IsFileExisted(const base::String& filepath,
                              ExceptionState& exception_state) = 0;
 
   /*--urge(name:enum_directory)--*/
-  virtual std::vector<std::string> EnumDirectory(
-      const std::string& dirpath,
+  virtual base::Vector<base::String> EnumDirectory(
+      const base::String& dirpath,
       ExceptionState& exception_state) = 0;
 };
 

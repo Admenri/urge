@@ -18,7 +18,7 @@
 namespace renderer {
 
 #define MAKE_BINDING_FUNCTION(ty, x)           \
-  inline std::unique_ptr<ty> CreateBinding() { \
+  inline base::OwnedPtr<ty> CreateBinding() { \
     return CreateBindingAt<ty>(x);             \
   }
 
@@ -45,11 +45,11 @@ enum BlendType {
 class RenderPipelineBase {
  public:
   struct ShaderSource {
-    std::string source;
-    std::string name = "generic.shader";
-    std::vector<Diligent::ShaderMacro> macros = {};
-    std::string vertex_entry = "VSMain";
-    std::string pixel_entry = "PSMain";
+    base::String source;
+    base::String name = "generic.shader";
+    base::Vector<Diligent::ShaderMacro> macros = {};
+    base::String vertex_entry = "VSMain";
+    base::String pixel_entry = "PSMain";
   };
 
   virtual ~RenderPipelineBase() = default;
@@ -70,19 +70,19 @@ class RenderPipelineBase {
   RenderPipelineBase(Diligent::IRenderDevice* device);
 
   void BuildPipeline(const ShaderSource& shader_source,
-                     const std::vector<Diligent::LayoutElement>& input_layout,
-                     const std::vector<Diligent::RefCntAutoPtr<
+                     const base::Vector<Diligent::LayoutElement>& input_layout,
+                     const base::Vector<Diligent::RefCntAutoPtr<
                          Diligent::IPipelineResourceSignature>>& signatures,
                      Diligent::TEXTURE_FORMAT target_format);
 
   Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>
   MakeResourceSignature(
-      const std::vector<Diligent::PipelineResourceDesc>& variables,
-      const std::vector<Diligent::ImmutableSamplerDesc>& samplers,
+      const base::Vector<Diligent::PipelineResourceDesc>& variables,
+      const base::Vector<Diligent::ImmutableSamplerDesc>& samplers,
       uint8_t binding_index);
 
   template <typename Ty>
-  std::unique_ptr<Ty> CreateBindingAt(size_t index) {
+  base::OwnedPtr<Ty> CreateBindingAt(size_t index) {
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> binding;
     resource_signatures_[index]->CreateShaderResourceBinding(&binding);
     return RenderBindingBase::Create<Ty>(binding);
@@ -90,9 +90,9 @@ class RenderPipelineBase {
 
  private:
   Diligent::IRenderDevice* device_;
-  std::vector<Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>
+  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>
       resource_signatures_;
-  std::vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>> pipelines_;
+  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>> pipelines_;
 };
 
 class Pipeline_Base : public RenderPipelineBase {

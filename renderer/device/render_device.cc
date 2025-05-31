@@ -8,7 +8,6 @@
 #include "SDL3/SDL_loadso.h"
 #include "SDL3/SDL_video.h"
 #include "magic_enum/magic_enum.hpp"
-#include "mimalloc.h"
 
 #include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
 #include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
@@ -245,29 +244,31 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   const auto& device_info = device->GetDeviceInfo();
   const auto& adapter_info = device->GetAdapterInfo();
   LOG(INFO) << "[Renderer] DeviceType: " +
-                   std::string(GetRenderDeviceTypeString(device_info.Type)) +
-                   " (version " + std::to_string(device_info.APIVersion.Major) +
-                   "." + std::to_string(device_info.APIVersion.Minor) + ")";
+                   base::String(GetRenderDeviceTypeString(device_info.Type)) +
+                   " (version "
+            << device_info.APIVersion.Major << "."
+            << device_info.APIVersion.Minor << ")";
   LOG(INFO) << "[Renderer] Adapter: " << adapter_info.Description;
   LOG(INFO) << "[Renderer] MaxTexture Size: "
-            << std::to_string(adapter_info.Texture.MaxTexture2DDimension);
+            << adapter_info.Texture.MaxTexture2DDimension;
 
   // Initialize graphics pipelines
-  std::unique_ptr<PipelineSet> pipelines_set =
-      std::make_unique<PipelineSet>(device, Diligent::TEX_FORMAT_RGBA8_UNORM);
+  base::OwnedPtr<PipelineSet> pipelines_set =
+      base::MakeOwnedPtr<PipelineSet>(device, Diligent::TEX_FORMAT_RGBA8_UNORM);
 
   // Initialize generic quad index buffer
-  std::unique_ptr<QuadIndexCache> quad_index_cache =
+  base::OwnedPtr<QuadIndexCache> quad_index_cache =
       QuadIndexCache::Make(device);
   quad_index_cache->Allocate(1 << 10);
 
   // Global render device
-  std::unique_ptr<RenderDevice> render_device(new RenderDevice(
+  base::OwnedPtr<RenderDevice> render_device = base::MakeOwnedPtr<RenderDevice>(
       window_target, swap_chain_desc, device, swapchain,
-      std::move(pipelines_set), std::move(quad_index_cache), glcontext));
+      std::move(pipelines_set), std::move(quad_index_cache), glcontext);
 
   // Immediate render context
-  std::unique_ptr<RenderContext> render_context(new RenderContext(context));
+  base::OwnedPtr<RenderContext> render_context =
+      base::MakeOwnedPtr<RenderContext>(context);
 
   return std::make_tuple(std::move(render_device), std::move(render_context));
 }
@@ -277,8 +278,8 @@ RenderDevice::RenderDevice(
     const Diligent::SwapChainDesc& swapchain_desc,
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
-    std::unique_ptr<PipelineSet> pipelines,
-    std::unique_ptr<QuadIndexCache> quad_index,
+    base::OwnedPtr<PipelineSet> pipelines,
+    base::OwnedPtr<QuadIndexCache> quad_index,
     SDL_GLContext gl_context)
     : window_(std::move(window)),
       swapchain_desc_(swapchain_desc),

@@ -30,13 +30,13 @@ class ImageAnimationImpl : public ImageAnimation,
   bool IsDisposed(ExceptionState& exception_state) override;
   int32_t Width(ExceptionState& exception_state) override;
   int32_t Height(ExceptionState& exception_state) override;
-  std::vector<scoped_refptr<Surface>> GetFrames(
+  base::Vector<scoped_refptr<Surface>> GetFrames(
       ExceptionState& exception_state) override;
-  std::vector<int32_t> GetDelays(ExceptionState& exception_state) override;
+  base::Vector<int32_t> GetDelays(ExceptionState& exception_state) override;
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "ImageAnimation"; }
+  base::String DisposedObjectName() override { return "ImageAnimation"; }
 
   IMG_Animation* animation_;
   filesystem::IOService* io_service_;

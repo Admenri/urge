@@ -169,7 +169,7 @@ void AudioImpl::SetupMIDI(ExceptionState& exception_state) {
   LOG(WARNING) << "[Content] Unsupport MIDI device setup.";
 }
 
-void AudioImpl::BGMPlay(const std::string& filename,
+void AudioImpl::BGMPlay(const base::String& filename,
                         int32_t volume,
                         int32_t pitch,
                         int32_t pos,
@@ -214,7 +214,7 @@ int32_t AudioImpl::BGMPos(ExceptionState& exception_state) {
   return pos;
 }
 
-void AudioImpl::BGSPlay(const std::string& filename,
+void AudioImpl::BGSPlay(const base::String& filename,
                         int32_t volume,
                         int32_t pitch,
                         int32_t pos,
@@ -259,7 +259,7 @@ int32_t AudioImpl::BGSPos(ExceptionState& exception_state) {
   return pos;
 }
 
-void AudioImpl::MEPlay(const std::string& filename,
+void AudioImpl::MEPlay(const base::String& filename,
                        int32_t volume,
                        int32_t pitch,
                        ExceptionState& exception_state) {
@@ -290,7 +290,7 @@ void AudioImpl::MEFade(int32_t time, ExceptionState& exception_state) {
                                           base::Unretained(this), &me_, time));
 }
 
-void AudioImpl::SEPlay(const std::string& filename,
+void AudioImpl::SEPlay(const base::String& filename,
                        int32_t volume,
                        int32_t pitch,
                        ExceptionState& exception_state) {
@@ -343,7 +343,8 @@ void AudioImpl::InitAudioDeviceInternal() {
   }
 
   // Me playing monitor thread
-  me_watcher_.reset(new std::thread(&AudioImpl::MeMonitorInternal, this));
+  me_watcher_ =
+      base::MakeOwnedPtr<std::thread>(&AudioImpl::MeMonitorInternal, this);
 }
 
 void AudioImpl::DestroyAudioDeviceInternal() {
@@ -374,21 +375,21 @@ void AudioImpl::MeMonitorInternal() {
 }
 
 void AudioImpl::PlaySlotInternal(SlotInfo* slot,
-                                 const std::string& filename,
+                                 const base::String& filename,
                                  int32_t volume,
                                  int32_t pitch,
                                  double pos,
                                  bool loop) {
   if (!core_.isValidVoiceHandle(slot->play_handle) || !slot->source ||
       slot->filename != filename) {
-    slot->source.reset(new SoLoud::Wav());
+    slot->source = base::MakeOwnedPtr<SoLoud::Wav>();
     slot->filename = filename;
 
     filesystem::IOState io_state;
     io_service_->OpenRead(
         filename,
         base::BindRepeating(
-            [](SoLoud::Wav* loader, SDL_IOStream* ops, const std::string& ext) {
+            [](SoLoud::Wav* loader, SDL_IOStream* ops, const base::String& ext) {
               size_t out_size = 0;
               uint8_t* mem =
                   static_cast<uint8_t*>(read_mem_file(ops, &out_size, true));
@@ -426,7 +427,7 @@ void AudioImpl::GetSlotPosInternal(SlotInfo* slot, double* out) {
   *out = core_.getStreamPosition(slot->play_handle);
 }
 
-void AudioImpl::EmitSoundInternal(const std::string& filename,
+void AudioImpl::EmitSoundInternal(const base::String& filename,
                                   int32_t volume,
                                   int32_t pitch) {
   auto cache = se_cache_.find(filename);
@@ -444,13 +445,13 @@ void AudioImpl::EmitSoundInternal(const std::string& filename,
     se_queue_.push(handle);
   } else {
     // Load from filesystem
-    std::unique_ptr<SoLoud::Wav> source(new SoLoud::Wav());
+    base::OwnedPtr<SoLoud::Wav> source = base::MakeOwnedPtr<SoLoud::Wav>();
 
     filesystem::IOState io_state;
     io_service_->OpenRead(
         filename,
         base::BindRepeating(
-            [](SoLoud::Wav* loader, SDL_IOStream* ops, const std::string& ext) {
+            [](SoLoud::Wav* loader, SDL_IOStream* ops, const base::String& ext) {
               size_t out_size = 0;
               uint8_t* mem =
                   static_cast<uint8_t*>(read_mem_file(ops, &out_size, true));

@@ -271,7 +271,7 @@ SpriteImpl::~SpriteImpl() {
   Dispose(exception_state);
 }
 
-void SpriteImpl::SetLabel(const std::string& label,
+void SpriteImpl::SetLabel(const base::String& label,
                           ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }

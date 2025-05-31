@@ -6,13 +6,13 @@
 
 namespace content {
 
-std::vector<scoped_refptr<TouchEvent>> TouchEvent::Update(
+base::Vector<scoped_refptr<TouchEvent>> TouchEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  std::vector<EventController::TouchEventData> raw_events;
+  base::Vector<EventController::TouchEventData> raw_events;
   execution_context->event_controller->PollTouchEvents(raw_events);
 
-  std::vector<scoped_refptr<TouchEvent>> filtered_events;
+  base::Vector<scoped_refptr<TouchEvent>> filtered_events;
   for (auto& it : raw_events)
     filtered_events.push_back(base::MakeRefCounted<TouchEventImpl>(it));
 

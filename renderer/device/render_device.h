@@ -5,14 +5,14 @@
 #ifndef RENDERER_DEVICE_RENDER_DEVICE_H_
 #define RENDERER_DEVICE_RENDER_DEVICE_H_
 
+#include <tuple>
+
+#include "base/memory/allocator.h"
 #include "renderer/context/render_context.h"
 #include "renderer/context/scissor_controller.h"
 #include "renderer/pipeline/render_pipeline.h"
 #include "renderer/resource/render_buffer.h"
 #include "ui/widget/widget.h"
-
-#include <memory>
-#include <tuple>
 
 namespace renderer {
 
@@ -55,7 +55,7 @@ class RenderDevice {
   };
 
   using CreateDeviceResult =
-      std::tuple<std::unique_ptr<RenderDevice>, std::unique_ptr<RenderContext>>;
+      std::tuple<base::OwnedPtr<RenderDevice>, base::OwnedPtr<RenderContext>>;
   static CreateDeviceResult Create(base::WeakPtr<ui::Widget> window_target,
                                    DriverType driver_type);
 
@@ -87,12 +87,13 @@ class RenderDevice {
   int32_t ResumeContext(Diligent::IDeviceContext* immediate_context);
 
  private:
+  friend struct base::Allocator;
   RenderDevice(base::WeakPtr<ui::Widget> window,
                const Diligent::SwapChainDesc& swapchain_desc,
                Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
                Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
-               std::unique_ptr<PipelineSet> pipelines,
-               std::unique_ptr<QuadIndexCache> quad_index,
+               base::OwnedPtr<PipelineSet> pipelines,
+               base::OwnedPtr<QuadIndexCache> quad_index,
                SDL_GLContext gl_context);
 
   base::WeakPtr<ui::Widget> window_;
@@ -101,8 +102,8 @@ class RenderDevice {
   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device_;
   Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain_;
 
-  std::unique_ptr<PipelineSet> pipelines_;
-  std::unique_ptr<QuadIndexCache> quad_index_;
+  base::OwnedPtr<PipelineSet> pipelines_;
+  base::OwnedPtr<QuadIndexCache> quad_index_;
 
   Diligent::RENDER_DEVICE_TYPE device_type_;
   SDL_GLContext gl_context_;

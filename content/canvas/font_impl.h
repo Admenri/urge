@@ -21,7 +21,7 @@ namespace content {
 class FontImpl : public Font {
  public:
   FontImpl(ScopedFontData* parent);
-  FontImpl(const std::string& name, uint32_t size, ScopedFontData* parent);
+  FontImpl(const base::String& name, uint32_t size, ScopedFontData* parent);
   FontImpl(const FontImpl& other);
   ~FontImpl() override = default;
 
@@ -30,12 +30,12 @@ class FontImpl : public Font {
   static scoped_refptr<FontImpl> From(scoped_refptr<Font> host);
 
   TTF_Font* GetCanonicalFont(ExceptionState& exception_state);
-  SDL_Surface* RenderText(const std::string& text,
+  SDL_Surface* RenderText(const base::String& text,
                           uint8_t* font_opacity,
                           ExceptionState& exception_state);
 
  protected:
-  URGE_DECLARE_OVERRIDE_ATTRIBUTE(Name, std::vector<std::string>);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(Name, base::Vector<base::String>);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Size, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Bold, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Italic, bool);
@@ -49,7 +49,7 @@ class FontImpl : public Font {
   void LoadFontInternal(ExceptionState& exception_state);
   void EnsureFontSurfaceFormatInternal(SDL_Surface*& surf);
 
-  std::vector<std::string> name_;
+  base::Vector<base::String> name_;
   int32_t size_;
   bool bold_;
   bool italic_;

@@ -20,7 +20,7 @@ class URGE_RUNTIME_API Display : public base::RefCounted<Display> {
   virtual ~Display() = default;
 
   /*--urge(name:get_all)--*/
-  static std::vector<scoped_refptr<Display>> GetAll(
+  static base::Vector<scoped_refptr<Display>> GetAll(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 
@@ -34,10 +34,10 @@ class URGE_RUNTIME_API Display : public base::RefCounted<Display> {
                                           ExceptionState& exception_state);
 
   /*--urge(name:name)--*/
-  virtual std::string GetName(ExceptionState& exception_state) = 0;
+  virtual base::String GetName(ExceptionState& exception_state) = 0;
 
   /*--urge(name:format)--*/
-  virtual std::string GetFormat(ExceptionState& exception_state) = 0;
+  virtual base::String GetFormat(ExceptionState& exception_state) = 0;
 
   /*--urge(name:width)--*/
   virtual int32_t GetWidth(ExceptionState& exception_state) = 0;

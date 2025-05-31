@@ -5,7 +5,7 @@
 #ifndef RENDERER_PIPELINE_BUILTIN_HLSL_H_
 #define RENDERER_PIPELINE_BUILTIN_HLSL_H_
 
-#include <string>
+#include "base/memory/allocator.h"
 
 namespace renderer {
 
@@ -24,7 +24,7 @@ namespace renderer {
 //   { float4x4, float4x4 }
 //   { Texture2D }
 ///
-extern const std::string kHLSL_BaseRender;
+extern const base::String kHLSL_BaseRender;
 
 ///
 // type:
@@ -40,7 +40,7 @@ extern const std::string kHLSL_BaseRender;
 // resource:
 //   { float4x4, float4x4 }
 ///
-extern const std::string kHLSL_ColorRender;
+extern const base::String kHLSL_ColorRender;
 
 ///
 // type:
@@ -58,7 +58,7 @@ extern const std::string kHLSL_ColorRender;
 //   { Texture2D }
 //   { float4, float4 }
 ///
-extern const std::string kHLSL_FlatRender;
+extern const base::String kHLSL_FlatRender;
 
 ///
 // type:
@@ -79,7 +79,7 @@ extern const std::string kHLSL_FlatRender;
 // macros:
 //   STORAGE_BUFFER_SUPPORT
 ///
-extern const std::string kHLSL_SpriteRender;
+extern const base::String kHLSL_SpriteRender;
 
 ///
 // type:
@@ -95,7 +95,7 @@ extern const std::string kHLSL_SpriteRender;
 // bind:
 //   { Texture2D, Texture2D }
 ///
-extern const std::string kHLSL_AlphaTransitionRender;
+extern const base::String kHLSL_AlphaTransitionRender;
 
 ///
 // type:
@@ -111,7 +111,7 @@ extern const std::string kHLSL_AlphaTransitionRender;
 // bind:
 //   { Texture2D, Texture2D, Texture2D }
 ///
-extern const std::string kHLSL_MappingTransitionRender;
+extern const base::String kHLSL_MappingTransitionRender;
 
 ///
 // type:
@@ -129,7 +129,7 @@ extern const std::string kHLSL_MappingTransitionRender;
 //   { Texture2D }
 //   { float2, float2, float, float }
 ///
-extern const std::string kHLSL_TilemapRender;
+extern const base::String kHLSL_TilemapRender;
 
 ///
 // type:
@@ -147,7 +147,7 @@ extern const std::string kHLSL_TilemapRender;
 //   { Texture2D }
 //   { float2, float2, float2, float }
 ///
-extern const std::string kHLSL_Tilemap2Render;
+extern const base::String kHLSL_Tilemap2Render;
 
 ///
 // type:
@@ -163,7 +163,7 @@ extern const std::string kHLSL_Tilemap2Render;
 // resource:
 //   { Texture2D }
 ///
-extern const std::string kHLSL_BitmapHueRender;
+extern const base::String kHLSL_BitmapHueRender;
 
 ///
 // type:
@@ -180,7 +180,7 @@ extern const std::string kHLSL_BitmapHueRender;
 //   { float4x4, float4x4 }
 //   { Texture2D }
 ///
-extern const std::string kHLSL_Spine2DRender;
+extern const base::String kHLSL_Spine2DRender;
 
 ///
 // type:
@@ -196,7 +196,7 @@ extern const std::string kHLSL_Spine2DRender;
 // resource:
 //   { Texture2D x 3 }
 ///
-extern const std::string kHLSL_YUVRender;
+extern const base::String kHLSL_YUVRender;
 
 ///
 // type:
@@ -216,7 +216,7 @@ extern const std::string kHLSL_YUVRender;
 // macros:
 //   CONVERT_PS_OUTPUT_TO_GAMMA
 ///
-extern const std::string kHLSL_PresentRender;
+extern const base::String kHLSL_PresentRender;
 
 }  // namespace renderer
 

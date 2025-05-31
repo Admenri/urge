@@ -529,7 +529,7 @@ WindowImpl::~WindowImpl() {
   Dispose(exception_state);
 }
 
-void WindowImpl::SetLabel(const std::string& label,
+void WindowImpl::SetLabel(const base::String& label,
                           ExceptionState& exception_state) {
   background_node_.SetDebugLabel(label);
   control_node_.SetDebugLabel(label);

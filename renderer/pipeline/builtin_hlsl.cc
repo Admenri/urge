@@ -22,7 +22,7 @@ namespace renderer {
 //   { Texture2D }
 ///
 
-const std::string kHLSL_BaseRender = R"(
+const base::String kHLSL_BaseRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -82,7 +82,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4x4, float4x4 }
 ///
 
-const std::string kHLSL_ColorRender = R"(
+const base::String kHLSL_ColorRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -139,7 +139,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4, float4 }
 ///
 
-const std::string kHLSL_FlatRender = R"(
+const base::String kHLSL_FlatRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -224,7 +224,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   < { float2, float2, float2, float, float4, float4, float, float, float } >
 ///
 
-const std::string kHLSL_SpriteRender = R"(
+const base::String kHLSL_SpriteRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -354,7 +354,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D, Texture2D }
 ///
 
-const std::string kHLSL_AlphaTransitionRender = R"(
+const base::String kHLSL_AlphaTransitionRender = R"(
 
 struct VSInput {
   float4 Pos : ATTRIB0;
@@ -407,7 +407,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D, Texture2D, Texture2D }
 ///
 
-const std::string kHLSL_MappingTransitionRender = R"(
+const base::String kHLSL_MappingTransitionRender = R"(
 
 struct VSInput {
   float4 Pos : ATTRIB0;
@@ -473,7 +473,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float2, float2, float, float }
 ///
 
-const std::string kHLSL_TilemapRender = R"(
+const base::String kHLSL_TilemapRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -563,7 +563,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float2, float2, float2, float }
 ///
 
-const std::string kHLSL_Tilemap2Render = R"(
+const base::String kHLSL_Tilemap2Render = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -665,7 +665,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D }
 ///
 
-const std::string kHLSL_BitmapHueRender = R"(
+const base::String kHLSL_BitmapHueRender = R"(
 
 struct VSInput {
   float4 Pos : ATTRIB0;
@@ -739,7 +739,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4x4, float4x4 }
 //   { Texture2D }
 ///
-const std::string kHLSL_Spine2DRender = R"(
+const base::String kHLSL_Spine2DRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -804,7 +804,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D x 3 }
 ///
 
-const std::string kHLSL_YUVRender = R"(
+const base::String kHLSL_YUVRender = R"(
 
 struct VSInput {
   float4 Pos : ATTRIB0;
@@ -876,7 +876,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   CONVERT_PS_OUTPUT_TO_GAMMA
 ///
 
-const std::string kHLSL_PresentRender = R"(
+const base::String kHLSL_PresentRender = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;

@@ -27,7 +27,7 @@ scoped_refptr<Rect> Rect::Copy(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
-                                      const std::string& data,
+                                      const base::String& data,
                                       ExceptionState& exception_state) {
   if (data.size() < sizeof(int32_t) * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -40,11 +40,11 @@ scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
       base::Rect(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3)));
 }
 
-std::string Rect::Serialize(ExecutionContext* execution_context,
+base::String Rect::Serialize(ExecutionContext* execution_context,
                             scoped_refptr<Rect> value,
                             ExceptionState& exception_state) {
   RectImpl* impl = static_cast<RectImpl*>(value.get());
-  std::string serial_data(sizeof(base::Rect), 0);
+  base::String serial_data(sizeof(base::Rect), 0);
   std::memcpy(serial_data.data(), &impl->rect_, sizeof(base::Rect));
   return serial_data;
 }

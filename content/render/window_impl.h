@@ -18,12 +18,12 @@
 namespace content {
 
 struct WindowAgent {
-  std::vector<renderer::Quad> background_cache;
-  std::unique_ptr<renderer::QuadBatch> background_batch;
-  std::vector<renderer::Quad> control_cache;
-  std::unique_ptr<renderer::QuadBatch> control_batch;
+  base::Vector<renderer::Quad> background_cache;
+  base::OwnedPtr<renderer::QuadBatch> background_batch;
+  base::Vector<renderer::Quad> control_cache;
+  base::OwnedPtr<renderer::QuadBatch> control_batch;
 
-  std::unique_ptr<renderer::Binding_Base> shader_binding;
+  base::OwnedPtr<renderer::Binding_Base> shader_binding;
 
   int32_t control_draw_count;
   int32_t contents_draw_count;
@@ -39,7 +39,7 @@ class WindowImpl : public Window, public GraphicsChild, public Disposable {
   WindowImpl(const WindowImpl&) = delete;
   WindowImpl& operator=(const WindowImpl&) = delete;
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -67,7 +67,7 @@ class WindowImpl : public Window, public GraphicsChild, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Window"; }
+  base::String DisposedObjectName() override { return "Window"; }
   void BackgroundNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

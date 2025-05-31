@@ -24,13 +24,13 @@ class URGE_RUNTIME_API ImageAnimation
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<ImageAnimation> New(ExecutionContext* execution_context,
-                                           const std::string& filename,
+                                           const base::String& filename,
                                            ExceptionState& exception_state);
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<ImageAnimation> New(ExecutionContext* execution_context,
                                            scoped_refptr<IOStream> stream,
-                                           const std::string& extname,
+                                           const base::String& extname,
                                            ExceptionState& exception_state);
 
   /*--urge(name:dispose)--*/
@@ -46,11 +46,11 @@ class URGE_RUNTIME_API ImageAnimation
   virtual int32_t Height(ExceptionState& exception_state) = 0;
 
   /*--urge(name:frames)--*/
-  virtual std::vector<scoped_refptr<Surface>> GetFrames(
+  virtual base::Vector<scoped_refptr<Surface>> GetFrames(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:delays)--*/
-  virtual std::vector<int32_t> GetDelays(ExceptionState& exception_state) = 0;
+  virtual base::Vector<int32_t> GetDelays(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

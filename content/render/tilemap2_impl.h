@@ -27,12 +27,12 @@ namespace content {
 class Tilemap2Impl;
 
 struct Tilemap2Agent {
-  std::unique_ptr<renderer::QuadBatch> batch;
+  base::OwnedPtr<renderer::QuadBatch> batch;
 
   int32_t ground_draw_count = 0;
   int32_t above_draw_count = 0;
 
-  std::unique_ptr<renderer::Binding_Tilemap2> shader_binding;
+  base::OwnedPtr<renderer::Binding_Tilemap2> shader_binding;
 
   RRefPtr<Diligent::ITexture> atlas_texture;
   RRefPtr<Diligent::ITextureView> atlas_binding;
@@ -92,7 +92,7 @@ class Tilemap2Impl : public Tilemap2, public GraphicsChild, public Disposable {
   Tilemap2Impl(const Tilemap2Impl&) = delete;
   Tilemap2Impl& operator=(const Tilemap2Impl&) = delete;
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -113,7 +113,7 @@ class Tilemap2Impl : public Tilemap2, public GraphicsChild, public Disposable {
  private:
   friend class TilemapBitmapImpl;
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Tilemap2"; }
+  base::String DisposedObjectName() override { return "Tilemap2"; }
   void GroundNodeHandlerInternal(DrawableNode::RenderStage stage,
                                  DrawableNode::RenderControllerParams* params);
   void AboveNodeHandlerInternal(DrawableNode::RenderStage stage,
@@ -122,9 +122,9 @@ class Tilemap2Impl : public Tilemap2, public GraphicsChild, public Disposable {
   void UpdateViewportInternal(const base::Rect& viewport,
                               const base::Vec2i& viewport_origin);
 
-  base::Vec2i MakeAtlasInternal(std::vector<AtlasCompositeCommand>& commands);
-  void ParseMapDataInternal(std::vector<renderer::Quad>& ground_cache,
-                            std::vector<renderer::Quad>& above_cache);
+  base::Vec2i MakeAtlasInternal(base::Vector<AtlasCompositeCommand>& commands);
+  void ParseMapDataInternal(base::Vector<renderer::Quad>& ground_cache,
+                            base::Vector<renderer::Quad>& above_cache);
 
   void AtlasModifyHandlerInternal();
   void MapDataModifyHandlerInternal();

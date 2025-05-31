@@ -9,10 +9,10 @@
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
-#include "mimalloc.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
+#include "base/memory/allocator.h"
 #include "binding/mri/mri_main.h"
 #include "components/filesystem/io_service.h"
 #include "content/canvas/font_context.h"
@@ -94,11 +94,11 @@ int main(int argc, char* argv[]) {
   // Initialize filesystem
   std::unique_ptr<filesystem::IOService> io_service =
       std::make_unique<filesystem::IOService>(argv[0]);
-  io_service->AddLoadPath(current_path, "", false);
-  io_service->SetWritePath(current_path);
+  io_service->AddLoadPath(current_path.c_str(), "", false);
+  io_service->SetWritePath(current_path.c_str());
 
   filesystem::IOState io_state;
-  SDL_IOStream* inifile = io_service->OpenReadRaw(ini, &io_state);
+  SDL_IOStream* inifile = io_service->OpenReadRaw(ini.c_str(), &io_state);
   if (io_state.error_count) {
     std::string error_info = "Failed to load configure: ";
     error_info += ini;
@@ -112,11 +112,11 @@ int main(int argc, char* argv[]) {
   }
 
   // Initialize profile
-  std::unique_ptr<content::ContentProfile> profile =
-      content::ContentProfile::MakeFrom(app, inifile);
+  base::OwnedPtr<content::ContentProfile> profile =
+      base::MakeOwnedPtr<content::ContentProfile>(app.c_str(), inifile);
   profile->LoadCommandLine(argc, argv);
 
-  if (!profile->LoadConfigure(app)) {
+  if (!profile->LoadConfigure(app.c_str())) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
                              "Error when parse configure file.", nullptr);
     return 1;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 
   // Setup encryption resource package
   std::string app_package = app + ".arb";
-  if (io_service->AddLoadPath(app_package, "", false))
+  if (io_service->AddLoadPath(app_package.c_str(), "", false))
     LOG(INFO) << "[IOService] Encrypto pack \"" << app_package
               << "\" was added.";
 
@@ -149,10 +149,11 @@ int main(int argc, char* argv[]) {
     // Initialize i18n profile
     auto* i18n_xml_stream =
         io_service->OpenReadRaw(profile->i18n_xml_path, nullptr);
-    auto i18n_profile = content::I18NProfile::MakeForStream(i18n_xml_stream);
+    auto i18n_profile =
+        base::MakeOwnedPtr<content::I18NProfile>(i18n_xml_stream);
 
     // Initialize font context
-    auto font_context = std::make_unique<content::ScopedFontData>(
+    auto font_context = base::MakeOwnedPtr<content::ScopedFontData>(
         io_service.get(), profile->default_font_path);
 
     {
@@ -185,9 +186,9 @@ int main(int argc, char* argv[]) {
       content_params.i18n_profile = i18n_profile.get();
       content_params.window = widget->AsWeakPtr();
       content_params.render_worker = render_worker.get();
-      content_params.entry = std::make_unique<binding::BindingEngineMri>();
+      content_params.entry = base::MakeOwnedPtr<binding::BindingEngineMri>();
 
-      std::unique_ptr<content::ContentRunner> runner =
+      base::OwnedPtr<content::ContentRunner> runner =
           content::ContentRunner::Create(std::move(content_params));
       runner->RunMainLoop();
 

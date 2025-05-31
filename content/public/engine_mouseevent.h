@@ -34,7 +34,7 @@ class URGE_RUNTIME_API MouseEvent : public base::RefCounted<MouseEvent> {
   };
 
   /*--urge(name:update)--*/
-  static std::vector<scoped_refptr<MouseEvent>> Update(
+  static base::Vector<scoped_refptr<MouseEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 

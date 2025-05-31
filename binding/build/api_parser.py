@@ -125,7 +125,7 @@ class APIParser:
   #    // xxx
   #    int32_t param1;
   #    std::optional<Struct2> param2;
-  #    std::string param3 = "default";
+  #    base::String param3 = "default";
   #    scoped_refptr<Klass1> param4 = nullptr;
   #  };
   def process_struct(self, lines):
@@ -202,7 +202,7 @@ class APIParser:
   # 解析成员函数信息
   # 期望输入：
   #  virtual scoped_refptr<xx> yy(ExceptionState& exception_state) = 0;
-  #  static scoped_refptr<zz> New(ExecutionContext* execution_context,const std::string& name,uint32_t size,ExceptionState& exception_state);
+  #  static scoped_refptr<zz> New(ExecutionContext* execution_context,const base::String& name,uint32_t size,ExceptionState& exception_state);
   def process_member(self, lines):
     pattern = r"""
         ^\s*
@@ -466,7 +466,7 @@ class APIParser:
       "bool",
       "float",
       "double",
-      "std::string",
+      "base::String",
     )
 
     result = []
@@ -533,13 +533,13 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   struct CreateInfo {
     uint32_t test;
     uint32_t id = 0;
-    std::string filename = "null";
+    base::String filename = "null";
     std::optional<Size> size;
   };
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
-                                   const std::string& filename,
+                                   const base::String& filename,
                                    const std::vector<scoped_refptr<Test>> test,
                                    ExceptionState& exception_state);
 
@@ -562,7 +562,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Bitmap> FromStream(ExecutionContext* execution_context,
                                           scoped_refptr<IOStream> stream,
-                                          const std::string& extname,
+                                          const base::String& extname,
                                           ExceptionState& exception_state);
 
   /*--urge(serializable)--*/
@@ -686,7 +686,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const std::string& str,
+                        const base::String& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
@@ -695,22 +695,22 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const std::string& str,
+                        const base::String& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const std::string& str,
+                        const base::String& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const std::string& str,
+                        const base::String& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:text_size)--*/
-  virtual scoped_refptr<Rect> TextSize(const std::string& str,
+  virtual scoped_refptr<Rect> TextSize(const base::String& str,
                                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:get_surface)--*/

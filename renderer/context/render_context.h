@@ -25,11 +25,12 @@ class RenderContext {
   ScissorController* ScissorState() const { return scissor_.get(); }
 
  private:
+  friend struct base::Allocator;
   friend class RenderDevice;
   RenderContext(Diligent::RefCntAutoPtr<Diligent::IDeviceContext> context);
 
   Diligent::RefCntAutoPtr<Diligent::IDeviceContext> context_;
-  std::unique_ptr<ScissorController> scissor_;
+  base::OwnedPtr<ScissorController> scissor_;
 };
 
 }  // namespace renderer

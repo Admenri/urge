@@ -56,7 +56,7 @@ const KeyboardControllerImpl::KeyBinding kKeyboardBindings2[] = {
 const int32_t kKeyboardBindings2Size =
     sizeof(kKeyboardBindings2) / sizeof(kKeyboardBindings2[0]);
 
-const std::string kArrowDirsSymbol[] = {
+const base::String kArrowDirsSymbol[] = {
     "DOWN",
     "LEFT",
     "RIGHT",
@@ -66,7 +66,7 @@ const std::string kArrowDirsSymbol[] = {
 const int32_t kArrowDirsSymbolSize =
     sizeof(kArrowDirsSymbol) / sizeof(kArrowDirsSymbol[0]);
 
-const std::array<std::string, 12> kButtonItems = {
+const std::array<base::String, 12> kButtonItems = {
     "A", "B", "C", "X", "Y", "Z", "L", "R", "DOWN", "LEFT", "RIGHT", "UP",
 };
 
@@ -129,7 +129,7 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
     }
 
     ImGui::SameLine();
-    std::string button_name = kButtonItems[selected_button];
+    base::String button_name = kButtonItems[selected_button];
 
     // Binding list box
     {
@@ -143,7 +143,7 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
                 (selected_binding == static_cast<int32_t>(i));
 
             // Generate button sign
-            std::string display_button_name = SDL_GetScancodeName(it.scancode);
+            base::String display_button_name = SDL_GetScancodeName(it.scancode);
             if (it.scancode == SDL_SCANCODE_UNKNOWN)
               display_button_name = "<x>";
             if (is_select)
@@ -274,7 +274,7 @@ void KeyboardControllerImpl::Update(ExceptionState& exception_state) {
   UpdateDir8Internal();
 }
 
-bool KeyboardControllerImpl::IsPressed(const std::string& sym,
+bool KeyboardControllerImpl::IsPressed(const base::String& sym,
                                        ExceptionState& exception_state) {
   if (sym.empty())
     return false;
@@ -288,7 +288,7 @@ bool KeyboardControllerImpl::IsPressed(const std::string& sym,
   return false;
 }
 
-bool KeyboardControllerImpl::IsTriggered(const std::string& sym,
+bool KeyboardControllerImpl::IsTriggered(const base::String& sym,
                                          ExceptionState& exception_state) {
   if (sym.empty())
     return false;
@@ -302,7 +302,7 @@ bool KeyboardControllerImpl::IsTriggered(const std::string& sym,
   return false;
 }
 
-bool KeyboardControllerImpl::IsRepeated(const std::string& sym,
+bool KeyboardControllerImpl::IsRepeated(const base::String& sym,
                                         ExceptionState& exception_state) {
   if (sym.empty())
     return false;
@@ -339,18 +339,18 @@ bool KeyboardControllerImpl::KeyRepeated(int32_t scancode,
   return key_states_[scancode].repeat;
 }
 
-std::string KeyboardControllerImpl::GetKeyName(
+base::String KeyboardControllerImpl::GetKeyName(
     int32_t scancode,
     ExceptionState& exception_state) {
   SDL_Keycode key = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode),
                                            SDL_KMOD_NONE, false);
-  return std::string(SDL_GetKeyName(key));
+  return base::String(SDL_GetKeyName(key));
 }
 
-std::vector<int32_t> KeyboardControllerImpl::GetKeysFromFlag(
-    const std::string& flag,
+base::Vector<int32_t> KeyboardControllerImpl::GetKeysFromFlag(
+    const base::String& flag,
     ExceptionState& exception_state) {
-  std::vector<int32_t> out;
+  base::Vector<int32_t> out;
   if (flag.empty())
     return out;
 
@@ -361,8 +361,8 @@ std::vector<int32_t> KeyboardControllerImpl::GetKeysFromFlag(
   return out;
 }
 
-void KeyboardControllerImpl::SetKeysFromFlag(const std::string& flag,
-                                             const std::vector<int32_t>& keys,
+void KeyboardControllerImpl::SetKeysFromFlag(const base::String& flag,
+                                             const base::Vector<int32_t>& keys,
                                              ExceptionState& exception_state) {
   if (flag.empty())
     return;
@@ -381,9 +381,9 @@ void KeyboardControllerImpl::SetKeysFromFlag(const std::string& flag,
   }
 }
 
-std::vector<int32_t> KeyboardControllerImpl::GetRecentPressed(
+base::Vector<int32_t> KeyboardControllerImpl::GetRecentPressed(
     ExceptionState& exception_state) {
-  std::vector<int32_t> out;
+  base::Vector<int32_t> out;
 
   for (size_t i = 0; i < recent_key_states_.size(); ++i)
     if (recent_key_states_[i].pressed)
@@ -392,9 +392,9 @@ std::vector<int32_t> KeyboardControllerImpl::GetRecentPressed(
   return out;
 }
 
-std::vector<int32_t> KeyboardControllerImpl::GetRecentTriggered(
+base::Vector<int32_t> KeyboardControllerImpl::GetRecentTriggered(
     ExceptionState& exception_state) {
-  std::vector<int32_t> out;
+  base::Vector<int32_t> out;
 
   for (size_t i = 0; i < recent_key_states_.size(); ++i)
     if (recent_key_states_[i].trigger)
@@ -403,9 +403,9 @@ std::vector<int32_t> KeyboardControllerImpl::GetRecentTriggered(
   return out;
 }
 
-std::vector<int32_t> KeyboardControllerImpl::GetRecentRepeated(
+base::Vector<int32_t> KeyboardControllerImpl::GetRecentRepeated(
     ExceptionState& exception_state) {
-  std::vector<int32_t> out;
+  base::Vector<int32_t> out;
 
   for (size_t i = 0; i < recent_key_states_.size(); ++i)
     if (recent_key_states_[i].repeat)
@@ -532,11 +532,11 @@ void KeyboardControllerImpl::UpdateDir8Internal() {
 }
 
 void KeyboardControllerImpl::TryReadBindingsInternal() {
-  std::string filepath = profile_->program_name;
+  base::String filepath = profile_->program_name;
   filepath += INPUT_CONFIG_SUBFIX;
   filepath += std::to_string(static_cast<int32_t>(profile_->api_version));
 
-  std::ifstream fs(filepath, std::ios::binary);
+  std::ifstream fs(filepath.c_str(), std::ios::binary);
   if (fs.is_open()) {
     key_bindings_.clear();
 
@@ -545,7 +545,7 @@ void KeyboardControllerImpl::TryReadBindingsInternal() {
     for (uint32_t i = 0; i < item_size; ++i) {
       uint32_t token_size;
       fs.read(reinterpret_cast<char*>(&token_size), sizeof(token_size));
-      std::string token(token_size, 0);
+      base::String token(token_size, 0);
       fs.read(token.data(), token_size);
       SDL_Scancode scancode;
       fs.read(reinterpret_cast<char*>(&scancode), sizeof(scancode));
@@ -558,11 +558,11 @@ void KeyboardControllerImpl::TryReadBindingsInternal() {
 }
 
 void KeyboardControllerImpl::StorageBindingsInternal() {
-  std::string filepath = profile_->program_name;
+  base::String filepath = profile_->program_name;
   filepath += INPUT_CONFIG_SUBFIX;
   filepath += std::to_string(static_cast<int32_t>(profile_->api_version));
 
-  std::ofstream fs(filepath, std::ios::binary);
+  std::ofstream fs(filepath.c_str(), std::ios::binary);
   if (fs.is_open()) {
     uint32_t item_size = key_bindings_.size();
     fs.write(reinterpret_cast<const char*>(&item_size), sizeof(item_size));

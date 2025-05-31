@@ -5,13 +5,11 @@
 #ifndef RENDERER_RESOURCE_RENDER_BUFFER_H_
 #define RENDERER_RESOURCE_RENDER_BUFFER_H_
 
-#include <cstring>
-#include <memory>
-
 #include "Graphics/GraphicsEngine/interface/Buffer.h"
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
 
+#include "base/memory/allocator.h"
 #include "renderer/layout/vertex_layout.h"
 #include "renderer/renderer_config.h"
 
@@ -24,7 +22,7 @@ class QuadIndexCache {
       Diligent::VALUE_TYPE::VT_UINT16;
 
   // Make quad index(6) buffer cache
-  static std::unique_ptr<QuadIndexCache> Make(
+  static base::OwnedPtr<QuadIndexCache> Make(
       RRefPtr<Diligent::IRenderDevice> device);
 
   ~QuadIndexCache();
@@ -39,12 +37,13 @@ class QuadIndexCache {
   RRefPtr<Diligent::IBuffer>& operator*() { return buffer_; }
 
  private:
+  friend struct base::Allocator;
   QuadIndexCache(RRefPtr<Diligent::IRenderDevice> device);
 
   RRefPtr<Diligent::IRenderDevice> device_;
   RRefPtr<Diligent::IBuffer> buffer_;
 
-  std::vector<uint16_t> cache_;
+  base::Vector<uint16_t> cache_;
 };
 
 template <typename TargetType,
@@ -60,8 +59,8 @@ class BatchBuffer {
   BatchBuffer(const BatchBuffer&) = delete;
   BatchBuffer& operator=(const BatchBuffer&) = delete;
 
-  static std::unique_ptr<BatchBuffer> Make(Diligent::IRenderDevice* device,
-                                           size_t initial_count = 0) {
+  static base::OwnedPtr<BatchBuffer> Make(Diligent::IRenderDevice* device,
+                                          size_t initial_count = 0) {
     RRefPtr<Diligent::IBuffer> buffer;
 
     if (initial_count > 0) {
@@ -71,7 +70,7 @@ class BatchBuffer {
       device->CreateBuffer(buffer_desc, nullptr, &buffer);
     }
 
-    return std::unique_ptr<BatchBuffer>(new BatchBuffer(device, buffer));
+    return base::MakeOwnedPtr<BatchBuffer>(device, buffer);
   }
 
   Diligent::IBuffer* operator*() { return buffer_; }
@@ -108,6 +107,7 @@ class BatchBuffer {
   }
 
  private:
+  friend struct base::Allocator;
   BatchBuffer(Diligent::IRenderDevice* device,
               RRefPtr<Diligent::IBuffer> buffer)
       : device_(device), buffer_(buffer) {}

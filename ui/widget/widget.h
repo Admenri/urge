@@ -71,7 +71,7 @@ class Widget {
     InitParams(const InitParams&) = delete;
     InitParams& operator=(const InitParams&) = delete;
 
-    std::string title;
+    base::String title;
 
     bool resizable = false;
 
@@ -114,8 +114,8 @@ class Widget {
   void SetFullscreen(bool fullscreen);
   bool IsFullscreen() const;
 
-  void SetTitle(const std::string& window_title);
-  std::string GetTitle() const;
+  void SetTitle(const base::String& window_title);
+  base::String GetTitle() const;
 
   SDL_Window* AsSDLWindow() const { return window_; }
   base::WeakPtr<Widget> AsWeakPtr() { return weak_ptr_factory_.GetWeakPtr(); }
@@ -131,7 +131,7 @@ class Widget {
   void EmulateKeyState(::SDL_Scancode scancode, bool pressed);
   MouseState& GetMouseState() { return mouse_state_; }
 
-  std::string FetchInputText();
+  base::String FetchInputText();
 
   bool DispatchEvent(SDL_Event* event);
 
@@ -147,7 +147,7 @@ class Widget {
   MouseState mouse_state_;
 
   std::mutex text_lock_;
-  std::string text_buffer_;
+  base::String text_buffer_;
 
   base::WeakPtrFactory<Widget> weak_ptr_factory_{this};
 };

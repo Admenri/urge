@@ -14,11 +14,11 @@
 namespace content {
 
 struct PlaneAgent {
-  std::unique_ptr<renderer::QuadBatch> batch;
-  std::vector<renderer::Quad> cache;
+  base::OwnedPtr<renderer::QuadBatch> batch;
+  base::Vector<renderer::Quad> cache;
   uint32_t quad_size;
 
-  std::unique_ptr<renderer::Binding_Flat> shader_binding;
+  base::OwnedPtr<renderer::Binding_Flat> shader_binding;
   RRefPtr<Diligent::IBuffer> uniform_buffer;
 };
 
@@ -30,7 +30,7 @@ class PlaneImpl : public Plane, public GraphicsChild, public Disposable {
   PlaneImpl(const PlaneImpl&) = delete;
   PlaneImpl& operator=(const PlaneImpl&) = delete;
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -52,7 +52,7 @@ class PlaneImpl : public Plane, public GraphicsChild, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Plane"; }
+  base::String DisposedObjectName() override { return "Plane"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

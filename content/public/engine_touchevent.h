@@ -28,7 +28,7 @@ class URGE_RUNTIME_API TouchEvent : public base::RefCounted<TouchEvent> {
   };
 
   /*--urge(name:update)--*/
-  static std::vector<scoped_refptr<TouchEvent>> Update(
+  static base::Vector<scoped_refptr<TouchEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 

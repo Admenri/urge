@@ -5,10 +5,9 @@
 #ifndef COMPONENTS_SPINE_SKELETON_RENDERER_H_
 #define COMPONENTS_SPINE_SKELETON_RENDERER_H_
 
-#include <memory>
-
 #include "spine/spine.h"
 
+#include "base/memory/allocator.h"
 #include "base/worker/thread_worker.h"
 #include "components/filesystem/io_service.h"
 #include "renderer/device/render_device.h"
@@ -23,8 +22,8 @@ using SpineVertexBatch = renderer::BatchBuffer<renderer::SpineVertex,
                                                Diligent::USAGE_DEFAULT>;
 
 struct SpineRendererAgent {
-  std::unique_ptr<SpineVertexBatch> vertex_batch;
-  std::unique_ptr<renderer::Binding_Base> shader_binding;
+  base::OwnedPtr<SpineVertexBatch> vertex_batch;
+  base::OwnedPtr<renderer::Binding_Base> shader_binding;
 };
 
 class DiligentTextureLoader : public TextureLoader {
@@ -48,14 +47,11 @@ class DiligentTextureLoader : public TextureLoader {
 
 class DiligentRenderer {
  public:
+  DiligentRenderer(renderer::RenderDevice* device, base::ThreadWorker* worker);
   ~DiligentRenderer();
 
   DiligentRenderer(const DiligentRenderer&) = delete;
   DiligentRenderer& operator=(const DiligentRenderer&) = delete;
-
-  static std::unique_ptr<DiligentRenderer> Create(
-      renderer::RenderDevice* device,
-      base::ThreadWorker* worker);
 
   void Update(renderer::RenderContext* context, spine::Skeleton* skeleton);
   void Render(renderer::RenderContext* context,
@@ -63,13 +59,11 @@ class DiligentRenderer {
               bool premultiplied_alpha);
 
  private:
-  DiligentRenderer(renderer::RenderDevice* device, base::ThreadWorker* worker);
-
   renderer::RenderDevice* device_;
   base::ThreadWorker* worker_;
   SpineRendererAgent* agent_;
-  std::vector<renderer::SpineVertex> vertex_cache_;
-  std::unique_ptr<SkeletonRenderer> skeleton_renderer_;
+  base::Vector<renderer::SpineVertex> vertex_cache_;
+  base::OwnedPtr<SkeletonRenderer> skeleton_renderer_;
   RenderCommand* pending_commands_;
 };
 

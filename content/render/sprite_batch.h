@@ -22,12 +22,11 @@ using SpriteBatchBuffer =
 
 class SpriteBatch {
  public:
+  SpriteBatch(renderer::RenderDevice* device);
   ~SpriteBatch();
 
   SpriteBatch(const SpriteBatch&) = delete;
   SpriteBatch& operator=(const SpriteBatch&) = delete;
-
-  static std::unique_ptr<SpriteBatch> Make(renderer::RenderDevice* device);
 
   TextureAgent* GetCurrentTexture() const { return current_texture_; }
 
@@ -48,20 +47,16 @@ class SpriteBatch {
                                     renderer::RenderContext* context);
 
  private:
-  SpriteBatch(renderer::RenderDevice* device,
-              std::unique_ptr<renderer::Binding_Sprite> binding,
-              std::unique_ptr<renderer::QuadBatch> vertex_batch,
-              std::unique_ptr<SpriteBatchBuffer> uniform_batch);
   renderer::RenderDevice* device_;
   TextureAgent* current_texture_;
   int32_t last_batch_index_;
 
-  std::vector<renderer::Quad> quad_cache_;
-  std::vector<renderer::Binding_Sprite::Params> uniform_cache_;
+  base::Vector<renderer::Quad> quad_cache_;
+  base::Vector<renderer::Binding_Sprite::Params> uniform_cache_;
 
-  std::unique_ptr<renderer::Binding_Sprite> binding_;
-  std::unique_ptr<renderer::QuadBatch> vertex_batch_;
-  std::unique_ptr<SpriteBatchBuffer> uniform_batch_;
+  base::OwnedPtr<renderer::Binding_Sprite> binding_;
+  base::OwnedPtr<renderer::QuadBatch> vertex_batch_;
+  base::OwnedPtr<SpriteBatchBuffer> uniform_batch_;
   RRefPtr<Diligent::IBufferView> uniform_binding_;
 };
 

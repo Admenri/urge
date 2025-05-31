@@ -18,10 +18,10 @@
 namespace content {
 
 struct Window2Agent {
-  std::unique_ptr<renderer::QuadBatch> background_batch;
-  std::unique_ptr<renderer::QuadBatch> controls_batch;
+  base::OwnedPtr<renderer::QuadBatch> background_batch;
+  base::OwnedPtr<renderer::QuadBatch> controls_batch;
 
-  std::unique_ptr<renderer::Binding_Base> shader_binding;
+  base::OwnedPtr<renderer::Binding_Base> shader_binding;
 
   RRefPtr<Diligent::ITexture> background_texture;
   RRefPtr<Diligent::IBuffer> background_world;
@@ -44,7 +44,7 @@ class Window2Impl : public Window2, public GraphicsChild, public Disposable {
   Window2Impl(const Window2Impl&) = delete;
   Window2Impl& operator=(const Window2Impl&) = delete;
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -83,7 +83,7 @@ class Window2Impl : public Window2, public GraphicsChild, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Window2"; }
+  base::String DisposedObjectName() override { return "Window2"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

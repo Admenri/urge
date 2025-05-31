@@ -39,19 +39,19 @@ class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
   /*--urge(name:from_filesystem)--*/
   static scoped_refptr<IOStream> FromFileSystem(
       ExecutionContext* execution_context,
-      const std::string& filename,
-      const std::string& mode,
+      const base::String& filename,
+      const base::String& mode,
       ExceptionState& exception_state);
 
   /*--urge(name:from_iosystem)--*/
   static scoped_refptr<IOStream> FromIOSystem(
       ExecutionContext* execution_context,
-      const std::string& filename,
+      const base::String& filename,
       ExceptionState& exception_state);
 
   /*--urge(name:from_memory)--*/
   static scoped_refptr<IOStream> FromMemory(ExecutionContext* execution_context,
-                                            const std::string& buffer,
+                                            const base::String& buffer,
                                             ExceptionState& exception_state);
 
   /*--urge(name:dispose)--*/
@@ -75,10 +75,10 @@ class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
   virtual int64_t Tell(ExceptionState& exception_state) = 0;
 
   /*--urge(name:read)--*/
-  virtual std::string Read(int64_t size, ExceptionState& exception_state) = 0;
+  virtual base::String Read(int64_t size, ExceptionState& exception_state) = 0;
 
   /*--urge(name:write)--*/
-  virtual int64_t Write(const std::string& buffer,
+  virtual int64_t Write(const base::String& buffer,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:flush)--*/

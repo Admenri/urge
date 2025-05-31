@@ -18,8 +18,8 @@ namespace content {
 
 struct VideoDecoderAgent {
   RRefPtr<Diligent::ITexture> y, u, v;
-  std::unique_ptr<renderer::QuadBatch> batch;
-  std::unique_ptr<renderer::Binding_YUV> shader_binding;
+  base::OwnedPtr<renderer::QuadBatch> batch;
+  base::OwnedPtr<renderer::Binding_YUV> shader_binding;
 };
 
 class VideoDecoderImpl : public VideoDecoder,
@@ -27,7 +27,7 @@ class VideoDecoderImpl : public VideoDecoder,
                          public Disposable {
  public:
   VideoDecoderImpl(RenderScreenImpl* parent,
-                   std::unique_ptr<uvpx::Player> player,
+                   base::OwnedPtr<uvpx::Player> player,
                    filesystem::IOService* io_service);
   ~VideoDecoderImpl() override;
 
@@ -49,14 +49,14 @@ class VideoDecoderImpl : public VideoDecoder,
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "DAV1D/AV1 Decoder"; }
+  base::String DisposedObjectName() override { return "DAV1D/AV1 Decoder"; }
 
   static void OnAudioData(void* userPtr, float* pcm, size_t count);
   static void OnVideoFinished(void* userPtr);
 
   VideoDecoderAgent* agent_;
 
-  std::unique_ptr<uvpx::Player> player_;
+  base::OwnedPtr<uvpx::Player> player_;
   uint64_t last_ticks_;
   int64_t counter_freq_;
   float frame_delta_;

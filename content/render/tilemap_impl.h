@@ -36,12 +36,12 @@ namespace content {
 */
 
 struct TilemapAgent {
-  std::unique_ptr<renderer::QuadBatch> batch;
+  base::OwnedPtr<renderer::QuadBatch> batch;
 
   int32_t ground_draw_count;
-  std::vector<int32_t> above_draw_count;
+  base::Vector<int32_t> above_draw_count;
 
-  std::unique_ptr<renderer::Binding_Tilemap> shader_binding;
+  base::OwnedPtr<renderer::Binding_Tilemap> shader_binding;
 
   RRefPtr<Diligent::ITexture> atlas_texture;
   RRefPtr<Diligent::ITextureView> atlas_binding;
@@ -90,7 +90,7 @@ class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
   TilemapImpl(const TilemapImpl&) = delete;
   TilemapImpl& operator=(const TilemapImpl&) = delete;
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -111,19 +111,19 @@ class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
  private:
   friend class TilemapAutotileImpl;
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Tilemap"; }
+  base::String DisposedObjectName() override { return "Tilemap"; }
   void GroundNodeHandlerInternal(DrawableNode::RenderStage stage,
                                  DrawableNode::RenderControllerParams* params);
   void AboveNodeHandlerInternal(int32_t layer_index,
                                 DrawableNode::RenderStage stage,
                                 DrawableNode::RenderControllerParams* params);
 
-  base::Vec2i MakeAtlasInternal(std::vector<AtlasCompositeCommand>& commands);
+  base::Vec2i MakeAtlasInternal(base::Vector<AtlasCompositeCommand>& commands);
   void UpdateViewportInternal(const base::Rect& viewport,
                               const base::Vec2i& viewport_origin);
   void ParseMapDataInternal(
-      std::vector<renderer::Quad>& ground_cache,
-      std::vector<std::vector<renderer::Quad>>& aboves_cache);
+      base::Vector<renderer::Quad>& ground_cache,
+      base::Vector<base::Vector<renderer::Quad>>& aboves_cache);
 
   void SetupTilemapLayersInternal(const base::Rect& viewport);
   void ResetAboveLayersOrderInternal();
@@ -138,7 +138,7 @@ class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
   };
 
   DrawableNode ground_node_;
-  std::vector<DrawableNode> above_nodes_;
+  base::Vector<DrawableNode> above_nodes_;
   TilemapAgent* agent_;
   int32_t tilesize_ = 32;
   base::Rect render_viewport_;

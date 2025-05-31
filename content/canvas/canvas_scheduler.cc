@@ -6,15 +6,6 @@
 
 namespace content {
 
-std::unique_ptr<CanvasScheduler> CanvasScheduler::MakeInstance(
-    base::ThreadWorker* worker,
-    renderer::RenderDevice* device,
-    renderer::RenderContext* context,
-    filesystem::IOService* io_service) {
-  return std::unique_ptr<CanvasScheduler>(
-      new CanvasScheduler(worker, device, context, io_service));
-}
-
 CanvasScheduler::CanvasScheduler(base::ThreadWorker* worker,
                                  renderer::RenderDevice* device,
                                  renderer::RenderContext* context,

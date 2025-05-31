@@ -205,7 +205,7 @@ class MriBindingGen:
         convert_func = f"RFLOAT_VALUE({member_name})"
       elif member_type.startswith("bool"):
         convert_func = f"MRI_FROM_BOOL({member_name})"
-      elif member_type.startswith("std::string"):
+      elif member_type.startswith("base::String"):
         convert_func = f"MRI_FROM_STRING({member_name})"
       elif member_type.startswith("scoped_refptr"):
         match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', param_type)
@@ -215,11 +215,11 @@ class MriBindingGen:
         match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
         decay_type = match.group(1)
         convert_func = f"RBHASH2{decay_type}({member_name})"
-      elif member_type.startswith("std::vector"):
-        match = re.search(r'std::vector<(.+)>', member_type)
+      elif member_type.startswith("base::Vector"):
+        match = re.search(r'base::Vector<(.+)>', member_type)
         decay_type = match.group(1)
 
-        # 萃取 std::vector 中的类型并使用对应的转换
+        # 萃取 base::Vector 中的类型并使用对应的转换
         if decay_type.startswith("scoped_refptr"):
           match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
           match_type = match.group(1)
@@ -265,7 +265,7 @@ class MriBindingGen:
         "bool": "MRI_BOOL_VALUE",
         "float": "DBL2NUM",
         "double": "DBL2NUM",
-        "std::string": "MRI_STRING_VALUE",
+        "base::String": "MRI_STRING_VALUE",
       }
 
       convert_func = ""
@@ -279,11 +279,11 @@ class MriBindingGen:
         match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
         decay_type = match.group(1)
         convert_func = f"{decay_type}2RBHASH(cxx_obj.{member_name})"
-      elif member_type.startswith("std::vector"):
-        match = re.search(r'std::vector<(.+)>', member_type)
+      elif member_type.startswith("base::Vector"):
+        match = re.search(r'base::Vector<(.+)>', member_type)
         decay_type = match.group(1)
 
-        # 萃取 std::vector 中的类型并使用对应的转换
+        # 萃取 base::Vector 中的类型并使用对应的转换
         if decay_type.startswith("scoped_refptr"):
           match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
           match_type = match.group(1)
@@ -424,9 +424,9 @@ class MriBindingGen:
           elif param_type == "double":
             parse_template += "f"
             ruby_type = "double"
-          elif param_type.startswith("const std::string&") or param_type.startswith("std::string"):
+          elif param_type.startswith("const base::String&") or param_type.startswith("base::String"):
             parse_template += "s"
-            ruby_type = "std::string"
+            ruby_type = "base::String"
           elif param_type.startswith("scoped_refptr"):
             match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', param_type)
             decay_type = match.group(1)
@@ -441,14 +441,14 @@ class MriBindingGen:
             ruby_type = "VALUE"
             convert_suffix += f"auto {param_name} = RBHASH2{decay_type}(rb_check_hash_type({param_name}_obj));\n"
             param_name += "_obj"
-          elif param_type.startswith("const std::vector") or param_type.startswith("std::vector"):
+          elif param_type.startswith("const base::Vector") or param_type.startswith("base::Vector"):
             parse_template += "o"
             ruby_type = "VALUE"
 
-            match = re.search(r'std::vector<(.+)>', param_type)
+            match = re.search(r'base::Vector<(.+)>', param_type)
             decay_type = match.group(1)
 
-            # 萃取 std::vector 中的类型并使用对应的转换
+            # 萃取 base::Vector 中的类型并使用对应的转换
             if decay_type.startswith("scoped_refptr"):
               match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
               match_type = match.group(1)
@@ -538,7 +538,7 @@ class MriBindingGen:
               "bool": "MRI_BOOL_VALUE",
               "float": "DBL2NUM",
               "double": "DBL2NUM",
-              "std::string": "MRI_STRING_VALUE",
+              "base::String": "MRI_STRING_VALUE",
             }
 
             if self.is_type_enum(return_type):
@@ -551,11 +551,11 @@ class MriBindingGen:
               match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', return_type)
               decay_type = match.group(1)
               content += f"VALUE _result = {decay_type}2RBHASH(_return_value);\n"
-            elif return_type.startswith("std::vector"):
-              match = re.search(r'std::vector<(.+)>', return_type)
+            elif return_type.startswith("base::Vector"):
+              match = re.search(r'base::Vector<(.+)>', return_type)
               decay_type = match.group(1)
 
-              # 萃取 std::vector 中的类型并使用对应的转换
+              # 萃取 base::Vector 中的类型并使用对应的转换
               if decay_type.startswith("scoped_refptr"):
                 match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
                 match_type = match.group(1)
@@ -687,14 +687,14 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   struct CreateInfo {
     uint32_t test;
     uint32_t id = 0;
-    std::string filename = "null";
+    base::String filename = "null";
     std::optional<Size> size;
   };
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
-                                   const std::string& filename,
-                                   const std::vector<scoped_refptr<Test>> test,
+                                   const base::String& filename,
+                                   const base::Vector<scoped_refptr<Test>> test,
                                    ExceptionState& exception_state);
 
   /*--urge(name:initialize)--*/
@@ -716,7 +716,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Bitmap> FromStream(ExecutionContext* execution_context,
                                           scoped_refptr<IOStream> stream,
-                                          const std::string& extname,
+                                          const base::String& extname,
                                           ExceptionState& exception_state);
 
   /*--urge(serializable)--*/
@@ -840,7 +840,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const std::string& str,
+                        const base::String& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
@@ -849,22 +849,22 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const std::string& str,
+                        const base::String& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const std::string& str,
+                        const base::String& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const std::string& str,
+                        const base::String& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:text_size)--*/
-  virtual scoped_refptr<Rect> TextSize(const std::string& str,
+  virtual scoped_refptr<Rect> TextSize(const base::String& str,
                                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:get_surface)--*/

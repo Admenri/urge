@@ -20,8 +20,8 @@ struct ViewportAgent {
 
   struct {
     base::Vec2i layer_size;
-    std::unique_ptr<renderer::QuadBatch> quads;
-    std::unique_ptr<renderer::Binding_Flat> binding;
+    base::OwnedPtr<renderer::QuadBatch> quads;
+    base::OwnedPtr<renderer::Binding_Flat> binding;
     RRefPtr<Diligent::ITexture> intermediate_layer;
     RRefPtr<Diligent::IBuffer> uniform_buffer;
   } effect;
@@ -39,7 +39,7 @@ class ViewportImpl : public Viewport, public GraphicsChild, public Disposable {
 
   static scoped_refptr<ViewportImpl> From(scoped_refptr<Viewport> host);
 
-  void SetLabel(const std::string& label,
+  void SetLabel(const base::String& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -64,7 +64,7 @@ class ViewportImpl : public Viewport, public GraphicsChild, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  std::string DisposedObjectName() override { return "Viewport"; }
+  base::String DisposedObjectName() override { return "Viewport"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

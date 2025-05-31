@@ -25,7 +25,7 @@ class URGE_RUNTIME_API Font : public base::RefCounted<Font> {
 
   /*--urge(name:initialize,optional:size=20)--*/
   static scoped_refptr<Font> New(ExecutionContext* execution_context,
-                                 const std::string& name,
+                                 const base::String& name,
                                  uint32_t size,
                                  ExceptionState& exception_state);
 
@@ -36,11 +36,11 @@ class URGE_RUNTIME_API Font : public base::RefCounted<Font> {
 
   /*--urge(name:exist?)--*/
   static bool IsExisted(ExecutionContext* execution_context,
-                        const std::string& name,
+                        const base::String& name,
                         ExceptionState& exception_state);
 
   /*--urge(name:default_name)--*/
-  URGE_EXPORT_STATIC_ATTRIBUTE(DefaultName, std::vector<std::string>);
+  URGE_EXPORT_STATIC_ATTRIBUTE(DefaultName, base::Vector<base::String>);
 
   /*--urge(name:default_size)--*/
   URGE_EXPORT_STATIC_ATTRIBUTE(DefaultSize, uint32_t);
@@ -67,7 +67,7 @@ class URGE_RUNTIME_API Font : public base::RefCounted<Font> {
   URGE_EXPORT_STATIC_ATTRIBUTE(DefaultOutColor, scoped_refptr<Color>);
 
   /*--urge(name:name)--*/
-  URGE_EXPORT_ATTRIBUTE(Name, std::vector<std::string>);
+  URGE_EXPORT_ATTRIBUTE(Name, base::Vector<base::String>);
 
   /*--urge(name:size)--*/
   URGE_EXPORT_ATTRIBUTE(Size, uint32_t);

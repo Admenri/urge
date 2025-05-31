@@ -47,7 +47,7 @@ class ContentRunner {
 
     // Binding boot entry,
     // require an unique one.
-    std::unique_ptr<EngineBindingBase> entry;
+    base::OwnedPtr<EngineBindingBase> entry;
   };
 
   ~ContentRunner();
@@ -55,18 +55,19 @@ class ContentRunner {
   ContentRunner(const ContentRunner&) = delete;
   ContentRunner& operator=(const ContentRunner&) = delete;
 
-  static std::unique_ptr<ContentRunner> Create(InitParams params);
+  static base::OwnedPtr<ContentRunner> Create(InitParams params);
 
   void RunMainLoop();
 
  private:
+  friend struct base::Allocator;
   ContentRunner(ContentProfile* profile,
                 filesystem::IOService* io_service,
                 ScopedFontData* font_context,
                 I18NProfile* i18n_profile,
                 base::WeakPtr<ui::Widget> window,
                 base::ThreadWorker* render_worker,
-                std::unique_ptr<EngineBindingBase> binding);
+                base::OwnedPtr<EngineBindingBase> binding);
   void TickHandlerInternal();
   void UpdateDisplayFPSInternal();
   bool RenderGUIInternal();
@@ -91,15 +92,15 @@ class ContentRunner {
   scoped_refptr<MouseImpl> mouse_impl_;
   scoped_refptr<MiscSystem> engine_impl_;
 
-  std::unique_ptr<EngineBindingBase> binding_;
-  std::unique_ptr<ExecutionContext> execution_context_;
+  base::OwnedPtr<EngineBindingBase> binding_;
+  base::OwnedPtr<ExecutionContext> execution_context_;
 
   base::CallbackListSubscription tick_observer_;
   std::atomic<int32_t> binding_quit_flag_;
   std::atomic<int32_t> binding_reset_flag_;
 
-  std::unique_ptr<EventController> event_controller_;
-  std::unique_ptr<Diligent::ImGuiDiligentRenderer> imgui_;
+  base::OwnedPtr<EventController> event_controller_;
+  base::OwnedPtr<Diligent::ImGuiDiligentRenderer> imgui_;
 
   bool background_running_;
   bool disable_gui_input_;
@@ -109,7 +110,7 @@ class ContentRunner {
   uint64_t last_tick_;
   int64_t total_delta_;
   int32_t frame_count_;
-  std::vector<float> fps_history_;
+  base::Vector<float> fps_history_;
 };
 
 }  // namespace content

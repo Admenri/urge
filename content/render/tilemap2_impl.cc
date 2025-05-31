@@ -336,7 +336,7 @@ const Tilemap2Impl::AtlasBlock kTilemapAtlas[] = {
 const base::Rect kShadowAtlasArea = {16, 27, 16, 1};
 
 SDL_Surface* CreateShadowSet(int32_t tilesize) {
-  std::vector<SDL_Rect> rects;
+  base::Vector<SDL_Rect> rects;
   SDL_Surface* surf = SDL_CreateSurface(kShadowAtlasArea.width * tilesize,
                                         kShadowAtlasArea.height * tilesize,
                                         SDL_PIXELFORMAT_ABGR8888);
@@ -382,7 +382,7 @@ void GPUMakeAtlasInternal(
     Tilemap2Agent* agent,
     int32_t tilesize,
     const base::Vec2i& atlas_size,
-    std::vector<Tilemap2Impl::AtlasCompositeCommand> make_commands) {
+    base::Vector<Tilemap2Impl::AtlasCompositeCommand> make_commands) {
   agent->atlas_texture.Release();
   renderer::CreateTexture2D(**device, &agent->atlas_texture, "tilemap2.atlas",
                             atlas_size);
@@ -449,12 +449,12 @@ void GPUMakeAtlasInternal(
 void GPUUpdateQuadBatchInternal(renderer::RenderDevice* device,
                                 renderer::RenderContext* context,
                                 Tilemap2Agent* agent,
-                                std::vector<renderer::Quad> ground_cache,
-                                std::vector<renderer::Quad> above_cache) {
+                                base::Vector<renderer::Quad> ground_cache,
+                                base::Vector<renderer::Quad> above_cache) {
   agent->ground_draw_count = ground_cache.size();
   agent->above_draw_count = above_cache.size();
 
-  std::vector<renderer::Quad> batch_data;
+  base::Vector<renderer::Quad> batch_data;
   batch_data.reserve(ground_cache.size() + above_cache.size());
   batch_data.insert(batch_data.end(),
                     std::make_move_iterator(ground_cache.begin()),
@@ -639,7 +639,7 @@ Tilemap2Impl::~Tilemap2Impl() {
   Dispose(exception_state);
 }
 
-void Tilemap2Impl::SetLabel(const std::string& label,
+void Tilemap2Impl::SetLabel(const base::String& label,
                             ExceptionState& exception_state) {
   ground_node_.SetDebugLabel(label);
   above_node_.SetDebugLabel(label);
@@ -836,7 +836,7 @@ void Tilemap2Impl::GroundNodeHandlerInternal(
     UpdateViewportInternal(params->viewport, params->origin);
 
     if (atlas_dirty_) {
-      std::vector<AtlasCompositeCommand> commands;
+      base::Vector<AtlasCompositeCommand> commands;
       base::Vec2i atlas_size = MakeAtlasInternal(commands);
 
       screen()->PostTask(base::BindRepeating(
@@ -847,8 +847,8 @@ void Tilemap2Impl::GroundNodeHandlerInternal(
     }
 
     if (map_buffer_dirty_) {
-      std::vector<renderer::Quad> ground_cache;
-      std::vector<renderer::Quad> above_cache;
+      base::Vector<renderer::Quad> ground_cache;
+      base::Vector<renderer::Quad> above_cache;
       ParseMapDataInternal(ground_cache, above_cache);
 
       screen()->PostTask(base::BindRepeating(
@@ -901,7 +901,7 @@ void Tilemap2Impl::UpdateViewportInternal(const base::Rect& viewport,
 }
 
 base::Vec2i Tilemap2Impl::MakeAtlasInternal(
-    std::vector<AtlasCompositeCommand>& commands) {
+    base::Vector<AtlasCompositeCommand>& commands) {
   for (size_t i = 0; i < _countof(kTilemapAtlas); ++i) {
     auto& atlas_info = kTilemapAtlas[i];
     scoped_refptr atlas_bitmap = bitmaps_[atlas_info.tile_id].bitmap;
@@ -930,8 +930,8 @@ base::Vec2i Tilemap2Impl::MakeAtlasInternal(
 //  https://web.archive.org/web/20230925131126/https://www.tktkgame.com/tkool/memo/vx/tile_id.html
 //  - RPGMV Tilemap
 void Tilemap2Impl::ParseMapDataInternal(
-    std::vector<renderer::Quad>& ground_cache,
-    std::vector<renderer::Quad>& above_cache) {
+    base::Vector<renderer::Quad>& ground_cache,
+    base::Vector<renderer::Quad>& above_cache) {
   auto value_wrap = [&](int32_t value, int32_t range) {
     int32_t res = value % range;
     return res < 0 ? res + range : res;
@@ -956,7 +956,7 @@ void Tilemap2Impl::ParseMapDataInternal(
   };
 
   auto process_quads = [&](renderer::Quad* quads, int32_t size, bool above) {
-    std::vector<renderer::Quad>* target = above ? &above_cache : &ground_cache;
+    base::Vector<renderer::Quad>* target = above ? &above_cache : &ground_cache;
     target->insert(target->end(), quads, quads + size);
   };
 

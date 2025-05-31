@@ -39,7 +39,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
                              I18NProfile* i18n_profile,
                              base::WeakPtr<ui::Widget> window,
                              base::ThreadWorker* render_worker,
-                             std::unique_ptr<EngineBindingBase> binding)
+                             base::OwnedPtr<EngineBindingBase> binding)
     : profile_(profile),
       io_service_(io_service),
       font_context_(font_context),
@@ -68,7 +68,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
   engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
 
   // Create event router
-  event_controller_.reset(new EventController(window));
+  event_controller_ = base::MakeOwnedPtr<EventController>(window);
 
   // Create imgui context
   base::ThreadWorker::PostTask(
@@ -124,12 +124,12 @@ void ContentRunner::RunMainLoop() {
   binding_->PostMainLoopRunning();
 }
 
-std::unique_ptr<ContentRunner> ContentRunner::Create(InitParams params) {
-  auto* runner =
-      new ContentRunner(params.profile, params.io_service, params.font_context,
-                        params.i18n_profile, params.window,
-                        params.render_worker, std::move(params.entry));
-  return std::unique_ptr<ContentRunner>(runner);
+base::OwnedPtr<ContentRunner> ContentRunner::Create(InitParams params) {
+  auto* runner = base::Allocator::New<ContentRunner>(
+      params.profile, params.io_service, params.font_context,
+      params.i18n_profile, params.window, params.render_worker,
+      std::move(params.entry));
+  return base::OwnedPtr<ContentRunner>(runner);
 }
 
 void ContentRunner::TickHandlerInternal() {
@@ -367,7 +367,8 @@ void ContentRunner::CreateIMGUIContextInternal() {
       **render_device,
       render_device->GetSwapChain()->GetDesc().ColorBufferFormat,
       Diligent::TEX_FORMAT_UNKNOWN);
-  imgui_.reset(new Diligent::ImGuiDiligentRenderer(imgui_create_info));
+  imgui_ =
+      base::MakeOwnedPtr<Diligent::ImGuiDiligentRenderer>(imgui_create_info);
 }
 
 void ContentRunner::DestroyIMGUIContextInternal() {

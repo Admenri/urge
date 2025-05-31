@@ -6,8 +6,8 @@
 
 namespace renderer {
 
-std::vector<Diligent::LayoutElement> Vertex::GetLayout() {
-  static std::vector<Diligent::LayoutElement> input_elements = {
+base::Vector<Diligent::LayoutElement> Vertex::GetLayout() {
+  static base::Vector<Diligent::LayoutElement> input_elements = {
       /* Position Vec4 */
       Diligent::LayoutElement{0, 0, 4, Diligent::VT_FLOAT32, Diligent::False},
       /* TexCoord Vec2 */
@@ -19,8 +19,8 @@ std::vector<Diligent::LayoutElement> Vertex::GetLayout() {
   return input_elements;
 }
 
-std::vector<Diligent::LayoutElement> SpineVertex::GetLayout() {
-  static std::vector<Diligent::LayoutElement> input_elements = {
+base::Vector<Diligent::LayoutElement> SpineVertex::GetLayout() {
+  static base::Vector<Diligent::LayoutElement> input_elements = {
       /* Position Vec2 */
       Diligent::LayoutElement{0, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
       /* LightColor Vec4 */

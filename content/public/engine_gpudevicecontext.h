@@ -198,14 +198,14 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void SetStencilRef(uint32_t ref, ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_blend_factors)--*/
-  virtual void SetBlendFactors(const std::vector<float>& factors,
+  virtual void SetBlendFactors(const base::Vector<float>& factors,
                                ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_vertex_buffers)--*/
   virtual void SetVertexBuffers(
       uint32_t start_slot,
-      const std::vector<scoped_refptr<GPUBuffer>>& buffers,
-      const std::vector<uint64_t>& offsets,
+      const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
+      const base::Vector<uint64_t>& offsets,
       ResourceStateTransitionMode mode,
       ExceptionState& exception_state) = 0;
 
@@ -220,16 +220,16 @@ class URGE_RUNTIME_API GPUDeviceContext
 
   /*--urge(name:set_viewports)--*/
   virtual void SetViewports(
-      const std::vector<scoped_refptr<GPUViewport>>& viewports,
+      const base::Vector<scoped_refptr<GPUViewport>>& viewports,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_scissor_rects)--*/
-  virtual void SetScissorRects(const std::vector<scoped_refptr<Rect>>& rects,
+  virtual void SetScissorRects(const base::Vector<scoped_refptr<Rect>>& rects,
                                ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_render_targets)--*/
   virtual void SetRenderTargets(
-      const std::vector<scoped_refptr<GPUTextureView>>& render_targets,
+      const base::Vector<scoped_refptr<GPUTextureView>>& render_targets,
       scoped_refptr<GPUTextureView> depth_stencil,
       ExceptionState& exception_state) = 0;
 
@@ -305,7 +305,7 @@ class URGE_RUNTIME_API GPUDeviceContext
 
   /*--urge(name:execute_command_lists)--*/
   virtual void ExecuteCommandLists(
-      const std::vector<scoped_refptr<GPUCommandList>>& command_lists,
+      const base::Vector<scoped_refptr<GPUCommandList>>& command_lists,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:enqueue_signal)--*/
@@ -335,7 +335,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   /*--urge(name:update_buffer)--*/
   virtual void UpdateBuffer(scoped_refptr<GPUBuffer> buffer,
                             uint64_t offset,
-                            const std::string& data,
+                            const base::String& data,
                             ExceptionState& exception_state) = 0;
 
   /*--urge(name:copy_buffer)--*/
@@ -393,7 +393,7 @@ class URGE_RUNTIME_API GPUDeviceContext
                                          ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin_debug_group)--*/
-  virtual void BeginDebugGroup(const std::string& name,
+  virtual void BeginDebugGroup(const base::String& name,
                                scoped_refptr<Color> color,
                                ExceptionState& exception_state) = 0;
 
@@ -401,7 +401,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void EndDebugGroup(ExceptionState& exception_state) = 0;
 
   /*--urge(name:insert_debug_group)--*/
-  virtual void InsertDebugGroup(const std::string& name,
+  virtual void InsertDebugGroup(const base::String& name,
                                 scoped_refptr<Color> color,
                                 ExceptionState& exception_state) = 0;
 };

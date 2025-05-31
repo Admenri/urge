@@ -30,18 +30,18 @@ class URGE_RUNTIME_API Surface : public base::RefCounted<Surface> {
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Surface> New(ExecutionContext* execution_context,
-                                    const std::string& filename,
+                                    const base::String& filename,
                                     ExceptionState& exception_state);
 
   /*--urge(name:from_dump)--*/
   static scoped_refptr<Surface> FromDump(ExecutionContext* execution_context,
-                                         const std::string& dump_data,
+                                         const base::String& dump_data,
                                          ExceptionState& exception_state);
 
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Surface> FromStream(ExecutionContext* execution_context,
                                            scoped_refptr<IOStream> stream,
-                                           const std::string& extname,
+                                           const base::String& extname,
                                            ExceptionState& exception_state);
 
   /*--urge(name:initialize_copy)--*/
@@ -121,10 +121,10 @@ class URGE_RUNTIME_API Surface : public base::RefCounted<Surface> {
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:dump_data)--*/
-  virtual std::string DumpData(ExceptionState& exception_state) = 0;
+  virtual base::String DumpData(ExceptionState& exception_state) = 0;
 
   /*--urge(name:save_png)--*/
-  virtual void SavePNG(const std::string& filename,
+  virtual void SavePNG(const base::String& filename,
                        ExceptionState& exception_state) = 0;
 };
 
