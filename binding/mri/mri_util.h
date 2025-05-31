@@ -300,6 +300,11 @@ inline base::Vector<Ty> RBARRAY2CXX(VALUE ary) {
 template <typename Ty>
 inline base::Vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
                                                    const rb_data_type_t& type) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<scoped_refptr<Ty>> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(MriCheckStructData<Ty>(rb_ary_entry(ary, i), type));
@@ -309,6 +314,11 @@ inline base::Vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
 template <typename Ty>
 inline base::Vector<Ty> RBARRAY2CXX(VALUE ary,
                                     std::function<Ty(VALUE)> cvt_fn) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<Ty> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(cvt_fn(rb_ary_entry(ary, i)));
@@ -317,6 +327,11 @@ inline base::Vector<Ty> RBARRAY2CXX(VALUE ary,
 
 template <typename Ty>
 inline base::Vector<Ty> RBARRAY2CXX_CONST(VALUE ary) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<Ty> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back((Ty)NUM2INT(rb_ary_entry(ary, i)));
@@ -325,6 +340,11 @@ inline base::Vector<Ty> RBARRAY2CXX_CONST(VALUE ary) {
 
 template <>
 inline base::Vector<int32_t> RBARRAY2CXX(VALUE ary) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<int32_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2INT(rb_ary_entry(ary, i)));
@@ -333,6 +353,11 @@ inline base::Vector<int32_t> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<uint32_t> RBARRAY2CXX(VALUE ary) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<uint32_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2UINT(rb_ary_entry(ary, i)));
@@ -341,6 +366,11 @@ inline base::Vector<uint32_t> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<int64_t> RBARRAY2CXX(VALUE ary) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<int64_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2LL(rb_ary_entry(ary, i)));
@@ -349,6 +379,11 @@ inline base::Vector<int64_t> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<uint64_t> RBARRAY2CXX(VALUE ary) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<uint64_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2LL(rb_ary_entry(ary, i)));
@@ -357,6 +392,11 @@ inline base::Vector<uint64_t> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<bool> RBARRAY2CXX(VALUE ary) {
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
   base::Vector<bool> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(MRI_FROM_BOOL(rb_ary_entry(ary, i)));
@@ -365,6 +405,9 @@ inline base::Vector<bool> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<float> RBARRAY2CXX(VALUE ary) {
+  if (RB_TYPE_P(ary, RUBY_T_FLOAT))
+    return {(float)RFLOAT_VALUE(ary)};
+
   base::Vector<float> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back((float)RFLOAT_VALUE(rb_ary_entry(ary, i)));
@@ -373,6 +416,9 @@ inline base::Vector<float> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<double> RBARRAY2CXX(VALUE ary) {
+  if (RB_TYPE_P(ary, RUBY_T_FLOAT))
+    return {RFLOAT_VALUE(ary)};
+
   base::Vector<double> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(RFLOAT_VALUE(rb_ary_entry(ary, i)));
@@ -381,9 +427,15 @@ inline base::Vector<double> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<base::String> RBARRAY2CXX(VALUE ary) {
+  if (RB_TYPE_P(ary, RUBY_T_STRING))
+    return {MRI_FROM_STRING(ary)};
+
   base::Vector<base::String> result;
-  for (long i = 0; i < RARRAY_LEN(ary); ++i)
-    result.push_back(MRI_FROM_STRING(rb_ary_entry(ary, i)));
+  for (long i = 0; i < RARRAY_LEN(ary); ++i) {
+    VALUE str = rb_ary_entry(ary, i);
+    result.push_back(MRI_FROM_STRING(str));
+  }
+
   return result;
 }
 
