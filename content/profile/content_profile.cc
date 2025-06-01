@@ -248,6 +248,9 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   disable_ime = reader->GetBoolean("Platform", "DisableIME", disable_ime);
   orientation = reader->Get("Platform", "Orientations", orientation.c_str());
 
+  sprite_vertical_sort = reader->GetBoolean("Features", "SpriteVerticalSort",
+                                            sprite_vertical_sort);
+
   if (ini_stream_)
     SDL_CloseIO(ini_stream_);
 

@@ -96,6 +96,7 @@ class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
   DrawableNode node_;
   DrawableFlashController flash_emitter_;
   SpriteAgent* agent_;
+  bool rgss2_style_;
 
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<CanvasImpl> bitmap_;

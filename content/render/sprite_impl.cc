@@ -247,6 +247,9 @@ SpriteImpl::SpriteImpl(RenderScreenImpl* screen,
       node_(parent ? parent->GetDrawableController()
                    : screen->GetDrawableController(),
             SortKey()),
+      rgss2_style_(screen->GetProfile()->sprite_vertical_sort &&
+                   screen->GetAPIVersion() >=
+                       ContentProfile::APIVersion::RGSS2),
       viewport_(parent),
       src_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
@@ -415,7 +418,7 @@ void SpriteImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
   uniform_params_.Position.y = value;
 
   // Sort with Z and Y attribute on RGSS 2/3.
-  if (screen()->GetAPIVersion() >= ContentProfile::APIVersion::RGSS2) {
+  if (rgss2_style_) {
     int64_t current_order = node_.GetSortKeys()->weight[0];
     node_.SetNodeSortWeight(current_order, value);
   }

@@ -92,19 +92,29 @@ class RenderScreenImpl : public Graphics, public DisposableCollection {
 
   void CreateButtonGUISettings();
 
-  DrawNodeController* GetDrawableController() { return &controller_; }
-  base::ThreadWorker* GetRenderRunner() const { return render_worker_; }
-  base::Vec2i GetResolution() const { return resolution_; }
+  inline DrawNodeController* GetDrawableController() { return &controller_; }
+  inline base::ThreadWorker* GetRenderRunner() const { return render_worker_; }
+  inline base::Vec2i GetResolution() const { return resolution_; }
 
-  renderer::RenderDevice* GetDevice() const { return agent_->device.get(); }
-  renderer::RenderContext* GetContext() const { return agent_->context.get(); }
-  SpriteBatch* GetSpriteBatch() const { return agent_->sprite_batch.get(); }
-  ScopedFontData* GetScopedFontContext() const { return scoped_font_; }
-  CanvasScheduler* GetCanvasScheduler() const {
+  inline renderer::RenderDevice* GetDevice() const {
+    return agent_->device.get();
+  }
+
+  inline renderer::RenderContext* GetContext() const {
+    return agent_->context.get();
+  }
+
+  inline SpriteBatch* GetSpriteBatch() const {
+    return agent_->sprite_batch.get();
+  }
+
+  inline ContentProfile* GetProfile() const { return profile_; }
+  inline ScopedFontData* GetScopedFontContext() const { return scoped_font_; }
+  inline CanvasScheduler* GetCanvasScheduler() const {
     return agent_->canvas_scheduler.get();
   }
 
-  ContentProfile::APIVersion GetAPIVersion() const {
+  inline ContentProfile::APIVersion GetAPIVersion() const {
     return profile_->api_version;
   }
 
