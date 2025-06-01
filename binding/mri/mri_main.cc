@@ -49,6 +49,10 @@
 #include "admenri/machineid/machineid.h"
 #endif
 
+extern "C" {
+void rb_call_builtin_inits();
+}
+
 namespace binding {
 
 content::ExecutionContext* g_current_execution_context = nullptr;
@@ -185,14 +189,7 @@ void BindingEngineMri::PreEarlyInitialization(
   ruby_init_loadpath();
 
 #if RAPI_FULL >= 300
-  std::vector<const char*> options = {profile->program_name.c_str(), "-e",
-                                      "\"\""};
-  void* node = ruby_options(options.size(), const_cast<char**>(options.data()));
-
-  int state;
-  bool valid = ruby_executable_node(node, &state);
-  if (valid)
-    state = ruby_exec_node(node);
+  rb_call_builtin_inits();
 #endif  //! RAPI_FULL >= 300
 
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
