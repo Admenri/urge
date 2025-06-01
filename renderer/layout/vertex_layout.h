@@ -63,8 +63,6 @@ struct Quad {
   static void SetColor(Quad* data, const base::Vec4& color);
 
   Vertex* data() { return vertices; }
-
-  friend std::ostream& operator<<(std::ostream& os, const Quad& value);
 };
 
 }  // namespace renderer

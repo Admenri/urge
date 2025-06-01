@@ -338,24 +338,21 @@ void GPUMakeAtlasInternal(
     copy_attribs.SrcTextureTransitionMode =
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
-    box.MinX = it.src_rect.x;
-    box.MinY = it.src_rect.y;
-    box.MaxX = it.src_rect.x + it.src_rect.width;
-    box.MaxY = it.src_rect.y + it.src_rect.height;
-
-    if (it.src_rect.x + it.src_rect.width > it.texture->size.x ||
-        it.src_rect.y + it.src_rect.height > it.texture->size.y)
+    const base::Rect real_src_rect =
+        base::MakeIntersect(it.src_rect, it.texture->size);
+    if (real_src_rect.width <= 0 || real_src_rect.height <= 0)
       continue;
+
+    box.MinX = real_src_rect.x;
+    box.MinY = real_src_rect.y;
+    box.MaxX = real_src_rect.x + real_src_rect.width;
+    box.MaxY = real_src_rect.y + real_src_rect.height;
 
     copy_attribs.pDstTexture = agent->atlas_texture;
     copy_attribs.DstX = it.dst_pos.x;
     copy_attribs.DstY = it.dst_pos.y;
     copy_attribs.DstTextureTransitionMode =
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-
-    if (it.dst_pos.x + it.src_rect.width > atlas_size.x ||
-        it.dst_pos.y + it.src_rect.height > atlas_size.y)
-      continue;
 
     (*context)->CopyTexture(copy_attribs);
   }
