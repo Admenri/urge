@@ -8,21 +8,20 @@
 
 namespace renderer {
 
-void MakeIdentityMatrix(float* out, bool flip) {
+void MakeIdentityMatrix(float* out) {
   std::memset(out, 0, sizeof(float) * 16);
   out[0] = 1.0f;
-  out[5] = flip ? 1.0f : -1.0f;
+  out[5] = -1.0f;
   out[10] = 1.0f;
   out[15] = 1.0f;
 }
 
 void MakeTransformMatrix(float* out,
                          const base::Vec2& size,
-                         const base::Vec2& offset,
-                         bool flip) {
+                         const base::Vec2& offset) {
   std::memset(out, 0, sizeof(float) * 16);
   out[0] = 1.0f;
-  out[5] = flip ? 1.0f : -1.0f;
+  out[5] = -1.0f;
   out[10] = 1.0f;
   out[15] = 1.0f;
 

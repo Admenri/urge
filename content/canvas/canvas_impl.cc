@@ -28,7 +28,7 @@ void GPUMakeTextureWorldInternal(renderer::RenderDevice* device,
   // Make transform matrix uniform for discrete draw command
   renderer::WorldTransform world_matrix;
   renderer::MakeProjectionMatrix(world_matrix.projection, bitmap_size);
-  renderer::MakeIdentityMatrix(world_matrix.transform, device->IsUVFlip());
+  renderer::MakeIdentityMatrix(world_matrix.transform);
 
   // Per bitmap create uniform once
   Diligent::CreateUniformBuffer(
@@ -383,10 +383,8 @@ void GPUCanvasHueChange(CanvasScheduler* scheduler,
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(
-      &transient_quad, scheduler->GetDevice()->IsUVFlip()
-                           ? base::RectF(0.0f, 1.0f, 1.0f, -1.0f)
-                           : base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
+                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
   scheduler->quad_batch()->QueueWrite(*context, &transient_quad);
 
@@ -543,8 +541,8 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
 }
 
 base::String Bitmap::Serialize(ExecutionContext* execution_context,
-                              scoped_refptr<Bitmap> value,
-                              ExceptionState& exception_state) {
+                               scoped_refptr<Bitmap> value,
+                               ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> bitmap = CanvasImpl::FromBitmap(value);
   SDL_Surface* surface = bitmap->RequireMemorySurface();
 

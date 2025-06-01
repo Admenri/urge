@@ -34,12 +34,12 @@ struct alignas(16) WorldTransform {
 // ndc_x = (in_x * 2) / w - 1
 // in_x = 100, w = 500, ndc_x = -0.6
 
-void MakeIdentityMatrix(float* out, bool flip);
+void MakeIdentityMatrix(float* out);
 
 void MakeTransformMatrix(float* out,
                          const base::Vec2& size,
-                         const base::Vec2& offset,
-                         bool flip);
+                         const base::Vec2& offset);
+
 void MakeProjectionMatrix(float* out, const base::Vec2& size);
 
 }  // namespace renderer

@@ -11,15 +11,23 @@ namespace renderer {
 
 namespace {
 
-static constexpr char GAMMA_TO_LINEAR[] =
+constexpr char kShaderGAMMA2LINEAR[] =
     "((Gamma) < 0.04045 ? (Gamma) / 12.92 : pow(max((Gamma) + 0.055, 0.0) / "
     "1.055, 2.4))";
 
-static constexpr char SRGBA_TO_LINEAR[] =
+constexpr char kShaderSRGBA2LINEAR[] =
     "col.r = GAMMA_TO_LINEAR(col.r); "
     "col.g = GAMMA_TO_LINEAR(col.g); "
     "col.b = GAMMA_TO_LINEAR(col.b); "
     "col.a = 1.0 - GAMMA_TO_LINEAR(1.0 - col.a);";
+
+constexpr char kShaderNdcProcessor[] = R"(
+#if defined(DESKTOP_GL) || defined(GL_ES)
+#define URGE_NDC_PROCESS(var) var.y = -var.y
+#else
+#define URGE_NDC_PROCESS(x)
+#endif // ! DESKTOP_GL || GL_ES
+)";
 
 Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
   Diligent::RenderTargetBlendDesc state;
@@ -138,12 +146,17 @@ void RenderPipelineBase::BuildPipeline(
       Diligent::SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
   {
+    // Preprocess shader source
+    base::String processed_shader = kShaderNdcProcessor;
+    processed_shader.push_back('\n');
+    processed_shader += shader_source.source;
+
     // Vertex shader
     shader_desc.Desc.ShaderType = Diligent::SHADER_TYPE_VERTEX;
     shader_desc.EntryPoint = shader_source.vertex_entry.c_str();
     shader_desc.Desc.Name = shader_source.name.c_str();
-    shader_desc.Source = shader_source.source.c_str();
-    shader_desc.SourceLength = shader_source.source.size();
+    shader_desc.Source = processed_shader.c_str();
+    shader_desc.SourceLength = processed_shader.size();
     shader_desc.Macros.Count = shader_source.macros.size();
     shader_desc.Macros.Elements = shader_source.macros.data();
     device_->CreateShader(shader_desc, &vertex_shader_object);
@@ -152,8 +165,8 @@ void RenderPipelineBase::BuildPipeline(
     shader_desc.Desc.ShaderType = Diligent::SHADER_TYPE_PIXEL;
     shader_desc.EntryPoint = shader_source.pixel_entry.c_str();
     shader_desc.Desc.Name = shader_source.name.c_str();
-    shader_desc.Source = shader_source.source.c_str();
-    shader_desc.SourceLength = shader_source.source.size();
+    shader_desc.Source = processed_shader.c_str();
+    shader_desc.SourceLength = processed_shader.size();
     shader_desc.Macros.Count = shader_source.macros.size();
     shader_desc.Macros.Elements = shader_source.macros.data();
     device_->CreateShader(shader_desc, &pixel_shader_object);
@@ -567,8 +580,8 @@ Pipeline_Present::Pipeline_Present(Diligent::IRenderDevice* device,
                                    bool manual_srgb)
     : RenderPipelineBase(device) {
   base::Vector<Diligent::ShaderMacro> pixel_macros = {
-      {"GAMMA_TO_LINEAR(Gamma)", GAMMA_TO_LINEAR},
-      {"SRGBA_TO_LINEAR(col)", manual_srgb ? SRGBA_TO_LINEAR : ""},
+      {"GAMMA_TO_LINEAR(Gamma)", kShaderGAMMA2LINEAR},
+      {"SRGBA_TO_LINEAR(col)", manual_srgb ? kShaderSRGBA2LINEAR : ""},
   };
 
   const ShaderSource shader_source{kHLSL_PresentRender, "present.render",

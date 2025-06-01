@@ -30,8 +30,7 @@ void GPUUpdateScreenWorldInternal(RenderGraphicsAgent* agent,
                                   const base::Vec2i& offset) {
   renderer::WorldTransform world_transform;
   renderer::MakeProjectionMatrix(world_transform.projection, resolution);
-  renderer::MakeTransformMatrix(world_transform.transform, resolution, offset,
-                                agent->device->IsUVFlip());
+  renderer::MakeTransformMatrix(world_transform.transform, resolution, offset);
 
   agent->world_transform.Release();
   Diligent::CreateUniformBuffer(
@@ -63,8 +62,7 @@ void GPUResetScreenBufferInternal(RenderGraphicsAgent* agent,
 
   renderer::WorldTransform world_transform;
   renderer::MakeProjectionMatrix(world_transform.projection, resolution);
-  renderer::MakeIdentityMatrix(world_transform.transform,
-                               agent->device->IsUVFlip());
+  renderer::MakeIdentityMatrix(world_transform.transform);
 
   agent->root_transform.Release();
   Diligent::CreateUniformBuffer(
@@ -174,16 +172,14 @@ void GPUPresentScreenBufferInternal(
     // Update vertex
     renderer::Quad transient_quad;
     renderer::Quad::SetPositionRect(&transient_quad, display_viewport);
-    renderer::Quad::SetTexCoordRectNorm(
-        &transient_quad, agent->device->IsUVFlip() ? base::Rect(0, 1, 1, -1)
-                                                   : base::Rect(0, 0, 1, 1));
+    renderer::Quad::SetTexCoordRectNorm(&transient_quad,
+                                        base::Rect(0, 0, 1, 1));
     present_quads->QueueWrite(*context, &transient_quad);
 
     // Update window screen transform
     renderer::WorldTransform world_matrix;
     renderer::MakeProjectionMatrix(world_matrix.projection, screen_size);
-    renderer::MakeIdentityMatrix(world_matrix.transform,
-                                 agent->device->IsUVFlip());
+    renderer::MakeIdentityMatrix(world_matrix.transform);
 
     Diligent::CreateUniformBuffer(**agent->device, sizeof(world_matrix),
                                   "present.world.uniform", &present_uniform,
@@ -332,16 +328,12 @@ void GPURenderAlphaTransitionFrameInternal(RenderGraphicsAgent* agent,
   // Initial context
   auto& context = *agent->context;
 
-  // Target UV
-  const bool flip_uv = agent->device->IsUVFlip();
-  const base::RectF uv_rect = flip_uv ? base::RectF(0.0f, 1.0f, 1.0f, -1.0f)
-                                      : base::RectF(0.0f, 0.0f, 1.0f, 1.0f);
-
   // Update transition uniform
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad, uv_rect);
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
+                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(progress));
   agent->transition_quads->QueueWrite(*context, &transient_quad);
 
@@ -405,16 +397,12 @@ void GPURenderVagueTransitionFrameInternal(
   // Initial context
   auto& context = *agent->context;
 
-  // Target UV
-  const bool flip_uv = agent->device->IsUVFlip();
-  const base::RectF uv_rect = flip_uv ? base::RectF(0.0f, 1.0f, 1.0f, -1.0f)
-                                      : base::RectF(0.0f, 0.0f, 1.0f, 1.0f);
-
   // Update transition uniform
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad, uv_rect);
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
+                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(vague, 0, 0, progress));
   agent->transition_quads->QueueWrite(*context, &transient_quad);
 
@@ -992,7 +980,8 @@ void RenderScreenImpl::Put_Oy(const int32_t& value,
                                      resolution_, -origin_));
 }
 
-base::String RenderScreenImpl::Get_WindowTitle(ExceptionState& exception_state) {
+base::String RenderScreenImpl::Get_WindowTitle(
+    ExceptionState& exception_state) {
   return SDL_GetWindowTitle(window_->AsSDLWindow());
 }
 

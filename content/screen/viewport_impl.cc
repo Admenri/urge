@@ -38,7 +38,7 @@ void GPUUpdateViewportTransform(renderer::RenderDevice* device,
   renderer::WorldTransform world_matrix;
   renderer::MakeProjectionMatrix(world_matrix.projection, region.Size());
   renderer::MakeTransformMatrix(world_matrix.transform, region.Size(),
-                                region.Position(), device->IsUVFlip());
+                                region.Position());
 
   (*context)->UpdateBuffer(agent->world_uniform, 0, sizeof(world_matrix),
                            &world_matrix,

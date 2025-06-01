@@ -63,7 +63,7 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
 
       renderer::WorldTransform world_matrix;
       renderer::MakeProjectionMatrix(world_matrix.projection, bound.Size());
-      renderer::MakeIdentityMatrix(world_matrix.transform, device->IsUVFlip());
+      renderer::MakeIdentityMatrix(world_matrix.transform);
 
       agent->background_world.Release();
       Diligent::CreateUniformBuffer(**device, sizeof(world_matrix),

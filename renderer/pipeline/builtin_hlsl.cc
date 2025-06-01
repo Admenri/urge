@@ -48,6 +48,7 @@ struct PSInput {
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = mul(u_Transform.ProjMat, VSIn.Pos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
@@ -108,6 +109,7 @@ struct PSInput {
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = mul(u_Transform.ProjMat, VSIn.Pos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
@@ -165,6 +167,7 @@ struct PSInput {
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = mul(u_Transform.ProjMat, VSIn.Pos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
@@ -300,6 +303,7 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
 
   PSIn.Pos = mul(u_Transform.ProjMat, transPos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = effect.Color;
   PSIn.Tone = effect.Tone;
@@ -370,6 +374,7 @@ struct PSInput {
 
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = VSIn.Pos;
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
@@ -423,6 +428,7 @@ struct PSInput {
 
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = VSIn.Pos;
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
@@ -526,6 +532,7 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   // Setup pixel shader params
   PSIn.Pos = mul(u_Transform.ProjMat, transPos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = float2(transUV.x * u_Params.OffsetAndTexSize.z,
                    transUV.y * u_Params.OffsetAndTexSize.w);
   PSIn.Color = VSIn.Color;
@@ -630,6 +637,7 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   // Setup pixel shader params
   PSIn.Pos = mul(u_Transform.ProjMat, transPos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = float2(transUV.x * u_Params.OffsetAndTexSize.z,
                    transUV.y * u_Params.OffsetAndTexSize.w);
   PSIn.Color = VSIn.Color;
@@ -681,6 +689,7 @@ struct PSInput {
 
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = VSIn.Pos;
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
@@ -768,6 +777,7 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   float4 pos = float4(VSIn.Pos.x, VSIn.Pos.y, 0.0, 1.0);
   PSIn.Pos = mul(u_Transform.ProjMat, pos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
   PSIn.LightColor = VSIn.LightColor;
   PSIn.DarkColor = VSIn.DarkColor;
@@ -819,6 +829,7 @@ struct PSInput {
 
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = VSIn.Pos;
+  URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
 }
 
@@ -902,6 +913,7 @@ struct PSInput {
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = mul(u_Transform.ProjMat, VSIn.Pos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  // No NDC flip because engine final process.
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }

@@ -88,10 +88,8 @@ void GPURenderYUVInternal(renderer::RenderDevice* device,
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(
-      &transient_quad, device->IsUVFlip()
-                           ? base::RectF(0.0f, 1.0f, 1.0f, -1.0f)
-                           : base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
+                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
   agent->batch->QueueWrite(**context, &transient_quad);
 
   // Setup render target

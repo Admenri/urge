@@ -76,12 +76,6 @@ class RenderDevice {
   PipelineSet* GetPipelines() const { return pipelines_.get(); }
   QuadIndexCache* GetQuadIndex() const { return quad_index_.get(); }
 
-  // Platform specific type
-  inline bool IsUVFlip() const {
-    return device_type_ == Diligent::RENDER_DEVICE_TYPE_GL ||
-           device_type_ == Diligent::RENDER_DEVICE_TYPE_GLES;
-  }
-
   // Managed mobile rendering context
   void SuspendContext();
   int32_t ResumeContext(Diligent::IDeviceContext* immediate_context);
