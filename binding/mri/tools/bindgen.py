@@ -78,15 +78,16 @@ class MriBindingGen:
 
     # 定义类
     if not is_module:
+      # 类定义头 
       content += f"VALUE klass = rb_define_class(\"{klass_name}\", rb_cObject);\n"
       content += f"rb_define_alloc_func(klass, MriClassAllocate<&k{klass_type}DataType>);\n"
+      # 由于引擎每次取出对象的 Ruby ObjectID 都不一样，这里需要为每个类重载比较函数
       content += "MriDefineMethod(klass, \"engine_id\", MriGetEngineID);\n"
+      content += f"MRI_DECLARE_OBJECT_COMPARE(klass, {klass_name});\n"
     else:
       content += f"VALUE klass = rb_define_module(\"{klass_name}\");\n"
 
     # 类特性定义
-    if is_comparable:
-      content += f"MRI_DECLARE_OBJECT_COMPARE(klass, {klass_name});\n"
     if is_serializable:
       content += f"MriInitSerializableBinding<content::{klass_type}>(klass);\n"
 
