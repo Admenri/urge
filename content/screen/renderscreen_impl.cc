@@ -850,8 +850,8 @@ void RenderScreenImpl::MoveWindow(int32_t x,
                                   int32_t height,
                                   ExceptionState& exception_state) {
   auto* window = window_->AsSDLWindow();
-  SDL_SetWindowPosition(window, x, y);
   SDL_SetWindowSize(window, width, height);
+  SDL_SetWindowPosition(window, x, y);
 }
 
 scoped_refptr<Rect> RenderScreenImpl::GetWindowRect(

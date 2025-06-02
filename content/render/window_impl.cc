@@ -188,16 +188,23 @@ void GPUCompositeControlLayerInternal(renderer::RenderDevice* device,
     int32_t y2 = y1 + h;
 
     int32_t i = 0;
+    // Left-Top
     quad_rects[i++] = base::Rect(x1, y1, scale, scale);
+    // Right-Top
     quad_rects[i++] = base::Rect(x2 - scale, y1, scale, scale);
+    // Right-Bottom
     quad_rects[i++] = base::Rect(x2 - scale, y2 - scale, scale, scale);
+    // Left-Bottom
     quad_rects[i++] = base::Rect(x1, y2 - scale, scale, scale);
-
+    // Left
     quad_rects[i++] = base::Rect(x1, y1 + scale, scale, h - scale * 2);
+    // Right
     quad_rects[i++] = base::Rect(x2 - scale, y1 + scale, scale, h - scale * 2);
-    quad_rects[i++] = base::Rect(x1 + scale, y1, w - scale * scale, scale);
+    // Top
+    quad_rects[i++] = base::Rect(x1 + scale, y1, w - scale * 2, scale);
+    // Bottom
     quad_rects[i++] = base::Rect(x1 + scale, y2 - scale, w - scale * 2, scale);
-
+    // Center
     quad_rects[i++] =
         base::Rect(x1 + scale, y1 + scale, w - scale * 2, h - scale * 2);
   };

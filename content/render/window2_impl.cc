@@ -315,8 +315,8 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
     const float contents_opacity_norm = contents_opacity / 255.0f;
     const float cursor_opacity_norm = cursor_opacity / 255.0f;
 
+    // Background texture quad
     if (windowskin) {
-      // Background
       const base::Rect background_dest(
           offset.x,
           static_cast<float>(offset.y) +
@@ -330,27 +330,29 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
       quad_ptr += 1;
     }
 
+    // Controls & Contents
     if (openness >= 255) {
+      // Controls offset
       base::Vec2i content_offset = offset + padding_rect.Position();
 
       if (windowskin) {
-        const base::Vec2i arrow_size =
-            (bound.Size() - base::Vec2i(8 * scale)) / base::Vec2i(scale);
+        const base::Vec2i arrow_display_offset =
+            (bound.Size() - base::Vec2i(8 * scale)) / 2;
 
         if (arrows_visible) {
           // Arrows
-          const base::Rect arrow_up_dest(offset.x + arrow_size.x,
+          const base::Rect arrow_up_dest(offset.x + arrow_display_offset.x,
                                          offset.y + 2 * scale, 8 * scale,
                                          4 * scale);
-          const base::Rect arrow_down_dest(offset.x + arrow_size.x,
+          const base::Rect arrow_down_dest(offset.x + arrow_display_offset.x,
                                            offset.y + bound.height - 6 * scale,
                                            8 * scale, 4 * scale);
           const base::Rect arrow_left_dest(offset.x + 2 * scale,
-                                           offset.y + arrow_size.y, 4 * scale,
-                                           8 * scale);
+                                           offset.y + arrow_display_offset.y,
+                                           4 * scale, 8 * scale);
           const base::Rect arrow_right_dest(offset.x + bound.width - 6 * scale,
-                                            offset.y + arrow_size.y, 4 * scale,
-                                            8 * scale);
+                                            offset.y + arrow_display_offset.y,
+                                            4 * scale, 8 * scale);
 
           const base::Rect arrow_up_src(44 * scale, 8 * scale, 8 * scale,
                                         4 * scale);
@@ -401,26 +403,6 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
           }
         }
 
-        // Pause
-        const base::Rect pause_src[] = {
-            {48 * scale, 32 * scale, 8 * scale, 8 * scale},
-            {56 * scale, 32 * scale, 8 * scale, 8 * scale},
-            {48 * scale, 40 * scale, 8 * scale, 8 * scale},
-            {56 * scale, 40 * scale, 8 * scale, 8 * scale},
-        };
-
-        if (pause) {
-          const base::Rect pause_dest(offset.x + arrow_size.x,
-                                      offset.y + bound.height - 8 * scale,
-                                      8 * scale, 8 * scale);
-          renderer::Quad::SetPositionRect(quad_ptr, pause_dest);
-          renderer::Quad::SetTexCoordRect(quad_ptr, pause_src[pause_index / 8],
-                                          windowskin->size);
-          renderer::Quad::SetColor(quad_ptr, base::Vec4(contents_opacity_norm));
-          agent->controls_draw_count += 1;
-          quad_ptr += 1;
-        }
-
         // Cursor
         if (cursor_rect.width > 0 && cursor_rect.height > 0) {
           auto build_cursor_internal = [&](const base::Rect& rect,
@@ -433,19 +415,25 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
             int32_t y2 = y1 + h;
 
             int32_t i = 0;
+            // Left-Top
             quad_rects[i++] = base::Rect(x1, y1, scale, scale);
+            // Right-Top
             quad_rects[i++] = base::Rect(x2 - scale, y1, scale, scale);
+            // Right-Bottom
             quad_rects[i++] = base::Rect(x2 - scale, y2 - scale, scale, scale);
+            // Left-Bottom
             quad_rects[i++] = base::Rect(x1, y2 - scale, scale, scale);
-
+            // Left
             quad_rects[i++] = base::Rect(x1, y1 + scale, scale, h - scale * 2);
+            // Right
             quad_rects[i++] =
                 base::Rect(x2 - scale, y1 + scale, scale, h - scale * 2);
-            quad_rects[i++] =
-                base::Rect(x1 + scale, y1, w - scale * scale, scale);
+            // Top
+            quad_rects[i++] = base::Rect(x1 + scale, y1, w - scale * 2, scale);
+            // Bottom
             quad_rects[i++] =
                 base::Rect(x1 + scale, y2 - scale, w - scale * 2, scale);
-
+            // Center
             quad_rects[i++] = base::Rect(x1 + scale, y1 + scale, w - scale * 2,
                                          h - scale * 2);
           };
@@ -487,6 +475,26 @@ void GPUCompositeWindowQuadsInternal(renderer::RenderDevice* device,
             agent->cursor_draw_count += count;
             quad_ptr += count;
           }
+        }
+
+        // Pause
+        const base::Rect pause_src[] = {
+            {48 * scale, 32 * scale, 8 * scale, 8 * scale},
+            {56 * scale, 32 * scale, 8 * scale, 8 * scale},
+            {48 * scale, 40 * scale, 8 * scale, 8 * scale},
+            {56 * scale, 40 * scale, 8 * scale, 8 * scale},
+        };
+
+        if (pause) {
+          const base::Rect pause_dest(offset.x + arrow_display_offset.x,
+                                      offset.y + bound.height - 8 * scale,
+                                      8 * scale, 8 * scale);
+          renderer::Quad::SetPositionRect(quad_ptr, pause_dest);
+          renderer::Quad::SetTexCoordRect(quad_ptr, pause_src[pause_index / 8],
+                                          windowskin->size);
+          renderer::Quad::SetColor(quad_ptr, base::Vec4(contents_opacity_norm));
+          agent->controls_draw_count += 1;
+          quad_ptr += 1;
         }
       }
 
