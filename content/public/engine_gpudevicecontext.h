@@ -9,7 +9,6 @@
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
 #include "content/context/execution_context.h"
-#include "content/public/engine_gpubox.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpucommandlist.h"
 #include "content/public/engine_gpufence.h"
@@ -17,9 +16,7 @@
 #include "content/public/engine_gpuquery.h"
 #include "content/public/engine_gpuresourcebinding.h"
 #include "content/public/engine_gputexture.h"
-#include "content/public/engine_gputexturesubresdata.h"
 #include "content/public/engine_gputextureview.h"
-#include "content/public/engine_gpuviewport.h"
 
 namespace content {
 
@@ -170,6 +167,33 @@ class URGE_RUNTIME_API GPUDeviceContext
     TEX_FORMAT_NUM_FORMATS,
   };
 
+  /*--urge(name:TextureSubResData)--*/
+  struct TextureSubResData {
+    base::String data;
+    uint64_t stride = 0;
+    uint64_t depth_stride = 0;
+  };
+
+  /*--urge(name:ClipViewport)--*/
+  struct ClipViewport {
+    float top_left_x = 0.0f;
+    float top_left_y = 0.0f;
+    float width = 0.0f;
+    float height = 0.0f;
+    float min_depth = 0.0f;
+    float max_depth = 1.0f;
+  };
+
+  /*--urge(name:ClipBox)--*/
+  struct ClipBox {
+    uint32_t min_x = 0;
+    uint32_t max_x = 0;
+    uint32_t min_y = 0;
+    uint32_t max_y = 0;
+    uint32_t min_z = 0;
+    uint32_t max_z = 1;
+  };
+
   /*--urge(name:submit)--*/
   virtual void Submit(ExceptionState& exception_state) = 0;
 
@@ -219,9 +243,8 @@ class URGE_RUNTIME_API GPUDeviceContext
                               ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_viewports)--*/
-  virtual void SetViewports(
-      const base::Vector<scoped_refptr<GPUViewport>>& viewports,
-      ExceptionState& exception_state) = 0;
+  virtual void SetViewports(const base::Vector<ClipViewport>& viewports,
+                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_scissor_rects)--*/
   virtual void SetScissorRects(const base::Vector<scoped_refptr<Rect>>& rects,
@@ -352,8 +375,8 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void UpdateTexture(scoped_refptr<GPUTexture> texture,
                              uint32_t mip_level,
                              uint32_t slice,
-                             scoped_refptr<GPUBox> box,
-                             scoped_refptr<GPUTextureSubResData> data,
+                             const std::optional<ClipBox>& box,
+                             const std::optional<TextureSubResData>& data,
                              ResourceStateTransitionMode src_buffer_mode,
                              ResourceStateTransitionMode texture_mode,
                              ExceptionState& exception_state) = 0;
@@ -362,7 +385,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void CopyTexture(scoped_refptr<GPUTexture> src_texture,
                            uint32_t src_mip_level,
                            uint32_t src_slice,
-                           scoped_refptr<GPUBox> src_box,
+                           const std::optional<ClipBox>& src_box,
                            ResourceStateTransitionMode src_mode,
                            scoped_refptr<GPUTexture> dst_texture,
                            uint32_t dst_mip_level,

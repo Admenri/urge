@@ -445,8 +445,10 @@ inline base::Vector<base::String> RBARRAY2CXX(VALUE ary) {
 
 template <typename Ty>
 inline VALUE CXX2RBARRAY(const base::Vector<Ty>& ary) {
-  static_assert(false, "unsupport vector type.");
-  return Qnil;
+  VALUE result = rb_ary_new();
+  for (auto it : ary)
+    rb_ary_push(result, INT2NUM(it));
+  return result;
 }
 
 template <>
@@ -524,7 +526,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<scoped_refptr<Ty>>& ary,
 
 template <typename Ty>
 inline VALUE CXX2RBARRAY(const base::Vector<Ty>& ary,
-                         std::function<Ty(VALUE)> cvt_fn) {
+                         std::function<VALUE(const Ty&)> cvt_fn) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, cvt_fn(it));

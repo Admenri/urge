@@ -9,19 +9,14 @@
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
 #include "content/context/execution_context.h"
-#include "content/public/engine_gpublendstate.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpufence.h"
-#include "content/public/engine_gpuimmutablesampler.h"
-#include "content/public/engine_gpulayoutelement.h"
-#include "content/public/engine_gpupipelineresource.h"
 #include "content/public/engine_gpupipelinesignature.h"
 #include "content/public/engine_gpupipelinestate.h"
 #include "content/public/engine_gpuquery.h"
 #include "content/public/engine_gpusampler.h"
 #include "content/public/engine_gpushader.h"
 #include "content/public/engine_gputexture.h"
-#include "content/public/engine_gputexturesubresdata.h"
 
 namespace content {
 
@@ -360,105 +355,322 @@ class URGE_RUNTIME_API GPURenderDevice
     COMPARISON_FUNC_NUM_FUNCTIONS,
   };
 
+  /*--urge(name:BlendFactor)--*/
+  enum BlendFactor {
+    BLEND_FACTOR_UNDEFINED = 0,
+    BLEND_FACTOR_ZERO,
+    BLEND_FACTOR_ONE,
+    BLEND_FACTOR_SRC_COLOR,
+    BLEND_FACTOR_INV_SRC_COLOR,
+    BLEND_FACTOR_SRC_ALPHA,
+    BLEND_FACTOR_INV_SRC_ALPHA,
+    BLEND_FACTOR_DEST_ALPHA,
+    BLEND_FACTOR_INV_DEST_ALPHA,
+    BLEND_FACTOR_DEST_COLOR,
+    BLEND_FACTOR_INV_DEST_COLOR,
+    BLEND_FACTOR_SRC_ALPHA_SAT,
+    BLEND_FACTOR_BLEND_FACTOR,
+    BLEND_FACTOR_INV_BLEND_FACTOR,
+    BLEND_FACTOR_SRC1_COLOR,
+    BLEND_FACTOR_INV_SRC1_COLOR,
+    BLEND_FACTOR_SRC1_ALPHA,
+    BLEND_FACTOR_INV_SRC1_ALPHA,
+    BLEND_FACTOR_NUM_FACTORS
+  };
+
+  /*--urge(name:BlendOperation)--*/
+  enum BlendOperation {
+    BLEND_OPERATION_UNDEFINED = 0,
+    BLEND_OPERATION_ADD,
+    BLEND_OPERATION_SUBTRACT,
+    BLEND_OPERATION_REV_SUBTRACT,
+    BLEND_OPERATION_MIN,
+    BLEND_OPERATION_MAX,
+    BLEND_OPERATION_NUM_OPERATIONS
+  };
+
+  /*--urge(name:ColorMask)--*/
+  enum ColorMask {
+    COLOR_MASK_NONE = 0u,
+    COLOR_MASK_RED = 1u << 0u,
+    COLOR_MASK_GREEN = 1u << 1u,
+    COLOR_MASK_BLUE = 1u << 2u,
+    COLOR_MASK_ALPHA = 1u << 3u,
+    COLOR_MASK_RGB = COLOR_MASK_RED | COLOR_MASK_GREEN | COLOR_MASK_BLUE,
+    COLOR_MASK_ALL = (COLOR_MASK_RGB | COLOR_MASK_ALPHA)
+  };
+
+  /*--urge(name:LogicOperation)--*/
+  enum LogicOperation {
+    LOGIC_OP_CLEAR = 0,
+    LOGIC_OP_SET,
+    LOGIC_OP_COPY,
+    LOGIC_OP_COPY_INVERTED,
+    LOGIC_OP_NOOP,
+    LOGIC_OP_INVERT,
+    LOGIC_OP_AND,
+    LOGIC_OP_NAND,
+    LOGIC_OP_OR,
+    LOGIC_OP_NOR,
+    LOGIC_OP_XOR,
+    LOGIC_OP_EQUIV,
+    LOGIC_OP_AND_REVERSE,
+    LOGIC_OP_AND_INVERTED,
+    LOGIC_OP_OR_REVERSE,
+    LOGIC_OP_OR_INVERTED,
+    LOGIC_OP_NUM_OPERATIONS
+  };
+
+  /*--urge(name:StencilOp)--*/
+  enum StencilOp {
+    STENCIL_OP_UNDEFINED = 0,
+    STENCIL_OP_KEEP = 1,
+    STENCIL_OP_ZERO = 2,
+    STENCIL_OP_REPLACE = 3,
+    STENCIL_OP_INCR_SAT = 4,
+    STENCIL_OP_DECR_SAT = 5,
+    STENCIL_OP_INVERT = 6,
+    STENCIL_OP_INCR_WRAP = 7,
+    STENCIL_OP_DECR_WRAP = 8,
+    STENCIL_OP_NUM_OPS
+  };
+
+  /*--urge(name:ValueType)--*/
+  enum ValueType {
+    VT_UNDEFINED = 0,
+    VT_INT8,
+    VT_INT16,
+    VT_INT32,
+    VT_UINT8,
+    VT_UINT16,
+    VT_UINT32,
+    VT_FLOAT16,
+    VT_FLOAT32,
+    VT_FLOAT64,
+  };
+
+  /*--urge(name:InputElementFrequency)--*/
+  enum InputElementFrequency {
+    INPUT_ELEMENT_FREQUENCY_UNDEFINED = 0,
+    INPUT_ELEMENT_FREQUENCY_PER_VERTEX,
+    INPUT_ELEMENT_FREQUENCY_PER_INSTANCE,
+    INPUT_ELEMENT_FREQUENCY_NUM_FREQUENCIES
+  };
+
+  /*--urge(name:ShaderResourceType)--*/
+  enum ShaderResourceType {
+    SHADER_RESOURCE_TYPE_UNKNOWN = 0,
+    SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
+    SHADER_RESOURCE_TYPE_TEXTURE_SRV,
+    SHADER_RESOURCE_TYPE_BUFFER_SRV,
+    SHADER_RESOURCE_TYPE_TEXTURE_UAV,
+    SHADER_RESOURCE_TYPE_BUFFER_UAV,
+    SHADER_RESOURCE_TYPE_SAMPLER,
+    SHADER_RESOURCE_TYPE_INPUT_ATTACHMENT,
+    SHADER_RESOURCE_TYPE_ACCEL_STRUCT,
+    SHADER_RESOURCE_TYPE_LAST = SHADER_RESOURCE_TYPE_ACCEL_STRUCT
+  };
+
+  /*--urge(name:ShaderResourceVariableType)--*/
+  enum ShaderResourceVariableType {
+    SHADER_RESOURCE_VARIABLE_TYPE_STATIC = 0,
+    SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE,
+    SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC,
+    SHADER_RESOURCE_VARIABLE_TYPE_NUM_TYPES
+  };
+
+  /*--urge(name:BufferDesc)--*/
+  struct BufferDesc {
+    uint64_t size = 0;
+    BindFlags bind_flags = BIND_NONE;
+    Usage usage = USAGE_DEFAULT;
+    CPUAccessFlags cpu_access_flags = CPU_ACCESS_NONE;
+    BufferMode mode = BUFFER_MODE_UNDEFINED;
+    uint32_t element_byte_stride = 0;
+    uint64_t immediate_context_mask = 1;
+  };
+
+  /*--urge(name:ShaderCreateInfo)--*/
+  struct ShaderCreateInfo {
+    base::String source;
+    base::String entry_point = "main";
+    ShaderType type = SHADER_TYPE_UNKNOWN;
+    bool combined_texture_samplers = true;
+    base::String combined_sampler_suffix = "_sampler";
+    ShaderSourceLanguage language = SHADER_SOURCE_LANGUAGE_DEFAULT;
+  };
+
+  /*--urge(name:TextureDesc)--*/
+  struct TextureDesc {
+    ResourceDimension type = RESOURCE_DIM_UNDEFINED;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t depth_or_array_size = 1;
+    TextureFormat format = TEX_FORMAT_UNKNOWN;
+    uint32_t mip_levels = 1;
+    uint32_t sample_count = 1;
+    BindFlags bind_flags = BIND_NONE;
+    Usage usage = USAGE_DEFAULT;
+    CPUAccessFlags cpu_access_flags = CPU_ACCESS_NONE;
+    uint64_t immediate_context_mask = 1;
+  };
+
+  /*--urge(name:TextureSubResData)--*/
+  struct TextureSubResData {
+    base::String data;
+    uint64_t stride = 0;
+    uint64_t depth_stride = 0;
+  };
+
+  /*--urge(name:SamplerDesc)--*/
+  struct SamplerDesc {
+    FilterType min_filter = FILTER_TYPE_LINEAR;
+    FilterType mag_filter = FILTER_TYPE_LINEAR;
+    FilterType mip_filter = FILTER_TYPE_LINEAR;
+    TextureAddressMode address_u = TEXTURE_ADDRESS_CLAMP;
+    TextureAddressMode address_v = TEXTURE_ADDRESS_CLAMP;
+    TextureAddressMode address_w = TEXTURE_ADDRESS_CLAMP;
+  };
+
+  /*--urge(name:RenderTargetBlendDesc)--*/
+  struct RenderTargetBlendDesc {
+    bool blend_enable = false;
+    bool logic_operation_enable = false;
+    BlendFactor src_blend = BLEND_FACTOR_ONE;
+    BlendFactor dest_blend = BLEND_FACTOR_ZERO;
+    BlendOperation blend_op = BLEND_OPERATION_ADD;
+    BlendFactor src_blend_alpha = BLEND_FACTOR_ONE;
+    BlendFactor dest_blend_alpha = BLEND_FACTOR_ZERO;
+    BlendOperation blend_op_alpha = BLEND_OPERATION_ADD;
+    LogicOperation logic_op = LOGIC_OP_NOOP;
+    ColorMask render_target_write_mask = COLOR_MASK_ALL;
+  };
+
+  /*--urge(name:BlendStateDesc)--*/
+  struct BlendStateDesc {
+    bool alpha_to_coverage_enable = false;
+    bool independent_blend_enable = false;
+    base::Vector<RenderTargetBlendDesc> render_targets;
+  };
+
+  /*--urge(name:RasterizerStateDesc)--*/
+  struct RasterizerStateDesc {
+    FillMode fill_mode = FILL_MODE_SOLID;
+    CullMode cull_mode = CULL_MODE_BACK;
+    bool front_counter_clockwise = false;
+    bool depth_clip_enable = true;
+    bool scissor_enable = false;
+    bool antialiased_line_enable = false;
+    int32_t depth_bias = 0;
+    float depth_bias_clamp = 0.0f;
+    float slope_scaled_depth_bias = 0.0f;
+  };
+
+  /*--urge(name:StencilOpDesc)--*/
+  struct StencilOpDesc {
+    StencilOp stencil_fail_op = STENCIL_OP_KEEP;
+    StencilOp stencil_depth_fail_op = STENCIL_OP_KEEP;
+    StencilOp stencil_pass_op = STENCIL_OP_KEEP;
+    ComparisonFunction stencil_func = COMPARISON_FUNC_ALWAYS;
+  };
+
+  /*--urge(name:DepthStencilStateDesc)--*/
+  struct DepthStencilStateDesc {
+    bool depth_enable = false;
+    bool depth_write_enable = false;
+    ComparisonFunction depth_func = COMPARISON_FUNC_LESS;
+    bool stencil_enable = false;
+    uint8_t stencil_read_mask = 0xFF;
+    uint8_t stencil_write_mask = 0xFF;
+    std::optional<StencilOpDesc> front_face;
+    std::optional<StencilOpDesc> back_face;
+  };
+
+  /*--urge(name:InputLayoutElement)--*/
+  struct InputLayoutElement {
+    base::String hlsl_semantic = "ATTRIB";
+    uint32_t input_index = 0;
+    uint32_t buffer_slot = 0;
+    uint32_t num_components = 0;
+    ValueType value_type = VT_FLOAT32;
+    bool is_normalized = true;
+    uint32_t relative_offset = 0xFFFFFFFFU;
+    uint32_t stride = 0xFFFFFFFFU;
+    InputElementFrequency frequency = INPUT_ELEMENT_FREQUENCY_PER_VERTEX;
+    uint32_t instance_data_step_rate = 1;
+  };
+
+  /*--urge(name:GraphicsPipelineDesc)--*/
+  struct GraphicsPipelineDesc {
+    std::optional<BlendStateDesc> blend_desc;
+    uint32_t sample_mask;
+    std::optional<RasterizerStateDesc> rasterizer_desc;
+    std::optional<DepthStencilStateDesc> depth_stencil_desc;
+    std::optional<InputLayoutElement> input_layout;
+    PrimitiveTopology primitive_topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    uint8_t num_viewports = 1;
+    uint8_t num_render_targets = 0;
+    uint8_t subpass_index = 0;
+    base::Vector<TextureFormat> rtv_formats;
+    TextureFormat dsv_format = TEX_FORMAT_UNKNOWN;
+    bool readonly_dsv = false;
+    uint8_t multisample_count = 1;
+    uint8_t multisample_quality = 0;
+    uint32_t node_mask = 0;
+  };
+
+  /*--urge(name:PipelineResourceDesc)--*/
+  struct PipelineResourceDesc {
+    base::String name;
+    ShaderType shader_stages = SHADER_TYPE_UNKNOWN;
+    uint32_t array_size = 1;
+    ShaderResourceType resource_type = SHADER_RESOURCE_TYPE_UNKNOWN;
+    ShaderResourceVariableType var_type = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+  };
+
+  /*--urge(name:ImmutableSamplerDesc)--*/
+  struct ImmutableSamplerDesc {
+    ShaderType shader_stages = SHADER_TYPE_UNKNOWN;
+    base::String sampler_name;
+    std::optional<SamplerDesc> desc;
+  };
+
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
-      uint64_t size,
-      BindFlags bind_flags,
-      Usage usage,
-      CPUAccessFlags cpu_access,
-      BufferMode mode,
-      uint32_t element_by_stride,
-      uint64_t immediate_context_mask,
+      const std::optional<BufferDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
-      uint64_t size,
-      BindFlags bind_flags,
-      Usage usage,
-      CPUAccessFlags cpu_access,
-      BufferMode mode,
-      uint32_t element_by_stride,
-      uint64_t immediate_context_mask,
-      const base::String& buffer_data,
+      const std::optional<BufferDesc>& desc,
+      const base::String& data,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_shader)--*/
   virtual scoped_refptr<GPUShader> CreateShader(
-      const base::String& source,
-      const base::String& entry_point,
-      ShaderType type,
-      bool combined_texture_samplers,
-      const base::String& combined_sampler_suffix,
-      ShaderSourceLanguage language,
+      const std::optional<ShaderCreateInfo>& create_info,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_texture)--*/
   virtual scoped_refptr<GPUTexture> CreateTexture(
-      ResourceDimension dim,
-      uint32_t width,
-      uint32_t height,
-      uint32_t array_size_or_depth,
-      TextureFormat format,
-      uint32_t mip_levels,
-      uint32_t sample_count,
-      BindFlags bind_flags,
-      Usage usage,
-      CPUAccessFlags cpu_access,
-      uint64_t immediate_context_mask,
+      const std::optional<TextureDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_texture)--*/
   virtual scoped_refptr<GPUTexture> CreateTexture(
-      ResourceDimension dim,
-      uint32_t width,
-      uint32_t height,
-      uint32_t array_size_or_depth,
-      TextureFormat format,
-      uint32_t mip_levels,
-      uint32_t sample_count,
-      BindFlags bind_flags,
-      Usage usage,
-      CPUAccessFlags cpu_access,
-      uint64_t immediate_context_mask,
-      const base::Vector<scoped_refptr<GPUTextureSubResData>>& subresources,
+      const std::optional<TextureDesc>& desc,
+      const base::Vector<TextureSubResData>& subresources,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_sampler)--*/
   virtual scoped_refptr<GPUSampler> CreateSampler(
-      FilterType min_filter,
-      FilterType mag_filter,
-      FilterType mip_filter,
-      TextureAddressMode address_u,
-      TextureAddressMode address_v,
-      TextureAddressMode address_w,
+      const std::optional<SamplerDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_graphics_pipeline_state)--*/
   virtual scoped_refptr<GPUPipelineState> CreateGraphicsPipelineState(
       const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
-      bool alpha_to_coverage_enable,
-      bool independent_blend_enable,
-      const base::Vector<scoped_refptr<GPUBlendState>>& rtv_blend_states,
-      FillMode fill_mode,
-      CullMode cull_mode,
-      bool front_counter_clockwise,
-      bool depth_clip_enable,
-      bool scissor_enable,
-      bool depth_enable,
-      bool depth_write_enable,
-      ComparisonFunction depth_func,
-      bool stencil_enable,
-      uint8_t stencil_read_mask,
-      uint8_t stencil_write_mask,
-      const base::Vector<scoped_refptr<GPULayoutElement>>& input_layouts,
-      uint32_t sample_mask,
-      PrimitiveTopology primitive_topology,
-      uint8_t viewports_num,
-      uint8_t render_targets_num,
-      const base::Vector<TextureFormat>& rtv_formats,
-      TextureFormat dsv_format,
-      bool readonly_dsv,
+      const std::optional<GraphicsPipelineDesc>& graphics_pipeline_desc,
       scoped_refptr<GPUShader> vertex_shader,
       scoped_refptr<GPUShader> pixel_shader,
       scoped_refptr<GPUShader> domain_shader,
@@ -486,8 +698,8 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_pipeline_signature)--*/
   virtual scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
-      const base::Vector<scoped_refptr<GPUPipelineResource>>& resources,
-      const base::Vector<scoped_refptr<GPUImmutableSampler>>& samplers,
+      const base::Vector<PipelineResourceDesc>& resources,
+      const base::Vector<ImmutableSamplerDesc>& samplers,
       uint8_t binding_index,
       bool use_combined_texture_samplers,
       const base::String& combined_sampler_suffix,

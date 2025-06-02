@@ -187,7 +187,7 @@ class MriBindingGen:
       member_type = member['type']
 
       # 在 Hash 中寻找指定成员
-      content += f"VALUE {member_name} = rb_hash_lookup(rb_hash, ID2SYM(rb_intern(\"{member_name}\"));\n"
+      content += f"VALUE {member_name} = rb_hash_lookup(rb_hash, ID2SYM(rb_intern(\"{member_name}\")));\n"
 
       # 通过成员变量类型确认转换函数
       convert_func = ""
@@ -198,7 +198,10 @@ class MriBindingGen:
       elif member_type.startswith("uint64_t"):
         convert_func = f"NUM2ULL({member_name})"
       elif member_type.startswith("int") or member_type.startswith("uint") or self.is_type_enum(member_type):
-        convert_func = f"NUM2INT({member_name})"
+        if self.is_type_enum(member_type):
+          convert_func = f"(content::{self.class_data['class']}::{member_type})NUM2INT({member_name})"
+        else:
+          convert_func = f"NUM2INT({member_name})"
       elif member_type.startswith("float"):
         convert_func = f"RFLOAT_VALUE({member_name})"
       elif member_type.startswith("double"):
@@ -225,7 +228,9 @@ class MriBindingGen:
           match_type = match.group(1)
           convert_func = f"RBARRAY2CXX<content::{match_type}>({member_name}, k{match_type}DataType)"
         elif self.is_type_struct(decay_type):
-          convert_func = f"RBARRAY2CXX<{decay_type}>({member_name}, RBHASH2{decay_type})"
+          convert_func = f"RBARRAY2CXX<content::{self.class_data['class']}::{decay_type}>({member_name}, RBHASH2{decay_type})"
+        elif self.is_type_enum(decay_type):
+          convert_func = f"RBARRAY2CXX_CONST<content::{self.class_data['class']}::{decay_type}>({member_name})"
         else:
           convert_func = f"RBARRAY2CXX<{decay_type}>({member_name})"
 
@@ -240,7 +245,10 @@ class MriBindingGen:
   # 函数名：VALUE ****2RBHASH(const ***&)
   def convert_struct_to_hash(self, struct_name):
     # 生成一个专用函数，将本类的结构体从 C++ 数据转为 Ruby 数据
-    content = f"static VALUE {struct_name}2RBHASH(const content::{self.class_data['class']}::{struct_name}& cxx_obj) {{\n"
+    content = f"static VALUE {struct_name}2RBHASH(const std::optional<content::{self.class_data['class']}::{struct_name}>& opt_cxx_obj) {{\n"
+    content += "if (!opt_cxx_obj.has_value())\nreturn Qnil;\n"
+    content += "auto& cxx_obj = *opt_cxx_obj;\n"
+
     # 创建一个局部变量
     content += f"VALUE result = rb_hash_new();\n\n"
 
@@ -289,9 +297,9 @@ class MriBindingGen:
           match_type = match.group(1)
           convert_func = f"CXX2RBARRAY<content::{match_type}>(cxx_obj.{member_name}, k{match_type}DataType)"
         elif self.is_type_struct(decay_type):
-          convert_func = f"CXX2RBARRAY<{decay_type}>(cxx_obj.{member_name}, {decay_type}2RBHASH)"
+          convert_func = f"CXX2RBARRAY<content::{self.class_data['class']}::{decay_type}>(cxx_obj.{member_name}, {decay_type}2RBHASH)"
         elif self.is_type_enum(decay_type):
-          convert_func = f"CXX2RBARRAY<int32_t>(cxx_obj.{member_name})"
+          convert_func = f"CXX2RBARRAY<content::{self.class_data['class']}::{decay_type}>(cxx_obj.{member_name})"
         else:
           convert_func = f"CXX2RBARRAY<{decay_type}>(cxx_obj.{member_name})"
 
@@ -434,7 +442,7 @@ class MriBindingGen:
             ruby_type = "VALUE"
             convert_suffix += f"auto {param_name} = MriCheckStructData<content::{decay_type}>({param_name}_obj, k{decay_type}DataType);\n"
             param_name += "_obj"
-          elif param_type.startswith("std::optional") or param_type.startswith("const std::optional&"):
+          elif param_type.startswith("std::optional") or param_type.startswith("const std::optional"):
             match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', param_type)
             decay_type = match.group(1)
             parse_template += "o"
@@ -454,7 +462,7 @@ class MriBindingGen:
               match_type = match.group(1)
               convert_func = f"RBARRAY2CXX<content::{match_type}>({param_name}_ary, k{match_type}DataType)"
             elif self.is_type_struct(decay_type):
-              convert_func = f"RBARRAY2CXX<{decay_type}>({param_name}_ary, RBHASH2{decay_type})"
+              convert_func = f"RBARRAY2CXX<content::{klass_type}::{decay_type}>({param_name}_ary, RBHASH2{decay_type})"
             elif self.is_type_enum(decay_type):
               convert_func = f"RBARRAY2CXX_CONST<content::{klass_type}::{decay_type}>({param_name}_ary)"
             else:
