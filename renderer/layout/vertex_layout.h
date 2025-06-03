@@ -73,12 +73,12 @@ struct IndirectParams {
 
   IndirectParams(uint32_t vertices,
                  uint32_t instances,
-                 uint32_t vertex_offset,
-                 uint32_t instance_offset)
+                 uint32_t vertex_first,
+                 uint32_t instance_first)
       : num_vertices(vertices),
         num_instances(instances),
-        start_vertex_location(vertex_offset),
-        first_instance_location(instance_offset) {}
+        start_vertex_location(vertex_first),
+        first_instance_location(instance_first) {}
 };
 
 struct IndexedIndirectParams {
@@ -90,14 +90,14 @@ struct IndexedIndirectParams {
 
   IndexedIndirectParams(uint32_t indices,
                         uint32_t instances,
-                        uint32_t index_offset,
-                        uint32_t bvertex,
-                        uint32_t instance_offset)
+                        uint32_t index_first,
+                        uint32_t vertex_offset,
+                        uint32_t instance_first)
       : num_indices(indices),
         num_instances(instances),
-        first_index_location(index_offset),
-        base_vertex(bvertex),
-        first_instance_location(instance_offset) {}
+        first_index_location(index_first),
+        base_vertex(vertex_offset),
+        first_instance_location(instance_first) {}
 };
 
 }  // namespace renderer
