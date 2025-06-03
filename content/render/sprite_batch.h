@@ -15,10 +15,10 @@ namespace content {
 
 using SpriteBatchBuffer =
     renderer::BatchBuffer<renderer::Binding_Sprite::Params,
-                          Diligent::BIND_FLAGS::BIND_SHADER_RESOURCE,
-                          Diligent::BUFFER_MODE::BUFFER_MODE_STRUCTURED,
-                          Diligent::CPU_ACCESS_WRITE,
-                          Diligent::USAGE_DYNAMIC>;
+                          Diligent::BIND_VERTEX_BUFFER,
+                          Diligent::BUFFER_MODE_UNDEFINED,
+                          Diligent::CPU_ACCESS_NONE,
+                          Diligent::USAGE_DEFAULT>;
 
 class SpriteBatch {
  public:
@@ -32,7 +32,8 @@ class SpriteBatch {
 
   renderer::Binding_Sprite* GetShaderBinding() { return binding_.get(); }
   Diligent::IBuffer* GetVertexBuffer() { return **vertex_batch_; }
-  Diligent::IBufferView* GetUniformBinding() { return uniform_binding_; }
+  Diligent::IBuffer* GetInstanceBuffer() { return **uniform_batch_; }
+  Diligent::IBuffer* GetIndirectArgsBuffer() { return **indirect_batch_; }
 
   // Setup a sprite batch
   void BeginBatch(TextureAgent* texture);
@@ -53,11 +54,12 @@ class SpriteBatch {
 
   base::Vector<renderer::Quad> quad_cache_;
   base::Vector<renderer::Binding_Sprite::Params> uniform_cache_;
+  base::Vector<renderer::IndexedIndirectParams> indirect_cache_;
 
   base::OwnedPtr<renderer::Binding_Sprite> binding_;
   base::OwnedPtr<renderer::QuadBatch> vertex_batch_;
   base::OwnedPtr<SpriteBatchBuffer> uniform_batch_;
-  RRefPtr<Diligent::IBufferView> uniform_binding_;
+  base::OwnedPtr<renderer::IndexedIndirectBatch> indirect_batch_;
 };
 
 }  // namespace content

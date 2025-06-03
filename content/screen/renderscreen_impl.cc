@@ -93,8 +93,7 @@ void GPUCreateGraphicsHostInternal(RenderGraphicsAgent* agent,
       render_worker, agent->device.get(), agent->context.get(), io_service);
 
   // Create global sprite batch scheduler
-  if (agent->device->GetPipelines()->sprite.storage_buffer_support)
-    agent->sprite_batch = base::MakeOwnedPtr<SpriteBatch>(agent->device.get());
+  agent->sprite_batch = base::MakeOwnedPtr<SpriteBatch>(agent->device.get());
 
   // Get pipeline manager
   auto* pipelines = agent->device->GetPipelines();

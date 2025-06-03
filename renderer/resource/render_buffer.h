@@ -134,6 +134,18 @@ using QuadBatch = BatchBuffer<Quad,
                               Diligent::USAGE_DEFAULT,
                               4>;
 
+using IndirectBatch = BatchBuffer<IndirectParams,
+                                  Diligent::BIND_INDIRECT_DRAW_ARGS,
+                                  Diligent::BUFFER_MODE_UNDEFINED,
+                                  Diligent::CPU_ACCESS_NONE,
+                                  Diligent::USAGE_DEFAULT>;
+
+using IndexedIndirectBatch = BatchBuffer<IndexedIndirectParams,
+                                         Diligent::BIND_INDIRECT_DRAW_ARGS,
+                                         Diligent::BUFFER_MODE_UNDEFINED,
+                                         Diligent::CPU_ACCESS_NONE,
+                                         Diligent::USAGE_DEFAULT>;
+
 }  // namespace renderer
 
 #endif  //! RENDERER_RESOURCE_RENDER_BUFFER_H_

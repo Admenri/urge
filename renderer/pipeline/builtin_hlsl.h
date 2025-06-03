@@ -70,14 +70,11 @@ extern const base::String kHLSL_FlatRender;
 ///
 // vertex:
 //   <float4, float2, float4>
+//   < { float4, float4, float2, float2, float2, float, float, float, float } >
 ///
 // resource:
 //   { float4x4, float4x4 }
 //   { Texture2D }
-//   < { float4, float4, float2, float2, float2, float, float, float, float } >
-//
-// macros:
-//   STORAGE_BUFFER_SUPPORT
 ///
 extern const base::String kHLSL_SpriteRender;
 
