@@ -35,6 +35,10 @@ Binding_Sprite::Binding_Sprite(ShaderBinding binding)
     : RenderBindingBase(binding) {
   u_transform = RawPtr()->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                             "WorldMatrixBuffer");
+  u_params =
+      RawPtr()->GetVariableByName(Diligent::SHADER_TYPE_VERTEX, "u_Params");
+  u_param = RawPtr()->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
+                                        "SpriteUniformParam");
   u_texture =
       RawPtr()->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }

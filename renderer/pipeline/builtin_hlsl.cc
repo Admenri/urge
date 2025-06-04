@@ -238,19 +238,30 @@ cbuffer WorldMatrixBuffer {
   WorldMatrix u_Transform;
 };
 
+struct SpriteParam {
+  float4 Color;
+  float4 Tone;
+  float4 Position;
+  float4 Origin;
+  float4 Scale;
+  float4 Rotation;
+  float4 Opacity;
+  float4 BushDepthAndOpacity;
+};
+
+#if STORAGE_BUFFER_SUPPORT
+StructuredBuffer<SpriteParam> u_Params;
+#else
+cbuffer SpriteUniformParam {
+  SpriteParam u_Param;
+};
+#endif // STORAGE_BUFFER_SUPPORT
+
 struct VSInput {
   float4 Pos : ATTRIB0;
   float2 UV : ATTRIB1;
-  float4 VertexColor : ATTRIB2;
-
-  float4 Color : ATTRIB3;
-  float4 Tone : ATTRIB4;
-  float4 Position : ATTRIB5;
-  float4 Origin : ATTRIB6;
-  float4 Scale : ATTRIB7;
-  float4 Rotation : ATTRIB8;
-  float4 Opacity : ATTRIB9;
-  float4 BushDepthAndOpacity : ATTRIB10;
+  float4 Color : ATTRIB2;
+  uint VertexIdx : SV_VertexID;
 };
 
 struct PSInput {
@@ -264,14 +275,25 @@ struct PSInput {
 };
 
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
-  float sine = sin(VSIn.Rotation.x);
-  float cosine = cos(VSIn.Rotation.x);
-  float sxs = VSIn.Scale.x * sine;
-  float sxc = VSIn.Scale.x * cosine;
-  float sys = VSIn.Scale.y * sine;
-  float syc = VSIn.Scale.y * cosine;
-  float tx = -VSIn.Origin.x * sxc - VSIn.Origin.y * sys + VSIn.Position.x;
-  float ty = VSIn.Origin.x * sxs - VSIn.Origin.y * syc + VSIn.Position.y;
+#if STORAGE_BUFFER_SUPPORT
+#if defined(GLSL)
+  int vertex_id = int(VSIn.VertexIdx);
+#else
+  uint vertex_id = VSIn.VertexIdx;
+#endif // GLSL
+  SpriteParam effect = u_Params[vertex_id / 4];
+#else
+  SpriteParam effect = u_Param;
+#endif // STORAGE_BUFFER_SUPPORT
+
+  float sine = sin(effect.Rotation.x);
+  float cosine = cos(effect.Rotation.x);
+  float sxs = effect.Scale.x * sine;
+  float sxc = effect.Scale.x * cosine;
+  float sys = effect.Scale.y * sine;
+  float syc = effect.Scale.y * cosine;
+  float tx = -effect.Origin.x * sxc - effect.Origin.y * sys + effect.Position.x;
+  float ty = effect.Origin.x * sxs - effect.Origin.y * syc + effect.Position.y;
 
   float4 transPos;
   transPos.x = VSIn.Pos.x * sxc + VSIn.Pos.y * sys + tx;
@@ -283,11 +305,11 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
   URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
-  PSIn.Color = VSIn.Color;
-  PSIn.Tone = VSIn.Tone;
-  PSIn.Opacity = VSIn.Opacity.x;
-  PSIn.BushDepth = VSIn.BushDepthAndOpacity.x;
-  PSIn.BushOpacity = VSIn.BushDepthAndOpacity.y;
+  PSIn.Color = effect.Color;
+  PSIn.Tone = effect.Tone;
+  PSIn.Opacity = effect.Opacity.x;
+  PSIn.BushDepth = effect.BushDepthAndOpacity.x;
+  PSIn.BushOpacity = effect.BushDepthAndOpacity.y;
 }
 
 Texture2D u_Texture;

@@ -65,41 +65,6 @@ struct Quad {
   Vertex* data() { return vertices; }
 };
 
-struct IndirectParams {
-  uint32_t num_vertices;
-  uint32_t num_instances;
-  uint32_t start_vertex_location;
-  uint32_t first_instance_location;
-
-  IndirectParams(uint32_t vertices,
-                 uint32_t instances,
-                 uint32_t vertex_offset,
-                 uint32_t instance_offset)
-      : num_vertices(vertices),
-        num_instances(instances),
-        start_vertex_location(vertex_offset),
-        first_instance_location(instance_offset) {}
-};
-
-struct IndexedIndirectParams {
-  uint32_t num_indices;
-  uint32_t num_instances;
-  uint32_t first_index_location;
-  uint32_t base_vertex;
-  uint32_t first_instance_location;
-
-  IndexedIndirectParams(uint32_t indices,
-                        uint32_t instances,
-                        uint32_t index_offset,
-                        uint32_t bvertex,
-                        uint32_t instance_offset)
-      : num_indices(indices),
-        num_instances(instances),
-        first_index_location(index_offset),
-        base_vertex(bvertex),
-        first_instance_location(instance_offset) {}
-};
-
 }  // namespace renderer
 
 #endif  //! RENDERER_LAYOUT_VERTEX_LAYOUT_H_

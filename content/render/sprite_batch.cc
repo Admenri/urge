@@ -12,8 +12,7 @@ SpriteBatch::SpriteBatch(renderer::RenderDevice* device)
       last_batch_index_(-1),
       binding_(device->GetPipelines()->sprite.CreateBinding()),
       vertex_batch_(renderer::QuadBatch::Make(**device)),
-      uniform_batch_(SpriteBatchBuffer::Make(**device)),
-      indirect_batch_(renderer::IndexedIndirectBatch::Make(**device)) {}
+      uniform_batch_(SpriteBatchBuffer::Make(**device)) {}
 
 SpriteBatch::~SpriteBatch() = default;
 
@@ -24,9 +23,6 @@ void SpriteBatch::BeginBatch(TextureAgent* texture) {
 
 void SpriteBatch::PushSprite(const renderer::Quad& quad,
                              const renderer::Binding_Sprite::Params& uniform) {
-  indirect_cache_.emplace_back(6, 1, 6 * quad_cache_.size(), 0,
-                               quad_cache_.size());
-
   quad_cache_.push_back(quad);
   uniform_cache_.push_back(uniform);
 }
@@ -53,18 +49,17 @@ void SpriteBatch::SubmitBatchDataAndResetCache(
     vertex_batch_->QueueWrite(**context, quad_cache_.data(),
                               quad_cache_.size());
 
-  if (uniform_cache_.size())
+  if (uniform_cache_.size()) {
     uniform_batch_->QueueWrite(**context, uniform_cache_.data(),
                                uniform_cache_.size());
-
-  if (indirect_cache_.size())
-    indirect_batch_->QueueWrite(**context, indirect_cache_.data(),
-                                indirect_cache_.size());
+    uniform_binding_ =
+        (**uniform_batch_)
+            ->GetDefaultView(Diligent::BUFFER_VIEW_SHADER_RESOURCE);
+  }
 
   // Reset cache
   quad_cache_.clear();
   uniform_cache_.clear();
-  indirect_cache_.clear();
 }
 
 }  // namespace content

@@ -17,9 +17,9 @@
 
 namespace renderer {
 
-#define MAKE_BINDING_FUNCTION(ty, x)          \
+#define MAKE_BINDING_FUNCTION(ty, x)           \
   inline base::OwnedPtr<ty> CreateBinding() { \
-    return CreateBindingAt<ty>(x);            \
+    return CreateBindingAt<ty>(x);             \
   }
 
 /// Color Blend Type of Pipeline
@@ -124,6 +124,8 @@ class Pipeline_Sprite : public RenderPipelineBase {
   Pipeline_Sprite(Diligent::IRenderDevice* device,
                   Diligent::TEXTURE_FORMAT target_format);
 
+  Diligent::Bool storage_buffer_support = Diligent::False;
+
   MAKE_BINDING_FUNCTION(Binding_Sprite, 0);
 };
 
@@ -187,7 +189,7 @@ class Pipeline_Present : public RenderPipelineBase {
 class Pipeline_YUV : public RenderPipelineBase {
  public:
   Pipeline_YUV(Diligent::IRenderDevice* device,
-               Diligent::TEXTURE_FORMAT target_format);
+                Diligent::TEXTURE_FORMAT target_format);
 
   MAKE_BINDING_FUNCTION(Binding_YUV, 0);
 };

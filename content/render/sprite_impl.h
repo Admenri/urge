@@ -23,6 +23,12 @@ struct SpriteAgent {
 
   uint32_t instance_offset = 0;
   uint32_t instance_count = 0;
+
+  // Enable if storage buffer is not supported
+  base::OwnedPtr<renderer::Binding_Sprite> single_binding;
+  base::OwnedPtr<renderer::QuadBatch> single_vertex;
+  RRefPtr<Diligent::IBuffer> single_uniform;
+  uint32_t single_wave_quad_count = 0;
 };
 
 class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
