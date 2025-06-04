@@ -161,26 +161,16 @@ void GPUOnSpriteRenderingInternal(renderer::RenderDevice* device,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
-    if (agent->instance_count > 1) {
-      Diligent::DrawIndexedIndirectAttribs draw_indexed_attribs;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-      draw_indexed_attribs.pAttribsBuffer =
-          batch_scheduler->GetIndirectArgsBuffer();
-      draw_indexed_attribs.DrawArgsOffset =
-          sizeof(renderer::IndexedIndirectParams) * agent->instance_offset;
-      draw_indexed_attribs.DrawCount = agent->instance_count;
-      draw_indexed_attribs.DrawArgsStride =
-          sizeof(renderer::IndexedIndirectParams);
-      (*context)->DrawIndexedIndirect(draw_indexed_attribs);
-    } else {
-      Diligent::DrawIndexedAttribs draw_indexed_attribs;
-      draw_indexed_attribs.NumIndices = 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-      draw_indexed_attribs.NumInstances = 1;
-      draw_indexed_attribs.FirstIndexLocation = agent->instance_offset * 6;
-      draw_indexed_attribs.FirstInstanceLocation = agent->instance_offset;
-      (*context)->DrawIndexed(draw_indexed_attribs);
-    }
+    Diligent::DrawIndexedIndirectAttribs draw_indexed_attribs;
+    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+    draw_indexed_attribs.pAttribsBuffer =
+        batch_scheduler->GetIndirectArgsBuffer();
+    draw_indexed_attribs.DrawArgsOffset =
+        sizeof(renderer::IndexedIndirectParams) * agent->instance_offset;
+    draw_indexed_attribs.DrawCount = agent->instance_count;
+    draw_indexed_attribs.DrawArgsStride =
+        sizeof(renderer::IndexedIndirectParams);
+    (*context)->DrawIndexedIndirect(draw_indexed_attribs);
   }
 }
 
