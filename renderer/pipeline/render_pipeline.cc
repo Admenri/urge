@@ -300,8 +300,12 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
   storage_buffer_support =
       !(device_info.Type == Diligent::RENDER_DEVICE_TYPE_GLES);
 
+  if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GL)
+    storage_buffer_support =
+        device_info.Features.VertexPipelineUAVWritesAndAtomics > 0;
+
   if (!storage_buffer_support)
-    LOG(INFO) << "[Pipeline] Disable Sprite batch process.";
+    LOG(INFO) << "[Pipeline] Disable sprite batch process.";
 
   Diligent::ShaderMacro vertex_macro = {"STORAGE_BUFFER_SUPPORT",
                                         storage_buffer_support ? "1" : "0"};

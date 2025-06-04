@@ -15,8 +15,8 @@ namespace content {
 
 using SpriteBatchBuffer =
     renderer::BatchBuffer<renderer::Binding_Sprite::Params,
-                          Diligent::BIND_FLAGS::BIND_SHADER_RESOURCE,
-                          Diligent::BUFFER_MODE::BUFFER_MODE_STRUCTURED,
+                          Diligent::BIND_SHADER_RESOURCE,
+                          Diligent::BUFFER_MODE_STRUCTURED,
                           Diligent::CPU_ACCESS_WRITE,
                           Diligent::USAGE_DYNAMIC>;
 
