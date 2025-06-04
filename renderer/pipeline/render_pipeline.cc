@@ -310,8 +310,35 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
   Diligent::ShaderMacro vertex_macro = {"STORAGE_BUFFER_SUPPORT",
                                         storage_buffer_support ? "1" : "0"};
 
-  const ShaderSource shader_source{
-      kHLSL_SpriteRender, "sprite.render", {vertex_macro}};
+  const ShaderSource shader_source{storage_buffer_support
+                                       ? kHLSL_SpriteRender_Batch
+                                       : kHLSL_SpriteRender_Normal,
+                                   "sprite.render",
+                                   {vertex_macro}};
+
+  const base::Vector<Diligent::LayoutElement> input_elements = {
+      // Per Vertex
+      Diligent::LayoutElement{0, 0, 4, Diligent::VT_FLOAT32, Diligent::False},
+      Diligent::LayoutElement{1, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
+      Diligent::LayoutElement{2, 0, 4, Diligent::VT_FLOAT32, Diligent::False},
+      // Per Instance
+      Diligent::LayoutElement{3, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{4, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{5, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{6, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{7, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{8, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{9, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+      Diligent::LayoutElement{10, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
+                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+  };
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
@@ -320,10 +347,8 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
       {Diligent::SHADER_TYPE_PIXEL, "u_Texture",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-      {Diligent::SHADER_TYPE_VERTEX,
-       storage_buffer_support ? "u_Params" : "SpriteUniformParam",
-       storage_buffer_support ? Diligent::SHADER_RESOURCE_TYPE_BUFFER_SRV
-                              : Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
+      {Diligent::SHADER_TYPE_VERTEX, "u_Params",
+       Diligent::SHADER_RESOURCE_TYPE_BUFFER_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
@@ -338,7 +363,9 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source,
+                storage_buffer_support ? Vertex::GetLayout() : input_elements,
+                {binding0}, target_format);
 }
 
 Pipeline_AlphaTransition::Pipeline_AlphaTransition(

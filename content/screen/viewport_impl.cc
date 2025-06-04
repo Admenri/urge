@@ -340,12 +340,11 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   controller_.BroadCastNotification(DrawableNode::BEFORE_RENDER,
                                     &controller_params);
 
-  // 1.5) Update sprite batch if need
-  if (screen()->GetSpriteBatch())
-    screen()->PostTask(
-        base::BindOnce(&SpriteBatch::SubmitBatchDataAndResetCache,
-                       base::Unretained(screen()->GetSpriteBatch()),
-                       controller_params.device, controller_params.context));
+  // 1.5) Update sprite batch data
+  screen()->PostTask(
+      base::BindOnce(&SpriteBatch::SubmitBatchDataAndResetCache,
+                     base::Unretained(screen()->GetSpriteBatch()),
+                     controller_params.device, controller_params.context));
 
   // 2) Setup renderpass
   screen()->PostTask(

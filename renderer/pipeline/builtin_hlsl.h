@@ -79,7 +79,8 @@ extern const base::String kHLSL_FlatRender;
 // macros:
 //   STORAGE_BUFFER_SUPPORT
 ///
-extern const base::String kHLSL_SpriteRender;
+extern const base::String kHLSL_SpriteRender_Normal;
+extern const base::String kHLSL_SpriteRender_Batch;
 
 ///
 // type:

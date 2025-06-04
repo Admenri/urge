@@ -10,9 +10,12 @@ SpriteBatch::SpriteBatch(renderer::RenderDevice* device)
     : device_(device),
       current_texture_(nullptr),
       last_batch_index_(-1),
+      support_storage_buffer_batch_(
+          device->GetPipelines()->sprite.storage_buffer_support),
       binding_(device->GetPipelines()->sprite.CreateBinding()),
       vertex_batch_(renderer::QuadBatch::Make(**device)),
-      uniform_batch_(SpriteBatchBuffer::Make(**device)) {}
+      uniform_batch_(SpriteBatchBuffer::Make(**device)),
+      instance_batch_(SpriteInstanceBatchBuffer::Make(**device)) {}
 
 SpriteBatch::~SpriteBatch() = default;
 
@@ -50,11 +53,16 @@ void SpriteBatch::SubmitBatchDataAndResetCache(
                               quad_cache_.size());
 
   if (uniform_cache_.size()) {
-    uniform_batch_->QueueWrite(**context, uniform_cache_.data(),
-                               uniform_cache_.size());
-    uniform_binding_ =
-        (**uniform_batch_)
-            ->GetDefaultView(Diligent::BUFFER_VIEW_SHADER_RESOURCE);
+    if (support_storage_buffer_batch_) {
+      uniform_batch_->QueueWrite(**context, uniform_cache_.data(),
+                                 uniform_cache_.size());
+      uniform_binding_ =
+          (**uniform_batch_)
+              ->GetDefaultView(Diligent::BUFFER_VIEW_SHADER_RESOURCE);
+    } else {
+      instance_batch_->QueueWrite(**context, uniform_cache_.data(),
+                                  uniform_cache_.size());
+    }
   }
 
   // Reset cache

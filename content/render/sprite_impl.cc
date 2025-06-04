@@ -21,15 +21,6 @@ inline float DegreesToRadians(float degrees) {
 void GPUCreateSpriteInternal(renderer::RenderDevice* device,
                              SpriteAgent* agent) {
   agent->wave_cache.reserve(1 << 3);
-
-  if (!device->GetPipelines()->sprite.storage_buffer_support) {
-    agent->single_binding = device->GetPipelines()->sprite.CreateBinding();
-    agent->single_vertex = renderer::QuadBatch::Make(**device, 1);
-    Diligent::CreateUniformBuffer(
-        **device, sizeof(renderer::Binding_Sprite::Params),
-        "sprite.single.uniform", &agent->single_uniform,
-        Diligent::USAGE_DEFAULT);
-  }
 }
 
 void GPUDestroySpriteInternal(SpriteAgent* agent) {
@@ -110,45 +101,31 @@ void GPUUpdateBatchSpriteInternal(
     renderer::Quad::SetTexCoordRect(&agent->quad, texcoord, texture->size);
   }
 
-  if (!agent->single_binding) {
-    // Start a batch if no context
-    if (!batch_scheduler->GetCurrentTexture())
-      batch_scheduler->BeginBatch(texture);
+  // Start a batch if no context
+  if (!batch_scheduler->GetCurrentTexture())
+    batch_scheduler->BeginBatch(texture);
 
-    // Push this node into batch scheduler if batchable
-    if (texture == batch_scheduler->GetCurrentTexture()) {
-      if (wave.amp) {
-        for (const auto& it : agent->wave_cache)
-          batch_scheduler->PushSprite(it, uniform);
-      } else {
-        batch_scheduler->PushSprite(agent->quad, uniform);
-      }
-    }
-
-    // End batch on this node if next cannot be batchable
-    if (batch_scheduler->GetCurrentTexture() && next_texture != texture) {
-      // Execute batch draw info on this node
-      batch_scheduler->EndBatch(&agent->instance_offset,
-                                &agent->instance_count);
-    } else {
-      // Do not draw quads on current node
-      agent->instance_count = 0;
-    }
-  } else {
+  // Push this node into batch scheduler if batchable
+  if (texture == batch_scheduler->GetCurrentTexture()) {
     if (wave.amp) {
-      agent->single_wave_quad_count = agent->wave_cache.size();
-      device->GetQuadIndex()->Allocate(agent->single_wave_quad_count);
-
-      agent->single_vertex->QueueWrite(**context, agent->wave_cache.data(),
-                                       agent->wave_cache.size());
+      for (const auto& it : agent->wave_cache)
+        batch_scheduler->PushSprite(it, uniform);
     } else {
-      agent->single_wave_quad_count = 1;
-      agent->single_vertex->QueueWrite(**context, &agent->quad);
+      batch_scheduler->PushSprite(agent->quad, uniform);
     }
+  }
 
-    (*context)->UpdateBuffer(
-        agent->single_uniform, 0, sizeof(uniform), &uniform,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  // Determine batch mode
+  const bool enable_batch = batch_scheduler->IsBatchEnabled();
+
+  // End batch on this node if next cannot be batchable
+  if (!enable_batch ||
+      (batch_scheduler->GetCurrentTexture() && next_texture != texture)) {
+    // Execute batch draw info on this node
+    batch_scheduler->EndBatch(&agent->instance_offset, &agent->instance_count);
+  } else {
+    // Do not draw quads on current node
+    agent->instance_count = 0;
   }
 }
 
@@ -160,41 +137,6 @@ void GPUOnSpriteRenderingInternal(renderer::RenderDevice* device,
                                   TextureAgent* texture,
                                   int32_t blend_type,
                                   bool wave_active) {
-  if (agent->single_binding) {
-    // Single drawcall
-    auto& pipeline_set = device->GetPipelines()->sprite;
-    auto* pipeline =
-        pipeline_set.GetPipeline(static_cast<renderer::BlendType>(blend_type));
-
-    // Setup uniform params
-    agent->single_binding->u_transform->Set(*world_binding);
-    agent->single_binding->u_texture->Set(texture->view);
-    agent->single_binding->u_param->Set(agent->single_uniform);
-
-    // Apply pipeline state
-    (*context)->SetPipelineState(pipeline);
-    (*context)->CommitShaderResources(
-        **agent->single_binding,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = **agent->single_vertex;
-    (*context)->SetVertexBuffers(
-        0, 1, &vertex_buffer, nullptr,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*context)->SetIndexBuffer(
-        **device->GetQuadIndex(), 0,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = 6 * agent->single_wave_quad_count;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    (*context)->DrawIndexed(draw_indexed_attribs);
-
-    return;
-  }
-
   if (agent->instance_count) {
     // Batch draw
     auto& pipeline_set = device->GetPipelines()->sprite;
@@ -213,21 +155,36 @@ void GPUOnSpriteRenderingInternal(renderer::RenderDevice* device,
         **batch_scheduler->GetShaderBinding(),
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+    // Determine batch mode
+    const bool enable_batch = batch_scheduler->IsBatchEnabled();
+
     // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = batch_scheduler->GetVertexBuffer();
+    Diligent::IBuffer* const vertex_buffer[] = {
+        batch_scheduler->GetVertexBuffer(),
+        batch_scheduler->GetInstanceBuffer()};
     (*context)->SetVertexBuffers(
-        0, 1, &vertex_buffer, nullptr,
+        0, 1 + !enable_batch, vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     (*context)->SetIndexBuffer(
         **device->GetQuadIndex(), 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = 6 * agent->instance_count;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    draw_indexed_attribs.FirstIndexLocation = 6 * agent->instance_offset;
-    (*context)->DrawIndexed(draw_indexed_attribs);
+    if (enable_batch) {
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6 * agent->instance_count;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = 6 * agent->instance_offset;
+      (*context)->DrawIndexed(draw_indexed_attribs);
+    } else {
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = 6 * agent->instance_offset;
+      draw_indexed_attribs.NumInstances = 1;
+      draw_indexed_attribs.FirstInstanceLocation = agent->instance_offset;
+      (*context)->DrawIndexed(draw_indexed_attribs);
+    }
   }
 }
 

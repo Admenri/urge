@@ -102,7 +102,6 @@ class Binding_Sprite : public RenderBindingBase {
 
   ShaderVariable u_transform;
   ShaderVariable u_params;
-  ShaderVariable u_param;
   ShaderVariable u_texture;
 
  private:

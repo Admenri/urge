@@ -227,7 +227,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   < { float2, float2, float2, float, float4, float4, float, float, float } >
 ///
 
-const base::String kHLSL_SpriteRender = R"(
+const base::String kSpriteShaderHeader = R"(
 
 struct WorldMatrix {
   float4x4 ProjMat;
@@ -251,18 +251,44 @@ struct SpriteParam {
 
 #if STORAGE_BUFFER_SUPPORT
 StructuredBuffer<SpriteParam> u_Params;
-#else
-cbuffer SpriteUniformParam {
-  SpriteParam u_Param;
-};
 #endif // STORAGE_BUFFER_SUPPORT
+
+)";
+
+const base::String kSpriteShaderInput_Normal = R"(
 
 struct VSInput {
   float4 Pos : ATTRIB0;
   float2 UV : ATTRIB1;
   float4 Color : ATTRIB2;
+  
+  float4 InstanceColor : ATTRIB3;
+  float4 InstanceTone : ATTRIB4;
+  float4 InstancePosition : ATTRIB5;
+  float4 InstanceOrigin : ATTRIB6;
+  float4 InstanceScale : ATTRIB7;
+  float4 InstanceRotation : ATTRIB8;
+  float4 InstanceOpacity : ATTRIB9;
+  float4 InstanceBushDepthAndOpacity : ATTRIB10;
+
   uint VertexIdx : SV_VertexID;
 };
+
+)";
+
+const base::String kSpriteShaderInput_Batch = R"(
+
+struct VSInput {
+  float4 Pos : ATTRIB0;
+  float2 UV : ATTRIB1;
+  float4 Color : ATTRIB2;
+
+  uint VertexIdx : SV_VertexID;
+};
+
+)";
+
+const base::String kSpriteShaderBody = R"(
 
 struct PSInput {
   float4 Pos : SV_Position;
@@ -283,7 +309,15 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
 #endif // GLSL
   SpriteParam effect = u_Params[vertex_id / 4];
 #else
-  SpriteParam effect = u_Param;
+  SpriteParam effect;
+  effect.Color = VSIn.InstanceColor;
+  effect.Tone = VSIn.InstanceTone;
+  effect.Position = VSIn.InstancePosition;
+  effect.Origin = VSIn.InstanceOrigin;
+  effect.Scale = VSIn.InstanceScale;
+  effect.Rotation = VSIn.InstanceRotation;
+  effect.Opacity = VSIn.InstanceOpacity;
+  effect.BushDepthAndOpacity = VSIn.InstanceBushDepthAndOpacity;
 #endif // STORAGE_BUFFER_SUPPORT
 
   float sine = sin(effect.Rotation.x);
@@ -342,6 +376,12 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 }
 
 )";
+
+const base::String kHLSL_SpriteRender_Normal =
+    kSpriteShaderHeader + kSpriteShaderInput_Normal + kSpriteShaderBody;
+
+const base::String kHLSL_SpriteRender_Batch =
+    kSpriteShaderHeader + kSpriteShaderInput_Batch + kSpriteShaderBody;
 
 ///
 // type:

@@ -20,6 +20,13 @@ using SpriteBatchBuffer =
                           Diligent::CPU_ACCESS_WRITE,
                           Diligent::USAGE_DYNAMIC>;
 
+using SpriteInstanceBatchBuffer =
+    renderer::BatchBuffer<renderer::Binding_Sprite::Params,
+                          Diligent::BIND_VERTEX_BUFFER,
+                          Diligent::BUFFER_MODE_UNDEFINED,
+                          Diligent::CPU_ACCESS_NONE,
+                          Diligent::USAGE_DEFAULT>;
+
 class SpriteBatch {
  public:
   SpriteBatch(renderer::RenderDevice* device);
@@ -33,6 +40,7 @@ class SpriteBatch {
   renderer::Binding_Sprite* GetShaderBinding() { return binding_.get(); }
   Diligent::IBuffer* GetVertexBuffer() { return **vertex_batch_; }
   Diligent::IBufferView* GetUniformBinding() { return uniform_binding_; }
+  Diligent::IBuffer* GetInstanceBuffer() { return **instance_batch_; }
 
   // Setup a sprite batch
   void BeginBatch(TextureAgent* texture);
@@ -46,10 +54,13 @@ class SpriteBatch {
   void SubmitBatchDataAndResetCache(renderer::RenderDevice* device,
                                     renderer::RenderContext* context);
 
+  bool IsBatchEnabled() const { return support_storage_buffer_batch_; }
+
  private:
   renderer::RenderDevice* device_;
   TextureAgent* current_texture_;
   int32_t last_batch_index_;
+  const bool support_storage_buffer_batch_;
 
   base::Vector<renderer::Quad> quad_cache_;
   base::Vector<renderer::Binding_Sprite::Params> uniform_cache_;
@@ -57,6 +68,7 @@ class SpriteBatch {
   base::OwnedPtr<renderer::Binding_Sprite> binding_;
   base::OwnedPtr<renderer::QuadBatch> vertex_batch_;
   base::OwnedPtr<SpriteBatchBuffer> uniform_batch_;
+  base::OwnedPtr<SpriteInstanceBatchBuffer> instance_batch_;
   RRefPtr<Diligent::IBufferView> uniform_binding_;
 };
 
