@@ -279,7 +279,7 @@ void GPUCanvasDrawTextSurfaceInternal(CanvasScheduler* scheduler,
                               agent->text_cache_size);
 
     if ((*scheduler->GetDevice())->GetDeviceInfo().IsGLDevice())
-      context->InvalidateState();
+      context->TransitionShaderResources(**scheduler->base_binding());
   }
 
   // Update text texture cache

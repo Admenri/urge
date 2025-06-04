@@ -97,7 +97,7 @@ class MriBindingGen:
       for const in enum["constants"]:
         enum_name = enum["name"]
         enum_type = enum["type"]
-        content += f"rb_const_set(klass, rb_intern(\"{enum_name}\"), INT2NUM(content::{klass_type}::{enum_type}::{const}));\n"
+        content += f"rb_const_set(klass, rb_intern(\"{const}\"), INT2NUM(content::{klass_type}::{enum_type}::{const}));\n"
       content += "\n"
 
     # 属性定义
