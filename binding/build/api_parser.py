@@ -104,7 +104,7 @@ class APIParser:
         continue
 
       # 解析内容
-      match = re.search(r'^([A-Z_]+)(?=\s*=)', line)
+      match = re.search(r'^\s*([A-Z_][A-Z0-9_]*)\b(?!\s*=)', line)
       if match:
         enum_constants.append(match.group(1))
 
