@@ -8,7 +8,6 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
-#include "content/context/execution_context.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpufence.h"
 #include "content/public/engine_gpupipelinesignature.h"

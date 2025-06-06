@@ -8,7 +8,9 @@
 #include "base/buildflags/build.h"
 #include "base/buildflags/compiler_specific.h"
 
-#include <optional>
+namespace content {
+struct ExecutionContext;
+}  // namespace content
 
 #define URGE_RUNTIME_API
 #define URGE_EXPORT_ATTRIBUTE(name, type)       \
@@ -17,11 +19,11 @@
 #define URGE_EXPORT_STATIC_ATTRIBUTE(name, type)              \
   static type Get_##name(ExecutionContext*, ExceptionState&); \
   static void Put_##name(ExecutionContext*, const type&, ExceptionState&)
-#define URGE_EXPORT_SERIALIZABLE(type)                                         \
-  static scoped_refptr<type> Deserialize(ExecutionContext*,                    \
-                                         const base::String&, ExceptionState&); \
-  static base::String Serialize(ExecutionContext*, scoped_refptr<type>,         \
-                               ExceptionState&)
+#define URGE_EXPORT_SERIALIZABLE(type)                                  \
+  static scoped_refptr<type> Deserialize(                               \
+      ExecutionContext*, const base::String&, ExceptionState&);         \
+  static base::String Serialize(ExecutionContext*, scoped_refptr<type>, \
+                                ExceptionState&)
 #define URGE_EXPORT_COMPARABLE(type) \
   virtual bool CompareWithOther(scoped_refptr<type>, ExceptionState&) = 0;
 
