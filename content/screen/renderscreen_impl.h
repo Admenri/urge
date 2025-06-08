@@ -22,60 +22,29 @@
 
 namespace content {
 
-struct RenderGraphicsAgent {
-  base::OwnedPtr<renderer::RenderDevice> device;
-  base::OwnedPtr<renderer::RenderContext> context;
-
-  base::OwnedPtr<CanvasScheduler> canvas_scheduler;
-  base::OwnedPtr<SpriteBatch> sprite_batch;
-
-  RRefPtr<Diligent::ITexture> screen_buffer;
-  RRefPtr<Diligent::ITexture> frozen_buffer;
-  RRefPtr<Diligent::ITexture> transition_buffer;
-  RRefPtr<Diligent::IBuffer> root_transform;
-  RRefPtr<Diligent::IBuffer> world_transform;
-
-  base::OwnedPtr<renderer::QuadBatch> effect_quads;
-  base::OwnedPtr<renderer::Binding_Color> effect_binding;
-
-  base::OwnedPtr<renderer::QuadBatch> transition_quads;
-  base::OwnedPtr<renderer::Binding_AlphaTrans> transition_binding_alpha;
-  base::OwnedPtr<renderer::Binding_VagueTrans> transition_binding_vague;
-
-  Diligent::ITexture** present_target = nullptr;
-  base::OwnedPtr<renderer::Pipeline_Present> present_pipeline;
-
-  struct {
-    base::String device;
-    base::String vendor;
-    base::String description;
-  } renderer_info;
-};
-
-class GraphicsChild {
+class RenderScreenImpl : public Graphics,
+                         public EngineObject,
+                         public DisposableCollection {
  public:
-  GraphicsChild(RenderScreenImpl* screen) : screen_(screen) {}
-  virtual ~GraphicsChild() = default;
+  struct Agent {
+    RRefPtr<Diligent::ITexture> screen_buffer;
+    RRefPtr<Diligent::ITexture> frozen_buffer;
+    RRefPtr<Diligent::ITexture> transition_buffer;
+    RRefPtr<Diligent::IBuffer> root_transform;
+    RRefPtr<Diligent::IBuffer> world_transform;
 
-  GraphicsChild(const GraphicsChild&) = delete;
-  GraphicsChild& operator=(const GraphicsChild&) = delete;
+    renderer::QuadBatch effect_quads;
+    renderer::Binding_Color effect_binding;
 
-  RenderScreenImpl* screen() const { return screen_; }
+    renderer::QuadBatch transition_quads;
+    renderer::Binding_AlphaTrans transition_binding_alpha;
+    renderer::Binding_VagueTrans transition_binding_vague;
 
- private:
-  RenderScreenImpl* screen_;
-};
+    Diligent::ITexture* present_target = nullptr;
+    base::OwnedPtr<renderer::Pipeline_Present> present_pipeline;
+  };
 
-class RenderScreenImpl : public Graphics, public DisposableCollection {
- public:
-  RenderScreenImpl(base::WeakPtr<ui::Widget> window,
-                   base::ThreadWorker* render_worker,
-                   ContentProfile* profile,
-                   I18NProfile* i18n_profile,
-                   filesystem::IOService* io_service,
-                   ScopedFontData* scoped_font,
-                   const base::Vec2i& resolution,
-                   uint32_t frame_rate);
+  RenderScreenImpl(ExecutionContext* execution_context, uint32_t frame_rate);
   ~RenderScreenImpl() override;
 
   RenderScreenImpl(const RenderScreenImpl&) = delete;
@@ -92,43 +61,12 @@ class RenderScreenImpl : public Graphics, public DisposableCollection {
 
   void CreateButtonGUISettings();
 
-  inline DrawNodeController* GetDrawableController() { return &controller_; }
-  inline base::ThreadWorker* GetRenderRunner() const { return render_worker_; }
-  inline base::Vec2i GetResolution() const { return resolution_; }
-
-  inline renderer::RenderDevice* GetDevice() const {
-    return agent_->device.get();
-  }
-
-  inline renderer::RenderContext* GetContext() const {
-    return agent_->context.get();
-  }
-
-  inline SpriteBatch* GetSpriteBatch() const {
-    return agent_->sprite_batch.get();
-  }
-
-  inline ContentProfile* GetProfile() const { return profile_; }
-  inline ScopedFontData* GetScopedFontContext() const { return scoped_font_; }
-  inline CanvasScheduler* GetCanvasScheduler() const {
-    return agent_->canvas_scheduler.get();
-  }
-
-  inline ContentProfile::APIVersion GetAPIVersion() const {
-    return profile_->api_version;
-  }
-
   // Add tick monitor handler
   base::CallbackListSubscription AddTickObserver(
       const base::RepeatingClosure& handler);
 
-  // DisposableCollection methods
-  void AddDisposable(Disposable* disp) override;
-
-  void PostTask(base::OnceClosure task);
-  void WaitWorkerSynchronize();
-
-  bool AllowBackgroundRunning() const { return background_running_; }
+  // Global drawable parent (default)
+  DrawNodeController* GetDrawableController() { return &controller_; }
 
  public:
   void Update(ExceptionState& exception_state) override;
@@ -181,38 +119,46 @@ class RenderScreenImpl : public Graphics, public DisposableCollection {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(WindowTitle, base::String);
 
+  // DisposableCollection methods
+  void AddDisposable(Disposable* disp) override;
+
  private:
-  void FrameProcessInternal(Diligent::ITexture** present_target);
-  void RenderFrameInternal(Diligent::ITexture** render_target);
+  void FrameProcessInternal(Diligent::ITexture* present_target);
+  void RenderFrameInternal(Diligent::ITexture* render_target);
   void UpdateWindowViewportInternal();
 
+  void GPUCreateGraphicsHostInternal();
+  void GPUUpdateScreenWorldInternal();
+  void GPUResetScreenBufferInternal();
+  void GPUPresentScreenBufferInternal(
+      renderer::RenderContext* render_context,
+      Diligent::ImGuiDiligentRenderer* gui_renderer);
+  void GPUFrameBeginRenderPassInternal(renderer::RenderContext* render_context,
+                                       Diligent::ITexture* render_target);
+  void GPUFrameEndRenderPassInternal(renderer::RenderContext* render_context);
+  void GPURenderAlphaTransitionFrameInternal(
+      renderer::RenderContext* render_context,
+      float progress);
+  void GPURenderVagueTransitionFrameInternal(
+      renderer::RenderContext* render_context,
+      Diligent::ITextureView* trans_mapping,
+      float progress,
+      float vague);
+
+  Agent agent_;
   DrawNodeController controller_;
-  base::RepeatingClosureList tick_observers_;
 
-  base::WeakPtr<ui::Widget> window_;
-  ContentProfile* profile_;
-  I18NProfile* i18n_profile_;
-  base::ThreadWorker* render_worker_;
-  ScopedFontData* scoped_font_;
   fpslimiter::FPSLimiter limiter_;
-
-  RenderGraphicsAgent* agent_;
+  base::RepeatingClosureList tick_observers_;
   base::LinkedList<Disposable> disposable_elements_;
 
   bool frozen_;
-  base::Vec2i resolution_;
   base::Rect display_viewport_;
   base::Vec2i window_size_;
   int32_t brightness_;
-  uint32_t vsync_;
   uint64_t frame_count_;
   uint32_t frame_rate_;
   base::Vec2i origin_;
-
-  bool keep_ratio_;
-  bool smooth_scale_;
-  bool allow_skip_frame_;
-  bool background_running_;
 };
 
 }  // namespace content

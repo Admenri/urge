@@ -17,27 +17,24 @@
 
 namespace renderer {
 
-#define MAKE_BINDING_FUNCTION(ty, x)           \
-  inline base::OwnedPtr<ty> CreateBinding() { \
-    return CreateBindingAt<ty>(x);             \
+#define MAKE_BINDING_FUNCTION(ty, x) \
+  inline ty CreateBinding() {        \
+    return CreateBindingAt<ty>(x);   \
   }
 
 /// Color Blend Type of Pipeline
 ///
 enum BlendType {
-  NORMAL = 0,
-  ADDITION,
-  SUBSTRACTION,
-  MULTIPLY,
-  SCREEN,
-  KEEP_ALPHA,
-
-  NORMAL_PMA,
-  ADDITION_PMA,
-
-  NO_BLEND,
-
-  TYPE_NUMS,
+  BLEND_TYPE_NORMAL = 0,
+  BLEND_TYPE_ADDITION,
+  BLEND_TYPE_SUBSTRACTION,
+  BLEND_TYPE_MULTIPLY,
+  BLEND_TYPE_SCREEN,
+  BLEND_TYPE_KEEP_ALPHA,
+  BLEND_TYPE_NORMAL_PMA,
+  BLEND_TYPE_ADDITION_PMA,
+  BLEND_TYPE_NO_BLEND,
+  BLEND_TYPE_NUMS,
 };
 
 /// Pipeline base manager
@@ -54,8 +51,8 @@ class RenderPipelineBase {
 
   virtual ~RenderPipelineBase() = default;
 
-  RenderPipelineBase(const RenderPipelineBase&) = delete;
-  RenderPipelineBase& operator=(const RenderPipelineBase&) = delete;
+  RenderPipelineBase(const RenderPipelineBase&) = default;
+  RenderPipelineBase& operator=(const RenderPipelineBase&) = default;
 
   inline Diligent::IPipelineState* GetPipeline(BlendType blend) const {
     return pipelines_[blend];
@@ -82,14 +79,14 @@ class RenderPipelineBase {
       uint8_t binding_index);
 
   template <typename Ty>
-  base::OwnedPtr<Ty> CreateBindingAt(size_t index) {
+  Ty CreateBindingAt(size_t index) {
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> binding;
     resource_signatures_[index]->CreateShaderResourceBinding(&binding);
     return RenderBindingBase::Create<Ty>(binding);
   }
 
  private:
-  Diligent::IRenderDevice* device_;
+  Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device_;
   base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>
       resource_signatures_;
   base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>> pipelines_;
@@ -189,7 +186,7 @@ class Pipeline_Present : public RenderPipelineBase {
 class Pipeline_YUV : public RenderPipelineBase {
  public:
   Pipeline_YUV(Diligent::IRenderDevice* device,
-                Diligent::TEXTURE_FORMAT target_format);
+               Diligent::TEXTURE_FORMAT target_format);
 
   MAKE_BINDING_FUNCTION(Binding_YUV, 0);
 };

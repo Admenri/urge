@@ -8,13 +8,16 @@
 #include "SDL3/SDL_iostream.h"
 
 #include "content/context/disposable.h"
+#include "content/context/engine_object.h"
 #include "content/public/engine_iostream.h"
 
 namespace content {
 
-class IOStreamImpl : public IOStream, public Disposable {
+class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
  public:
-  IOStreamImpl(SDL_IOStream* stream, base::String buffer);
+  IOStreamImpl(ExecutionContext* execution_context,
+               SDL_IOStream* stream,
+               base::String buffer);
   ~IOStreamImpl() override;
 
   IOStreamImpl(const IOStreamImpl&) = delete;

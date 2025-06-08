@@ -13,18 +13,19 @@
 
 namespace content {
 
-struct PlaneAgent {
-  base::OwnedPtr<renderer::QuadBatch> batch;
-  base::Vector<renderer::Quad> cache;
-  uint32_t quad_size;
-
-  base::OwnedPtr<renderer::Binding_Flat> shader_binding;
-  RRefPtr<Diligent::IBuffer> uniform_buffer;
-};
-
-class PlaneImpl : public Plane, public GraphicsChild, public Disposable {
+class PlaneImpl : public Plane, public EngineObject, public Disposable {
  public:
-  PlaneImpl(RenderScreenImpl* screen, scoped_refptr<ViewportImpl> parent);
+  struct Agent {
+    renderer::QuadBatch batch;
+    base::Vector<renderer::Quad> cache;
+    uint32_t quad_size;
+
+    renderer::Binding_Flat shader_binding;
+    RRefPtr<Diligent::IBuffer> uniform_buffer;
+  };
+
+  PlaneImpl(ExecutionContext* execution_context,
+            scoped_refptr<ViewportImpl> parent);
   ~PlaneImpl();
 
   PlaneImpl(const PlaneImpl&) = delete;
@@ -57,8 +58,17 @@ class PlaneImpl : public Plane, public GraphicsChild, public Disposable {
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);
 
+  void GPUCreatePlaneInternal();
+  void GPUUpdatePlaneQuadArrayInternal(renderer::RenderContext* render_context,
+                                       const base::Rect& src_rect,
+                                       const base::Vec2i& viewport_size,
+                                       const base::Vec2& scale,
+                                       const base::Vec2i& origin);
+  void GPUOnViewportRenderingInternal(renderer::RenderContext* render_context,
+                                      Diligent::IBuffer* world_binding);
+
   DrawableNode node_;
-  PlaneAgent* agent_;
+  Agent agent_;
 
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<RectImpl> src_rect_;

@@ -5,6 +5,7 @@
 #include "content/io/iostream_impl.h"
 
 #include "components/filesystem/io_service.h"
+#include "content/context/execution_context.h"
 
 namespace content {
 
@@ -20,7 +21,8 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(stream, base::String());
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream,
+                                            base::String());
 }
 
 scoped_refptr<IOStream> IOStream::FromIOSystem(
@@ -37,7 +39,8 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(stream, base::String());
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream,
+                                            base::String());
 }
 
 scoped_refptr<IOStream> IOStream::FromMemory(
@@ -52,11 +55,17 @@ scoped_refptr<IOStream> IOStream::FromMemory(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(stream, std::move(new_buffer));
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream,
+                                            std::move(new_buffer));
 }
 
-IOStreamImpl::IOStreamImpl(SDL_IOStream* stream, base::String buffer)
-    : Disposable(nullptr), stream_(stream), buffer_(std::move(buffer)) {}
+IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
+                           SDL_IOStream* stream,
+                           base::String buffer)
+    : Disposable(execution_context->disposable_parent),
+      EngineObject(execution_context),
+      stream_(stream),
+      buffer_(std::move(buffer)) {}
 
 IOStreamImpl::~IOStreamImpl() {
   ExceptionState exception_state;

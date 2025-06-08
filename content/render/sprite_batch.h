@@ -35,15 +35,15 @@ class SpriteBatch {
   SpriteBatch(const SpriteBatch&) = delete;
   SpriteBatch& operator=(const SpriteBatch&) = delete;
 
-  TextureAgent* GetCurrentTexture() const { return current_texture_; }
+  CanvasImpl::Agent* GetCurrentTexture() const { return current_texture_; }
 
-  renderer::Binding_Sprite* GetShaderBinding() { return binding_.get(); }
-  Diligent::IBuffer* GetVertexBuffer() { return **vertex_batch_; }
+  renderer::Binding_Sprite& GetShaderBinding() { return binding_; }
+  Diligent::IBuffer* GetVertexBuffer() { return *vertex_batch_; }
   Diligent::IBufferView* GetUniformBinding() { return uniform_binding_; }
-  Diligent::IBuffer* GetInstanceBuffer() { return **instance_batch_; }
+  Diligent::IBuffer* GetInstanceBuffer() { return *instance_batch_; }
 
   // Setup a sprite batch
-  void BeginBatch(TextureAgent* texture);
+  void BeginBatch(CanvasImpl::Agent* texture);
 
   void PushSprite(const renderer::Quad& quad,
                   const renderer::Binding_Sprite::Params& uniform);
@@ -51,24 +51,23 @@ class SpriteBatch {
   void EndBatch(uint32_t* instance_offset, uint32_t* instance_count);
 
   // Summit pending batch data to rendering queue
-  void SubmitBatchDataAndResetCache(renderer::RenderDevice* device,
-                                    renderer::RenderContext* context);
+  void SubmitBatchDataAndResetCache(renderer::RenderContext* render_context);
 
   bool IsBatchEnabled() const { return support_storage_buffer_batch_; }
 
  private:
   renderer::RenderDevice* device_;
-  TextureAgent* current_texture_;
+  CanvasImpl::Agent* current_texture_;
   int32_t last_batch_index_;
   const bool support_storage_buffer_batch_;
 
   base::Vector<renderer::Quad> quad_cache_;
   base::Vector<renderer::Binding_Sprite::Params> uniform_cache_;
 
-  base::OwnedPtr<renderer::Binding_Sprite> binding_;
-  base::OwnedPtr<renderer::QuadBatch> vertex_batch_;
-  base::OwnedPtr<SpriteBatchBuffer> uniform_batch_;
-  base::OwnedPtr<SpriteInstanceBatchBuffer> instance_batch_;
+  renderer::Binding_Sprite binding_;
+  renderer::QuadBatch vertex_batch_;
+  SpriteBatchBuffer uniform_batch_;
+  SpriteInstanceBatchBuffer instance_batch_;
   RRefPtr<Diligent::IBufferView> uniform_binding_;
 };
 

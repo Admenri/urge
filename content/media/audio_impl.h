@@ -16,17 +16,16 @@
 
 #include "base/worker/thread_worker.h"
 #include "components/filesystem/io_service.h"
+#include "content/context/engine_object.h"
 #include "content/profile/content_profile.h"
 #include "content/profile/i18n_profile.h"
 #include "content/public/engine_audio.h"
 
 namespace content {
 
-class AudioImpl : public Audio {
+class AudioImpl : public Audio, public EngineObject {
  public:
-  AudioImpl(ContentProfile* profile,
-            filesystem::IOService* io_service,
-            I18NProfile* i18n_profile);
+  AudioImpl(ExecutionContext* execution_context);
   ~AudioImpl() override;
 
   AudioImpl(const AudioImpl&) = delete;

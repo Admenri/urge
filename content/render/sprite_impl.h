@@ -17,16 +17,16 @@
 
 namespace content {
 
-struct SpriteAgent {
-  renderer::Quad quad;
-  base::Vector<renderer::Quad> wave_cache;
-
-  uint32_t instance_offset = 0;
-  uint32_t instance_count = 0;
-};
-
-class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
+class SpriteImpl : public Sprite, public EngineObject, public Disposable {
  public:
+  struct Agent {
+    renderer::Quad quad;
+    base::Vector<renderer::Quad> wave_cache;
+
+    uint32_t instance_offset = 0;
+    uint32_t instance_count = 0;
+  };
+
   struct WaveParams {
     int32_t amp = 0;
     int32_t length = 180;
@@ -35,7 +35,8 @@ class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
     bool dirty = false;
   };
 
-  SpriteImpl(RenderScreenImpl* screen, scoped_refptr<ViewportImpl> parent);
+  SpriteImpl(ExecutionContext* execution_context,
+             scoped_refptr<ViewportImpl> parent);
   ~SpriteImpl() override;
 
   SpriteImpl(const SpriteImpl&) = delete;
@@ -85,11 +86,20 @@ class SpriteImpl : public Sprite, public GraphicsChild, public Disposable {
       DrawableNode::RenderControllerParams* params);
 
   void SrcRectChangedInternal();
-  TextureAgent* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
+  CanvasImpl::Agent* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
+
+  void GPUUpdateWaveSpriteInternal(CanvasImpl::Agent* texture,
+                                   const base::Rect& src_rect);
+  void GPUUpdateBatchSpriteInternal(CanvasImpl::Agent* texture,
+                                    CanvasImpl::Agent* next_texture,
+                                    const base::Rect& src_rect);
+  void GPUOnSpriteRenderingInternal(renderer::RenderContext* render_context,
+                                    Diligent::IBuffer* world_binding,
+                                    CanvasImpl::Agent* texture);
 
   DrawableNode node_;
   DrawableFlashController flash_emitter_;
-  SpriteAgent* agent_;
+  Agent agent_;
   bool rgss2_style_;
 
   scoped_refptr<ViewportImpl> viewport_;

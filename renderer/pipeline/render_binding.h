@@ -27,22 +27,22 @@ class RenderBindingBase {
 
   virtual ~RenderBindingBase() = default;
 
-  RenderBindingBase(const RenderBindingBase&) = delete;
-  RenderBindingBase& operator=(const RenderBindingBase&) = delete;
+  RenderBindingBase(const RenderBindingBase&) = default;
+  RenderBindingBase& operator=(const RenderBindingBase&) = default;
 
   template <typename Ty>
-  static base::OwnedPtr<Ty> Create(ShaderBinding binding) {
-    return base::MakeOwnedPtr<Ty>(binding);
+  static Ty Create(ShaderBinding binding) {
+    return Ty(binding);
   }
 
-  // Raw ptr access
-  inline Diligent::IShaderResourceBinding* operator->() { return binding_; }
-  inline Diligent::IShaderResourceBinding* operator*() { return binding_; }
+  bool operator()() const { return binding_; }
+
+  Diligent::IShaderResourceBinding* operator->() const { return binding_; }
+  Diligent::IShaderResourceBinding* operator*() const { return binding_; }
 
  protected:
+  RenderBindingBase() = default;
   RenderBindingBase(ShaderBinding binding);
-
-  Diligent::IShaderResourceBinding* RawPtr() const { return binding_; }
 
  private:
   ShaderBinding binding_;
@@ -54,20 +54,24 @@ class RenderBindingBase {
 
 class Binding_Base : public RenderBindingBase {
  public:
+  Binding_Base() = default;
+
   ShaderVariable u_transform;
   ShaderVariable u_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_Base(ShaderBinding binding);
 };
 
 class Binding_Color : public RenderBindingBase {
  public:
+  Binding_Color() = default;
+
   ShaderVariable u_transform;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_Color(ShaderBinding binding);
 };
 
@@ -78,12 +82,14 @@ class Binding_Flat : public RenderBindingBase {
     base::Vec4 Tone;
   };
 
+  Binding_Flat() = default;
+
   ShaderVariable u_transform;
   ShaderVariable u_texture;
   ShaderVariable u_params;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_Flat(ShaderBinding binding);
 };
 
@@ -100,33 +106,39 @@ class Binding_Sprite : public RenderBindingBase {
     base::Vec4 BushDepthAndOpacity;
   };
 
+  Binding_Sprite() = default;
+
   ShaderVariable u_transform;
   ShaderVariable u_params;
   ShaderVariable u_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_Sprite(ShaderBinding binding);
 };
 
 class Binding_AlphaTrans : public RenderBindingBase {
  public:
+  Binding_AlphaTrans() = default;
+
   ShaderVariable u_frozen_texture;
   ShaderVariable u_current_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_AlphaTrans(ShaderBinding binding);
 };
 
 class Binding_VagueTrans : public RenderBindingBase {
  public:
+  Binding_VagueTrans() = default;
+
   ShaderVariable u_frozen_texture;
   ShaderVariable u_current_texture;
   ShaderVariable u_trans_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_VagueTrans(ShaderBinding binding);
 };
 
@@ -137,12 +149,14 @@ class Binding_Tilemap : public RenderBindingBase {
     base::Vec4 AnimateIndexAndTileSize;
   };
 
+  Binding_Tilemap() = default;
+
   ShaderVariable u_transform;
   ShaderVariable u_params;
   ShaderVariable u_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_Tilemap(ShaderBinding binding);
 };
 
@@ -153,32 +167,38 @@ class Binding_Tilemap2 : public RenderBindingBase {
     base::Vec4 AnimationOffsetAndTileSize;
   };
 
+  Binding_Tilemap2() = default;
+
   ShaderVariable u_transform;
   ShaderVariable u_params;
   ShaderVariable u_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_Tilemap2(ShaderBinding binding);
 };
 
 class Binding_BitmapFilter : public RenderBindingBase {
  public:
+  Binding_BitmapFilter() = default;
+
   ShaderVariable u_texture;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_BitmapFilter(ShaderBinding binding);
 };
 
 class Binding_YUV : public RenderBindingBase {
  public:
+  Binding_YUV() = default;
+
   ShaderVariable u_texture_y;
   ShaderVariable u_texture_u;
   ShaderVariable u_texture_v;
 
  private:
-  friend struct base::Allocator;
+  friend class RenderBindingBase;
   Binding_YUV(ShaderBinding binding);
 };
 

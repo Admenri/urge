@@ -62,10 +62,12 @@ class ContentProfile {
 
   // Renderer
   int32_t frame_rate = 60;
+  uint32_t vsync = 1;
   bool render_validation = false;
   bool smooth_scale = false;
   bool allow_skip_frame = true;
   bool fullscreen = false;
+  bool keep_ratio = true;
   bool background_running = true;
 
   // Platform

@@ -6,31 +6,16 @@
 
 namespace content {
 
-CanvasScheduler::CanvasScheduler(base::ThreadWorker* worker,
-                                 renderer::RenderDevice* device,
-                                 renderer::RenderContext* context,
-                                 filesystem::IOService* io_service)
-    : device_(device),
-      context_(context),
-      render_worker_(worker),
-      io_service_(io_service),
-      generic_base_binding_(device->GetPipelines()->base.CreateBinding()),
-      generic_color_binding_(device->GetPipelines()->color.CreateBinding()),
-      common_quad_batch_(renderer::QuadBatch::Make(**device)) {}
+CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
+                                 renderer::RenderContext* primary_context)
+    : device_(render_device),
+      context_(primary_context),
+      generic_base_binding_(device_->GetPipelines()->base.CreateBinding()),
+      generic_color_binding_(device_->GetPipelines()->color.CreateBinding()),
+      generic_hue_binding_(device_->GetPipelines()->bitmaphue.CreateBinding()),
+      common_quad_batch_(renderer::QuadBatch::Make(**device_)) {}
 
 CanvasScheduler::~CanvasScheduler() = default;
-
-renderer::RenderDevice* CanvasScheduler::GetDevice() const {
-  return device_;
-}
-
-renderer::RenderContext* CanvasScheduler::GetContext() const {
-  return context_;
-}
-
-filesystem::IOService* CanvasScheduler::GetIOService() const {
-  return io_service_;
-}
 
 void CanvasScheduler::SubmitPendingPaintCommands() {
   for (auto it = children_.head(); it != children_.end(); it = it->next()) {
@@ -63,6 +48,14 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
   // Reset render target state
   context->SetRenderTargets(
       0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+}
+
+renderer::RenderDevice* CanvasScheduler::GetRenderDevice() {
+  return device_;
+}
+
+renderer::RenderContext* CanvasScheduler::GetDiscreteRenderContext() {
+  return context_;
 }
 
 }  // namespace content

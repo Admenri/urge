@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:MouseEvent)--*/
 class URGE_RUNTIME_API MouseEvent : public base::RefCounted<MouseEvent> {
  public:

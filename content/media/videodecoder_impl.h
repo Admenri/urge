@@ -16,19 +16,18 @@
 
 namespace content {
 
-struct VideoDecoderAgent {
-  RRefPtr<Diligent::ITexture> y, u, v;
-  base::OwnedPtr<renderer::QuadBatch> batch;
-  base::OwnedPtr<renderer::Binding_YUV> shader_binding;
-};
-
 class VideoDecoderImpl : public VideoDecoder,
-                         public GraphicsChild,
+                         public EngineObject,
                          public Disposable {
  public:
-  VideoDecoderImpl(RenderScreenImpl* parent,
-                   base::OwnedPtr<uvpx::Player> player,
-                   filesystem::IOService* io_service);
+  struct Agent {
+    RRefPtr<Diligent::ITexture> y, u, v;
+    renderer::QuadBatch batch;
+    renderer::Binding_YUV shader_binding;
+  };
+
+  VideoDecoderImpl(ExecutionContext* execution_context,
+                   base::OwnedPtr<uvpx::Player> player);
   ~VideoDecoderImpl() override;
 
   VideoDecoderImpl(const VideoDecoderImpl&) = delete;
@@ -54,7 +53,12 @@ class VideoDecoderImpl : public VideoDecoder,
   static void OnAudioData(void* userPtr, float* pcm, size_t count);
   static void OnVideoFinished(void* userPtr);
 
-  VideoDecoderAgent* agent_;
+  void GPUCreateYUVFramesInternal(const base::Vec2i& size);
+  void GPURenderYUVInternal(renderer::RenderContext* render_context,
+                            uvpx::Frame* data,
+                            CanvasImpl::Agent* target);
+
+  Agent agent_;
 
   base::OwnedPtr<uvpx::Player> player_;
   uint64_t last_ticks_;

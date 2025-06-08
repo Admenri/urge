@@ -13,62 +13,55 @@
 #include "base/containers/linked_list.h"
 #include "content/canvas/font_impl.h"
 #include "content/context/disposable.h"
+#include "content/context/engine_object.h"
 #include "content/public/engine_bitmap.h"
 #include "content/render/drawable_controller.h"
 
 namespace content {
 
-class CanvasScheduler;
-
-// Pooling object texture agent,
-// used for async thread task runner.
-struct TextureAgent {
-  // Debug name
-  base::String name;
-
-  // Bitmap texture data
-  base::Vec2i size;
-  RRefPtr<Diligent::ITexture> data;
-  RRefPtr<Diligent::ITextureView> view;
-  RRefPtr<Diligent::ITextureView> target;
-
-  // Shader binding cache data
-  RRefPtr<Diligent::IBuffer> world_buffer;
-
-  // Text drawing cache texture
-  base::Vec2i text_cache_size;
-  RRefPtr<Diligent::ITexture> text_cache_texture;
-
-  // Filter effect intermediate layer
-  RRefPtr<Diligent::ITexture> effect_layer;
-  base::OwnedPtr<renderer::Binding_BitmapFilter> hue_binding;
-};
-
 constexpr int32_t kBlockMaxSize = 4096;
 
+class CanvasScheduler;
+
 class CanvasImpl : public base::LinkNode<CanvasImpl>,
-                   public Bitmap,
-                   public Disposable {
+                   public EngineObject,
+                   public Disposable,
+                   public Bitmap {
  public:
-  CanvasImpl(RenderScreenImpl* screen,
-             CanvasScheduler* scheduler,
+  struct Agent {
+    // Debug name
+    base::String name;
+
+    // Bitmap texture data
+    base::Vec2i size;
+    RRefPtr<Diligent::ITexture> data;
+    RRefPtr<Diligent::ITextureView> resource;
+    RRefPtr<Diligent::ITextureView> target;
+
+    // Shader binding cache data
+    RRefPtr<Diligent::IBuffer> world_buffer;
+
+    // Text drawing cache texture
+    base::Vec2i text_cache_size;
+    RRefPtr<Diligent::ITexture> text_cache_texture;
+
+    // Filter effect intermediate layer
+    RRefPtr<Diligent::ITexture> effect_layer;
+  };
+
+  CanvasImpl(ExecutionContext* context,
              SDL_Surface* memory_surface,
-             ScopedFontData* font_data,
              const base::String& debug_name);
   ~CanvasImpl() override;
 
   CanvasImpl(const CanvasImpl&) = delete;
   CanvasImpl& operator=(const CanvasImpl&) = delete;
 
-  static scoped_refptr<CanvasImpl> Create(CanvasScheduler* scheduler,
-                                          RenderScreenImpl* screen,
-                                          ScopedFontData* font_data,
+  static scoped_refptr<CanvasImpl> Create(ExecutionContext* context,
                                           const base::Vec2i& size,
                                           ExceptionState& exception_state);
 
-  static scoped_refptr<CanvasImpl> Create(CanvasScheduler* scheduler,
-                                          RenderScreenImpl* screen,
-                                          ScopedFontData* font_data,
+  static scoped_refptr<CanvasImpl> Create(ExecutionContext* context,
                                           const base::String& filename,
                                           ExceptionState& exception_state);
 
@@ -85,11 +78,8 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   // Process queued pending commands.
   void SubmitQueuedCommands();
 
-  // Get base-style size vec2i
-  base::Vec2i AsBaseSize() const;
-
   // Require render texture (maybe null after disposed)
-  TextureAgent* GetAgent() const { return texture_; }
+  Agent* GetAgent() { return Disposable::IsDisposed() ? nullptr : &agent_; }
 
   // Add a handler for observe bitmap content changing
   inline base::CallbackListSubscription AddCanvasObserver(
@@ -205,6 +195,25 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                            int32_t blend_type,
                            uint32_t alpha);
 
+  void GPUCreateTextureWithDataInternal();
+  void GPUResetEffectLayerIfNeed();
+  void GPUBlendBlitTextureInternal(const base::Rect& dst_region,
+                                   Agent* src_texture,
+                                   const base::Rect& src_region,
+                                   int32_t blend_type,
+                                   uint32_t blit_alpha);
+  void GPUFetchTexturePixelsDataInternal();
+  void GPUCanvasClearInternal();
+  void GPUCanvasGradientFillRectInternal(const base::Rect& region,
+                                         const base::Vec4& color1,
+                                         const base::Vec4& color2,
+                                         bool vertical);
+  void GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
+                                        SDL_Surface* text,
+                                        float opacity,
+                                        int32_t align);
+  void GPUCanvasHueChange(int32_t hue);
+
   enum class CommandID {
     NONE = 0,
     CLEAR,
@@ -313,10 +322,10 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     current_block_ = 0;
   }
 
-  CanvasScheduler* scheduler_;
-  TextureAgent* texture_;
-  SDL_Surface* canvas_cache_;
+  Agent agent_;
+
   base::String name_;
+  SDL_Surface* surface_;
 
   Command* commands_ = nullptr;
   Command* last_command_ = nullptr;
@@ -325,7 +334,6 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
   base::RepeatingClosureList observers_;
   scoped_refptr<FontImpl> font_;
-  DisposableCollection* parent_;
 };
 
 }  // namespace content

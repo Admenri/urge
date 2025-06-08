@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:Display)--*/
 class URGE_RUNTIME_API Display : public base::RefCounted<Display> {
  public:

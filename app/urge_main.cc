@@ -175,9 +175,6 @@ int main(int argc, char* argv[]) {
       widget_params.title = profile->window_title;
       widget->Init(std::move(widget_params));
 
-      // Create worker thread
-      auto render_worker = base::ThreadWorker::Create();
-
       // Setup content runner module
       content::ContentRunner::InitParams content_params;
       content_params.profile = profile.get();
@@ -185,7 +182,6 @@ int main(int argc, char* argv[]) {
       content_params.font_context = font_context.get();
       content_params.i18n_profile = i18n_profile.get();
       content_params.window = widget->AsWeakPtr();
-      content_params.render_worker = render_worker.get();
       content_params.entry = base::MakeOwnedPtr<binding::BindingEngineMri>();
 
       base::OwnedPtr<content::ContentRunner> runner =
@@ -194,7 +190,6 @@ int main(int argc, char* argv[]) {
 
       // Finalize modules at end
       runner.reset();
-      render_worker.reset();
       widget.reset();
     }
 

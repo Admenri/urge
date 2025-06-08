@@ -31,6 +31,7 @@ set(ENGINE_CONTENT_SRC
   common/value_observer.h
   context/disposable.cc
   context/disposable.h
+  context/engine_object.h
   context/exception_state.cc
   context/exception_state.h
   context/execution_context.cc

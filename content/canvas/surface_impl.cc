@@ -9,6 +9,7 @@
 #include "components/filesystem/io_service.h"
 #include "content/common/color_impl.h"
 #include "content/common/rect_impl.h"
+#include "content/context/execution_context.h"
 #include "content/io/iostream_impl.h"
 #include "content/screen/renderscreen_impl.h"
 
@@ -26,8 +27,7 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return base::MakeRefCounted<SurfaceImpl>(
-      execution_context->graphics, surface_data, execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
 }
 
 scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
@@ -56,8 +56,7 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return base::MakeRefCounted<SurfaceImpl>(
-      execution_context->graphics, surface_data, execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
 }
 
 scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
@@ -87,8 +86,7 @@ scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
   std::memcpy(surface_data->pixels, raw_data + 2,
               surface_data->pitch * surface_data->h);
 
-  return base::MakeRefCounted<SurfaceImpl>(
-      execution_context->graphics, surface_data, execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
 }
 
 scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
@@ -111,9 +109,7 @@ scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return base::MakeRefCounted<SurfaceImpl>(execution_context->graphics,
-                                           memory_texture,
-                                           execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, memory_texture);
 }
 
 scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
@@ -135,8 +131,7 @@ scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return base::MakeRefCounted<SurfaceImpl>(
-      execution_context->graphics, dst_surf, execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, dst_surf);
 }
 
 scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
@@ -167,13 +162,12 @@ scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
   std::memcpy(surface->pixels, raw_data + sizeof(uint32_t) * 2,
               surface->pitch * surface->h);
 
-  return base::MakeRefCounted<SurfaceImpl>(execution_context->graphics, surface,
-                                           execution_context->io_service);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface);
 }
 
 base::String Surface::Serialize(ExecutionContext* execution_context,
-                               scoped_refptr<Surface> value,
-                               ExceptionState& exception_state) {
+                                scoped_refptr<Surface> value,
+                                ExceptionState& exception_state) {
   scoped_refptr<SurfaceImpl> surface = SurfaceImpl::From(value);
   SDL_Surface* raw_surface = surface->GetRawSurface();
 
@@ -191,10 +185,10 @@ base::String Surface::Serialize(ExecutionContext* execution_context,
   return serialized_data;
 }
 
-SurfaceImpl::SurfaceImpl(DisposableCollection* parent,
-                         SDL_Surface* surface,
-                         filesystem::IOService* io_service)
-    : Disposable(parent), surface_(surface), io_service_(io_service) {}
+SurfaceImpl::SurfaceImpl(ExecutionContext* context, SDL_Surface* surface)
+    : EngineObject(context),
+      Disposable(context->disposable_parent),
+      surface_(surface) {}
 
 SurfaceImpl::~SurfaceImpl() {
   ExceptionState exception_state;
@@ -419,7 +413,7 @@ void SurfaceImpl::SavePNG(const base::String& filename,
     return;
 
   filesystem::IOState io_state;
-  auto* out_stream = io_service_->OpenWrite(filename, &io_state);
+  auto* out_stream = context()->io_service->OpenWrite(filename, &io_state);
   if (io_state.error_count)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, "%s",
                                       io_state.error_message.c_str());

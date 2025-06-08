@@ -4,6 +4,8 @@
 
 #include "content/input/touch_event.h"
 
+#include "content/context/execution_context.h"
+
 namespace content {
 
 base::Vector<scoped_refptr<TouchEvent>> TouchEvent::Update(

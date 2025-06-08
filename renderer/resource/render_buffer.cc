@@ -22,15 +22,8 @@ static std::array<QuadIndexCache::IndexFormat, 6> kQuadrangleDrawIndices = {
     0, 1, 2, 2, 3, 0,
 };
 
-base::OwnedPtr<QuadIndexCache> renderer::QuadIndexCache::Make(
-    RRefPtr<Diligent::IRenderDevice> device) {
-  return base::MakeOwnedPtr<QuadIndexCache>(device);
-}
-
-QuadIndexCache::QuadIndexCache(RRefPtr<Diligent::IRenderDevice> device)
+QuadIndexCache::QuadIndexCache(Diligent::IRenderDevice* device)
     : device_(device) {}
-
-QuadIndexCache::~QuadIndexCache() = default;
 
 void QuadIndexCache::Allocate(size_t quadrangle_size) {
   size_t required_indices_size =

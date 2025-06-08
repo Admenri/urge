@@ -18,429 +18,21 @@
 
 namespace content {
 
-namespace {
-
-constexpr SDL_PixelFormat kCanvasInternalFormat = SDL_PIXELFORMAT_ABGR8888;
-
-void GPUMakeTextureWorldInternal(renderer::RenderDevice* device,
-                                 const base::Vec2& bitmap_size,
-                                 Diligent::IBuffer** out) {
-  // Make transform matrix uniform for discrete draw command
-  renderer::WorldTransform world_matrix;
-  renderer::MakeProjectionMatrix(world_matrix.projection, bitmap_size);
-  renderer::MakeIdentityMatrix(world_matrix.transform);
-
-  // Per bitmap create uniform once
-  Diligent::CreateUniformBuffer(
-      **device, sizeof(world_matrix), "bitmap.binding.world", out,
-      Diligent::USAGE_IMMUTABLE, Diligent::BIND_UNIFORM_BUFFER,
-      Diligent::CPU_ACCESS_WRITE, &world_matrix);
-}
-
-void GPUResetEffectLayerIfNeed(renderer::RenderDevice* device,
-                               TextureAgent* agent) {
-  // Create an intermediate layer if bitmap need filter effect,
-  // the bitmap is fixed size, it is unnecessary to reset effect layer.
-  if (!agent->effect_layer)
-    renderer::CreateTexture2D(**device, &agent->effect_layer,
-                              "bitmap.filter.intermediate", agent->size);
-}
-
-void GPUCreateTextureWithDataInternal(renderer::RenderDevice* device_base,
-                                      SDL_Surface* initial_data,
-                                      const base::String& name,
-                                      TextureAgent* agent) {
-  // Make sure correct texture format
-  if (initial_data->format != kCanvasInternalFormat) {
-    SDL_Surface* conv = SDL_ConvertSurface(initial_data, kCanvasInternalFormat);
-    SDL_DestroySurface(initial_data);
-    initial_data = conv;
-  }
-
-  // Setup GPU texture
-  agent->name = "bitmap.texture<\"" + name + "\">";
-  renderer::CreateTexture2D(
-      **device_base, &agent->data, agent->name, initial_data,
-      Diligent::USAGE_DEFAULT,
-      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
-
-  // Setup access texture view
-  agent->view =
-      agent->data->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-  agent->target =
-      agent->data->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-
-  // Make bitmap draw transform
-  GPUMakeTextureWorldInternal(device_base, agent->size, &agent->world_buffer);
-
-  // Release temp memory surface
-  SDL_DestroySurface(initial_data);
-}
-
-void GPUBlendBlitTextureInternal(CanvasScheduler* scheduler,
-                                 TextureAgent* dst_texture,
-                                 const base::Rect& dst_region,
-                                 TextureAgent* src_texture,
-                                 const base::Rect& src_region,
-                                 int32_t blend_type,
-                                 uint32_t blit_alpha) {
-  // Custom blend blit pipeline
-  auto& context = *scheduler->GetContext();
-  auto& pipeline_set = scheduler->GetDevice()->GetPipelines()->base;
-  auto* pipeline =
-      pipeline_set.GetPipeline(static_cast<renderer::BlendType>(blend_type));
-
-  // Norm opacity value
-  base::Vec4 blend_alpha;
-  blend_alpha.w = static_cast<float>(blit_alpha) / 255.0f;
-
-  // Make drawing vertices
-  renderer::Quad transient_quad;
-  renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
-                                  src_texture->size);
-  renderer::Quad::SetPositionRect(&transient_quad, dst_region);
-  renderer::Quad::SetColor(&transient_quad, blend_alpha);
-  scheduler->quad_batch()->QueueWrite(*context, &transient_quad);
-
-  // Setup render target
-  Diligent::ITextureView* render_target_view = dst_texture->target;
-  scheduler->SetupRenderTarget(render_target_view, false);
-
-  // Push scissor
-  context.ScissorState()->Push(dst_texture->size);
-
-  // Setup uniform params
-  scheduler->base_binding()->u_transform->Set(dst_texture->world_buffer);
-  scheduler->base_binding()->u_texture->Set(src_texture->view);
-
-  // Apply pipeline state
-  context->SetPipelineState(pipeline);
-  context->CommitShaderResources(
-      **scheduler->base_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = **scheduler->quad_batch();
-  context->SetVertexBuffers(
-      0, 1, &vertex_buffer, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  context->SetIndexBuffer(**scheduler->GetDevice()->GetQuadIndex(), 0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Execute render command
-  Diligent::DrawIndexedAttribs draw_indexed_attribs;
-  draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor region
-  context.ScissorState()->Pop();
-}
-
-void GPUDestroyTextureInternal(TextureAgent* agent) {
-  delete agent;
-}
-
-void GPUFetchTexturePixelsDataInternal(CanvasScheduler* scheduler,
-                                       TextureAgent* agent,
-                                       SDL_Surface* surface_cache) {
-  auto& context = *scheduler->GetContext();
-  auto& device = *scheduler->GetDevice();
-
-  // Create transient read stage texture
-  Diligent::TextureDesc stage_buffer_desc = agent->data->GetDesc();
-  stage_buffer_desc.Name = "bitmap.readstage.buffer";
-  stage_buffer_desc.Usage = Diligent::USAGE_STAGING;
-  stage_buffer_desc.BindFlags = Diligent::BIND_NONE;
-  stage_buffer_desc.CPUAccessFlags = Diligent::CPU_ACCESS_READ;
-
-  RRefPtr<Diligent::ITexture> stage_read_buffer;
-  device->CreateTexture(stage_buffer_desc, nullptr, &stage_read_buffer);
-
-  // Reset render target
-  scheduler->SetupRenderTarget(nullptr, false);
-
-  // Copy textrue to temp buffer
-  Diligent::CopyTextureAttribs copy_texture_attribs(
-      agent->data.RawPtr(), Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-      stage_read_buffer.RawPtr(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  context->CopyTexture(copy_texture_attribs);
-  context->WaitForIdle();
-
-  // Read buffer data from mapping buffer
-  Diligent::MappedTextureSubresource MappedData;
-  context->MapTextureSubresource(stage_read_buffer, 0, 0, Diligent::MAP_READ,
-                                 Diligent::MAP_FLAG_DO_NOT_WAIT, nullptr,
-                                 MappedData);
-
-  if (MappedData.pData) {
-    // Fill in memory surface
-    uint8_t* dst_data = static_cast<uint8_t*>(surface_cache->pixels);
-    uint8_t* src_data = static_cast<uint8_t*>(MappedData.pData);
-    for (int32_t i = 0; i < surface_cache->h; ++i) {
-      memcpy(dst_data, src_data, surface_cache->pitch);
-      dst_data += surface_cache->pitch;
-      src_data += MappedData.Stride;
-    }
-  }
-
-  // End of mapping
-  context->UnmapTextureSubresource(stage_read_buffer, 0, 0);
-}
-
-void GPUCanvasClearInternal(CanvasScheduler* scheduler, TextureAgent* agent) {
-  // Clear all data in texture
-  Diligent::ITextureView* render_target_view = agent->target;
-  scheduler->SetupRenderTarget(render_target_view, true);
-}
-
-void GPUCanvasGradientFillRectInternal(CanvasScheduler* scheduler,
-                                       TextureAgent* agent,
-                                       const base::Rect& region,
-                                       const base::Vec4& color1,
-                                       const base::Vec4& color2,
-                                       bool vertical) {
-  auto& context = *scheduler->GetContext();
-  auto& pipeline_set = scheduler->GetDevice()->GetPipelines()->color;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BlendType::NO_BLEND);
-
-  // Make transient vertices data
-  renderer::Quad transient_quad;
-  renderer::Quad::SetPositionRect(&transient_quad, region);
-  if (vertical) {
-    transient_quad.vertices[0].color = color1;
-    transient_quad.vertices[1].color = color1;
-    transient_quad.vertices[2].color = color2;
-    transient_quad.vertices[3].color = color2;
-  } else {
-    transient_quad.vertices[0].color = color1;
-    transient_quad.vertices[1].color = color2;
-    transient_quad.vertices[2].color = color2;
-    transient_quad.vertices[3].color = color1;
-  }
-  scheduler->quad_batch()->QueueWrite(*context, &transient_quad);
-
-  // Setup render target
-  Diligent::ITextureView* render_target_view = agent->target;
-  scheduler->SetupRenderTarget(render_target_view, false);
-
-  // Push scissor
-  context.ScissorState()->Push(agent->size);
-
-  // Setup uniform params
-  scheduler->color_binding()->u_transform->Set(agent->world_buffer);
-
-  // Apply pipeline state
-  context->SetPipelineState(pipeline);
-  context->CommitShaderResources(
-      **scheduler->color_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = **scheduler->quad_batch();
-  context->SetVertexBuffers(
-      0, 1, &vertex_buffer, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  context->SetIndexBuffer(**scheduler->GetDevice()->GetQuadIndex(), 0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Execute render command
-  Diligent::DrawIndexedAttribs draw_indexed_attribs;
-  draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor
-  context.ScissorState()->Pop();
-}
-
-void GPUCanvasDrawTextSurfaceInternal(CanvasScheduler* scheduler,
-                                      TextureAgent* agent,
-                                      const base::Rect& region,
-                                      SDL_Surface* text,
-                                      float opacity,
-                                      int32_t align) {
-  auto& context = *scheduler->GetContext();
-  auto& pipeline_set = scheduler->GetDevice()->GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BlendType::NORMAL);
-
-  // Reset text upload stage buffer if need
-  if (!agent->text_cache_texture || agent->text_cache_size.x < text->w ||
-      agent->text_cache_size.y < text->h) {
-    agent->text_cache_size.x =
-        std::max<int32_t>(agent->text_cache_size.x, text->w);
-    agent->text_cache_size.y =
-        std::max<int32_t>(agent->text_cache_size.y, text->h);
-
-    agent->text_cache_texture.Release();
-    renderer::CreateTexture2D(**scheduler->GetDevice(),
-                              &agent->text_cache_texture, "textdraw.cache",
-                              agent->text_cache_size);
-
-    if ((*scheduler->GetDevice())->GetDeviceInfo().IsGLDevice())
-      context->TransitionShaderResources(**scheduler->base_binding());
-  }
-
-  // Update text texture cache
-  Diligent::TextureSubResData texture_sub_res_data(text->pixels, text->pitch);
-  Diligent::Box box(0, text->w, 0, text->h);
-
-  context->UpdateTexture(agent->text_cache_texture, 0, 0, box,
-                         texture_sub_res_data,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Render text stage data to current texture
-  base::Vec4 blend_alpha;
-  blend_alpha.w = opacity / 255.0f;
-
-  int32_t align_x = region.x,
-          align_y = region.y + (region.height - text->h) / 2;
-  switch (align) {
-    default:
-    case 0:  // Left
-      break;
-    case 1:  // Center
-      align_x += (region.width - text->w) / 2;
-      break;
-    case 2:  // Right
-      align_x += region.width - text->w;
-      break;
-  }
-
-  // Assemble attributes
-  float zoom_x = static_cast<float>(region.width) / text->w;
-  zoom_x = std::min(zoom_x, 1.0f);
-  base::Rect compose_position(align_x, align_y, text->w * zoom_x, text->h);
-
-  // Make render vertices
-  renderer::Quad transient_quad;
-  renderer::Quad::SetTexCoordRect(&transient_quad, base::Vec2(text->w, text->h),
-                                  agent->text_cache_size);
-  renderer::Quad::SetPositionRect(&transient_quad, compose_position);
-  renderer::Quad::SetColor(&transient_quad, blend_alpha);
-  scheduler->quad_batch()->QueueWrite(*context, &transient_quad);
-
-  // Setup render target
-  Diligent::ITextureView* render_target_view = agent->target;
-  scheduler->SetupRenderTarget(render_target_view, false);
-
-  // Push scissor
-  context.ScissorState()->Push(agent->size);
-
-  // Setup uniform params
-  scheduler->base_binding()->u_transform->Set(agent->world_buffer);
-  scheduler->base_binding()->u_texture->Set(
-      agent->text_cache_texture->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-
-  // Apply pipeline state
-  context->SetPipelineState(pipeline);
-  context->CommitShaderResources(
-      **scheduler->base_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = **scheduler->quad_batch();
-  context->SetVertexBuffers(
-      0, 1, &vertex_buffer, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  context->SetIndexBuffer(**scheduler->GetDevice()->GetQuadIndex(), 0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Execute render command
-  Diligent::DrawIndexedAttribs draw_indexed_attribs;
-  draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor
-  context.ScissorState()->Pop();
-}
-
-void GPUCanvasHueChange(CanvasScheduler* scheduler,
-                        TextureAgent* agent,
-                        int32_t hue) {
-  auto& context = *scheduler->GetContext();
-  auto& pipeline_set = scheduler->GetDevice()->GetPipelines()->bitmaphue;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BlendType::NO_BLEND);
-
-  if (!agent->hue_binding)
-    agent->hue_binding = pipeline_set.CreateBinding();
-
-  GPUResetEffectLayerIfNeed(scheduler->GetDevice(), agent);
-
-  // Copy current texture to stage intermediate texture
-  scheduler->SetupRenderTarget(nullptr, false);
-
-  Diligent::CopyTextureAttribs copy_texture_attribs(
-      agent->data, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-      agent->effect_layer, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  context->CopyTexture(copy_texture_attribs);
-
-  // Make transient vertices
-  renderer::Quad transient_quad;
-  renderer::Quad::SetPositionRect(&transient_quad,
-                                  base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
-                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
-  renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
-  scheduler->quad_batch()->QueueWrite(*context, &transient_quad);
-
-  // Setup render target
-  Diligent::ITextureView* render_target_view = agent->target;
-  scheduler->SetupRenderTarget(render_target_view, false);
-
-  // Push scissor
-  context.ScissorState()->Push(agent->size);
-
-  // Setup uniform params
-  agent->hue_binding->u_texture->Set(agent->effect_layer->GetDefaultView(
-      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-
-  // Apply pipeline state
-  context->SetPipelineState(pipeline);
-  context->CommitShaderResources(
-      **agent->hue_binding,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = **scheduler->quad_batch();
-  context->SetVertexBuffers(
-      0, 1, &vertex_buffer, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  context->SetIndexBuffer(**scheduler->GetDevice()->GetQuadIndex(), 0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Execute render command
-  Diligent::DrawIndexedAttribs draw_indexed_attribs;
-  draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor
-  context.ScissorState()->Pop();
-}
-
-}  // namespace
+static constexpr SDL_PixelFormat kCanvasInternalFormat =
+    SDL_PIXELFORMAT_ABGR8888;
 
 scoped_refptr<Bitmap> Bitmap::New(ExecutionContext* execution_context,
                                   const base::String& filename,
                                   ExceptionState& exception_state) {
-  return CanvasImpl::Create(
-      execution_context->canvas_scheduler, execution_context->graphics,
-      execution_context->font_context, filename, exception_state);
+  return CanvasImpl::Create(execution_context, filename, exception_state);
 }
 
 scoped_refptr<Bitmap> Bitmap::New(ExecutionContext* execution_context,
                                   uint32_t width,
                                   uint32_t height,
                                   ExceptionState& exception_state) {
-  return CanvasImpl::Create(execution_context->canvas_scheduler,
-                            execution_context->graphics,
-                            execution_context->font_context,
-                            base::Vec2i(width, height), exception_state);
+  return CanvasImpl::Create(execution_context, base::Vec2i(width, height),
+                            exception_state);
 }
 
 scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
@@ -465,9 +57,8 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return base::MakeRefCounted<CanvasImpl>(
-      execution_context->graphics, execution_context->canvas_scheduler,
-      surface_duplicate, execution_context->font_context, "SurfaceDataBitmap");
+  return base::MakeRefCounted<CanvasImpl>(execution_context, surface_duplicate,
+                                          "SurfaceDataBitmap");
 }
 
 scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
@@ -490,9 +81,8 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
     return nullptr;
   }
 
-  return base::MakeRefCounted<CanvasImpl>(
-      execution_context->graphics, execution_context->canvas_scheduler,
-      memory_texture, execution_context->font_context, "IOBitmap");
+  return base::MakeRefCounted<CanvasImpl>(execution_context, memory_texture,
+                                          "IOBitmap");
 }
 
 scoped_refptr<Bitmap> Bitmap::Copy(ExecutionContext* execution_context,
@@ -535,9 +125,8 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
   std::memcpy(surface->pixels, raw_data + sizeof(uint32_t) * 2,
               surface->pitch * surface->h);
 
-  return base::MakeRefCounted<CanvasImpl>(
-      execution_context->graphics, execution_context->canvas_scheduler, surface,
-      execution_context->font_context, "MemoryData");
+  return base::MakeRefCounted<CanvasImpl>(execution_context, surface,
+                                          "MemoryData");
 }
 
 base::String Bitmap::Serialize(ExecutionContext* execution_context,
@@ -560,11 +149,10 @@ base::String Bitmap::Serialize(ExecutionContext* execution_context,
   return serialized_data;
 }
 
-scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
-                                             RenderScreenImpl* screen,
-                                             ScopedFontData* font_data,
-                                             const base::Vec2i& size,
-                                             ExceptionState& exception_state) {
+scoped_refptr<CanvasImpl> CanvasImpl::Create(
+    ExecutionContext* execution_context,
+    const base::Vec2i& size,
+    ExceptionState& exception_state) {
   if (size.x <= 0 || size.y <= 0) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Invalid bitmap size: %dx%d", size.x, size.y);
@@ -578,15 +166,14 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
     return nullptr;
   }
 
-  return base::MakeRefCounted<CanvasImpl>(screen, scheduler, empty_surface,
-                                          font_data, "SizeBitmap");
+  return base::MakeRefCounted<CanvasImpl>(execution_context, empty_surface,
+                                          "SizeBitmap");
 }
 
-scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
-                                             RenderScreenImpl* screen,
-                                             ScopedFontData* font_data,
-                                             const base::String& filename,
-                                             ExceptionState& exception_state) {
+scoped_refptr<CanvasImpl> CanvasImpl::Create(
+    ExecutionContext* execution_context,
+    const base::String& filename,
+    ExceptionState& exception_state) {
   SDL_Surface* memory_texture = nullptr;
   auto file_handler = base::BindRepeating(
       [](SDL_Surface** surf, SDL_IOStream* ops, const base::String& ext) {
@@ -596,7 +183,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
       &memory_texture);
 
   filesystem::IOState io_state;
-  scheduler->GetIOService()->OpenRead(filename, file_handler, &io_state);
+  execution_context->io_service->OpenRead(filename, file_handler, &io_state);
 
   if (io_state.error_count) {
     exception_state.ThrowError(ExceptionCode::IO_ERROR,
@@ -612,33 +199,23 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(CanvasScheduler* scheduler,
     return nullptr;
   }
 
-  return base::MakeRefCounted<CanvasImpl>(screen, scheduler, memory_texture,
-                                          font_data, filename);
+  return base::MakeRefCounted<CanvasImpl>(execution_context, memory_texture,
+                                          filename);
 }
 
-CanvasImpl::CanvasImpl(RenderScreenImpl* screen,
-                       CanvasScheduler* scheduler,
+CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
                        SDL_Surface* memory_surface,
-                       ScopedFontData* font_data,
                        const base::String& debug_name)
-    : Disposable(screen),
-      scheduler_(scheduler),
-      canvas_cache_(nullptr),
+    : EngineObject(execution_context),
+      Disposable(execution_context->disposable_parent),
       name_(debug_name),
-      font_(base::MakeRefCounted<FontImpl>(font_data)),
-      parent_(screen) {
+      surface_(memory_surface),
+      font_(base::MakeRefCounted<FontImpl>(execution_context->font_context)) {
   // Add link in scheduler node
-  scheduler->children_.Append(this);
-
-  // Create agent data
-  texture_ = new TextureAgent;
-  texture_->size = base::Vec2i(memory_surface->w, memory_surface->h);
+  context()->canvas_scheduler->children_.Append(this);
 
   // Create renderer texture
-  base::ThreadWorker::PostTask(
-      scheduler->render_worker(),
-      base::BindOnce(&GPUCreateTextureWithDataInternal, scheduler->GetDevice(),
-                     memory_surface, debug_name, texture_));
+  GPUCreateTextureWithDataInternal();
 }
 
 CanvasImpl::~CanvasImpl() {
@@ -651,33 +228,29 @@ scoped_refptr<CanvasImpl> CanvasImpl::FromBitmap(scoped_refptr<Bitmap> host) {
 }
 
 SDL_Surface* CanvasImpl::RequireMemorySurface() {
-  if (!canvas_cache_) {
+  if (!surface_) {
     // Create empty cache
-    canvas_cache_ = SDL_CreateSurface(texture_->size.x, texture_->size.y,
-                                      kCanvasInternalFormat);
+    surface_ =
+        SDL_CreateSurface(agent_.size.x, agent_.size.y, kCanvasInternalFormat);
 
     // Submit pending commands
     SubmitQueuedCommands();
 
     // Sync fetch pixels to memory
-    base::ThreadWorker::PostTask(
-        scheduler_->render_worker(),
-        base::BindOnce(&GPUFetchTexturePixelsDataInternal, scheduler_, texture_,
-                       canvas_cache_));
-    base::ThreadWorker::WaitWorkerSynchronize(scheduler_->render_worker());
+    GPUFetchTexturePixelsDataInternal();
   }
 
-  return canvas_cache_;
+  return surface_;
 }
 
 void CanvasImpl::InvalidateSurfaceCache() {
   // Notify children observers
   observers_.Notify();
 
-  if (canvas_cache_) {
+  if (surface_) {
     // Set cache ptr to null
-    SDL_DestroySurface(canvas_cache_);
-    canvas_cache_ = nullptr;
+    SDL_DestroySurface(surface_);
+    surface_ = nullptr;
   }
 }
 
@@ -688,25 +261,17 @@ void CanvasImpl::SubmitQueuedCommands() {
   while (command_sequence) {
     switch (command_sequence->id) {
       case CommandID::CLEAR: {
-        base::ThreadWorker::PostTask(
-            scheduler_->render_worker(),
-            base::BindOnce(&GPUCanvasClearInternal, scheduler_, texture_));
+        GPUCanvasClearInternal();
       } break;
       case CommandID::GRADIENT_FILL_RECT: {
         const auto* c =
             static_cast<Command_GradientFillRect*>(command_sequence);
-        base::ThreadWorker::PostTask(
-            scheduler_->render_worker(),
-            base::BindOnce(&GPUCanvasGradientFillRectInternal, scheduler_,
-                           texture_, c->region, c->color1, c->color2,
-                           c->vertical));
+        GPUCanvasGradientFillRectInternal(c->region, c->color1, c->color2,
+                                          c->vertical);
       } break;
       case CommandID::HUE_CHANGE: {
         const auto* c = static_cast<Command_HueChange*>(command_sequence);
-
-        base::ThreadWorker::PostTask(
-            scheduler_->render_worker(),
-            base::BindOnce(&GPUCanvasHueChange, scheduler_, texture_, c->hue));
+        GPUCanvasHueChange(c->hue);
       } break;
       case CommandID::RADIAL_BLUR: {
         const auto* c = static_cast<Command_RadialBlur*>(command_sequence);
@@ -715,10 +280,8 @@ void CanvasImpl::SubmitQueuedCommands() {
       } break;
       case CommandID::DRAW_TEXT: {
         const auto* c = static_cast<Command_DrawText*>(command_sequence);
-        base::ThreadWorker::PostTask(
-            scheduler_->render_worker(),
-            base::BindOnce(&GPUCanvasDrawTextSurfaceInternal, scheduler_,
-                           texture_, c->region, c->text, c->opacity, c->align));
+        GPUCanvasDrawTextSurfaceInternal(c->region, c->text, c->opacity,
+                                         c->align);
       } break;
       default:
         break;
@@ -730,12 +293,6 @@ void CanvasImpl::SubmitQueuedCommands() {
   // Clear command pool,
   // no memory release.
   ClearPendingCommands();
-}
-
-base::Vec2i CanvasImpl::AsBaseSize() const {
-  if (texture_)
-    return texture_->size;
-  return base::Vec2i(0);
 }
 
 void CanvasImpl::Dispose(ExceptionState& exception_state) {
@@ -750,21 +307,21 @@ uint32_t CanvasImpl::Width(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return 0;
 
-  return texture_->size.x;
+  return agent_.size.x;
 }
 
 uint32_t CanvasImpl::Height(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return 0;
 
-  return texture_->size.y;
+  return agent_.size.y;
 }
 
 scoped_refptr<Rect> CanvasImpl::GetRect(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return nullptr;
 
-  return base::MakeRefCounted<RectImpl>(texture_->size);
+  return base::MakeRefCounted<RectImpl>(agent_.size);
 }
 
 void CanvasImpl::Blt(int32_t x,
@@ -948,7 +505,7 @@ scoped_refptr<Color> CanvasImpl::GetPixel(int32_t x,
   if (CheckDisposed(exception_state))
     return nullptr;
 
-  if (x < 0 || x >= texture_->size.x || y < 0 || y >= texture_->size.y)
+  if (x < 0 || x >= agent_.size.x || y < 0 || y >= agent_.size.y)
     return nullptr;
 
   SDL_Surface* surface = RequireMemorySurface();
@@ -973,7 +530,7 @@ void CanvasImpl::SetPixel(int32_t x,
   if (CheckDisposed(exception_state))
     return;
 
-  if (x < 0 || x >= texture_->size.x || y < 0 || y >= texture_->size.y)
+  if (x < 0 || x >= agent_.size.x || y < 0 || y >= agent_.size.y)
     return;
 
   if (!color)
@@ -1122,8 +679,7 @@ scoped_refptr<Surface> CanvasImpl::GetSurface(ExceptionState& exception_state) {
     return nullptr;
 
   SDL_Surface* surface = RequireMemorySurface();
-  return base::MakeRefCounted<SurfaceImpl>(parent_, surface,
-                                           scheduler_->io_service_);
+  return base::MakeRefCounted<SurfaceImpl>(context(), surface);
 }
 
 void CanvasImpl::OnObjectDisposed() {
@@ -1131,10 +687,8 @@ void CanvasImpl::OnObjectDisposed() {
   base::LinkNode<CanvasImpl>::RemoveFromList();
 
   // Destroy GPU texture
-  base::ThreadWorker::PostTask(
-      scheduler_->render_worker(),
-      base::BindOnce(&GPUDestroyTextureInternal, texture_));
-  texture_ = nullptr;
+  Agent empty_agent;
+  std::swap(agent_, empty_agent);
 
   // Free memory surface cache
   InvalidateSurfaceCache();
@@ -1152,14 +706,11 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
 
   // Clamp blend type
   blend_type =
-      std::clamp<int32_t>(blend_type, 0, renderer::BlendType::TYPE_NUMS - 1);
+      std::clamp<int32_t>(blend_type, 0, renderer::BLEND_TYPE_NUMS - 1);
 
   // Execute blit immediately.
-  base::ThreadWorker::PostTask(
-      scheduler_->render_worker(),
-      base::BindOnce(&GPUBlendBlitTextureInternal, scheduler_, texture_,
-                     dst_rect, src_texture->texture_, src_rect, blend_type,
-                     alpha));
+  GPUBlendBlitTextureInternal(dst_rect, &src_texture->agent_, src_rect,
+                              blend_type, alpha);
 
   // Invalidate memory cache
   InvalidateSurfaceCache();
@@ -1178,6 +729,399 @@ void CanvasImpl::Put_Font(const scoped_refptr<Font>& value,
     return;
 
   *font_ = *FontImpl::From(value);
+}
+
+void CanvasImpl::GPUCreateTextureWithDataInternal() {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+
+  // Make sure correct texture format
+  if (surface_->format != kCanvasInternalFormat) {
+    SDL_Surface* conv = SDL_ConvertSurface(surface_, kCanvasInternalFormat);
+    SDL_DestroySurface(surface_);
+    surface_ = conv;
+  }
+
+  // Setup GPU texture
+  agent_.name = "bitmap.texture<\"" + name_ + "\">";
+  agent_.size = base::Vec2i(surface_->w, surface_->h);
+  renderer::CreateTexture2D(
+      *render_device, &agent_.data, agent_.name, surface_,
+      Diligent::USAGE_DEFAULT,
+      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+
+  // Setup access texture view
+  agent_.resource =
+      agent_.data->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+  agent_.target =
+      agent_.data->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+
+  // Make bitmap draw transform
+  // Make transform matrix uniform for discrete draw command
+  renderer::WorldTransform world_matrix;
+  renderer::MakeProjectionMatrix(world_matrix.projection, agent_.size);
+  renderer::MakeIdentityMatrix(world_matrix.transform);
+
+  // Per bitmap create uniform once
+  Diligent::CreateUniformBuffer(
+      *render_device, sizeof(world_matrix), "bitmap.binding.world",
+      &agent_.world_buffer, Diligent::USAGE_IMMUTABLE,
+      Diligent::BIND_UNIFORM_BUFFER, Diligent::CPU_ACCESS_WRITE, &world_matrix);
+}
+
+void CanvasImpl::GPUResetEffectLayerIfNeed() {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+
+  // Create an intermediate layer if bitmap need filter effect,
+  // the bitmap is fixed size, it is unnecessary to reset effect layer.
+  if (!agent_.effect_layer)
+    renderer::CreateTexture2D(*render_device, &agent_.effect_layer,
+                              "bitmap.filter.intermediate", agent_.size);
+}
+
+void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
+                                             Agent* src_texture,
+                                             const base::Rect& src_region,
+                                             int32_t blend_type,
+                                             uint32_t blit_alpha) {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto& render_context = *scheduler->GetDiscreteRenderContext();
+
+  // Custom blend blit pipeline
+  auto& pipeline_set = render_device.GetPipelines()->base;
+  auto* pipeline =
+      pipeline_set.GetPipeline(static_cast<renderer::BlendType>(blend_type));
+
+  // Norm opacity value
+  base::Vec4 blend_alpha;
+  blend_alpha.w = static_cast<float>(blit_alpha) / 255.0f;
+
+  // Make drawing vertices
+  renderer::Quad transient_quad;
+  renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
+                                  src_texture->size);
+  renderer::Quad::SetPositionRect(&transient_quad, dst_region);
+  renderer::Quad::SetColor(&transient_quad, blend_alpha);
+  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+
+  // Setup render target
+  scheduler->SetupRenderTarget(agent_.target, false);
+
+  // Push scissor
+  render_context.ScissorState()->Push(agent_.size);
+
+  // Setup uniform params
+  scheduler->base_binding().u_transform->Set(agent_.world_buffer);
+  scheduler->base_binding().u_texture->Set(src_texture->resource);
+
+  // Apply pipeline state
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *scheduler->base_binding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  render_context->DrawIndexed(draw_indexed_attribs);
+
+  // Pop scissor region
+  render_context.ScissorState()->Pop();
+}
+
+void CanvasImpl::GPUFetchTexturePixelsDataInternal() {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto& render_context = *scheduler->GetDiscreteRenderContext();
+
+  // Create transient read stage texture
+  Diligent::TextureDesc stage_buffer_desc = agent_.data->GetDesc();
+  stage_buffer_desc.Name = "bitmap.readstage.buffer";
+  stage_buffer_desc.Usage = Diligent::USAGE_STAGING;
+  stage_buffer_desc.BindFlags = Diligent::BIND_NONE;
+  stage_buffer_desc.CPUAccessFlags = Diligent::CPU_ACCESS_READ;
+
+  RRefPtr<Diligent::ITexture> stage_read_buffer;
+  render_device->CreateTexture(stage_buffer_desc, nullptr, &stage_read_buffer);
+
+  // Reset render target
+  scheduler->SetupRenderTarget(nullptr, false);
+
+  // Copy textrue to temp buffer
+  Diligent::CopyTextureAttribs copy_texture_attribs(
+      agent_.data.RawPtr(), Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+      stage_read_buffer.RawPtr(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->CopyTexture(copy_texture_attribs);
+  render_context->WaitForIdle();
+
+  // Read buffer data from mapping buffer
+  Diligent::MappedTextureSubresource MappedData;
+  render_context->MapTextureSubresource(
+      stage_read_buffer, 0, 0, Diligent::MAP_READ,
+      Diligent::MAP_FLAG_DO_NOT_WAIT, nullptr, MappedData);
+
+  if (MappedData.pData) {
+    // Fill in memory surface
+    uint8_t* dst_data = static_cast<uint8_t*>(surface_->pixels);
+    uint8_t* src_data = static_cast<uint8_t*>(MappedData.pData);
+    for (int32_t i = 0; i < surface_->h; ++i) {
+      std::memcpy(dst_data, src_data, surface_->pitch);
+      dst_data += surface_->pitch;
+      src_data += MappedData.Stride;
+    }
+  }
+
+  // End of mapping
+  render_context->UnmapTextureSubresource(stage_read_buffer, 0, 0);
+}
+
+void CanvasImpl::GPUCanvasClearInternal() {
+  // Clear all data in texture
+  context()->canvas_scheduler->SetupRenderTarget(agent_.target, true);
+}
+
+void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
+                                                   const base::Vec4& color1,
+                                                   const base::Vec4& color2,
+                                                   bool vertical) {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto& render_context = *scheduler->GetDiscreteRenderContext();
+
+  auto& pipeline_set = render_device.GetPipelines()->color;
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+
+  // Make transient vertices data
+  renderer::Quad transient_quad;
+  renderer::Quad::SetPositionRect(&transient_quad, region);
+  if (vertical) {
+    transient_quad.vertices[0].color = color1;
+    transient_quad.vertices[1].color = color1;
+    transient_quad.vertices[2].color = color2;
+    transient_quad.vertices[3].color = color2;
+  } else {
+    transient_quad.vertices[0].color = color1;
+    transient_quad.vertices[1].color = color2;
+    transient_quad.vertices[2].color = color2;
+    transient_quad.vertices[3].color = color1;
+  }
+  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+
+  // Setup render target
+  scheduler->SetupRenderTarget(agent_.target, false);
+
+  // Push scissor
+  render_context.ScissorState()->Push(agent_.size);
+
+  // Setup uniform params
+  scheduler->color_binding().u_transform->Set(agent_.world_buffer);
+
+  // Apply pipeline state
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *scheduler->color_binding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  render_context->DrawIndexed(draw_indexed_attribs);
+
+  // Pop scissor
+  render_context.ScissorState()->Pop();
+}
+
+void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
+                                                  SDL_Surface* text,
+                                                  float opacity,
+                                                  int32_t align) {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto& render_context = *scheduler->GetDiscreteRenderContext();
+
+  auto& pipeline_set = render_device.GetPipelines()->base;
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+
+  // Reset text upload stage buffer if need
+  if (!agent_.text_cache_texture || agent_.text_cache_size.x < text->w ||
+      agent_.text_cache_size.y < text->h) {
+    agent_.text_cache_size.x =
+        std::max<int32_t>(agent_.text_cache_size.x, text->w);
+    agent_.text_cache_size.y =
+        std::max<int32_t>(agent_.text_cache_size.y, text->h);
+
+    agent_.text_cache_texture.Release();
+    renderer::CreateTexture2D(*render_device, &agent_.text_cache_texture,
+                              "textdraw.cache", agent_.text_cache_size);
+
+    if ((*render_device)->GetDeviceInfo().IsGLDevice())
+      render_context->TransitionShaderResources(*scheduler->base_binding());
+  }
+
+  // Update text texture cache
+  Diligent::TextureSubResData texture_sub_res_data(text->pixels, text->pitch);
+  Diligent::Box box(0, text->w, 0, text->h);
+
+  render_context->UpdateTexture(
+      agent_.text_cache_texture, 0, 0, box, texture_sub_res_data,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Render text stage data to current texture
+  base::Vec4 blend_alpha;
+  blend_alpha.w = opacity / 255.0f;
+
+  int32_t align_x = region.x,
+          align_y = region.y + (region.height - text->h) / 2;
+  switch (align) {
+    default:
+    case 0:  // Left
+      break;
+    case 1:  // Center
+      align_x += (region.width - text->w) / 2;
+      break;
+    case 2:  // Right
+      align_x += region.width - text->w;
+      break;
+  }
+
+  // Assemble attributes
+  float zoom_x = static_cast<float>(region.width) / text->w;
+  zoom_x = std::min(zoom_x, 1.0f);
+  const base::Rect compose_position(align_x, align_y, text->w * zoom_x,
+                                    text->h);
+  const base::Vec2i text_cache_size(
+      agent_.text_cache_texture->GetDesc().Width,
+      agent_.text_cache_texture->GetDesc().Height);
+
+  // Make render vertices
+  renderer::Quad transient_quad;
+  renderer::Quad::SetTexCoordRect(&transient_quad, base::Vec2(text->w, text->h),
+                                  text_cache_size);
+  renderer::Quad::SetPositionRect(&transient_quad, compose_position);
+  renderer::Quad::SetColor(&transient_quad, blend_alpha);
+  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+
+  // Setup render target
+  scheduler->SetupRenderTarget(agent_.target, false);
+
+  // Push scissor
+  render_context.ScissorState()->Push(agent_.size);
+
+  // Setup uniform params
+  scheduler->base_binding().u_transform->Set(agent_.world_buffer);
+  scheduler->base_binding().u_texture->Set(
+      agent_.text_cache_texture->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+
+  // Apply pipeline state
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *scheduler->base_binding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  render_context->DrawIndexed(draw_indexed_attribs);
+
+  // Pop scissor
+  render_context.ScissorState()->Pop();
+}
+
+void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto& render_context = *scheduler->GetDiscreteRenderContext();
+
+  auto& pipeline_set = render_device.GetPipelines()->bitmaphue;
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+
+  GPUResetEffectLayerIfNeed();
+
+  // Copy current texture to stage intermediate texture
+  scheduler->SetupRenderTarget(nullptr, false);
+
+  Diligent::CopyTextureAttribs copy_texture_attribs(
+      agent_.data, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+      agent_.effect_layer, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->CopyTexture(copy_texture_attribs);
+
+  // Make transient vertices
+  renderer::Quad transient_quad;
+  renderer::Quad::SetPositionRect(&transient_quad,
+                                  base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
+                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+  renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
+  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+
+  // Setup render target
+  scheduler->SetupRenderTarget(agent_.target, false);
+
+  // Push scissor
+  render_context.ScissorState()->Push(agent_.size);
+
+  // Setup uniform params
+  scheduler->hue_binding().u_texture->Set(agent_.effect_layer->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+
+  // Apply pipeline state
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *scheduler->hue_binding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  render_context->DrawIndexed(draw_indexed_attribs);
+
+  // Pop scissor
+  render_context.ScissorState()->Pop();
 }
 
 }  // namespace content

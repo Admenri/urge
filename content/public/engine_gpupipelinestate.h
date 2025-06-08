@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUPipelineState)--*/
 class URGE_RUNTIME_API GPUPipelineState
     : public base::RefCounted<GPUPipelineState> {

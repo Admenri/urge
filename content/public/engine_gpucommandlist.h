@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUCommandList)--*/
 class URGE_RUNTIME_API GPUCommandList
     : public base::RefCounted<GPUCommandList> {

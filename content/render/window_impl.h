@@ -17,21 +17,21 @@
 
 namespace content {
 
-struct WindowAgent {
-  base::Vector<renderer::Quad> background_cache;
-  base::OwnedPtr<renderer::QuadBatch> background_batch;
-  base::Vector<renderer::Quad> control_cache;
-  base::OwnedPtr<renderer::QuadBatch> control_batch;
-
-  base::OwnedPtr<renderer::Binding_Base> shader_binding;
-
-  int32_t control_draw_count;
-  int32_t contents_draw_count;
-};
-
-class WindowImpl : public Window, public GraphicsChild, public Disposable {
+class WindowImpl : public Window, public EngineObject, public Disposable {
  public:
-  WindowImpl(RenderScreenImpl* screen,
+  struct Agent {
+    base::Vector<renderer::Quad> background_cache;
+    renderer::QuadBatch background_batch;
+    base::Vector<renderer::Quad> control_cache;
+    renderer::QuadBatch control_batch;
+
+    renderer::Binding_Base shader_binding;
+
+    int32_t control_draw_count;
+    int32_t contents_draw_count;
+  };
+
+  WindowImpl(ExecutionContext* execution_context,
              scoped_refptr<ViewportImpl> parent,
              int32_t scale);
   ~WindowImpl() override;
@@ -74,9 +74,28 @@ class WindowImpl : public Window, public GraphicsChild, public Disposable {
   void ControlNodeHandlerInternal(DrawableNode::RenderStage stage,
                                   DrawableNode::RenderControllerParams* params);
 
+  void GPUCreateWindowInternal();
+  void GPUCompositeBackgroundLayerInternal(
+      renderer::RenderContext* render_context,
+      CanvasImpl::Agent* windowskin);
+  void GPUCompositeControlLayerInternal(renderer::RenderContext* render_context,
+                                        CanvasImpl::Agent* windowskin,
+                                        CanvasImpl::Agent* contents);
+  void GPURenderBackgroundLayerInternal(renderer::RenderContext* render_context,
+                                        Diligent::IBuffer* world_binding,
+                                        const base::Rect& last_viewport,
+                                        const base::Vec2i& last_origin,
+                                        CanvasImpl::Agent* windowskin);
+  void GPURenderControlLayerInternal(renderer::RenderContext* render_context,
+                                     Diligent::IBuffer* world_binding,
+                                     const base::Rect& last_viewport,
+                                     const base::Vec2i& last_origin,
+                                     CanvasImpl::Agent* windowskin,
+                                     CanvasImpl::Agent* contents);
+
   DrawableNode background_node_;
   DrawableNode control_node_;
-  WindowAgent* agent_;
+  Agent agent_;
   int32_t scale_ = 2;
   int32_t pause_index_ = 0;
   int32_t cursor_opacity_ = 255;

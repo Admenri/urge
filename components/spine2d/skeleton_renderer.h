@@ -21,15 +21,9 @@ using SpineVertexBatch = renderer::BatchBuffer<renderer::SpineVertex,
                                                Diligent::CPU_ACCESS_NONE,
                                                Diligent::USAGE_DEFAULT>;
 
-struct SpineRendererAgent {
-  base::OwnedPtr<SpineVertexBatch> vertex_batch;
-  base::OwnedPtr<renderer::Binding_Base> shader_binding;
-};
-
 class DiligentTextureLoader : public TextureLoader {
  public:
   DiligentTextureLoader(renderer::RenderDevice* device,
-                        base::ThreadWorker* worker,
                         filesystem::IOService* io_service);
   ~DiligentTextureLoader() override;
 
@@ -40,14 +34,19 @@ class DiligentTextureLoader : public TextureLoader {
   void unload(void* texture) override;
 
  private:
+  void* GPUCreateTextureInternal(SDL_Surface* atlas_surface,
+                                 TEXTURE_FILTER_ENUM min_filter,
+                                 TEXTURE_FILTER_ENUM mag_filter,
+                                 TextureWrap uwrap,
+                                 TextureWrap vwrap);
+
   renderer::RenderDevice* device_;
-  base::ThreadWorker* worker_;
   filesystem::IOService* io_service_;
 };
 
 class DiligentRenderer {
  public:
-  DiligentRenderer(renderer::RenderDevice* device, base::ThreadWorker* worker);
+  DiligentRenderer(renderer::RenderDevice* device);
   ~DiligentRenderer();
 
   DiligentRenderer(const DiligentRenderer&) = delete;
@@ -55,13 +54,23 @@ class DiligentRenderer {
 
   void Update(renderer::RenderContext* context, spine::Skeleton* skeleton);
   void Render(renderer::RenderContext* context,
-              Diligent::IBuffer** world_buffer,
+              Diligent::IBuffer* world_buffer,
               bool premultiplied_alpha);
 
  private:
+  void GPURenderSkeletonCommandsInternal(
+      renderer::RenderContext* render_context,
+      Diligent::ITexture* atlas,
+      BlendMode blend_mode,
+      bool premultiplied_alpha,
+      Diligent::IBuffer* world_buffer,
+      uint32_t num_vertices,
+      uint32_t vertices_offset);
+
   renderer::RenderDevice* device_;
-  base::ThreadWorker* worker_;
-  SpineRendererAgent* agent_;
+  SpineVertexBatch vertex_batch_;
+  renderer::Binding_Base shader_binding_;
+
   base::Vector<renderer::SpineVertex> vertex_cache_;
   base::OwnedPtr<SkeletonRenderer> skeleton_renderer_;
   RenderCommand* pending_commands_;

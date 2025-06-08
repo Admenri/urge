@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:SpineEvent)--*/
 class URGE_RUNTIME_API SpineEvent : public base::RefCounted<SpineEvent> {
  public:

@@ -116,8 +116,8 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   // Setup specific platform window handle
   SDL_GLContext glcontext = nullptr;
 #if defined(OS_WIN)
-  if (driver_type == DriverType::UNDEFINED)
-    driver_type = DriverType::D3D11;
+  if (driver_type == DRIVER_UNDEFINED)
+    driver_type = DRIVER_D3D11;
 
   native_window.hWnd = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
@@ -183,7 +183,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 
 // Initialize specific graphics api
 #if GL_SUPPORTED || GLES_SUPPORTED
-  if (driver_type == DriverType::OPENGL) {
+  if (driver_type == DRIVER_OPENGL) {
 #if ENGINE_DLL
     auto GetEngineFactoryOpenGL = Diligent::LoadGraphicsEngineOpenGL();
 #endif
@@ -197,7 +197,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // OPENGL_SUPPORT
 #if VULKAN_SUPPORTED
-  if (driver_type == DriverType::VULKAN) {
+  if (driver_type == DRIVER_VULKAN) {
 #if ENGINE_DLL
     auto GetEngineFactoryVk = Diligent::LoadGraphicsEngineVk();
 #endif
@@ -210,7 +210,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // VULKAN_SUPPORT
 #if D3D11_SUPPORTED
-  if (driver_type == DriverType::D3D11) {
+  if (driver_type == DRIVER_D3D11) {
 #if ENGINE_DLL
     auto GetEngineFactoryD3D11 = Diligent::LoadGraphicsEngineD3D11();
 #endif
@@ -225,7 +225,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // D3D11_SUPPORT
 #if D3D12_SUPPORTED
-  if (driver_type == DriverType::D3D12) {
+  if (driver_type == DRIVER_D3D12) {
 #if ENGINE_DLL
     auto GetEngineFactoryD3D12 = Diligent::LoadGraphicsEngineD3D12();
 #endif
@@ -252,19 +252,9 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   LOG(INFO) << "[Renderer] MaxTexture Size: "
             << adapter_info.Texture.MaxTexture2DDimension;
 
-  // Initialize graphics pipelines
-  base::OwnedPtr<PipelineSet> pipelines_set =
-      base::MakeOwnedPtr<PipelineSet>(device, Diligent::TEX_FORMAT_RGBA8_UNORM);
-
-  // Initialize generic quad index buffer
-  base::OwnedPtr<QuadIndexCache> quad_index_cache =
-      QuadIndexCache::Make(device);
-  quad_index_cache->Allocate(1 << 10);
-
   // Global render device
   base::OwnedPtr<RenderDevice> render_device = base::MakeOwnedPtr<RenderDevice>(
-      window_target, swap_chain_desc, device, swapchain,
-      std::move(pipelines_set), std::move(quad_index_cache), glcontext);
+      window_target, swap_chain_desc, device, swapchain, glcontext);
 
   // Immediate render context
   base::OwnedPtr<RenderContext> render_context =
@@ -278,17 +268,17 @@ RenderDevice::RenderDevice(
     const Diligent::SwapChainDesc& swapchain_desc,
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
-    base::OwnedPtr<PipelineSet> pipelines,
-    base::OwnedPtr<QuadIndexCache> quad_index,
     SDL_GLContext gl_context)
     : window_(std::move(window)),
       swapchain_desc_(swapchain_desc),
       device_(device),
       swapchain_(swapchain),
-      pipelines_(std::move(pipelines)),
-      quad_index_(std::move(quad_index)),
+      pipelines_(device_, Diligent::TEX_FORMAT_RGBA8_UNORM),
+      quad_index_(QuadIndexCache::Make(device_)),
       device_type_(device_->GetDeviceInfo().Type),
-      gl_context_(gl_context) {}
+      gl_context_(gl_context) {
+  quad_index_.Allocate(1 << 10);
+}
 
 RenderDevice::~RenderDevice() {
   if (gl_context_)

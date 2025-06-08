@@ -13,8 +13,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:ImageAnimation)--*/
 class URGE_RUNTIME_API ImageAnimation
     : public base::RefCounted<ImageAnimation> {

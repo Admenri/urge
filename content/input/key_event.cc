@@ -4,6 +4,8 @@
 
 #include "content/input/key_event.h"
 
+#include "content/context/execution_context.h"
+
 namespace content {
 
 base::Vector<scoped_refptr<KeyEvent>> KeyEvent::Update(

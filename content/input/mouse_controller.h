@@ -7,13 +7,14 @@
 
 #include <array>
 
+#include "content/context/engine_object.h"
 #include "content/profile/content_profile.h"
 #include "content/public/engine_mouse.h"
 #include "ui/widget/widget.h"
 
 namespace content {
 
-class MouseImpl : public Mouse {
+class MouseImpl : public Mouse, public EngineObject {
  public:
   enum Button {
     Left = SDL_BUTTON_LEFT,
@@ -23,7 +24,7 @@ class MouseImpl : public Mouse {
     X2 = SDL_BUTTON_X2,
   };
 
-  MouseImpl(base::WeakPtr<ui::Widget> window);
+  MouseImpl(ExecutionContext* execution_context);
   ~MouseImpl() override;
 
   MouseImpl(const MouseImpl&) = delete;
@@ -69,7 +70,6 @@ class MouseImpl : public Mouse {
   } entity_state_;
 
   base::WeakPtr<ui::Widget> window_;
-
   std::array<BindingState, sizeof(ui::Widget::MouseState::states)> states_;
 };
 

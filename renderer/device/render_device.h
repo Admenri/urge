@@ -16,12 +16,12 @@
 
 namespace renderer {
 
-enum class DriverType {
-  UNDEFINED = 0,
-  OPENGL,
-  VULKAN,
-  D3D11,
-  D3D12,
+enum DriverType {
+  DRIVER_UNDEFINED = 0,
+  DRIVER_OPENGL,
+  DRIVER_VULKAN,
+  DRIVER_D3D11,
+  DRIVER_D3D12,
 };
 
 class RenderDevice {
@@ -73,8 +73,8 @@ class RenderDevice {
   Diligent::ISwapChain* GetSwapChain() const { return swapchain_; }
 
   // Pre-compile shaders set storage
-  PipelineSet* GetPipelines() const { return pipelines_.get(); }
-  QuadIndexCache* GetQuadIndex() const { return quad_index_.get(); }
+  PipelineSet* GetPipelines() { return &pipelines_; }
+  QuadIndexCache* GetQuadIndex() { return &quad_index_; }
 
   // Managed mobile rendering context
   void SuspendContext();
@@ -86,8 +86,6 @@ class RenderDevice {
                const Diligent::SwapChainDesc& swapchain_desc,
                Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
                Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
-               base::OwnedPtr<PipelineSet> pipelines,
-               base::OwnedPtr<QuadIndexCache> quad_index,
                SDL_GLContext gl_context);
 
   base::WeakPtr<ui::Widget> window_;
@@ -96,8 +94,8 @@ class RenderDevice {
   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device_;
   Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain_;
 
-  base::OwnedPtr<PipelineSet> pipelines_;
-  base::OwnedPtr<QuadIndexCache> quad_index_;
+  PipelineSet pipelines_;
+  QuadIndexCache quad_index_;
 
   Diligent::RENDER_DEVICE_TYPE device_type_;
   SDL_GLContext gl_context_;

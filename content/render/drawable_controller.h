@@ -81,17 +81,12 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
 
   struct RenderControllerParams {
     // [Stage: all]
-    // Logic abstract render device for drawable node.
-    // Never be null whenever events.
-    renderer::RenderDevice* device = nullptr;
-
-    // [Stage: all]
     // Immediate rendering context.
     renderer::RenderContext* context = nullptr;
 
     // [Stage: all]
     // Abstract "screen" render buffer.
-    Diligent::ITexture** screen_buffer = nullptr;
+    Diligent::ITexture* screen_buffer = nullptr;
 
     // [Stage: all]
     // Screen buffer size.
@@ -107,11 +102,11 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
 
     // [Stage: on rendering]
     // World transform matrix with offset.
-    Diligent::IBuffer** root_world = nullptr;
+    Diligent::IBuffer* root_world = nullptr;
 
     // [Stage: on rendering]
     // Root transform matrix without any offset.
-    Diligent::IBuffer** world_binding = nullptr;
+    Diligent::IBuffer* world_binding = nullptr;
   };
 
   using NotificationHandler =

@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUSampler)--*/
 class URGE_RUNTIME_API GPUSampler : public base::RefCounted<GPUSampler> {
  public:

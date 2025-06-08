@@ -8,15 +8,14 @@
 #include "SDL3/SDL_surface.h"
 
 #include "content/context/disposable.h"
+#include "content/context/engine_object.h"
 #include "content/public/engine_surface.h"
 
 namespace content {
 
-class SurfaceImpl : public Surface, public Disposable {
+class SurfaceImpl : public EngineObject, public Disposable, public Surface {
  public:
-  SurfaceImpl(DisposableCollection* parent,
-              SDL_Surface* surface,
-              filesystem::IOService* io_service);
+  SurfaceImpl(ExecutionContext* context, SDL_Surface* surface);
   ~SurfaceImpl() override;
 
   SurfaceImpl(const SurfaceImpl&) = delete;
@@ -76,7 +75,6 @@ class SurfaceImpl : public Surface, public Disposable {
   base::String DisposedObjectName() override { return "Surface"; }
 
   SDL_Surface* surface_;
-  filesystem::IOService* io_service_;
 };
 
 }  // namespace content

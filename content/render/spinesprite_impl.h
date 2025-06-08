@@ -48,12 +48,12 @@ class SpineEventImpl : public SpineEvent {
 };
 
 class SpineSpriteImpl : public SpineSprite,
-                        public GraphicsChild,
+                        public EngineObject,
                         public Disposable,
                         public spine::AnimationStateListenerObject {
  public:
   SpineSpriteImpl(
-      RenderScreenImpl* screen,
+      ExecutionContext* execution_context,
       base::OwnedPtr<spine::Atlas> atlas,
       base::OwnedPtr<spine::DiligentTextureLoader> texture_loader,
       base::OwnedPtr<spine::SkeletonData> skeleton_data,

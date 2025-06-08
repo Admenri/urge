@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:IOStream)--*/
 class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
  public:

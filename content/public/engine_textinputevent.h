@@ -12,8 +12,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:TextInputEvent)--*/
 class URGE_RUNTIME_API TextInputEvent
     : public base::RefCounted<TextInputEvent> {

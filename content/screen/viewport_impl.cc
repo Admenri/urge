@@ -7,201 +7,21 @@
 #include "content/canvas/canvas_impl.h"
 #include "content/canvas/canvas_scheduler.h"
 #include "content/common/rect_impl.h"
-#include "content/context/execution_context.h"
 #include "renderer/utils/texture_utils.h"
 
 namespace content {
 
-namespace {
-
-void GPUCreateViewportAgent(renderer::RenderDevice* device,
-                            ViewportAgent* agent) {
-  Diligent::CreateUniformBuffer(**device, sizeof(renderer::WorldTransform),
-                                "viewport.world", &agent->world_uniform,
-                                Diligent::USAGE_DEFAULT);
-  Diligent::CreateUniformBuffer(
-      **device, sizeof(renderer::Binding_Flat::Params), "viewport.effect",
-      &agent->effect.uniform_buffer, Diligent::USAGE_DEFAULT);
-
-  agent->effect.quads = renderer::QuadBatch::Make(**device);
-  agent->effect.binding = device->GetPipelines()->viewport.CreateBinding();
-}
-
-void GPUDestroyViewportAgent(ViewportAgent* agent) {
-  delete agent;
-}
-
-void GPUUpdateViewportTransform(renderer::RenderDevice* device,
-                                renderer::RenderContext* context,
-                                ViewportAgent* agent,
-                                const base::Rect& region) {
-  renderer::WorldTransform world_matrix;
-  renderer::MakeProjectionMatrix(world_matrix.projection, region.Size());
-  renderer::MakeTransformMatrix(world_matrix.transform, region.Size(),
-                                region.Position());
-
-  (*context)->UpdateBuffer(agent->world_uniform, 0, sizeof(world_matrix),
-                           &world_matrix,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-}
-
-void GPUResetIntermediateLayer(renderer::RenderDevice* device,
-                               ViewportAgent* agent,
-                               const base::Vec2i& effect_size) {
-  auto effect_layer = agent->effect.intermediate_layer;
-  if (!effect_layer ||
-      static_cast<int32_t>(effect_layer->GetDesc().Width) < effect_size.x ||
-      static_cast<int32_t>(effect_layer->GetDesc().Height) < effect_size.y) {
-    agent->effect.layer_size.x = std::max<int32_t>(
-        effect_size.x, effect_layer ? effect_layer->GetDesc().Width : 0);
-    agent->effect.layer_size.y = std::max<int32_t>(
-        effect_size.y, effect_layer ? effect_layer->GetDesc().Height : 0);
-
-    agent->effect.intermediate_layer.Release();
-    renderer::CreateTexture2D(**device, &agent->effect.intermediate_layer,
-                              "viewport.intermediate.layer",
-                              agent->effect.layer_size);
-  }
-}
-
-void GPUResetViewportRegion(renderer::RenderContext* context,
-                            const base::Rect& region) {
-  context->ScissorState()->Push(region);
-}
-
-void GPUApplyViewportEffect(renderer::RenderDevice* device,
-                            renderer::RenderContext* context,
-                            Diligent::ITexture** screen_buffer,
-                            Diligent::IBuffer** root_world,
-                            ViewportAgent* agent,
-                            const base::Rect& effect_region,
-                            const base::Vec4& color,
-                            const base::Vec4& tone) {
-  // Copy "screen" buffer desired region data to stage intermediate texture
-  Diligent::Box box;
-  box.MinX = effect_region.x;
-  box.MinY = effect_region.y;
-  box.MaxX = effect_region.x + effect_region.width;
-  box.MaxY = effect_region.y + effect_region.height;
-
-  (*context)->SetRenderTargets(
-      0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  Diligent::CopyTextureAttribs copy_texture_attribs;
-  copy_texture_attribs.pSrcTexture = *screen_buffer;
-  copy_texture_attribs.pSrcBox = &box;
-  copy_texture_attribs.SrcTextureTransitionMode =
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-  copy_texture_attribs.pDstTexture = agent->effect.intermediate_layer;
-  copy_texture_attribs.DstTextureTransitionMode =
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-  (*context)->CopyTexture(copy_texture_attribs);
-
-  // Make effect transient vertices
-  renderer::Quad transient_quad;
-  renderer::Quad::SetPositionRect(&transient_quad, effect_region);
-  renderer::Quad::SetTexCoordRect(&transient_quad,
-                                  base::Rect(effect_region.Size()),
-                                  agent->effect.layer_size);
-  agent->effect.quads->QueueWrite(**context, &transient_quad);
-
-  // Update uniform data
-  renderer::Binding_Flat::Params transient_uniform;
-  transient_uniform.Color = color;
-  transient_uniform.Tone = tone;
-  (*context)->UpdateBuffer(agent->effect.uniform_buffer, 0,
-                           sizeof(transient_uniform), &transient_uniform,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Derive effect pipeline
-  auto& pipeline_set = device->GetPipelines()->viewport;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BlendType::NO_BLEND);
-
-  // Apply render target
-  Diligent::ITextureView* render_target_view =
-      (*screen_buffer)->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  (*context)->SetRenderTargets(
-      1, &render_target_view, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Setup uniform params
-  agent->effect.binding->u_transform->Set(*root_world);
-  agent->effect.binding->u_texture->Set(
-      agent->effect.intermediate_layer->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent->effect.binding->u_params->Set(agent->effect.uniform_buffer);
-
-  // Apply pipeline state
-  (*context)->SetPipelineState(pipeline);
-  (*context)->CommitShaderResources(
-      **agent->effect.binding,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = **agent->effect.quads;
-  (*context)->SetVertexBuffers(
-      0, 1, &vertex_buffer, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*context)->SetIndexBuffer(
-      **device->GetQuadIndex(), 0,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Execute render command
-  Diligent::DrawIndexedAttribs draw_indexed_attribs;
-  draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*context)->DrawIndexed(draw_indexed_attribs);
-}
-
-void GPUViewportProcessAfterRender(renderer::RenderDevice* device,
-                                   renderer::RenderContext* context,
-                                   Diligent::IBuffer** root_world,
-                                   Diligent::ITexture** screen_buffer,
-                                   ViewportAgent* agent,
-                                   const base::Rect& effect_region,
-                                   const base::Vec4& color,
-                                   const base::Vec4& tone) {
-  const bool is_effect_valid =
-      color.w != 0 || tone.x != 0 || tone.y != 0 || tone.z != 0 || tone.w != 0;
-  if (is_effect_valid)
-    GPUApplyViewportEffect(device, context, screen_buffer, root_world, agent,
-                           effect_region, color, tone);
-
-  // Restore viewport region
-  context->ScissorState()->Pop();
-}
-
-void GPUFrameBeginRenderPassInternal(renderer::RenderDevice* device,
-                                     renderer::RenderContext* context,
-                                     ViewportAgent* agent,
-                                     Diligent::ITexture** render_target,
-                                     const base::Vec2i& viewport_offset,
-                                     const base::Rect& scissor_region) {
-  // Apply render target
-  Diligent::ITextureView* render_target_view =
-      (*render_target)->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  (*context)->SetRenderTargets(
-      1, &render_target_view, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Setup scissor region
-  context->ScissorState()->Apply(scissor_region.Size());
-}
-
-}  // namespace
-
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       ExceptionState& exception_state) {
-  return base::MakeRefCounted<ViewportImpl>(
-      execution_context->graphics, nullptr,
-      execution_context->graphics->GetResolution());
+  return base::MakeRefCounted<ViewportImpl>(execution_context, nullptr,
+                                            execution_context->resolution);
 }
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       scoped_refptr<Rect> rect,
                                       ExceptionState& exception_state) {
-  return base::MakeRefCounted<ViewportImpl>(
-      execution_context->graphics, nullptr, RectImpl::From(rect)->AsBaseRect());
+  return base::MakeRefCounted<ViewportImpl>(execution_context, nullptr,
+                                            RectImpl::From(rect)->AsBaseRect());
 }
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
@@ -210,8 +30,8 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       int32_t width,
                                       int32_t height,
                                       ExceptionState& exception_state) {
-  return base::MakeRefCounted<ViewportImpl>(
-      execution_context->graphics, nullptr, base::Rect(x, y, width, height));
+  return base::MakeRefCounted<ViewportImpl>(execution_context, nullptr,
+                                            base::Rect(x, y, width, height));
 }
 
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
@@ -219,18 +39,17 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       scoped_refptr<Rect> rect,
                                       ExceptionState& exception_state) {
   scoped_refptr<RectImpl> region = RectImpl::From(rect);
-  return base::MakeRefCounted<ViewportImpl>(execution_context->graphics,
-                                            ViewportImpl::From(parent),
-                                            region->AsBaseRect());
+  return base::MakeRefCounted<ViewportImpl>(
+      execution_context, ViewportImpl::From(parent), region->AsBaseRect());
 }
 
-ViewportImpl::ViewportImpl(RenderScreenImpl* screen,
+ViewportImpl::ViewportImpl(ExecutionContext* execution_context,
                            scoped_refptr<ViewportImpl> parent,
                            const base::Rect& region)
-    : GraphicsChild(screen),
-      Disposable(screen),
+    : EngineObject(execution_context),
+      Disposable(execution_context->disposable_parent),
       node_(parent ? parent->GetDrawableController()
-                   : screen->GetDrawableController(),
+                   : execution_context->screen_drawable_node,
             SortKey()),
       rect_(base::MakeRefCounted<RectImpl>(region)),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
@@ -238,9 +57,7 @@ ViewportImpl::ViewportImpl(RenderScreenImpl* screen,
   node_.RegisterEventHandler(base::BindRepeating(
       &ViewportImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
 
-  agent_ = new ViewportAgent;
-  screen->PostTask(
-      base::BindOnce(&GPUCreateViewportAgent, screen->GetDevice(), agent_));
+  GPUCreateViewportAgent();
 }
 
 ViewportImpl::~ViewportImpl() {
@@ -290,7 +107,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
     return;
 
   scoped_refptr<CanvasImpl> render_target = CanvasImpl::FromBitmap(target);
-  TextureAgent* bitmap_agent =
+  CanvasImpl::Agent* bitmap_agent =
       render_target ? render_target->GetAgent() : nullptr;
   if (!bitmap_agent)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -308,13 +125,12 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
     return;
 
   // Submit pending canvas commands
-  screen()->GetCanvasScheduler()->SubmitPendingPaintCommands();
+  context()->canvas_scheduler->SubmitPendingPaintCommands();
 
   // Prepare for rendering context
   DrawableNode::RenderControllerParams controller_params;
-  controller_params.device = screen()->GetDevice();
-  controller_params.context = screen()->GetContext();
-  controller_params.screen_buffer = bitmap_agent->data.RawDblPtr();
+  controller_params.context = context()->primary_render_context;
+  controller_params.screen_buffer = bitmap_agent->data;
   controller_params.screen_size = bitmap_agent->size;
   controller_params.viewport = viewport_rect;
   controller_params.origin = origin_;
@@ -323,17 +139,13 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   base::Rect transform_cache_rect(offset, controller_params.screen_size);
   if (!(transform_cache_ == transform_cache_rect)) {
     transform_cache_ = transform_cache_rect;
-    screen()->PostTask(base::BindOnce(
-        &GPUUpdateViewportTransform, controller_params.device,
-        controller_params.context, agent_, transform_cache_rect));
+    GPUUpdateViewportTransform(controller_params.context, transform_cache_rect);
   }
 
   // 0.5) Reset intermediate layer if need
   if (!(effect_layer_cache_ == viewport_rect.Size())) {
     effect_layer_cache_ = viewport_rect.Size();
-    screen()->PostTask(base::BindOnce(&GPUResetIntermediateLayer,
-                                      controller_params.device, agent_,
-                                      viewport_rect.Size()));
+    GPUResetIntermediateLayer(viewport_rect.Size());
   }
 
   // 1) Execute pre-composite handler
@@ -341,20 +153,16 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
                                     &controller_params);
 
   // 1.5) Update sprite batch data
-  screen()->PostTask(
-      base::BindOnce(&SpriteBatch::SubmitBatchDataAndResetCache,
-                     base::Unretained(screen()->GetSpriteBatch()),
-                     controller_params.device, controller_params.context));
+  context()->sprite_batcher->SubmitBatchDataAndResetCache(
+      controller_params.context);
 
   // 2) Setup renderpass
-  screen()->PostTask(
-      base::BindOnce(&GPUFrameBeginRenderPassInternal, controller_params.device,
-                     controller_params.context, agent_,
-                     bitmap_agent->data.RawDblPtr(), offset, viewport_rect));
+  GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent->data,
+                                  offset, viewport_rect);
 
   // 3) Notify render a frame
-  controller_params.root_world = bitmap_agent->world_buffer.RawDblPtr();
-  controller_params.world_binding = agent_->world_uniform.RawDblPtr();
+  controller_params.root_world = bitmap_agent->world_buffer;
+  controller_params.world_binding = agent_.world_uniform;
   controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
                                     &controller_params);
 
@@ -366,11 +174,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
     target_color =
         (flash_color.w > composite_color.w ? flash_color : composite_color);
 
-  screen()->PostTask(
-      base::BindOnce(&GPUApplyViewportEffect, controller_params.device,
-                     controller_params.context, controller_params.screen_buffer,
-                     controller_params.root_world, agent_, viewport_rect,
-                     target_color, tone_->AsNormColor()));
+  GPUApplyViewportEffect(
+      controller_params.context, controller_params.screen_buffer,
+      controller_params.root_world, viewport_rect, target_color);
 }
 
 scoped_refptr<Viewport> ViewportImpl::Get_Viewport(
@@ -388,7 +194,7 @@ void ViewportImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
 
   viewport_ = ViewportImpl::From(value);
   node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : screen()->GetDrawableController());
+                                   : context()->screen_drawable_node);
 }
 
 scoped_refptr<Rect> ViewportImpl::Get_Rect(ExceptionState& exception_state) {
@@ -505,8 +311,8 @@ void ViewportImpl::Put_Tone(const scoped_refptr<Tone>& value,
 void ViewportImpl::OnObjectDisposed() {
   node_.DisposeNode();
 
-  screen()->PostTask(base::BindOnce(&GPUDestroyViewportAgent, agent_));
-  agent_ = nullptr;
+  Agent empty_agent;
+  std::swap(agent_, empty_agent);
 
   viewport_.reset();
 }
@@ -545,17 +351,13 @@ void ViewportImpl::DrawableNodeHandlerInternal(
     base::Rect transform_cache_rect(real_offset, params->screen_size);
     if (!(transform_cache_ == transform_cache_rect)) {
       transform_cache_ = transform_cache_rect;
-      screen()->PostTask(base::BindOnce(&GPUUpdateViewportTransform,
-                                        params->device, params->context, agent_,
-                                        transform_cache_rect));
+      GPUUpdateViewportTransform(params->context, transform_cache_rect);
     }
 
     // Update effect texture size if need
     if (!(effect_layer_cache_ == viewport_rect.Size())) {
       effect_layer_cache_ = viewport_rect.Size();
-      screen()->PostTask(base::BindOnce(&GPUResetIntermediateLayer,
-                                        params->device, agent_,
-                                        viewport_rect.Size()));
+      GPUResetIntermediateLayer(viewport_rect.Size());
     }
 
     // Notify children for preparing rendering
@@ -563,11 +365,10 @@ void ViewportImpl::DrawableNodeHandlerInternal(
                                       &transient_params);
   } else if (stage == DrawableNode::ON_RENDERING) {
     // Setup viewport world uniform
-    transient_params.world_binding = agent_->world_uniform.RawDblPtr();
+    transient_params.world_binding = agent_.world_uniform;
 
     // Setup current viewport scissor
-    screen()->PostTask(base::BindOnce(&GPUResetViewportRegion, params->context,
-                                      viewport_rect));
+    GPUResetViewportRegion(params->context, viewport_rect);
 
     // Notify children for executing rendering commands
     controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
@@ -581,11 +382,179 @@ void ViewportImpl::DrawableNodeHandlerInternal(
       target_color =
           (flash_color.w > composite_color.w ? flash_color : composite_color);
 
-    screen()->PostTask(base::BindOnce(
-        &GPUViewportProcessAfterRender, params->device, params->context,
-        params->root_world, params->screen_buffer, agent_, viewport_rect,
-        target_color, tone_->AsNormColor()));
+    GPUViewportProcessAfterRender(params->context, params->root_world,
+                                  params->screen_buffer, viewport_rect,
+                                  target_color);
   }
+}
+
+void ViewportImpl::GPUCreateViewportAgent() {
+  Diligent::CreateUniformBuffer(
+      **context()->render_device, sizeof(renderer::WorldTransform),
+      "viewport.world", &agent_.world_uniform, Diligent::USAGE_DEFAULT);
+  Diligent::CreateUniformBuffer(
+      **context()->render_device, sizeof(renderer::Binding_Flat::Params),
+      "viewport.effect", &agent_.effect.uniform_buffer,
+      Diligent::USAGE_DEFAULT);
+
+  agent_.effect.quads = renderer::QuadBatch::Make(**context()->render_device);
+  agent_.effect.binding =
+      context()->render_device->GetPipelines()->viewport.CreateBinding();
+}
+
+void ViewportImpl::GPUUpdateViewportTransform(
+    renderer::RenderContext* render_context,
+    const base::Rect& region) {
+  renderer::WorldTransform world_matrix;
+  renderer::MakeProjectionMatrix(world_matrix.projection, region.Size());
+  renderer::MakeTransformMatrix(world_matrix.transform, region.Size(),
+                                region.Position());
+
+  (*render_context)
+      ->UpdateBuffer(agent_.world_uniform, 0, sizeof(world_matrix),
+                     &world_matrix,
+                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+}
+
+void ViewportImpl::GPUResetIntermediateLayer(const base::Vec2i& effect_size) {
+  auto effect_layer = agent_.effect.intermediate_layer;
+  if (!effect_layer ||
+      static_cast<int32_t>(effect_layer->GetDesc().Width) < effect_size.x ||
+      static_cast<int32_t>(effect_layer->GetDesc().Height) < effect_size.y) {
+    agent_.effect.layer_size.x = std::max<int32_t>(
+        effect_size.x, effect_layer ? effect_layer->GetDesc().Width : 0);
+    agent_.effect.layer_size.y = std::max<int32_t>(
+        effect_size.y, effect_layer ? effect_layer->GetDesc().Height : 0);
+
+    agent_.effect.intermediate_layer.Release();
+    renderer::CreateTexture2D(
+        **context()->render_device, &agent_.effect.intermediate_layer,
+        "viewport.intermediate.layer", agent_.effect.layer_size);
+  }
+}
+
+void ViewportImpl::GPUResetViewportRegion(
+    renderer::RenderContext* render_context,
+    const base::Rect& region) {
+  render_context->ScissorState()->Push(region);
+}
+
+void ViewportImpl::GPUApplyViewportEffect(
+    renderer::RenderContext* render_context,
+    Diligent::ITexture* screen_buffer,
+    Diligent::IBuffer* root_world,
+    const base::Rect& effect_region,
+    const base::Vec4& color) {
+  // Copy "screen" buffer desired region data to stage intermediate texture
+  Diligent::Box box;
+  box.MinX = effect_region.x;
+  box.MinY = effect_region.y;
+  box.MaxX = effect_region.x + effect_region.width;
+  box.MaxY = effect_region.y + effect_region.height;
+
+  (*render_context)
+      ->SetRenderTargets(0, nullptr, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  Diligent::CopyTextureAttribs copy_texture_attribs;
+  copy_texture_attribs.pSrcTexture = screen_buffer;
+  copy_texture_attribs.pSrcBox = &box;
+  copy_texture_attribs.SrcTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_texture_attribs.pDstTexture = agent_.effect.intermediate_layer;
+  copy_texture_attribs.DstTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  (*render_context)->CopyTexture(copy_texture_attribs);
+
+  // Make effect transient vertices
+  renderer::Quad transient_quad;
+  renderer::Quad::SetPositionRect(&transient_quad, effect_region);
+  renderer::Quad::SetTexCoordRect(&transient_quad,
+                                  base::Rect(effect_region.Size()),
+                                  agent_.effect.layer_size);
+  agent_.effect.quads.QueueWrite(**render_context, &transient_quad);
+
+  // Update uniform data
+  renderer::Binding_Flat::Params transient_uniform;
+  transient_uniform.Color = color;
+  transient_uniform.Tone = tone_->AsNormColor();
+  (*render_context)
+      ->UpdateBuffer(agent_.effect.uniform_buffer, 0, sizeof(transient_uniform),
+                     &transient_uniform,
+                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Derive effect pipeline
+  auto& pipeline_set = context()->render_device->GetPipelines()->viewport;
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+
+  // Apply render target
+  Diligent::ITextureView* render_target_view =
+      screen_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Setup uniform params
+  agent_.effect.binding.u_transform->Set(root_world);
+  agent_.effect.binding.u_texture->Set(
+      agent_.effect.intermediate_layer->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  agent_.effect.binding.u_params->Set(agent_.effect.uniform_buffer);
+
+  // Apply pipeline state
+  (*render_context)->SetPipelineState(pipeline);
+  (*render_context)
+      ->CommitShaderResources(
+          *agent_.effect.binding,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *agent_.effect.quads;
+  (*render_context)
+      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
+                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  (*render_context)->DrawIndexed(draw_indexed_attribs);
+}
+
+void ViewportImpl::GPUViewportProcessAfterRender(
+    renderer::RenderContext* render_context,
+    Diligent::IBuffer* root_world,
+    Diligent::ITexture* screen_buffer,
+    const base::Rect& effect_region,
+    const base::Vec4& color) {
+  const auto tone = tone_->AsNormColor();
+  const bool is_effect_valid =
+      color.w != 0 || tone.x != 0 || tone.y != 0 || tone.z != 0 || tone.w != 0;
+  if (is_effect_valid)
+    GPUApplyViewportEffect(render_context, screen_buffer, root_world,
+                           effect_region, color);
+
+  // Restore viewport region
+  render_context->ScissorState()->Pop();
+}
+
+void ViewportImpl::GPUFrameBeginRenderPassInternal(
+    renderer::RenderContext* render_context,
+    Diligent::ITexture* render_target,
+    const base::Vec2i& viewport_offset,
+    const base::Rect& scissor_region) {
+  // Apply render target
+  Diligent::ITextureView* render_target_view =
+      render_target->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Setup scissor region
+  render_context->ScissorState()->Apply(scissor_region.Size());
 }
 
 }  // namespace content

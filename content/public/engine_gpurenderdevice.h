@@ -19,8 +19,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPURenderDevice)--*/
 class URGE_RUNTIME_API GPURenderDevice
     : public base::RefCounted<GPURenderDevice> {

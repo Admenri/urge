@@ -33,7 +33,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
   Diligent::RenderTargetBlendDesc state;
   switch (type) {
     default:
-    case BlendType::NORMAL:
+    case BLEND_TYPE_NORMAL:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
@@ -41,7 +41,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
       break;
-    case BlendType::ADDITION:
+    case BLEND_TYPE_ADDITION:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
@@ -49,7 +49,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       break;
-    case BlendType::SUBSTRACTION:
+    case BLEND_TYPE_SUBSTRACTION:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_REV_SUBTRACT;
       state.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
@@ -57,7 +57,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ZERO;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       break;
-    case BlendType::MULTIPLY:
+    case BLEND_TYPE_MULTIPLY:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_DEST_COLOR;
@@ -65,7 +65,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
       break;
-    case BlendType::SCREEN:
+    case BLEND_TYPE_SCREEN:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_ONE;
@@ -73,7 +73,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
       break;
-    case BlendType::KEEP_ALPHA:
+    case BLEND_TYPE_KEEP_ALPHA:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
@@ -81,7 +81,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ZERO;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       break;
-    case BlendType::NORMAL_PMA:
+    case BLEND_TYPE_NORMAL_PMA:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_ONE;
@@ -89,7 +89,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
       break;
-    case BlendType::ADDITION_PMA:
+    case BLEND_TYPE_ADDITION_PMA:
       state.BlendEnable = Diligent::True;
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_ONE;
@@ -97,7 +97,7 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       state.DestBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       break;
-    case BlendType::NO_BLEND:
+    case BLEND_TYPE_NO_BLEND:
       state.BlendEnable = Diligent::False;
       break;
   }
@@ -190,7 +190,7 @@ void RenderPipelineBase::BuildPipeline(
   pipeline_state_desc.ppResourceSignatures = raw_signatures.data();
 
   // Make all color blend type pipelines
-  for (int32_t i = 0; i < BlendType::TYPE_NUMS; ++i) {
+  for (int32_t i = 0; i < BLEND_TYPE_NUMS; ++i) {
     pipeline_state_desc.GraphicsPipeline.BlendDesc.RenderTargets[0] =
         GetBlendState(static_cast<BlendType>(i));
 

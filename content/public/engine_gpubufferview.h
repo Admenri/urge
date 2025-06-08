@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUBufferView)--*/
 class URGE_RUNTIME_API GPUBufferView : public base::RefCounted<GPUBufferView> {
  public:

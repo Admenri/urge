@@ -6,6 +6,7 @@
 
 #include "imgui/imgui.h"
 
+#include "content/context/execution_context.h"
 #include "content/profile/command_ids.h"
 
 namespace content {
@@ -128,11 +129,12 @@ SoLoud::result soloud_sdlbackend_init(SoLoud::Soloud* aSoloud,
 
 }  // namespace
 
-AudioImpl::AudioImpl(ContentProfile* profile,
-                     filesystem::IOService* io_service,
-                     I18NProfile* i18n_profile)
-    : io_service_(io_service), i18n_profile_(i18n_profile), output_device_(0) {
-  if (profile->disable_audio)
+AudioImpl::AudioImpl(ExecutionContext* execution_context)
+    : EngineObject(execution_context),
+      io_service_(execution_context->io_service),
+      i18n_profile_(execution_context->i18n_profile),
+      output_device_(0) {
+  if (execution_context->engine_profile->disable_audio)
     return;
 
   audio_runner_ = base::ThreadWorker::Create();
@@ -389,7 +391,8 @@ void AudioImpl::PlaySlotInternal(SlotInfo* slot,
     io_service_->OpenRead(
         filename,
         base::BindRepeating(
-            [](SoLoud::Wav* loader, SDL_IOStream* ops, const base::String& ext) {
+            [](SoLoud::Wav* loader, SDL_IOStream* ops,
+               const base::String& ext) {
               size_t out_size = 0;
               uint8_t* mem =
                   static_cast<uint8_t*>(read_mem_file(ops, &out_size, true));
@@ -451,7 +454,8 @@ void AudioImpl::EmitSoundInternal(const base::String& filename,
     io_service_->OpenRead(
         filename,
         base::BindRepeating(
-            [](SoLoud::Wav* loader, SDL_IOStream* ops, const base::String& ext) {
+            [](SoLoud::Wav* loader, SDL_IOStream* ops,
+               const base::String& ext) {
               size_t out_size = 0;
               uint8_t* mem =
                   static_cast<uint8_t*>(read_mem_file(ops, &out_size, true));

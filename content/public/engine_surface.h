@@ -14,8 +14,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:Surface)--*/
 class URGE_RUNTIME_API Surface : public base::RefCounted<Surface> {
  public:

@@ -15,21 +15,21 @@
 
 namespace content {
 
-struct ViewportAgent {
-  RRefPtr<Diligent::IBuffer> world_uniform;
-
-  struct {
-    base::Vec2i layer_size;
-    base::OwnedPtr<renderer::QuadBatch> quads;
-    base::OwnedPtr<renderer::Binding_Flat> binding;
-    RRefPtr<Diligent::ITexture> intermediate_layer;
-    RRefPtr<Diligent::IBuffer> uniform_buffer;
-  } effect;
-};
-
-class ViewportImpl : public Viewport, public GraphicsChild, public Disposable {
+class ViewportImpl : public Viewport, public EngineObject, public Disposable {
  public:
-  ViewportImpl(RenderScreenImpl* screen,
+  struct Agent {
+    RRefPtr<Diligent::IBuffer> world_uniform;
+
+    struct {
+      base::Vec2i layer_size;
+      renderer::QuadBatch quads;
+      renderer::Binding_Flat binding;
+      RRefPtr<Diligent::ITexture> intermediate_layer;
+      RRefPtr<Diligent::IBuffer> uniform_buffer;
+    } effect;
+  };
+
+  ViewportImpl(ExecutionContext* execution_context,
                scoped_refptr<ViewportImpl> parent,
                const base::Rect& region);
   ~ViewportImpl() override;
@@ -69,10 +69,31 @@ class ViewportImpl : public Viewport, public GraphicsChild, public Disposable {
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);
 
+  void GPUCreateViewportAgent();
+  void GPUUpdateViewportTransform(renderer::RenderContext* render_context,
+                                  const base::Rect& region);
+  void GPUResetIntermediateLayer(const base::Vec2i& effect_size);
+  void GPUResetViewportRegion(renderer::RenderContext* render_context,
+                              const base::Rect& region);
+  void GPUApplyViewportEffect(renderer::RenderContext* render_context,
+                              Diligent::ITexture* screen_buffer,
+                              Diligent::IBuffer* root_world,
+                              const base::Rect& effect_region,
+                              const base::Vec4& color);
+  void GPUViewportProcessAfterRender(renderer::RenderContext* render_context,
+                                     Diligent::IBuffer* root_world,
+                                     Diligent::ITexture* screen_buffer,
+                                     const base::Rect& effect_region,
+                                     const base::Vec4& color);
+  void GPUFrameBeginRenderPassInternal(renderer::RenderContext* render_context,
+                                       Diligent::ITexture* render_target,
+                                       const base::Vec2i& viewport_offset,
+                                       const base::Rect& scissor_region);
+
   DrawableNode node_;
   DrawNodeController controller_;
   DrawableFlashController flash_emitter_;
-  ViewportAgent* agent_;
+  Agent agent_;
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<RectImpl> rect_;
   base::Vec2i origin_;

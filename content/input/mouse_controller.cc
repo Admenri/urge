@@ -7,10 +7,12 @@
 #include "SDL3/SDL_events.h"
 
 #include "content/canvas/canvas_impl.h"
+#include "content/context/execution_context.h"
 
 namespace content {
 
-MouseImpl::MouseImpl(base::WeakPtr<ui::Widget> window) : window_(window) {
+MouseImpl::MouseImpl(ExecutionContext* execution_context)
+    : EngineObject(execution_context), window_(execution_context->window) {
   // Initial mouse state
   auto& display_state = window_->GetDisplayState();
 

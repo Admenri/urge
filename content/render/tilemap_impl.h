@@ -35,19 +35,6 @@ namespace content {
     4. The Z-coordinate changes accordingly as the tilemap scrolls vertically.
 */
 
-struct TilemapAgent {
-  base::OwnedPtr<renderer::QuadBatch> batch;
-
-  int32_t ground_draw_count;
-  base::Vector<int32_t> above_draw_count;
-
-  base::OwnedPtr<renderer::Binding_Tilemap> shader_binding;
-
-  RRefPtr<Diligent::ITexture> atlas_texture;
-  RRefPtr<Diligent::ITextureView> atlas_binding;
-  RRefPtr<Diligent::IBuffer> uniform_buffer;
-};
-
 class TilemapImpl;
 
 class TilemapAutotileImpl : public TilemapAutotile {
@@ -68,10 +55,22 @@ class TilemapAutotileImpl : public TilemapAutotile {
   base::WeakPtr<TilemapImpl> tilemap_;
 };
 
-class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
+class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
  public:
+  struct Agent {
+    renderer::QuadBatch batch;
+    renderer::Binding_Tilemap shader_binding;
+
+    int32_t ground_draw_count;
+    base::Vector<int32_t> above_draw_count;
+
+    RRefPtr<Diligent::ITexture> atlas_texture;
+    RRefPtr<Diligent::ITextureView> atlas_binding;
+    RRefPtr<Diligent::IBuffer> uniform_buffer;
+  };
+
   struct AtlasCompositeCommand {
-    TextureAgent* texture;
+    CanvasImpl::Agent* texture;
     base::Rect src_rect;
     base::Vec2i dst_pos;
   };
@@ -82,7 +81,7 @@ class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
     SINGLE_ANIMATED,
   };
 
-  TilemapImpl(RenderScreenImpl* screen,
+  TilemapImpl(ExecutionContext* execution_context,
               scoped_refptr<ViewportImpl> parent,
               int32_t tilesize);
   ~TilemapImpl() override;
@@ -131,6 +130,25 @@ class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
   void AtlasModifyHandlerInternal();
   void MapDataModifyHandlerInternal();
 
+  void GPUCreateTilemapInternal();
+  void GPUMakeAtlasInternal(
+      renderer::RenderContext* render_context,
+      const base::Vec2i& atlas_size,
+      base::Vector<TilemapImpl::AtlasCompositeCommand> make_commands);
+  void GPUUploadTilesBatchInternal(
+      renderer::RenderContext* render_context,
+      base::Vector<renderer::Quad> ground_cache,
+      base::Vector<base::Vector<renderer::Quad>> aboves_cache);
+  void GPUUpdateTilemapUniformInternal(renderer::RenderContext* render_context,
+                                       const base::Vec2& offset,
+                                       int32_t tilesize,
+                                       int32_t anim_index);
+  void GPURenderGroundLayerInternal(renderer::RenderContext* render_context,
+                                    Diligent::IBuffer* world_binding);
+  void GPURenderAboveLayerInternal(renderer::RenderContext* render_context,
+                                   Diligent::IBuffer* world_binding,
+                                   int32_t index);
+
   struct AutotileInfo {
     scoped_refptr<CanvasImpl> bitmap;
     AutotileType type = AutotileType::ANIMATED;
@@ -139,7 +157,7 @@ class TilemapImpl : public Tilemap, public GraphicsChild, public Disposable {
 
   DrawableNode ground_node_;
   base::Vector<DrawableNode> above_nodes_;
-  TilemapAgent* agent_;
+  Agent agent_;
   int32_t tilesize_ = 32;
   base::Rect render_viewport_;
   base::Vec2i render_offset_;

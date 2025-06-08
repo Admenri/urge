@@ -17,25 +17,24 @@
 
 namespace content {
 
-struct Window2Agent {
-  base::OwnedPtr<renderer::QuadBatch> background_batch;
-  base::OwnedPtr<renderer::QuadBatch> controls_batch;
-
-  base::OwnedPtr<renderer::Binding_Base> shader_binding;
-
-  RRefPtr<Diligent::ITexture> background_texture;
-  RRefPtr<Diligent::IBuffer> background_world;
-  RRefPtr<Diligent::IBuffer> uniform_buffer;
-
-  int32_t background_draw_count;
-  int32_t controls_draw_count;
-  int32_t cursor_draw_count;
-  int32_t contents_draw_count;
-};
-
-class Window2Impl : public Window2, public GraphicsChild, public Disposable {
+class Window2Impl : public Window2, public EngineObject, public Disposable {
  public:
-  Window2Impl(RenderScreenImpl* screen,
+  struct Agent {
+    renderer::QuadBatch background_batch;
+    renderer::QuadBatch controls_batch;
+    renderer::Binding_Base shader_binding;
+
+    RRefPtr<Diligent::ITexture> background_texture;
+    RRefPtr<Diligent::IBuffer> background_world;
+    RRefPtr<Diligent::IBuffer> uniform_buffer;
+
+    int32_t background_draw_count;
+    int32_t controls_draw_count;
+    int32_t cursor_draw_count;
+    int32_t contents_draw_count;
+  };
+
+  Window2Impl(ExecutionContext* execution_context,
               scoped_refptr<ViewportImpl> parent,
               const base::Rect& bound,
               int32_t scale);
@@ -89,9 +88,22 @@ class Window2Impl : public Window2, public GraphicsChild, public Disposable {
       DrawableNode::RenderControllerParams* params);
   void BackgroundTextureObserverInternal();
 
+  void GPUCreateWindowInternal();
+  void GPUCompositeWindowQuadsInternal(renderer::RenderContext* render_context,
+                                       CanvasImpl::Agent* contents,
+                                       CanvasImpl::Agent* windowskin,
+                                       const base::Rect& padding_rect);
+  void GPURenderWindowQuadsInternal(renderer::RenderContext* render_context,
+                                    Diligent::IBuffer* world_binding,
+                                    CanvasImpl::Agent* windowskin,
+                                    CanvasImpl::Agent* contents,
+                                    const base::Rect& padding_rect,
+                                    const base::Rect& last_viewport,
+                                    const base::Vec2i& last_origin);
+
   bool rgss3_style_ = false;
   DrawableNode node_;
-  Window2Agent* agent_;
+  Agent agent_;
   int32_t scale_ = 2;
   int32_t pause_index_ = 0;
   int32_t cursor_opacity_ = 255;

@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:TouchEvent)--*/
 class URGE_RUNTIME_API TouchEvent : public base::RefCounted<TouchEvent> {
  public:

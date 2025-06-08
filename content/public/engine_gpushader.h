@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUShader)--*/
 class URGE_RUNTIME_API GPUShader : public base::RefCounted<GPUShader> {
  public:

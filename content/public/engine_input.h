@@ -11,9 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
-// Interface reference: RGSS Reference
 /*--urge(name:Input,is_module)--*/
 class URGE_RUNTIME_API Input : public base::RefCounted<Input> {
  public:

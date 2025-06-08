@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUResourceBinding)--*/
 class URGE_RUNTIME_API GPUResourceBinding
     : public base::RefCounted<GPUResourceBinding> {

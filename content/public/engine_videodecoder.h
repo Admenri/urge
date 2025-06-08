@@ -13,8 +13,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:VideoDecoder)--*/
 class URGE_RUNTIME_API VideoDecoder : public base::RefCounted<VideoDecoder> {
  public:

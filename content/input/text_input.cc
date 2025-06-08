@@ -5,6 +5,7 @@
 #include "content/input/text_input.h"
 
 #include "content/common/rect_impl.h"
+#include "content/context/execution_context.h"
 
 namespace content {
 

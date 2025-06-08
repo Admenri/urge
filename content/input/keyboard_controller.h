@@ -5,6 +5,7 @@
 #ifndef CONTENT_INPUT_KEYBOARD_CONTROLLER_H_
 #define CONTENT_INPUT_KEYBOARD_CONTROLLER_H_
 
+#include "content/context/engine_object.h"
 #include "content/profile/content_profile.h"
 #include "content/profile/i18n_profile.h"
 #include "content/public/engine_input.h"
@@ -12,7 +13,7 @@
 
 namespace content {
 
-class KeyboardControllerImpl : public Input {
+class KeyboardControllerImpl : public Input, public EngineObject {
  public:
   struct KeyBinding {
     base::String sym;
@@ -31,9 +32,7 @@ class KeyboardControllerImpl : public Input {
     int32_t repeat_count;
   };
 
-  KeyboardControllerImpl(base::WeakPtr<ui::Widget> window,
-                         ContentProfile* profile,
-                         I18NProfile* i18n_profile);
+  KeyboardControllerImpl(ExecutionContext* execution_context);
   ~KeyboardControllerImpl() override;
 
   KeyboardControllerImpl(const KeyboardControllerImpl&) = delete;
@@ -57,7 +56,7 @@ class KeyboardControllerImpl : public Input {
   bool KeyTriggered(int32_t scancode, ExceptionState& exception_state) override;
   bool KeyRepeated(int32_t scancode, ExceptionState& exception_state) override;
   base::String GetKeyName(int32_t scancode,
-                         ExceptionState& exception_state) override;
+                          ExceptionState& exception_state) override;
   base::Vector<int32_t> GetKeysFromFlag(
       const base::String& flag,
       ExceptionState& exception_state) override;
@@ -85,9 +84,6 @@ class KeyboardControllerImpl : public Input {
   void TryReadBindingsInternal();
   void StorageBindingsInternal();
 
-  base::WeakPtr<ui::Widget> window_;
-  ContentProfile* profile_;
-  I18NProfile* i18n_profile_;
   KeySymMap key_bindings_;
   KeySymMap setting_bindings_;
   bool disable_gui_key_input_;

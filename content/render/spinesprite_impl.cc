@@ -12,7 +12,6 @@ scoped_refptr<SpineSprite> SpineSprite::New(
     const base::String& skeleton_filename,
     float default_mix,
     ExceptionState& exception_state) {
-  auto* screen = execution_context->graphics;
   auto* io_service = execution_context->io_service;
 
   // Read necessary data from filesystem
@@ -59,7 +58,7 @@ scoped_refptr<SpineSprite> SpineSprite::New(
   spine::Bone::setYDown(true);
   base::OwnedPtr<spine::DiligentTextureLoader> texture_loader =
       base::MakeOwnedPtr<spine::DiligentTextureLoader>(
-          screen->GetDevice(), screen->GetRenderRunner(), io_service);
+          execution_context->render_device, io_service);
   base::OwnedPtr<spine::Atlas> atlas =
       base::MakeOwnedPtr<spine::Atlas>(atlas_data.data(), atlas_data.size(),
                                        dir.c_str(), texture_loader.get(), true);
@@ -90,7 +89,7 @@ scoped_refptr<SpineSprite> SpineSprite::New(
   animation_state_data->setDefaultMix(default_mix);
 
   return base::MakeRefCounted<SpineSpriteImpl>(
-      execution_context->graphics, std::move(atlas), std::move(texture_loader),
+      execution_context, std::move(atlas), std::move(texture_loader),
       base::OwnedPtr<spine::SkeletonData>(skeleton_data_ptr),
       std::move(animation_state_data));
 }
@@ -147,14 +146,14 @@ float SpineEventImpl::GetBalance(ExceptionState& exception_state) {
 }
 
 SpineSpriteImpl::SpineSpriteImpl(
-    RenderScreenImpl* screen,
+    ExecutionContext* execution_context,
     base::OwnedPtr<spine::Atlas> atlas,
     base::OwnedPtr<spine::DiligentTextureLoader> texture_loader,
     base::OwnedPtr<spine::SkeletonData> skeleton_data,
     base::OwnedPtr<spine::AnimationStateData> animation_state_data)
-    : GraphicsChild(screen),
-      Disposable(screen),
-      node_(screen->GetDrawableController(), SortKey()),
+    : EngineObject(execution_context),
+      Disposable(execution_context->disposable_parent),
+      node_(execution_context->screen_drawable_node, SortKey()),
       atlas_(std::move(atlas)),
       texture_loader_(std::move(texture_loader)),
       skeleton_data_(std::move(skeleton_data)),
@@ -170,7 +169,7 @@ SpineSpriteImpl::SpineSpriteImpl(
   animation_state_->setListener(this);
 
   renderer_ = base::MakeOwnedPtr<spine::DiligentRenderer>(
-      screen->GetDevice(), screen->GetRenderRunner());
+      execution_context->render_device);
 }
 
 SpineSpriteImpl::~SpineSpriteImpl() {
@@ -284,7 +283,7 @@ void SpineSpriteImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
 
   viewport_ = ViewportImpl::From(value);
   node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : screen()->GetDrawableController());
+                                   : context()->screen_drawable_node);
 }
 
 bool SpineSpriteImpl::Get_Visible(ExceptionState& exception_state) {

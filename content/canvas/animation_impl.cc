@@ -39,9 +39,8 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
     return nullptr;
   }
 
-  return base::MakeRefCounted<ImageAnimationImpl>(
-      execution_context->graphics, animation_data,
-      execution_context->io_service);
+  return base::MakeRefCounted<ImageAnimationImpl>(execution_context,
+                                                  animation_data);
 }
 
 scoped_refptr<ImageAnimation> ImageAnimation::New(
@@ -65,18 +64,15 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
     return nullptr;
   }
 
-  return base::MakeRefCounted<ImageAnimationImpl>(
-      execution_context->graphics, memory_animation,
-      execution_context->io_service);
+  return base::MakeRefCounted<ImageAnimationImpl>(execution_context,
+                                                  memory_animation);
 }
 
-ImageAnimationImpl::ImageAnimationImpl(RenderScreenImpl* parent,
-                                       IMG_Animation* animation,
-                                       filesystem::IOService* io_service)
-    : GraphicsChild(parent),
-      Disposable(parent),
-      animation_(animation),
-      io_service_(io_service) {}
+ImageAnimationImpl::ImageAnimationImpl(ExecutionContext* execution_context,
+                                       IMG_Animation* animation)
+    : EngineObject(execution_context),
+      Disposable(execution_context->disposable_parent),
+      animation_(animation) {}
 
 ImageAnimationImpl::~ImageAnimationImpl() {
   ExceptionState exception_state;
@@ -118,8 +114,8 @@ base::Vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
     std::memcpy(duplicate_surface->pixels, origin_surface->pixels,
                 origin_surface->pitch * origin_surface->h);
 
-    result.push_back(base::MakeRefCounted<SurfaceImpl>(
-        screen(), duplicate_surface, io_service_));
+    result.push_back(
+        base::MakeRefCounted<SurfaceImpl>(context(), duplicate_surface));
   }
 
   return result;

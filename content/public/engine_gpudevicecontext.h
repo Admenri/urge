@@ -19,8 +19,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUDeviceContext)--*/
 class URGE_RUNTIME_API GPUDeviceContext
     : public base::RefCounted<GPUDeviceContext> {

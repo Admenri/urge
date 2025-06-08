@@ -42,9 +42,6 @@ class ContentRunner {
     // Graphics renderer target.
     base::WeakPtr<ui::Widget> window;
 
-    // Render thread setup
-    base::ThreadWorker* render_worker;
-
     // Binding boot entry,
     // require an unique one.
     base::OwnedPtr<EngineBindingBase> entry;
@@ -66,7 +63,6 @@ class ContentRunner {
                 ScopedFontData* font_context,
                 I18NProfile* i18n_profile,
                 base::WeakPtr<ui::Widget> window,
-                base::ThreadWorker* render_worker,
                 base::OwnedPtr<EngineBindingBase> binding);
   void TickHandlerInternal();
   void UpdateDisplayFPSInternal();
@@ -79,12 +75,15 @@ class ContentRunner {
   void CreateIMGUIContextInternal();
   void DestroyIMGUIContextInternal();
 
-  ContentProfile* profile_;
-  filesystem::IOService* io_service_;
-  ScopedFontData* font_context_;
-  I18NProfile* i18n_profile_;
-  base::WeakPtr<ui::Widget> window_;
-  base::ThreadWorker* render_worker_;
+  base::OwnedPtr<ExecutionContext> execution_context_;
+  base::OwnedPtr<EngineBindingBase> binding_;
+
+  base::OwnedPtr<renderer::RenderDevice> render_device_;
+  base::OwnedPtr<renderer::RenderContext> render_context_;
+  base::OwnedPtr<CanvasScheduler> canvas_scheduler_;
+  base::OwnedPtr<SpriteBatch> sprite_batcher_;
+  base::OwnedPtr<EventController> event_controller_;
+  base::OwnedPtr<Diligent::ImGuiDiligentRenderer> imgui_;
 
   scoped_refptr<RenderScreenImpl> graphics_impl_;
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;
@@ -92,15 +91,9 @@ class ContentRunner {
   scoped_refptr<MouseImpl> mouse_impl_;
   scoped_refptr<MiscSystem> engine_impl_;
 
-  base::OwnedPtr<EngineBindingBase> binding_;
-  base::OwnedPtr<ExecutionContext> execution_context_;
-
   base::CallbackListSubscription tick_observer_;
   std::atomic<int32_t> binding_quit_flag_;
   std::atomic<int32_t> binding_reset_flag_;
-
-  base::OwnedPtr<EventController> event_controller_;
-  base::OwnedPtr<Diligent::ImGuiDiligentRenderer> imgui_;
 
   bool background_running_;
   bool disable_gui_input_;

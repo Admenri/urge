@@ -6,6 +6,7 @@
 
 #include "imgui/backends/imgui_impl_sdl3.h"
 #include "imgui/imgui.h"
+#include "magic_enum/magic_enum.hpp"
 
 #include "content/context/execution_context.h"
 #include "content/profile/command_ids.h"
@@ -38,15 +39,8 @@ ContentRunner::ContentRunner(ContentProfile* profile,
                              ScopedFontData* font_context,
                              I18NProfile* i18n_profile,
                              base::WeakPtr<ui::Widget> window,
-                             base::ThreadWorker* render_worker,
                              base::OwnedPtr<EngineBindingBase> binding)
-    : profile_(profile),
-      io_service_(io_service),
-      font_context_(font_context),
-      i18n_profile_(i18n_profile),
-      window_(window),
-      render_worker_(render_worker),
-      binding_(std::move(binding)),
+    : binding_(std::move(binding)),
       binding_quit_flag_(0),
       binding_reset_flag_(0),
       background_running_(false),
@@ -56,25 +50,48 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       last_tick_(SDL_GetPerformanceCounter()),
       total_delta_(0),
       frame_count_(0) {
-  // Create engine objects
-  graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
-      window, render_worker, profile, i18n_profile, io_service, font_context,
-      profile->resolution, profile->frame_rate);
-  keyboard_impl_ = base::MakeRefCounted<KeyboardControllerImpl>(window, profile,
-                                                                i18n_profile);
-  audio_impl_ =
-      base::MakeRefCounted<AudioImpl>(profile, io_service, i18n_profile);
-  mouse_impl_ = base::MakeRefCounted<MouseImpl>(window);
-  engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
-
-  // Create event router
+  // Initialize components
+  auto [render_device, render_context] = renderer::RenderDevice::Create(
+      window,
+      magic_enum::enum_cast<renderer::DriverType>(profile->driver_backend)
+          .value_or(renderer::DRIVER_UNDEFINED));
+  render_device_ = std::move(render_device);
+  render_context_ = std::move(render_context);
+  canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(
+      render_device_.get(), render_context_.get());
+  sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
   event_controller_ = base::MakeOwnedPtr<EventController>(window);
 
+  // Initialize execution context
+  execution_context_ = base::MakeOwnedPtr<ExecutionContext>();
+  execution_context_->resolution = profile->resolution;
+  execution_context_->window = window;
+  execution_context_->render_device = render_device_.get();
+  execution_context_->primary_render_context = render_context_.get();
+
+  execution_context_->engine_profile = profile;
+  execution_context_->font_context = font_context;
+  execution_context_->i18n_profile = i18n_profile;
+  execution_context_->io_service = io_service;
+  execution_context_->canvas_scheduler = canvas_scheduler_.get();
+  execution_context_->sprite_batcher = sprite_batcher_.get();
+  execution_context_->event_controller = event_controller_.get();
+
+  // Create engine objects
+  graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
+      execution_context_.get(), profile->frame_rate);
+  execution_context_->disposable_parent = graphics_impl_.get();
+  execution_context_->screen_drawable_node =
+      graphics_impl_->GetDrawableController();
+
+  keyboard_impl_ =
+      base::MakeRefCounted<KeyboardControllerImpl>(execution_context_.get());
+  audio_impl_ = base::MakeRefCounted<AudioImpl>(execution_context_.get());
+  mouse_impl_ = base::MakeRefCounted<MouseImpl>(execution_context_.get());
+  engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
+
   // Create imgui context
-  base::ThreadWorker::PostTask(
-      render_worker_, base::BindOnce(&ContentRunner::CreateIMGUIContextInternal,
-                                     base::Unretained(this)));
-  base::ThreadWorker::WaitWorkerSynchronize(render_worker_);
+  CreateIMGUIContextInternal();
 
   // Hook graphics event loop
   tick_observer_ = graphics_impl_->AddTickObserver(base::BindRepeating(
@@ -89,25 +106,13 @@ ContentRunner::~ContentRunner() {
   SDL_RemoveEventWatch(&ContentRunner::EventWatchHandlerInternal, this);
 
   // Destory GUI context
-  base::ThreadWorker::PostTask(
-      render_worker_,
-      base::BindOnce(&ContentRunner::DestroyIMGUIContextInternal,
-                     base::Unretained(this)));
-  base::ThreadWorker::WaitWorkerSynchronize(render_worker_);
+  DestroyIMGUIContextInternal();
 }
 
 void ContentRunner::RunMainLoop() {
   // Before running loop handler
-  binding_->PreEarlyInitialization(profile_, io_service_);
-
-  // Make script binding execution context
-  // Call binding boot handler before running loop handler
-  ExecutionContext execution_context;
-  execution_context.font_context = font_context_;
-  execution_context.event_controller = event_controller_.get();
-  execution_context.canvas_scheduler = graphics_impl_->GetCanvasScheduler();
-  execution_context.graphics = graphics_impl_.get();
-  execution_context.io_service = io_service_;
+  binding_->PreEarlyInitialization(execution_context_->engine_profile,
+                                   execution_context_->io_service);
 
   // Make module context
   EngineBindingBase::ScopedModuleContext module_context;
@@ -118,7 +123,7 @@ void ContentRunner::RunMainLoop() {
   module_context.engine = engine_impl_.get();
 
   // Execute main loop
-  binding_->OnMainMessageLoopRun(&execution_context, &module_context);
+  binding_->OnMainMessageLoopRun(execution_context_.get(), &module_context);
 
   // End of running
   binding_->PostMainLoopRunning();
@@ -127,8 +132,7 @@ void ContentRunner::RunMainLoop() {
 base::OwnedPtr<ContentRunner> ContentRunner::Create(InitParams params) {
   auto* runner = base::Allocator::New<ContentRunner>(
       params.profile, params.io_service, params.font_context,
-      params.i18n_profile, params.window, params.render_worker,
-      std::move(params.entry));
+      params.i18n_profile, params.window, std::move(params.entry));
   return base::OwnedPtr<ContentRunner>(runner);
 }
 
@@ -154,7 +158,8 @@ void ContentRunner::TickHandlerInternal() {
 
     // Shortcut
     if (queued_event.type == SDL_EVENT_KEY_UP &&
-        queued_event.key.windowID == window_->GetWindowID()) {
+        queued_event.key.windowID ==
+            execution_context_->window->GetWindowID()) {
       if (queued_event.key.scancode == SDL_SCANCODE_F1) {
         show_settings_menu_ = !show_settings_menu_;
       } else if (queued_event.key.scancode == SDL_SCANCODE_F2) {
@@ -166,7 +171,7 @@ void ContentRunner::TickHandlerInternal() {
 
     // Widget event
     if (handle_event) {
-      window_->DispatchEvent(&queued_event);
+      execution_context_->window->DispatchEvent(&queued_event);
       event_controller_->DispatchEvent(&queued_event);
     }
   }
@@ -216,7 +221,7 @@ bool ContentRunner::RenderGUIInternal() {
 
   // Setup renderer new frame
   const Diligent::SwapChainDesc& swapchain_desc =
-      graphics_impl_->GetDevice()->GetSwapChain()->GetDesc();
+      execution_context_->render_device->GetSwapChain()->GetDesc();
   imgui_->NewFrame(swapchain_desc.Width, swapchain_desc.Height,
                    swapchain_desc.PreTransform);
 
@@ -245,7 +250,8 @@ bool ContentRunner::RenderSettingsGUIInternal() {
   ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_FirstUseEver);
 
   bool window_hovered = false;
-  if (ImGui::Begin(i18n_profile_->GetI18NString(IDS_MENU_SETTINGS, "Settings")
+  if (ImGui::Begin(execution_context_->i18n_profile
+                       ->GetI18NString(IDS_MENU_SETTINGS, "Settings")
                        .c_str())) {
     window_hovered = ImGui::IsWindowHovered();
 
@@ -259,7 +265,7 @@ bool ContentRunner::RenderSettingsGUIInternal() {
     audio_impl_->CreateButtonGUISettings();
 
     // Engine Info
-    DrawEngineInfoGUI(i18n_profile_);
+    DrawEngineInfoGUI(execution_context_->i18n_profile);
   }
 
   // End window create
@@ -288,7 +294,7 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
   ContentRunner* self = static_cast<ContentRunner*>(userdata);
 
 #if !defined(OS_ANDROID)
-  if (self->graphics_impl_->AllowBackgroundRunning())
+  if (self->execution_context_->engine_profile->background_running)
     return true;
 #endif
 
@@ -322,7 +328,7 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
 }
 
 void ContentRunner::CreateIMGUIContextInternal() {
-  auto* render_device = graphics_impl_->GetDevice();
+  auto* render_device = execution_context_->render_device;
 
   // Derive atlas limit info
   const auto& adapter_info = (*render_device)->GetAdapterInfo();
@@ -337,16 +343,19 @@ void ContentRunner::CreateIMGUIContextInternal() {
 
   // Apply DPI Settings
   int32_t display_w, display_h;
-  SDL_GetWindowSizeInPixels(window_->AsSDLWindow(), &display_w, &display_h);
+  SDL_GetWindowSizeInPixels(execution_context_->window->AsSDLWindow(),
+                            &display_w, &display_h);
   io.DisplaySize =
       ImVec2(static_cast<float>(display_w), static_cast<float>(display_h));
   io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
-  float window_scale = SDL_GetWindowDisplayScale(window_->AsSDLWindow());
+  float window_scale =
+      SDL_GetWindowDisplayScale(execution_context_->window->AsSDLWindow());
   ImGui::GetStyle().ScaleAllSizes(window_scale);
 
   // Apply default font
   int64_t font_data_size;
-  auto* font_data = font_context_->GetUIDefaultFont(&font_data_size);
+  auto* font_data =
+      execution_context_->font_context->GetUIDefaultFont(&font_data_size);
 
   ImFontConfig font_config;
   font_config.FontDataOwnedByAtlas = false;
@@ -360,7 +369,7 @@ void ContentRunner::CreateIMGUIContextInternal() {
   ImGui::StyleColorsDark();
 
   // Setup imgui platform backends
-  ImGui_ImplSDL3_InitForOther(window_->AsSDLWindow());
+  ImGui_ImplSDL3_InitForOther(execution_context_->window->AsSDLWindow());
 
   // Setup renderer backend
   Diligent::ImGuiDiligentCreateInfo imgui_create_info(

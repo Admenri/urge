@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUTextureView)--*/
 class URGE_RUNTIME_API GPUTextureView
     : public base::RefCounted<GPUTextureView> {

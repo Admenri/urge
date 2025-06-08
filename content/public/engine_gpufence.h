@@ -11,8 +11,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
 /*--urge(name:GPUFence)--*/
 class URGE_RUNTIME_API GPUFence : public base::RefCounted<GPUFence> {
  public:

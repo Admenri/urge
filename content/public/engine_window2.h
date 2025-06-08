@@ -13,9 +13,6 @@
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
-// Interface reference: RGSS Reference
 /*--urge(name:Window2)--*/
 class URGE_RUNTIME_API Window2 : public base::RefCounted<Window2> {
  public:

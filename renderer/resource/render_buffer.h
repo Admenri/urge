@@ -18,14 +18,12 @@ namespace renderer {
 class QuadIndexCache {
  public:
   using IndexFormat = uint16_t;
-  static const Diligent::VALUE_TYPE kValueType =
-      Diligent::VALUE_TYPE::VT_UINT16;
+  static const Diligent::VALUE_TYPE kValueType = Diligent::VT_UINT16;
 
   // Make quad index(6) buffer cache
-  static base::OwnedPtr<QuadIndexCache> Make(
-      RRefPtr<Diligent::IRenderDevice> device);
-
-  ~QuadIndexCache();
+  static QuadIndexCache Make(RRefPtr<Diligent::IRenderDevice> device) {
+    return QuadIndexCache(device);
+  }
 
   QuadIndexCache(const QuadIndexCache&) = delete;
   QuadIndexCache& operator=(const QuadIndexCache&) = delete;
@@ -34,16 +32,16 @@ class QuadIndexCache {
   // |quadrangle_size| is the count not the byte size.
   void Allocate(size_t quadrangle_size);
 
-  RRefPtr<Diligent::IBuffer>& operator*() { return buffer_; }
+  bool operator()() const { return buffer_; }
+  Diligent::IBuffer* operator*() { return buffer_; }
 
  private:
-  friend struct base::Allocator;
-  QuadIndexCache(RRefPtr<Diligent::IRenderDevice> device);
+  QuadIndexCache(Diligent::IRenderDevice* device);
+
+  base::Vector<uint16_t> cache_;
 
   RRefPtr<Diligent::IRenderDevice> device_;
   RRefPtr<Diligent::IBuffer> buffer_;
-
-  base::Vector<uint16_t> cache_;
 };
 
 template <typename TargetType,
@@ -54,13 +52,16 @@ template <typename TargetType,
           size_t ElementCount = 1>
 class BatchBuffer {
  public:
-  ~BatchBuffer() = default;
+  BatchBuffer() = default;
 
-  BatchBuffer(const BatchBuffer&) = delete;
-  BatchBuffer& operator=(const BatchBuffer&) = delete;
+  BatchBuffer(const BatchBuffer&) = default;
+  BatchBuffer& operator=(const BatchBuffer&) = default;
 
-  static base::OwnedPtr<BatchBuffer> Make(Diligent::IRenderDevice* device,
-                                          size_t initial_count = 0) {
+  bool operator()() const { return buffer_; }
+  Diligent::IBuffer* operator*() { return buffer_; }
+
+  static BatchBuffer Make(Diligent::IRenderDevice* device,
+                          size_t initial_count = 0) {
     RRefPtr<Diligent::IBuffer> buffer;
 
     if (initial_count > 0) {
@@ -70,10 +71,8 @@ class BatchBuffer {
       device->CreateBuffer(buffer_desc, nullptr, &buffer);
     }
 
-    return base::MakeOwnedPtr<BatchBuffer>(device, buffer);
+    return BatchBuffer(device, buffer);
   }
-
-  Diligent::IBuffer* operator*() { return buffer_; }
 
   void QueueWrite(Diligent::IDeviceContext* context,
                   const TargetType* data,
@@ -107,9 +106,7 @@ class BatchBuffer {
   }
 
  private:
-  friend struct base::Allocator;
-  BatchBuffer(Diligent::IRenderDevice* device,
-              RRefPtr<Diligent::IBuffer> buffer)
+  BatchBuffer(Diligent::IRenderDevice* device, Diligent::IBuffer* buffer)
       : device_(device), buffer_(buffer) {}
 
   static void MakeBufferDesc(Diligent::BufferDesc& buffer_desc,
@@ -123,7 +120,7 @@ class BatchBuffer {
     buffer_desc.ElementByteStride = sizeof(TargetType) / ElementCount;
   }
 
-  Diligent::IRenderDevice* device_;
+  RRefPtr<Diligent::IRenderDevice> device_;
   RRefPtr<Diligent::IBuffer> buffer_;
 };
 

@@ -32,12 +32,13 @@ class Disposable : public base::LinkNode<Disposable> {
 
   void Dispose(ExceptionState& exception_state);
   bool IsDisposed(ExceptionState& exception_state);
-
-  bool CheckDisposed(ExceptionState& exception_state);
+  bool IsDisposed() const { return disposed_; }
 
  protected:
   virtual void OnObjectDisposed() = 0;
   virtual base::String DisposedObjectName() = 0;
+
+  bool CheckDisposed(ExceptionState& exception_state);
 
  private:
   int32_t disposed_;

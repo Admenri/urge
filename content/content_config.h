@@ -5,6 +5,9 @@
 #ifndef CONTENT_CONTENT_CONFIG_H_
 #define CONTENT_CONTENT_CONFIG_H_
 
+#include <stdint.h>
+#include <optional>
+
 #include "base/buildflags/build.h"
 #include "base/buildflags/compiler_specific.h"
 

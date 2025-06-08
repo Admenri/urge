@@ -10,6 +10,7 @@
 #include "SDL3/SDL_timer.h"
 #include "imgui/imgui.h"
 
+#include "content/context/execution_context.h"
 #include "content/profile/command_ids.h"
 
 #define INPUT_CONFIG_SUBFIX ".cfg"
@@ -72,26 +73,24 @@ const std::array<base::String, 12> kButtonItems = {
 
 }  // namespace
 
-KeyboardControllerImpl::KeyboardControllerImpl(base::WeakPtr<ui::Widget> window,
-                                               ContentProfile* profile,
-                                               I18NProfile* i18n_profile)
-    : window_(window),
-      profile_(profile),
-      i18n_profile_(i18n_profile),
-      disable_gui_key_input_(false) {
-  memset(key_states_.data(), 0, key_states_.size() * sizeof(KeyState));
-  memset(recent_key_states_.data(), 0,
-         recent_key_states_.size() * sizeof(KeyState));
+KeyboardControllerImpl::KeyboardControllerImpl(
+    ExecutionContext* execution_context)
+    : EngineObject(execution_context), disable_gui_key_input_(false) {
+  std::memset(key_states_.data(), 0, key_states_.size() * sizeof(KeyState));
+  std::memset(recent_key_states_.data(), 0,
+              recent_key_states_.size() * sizeof(KeyState));
 
   /* Apply default keyboard bindings */
   for (int32_t i = 0; i < kDefaultKeyboardBindingsSize; ++i)
     key_bindings_.push_back(kDefaultKeyboardBindings[i]);
 
-  if (profile->api_version == ContentProfile::APIVersion::RGSS1)
+  if (execution_context->engine_profile->api_version ==
+      ContentProfile::APIVersion::RGSS1)
     for (int32_t i = 0; i < kKeyboardBindings1Size; ++i)
       key_bindings_.push_back(kKeyboardBindings1[i]);
 
-  if (profile->api_version >= ContentProfile::APIVersion::RGSS2)
+  if (execution_context->engine_profile->api_version >=
+      ContentProfile::APIVersion::RGSS2)
     for (int32_t i = 0; i < kKeyboardBindings2Size; ++i)
       key_bindings_.push_back(kKeyboardBindings2[i]);
 
@@ -110,7 +109,8 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
   disable_gui_key_input_ = (selected_binding != -1);
 
   if (ImGui::CollapsingHeader(
-          i18n_profile_->GetI18NString(IDS_SETTINGS_BUTTON, "Button")
+          context()
+              ->i18n_profile->GetI18NString(IDS_SETTINGS_BUTTON, "Button")
               .c_str())) {
     auto list_height = 6 * ImGui::GetTextLineHeightWithSpacing();
     // Button name list box
@@ -178,7 +178,7 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
       if (disable_gui_key_input_) {
         for (int32_t code = 0; code < SDL_SCANCODE_COUNT; ++code) {
           bool key_pressed =
-              window_->GetKeyState(static_cast<SDL_Scancode>(code));
+              context()->window->GetKeyState(static_cast<SDL_Scancode>(code));
           if (key_pressed) {
             setting_bindings_[selected_binding].scancode =
                 static_cast<SDL_Scancode>(code);
@@ -188,8 +188,9 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
       }
 
       // Add binding
-      if (ImGui::Button(
-              i18n_profile_->GetI18NString(IDS_BUTTON_ADD, "Add").c_str())) {
+      if (ImGui::Button(context()
+                            ->i18n_profile->GetI18NString(IDS_BUTTON_ADD, "Add")
+                            .c_str())) {
         selected_binding = -1;
         setting_bindings_.push_back(
             KeyBinding{button_name, SDL_SCANCODE_UNKNOWN});
@@ -200,7 +201,8 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
       // Remove binding
       if (selected_binding >= 0 &&
           ImGui::Button(
-              i18n_profile_->GetI18NString(IDS_BUTTON_REMOVE, "Remove")
+              context()
+                  ->i18n_profile->GetI18NString(IDS_BUTTON_REMOVE, "Remove")
                   .c_str())) {
         auto it = setting_bindings_.begin();
         for (int32_t i = 0; i < selected_binding; ++i)
@@ -214,7 +216,8 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
     }
 
     if (ImGui::Button(
-            i18n_profile_
+            context()
+                ->i18n_profile
                 ->GetI18NString(IDS_BUTTON_SAVE_SETTINGS, "Save Settings")
                 .c_str())) {
       key_bindings_ = setting_bindings_;
@@ -225,7 +228,8 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
 
     ImGui::SameLine();
     if (ImGui::Button(
-            i18n_profile_
+            context()
+                ->i18n_profile
                 ->GetI18NString(IDS_BUTTON_RESET_SETTINGS, "Reset Settings")
                 .c_str())) {
       setting_bindings_ = key_bindings_;
@@ -240,7 +244,8 @@ bool KeyboardControllerImpl::CreateButtonGUISettings() {
 
 void KeyboardControllerImpl::Update(ExceptionState& exception_state) {
   for (int32_t i = 0; i < SDL_SCANCODE_COUNT; ++i) {
-    bool key_pressed = window_->GetKeyState(static_cast<SDL_Scancode>(i));
+    bool key_pressed =
+        context()->window->GetKeyState(static_cast<SDL_Scancode>(i));
 
     /* Update key state with elder state */
     key_states_[i].trigger = !key_states_[i].pressed && key_pressed;
@@ -422,7 +427,7 @@ bool KeyboardControllerImpl::Emulate(int32_t scancode,
   SDL_Event emulate_event;
   emulate_event.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
   emulate_event.key.timestamp = SDL_GetTicksNS();
-  emulate_event.key.windowID = window_->GetWindowID();
+  emulate_event.key.windowID = context()->window->GetWindowID();
   emulate_event.key.which = 0;
   emulate_event.key.scancode = static_cast<SDL_Scancode>(scancode);
   emulate_event.key.mod = modifier;
@@ -532,9 +537,10 @@ void KeyboardControllerImpl::UpdateDir8Internal() {
 }
 
 void KeyboardControllerImpl::TryReadBindingsInternal() {
-  base::String filepath = profile_->program_name;
+  base::String filepath = context()->engine_profile->program_name;
   filepath += INPUT_CONFIG_SUBFIX;
-  filepath += std::to_string(static_cast<int32_t>(profile_->api_version));
+  filepath += std::to_string(
+      static_cast<int32_t>(context()->engine_profile->api_version));
 
   std::ifstream fs(filepath.c_str(), std::ios::binary);
   if (fs.is_open()) {
@@ -558,9 +564,10 @@ void KeyboardControllerImpl::TryReadBindingsInternal() {
 }
 
 void KeyboardControllerImpl::StorageBindingsInternal() {
-  base::String filepath = profile_->program_name;
+  base::String filepath = context()->engine_profile->program_name;
   filepath += INPUT_CONFIG_SUBFIX;
-  filepath += std::to_string(static_cast<int32_t>(profile_->api_version));
+  filepath += std::to_string(
+      static_cast<int32_t>(context()->engine_profile->api_version));
 
   std::ofstream fs(filepath.c_str(), std::ios::binary);
   if (fs.is_open()) {

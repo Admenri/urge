@@ -14,12 +14,11 @@
 namespace content {
 
 class ImageAnimationImpl : public ImageAnimation,
-                           public GraphicsChild,
+                           public EngineObject,
                            public Disposable {
  public:
-  ImageAnimationImpl(RenderScreenImpl* parent,
-                     IMG_Animation* animation,
-                     filesystem::IOService* io_service);
+  ImageAnimationImpl(ExecutionContext* execution_context,
+                     IMG_Animation* animation);
   ~ImageAnimationImpl() override;
 
   ImageAnimationImpl(const ImageAnimationImpl&) = delete;
@@ -39,7 +38,6 @@ class ImageAnimationImpl : public ImageAnimation,
   base::String DisposedObjectName() override { return "ImageAnimation"; }
 
   IMG_Animation* animation_;
-  filesystem::IOService* io_service_;
 };
 
 }  // namespace content
