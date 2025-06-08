@@ -789,7 +789,7 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
     renderer::Quad::SetPositionRect(&effect_quad,
                                     base::Rect(context()->resolution));
     renderer::Quad::SetColor(&effect_quad,
-                             base::Vec4((255 - brightness_) / 255.0f));
+                             base::Vec4(0, 0, 0, (255 - brightness_) / 255.0f));
     agent_.effect_quads.QueueWrite(**render_context, &effect_quad);
   }
 

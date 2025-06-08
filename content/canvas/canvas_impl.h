@@ -24,9 +24,9 @@ constexpr int32_t kBlockMaxSize = 4096;
 class CanvasScheduler;
 
 class CanvasImpl : public base::LinkNode<CanvasImpl>,
+                   public Bitmap,
                    public EngineObject,
-                   public Disposable,
-                   public Bitmap {
+                   public Disposable {
  public:
   struct Agent {
     // Debug name

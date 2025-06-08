@@ -82,7 +82,7 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
   }
 
   return base::MakeRefCounted<CanvasImpl>(execution_context, memory_texture,
-                                          "IOBitmap");
+                                          "IOStreamBitmap");
 }
 
 scoped_refptr<Bitmap> Bitmap::Copy(ExecutionContext* execution_context,
@@ -91,6 +91,9 @@ scoped_refptr<Bitmap> Bitmap::Copy(ExecutionContext* execution_context,
   scoped_refptr<Bitmap> duplicate_bitmap =
       Bitmap::New(execution_context, other->Width(exception_state),
                   other->Height(exception_state), exception_state);
+  if (!duplicate_bitmap)
+    return nullptr;
+
   duplicate_bitmap->Blt(0, 0, other, other->GetRect(exception_state), 255, 0,
                         exception_state);
 

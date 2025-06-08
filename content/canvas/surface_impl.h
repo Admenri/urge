@@ -13,7 +13,7 @@
 
 namespace content {
 
-class SurfaceImpl : public EngineObject, public Disposable, public Surface {
+class SurfaceImpl : public Surface, public EngineObject, public Disposable {
  public:
   SurfaceImpl(ExecutionContext* context, SDL_Surface* surface);
   ~SurfaceImpl() override;
