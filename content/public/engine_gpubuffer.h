@@ -17,6 +17,12 @@ class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
   virtual ~GPUBuffer() = default;
 };
 
+/*--urge(name:GPUBufferView)--*/
+class URGE_RUNTIME_API GPUBufferView : public base::RefCounted<GPUBufferView> {
+ public:
+  virtual ~GPUBufferView() = default;
+};
+
 }  // namespace content
 
 #endif  //! CONTENT_PUBLIC_ENGINE_GPUBUFFER_H_

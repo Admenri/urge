@@ -17,6 +17,13 @@ class URGE_RUNTIME_API GPUTexture : public base::RefCounted<GPUTexture> {
   virtual ~GPUTexture() = default;
 };
 
+/*--urge(name:GPUTextureView)--*/
+class URGE_RUNTIME_API GPUTextureView
+    : public base::RefCounted<GPUTextureView> {
+ public:
+  virtual ~GPUTextureView() = default;
+};
+
 }  // namespace content
 
 #endif  //! CONTENT_PUBLIC_ENGINE_GPUTEXTURE_H_

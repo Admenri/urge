@@ -8,6 +8,7 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_gpu.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpucommandlist.h"
 #include "content/public/engine_gpufence.h"
@@ -15,7 +16,6 @@
 #include "content/public/engine_gpuquery.h"
 #include "content/public/engine_gpuresourcebinding.h"
 #include "content/public/engine_gputexture.h"
-#include "content/public/engine_gputextureview.h"
 
 namespace content {
 
@@ -24,145 +24,6 @@ class URGE_RUNTIME_API GPUDeviceContext
     : public base::RefCounted<GPUDeviceContext> {
  public:
   virtual ~GPUDeviceContext() = default;
-
-  /*--urge(name:ResourceStateTransitionMode)--*/
-  enum ResourceStateTransitionMode {
-    RESOURCE_STATE_TRANSITION_MODE_NONE = 0,
-    RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-    RESOURCE_STATE_TRANSITION_MODE_VERIFY,
-  };
-
-  /*--urge(name:ValueType)--*/
-  enum ValueType {
-    VT_UNDEFINED = 0,
-    VT_INT8,
-    VT_INT16,
-    VT_INT32,
-    VT_UINT8,
-    VT_UINT16,
-    VT_UINT32,
-    VT_FLOAT16,
-    VT_FLOAT32,
-    VT_FLOAT64,
-  };
-
-  /*--urge(name:ClearDepthStencilFlags)--*/
-  enum ClearDepthStencilFlags {
-    CLEAR_DEPTH_FLAG_NONE = 0x00,
-    CLEAR_DEPTH_FLAG = 0x01,
-    CLEAR_STENCIL_FLAG = 0x02,
-  };
-
-  /*--urge(name:TextureFormat)--*/
-  enum TextureFormat {
-    TEX_FORMAT_UNKNOWN = 0,
-    TEX_FORMAT_RGBA32_TYPELESS,
-    TEX_FORMAT_RGBA32_FLOAT,
-    TEX_FORMAT_RGBA32_UINT,
-    TEX_FORMAT_RGBA32_SINT,
-    TEX_FORMAT_RGB32_TYPELESS,
-    TEX_FORMAT_RGB32_FLOAT,
-    TEX_FORMAT_RGB32_UINT,
-    TEX_FORMAT_RGB32_SINT,
-    TEX_FORMAT_RGBA16_TYPELESS,
-    TEX_FORMAT_RGBA16_FLOAT,
-    TEX_FORMAT_RGBA16_UNORM,
-    TEX_FORMAT_RGBA16_UINT,
-    TEX_FORMAT_RGBA16_SNORM,
-    TEX_FORMAT_RGBA16_SINT,
-    TEX_FORMAT_RG32_TYPELESS,
-    TEX_FORMAT_RG32_FLOAT,
-    TEX_FORMAT_RG32_UINT,
-    TEX_FORMAT_RG32_SINT,
-    TEX_FORMAT_R32G8X24_TYPELESS,
-    TEX_FORMAT_D32_FLOAT_S8X24_UINT,
-    TEX_FORMAT_R32_FLOAT_X8X24_TYPELESS,
-    TEX_FORMAT_X32_TYPELESS_G8X24_UINT,
-    TEX_FORMAT_RGB10A2_TYPELESS,
-    TEX_FORMAT_RGB10A2_UNORM,
-    TEX_FORMAT_RGB10A2_UINT,
-    TEX_FORMAT_R11G11B10_FLOAT,
-    TEX_FORMAT_RGBA8_TYPELESS,
-    TEX_FORMAT_RGBA8_UNORM,
-    TEX_FORMAT_RGBA8_UNORM_SRGB,
-    TEX_FORMAT_RGBA8_UINT,
-    TEX_FORMAT_RGBA8_SNORM,
-    TEX_FORMAT_RGBA8_SINT,
-    TEX_FORMAT_RG16_TYPELESS,
-    TEX_FORMAT_RG16_FLOAT,
-    TEX_FORMAT_RG16_UNORM,
-    TEX_FORMAT_RG16_UINT,
-    TEX_FORMAT_RG16_SNORM,
-    TEX_FORMAT_RG16_SINT,
-    TEX_FORMAT_R32_TYPELESS,
-    TEX_FORMAT_D32_FLOAT,
-    TEX_FORMAT_R32_FLOAT,
-    TEX_FORMAT_R32_UINT,
-    TEX_FORMAT_R32_SINT,
-    TEX_FORMAT_R24G8_TYPELESS,
-    TEX_FORMAT_D24_UNORM_S8_UINT,
-    TEX_FORMAT_R24_UNORM_X8_TYPELESS,
-    TEX_FORMAT_X24_TYPELESS_G8_UINT,
-    TEX_FORMAT_RG8_TYPELESS,
-    TEX_FORMAT_RG8_UNORM,
-    TEX_FORMAT_RG8_UINT,
-    TEX_FORMAT_RG8_SNORM,
-    TEX_FORMAT_RG8_SINT,
-    TEX_FORMAT_R16_TYPELESS,
-    TEX_FORMAT_R16_FLOAT,
-    TEX_FORMAT_D16_UNORM,
-    TEX_FORMAT_R16_UNORM,
-    TEX_FORMAT_R16_UINT,
-    TEX_FORMAT_R16_SNORM,
-    TEX_FORMAT_R16_SINT,
-    TEX_FORMAT_R8_TYPELESS,
-    TEX_FORMAT_R8_UNORM,
-    TEX_FORMAT_R8_UINT,
-    TEX_FORMAT_R8_SNORM,
-    TEX_FORMAT_R8_SINT,
-    TEX_FORMAT_A8_UNORM,
-    TEX_FORMAT_R1_UNORM,
-    TEX_FORMAT_RGB9E5_SHAREDEXP,
-    TEX_FORMAT_RG8_B8G8_UNORM,
-    TEX_FORMAT_G8R8_G8B8_UNORM,
-    TEX_FORMAT_BC1_TYPELESS,
-    TEX_FORMAT_BC1_UNORM,
-    TEX_FORMAT_BC1_UNORM_SRGB,
-    TEX_FORMAT_BC2_TYPELESS,
-    TEX_FORMAT_BC2_UNORM,
-    TEX_FORMAT_BC2_UNORM_SRGB,
-    TEX_FORMAT_BC3_TYPELESS,
-    TEX_FORMAT_BC3_UNORM,
-    TEX_FORMAT_BC3_UNORM_SRGB,
-    TEX_FORMAT_BC4_TYPELESS,
-    TEX_FORMAT_BC4_UNORM,
-    TEX_FORMAT_BC4_SNORM,
-    TEX_FORMAT_BC5_TYPELESS,
-    TEX_FORMAT_BC5_UNORM,
-    TEX_FORMAT_BC5_SNORM,
-    TEX_FORMAT_B5G6R5_UNORM,
-    TEX_FORMAT_B5G5R5A1_UNORM,
-    TEX_FORMAT_BGRA8_UNORM,
-    TEX_FORMAT_BGRX8_UNORM,
-    TEX_FORMAT_R10G10B10_XR_BIAS_A2_UNORM,
-    TEX_FORMAT_BGRA8_TYPELESS,
-    TEX_FORMAT_BGRA8_UNORM_SRGB,
-    TEX_FORMAT_BGRX8_TYPELESS,
-    TEX_FORMAT_BGRX8_UNORM_SRGB,
-    TEX_FORMAT_BC6H_TYPELESS,
-    TEX_FORMAT_BC6H_UF16,
-    TEX_FORMAT_BC6H_SF16,
-    TEX_FORMAT_BC7_TYPELESS,
-    TEX_FORMAT_BC7_UNORM,
-    TEX_FORMAT_BC7_UNORM_SRGB,
-    TEX_FORMAT_ETC2_RGB8_UNORM,
-    TEX_FORMAT_ETC2_RGB8_UNORM_SRGB,
-    TEX_FORMAT_ETC2_RGB8A1_UNORM,
-    TEX_FORMAT_ETC2_RGB8A1_UNORM_SRGB,
-    TEX_FORMAT_ETC2_RGBA8_UNORM,
-    TEX_FORMAT_ETC2_RGBA8_UNORM_SRGB,
-    TEX_FORMAT_NUM_FORMATS,
-  };
 
   /*--urge(name:TextureSubResData)--*/
   struct TextureSubResData {
@@ -212,7 +73,7 @@ class URGE_RUNTIME_API GPUDeviceContext
 
   /*--urge(name:commit_shader_resources)--*/
   virtual void CommitShaderResources(scoped_refptr<GPUResourceBinding> binding,
-                                     ResourceStateTransitionMode mode,
+                                     GPU::ResourceStateTransitionMode mode,
                                      ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_stencil_ref)--*/
@@ -227,7 +88,7 @@ class URGE_RUNTIME_API GPUDeviceContext
       uint32_t start_slot,
       const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
       const base::Vector<uint64_t>& offsets,
-      ResourceStateTransitionMode mode,
+      GPU::ResourceStateTransitionMode mode,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:invalidate_state)--*/
@@ -236,7 +97,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   /*--urge(name:set_index_buffer)--*/
   virtual void SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
                               uint64_t byte_offset,
-                              ResourceStateTransitionMode mode,
+                              GPU::ResourceStateTransitionMode mode,
                               ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_viewports)--*/
@@ -266,19 +127,20 @@ class URGE_RUNTIME_API GPUDeviceContext
                            uint32_t first_index,
                            uint32_t base_vertex,
                            uint32_t first_instance,
-                           ValueType index_type,
+                           GPU::ValueType index_type,
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_indirect)--*/
-  virtual void DrawIndirect(scoped_refptr<GPUBuffer> attribs_buffer,
-                            uint64_t draw_args_offset,
-                            uint32_t draw_count,
-                            uint32_t draw_args_stride,
-                            ResourceStateTransitionMode attribs_buffer_mode,
-                            scoped_refptr<GPUBuffer> counter_buffer,
-                            uint64_t counter_offset,
-                            ResourceStateTransitionMode counter_buffer_mode,
-                            ExceptionState& exception_state) = 0;
+  virtual void DrawIndirect(
+      scoped_refptr<GPUBuffer> attribs_buffer,
+      uint64_t draw_args_offset,
+      uint32_t draw_count,
+      uint32_t draw_args_stride,
+      GPU::ResourceStateTransitionMode attribs_buffer_mode,
+      scoped_refptr<GPUBuffer> counter_buffer,
+      uint64_t counter_offset,
+      GPU::ResourceStateTransitionMode counter_buffer_mode,
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_indexed_indirect)--*/
   virtual void DrawIndexedIndirect(
@@ -286,11 +148,11 @@ class URGE_RUNTIME_API GPUDeviceContext
       uint64_t draw_args_offset,
       uint32_t draw_count,
       uint32_t draw_args_stride,
-      ResourceStateTransitionMode attribs_buffer_mode,
+      GPU::ResourceStateTransitionMode attribs_buffer_mode,
       scoped_refptr<GPUBuffer> counter_buffer,
       uint64_t counter_offset,
-      ResourceStateTransitionMode counter_buffer_mode,
-      ValueType index_type,
+      GPU::ResourceStateTransitionMode counter_buffer_mode,
+      GPU::ValueType index_type,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:dispatch_compute)--*/
@@ -302,13 +164,13 @@ class URGE_RUNTIME_API GPUDeviceContext
   /*--urge(name:dispatch_compute_indirect)--*/
   virtual void DispatchComputeIndirect(
       scoped_refptr<GPUBuffer> attribs_buffer,
-      ResourceStateTransitionMode attribs_buffer_mode,
+      GPU::ResourceStateTransitionMode attribs_buffer_mode,
       uint64_t dispatch_args_byte_offset,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:clear_depth_stencil)--*/
   virtual void ClearDepthStencil(scoped_refptr<GPUTextureView> view,
-                                 ClearDepthStencilFlags clear_flags,
+                                 GPU::ClearDepthStencilFlags clear_flags,
                                  float depth,
                                  uint32_t stencil,
                                  ExceptionState& exception_state) = 0;
@@ -316,7 +178,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   /*--urge(name:clear_render_target)--*/
   virtual void ClearRenderTarget(scoped_refptr<GPUTextureView> view,
                                  scoped_refptr<Color> color,
-                                 ResourceStateTransitionMode mode,
+                                 GPU::ResourceStateTransitionMode mode,
                                  ExceptionState& exception_state) = 0;
 
   /*--urge(name:finish_command_list)--*/
@@ -361,10 +223,10 @@ class URGE_RUNTIME_API GPUDeviceContext
   /*--urge(name:copy_buffer)--*/
   virtual void CopyBuffer(scoped_refptr<GPUBuffer> src_buffer,
                           uint64_t src_offset,
-                          ResourceStateTransitionMode src_mode,
+                          GPU::ResourceStateTransitionMode src_mode,
                           scoped_refptr<GPUBuffer> dst_buffer,
                           uint64_t dst_offset,
-                          ResourceStateTransitionMode dst_mode,
+                          GPU::ResourceStateTransitionMode dst_mode,
                           uint64_t copy_size,
                           ExceptionState& exception_state) = 0;
 
@@ -374,8 +236,8 @@ class URGE_RUNTIME_API GPUDeviceContext
                              uint32_t slice,
                              const std::optional<ClipBox>& box,
                              const std::optional<TextureSubResData>& data,
-                             ResourceStateTransitionMode src_buffer_mode,
-                             ResourceStateTransitionMode texture_mode,
+                             GPU::ResourceStateTransitionMode src_buffer_mode,
+                             GPU::ResourceStateTransitionMode texture_mode,
                              ExceptionState& exception_state) = 0;
 
   /*--urge(name:copy_texture)--*/
@@ -383,14 +245,14 @@ class URGE_RUNTIME_API GPUDeviceContext
                            uint32_t src_mip_level,
                            uint32_t src_slice,
                            const std::optional<ClipBox>& src_box,
-                           ResourceStateTransitionMode src_mode,
+                           GPU::ResourceStateTransitionMode src_mode,
                            scoped_refptr<GPUTexture> dst_texture,
                            uint32_t dst_mip_level,
                            uint32_t dst_slice,
                            uint32_t dst_x,
                            uint32_t dst_y,
                            uint32_t dst_z,
-                           ResourceStateTransitionMode dst_mode,
+                           GPU::ResourceStateTransitionMode dst_mode,
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:generate_mips)--*/
@@ -401,16 +263,17 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void FinishFrame(ExceptionState& exception_state) = 0;
 
   /*--urge(name:resolve_texture_subresource)--*/
-  virtual void ResolveTextureSubresource(scoped_refptr<GPUTexture> src,
-                                         scoped_refptr<GPUTexture> dst,
-                                         uint32_t src_mip_level,
-                                         uint32_t src_slice,
-                                         ResourceStateTransitionMode src_mode,
-                                         uint32_t dst_mip_level,
-                                         uint32_t dst_slice,
-                                         ResourceStateTransitionMode dst_mode,
-                                         TextureFormat format,
-                                         ExceptionState& exception_state) = 0;
+  virtual void ResolveTextureSubresource(
+      scoped_refptr<GPUTexture> src,
+      scoped_refptr<GPUTexture> dst,
+      uint32_t src_mip_level,
+      uint32_t src_slice,
+      GPU::ResourceStateTransitionMode src_mode,
+      uint32_t dst_mip_level,
+      uint32_t dst_slice,
+      GPU::ResourceStateTransitionMode dst_mode,
+      GPU::TextureFormat format,
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin_debug_group)--*/
   virtual void BeginDebugGroup(const base::String& name,
