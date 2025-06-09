@@ -50,6 +50,8 @@
 #endif
 
 extern "C" {
+void Init_zlib(void);
+void Init_ruby_prof(void);
 void rb_call_builtin_inits();
 }
 
@@ -230,6 +232,9 @@ void BindingEngineMri::PreEarlyInitialization(
   InitWindowBinding();
   InitWindow2Binding();
   InitURGEBinding();
+
+  Init_zlib();
+  Init_ruby_prof();
 
   MriApplyBindingPatch();
 

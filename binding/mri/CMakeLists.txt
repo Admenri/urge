@@ -2,6 +2,26 @@
 cmake_minimum_required(VERSION 3.20.1)
 
 #--------------------------------------------------------------------------------
+# Mri Gem Ext
+#--------------------------------------------------------------------------------
+
+set(GEM_EXT_RUBYPROF_SRC
+  "ruby_prof/rp_allocation.c"
+  "ruby_prof/rp_call_tree.c"
+  "ruby_prof/rp_call_trees.c"
+  "ruby_prof/rp_measure_allocations.c"
+  "ruby_prof/rp_measure_memory.c"
+  "ruby_prof/rp_measure_process_time.c"
+  "ruby_prof/rp_measure_wall_time.c"
+  "ruby_prof/rp_measurement.c"
+  "ruby_prof/rp_method.c"
+  "ruby_prof/rp_profile.c"
+  "ruby_prof/rp_stack.c"
+  "ruby_prof/rp_thread.c"
+  "ruby_prof/ruby_prof.c"
+)
+
+#--------------------------------------------------------------------------------
 # Autogen MRI binding source collection
 #--------------------------------------------------------------------------------
 
@@ -30,11 +50,14 @@ set(BINDING_MRI_SRC
   mri_util.cc
   mri_util.h
 
+  binding_patch.cc
+  binding_patch.h
+
   ${GENERATED_SOURCES}
   ${GENERATED_HEADERS}
 
-  binding_patch.cc
-  binding_patch.h
+  ${GEM_EXT_RUBYPROF_SRC}
+  "zlib/zlib.c"
 )
 
 add_library(binding_mri STATIC ${BINDING_MRI_SRC})
