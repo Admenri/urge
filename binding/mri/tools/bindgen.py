@@ -20,6 +20,8 @@ autogen_header = """
 
 class MriBindingGen:
   def __init__(self):
+    # 全部类的信息（用于获取枚举，结构体信息）
+    self.global_classes = {}
     # 当前将要生成类的全部数据
     self.class_data = {}
     # 当前正在解析的头文件名
@@ -154,8 +156,24 @@ class MriBindingGen:
     content += "}\n"
     return content
 
+  @staticmethod
+  def parse_namespace_element(varname):
+    parts = varname.split('::', 1)  # 最多分割一次
+    if len(parts) == 2:
+      left, right = parts
+      return True, left, right
+    return False, None, None
+
   # 判断一个类型是否为 enum
   def is_type_enum(self, typename):
+    is_other_domain, domain, varname = self.parse_namespace_element(typename)
+    if is_other_domain:
+      for klass in self.global_classes:
+        if klass['class'] == domain:
+          for enum in klass['enums']:
+            if enum['type'] == varname:
+              return True
+
     deps = self.class_data['enums']
     data = []
     for dep in deps:
@@ -164,7 +182,15 @@ class MriBindingGen:
 
   # 判断一个类型是否为 struct
   def is_type_struct(self, typename):
-    deps = self.class_data['structs']
+    is_other_domain, domain, varname = self.parse_namespace_element(typename)
+    if is_other_domain:
+      for klass in self.global_classes:
+        if klass['class'] == domain:
+          for enum in klass['structs']:
+            if enum['type'] == varname:
+              return True
+
+    deps = list(self.class_data['structs'])
     data = []
     for dep in deps:
       data.append(dep['type'])
@@ -200,7 +226,7 @@ class MriBindingGen:
         convert_func = f"NUM2ULL({member_name})"
       elif member_type.startswith("int") or member_type.startswith("uint") or self.is_type_enum(member_type):
         if self.is_type_enum(member_type):
-          convert_func = f"(content::{self.class_data['class']}::{member_type})NUM2INT({member_name})"
+          convert_func = f"static_cast<decltype(result.{member_name})>(NUM2INT({member_name}))"
         else:
           convert_func = f"NUM2INT({member_name})"
       elif member_type.startswith("float"):
@@ -229,9 +255,9 @@ class MriBindingGen:
           match_type = match.group(1)
           convert_func = f"RBARRAY2CXX<content::{match_type}>({member_name}, k{match_type}DataType)"
         elif self.is_type_struct(decay_type):
-          convert_func = f"RBARRAY2CXX<content::{self.class_data['class']}::{decay_type}>({member_name}, RBHASH2{decay_type})"
+          convert_func = f"RBARRAY2CXX<decltype(result.{member_name})::value_type>({member_name}, RBHASH2{decay_type})"
         elif self.is_type_enum(decay_type):
-          convert_func = f"RBARRAY2CXX_CONST<content::{self.class_data['class']}::{decay_type}>({member_name})"
+          convert_func = f"RBARRAY2CXX_CONST<decltype(result.{member_name})::value_type>({member_name})"
         else:
           convert_func = f"RBARRAY2CXX<{decay_type}>({member_name})"
 
@@ -298,9 +324,9 @@ class MriBindingGen:
           match_type = match.group(1)
           convert_func = f"CXX2RBARRAY<content::{match_type}>(cxx_obj.{member_name}, k{match_type}DataType)"
         elif self.is_type_struct(decay_type):
-          convert_func = f"CXX2RBARRAY<content::{self.class_data['class']}::{decay_type}>(cxx_obj.{member_name}, {decay_type}2RBHASH)"
+          convert_func = f"CXX2RBARRAY<decltype(cxx_obj.{member_name})::value_type>(cxx_obj.{member_name}, {decay_type}2RBHASH)"
         elif self.is_type_enum(decay_type):
-          convert_func = f"CXX2RBARRAY<content::{self.class_data['class']}::{decay_type}>(cxx_obj.{member_name})"
+          convert_func = f"CXX2RBARRAY<decltype(cxx_obj.{member_name})::value_type>(cxx_obj.{member_name})"
         else:
           convert_func = f"CXX2RBARRAY<{decay_type}>(cxx_obj.{member_name})"
 
@@ -507,7 +533,8 @@ class MriBindingGen:
           param_name = param['name']
           param_type = param['type']
           if self.is_type_enum(param_type):
-            calling_parameters += f"(content::{klass_type}::{param_type})"
+            is_other_domain, domain, varname = self.parse_namespace_element(param_type)
+            calling_parameters += f"(content::{domain if is_other_domain else klass_type}::{varname if is_other_domain else param_type})"
           elif param_type == "float":
             calling_parameters += "(float)"
           calling_parameters += f"{param_name},"
@@ -654,7 +681,8 @@ class MriBindingGen:
     return content, f"autogen_{klass_type.lower()}_binding.cc"
 
   # 设置要解析的接口头文件内容
-  def setup(self, class_info):
+  def setup(self, all_classes, class_info):
+    self.global_classes = all_classes
     self.class_data = class_info
 
 if __name__ == "__main__":

@@ -36,6 +36,12 @@ set(ENGINE_CONTENT_SRC
   context/exception_state.h
   context/execution_context.cc
   context/execution_context.h
+  gpu/buffer_impl.cc
+  gpu/buffer_impl.h
+  gpu/device_context_impl.cc
+  gpu/device_context_impl.h
+  gpu/render_device_impl.cc
+  gpu/render_device_impl.h
   input/keyboard_controller.cc
   input/keyboard_controller.h
   input/key_event.cc

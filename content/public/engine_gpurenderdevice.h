@@ -29,10 +29,10 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:BufferDesc)--*/
   struct BufferDesc {
     uint64_t size = 0;
-    GPU::BindFlags bind_flags = BIND_NONE;
-    GPU::Usage usage = USAGE_DEFAULT;
-    GPU::CPUAccessFlags cpu_access_flags = CPU_ACCESS_NONE;
-    GPU::BufferMode mode = BUFFER_MODE_UNDEFINED;
+    GPU::BindFlags bind_flags = GPU::BIND_NONE;
+    GPU::Usage usage = GPU::USAGE_DEFAULT;
+    GPU::CPUAccessFlags cpu_access_flags = GPU::CPU_ACCESS_NONE;
+    GPU::BufferMode mode = GPU::BUFFER_MODE_UNDEFINED;
     uint32_t element_byte_stride = 0;
     uint64_t immediate_context_mask = 1;
   };
@@ -41,24 +41,24 @@ class URGE_RUNTIME_API GPURenderDevice
   struct ShaderCreateInfo {
     base::String source;
     base::String entry_point = "main";
-    GPU::ShaderType type = SHADER_TYPE_UNKNOWN;
+    GPU::ShaderType type = GPU::SHADER_TYPE_UNKNOWN;
     bool combined_texture_samplers = true;
     base::String combined_sampler_suffix = "_sampler";
-    GPU::ShaderSourceLanguage language = SHADER_SOURCE_LANGUAGE_DEFAULT;
+    GPU::ShaderSourceLanguage language = GPU::SHADER_SOURCE_LANGUAGE_DEFAULT;
   };
 
   /*--urge(name:TextureDesc)--*/
   struct TextureDesc {
-    GPU::ResourceDimension type = RESOURCE_DIM_UNDEFINED;
+    GPU::ResourceDimension type = GPU::RESOURCE_DIM_UNDEFINED;
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t depth_or_array_size = 1;
-    GPU::TextureFormat format = TEX_FORMAT_UNKNOWN;
+    GPU::TextureFormat format = GPU::TEX_FORMAT_UNKNOWN;
     uint32_t mip_levels = 1;
     uint32_t sample_count = 1;
-    GPU::BindFlags bind_flags = BIND_NONE;
-    GPU::Usage usage = USAGE_DEFAULT;
-    GPU::CPUAccessFlags cpu_access_flags = CPU_ACCESS_NONE;
+    GPU::BindFlags bind_flags = GPU::BIND_NONE;
+    GPU::Usage usage = GPU::USAGE_DEFAULT;
+    GPU::CPUAccessFlags cpu_access_flags = GPU::CPU_ACCESS_NONE;
     uint64_t immediate_context_mask = 1;
   };
 
@@ -71,26 +71,26 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:SamplerDesc)--*/
   struct SamplerDesc {
-    GPU::FilterType min_filter = FILTER_TYPE_LINEAR;
-    GPU::FilterType mag_filter = FILTER_TYPE_LINEAR;
-    GPU::FilterType mip_filter = FILTER_TYPE_LINEAR;
-    GPU::TextureAddressMode address_u = TEXTURE_ADDRESS_CLAMP;
-    GPU::TextureAddressMode address_v = TEXTURE_ADDRESS_CLAMP;
-    GPU::TextureAddressMode address_w = TEXTURE_ADDRESS_CLAMP;
+    GPU::FilterType min_filter = GPU::FILTER_TYPE_LINEAR;
+    GPU::FilterType mag_filter = GPU::FILTER_TYPE_LINEAR;
+    GPU::FilterType mip_filter = GPU::FILTER_TYPE_LINEAR;
+    GPU::TextureAddressMode address_u = GPU::TEXTURE_ADDRESS_CLAMP;
+    GPU::TextureAddressMode address_v = GPU::TEXTURE_ADDRESS_CLAMP;
+    GPU::TextureAddressMode address_w = GPU::TEXTURE_ADDRESS_CLAMP;
   };
 
   /*--urge(name:RenderTargetBlendDesc)--*/
   struct RenderTargetBlendDesc {
     bool blend_enable = false;
     bool logic_operation_enable = false;
-    GPU::BlendFactor src_blend = BLEND_FACTOR_ONE;
-    GPU::BlendFactor dest_blend = BLEND_FACTOR_ZERO;
-    GPU::BlendOperation blend_op = BLEND_OPERATION_ADD;
-    GPU::BlendFactor src_blend_alpha = BLEND_FACTOR_ONE;
-    GPU::BlendFactor dest_blend_alpha = BLEND_FACTOR_ZERO;
-    GPU::BlendOperation blend_op_alpha = BLEND_OPERATION_ADD;
-    GPU::LogicOperation logic_op = LOGIC_OP_NOOP;
-    GPU::ColorMask render_target_write_mask = COLOR_MASK_ALL;
+    GPU::BlendFactor src_blend = GPU::BLEND_FACTOR_ONE;
+    GPU::BlendFactor dest_blend = GPU::BLEND_FACTOR_ZERO;
+    GPU::BlendOperation blend_op = GPU::BLEND_OPERATION_ADD;
+    GPU::BlendFactor src_blend_alpha = GPU::BLEND_FACTOR_ONE;
+    GPU::BlendFactor dest_blend_alpha = GPU::BLEND_FACTOR_ZERO;
+    GPU::BlendOperation blend_op_alpha = GPU::BLEND_OPERATION_ADD;
+    GPU::LogicOperation logic_op = GPU::LOGIC_OP_NOOP;
+    GPU::ColorMask render_target_write_mask = GPU::COLOR_MASK_ALL;
   };
 
   /*--urge(name:BlendStateDesc)--*/
@@ -102,8 +102,8 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:RasterizerStateDesc)--*/
   struct RasterizerStateDesc {
-    GPU::FillMode fill_mode = FILL_MODE_SOLID;
-    GPU::CullMode cull_mode = CULL_MODE_BACK;
+    GPU::FillMode fill_mode = GPU::FILL_MODE_SOLID;
+    GPU::CullMode cull_mode = GPU::CULL_MODE_BACK;
     bool front_counter_clockwise = false;
     bool depth_clip_enable = true;
     bool scissor_enable = false;
@@ -115,17 +115,17 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:StencilOpDesc)--*/
   struct StencilOpDesc {
-    GPU::StencilOp stencil_fail_op = STENCIL_OP_KEEP;
-    GPU::StencilOp stencil_depth_fail_op = STENCIL_OP_KEEP;
-    GPU::StencilOp stencil_pass_op = STENCIL_OP_KEEP;
-    GPU::ComparisonFunction stencil_func = COMPARISON_FUNC_ALWAYS;
+    GPU::StencilOp stencil_fail_op = GPU::STENCIL_OP_KEEP;
+    GPU::StencilOp stencil_depth_fail_op = GPU::STENCIL_OP_KEEP;
+    GPU::StencilOp stencil_pass_op = GPU::STENCIL_OP_KEEP;
+    GPU::ComparisonFunction stencil_func = GPU::COMPARISON_FUNC_ALWAYS;
   };
 
   /*--urge(name:DepthStencilStateDesc)--*/
   struct DepthStencilStateDesc {
     bool depth_enable = false;
     bool depth_write_enable = false;
-    GPU::ComparisonFunction depth_func = COMPARISON_FUNC_LESS;
+    GPU::ComparisonFunction depth_func = GPU::COMPARISON_FUNC_LESS;
     bool stencil_enable = false;
     uint8_t stencil_read_mask = 0xFF;
     uint8_t stencil_write_mask = 0xFF;
@@ -139,11 +139,12 @@ class URGE_RUNTIME_API GPURenderDevice
     uint32_t input_index = 0;
     uint32_t buffer_slot = 0;
     uint32_t num_components = 0;
-    GPU::ValueType value_type = VT_FLOAT32;
+    GPU::ValueType value_type = GPU::VT_FLOAT32;
     bool is_normalized = true;
     uint32_t relative_offset = 0xFFFFFFFFU;
     uint32_t stride = 0xFFFFFFFFU;
-    GPU::InputElementFrequency frequency = INPUT_ELEMENT_FREQUENCY_PER_VERTEX;
+    GPU::InputElementFrequency frequency =
+        GPU::INPUT_ELEMENT_FREQUENCY_PER_VERTEX;
     uint32_t instance_data_step_rate = 1;
   };
 
@@ -155,12 +156,12 @@ class URGE_RUNTIME_API GPURenderDevice
     std::optional<DepthStencilStateDesc> depth_stencil_desc;
     std::optional<InputLayoutElement> input_layout;
     GPU::PrimitiveTopology primitive_topology =
-        PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        GPU::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     uint8_t num_viewports = 1;
     uint8_t num_render_targets = 0;
     uint8_t subpass_index = 0;
     base::Vector<GPU::TextureFormat> rtv_formats;
-    GPU::TextureFormat dsv_format = TEX_FORMAT_UNKNOWN;
+    GPU::TextureFormat dsv_format = GPU::TEX_FORMAT_UNKNOWN;
     bool readonly_dsv = false;
     uint8_t multisample_count = 1;
     uint8_t multisample_quality = 0;
@@ -170,16 +171,16 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:PipelineResourceDesc)--*/
   struct PipelineResourceDesc {
     base::String name;
-    GPU::ShaderType shader_stages = SHADER_TYPE_UNKNOWN;
+    GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
     uint32_t array_size = 1;
-    GPU::ShaderResourceType resource_type = SHADER_RESOURCE_TYPE_UNKNOWN;
+    GPU::ShaderResourceType resource_type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
     GPU::ShaderResourceVariableType var_type =
-        SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+        GPU::SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
   };
 
   /*--urge(name:ImmutableSamplerDesc)--*/
   struct ImmutableSamplerDesc {
-    GPU::ShaderType shader_stages = SHADER_TYPE_UNKNOWN;
+    GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
     base::String sampler_name;
     std::optional<SamplerDesc> desc;
   };

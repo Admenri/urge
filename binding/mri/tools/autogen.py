@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
   for klass in template_classes:
     generator = bgen.MriBindingGen()
-    generator.setup(klass)
+    generator.setup(template_classes, klass)
 
     source, filename = generator.generate_header()
     with open(os.path.join(out_dir, filename), "w", encoding="utf-8") as f:
