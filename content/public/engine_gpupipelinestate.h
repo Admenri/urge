@@ -8,6 +8,8 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_gpu.h"
+#include "content/public/engine_gpupipelinesignature.h"
 
 namespace content {
 
@@ -16,6 +18,20 @@ class URGE_RUNTIME_API GPUPipelineState
     : public base::RefCounted<GPUPipelineState> {
  public:
   virtual ~GPUPipelineState() = default;
+
+  /*--urge(name:resource_signature_count)--*/
+  virtual uint32_t GetResourceSignatureCount(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:resource_signature)--*/
+  virtual scoped_refptr<GPUPipelineSignature> GetResourceSignature(
+      uint32_t index,
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:status)--*/
+  virtual GPU::PipelineStateStatus GetStatus(
+      bool wait_for_completion,
+      ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

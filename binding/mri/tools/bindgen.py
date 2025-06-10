@@ -476,6 +476,9 @@ class MriBindingGen:
             ruby_type = "VALUE"
             convert_suffix += f"auto {param_name} = RBHASH2{decay_type}(rb_check_hash_type({param_name}_obj));\n"
             param_name += "_obj"
+          elif param_type.startswith("void*") or param_type.startswith("const void*"):
+            parse_template += "r"
+            ruby_type = "void*"
           elif param_type.startswith("const base::Vector") or param_type.startswith("base::Vector"):
             parse_template += "o"
             ruby_type = "VALUE"
@@ -620,7 +623,7 @@ class MriBindingGen:
       if len(overloads) > 1:
         content += "default:\n"
         content += "rb_raise(rb_eArgError, \"failed to determine overload method. (count: %d)\", argc);\n"
-        content += "return Qnil;\n"
+        # content += "return Qnil;\n"
         content += "}\n"
 
       # 函数尾部

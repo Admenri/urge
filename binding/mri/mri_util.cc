@@ -44,6 +44,7 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
      * f -> double
      * b -> bool
      * n -> base::String
+     * r -> void*
      */
 
     VALUE arg_element = argv[count];
@@ -162,11 +163,24 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
             *ptr = base::String(rb_id2name(SYM2ID(arg_element)));
             break;
           case RUBY_T_STRING:
-            *ptr =
-                base::String(RSTRING_PTR(arg_element), RSTRING_LEN(arg_element));
+            *ptr = base::String(RSTRING_PTR(arg_element),
+                                RSTRING_LEN(arg_element));
             break;
           default:
             rb_raise(rb_eTypeError, "Argument %d: Expected symbol", count);
+        }
+      }
+        ++count;
+        break;
+      case 'r': {
+        void** ptr = va_arg(args_iter, void**);
+        switch (rb_type(arg_element)) {
+          case RUBY_T_STRING:
+            *ptr = RSTRING_PTR(arg_element);
+            break;
+          default:
+            rb_raise(rb_eTypeError, "Argument %d: Expected raw string buffer",
+                     count);
         }
       }
         ++count;

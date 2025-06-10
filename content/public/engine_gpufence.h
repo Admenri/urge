@@ -8,6 +8,7 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_gpu.h"
 
 namespace content {
 
@@ -15,6 +16,18 @@ namespace content {
 class URGE_RUNTIME_API GPUFence : public base::RefCounted<GPUFence> {
  public:
   virtual ~GPUFence() = default;
+
+  /*--urge(name:type)--*/
+  virtual GPU::FenceType GetType(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:completed_value)--*/
+  virtual uint64_t GetCompletedValue(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:signal)--*/
+  virtual void Signal(uint64_t value, ExceptionState& exception_state) = 0;
+
+  /*--urge(name:wait)--*/
+  virtual void Wait(uint64_t value, ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

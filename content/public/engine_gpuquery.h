@@ -15,6 +15,15 @@ namespace content {
 class URGE_RUNTIME_API GPUQuery : public base::RefCounted<GPUQuery> {
  public:
   virtual ~GPUQuery() = default;
+
+  /*--urge(name:data)--*/
+  virtual bool GetData(void* data,
+                       uint32_t size,
+                       bool auto_invalidate,
+                       ExceptionState& exception_state) = 0;
+
+  /*--urge(name:invalidate)--*/
+  virtual void Invalidate(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

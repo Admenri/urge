@@ -8,19 +8,59 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_gpu.h"
 
 namespace content {
 
-/*--urge(name:GPUBuffer)--*/
-class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
- public:
-  virtual ~GPUBuffer() = default;
-};
+class GPUBuffer;
 
 /*--urge(name:GPUBufferView)--*/
 class URGE_RUNTIME_API GPUBufferView : public base::RefCounted<GPUBufferView> {
  public:
   virtual ~GPUBufferView() = default;
+
+  /*--urge(name:buffer)--*/
+  virtual scoped_refptr<GPUBuffer> GetBuffer(
+      ExceptionState& exception_state) = 0;
+};
+
+/*--urge(name:GPUBuffer)--*/
+class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
+ public:
+  virtual ~GPUBuffer() = default;
+
+  /*--urge(name:BufferViewDesc)--*/
+  struct BufferViewDesc {
+    GPU::BufferViewType view_type = GPU::BUFFER_VIEW_UNDEFINED;
+    GPU::ValueType value_type = GPU::VT_UNDEFINED;
+    uint8_t num_components = 0;
+    bool is_normalized = false;
+    uint64_t byte_offset = 0;
+    uint64_t byte_width = 0;
+  };
+
+  /*--urge(name:create_view)--*/
+  virtual scoped_refptr<GPUBufferView> CreateView(
+      std::optional<BufferViewDesc> desc,
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:default_view)--*/
+  virtual scoped_refptr<GPUBufferView> GetDefaultView(
+      GPU::BufferViewType view_type,
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:flush_mapped_range)--*/
+  virtual void FlushMappedRange(uint64_t start_offset,
+                                uint64_t size,
+                                ExceptionState& exception_state) = 0;
+
+  /*--urge(name:invalidate_mapped_range)--*/
+  virtual void InvalidateMappedRange(uint64_t start_offset,
+                                     uint64_t size,
+                                     ExceptionState& exception_state) = 0;
+
+  /*--urge(name:state)--*/
+  URGE_EXPORT_ATTRIBUTE(State, GPU::ResourceState);
 };
 
 }  // namespace content

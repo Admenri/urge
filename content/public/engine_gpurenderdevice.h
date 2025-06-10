@@ -185,6 +185,16 @@ class URGE_RUNTIME_API GPURenderDevice
     std::optional<SamplerDesc> desc;
   };
 
+  /*--urge(name:PipelineSignatureDesc)--*/
+  struct PipelineSignatureDesc {
+    base::Vector<PipelineResourceDesc> resources;
+    base::Vector<ImmutableSamplerDesc> samplers;
+    uint8_t binding_index = 0;
+    bool use_combined_texture_samplers = true;
+    base::String combined_sampler_suffix = "_sampler";
+    uint32_t srb_allocation_granularity = 1;
+  };
+
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
       const std::optional<BufferDesc>& desc,
@@ -248,11 +258,7 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_pipeline_signature)--*/
   virtual scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
-      const base::Vector<PipelineResourceDesc>& resources,
-      const base::Vector<ImmutableSamplerDesc>& samplers,
-      uint8_t binding_index,
-      bool use_combined_texture_samplers,
-      const base::String& combined_sampler_suffix,
+      const std::optional<PipelineSignatureDesc>& desc,
       ExceptionState& exception_state) = 0;
 };
 
