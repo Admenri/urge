@@ -16,6 +16,12 @@ class URGE_RUNTIME_API GPUCommandList
     : public base::RefCounted<GPUCommandList> {
  public:
   virtual ~GPUCommandList() = default;
+
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

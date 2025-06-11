@@ -45,27 +45,24 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
 
 scoped_refptr<IOStream> IOStream::FromMemory(
     ExecutionContext* execution_context,
-    const base::String& buffer,
+    void* target_buffer,
+    int64_t buffer_size,
     ExceptionState& exception_state) {
-  base::String new_buffer = buffer;
-  auto* stream = SDL_IOFromConstMem(new_buffer.data(), new_buffer.size());
+  auto* stream = SDL_IOFromConstMem(target_buffer, buffer_size);
   if (!stream) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to open file: %s", SDL_GetError());
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream,
-                                            std::move(new_buffer));
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
 IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
-                           SDL_IOStream* stream,
-                           base::String buffer)
+                           SDL_IOStream* stream)
     : Disposable(execution_context->disposable_parent),
       EngineObject(execution_context),
-      stream_(stream),
-      buffer_(std::move(buffer)) {}
+      stream_(stream) {}
 
 IOStreamImpl::~IOStreamImpl() {
   ExceptionState exception_state;
@@ -114,24 +111,22 @@ int64_t IOStreamImpl::Tell(ExceptionState& exception_state) {
   return SDL_TellIO(stream_);
 }
 
-base::String IOStreamImpl::Read(int64_t size, ExceptionState& exception_state) {
+int64_t IOStreamImpl::Read(void* buffer,
+                           int64_t size,
+                           ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
-    return base::String();
+    return 0;
 
-  base::String buffer(size, 0);
-  size_t read_size = SDL_ReadIO(stream_, buffer.data(), size);
-  buffer.resize(read_size);
-
-  return buffer;
+  return static_cast<int64_t>(SDL_ReadIO(stream_, buffer, size));
 }
 
-int64_t IOStreamImpl::Write(const base::String& buffer,
+int64_t IOStreamImpl::Write(const void* buffer,
+                            int64_t size,
                             ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return 0;
 
-  return static_cast<int64_t>(
-      SDL_WriteIO(stream_, buffer.data(), buffer.size()));
+  return static_cast<int64_t>(SDL_WriteIO(stream_, buffer, size));
 }
 
 bool IOStreamImpl::Flush(ExceptionState& exception_state) {

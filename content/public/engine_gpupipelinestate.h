@@ -19,6 +19,12 @@ class URGE_RUNTIME_API GPUPipelineState
  public:
   virtual ~GPUPipelineState() = default;
 
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
   /*--urge(name:resource_signature_count)--*/
   virtual uint32_t GetResourceSignatureCount(
       ExceptionState& exception_state) = 0;

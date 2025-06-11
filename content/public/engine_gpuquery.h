@@ -16,6 +16,12 @@ class URGE_RUNTIME_API GPUQuery : public base::RefCounted<GPUQuery> {
  public:
   virtual ~GPUQuery() = default;
 
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
   /*--urge(name:data)--*/
   virtual bool GetData(void* data,
                        uint32_t size,

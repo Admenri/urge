@@ -16,6 +16,12 @@ class URGE_RUNTIME_API GPUResourceVariable
     : public base::RefCounted<GPUResourceVariable> {
  public:
   virtual ~GPUResourceVariable() = default;
+
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

@@ -17,6 +17,12 @@ class URGE_RUNTIME_API GPUFence : public base::RefCounted<GPUFence> {
  public:
   virtual ~GPUFence() = default;
 
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
   /*--urge(name:type)--*/
   virtual GPU::FenceType GetType(ExceptionState& exception_state) = 0;
 

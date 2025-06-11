@@ -52,11 +52,11 @@ class URGE_RUNTIME_API GPUDeviceContext
     uint32_t max_z = 1;
   };
 
-  /*--urge(name:submit)--*/
-  virtual void Submit(ExceptionState& exception_state) = 0;
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
 
-  /*--urge(name:synchronize)--*/
-  virtual void Synchronize(ExceptionState& exception_state) = 0;
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin)--*/
   virtual void Begin(uint32_t immediate_context_id,

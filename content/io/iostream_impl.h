@@ -15,9 +15,7 @@ namespace content {
 
 class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
  public:
-  IOStreamImpl(ExecutionContext* execution_context,
-               SDL_IOStream* stream,
-               base::String buffer);
+  IOStreamImpl(ExecutionContext* execution_context, SDL_IOStream* stream);
   ~IOStreamImpl() override;
 
   IOStreamImpl(const IOStreamImpl&) = delete;
@@ -36,8 +34,11 @@ class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
                IOWhence whence,
                ExceptionState& exception_state) override;
   int64_t Tell(ExceptionState& exception_state) override;
-  base::String Read(int64_t size, ExceptionState& exception_state) override;
-  int64_t Write(const base::String& buffer,
+  int64_t Read(void* buffer,
+               int64_t size,
+               ExceptionState& exception_state) override;
+  int64_t Write(const void* buffer,
+                int64_t size,
                 ExceptionState& exception_state) override;
   bool Flush(ExceptionState& exception_state) override;
 
@@ -46,7 +47,6 @@ class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
   base::String DisposedObjectName() override { return "IOStream"; }
 
   SDL_IOStream* stream_;
-  base::String buffer_;
 };
 
 }  // namespace content

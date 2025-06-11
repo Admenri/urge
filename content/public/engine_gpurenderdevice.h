@@ -14,6 +14,7 @@
 #include "content/public/engine_gpupipelinesignature.h"
 #include "content/public/engine_gpupipelinestate.h"
 #include "content/public/engine_gpuquery.h"
+#include "content/public/engine_gpuresourcemapping.h"
 #include "content/public/engine_gpusampler.h"
 #include "content/public/engine_gpushader.h"
 #include "content/public/engine_gputexture.h"
@@ -195,6 +196,13 @@ class URGE_RUNTIME_API GPURenderDevice
     uint32_t srb_allocation_granularity = 1;
   };
 
+  /*--urge(name:ResourceMappingEntry)--*/
+  struct ResourceMappingEntry {
+    base::String name;
+    uint64_t object_ptr = 0;
+    uint32_t array_index = 0;
+  };
+
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
       const std::optional<BufferDesc>& desc,
@@ -225,6 +233,11 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:create_sampler)--*/
   virtual scoped_refptr<GPUSampler> CreateSampler(
       const std::optional<SamplerDesc>& desc,
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:create_resource_mapping)--*/
+  virtual scoped_refptr<GPUResourceMapping> CreateResourceMapping(
+      const base::Vector<ResourceMappingEntry>& entries,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_graphics_pipeline_state)--*/

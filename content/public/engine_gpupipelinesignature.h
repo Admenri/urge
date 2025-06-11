@@ -10,6 +10,7 @@
 #include "content/context/exception_state.h"
 #include "content/public/engine_gpu.h"
 #include "content/public/engine_gpuresourcebinding.h"
+#include "content/public/engine_gpuresourcemapping.h"
 #include "content/public/engine_gpuresourcevariable.h"
 
 namespace content {
@@ -20,10 +21,22 @@ class URGE_RUNTIME_API GPUPipelineSignature
  public:
   virtual ~GPUPipelineSignature() = default;
 
-  /*--urge(name:create_resource_binding,optional:init_static_resources=false)--*/
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:create_resource_binding)--*/
   virtual scoped_refptr<GPUResourceBinding> CreateResourceBinding(
       bool init_static_resources,
       ExceptionState& exception_state) = 0;
+
+  /*--urge(name:bind_static_resources)--*/
+  virtual void BindStaticResources(GPU::ShaderType shader_type,
+                                   scoped_refptr<GPUResourceMapping> mapping,
+                                   GPU::BindShaderResourcesFlags flags,
+                                   ExceptionState& exception_state) = 0;
 
   /*--urge(name:static_variable_by_name)--*/
   virtual scoped_refptr<GPUResourceVariable> GetStaticVariableByName(

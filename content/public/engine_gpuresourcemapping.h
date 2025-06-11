@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_PUBLIC_ENGINE_GPUSAMPLER_H_
-#define CONTENT_PUBLIC_ENGINE_GPUSAMPLER_H_
+#ifndef CONTENT_PUBLIC_ENGINE_GPURESOURCEMAPPING_H_
+#define CONTENT_PUBLIC_ENGINE_GPURESOURCEMAPPING_H_
 
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
@@ -11,10 +11,11 @@
 
 namespace content {
 
-/*--urge(name:GPUSampler)--*/
-class URGE_RUNTIME_API GPUSampler : public base::RefCounted<GPUSampler> {
+/*--urge(name:GPUResourceMapping)--*/
+class URGE_RUNTIME_API GPUResourceMapping
+    : public base::RefCounted<GPUResourceMapping> {
  public:
-  virtual ~GPUSampler() = default;
+  virtual ~GPUResourceMapping() = default;
 
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
@@ -25,4 +26,4 @@ class URGE_RUNTIME_API GPUSampler : public base::RefCounted<GPUSampler> {
 
 }  // namespace content
 
-#endif  //! CONTENT_PUBLIC_ENGINE_GPUSAMPLER_H_
+#endif  //! CONTENT_PUBLIC_ENGINE_GPURESOURCEMAPPING_H_

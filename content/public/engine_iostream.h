@@ -48,7 +48,8 @@ class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
 
   /*--urge(name:from_memory)--*/
   static scoped_refptr<IOStream> FromMemory(ExecutionContext* execution_context,
-                                            const base::String& buffer,
+                                            void* target_buffer,
+                                            int64_t buffer_size,
                                             ExceptionState& exception_state);
 
   /*--urge(name:dispose)--*/
@@ -72,10 +73,13 @@ class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
   virtual int64_t Tell(ExceptionState& exception_state) = 0;
 
   /*--urge(name:read)--*/
-  virtual base::String Read(int64_t size, ExceptionState& exception_state) = 0;
+  virtual int64_t Read(void* buffer,
+                       int64_t size,
+                       ExceptionState& exception_state) = 0;
 
   /*--urge(name:write)--*/
-  virtual int64_t Write(const base::String& buffer,
+  virtual int64_t Write(const void* buffer,
+                        int64_t size,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:flush)--*/
