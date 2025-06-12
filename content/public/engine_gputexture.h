@@ -26,6 +26,9 @@ class URGE_RUNTIME_API GPUTextureView
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:device_object)--*/
+  virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
+
   /*--urge(name:texture)--*/
   virtual scoped_refptr<GPUTexture> GetTexture(
       ExceptionState& exception_state) = 0;
@@ -57,6 +60,9 @@ class URGE_RUNTIME_API GPUTexture : public base::RefCounted<GPUTexture> {
 
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:device_object)--*/
+  virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_view)--*/
   virtual scoped_refptr<GPUTextureView> CreateView(

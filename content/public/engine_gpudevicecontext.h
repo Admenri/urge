@@ -52,6 +52,29 @@ class URGE_RUNTIME_API GPUDeviceContext
     uint32_t max_z = 1;
   };
 
+  /*--urge(name:StateTransitionDesc)--*/
+  struct StateTransitionDesc {
+    uint64_t resource_before_ptr = 0;
+    uint64_t resource_ptr = 0;
+    uint32_t first_map_level = 0;
+    uint32_t mip_levels_count = 0xFFFFFFFFU;
+    uint32_t first_array_size = 0;
+    uint32_t array_slice_count = 0xFFFFFFFFU;
+    GPU::ResourceState old_state;
+    GPU::ResourceState new_state;
+    GPU::StateTransitionType transition_type =
+        GPU::STATE_TRANSITION_TYPE_IMMEDIATE;
+    GPU::StateTransitionFlags transition_flags =
+        GPU::STATE_TRANSITION_FLAG_NONE;
+  };
+
+  /*--urge(name:MappedTextureSubresource)--*/
+  struct MappedTextureSubresource {
+    uint64_t data_ptr;
+    uint64_t stride = 0;
+    uint64_t depth_stride = 0;
+  };
+
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
 
@@ -217,7 +240,8 @@ class URGE_RUNTIME_API GPUDeviceContext
   /*--urge(name:update_buffer)--*/
   virtual void UpdateBuffer(scoped_refptr<GPUBuffer> buffer,
                             uint64_t offset,
-                            const base::String& data,
+                            const void* data,
+                            uint64_t size,
                             ExceptionState& exception_state) = 0;
 
   /*--urge(name:copy_buffer)--*/
@@ -229,6 +253,17 @@ class URGE_RUNTIME_API GPUDeviceContext
                           GPU::ResourceStateTransitionMode dst_mode,
                           uint64_t copy_size,
                           ExceptionState& exception_state) = 0;
+
+  /*--urge(name:map_buffer)--*/
+  virtual uint64_t MapBuffer(scoped_refptr<GPUBuffer> buffer,
+                             GPU::MapType map_type,
+                             GPU::MapFlags map_flags,
+                             ExceptionState& exception_state) = 0;
+
+  /*--urge(name:unmap_buffer)--*/
+  virtual void UnmapBuffer(scoped_refptr<GPUBuffer> buffer,
+                           GPU::MapType map_type,
+                           ExceptionState& exception_state) = 0;
 
   /*--urge(name:update_texture)--*/
   virtual void UpdateTexture(scoped_refptr<GPUTexture> texture,
@@ -255,12 +290,33 @@ class URGE_RUNTIME_API GPUDeviceContext
                            GPU::ResourceStateTransitionMode dst_mode,
                            ExceptionState& exception_state) = 0;
 
+  /*--urge(name:map_texture_subresource)--*/
+  virtual std::optional<MappedTextureSubresource> MapTextureSubresource(
+      scoped_refptr<GPUTexture> texture,
+      uint32_t mip_level,
+      uint32_t array_slice,
+      GPU::MapType map_type,
+      GPU::MapFlags map_flags,
+      const std::optional<ClipBox>& map_region,
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:unmap_texture_subresource)--*/
+  virtual void UnmapTextureSubresource(scoped_refptr<GPUTexture> texture,
+                                       uint32_t mip_level,
+                                       uint32_t array_slice,
+                                       ExceptionState& exception_state) = 0;
+
   /*--urge(name:generate_mips)--*/
   virtual void GenerateMips(scoped_refptr<GPUTextureView> view,
                             ExceptionState& exception_state) = 0;
 
   /*--urge(name:finish_frame)--*/
   virtual void FinishFrame(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:transition_resource_states)--*/
+  virtual void TransitionResourceStates(
+      const base::Vector<StateTransitionDesc>& barriers,
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:resolve_texture_subresource)--*/
   virtual void ResolveTextureSubresource(

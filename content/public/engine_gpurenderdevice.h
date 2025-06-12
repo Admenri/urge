@@ -199,7 +199,7 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:ResourceMappingEntry)--*/
   struct ResourceMappingEntry {
     base::String name;
-    uint64_t object_ptr = 0;
+    uint64_t device_object = 0;
     uint32_t array_index = 0;
   };
 

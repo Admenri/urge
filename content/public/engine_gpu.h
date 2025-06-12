@@ -636,6 +636,42 @@ class URGE_RUNTIME_API GPU : public base::RefCounted<GPU> {
     BIND_SHADER_RESOURCES_ALLOW_OVERWRITE = 0x20,
     BIND_SHADER_RESOURCES_FLAG_LAST = BIND_SHADER_RESOURCES_ALLOW_OVERWRITE,
   };
+
+  /*--urge(name:SetShaderResourceFlags)--*/
+  enum SetShaderResourceFlags {
+    SET_SHADER_RESOURCE_FLAG_NONE = 0,
+    SET_SHADER_RESOURCE_FLAG_ALLOW_OVERWRITE = 1u << 0,
+  };
+
+  /*--urge(name:StateTransitionType)--*/
+  enum StateTransitionType {
+    STATE_TRANSITION_TYPE_IMMEDIATE = 0,
+    STATE_TRANSITION_TYPE_BEGIN,
+    STATE_TRANSITION_TYPE_END,
+  };
+
+  /*--urge(name:StateTransitionFlags)--*/
+  enum StateTransitionFlags {
+    STATE_TRANSITION_FLAG_NONE = 0,
+    STATE_TRANSITION_FLAG_UPDATE_STATE = 1u << 0,
+    STATE_TRANSITION_FLAG_DISCARD_CONTENT = 1u << 1,
+    STATE_TRANSITION_FLAG_ALIASING = 1u << 2,
+  };
+
+  /*--urge(name:MapType)--*/
+  enum MapType {
+    MAP_READ = 0x01,
+    MAP_WRITE = 0x02,
+    MAP_READ_WRITE = 0x03,
+  };
+
+  /*--urge(name:MapFlags)--*/
+  enum MapFlags {
+    MAP_FLAG_NONE = 0x000,
+    MAP_FLAG_DO_NOT_WAIT = 0x001,
+    MAP_FLAG_DISCARD = 0x002,
+    MAP_FLAG_NO_OVERWRITE = 0x004,
+  };
 };
 
 }  // namespace content

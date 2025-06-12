@@ -52,6 +52,18 @@ class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
                                             int64_t buffer_size,
                                             ExceptionState& exception_state);
 
+  /*--urge(name:copy_memory_from_ptr)--*/
+  static uint64_t CopyMemoryFromPtr(void* dest,
+                                    uint64_t source_ptr,
+                                    uint64_t byte_size,
+                                    ExceptionState& exception_state);
+
+  /*--urge(name:copy_memory_to_ptr)--*/
+  static uint64_t CopyMemoryToPtr(uint64_t dest_ptr,
+                                  const void* source,
+                                  uint64_t byte_size,
+                                  ExceptionState& exception_state);
+
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
 

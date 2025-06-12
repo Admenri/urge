@@ -17,11 +17,52 @@ class URGE_RUNTIME_API GPUResourceVariable
  public:
   virtual ~GPUResourceVariable() = default;
 
+  /*--urge(name:ShaderResourceDesc)--*/
+  struct ShaderResourceDesc {
+    base::String name;
+    GPU::ShaderResourceType type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
+    uint32_t array_size = 0;
+  };
+
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
 
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:set)--*/
+  virtual void Set(uint64_t device_object,
+                   GPU::SetShaderResourceFlags flags,
+                   ExceptionState& exception_state) = 0;
+
+  /*--urge(name:set_array)--*/
+  virtual void SetArray(const base::Vector<uint64_t>& device_objects,
+                        uint32_t first_element,
+                        GPU::SetShaderResourceFlags flags,
+                        ExceptionState& exception_state) = 0;
+
+  /*--urge(name:set_buffer_range)--*/
+  virtual void SetBufferRange(uint64_t device_object,
+                              uint64_t offset,
+                              uint64_t size,
+                              uint32_t array_index,
+                              GPU::SetShaderResourceFlags flags,
+                              ExceptionState& exception_state) = 0;
+
+  /*--urge(name:type)--*/
+  virtual GPU::ShaderResourceVariableType GetType(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:resource_desc)--*/
+  virtual std::optional<ShaderResourceDesc> GetResourceDesc(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:index)--*/
+  virtual uint32_t GetIndex(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:get)--*/
+  virtual uint64_t Get(uint32_t array_index,
+                       ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

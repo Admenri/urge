@@ -58,6 +58,22 @@ scoped_refptr<IOStream> IOStream::FromMemory(
   return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
+uint64_t IOStream::CopyMemoryFromPtr(void* dest,
+                                     uint64_t source_ptr,
+                                     uint64_t byte_size,
+                                     ExceptionState& exception_state) {
+  return reinterpret_cast<uint64_t>(
+      SDL_memcpy(dest, reinterpret_cast<void*>(source_ptr), byte_size));
+}
+
+uint64_t IOStream::CopyMemoryToPtr(uint64_t dest_ptr,
+                                   const void* source,
+                                   uint64_t byte_size,
+                                   ExceptionState& exception_state) {
+  return reinterpret_cast<uint64_t>(
+      SDL_memcpy(reinterpret_cast<void*>(dest_ptr), source, byte_size));
+}
+
 IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
                            SDL_IOStream* stream)
     : Disposable(execution_context->disposable_parent),

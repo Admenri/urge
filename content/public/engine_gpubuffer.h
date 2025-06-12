@@ -25,6 +25,9 @@ class URGE_RUNTIME_API GPUBufferView : public base::RefCounted<GPUBufferView> {
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:device_object)--*/
+  virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
+
   /*--urge(name:buffer)--*/
   virtual scoped_refptr<GPUBuffer> GetBuffer(
       ExceptionState& exception_state) = 0;
@@ -50,6 +53,9 @@ class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
 
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:device_object)--*/
+  virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_view)--*/
   virtual scoped_refptr<GPUBufferView> CreateView(
