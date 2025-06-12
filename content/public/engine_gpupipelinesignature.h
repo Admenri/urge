@@ -15,6 +15,8 @@
 
 namespace content {
 
+class GPUResourceBinding;
+
 /*--urge(name:GPUPipelineSignature)--*/
 class URGE_RUNTIME_API GPUPipelineSignature
     : public base::RefCounted<GPUPipelineSignature> {

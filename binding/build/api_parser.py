@@ -88,6 +88,8 @@ class APIParser:
     enum_range = None
     enum_constants = []
 
+    intermediate_enum_code = ""
+
     # 逐行解析枚举体
     for line in lines:
       # 解析枚举名称
@@ -103,6 +105,10 @@ class APIParser:
       if line.startswith('//'):
         continue
 
+      # 加入多行内容
+      intermediate_enum_code += line
+
+    for line in intermediate_enum_code.split(','):
       # 解析内容
       match = re.search(r'^\s*([A-Z_][A-Z0-9_]*)', line)
       if match:

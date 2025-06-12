@@ -8,6 +8,7 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_gpu.h"
 
 namespace content {
 
@@ -22,6 +23,32 @@ class URGE_RUNTIME_API GPUResourceMapping
 
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:add_resource)--*/
+  virtual void AddResource(const base::String& name,
+                           uint64_t device_object,
+                           bool is_unique,
+                           ExceptionState& exception_state) = 0;
+
+  /*--urge(name:add_resource_array)--*/
+  virtual void AddResourceArray(const base::String& name,
+                                uint32_t start_index,
+                                const base::Vector<uint64_t>& device_objects,
+                                bool is_unique,
+                                ExceptionState& exception_state) = 0;
+
+  /*--urge(name:remove_resource_by_name)--*/
+  virtual void RemoveResourceByName(const base::String& name,
+                                    uint32_t array_index,
+                                    ExceptionState& exception_state) = 0;
+
+  /*--urge(name:resource)--*/
+  virtual uint64_t GetResource(const base::String& name,
+                               uint32_t array_index,
+                               ExceptionState& exception_state) = 0;
+
+  /*--urge(name:size)--*/
+  virtual uint64_t GetSize(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

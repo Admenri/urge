@@ -8,6 +8,7 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_gpu.h"
 #include "content/public/engine_gpusampler.h"
 
 namespace content {

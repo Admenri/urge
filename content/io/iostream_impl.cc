@@ -21,8 +21,7 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream,
-                                            base::String());
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
 scoped_refptr<IOStream> IOStream::FromIOSystem(
@@ -39,8 +38,7 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
     return nullptr;
   }
 
-  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream,
-                                            base::String());
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
 scoped_refptr<IOStream> IOStream::FromMemory(
@@ -48,7 +46,7 @@ scoped_refptr<IOStream> IOStream::FromMemory(
     void* target_buffer,
     int64_t buffer_size,
     ExceptionState& exception_state) {
-  auto* stream = SDL_IOFromConstMem(target_buffer, buffer_size);
+  auto* stream = SDL_IOFromMem(target_buffer, buffer_size);
   if (!stream) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to open file: %s", SDL_GetError());
@@ -58,7 +56,8 @@ scoped_refptr<IOStream> IOStream::FromMemory(
   return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
-uint64_t IOStream::CopyMemoryFromPtr(void* dest,
+uint64_t IOStream::CopyMemoryFromPtr(ExecutionContext* execution_context,
+                                     void* dest,
                                      uint64_t source_ptr,
                                      uint64_t byte_size,
                                      ExceptionState& exception_state) {
@@ -66,7 +65,8 @@ uint64_t IOStream::CopyMemoryFromPtr(void* dest,
       SDL_memcpy(dest, reinterpret_cast<void*>(source_ptr), byte_size));
 }
 
-uint64_t IOStream::CopyMemoryToPtr(uint64_t dest_ptr,
+uint64_t IOStream::CopyMemoryToPtr(ExecutionContext* execution_context,
+                                   uint64_t dest_ptr,
                                    const void* source,
                                    uint64_t byte_size,
                                    ExceptionState& exception_state) {
