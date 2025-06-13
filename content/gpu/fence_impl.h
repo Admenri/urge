@@ -5,8 +5,42 @@
 #ifndef CONTENT_GPU_FENCE_IMPL_H_
 #define CONTENT_GPU_FENCE_IMPL_H_
 
+#include "Common/interface/RefCntAutoPtr.hpp"
+#include "Graphics/GraphicsEngine/interface/Fence.h"
+
+#include "content/context/disposable.h"
+#include "content/context/engine_object.h"
 #include "content/public/engine_gpufence.h"
 
-namespace content {}
+namespace content {
+
+class FenceImpl : public GPUFence, public EngineObject, public Disposable {
+ public:
+  FenceImpl(ExecutionContext* context,
+            Diligent::RefCntAutoPtr<Diligent::IFence> object);
+  ~FenceImpl() override;
+
+  FenceImpl(const FenceImpl&) = delete;
+  FenceImpl& operator=(const FenceImpl&) = delete;
+
+  Diligent::IFence* AsRawPtr() const { return object_; }
+
+ protected:
+  // GPUFence interface
+  void Dispose(ExceptionState& exception_state) override;
+  bool IsDisposed(ExceptionState& exception_state) override;
+  GPU::FenceType GetType(ExceptionState& exception_state) override;
+  uint64_t GetCompletedValue(ExceptionState& exception_state) override;
+  void Signal(uint64_t value, ExceptionState& exception_state) override;
+  void Wait(uint64_t value, ExceptionState& exception_state) override;
+
+ private:
+  void OnObjectDisposed() override;
+  base::String DisposedObjectName() override { return "GPU.Fence"; }
+
+  Diligent::RefCntAutoPtr<Diligent::IFence> object_;
+};
+
+}  // namespace content
 
 #endif  //! CONTENT_GPU_FENCE_IMPL_H_

@@ -5,8 +5,38 @@
 #ifndef CONTENT_GPU_SAMPLER_H_
 #define CONTENT_GPU_SAMPLER_H_
 
+#include "Common/interface/RefCntAutoPtr.hpp"
+#include "Graphics/GraphicsEngine/interface/Sampler.h"
+
+#include "content/context/disposable.h"
+#include "content/context/engine_object.h"
 #include "content/public/engine_gpusampler.h"
 
-namespace content {}
+namespace content {
+
+class SamplerImpl : public GPUSampler, public EngineObject, public Disposable {
+ public:
+  SamplerImpl(ExecutionContext* context,
+              Diligent::RefCntAutoPtr<Diligent::ISampler> object);
+  ~SamplerImpl() override;
+
+  SamplerImpl(const SamplerImpl&) = delete;
+  SamplerImpl& operator=(const SamplerImpl&) = delete;
+
+  Diligent::ISampler* AsRawPtr() const { return object_; }
+
+ protected:
+  // GPUSampler interface
+  void Dispose(ExceptionState& exception_state) override;
+  bool IsDisposed(ExceptionState& exception_state) override;
+
+ private:
+  void OnObjectDisposed() override;
+  base::String DisposedObjectName() override { return "GPU.Sampler"; }
+
+  Diligent::RefCntAutoPtr<Diligent::ISampler> object_;
+};
+
+}  // namespace content
 
 #endif  //! CONTENT_GPU_SAMPLER_H_

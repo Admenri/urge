@@ -65,7 +65,9 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:TextureSubResData)--*/
   struct TextureSubResData {
-    base::String data;
+    uint64_t data_ptr;
+    scoped_refptr<GPUBuffer> src_buffer;
+    uint64_t src_offset = 0;
     uint64_t stride = 0;
     uint64_t depth_stride = 0;
   };
@@ -202,6 +204,12 @@ class URGE_RUNTIME_API GPURenderDevice
     uint64_t device_object = 0;
     uint32_t array_index = 0;
   };
+
+  /*--urge(name:dispose)--*/
+  virtual void Dispose(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:disposed?)--*/
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(

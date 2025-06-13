@@ -4,4 +4,31 @@
 
 #include "content/gpu/sampler_impl.h"
 
-namespace content {}
+#include "content/context/execution_context.h"
+
+namespace content {
+
+SamplerImpl::SamplerImpl(ExecutionContext* context,
+                         Diligent::RefCntAutoPtr<Diligent::ISampler> object)
+    : EngineObject(context),
+      Disposable(context->disposable_parent),
+      object_(object) {}
+
+SamplerImpl::~SamplerImpl() {
+  ExceptionState exception_state;
+  Disposable::Dispose(exception_state);
+}
+
+void SamplerImpl::Dispose(ExceptionState& exception_state) {
+  Disposable::Dispose(exception_state);
+}
+
+bool SamplerImpl::IsDisposed(ExceptionState& exception_state) {
+  return Disposable::IsDisposed(exception_state);
+}
+
+void SamplerImpl::OnObjectDisposed() {
+  object_.Release();
+}
+
+}  // namespace content

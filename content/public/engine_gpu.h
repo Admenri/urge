@@ -672,6 +672,12 @@ class URGE_RUNTIME_API GPU : public base::RefCounted<GPU> {
     MAP_FLAG_DISCARD = 0x002,
     MAP_FLAG_NO_OVERWRITE = 0x004,
   };
+
+  /*--urge(name:SetVertexBuffersFlags)--*/
+  enum SetVertexBuffersFlags {
+    SET_VERTEX_BUFFERS_FLAG_NONE = 0x00,
+    SET_VERTEX_BUFFERS_FLAG_RESET = 0x01,
+  };
 };
 
 }  // namespace content

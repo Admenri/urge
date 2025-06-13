@@ -27,7 +27,9 @@ class URGE_RUNTIME_API GPUDeviceContext
 
   /*--urge(name:TextureSubResData)--*/
   struct TextureSubResData {
-    base::String data;
+    uint64_t data_ptr;
+    scoped_refptr<GPUBuffer> src_buffer;
+    uint64_t src_offset = 0;
     uint64_t stride = 0;
     uint64_t depth_stride = 0;
   };
@@ -56,9 +58,9 @@ class URGE_RUNTIME_API GPUDeviceContext
   struct StateTransitionDesc {
     uint64_t resource_before_ptr = 0;
     uint64_t resource_ptr = 0;
-    uint32_t first_map_level = 0;
+    uint32_t first_mip_level = 0;
     uint32_t mip_levels_count = 0xFFFFFFFFU;
-    uint32_t first_array_size = 0;
+    uint32_t first_array_slice = 0;
     uint32_t array_slice_count = 0xFFFFFFFFU;
     GPU::ResourceState old_state;
     GPU::ResourceState new_state;
@@ -112,6 +114,7 @@ class URGE_RUNTIME_API GPUDeviceContext
       const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
       const base::Vector<uint64_t>& offsets,
       GPU::ResourceStateTransitionMode mode,
+      GPU::SetVertexBuffersFlags flags,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:invalidate_state)--*/
@@ -135,6 +138,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void SetRenderTargets(
       const base::Vector<scoped_refptr<GPUTextureView>>& render_targets,
       scoped_refptr<GPUTextureView> depth_stencil,
+      GPU::ResourceStateTransitionMode mode,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw)--*/
@@ -196,6 +200,7 @@ class URGE_RUNTIME_API GPUDeviceContext
                                  GPU::ClearDepthStencilFlags clear_flags,
                                  float depth,
                                  uint32_t stencil,
+                                 GPU::ResourceStateTransitionMode mode,
                                  ExceptionState& exception_state) = 0;
 
   /*--urge(name:clear_render_target)--*/
@@ -242,6 +247,7 @@ class URGE_RUNTIME_API GPUDeviceContext
                             uint64_t offset,
                             const void* data,
                             uint64_t size,
+                            GPU::ResourceStateTransitionMode mode,
                             ExceptionState& exception_state) = 0;
 
   /*--urge(name:copy_buffer)--*/

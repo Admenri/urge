@@ -36,6 +36,34 @@ set(ENGINE_CONTENT_SRC
   context/exception_state.h
   context/execution_context.cc
   context/execution_context.h
+  gpu/buffer_impl.cc
+  gpu/buffer_impl.h
+  gpu/command_list_impl.cc
+  gpu/command_list_impl.h
+  gpu/device_context_impl.cc
+  gpu/device_context_impl.h
+  gpu/fence_impl.cc
+  gpu/fence_impl.h
+  gpu/pipeline_signature_impl.cc
+  gpu/pipeline_signature_impl.h
+  gpu/pipeline_state_impl.cc
+  gpu/pipeline_state_impl.h
+  gpu/query_impl.cc
+  gpu/query_impl.h
+  gpu/render_device_impl.cc
+  gpu/render_device_impl.h
+  gpu/resource_binding_impl.cc
+  gpu/resource_binding_impl.h
+  gpu/resource_mapping_impl.cc
+  gpu/resource_mapping_impl.h
+  gpu/resource_variable_impl.cc
+  gpu/resource_variable_impl.h
+  gpu/sampler_impl.cc
+  gpu/sampler_impl.h
+  gpu/shader_impl.cc
+  gpu/shader_impl.h
+  gpu/texture_impl.cc
+  gpu/texture_impl.h
   input/keyboard_controller.cc
   input/keyboard_controller.h
   input/key_event.cc

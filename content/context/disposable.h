@@ -13,6 +13,10 @@
 #include "base/containers/linked_list.h"
 #include "content/context/exception_state.h"
 
+#define DISPOSE_CHECK_RETURN(v)       \
+  if (CheckDisposed(exception_state)) \
+    return v;
+
 namespace content {
 
 class Disposable;

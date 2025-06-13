@@ -35,7 +35,6 @@ class URGE_RUNTIME_API GPUShader : public base::RefCounted<GPUShader> {
     uint8_t num_columns = 0;
     uint32_t offset = 0;
     uint32_t array_size = 0;
-    uint32_t num_members = 0;
     base::Vector<ShaderCodeVariableDesc> members;
   };
 
