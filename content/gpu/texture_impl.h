@@ -19,8 +19,7 @@ class TextureViewImpl : public GPUTextureView,
                         public EngineObject,
                         public Disposable {
  public:
-  TextureViewImpl(ExecutionContext* context,
-                  Diligent::RefCntAutoPtr<Diligent::ITextureView> object);
+  TextureViewImpl(ExecutionContext* context, Diligent::ITextureView* object);
   ~TextureViewImpl() override;
 
   TextureViewImpl(const TextureViewImpl&) = delete;
@@ -46,8 +45,7 @@ class TextureViewImpl : public GPUTextureView,
 
 class TextureImpl : public GPUTexture, public EngineObject, public Disposable {
  public:
-  TextureImpl(ExecutionContext* context,
-              Diligent::RefCntAutoPtr<Diligent::ITexture> object);
+  TextureImpl(ExecutionContext* context, Diligent::ITexture* object);
   ~TextureImpl() override;
 
   TextureImpl(const TextureImpl&) = delete;

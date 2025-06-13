@@ -8,9 +8,8 @@
 
 namespace content {
 
-BufferViewImpl::BufferViewImpl(
-    ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IBufferView> object)
+BufferViewImpl::BufferViewImpl(ExecutionContext* context,
+                               Diligent::IBufferView* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -46,8 +45,7 @@ void BufferViewImpl::OnObjectDisposed() {
   object_.Release();
 }
 
-BufferImpl::BufferImpl(ExecutionContext* context,
-                       Diligent::RefCntAutoPtr<Diligent::IBuffer> object)
+BufferImpl::BufferImpl(ExecutionContext* context, Diligent::IBuffer* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -109,7 +107,7 @@ scoped_refptr<GPUBufferView> BufferImpl::GetDefaultView(
 void BufferImpl::FlushMappedRange(uint64_t start_offset,
                                   uint64_t size,
                                   ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->FlushMappedRange(start_offset, size);
 }
@@ -117,7 +115,7 @@ void BufferImpl::FlushMappedRange(uint64_t start_offset,
 void BufferImpl::InvalidateMappedRange(uint64_t start_offset,
                                        uint64_t size,
                                        ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->InvalidateMappedRange(start_offset, size);
 }
@@ -130,7 +128,7 @@ GPU::ResourceState BufferImpl::Get_State(ExceptionState& exception_state) {
 
 void BufferImpl::Put_State(const GPU::ResourceState& value,
                            ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->SetState(static_cast<Diligent::RESOURCE_STATE>(value));
 }

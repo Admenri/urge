@@ -10,7 +10,7 @@ namespace content {
 
 ResourceVariableImpl::ResourceVariableImpl(
     ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceVariable> object)
+    Diligent::IShaderResourceVariable* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -31,7 +31,7 @@ bool ResourceVariableImpl::IsDisposed(ExceptionState& exception_state) {
 void ResourceVariableImpl::Set(uint64_t device_object,
                                GPU::SetShaderResourceFlags flags,
                                ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->Set(reinterpret_cast<Diligent::IDeviceObject*>(device_object),
                static_cast<Diligent::SET_SHADER_RESOURCE_FLAGS>(flags));
@@ -42,7 +42,7 @@ void ResourceVariableImpl::SetArray(
     uint32_t first_element,
     GPU::SetShaderResourceFlags flags,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::IDeviceObject*> objects;
   for (auto element : device_objects)
@@ -58,7 +58,7 @@ void ResourceVariableImpl::SetBufferRange(uint64_t device_object,
                                           uint32_t array_index,
                                           GPU::SetShaderResourceFlags flags,
                                           ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->SetBufferRange(
       reinterpret_cast<Diligent::IDeviceObject*>(device_object), offset, size,

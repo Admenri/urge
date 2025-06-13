@@ -17,9 +17,8 @@
 
 namespace content {
 
-DeviceContextImpl::DeviceContextImpl(
-    ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> object)
+DeviceContextImpl::DeviceContextImpl(ExecutionContext* context,
+                                     Diligent::IDeviceContext* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -39,7 +38,7 @@ bool DeviceContextImpl::IsDisposed(ExceptionState& exception_state) {
 
 void DeviceContextImpl::Begin(uint32_t immediate_context_id,
                               ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->Begin(immediate_context_id);
 }
@@ -47,7 +46,7 @@ void DeviceContextImpl::Begin(uint32_t immediate_context_id,
 void DeviceContextImpl::SetPipelineState(
     scoped_refptr<GPUPipelineState> pipeline,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_pipeline = static_cast<PipelineStateImpl*>(pipeline.get());
   auto* object_pipeline = raw_pipeline ? raw_pipeline->AsRawPtr() : nullptr;
@@ -58,7 +57,7 @@ void DeviceContextImpl::SetPipelineState(
 void DeviceContextImpl::TransitionShaderResources(
     scoped_refptr<GPUResourceBinding> binding,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_binding = static_cast<ResourceBindingImpl*>(binding.get());
   auto* object_binding = raw_binding ? raw_binding->AsRawPtr() : nullptr;
@@ -70,7 +69,7 @@ void DeviceContextImpl::CommitShaderResources(
     scoped_refptr<GPUResourceBinding> binding,
     GPU::ResourceStateTransitionMode mode,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_binding = static_cast<ResourceBindingImpl*>(binding.get());
   auto* object_binding = raw_binding ? raw_binding->AsRawPtr() : nullptr;
@@ -82,14 +81,14 @@ void DeviceContextImpl::CommitShaderResources(
 
 void DeviceContextImpl::SetStencilRef(uint32_t ref,
                                       ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->SetStencilRef(ref);
 }
 
 void DeviceContextImpl::SetBlendFactors(const base::Vector<float>& factors,
                                         ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->SetBlendFactors(factors.data());
 }
@@ -101,7 +100,7 @@ void DeviceContextImpl::SetVertexBuffers(
     GPU::ResourceStateTransitionMode mode,
     GPU::SetVertexBuffersFlags flags,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::IBuffer*> objects;
   for (auto& it : buffers) {
@@ -116,7 +115,7 @@ void DeviceContextImpl::SetVertexBuffers(
 }
 
 void DeviceContextImpl::InvalidateState(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->InvalidateState();
 }
@@ -125,7 +124,7 @@ void DeviceContextImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
                                        uint64_t byte_offset,
                                        GPU::ResourceStateTransitionMode mode,
                                        ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_buffer = static_cast<BufferImpl*>(buffer.get());
   auto* object_buffer = raw_buffer ? raw_buffer->AsRawPtr() : nullptr;
@@ -138,7 +137,7 @@ void DeviceContextImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
 void DeviceContextImpl::SetViewports(
     const base::Vector<ClipViewport>& viewports,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::Viewport> objects;
   for (auto& it : viewports) {
@@ -158,7 +157,7 @@ void DeviceContextImpl::SetViewports(
 void DeviceContextImpl::SetScissorRects(
     const base::Vector<scoped_refptr<Rect>>& rects,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::Rect> objects;
   for (auto& it : rects) {
@@ -180,7 +179,7 @@ void DeviceContextImpl::SetRenderTargets(
     scoped_refptr<GPUTextureView> depth_stencil,
     GPU::ResourceStateTransitionMode mode,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::ITextureView*> objects;
   for (auto& it : render_targets) {
@@ -202,7 +201,7 @@ void DeviceContextImpl::Draw(uint32_t num_vertices,
                              uint32_t first_vertex,
                              uint32_t first_instance,
                              ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   Diligent::DrawAttribs attrib;
   attrib.NumVertices = num_vertices;
@@ -219,7 +218,7 @@ void DeviceContextImpl::DrawIndexed(uint32_t num_indices,
                                     uint32_t first_instance,
                                     GPU::ValueType index_type,
                                     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   Diligent::DrawIndexedAttribs attrib;
   attrib.NumIndices = num_indices;
@@ -241,7 +240,7 @@ void DeviceContextImpl::DrawIndirect(
     uint64_t counter_offset,
     GPU::ResourceStateTransitionMode counter_buffer_mode,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_attribs_buffer = static_cast<BufferImpl*>(attribs_buffer.get());
   auto* raw_counter_buffer = static_cast<BufferImpl*>(counter_buffer.get());
@@ -275,7 +274,7 @@ void DeviceContextImpl::DrawIndexedIndirect(
     GPU::ResourceStateTransitionMode counter_buffer_mode,
     GPU::ValueType index_type,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_attribs_buffer = static_cast<BufferImpl*>(attribs_buffer.get());
   auto* raw_counter_buffer = static_cast<BufferImpl*>(counter_buffer.get());
@@ -303,7 +302,7 @@ void DeviceContextImpl::DispatchCompute(uint32_t thread_group_count_x,
                                         uint32_t thread_group_count_y,
                                         uint32_t thread_group_count_z,
                                         ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   Diligent::DispatchComputeAttribs attrib;
   attrib.ThreadGroupCountX = thread_group_count_x;
@@ -317,7 +316,7 @@ void DeviceContextImpl::DispatchComputeIndirect(
     GPU::ResourceStateTransitionMode attribs_buffer_mode,
     uint64_t dispatch_args_byte_offset,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_attribs_buffer = static_cast<BufferImpl*>(attribs_buffer.get());
 
@@ -338,7 +337,7 @@ void DeviceContextImpl::ClearDepthStencil(
     uint32_t stencil,
     GPU::ResourceStateTransitionMode mode,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_view = static_cast<TextureViewImpl*>(view.get());
   auto* object_view = raw_view ? raw_view->AsRawPtr() : nullptr;
@@ -353,7 +352,7 @@ void DeviceContextImpl::ClearRenderTarget(scoped_refptr<GPUTextureView> view,
                                           scoped_refptr<Color> color,
                                           GPU::ResourceStateTransitionMode mode,
                                           ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_view = static_cast<TextureViewImpl*>(view.get());
   auto* object_view = raw_view ? raw_view->AsRawPtr() : nullptr;
@@ -380,7 +379,7 @@ scoped_refptr<GPUCommandList> DeviceContextImpl::FinishCommandList(
 void DeviceContextImpl::ExecuteCommandLists(
     const base::Vector<scoped_refptr<GPUCommandList>>& command_lists,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::ICommandList*> objects;
   for (auto& it : command_lists) {
@@ -394,7 +393,7 @@ void DeviceContextImpl::ExecuteCommandLists(
 void DeviceContextImpl::EnqueueSignal(scoped_refptr<GPUFence> fence,
                                       uint64_t value,
                                       ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_fence = static_cast<FenceImpl*>(fence.get());
   auto* object_fence = raw_fence ? raw_fence->AsRawPtr() : nullptr;
@@ -405,7 +404,7 @@ void DeviceContextImpl::EnqueueSignal(scoped_refptr<GPUFence> fence,
 void DeviceContextImpl::DeviceWaitForFence(scoped_refptr<GPUFence> fence,
                                            uint64_t value,
                                            ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_fence = static_cast<FenceImpl*>(fence.get());
   auto* object_fence = raw_fence ? raw_fence->AsRawPtr() : nullptr;
@@ -414,14 +413,14 @@ void DeviceContextImpl::DeviceWaitForFence(scoped_refptr<GPUFence> fence,
 }
 
 void DeviceContextImpl::WaitForIdle(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->WaitForIdle();
 }
 
 void DeviceContextImpl::BeginQuery(scoped_refptr<GPUQuery> query,
                                    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_query = static_cast<QueryImpl*>(query.get());
   auto* object_query = raw_query ? raw_query->AsRawPtr() : nullptr;
@@ -431,7 +430,7 @@ void DeviceContextImpl::BeginQuery(scoped_refptr<GPUQuery> query,
 
 void DeviceContextImpl::EndQuery(scoped_refptr<GPUQuery> query,
                                  ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_query = static_cast<QueryImpl*>(query.get());
   auto* object_query = raw_query ? raw_query->AsRawPtr() : nullptr;
@@ -440,7 +439,7 @@ void DeviceContextImpl::EndQuery(scoped_refptr<GPUQuery> query,
 }
 
 void DeviceContextImpl::Flush(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->Flush();
 }
@@ -451,7 +450,7 @@ void DeviceContextImpl::UpdateBuffer(scoped_refptr<GPUBuffer> buffer,
                                      uint64_t size,
                                      GPU::ResourceStateTransitionMode mode,
                                      ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_buffer = static_cast<BufferImpl*>(buffer.get());
   auto* object_buffer = raw_buffer ? raw_buffer->AsRawPtr() : nullptr;
@@ -469,7 +468,7 @@ void DeviceContextImpl::CopyBuffer(scoped_refptr<GPUBuffer> src_buffer,
                                    GPU::ResourceStateTransitionMode dst_mode,
                                    uint64_t copy_size,
                                    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_src_buffer = static_cast<BufferImpl*>(src_buffer.get());
   auto* object_src_buffer =
@@ -488,7 +487,7 @@ uint64_t DeviceContextImpl::MapBuffer(scoped_refptr<GPUBuffer> buffer,
                                       GPU::MapType map_type,
                                       GPU::MapFlags map_flags,
                                       ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK_RETURN(0);
 
   auto* raw_buffer = static_cast<BufferImpl*>(buffer.get());
   auto* object_buffer = raw_buffer ? raw_buffer->AsRawPtr() : nullptr;
@@ -504,7 +503,7 @@ uint64_t DeviceContextImpl::MapBuffer(scoped_refptr<GPUBuffer> buffer,
 void DeviceContextImpl::UnmapBuffer(scoped_refptr<GPUBuffer> buffer,
                                     GPU::MapType map_type,
                                     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_buffer = static_cast<BufferImpl*>(buffer.get());
   auto* object_buffer = raw_buffer ? raw_buffer->AsRawPtr() : nullptr;
@@ -522,7 +521,7 @@ void DeviceContextImpl::UpdateTexture(
     GPU::ResourceStateTransitionMode src_buffer_mode,
     GPU::ResourceStateTransitionMode texture_mode,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_texture = static_cast<TextureImpl*>(texture.get());
   auto* object_texture = raw_texture ? raw_texture->AsRawPtr() : nullptr;
@@ -567,7 +566,7 @@ void DeviceContextImpl::CopyTexture(scoped_refptr<GPUTexture> src_texture,
                                     uint32_t dst_z,
                                     GPU::ResourceStateTransitionMode dst_mode,
                                     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_src_texture = static_cast<TextureImpl*>(src_texture.get());
   auto* raw_dst_texture = static_cast<TextureImpl*>(dst_texture.get());
@@ -610,7 +609,7 @@ DeviceContextImpl::MapTextureSubresource(
     GPU::MapFlags map_flags,
     const std::optional<ClipBox>& map_region,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK_RETURN(std::nullopt);
 
   auto* raw_texture = static_cast<TextureImpl*>(texture.get());
   auto* object_texture = raw_texture ? raw_texture->AsRawPtr() : nullptr;
@@ -644,7 +643,7 @@ void DeviceContextImpl::UnmapTextureSubresource(
     uint32_t mip_level,
     uint32_t array_slice,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_texture = static_cast<TextureImpl*>(texture.get());
   auto* object_texture = raw_texture ? raw_texture->AsRawPtr() : nullptr;
@@ -654,7 +653,7 @@ void DeviceContextImpl::UnmapTextureSubresource(
 
 void DeviceContextImpl::GenerateMips(scoped_refptr<GPUTextureView> view,
                                      ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_view = static_cast<TextureViewImpl*>(view.get());
   auto* object_view = raw_view ? raw_view->AsRawPtr() : nullptr;
@@ -663,7 +662,7 @@ void DeviceContextImpl::GenerateMips(scoped_refptr<GPUTextureView> view,
 }
 
 void DeviceContextImpl::FinishFrame(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->FinishFrame();
 }
@@ -671,7 +670,7 @@ void DeviceContextImpl::FinishFrame(ExceptionState& exception_state) {
 void DeviceContextImpl::TransitionResourceStates(
     const base::Vector<StateTransitionDesc>& barriers,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::StateTransitionDesc> objects;
   for (auto& it : barriers) {
@@ -708,7 +707,7 @@ void DeviceContextImpl::ResolveTextureSubresource(
     GPU::ResourceStateTransitionMode dst_mode,
     GPU::TextureFormat format,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_src_texture = static_cast<TextureImpl*>(src.get());
   auto* object_src_texture =
@@ -734,7 +733,7 @@ void DeviceContextImpl::ResolveTextureSubresource(
 void DeviceContextImpl::BeginDebugGroup(const base::String& name,
                                         scoped_refptr<Color> color,
                                         ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto debug_color = ColorImpl::From(color);
   base::Vec4 norm_color =
@@ -744,7 +743,7 @@ void DeviceContextImpl::BeginDebugGroup(const base::String& name,
 }
 
 void DeviceContextImpl::EndDebugGroup(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->EndDebugGroup();
 }
@@ -752,7 +751,7 @@ void DeviceContextImpl::EndDebugGroup(ExceptionState& exception_state) {
 void DeviceContextImpl::InsertDebugGroup(const base::String& name,
                                          scoped_refptr<Color> color,
                                          ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto debug_color = ColorImpl::From(color);
   base::Vec4 norm_color =

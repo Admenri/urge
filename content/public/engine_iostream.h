@@ -52,6 +52,11 @@ class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
                                             int64_t buffer_size,
                                             ExceptionState& exception_state);
 
+  /*--urge(name:string_as_pointer)--*/
+  static uint64_t StringToPointer(ExecutionContext* execution_context,
+                                  const void* source,
+                                  ExceptionState& exception_state);
+
   /*--urge(name:copy_memory_from_ptr)--*/
   static uint64_t CopyMemoryFromPtr(ExecutionContext* execution_context,
                                     void* dest,

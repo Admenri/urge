@@ -30,8 +30,7 @@ GPUShader::ShaderCodeVariableDesc GetVariableDesc(
 
 }  // namespace
 
-ShaderImpl::ShaderImpl(ExecutionContext* context,
-                       Diligent::RefCntAutoPtr<Diligent::IShader> object)
+ShaderImpl::ShaderImpl(ExecutionContext* context, Diligent::IShader* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -90,7 +89,7 @@ ShaderImpl::GetConstantBufferDesc(uint32_t index,
 base::String ShaderImpl::GetBytecode(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(base::String());
 
-  void* byte_buffer;
+  const void* byte_buffer;
   uint64_t byte_size;
   object_->GetBytecode(&byte_buffer, byte_size);
 

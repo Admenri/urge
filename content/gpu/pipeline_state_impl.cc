@@ -9,9 +9,8 @@
 
 namespace content {
 
-PipelineStateImpl::PipelineStateImpl(
-    ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> object)
+PipelineStateImpl::PipelineStateImpl(ExecutionContext* context,
+                                     Diligent::IPipelineState* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}

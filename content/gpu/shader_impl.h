@@ -16,8 +16,7 @@ namespace content {
 
 class ShaderImpl : public GPUShader, public EngineObject, public Disposable {
  public:
-  ShaderImpl(ExecutionContext* context,
-             Diligent::RefCntAutoPtr<Diligent::IShader> object);
+  ShaderImpl(ExecutionContext* context, Diligent::IShader* object);
   ~ShaderImpl() override;
 
   ShaderImpl(const ShaderImpl&) = delete;

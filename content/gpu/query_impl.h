@@ -16,8 +16,7 @@ namespace content {
 
 class QueryImpl : public GPUQuery, public EngineObject, public Disposable {
  public:
-  QueryImpl(ExecutionContext* context,
-            Diligent::RefCntAutoPtr<Diligent::IQuery> object);
+  QueryImpl(ExecutionContext* context, Diligent::IQuery* object);
   ~QueryImpl() override;
 
   QueryImpl(const QueryImpl&) = delete;

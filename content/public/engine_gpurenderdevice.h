@@ -10,6 +10,7 @@
 #include "content/context/exception_state.h"
 #include "content/public/engine_gpu.h"
 #include "content/public/engine_gpubuffer.h"
+#include "content/public/engine_gpudevicecontext.h"
 #include "content/public/engine_gpufence.h"
 #include "content/public/engine_gpupipelinesignature.h"
 #include "content/public/engine_gpupipelinestate.h"
@@ -36,6 +37,13 @@ class URGE_RUNTIME_API GPURenderDevice
     GPU::BufferMode mode = GPU::BUFFER_MODE_UNDEFINED;
     uint32_t element_byte_stride = 0;
     uint64_t immediate_context_mask = 1;
+  };
+
+  /*--urge(name:BufferData)--*/
+  struct BufferData {
+    uint64_t data_ptr;
+    uint64_t data_size = 0;
+    scoped_refptr<GPUDeviceContext> context;
   };
 
   /*--urge(name:ShaderCreateInfo)--*/
@@ -70,6 +78,12 @@ class URGE_RUNTIME_API GPURenderDevice
     uint64_t src_offset = 0;
     uint64_t stride = 0;
     uint64_t depth_stride = 0;
+  };
+
+  /*--urge(name:TextureData)--*/
+  struct TextureData {
+    base::Vector<TextureSubResData> resources;
+    scoped_refptr<GPUDeviceContext> context;
   };
 
   /*--urge(name:SamplerDesc)--*/
@@ -219,7 +233,7 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
       const std::optional<BufferDesc>& desc,
-      const base::String& data,
+      const std::optional<BufferData>& data,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_shader)--*/
@@ -235,7 +249,7 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:create_texture)--*/
   virtual scoped_refptr<GPUTexture> CreateTexture(
       const std::optional<TextureDesc>& desc,
-      const base::Vector<TextureSubResData>& subresources,
+      const std::optional<TextureData>& data,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_sampler)--*/

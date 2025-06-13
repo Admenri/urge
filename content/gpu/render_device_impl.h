@@ -18,8 +18,7 @@ class RenderDeviceImpl : public GPURenderDevice,
                          public EngineObject,
                          public Disposable {
  public:
-  RenderDeviceImpl(ExecutionContext* context,
-                   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> object);
+  RenderDeviceImpl(ExecutionContext* context, Diligent::IRenderDevice* object);
   ~RenderDeviceImpl() override;
 
   RenderDeviceImpl(const RenderDeviceImpl&) = delete;
@@ -36,7 +35,7 @@ class RenderDeviceImpl : public GPURenderDevice,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUBuffer> CreateBuffer(
       const std::optional<BufferDesc>& desc,
-      const base::String& data,
+      const std::optional<BufferData>& data,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUShader> CreateShader(
       const std::optional<ShaderCreateInfo>& create_info,
@@ -46,7 +45,7 @@ class RenderDeviceImpl : public GPURenderDevice,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUTexture> CreateTexture(
       const std::optional<TextureDesc>& desc,
-      const base::Vector<TextureSubResData>& subresources,
+      const std::optional<TextureData>& data,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUSampler> CreateSampler(
       const std::optional<SamplerDesc>& desc,

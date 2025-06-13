@@ -17,6 +17,10 @@
   if (CheckDisposed(exception_state)) \
     return v;
 
+#define DISPOSE_CHECK                 \
+  if (CheckDisposed(exception_state)) \
+    return;
+
 namespace content {
 
 class Disposable;

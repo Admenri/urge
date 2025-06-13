@@ -18,9 +18,8 @@ class ResourceVariableImpl : public GPUResourceVariable,
                              public EngineObject,
                              public Disposable {
  public:
-  ResourceVariableImpl(
-      ExecutionContext* context,
-      Diligent::RefCntAutoPtr<Diligent::IShaderResourceVariable> object);
+  ResourceVariableImpl(ExecutionContext* context,
+                       Diligent::IShaderResourceVariable* object);
   ~ResourceVariableImpl() override;
 
   ResourceVariableImpl(const ResourceVariableImpl&) = delete;

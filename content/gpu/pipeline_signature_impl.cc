@@ -13,7 +13,7 @@ namespace content {
 
 PipelineSignatureImpl::PipelineSignatureImpl(
     ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature> object)
+    Diligent::IPipelineResourceSignature* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -47,7 +47,7 @@ void PipelineSignatureImpl::BindStaticResources(
     scoped_refptr<GPUResourceMapping> mapping,
     GPU::BindShaderResourcesFlags flags,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_mapping = static_cast<ResourceMappingImpl*>(mapping.get());
   auto* object_mapping = raw_mapping ? raw_mapping->AsRawPtr() : nullptr;
@@ -95,7 +95,7 @@ uint32_t PipelineSignatureImpl::GetStaticVariableCount(
 void PipelineSignatureImpl::InitializeStaticSRBResources(
     scoped_refptr<GPUResourceBinding> srb,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_srb = static_cast<ResourceBindingImpl*>(srb.get());
   auto* object_srb = raw_srb ? raw_srb->AsRawPtr() : nullptr;
@@ -106,7 +106,7 @@ void PipelineSignatureImpl::InitializeStaticSRBResources(
 void PipelineSignatureImpl::CopyStaticResources(
     scoped_refptr<GPUPipelineSignature> dst,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_other = static_cast<PipelineSignatureImpl*>(dst.get());
   auto* object_other = raw_other ? raw_other->AsRawPtr() : nullptr;

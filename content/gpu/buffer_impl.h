@@ -19,8 +19,7 @@ class BufferViewImpl : public GPUBufferView,
                        public EngineObject,
                        public Disposable {
  public:
-  BufferViewImpl(ExecutionContext* context,
-                 Diligent::RefCntAutoPtr<Diligent::IBufferView> object);
+  BufferViewImpl(ExecutionContext* context, Diligent::IBufferView* object);
   ~BufferViewImpl() override;
 
   BufferViewImpl(const BufferViewImpl&) = delete;
@@ -43,8 +42,7 @@ class BufferViewImpl : public GPUBufferView,
 
 class BufferImpl : public GPUBuffer, public EngineObject, public Disposable {
  public:
-  BufferImpl(ExecutionContext* context,
-             Diligent::RefCntAutoPtr<Diligent::IBuffer> object);
+  BufferImpl(ExecutionContext* context, Diligent::IBuffer* object);
   ~BufferImpl() override;
 
   BufferImpl(const BufferImpl&) = delete;

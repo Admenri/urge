@@ -8,8 +8,7 @@
 
 namespace content {
 
-QueryImpl::QueryImpl(ExecutionContext* context,
-                     Diligent::RefCntAutoPtr<Diligent::IQuery> object)
+QueryImpl::QueryImpl(ExecutionContext* context, Diligent::IQuery* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -37,7 +36,7 @@ bool QueryImpl::GetData(void* data,
 }
 
 void QueryImpl::Invalidate(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->Invalidate();
 }

@@ -8,9 +8,8 @@
 
 namespace content {
 
-ResourceMappingImpl::ResourceMappingImpl(
-    ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IResourceMapping> object)
+ResourceMappingImpl::ResourceMappingImpl(ExecutionContext* context,
+                                         Diligent::IResourceMapping* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -32,7 +31,7 @@ void ResourceMappingImpl::AddResource(const base::String& name,
                                       uint64_t device_object,
                                       bool is_unique,
                                       ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->AddResource(
       name.c_str(), reinterpret_cast<Diligent::IDeviceObject*>(device_object),
@@ -45,7 +44,7 @@ void ResourceMappingImpl::AddResourceArray(
     const base::Vector<uint64_t>& device_objects,
     bool is_unique,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   base::Vector<Diligent::IDeviceObject*> objects;
   for (auto element : device_objects)
@@ -59,7 +58,7 @@ void ResourceMappingImpl::RemoveResourceByName(
     const base::String& name,
     uint32_t array_index,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->RemoveResourceByName(name.c_str(), array_index);
 }
@@ -67,14 +66,14 @@ void ResourceMappingImpl::RemoveResourceByName(
 uint64_t ResourceMappingImpl::GetResource(const base::String& name,
                                           uint32_t array_index,
                                           ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK_RETURN(0);
 
   return reinterpret_cast<uint64_t>(
       object_->GetResource(name.c_str(), array_index));
 }
 
 uint64_t ResourceMappingImpl::GetSize(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK_RETURN(0);
 
   return object_->GetSize();
 }

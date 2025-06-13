@@ -9,9 +9,8 @@
 
 namespace content {
 
-TextureViewImpl::TextureViewImpl(
-    ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> object)
+TextureViewImpl::TextureViewImpl(ExecutionContext* context,
+                                 Diligent::ITextureView* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -52,7 +51,7 @@ scoped_refptr<GPUSampler> TextureViewImpl::Get_Sampler(
 
 void TextureViewImpl::Put_Sampler(const scoped_refptr<GPUSampler>& value,
                                   ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_sampler = static_cast<SamplerImpl*>(value.get());
   auto* object_sampler = raw_sampler ? raw_sampler->AsRawPtr() : nullptr;
@@ -64,8 +63,7 @@ void TextureViewImpl::OnObjectDisposed() {
   object_.Release();
 }
 
-TextureImpl::TextureImpl(ExecutionContext* context,
-                         Diligent::RefCntAutoPtr<Diligent::ITexture> object)
+TextureImpl::TextureImpl(ExecutionContext* context, Diligent::ITexture* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -135,7 +133,7 @@ GPU::ResourceState TextureImpl::Get_State(ExceptionState& exception_state) {
 
 void TextureImpl::Put_State(const GPU::ResourceState& value,
                             ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->SetState(static_cast<Diligent::RESOURCE_STATE>(value));
 }

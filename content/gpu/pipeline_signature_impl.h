@@ -18,9 +18,8 @@ class PipelineSignatureImpl : public GPUPipelineSignature,
                               public EngineObject,
                               public Disposable {
  public:
-  PipelineSignatureImpl(
-      ExecutionContext* context,
-      Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature> object);
+  PipelineSignatureImpl(ExecutionContext* context,
+                        Diligent::IPipelineResourceSignature* object);
   ~PipelineSignatureImpl() override;
 
   PipelineSignatureImpl(const PipelineSignatureImpl&) = delete;

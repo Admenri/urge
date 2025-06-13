@@ -16,8 +16,7 @@ namespace content {
 
 class FenceImpl : public GPUFence, public EngineObject, public Disposable {
  public:
-  FenceImpl(ExecutionContext* context,
-            Diligent::RefCntAutoPtr<Diligent::IFence> object);
+  FenceImpl(ExecutionContext* context, Diligent::IFence* object);
   ~FenceImpl() override;
 
   FenceImpl(const FenceImpl&) = delete;

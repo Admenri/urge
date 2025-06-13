@@ -16,8 +16,7 @@ namespace content {
 
 class SamplerImpl : public GPUSampler, public EngineObject, public Disposable {
  public:
-  SamplerImpl(ExecutionContext* context,
-              Diligent::RefCntAutoPtr<Diligent::ISampler> object);
+  SamplerImpl(ExecutionContext* context, Diligent::ISampler* object);
   ~SamplerImpl() override;
 
   SamplerImpl(const SamplerImpl&) = delete;

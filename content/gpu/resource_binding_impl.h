@@ -18,9 +18,8 @@ class ResourceBindingImpl : public GPUResourceBinding,
                             public EngineObject,
                             public Disposable {
  public:
-  ResourceBindingImpl(
-      ExecutionContext* context,
-      Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> object);
+  ResourceBindingImpl(ExecutionContext* context,
+                      Diligent::IShaderResourceBinding* object);
   ~ResourceBindingImpl() override;
 
   ResourceBindingImpl(const ResourceBindingImpl&) = delete;

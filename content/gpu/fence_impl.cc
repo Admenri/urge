@@ -8,8 +8,7 @@
 
 namespace content {
 
-FenceImpl::FenceImpl(ExecutionContext* context,
-                     Diligent::RefCntAutoPtr<Diligent::IFence> object)
+FenceImpl::FenceImpl(ExecutionContext* context, Diligent::IFence* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -40,13 +39,13 @@ uint64_t FenceImpl::GetCompletedValue(ExceptionState& exception_state) {
 }
 
 void FenceImpl::Signal(uint64_t value, ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->Signal(value);
 }
 
 void FenceImpl::Wait(uint64_t value, ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   object_->Wait(value);
 }

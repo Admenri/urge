@@ -8,6 +8,7 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
+#include "content/public/engine_color.h"
 #include "content/public/engine_gpu.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpucommandlist.h"
@@ -16,6 +17,7 @@
 #include "content/public/engine_gpuquery.h"
 #include "content/public/engine_gpuresourcebinding.h"
 #include "content/public/engine_gputexture.h"
+#include "content/public/engine_rect.h"
 
 namespace content {
 

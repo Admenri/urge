@@ -21,7 +21,7 @@ class DeviceContextImpl : public GPUDeviceContext,
                           public Disposable {
  public:
   DeviceContextImpl(ExecutionContext* context,
-                    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> object);
+                    Diligent::IDeviceContext* object);
   ~DeviceContextImpl() override;
 
   DeviceContextImpl(const DeviceContextImpl&) = delete;

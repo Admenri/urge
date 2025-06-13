@@ -18,8 +18,7 @@ class CommandListImpl : public GPUCommandList,
                         public EngineObject,
                         public Disposable {
  public:
-  CommandListImpl(ExecutionContext* context,
-                  Diligent::RefCntAutoPtr<Diligent::ICommandList> object);
+  CommandListImpl(ExecutionContext* context, Diligent::ICommandList* object);
   ~CommandListImpl() override;
 
   CommandListImpl(const CommandListImpl&) = delete;

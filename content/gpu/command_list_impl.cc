@@ -8,9 +8,8 @@
 
 namespace content {
 
-CommandListImpl::CommandListImpl(
-    ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::ICommandList> object)
+CommandListImpl::CommandListImpl(ExecutionContext* context,
+                                 Diligent::ICommandList* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}

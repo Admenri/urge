@@ -8,8 +8,7 @@
 
 namespace content {
 
-SamplerImpl::SamplerImpl(ExecutionContext* context,
-                         Diligent::RefCntAutoPtr<Diligent::ISampler> object)
+SamplerImpl::SamplerImpl(ExecutionContext* context, Diligent::ISampler* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}

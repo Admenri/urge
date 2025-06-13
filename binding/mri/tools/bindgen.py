@@ -238,7 +238,7 @@ class MriBindingGen:
       elif member_type.startswith("base::String"):
         convert_func = f"MRI_FROM_STRING({member_name})"
       elif member_type.startswith("scoped_refptr"):
-        match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', param_type)
+        match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', member_type)
         decay_type = match.group(1)
         convert_func = f"MriCheckStructData<content::{decay_type}>({member_name}, k{decay_type}DataType)"
       elif member_type.startswith("std::optional"):

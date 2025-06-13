@@ -13,7 +13,7 @@ namespace content {
 
 ResourceBindingImpl::ResourceBindingImpl(
     ExecutionContext* context,
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> object)
+    Diligent::IShaderResourceBinding* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       object_(object) {}
@@ -44,7 +44,7 @@ void ResourceBindingImpl::BindResources(
     scoped_refptr<GPUResourceMapping> mapping,
     GPU::BindShaderResourcesFlags flags,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN();
+  DISPOSE_CHECK;
 
   auto* raw_mapping = static_cast<ResourceMappingImpl*>(mapping.get());
   auto* object_mapping = raw_mapping ? raw_mapping->AsRawPtr() : nullptr;

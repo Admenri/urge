@@ -18,9 +18,8 @@ class ResourceMappingImpl : public GPUResourceMapping,
                             public EngineObject,
                             public Disposable {
  public:
-  ResourceMappingImpl(
-      ExecutionContext* context,
-      Diligent::RefCntAutoPtr<Diligent::IResourceMapping> object);
+  ResourceMappingImpl(ExecutionContext* context,
+                      Diligent::IResourceMapping* object);
   ~ResourceMappingImpl() override;
 
   ResourceMappingImpl(const ResourceMappingImpl&) = delete;

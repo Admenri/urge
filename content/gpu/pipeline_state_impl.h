@@ -19,7 +19,7 @@ class PipelineStateImpl : public GPUPipelineState,
                           public Disposable {
  public:
   PipelineStateImpl(ExecutionContext* context,
-                    Diligent::RefCntAutoPtr<Diligent::IPipelineState> object);
+                    Diligent::IPipelineState* object);
   ~PipelineStateImpl() override;
 
   PipelineStateImpl(const PipelineStateImpl&) = delete;

@@ -56,6 +56,12 @@ scoped_refptr<IOStream> IOStream::FromMemory(
   return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
+uint64_t IOStream::StringToPointer(ExecutionContext* execution_context,
+                                   const void* source,
+                                   ExceptionState& exception_state) {
+  return reinterpret_cast<uint64_t>(source);
+}
+
 uint64_t IOStream::CopyMemoryFromPtr(ExecutionContext* execution_context,
                                      void* dest,
                                      uint64_t source_ptr,
