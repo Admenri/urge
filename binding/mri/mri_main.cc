@@ -45,6 +45,24 @@
 #include "binding/mri/autogen_window2_binding.h"
 #include "binding/mri/autogen_window_binding.h"
 
+#include "binding/mri/autogen_gpu_binding.h"
+#include "binding/mri/autogen_gpubuffer_binding.h"
+#include "binding/mri/autogen_gpubufferview_binding.h"
+#include "binding/mri/autogen_gpucommandlist_binding.h"
+#include "binding/mri/autogen_gpudevicecontext_binding.h"
+#include "binding/mri/autogen_gpufence_binding.h"
+#include "binding/mri/autogen_gpupipelinesignature_binding.h"
+#include "binding/mri/autogen_gpupipelinestate_binding.h"
+#include "binding/mri/autogen_gpuquery_binding.h"
+#include "binding/mri/autogen_gpurenderdevice_binding.h"
+#include "binding/mri/autogen_gpuresourcebinding_binding.h"
+#include "binding/mri/autogen_gpuresourcemapping_binding.h"
+#include "binding/mri/autogen_gpuresourcevariable_binding.h"
+#include "binding/mri/autogen_gpusampler_binding.h"
+#include "binding/mri/autogen_gpushader_binding.h"
+#include "binding/mri/autogen_gputexture_binding.h"
+#include "binding/mri/autogen_gputextureview_binding.h"
+
 #ifdef HAVE_GET_MACHINE_HASH
 #include "admenri/machineid/machineid.h"
 #endif
@@ -232,6 +250,24 @@ void BindingEngineMri::PreEarlyInitialization(
   InitWindowBinding();
   InitWindow2Binding();
   InitURGEBinding();
+
+  InitGPUBinding();
+  InitGPUBufferBinding();
+  InitGPUBufferViewBinding();
+  InitGPUCommandListBinding();
+  InitGPUDeviceContextBinding();
+  InitGPUFenceBinding();
+  InitGPUPipelineSignatureBinding();
+  InitGPUPipelineStateBinding();
+  InitGPUQueryBinding();
+  InitGPURenderDeviceBinding();
+  InitGPUResourceBindingBinding();
+  InitGPUResourceMappingBinding();
+  InitGPUResourceVariableBinding();
+  InitGPUSamplerBinding();
+  InitGPUShaderBinding();
+  InitGPUTextureBinding();
+  InitGPUTextureViewBinding();
 
   Init_zlib();
   Init_ruby_prof();
