@@ -171,12 +171,11 @@ class URGE_RUNTIME_API GPURenderDevice
     uint32_t sample_mask;
     std::optional<RasterizerStateDesc> rasterizer_desc;
     std::optional<DepthStencilStateDesc> depth_stencil_desc;
-    std::optional<InputLayoutElement> input_layout;
+    base::Vector<InputLayoutElement> input_layout;
     GPU::PrimitiveTopology primitive_topology =
         GPU::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     uint8_t num_viewports = 1;
     uint8_t num_render_targets = 0;
-    uint8_t subpass_index = 0;
     base::Vector<GPU::TextureFormat> rtv_formats;
     GPU::TextureFormat dsv_format = GPU::TEX_FORMAT_UNKNOWN;
     bool readonly_dsv = false;
