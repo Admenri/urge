@@ -54,7 +54,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
   auto [render_device, render_context] = renderer::RenderDevice::Create(
       window,
       magic_enum::enum_cast<renderer::DriverType>(profile->driver_backend)
-          .value_or(renderer::DRIVER_UNDEFINED));
+          .value_or(renderer::DriverType::UNDEFINED));
   render_device_ = std::move(render_device);
   render_context_ = std::move(render_context);
   canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(

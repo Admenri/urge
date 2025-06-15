@@ -294,6 +294,13 @@ class URGE_RUNTIME_API GPURenderDevice
   virtual scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
       const std::optional<PipelineSignatureDesc>& desc,
       ExceptionState& exception_state) = 0;
+
+  /*--urge(name:create_deferred_context)--*/
+  virtual scoped_refptr<GPUDeviceContext> CreateDeferredContext(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:idle_gpu)--*/
+  virtual void IdleGPU(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

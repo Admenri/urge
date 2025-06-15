@@ -9,6 +9,8 @@
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
 #include "content/public/engine_bitmap.h"
+#include "content/public/engine_gpudevicecontext.h"
+#include "content/public/engine_gpurenderdevice.h"
 
 namespace content {
 
@@ -98,6 +100,14 @@ class URGE_RUNTIME_API Graphics : public base::RefCounted<Graphics> {
   /*--urge(name:set_window_icon)--*/
   virtual void SetWindowIcon(scoped_refptr<Bitmap> icon,
                              ExceptionState& exception_state) = 0;
+
+  /*--urge(name:render_device)--*/
+  virtual scoped_refptr<GPURenderDevice> GetRenderDevice(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:immediate_context)--*/
+  virtual scoped_refptr<GPUDeviceContext> GetImmediateContext(
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:frame_rate)--*/
   URGE_EXPORT_ATTRIBUTE(FrameRate, uint32_t);

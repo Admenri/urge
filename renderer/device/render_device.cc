@@ -116,8 +116,8 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   // Setup specific platform window handle
   SDL_GLContext glcontext = nullptr;
 #if defined(OS_WIN)
-  if (driver_type == DRIVER_UNDEFINED)
-    driver_type = DRIVER_D3D11;
+  if (driver_type == DriverType::UNDEFINED)
+    driver_type = DriverType::D3D11;
 
   native_window.hWnd = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
@@ -183,7 +183,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 
 // Initialize specific graphics api
 #if GL_SUPPORTED || GLES_SUPPORTED
-  if (driver_type == DRIVER_OPENGL) {
+  if (driver_type == DriverType::OPENGL) {
 #if ENGINE_DLL
     auto GetEngineFactoryOpenGL = Diligent::LoadGraphicsEngineOpenGL();
 #endif
@@ -197,7 +197,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // OPENGL_SUPPORT
 #if VULKAN_SUPPORTED
-  if (driver_type == DRIVER_VULKAN) {
+  if (driver_type == DriverType::VULKAN) {
 #if ENGINE_DLL
     auto GetEngineFactoryVk = Diligent::LoadGraphicsEngineVk();
 #endif
@@ -210,7 +210,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // VULKAN_SUPPORT
 #if D3D11_SUPPORTED
-  if (driver_type == DRIVER_D3D11) {
+  if (driver_type == DriverType::D3D11) {
 #if ENGINE_DLL
     auto GetEngineFactoryD3D11 = Diligent::LoadGraphicsEngineD3D11();
 #endif
@@ -225,7 +225,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // D3D11_SUPPORT
 #if D3D12_SUPPORTED
-  if (driver_type == DRIVER_D3D12) {
+  if (driver_type == DriverType::D3D12) {
 #if ENGINE_DLL
     auto GetEngineFactoryD3D12 = Diligent::LoadGraphicsEngineD3D12();
 #endif

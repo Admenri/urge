@@ -547,6 +547,22 @@ scoped_refptr<GPUPipelineSignature> RenderDeviceImpl::CreatePipelineSignature(
   return base::MakeRefCounted<PipelineSignatureImpl>(context(), result);
 }
 
+scoped_refptr<GPUDeviceContext> RenderDeviceImpl::CreateDeferredContext(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  Diligent::RefCntAutoPtr<Diligent::IDeviceContext> result;
+  object_->CreateDeferredContext(&result);
+
+  return base::MakeRefCounted<DeviceContextImpl>(context(), result);
+}
+
+void RenderDeviceImpl::IdleGPU(ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  object_->IdleGPU();
+}
+
 void RenderDeviceImpl::OnObjectDisposed() {
   object_.Release();
 }

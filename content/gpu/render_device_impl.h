@@ -75,6 +75,9 @@ class RenderDeviceImpl : public GPURenderDevice,
   scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
       const std::optional<PipelineSignatureDesc>& desc,
       ExceptionState& exception_state) override;
+  scoped_refptr<GPUDeviceContext> CreateDeferredContext(
+      ExceptionState& exception_state) override;
+  void IdleGPU(ExceptionState& exception_state) override;
 
  private:
   void OnObjectDisposed() override;

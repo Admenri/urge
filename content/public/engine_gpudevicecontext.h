@@ -27,6 +27,16 @@ class URGE_RUNTIME_API GPUDeviceContext
  public:
   virtual ~GPUDeviceContext() = default;
 
+  /*--urge(name:DeviceContextDesc)--*/
+  struct DeviceContextDesc {
+    base::String name;
+    GPU::CommandQueueType queue_type = GPU::COMMAND_QUEUE_TYPE_UNKNOWN;
+    bool is_deferred = false;
+    uint8_t context_id = 0;
+    uint8_t queue_id = 0;
+    base::Vector<uint32_t> texture_copy_granularity;
+  };
+
   /*--urge(name:TextureSubResData)--*/
   struct TextureSubResData {
     uint64_t data_ptr;
@@ -84,6 +94,10 @@ class URGE_RUNTIME_API GPUDeviceContext
 
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:desc)--*/
+  virtual std::optional<DeviceContextDesc> GetDesc(
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin)--*/
   virtual void Begin(uint32_t immediate_context_id,

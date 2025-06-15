@@ -16,12 +16,12 @@
 
 namespace renderer {
 
-enum DriverType {
-  DRIVER_UNDEFINED = 0,
-  DRIVER_OPENGL,
-  DRIVER_VULKAN,
-  DRIVER_D3D11,
-  DRIVER_D3D12,
+enum class DriverType {
+  UNDEFINED = 0,
+  OPENGL,
+  VULKAN,
+  D3D11,
+  D3D12,
 };
 
 class RenderDevice {

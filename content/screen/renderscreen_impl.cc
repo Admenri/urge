@@ -11,13 +11,14 @@
 #include "magic_enum/magic_enum.hpp"
 
 #include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
-
 #if defined(OS_ANDROID)
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceGLES.h"
 #endif
 
 #include "content/canvas/canvas_scheduler.h"
 #include "content/common/rect_impl.h"
+#include "content/gpu/device_context_impl.h"
+#include "content/gpu/render_device_impl.h"
 #include "content/profile/command_ids.h"
 #include "renderer/utils/texture_utils.h"
 
@@ -400,6 +401,18 @@ void RenderScreenImpl::SetWindowIcon(scoped_refptr<Bitmap> icon,
   scoped_refptr<CanvasImpl> data = CanvasImpl::FromBitmap(icon);
   SDL_Surface* icon_surface = data->RequireMemorySurface();
   SDL_SetWindowIcon(context()->window->AsSDLWindow(), icon_surface);
+}
+
+scoped_refptr<GPURenderDevice> RenderScreenImpl::GetRenderDevice(
+    ExceptionState& exception_state) {
+  return base::MakeRefCounted<RenderDeviceImpl>(context(),
+                                                **context()->render_device);
+}
+
+scoped_refptr<GPUDeviceContext> RenderScreenImpl::GetImmediateContext(
+    ExceptionState& exception_state) {
+  return base::MakeRefCounted<DeviceContextImpl>(
+      context(), **context()->primary_render_context);
 }
 
 uint32_t RenderScreenImpl::Get_FrameRate(ExceptionState& exception_state) {

@@ -36,6 +36,25 @@ bool DeviceContextImpl::IsDisposed(ExceptionState& exception_state) {
   return Disposable::IsDisposed(exception_state);
 }
 
+std::optional<GPUDeviceContext::DeviceContextDesc> DeviceContextImpl::GetDesc(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(std::nullopt);
+
+  const auto& desc = object_->GetDesc();
+  DeviceContextDesc object_desc;
+  object_desc.name = desc.Name;
+  object_desc.queue_type = static_cast<GPU::CommandQueueType>(desc.QueueType);
+  object_desc.is_deferred = desc.IsDeferred;
+  object_desc.context_id = desc.ContextId;
+  object_desc.queue_id = desc.QueueId;
+  object_desc.texture_copy_granularity.insert(
+      object_desc.texture_copy_granularity.end(),
+      std::begin(desc.TextureCopyGranularity),
+      std::end(desc.TextureCopyGranularity));
+
+  return object_desc;
+}
+
 void DeviceContextImpl::Begin(uint32_t immediate_context_id,
                               ExceptionState& exception_state) {
   DISPOSE_CHECK;

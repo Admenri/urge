@@ -35,6 +35,8 @@ class DeviceContextImpl : public GPUDeviceContext,
   bool IsDisposed(ExceptionState& exception_state) override;
 
   // GPUDeviceContext interface
+  std::optional<DeviceContextDesc> GetDesc(
+      ExceptionState& exception_state) override;
   void Begin(uint32_t immediate_context_id,
              ExceptionState& exception_state) override;
   void SetPipelineState(scoped_refptr<GPUPipelineState> pipeline,

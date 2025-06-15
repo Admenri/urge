@@ -106,6 +106,10 @@ class RenderScreenImpl : public Graphics,
   uint32_t GetDisplayID(ExceptionState& exception_state) override;
   void SetWindowIcon(scoped_refptr<Bitmap> icon,
                      ExceptionState& exception_state) override;
+  scoped_refptr<GPURenderDevice> GetRenderDevice(
+      ExceptionState& exception_state) override;
+  scoped_refptr<GPUDeviceContext> GetImmediateContext(
+      ExceptionState& exception_state) override;
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(FrameRate, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(FrameCount, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Brightness, uint32_t);
