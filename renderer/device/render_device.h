@@ -40,18 +40,19 @@ class RenderDevice {
     Pipeline_YUV yuv;
 
     PipelineSet(Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
-                Diligent::TEXTURE_FORMAT target_format)
-        : base(device, target_format),
-          color(device, target_format),
-          viewport(device, target_format),
-          sprite(device, target_format),
-          alphatrans(device, target_format),
-          mappedtrans(device, target_format),
-          tilemap(device, target_format),
-          tilemap2(device, target_format),
-          bitmaphue(device, target_format),
-          spine2d(device, target_format),
-          yuv(device, target_format) {}
+                Diligent::TEXTURE_FORMAT target_format,
+                Diligent::TEXTURE_FORMAT depth_stencil_format)
+        : base(device, target_format, depth_stencil_format),
+          color(device, target_format, depth_stencil_format),
+          viewport(device, target_format, depth_stencil_format),
+          sprite(device, target_format, depth_stencil_format),
+          alphatrans(device, target_format, depth_stencil_format),
+          mappedtrans(device, target_format, depth_stencil_format),
+          tilemap(device, target_format, depth_stencil_format),
+          tilemap2(device, target_format, depth_stencil_format),
+          bitmaphue(device, target_format, depth_stencil_format),
+          spine2d(device, target_format, depth_stencil_format),
+          yuv(device, target_format, depth_stencil_format) {}
   };
 
   using CreateDeviceResult =

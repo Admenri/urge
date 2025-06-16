@@ -257,7 +257,7 @@ void VideoDecoderImpl::GPUCreateYUVFramesInternal(const base::Vec2i& size) {
 void VideoDecoderImpl::GPURenderYUVInternal(
     renderer::RenderContext* render_context,
     uvpx::Frame* data,
-    CanvasImpl::Agent* target) {
+    BitmapAgent* target) {
   // Update yuv planes
   Diligent::Box dest_box;
   Diligent::TextureSubResData sub_res_data;
@@ -292,7 +292,8 @@ void VideoDecoderImpl::GPURenderYUVInternal(
   // Render to target
   auto& render_device = *context()->render_device;
   auto& pipeline_set = render_device.GetPipelines()->yuv;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
 
   // Make transient vertices data
   renderer::Quad transient_quad;
@@ -303,13 +304,16 @@ void VideoDecoderImpl::GPURenderYUVInternal(
   agent_.batch.QueueWrite(**render_context, &transient_quad);
 
   // Setup render target
-  auto render_target = target->target;
   float clear_color[] = {0, 0, 0, 0};
   (*render_context)
-      ->SetRenderTargets(1, &render_target, nullptr,
+      ->SetRenderTargets(1, &target->target, target->depth_view,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
-      ->ClearRenderTarget(render_target, clear_color,
+      ->ClearDepthStencil(target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
+                          0,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->ClearRenderTarget(target->target, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Push scissor

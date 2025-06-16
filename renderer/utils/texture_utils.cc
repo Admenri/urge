@@ -23,6 +23,9 @@ void CreateTexture2D(Diligent::IRenderDevice* device,
   texture_desc.BindFlags = bind_flags;
   texture_desc.Usage = usage;
   texture_desc.CPUAccessFlags = access;
+  texture_desc.ClearValue.Format = texture_desc.Format;
+  std::memset(texture_desc.ClearValue.Color, 0,
+              sizeof(texture_desc.ClearValue.Color));
 
   device->CreateTexture(texture_desc, nullptr, texture);
 }
@@ -44,6 +47,9 @@ void CreateTexture2D(Diligent::IRenderDevice* device,
   texture_desc.BindFlags = bind_flags;
   texture_desc.Usage = usage;
   texture_desc.CPUAccessFlags = access;
+  texture_desc.ClearValue.Format = texture_desc.Format;
+  std::memset(texture_desc.ClearValue.Color, 0,
+              sizeof(texture_desc.ClearValue.Color));
 
   Diligent::TextureSubResData texture_sub_res_data;
   texture_sub_res_data.pData = data->pixels;

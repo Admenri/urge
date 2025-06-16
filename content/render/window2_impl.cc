@@ -492,10 +492,9 @@ void Window2Impl::DrawableNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  CanvasImpl::Agent* windowskin_agent =
+  BitmapAgent* windowskin_agent =
       windowskin_ ? windowskin_->GetAgent() : nullptr;
-  CanvasImpl::Agent* contents_agent =
-      contents_ ? contents_->GetAgent() : nullptr;
+  BitmapAgent* contents_agent = contents_ ? contents_->GetAgent() : nullptr;
 
   base::Rect padding_rect =
       base::Rect(padding_, padding_, std::max(0, bound_.width - padding_ * 2),
@@ -530,8 +529,8 @@ void Window2Impl::GPUCreateWindowInternal() {
 
 void Window2Impl::GPUCompositeWindowQuadsInternal(
     renderer::RenderContext* render_context,
-    CanvasImpl::Agent* contents,
-    CanvasImpl::Agent* windowskin,
+    BitmapAgent* contents,
+    BitmapAgent* windowskin,
     const base::Rect& padding_rect) {
   // Create texture if need
   if (windowskin) {
@@ -695,13 +694,13 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
         auto& pipeline_set_tone =
             context()->render_device->GetPipelines()->viewport;
         auto* pipeline_tone =
-            pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_NORMAL);
-        auto* pipeline_tone_alpha =
-            pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_KEEP_ALPHA);
+            pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+        auto* pipeline_tone_alpha = pipeline_set_tone.GetPipeline(
+            renderer::BLEND_TYPE_KEEP_ALPHA, false);
         auto& pipeline_set_base =
             context()->render_device->GetPipelines()->base;
         auto* pipeline_base =
-            pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+            pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
 
         float clear_color[] = {0, 0, 0, 0};
         auto* render_target_view = agent_.background_texture->GetDefaultView(
@@ -1020,13 +1019,13 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
 void Window2Impl::GPURenderWindowQuadsInternal(
     renderer::RenderContext* render_context,
     Diligent::IBuffer* world_binding,
-    CanvasImpl::Agent* windowskin,
-    CanvasImpl::Agent* contents,
+    BitmapAgent* windowskin,
+    BitmapAgent* contents,
     const base::Rect& padding_rect,
     const base::Rect& last_viewport,
     const base::Vec2i& last_origin) {
   auto& pipeline_set = context()->render_device->GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
   // Setup world uniform
   agent_.shader_binding.u_transform->Set(world_binding);

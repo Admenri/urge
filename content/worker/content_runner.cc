@@ -373,9 +373,7 @@ void ContentRunner::CreateIMGUIContextInternal() {
 
   // Setup renderer backend
   Diligent::ImGuiDiligentCreateInfo imgui_create_info(
-      **render_device,
-      render_device->GetSwapChain()->GetDesc().ColorBufferFormat,
-      Diligent::TEX_FORMAT_UNKNOWN);
+      **render_device, render_device->GetSwapChain()->GetDesc());
   imgui_ =
       base::MakeOwnedPtr<Diligent::ImGuiDiligentRenderer>(imgui_create_info);
 }

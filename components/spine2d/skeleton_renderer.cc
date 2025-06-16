@@ -219,7 +219,7 @@ void DiligentRenderer::GPURenderSkeletonCommandsInternal(
     uint32_t vertices_offset) {
   auto& pipeline_set = device_->GetPipelines()->spine2d;
   auto* pipeline = pipeline_set.GetPipeline(
-      RenderBlendTypeWrap(blend_mode, premultiplied_alpha));
+      RenderBlendTypeWrap(blend_mode, premultiplied_alpha), true);
 
   // Setup uniform params
   shader_binding_.u_transform->Set(world_buffer);

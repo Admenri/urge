@@ -1019,7 +1019,8 @@ void TilemapImpl::GPURenderGroundLayerInternal(
 
   if (agent_.ground_draw_count) {
     auto& pipeline_set = context()->render_device->GetPipelines()->tilemap;
-    auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+    auto* pipeline =
+        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
     // Setup uniform params
     agent_.shader_binding.u_transform->Set(world_binding);
@@ -1064,7 +1065,8 @@ void TilemapImpl::GPURenderAboveLayerInternal(
         draw_offset += agent_.above_draw_count[i];
 
       auto& pipeline_set = context()->render_device->GetPipelines()->tilemap;
-      auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+      auto* pipeline =
+          pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
       // Setup uniform params
       agent_.shader_binding.u_transform->Set(world_binding);

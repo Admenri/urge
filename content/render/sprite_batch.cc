@@ -19,7 +19,7 @@ SpriteBatch::SpriteBatch(renderer::RenderDevice* device)
 
 SpriteBatch::~SpriteBatch() = default;
 
-void SpriteBatch::BeginBatch(CanvasImpl::Agent* texture) {
+void SpriteBatch::BeginBatch(BitmapAgent* texture) {
   current_texture_ = texture;
   last_batch_index_ = uniform_cache_.size();
 }

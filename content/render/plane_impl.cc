@@ -360,8 +360,8 @@ void PlaneImpl::GPUOnViewportRenderingInternal(
   // Render device etc
   auto& render_device = *context()->render_device;
   auto& pipeline_set = render_device.GetPipelines()->viewport;
-  auto* pipeline =
-      pipeline_set.GetPipeline(static_cast<renderer::BlendType>(blend_type_));
+  auto* pipeline = pipeline_set.GetPipeline(
+      static_cast<renderer::BlendType>(blend_type_), true);
 
   // Setup uniform params
   agent_.shader_binding.u_transform->Set(world_binding);

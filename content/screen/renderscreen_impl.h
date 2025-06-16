@@ -30,6 +30,11 @@ class RenderScreenImpl : public Graphics,
     RRefPtr<Diligent::ITexture> screen_buffer;
     RRefPtr<Diligent::ITexture> frozen_buffer;
     RRefPtr<Diligent::ITexture> transition_buffer;
+
+    RRefPtr<Diligent::ITexture> screen_depth_stencil;
+    RRefPtr<Diligent::ITexture> frozen_depth_stencil;
+    RRefPtr<Diligent::ITexture> transition_depth_stencil;
+
     RRefPtr<Diligent::IBuffer> root_transform;
     RRefPtr<Diligent::IBuffer> world_transform;
 
@@ -128,7 +133,8 @@ class RenderScreenImpl : public Graphics,
 
  private:
   void FrameProcessInternal(Diligent::ITexture* present_target);
-  void RenderFrameInternal(Diligent::ITexture* render_target);
+  void RenderFrameInternal(Diligent::ITexture* render_target,
+                           Diligent::ITexture* depth_stencil);
   void UpdateWindowViewportInternal();
 
   void GPUCreateGraphicsHostInternal();
@@ -138,7 +144,8 @@ class RenderScreenImpl : public Graphics,
       renderer::RenderContext* render_context,
       Diligent::ImGuiDiligentRenderer* gui_renderer);
   void GPUFrameBeginRenderPassInternal(renderer::RenderContext* render_context,
-                                       Diligent::ITexture* render_target);
+                                       Diligent::ITexture* render_target,
+                                       Diligent::ITexture* depth_stencil);
   void GPUFrameEndRenderPassInternal(renderer::RenderContext* render_context);
   void GPURenderAlphaTransitionFrameInternal(
       renderer::RenderContext* render_context,

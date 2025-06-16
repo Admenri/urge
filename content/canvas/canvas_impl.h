@@ -21,6 +21,30 @@ namespace content {
 
 constexpr int32_t kBlockMaxSize = 4096;
 
+struct BitmapAgent {
+  // Debug name
+  base::String name;
+
+  // Bitmap texture data
+  base::Vec2i size;
+  RRefPtr<Diligent::ITexture> data;
+  RRefPtr<Diligent::ITextureView> resource;
+  RRefPtr<Diligent::ITextureView> target;
+
+  RRefPtr<Diligent::ITexture> depth_stencil;
+  RRefPtr<Diligent::ITextureView> depth_view;
+
+  // Shader binding cache data
+  RRefPtr<Diligent::IBuffer> world_buffer;
+
+  // Text drawing cache texture
+  base::Vec2i text_cache_size;
+  RRefPtr<Diligent::ITexture> text_cache_texture;
+
+  // Filter effect intermediate layer
+  RRefPtr<Diligent::ITexture> effect_layer;
+};
+
 class CanvasScheduler;
 
 class CanvasImpl : public base::LinkNode<CanvasImpl>,
@@ -28,27 +52,6 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                    public EngineObject,
                    public Disposable {
  public:
-  struct Agent {
-    // Debug name
-    base::String name;
-
-    // Bitmap texture data
-    base::Vec2i size;
-    RRefPtr<Diligent::ITexture> data;
-    RRefPtr<Diligent::ITextureView> resource;
-    RRefPtr<Diligent::ITextureView> target;
-
-    // Shader binding cache data
-    RRefPtr<Diligent::IBuffer> world_buffer;
-
-    // Text drawing cache texture
-    base::Vec2i text_cache_size;
-    RRefPtr<Diligent::ITexture> text_cache_texture;
-
-    // Filter effect intermediate layer
-    RRefPtr<Diligent::ITexture> effect_layer;
-  };
-
   CanvasImpl(ExecutionContext* context,
              SDL_Surface* memory_surface,
              const base::String& debug_name);
@@ -79,7 +82,9 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   void SubmitQueuedCommands();
 
   // Require render texture (maybe null after disposed)
-  Agent* GetAgent() { return Disposable::IsDisposed() ? nullptr : &agent_; }
+  BitmapAgent* GetAgent() {
+    return Disposable::IsDisposed() ? nullptr : &agent_;
+  }
 
   // Add a handler for observe bitmap content changing
   inline base::CallbackListSubscription AddCanvasObserver(
@@ -198,7 +203,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   void GPUCreateTextureWithDataInternal();
   void GPUResetEffectLayerIfNeed();
   void GPUBlendBlitTextureInternal(const base::Rect& dst_region,
-                                   Agent* src_texture,
+                                   BitmapAgent* src_texture,
                                    const base::Rect& src_region,
                                    int32_t blend_type,
                                    uint32_t blit_alpha);
@@ -322,7 +327,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     current_block_ = 0;
   }
 
-  Agent agent_;
+  BitmapAgent agent_;
 
   base::String name_;
   SDL_Surface* surface_;

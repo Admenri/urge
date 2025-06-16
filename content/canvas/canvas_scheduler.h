@@ -31,6 +31,7 @@ class CanvasScheduler {
   // Setup canvas render target
   // Cached render state
   void SetupRenderTarget(Diligent::ITextureView* render_target,
+                         Diligent::ITextureView* depth_stencil,
                          bool clear_target);
 
   // Get rendering context for canvas opeartion.

@@ -273,7 +273,9 @@ RenderDevice::RenderDevice(
       swapchain_desc_(swapchain_desc),
       device_(device),
       swapchain_(swapchain),
-      pipelines_(device_, Diligent::TEX_FORMAT_RGBA8_UNORM),
+      pipelines_(device_,
+                 Diligent::TEX_FORMAT_RGBA8_UNORM,
+                 Diligent::TEX_FORMAT_D24_UNORM_S8_UINT),
       quad_index_(QuadIndexCache::Make(device_)),
       device_type_(device_->GetDeviceInfo().Type),
       gl_context_(gl_context) {

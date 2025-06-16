@@ -107,7 +107,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
     return;
 
   scoped_refptr<CanvasImpl> render_target = CanvasImpl::FromBitmap(target);
-  CanvasImpl::Agent* bitmap_agent =
+  BitmapAgent* bitmap_agent =
       render_target ? render_target->GetAgent() : nullptr;
   if (!bitmap_agent)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -131,6 +131,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   DrawableNode::RenderControllerParams controller_params;
   controller_params.context = context()->primary_render_context;
   controller_params.screen_buffer = bitmap_agent->data;
+  controller_params.screen_depth_stencil = bitmap_agent->depth_stencil;
   controller_params.screen_size = bitmap_agent->size;
   controller_params.viewport = viewport_rect;
   controller_params.origin = origin_;
@@ -157,7 +158,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
       controller_params.context);
 
   // 2) Setup renderpass
-  GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent->data,
+  GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent,
                                   offset, viewport_rect);
 
   // 3) Notify render a frame
@@ -176,7 +177,8 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
 
   GPUApplyViewportEffect(
       controller_params.context, controller_params.screen_buffer,
-      controller_params.root_world, viewport_rect, target_color);
+      controller_params.screen_depth_stencil, controller_params.root_world,
+      viewport_rect, target_color);
 }
 
 scoped_refptr<Viewport> ViewportImpl::Get_Viewport(
@@ -382,9 +384,9 @@ void ViewportImpl::DrawableNodeHandlerInternal(
       target_color =
           (flash_color.w > composite_color.w ? flash_color : composite_color);
 
-    GPUViewportProcessAfterRender(params->context, params->root_world,
-                                  params->screen_buffer, viewport_rect,
-                                  target_color);
+    GPUViewportProcessAfterRender(
+        params->context, params->root_world, params->screen_buffer,
+        params->screen_depth_stencil, viewport_rect, target_color);
   }
 }
 
@@ -442,6 +444,7 @@ void ViewportImpl::GPUResetViewportRegion(
 void ViewportImpl::GPUApplyViewportEffect(
     renderer::RenderContext* render_context,
     Diligent::ITexture* screen_buffer,
+    Diligent::ITexture* screen_depth_stencil,
     Diligent::IBuffer* root_world,
     const base::Rect& effect_region,
     const base::Vec4& color) {
@@ -485,7 +488,8 @@ void ViewportImpl::GPUApplyViewportEffect(
 
   // Derive effect pipeline
   auto& pipeline_set = context()->render_device->GetPipelines()->viewport;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Apply render target
   Diligent::ITextureView* render_target_view =
@@ -522,20 +526,29 @@ void ViewportImpl::GPUApplyViewportEffect(
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
   (*render_context)->DrawIndexed(draw_indexed_attribs);
+
+  // Restore depth test buffer
+  Diligent::ITextureView* depth_stencil_view =
+      screen_depth_stencil->GetDefaultView(
+          Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void ViewportImpl::GPUViewportProcessAfterRender(
     renderer::RenderContext* render_context,
     Diligent::IBuffer* root_world,
     Diligent::ITexture* screen_buffer,
+    Diligent::ITexture* screen_depth_stencil,
     const base::Rect& effect_region,
     const base::Vec4& color) {
   const auto tone = tone_->AsNormColor();
   const bool is_effect_valid =
       color.w != 0 || tone.x != 0 || tone.y != 0 || tone.z != 0 || tone.w != 0;
   if (is_effect_valid)
-    GPUApplyViewportEffect(render_context, screen_buffer, root_world,
-                           effect_region, color);
+    GPUApplyViewportEffect(render_context, screen_buffer, screen_depth_stencil,
+                           root_world, effect_region, color);
 
   // Restore viewport region
   render_context->ScissorState()->Pop();
@@ -543,14 +556,12 @@ void ViewportImpl::GPUViewportProcessAfterRender(
 
 void ViewportImpl::GPUFrameBeginRenderPassInternal(
     renderer::RenderContext* render_context,
-    Diligent::ITexture* render_target,
+    BitmapAgent* render_target,
     const base::Vec2i& viewport_offset,
     const base::Rect& scissor_region) {
   // Apply render target
-  Diligent::ITextureView* render_target_view =
-      render_target->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
+      ->SetRenderTargets(1, &render_target->target, render_target->depth_view,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup scissor region

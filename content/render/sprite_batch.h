@@ -35,7 +35,7 @@ class SpriteBatch {
   SpriteBatch(const SpriteBatch&) = delete;
   SpriteBatch& operator=(const SpriteBatch&) = delete;
 
-  CanvasImpl::Agent* GetCurrentTexture() const { return current_texture_; }
+  BitmapAgent* GetCurrentTexture() const { return current_texture_; }
 
   renderer::Binding_Sprite& GetShaderBinding() { return binding_; }
   Diligent::IBuffer* GetVertexBuffer() { return *vertex_batch_; }
@@ -43,7 +43,7 @@ class SpriteBatch {
   Diligent::IBuffer* GetInstanceBuffer() { return *instance_batch_; }
 
   // Setup a sprite batch
-  void BeginBatch(CanvasImpl::Agent* texture);
+  void BeginBatch(BitmapAgent* texture);
 
   void PushSprite(const renderer::Quad& quad,
                   const renderer::Binding_Sprite::Params& uniform);
@@ -57,7 +57,7 @@ class SpriteBatch {
 
  private:
   renderer::RenderDevice* device_;
-  CanvasImpl::Agent* current_texture_;
+  BitmapAgent* current_texture_;
   int32_t last_batch_index_;
   const bool support_storage_buffer_batch_;
 

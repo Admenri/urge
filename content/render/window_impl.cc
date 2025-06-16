@@ -382,10 +382,9 @@ void WindowImpl::ControlNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  CanvasImpl::Agent* windowskin_agent =
+  BitmapAgent* windowskin_agent =
       windowskin_ ? windowskin_->GetAgent() : nullptr;
-  CanvasImpl::Agent* contents_agent =
-      contents_ ? contents_->GetAgent() : nullptr;
+  BitmapAgent* contents_agent = contents_ ? contents_->GetAgent() : nullptr;
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUCompositeControlLayerInternal(params->context, windowskin_agent,
@@ -407,7 +406,7 @@ void WindowImpl::GPUCreateWindowInternal() {
 
 void WindowImpl::GPUCompositeBackgroundLayerInternal(
     renderer::RenderContext* render_context,
-    CanvasImpl::Agent* windowskin) {
+    BitmapAgent* windowskin) {
   auto& quad_buffer = agent_.background_cache;
 
   // Display offset
@@ -542,8 +541,8 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
 
 void WindowImpl::GPUCompositeControlLayerInternal(
     renderer::RenderContext* render_context,
-    CanvasImpl::Agent* windowskin,
-    CanvasImpl::Agent* contents) {
+    BitmapAgent* windowskin,
+    BitmapAgent* contents) {
   const float contents_opacity_norm = contents_opacity_ / 255.0f;
   const float cursor_opacity_norm = cursor_opacity_ / 255.0f;
 
@@ -735,10 +734,11 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
     Diligent::IBuffer* world_binding,
     const base::Rect& last_viewport,
     const base::Vec2i& last_origin,
-    CanvasImpl::Agent* windowskin) {
+    BitmapAgent* windowskin) {
   if (agent_.background_cache.size()) {
     auto& pipeline_set = context()->render_device->GetPipelines()->base;
-    auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+    auto* pipeline =
+        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
     const base::Rect window_bound(last_viewport.x + bound_.x - last_origin.x,
                                   last_viewport.y + bound_.y - last_origin.y,
@@ -784,11 +784,12 @@ void WindowImpl::GPURenderControlLayerInternal(
     Diligent::IBuffer* world_binding,
     const base::Rect& last_viewport,
     const base::Vec2i& last_origin,
-    CanvasImpl::Agent* windowskin,
-    CanvasImpl::Agent* contents) {
+    BitmapAgent* windowskin,
+    BitmapAgent* contents) {
   if (agent_.control_draw_count || agent_.contents_draw_count) {
     auto& pipeline_set = context()->render_device->GetPipelines()->base;
-    auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+    auto* pipeline =
+        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
     {
       const base::Rect window_bound(last_viewport.x + bound_.x - last_origin.x,

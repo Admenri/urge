@@ -177,7 +177,7 @@ void RenderScreenImpl::Update(ExceptionState& exception_state) {
   if (!frozen_render && !need_skip_frame) {
     // Render a frame and push into render queue
     // This function only encodes the render commands
-    RenderFrameInternal(agent_.screen_buffer);
+    RenderFrameInternal(agent_.screen_buffer, agent_.screen_depth_stencil);
   }
 
   if (need_skip_frame)
@@ -239,7 +239,7 @@ void RenderScreenImpl::FadeIn(uint32_t duration,
 void RenderScreenImpl::Freeze(ExceptionState& exception_state) {
   if (!frozen_) {
     // Get frozen scene snapshot for transition
-    RenderFrameInternal(agent_.frozen_buffer);
+    RenderFrameInternal(agent_.frozen_buffer, agent_.frozen_depth_stencil);
 
     // Set forzen flag for blocking frame update
     frozen_ = true;
@@ -289,14 +289,15 @@ void RenderScreenImpl::TransitionWithBitmap(uint32_t duration,
 
   // Fetch transmapping if available
   scoped_refptr<CanvasImpl> mapping_bitmap = CanvasImpl::FromBitmap(bitmap);
-  CanvasImpl::Agent* texture_agent =
+  BitmapAgent* texture_agent =
       mapping_bitmap ? mapping_bitmap->GetAgent() : nullptr;
   Diligent::ITextureView* transition_mapping =
       texture_agent ? texture_agent->resource : nullptr;
 
   // Get current scene snapshot for transition
   auto* render_context = context()->primary_render_context;
-  RenderFrameInternal(agent_.transition_buffer);
+  RenderFrameInternal(agent_.transition_buffer,
+                      agent_.transition_depth_stencil);
 
   // Transition render loop
   for (uint32_t i = 0; i < duration; ++i) {
@@ -322,9 +323,10 @@ scoped_refptr<Bitmap> RenderScreenImpl::SnapToBitmap(
     ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> target =
       CanvasImpl::Create(context(), context()->resolution, exception_state);
+  BitmapAgent* texture_agent = target ? target->GetAgent() : nullptr;
 
-  if (target)
-    RenderFrameInternal(target->GetAgent()->data);
+  if (texture_agent)
+    RenderFrameInternal(texture_agent->data, texture_agent->depth_stencil);
 
   return target;
 }
@@ -539,7 +541,8 @@ void RenderScreenImpl::FrameProcessInternal(
   tick_observers_.Notify();
 }
 
-void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target) {
+void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
+                                           Diligent::ITexture* depth_stencil) {
   // Submit pending canvas commands
   context()->canvas_scheduler->SubmitPendingPaintCommands();
 
@@ -547,6 +550,7 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target) {
   DrawableNode::RenderControllerParams controller_params;
   controller_params.context = context()->primary_render_context;
   controller_params.screen_buffer = render_target;
+  controller_params.screen_depth_stencil = depth_stencil;
   controller_params.screen_size = context()->resolution;
   controller_params.viewport = context()->resolution;
   controller_params.origin = origin_;
@@ -560,7 +564,8 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target) {
       controller_params.context);
 
   // 2) Setup renderpass
-  GPUFrameBeginRenderPassInternal(controller_params.context, render_target);
+  GPUFrameBeginRenderPassInternal(controller_params.context, render_target,
+                                  depth_stencil);
 
   // 3) Notify render a frame
   controller_params.root_world = agent_.root_transform;
@@ -631,7 +636,7 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
   // Create screen present pipeline
   agent_.present_pipeline = base::MakeOwnedPtr<renderer::Pipeline_Present>(
       **context()->render_device, swapchain_desc.ColorBufferFormat,
-      srgb_framebuffer);
+      swapchain_desc.DepthBufferFormat, srgb_framebuffer);
 
   // Create screen buffer
   GPUResetScreenBufferInternal();
@@ -657,9 +662,13 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
       Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
 
   agent_.screen_buffer.Release();
+  agent_.screen_depth_stencil.Release();
   agent_.frozen_buffer.Release();
+  agent_.frozen_depth_stencil.Release();
   agent_.transition_buffer.Release();
+  agent_.transition_depth_stencil.Release();
 
+  // Color attachment
   renderer::CreateTexture2D(**context()->render_device, &agent_.screen_buffer,
                             "screen.main.buffer", context()->resolution,
                             Diligent::USAGE_DEFAULT, bind_flags);
@@ -670,6 +679,23 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
                             &agent_.transition_buffer,
                             "screen.transition.buffer", context()->resolution,
                             Diligent::USAGE_DEFAULT, bind_flags);
+
+  // Depth stencil
+  renderer::CreateTexture2D(
+      **context()->render_device, &agent_.screen_depth_stencil,
+      "screen.main.depth_stencil", context()->resolution,
+      Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
+      Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
+  renderer::CreateTexture2D(
+      **context()->render_device, &agent_.frozen_depth_stencil,
+      "screen.frozen.depth_stencil", context()->resolution,
+      Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
+      Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
+  renderer::CreateTexture2D(
+      **context()->render_device, &agent_.transition_depth_stencil,
+      "screen.transition.depth_stencil", context()->resolution,
+      Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
+      Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
 
   renderer::WorldTransform world_transform;
   renderer::MakeProjectionMatrix(world_transform.projection,
@@ -694,11 +720,13 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
 
   // Setup render params
   auto* render_target_view = swapchain->GetCurrentBackBufferRTV();
+  auto* depth_stencil_view = swapchain->GetDepthBufferDSV();
   base::Vec2i screen_size(swapchain->GetDesc().Width,
                           swapchain->GetDesc().Height);
 
   auto& pipeline_set = *agent_.present_pipeline;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
   renderer::QuadBatch present_quads =
       renderer::QuadBatch::Make(**context()->render_device);
   renderer::Binding_Base present_binding = pipeline_set.CreateBinding();
@@ -743,8 +771,12 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
   // Prepare for rendering
   float clear_color[] = {0, 0, 0, 1};
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
+                          0,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -795,7 +827,8 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
 
 void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
     renderer::RenderContext* render_context,
-    Diligent::ITexture* render_target) {
+    Diligent::ITexture* render_target,
+    Diligent::ITexture* depth_stencil) {
   // Setup screen effect params
   if (brightness_ < 255) {
     renderer::Quad effect_quad;
@@ -807,12 +840,19 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
   }
 
   // Setup render pass
-  auto render_target_view =
+  auto* render_target_view =
       render_target->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  const float clear_color[] = {0, 0, 0, 1};
+  auto* depth_stencil_view =
+      depth_stencil->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  const float clear_color[] = {0, 0, 0, 1.0f};
+  (*render_context)
+      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
+                          0,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -827,7 +867,8 @@ void RenderScreenImpl::GPUFrameEndRenderPassInternal(
   if (brightness_ < 255) {
     // Apply brightness effect
     auto& pipeline_set = context()->render_device->GetPipelines()->color;
-    auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+    auto* pipeline =
+        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
     // Set world transform
     agent_.effect_binding.u_transform->Set(agent_.world_transform);
@@ -874,10 +915,16 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  auto depth_stencil_view = agent_.screen_depth_stencil->GetDefaultView(
+      Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
+                          0,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -886,9 +933,10 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
                          agent_.screen_buffer->GetDesc().Height);
   render_context->ScissorState()->Push(resolution);
 
-  // Apply brightness effect
+  // Derive pipeline sets
   auto& pipeline_set = context()->render_device->GetPipelines()->alphatrans;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
 
   // Set uniform texture
   agent_.transition_binding_alpha.u_current_texture->Set(
@@ -940,10 +988,16 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  auto depth_stencil_view = agent_.screen_depth_stencil->GetDefaultView(
+      Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
+                          0,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -952,9 +1006,10 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
                          agent_.screen_buffer->GetDesc().Height);
   render_context->ScissorState()->Push(resolution);
 
-  // Apply brightness effect
+  // Derive pipeline sets
   auto& pipeline_set = context()->render_device->GetPipelines()->mappedtrans;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
 
   // Set uniform texture
   agent_.transition_binding_vague.u_current_texture->Set(

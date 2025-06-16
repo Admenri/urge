@@ -690,7 +690,7 @@ void CanvasImpl::OnObjectDisposed() {
   base::LinkNode<CanvasImpl>::RemoveFromList();
 
   // Destroy GPU texture
-  Agent empty_agent;
+  BitmapAgent empty_agent;
   std::swap(agent_, empty_agent);
 
   // Free memory surface cache
@@ -752,12 +752,18 @@ void CanvasImpl::GPUCreateTextureWithDataInternal() {
       *render_device, &agent_.data, agent_.name, surface_,
       Diligent::USAGE_DEFAULT,
       Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+  renderer::CreateTexture2D(
+      *render_device, &agent_.depth_stencil, agent_.name, agent_.size,
+      Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
+      Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
 
   // Setup access texture view
   agent_.resource =
       agent_.data->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
   agent_.target =
       agent_.data->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  agent_.depth_view = agent_.depth_stencil->GetDefaultView(
+      Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
 
   // Make bitmap draw transform
   // Make transform matrix uniform for discrete draw command
@@ -784,7 +790,7 @@ void CanvasImpl::GPUResetEffectLayerIfNeed() {
 }
 
 void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
-                                             Agent* src_texture,
+                                             BitmapAgent* src_texture,
                                              const base::Rect& src_region,
                                              int32_t blend_type,
                                              uint32_t blit_alpha) {
@@ -794,8 +800,8 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
 
   // Custom blend blit pipeline
   auto& pipeline_set = render_device.GetPipelines()->base;
-  auto* pipeline =
-      pipeline_set.GetPipeline(static_cast<renderer::BlendType>(blend_type));
+  auto* pipeline = pipeline_set.GetPipeline(
+      static_cast<renderer::BlendType>(blend_type), true);
 
   // Norm opacity value
   base::Vec4 blend_alpha;
@@ -810,7 +816,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, false);
+  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
   render_context.ScissorState()->Push(agent_.size);
@@ -860,7 +866,7 @@ void CanvasImpl::GPUFetchTexturePixelsDataInternal() {
   render_device->CreateTexture(stage_buffer_desc, nullptr, &stage_read_buffer);
 
   // Reset render target
-  scheduler->SetupRenderTarget(nullptr, false);
+  scheduler->SetupRenderTarget(nullptr, nullptr, false);
 
   // Copy textrue to temp buffer
   Diligent::CopyTextureAttribs copy_texture_attribs(
@@ -893,7 +899,8 @@ void CanvasImpl::GPUFetchTexturePixelsDataInternal() {
 
 void CanvasImpl::GPUCanvasClearInternal() {
   // Clear all data in texture
-  context()->canvas_scheduler->SetupRenderTarget(agent_.target, true);
+  context()->canvas_scheduler->SetupRenderTarget(agent_.target,
+                                                 agent_.depth_view, true);
 }
 
 void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
@@ -905,7 +912,8 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   auto& render_context = *scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->color;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
 
   // Make transient vertices data
   renderer::Quad transient_quad;
@@ -924,7 +932,7 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, false);
+  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
   render_context.ScissorState()->Push(agent_.size);
@@ -966,7 +974,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   auto& render_context = *scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL);
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
   // Reset text upload stage buffer if need
   if (!agent_.text_cache_texture || agent_.text_cache_size.x < text->w ||
@@ -1029,7 +1037,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, false);
+  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
   render_context.ScissorState()->Push(agent_.size);
@@ -1071,12 +1079,13 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   auto& render_context = *scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->bitmaphue;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
 
   GPUResetEffectLayerIfNeed();
 
   // Copy current texture to stage intermediate texture
-  scheduler->SetupRenderTarget(nullptr, false);
+  scheduler->SetupRenderTarget(nullptr, nullptr, false);
 
   Diligent::CopyTextureAttribs copy_texture_attribs(
       agent_.data, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
@@ -1093,7 +1102,7 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, false);
+  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
   render_context.ScissorState()->Push(agent_.size);

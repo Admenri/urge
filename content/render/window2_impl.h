@@ -90,13 +90,13 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
 
   void GPUCreateWindowInternal();
   void GPUCompositeWindowQuadsInternal(renderer::RenderContext* render_context,
-                                       CanvasImpl::Agent* contents,
-                                       CanvasImpl::Agent* windowskin,
+                                       BitmapAgent* contents,
+                                       BitmapAgent* windowskin,
                                        const base::Rect& padding_rect);
   void GPURenderWindowQuadsInternal(renderer::RenderContext* render_context,
                                     Diligent::IBuffer* world_binding,
-                                    CanvasImpl::Agent* windowskin,
-                                    CanvasImpl::Agent* contents,
+                                    BitmapAgent* windowskin,
+                                    BitmapAgent* contents,
                                     const base::Rect& padding_rect,
                                     const base::Rect& last_viewport,
                                     const base::Vec2i& last_origin);

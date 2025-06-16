@@ -116,7 +116,8 @@ void RenderPipelineBase::BuildPipeline(
     const base::Vector<
         Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>&
         signatures,
-    Diligent::TEXTURE_FORMAT target_format) {
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format) {
   // Make pipeline debug name
   base::String pipeline_name = "pipeline<" + shader_source.name + ">";
 
@@ -133,8 +134,6 @@ void RenderPipelineBase::BuildPipeline(
       Diligent::CULL_MODE_NONE;
   pipeline_state_desc.GraphicsPipeline.RasterizerDesc.ScissorEnable =
       Diligent::True;
-  pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
-      Diligent::False;
 
   // Make vertex shader and pixel shader
   Diligent::ShaderCreateInfo shader_desc;
@@ -194,10 +193,32 @@ void RenderPipelineBase::BuildPipeline(
     pipeline_state_desc.GraphicsPipeline.BlendDesc.RenderTargets[0] =
         GetBlendState(static_cast<BlendType>(i));
 
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> pipeline_state;
-    device_->CreateGraphicsPipelineState(pipeline_state_desc, &pipeline_state);
+    // With depth stencil test
+    {
+      pipeline_state_desc.GraphicsPipeline.DSVFormat = depth_stencil_format;
+      pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthFunc =
+          Diligent::COMPARISON_FUNC_LESS_EQUAL;
+      pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
+          Diligent::True;
 
-    pipelines_.push_back(pipeline_state);
+      Diligent::RefCntAutoPtr<Diligent::IPipelineState> pipeline_state;
+      device_->CreateGraphicsPipelineState(pipeline_state_desc,
+                                           &pipeline_state);
+      depth_stencil_pipelines_.push_back(pipeline_state);
+    }
+
+    // No depth stencil test
+    {
+      pipeline_state_desc.GraphicsPipeline.DSVFormat =
+          Diligent::TEX_FORMAT_UNKNOWN;
+      pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
+          Diligent::False;
+
+      Diligent::RefCntAutoPtr<Diligent::IPipelineState> pipeline_state;
+      device_->CreateGraphicsPipelineState(pipeline_state_desc,
+                                           &pipeline_state);
+      flat_pipelines_.push_back(pipeline_state);
+    }
   }
 }
 
@@ -220,7 +241,8 @@ RenderPipelineBase::MakeResourceSignature(
 }
 
 Pipeline_Base::Pipeline_Base(Diligent::IRenderDevice* device,
-                             Diligent::TEXTURE_FORMAT target_format)
+                             Diligent::TEXTURE_FORMAT target_format,
+                             Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_BaseRender, "base.render"};
 
@@ -244,11 +266,13 @@ Pipeline_Base::Pipeline_Base(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
 Pipeline_Color::Pipeline_Color(Diligent::IRenderDevice* device,
-                               Diligent::TEXTURE_FORMAT target_format)
+                               Diligent::TEXTURE_FORMAT target_format,
+                               Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_ColorRender, "color.render"};
 
@@ -259,11 +283,13 @@ Pipeline_Color::Pipeline_Color(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, {}, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
 Pipeline_Flat::Pipeline_Flat(Diligent::IRenderDevice* device,
-                             Diligent::TEXTURE_FORMAT target_format)
+                             Diligent::TEXTURE_FORMAT target_format,
+                             Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_FlatRender, "flat.render"};
 
@@ -290,11 +316,13 @@ Pipeline_Flat::Pipeline_Flat(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
 Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
-                                 Diligent::TEXTURE_FORMAT target_format)
+                                 Diligent::TEXTURE_FORMAT target_format,
+                                 Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const auto& device_info = device->GetDeviceInfo();
   storage_buffer_support =
@@ -365,12 +393,13 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
   BuildPipeline(shader_source,
                 storage_buffer_support ? Vertex::GetLayout() : input_elements,
-                {binding0}, target_format);
+                {binding0}, target_format, depth_stencil_format);
 }
 
 Pipeline_AlphaTransition::Pipeline_AlphaTransition(
     Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format)
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_AlphaTransitionRender,
                                    "alpha.trans.render"};
@@ -402,12 +431,14 @@ Pipeline_AlphaTransition::Pipeline_AlphaTransition(
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
 Pipeline_VagueTransition::Pipeline_VagueTransition(
     Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format)
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_MappingTransitionRender,
                                    "vague.trans.render"};
@@ -449,11 +480,14 @@ Pipeline_VagueTransition::Pipeline_VagueTransition(
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
-Pipeline_Tilemap::Pipeline_Tilemap(Diligent::IRenderDevice* device,
-                                   Diligent::TEXTURE_FORMAT target_format)
+Pipeline_Tilemap::Pipeline_Tilemap(
+    Diligent::IRenderDevice* device,
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_TilemapRender, "tilemap.render"};
 
@@ -480,11 +514,14 @@ Pipeline_Tilemap::Pipeline_Tilemap(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
-Pipeline_Tilemap2::Pipeline_Tilemap2(Diligent::IRenderDevice* device,
-                                     Diligent::TEXTURE_FORMAT target_format)
+Pipeline_Tilemap2::Pipeline_Tilemap2(
+    Diligent::IRenderDevice* device,
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_Tilemap2Render, "tilemap2.render"};
 
@@ -511,11 +548,14 @@ Pipeline_Tilemap2::Pipeline_Tilemap2(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
-Pipeline_BitmapHue::Pipeline_BitmapHue(Diligent::IRenderDevice* device,
-                                       Diligent::TEXTURE_FORMAT target_format)
+Pipeline_BitmapHue::Pipeline_BitmapHue(
+    Diligent::IRenderDevice* device,
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_BitmapHueRender, "hue.render"};
 
@@ -536,11 +576,14 @@ Pipeline_BitmapHue::Pipeline_BitmapHue(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
-Pipeline_Spine2D::Pipeline_Spine2D(Diligent::IRenderDevice* device,
-                                   Diligent::TEXTURE_FORMAT target_format)
+Pipeline_Spine2D::Pipeline_Spine2D(
+    Diligent::IRenderDevice* device,
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_Spine2DRender, "spine2d.render"};
 
@@ -558,11 +601,12 @@ Pipeline_Spine2D::Pipeline_Spine2D(Diligent::IRenderDevice* device,
 
   auto binding0 = MakeResourceSignature(variables, {}, 0);
   BuildPipeline(shader_source, SpineVertex::GetLayout(), {binding0},
-                target_format);
+                target_format, depth_stencil_format);
 }
 
 Pipeline_YUV::Pipeline_YUV(Diligent::IRenderDevice* device,
-                           Diligent::TEXTURE_FORMAT target_format)
+                           Diligent::TEXTURE_FORMAT target_format,
+                           Diligent::TEXTURE_FORMAT depth_stencil_format)
     : RenderPipelineBase(device) {
   const ShaderSource shader_source{kHLSL_YUVRender, "yuv.render"};
 
@@ -603,12 +647,15 @@ Pipeline_YUV::Pipeline_YUV(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
-Pipeline_Present::Pipeline_Present(Diligent::IRenderDevice* device,
-                                   Diligent::TEXTURE_FORMAT target_format,
-                                   bool manual_srgb)
+Pipeline_Present::Pipeline_Present(
+    Diligent::IRenderDevice* device,
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format,
+    bool manual_srgb)
     : RenderPipelineBase(device) {
   base::Vector<Diligent::ShaderMacro> pixel_macros = {
       {"GAMMA_TO_LINEAR(Gamma)", kShaderGAMMA2LINEAR},
@@ -631,7 +678,8 @@ Pipeline_Present::Pipeline_Present(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, {}, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
 }
 
 }  // namespace renderer

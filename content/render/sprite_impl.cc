@@ -475,7 +475,7 @@ void SpriteImpl::OnObjectDisposed() {
 void SpriteImpl::DrawableNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
-  CanvasImpl::Agent* current_texture = bitmap_ ? bitmap_->GetAgent() : nullptr;
+  BitmapAgent* current_texture = bitmap_ ? bitmap_->GetAgent() : nullptr;
   if (!current_texture)
     return;
 
@@ -506,7 +506,7 @@ void SpriteImpl::DrawableNodeHandlerInternal(
     DrawableNode* next_node = node_.GetNextNode();
     SpriteImpl* next_sprite =
         next_node ? next_node->CastToNode<SpriteImpl>() : nullptr;
-    CanvasImpl::Agent* next_texture =
+    BitmapAgent* next_texture =
         GetOtherRenderBatchableTextureInternal(next_sprite);
 
     GPUUpdateBatchSpriteInternal(current_texture, next_texture, src_rect);
@@ -523,7 +523,7 @@ void SpriteImpl::SrcRectChangedInternal() {
   src_rect_dirty_ = true;
 }
 
-CanvasImpl::Agent* SpriteImpl::GetOtherRenderBatchableTextureInternal(
+BitmapAgent* SpriteImpl::GetOtherRenderBatchableTextureInternal(
     SpriteImpl* other) {
   // Disable batch if other is not a sprite
   if (!other)
@@ -548,7 +548,7 @@ CanvasImpl::Agent* SpriteImpl::GetOtherRenderBatchableTextureInternal(
   return other->bitmap_->GetAgent();
 }
 
-void SpriteImpl::GPUUpdateWaveSpriteInternal(CanvasImpl::Agent* texture,
+void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
                                              const base::Rect& src_rect) {
   int32_t last_block_aligned_size = src_rect.height % kWaveBlockAlign;
   int32_t loop_block = src_rect.height / kWaveBlockAlign;
@@ -584,8 +584,8 @@ void SpriteImpl::GPUUpdateWaveSpriteInternal(CanvasImpl::Agent* texture,
     emit_wave_block(loop_block * kWaveBlockAlign, last_block_aligned_size);
 }
 
-void SpriteImpl::GPUUpdateBatchSpriteInternal(CanvasImpl::Agent* texture,
-                                              CanvasImpl::Agent* next_texture,
+void SpriteImpl::GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
+                                              BitmapAgent* next_texture,
                                               const base::Rect& src_rect) {
   // Update sprite quad if need
   if (wave_.amp) {
@@ -638,12 +638,12 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(CanvasImpl::Agent* texture,
 void SpriteImpl::GPUOnSpriteRenderingInternal(
     renderer::RenderContext* render_context,
     Diligent::IBuffer* world_binding,
-    CanvasImpl::Agent* texture) {
+    BitmapAgent* texture) {
   if (agent_.instance_count) {
     // Batch draw
     auto& pipeline_set = context()->render_device->GetPipelines()->sprite;
-    auto* pipeline =
-        pipeline_set.GetPipeline(static_cast<renderer::BlendType>(blend_type_));
+    auto* pipeline = pipeline_set.GetPipeline(
+        static_cast<renderer::BlendType>(blend_type_), true);
 
     // Setup uniform params
     context()->sprite_batcher->GetShaderBinding().u_transform->Set(

@@ -87,6 +87,7 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
     // [Stage: all]
     // Abstract "screen" render buffer.
     Diligent::ITexture* screen_buffer = nullptr;
+    Diligent::ITexture* screen_depth_stencil = nullptr;
 
     // [Stage: all]
     // Screen buffer size.

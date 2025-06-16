@@ -77,16 +77,18 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
                               const base::Rect& region);
   void GPUApplyViewportEffect(renderer::RenderContext* render_context,
                               Diligent::ITexture* screen_buffer,
+                              Diligent::ITexture* screen_depth_stencil,
                               Diligent::IBuffer* root_world,
                               const base::Rect& effect_region,
                               const base::Vec4& color);
   void GPUViewportProcessAfterRender(renderer::RenderContext* render_context,
                                      Diligent::IBuffer* root_world,
                                      Diligent::ITexture* screen_buffer,
+                                     Diligent::ITexture* screen_depth_stencil,
                                      const base::Rect& effect_region,
                                      const base::Vec4& color);
   void GPUFrameBeginRenderPassInternal(renderer::RenderContext* render_context,
-                                       Diligent::ITexture* render_target,
+                                       BitmapAgent* render_target,
                                        const base::Vec2i& viewport_offset,
                                        const base::Rect& scissor_region);
 

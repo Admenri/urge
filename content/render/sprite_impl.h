@@ -86,16 +86,16 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
       DrawableNode::RenderControllerParams* params);
 
   void SrcRectChangedInternal();
-  CanvasImpl::Agent* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
+  BitmapAgent* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
 
-  void GPUUpdateWaveSpriteInternal(CanvasImpl::Agent* texture,
+  void GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
                                    const base::Rect& src_rect);
-  void GPUUpdateBatchSpriteInternal(CanvasImpl::Agent* texture,
-                                    CanvasImpl::Agent* next_texture,
+  void GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
+                                    BitmapAgent* next_texture,
                                     const base::Rect& src_rect);
   void GPUOnSpriteRenderingInternal(renderer::RenderContext* render_context,
                                     Diligent::IBuffer* world_binding,
-                                    CanvasImpl::Agent* texture);
+                                    BitmapAgent* texture);
 
   DrawableNode node_;
   DrawableFlashController flash_emitter_;

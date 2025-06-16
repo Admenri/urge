@@ -54,8 +54,11 @@ class RenderPipelineBase {
   RenderPipelineBase(const RenderPipelineBase&) = default;
   RenderPipelineBase& operator=(const RenderPipelineBase&) = default;
 
-  inline Diligent::IPipelineState* GetPipeline(BlendType blend) const {
-    return pipelines_[blend];
+  inline Diligent::IPipelineState* GetPipeline(
+      BlendType blend,
+      bool enable_depth_stencil) const {
+    return enable_depth_stencil ? depth_stencil_pipelines_[blend]
+                                : flat_pipelines_[blend];
   }
 
   inline Diligent::IPipelineResourceSignature* GetSignatureAt(
@@ -70,7 +73,8 @@ class RenderPipelineBase {
                      const base::Vector<Diligent::LayoutElement>& input_layout,
                      const base::Vector<Diligent::RefCntAutoPtr<
                          Diligent::IPipelineResourceSignature>>& signatures,
-                     Diligent::TEXTURE_FORMAT target_format);
+                     Diligent::TEXTURE_FORMAT target_format,
+                     Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>
   MakeResourceSignature(
@@ -87,15 +91,21 @@ class RenderPipelineBase {
 
  private:
   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device_;
+
   base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>
       resource_signatures_;
-  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>> pipelines_;
+
+  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>>
+      flat_pipelines_;
+  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>>
+      depth_stencil_pipelines_;
 };
 
 class Pipeline_Base : public RenderPipelineBase {
  public:
   Pipeline_Base(Diligent::IRenderDevice* device,
-                Diligent::TEXTURE_FORMAT target_format);
+                Diligent::TEXTURE_FORMAT target_format,
+                Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };
@@ -103,7 +113,8 @@ class Pipeline_Base : public RenderPipelineBase {
 class Pipeline_Color : public RenderPipelineBase {
  public:
   Pipeline_Color(Diligent::IRenderDevice* device,
-                 Diligent::TEXTURE_FORMAT target_format);
+                 Diligent::TEXTURE_FORMAT target_format,
+                 Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_Color, 0);
 };
@@ -111,7 +122,8 @@ class Pipeline_Color : public RenderPipelineBase {
 class Pipeline_Flat : public RenderPipelineBase {
  public:
   Pipeline_Flat(Diligent::IRenderDevice* device,
-                Diligent::TEXTURE_FORMAT target_format);
+                Diligent::TEXTURE_FORMAT target_format,
+                Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_Flat, 0);
 };
@@ -119,7 +131,8 @@ class Pipeline_Flat : public RenderPipelineBase {
 class Pipeline_Sprite : public RenderPipelineBase {
  public:
   Pipeline_Sprite(Diligent::IRenderDevice* device,
-                  Diligent::TEXTURE_FORMAT target_format);
+                  Diligent::TEXTURE_FORMAT target_format,
+                  Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   Diligent::Bool storage_buffer_support = Diligent::False;
 
@@ -129,7 +142,8 @@ class Pipeline_Sprite : public RenderPipelineBase {
 class Pipeline_AlphaTransition : public RenderPipelineBase {
  public:
   Pipeline_AlphaTransition(Diligent::IRenderDevice* device,
-                           Diligent::TEXTURE_FORMAT target_format);
+                           Diligent::TEXTURE_FORMAT target_format,
+                           Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_AlphaTrans, 0);
 };
@@ -137,7 +151,8 @@ class Pipeline_AlphaTransition : public RenderPipelineBase {
 class Pipeline_VagueTransition : public RenderPipelineBase {
  public:
   Pipeline_VagueTransition(Diligent::IRenderDevice* device,
-                           Diligent::TEXTURE_FORMAT target_format);
+                           Diligent::TEXTURE_FORMAT target_format,
+                           Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_VagueTrans, 0);
 };
@@ -145,7 +160,8 @@ class Pipeline_VagueTransition : public RenderPipelineBase {
 class Pipeline_Tilemap : public RenderPipelineBase {
  public:
   Pipeline_Tilemap(Diligent::IRenderDevice* device,
-                   Diligent::TEXTURE_FORMAT target_format);
+                   Diligent::TEXTURE_FORMAT target_format,
+                   Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_Tilemap, 0);
 };
@@ -153,7 +169,8 @@ class Pipeline_Tilemap : public RenderPipelineBase {
 class Pipeline_Tilemap2 : public RenderPipelineBase {
  public:
   Pipeline_Tilemap2(Diligent::IRenderDevice* device,
-                    Diligent::TEXTURE_FORMAT target_format);
+                    Diligent::TEXTURE_FORMAT target_format,
+                    Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_Tilemap2, 0);
 };
@@ -161,7 +178,8 @@ class Pipeline_Tilemap2 : public RenderPipelineBase {
 class Pipeline_BitmapHue : public RenderPipelineBase {
  public:
   Pipeline_BitmapHue(Diligent::IRenderDevice* device,
-                     Diligent::TEXTURE_FORMAT target_format);
+                     Diligent::TEXTURE_FORMAT target_format,
+                     Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_BitmapFilter, 0);
 };
@@ -169,16 +187,8 @@ class Pipeline_BitmapHue : public RenderPipelineBase {
 class Pipeline_Spine2D : public RenderPipelineBase {
  public:
   Pipeline_Spine2D(Diligent::IRenderDevice* device,
-                   Diligent::TEXTURE_FORMAT target_format);
-
-  MAKE_BINDING_FUNCTION(Binding_Base, 0);
-};
-
-class Pipeline_Present : public RenderPipelineBase {
- public:
-  Pipeline_Present(Diligent::IRenderDevice* device,
                    Diligent::TEXTURE_FORMAT target_format,
-                   bool manual_srgb);
+                   Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };
@@ -186,9 +196,20 @@ class Pipeline_Present : public RenderPipelineBase {
 class Pipeline_YUV : public RenderPipelineBase {
  public:
   Pipeline_YUV(Diligent::IRenderDevice* device,
-               Diligent::TEXTURE_FORMAT target_format);
+               Diligent::TEXTURE_FORMAT target_format,
+               Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   MAKE_BINDING_FUNCTION(Binding_YUV, 0);
+};
+
+class Pipeline_Present : public RenderPipelineBase {
+ public:
+  Pipeline_Present(Diligent::IRenderDevice* device,
+                   Diligent::TEXTURE_FORMAT target_format,
+                   Diligent::TEXTURE_FORMAT depth_stencil_format,
+                   bool manual_srgb);
+
+  MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };
 
 }  // namespace renderer
