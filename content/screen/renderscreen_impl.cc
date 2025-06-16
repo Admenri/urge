@@ -915,16 +915,10 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  auto depth_stencil_view = agent_.screen_depth_stencil->GetDefaultView(
-      Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+      ->SetRenderTargets(1, &render_target_view, nullptr,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
-  (*render_context)
-      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
-                          0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -936,7 +930,7 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   // Derive pipeline sets
   auto& pipeline_set = context()->render_device->GetPipelines()->alphatrans;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Set uniform texture
   agent_.transition_binding_alpha.u_current_texture->Set(
@@ -988,16 +982,10 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  auto depth_stencil_view = agent_.screen_depth_stencil->GetDefaultView(
-      Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
   (*render_context)
-      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+      ->SetRenderTargets(1, &render_target_view, nullptr,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
-  (*render_context)
-      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
-                          0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
