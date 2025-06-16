@@ -54,6 +54,7 @@ class URGE_RUNTIME_API GPURenderDevice
     bool combined_texture_samplers = true;
     base::String combined_sampler_suffix = "_sampler";
     GPU::ShaderSourceLanguage language = GPU::SHADER_SOURCE_LANGUAGE_DEFAULT;
+    GPU::ShaderCompileFlags compile_flags = GPU::SHADER_COMPILE_FLAG_NONE;
   };
 
   /*--urge(name:TextureDesc)--*/

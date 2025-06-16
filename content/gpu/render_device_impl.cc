@@ -110,6 +110,8 @@ scoped_refptr<GPUShader> RenderDeviceImpl::CreateShader(
         create_info->combined_sampler_suffix.c_str();
     create_desc.SourceLanguage =
         static_cast<Diligent::SHADER_SOURCE_LANGUAGE>(create_info->language);
+    create_desc.CompileFlags =
+        static_cast<Diligent::SHADER_COMPILE_FLAGS>(create_info->compile_flags);
   }
 
   Diligent::RefCntAutoPtr<Diligent::IShader> result;
