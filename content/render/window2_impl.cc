@@ -72,9 +72,6 @@ Window2Impl::Window2Impl(ExecutionContext* execution_context,
   node_.RegisterEventHandler(base::BindRepeating(
       &Window2Impl::DrawableNodeHandlerInternal, base::Unretained(this)));
 
-  tone_->AddObserver(base::BindRepeating(
-      &Window2Impl::BackgroundTextureObserverInternal, base::Unretained(this)));
-
   ExceptionState exception_state;
   contents_ =
       CanvasImpl::Create(execution_context, base::Vec2i(1, 1), exception_state);
@@ -127,7 +124,6 @@ void Window2Impl::Move(int32_t x,
     return;
 
   bound_ = base::Rect(x, y, width, height);
-  background_dirty_ = true;
 }
 
 bool Window2Impl::IsOpened(ExceptionState& exception_state) {
@@ -167,11 +163,6 @@ void Window2Impl::Put_Windowskin(const scoped_refptr<Bitmap>& value,
     return;
 
   windowskin_ = CanvasImpl::FromBitmap(value);
-  if (windowskin_)
-    windowskin_->AddCanvasObserver(
-        base::BindRepeating(&Window2Impl::BackgroundTextureObserverInternal,
-                            base::Unretained(this)));
-  background_dirty_ = true;
 }
 
 scoped_refptr<Bitmap> Window2Impl::Get_Contents(
@@ -306,7 +297,6 @@ void Window2Impl::Put_Width(const int32_t& value,
     return;
 
   bound_.width = value;
-  background_dirty_ = true;
 }
 
 int32_t Window2Impl::Get_Height(ExceptionState& exception_state) {
@@ -322,7 +312,6 @@ void Window2Impl::Put_Height(const int32_t& value,
     return;
 
   bound_.height = value;
-  background_dirty_ = true;
 }
 
 int32_t Window2Impl::Get_Z(ExceptionState& exception_state) {
@@ -428,7 +417,6 @@ void Window2Impl::Put_BackOpacity(const int32_t& value,
     return;
 
   back_opacity_ = std::clamp(value, 0, 255);
-  background_dirty_ = true;
 }
 
 int32_t Window2Impl::Get_ContentsOpacity(ExceptionState& exception_state) {
@@ -476,7 +464,6 @@ void Window2Impl::Put_Tone(const scoped_refptr<Tone>& value,
   CHECK_ATTRIBUTE_VALUE;
 
   *tone_ = *ToneImpl::From(value);
-  background_dirty_ = true;
 }
 
 void Window2Impl::OnObjectDisposed() {
@@ -503,28 +490,23 @@ void Window2Impl::DrawableNodeHandlerInternal(
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUCompositeWindowQuadsInternal(params->context, contents_agent,
                                     windowskin_agent, padding_rect);
-    background_dirty_ = false;
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
-    GPURenderWindowQuadsInternal(params->context, params->world_binding,
-                                 windowskin_agent, contents_agent, padding_rect,
-                                 params->viewport, params->origin);
+    GPURenderWindowQuadsInternal(params->context, params->world_binding);
   }
 }
 
-void Window2Impl::BackgroundTextureObserverInternal() {
-  background_dirty_ = true;
-}
-
 void Window2Impl::GPUCreateWindowInternal() {
-  agent_.background_batch =
-      renderer::QuadBatch::Make(**context()->render_device);
-  agent_.controls_batch = renderer::QuadBatch::Make(**context()->render_device);
-  agent_.shader_binding =
-      context()->render_device->GetPipelines()->base.CreateBinding();
+  agent_.batch = renderer::QuadBatch::Make(**context()->render_device);
+
+  auto* pipelines = context()->render_device->GetPipelines();
+  agent_.base_binding = pipelines->base.CreateBinding();
+  agent_.flat_binding = pipelines->viewport.CreateBinding();
+  agent_.content_binding = pipelines->base.CreateBinding();
+  agent_.display_binding = pipelines->base.CreateBinding();
 
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(renderer::Binding_Flat::Params),
-      "window2.uniform", &agent_.uniform_buffer, Diligent::USAGE_DEFAULT);
+      "window2.uniform", &agent_.uniform, Diligent::USAGE_DEFAULT);
 }
 
 void Window2Impl::GPUCompositeWindowQuadsInternal(
@@ -532,506 +514,572 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
     BitmapAgent* contents,
     BitmapAgent* windowskin,
     const base::Rect& padding_rect) {
-  // Create texture if need
+  // Reset texture if size changed
+  if (!agent_.texture ||
+      static_cast<int32_t>(agent_.texture->GetDesc().Width) != bound_.width ||
+      static_cast<int32_t>(agent_.texture->GetDesc().Height) != bound_.height) {
+    agent_.texture.Release();
+    renderer::CreateTexture2D(
+        **context()->render_device, &agent_.texture, "window2.texture",
+        bound_.Size(), Diligent::USAGE_DEFAULT,
+        Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+
+    renderer::WorldTransform world_matrix;
+    renderer::MakeProjectionMatrix(world_matrix.projection, bound_.Size());
+    renderer::MakeIdentityMatrix(world_matrix.transform);
+
+    agent_.world.Release();
+    Diligent::CreateUniformBuffer(
+        **context()->render_device, sizeof(world_matrix), "window2.world",
+        &agent_.world, Diligent::USAGE_IMMUTABLE, Diligent::BIND_UNIFORM_BUFFER,
+        Diligent::CPU_ACCESS_NONE, &world_matrix);
+  }
+
+  // Prepare quad count
+  int32_t quad_count = 1;
+
   if (windowskin) {
-    if (!agent_.background_texture ||
-        static_cast<int32_t>(agent_.background_texture->GetDesc().Width) !=
-            bound_.width ||
-        static_cast<int32_t>(agent_.background_texture->GetDesc().Height) !=
-            bound_.height) {
-      agent_.background_texture.Release();
-      renderer::CreateTexture2D(
-          **context()->render_device, &agent_.background_texture,
-          "window2.background", bound_.Size(), Diligent::USAGE_DEFAULT,
-          Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+    // Background 1
+    quad_count += 1;
+    // Background 2
+    const int32_t horizon_tiles =
+        CalculateQuadTileCount(32 * scale_, bound_.width - 2 * scale_);
+    const int32_t vertical_tiles =
+        CalculateQuadTileCount(32 * scale_, bound_.height - 2 * scale_);
+    quad_count += horizon_tiles * vertical_tiles;
 
-      renderer::WorldTransform world_matrix;
-      renderer::MakeProjectionMatrix(world_matrix.projection, bound_.Size());
-      renderer::MakeIdentityMatrix(world_matrix.transform);
+    // Corners
+    quad_count += 4;
+    // Frames
+    const int32_t horizon_frame_tiles =
+        CalculateQuadTileCount(16 * scale_, bound_.width - 16 * scale_);
+    const int32_t vertical_frame_tiles =
+        CalculateQuadTileCount(16 * scale_, bound_.height - 16 * scale_);
+    quad_count += horizon_frame_tiles * 2 + vertical_frame_tiles * 2;
 
-      agent_.background_world.Release();
-      Diligent::CreateUniformBuffer(
-          **context()->render_device, sizeof(world_matrix), "window2.world",
-          &agent_.background_world, Diligent::USAGE_IMMUTABLE,
-          Diligent::BIND_UNIFORM_BUFFER, Diligent::CPU_ACCESS_NONE,
-          &world_matrix);
+    // Arrows
+    quad_count += 4;
 
-      background_dirty_ = true;
+    // Pause anime
+    quad_count += 1;
+
+    // Cursor
+    quad_count += 9;
+  }
+
+  if (contents) {
+    // Contents (1)
+    quad_count += 1;
+  }
+
+  // Generate quads
+  base::Vector<renderer::Quad> quads(quad_count);
+  int32_t quad_index = 0;
+
+  // Draw attributes
+  const float opacity_norm = opacity_ / 255.0f;
+  const float openness_norm = openness_ / 255.0f;
+  const float back_opacity_norm = back_opacity_ / 255.0f;
+  const float contents_opacity_norm = contents_opacity_ / 255.0f;
+  const float cursor_opacity_norm = cursor_opacity_ / 255.0f;
+
+  int32_t tiled_quads_count = 0;
+  int32_t cursor_quads_offset = 0;
+  int32_t frames_quads_count = 0;
+  int32_t contents_quads_offset = 0;
+  int32_t cursor_draw_quads = 0;
+  int32_t arrows_pause_quads = 0;
+
+  if (windowskin) {
+    const base::Rect background1_src(0, 0, 32 * scale_, 32 * scale_);
+    const base::Rect background2_src(0, 32 * scale_, 32 * scale_, 32 * scale_);
+    const base::Rect background_dest(scale_, scale_, bound_.width - 2 * scale_,
+                                     bound_.height - 2 * scale_);
+
+    // Stretch layer (1)
+    renderer::Quad::SetPositionRect(&quads[quad_index], background_dest);
+    renderer::Quad::SetTexCoordRect(&quads[quad_index], background1_src,
+                                    windowskin->size);
+    renderer::Quad::SetColor(&quads[quad_index],
+                             base::Vec4(back_opacity_norm * opacity_norm));
+    quad_index++;
+
+    // Tiled layer (NxM)
+    tiled_quads_count = BuildTiles(background2_src, background_dest,
+                                   base::Vec4(back_opacity_norm * opacity_norm),
+                                   windowskin->size, &quads[quad_index]);
+    quad_index += tiled_quads_count;
+
+    // Corners (4)
+    const base::Rect corner_left_top_src(32 * scale_, 0, 8 * scale_,
+                                         8 * scale_);
+    const base::Rect corner_right_top_src(56 * scale_, 0, 8 * scale_,
+                                          8 * scale_);
+    const base::Rect corner_left_bottom_src(32 * scale_, 24 * scale_,
+                                            8 * scale_, 8 * scale_);
+    const base::Rect corner_right_bottom_src(56 * scale_, 24 * scale_,
+                                             8 * scale_, 8 * scale_);
+
+    const base::Rect corner_left_top_dest(0, 0, 8 * scale_, 8 * scale_);
+    const base::Rect corner_right_top_dest(bound_.width - 8 * scale_, 0,
+                                           8 * scale_, 8 * scale_);
+    const base::Rect corner_left_bottom_dest(0, bound_.height - 8 * scale_,
+                                             8 * scale_, 8 * scale_);
+    const base::Rect corner_right_bottom_dest(bound_.width - 8 * scale_,
+                                              bound_.height - 8 * scale_,
+                                              8 * scale_, 8 * scale_);
+
+    renderer::Quad::SetPositionRect(&quads[quad_index], corner_left_top_dest);
+    renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_left_top_src,
+                                    windowskin->size);
+    renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
+    quad_index++;
+    renderer::Quad::SetPositionRect(&quads[quad_index], corner_right_top_dest);
+    renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_right_top_src,
+                                    windowskin->size);
+    renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
+    quad_index++;
+    renderer::Quad::SetPositionRect(&quads[quad_index],
+                                    corner_left_bottom_dest);
+    renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_left_bottom_src,
+                                    windowskin->size);
+    renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
+    quad_index++;
+    renderer::Quad::SetPositionRect(&quads[quad_index],
+                                    corner_right_bottom_dest);
+    renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_right_bottom_src,
+                                    windowskin->size);
+    renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
+    quad_index++;
+    frames_quads_count += 4;
+
+    // Tiles frame (Nx2 + Mx2)
+    const base::Rect frame_up_src(40 * scale_, 0, 16 * scale_, 8 * scale_);
+    const base::Rect frame_down_src(40 * scale_, 24 * scale_, 16 * scale_,
+                                    8 * scale_);
+    const base::Rect frame_left_src(32 * scale_, 8 * scale_, 8 * scale_,
+                                    16 * scale_);
+    const base::Rect frame_right_src(56 * scale_, 8 * scale_, 8 * scale_,
+                                     16 * scale_);
+
+    int32_t tiled_frames_quads = 0;
+    tiled_frames_quads = BuildTilesAlongAxis(
+        TileAxis::HORIZONTAL, frame_up_src, base::Vec2i(8 * scale_, 0),
+        base::Vec4(opacity_norm), bound_.width - 16 * scale_, windowskin->size,
+        &quads[quad_index]);
+    quad_index += tiled_frames_quads;
+    frames_quads_count += tiled_frames_quads;
+    tiled_frames_quads = BuildTilesAlongAxis(
+        TileAxis::HORIZONTAL, frame_down_src,
+        base::Vec2i(8 * scale_, bound_.height - 8 * scale_),
+        base::Vec4(opacity_norm), bound_.width - 16 * scale_, windowskin->size,
+        &quads[quad_index]);
+    quad_index += tiled_frames_quads;
+    frames_quads_count += tiled_frames_quads;
+    tiled_frames_quads = BuildTilesAlongAxis(
+        TileAxis::VERTICAL, frame_left_src, base::Vec2i(0, 8 * scale_),
+        base::Vec4(opacity_norm), bound_.height - 16 * scale_, windowskin->size,
+        &quads[quad_index]);
+    quad_index += tiled_frames_quads;
+    frames_quads_count += tiled_frames_quads;
+    tiled_frames_quads = BuildTilesAlongAxis(
+        TileAxis::VERTICAL, frame_right_src,
+        base::Vec2i(bound_.width - 8 * scale_, 8 * scale_),
+        base::Vec4(opacity_norm), bound_.height - 16 * scale_, windowskin->size,
+        &quads[quad_index]);
+    quad_index += tiled_frames_quads;
+    frames_quads_count += tiled_frames_quads;
+  }
+
+  // Controls & Contents
+  if (openness_ >= 255) {
+    // Padding offset
+    base::Vec2i content_offset = padding_rect.Position();
+
+    // Controls
+    if (windowskin) {
+      const base::Vec2i arrow_display_offset =
+          (bound_.Size() - base::Vec2i(8 * scale_)) / 2;
+
+      // Arrows (4)
+      if (arrows_visible_) {
+        const base::Rect arrow_up_dest(arrow_display_offset.x, 2 * scale_,
+                                       8 * scale_, 4 * scale_);
+        const base::Rect arrow_down_dest(arrow_display_offset.x,
+                                         bound_.height - 6 * scale_, 8 * scale_,
+                                         4 * scale_);
+        const base::Rect arrow_left_dest(2 * scale_, arrow_display_offset.y,
+                                         4 * scale_, 8 * scale_);
+        const base::Rect arrow_right_dest(bound_.width - 6 * scale_,
+                                          arrow_display_offset.y, 4 * scale_,
+                                          8 * scale_);
+
+        const base::Rect arrow_up_src(44 * scale_, 8 * scale_, 8 * scale_,
+                                      4 * scale_);
+        const base::Rect arrow_down_src(44 * scale_, 20 * scale_, 8 * scale_,
+                                        4 * scale_);
+        const base::Rect arrow_left_src(40 * scale_, 12 * scale_, 4 * scale_,
+                                        8 * scale_);
+        const base::Rect arrow_right_src(52 * scale_, 12 * scale_, 4 * scale_,
+                                         8 * scale_);
+
+        if (contents) {
+          if (origin_.x > 0) {
+            renderer::Quad::SetPositionRect(&quads[quad_index],
+                                            arrow_left_dest);
+            renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_left_src,
+                                            windowskin->size);
+            renderer::Quad::SetColor(&quads[quad_index],
+                                     base::Vec4(contents_opacity_norm));
+            quad_index++;
+            arrows_pause_quads++;
+          }
+          if (origin_.y > 0) {
+            renderer::Quad::SetPositionRect(&quads[quad_index], arrow_up_dest);
+            renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_up_src,
+                                            windowskin->size);
+            renderer::Quad::SetColor(&quads[quad_index],
+                                     base::Vec4(contents_opacity_norm));
+            quad_index++;
+            arrows_pause_quads++;
+          }
+          if (padding_rect.width < (contents->size.x - origin_.x)) {
+            renderer::Quad::SetPositionRect(&quads[quad_index],
+                                            arrow_right_dest);
+            renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_right_src,
+                                            windowskin->size);
+            renderer::Quad::SetColor(&quads[quad_index],
+                                     base::Vec4(contents_opacity_norm));
+            quad_index++;
+            arrows_pause_quads++;
+          }
+          if (padding_rect.height < (contents->size.y - origin_.y)) {
+            renderer::Quad::SetPositionRect(&quads[quad_index],
+                                            arrow_down_dest);
+            renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_down_src,
+                                            windowskin->size);
+            renderer::Quad::SetColor(&quads[quad_index],
+                                     base::Vec4(contents_opacity_norm));
+            quad_index++;
+            arrows_pause_quads++;
+          }
+        }
+      }
+
+      // Pause (1)
+      const base::Rect pause_src[] = {
+          {48 * scale_, 32 * scale_, 8 * scale_, 8 * scale_},
+          {56 * scale_, 32 * scale_, 8 * scale_, 8 * scale_},
+          {48 * scale_, 40 * scale_, 8 * scale_, 8 * scale_},
+          {56 * scale_, 40 * scale_, 8 * scale_, 8 * scale_},
+      };
+
+      if (pause_) {
+        const base::Rect pause_dest(arrow_display_offset.x,
+                                    bound_.height - 8 * scale_, 8 * scale_,
+                                    8 * scale_);
+        renderer::Quad::SetPositionRect(&quads[quad_index], pause_dest);
+        renderer::Quad::SetTexCoordRect(
+            &quads[quad_index], pause_src[pause_index_ / 8], windowskin->size);
+        renderer::Quad::SetColor(&quads[quad_index],
+                                 base::Vec4(contents_opacity_norm));
+        quad_index++;
+        arrows_pause_quads++;
+      }
+
+      // Cursor (9)
+      const auto cursor_rect = cursor_rect_->AsBaseRect();
+      if (cursor_rect.width > 0 && cursor_rect.height > 0) {
+        auto build_cursor_internal = [&](const base::Rect& rect,
+                                         base::Rect quad_rects[9]) {
+          int32_t w = rect.width;
+          int32_t h = rect.height;
+          int32_t x1 = rect.x;
+          int32_t x2 = x1 + w;
+          int32_t y1 = rect.y;
+          int32_t y2 = y1 + h;
+
+          int32_t i = 0;
+          // Left-Top
+          quad_rects[i++] = base::Rect(x1, y1, scale_, scale_);
+          // Right-Top
+          quad_rects[i++] = base::Rect(x2 - scale_, y1, scale_, scale_);
+          // Right-Bottom
+          quad_rects[i++] =
+              base::Rect(x2 - scale_, y2 - scale_, scale_, scale_);
+          // Left-Bottom
+          quad_rects[i++] = base::Rect(x1, y2 - scale_, scale_, scale_);
+          // Left
+          quad_rects[i++] = base::Rect(x1, y1 + scale_, scale_, h - scale_ * 2);
+          // Right
+          quad_rects[i++] =
+              base::Rect(x2 - scale_, y1 + scale_, scale_, h - scale_ * 2);
+          // Top
+          quad_rects[i++] = base::Rect(x1 + scale_, y1, w - scale_ * 2, scale_);
+          // Bottom
+          quad_rects[i++] =
+              base::Rect(x1 + scale_, y2 - scale_, w - scale_ * 2, scale_);
+          // Center
+          quad_rects[i++] = base::Rect(x1 + scale_, y1 + scale_, w - scale_ * 2,
+                                       h - scale_ * 2);
+        };
+
+        auto build_cursor_quads = [&](const base::Rect& src,
+                                      const base::Rect& dst,
+                                      renderer::Quad vert[9]) {
+          base::Rect quad_rects[9];
+
+          build_cursor_internal(src, quad_rects);
+          for (int32_t i = 0; i < 9; ++i)
+            renderer::Quad::SetTexCoordRect(&vert[i], quad_rects[i],
+                                            windowskin->size);
+
+          build_cursor_internal(dst, quad_rects);
+          for (int32_t i = 0; i < 9; ++i)
+            renderer::Quad::SetPositionRect(&vert[i], quad_rects[i]);
+
+          const base::Vec4 color(cursor_opacity_norm * contents_opacity_norm);
+          for (int32_t i = 0; i < 9; ++i)
+            renderer::Quad::SetColor(&vert[i], color);
+
+          return 9;
+        };
+
+        const base::Rect cursor_src(32 * scale_, 32 * scale_, 16 * scale_,
+                                    16 * scale_);
+        if (cursor_rect.width > 0 && cursor_rect.height > 0) {
+          base::Rect cursor_dest(content_offset + cursor_rect.Position(),
+                                 cursor_rect.Size());
+
+          if (rgss3_style_) {
+            cursor_dest.x -= origin_.x;
+            cursor_dest.y -= origin_.y;
+          }
+
+          cursor_draw_quads =
+              build_cursor_quads(cursor_src, cursor_dest, &quads[quad_index]);
+          cursor_quads_offset = quad_index;
+          quad_index += cursor_draw_quads;
+        }
+      }
     }
 
-    // Render background texture if need
-    if (background_dirty_) {
-      background_dirty_ = false;
-      int32_t quad_count = 0;
+    // Contents (1)
+    if (contents) {
+      renderer::Quad::SetPositionRect(
+          &quads[quad_index],
+          base::Rect(content_offset - origin_, contents->size));
+      renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+      renderer::Quad::SetColor(&quads[quad_index],
+                               base::Vec4(contents_opacity_norm));
+      contents_quads_offset = quad_index;
+      quad_index++;
+    }
+  }
 
-      // Background part
-      {
-        // Background 1
-        quad_count += 1;
-        // Background 2
-        const int32_t horizon_tiles =
-            CalculateQuadTileCount(32 * scale_, bound_.width - 2 * scale_);
-        const int32_t vertical_tiles =
-            CalculateQuadTileCount(32 * scale_, bound_.height - 2 * scale_);
-        quad_count += horizon_tiles * vertical_tiles;
+  // Screen display quad (1)
+  const base::Rect background_dest(
+      bound_.x,
+      static_cast<float>(bound_.y) +
+          static_cast<float>(bound_.height / 2.0f) * (1.0f - openness_norm),
+      bound_.width, bound_.height * openness_norm);
+  renderer::Quad::SetPositionRect(&quads[quad_index], background_dest);
+  renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+  agent_.display_quad_offset = quad_index;
+  quad_index++;
 
-        // Corners
-        quad_count += 4;
-        // Frames
-        const int32_t horizon_frame_tiles =
-            CalculateQuadTileCount(16 * scale_, bound_.width - 16 * scale_);
-        const int32_t vertical_frame_tiles =
-            CalculateQuadTileCount(16 * scale_, bound_.height - 16 * scale_);
-        quad_count += horizon_frame_tiles * 2 + vertical_frame_tiles * 2;
-      }
+  // Update GPU vertex buffer
+  agent_.batch.QueueWrite(**render_context, quads.data(), quads.size());
 
-      base::Vector<renderer::Quad> quads;
-      quads.resize(quad_count);
-      renderer::Quad* quad_ptr = quads.data();
+  // Make sure index buffer count
+  context()->render_device->GetQuadIndex()->Allocate(quad_index);
 
-      // Generate quads
-      const float back_opacity_norm = back_opacity_ / 255.0f;
-      int32_t background_draw_count = 0;
+  // Update background tone uniform buffer
+  renderer::Binding_Flat::Params uniform;
+  uniform.Color = base::Vec4();
+  uniform.Tone = tone_->AsNormColor();
+  (*render_context)
+      ->UpdateBuffer(agent_.uniform, 0, sizeof(uniform), &uniform,
+                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-      // Background part
-      {
-        // Stretch layer + Tile layer
-        const base::Rect background1_src(0, 0, 32 * scale_, 32 * scale_);
-        const base::Rect background2_src(0, 32 * scale_, 32 * scale_,
-                                         32 * scale_);
-        const base::Rect background_dest(scale_, scale_,
-                                         bound_.width - 2 * scale_,
-                                         bound_.height - 2 * scale_);
-        renderer::Quad::SetPositionRect(quad_ptr, background_dest);
-        renderer::Quad::SetTexCoordRect(quad_ptr, background1_src,
-                                        windowskin->size);
-        renderer::Quad::SetColor(quad_ptr, base::Vec4(back_opacity_norm));
-        quad_ptr++;
+  // Prepare render pipelines
+  auto& pipeline_set_tone = context()->render_device->GetPipelines()->viewport;
+  auto& pipeline_set_base = context()->render_device->GetPipelines()->base;
 
-        int32_t tiles_count = BuildTiles(background2_src, background_dest,
-                                         base::Vec4(back_opacity_norm),
-                                         windowskin->size, quad_ptr);
-        background_draw_count += tiles_count;
-        quad_ptr += tiles_count;
+  auto* pipeline_tone =
+      pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+  auto* pipeline_tone_alpha =
+      pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_KEEP_ALPHA, false);
+  auto* pipeline_base =
+      pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
 
-        // Corners
-        const base::Rect corner_left_top_src(32 * scale_, 0, 8 * scale_,
-                                             8 * scale_);
-        const base::Rect corner_right_top_src(56 * scale_, 0, 8 * scale_,
-                                              8 * scale_);
-        const base::Rect corner_left_bottom_src(32 * scale_, 24 * scale_,
-                                                8 * scale_, 8 * scale_);
-        const base::Rect corner_right_bottom_src(56 * scale_, 24 * scale_,
-                                                 8 * scale_, 8 * scale_);
-
-        const base::Rect corner_left_top_dest(0, 0, 8 * scale_, 8 * scale_);
-        const base::Rect corner_right_top_dest(bound_.width - 8 * scale_, 0,
-                                               8 * scale_, 8 * scale_);
-        const base::Rect corner_left_bottom_dest(0, bound_.height - 8 * scale_,
-                                                 8 * scale_, 8 * scale_);
-        const base::Rect corner_right_bottom_dest(bound_.width - 8 * scale_,
-                                                  bound_.height - 8 * scale_,
-                                                  8 * scale_, 8 * scale_);
-
-        renderer::Quad::SetPositionRect(quad_ptr, corner_left_top_dest);
-        renderer::Quad::SetTexCoordRect(quad_ptr, corner_left_top_src,
-                                        windowskin->size);
-        quad_ptr++;
-        renderer::Quad::SetPositionRect(quad_ptr, corner_right_top_dest);
-        renderer::Quad::SetTexCoordRect(quad_ptr, corner_right_top_src,
-                                        windowskin->size);
-        quad_ptr++;
-        renderer::Quad::SetPositionRect(quad_ptr, corner_left_bottom_dest);
-        renderer::Quad::SetTexCoordRect(quad_ptr, corner_left_bottom_src,
-                                        windowskin->size);
-        quad_ptr++;
-        renderer::Quad::SetPositionRect(quad_ptr, corner_right_bottom_dest);
-        renderer::Quad::SetTexCoordRect(quad_ptr, corner_right_bottom_src,
-                                        windowskin->size);
-        quad_ptr++;
-
-        // Tiles frame
-        const base::Rect frame_up_src(40 * scale_, 0, 16 * scale_, 8 * scale_);
-        const base::Rect frame_down_src(40 * scale_, 24 * scale_, 16 * scale_,
-                                        8 * scale_);
-        const base::Rect frame_left_src(32 * scale_, 8 * scale_, 8 * scale_,
-                                        16 * scale_);
-        const base::Rect frame_right_src(56 * scale_, 8 * scale_, 8 * scale_,
-                                         16 * scale_);
-
-        quad_ptr += BuildTilesAlongAxis(
-            TileAxis::HORIZONTAL, frame_up_src, base::Vec2i(8 * scale_, 0),
-            base::Vec4(1.0f), bound_.width - 16 * scale_, windowskin->size,
-            quad_ptr);
-        quad_ptr += BuildTilesAlongAxis(
-            TileAxis::HORIZONTAL, frame_down_src,
-            base::Vec2i(8 * scale_, bound_.height - 8 * scale_),
-            base::Vec4(1.0f), bound_.width - 16 * scale_, windowskin->size,
-            quad_ptr);
-        quad_ptr += BuildTilesAlongAxis(
-            TileAxis::VERTICAL, frame_left_src, base::Vec2i(0, 8 * scale_),
-            base::Vec4(1.0f), bound_.height - 16 * scale_, windowskin->size,
-            quad_ptr);
-        quad_ptr += BuildTilesAlongAxis(
-            TileAxis::VERTICAL, frame_right_src,
-            base::Vec2i(bound_.width - 8 * scale_, 8 * scale_),
-            base::Vec4(1.0f), bound_.height - 16 * scale_, windowskin->size,
-            quad_ptr);
-      }
-
-      agent_.background_batch.QueueWrite(**render_context, quads.data(),
-                                         quads.size());
-
-      renderer::Binding_Flat::Params uniform;
-      uniform.Color = base::Vec4();
-      uniform.Tone = tone_->AsNormColor();
-
-      (*render_context)
-          ->UpdateBuffer(agent_.uniform_buffer, 0, sizeof(uniform), &uniform,
+  // Setup render pass
+  auto* render_target_view =
+      agent_.texture->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->ClearRenderTarget(render_target_view, nullptr,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Setup shader binding
+  if (windowskin) {
+    agent_.base_binding.u_transform->Set(agent_.world);
+    agent_.base_binding.u_texture->Set(windowskin->resource);
+
+    agent_.flat_binding.u_transform->Set(agent_.world);
+    agent_.flat_binding.u_texture->Set(windowskin->resource);
+    agent_.flat_binding.u_params->Set(agent_.uniform);
+  }
+
+  if (contents) {
+    agent_.content_binding.u_transform->Set(agent_.world);
+    agent_.content_binding.u_texture->Set(contents->resource);
+  }
+
+  // Apply global vertex and index
+  Diligent::IBuffer* const vertex_buffer = *agent_.batch;
+  (*render_context)
+      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
+                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Reset scissor test
+  render_context->ScissorState()->Apply(bound_.Size());
+
+  // Execute texture composite
+  if (windowskin) {
+    int32_t quads_draw_offset = 0;
+
+    // Stretch layer pass
+    (*render_context)->SetPipelineState(pipeline_tone);
+    (*render_context)
+        ->CommitShaderResources(
+            *agent_.flat_binding,
+            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    {
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+      quads_draw_offset++;
+    }
+
+    // Tiled layer pass
+    (*render_context)->SetPipelineState(pipeline_tone_alpha);
+    (*render_context)
+        ->CommitShaderResources(
+            *agent_.flat_binding,
+            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    {
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = tiled_quads_count * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+      quads_draw_offset += tiled_quads_count;
+    }
+
+    // Corners & Frames
+    (*render_context)->SetPipelineState(pipeline_base);
+    (*render_context)
+        ->CommitShaderResources(
+            *agent_.base_binding,
+            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    {
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = frames_quads_count * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+      quads_draw_offset += frames_quads_count;
+    }
+
+    if (openness_ >= 255) {
+      // Arrows & Pause
+      (*render_context)->SetPipelineState(pipeline_base);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.base_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       {
-        auto& pipeline_set_tone =
-            context()->render_device->GetPipelines()->viewport;
-        auto* pipeline_tone =
-            pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
-        auto* pipeline_tone_alpha = pipeline_set_tone.GetPipeline(
-            renderer::BLEND_TYPE_KEEP_ALPHA, false);
-        auto& pipeline_set_base =
-            context()->render_device->GetPipelines()->base;
-        auto* pipeline_base =
-            pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+        Diligent::DrawIndexedAttribs draw_indexed_attribs;
+        draw_indexed_attribs.NumIndices = arrows_pause_quads * 6;
+        draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+        draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
+        (*render_context)->DrawIndexed(draw_indexed_attribs);
+        quads_draw_offset += arrows_pause_quads;
+      }
 
-        float clear_color[] = {0, 0, 0, 0};
-        auto* render_target_view = agent_.background_texture->GetDefaultView(
-            Diligent::TEXTURE_VIEW_RENDER_TARGET);
-        (*render_context)
-            ->SetRenderTargets(
-                1, &render_target_view, nullptr,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        (*render_context)
-            ->ClearRenderTarget(
-                render_target_view, clear_color,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      // Clamped cursor region
+      if (cursor_draw_quads) {
+        render_context->ScissorState()->Push(padding_rect);
 
-        render_context->ScissorState()->Apply(bound_.Size());
-        context()->render_device->GetQuadIndex()->Allocate(quads.size() + 20);
+        // Cursor rect
+        if (cursor_quads_offset) {
+          (*render_context)->SetPipelineState(pipeline_base);
+          (*render_context)
+              ->CommitShaderResources(
+                  *agent_.base_binding,
+                  Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        // Create binding
-        renderer::Binding_Flat flat_binding =
-            context()->render_device->GetPipelines()->viewport.CreateBinding();
-        renderer::Binding_Base base_binding =
-            context()->render_device->GetPipelines()->base.CreateBinding();
-
-        // Setup uniform params
-        flat_binding.u_transform->Set(agent_.background_world);
-        flat_binding.u_texture->Set(windowskin->resource);
-        flat_binding.u_params->Set(agent_.uniform_buffer);
-
-        base_binding.u_transform->Set(agent_.background_world);
-        base_binding.u_texture->Set(windowskin->resource);
-
-        // Apply vertex index
-        Diligent::IBuffer* const vertex_buffer = *agent_.background_batch;
-        (*render_context)
-            ->SetVertexBuffers(
-                0, 1, &vertex_buffer, nullptr,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        (*render_context)
-            ->SetIndexBuffer(
-                **context()->render_device->GetQuadIndex(), 0,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Apply pipeline state
-        (*render_context)->SetPipelineState(pipeline_tone);
-        (*render_context)
-            ->CommitShaderResources(
-                *flat_binding,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Stretch Layer
-        {
-          Diligent::DrawIndexedAttribs draw_indexed_attribs;
-          draw_indexed_attribs.NumIndices = 6;
-          draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-          (*render_context)->DrawIndexed(draw_indexed_attribs);
+          {
+            Diligent::DrawIndexedAttribs draw_indexed_attribs;
+            draw_indexed_attribs.NumIndices = cursor_draw_quads * 6;
+            draw_indexed_attribs.IndexType =
+                renderer::QuadIndexCache::kValueType;
+            draw_indexed_attribs.FirstIndexLocation = cursor_quads_offset * 6;
+            (*render_context)->DrawIndexed(draw_indexed_attribs);
+          }
         }
 
-        // Apply pipeline state
-        (*render_context)->SetPipelineState(pipeline_tone_alpha);
-        (*render_context)
-            ->CommitShaderResources(
-                *flat_binding,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Tiled Layer
-        {
-          Diligent::DrawIndexedAttribs draw_indexed_attribs;
-          draw_indexed_attribs.NumIndices = background_draw_count * 6;
-          draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-          draw_indexed_attribs.FirstIndexLocation = 6;
-          (*render_context)->DrawIndexed(draw_indexed_attribs);
-        }
-
-        // Apply pipeline state
-        (*render_context)->SetPipelineState(pipeline_base);
-        (*render_context)
-            ->CommitShaderResources(
-                *base_binding,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Frames and Corners
-        {
-          background_draw_count++;
-          Diligent::DrawIndexedAttribs draw_indexed_attribs;
-          draw_indexed_attribs.NumIndices =
-              (quads.size() - background_draw_count) * 6;
-          draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-          draw_indexed_attribs.FirstIndexLocation = background_draw_count * 6;
-          (*render_context)->DrawIndexed(draw_indexed_attribs);
-        }
+        render_context->ScissorState()->Pop();
       }
     }
   }
 
-  // Reset draw count
-  agent_.background_draw_count = 0;
-  agent_.controls_draw_count = 0;
-  agent_.cursor_draw_count = 0;
-  agent_.contents_draw_count = 0;
+  if (contents && openness_ >= 255) {
+    render_context->ScissorState()->Push(padding_rect);
 
-  // Render background and controls
-  {
-    base::Vector<renderer::Quad> quads;
-    // Background + Pause Anime + Arrows + Cursor + Contents
-    quads.resize(1 + 1 + 4 + 9 + 1);
+    // Contents pass
+    (*render_context)->SetPipelineState(pipeline_base);
+    (*render_context)
+        ->CommitShaderResources(
+            *agent_.content_binding,
+            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    renderer::Quad* quad_ptr = quads.data();
-    const base::Vec2i offset = bound_.Position();
-    const float openness_norm = openness_ / 255.0f;
-    const float contents_opacity_norm = contents_opacity_ / 255.0f;
-    const float cursor_opacity_norm = cursor_opacity_ / 255.0f;
-
-    // Background texture quad
-    if (windowskin) {
-      const base::Rect background_dest(
-          offset.x,
-          static_cast<float>(offset.y) +
-              static_cast<float>(bound_.height / 2.0f) * (1.0f - openness_norm),
-          bound_.width, bound_.height * openness_norm);
-      renderer::Quad::SetPositionRect(quad_ptr, background_dest);
-      renderer::Quad::SetTexCoordRect(quad_ptr, base::Rect(bound_.Size()),
-                                      bound_.Size());
-      renderer::Quad::SetColor(quad_ptr, base::Vec4(opacity_ / 255.0f));
-      agent_.background_draw_count += 1;
-      quad_ptr += 1;
+    {
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = contents_quads_offset * 6;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
     }
 
-    // Controls & Contents
-    if (openness_ >= 255) {
-      // Controls offset
-      base::Vec2i content_offset = offset + padding_rect.Position();
-
-      if (windowskin) {
-        const base::Vec2i arrow_display_offset =
-            (bound_.Size() - base::Vec2i(8 * scale_)) / 2;
-
-        if (arrows_visible_) {
-          // Arrows
-          const base::Rect arrow_up_dest(offset.x + arrow_display_offset.x,
-                                         offset.y + 2 * scale_, 8 * scale_,
-                                         4 * scale_);
-          const base::Rect arrow_down_dest(
-              offset.x + arrow_display_offset.x,
-              offset.y + bound_.height - 6 * scale_, 8 * scale_, 4 * scale_);
-          const base::Rect arrow_left_dest(offset.x + 2 * scale_,
-                                           offset.y + arrow_display_offset.y,
-                                           4 * scale_, 8 * scale_);
-          const base::Rect arrow_right_dest(
-              offset.x + bound_.width - 6 * scale_,
-              offset.y + arrow_display_offset.y, 4 * scale_, 8 * scale_);
-
-          const base::Rect arrow_up_src(44 * scale_, 8 * scale_, 8 * scale_,
-                                        4 * scale_);
-          const base::Rect arrow_down_src(44 * scale_, 20 * scale_, 8 * scale_,
-                                          4 * scale_);
-          const base::Rect arrow_left_src(40 * scale_, 12 * scale_, 4 * scale_,
-                                          8 * scale_);
-          const base::Rect arrow_right_src(52 * scale_, 12 * scale_, 4 * scale_,
-                                           8 * scale_);
-
-          if (contents && arrows_visible_) {
-            if (origin_.x > 0) {
-              renderer::Quad::SetPositionRect(quad_ptr, arrow_left_dest);
-              renderer::Quad::SetTexCoordRect(quad_ptr, arrow_left_src,
-                                              windowskin->size);
-              renderer::Quad::SetColor(quad_ptr,
-                                       base::Vec4(contents_opacity_norm));
-              agent_.controls_draw_count += 1;
-              quad_ptr += 1;
-            }
-            if (origin_.y > 0) {
-              renderer::Quad::SetPositionRect(quad_ptr, arrow_up_dest);
-              renderer::Quad::SetTexCoordRect(quad_ptr, arrow_up_src,
-                                              windowskin->size);
-              renderer::Quad::SetColor(quad_ptr,
-                                       base::Vec4(contents_opacity_norm));
-              agent_.controls_draw_count += 1;
-              quad_ptr += 1;
-            }
-            if (padding_rect.width < (contents->size.x - origin_.x)) {
-              renderer::Quad::SetPositionRect(quad_ptr, arrow_right_dest);
-              renderer::Quad::SetTexCoordRect(quad_ptr, arrow_right_src,
-                                              windowskin->size);
-              renderer::Quad::SetColor(quad_ptr,
-                                       base::Vec4(contents_opacity_norm));
-              agent_.controls_draw_count += 1;
-              quad_ptr += 1;
-            }
-            if (padding_rect.height < (contents->size.y - origin_.y)) {
-              renderer::Quad::SetPositionRect(quad_ptr, arrow_down_dest);
-              renderer::Quad::SetTexCoordRect(quad_ptr, arrow_down_src,
-                                              windowskin->size);
-              renderer::Quad::SetColor(quad_ptr,
-                                       base::Vec4(contents_opacity_norm));
-              agent_.controls_draw_count += 1;
-              quad_ptr += 1;
-            }
-          }
-        }
-
-        // Cursor
-        const auto cursor_rect = cursor_rect_->AsBaseRect();
-        if (cursor_rect.width > 0 && cursor_rect.height > 0) {
-          auto build_cursor_internal = [&](const base::Rect& rect,
-                                           base::Rect quad_rects[9]) {
-            int32_t w = rect.width;
-            int32_t h = rect.height;
-            int32_t x1 = rect.x;
-            int32_t x2 = x1 + w;
-            int32_t y1 = rect.y;
-            int32_t y2 = y1 + h;
-
-            int32_t i = 0;
-            // Left-Top
-            quad_rects[i++] = base::Rect(x1, y1, scale_, scale_);
-            // Right-Top
-            quad_rects[i++] = base::Rect(x2 - scale_, y1, scale_, scale_);
-            // Right-Bottom
-            quad_rects[i++] =
-                base::Rect(x2 - scale_, y2 - scale_, scale_, scale_);
-            // Left-Bottom
-            quad_rects[i++] = base::Rect(x1, y2 - scale_, scale_, scale_);
-            // Left
-            quad_rects[i++] =
-                base::Rect(x1, y1 + scale_, scale_, h - scale_ * 2);
-            // Right
-            quad_rects[i++] =
-                base::Rect(x2 - scale_, y1 + scale_, scale_, h - scale_ * 2);
-            // Top
-            quad_rects[i++] =
-                base::Rect(x1 + scale_, y1, w - scale_ * 2, scale_);
-            // Bottom
-            quad_rects[i++] =
-                base::Rect(x1 + scale_, y2 - scale_, w - scale_ * 2, scale_);
-            // Center
-            quad_rects[i++] = base::Rect(x1 + scale_, y1 + scale_,
-                                         w - scale_ * 2, h - scale_ * 2);
-          };
-
-          auto build_cursor_quads = [&](const base::Rect& src,
-                                        const base::Rect& dst,
-                                        renderer::Quad vert[9]) {
-            base::Rect quad_rects[9];
-
-            build_cursor_internal(src, quad_rects);
-            for (int32_t i = 0; i < 9; ++i)
-              renderer::Quad::SetTexCoordRect(&vert[i], quad_rects[i],
-                                              windowskin->size);
-
-            build_cursor_internal(dst, quad_rects);
-            for (int32_t i = 0; i < 9; ++i)
-              renderer::Quad::SetPositionRect(&vert[i], quad_rects[i]);
-
-            const base::Vec4 color(cursor_opacity_norm * contents_opacity_norm);
-            for (int32_t i = 0; i < 9; ++i)
-              renderer::Quad::SetColor(&vert[i], color);
-
-            return 9;
-          };
-
-          const base::Rect cursor_src(32 * scale_, 32 * scale_, 16 * scale_,
-                                      16 * scale_);
-          if (cursor_rect.width > 0 && cursor_rect.height > 0) {
-            base::Rect cursor_dest(content_offset + cursor_rect.Position(),
-                                   cursor_rect.Size());
-
-            if (rgss3_style_) {
-              cursor_dest.x -= origin_.x;
-              cursor_dest.y -= origin_.y;
-            }
-
-            int32_t count =
-                build_cursor_quads(cursor_src, cursor_dest, quad_ptr);
-            agent_.cursor_draw_count += count;
-            quad_ptr += count;
-          }
-        }
-
-        // Pause
-        const base::Rect pause_src[] = {
-            {48 * scale_, 32 * scale_, 8 * scale_, 8 * scale_},
-            {56 * scale_, 32 * scale_, 8 * scale_, 8 * scale_},
-            {48 * scale_, 40 * scale_, 8 * scale_, 8 * scale_},
-            {56 * scale_, 40 * scale_, 8 * scale_, 8 * scale_},
-        };
-
-        if (pause_) {
-          const base::Rect pause_dest(offset.x + arrow_display_offset.x,
-                                      offset.y + bound_.height - 8 * scale_,
-                                      8 * scale_, 8 * scale_);
-          renderer::Quad::SetPositionRect(quad_ptr, pause_dest);
-          renderer::Quad::SetTexCoordRect(quad_ptr, pause_src[pause_index_ / 8],
-                                          windowskin->size);
-          renderer::Quad::SetColor(quad_ptr, base::Vec4(contents_opacity_norm));
-          agent_.controls_draw_count += 1;
-          quad_ptr += 1;
-        }
-      }
-
-      // Contents
-      if (contents) {
-        renderer::Quad::SetPositionRect(
-            quad_ptr, base::Rect(content_offset - origin_, contents->size));
-        renderer::Quad::SetTexCoordRect(quad_ptr, base::Rect(contents->size),
-                                        contents->size);
-        renderer::Quad::SetColor(quad_ptr, base::Vec4(contents_opacity_norm));
-        agent_.contents_draw_count += 1;
-      }
-    }
-
-    // Uplopad data
-    agent_.controls_batch.QueueWrite(**render_context, quads.data(),
-                                     quads.size());
+    render_context->ScissorState()->Pop();
   }
 }
 
 void Window2Impl::GPURenderWindowQuadsInternal(
     renderer::RenderContext* render_context,
-    Diligent::IBuffer* world_binding,
-    BitmapAgent* windowskin,
-    BitmapAgent* contents,
-    const base::Rect& padding_rect,
-    const base::Rect& last_viewport,
-    const base::Vec2i& last_origin) {
+    Diligent::IBuffer* world_binding) {
   auto& pipeline_set = context()->render_device->GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
   // Setup world uniform
-  agent_.shader_binding.u_transform->Set(world_binding);
+  agent_.display_binding.u_transform->Set(world_binding);
+  agent_.display_binding.u_texture->Set(
+      agent_.texture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
+  Diligent::IBuffer* const vertex_buffer = *agent_.batch;
   (*render_context)
       ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -1041,91 +1089,17 @@ void Window2Impl::GPURenderWindowQuadsInternal(
 
   // Apply pipeline state
   (*render_context)->SetPipelineState(pipeline);
+  (*render_context)
+      ->CommitShaderResources(
+          *agent_.display_binding,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  int32_t count = 0;
-  if (agent_.background_draw_count > 0) {
-    // Setup texture
-    agent_.shader_binding.u_texture->Set(
-        agent_.background_texture->GetDefaultView(
-            Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.shader_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = agent_.background_draw_count * 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    draw_indexed_attribs.FirstIndexLocation = count * 6;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
-
-    count += agent_.background_draw_count;
-  }
-
-  if (agent_.controls_draw_count > 0) {
-    // Setup texture
-    agent_.shader_binding.u_texture->Set(windowskin->resource);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.shader_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    draw_indexed_attribs.FirstIndexLocation = count * 6;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
-
-    count += agent_.controls_draw_count;
-  }
-
-  const base::Rect contents_region(
-      last_viewport.x + bound_.x + padding_rect.x - last_origin.x,
-      last_viewport.y + bound_.y + padding_rect.y - last_origin.y,
-      padding_rect.width, padding_rect.height);
-  auto scissor_region = base::MakeIntersect(last_viewport, contents_region);
-  if (!scissor_region.width || !scissor_region.height)
-    return;
-
-  render_context->ScissorState()->Push(scissor_region);
-
-  if (agent_.cursor_draw_count > 0) {
-    // Setup texture
-    agent_.shader_binding.u_texture->Set(windowskin->resource);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.shader_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = agent_.cursor_draw_count * 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    draw_indexed_attribs.FirstIndexLocation = count * 6;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
-
-    count += agent_.cursor_draw_count;
-  }
-
-  if (agent_.contents_draw_count > 0) {
-    // Setup texture
-    agent_.shader_binding.u_texture->Set(contents->resource);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.shader_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = agent_.contents_draw_count * 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    draw_indexed_attribs.FirstIndexLocation = count * 6;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
-  }
-
-  render_context->ScissorState()->Pop();
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.FirstIndexLocation = agent_.display_quad_offset * 6;
+  (*render_context)->DrawIndexed(draw_indexed_attribs);
 }
 
 }  // namespace content

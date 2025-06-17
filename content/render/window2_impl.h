@@ -20,18 +20,17 @@ namespace content {
 class Window2Impl : public Window2, public EngineObject, public Disposable {
  public:
   struct Agent {
-    renderer::QuadBatch background_batch;
-    renderer::QuadBatch controls_batch;
-    renderer::Binding_Base shader_binding;
+    renderer::QuadBatch batch;
+    renderer::Binding_Base base_binding;
+    renderer::Binding_Flat flat_binding;
+    renderer::Binding_Base content_binding;
+    renderer::Binding_Base display_binding;
 
-    RRefPtr<Diligent::ITexture> background_texture;
-    RRefPtr<Diligent::IBuffer> background_world;
-    RRefPtr<Diligent::IBuffer> uniform_buffer;
+    int32_t display_quad_offset = 0;
 
-    int32_t background_draw_count;
-    int32_t controls_draw_count;
-    int32_t cursor_draw_count;
-    int32_t contents_draw_count;
+    RRefPtr<Diligent::ITexture> texture;
+    RRefPtr<Diligent::IBuffer> world;
+    RRefPtr<Diligent::IBuffer> uniform;
   };
 
   Window2Impl(ExecutionContext* execution_context,
@@ -86,7 +85,6 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);
-  void BackgroundTextureObserverInternal();
 
   void GPUCreateWindowInternal();
   void GPUCompositeWindowQuadsInternal(renderer::RenderContext* render_context,
@@ -94,12 +92,7 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
                                        BitmapAgent* windowskin,
                                        const base::Rect& padding_rect);
   void GPURenderWindowQuadsInternal(renderer::RenderContext* render_context,
-                                    Diligent::IBuffer* world_binding,
-                                    BitmapAgent* windowskin,
-                                    BitmapAgent* contents,
-                                    const base::Rect& padding_rect,
-                                    const base::Rect& last_viewport,
-                                    const base::Vec2i& last_origin);
+                                    Diligent::IBuffer* world_binding);
 
   bool rgss3_style_ = false;
   DrawableNode node_;
@@ -108,7 +101,6 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
   int32_t pause_index_ = 0;
   int32_t cursor_opacity_ = 255;
   bool cursor_fade_ = false;
-  bool background_dirty_ = false;
 
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<CanvasImpl> windowskin_;
