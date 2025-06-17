@@ -21,6 +21,8 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
  public:
   struct Agent {
     renderer::QuadBatch batch;
+    base::Vector<renderer::Quad> cache;
+
     renderer::Binding_Base base_binding;
     renderer::Binding_Flat flat_binding;
     renderer::Binding_Base content_binding;

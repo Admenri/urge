@@ -573,7 +573,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
   }
 
   // Generate quads
-  base::Vector<renderer::Quad> quads(quad_count);
+  auto& quads = agent_.cache;
+  quads.resize(quad_count);
   int32_t quad_index = 0;
 
   // Draw attributes

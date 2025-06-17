@@ -20,15 +20,21 @@ namespace content {
 class WindowImpl : public Window, public EngineObject, public Disposable {
  public:
   struct Agent {
-    base::Vector<renderer::Quad> background_cache;
     renderer::QuadBatch background_batch;
-    base::Vector<renderer::Quad> control_cache;
-    renderer::QuadBatch control_batch;
+    base::Vector<renderer::Quad> background_cache;
+    renderer::QuadBatch controls_batch;
+    base::Vector<renderer::Quad> controls_cache;
 
-    renderer::Binding_Base shader_binding;
+    RRefPtr<Diligent::ITexture> background_texture;
+    RRefPtr<Diligent::ITexture> controls_texture;
+    RRefPtr<Diligent::IBuffer> world;
 
-    int32_t control_draw_count;
-    int32_t contents_draw_count;
+    renderer::Binding_Base base_binding;
+    renderer::Binding_Base content_binding;
+    renderer::Binding_Base display_binding;
+
+    int32_t background_display_quad_offset = 0;
+    int32_t controls_display_quad_offset = 0;
   };
 
   WindowImpl(ExecutionContext* execution_context,
@@ -83,13 +89,9 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
                                         BitmapAgent* contents);
   void GPURenderBackgroundLayerInternal(renderer::RenderContext* render_context,
                                         Diligent::IBuffer* world_binding,
-                                        const base::Rect& last_viewport,
-                                        const base::Vec2i& last_origin,
                                         BitmapAgent* windowskin);
   void GPURenderControlLayerInternal(renderer::RenderContext* render_context,
                                      Diligent::IBuffer* world_binding,
-                                     const base::Rect& last_viewport,
-                                     const base::Vec2i& last_origin,
                                      BitmapAgent* windowskin,
                                      BitmapAgent* contents);
 
