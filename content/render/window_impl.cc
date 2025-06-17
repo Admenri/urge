@@ -728,7 +728,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
         renderer::Quad::SetTexCoordRect(
             &quads[quad_index], scroll_arrow_left_src, windowskin->size);
         renderer::Quad::SetColor(&quads[quad_index],
-                                 base::Vec4(contents_opacity_));
+                                 base::Vec4(contents_opacity_norm));
         quad_index++;
       }
 
@@ -738,7 +738,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
         renderer::Quad::SetTexCoordRect(&quads[quad_index], scroll_arrow_up_src,
                                         windowskin->size);
         renderer::Quad::SetColor(&quads[quad_index],
-                                 base::Vec4(contents_opacity_));
+                                 base::Vec4(contents_opacity_norm));
         quad_index++;
       }
 
@@ -748,7 +748,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
         renderer::Quad::SetTexCoordRect(
             &quads[quad_index], scroll_arrow_right_src, windowskin->size);
         renderer::Quad::SetColor(&quads[quad_index],
-                                 base::Vec4(contents_opacity_));
+                                 base::Vec4(contents_opacity_norm));
         quad_index++;
       }
 
@@ -758,7 +758,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
         renderer::Quad::SetTexCoordRect(
             &quads[quad_index], scroll_arrow_down_src, windowskin->size);
         renderer::Quad::SetColor(&quads[quad_index],
-                                 base::Vec4(contents_opacity_));
+                                 base::Vec4(contents_opacity_norm));
         quad_index++;
       }
     }
@@ -780,7 +780,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
                                       pause_animation[pause_index_ / 8],
                                       windowskin->size);
       renderer::Quad::SetColor(&quads[quad_index],
-                               base::Vec4(contents_opacity_));
+                               base::Vec4(contents_opacity_norm));
       quad_index++;
     }
 
@@ -795,7 +795,8 @@ void WindowImpl::GPUCompositeControlLayerInternal(
     renderer::Quad::SetPositionRect(
         &quads[quad_index], base::Rect(content_position, contents->size));
     renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
-    renderer::Quad::SetColor(&quads[quad_index], base::Vec4(contents_opacity_));
+    renderer::Quad::SetColor(&quads[quad_index],
+                             base::Vec4(contents_opacity_norm));
     content_quad_offset = quad_index;
     quad_index++;
   }
