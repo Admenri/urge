@@ -886,6 +886,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       bound_.width, bound_.height * openness_norm);
   renderer::Quad::SetPositionRect(&quads[quad_index], background_dest);
   renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+  renderer::Quad::SetColor(&quads[quad_index], base::Vec4(1));
   agent_.display_quad_offset = quad_index;
   quad_index++;
 

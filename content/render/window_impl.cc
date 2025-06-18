@@ -550,6 +550,7 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
     // Display quad
     renderer::Quad::SetPositionRect(&quads[quad_index], bound_);
     renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+    renderer::Quad::SetColor(&quads[quad_index], base::Vec4(1));
     agent_.background_display_quad_offset = quad_index;
   }
 
@@ -804,6 +805,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
   // Display
   renderer::Quad::SetPositionRect(&quads[quad_index], bound_);
   renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+  renderer::Quad::SetColor(&quads[quad_index], base::Vec4(1));
   agent_.controls_display_quad_offset = quad_index;
 
   // Update vertex buffer
