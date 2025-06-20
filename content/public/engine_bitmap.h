@@ -66,7 +66,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   /*--urge(name:rect)--*/
   virtual scoped_refptr<Rect> GetRect(ExceptionState& exception_state) = 0;
 
-  /*--urge(name:blt,optional:opacity=255,optional:blend_type=0)--*/
+  /*--urge(name:blt,optional:opacity=255,optional:blend_type=-1)--*/
   virtual void Blt(int32_t x,
                    int32_t y,
                    scoped_refptr<Bitmap> src_bitmap,
@@ -75,7 +75,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
                    int32_t blend_type,
                    ExceptionState& exception_state) = 0;
 
-  /*--urge(name:stretch_blt,optional:opacity=255,optional:blend_type=0)--*/
+  /*--urge(name:stretch_blt,optional:opacity=255,optional:blend_type=-1)--*/
   virtual void StretchBlt(scoped_refptr<Rect> dest_rect,
                           scoped_refptr<Bitmap> src_bitmap,
                           scoped_refptr<Rect> src_rect,

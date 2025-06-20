@@ -433,6 +433,8 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
         Diligent::CPU_ACCESS_NONE, &world_matrix);
   }
 
+  int32_t background_draw_counts = 0;
+
   // Generate background quads
   int32_t quad_index = 0;
   if (windowskin) {
@@ -482,6 +484,8 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
                                base::Vec4(opacity_norm * back_opacity_norm),
                                windowskin->size, &quads[quad_index]);
     }
+
+    background_draw_counts = quad_index;
 
     // Frame Corners
     base::Rect corner_left_top(64 * scale_, 0, 8 * scale_, 8 * scale_);
@@ -591,18 +595,38 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
     auto& pipeline_set_base = context()->render_device->GetPipelines()->base;
     auto* pipeline_base =
         pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+    auto* pipeline_base_pma =
+        pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL_PMA, false);
 
-    // Render pass
-    (*render_context)->SetPipelineState(pipeline_base);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.base_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    // Background pass
+    {
+      (*render_context)->SetPipelineState(pipeline_base_pma);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.base_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = quad_index * 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = background_draw_counts * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+    }
+
+    // Frames pass
+    {
+      (*render_context)->SetPipelineState(pipeline_base);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.base_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices =
+          (quad_index - background_draw_counts) * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = background_draw_counts * 6;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+    }
   }
 }
 
@@ -843,7 +867,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
     // Prepare render pipelines
     auto& pipeline_set_base = context()->render_device->GetPipelines()->base;
     auto* pipeline_base =
-        pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+        pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL_PMA, false);
 
     // Arrows & Pause render pass
     (*render_context)->SetPipelineState(pipeline_base);
@@ -883,7 +907,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
     // Prepare render pipelines
     auto& pipeline_set_base = context()->render_device->GetPipelines()->base;
     auto* pipeline_base =
-        pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+        pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL_PMA, false);
 
     // Render pass
     (*render_context)->SetPipelineState(pipeline_base);

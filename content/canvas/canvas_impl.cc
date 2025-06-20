@@ -799,9 +799,11 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   auto& render_context = *scheduler->GetDiscreteRenderContext();
 
   // Custom blend blit pipeline
+  int32_t alpha_blend_type =
+      blend_type == -1 ? renderer::BLEND_TYPE_NORMAL_PMA : blend_type;
   auto& pipeline_set = render_device.GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(
-      static_cast<renderer::BlendType>(blend_type), true);
+      static_cast<renderer::BlendType>(alpha_blend_type), true);
 
   // Norm opacity value
   base::Vec4 blend_alpha;
@@ -974,7 +976,8 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   auto& render_context = *scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL_PMA, true);
 
   // Reset text upload stage buffer if need
   if (!agent_.text_cache_texture || agent_.text_cache_size.x < text->w ||
