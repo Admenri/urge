@@ -59,11 +59,10 @@ class RenderScreenImpl : public Graphics,
   // This function will wait for delta time to clamp fps.
   void PresentScreenBuffer(Diligent::ImGuiDiligentRenderer* gui_renderer);
 
-  // Hungup rendering context if system enter background,
-  // only calling on Android system
-  void SuspendRenderingContext();
-  void ResumeRenderingContext();
+  // Reset frame counter
+  void ResetFPSCounter();
 
+  // Create graphics parition gui
   void CreateButtonGUISettings();
 
   // Add tick monitor handler

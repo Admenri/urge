@@ -57,31 +57,7 @@ void RenderScreenImpl::PresentScreenBuffer(
                                  gui_renderer);
 }
 
-void RenderScreenImpl::SuspendRenderingContext() {
-#if defined(OS_ANDROID)
-  base::ThreadWorker::PostTask(
-      render_worker_,
-      base::BindOnce(
-          [](renderer::RenderDevice* device) { device->SuspendContext(); },
-          GetDevice()));
-  base::ThreadWorker::WaitWorkerSynchronize(render_worker_);
-#endif  // OS_ANDROID
-}
-
-void RenderScreenImpl::ResumeRenderingContext() {
-#if defined(OS_ANDROID)
-  base::ThreadWorker::PostTask(
-      render_worker_, base::BindOnce(
-                          [](renderer::RenderDevice* device,
-                             renderer::RenderContext* immediate_context) {
-                            int32_t resume_result =
-                                device->ResumeContext(**immediate_context);
-                            if (resume_result != EGL_SUCCESS)
-                              LOG(INFO) << "Failed to resume EGL context.";
-                          },
-                          GetDevice(), GetContext()));
-  base::ThreadWorker::WaitWorkerSynchronize(render_worker_);
-#endif  // OS_ANDROID
+void RenderScreenImpl::ResetFPSCounter() {
   limiter_.Reset();
 }
 

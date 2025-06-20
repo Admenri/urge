@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.20.1)
 # Mri Gem Ext
 #--------------------------------------------------------------------------------
 
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
 set(GEM_EXT_RUBYPROF_SRC
   "ruby_prof/rp_allocation.c"
   "ruby_prof/rp_call_tree.c"
@@ -20,6 +21,7 @@ set(GEM_EXT_RUBYPROF_SRC
   "ruby_prof/rp_thread.c"
   "ruby_prof/ruby_prof.c"
 )
+endif ()
 
 #--------------------------------------------------------------------------------
 # Autogen MRI binding source collection
@@ -35,9 +37,9 @@ execute_process(
   RESULT_VARIABLE SCRIPT_RESULT
 )
 
-if(NOT SCRIPT_RESULT EQUAL 0)
+if (NOT SCRIPT_RESULT EQUAL 0)
   message(FATAL_ERROR "Failed to create MRI binding source: ${SCRIPT_RESULT}")
-endif()
+endif ()
 
 file(GLOB GENERATED_SOURCES CONFIGURE_DEPENDS "${GENERATE_BINDING_DIR}/*.cc")
 file(GLOB GENERATED_HEADERS CONFIGURE_DEPENDS "${GENERATE_BINDING_DIR}/*.h")

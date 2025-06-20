@@ -313,13 +313,15 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
 
   if (is_focus_lost) {
     LOG(INFO) << "[Content] Enter background running.";
-    self->graphics_impl_->SuspendRenderingContext();
+    self->execution_context_->render_device->SuspendContext();
     self->background_running_ = true;
     return false;
   }
   if (is_focus_gained) {
     LOG(INFO) << "[Content] Resume foreground running.";
-    self->graphics_impl_->ResumeRenderingContext();
+    self->execution_context_->render_device->ResumeContext(
+        **self->execution_context_->primary_render_context);
+    self->graphics_impl_->ResetFPSCounter();
     self->background_running_ = false;
     return false;
   }

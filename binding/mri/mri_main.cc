@@ -270,7 +270,9 @@ void BindingEngineMri::PreEarlyInitialization(
   InitGPUTextureViewBinding();
 
   Init_zlib();
+#if !defined(OS_ANDROID)
   Init_ruby_prof();
+#endif
 
   MriApplyBindingPatch();
 

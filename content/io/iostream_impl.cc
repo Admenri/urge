@@ -82,8 +82,8 @@ uint64_t IOStream::CopyMemoryToPtr(ExecutionContext* execution_context,
 
 IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
                            SDL_IOStream* stream)
-    : Disposable(execution_context->disposable_parent),
-      EngineObject(execution_context),
+    : EngineObject(execution_context),
+      Disposable(execution_context->disposable_parent),
       stream_(stream) {}
 
 IOStreamImpl::~IOStreamImpl() {
