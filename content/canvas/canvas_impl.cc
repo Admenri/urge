@@ -709,6 +709,8 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
 
   // Clamp blend type
   blend_type =
+      (blend_type == -1 ? renderer::BLEND_TYPE_NORMAL_PMA : blend_type);
+  blend_type =
       std::clamp<int32_t>(blend_type, 0, renderer::BLEND_TYPE_NUMS - 1);
 
   // Execute blit immediately.
@@ -799,11 +801,9 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   auto& render_context = *scheduler->GetDiscreteRenderContext();
 
   // Custom blend blit pipeline
-  int32_t alpha_blend_type =
-      blend_type == -1 ? renderer::BLEND_TYPE_NORMAL_PMA : blend_type;
   auto& pipeline_set = render_device.GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(
-      static_cast<renderer::BlendType>(alpha_blend_type), true);
+      static_cast<renderer::BlendType>(blend_type), true);
 
   // Norm opacity value
   base::Vec4 blend_alpha;

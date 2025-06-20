@@ -623,7 +623,7 @@ class MriBindingGen:
       if len(overloads) > 1:
         content += "default:\n"
         content += "rb_raise(rb_eArgError, \"failed to determine overload method. (count: %d)\", argc);\n"
-        # content += "return Qnil;\n"
+        content += "return Qnil;\n"
         content += "}\n"
 
       # 函数尾部
