@@ -23,16 +23,20 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
     renderer::QuadBatch batch;
     base::Vector<renderer::Quad> cache;
 
-    renderer::Binding_Base base_binding;
     renderer::Binding_Flat flat_binding;
+    renderer::Binding_Base base_binding;
+    renderer::Binding_Base background_binding;
+    renderer::Binding_Base controls_binding;
     renderer::Binding_Base content_binding;
-    renderer::Binding_Base display_binding;
-
-    int32_t display_quad_offset = 0;
 
     RRefPtr<Diligent::ITexture> texture;
     RRefPtr<Diligent::IBuffer> world;
     RRefPtr<Diligent::IBuffer> uniform;
+
+    int32_t background_quad_offset = 0;
+    int32_t controls_quad_offset = 0;
+    int32_t controls_draw_count = 0;
+    int32_t contents_quad_offset = 0;
   };
 
   Window2Impl(ExecutionContext* execution_context,
@@ -94,7 +98,9 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
                                        BitmapAgent* windowskin,
                                        const base::Rect& padding_rect);
   void GPURenderWindowQuadsInternal(renderer::RenderContext* render_context,
-                                    Diligent::IBuffer* world_binding);
+                                    Diligent::IBuffer* world_binding,
+                                    BitmapAgent* contents,
+                                    BitmapAgent* windowskin);
 
   bool rgss3_style_ = false;
   DrawableNode node_;

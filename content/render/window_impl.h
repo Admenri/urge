@@ -25,16 +25,12 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
     renderer::QuadBatch controls_batch;
     base::Vector<renderer::Quad> controls_cache;
 
-    RRefPtr<Diligent::ITexture> background_texture;
-    RRefPtr<Diligent::ITexture> controls_texture;
-    RRefPtr<Diligent::IBuffer> world;
-
     renderer::Binding_Base base_binding;
     renderer::Binding_Base content_binding;
-    renderer::Binding_Base display_binding;
 
-    int32_t background_display_quad_offset = 0;
-    int32_t controls_display_quad_offset = 0;
+    int32_t background_draw_count = 0;
+    int32_t controls_draw_count = 0;
+    int32_t contents_quad_offset = 0;
   };
 
   WindowImpl(ExecutionContext* execution_context,

@@ -491,7 +491,8 @@ void Window2Impl::DrawableNodeHandlerInternal(
     GPUCompositeWindowQuadsInternal(params->context, contents_agent,
                                     windowskin_agent, padding_rect);
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
-    GPURenderWindowQuadsInternal(params->context, params->world_binding);
+    GPURenderWindowQuadsInternal(params->context, params->world_binding,
+                                 contents_agent, windowskin_agent);
   }
 }
 
@@ -499,10 +500,11 @@ void Window2Impl::GPUCreateWindowInternal() {
   agent_.batch = renderer::QuadBatch::Make(**context()->render_device);
 
   auto* pipelines = context()->render_device->GetPipelines();
-  agent_.base_binding = pipelines->base.CreateBinding();
   agent_.flat_binding = pipelines->viewport.CreateBinding();
+  agent_.base_binding = pipelines->base.CreateBinding();
+  agent_.background_binding = pipelines->base.CreateBinding();
+  agent_.controls_binding = pipelines->base.CreateBinding();
   agent_.content_binding = pipelines->base.CreateBinding();
-  agent_.display_binding = pipelines->base.CreateBinding();
 
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(renderer::Binding_Flat::Params),
@@ -573,6 +575,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
   }
 
   // Generate quads
+  const base::Vec2i& draw_offset = bound_.Position();
   auto& quads = agent_.cache;
   quads.resize(quad_count);
   int32_t quad_index = 0;
@@ -585,11 +588,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
   const float cursor_opacity_norm = cursor_opacity_ / 255.0f;
 
   int32_t tiled_quads_count = 0;
-  int32_t cursor_quads_offset = 0;
   int32_t frames_quads_count = 0;
-  int32_t contents_quads_offset = 0;
-  int32_t cursor_draw_quads = 0;
-  int32_t arrows_pause_quads = 0;
 
   if (windowskin) {
     const base::Rect background1_src(0, 0, 32 * scale_, 32 * scale_);
@@ -692,28 +691,41 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
     frames_quads_count += tiled_frames_quads;
   }
 
+  // Background texture display quad (1)
+  const base::Rect background_pos(
+      bound_.x,
+      static_cast<float>(bound_.y) +
+          static_cast<float>(bound_.height / 2.0f) * (1.0f - openness_norm),
+      bound_.width, bound_.height * openness_norm);
+  renderer::Quad::SetPositionRect(&quads[quad_index], background_pos);
+  renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+  renderer::Quad::SetColor(&quads[quad_index], base::Vec4(1));
+  agent_.background_quad_offset = quad_index;
+  quad_index++;
+
   // Controls & Contents
   if (openness_ >= 255) {
-    // Padding offset
-    base::Vec2i content_offset = padding_rect.Position();
-
     // Controls
     if (windowskin) {
+      agent_.controls_quad_offset = quad_index;
+      agent_.controls_draw_count = 0;
       const base::Vec2i arrow_display_offset =
-          (bound_.Size() - base::Vec2i(8 * scale_)) / 2;
+          draw_offset + ((bound_.Size() - base::Vec2i(8 * scale_)) / 2);
 
       // Arrows (4)
       if (arrows_visible_) {
-        const base::Rect arrow_up_dest(arrow_display_offset.x, 2 * scale_,
-                                       8 * scale_, 4 * scale_);
-        const base::Rect arrow_down_dest(arrow_display_offset.x,
-                                         bound_.height - 6 * scale_, 8 * scale_,
-                                         4 * scale_);
-        const base::Rect arrow_left_dest(2 * scale_, arrow_display_offset.y,
-                                         4 * scale_, 8 * scale_);
-        const base::Rect arrow_right_dest(bound_.width - 6 * scale_,
-                                          arrow_display_offset.y, 4 * scale_,
-                                          8 * scale_);
+        const base::Rect arrow_up_dest(arrow_display_offset.x,
+                                       draw_offset.y + 2 * scale_, 8 * scale_,
+                                       4 * scale_);
+        const base::Rect arrow_down_dest(
+            arrow_display_offset.x, draw_offset.y + bound_.height - 6 * scale_,
+            8 * scale_, 4 * scale_);
+        const base::Rect arrow_left_dest(draw_offset.x + 2 * scale_,
+                                         arrow_display_offset.y, 4 * scale_,
+                                         8 * scale_);
+        const base::Rect arrow_right_dest(
+            draw_offset.x + bound_.width - 6 * scale_, arrow_display_offset.y,
+            4 * scale_, 8 * scale_);
 
         const base::Rect arrow_up_src(44 * scale_, 8 * scale_, 8 * scale_,
                                       4 * scale_);
@@ -733,7 +745,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
-            arrows_pause_quads++;
+            agent_.controls_draw_count++;
           }
           if (origin_.y > 0) {
             renderer::Quad::SetPositionRect(&quads[quad_index], arrow_up_dest);
@@ -742,7 +754,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
-            arrows_pause_quads++;
+            agent_.controls_draw_count++;
           }
           if (padding_rect.width < (contents->size.x - origin_.x)) {
             renderer::Quad::SetPositionRect(&quads[quad_index],
@@ -752,7 +764,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
-            arrows_pause_quads++;
+            agent_.controls_draw_count++;
           }
           if (padding_rect.height < (contents->size.y - origin_.y)) {
             renderer::Quad::SetPositionRect(&quads[quad_index],
@@ -762,7 +774,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
-            arrows_pause_quads++;
+            agent_.controls_draw_count++;
           }
         }
       }
@@ -776,119 +788,109 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       };
 
       if (pause_) {
-        const base::Rect pause_dest(arrow_display_offset.x,
-                                    bound_.height - 8 * scale_, 8 * scale_,
-                                    8 * scale_);
+        const base::Rect pause_dest(draw_offset.x + arrow_display_offset.x,
+                                    draw_offset.y + bound_.height - 8 * scale_,
+                                    8 * scale_, 8 * scale_);
         renderer::Quad::SetPositionRect(&quads[quad_index], pause_dest);
         renderer::Quad::SetTexCoordRect(
             &quads[quad_index], pause_src[pause_index_ / 8], windowskin->size);
         renderer::Quad::SetColor(&quads[quad_index],
                                  base::Vec4(contents_opacity_norm));
         quad_index++;
-        arrows_pause_quads++;
+        agent_.controls_draw_count++;
       }
 
       // Cursor (9)
       const auto cursor_rect = cursor_rect_->AsBaseRect();
       if (cursor_rect.width > 0 && cursor_rect.height > 0) {
-        auto build_cursor_internal = [&](const base::Rect& rect,
+        auto build_cursor_internal = [&](const base::Rect& rect, int32_t unit,
                                          base::Rect quad_rects[9]) {
-          int32_t w = rect.width;
-          int32_t h = rect.height;
-          int32_t x1 = rect.x;
-          int32_t x2 = x1 + w;
-          int32_t y1 = rect.y;
-          int32_t y2 = y1 + h;
+          const int32_t w = rect.width;
+          const int32_t h = rect.height;
+          const int32_t l = rect.x;
+          const int32_t r = l + w;
+          const int32_t t = rect.y;
+          const int32_t b = t + h;
 
           int32_t i = 0;
-          // Left-Top
-          quad_rects[i++] = base::Rect(x1, y1, scale_, scale_);
-          // Right-Top
-          quad_rects[i++] = base::Rect(x2 - scale_, y1, scale_, scale_);
-          // Right-Bottom
-          quad_rects[i++] =
-              base::Rect(x2 - scale_, y2 - scale_, scale_, scale_);
-          // Left-Bottom
-          quad_rects[i++] = base::Rect(x1, y2 - scale_, scale_, scale_);
-          // Left
-          quad_rects[i++] = base::Rect(x1, y1 + scale_, scale_, h - scale_ * 2);
-          // Right
-          quad_rects[i++] =
-              base::Rect(x2 - scale_, y1 + scale_, scale_, h - scale_ * 2);
-          // Top
-          quad_rects[i++] = base::Rect(x1 + scale_, y1, w - scale_ * 2, scale_);
-          // Bottom
-          quad_rects[i++] =
-              base::Rect(x1 + scale_, y2 - scale_, w - scale_ * 2, scale_);
-          // Center
-          quad_rects[i++] = base::Rect(x1 + scale_, y1 + scale_, w - scale_ * 2,
-                                       h - scale_ * 2);
+          quad_rects[i++] = {{l, t}, unit};                // Left-Top
+          quad_rects[i++] = {{r - unit, t}, unit};         // Right-Top
+          quad_rects[i++] = {{r - unit, b - unit}, unit};  // Right-Bottom
+          quad_rects[i++] = {{l, b - unit}, unit};         // Left-Bottom
+
+          quad_rects[i++] = {l, t + unit, unit, h - unit * 2};         // Left
+          quad_rects[i++] = {r - unit, t + unit, unit, h - unit * 2};  // Right
+          quad_rects[i++] = {l + unit, t, w - unit * 2, unit};         // Top
+          quad_rects[i++] = {l + unit, b - unit, w - unit * 2, unit};  // Bottom
+          quad_rects[i++] = {l + unit, t + unit, w - unit * 2,
+                             h - unit * 2};  // Center
         };
 
         auto build_cursor_quads = [&](const base::Rect& src,
                                       const base::Rect& dst,
                                       renderer::Quad vert[9]) {
-          base::Rect quad_rects[9];
+          int32_t quads_count = 0;
 
-          build_cursor_internal(src, quad_rects);
-          for (int32_t i = 0; i < 9; ++i)
-            renderer::Quad::SetTexCoordRect(&vert[i], quad_rects[i],
-                                            windowskin->size);
+          base::Rect texcoords[9], positions[9];
+          build_cursor_internal(src, scale_, texcoords);
+          build_cursor_internal(dst, scale_, positions);
 
-          build_cursor_internal(dst, quad_rects);
-          for (int32_t i = 0; i < 9; ++i)
-            renderer::Quad::SetPositionRect(&vert[i], quad_rects[i]);
+          const base::Vec4 draw_color(cursor_opacity_norm *
+                                      contents_opacity_norm);
 
-          const base::Vec4 color(cursor_opacity_norm * contents_opacity_norm);
-          for (int32_t i = 0; i < 9; ++i)
-            renderer::Quad::SetColor(&vert[i], color);
+          for (int32_t i = 0; i < 9; ++i) {
+            const base::Rect clip_region(draw_offset + padding_rect.Position(),
+                                         padding_rect.Size());
+            const auto interaction =
+                base::MakeIntersect(positions[i], clip_region);
+            if (interaction.width && interaction.height) {
+              renderer::Quad::SetPositionRect(&vert[i], interaction);
+              renderer::Quad::SetTexCoordRect(&vert[i], texcoords[i],
+                                              windowskin->size);
+              renderer::Quad::SetColor(&vert[i], draw_color);
+              quads_count++;
+            }
+          }
 
-          return 9;
+          return quads_count;
         };
 
         const base::Rect cursor_src(32 * scale_, 32 * scale_, 16 * scale_,
                                     16 * scale_);
         if (cursor_rect.width > 0 && cursor_rect.height > 0) {
-          base::Rect cursor_dest(content_offset + cursor_rect.Position(),
-                                 cursor_rect.Size());
+          base::Rect cursor_dest(
+              draw_offset + padding_rect.Position() + cursor_rect.Position(),
+              cursor_rect.Size());
 
           if (rgss3_style_) {
             cursor_dest.x -= origin_.x;
             cursor_dest.y -= origin_.y;
           }
 
-          cursor_draw_quads =
+          const int32_t cursor_draw_count =
               build_cursor_quads(cursor_src, cursor_dest, &quads[quad_index]);
-          cursor_quads_offset = quad_index;
-          quad_index += cursor_draw_quads;
+          agent_.controls_draw_count += cursor_draw_count;
+          quad_index += cursor_draw_count;
         }
       }
     }
 
     // Contents (1)
     if (contents) {
-      renderer::Quad::SetPositionRect(
-          &quads[quad_index],
-          base::Rect(content_offset - origin_, contents->size));
+      const base::Rect clip_region(bound_.Position() + padding_rect.Position(),
+                                   padding_rect.Size());
+      const base::Rect content_region(
+          draw_offset + padding_rect.Position() - origin_, contents->size);
+      const auto interaction = base::MakeIntersect(clip_region, content_region);
+
+      renderer::Quad::SetPositionRect(&quads[quad_index], interaction);
       renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
       renderer::Quad::SetColor(&quads[quad_index],
                                base::Vec4(contents_opacity_norm));
-      contents_quads_offset = quad_index;
+      agent_.contents_quad_offset = quad_index;
       quad_index++;
     }
   }
-
-  // Screen display quad (1)
-  const base::Rect background_dest(
-      bound_.x,
-      static_cast<float>(bound_.y) +
-          static_cast<float>(bound_.height / 2.0f) * (1.0f - openness_norm),
-      bound_.width, bound_.height * openness_norm);
-  renderer::Quad::SetPositionRect(&quads[quad_index], background_dest);
-  renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
-  renderer::Quad::SetColor(&quads[quad_index], base::Vec4(1));
-  agent_.display_quad_offset = quad_index;
-  quad_index++;
 
   // Update GPU vertex buffer
   agent_.batch.QueueWrite(**render_context, quads.data(), quads.size());
@@ -927,43 +929,35 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
 
   // Setup shader binding
   if (windowskin) {
-    agent_.base_binding.u_transform->Set(agent_.world);
-    agent_.base_binding.u_texture->Set(windowskin->resource);
-
     agent_.flat_binding.u_transform->Set(agent_.world);
     agent_.flat_binding.u_texture->Set(windowskin->resource);
     agent_.flat_binding.u_params->Set(agent_.uniform);
-  }
 
-  if (contents) {
-    agent_.content_binding.u_transform->Set(agent_.world);
-    agent_.content_binding.u_texture->Set(contents->resource);
-  }
+    agent_.base_binding.u_transform->Set(agent_.world);
+    agent_.base_binding.u_texture->Set(windowskin->resource);
 
-  // Apply global vertex and index
-  Diligent::IBuffer* const vertex_buffer = *agent_.batch;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
+    // Apply global vertex and index
+    Diligent::IBuffer* const vertex_buffer = *agent_.batch;
+    (*render_context)
+        ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
+                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    (*render_context)
+        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  // Reset scissor test
-  render_context->ScissorState()->Apply(bound_.Size());
+    // Reset scissor test
+    render_context->ScissorState()->Apply(bound_.Size());
 
-  // Execute texture composite
-  if (windowskin) {
     int32_t quads_draw_offset = 0;
 
     // Stretch layer pass
-    (*render_context)->SetPipelineState(pipeline_tone);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.flat_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
     {
+      (*render_context)->SetPipelineState(pipeline_tone);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.flat_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
@@ -972,13 +966,13 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
     }
 
     // Tiled layer pass
-    (*render_context)->SetPipelineState(pipeline_tone_alpha);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.flat_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
     {
+      (*render_context)->SetPipelineState(pipeline_tone_alpha);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.flat_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = tiled_quads_count * 6;
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
@@ -1000,85 +994,26 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
       draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
       (*render_context)->DrawIndexed(draw_indexed_attribs);
-      quads_draw_offset += frames_quads_count;
     }
-
-    if (openness_ >= 255) {
-      // Arrows & Pause
-      (*render_context)->SetPipelineState(pipeline_base);
-      (*render_context)
-          ->CommitShaderResources(
-              *agent_.base_binding,
-              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-      {
-        Diligent::DrawIndexedAttribs draw_indexed_attribs;
-        draw_indexed_attribs.NumIndices = arrows_pause_quads * 6;
-        draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-        draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
-        (*render_context)->DrawIndexed(draw_indexed_attribs);
-        quads_draw_offset += arrows_pause_quads;
-      }
-
-      // Clamped cursor region
-      if (cursor_draw_quads) {
-        render_context->ScissorState()->Push(padding_rect);
-
-        // Cursor rect
-        if (cursor_quads_offset) {
-          (*render_context)->SetPipelineState(pipeline_base);
-          (*render_context)
-              ->CommitShaderResources(
-                  *agent_.base_binding,
-                  Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-          {
-            Diligent::DrawIndexedAttribs draw_indexed_attribs;
-            draw_indexed_attribs.NumIndices = cursor_draw_quads * 6;
-            draw_indexed_attribs.IndexType =
-                renderer::QuadIndexCache::kValueType;
-            draw_indexed_attribs.FirstIndexLocation = cursor_quads_offset * 6;
-            (*render_context)->DrawIndexed(draw_indexed_attribs);
-          }
-        }
-
-        render_context->ScissorState()->Pop();
-      }
-    }
-  }
-
-  if (contents && openness_ >= 255) {
-    render_context->ScissorState()->Push(padding_rect);
-
-    // Contents pass
-    (*render_context)->SetPipelineState(pipeline_base);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.content_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    {
-      Diligent::DrawIndexedAttribs draw_indexed_attribs;
-      draw_indexed_attribs.NumIndices = 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-      draw_indexed_attribs.FirstIndexLocation = contents_quads_offset * 6;
-      (*render_context)->DrawIndexed(draw_indexed_attribs);
-    }
-
-    render_context->ScissorState()->Pop();
   }
 }
 
 void Window2Impl::GPURenderWindowQuadsInternal(
     renderer::RenderContext* render_context,
-    Diligent::IBuffer* world_binding) {
+    Diligent::IBuffer* world_binding,
+    BitmapAgent* contents,
+    BitmapAgent* windowskin) {
   auto& pipeline_set = context()->render_device->GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
-  // Setup world uniform
-  agent_.display_binding.u_transform->Set(world_binding);
-  agent_.display_binding.u_texture->Set(
+  // Setup shader binding
+  agent_.background_binding.u_transform->Set(world_binding);
+  agent_.background_binding.u_texture->Set(
       agent_.texture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  agent_.controls_binding.u_transform->Set(world_binding);
+  agent_.controls_binding.u_texture->Set(windowskin->resource);
+  agent_.content_binding.u_transform->Set(world_binding);
+  agent_.content_binding.u_texture->Set(contents->resource);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.batch;
@@ -1089,19 +1024,55 @@ void Window2Impl::GPURenderWindowQuadsInternal(
       ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
                        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.display_binding,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  // Background render pass
+  if (windowskin) {
+    (*render_context)->SetPipelineState(pipeline);
+    (*render_context)
+        ->CommitShaderResources(
+            *agent_.background_binding,
+            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  // Execute render command
-  Diligent::DrawIndexedAttribs draw_indexed_attribs;
-  draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  draw_indexed_attribs.FirstIndexLocation = agent_.display_quad_offset * 6;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
+    // Execute render command
+    Diligent::DrawIndexedAttribs draw_indexed_attribs;
+    draw_indexed_attribs.NumIndices = 6;
+    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+    draw_indexed_attribs.FirstIndexLocation = agent_.background_quad_offset * 6;
+    (*render_context)->DrawIndexed(draw_indexed_attribs);
+  }
+
+  if (openness_ >= 255) {
+    // Controls render pass
+    if (windowskin && agent_.controls_draw_count) {
+      (*render_context)->SetPipelineState(pipeline);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.controls_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Execute render command
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = agent_.controls_quad_offset * 6;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+    }
+
+    // Contents render pass
+    if (contents) {
+      (*render_context)->SetPipelineState(pipeline);
+      (*render_context)
+          ->CommitShaderResources(
+              *agent_.content_binding,
+              Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Execute render command
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
+      (*render_context)->DrawIndexed(draw_indexed_attribs);
+    }
+  }
 }
 
 }  // namespace content
