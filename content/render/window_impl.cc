@@ -585,9 +585,18 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
     for (int32_t i = 0; i < 9; ++i) {
       const auto interaction = base::MakeIntersect(positions[i], bound_);
-      if (interaction.width && interaction.height) {
+      {
+        const base::Vec2 texcoord_scale =
+            base::Vec2(texcoords[i].Size()) / base::Vec2(positions[i].Size());
+        const base::Vec2 texcoord_offset =
+            interaction.Position() - positions[i].Position();
+        const base::RectF final_texcoord(
+            base::Vec2(texcoords[i].Position()) +
+                texcoord_offset * texcoord_scale,
+            base::Vec2(interaction.Size()) * texcoord_scale);
+
         renderer::Quad::SetPositionRect(&vert[i], interaction);
-        renderer::Quad::SetTexCoordRect(&vert[i], texcoords[i],
+        renderer::Quad::SetTexCoordRect(&vert[i], final_texcoord,
                                         windowskin->size);
         renderer::Quad::SetColor(&vert[i], draw_color);
         quads_count++;
@@ -718,9 +727,13 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
     const auto interaction = base::MakeIntersect(
         base::Rect(content_offset, contents->size), content_bound);
+    const base::Vec2i texcoord_offset =
+        interaction.Position() - content_bound.Position();
 
     renderer::Quad::SetPositionRect(&quads[quad_index], interaction);
-    renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+    renderer::Quad::SetTexCoordRect(
+        &quads[quad_index], base::Rect(texcoord_offset, interaction.Size()),
+        contents->size);
     renderer::Quad::SetColor(&quads[quad_index],
                              base::Vec4(contents_opacity_norm));
 

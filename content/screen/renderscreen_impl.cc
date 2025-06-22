@@ -973,7 +973,7 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   // Derive pipeline sets
   auto& pipeline_set = context()->render_device->GetPipelines()->mappedtrans;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Set uniform texture
   agent_.transition_binding_vague.u_current_texture->Set(
