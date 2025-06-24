@@ -151,6 +151,10 @@ target_link_libraries(engine_content
   soloud
 )
 
+if (LIVE2D_CUBISM_SUPPORT)
+  target_link_libraries(engine_content PUBLIC CubismFramework)
+endif ()
+
 if (MSVC)
   target_compile_options(engine_content PRIVATE /WX /wd4267 /wd4244)
 else ()

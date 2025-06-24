@@ -27,21 +27,19 @@ void CanvasScheduler::SubmitPendingPaintCommands() {
 void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
                                         Diligent::ITextureView* depth_stencil,
                                         bool clear_target) {
-  auto* context = **context_;
-
   // Setup new render target
   if (render_target) {
-    context->SetRenderTargets(
+    context_->SetRenderTargets(
         1, &render_target, depth_stencil,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply clear buffer if need
     if (clear_target) {
       float clear_color[] = {0, 0, 0, 0};
-      context->ClearDepthStencil(
+      (*context_)->ClearDepthStencil(
           depth_stencil, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-      context->ClearRenderTarget(
+      (*context_)->ClearRenderTarget(
           render_target, clear_color,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -50,7 +48,7 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
   }
 
   // Reset render target state
-  context->SetRenderTargets(
+  context_->SetRenderTargets(
       0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 

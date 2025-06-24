@@ -1,0 +1,9 @@
+target_sources(${LIB_NAME}
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismOffscreenSurface_Diligent.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismOffscreenSurface_Diligent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismPipeline_Diligent.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismPipeline_Diligent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismRenderer_Diligent.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismRenderer_Diligent.h
+)
