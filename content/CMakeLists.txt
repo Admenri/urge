@@ -89,6 +89,8 @@ set(ENGINE_CONTENT_SRC
   profile/content_profile.h
   profile/i18n_profile.cc
   profile/i18n_profile.h
+  render/cubismsprite_impl.cc
+  render/cubismsprite_impl.h
   render/drawable_controller.cc
   render/drawable_controller.h
   render/plane_impl.cc
@@ -147,12 +149,13 @@ target_link_libraries(engine_content
   sdl_image_loader
   sdl_ttf_render
   ocornut_imgui
+  libuv::libuv
   av1player
   soloud
 )
 
 if (LIVE2D_CUBISM_SUPPORT)
-  target_link_libraries(engine_content PUBLIC CubismFramework)
+  target_link_libraries(engine_content PUBLIC components_cubismrenderer)
 endif ()
 
 if (MSVC)

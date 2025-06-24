@@ -161,6 +161,9 @@ add_subdirectory(third_party/webm)
 ## Mimalloc
 add_subdirectory(third_party/mimalloc)
 
+## libuv
+add_subdirectory(third_party/libuv)
+
 ## Private crypto
 set(ENABLE_ADMENRI_BUILD_VERSION False)
 set(ADMENRI_BUILD_BUNDLE_DIR ${PROJECT_SOURCE_DIR}/admenri)
@@ -177,6 +180,9 @@ endif ()
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
 add_subdirectory(components/spine2d)
+if (LIVE2D_CUBISM_SUPPORT)
+  add_subdirectory(components/cubism)
+endif ()
 
 #-------------------------------------------------------------------------
 # * source
