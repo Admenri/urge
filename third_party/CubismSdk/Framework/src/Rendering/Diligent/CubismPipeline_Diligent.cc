@@ -15,6 +15,7 @@ namespace Framework {
 namespace Rendering {
 
 const char kCubismEffectHLSL[] = R"(
+
 cbuffer CubismConstants {
   float4x4 projectMatrix;
   float4x4 clipMatrix;
@@ -44,11 +45,11 @@ struct VS_OUT {
 
 // Mask shader
 VS_OUT VertSetupMask(VS_IN In) {
-  VS_OUT Out;
+  VS_OUT Out = (VS_OUT)0;
   Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.uv.x = In.uv.x;
-  Out.uv.y = 1.0f - In.uv.y;
+  Out.uv.y = 1.0f - +In.uv.y;
   return Out;
 }
 
@@ -64,17 +65,16 @@ float4 PixelSetupMask(VS_OUT In) : SV_Target {
 // Vertex shader
 // normal
 VS_OUT VertNormal(VS_IN In) {
-  VS_OUT Out;
+  VS_OUT Out = (VS_OUT)0;
   Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
-  Out.clipPosition = float4(0.0f, 0.0f, 0.0f, 0.0f);
   Out.uv.x = In.uv.x;
-  Out.uv.y = 1.0f - In.uv.y;
+  Out.uv.y = 1.0f - +In.uv.y;
   return Out;
 }
 
 // masked
 VS_OUT VertMasked(VS_IN In) {
-  VS_OUT Out;
+  VS_OUT Out = (VS_OUT)0;
   Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), clipMatrix);
   Out.uv.x = In.uv.x;
@@ -224,15 +224,15 @@ void CubismPipeline_Diligent::MakePipelineStates() {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "mainTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "maskTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -245,7 +245,6 @@ void CubismPipeline_Diligent::MakePipelineStates() {
   signatureDesc.UseCombinedTextureSamplers = Diligent::True;
   _device->CreatePipelineResourceSignature(signatureDesc, &_signature);
 
-  // Pipeline States
   Diligent::LayoutElement input_layout[] = {
       /* Position Vec2 */
       Diligent::LayoutElement{0, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
@@ -253,6 +252,7 @@ void CubismPipeline_Diligent::MakePipelineStates() {
       Diligent::LayoutElement{1, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
   };
 
+  // Pipeline States
   Diligent::GraphicsPipelineStateCreateInfo pipelineCreateInfo;
   pipelineCreateInfo.ppResourceSignatures = &_signature;
   pipelineCreateInfo.ResourceSignaturesCount = 1;
@@ -261,11 +261,11 @@ void CubismPipeline_Diligent::MakePipelineStates() {
   pipelineCreateInfo.GraphicsPipeline.InputLayout.NumElements =
       std::size(input_layout);
 
-  pipelineCreateInfo.GraphicsPipeline.RasterizerDesc.ScissorEnable =
-      Diligent::True;
   pipelineCreateInfo.GraphicsPipeline.NumRenderTargets = 1;
   pipelineCreateInfo.GraphicsPipeline.RTVFormats[0] =
       Diligent::TEX_FORMAT_RGBA8_UNORM;
+  pipelineCreateInfo.GraphicsPipeline.RasterizerDesc.ScissorEnable =
+      Diligent::False;
   pipelineCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable =
       Diligent::False;
 
@@ -316,8 +316,9 @@ void CubismPipeline_Diligent::MakePipelineStates() {
       },
   };
 
-  for (int32_t vertIndex = 0; vertIndex < 3; ++vertIndex) {
-    for (int32_t pixelIndex = 0; pixelIndex < 7; ++pixelIndex) {
+  for (int32_t vertIndex = 0; vertIndex < std::size(vertShaders); ++vertIndex) {
+    for (int32_t pixelIndex = 0; pixelIndex < std::size(pixelShaders);
+         ++pixelIndex) {
       for (int32_t blendIndex = 0; blendIndex < 4; ++blendIndex) {
         for (int32_t cullIndex = 0; cullIndex < 2; ++cullIndex) {
           pipelineCreateInfo.PSODesc.Name = "cubism.pipeline.collection";
@@ -351,6 +352,42 @@ void CubismPipeline_Diligent::CreateShader(Diligent::SHADER_TYPE type,
   shaderCreateInfo.Desc.ShaderType = type;
   shaderCreateInfo.Desc.UseCombinedTextureSamplers = Diligent::True;
   _device->CreateShader(shaderCreateInfo, shader);
+}
+
+/*********************************************************************************************************************
+ *                                      CubismShaderBinding_Diligent
+ ********************************************************************************************************************/
+
+CubismShaderBinding_Diligent::CubismShaderBinding_Diligent() = default;
+
+void CubismShaderBinding_Diligent::InitializeBinding(
+    Diligent::IPipelineResourceSignature* signature) {
+  signature->CreateShaderResourceBinding(&_binding);
+
+  _constantBufferVert = _binding->GetVariableByName(
+      Diligent::SHADER_TYPE_VERTEX, "CubismConstants");
+  _constantBufferPixel = _binding->GetVariableByName(
+      Diligent::SHADER_TYPE_PIXEL, "CubismConstants");
+  _mainTexture =
+      _binding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "mainTexture");
+  _maskTexture =
+      _binding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "maskTexture");
+}
+
+void CubismShaderBinding_Diligent::SetConstantBuffer(
+    Diligent::IBuffer* constantBuffer) {
+  _constantBufferVert->Set(constantBuffer);
+  _constantBufferPixel->Set(constantBuffer);
+}
+
+void CubismShaderBinding_Diligent::SetMainTexture(
+    Diligent::ITextureView* shaderResourceView) {
+  _mainTexture->Set(shaderResourceView);
+}
+
+void CubismShaderBinding_Diligent::SetMaskTexture(
+    Diligent::ITextureView* shaderResourceView) {
+  _maskTexture->Set(shaderResourceView);
 }
 
 }  // namespace Rendering

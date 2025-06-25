@@ -398,8 +398,8 @@ void CubismSpriteImpl::GPURenderCubismModelOffscreenInternal(
     }
 
     auto& offscreen_canvas = model_->GetRenderBuffer();
-    Csm::Rendering::CubismRenderer_Diligent::StartFrame(
-        context()->render_device, render_context, offscreen_canvas);
+    Csm::Rendering::CubismRenderer_Diligent::StartFrame(render_context,
+                                                        &offscreen_canvas);
 
     offscreen_canvas.BeginDraw(render_context);
     offscreen_canvas.Clear(render_context, 0, 0, 0, 0);
@@ -409,7 +409,7 @@ void CubismSpriteImpl::GPURenderCubismModelOffscreenInternal(
 
     offscreen_canvas.EndDraw(render_context);
 
-    Csm::Rendering::CubismRenderer_Diligent::EndFrame(context()->render_device);
+    Csm::Rendering::CubismRenderer_Diligent::EndFrame();
   }
 
   // Prepare display single quad

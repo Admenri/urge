@@ -11,6 +11,8 @@
 
 #include "Utils/CubismDebug.hpp"
 
+#include "renderer/utils/texture_utils.h"
+
 namespace Live2D {
 namespace Cubism {
 namespace Framework {
@@ -65,15 +67,12 @@ csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(
   DestroyOffscreenSurface();
 
   do {
-    Diligent::TextureDesc textureDesc;
-    textureDesc.Name = "cubism.framework.offscreen.canvas";
-    textureDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
-    textureDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM;
-    textureDesc.BindFlags =
-        Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
-    textureDesc.Width = displayBufferWidth;
-    textureDesc.Height = displayBufferHeight;
-    (*device)->CreateTexture(textureDesc, nullptr, &_texture);
+    renderer::CreateTexture2D(
+        **device, &_texture, "cubism.offscreen.canvas",
+        base::Vec2i(displayBufferWidth, displayBufferHeight),
+        Diligent::USAGE_DEFAULT,
+        Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+
     if (!_texture) {
       CubismLogError("Error : create offscreen texture");
       break;
@@ -88,7 +87,6 @@ csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(
     _bufferHeight = displayBufferHeight;
 
     return true;
-
   } while (0);
 
   DestroyOffscreenSurface();

@@ -89,6 +89,27 @@ class CubismPipeline_Diligent {
   RRefPtr<Diligent::IPipelineState> _pipelines[3][7][4][2];
 };
 
+class CubismShaderBinding_Diligent {
+ public:
+  CubismShaderBinding_Diligent();
+
+  void InitializeBinding(Diligent::IPipelineResourceSignature* signature);
+
+  void SetConstantBuffer(Diligent::IBuffer* constantBuffer);
+  void SetMainTexture(Diligent::ITextureView* shaderResourceView);
+  void SetMaskTexture(Diligent::ITextureView* shaderResourceView);
+
+  Diligent::IShaderResourceBinding* GetBinding() const { return _binding; }
+
+ private:
+  RRefPtr<Diligent::IShaderResourceBinding> _binding;
+
+  RRefPtr<Diligent::IShaderResourceVariable> _constantBufferVert;
+  RRefPtr<Diligent::IShaderResourceVariable> _constantBufferPixel;
+  RRefPtr<Diligent::IShaderResourceVariable> _mainTexture;
+  RRefPtr<Diligent::IShaderResourceVariable> _maskTexture;
+};
+
 }  // namespace Rendering
 }  // namespace Framework
 }  // namespace Cubism
