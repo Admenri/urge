@@ -305,9 +305,9 @@ void VideoDecoderImpl::GPURenderYUVInternal(
 
   // Setup render target
   float clear_color[] = {0, 0, 0, 0};
-  render_context->SetRenderTargets(
-      1, &target->target, target->depth_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &target->target, target->depth_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearDepthStencil(target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
                           0,

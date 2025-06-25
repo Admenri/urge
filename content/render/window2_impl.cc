@@ -934,9 +934,9 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
   // Setup render pass
   auto* render_target_view =
       agent_.texture->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  render_context->SetRenderTargets(
-      1, &render_target_view, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearRenderTarget(render_target_view, nullptr,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

@@ -746,9 +746,9 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
 
   // Prepare for rendering
   float clear_color[] = {0, 0, 0, 1};
-  render_context->SetRenderTargets(
-      1, &render_target_view, depth_stencil_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   (*render_context)
       ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
                           0,
@@ -820,9 +820,9 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
       render_target->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
   auto* depth_stencil_view =
       depth_stencil->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
-  render_context->SetRenderTargets(
-      1, &render_target_view, depth_stencil_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   const float clear_color[] = {0, 0, 0, 1.0f};
   (*render_context)
@@ -891,9 +891,9 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  render_context->SetRenderTargets(
-      1, &render_target_view, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,
@@ -958,9 +958,9 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  render_context->SetRenderTargets(
-      1, &render_target_view, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
   (*render_context)
       ->ClearRenderTarget(render_target_view, clear_color,

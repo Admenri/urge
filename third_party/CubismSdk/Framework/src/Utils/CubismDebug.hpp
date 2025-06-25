@@ -17,7 +17,7 @@
 #endif
 
 #define CubismLogPrint(level, fmt, ...)         Live2D::Cubism::Framework::Utils::CubismDebug::Print(level,  "[CSM]" fmt, ## __VA_ARGS__)
-#define CubismLogPrintln(level, fmt, ...)       CubismLogPrint(level, fmt "\n", ## __VA_ARGS__)
+#define CubismLogPrintln(level, fmt, ...)       CubismLogPrint(level, fmt, ## __VA_ARGS__)
 
 #if CSM_LOG_LEVEL <= CSM_LOG_LEVEL_VERBOSE
 #define CubismLogVerbose(fmt, ...)    CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Verbose, "[V]" fmt, ## __VA_ARGS__)

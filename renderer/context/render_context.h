@@ -24,15 +24,6 @@ class RenderContext {
   // Scissor state stack
   ScissorController* ScissorState() const { return scissor_.get(); }
 
-  // Render targets state manage
-  void SetRenderTargets(uint32_t num_targets,
-                        Diligent::ITextureView** render_targets,
-                        Diligent::ITextureView* depth_stencil,
-                        Diligent::RESOURCE_STATE_TRANSITION_MODE mode);
-  void GetRenderTargets(uint32_t num_targets,
-                        Diligent::ITextureView** render_targets,
-                        Diligent::ITextureView** depth_stencil);
-
  private:
   friend struct base::Allocator;
   friend class RenderDevice;
@@ -40,9 +31,6 @@ class RenderContext {
 
   Diligent::RefCntAutoPtr<Diligent::IDeviceContext> context_;
   base::OwnedPtr<ScissorController> scissor_;
-
-  Diligent::ITextureView* current_render_targets_[DILIGENT_MAX_RENDER_TARGETS];
-  Diligent::ITextureView* current_depth_stencil_;
 };
 
 }  // namespace renderer

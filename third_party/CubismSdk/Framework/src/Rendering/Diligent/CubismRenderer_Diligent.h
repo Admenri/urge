@@ -53,10 +53,8 @@ class CubismShaderBinding_Diligent {
   void InitializeBinding(Diligent::IPipelineResourceSignature* signature);
 
   void SetConstantBuffer(Diligent::IBuffer* constantBuffer);
-  void SetMainTexture(Diligent::ITextureView* shaderResourceView,
-                      Diligent::ISampler* sampler);
-  void SetMaskTexture(Diligent::ITextureView* shaderResourceView,
-                      Diligent::ISampler* sampler);
+  void SetMainTexture(Diligent::ITextureView* shaderResourceView);
+  void SetMaskTexture(Diligent::ITextureView* shaderResourceView);
 
   Diligent::IShaderResourceBinding* GetBinding() const { return _binding; }
 
@@ -112,7 +110,8 @@ class CubismRenderer_Diligent : public CubismRenderer {
   static void StartFrame(renderer::RenderDevice* device,
                          renderer::RenderContext* renderContext,
                          csmUint32 viewportWidth,
-                         csmUint32 viewportHeight);
+                         csmUint32 viewportHeight,
+                         csmBool enableDepth);
   static void EndFrame(renderer::RenderDevice* device);
   static CubismPipeline_Diligent* GetPipelineManager();
   static void DeletePipelineManager();
@@ -125,7 +124,8 @@ class CubismRenderer_Diligent : public CubismRenderer {
   void BindTexture(csmUint32 modelTextureAssign,
                    Diligent::ITextureView* textureView);
 
-  const csmMap<csmInt32, Diligent::ITextureView*>& GetBindedTextures() const;
+  const csmMap<csmInt32, RRefPtr<Diligent::ITextureView>>& GetBindedTextures()
+      const;
   void SetClippingMaskBufferSize(csmFloat32 width, csmFloat32 height);
   csmInt32 GetRenderTextureCount() const;
   CubismVector2 GetClippingMaskBufferSize() const;
@@ -186,7 +186,6 @@ class CubismRenderer_Diligent : public CubismRenderer {
                            CubismMatrix44 matrix);
   Diligent::IBuffer* UpdateConstantBuffer(CubismConstantBufferDiligent& cb,
                                           csmInt32 index);
-  void DeriveSamplerAccordingToAnisotropy(Diligent::ISampler** out);
   const csmBool inline IsGeneratingMask() const;
 
   Diligent::IBuffer*** _vertexBuffers;
@@ -201,7 +200,7 @@ class CubismRenderer_Diligent : public CubismRenderer {
 
   csmVector<csmInt32> _sortedDrawableIndexList;
 
-  csmMap<csmInt32, Diligent::ITextureView*> _textures;
+  csmMap<csmInt32, RRefPtr<Diligent::ITextureView>> _textures;
 
   csmVector<csmVector<CubismOffscreenSurface_Diligent>> _offscreenSurfaces;
 

@@ -35,14 +35,11 @@ class CubismOffscreenSurface_Diligent {
 
  private:
   RRefPtr<Diligent::ITexture> _texture;
-  Diligent::ITextureView* _textureView;
-  Diligent::ITextureView* _renderTargetView;
+  RRefPtr<Diligent::ITextureView> _textureView;
+  RRefPtr<Diligent::ITextureView> _renderTargetView;
 
   RRefPtr<Diligent::ITexture> _depthTexture;
-  Diligent::ITextureView* _depthView;
-
-  Diligent::ITextureView* _backupRender;
-  Diligent::ITextureView* _backupDepth;
+  RRefPtr<Diligent::ITextureView> _depthView;
 
   csmUint32 _bufferWidth;
   csmUint32 _bufferHeight;

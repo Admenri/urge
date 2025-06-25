@@ -455,8 +455,9 @@ void ViewportImpl::GPUApplyViewportEffect(
   box.MaxX = effect_region.x + effect_region.width;
   box.MaxY = effect_region.y + effect_region.height;
 
-  render_context->SetRenderTargets(
-      0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(0, nullptr, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::CopyTextureAttribs copy_texture_attribs;
   copy_texture_attribs.pSrcTexture = screen_buffer;
@@ -493,9 +494,9 @@ void ViewportImpl::GPUApplyViewportEffect(
   // Apply render target
   Diligent::ITextureView* render_target_view =
       screen_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  render_context->SetRenderTargets(
-      1, &render_target_view, nullptr,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup uniform params
   agent_.effect.binding.u_transform->Set(root_world);
@@ -530,9 +531,9 @@ void ViewportImpl::GPUApplyViewportEffect(
   Diligent::ITextureView* depth_stencil_view =
       screen_depth_stencil->GetDefaultView(
           Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
-  render_context->SetRenderTargets(
-      1, &render_target_view, depth_stencil_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void ViewportImpl::GPUViewportProcessAfterRender(
@@ -559,9 +560,9 @@ void ViewportImpl::GPUFrameBeginRenderPassInternal(
     const base::Vec2i& viewport_offset,
     const base::Rect& scissor_region) {
   // Apply render target
-  render_context->SetRenderTargets(
-      1, &render_target->target, render_target->depth_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*render_context)
+      ->SetRenderTargets(1, &render_target->target, render_target->depth_view,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup scissor region
   render_context->ScissorState()->Apply(scissor_region.Size());

@@ -6,6 +6,7 @@
 #define CONTENT_RENDER_CUBISMSPRITE_IMPL_H_
 
 #include "base/memory/allocator.h"
+#include "components/cubism/cubism_model_manager.h"
 #include "content/context/disposable.h"
 #include "content/public/engine_cubismsprite.h"
 #include "content/screen/renderscreen_impl.h"
@@ -13,11 +14,22 @@
 
 namespace content {
 
+struct CubismSpriteAgent {
+  renderer::QuadBatch quad;
+  renderer::Binding_Base binding;
+};
+
 class CubismSpriteImpl : public CubismSprite,
                          public EngineObject,
                          public Disposable {
  public:
-  CubismSpriteImpl();
+  static void InitializeCubismFramework(int32_t buffer_num,
+                                        renderer::RenderDevice* device,
+                                        filesystem::IOService* io_service);
+  static void DestroyCubismFramework();
+
+  CubismSpriteImpl(ExecutionContext* execution_context,
+                   base::OwnedPtr<cubism_render::CubismModel> model);
   ~CubismSpriteImpl() override;
 
   CubismSpriteImpl(const CubismSpriteImpl&) = delete;
@@ -45,10 +57,10 @@ class CubismSpriteImpl : public CubismSprite,
                ExceptionState& exception_state) override;
   float GetParameter(const base::String& name,
                      ExceptionState& exception_state) override;
-  float SetParameter(const base::String& name,
-                     float value,
-                     float weight,
-                     ExceptionState& exception_state) override;
+  void SetParameter(const base::String& name,
+                    float value,
+                    float weight,
+                    ExceptionState& exception_state) override;
   void AddParameter(const base::String& name,
                     float value,
                     float weight,
@@ -71,9 +83,22 @@ class CubismSpriteImpl : public CubismSprite,
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);
 
+  void GPUCreateCubismSpriteInternal(const base::Vec2i& canvas_size);
+  void GPURenderCubismModelOffscreenInternal(
+      renderer::RenderContext* render_context);
+  void GPURenderCanvasInternal(renderer::RenderContext* render_context,
+                               Diligent::IBuffer* world_buffer);
+
   DrawableNode node_;
 
+  CubismSpriteAgent agent_;
+  base::OwnedPtr<cubism_render::CubismModel> model_;
+
   scoped_refptr<ViewportImpl> viewport_;
+  base::Vec2i position_;
+  base::Vec2 scale_{1.0f};
+  int32_t opacity_ = 255;
+  int32_t blend_type_ = 0;
 };
 
 }  // namespace content

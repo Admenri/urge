@@ -67,10 +67,10 @@ class URGE_RUNTIME_API CubismSprite : public base::RefCounted<CubismSprite> {
                              ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_parameter)--*/
-  virtual float SetParameter(const base::String& name,
-                             float value,
-                             float weight,
-                             ExceptionState& exception_state) = 0;
+  virtual void SetParameter(const base::String& name,
+                            float value,
+                            float weight,
+                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:add_parameter)--*/
   virtual void AddParameter(const base::String& name,

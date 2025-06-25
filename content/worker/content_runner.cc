@@ -10,6 +10,7 @@
 
 #include "content/context/execution_context.h"
 #include "content/profile/command_ids.h"
+#include "content/render/cubismsprite_impl.h"
 
 namespace content {
 
@@ -93,6 +94,10 @@ ContentRunner::ContentRunner(ContentProfile* profile,
   // Create imgui context
   CreateIMGUIContextInternal();
 
+  // Create cubism framework
+  CubismSpriteImpl::InitializeCubismFramework(1, render_device_.get(),
+                                              io_service);
+
   // Hook graphics event loop
   tick_observer_ = graphics_impl_->AddTickObserver(base::BindRepeating(
       &ContentRunner::TickHandlerInternal, base::Unretained(this)));
@@ -104,6 +109,9 @@ ContentRunner::ContentRunner(ContentProfile* profile,
 ContentRunner::~ContentRunner() {
   // Remove watch
   SDL_RemoveEventWatch(&ContentRunner::EventWatchHandlerInternal, this);
+
+  // Destroy cubism framework
+  CubismSpriteImpl::DestroyCubismFramework();
 
   // Destory GUI context
   DestroyIMGUIContextInternal();

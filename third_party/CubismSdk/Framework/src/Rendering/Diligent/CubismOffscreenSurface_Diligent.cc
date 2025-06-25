@@ -8,15 +8,7 @@ namespace Framework {
 namespace Rendering {
 
 CubismOffscreenSurface_Diligent::CubismOffscreenSurface_Diligent()
-    : _texture(nullptr),
-      _textureView(nullptr),
-      _renderTargetView(nullptr),
-      _depthTexture(nullptr),
-      _depthView(nullptr),
-      _backupRender(nullptr),
-      _backupDepth(nullptr),
-      _bufferWidth(0),
-      _bufferHeight(0) {}
+    : _bufferWidth(0), _bufferHeight(0) {}
 
 void CubismOffscreenSurface_Diligent::BeginDraw(
     renderer::RenderContext* renderContext) {
@@ -24,27 +16,18 @@ void CubismOffscreenSurface_Diligent::BeginDraw(
     return;
   }
 
-  _backupRender = nullptr;
-  _backupDepth = nullptr;
-
-  renderContext->GetRenderTargets(1, &_backupRender, &_backupDepth);
-  renderContext->SetRenderTargets(
-      1, &_renderTargetView, _depthView,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  (*renderContext)
+      ->SetRenderTargets(1, &_renderTargetView, _depthView,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  renderContext->ScissorState()->Apply(
+      base::Vec2i(_bufferWidth, _bufferHeight));
 }
 
 void CubismOffscreenSurface_Diligent::EndDraw(
     renderer::RenderContext* renderContext) {
-  if (!_textureView || !_renderTargetView || !_depthView) {
-    return;
-  }
-
-  renderContext->SetRenderTargets(
-      1, &_backupRender, _backupDepth,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  _backupDepth = nullptr;
-  _backupRender = nullptr;
+  (*renderContext)
+      ->SetRenderTargets(0, nullptr, nullptr,
+                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void CubismOffscreenSurface_Diligent::Clear(
@@ -70,6 +53,7 @@ csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(
 
   do {
     Diligent::TextureDesc textureDesc;
+    textureDesc.Name = "cubism.framework.offscreen.canvas";
     textureDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
     textureDesc.Format = Diligent::TEX_FORMAT_RGBA8_UNORM;
     textureDesc.BindFlags =
@@ -116,11 +100,9 @@ csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(
 }
 
 void CubismOffscreenSurface_Diligent::DestroyOffscreenSurface() {
-  _backupDepth = nullptr;
-  _backupRender = nullptr;
-  _depthView = nullptr;
-  _textureView = nullptr;
-  _renderTargetView = nullptr;
+  _depthView.Release();
+  _textureView.Release();
+  _renderTargetView.Release();
 
   _depthTexture.Release();
   _texture.Release();

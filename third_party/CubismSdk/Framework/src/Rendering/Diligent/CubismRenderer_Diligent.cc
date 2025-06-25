@@ -24,9 +24,9 @@ void CubismShaderBinding_Diligent::InitializeBinding(
   signature->CreateShaderResourceBinding(&_binding);
 
   _constantBufferVert = _binding->GetVariableByName(
-      Diligent::SHADER_TYPE_VERTEX, "ConstantBuffer");
+      Diligent::SHADER_TYPE_VERTEX, "CubismConstants");
   _constantBufferPixel = _binding->GetVariableByName(
-      Diligent::SHADER_TYPE_PIXEL, "ConstantBuffer");
+      Diligent::SHADER_TYPE_PIXEL, "CubismConstants");
   _mainTexture =
       _binding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "mainTexture");
   _maskTexture =
@@ -40,17 +40,13 @@ void CubismShaderBinding_Diligent::SetConstantBuffer(
 }
 
 void CubismShaderBinding_Diligent::SetMainTexture(
-    Diligent::ITextureView* shaderResourceView,
-    Diligent::ISampler* sampler) {
+    Diligent::ITextureView* shaderResourceView) {
   _mainTexture->Set(shaderResourceView);
-  shaderResourceView->SetSampler(sampler);
 }
 
 void CubismShaderBinding_Diligent::SetMaskTexture(
-    Diligent::ITextureView* shaderResourceView,
-    Diligent::ISampler* sampler) {
+    Diligent::ITextureView* shaderResourceView) {
   _maskTexture->Set(shaderResourceView);
-  shaderResourceView->SetSampler(sampler);
 }
 
 /*********************************************************************************************************************
@@ -93,9 +89,8 @@ void CubismClippingManager_Diligent::SetupClippingContext(
   // マスク作成処理
   // ビューポートは退避済み
   // 生成したOffscreenSurfaceと同じサイズでビューポートを設定
-  Diligent::Rect clippingScissor(0, 0,
-                                 static_cast<float>(_clippingMaskBufferSize.X),
-                                 static_cast<float>(_clippingMaskBufferSize.Y));
+  Diligent::Rect clippingScissor(0, 0, _clippingMaskBufferSize.X,
+                                 _clippingMaskBufferSize.Y);
   (*renderContext)
       ->SetScissorRects(1, &clippingScissor, UINT32_MAX, UINT32_MAX);
 
@@ -389,6 +384,13 @@ void CubismRenderer_Diligent::Initialize(CubismModel* model,
     _constantBuffers[buffer] = static_cast<Diligent::IBuffer**>(
         CSM_MALLOC(sizeof(Diligent::IBuffer*) * drawableCount));
 
+    memset(_vertexBuffers[buffer], 0,
+           sizeof(Diligent::IBuffer*) * drawableCount);
+    memset(_indexBuffers[buffer], 0,
+           sizeof(Diligent::IBuffer*) * drawableCount);
+    memset(_constantBuffers[buffer], 0,
+           sizeof(Diligent::IBuffer*) * drawableCount);
+
     for (csmUint32 drawAssign = 0; drawAssign < drawableCount; drawAssign++) {
       const csmInt32 vcount = GetModel()->GetDrawableVertexCount(drawAssign);
       if (vcount != 0) {
@@ -400,7 +402,7 @@ void CubismRenderer_Diligent::Initialize(CubismModel* model,
 
         (*s_device)->CreateBuffer(bufferDesc, nullptr,
                                   &_vertexBuffers[buffer][drawAssign]);
-        if (_vertexBuffers[buffer][drawAssign])
+        if (!_vertexBuffers[buffer][drawAssign])
           CubismLogError("Vertexbuffer create failed : %d", vcount);
       } else {
         _vertexBuffers[buffer][drawAssign] = nullptr;
@@ -423,7 +425,7 @@ void CubismRenderer_Diligent::Initialize(CubismModel* model,
 
         (*s_device)->CreateBuffer(bufferDesc, &subResourceData,
                                   &_indexBuffers[buffer][drawAssign]);
-        if (_indexBuffers[buffer][drawAssign])
+        if (!_indexBuffers[buffer][drawAssign])
           CubismLogError("Indexbuffer create failed : %d", icount);
       }
 
@@ -437,7 +439,7 @@ void CubismRenderer_Diligent::Initialize(CubismModel* model,
 
         (*s_device)->CreateBuffer(bufferDesc, nullptr,
                                   &_constantBuffers[buffer][drawAssign]);
-        if (_constantBuffers[buffer][drawAssign])
+        if (!_constantBuffers[buffer][drawAssign])
           CubismLogError("ConstantBuffers create failed");
       }
     }
@@ -571,9 +573,8 @@ void CubismRenderer_Diligent::DoDrawModel() {
 
 void CubismRenderer_Diligent::ExecuteDrawForMask(const CubismModel& model,
                                                  const csmInt32 index) {
-  Diligent::IBuffer* constantBuffer;
-  Diligent::ITextureView *textureView, *maskView;
-  Diligent::ISampler* sampler;
+  Diligent::IBuffer* constantBuffer = nullptr;
+  Diligent::ITextureView *textureView = nullptr, *maskView = nullptr;
 
   // 定数バッファ
   {
@@ -617,13 +618,16 @@ void CubismRenderer_Diligent::ExecuteDrawForMask(const CubismModel& model,
 
   // テクスチャ+サンプラーセット
   SetTextureView(model, index, &textureView, &maskView);
-  DeriveSamplerAccordingToAnisotropy(&sampler);
 
   // Setup shader resources
   auto& shaderBinding = _shaderBindings[_commandBufferCurrent][index];
   shaderBinding.SetConstantBuffer(constantBuffer);
-  shaderBinding.SetMainTexture(textureView, sampler);
-  shaderBinding.SetMaskTexture(maskView, sampler);
+  shaderBinding.SetMainTexture(textureView);
+  shaderBinding.SetMaskTexture(maskView);
+  (*s_context)
+      ->CommitShaderResources(
+          shaderBinding.GetBinding(),
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // 描画
   DrawDrawableIndexed(model, index);
@@ -631,9 +635,8 @@ void CubismRenderer_Diligent::ExecuteDrawForMask(const CubismModel& model,
 
 void CubismRenderer_Diligent::ExecuteDrawForDraw(const CubismModel& model,
                                                  const csmInt32 index) {
-  Diligent::IBuffer* constantBuffer;
-  Diligent::ITextureView *textureView, *maskView;
-  Diligent::ISampler* sampler;
+  Diligent::IBuffer* constantBuffer = nullptr;
+  Diligent::ITextureView *textureView = nullptr, *maskView = nullptr;
 
   // 定数バッファ
   {
@@ -680,13 +683,16 @@ void CubismRenderer_Diligent::ExecuteDrawForDraw(const CubismModel& model,
 
   // テクスチャ+サンプラーセット
   SetTextureView(model, index, &textureView, &maskView);
-  DeriveSamplerAccordingToAnisotropy(&sampler);
 
   // Setup shader resources
   auto& shaderBinding = _shaderBindings[_commandBufferCurrent][index];
   shaderBinding.SetConstantBuffer(constantBuffer);
-  shaderBinding.SetMainTexture(textureView, sampler);
-  shaderBinding.SetMaskTexture(maskView, sampler);
+  shaderBinding.SetMainTexture(textureView);
+  shaderBinding.SetMaskTexture(maskView);
+  (*s_context)
+      ->CommitShaderResources(
+          shaderBinding.GetBinding(),
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // 描画
   DrawDrawableIndexed(model, index);
@@ -694,12 +700,6 @@ void CubismRenderer_Diligent::ExecuteDrawForDraw(const CubismModel& model,
 
 void CubismRenderer_Diligent::DrawDrawableIndexed(const CubismModel& model,
                                                   const csmInt32 index) {
-  auto& shaderBinding = _shaderBindings[_commandBufferCurrent][index];
-  (*s_context)
-      ->CommitShaderResources(
-          shaderBinding.GetBinding(),
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
   Diligent::IBuffer* vertexBuffer =
       _vertexBuffers[_commandBufferCurrent][index];
   Diligent::IBuffer* indexBuffer = _indexBuffers[_commandBufferCurrent][index];
@@ -778,7 +778,7 @@ void CubismRenderer_Diligent::BindTexture(csmUint32 modelTextureAssign,
   _textures[modelTextureAssign] = textureView;
 }
 
-const csmMap<csmInt32, Diligent::ITextureView*>&
+const csmMap<csmInt32, RRefPtr<Diligent::ITextureView>>&
 CubismRenderer_Diligent::GetBindedTextures() const {
   return _textures;
 }
@@ -828,16 +828,14 @@ void CubismRenderer_Diligent::InitializeConstantSettings(
 void CubismRenderer_Diligent::StartFrame(renderer::RenderDevice* device,
                                          renderer::RenderContext* renderContext,
                                          csmUint32 viewportWidth,
-                                         csmUint32 viewportHeight) {
+                                         csmUint32 viewportHeight,
+                                         csmBool enableDepth) {
   // フレームで使用するデバイス設定
   s_device = device;
   s_context = renderContext;
   s_viewportWidth = viewportWidth;
   s_viewportHeight = viewportHeight;
-
-  Diligent::ITextureView* depthView = nullptr;
-  renderContext->GetRenderTargets(0, nullptr, &depthView);
-  s_enableDepthTest = !!depthView;
+  s_enableDepthTest = enableDepth;
 }
 
 void CubismRenderer_Diligent::EndFrame(renderer::RenderDevice* device) {}
@@ -1009,19 +1007,6 @@ Diligent::IBuffer* CubismRenderer_Diligent::UpdateConstantBuffer(
                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   return constantBuffer;
-}
-
-void CubismRenderer_Diligent::DeriveSamplerAccordingToAnisotropy(
-    Diligent::ISampler** out) {
-  Diligent::SamplerDesc samplerDesc;
-  samplerDesc.MinFilter = Diligent::FILTER_TYPE_ANISOTROPIC;
-  samplerDesc.MagFilter = samplerDesc.MinFilter;
-  samplerDesc.MipFilter = samplerDesc.MagFilter;
-
-  if (GetAnisotropy() >= 1.0f)
-    samplerDesc.MaxAnisotropy = static_cast<uint32_t>(GetAnisotropy());
-
-  (*s_device)->CreateSampler(samplerDesc, out);
 }
 
 const csmBool inline CubismRenderer_Diligent::IsGeneratingMask() const {

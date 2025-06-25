@@ -29,7 +29,7 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
                                         bool clear_target) {
   // Setup new render target
   if (render_target) {
-    context_->SetRenderTargets(
+    (*context_)->SetRenderTargets(
         1, &render_target, depth_stencil,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -48,7 +48,7 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
   }
 
   // Reset render target state
-  context_->SetRenderTargets(
+  (*context_)->SetRenderTargets(
       0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
