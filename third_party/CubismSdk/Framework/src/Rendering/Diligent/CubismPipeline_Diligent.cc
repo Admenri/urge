@@ -39,7 +39,7 @@ VS_OUT VertSetupMask(VS_IN In) {
   Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.uv.x = In.uv.x;
-  Out.uv.y = 1.0f - +In.uv.y;
+  Out.uv.y = 1.0f - In.uv.y;
   return Out;
 }
 
@@ -59,7 +59,7 @@ VS_OUT VertNormal(VS_IN In) {
   Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.clipPosition = float4(0.0f, 0.0f, 0.0f, 0.0f);
   Out.uv.x = In.uv.x;
-  Out.uv.y = 1.0f - +In.uv.y;
+  Out.uv.y = 1.0f - In.uv.y;
   return Out;
 }
 
@@ -257,8 +257,8 @@ void CubismPipeline_Diligent::MakePipelineStates() {
   pipelineCreateInfo.GraphicsPipeline.NumRenderTargets = 1;
   pipelineCreateInfo.GraphicsPipeline.RTVFormats[0] =
       Diligent::TEX_FORMAT_RGBA8_UNORM;
-  pipelineCreateInfo.GraphicsPipeline.DSVFormat =
-      Diligent::TEX_FORMAT_D24_UNORM_S8_UINT;
+  pipelineCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable =
+      Diligent::False;
 
   Diligent::RenderTargetBlendDesc renderTargetBlends[] = {
       // Normal
@@ -311,21 +311,17 @@ void CubismPipeline_Diligent::MakePipelineStates() {
     for (int32_t pixelIndex = 0; pixelIndex < 7; ++pixelIndex) {
       for (int32_t blendIndex = 0; blendIndex < 4; ++blendIndex) {
         for (int32_t cullIndex = 0; cullIndex < 2; ++cullIndex) {
-          for (int32_t depthIndex = 0; depthIndex < 2; ++depthIndex) {
-            pipelineCreateInfo.pVS = vertShaders[vertIndex];
-            pipelineCreateInfo.pPS = pixelShaders[pixelIndex];
-            pipelineCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0] =
-                renderTargetBlends[blendIndex];
-            pipelineCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode =
-                cullIndex ? Diligent::CULL_MODE_BACK : Diligent::CULL_MODE_NONE;
-            pipelineCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable =
-                depthIndex ? Diligent::True : Diligent::False;
+          pipelineCreateInfo.PSODesc.Name = "cubism.pipeline.collection";
+          pipelineCreateInfo.pVS = vertShaders[vertIndex];
+          pipelineCreateInfo.pPS = pixelShaders[pixelIndex];
+          pipelineCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0] =
+              renderTargetBlends[blendIndex];
+          pipelineCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode =
+              cullIndex ? Diligent::CULL_MODE_BACK : Diligent::CULL_MODE_NONE;
 
-            _device->CreatePipelineState(
-                pipelineCreateInfo,
-                &_pipelines[vertIndex][pixelIndex][blendIndex][cullIndex]
-                           [depthIndex]);
-          }
+          _device->CreatePipelineState(
+              pipelineCreateInfo,
+              &_pipelines[vertIndex][pixelIndex][blendIndex][cullIndex]);
         }
       }
     }

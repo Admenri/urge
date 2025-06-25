@@ -109,9 +109,7 @@ class CubismRenderer_Diligent : public CubismRenderer {
                                          renderer::RenderDevice* device);
   static void StartFrame(renderer::RenderDevice* device,
                          renderer::RenderContext* renderContext,
-                         csmUint32 viewportWidth,
-                         csmUint32 viewportHeight,
-                         csmBool enableDepth);
+                         CubismOffscreenSurface_Diligent& renderTarget);
   static void EndFrame(renderer::RenderDevice* device);
   static CubismPipeline_Diligent* GetPipelineManager();
   static void DeletePipelineManager();

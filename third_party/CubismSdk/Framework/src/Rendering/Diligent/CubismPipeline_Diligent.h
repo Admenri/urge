@@ -64,10 +64,8 @@ class CubismPipeline_Diligent {
   Diligent::IPipelineState* GetPipeline(csmInt32 vertIndex,
                                         csmInt32 pixelIndex,
                                         csmInt32 blendIndex,
-                                        csmBool culling,
-                                        csmBool enableDepth) {
-    return _pipelines[vertIndex][pixelIndex][blendIndex][!!culling]
-                     [enableDepth];
+                                        csmBool culling) {
+    return _pipelines[vertIndex][pixelIndex][blendIndex][!!culling];
   }
 
  private:
@@ -78,8 +76,8 @@ class CubismPipeline_Diligent {
 
   Diligent::IRenderDevice* _device;
   RRefPtr<Diligent::IPipelineResourceSignature> _signature;
-  // vert, pixel, blend, cull, depth
-  RRefPtr<Diligent::IPipelineState> _pipelines[3][7][4][2][2];
+  // vert, pixel, blend, cull
+  RRefPtr<Diligent::IPipelineState> _pipelines[3][7][4][2];
 };
 
 }  // namespace Rendering

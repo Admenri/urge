@@ -7,20 +7,27 @@ namespace Cubism {
 namespace Framework {
 namespace Rendering {
 
+namespace {
+
+Diligent::ITextureView* s_backRenderTargetView = nullptr;
+Diligent::ITextureView* s_backDepthView = nullptr;
+
+}  // namespace
+
 CubismOffscreenSurface_Diligent::CubismOffscreenSurface_Diligent()
     : _bufferWidth(0), _bufferHeight(0) {}
 
 void CubismOffscreenSurface_Diligent::BeginDraw(
     renderer::RenderContext* renderContext) {
-  if (!_textureView || !_renderTargetView || !_depthView) {
+  if (!_textureView || !_renderTargetView) {
     return;
   }
 
   (*renderContext)
-      ->SetRenderTargets(1, &_renderTargetView, _depthView,
+      ->SetRenderTargets(1, &_renderTargetView, nullptr,
                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   renderContext->ScissorState()->Apply(
-      base::Vec2i(_bufferWidth, _bufferHeight));
+      base::Rect(0, 0, _bufferWidth, _bufferHeight));
 }
 
 void CubismOffscreenSurface_Diligent::EndDraw(
@@ -39,9 +46,6 @@ void CubismOffscreenSurface_Diligent::Clear(
   float clearColor[4] = {r, g, b, a};
   (*renderContext)
       ->ClearRenderTarget(_renderTargetView, clearColor,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*renderContext)
-      ->ClearDepthStencil(_depthView, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
@@ -71,22 +75,6 @@ csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(
     _textureView =
         _texture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
 
-    // Depth/Stencil
-    Diligent::TextureDesc depthDesc;
-    depthDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
-    depthDesc.Width = displayBufferWidth;
-    depthDesc.Height = displayBufferHeight;
-    depthDesc.Format = Diligent::TEX_FORMAT_D24_UNORM_S8_UINT;
-    depthDesc.BindFlags = Diligent::BIND_DEPTH_STENCIL;
-    (*device)->CreateTexture(depthDesc, nullptr, &_depthTexture);
-    if (!_depthTexture) {
-      CubismLogError("Error : create offscreen depth texture");
-      break;
-    }
-
-    _depthView =
-        _depthTexture->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
-
     _bufferWidth = displayBufferWidth;
     _bufferHeight = displayBufferHeight;
 
@@ -100,11 +88,9 @@ csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(
 }
 
 void CubismOffscreenSurface_Diligent::DestroyOffscreenSurface() {
-  _depthView.Release();
   _textureView.Release();
   _renderTargetView.Release();
 
-  _depthTexture.Release();
   _texture.Release();
 }
 
@@ -122,7 +108,7 @@ csmUint32 CubismOffscreenSurface_Diligent::GetBufferHeight() const {
 }
 
 csmBool CubismOffscreenSurface_Diligent::IsValid() const {
-  if (!_textureView || !_renderTargetView || !_depthView) {
+  if (!_textureView || !_renderTargetView) {
     return false;
   }
 
