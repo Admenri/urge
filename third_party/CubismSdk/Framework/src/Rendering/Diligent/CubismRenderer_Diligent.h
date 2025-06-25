@@ -1,5 +1,6 @@
 ﻿/**
  * Copyright(c) Live2D Inc. All rights reserved.
+ * Portions (c) Admenri Adev.
  *
  * Use of this source code is governed by the Live2D Open Software license
  * that can be found at

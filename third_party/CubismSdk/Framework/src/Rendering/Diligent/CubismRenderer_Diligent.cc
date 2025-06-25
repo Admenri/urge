@@ -1,4 +1,12 @@
-﻿
+﻿/**
+ * Copyright(c) Live2D Inc. All rights reserved.
+ * Portions (c) Admenri Adev.
+ *
+ * Use of this source code is governed by the Live2D Open Software license
+ * that can be found at
+ * https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
+ */
+
 #include "CubismRenderer_Diligent.h"
 
 #include <cfloat>  // FLT_MAX,MIN
@@ -193,7 +201,7 @@ void CubismClippingManager_Diligent::SetupClippingContext(
 
   // --- 後処理 ---
   _currentMaskBuffer->EndDraw(renderContext);
-  renderer->SetClippingContextBufferForMask(NULL);
+  renderer->SetClippingContextBufferForMask(nullptr);
 }
 
 /*********************************************************************************************************************
