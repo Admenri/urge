@@ -438,8 +438,8 @@ void ViewportImpl::GPUResetIntermediateLayer(const base::Vec2i& effect_size) {
 void ViewportImpl::GPUResetViewportRegion(
     Diligent::IDeviceContext* render_context,
     const base::Rect& region) {
-  Diligent::Rect render_scissor(region.x, region.y, region.width,
-                                region.height);
+  Diligent::Rect render_scissor(region.x, region.y, region.x + region.width,
+                                region.y + region.height);
   render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 }
 
