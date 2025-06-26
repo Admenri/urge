@@ -8,7 +8,6 @@
 #include "base/worker/thread_worker.h"
 #include "content/canvas/canvas_impl.h"
 #include "content/context/execution_context.h"
-#include "renderer/context/render_context.h"
 #include "renderer/device/render_device.h"
 #include "renderer/resource/render_buffer.h"
 
@@ -18,7 +17,7 @@ class CanvasScheduler {
  public:
   // All bitmap/canvas draw command will be encoded on this worker.
   CanvasScheduler(renderer::RenderDevice* render_device,
-                  renderer::RenderContext* primary_context);
+                  Diligent::IDeviceContext* primary_context);
   ~CanvasScheduler();
 
   CanvasScheduler(const CanvasScheduler&) = delete;
@@ -37,7 +36,7 @@ class CanvasScheduler {
   // Get rendering context for canvas opeartion.
   // The operations of all canvas are regarded as discrete draw commands.
   renderer::RenderDevice* GetRenderDevice();
-  renderer::RenderContext* GetDiscreteRenderContext();
+  Diligent::IDeviceContext* GetDiscreteRenderContext();
 
   renderer::QuadBatch& quad_batch() { return common_quad_batch_; }
   renderer::Binding_Base& base_binding() { return generic_base_binding_; }
@@ -50,7 +49,7 @@ class CanvasScheduler {
   base::LinkedList<CanvasImpl> children_;
 
   renderer::RenderDevice* device_;
-  renderer::RenderContext* context_;
+  Diligent::IDeviceContext* context_;
 
   renderer::Binding_Base generic_base_binding_;
   renderer::Binding_Color generic_color_binding_;

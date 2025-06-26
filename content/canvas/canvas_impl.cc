@@ -798,7 +798,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
                                              uint32_t blit_alpha) {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
-  auto& render_context = *scheduler->GetDiscreteRenderContext();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Custom blend blit pipeline
   auto& pipeline_set = render_device.GetPipelines()->base;
@@ -815,13 +815,14 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
                                   src_texture->size);
   renderer::Quad::SetPositionRect(&transient_quad, dst_region);
   renderer::Quad::SetColor(&transient_quad, blend_alpha);
-  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+  scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
   scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
-  render_context.ScissorState()->Push(agent_.size);
+  Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Setup uniform params
   scheduler->base_binding().u_transform->Set(agent_.world_buffer);
@@ -847,15 +848,12 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
   render_context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor region
-  render_context.ScissorState()->Pop();
 }
 
 void CanvasImpl::GPUFetchTexturePixelsDataInternal() {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
-  auto& render_context = *scheduler->GetDiscreteRenderContext();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Create transient read stage texture
   Diligent::TextureDesc stage_buffer_desc = agent_.data->GetDesc();
@@ -911,7 +909,7 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
                                                    bool vertical) {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
-  auto& render_context = *scheduler->GetDiscreteRenderContext();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->color;
   auto* pipeline =
@@ -931,13 +929,14 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
     transient_quad.vertices[2].color = color2;
     transient_quad.vertices[3].color = color1;
   }
-  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+  scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
   scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
-  render_context.ScissorState()->Push(agent_.size);
+  Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Setup uniform params
   scheduler->color_binding().u_transform->Set(agent_.world_buffer);
@@ -962,9 +961,6 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
   render_context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor
-  render_context.ScissorState()->Pop();
 }
 
 void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
@@ -973,7 +969,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
                                                   int32_t align) {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
-  auto& render_context = *scheduler->GetDiscreteRenderContext();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->base;
   auto* pipeline =
@@ -990,9 +986,6 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
     agent_.text_cache_texture.Release();
     renderer::CreateTexture2D(*render_device, &agent_.text_cache_texture,
                               "textdraw.cache", agent_.text_cache_size);
-
-    if ((*render_device)->GetDeviceInfo().IsGLDevice())
-      render_context->TransitionShaderResources(*scheduler->base_binding());
   }
 
   // Update text texture cache
@@ -1037,13 +1030,14 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
                                   text_cache_size);
   renderer::Quad::SetPositionRect(&transient_quad, compose_position);
   renderer::Quad::SetColor(&transient_quad, blend_alpha);
-  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+  scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
   scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
-  render_context.ScissorState()->Push(agent_.size);
+  Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Setup uniform params
   scheduler->base_binding().u_transform->Set(agent_.world_buffer);
@@ -1071,15 +1065,12 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
   render_context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor
-  render_context.ScissorState()->Pop();
 }
 
 void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
-  auto& render_context = *scheduler->GetDiscreteRenderContext();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->bitmaphue;
   auto* pipeline =
@@ -1102,13 +1093,14 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   renderer::Quad::SetTexCoordRectNorm(&transient_quad,
                                       base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
-  scheduler->quad_batch().QueueWrite(*render_context, &transient_quad);
+  scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
   scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
 
   // Push scissor
-  render_context.ScissorState()->Push(agent_.size);
+  Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Setup uniform params
   scheduler->hue_binding().u_texture->Set(agent_.effect_layer->GetDefaultView(
@@ -1134,9 +1126,6 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
   render_context->DrawIndexed(draw_indexed_attribs);
-
-  // Pop scissor
-  render_context.ScissorState()->Pop();
 }
 
 }  // namespace content

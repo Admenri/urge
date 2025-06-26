@@ -85,8 +85,8 @@ class CubismSpriteImpl : public CubismSprite,
 
   void GPUCreateCubismSpriteInternal(const base::Vec2i& canvas_size);
   void GPURenderCubismModelOffscreenInternal(
-      renderer::RenderContext* render_context);
-  void GPURenderCanvasInternal(renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context);
+  void GPURenderCanvasInternal(Diligent::IDeviceContext* render_context,
                                Diligent::IBuffer* world_buffer);
 
   DrawableNode node_;

@@ -11,7 +11,6 @@
 
 #include "CubismFramework.hpp"
 
-#include "renderer/context/render_context.h"
 #include "renderer/device/render_device.h"
 
 namespace Live2D {
@@ -23,9 +22,9 @@ class CubismOffscreenSurface_Diligent {
  public:
   CubismOffscreenSurface_Diligent();
 
-  void BeginDraw(renderer::RenderContext* renderContext);
-  void EndDraw(renderer::RenderContext* renderContext);
-  void Clear(renderer::RenderContext* renderContext,
+  void BeginDraw(Diligent::IDeviceContext* renderContext);
+  void EndDraw(Diligent::IDeviceContext* renderContext);
+  void Clear(Diligent::IDeviceContext* renderContext,
              float r,
              float g,
              float b,

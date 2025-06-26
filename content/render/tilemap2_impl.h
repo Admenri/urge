@@ -130,20 +130,20 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
 
   void GPUCreateTilemapInternal();
   void GPUMakeAtlasInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       int32_t tilesize,
       const base::Vec2i& atlas_size,
       base::Vector<Tilemap2Impl::AtlasCompositeCommand> make_commands);
-  void GPUUpdateQuadBatchInternal(renderer::RenderContext* render_context,
+  void GPUUpdateQuadBatchInternal(Diligent::IDeviceContext* render_context,
                                   base::Vector<renderer::Quad> ground_cache,
                                   base::Vector<renderer::Quad> above_cache);
-  void GPUUpdateTilemapUniformInternal(renderer::RenderContext* render_context,
+  void GPUUpdateTilemapUniformInternal(Diligent::IDeviceContext* render_context,
                                        const base::Vec2& offset,
                                        const base::Vec2& anim_offset,
                                        int32_t tilesize);
-  void GPURenderGroundLayerInternal(renderer::RenderContext* render_context,
+  void GPURenderGroundLayerInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding);
-  void GPURenderAboveLayerInternal(renderer::RenderContext* render_context,
+  void GPURenderAboveLayerInternal(Diligent::IDeviceContext* render_context,
                                    Diligent::IBuffer* world_binding);
 
   struct BitmapInfo {

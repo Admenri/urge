@@ -59,12 +59,12 @@ class PlaneImpl : public Plane, public EngineObject, public Disposable {
       DrawableNode::RenderControllerParams* params);
 
   void GPUCreatePlaneInternal();
-  void GPUUpdatePlaneQuadArrayInternal(renderer::RenderContext* render_context,
+  void GPUUpdatePlaneQuadArrayInternal(Diligent::IDeviceContext* render_context,
                                        const base::Rect& src_rect,
                                        const base::Vec2i& viewport_size,
                                        const base::Vec2& scale,
                                        const base::Vec2i& origin);
-  void GPUOnViewportRenderingInternal(renderer::RenderContext* render_context,
+  void GPUOnViewportRenderingInternal(Diligent::IDeviceContext* render_context,
                                       Diligent::IBuffer* world_binding);
 
   DrawableNode node_;

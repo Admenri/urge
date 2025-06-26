@@ -93,7 +93,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   void GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
                                     BitmapAgent* next_texture,
                                     const base::Rect& src_rect);
-  void GPUOnSpriteRenderingInternal(renderer::RenderContext* render_context,
+  void GPUOnSpriteRenderingInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding,
                                     BitmapAgent* texture);
 

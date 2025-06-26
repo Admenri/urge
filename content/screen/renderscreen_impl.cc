@@ -390,7 +390,7 @@ scoped_refptr<GPURenderDevice> RenderScreenImpl::GetRenderDevice(
 scoped_refptr<GPUDeviceContext> RenderScreenImpl::GetImmediateContext(
     ExceptionState& exception_state) {
   return base::MakeRefCounted<DeviceContextImpl>(
-      context(), **context()->primary_render_context);
+      context(), context()->primary_render_context);
 }
 
 uint32_t RenderScreenImpl::Get_FrameRate(ExceptionState& exception_state) {
@@ -689,7 +689,7 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
 }
 
 void RenderScreenImpl::GPUPresentScreenBufferInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::ImGuiDiligentRenderer* gui_renderer) {
   // Initial device attribute
   Diligent::ISwapChain* swapchain = context()->render_device->GetSwapChain();
@@ -715,7 +715,7 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
     renderer::Quad::SetPositionRect(&transient_quad, display_viewport_);
     renderer::Quad::SetTexCoordRectNorm(&transient_quad,
                                         base::Rect(0, 0, 1, 1));
-    present_quads.QueueWrite(**render_context, &transient_quad);
+    present_quads.QueueWrite(render_context, &transient_quad);
 
     // Update window screen transform
     renderer::WorldTransform world_matrix;
@@ -746,19 +746,19 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
 
   // Prepare for rendering
   float clear_color[] = {0, 0, 0, 1};
-  (*render_context)
-      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
-                          0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->ClearRenderTarget(render_target_view, clear_color,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target_view, depth_stencil_view,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearDepthStencil(
+      depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearRenderTarget(
+      render_target_view, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply present scissor
-  render_context->ScissorState()->Apply(screen_size);
+  Diligent::Rect present_scissor(0, 0, screen_size.x, screen_size.y);
+  render_context->SetScissorRects(1, &present_scissor, UINT32_MAX, UINT32_MAX);
 
   // Start screen render
   if (agent_.present_target) {
@@ -771,38 +771,36 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
     present_binding.u_texture->Set(render_source);
 
     // Apply pipeline state
-    (*render_context)->SetPipelineState(pipeline);
-    (*render_context)
-        ->CommitShaderResources(
-            *present_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetPipelineState(pipeline);
+    render_context->CommitShaderResources(
+        *present_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply vertex index
     Diligent::IBuffer* const vertex_buffer = *present_quads;
-    (*render_context)
-        ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*render_context)
-        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetVertexBuffers(
+        0, 1, &vertex_buffer, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetIndexBuffer(
+        **context()->render_device->GetQuadIndex(), 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6;
     draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
+    render_context->DrawIndexed(draw_indexed_attribs);
   }
 
   // Render GUI if need
   if (gui_renderer)
-    gui_renderer->RenderDrawData(**render_context, ImGui::GetDrawData());
+    gui_renderer->RenderDrawData(render_context, ImGui::GetDrawData());
 
   // Flush command buffer and present GPU surface
   swapchain->Present(context()->engine_profile->vsync);
 }
 
 void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::ITexture* render_target,
     Diligent::ITexture* depth_stencil) {
   // Setup screen effect params
@@ -812,7 +810,7 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
                                     base::Rect(context()->resolution));
     renderer::Quad::SetColor(&effect_quad,
                              base::Vec4(0, 0, 0, (255 - brightness_) / 255.0f));
-    agent_.effect_quads.QueueWrite(**render_context, &effect_quad);
+    agent_.effect_quads.QueueWrite(render_context, &effect_quad);
   }
 
   // Setup render pass
@@ -820,25 +818,26 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
       render_target->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
   auto* depth_stencil_view =
       depth_stencil->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
-  (*render_context)
-      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target_view, depth_stencil_view,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   const float clear_color[] = {0, 0, 0, 1.0f};
-  (*render_context)
-      ->ClearDepthStencil(depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
-                          0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->ClearRenderTarget(render_target_view, clear_color,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearDepthStencil(
+      depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearRenderTarget(
+      render_target_view, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Push scissor
-  render_context->ScissorState()->Push(context()->resolution);
+  Diligent::Rect render_scissor(0, 0, render_target->GetDesc().Width,
+                                render_target->GetDesc().Height);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 }
 
 void RenderScreenImpl::GPUFrameEndRenderPassInternal(
-    renderer::RenderContext* render_context) {
+    Diligent::IDeviceContext* render_context) {
   // Render screen effect if need
   if (brightness_ < 255) {
     // Apply brightness effect
@@ -850,58 +849,55 @@ void RenderScreenImpl::GPUFrameEndRenderPassInternal(
     agent_.effect_binding.u_transform->Set(agent_.world_transform);
 
     // Apply pipeline state
-    (*render_context)->SetPipelineState(pipeline);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.effect_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetPipelineState(pipeline);
+    render_context->CommitShaderResources(
+        *agent_.effect_binding,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply vertex index
     Diligent::IBuffer* const vertex_buffer = *agent_.effect_quads;
-    (*render_context)
-        ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*render_context)
-        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetVertexBuffers(
+        0, 1, &vertex_buffer, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetIndexBuffer(
+        **context()->render_device->GetQuadIndex(), 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6;
     draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
+    render_context->DrawIndexed(draw_indexed_attribs);
   }
-
-  // Pop scissor
-  render_context->ScissorState()->Pop();
 }
 
 void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     float progress) {
   // Update transition uniform
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
-                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(progress));
-  agent_.transition_quads.QueueWrite(**render_context, &transient_quad);
+  agent_.transition_quads.QueueWrite(render_context, &transient_quad);
 
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target_view, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
-  (*render_context)
-      ->ClearRenderTarget(render_target_view, clear_color,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearRenderTarget(
+      render_target_view, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   base::Vec2i resolution(agent_.screen_buffer->GetDesc().Width,
                          agent_.screen_buffer->GetDesc().Height);
-  render_context->ScissorState()->Push(resolution);
+
+  Diligent::Rect render_scissor(0, 0, resolution.x, resolution.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Derive pipeline sets
   auto& pipeline_set = context()->render_device->GetPipelines()->alphatrans;
@@ -917,32 +913,29 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.transition_binding_alpha,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *agent_.transition_binding_alpha,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.transition_quads;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **context()->render_device->GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
-
-  render_context->ScissorState()->Pop();
+  render_context->DrawIndexed(draw_indexed_attribs);
 }
 
 void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::ITextureView* trans_mapping,
     float progress,
     float vague) {
@@ -950,25 +943,26 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
-                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(vague, 0, 0, progress));
-  agent_.transition_quads.QueueWrite(**render_context, &transient_quad);
+  agent_.transition_quads.QueueWrite(render_context, &transient_quad);
 
   // Composite transition frame
   auto render_target_view = agent_.screen_buffer->GetDefaultView(
       Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target_view, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   const float clear_color[] = {0, 0, 0, 1};
-  (*render_context)
-      ->ClearRenderTarget(render_target_view, clear_color,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearRenderTarget(
+      render_target_view, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   base::Vec2i resolution(agent_.screen_buffer->GetDesc().Width,
                          agent_.screen_buffer->GetDesc().Height);
-  render_context->ScissorState()->Push(resolution);
+
+  Diligent::Rect render_scissor(0, 0, resolution.x, resolution.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Derive pipeline sets
   auto& pipeline_set = context()->render_device->GetPipelines()->mappedtrans;
@@ -985,28 +979,25 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   agent_.transition_binding_vague.u_trans_texture->Set(trans_mapping);
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.transition_binding_vague,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *agent_.transition_binding_vague,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.transition_quads;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **context()->render_device->GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
-
-  render_context->ScissorState()->Pop();
+  render_context->DrawIndexed(draw_indexed_attribs);
 }
 
 }  // namespace content

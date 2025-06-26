@@ -79,7 +79,7 @@ class ContentRunner {
   base::OwnedPtr<EngineBindingBase> binding_;
 
   base::OwnedPtr<renderer::RenderDevice> render_device_;
-  base::OwnedPtr<renderer::RenderContext> render_context_;
+  RRefPtr<Diligent::IDeviceContext> device_context_;
   base::OwnedPtr<CanvasScheduler> canvas_scheduler_;
   base::OwnedPtr<SpriteBatch> sprite_batcher_;
   base::OwnedPtr<EventController> event_controller_;

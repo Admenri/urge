@@ -8,8 +8,6 @@
 #include <tuple>
 
 #include "base/memory/allocator.h"
-#include "renderer/context/render_context.h"
-#include "renderer/context/scissor_controller.h"
 #include "renderer/pipeline/render_pipeline.h"
 #include "renderer/resource/render_buffer.h"
 #include "ui/widget/widget.h"
@@ -55,8 +53,8 @@ class RenderDevice {
           yuv(device, target_format, depth_stencil_format) {}
   };
 
-  using CreateDeviceResult =
-      std::tuple<base::OwnedPtr<RenderDevice>, base::OwnedPtr<RenderContext>>;
+  using CreateDeviceResult = std::tuple<base::OwnedPtr<RenderDevice>,
+                                        RRefPtr<Diligent::IDeviceContext>>;
   static CreateDeviceResult Create(base::WeakPtr<ui::Widget> window_target,
                                    DriverType driver_type);
 

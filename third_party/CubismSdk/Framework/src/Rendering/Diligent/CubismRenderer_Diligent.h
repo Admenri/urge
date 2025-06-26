@@ -19,7 +19,6 @@
 #include "Type/csmRectF.hpp"
 #include "Type/csmVector.hpp"
 
-#include "renderer/context/render_context.h"
 #include "renderer/device/render_device.h"
 
 //------------ LIVE2D NAMESPACE ------------
@@ -61,7 +60,7 @@ class CubismClippingManager_Diligent
    * @param[in]   renderer    ->  レンダラのインスタンス
    */
   void SetupClippingContext(renderer::RenderDevice* device,
-                            renderer::RenderContext* renderContext,
+                            Diligent::IDeviceContext* renderContext,
                             CubismModel& model,
                             CubismRenderer_Diligent* renderer,
                             csmInt32 offscreenCurrent);
@@ -130,7 +129,7 @@ class CubismRenderer_Diligent : public CubismRenderer {
    *
    * @param[in]   device         -> 使用デバイス
    */
-  static void StartFrame(renderer::RenderContext* renderContext,
+  static void StartFrame(Diligent::IDeviceContext* renderContext,
                          CubismOffscreenSurface_Diligent* renderTarget);
 
   /**
@@ -324,7 +323,7 @@ class CubismRenderer_Diligent : public CubismRenderer {
   /**
    * @brief   GetDrawableVertices,GetDrawableVertexUvsの内容をバッファへコピー
    */
-  void CopyToBuffer(renderer::RenderContext* renderContext,
+  void CopyToBuffer(Diligent::IDeviceContext* renderContext,
                     csmInt32 drawAssign,
                     const csmInt32 vcount,
                     const csmFloat32* varray,

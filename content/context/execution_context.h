@@ -16,7 +16,6 @@
 #include "content/render/drawable_controller.h"
 #include "content/render/sprite_batch.h"
 #include "content/worker/event_controller.h"
-#include "renderer/context/render_context.h"
 #include "renderer/device/render_device.h"
 #include "ui/widget/widget.h"
 
@@ -26,7 +25,7 @@ struct ExecutionContext {
   base::Vec2i resolution;
   base::WeakPtr<ui::Widget> window;
   renderer::RenderDevice* render_device;
-  renderer::RenderContext* primary_render_context;
+  Diligent::IDeviceContext* primary_render_context;
 
   ContentProfile* engine_profile = nullptr;
   ScopedFontData* font_context = nullptr;

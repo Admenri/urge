@@ -57,9 +57,9 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       magic_enum::enum_cast<renderer::DriverType>(profile->driver_backend)
           .value_or(renderer::DriverType::UNDEFINED));
   render_device_ = std::move(render_device);
-  render_context_ = std::move(render_context);
-  canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(
-      render_device_.get(), render_context_.get());
+  device_context_ = std::move(render_context);
+  canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(render_device_.get(),
+                                                          device_context_);
   sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
   event_controller_ = base::MakeOwnedPtr<EventController>(window);
 
@@ -68,7 +68,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
   execution_context_->resolution = profile->resolution;
   execution_context_->window = window;
   execution_context_->render_device = render_device_.get();
-  execution_context_->primary_render_context = render_context_.get();
+  execution_context_->primary_render_context = device_context_;
 
   execution_context_->engine_profile = profile;
   execution_context_->font_context = font_context;
@@ -328,7 +328,7 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
   if (is_focus_gained) {
     LOG(INFO) << "[Content] Resume foreground running.";
     self->execution_context_->render_device->ResumeContext(
-        **self->execution_context_->primary_render_context);
+        self->execution_context_->primary_render_context);
     self->graphics_impl_->ResetFPSCounter();
     self->background_running_ = false;
     return false;

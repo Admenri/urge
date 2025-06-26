@@ -636,7 +636,7 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
 }
 
 void SpriteImpl::GPUOnSpriteRenderingInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
     BitmapAgent* texture) {
   if (agent_.instance_count) {
@@ -654,11 +654,10 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
         context()->sprite_batcher->GetUniformBinding());
 
     // Apply pipeline state
-    (*render_context)->SetPipelineState(pipeline);
-    (*render_context)
-        ->CommitShaderResources(
-            *context()->sprite_batcher->GetShaderBinding(),
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetPipelineState(pipeline);
+    render_context->CommitShaderResources(
+        *context()->sprite_batcher->GetShaderBinding(),
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Determine batch mode
     const bool enable_batch = context()->sprite_batcher->IsBatchEnabled();
@@ -667,12 +666,12 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
     Diligent::IBuffer* const vertex_buffer[] = {
         context()->sprite_batcher->GetVertexBuffer(),
         context()->sprite_batcher->GetInstanceBuffer()};
-    (*render_context)
-        ->SetVertexBuffers(0, 1 + !enable_batch, vertex_buffer, nullptr,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*render_context)
-        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetVertexBuffers(
+        0, 1 + !enable_batch, vertex_buffer, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetIndexBuffer(
+        **context()->render_device->GetQuadIndex(), 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     if (enable_batch) {
@@ -680,7 +679,7 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
       draw_indexed_attribs.NumIndices = 6 * agent_.instance_count;
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
-      (*render_context)->DrawIndexed(draw_indexed_attribs);
+      render_context->DrawIndexed(draw_indexed_attribs);
     } else {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
@@ -688,7 +687,7 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
       draw_indexed_attribs.NumInstances = 1;
       draw_indexed_attribs.FirstInstanceLocation = agent_.instance_offset;
-      (*render_context)->DrawIndexed(draw_indexed_attribs);
+      render_context->DrawIndexed(draw_indexed_attribs);
     }
   }
 }

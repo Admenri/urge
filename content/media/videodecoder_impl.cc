@@ -255,7 +255,7 @@ void VideoDecoderImpl::GPUCreateYUVFramesInternal(const base::Vec2i& size) {
 }
 
 void VideoDecoderImpl::GPURenderYUVInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     uvpx::Frame* data,
     BitmapAgent* target) {
   // Update yuv planes
@@ -266,28 +266,28 @@ void VideoDecoderImpl::GPURenderYUVInternal(
   dest_box.MaxY = agent_.y->GetDesc().Height;
   sub_res_data.pData = data->plane(0);
   sub_res_data.Stride = data->width(0);
-  (*render_context)
-      ->UpdateTexture(agent_.y, 0, 0, dest_box, sub_res_data,
-                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->UpdateTexture(
+      agent_.y, 0, 0, dest_box, sub_res_data,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   dest_box.MaxX = agent_.u->GetDesc().Width;
   dest_box.MaxY = agent_.u->GetDesc().Height;
   sub_res_data.pData = data->plane(1);
   sub_res_data.Stride = data->width(1);
-  (*render_context)
-      ->UpdateTexture(agent_.u, 0, 0, dest_box, sub_res_data,
-                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->UpdateTexture(
+      agent_.u, 0, 0, dest_box, sub_res_data,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   dest_box.MaxX = agent_.v->GetDesc().Width;
   dest_box.MaxY = agent_.v->GetDesc().Height;
   sub_res_data.pData = data->plane(2);
   sub_res_data.Stride = data->width(2);
-  (*render_context)
-      ->UpdateTexture(agent_.v, 0, 0, dest_box, sub_res_data,
-                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->UpdateTexture(
+      agent_.v, 0, 0, dest_box, sub_res_data,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Render to target
   auto& render_device = *context()->render_device;
@@ -301,23 +301,23 @@ void VideoDecoderImpl::GPURenderYUVInternal(
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
   renderer::Quad::SetTexCoordRectNorm(&transient_quad,
                                       base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
-  agent_.batch.QueueWrite(**render_context, &transient_quad);
+  agent_.batch.QueueWrite(render_context, &transient_quad);
 
   // Setup render target
   float clear_color[] = {0, 0, 0, 0};
-  (*render_context)
-      ->SetRenderTargets(1, &target->target, target->depth_view,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->ClearDepthStencil(target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f,
-                          0,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->ClearRenderTarget(target->target, clear_color,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &target->target, target->depth_view,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearDepthStencil(
+      target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearRenderTarget(
+      target->target, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Push scissor
-  render_context->ScissorState()->Apply(target->size);
+  Diligent::Rect render_scissor(0, 0, target->size.x, target->size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Setup uniform params
   agent_.shader_binding.u_texture_y->Set(
@@ -328,26 +328,25 @@ void VideoDecoderImpl::GPURenderYUVInternal(
       agent_.v->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.shader_binding,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *agent_.shader_binding,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.batch;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**render_device.GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
+  render_context->DrawIndexed(draw_indexed_attribs);
 }
 
 }  // namespace content

@@ -52,14 +52,14 @@ class DiligentRenderer {
   DiligentRenderer(const DiligentRenderer&) = delete;
   DiligentRenderer& operator=(const DiligentRenderer&) = delete;
 
-  void Update(renderer::RenderContext* context, spine::Skeleton* skeleton);
-  void Render(renderer::RenderContext* context,
+  void Update(Diligent::IDeviceContext* context, spine::Skeleton* skeleton);
+  void Render(Diligent::IDeviceContext* context,
               Diligent::IBuffer* world_buffer,
               bool premultiplied_alpha);
 
  private:
   void GPURenderSkeletonCommandsInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       Diligent::ITexture* atlas,
       BlendMode blend_mode,
       bool premultiplied_alpha,

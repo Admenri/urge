@@ -140,17 +140,17 @@ class RenderScreenImpl : public Graphics,
   void GPUUpdateScreenWorldInternal();
   void GPUResetScreenBufferInternal();
   void GPUPresentScreenBufferInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       Diligent::ImGuiDiligentRenderer* gui_renderer);
-  void GPUFrameBeginRenderPassInternal(renderer::RenderContext* render_context,
+  void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
                                        Diligent::ITexture* render_target,
                                        Diligent::ITexture* depth_stencil);
-  void GPUFrameEndRenderPassInternal(renderer::RenderContext* render_context);
+  void GPUFrameEndRenderPassInternal(Diligent::IDeviceContext* render_context);
   void GPURenderAlphaTransitionFrameInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       float progress);
   void GPURenderVagueTransitionFrameInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       Diligent::ITextureView* trans_mapping,
       float progress,
       float vague);

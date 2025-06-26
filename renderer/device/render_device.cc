@@ -256,11 +256,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   base::OwnedPtr<RenderDevice> render_device = base::MakeOwnedPtr<RenderDevice>(
       window_target, swap_chain_desc, device, swapchain, glcontext);
 
-  // Immediate render context
-  base::OwnedPtr<RenderContext> render_context =
-      base::MakeOwnedPtr<RenderContext>(context);
-
-  return std::make_tuple(std::move(render_device), std::move(render_context));
+  return std::make_tuple(std::move(render_device), std::move(context));
 }
 
 RenderDevice::RenderDevice(

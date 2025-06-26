@@ -407,7 +407,7 @@ void WindowImpl::GPUCreateWindowInternal() {
 }
 
 void WindowImpl::GPUCompositeBackgroundLayerInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     BitmapAgent* windowskin) {
   const base::Vec2i& draw_offset = bound_.Position();
 
@@ -537,13 +537,13 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
 
   // Update vertex buffer
   if (!agent_.background_cache.empty())
-    agent_.background_batch.QueueWrite(**render_context,
+    agent_.background_batch.QueueWrite(render_context,
                                        agent_.background_cache.data(),
                                        agent_.background_cache.size());
 }
 
 void WindowImpl::GPUCompositeControlLayerInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     BitmapAgent* windowskin,
     BitmapAgent* contents) {
   const float contents_opacity_norm = contents_opacity_ / 255.0f;
@@ -746,12 +746,12 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
   // Update vertex buffer
   if (!quads.empty())
-    agent_.controls_batch.QueueWrite(**render_context, quads.data(),
+    agent_.controls_batch.QueueWrite(render_context, quads.data(),
                                      quads.size());
 }
 
 void WindowImpl::GPURenderBackgroundLayerInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
     BitmapAgent* windowskin) {
   if (windowskin) {
@@ -765,30 +765,29 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
 
     // Apply vertex index
     Diligent::IBuffer* const vertex_buffer = *agent_.background_batch;
-    (*render_context)
-        ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*render_context)
-        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetVertexBuffers(
+        0, 1, &vertex_buffer, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetIndexBuffer(
+        **context()->render_device->GetQuadIndex(), 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply pipeline state
-    (*render_context)->SetPipelineState(pipeline);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.base_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetPipelineState(pipeline);
+    render_context->CommitShaderResources(
+        *agent_.base_binding,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = agent_.background_draw_count * 6;
     draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
+    render_context->DrawIndexed(draw_indexed_attribs);
   }
 }
 
 void WindowImpl::GPURenderControlLayerInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
     BitmapAgent* windowskin,
     BitmapAgent* contents) {
@@ -803,25 +802,24 @@ void WindowImpl::GPURenderControlLayerInternal(
 
     // Apply vertex index
     Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
-    (*render_context)
-        ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*render_context)
-        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetVertexBuffers(
+        0, 1, &vertex_buffer, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetIndexBuffer(
+        **context()->render_device->GetQuadIndex(), 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply pipeline state
-    (*render_context)->SetPipelineState(pipeline);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.base_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetPipelineState(pipeline);
+    render_context->CommitShaderResources(
+        *agent_.base_binding,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
     draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
+    render_context->DrawIndexed(draw_indexed_attribs);
   }
 
   if (contents) {
@@ -835,26 +833,25 @@ void WindowImpl::GPURenderControlLayerInternal(
 
     // Apply vertex index
     Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
-    (*render_context)
-        ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    (*render_context)
-        ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetVertexBuffers(
+        0, 1, &vertex_buffer, nullptr,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetIndexBuffer(
+        **context()->render_device->GetQuadIndex(), 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply pipeline state
-    (*render_context)->SetPipelineState(pipeline);
-    (*render_context)
-        ->CommitShaderResources(
-            *agent_.content_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->SetPipelineState(pipeline);
+    render_context->CommitShaderResources(
+        *agent_.content_binding,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6;
     draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
     draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
-    (*render_context)->DrawIndexed(draw_indexed_attribs);
+    render_context->DrawIndexed(draw_indexed_attribs);
   }
 }
 

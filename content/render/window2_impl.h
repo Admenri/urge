@@ -93,11 +93,11 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
       DrawableNode::RenderControllerParams* params);
 
   void GPUCreateWindowInternal();
-  void GPUCompositeWindowQuadsInternal(renderer::RenderContext* render_context,
+  void GPUCompositeWindowQuadsInternal(Diligent::IDeviceContext* render_context,
                                        BitmapAgent* contents,
                                        BitmapAgent* windowskin,
                                        const base::Rect& padding_rect);
-  void GPURenderWindowQuadsInternal(renderer::RenderContext* render_context,
+  void GPURenderWindowQuadsInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding,
                                     BitmapAgent* contents,
                                     BitmapAgent* windowskin);

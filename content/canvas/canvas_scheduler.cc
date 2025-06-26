@@ -7,7 +7,7 @@
 namespace content {
 
 CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
-                                 renderer::RenderContext* primary_context)
+                                 Diligent::IDeviceContext* primary_context)
     : device_(render_device),
       context_(primary_context),
       generic_base_binding_(device_->GetPipelines()->base.CreateBinding()),
@@ -29,17 +29,17 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
                                         bool clear_target) {
   // Setup new render target
   if (render_target) {
-    (*context_)->SetRenderTargets(
+    context_->SetRenderTargets(
         1, &render_target, depth_stencil,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply clear buffer if need
     if (clear_target) {
       float clear_color[] = {0, 0, 0, 0};
-      (*context_)->ClearDepthStencil(
+      context_->ClearDepthStencil(
           depth_stencil, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-      (*context_)->ClearRenderTarget(
+      context_->ClearRenderTarget(
           render_target, clear_color,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -48,7 +48,7 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
   }
 
   // Reset render target state
-  (*context_)->SetRenderTargets(
+  context_->SetRenderTargets(
       0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
@@ -56,7 +56,7 @@ renderer::RenderDevice* CanvasScheduler::GetRenderDevice() {
   return device_;
 }
 
-renderer::RenderContext* CanvasScheduler::GetDiscreteRenderContext() {
+Diligent::IDeviceContext* CanvasScheduler::GetDiscreteRenderContext() {
   return context_;
 }
 

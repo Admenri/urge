@@ -282,7 +282,7 @@ void PlaneImpl::GPUCreatePlaneInternal() {
 }
 
 void PlaneImpl::GPUUpdatePlaneQuadArrayInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     const base::Rect& src_rect,
     const base::Vec2i& viewport_size,
     const base::Vec2& scale,
@@ -339,20 +339,19 @@ void PlaneImpl::GPUUpdatePlaneQuadArrayInternal(
   auto& render_device = *context()->render_device;
   render_device.GetQuadIndex()->Allocate(quad_size);
   agent_.quad_size = quad_size;
-  agent_.batch.QueueWrite(**render_context, agent_.cache.data(),
+  agent_.batch.QueueWrite(render_context, agent_.cache.data(),
                           agent_.cache.size());
 
   renderer::Binding_Flat::Params transient_uniform;
   transient_uniform.Color = color_->AsNormColor();
   transient_uniform.Tone = tone_->AsNormColor();
-  (*render_context)
-      ->UpdateBuffer(agent_.uniform_buffer, 0, sizeof(transient_uniform),
-                     &transient_uniform,
-                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->UpdateBuffer(
+      agent_.uniform_buffer, 0, sizeof(transient_uniform), &transient_uniform,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void PlaneImpl::GPUOnViewportRenderingInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding) {
   // Source texture
   auto* texture = bitmap_->GetAgent();
@@ -369,26 +368,25 @@ void PlaneImpl::GPUOnViewportRenderingInternal(
   agent_.shader_binding.u_params->Set(agent_.uniform_buffer);
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.shader_binding,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *agent_.shader_binding,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.batch;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**render_device.GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6 * agent_.cache.size();
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
+  render_context->DrawIndexed(draw_indexed_attribs);
 }
 
 }  // namespace content

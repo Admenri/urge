@@ -29,35 +29,32 @@ CubismOffscreenSurface_Diligent::CubismOffscreenSurface_Diligent()
     : _bufferWidth(0), _bufferHeight(0) {}
 
 void CubismOffscreenSurface_Diligent::BeginDraw(
-    renderer::RenderContext* renderContext) {
+    Diligent::IDeviceContext* renderContext) {
   if (!_textureView || !_renderTargetView) {
     return;
   }
 
-  (*renderContext)
-      ->SetRenderTargets(1, &_renderTargetView, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  renderContext->ScissorState()->Apply(
-      base::Rect(0, 0, _bufferWidth, _bufferHeight));
+  renderContext->SetRenderTargets(
+      1, &_renderTargetView, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void CubismOffscreenSurface_Diligent::EndDraw(
-    renderer::RenderContext* renderContext) {
-  (*renderContext)
-      ->SetRenderTargets(0, nullptr, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    Diligent::IDeviceContext* renderContext) {
+  renderContext->SetRenderTargets(
+      0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void CubismOffscreenSurface_Diligent::Clear(
-    renderer::RenderContext* renderContext,
+    Diligent::IDeviceContext* renderContext,
     float r,
     float g,
     float b,
     float a) {
   float clearColor[4] = {r, g, b, a};
-  (*renderContext)
-      ->ClearRenderTarget(_renderTargetView, clearColor,
-                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  renderContext->ClearRenderTarget(
+      _renderTargetView, clearColor,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 csmBool CubismOffscreenSurface_Diligent::CreateOffscreenSurface(

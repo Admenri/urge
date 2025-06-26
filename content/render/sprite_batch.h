@@ -51,7 +51,7 @@ class SpriteBatch {
   void EndBatch(uint32_t* instance_offset, uint32_t* instance_count);
 
   // Summit pending batch data to rendering queue
-  void SubmitBatchDataAndResetCache(renderer::RenderContext* render_context);
+  void SubmitBatchDataAndResetCache(Diligent::IDeviceContext* render_context);
 
   bool IsBatchEnabled() const { return support_storage_buffer_batch_; }
 

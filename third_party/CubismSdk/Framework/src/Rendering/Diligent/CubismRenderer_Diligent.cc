@@ -37,7 +37,7 @@ inline void Transpose4x4(float* matrix) {
  ********************************************************************************************************************/
 void CubismClippingManager_Diligent::SetupClippingContext(
     renderer::RenderDevice* device,
-    renderer::RenderContext* renderContext,
+    Diligent::IDeviceContext* renderContext,
     CubismModel& model,
     CubismRenderer_Diligent* renderer,
     csmInt32 offscreenCurrent) {
@@ -208,7 +208,7 @@ csmUint32 s_bufferSetNum =
     0;  ///< 作成コンテキストの数。モデルロード前に設定されている必要あり。
 renderer::RenderDevice* s_device =
     NULL;  ///< 使用デバイス。モデルロード前に設定されている必要あり。
-renderer::RenderContext* s_context = NULL;  ///< 使用描画コンテキスト
+Diligent::IDeviceContext* s_context = NULL;  ///< 使用描画コンテキスト
 CubismOffscreenSurface_Diligent* s_renderTarget = NULL;
 
 }  // namespace
@@ -604,7 +604,7 @@ void CubismRenderer_Diligent::ExecuteDrawForMask(const CubismModel& model,
   auto* pipeline = shaderManager->GetPipeline(
       ShaderNames_SetupMask, ShaderNames_SetupMask, Blend_Mask, IsCulling());
   auto& binding = _shaderBindings[_commandBufferCurrent][index];
-  (*s_context)->SetPipelineState(pipeline);
+  s_context->SetPipelineState(pipeline);
 
   // テクスチャ+サンプラーセット
   SetTextureView(model, index, &binding);
@@ -655,7 +655,7 @@ void CubismRenderer_Diligent::ExecuteDrawForDraw(const CubismModel& model,
   // シェーダーセット
   auto* pipeline = DerivePipeline(colorBlendMode, model, index);
   auto& binding = _shaderBindings[_commandBufferCurrent][index];
-  (*s_context)->SetPipelineState(pipeline);
+  s_context->SetPipelineState(pipeline);
 
   // テクスチャ+サンプラーセット
   SetTextureView(model, index, &binding);
@@ -700,10 +700,9 @@ void CubismRenderer_Diligent::ExecuteDrawForDraw(const CubismModel& model,
 void CubismRenderer_Diligent::DrawDrawableIndexed(const CubismModel& model,
                                                   const csmInt32 index) {
   auto& binding = _shaderBindings[_commandBufferCurrent][index];
-  (*s_context)
-      ->CommitShaderResources(
-          binding.GetBinding(),
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  s_context->CommitShaderResources(
+      binding.GetBinding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   UINT strides = sizeof(CubismVertexDiligent);
   UINT offsets = 0;
@@ -712,17 +711,16 @@ void CubismRenderer_Diligent::DrawDrawableIndexed(const CubismModel& model,
   Diligent::IBuffer* indexBuffer = _indexBuffers[_commandBufferCurrent][index];
   const csmInt32 indexCount = model.GetDrawableVertexIndexCount(index);
 
-  (*s_context)
-      ->SetVertexBuffers(0, 1, &vertexBuffer, NULL,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*s_context)
-      ->SetIndexBuffer(indexBuffer, 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  s_context->SetVertexBuffers(
+      0, 1, &vertexBuffer, NULL,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  s_context->SetIndexBuffer(
+      indexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::DrawIndexedAttribs drawAttribs;
   drawAttribs.NumIndices = indexCount;
   drawAttribs.IndexType = Diligent::VT_UINT16;
-  (*s_context)->DrawIndexed(drawAttribs);
+  s_context->DrawIndexed(drawAttribs);
 }
 
 void CubismRenderer_Diligent::DrawMeshDX11(const CubismModel& model,
@@ -826,7 +824,7 @@ void CubismRenderer_Diligent::InitializeConstantSettings(
 }
 
 void CubismRenderer_Diligent::StartFrame(
-    renderer::RenderContext* renderContext,
+    Diligent::IDeviceContext* renderContext,
     CubismOffscreenSurface_Diligent* renderTarget) {
   // フレームで使用するデバイス設定
   s_context = renderContext;
@@ -858,7 +856,7 @@ CubismRenderer_Diligent::GetClippingContextBufferForMask() const {
 }
 
 void CubismRenderer_Diligent::CopyToBuffer(
-    renderer::RenderContext* renderContext,
+    Diligent::IDeviceContext* renderContext,
     csmInt32 drawAssign,
     const csmInt32 vcount,
     const csmFloat32* varray,
@@ -866,10 +864,9 @@ void CubismRenderer_Diligent::CopyToBuffer(
   // CubismVertexD3D11の書き込み
   if (_vertexBuffers[_commandBufferCurrent][drawAssign]) {
     void* mappingPointer = nullptr;
-    (*renderContext)
-        ->MapBuffer(_vertexBuffers[_commandBufferCurrent][drawAssign],
-                    Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD,
-                    mappingPointer);
+    renderContext->MapBuffer(_vertexBuffers[_commandBufferCurrent][drawAssign],
+                             Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD,
+                             mappingPointer);
 
     if (mappingPointer) {
       CubismVertexDiligent* lockPointer =
@@ -883,9 +880,8 @@ void CubismRenderer_Diligent::CopyToBuffer(
       }
     }
 
-    (*renderContext)
-        ->UnmapBuffer(_vertexBuffers[_commandBufferCurrent][drawAssign],
-                      Diligent::MAP_WRITE);
+    renderContext->UnmapBuffer(
+        _vertexBuffers[_commandBufferCurrent][drawAssign], Diligent::MAP_WRITE);
   }
 }
 
@@ -1016,9 +1012,8 @@ void CubismRenderer_Diligent::UpdateConstantBuffer(
     CubismShaderBinding_Diligent* binding) {
   Diligent::IBuffer* constantBuffer =
       _constantBuffers[_commandBufferCurrent][index];
-  (*s_context)
-      ->UpdateBuffer(constantBuffer, 0, sizeof(cb), &cb,
-                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  s_context->UpdateBuffer(constantBuffer, 0, sizeof(cb), &cb,
+                          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   binding->SetConstantBuffer(constantBuffer);
 }

@@ -151,7 +151,7 @@ DiligentRenderer::~DiligentRenderer() {
   shader_binding_ = renderer::Binding_Base();
 }
 
-void DiligentRenderer::Update(renderer::RenderContext* context,
+void DiligentRenderer::Update(Diligent::IDeviceContext* context,
                               spine::Skeleton* skeleton) {
   vertex_cache_.clear();
   pending_commands_ = skeleton_renderer_->render(*skeleton);
@@ -186,11 +186,10 @@ void DiligentRenderer::Update(renderer::RenderContext* context,
   }
 
   // Upload data
-  vertex_batch_.QueueWrite(**context, vertex_cache_.data(),
-                           vertex_cache_.size());
+  vertex_batch_.QueueWrite(context, vertex_cache_.data(), vertex_cache_.size());
 }
 
-void DiligentRenderer::Render(renderer::RenderContext* context,
+void DiligentRenderer::Render(Diligent::IDeviceContext* context,
                               Diligent::IBuffer* world_buffer,
                               bool premultiplied_alpha) {
   uint32_t vertices_offset = 0;
@@ -210,7 +209,7 @@ void DiligentRenderer::Render(renderer::RenderContext* context,
 }
 
 void DiligentRenderer::GPURenderSkeletonCommandsInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::ITexture* atlas,
     BlendMode blend_mode,
     bool premultiplied_alpha,
@@ -227,23 +226,21 @@ void DiligentRenderer::GPURenderSkeletonCommandsInternal(
       atlas->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *shader_binding_,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *shader_binding_, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *vertex_batch_;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumVertices = num_vertices;
   draw_indexed_attribs.StartVertexLocation = vertices_offset;
-  (*render_context)->Draw(draw_indexed_attribs);
+  render_context->Draw(draw_indexed_attribs);
 }
 
 }  // namespace spine

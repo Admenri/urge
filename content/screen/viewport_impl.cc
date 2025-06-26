@@ -329,7 +329,7 @@ void ViewportImpl::DrawableNodeHandlerInternal(
   // Current viewport region
   base::Rect viewport_rect = rect_->AsBaseRect();
 
-  // Apply parent offset
+  // Apply parent offset and origin
   viewport_rect.x += params->viewport.x - params->origin.x;
   viewport_rect.y += params->viewport.y - params->origin.y;
 
@@ -384,9 +384,10 @@ void ViewportImpl::DrawableNodeHandlerInternal(
       target_color =
           (flash_color.w > composite_color.w ? flash_color : composite_color);
 
-    GPUViewportProcessAfterRender(
-        params->context, params->root_world, params->screen_buffer,
-        params->screen_depth_stencil, viewport_rect, target_color);
+    GPUViewportProcessAfterRender(params->context, params->root_world,
+                                  params->screen_buffer,
+                                  params->screen_depth_stencil, viewport_rect,
+                                  target_color, params->viewport);
   }
 }
 
@@ -405,17 +406,16 @@ void ViewportImpl::GPUCreateViewportAgent() {
 }
 
 void ViewportImpl::GPUUpdateViewportTransform(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     const base::Rect& region) {
   renderer::WorldTransform world_matrix;
   renderer::MakeProjectionMatrix(world_matrix.projection, region.Size());
   renderer::MakeTransformMatrix(world_matrix.transform, region.Size(),
                                 region.Position());
 
-  (*render_context)
-      ->UpdateBuffer(agent_.world_uniform, 0, sizeof(world_matrix),
-                     &world_matrix,
-                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->UpdateBuffer(
+      agent_.world_uniform, 0, sizeof(world_matrix), &world_matrix,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void ViewportImpl::GPUResetIntermediateLayer(const base::Vec2i& effect_size) {
@@ -436,13 +436,15 @@ void ViewportImpl::GPUResetIntermediateLayer(const base::Vec2i& effect_size) {
 }
 
 void ViewportImpl::GPUResetViewportRegion(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     const base::Rect& region) {
-  render_context->ScissorState()->Push(region);
+  Diligent::Rect render_scissor(region.x, region.y, region.width,
+                                region.height);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 }
 
 void ViewportImpl::GPUApplyViewportEffect(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::ITexture* screen_buffer,
     Diligent::ITexture* screen_depth_stencil,
     Diligent::IBuffer* root_world,
@@ -455,9 +457,8 @@ void ViewportImpl::GPUApplyViewportEffect(
   box.MaxX = effect_region.x + effect_region.width;
   box.MaxY = effect_region.y + effect_region.height;
 
-  (*render_context)
-      ->SetRenderTargets(0, nullptr, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   Diligent::CopyTextureAttribs copy_texture_attribs;
   copy_texture_attribs.pSrcTexture = screen_buffer;
@@ -467,7 +468,7 @@ void ViewportImpl::GPUApplyViewportEffect(
   copy_texture_attribs.pDstTexture = agent_.effect.intermediate_layer;
   copy_texture_attribs.DstTextureTransitionMode =
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-  (*render_context)->CopyTexture(copy_texture_attribs);
+  render_context->CopyTexture(copy_texture_attribs);
 
   // Make effect transient vertices
   renderer::Quad transient_quad;
@@ -475,16 +476,15 @@ void ViewportImpl::GPUApplyViewportEffect(
   renderer::Quad::SetTexCoordRect(&transient_quad,
                                   base::Rect(effect_region.Size()),
                                   agent_.effect.layer_size);
-  agent_.effect.quads.QueueWrite(**render_context, &transient_quad);
+  agent_.effect.quads.QueueWrite(render_context, &transient_quad);
 
   // Update uniform data
   renderer::Binding_Flat::Params transient_uniform;
   transient_uniform.Color = color;
   transient_uniform.Tone = tone_->AsNormColor();
-  (*render_context)
-      ->UpdateBuffer(agent_.effect.uniform_buffer, 0, sizeof(transient_uniform),
-                     &transient_uniform,
-                     Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->UpdateBuffer(
+      agent_.effect.uniform_buffer, 0, sizeof(transient_uniform),
+      &transient_uniform, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Derive effect pipeline
   auto& pipeline_set = context()->render_device->GetPipelines()->viewport;
@@ -494,9 +494,9 @@ void ViewportImpl::GPUApplyViewportEffect(
   // Apply render target
   Diligent::ITextureView* render_target_view =
       screen_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  (*render_context)
-      ->SetRenderTargets(1, &render_target_view, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target_view, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup uniform params
   agent_.effect.binding.u_transform->Set(root_world);
@@ -506,43 +506,43 @@ void ViewportImpl::GPUApplyViewportEffect(
   agent_.effect.binding.u_params->Set(agent_.effect.uniform_buffer);
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.effect.binding,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *agent_.effect.binding,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.effect.quads;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **context()->render_device->GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
+  render_context->DrawIndexed(draw_indexed_attribs);
 
   // Restore depth test buffer
   Diligent::ITextureView* depth_stencil_view =
       screen_depth_stencil->GetDefaultView(
           Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
-  (*render_context)
-      ->SetRenderTargets(1, &render_target_view, depth_stencil_view,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target_view, depth_stencil_view,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void ViewportImpl::GPUViewportProcessAfterRender(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* root_world,
     Diligent::ITexture* screen_buffer,
     Diligent::ITexture* screen_depth_stencil,
     const base::Rect& effect_region,
-    const base::Vec4& color) {
+    const base::Vec4& color,
+    const base::Rect& last_viewport) {
   const auto tone = tone_->AsNormColor();
   const bool is_effect_valid =
       color.w != 0 || tone.x != 0 || tone.y != 0 || tone.z != 0 || tone.w != 0;
@@ -551,21 +551,21 @@ void ViewportImpl::GPUViewportProcessAfterRender(
                            root_world, effect_region, color);
 
   // Restore viewport region
-  render_context->ScissorState()->Pop();
+  GPUResetViewportRegion(render_context, last_viewport);
 }
 
 void ViewportImpl::GPUFrameBeginRenderPassInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     BitmapAgent* render_target,
     const base::Vec2i& viewport_offset,
     const base::Rect& scissor_region) {
   // Apply render target
-  (*render_context)
-      ->SetRenderTargets(1, &render_target->target, render_target->depth_view,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetRenderTargets(
+      1, &render_target->target, render_target->depth_view,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup scissor region
-  render_context->ScissorState()->Apply(scissor_region.Size());
+  GPUResetViewportRegion(render_context, scissor_region.Size());
 }
 
 }  // namespace content

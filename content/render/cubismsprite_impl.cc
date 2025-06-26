@@ -376,7 +376,7 @@ void CubismSpriteImpl::GPUCreateCubismSpriteInternal(
 }
 
 void CubismSpriteImpl::GPURenderCubismModelOffscreenInternal(
-    renderer::RenderContext* render_context) {
+    Diligent::IDeviceContext* render_context) {
   // Offscreen rendering cubism model
   base::Vec2i canvas_size;
   canvas_size.x = model_->GetRenderBuffer().GetBufferWidth();
@@ -420,11 +420,11 @@ void CubismSpriteImpl::GPURenderCubismModelOffscreenInternal(
   renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(opacity_ / 255.0f));
 
-  agent_.quad.QueueWrite(**render_context, &transient_quad);
+  agent_.quad.QueueWrite(render_context, &transient_quad);
 }
 
 void CubismSpriteImpl::GPURenderCanvasInternal(
-    renderer::RenderContext* render_context,
+    Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_buffer) {
   auto& pipeline_set = context()->render_device->GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
@@ -433,25 +433,24 @@ void CubismSpriteImpl::GPURenderCanvasInternal(
   agent_.binding.u_texture->Set(model_->GetRenderBuffer().GetTextureView());
 
   // Apply pipeline state
-  (*render_context)->SetPipelineState(pipeline);
-  (*render_context)
-      ->CommitShaderResources(
-          *agent_.binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *agent_.binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.quad;
-  (*render_context)
-      ->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  (*render_context)
-      ->SetIndexBuffer(**context()->render_device->GetQuadIndex(), 0,
-                       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **context()->render_device->GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-  (*render_context)->DrawIndexed(draw_indexed_attribs);
+  render_context->DrawIndexed(draw_indexed_attribs);
 }
 
 }  // namespace content

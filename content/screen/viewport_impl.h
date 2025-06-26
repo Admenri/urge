@@ -70,24 +70,25 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
       DrawableNode::RenderControllerParams* params);
 
   void GPUCreateViewportAgent();
-  void GPUUpdateViewportTransform(renderer::RenderContext* render_context,
+  void GPUUpdateViewportTransform(Diligent::IDeviceContext* render_context,
                                   const base::Rect& region);
   void GPUResetIntermediateLayer(const base::Vec2i& effect_size);
-  void GPUResetViewportRegion(renderer::RenderContext* render_context,
+  void GPUResetViewportRegion(Diligent::IDeviceContext* render_context,
                               const base::Rect& region);
-  void GPUApplyViewportEffect(renderer::RenderContext* render_context,
+  void GPUApplyViewportEffect(Diligent::IDeviceContext* render_context,
                               Diligent::ITexture* screen_buffer,
                               Diligent::ITexture* screen_depth_stencil,
                               Diligent::IBuffer* root_world,
                               const base::Rect& effect_region,
                               const base::Vec4& color);
-  void GPUViewportProcessAfterRender(renderer::RenderContext* render_context,
+  void GPUViewportProcessAfterRender(Diligent::IDeviceContext* render_context,
                                      Diligent::IBuffer* root_world,
                                      Diligent::ITexture* screen_buffer,
                                      Diligent::ITexture* screen_depth_stencil,
                                      const base::Rect& effect_region,
-                                     const base::Vec4& color);
-  void GPUFrameBeginRenderPassInternal(renderer::RenderContext* render_context,
+                                     const base::Vec4& color,
+                                     const base::Rect& last_viewport);
+  void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
                                        BitmapAgent* render_target,
                                        const base::Vec2i& viewport_offset,
                                        const base::Rect& scissor_region);

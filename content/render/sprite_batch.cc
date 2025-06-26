@@ -42,24 +42,24 @@ void SpriteBatch::EndBatch(uint32_t* instance_offset,
 }
 
 void SpriteBatch::SubmitBatchDataAndResetCache(
-    renderer::RenderContext* render_context) {
+    Diligent::IDeviceContext* render_context) {
   // Setup index buffer
   device_->GetQuadIndex()->Allocate(uniform_cache_.size());
 
   // Upload data and rebuild binding
   if (quad_cache_.size())
-    vertex_batch_.QueueWrite(**render_context, quad_cache_.data(),
+    vertex_batch_.QueueWrite(render_context, quad_cache_.data(),
                              quad_cache_.size());
 
   if (uniform_cache_.size()) {
     if (support_storage_buffer_batch_) {
-      uniform_batch_.QueueWrite(**render_context, uniform_cache_.data(),
+      uniform_batch_.QueueWrite(render_context, uniform_cache_.data(),
                                 uniform_cache_.size());
       uniform_binding_ =
           (*uniform_batch_)
               ->GetDefaultView(Diligent::BUFFER_VIEW_SHADER_RESOURCE);
     } else {
-      instance_batch_.QueueWrite(**render_context, uniform_cache_.data(),
+      instance_batch_.QueueWrite(render_context, uniform_cache_.data(),
                                  uniform_cache_.size());
     }
   }

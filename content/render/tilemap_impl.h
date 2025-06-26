@@ -132,20 +132,20 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
 
   void GPUCreateTilemapInternal();
   void GPUMakeAtlasInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       const base::Vec2i& atlas_size,
       base::Vector<TilemapImpl::AtlasCompositeCommand> make_commands);
   void GPUUploadTilesBatchInternal(
-      renderer::RenderContext* render_context,
+      Diligent::IDeviceContext* render_context,
       base::Vector<renderer::Quad> ground_cache,
       base::Vector<base::Vector<renderer::Quad>> aboves_cache);
-  void GPUUpdateTilemapUniformInternal(renderer::RenderContext* render_context,
+  void GPUUpdateTilemapUniformInternal(Diligent::IDeviceContext* render_context,
                                        const base::Vec2& offset,
                                        int32_t tilesize,
                                        int32_t anim_index);
-  void GPURenderGroundLayerInternal(renderer::RenderContext* render_context,
+  void GPURenderGroundLayerInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding);
-  void GPURenderAboveLayerInternal(renderer::RenderContext* render_context,
+  void GPURenderAboveLayerInternal(Diligent::IDeviceContext* render_context,
                                    Diligent::IBuffer* world_binding,
                                    int32_t index);
 

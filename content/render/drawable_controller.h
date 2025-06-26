@@ -82,7 +82,7 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
   struct RenderControllerParams {
     // [Stage: all]
     // Immediate rendering context.
-    renderer::RenderContext* context = nullptr;
+    Diligent::IDeviceContext* context = nullptr;
 
     // [Stage: all]
     // Abstract "screen" render buffer.
