@@ -510,6 +510,9 @@ void CubismRenderer_Diligent::DoDrawModel() {
     _sortedDrawableIndexList[order] = i;
   }
 
+  // Rendertarget reset requirement
+  bool resetRenderTarget = true;
+
   // 描画
   for (csmInt32 i = 0; i < drawableCount; ++i) {
     const csmInt32 drawableIndex = _sortedDrawableIndexList[i];
@@ -573,6 +576,8 @@ void CubismRenderer_Diligent::DoDrawModel() {
           // GetRenderStateManager()->SetViewport(
           //     s_context, 0.0f, 0.0f, static_cast<float>(s_viewportWidth),
           //     static_cast<float>(s_viewportHeight), 0.0f, 1.0f);
+
+          resetRenderTarget = true;
         }
       }
     }
@@ -582,10 +587,14 @@ void CubismRenderer_Diligent::DoDrawModel() {
 
     IsCulling(GetModel()->GetDrawableCulling(drawableIndex) != 0);
 
-    s_renderTarget->BeginDraw(s_context);
+    if (resetRenderTarget)
+      s_renderTarget->BeginDraw(s_context);
+    resetRenderTarget = false;
+
     DrawMeshDX11(*GetModel(), drawableIndex);
-    s_renderTarget->EndDraw(s_context);
   }
+
+  s_renderTarget->EndDraw(s_context);
 
   // ダブルバッファ・トリプルバッファを回す
   PostDraw();
