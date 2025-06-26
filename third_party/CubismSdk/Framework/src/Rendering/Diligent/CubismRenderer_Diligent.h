@@ -242,7 +242,7 @@ class CubismRenderer_Diligent : public CubismRenderer {
    * @param[in]   model       ->  描画対象のモデル
    * @param[in]   index       ->  描画対象のインデックス
    */
-  void DrawMeshDX11(const CubismModel& model, const csmInt32 index);
+  void DrawMeshDiligent(const CubismModel& model, const csmInt32 index);
 
  private:
   /**
@@ -252,7 +252,9 @@ class CubismRenderer_Diligent : public CubismRenderer {
    * @param[in]   model       ->  描画対象のモデル
    * @param[in]   index       ->  描画対象のインデックス
    */
-  void ExecuteDrawForMask(const CubismModel& model, const csmInt32 index);
+  void ExecuteDrawForMask(const CubismModel& model,
+                          const csmInt32 index,
+                          CubismConstantBufferDiligent& constantsData);
 
   /**
    * @brief
@@ -261,7 +263,9 @@ class CubismRenderer_Diligent : public CubismRenderer {
    * @param[in]   model       ->  描画対象のモデル
    * @param[in]   index       ->  描画対象のインデックス
    */
-  void ExecuteDrawForDraw(const CubismModel& model, const csmInt32 index);
+  void ExecuteDrawForDraw(const CubismModel& model,
+                          const csmInt32 index,
+                          CubismConstantBufferDiligent& constantsData);
 
   /**
    * @brief  指定されたメッシュインデックスに対して描画命令を実行する
@@ -382,15 +386,6 @@ class CubismRenderer_Diligent : public CubismRenderer {
    */
   void SetColorChannel(CubismConstantBufferDiligent& cb,
                        CubismClippingContext_Diligent* contextBuffer);
-
-  /**
-   * @brief  描画に使用するプロジェクション行列を更新する
-   *
-   * @param[in]   cb          ->  設定する定数バッファ
-   * @param[in]   matrix      ->  設定するプロジェクション行列
-   */
-  void SetProjectionMatrix(CubismConstantBufferDiligent& cb,
-                           CubismMatrix44 matrix);
 
   /**
    * @brief  定数バッファを更新する

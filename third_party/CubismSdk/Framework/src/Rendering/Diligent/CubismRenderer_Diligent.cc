@@ -73,7 +73,7 @@ void CubismClippingManager_Diligent::SetupClippingContext(
 
   // ----- マスク描画処理 -----
   // マスク用RenderTextureをactiveにセット
-  _currentMaskBuffer->BeginDraw(renderContext);
+  _currentMaskBuffer->SetupDraw(renderContext);
 
   // 各マスクのレイアウトを決定していく
   SetupLayoutBounds(usingClipCount);
@@ -114,11 +114,10 @@ void CubismClippingManager_Diligent::SetupClippingContext(
 
     // 現在のレンダーテクスチャがclipContextのものと異なる場合
     if (_currentMaskBuffer != clipContextRenderTexture) {
-      _currentMaskBuffer->EndDraw(renderContext);
       _currentMaskBuffer = clipContextRenderTexture;
 
       // マスク用RenderTextureをactiveにセット
-      _currentMaskBuffer->BeginDraw(renderContext);
+      _currentMaskBuffer->SetupDraw(renderContext);
     }
 
     // モデル座標上の矩形を、適宜マージンを付けて使う
@@ -163,12 +162,11 @@ void CubismClippingManager_Diligent::SetupClippingContext(
       // 今回専用の変換を適用して描く
       // チャンネルも切り替える必要がある(A,R,G,B)
       renderer->SetClippingContextBufferForMask(clipContext);
-      renderer->DrawMeshDX11(model, clipDrawIndex);
+      renderer->DrawMeshDiligent(model, clipDrawIndex);
     }
   }
 
   // --- 後処理 ---
-  _currentMaskBuffer->EndDraw(renderContext);
   renderer->SetClippingContextBufferForMask(NULL);
 }
 
@@ -406,7 +404,7 @@ void CubismRenderer_Diligent::Initialize(CubismModel* model,
           GetModel()->GetDrawableVertexIndexCount(drawAssign);
       if (icount != 0) {
         Diligent::BufferDesc bufferDesc;
-        bufferDesc.Size = sizeof(WORD) * icount;  // 総長 構造体サイズ*個数
+        bufferDesc.Size = sizeof(uint16_t) * icount;  // 総長 構造体サイズ*個数
         bufferDesc.Usage = Diligent::USAGE_DEFAULT;
         bufferDesc.BindFlags = Diligent::BIND_INDEX_BUFFER;
         bufferDesc.CPUAccessFlags = Diligent::CPU_ACCESS_NONE;
@@ -428,8 +426,7 @@ void CubismRenderer_Diligent::Initialize(CubismModel* model,
         Diligent::BufferDesc bufferDesc;
         bufferDesc.Size =
             sizeof(CubismConstantBufferDiligent);  // 総長 構造体サイズ*個数
-        bufferDesc.Usage = Diligent::
-            USAGE_DEFAULT;  // 定数バッファに関しては「Map用にDynamic」にしなくともよい
+        bufferDesc.Usage = Diligent::USAGE_DEFAULT;
         bufferDesc.BindFlags = Diligent::BIND_UNIFORM_BUFFER;
         bufferDesc.CPUAccessFlags = Diligent::CPU_ACCESS_NONE;
 
@@ -467,6 +464,9 @@ void CubismRenderer_Diligent::DoDrawModel() {
   CSM_ASSERT(s_device != NULL);
   CSM_ASSERT(s_context != NULL);
 
+  // Rendertarget reset requirement
+  bool resetRenderTarget = true;
+
   //------------ クリッピングマスク・バッファ前処理方式の場合 ------------
   if (_clippingManager != NULL) {
     // サイズが違う場合はここで作成しなおし
@@ -491,14 +491,10 @@ void CubismRenderer_Diligent::DoDrawModel() {
     } else {
       _clippingManager->SetupClippingContext(s_device, s_context, *GetModel(),
                                              this, _commandBufferCurrent);
-    }
 
-    // if (!IsUsingHighPrecisionMask()) {
-    //   // ビューポートを元に戻す
-    //   GetRenderStateManager()->SetViewport(
-    //       s_context, 0.0f, 0.0f, static_cast<float>(s_viewportWidth),
-    //       static_cast<float>(s_viewportHeight), 0.0f, 1.0f);
-    // }
+      // Reset render targets
+      resetRenderTarget = true;
+    }
   }
 
   const csmInt32 drawableCount = GetModel()->GetDrawableCount();
@@ -509,9 +505,6 @@ void CubismRenderer_Diligent::DoDrawModel() {
     const csmInt32 order = renderOrder[i];
     _sortedDrawableIndexList[order] = i;
   }
-
-  // Rendertarget reset requirement
-  bool resetRenderTarget = true;
 
   // 描画
   for (csmInt32 i = 0; i < drawableCount; ++i) {
@@ -530,22 +523,14 @@ void CubismRenderer_Diligent::DoDrawModel() {
             : NULL;
 
     if (clipContext != NULL &&
-        IsUsingHighPrecisionMask())  // マスクを書く必要がある
-    {
-      if (clipContext->_isUsing)  // 書くことになっていた
-      {
-        // CubismRenderer_Diligent::GetRenderStateManager()->SetViewport(
-        //     s_context, 0, 0,
-        //     static_cast<FLOAT>(_clippingManager->GetClippingMaskBufferSize().X),
-        //     static_cast<FLOAT>(_clippingManager->GetClippingMaskBufferSize().Y),
-        //     0.0f, 1.0f);
-
+        IsUsingHighPrecisionMask()) {  // マスクを書く必要がある
+      if (clipContext->_isUsing) {     // 書くことになっていた
         // 正しいレンダーターゲットを持つオフスクリーンサーフェイスバッファを呼ぶ
         CubismOffscreenSurface_Diligent* currentHighPrecisionMaskColorBuffer =
             &_offscreenSurfaces[_commandBufferCurrent]
                                [clipContext->_bufferIndex];
 
-        currentHighPrecisionMaskColorBuffer->BeginDraw(s_context);
+        currentHighPrecisionMaskColorBuffer->SetupDraw(s_context);
         currentHighPrecisionMaskColorBuffer->Clear(s_context, 1.0f, 1.0f, 1.0f,
                                                    1.0f);
 
@@ -564,21 +549,12 @@ void CubismRenderer_Diligent::DoDrawModel() {
           // 今回専用の変換を適用して描く
           // チャンネルも切り替える必要がある(A,R,G,B)
           SetClippingContextBufferForMask(clipContext);
-          DrawMeshDX11(*GetModel(), clipDrawIndex);
+          DrawMeshDiligent(*GetModel(), clipDrawIndex);
         }
 
-        {
-          // --- 後処理 ---
-          currentHighPrecisionMaskColorBuffer->EndDraw(s_context);
-          SetClippingContextBufferForMask(NULL);
-
-          //// ビューポートを元に戻す
-          // GetRenderStateManager()->SetViewport(
-          //     s_context, 0.0f, 0.0f, static_cast<float>(s_viewportWidth),
-          //     static_cast<float>(s_viewportHeight), 0.0f, 1.0f);
-
-          resetRenderTarget = true;
-        }
+        // --- 後処理 ---
+        SetClippingContextBufferForMask(NULL);
+        resetRenderTarget = true;
       }
     }
 
@@ -588,122 +564,79 @@ void CubismRenderer_Diligent::DoDrawModel() {
     IsCulling(GetModel()->GetDrawableCulling(drawableIndex) != 0);
 
     if (resetRenderTarget)
-      s_renderTarget->BeginDraw(s_context);
+      s_renderTarget->SetupDraw(s_context);
     resetRenderTarget = false;
 
-    DrawMeshDX11(*GetModel(), drawableIndex);
+    DrawMeshDiligent(*GetModel(), drawableIndex);
   }
-
-  s_renderTarget->EndDraw(s_context);
 
   // ダブルバッファ・トリプルバッファを回す
   PostDraw();
 }
 
-void CubismRenderer_Diligent::ExecuteDrawForMask(const CubismModel& model,
-                                                 const csmInt32 index) {
+void CubismRenderer_Diligent::ExecuteDrawForMask(
+    const CubismModel& model,
+    const csmInt32 index,
+    CubismConstantBufferDiligent& constantsData) {
   // 使用シェーダエフェクト取得
   CubismPipeline_Diligent* shaderManager =
       CubismRenderer_Diligent::GetPipelineManager();
-  if (!shaderManager) {
-    return;
-  }
 
   // シェーダーセット
   auto* pipeline = shaderManager->GetPipeline(
       ShaderNames_SetupMask, ShaderNames_SetupMask, Blend_Mask, IsCulling());
-  auto& binding = _shaderBindings[_commandBufferCurrent][index];
   s_context->SetPipelineState(pipeline);
 
-  // テクスチャ+サンプラーセット
-  SetTextureView(model, index, &binding);
+  // 使用するカラーチャンネルを設定
+  CubismClippingContext_Diligent* contextBuffer =
+      GetClippingContextBufferForMask();
+  ConvertToNative(contextBuffer->_matrixForMask, constantsData.clipMatrix);
+  SetColorChannel(constantsData, contextBuffer);
 
-  // 定数バッファ
-  {
-    CubismConstantBufferDiligent cb;
-    memset(&cb, 0, sizeof(cb));
-
-    // 使用するカラーチャンネルを設定
-    CubismClippingContext_Diligent* contextBuffer =
-        GetClippingContextBufferForMask();
-    SetColorChannel(cb, contextBuffer);
-
-    // 色
-    csmRectF* rect = GetClippingContextBufferForMask()->_layoutBounds;
-    CubismTextureColor baseColor = {
-        rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f,
-        rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f};
-    CubismTextureColor multiplyColor = model.GetMultiplyColor(index);
-    CubismTextureColor screenColor = model.GetScreenColor(index);
-    SetColorConstantBuffer(cb, model, index, baseColor, multiplyColor,
-                           screenColor);
-
-    // プロジェクションMtx
-    SetProjectionMatrix(cb, GetClippingContextBufferForMask()->_matrixForMask);
-
-    // Update
-    UpdateConstantBuffer(cb, index, &binding);
-  }
-
-  // 描画
-  DrawDrawableIndexed(model, index);
+  // 色
+  csmRectF* rect = GetClippingContextBufferForMask()->_layoutBounds;
+  CubismTextureColor baseColor = {rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f,
+                                  rect->GetRight() * 2.0f - 1.0f,
+                                  rect->GetBottom() * 2.0f - 1.0f};
+  CubismTextureColor multiplyColor = model.GetMultiplyColor(index);
+  CubismTextureColor screenColor = model.GetScreenColor(index);
+  SetColorConstantBuffer(constantsData, model, index, baseColor, multiplyColor,
+                         screenColor);
 }
 
-void CubismRenderer_Diligent::ExecuteDrawForDraw(const CubismModel& model,
-                                                 const csmInt32 index) {
-  // 使用シェーダエフェクト取得
-  CubismPipeline_Diligent* shaderManager =
-      CubismRenderer_Diligent::GetPipelineManager();
-  if (!shaderManager) {
-    return;
-  }
-
+void CubismRenderer_Diligent::ExecuteDrawForDraw(
+    const CubismModel& model,
+    const csmInt32 index,
+    CubismConstantBufferDiligent& constantsData) {
   // ブレンドステート
   CubismBlendMode colorBlendMode = model.GetDrawableBlendMode(index);
 
   // シェーダーセット
   auto* pipeline = DerivePipeline(colorBlendMode, model, index);
-  auto& binding = _shaderBindings[_commandBufferCurrent][index];
   s_context->SetPipelineState(pipeline);
 
-  // テクスチャ+サンプラーセット
-  SetTextureView(model, index, &binding);
+  // プロジェクションMtx
+  CubismMatrix44 projection = GetMvpMatrix();
+  ConvertToNative(projection, constantsData.projectMatrix);
 
-  // 定数バッファ
-  {
-    CubismConstantBufferDiligent cb;
-    memset(&cb, 0, sizeof(cb));
+  const csmBool masked = GetClippingContextBufferForDraw() != NULL;
+  if (masked) {
+    // 使用するカラーチャンネルを設定
+    CubismClippingContext_Diligent* contextBuffer =
+        GetClippingContextBufferForDraw();
+    // View座標をClippingContextの座標に変換するための行列を設定
+    ConvertToNative(contextBuffer->_matrixForDraw, constantsData.clipMatrix);
 
-    const csmBool masked = GetClippingContextBufferForDraw() != NULL;
-    if (masked) {
-      // View座標をClippingContextの座標に変換するための行列を設定
-      ConvertToNative(GetClippingContextBufferForDraw()->_matrixForDraw,
-                      cb.clipMatrix);
-      Transpose4x4(cb.clipMatrix);
-
-      // 使用するカラーチャンネルを設定
-      CubismClippingContext_Diligent* contextBuffer =
-          GetClippingContextBufferForDraw();
-      SetColorChannel(cb, contextBuffer);
-    }
-
-    // 色
-    CubismTextureColor baseColor =
-        GetModelColorWithOpacity(model.GetDrawableOpacity(index));
-    CubismTextureColor multiplyColor = model.GetMultiplyColor(index);
-    CubismTextureColor screenColor = model.GetScreenColor(index);
-    SetColorConstantBuffer(cb, model, index, baseColor, multiplyColor,
-                           screenColor);
-
-    // プロジェクションMtx
-    SetProjectionMatrix(cb, GetMvpMatrix());
-
-    // Update
-    UpdateConstantBuffer(cb, index, &binding);
+    SetColorChannel(constantsData, contextBuffer);
   }
 
-  // 描画
-  DrawDrawableIndexed(model, index);
+  // 色
+  CubismTextureColor baseColor =
+      GetModelColorWithOpacity(model.GetDrawableOpacity(index));
+  CubismTextureColor multiplyColor = model.GetMultiplyColor(index);
+  CubismTextureColor screenColor = model.GetScreenColor(index);
+  SetColorConstantBuffer(constantsData, model, index, baseColor, multiplyColor,
+                         screenColor);
 }
 
 void CubismRenderer_Diligent::DrawDrawableIndexed(const CubismModel& model,
@@ -713,8 +646,6 @@ void CubismRenderer_Diligent::DrawDrawableIndexed(const CubismModel& model,
       binding.GetBinding(),
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  UINT strides = sizeof(CubismVertexDiligent);
-  UINT offsets = 0;
   Diligent::IBuffer* vertexBuffer =
       _vertexBuffers[_commandBufferCurrent][index];
   Diligent::IBuffer* indexBuffer = _indexBuffers[_commandBufferCurrent][index];
@@ -732,8 +663,8 @@ void CubismRenderer_Diligent::DrawDrawableIndexed(const CubismModel& model,
   s_context->DrawIndexed(drawAttribs);
 }
 
-void CubismRenderer_Diligent::DrawMeshDX11(const CubismModel& model,
-                                           const csmInt32 index) {
+void CubismRenderer_Diligent::DrawMeshDiligent(const CubismModel& model,
+                                               const csmInt32 index) {
   // デバイス未設定
   if (s_device == NULL) {
     return;
@@ -764,12 +695,28 @@ void CubismRenderer_Diligent::DrawMeshDX11(const CubismModel& model,
     CopyToBuffer(s_context, drawableIndex, vertexCount, vertexArray, uvArray);
   }
 
-  // シェーダーセット・描画
+  // Constants Buffer
+  CubismConstantBufferDiligent constantsBuffer;
+  memset(&constantsBuffer, 0, sizeof(constantsBuffer));
+
+  // シェーダーセット
   if (IsGeneratingMask()) {
-    ExecuteDrawForMask(model, index);
+    ExecuteDrawForMask(model, index, constantsBuffer);
   } else {
-    ExecuteDrawForDraw(model, index);
+    ExecuteDrawForDraw(model, index, constantsBuffer);
   }
+
+  // Shader resource binding
+  auto& binding = _shaderBindings[_commandBufferCurrent][index];
+
+  // Update
+  UpdateConstantBuffer(constantsBuffer, index, &binding);
+
+  // テクスチャ+サンプラーセット
+  SetTextureView(model, index, &binding);
+
+  // 描画
+  DrawDrawableIndexed(model, index);
 
   SetClippingContextBufferForDraw(NULL);
   SetClippingContextBufferForMask(NULL);
@@ -902,6 +849,7 @@ Diligent::ITextureView* CubismRenderer_Diligent::GetTextureViewWithIndex(
   if (textureIndex >= 0) {
     result = _textures[textureIndex];
   }
+
   return result;
 }
 
@@ -1007,12 +955,6 @@ void CubismRenderer_Diligent::SetColorChannel(
   const float sourceColor[] = {colorChannel->R, colorChannel->G,
                                colorChannel->B, colorChannel->A};
   memcpy(cb.channelFlag, sourceColor, sizeof(sourceColor));
-}
-
-void CubismRenderer_Diligent::SetProjectionMatrix(
-    CubismConstantBufferDiligent& cb,
-    CubismMatrix44 matrix) {
-  ConvertToNative(matrix, cb.projectMatrix);
 }
 
 void CubismRenderer_Diligent::UpdateConstantBuffer(

@@ -46,10 +46,10 @@ struct VS_OUT {
 // Mask shader
 VS_OUT VertSetupMask(VS_IN In) {
   VS_OUT Out = (VS_OUT)0;
-  Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
-  Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
+  Out.Position = mul(float4(In.pos, 0.0f, 1.0f), clipMatrix);
+  Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), clipMatrix);
   Out.uv.x = In.uv.x;
-  Out.uv.y = 1.0f - +In.uv.y;
+  Out.uv.y = 1.0f - In.uv.y;
   return Out;
 }
 
@@ -68,7 +68,7 @@ VS_OUT VertNormal(VS_IN In) {
   VS_OUT Out = (VS_OUT)0;
   Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);
   Out.uv.x = In.uv.x;
-  Out.uv.y = 1.0f - +In.uv.y;
+  Out.uv.y = 1.0f - In.uv.y;
   return Out;
 }
 
@@ -266,6 +266,8 @@ void CubismPipeline_Diligent::MakePipelineStates() {
       Diligent::TEX_FORMAT_RGBA8_UNORM;
   pipelineCreateInfo.GraphicsPipeline.RasterizerDesc.ScissorEnable =
       Diligent::False;
+  pipelineCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise =
+      Diligent::True;
   pipelineCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable =
       Diligent::False;
 

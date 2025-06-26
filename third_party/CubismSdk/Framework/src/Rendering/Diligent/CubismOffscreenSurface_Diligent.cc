@@ -28,7 +28,7 @@ Diligent::ITextureView* s_backDepthView = nullptr;
 CubismOffscreenSurface_Diligent::CubismOffscreenSurface_Diligent()
     : _bufferWidth(0), _bufferHeight(0) {}
 
-void CubismOffscreenSurface_Diligent::BeginDraw(
+void CubismOffscreenSurface_Diligent::SetupDraw(
     Diligent::IDeviceContext* renderContext) {
   if (!_textureView || !_renderTargetView) {
     return;
@@ -38,9 +38,6 @@ void CubismOffscreenSurface_Diligent::BeginDraw(
       1, &_renderTargetView, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
-
-void CubismOffscreenSurface_Diligent::EndDraw(
-    Diligent::IDeviceContext* renderContext) {}
 
 void CubismOffscreenSurface_Diligent::Clear(
     Diligent::IDeviceContext* renderContext,

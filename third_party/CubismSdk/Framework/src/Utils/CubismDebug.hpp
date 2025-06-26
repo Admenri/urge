@@ -16,15 +16,15 @@
 #define CSM_ASSERT(expr)
 #endif
 
-#define CubismLogPrint(level, fmt, ...)         Live2D::Cubism::Framework::Utils::CubismDebug::Print(level,  "[CSM]" fmt, ## __VA_ARGS__)
+#define CubismLogPrint(level, fmt, ...)         Live2D::Cubism::Framework::Utils::CubismDebug::Print(level,  "[CSM] " fmt, ## __VA_ARGS__)
 #define CubismLogPrintln(level, fmt, ...)       CubismLogPrint(level, fmt, ## __VA_ARGS__)
 
 #if CSM_LOG_LEVEL <= CSM_LOG_LEVEL_VERBOSE
-#define CubismLogVerbose(fmt, ...)    CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Verbose, "[V]" fmt, ## __VA_ARGS__)
-#define CubismLogDebug(fmt, ...)      CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Debug,   "[D]" fmt, ## __VA_ARGS__)
-#define CubismLogInfo(fmt, ...)       CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Info,    "[I]" fmt, ## __VA_ARGS__)
-#define CubismLogWarning(fmt, ...)    CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Warning, "[W]" fmt, ## __VA_ARGS__)
-#define CubismLogError(fmt, ...)      CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Error,   "[E]" fmt, ## __VA_ARGS__)
+#define CubismLogVerbose(fmt, ...)    CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Verbose, "[V] " fmt, ## __VA_ARGS__)
+#define CubismLogDebug(fmt, ...)      CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Debug,   "[D] " fmt, ## __VA_ARGS__)
+#define CubismLogInfo(fmt, ...)       CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Info,    "[I] " fmt, ## __VA_ARGS__)
+#define CubismLogWarning(fmt, ...)    CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Warning, "[W] " fmt, ## __VA_ARGS__)
+#define CubismLogError(fmt, ...)      CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Error,   "[E] " fmt, ## __VA_ARGS__)
 #elif CSM_LOG_LEVEL == CSM_LOG_LEVEL_DEBUG
 #define CubismLogVerbose(fmt, ...)
 #define CubismLogDebug(fmt, ...)      CubismLogPrintln(Live2D::Cubism::Framework::CubismFramework::Option::LogLevel_Debug,   "[D]" fmt, ## __VA_ARGS__)

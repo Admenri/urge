@@ -22,8 +22,7 @@ class CubismOffscreenSurface_Diligent {
  public:
   CubismOffscreenSurface_Diligent();
 
-  void BeginDraw(Diligent::IDeviceContext* renderContext);
-  void EndDraw(Diligent::IDeviceContext* renderContext);
+  void SetupDraw(Diligent::IDeviceContext* renderContext);
   void Clear(Diligent::IDeviceContext* renderContext,
              float r,
              float g,
