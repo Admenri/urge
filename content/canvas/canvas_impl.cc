@@ -865,6 +865,8 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   const base::Vec2 intermediate_size(intermediate_cache->GetDesc().Width,
                                      intermediate_cache->GetDesc().Height);
 
+  scheduler->SetupRenderTarget(nullptr, nullptr, false);
+
   Diligent::Box copy_region;
   copy_region.MinX = dst_region.x;
   copy_region.MaxX = dst_region.x + dst_region.width;
