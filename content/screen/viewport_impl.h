@@ -90,8 +90,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
                                      const base::Rect& last_scissor);
   void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
                                        BitmapAgent* render_target,
-                                       const base::Vec2i& viewport_offset,
-                                       const base::Rect& scissor_region);
+                                       const base::Rect& scissor);
 
   DrawableNode node_;
   DrawNodeController controller_;

@@ -833,11 +833,11 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   const float clear_color[] = {0, 0, 0, 1.0f};
-  render_context->ClearDepthStencil(
-      depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->ClearRenderTarget(
       render_target_view, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearDepthStencil(
+      depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Push scissor

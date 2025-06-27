@@ -123,8 +123,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   // Check viewport visible
   const base::Rect viewport_rect =
       base::MakeIntersect(bitmap_agent->size, bound.Size());
-  const base::Vec2i offset = -origin_;
-  if (viewport_rect.width <= 0 || viewport_rect.height <= 0)
+  if (!viewport_rect.width || !viewport_rect.height)
     return;
 
   // Submit pending canvas commands
@@ -142,10 +141,11 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   controller_params.origin = origin_;
 
   // 0) Update uniform buffer if viewport region changed
-  base::Rect transform_cache_rect(offset, controller_params.screen_size);
+  base::Rect transform_cache_rect(controller_params.offset,
+                                  controller_params.screen_size);
   if (!(transform_cache_ == transform_cache_rect)) {
-    transform_cache_ = transform_cache_rect;
     GPUUpdateViewportTransform(controller_params.context, transform_cache_rect);
+    transform_cache_ = transform_cache_rect;
   }
 
   // 0.5) Reset intermediate layer if need
@@ -164,7 +164,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
 
   // 2) Setup renderpass
   GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent,
-                                  offset, viewport_rect);
+                                  viewport_rect);
 
   // 3) Notify render a frame
   controller_params.root_world = bitmap_agent->world_buffer;
@@ -180,10 +180,17 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
     target_color =
         (flash_color.w > composite_color.w ? flash_color : composite_color);
 
-  GPUApplyViewportEffect(
-      controller_params.context, controller_params.screen_buffer,
-      controller_params.screen_depth_stencil, controller_params.root_world,
-      viewport_rect, target_color);
+  const auto tone = tone_->AsNormColor();
+  const bool is_effect_valid = target_color.w != 0 || tone.x != 0 ||
+                               tone.y != 0 || tone.z != 0 || tone.w != 0;
+  if (is_effect_valid)
+    GPUApplyViewportEffect(
+        controller_params.context, controller_params.screen_buffer,
+        controller_params.screen_depth_stencil, controller_params.root_world,
+        viewport_rect, target_color);
+
+  // Submit rendering commands
+  controller_params.context->Flush();
 }
 
 scoped_refptr<Viewport> ViewportImpl::Get_Viewport(
@@ -561,15 +568,23 @@ void ViewportImpl::GPUViewportProcessAfterRender(
 void ViewportImpl::GPUFrameBeginRenderPassInternal(
     Diligent::IDeviceContext* render_context,
     BitmapAgent* render_target,
-    const base::Vec2i& viewport_offset,
-    const base::Rect& scissor_region) {
+    const base::Rect& scissor) {
   // Apply render target
   render_context->SetRenderTargets(
       1, &render_target->target, render_target->depth_view,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+  // Clear targets
+  float clear_color[] = {0, 0, 0, 0};
+  render_context->ClearRenderTarget(
+      render_target->target, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearDepthStencil(
+      render_target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
   // Setup scissor region
-  GPUResetViewportRegion(render_context, scissor_region.Size());
+  GPUResetViewportRegion(render_context, scissor);
 }
 
 }  // namespace content
