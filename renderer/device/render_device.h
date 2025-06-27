@@ -26,6 +26,7 @@ class RenderDevice {
  public:
   struct PipelineSet {
     Pipeline_Base base;
+    Pipeline_BitmapBlt bitmapblt;
     Pipeline_Color color;
     Pipeline_Flat viewport;
     Pipeline_Sprite sprite;
@@ -41,6 +42,7 @@ class RenderDevice {
                 Diligent::TEXTURE_FORMAT target_format,
                 Diligent::TEXTURE_FORMAT depth_stencil_format)
         : base(device, target_format, depth_stencil_format),
+          bitmapblt(device, target_format, depth_stencil_format),
           color(device, target_format, depth_stencil_format),
           viewport(device, target_format, depth_stencil_format),
           sprite(device, target_format, depth_stencil_format),

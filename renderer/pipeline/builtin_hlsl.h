@@ -28,6 +28,25 @@ extern const base::String kHLSL_BaseRender;
 
 ///
 // type:
+//   bitmapblt shader
+///
+// entry:
+//   vertex: VSMain
+//   pixel: PSMain
+///
+// vertex:
+//   <float4, float2, float4>
+///
+// resource:
+//   { float4x4, float4x4 }
+//   { Texture2D }
+//   { Texture2D }
+///
+
+extern const base::String kHLSL_BitmapBltRender;
+
+///
+// type:
 //   color shader
 ///
 // entry:

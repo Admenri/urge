@@ -198,7 +198,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                            CanvasImpl* src_texture,
                            const base::Rect& src_rect,
                            int32_t blend_type,
-                           uint32_t alpha);
+                           uint32_t opacity);
 
   void GPUCreateTextureWithDataInternal();
   void GPUResetEffectLayerIfNeed();
@@ -206,7 +206,11 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                                    BitmapAgent* src_texture,
                                    const base::Rect& src_region,
                                    int32_t blend_type,
-                                   uint32_t blit_alpha);
+                                   uint32_t opacity);
+  void GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
+                                         BitmapAgent* src_texture,
+                                         const base::Rect& src_region,
+                                         uint32_t opacity);
   void GPUFetchTexturePixelsDataInternal();
   void GPUCanvasClearInternal();
   void GPUCanvasGradientFillRectInternal(const base::Rect& region,

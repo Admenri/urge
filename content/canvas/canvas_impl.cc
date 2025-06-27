@@ -701,21 +701,22 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
                                      CanvasImpl* src_texture,
                                      const base::Rect& src_rect,
                                      int32_t blend_type,
-                                     uint32_t alpha) {
+                                     uint32_t opacity) {
   // Synchronize pending queue immediately,
   // blit the sourcetexture to destination texture immediately.
   src_texture->SubmitQueuedCommands();
   SubmitQueuedCommands();
 
-  // Clamp blend type
-  blend_type =
-      (blend_type == -1 ? renderer::BLEND_TYPE_NORMAL_PMA : blend_type);
-  blend_type =
-      std::clamp<int32_t>(blend_type, 0, renderer::BLEND_TYPE_NUMS - 1);
-
   // Execute blit immediately.
-  GPUBlendBlitTextureInternal(dst_rect, &src_texture->agent_, src_rect,
-                              blend_type, alpha);
+  if (blend_type >= 0) {
+    blend_type =
+        std::clamp<int32_t>(blend_type, 0, renderer::BLEND_TYPE_NUMS - 1);
+    GPUBlendBlitTextureInternal(dst_rect, &src_texture->agent_, src_rect,
+                                blend_type, opacity);
+  } else {
+    GPUApproximateBlitTextureInternal(dst_rect, &src_texture->agent_, src_rect,
+                                      opacity);
+  }
 
   // Invalidate memory cache
   InvalidateSurfaceCache();
@@ -795,7 +796,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
                                              BitmapAgent* src_texture,
                                              const base::Rect& src_region,
                                              int32_t blend_type,
-                                             uint32_t blit_alpha) {
+                                             uint32_t opacity) {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
@@ -807,7 +808,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
 
   // Norm opacity value
   base::Vec4 blend_alpha;
-  blend_alpha.w = static_cast<float>(blit_alpha) / 255.0f;
+  blend_alpha.w = static_cast<float>(opacity) / 255.0f;
 
   // Make drawing vertices
   renderer::Quad transient_quad;
@@ -832,6 +833,97 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
       *scheduler->base_binding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  render_context->DrawIndexed(draw_indexed_attribs);
+}
+
+void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
+                                                   BitmapAgent* src_texture,
+                                                   const base::Rect& src_region,
+                                                   uint32_t opacity) {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
+
+  // Copy dst region to intermediate texture
+  auto* intermediate_cache =
+      scheduler->RequireBltCacheTexture(dst_region.Size());
+  const base::Vec2 intermediate_size(intermediate_cache->GetDesc().Width,
+                                     intermediate_cache->GetDesc().Height);
+
+  Diligent::Box copy_region;
+  copy_region.MinX = dst_region.x;
+  copy_region.MaxX = dst_region.x + dst_region.width;
+  copy_region.MinY = dst_region.y;
+  copy_region.MaxY = dst_region.y + dst_region.height;
+
+  Diligent::CopyTextureAttribs copy_attribs;
+  copy_attribs.pSrcTexture = agent_.data;
+  copy_attribs.pSrcBox = &copy_region;
+  copy_attribs.SrcTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_attribs.pDstTexture = intermediate_cache;
+  copy_attribs.DstTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  render_context->CopyTexture(copy_attribs);
+
+  // Custom blend blit pipeline
+  auto& pipeline_set = render_device.GetPipelines()->bitmapblt;
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+
+  // Norm opacity value
+  const float norm_opacity = static_cast<float>(opacity) / 255.0f;
+
+  // Make drawing vertices
+  renderer::Quad transient_quad;
+  renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
+                                  src_texture->size);
+  renderer::Quad::SetPositionRect(&transient_quad, dst_region);
+  renderer::Quad::SetColor(&transient_quad, base::Vec4(norm_opacity));
+
+  // Set dst texture uv
+  const base::Vec2 dst_uv(dst_region.width / intermediate_size.x,
+                          dst_region.height / intermediate_size.y);
+  transient_quad.vertices[1].color.x = dst_uv.x;
+  transient_quad.vertices[2].color.x = dst_uv.x;
+  transient_quad.vertices[2].color.y = dst_uv.y;
+  transient_quad.vertices[3].color.y = dst_uv.y;
+
+  scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
+
+  // Setup render target
+  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
+
+  // Push scissor
+  Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+
+  // Setup uniform params
+  scheduler->blt_binding().u_transform->Set(agent_.world_buffer);
+  scheduler->blt_binding().u_texture->Set(src_texture->resource);
+  scheduler->blt_binding().u_dst_texture->Set(
+      intermediate_cache->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+
+  // Apply pipeline state
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *scheduler->blt_binding(),
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index

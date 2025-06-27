@@ -4,6 +4,8 @@
 
 #include "content/canvas/canvas_scheduler.h"
 
+#include "renderer/utils/texture_utils.h"
+
 namespace content {
 
 CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
@@ -12,8 +14,13 @@ CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
       context_(primary_context),
       generic_base_binding_(device_->GetPipelines()->base.CreateBinding()),
       generic_color_binding_(device_->GetPipelines()->color.CreateBinding()),
+      generic_blt_binding_(device_->GetPipelines()->bitmapblt.CreateBinding()),
       generic_hue_binding_(device_->GetPipelines()->bitmaphue.CreateBinding()),
-      common_quad_batch_(renderer::QuadBatch::Make(**device_)) {}
+      common_quad_batch_(renderer::QuadBatch::Make(**device_)) {
+  // Create initial blt cache
+  renderer::CreateTexture2D(**device_, &generic_blt_texture_,
+                            "canvas.generic.blt.cache", base::Vec2i(2 << 8));
+}
 
 CanvasScheduler::~CanvasScheduler() = default;
 
@@ -50,6 +57,24 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
   // Reset render target state
   context_->SetRenderTargets(
       0, nullptr, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+}
+
+Diligent::ITexture* CanvasScheduler::RequireBltCacheTexture(
+    const base::Vec2i& size) {
+  if (static_cast<int32_t>(generic_blt_texture_->GetDesc().Width) < size.x ||
+      static_cast<int32_t>(generic_blt_texture_->GetDesc().Height) < size.y) {
+    base::Vec2i new_size;
+    new_size.x =
+        std::max<int32_t>(size.x, generic_blt_texture_->GetDesc().Width);
+    new_size.y =
+        std::max<int32_t>(size.y, generic_blt_texture_->GetDesc().Height);
+
+    generic_blt_texture_.Release();
+    renderer::CreateTexture2D(**device_, &generic_blt_texture_,
+                              "canvas.generic.blt.cache", new_size);
+  }
+
+  return generic_blt_texture_;
 }
 
 renderer::RenderDevice* CanvasScheduler::GetRenderDevice() {

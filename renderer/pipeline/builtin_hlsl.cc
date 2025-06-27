@@ -70,6 +70,82 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 
 ///
 // type:
+//   bitmapblt shader
+///
+// entry:
+//   vertex: VSMain
+//   pixel: PSMain
+///
+// vertex:
+//   <float4, float2, float4>
+///
+// resource:
+//   { float4x4, float4x4 }
+//   { Texture2D }
+//   { Texture2D }
+///
+
+const base::String kHLSL_BitmapBltRender = R"(
+
+struct WorldMatrix {
+  float4x4 ProjMat;
+  float4x4 TransMat;
+};
+
+cbuffer WorldMatrixBuffer {
+  WorldMatrix u_Transform;
+};
+
+struct VSInput {
+  float4 Pos : ATTRIB0;
+  float2 UV : ATTRIB1;
+  float4 Color : ATTRIB2;
+};
+
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : TEXCOORD1;
+  float Alpha : NORMAL0;
+};
+
+void VSMain(in VSInput VSIn, out PSInput PSIn) {
+  PSIn.Pos = mul(u_Transform.ProjMat, VSIn.Pos);
+  PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
+  URGE_NDC_PROCESS(PSIn.Pos);
+  PSIn.UV = VSIn.UV;
+  PSIn.Color = VSIn.Color;
+  PSIn.Alpha = VSIn.Color.w;
+}
+
+Texture2D u_Texture;
+SamplerState u_Texture_sampler;
+
+Texture2D u_DstTexture;
+SamplerState u_DstTexture_sampler;
+
+struct PSOutput {
+  float4 Color : SV_TARGET;
+};
+
+void PSMain(in PSInput PSIn, out PSOutput PSOut) {
+  float4 srcFrag = u_Texture.Sample(u_Texture_sampler, PSIn.UV);
+  float4 dstFrag = u_DstTexture.Sample(u_DstTexture_sampler, PSIn.Color.xy);
+
+  float srcAlpha = srcFrag.a * PSIn.Alpha;
+  float3 resultRGB = (srcFrag.rgb * srcAlpha) + (dstFrag.rgb * dstFrag.a * (1.0 - srcAlpha));
+  float resultAlpha = srcAlpha + (dstFrag.a * (1.0 - srcAlpha));
+  
+  resultRGB = (resultAlpha <= 0.0 ? srcFrag.rgb : resultRGB / resultAlpha);
+
+  PSOut.Color.rgb = resultRGB;
+  PSOut.Color.a = resultAlpha;
+}
+
+)";
+
+///
+// type:
 //   color shader
 ///
 // entry:

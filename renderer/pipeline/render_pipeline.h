@@ -110,6 +110,15 @@ class Pipeline_Base : public RenderPipelineBase {
   MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };
 
+class Pipeline_BitmapBlt : public RenderPipelineBase {
+ public:
+  Pipeline_BitmapBlt(Diligent::IRenderDevice* device,
+                     Diligent::TEXTURE_FORMAT target_format,
+                     Diligent::TEXTURE_FORMAT depth_stencil_format);
+
+  MAKE_BINDING_FUNCTION(Binding_BitmapBlt, 0);
+};
+
 class Pipeline_Color : public RenderPipelineBase {
  public:
   Pipeline_Color(Diligent::IRenderDevice* device,

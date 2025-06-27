@@ -259,8 +259,49 @@ Pipeline_Base::Pipeline_Base(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
+           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+      },
+  };
+
+  auto binding0 = MakeResourceSignature(variables, samplers, 0);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
+                depth_stencil_format);
+}
+
+Pipeline_BitmapBlt::Pipeline_BitmapBlt(
+    Diligent::IRenderDevice* device,
+    Diligent::TEXTURE_FORMAT target_format,
+    Diligent::TEXTURE_FORMAT depth_stencil_format)
+    : RenderPipelineBase(device) {
+  const ShaderSource shader_source{kHLSL_BitmapBltRender, "bitmapblt.render"};
+
+  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+      {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
+       Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {Diligent::SHADER_TYPE_PIXEL, "u_Texture",
+       Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {Diligent::SHADER_TYPE_PIXEL, "u_DstTexture",
+       Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+      {
+          Diligent::SHADER_TYPE_PIXEL,
+          "u_Texture",
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
+           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+      },
+      {
+          Diligent::SHADER_TYPE_PIXEL,
+          "u_DstTexture",
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -309,8 +350,8 @@ Pipeline_Flat::Pipeline_Flat(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -384,8 +425,8 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -417,15 +458,15 @@ Pipeline_AlphaTransition::Pipeline_AlphaTransition(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_FrozenTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_CurrentTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -459,22 +500,22 @@ Pipeline_VagueTransition::Pipeline_VagueTransition(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_FrozenTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_CurrentTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TransTexture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -507,8 +548,8 @@ Pipeline_Tilemap::Pipeline_Tilemap(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -541,8 +582,8 @@ Pipeline_Tilemap2::Pipeline_Tilemap2(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -569,8 +610,8 @@ Pipeline_BitmapHue::Pipeline_BitmapHue(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };
@@ -626,22 +667,22 @@ Pipeline_YUV::Pipeline_YUV(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureY",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureU",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureV",
-          {Diligent::FILTER_TYPE_POINT, Diligent::FILTER_TYPE_POINT,
-           Diligent::FILTER_TYPE_POINT, Diligent::TEXTURE_ADDRESS_CLAMP,
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
            Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
       },
   };

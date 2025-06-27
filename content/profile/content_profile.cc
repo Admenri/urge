@@ -213,14 +213,15 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   ReplaceStringWidth(default_font_path, '\\', '/');
   i18n_xml_path =
       reader->Get("Engine", "I18nXMLPath", base::String(app + ".xml").c_str());
-  resolution = GetVec2iFromString(
-      reader->Get("Engine", "Resolution", "").c_str(), resolution);
-  window_size = GetVec2iFromString(
-      reader->Get("Engine", "WindowSize", "").c_str(), resolution);
+
   if (api_version == APIVersion::RGSS1)
     resolution = base::Vec2i(640, 480);
   if (api_version >= APIVersion::RGSS2)
     resolution = base::Vec2i(544, 416);
+  resolution = GetVec2iFromString(
+      reader->Get("Engine", "Resolution", "").c_str(), resolution);
+  window_size = GetVec2iFromString(
+      reader->Get("Engine", "WindowSize", "").c_str(), resolution);
 
   // GUI
   disable_settings =

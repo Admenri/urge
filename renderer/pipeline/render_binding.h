@@ -64,6 +64,19 @@ class Binding_Base : public RenderBindingBase {
   Binding_Base(ShaderBinding binding);
 };
 
+class Binding_BitmapBlt : public RenderBindingBase {
+ public:
+  Binding_BitmapBlt() = default;
+
+  ShaderVariable u_transform;
+  ShaderVariable u_texture;
+  ShaderVariable u_dst_texture;
+
+ private:
+  friend class RenderBindingBase;
+  Binding_BitmapBlt(ShaderBinding binding);
+};
+
 class Binding_Color : public RenderBindingBase {
  public:
   Binding_Color() = default;

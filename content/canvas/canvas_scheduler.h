@@ -33,6 +33,9 @@ class CanvasScheduler {
                          Diligent::ITextureView* depth_stencil,
                          bool clear_target);
 
+  // Create or get generic blt intermediate cache texture.
+  Diligent::ITexture* RequireBltCacheTexture(const base::Vec2i& size);
+
   // Get rendering context for canvas opeartion.
   // The operations of all canvas are regarded as discrete draw commands.
   renderer::RenderDevice* GetRenderDevice();
@@ -41,6 +44,7 @@ class CanvasScheduler {
   renderer::QuadBatch& quad_batch() { return common_quad_batch_; }
   renderer::Binding_Base& base_binding() { return generic_base_binding_; }
   renderer::Binding_Color& color_binding() { return generic_color_binding_; }
+  renderer::Binding_BitmapBlt& blt_binding() { return generic_blt_binding_; }
   renderer::Binding_BitmapFilter& hue_binding() { return generic_hue_binding_; }
 
  private:
@@ -53,9 +57,11 @@ class CanvasScheduler {
 
   renderer::Binding_Base generic_base_binding_;
   renderer::Binding_Color generic_color_binding_;
+  renderer::Binding_BitmapBlt generic_blt_binding_;
   renderer::Binding_BitmapFilter generic_hue_binding_;
 
   renderer::QuadBatch common_quad_batch_;
+  RRefPtr<Diligent::ITexture> generic_blt_texture_;
 };
 
 }  // namespace content

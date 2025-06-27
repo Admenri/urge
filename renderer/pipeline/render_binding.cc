@@ -16,6 +16,16 @@ Binding_Base::Binding_Base(ShaderBinding binding) : RenderBindingBase(binding) {
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }
 
+Binding_BitmapBlt::Binding_BitmapBlt(ShaderBinding binding)
+    : RenderBindingBase(binding) {
+  u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
+                                           "WorldMatrixBuffer");
+  u_texture =
+      (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
+  u_dst_texture =
+      (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_DstTexture");
+}
+
 Binding_Color::Binding_Color(ShaderBinding binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
