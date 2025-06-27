@@ -173,7 +173,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
     LOG(INFO) << "[App] Warning: No configure file found.";
   }
 
-  // RGSS part
+  // Default
   window_title = reader->Get("Game", "Title", window_title.c_str());
   if (!CheckValidUTF8(window_title.c_str())) {
 #if defined(OS_WIN)
@@ -188,7 +188,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   script_path = reader->Get("Game", "Scripts", script_path.c_str());
   ReplaceStringWidth(script_path, '\\', '/');
 
-  // Engine part
+  // Engine
   api_version = static_cast<APIVersion>(reader->GetInteger(
       "Engine", "APIVersion", static_cast<int32_t>(api_version)));
   if (api_version == APIVersion::UNKNOWN) {
@@ -208,46 +208,46 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
         api_version = APIVersion::RGSS3;
     }
   }
-
   default_font_path =
       reader->Get("Engine", "DefaultFontPath", default_font_path.c_str());
   ReplaceStringWidth(default_font_path, '\\', '/');
-  driver_backend = reader->Get("Engine", "GraphicsAPI", driver_backend.c_str());
   i18n_xml_path =
       reader->Get("Engine", "I18nXMLPath", base::String(app + ".xml").c_str());
-  disable_audio = reader->GetBoolean("Engine", "DisableAudio", disable_audio);
-
-  disable_settings =
-      reader->GetBoolean("Engine", "DisableSettings", disable_settings);
-  disable_fps_monitor =
-      reader->GetBoolean("Engine", "DisableFPSMonitor", disable_fps_monitor);
-  disable_reset = reader->GetBoolean("Engine", "DisableReset", disable_reset);
-
+  resolution = GetVec2iFromString(
+      reader->Get("Engine", "Resolution", "").c_str(), resolution);
+  window_size = GetVec2iFromString(
+      reader->Get("Engine", "WindowSize", "").c_str(), resolution);
   if (api_version == APIVersion::RGSS1)
     resolution = base::Vec2i(640, 480);
   if (api_version >= APIVersion::RGSS2)
     resolution = base::Vec2i(544, 416);
 
-  resolution = GetVec2iFromString(
-      reader->Get("Engine", "Resolution", "").c_str(), resolution);
-  window_size = GetVec2iFromString(
-      reader->Get("Engine", "WindowSize", "").c_str(), resolution);
+  // GUI
+  disable_settings =
+      reader->GetBoolean("GUI", "DisableSettings", disable_settings);
+  disable_fps_monitor =
+      reader->GetBoolean("GUI", "DisableFPSMonitor", disable_fps_monitor);
+  disable_reset = reader->GetBoolean("GUI", "DisableReset", disable_reset);
 
-  frame_rate = (api_version == APIVersion::RGSS1) ? 40 : 60;
-  frame_rate = reader->GetInteger("Engine", "FrameRate", frame_rate);
-
+  // Renderer
+  driver_backend = reader->Get("Renderer", "Backend", driver_backend.c_str());
   render_validation =
-      reader->GetBoolean("Engine", "RenderValidation", render_validation);
-  smooth_scale = reader->GetBoolean("Engine", "SmoothScale", smooth_scale);
+      reader->GetBoolean("Renderer", "RenderValidation", render_validation);
+  frame_rate = reader->GetInteger("Renderer", "FrameRate",
+                                  (api_version == APIVersion::RGSS1) ? 40 : 60);
+  smooth_scale = reader->GetBoolean("Renderer", "SmoothScale", smooth_scale);
   allow_skip_frame =
-      reader->GetBoolean("Engine", "AllowSkipFrame", allow_skip_frame);
-  fullscreen = reader->GetBoolean("Engine", "Fullscreen", fullscreen);
+      reader->GetBoolean("Renderer", "AllowSkipFrame", allow_skip_frame);
+  fullscreen = reader->GetBoolean("Renderer", "Fullscreen", fullscreen);
   background_running =
-      reader->GetBoolean("Engine", "BackgroundRunning", background_running);
+      reader->GetBoolean("Renderer", "BackgroundRunning", background_running);
 
+  // Platform
   disable_ime = reader->GetBoolean("Platform", "DisableIME", disable_ime);
   orientation = reader->Get("Platform", "Orientations", orientation.c_str());
 
+  // Features
+  disable_audio = reader->GetBoolean("Features", "DisableAudio", disable_audio);
   sprite_vertical_sort = reader->GetBoolean("Features", "SpriteVerticalSort",
                                             sprite_vertical_sort);
 

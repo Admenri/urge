@@ -104,7 +104,8 @@ using Diligent::GetEngineFactoryVk;
 
 RenderDevice::CreateDeviceResult RenderDevice::Create(
     base::WeakPtr<ui::Widget> window_target,
-    DriverType driver_type) {
+    DriverType driver_type,
+    bool validation) {
   // Setup debugging output
   Diligent::SetDebugMessageCallback(DebugMessageOutputFunc);
 
@@ -175,6 +176,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 
   // Hook raw memory allocator
   engine_create_info.pRawMemAllocator = &g_raw_memory_allocator;
+  engine_create_info.EnableValidation = validation;
 
   // Setup primary swapchain
   swap_chain_desc.ColorBufferFormat = Diligent::TEX_FORMAT_RGBA8_UNORM;

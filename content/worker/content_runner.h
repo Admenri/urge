@@ -75,6 +75,7 @@ class ContentRunner {
   void CreateIMGUIContextInternal();
   void DestroyIMGUIContextInternal();
 
+  ContentProfile* profile_;
   base::OwnedPtr<ExecutionContext> execution_context_;
   base::OwnedPtr<EngineBindingBase> binding_;
 

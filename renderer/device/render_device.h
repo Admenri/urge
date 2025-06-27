@@ -56,7 +56,8 @@ class RenderDevice {
   using CreateDeviceResult = std::tuple<base::OwnedPtr<RenderDevice>,
                                         RRefPtr<Diligent::IDeviceContext>>;
   static CreateDeviceResult Create(base::WeakPtr<ui::Widget> window_target,
-                                   DriverType driver_type);
+                                   DriverType driver_type,
+                                   bool validation);
 
   ~RenderDevice();
 

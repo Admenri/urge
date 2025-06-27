@@ -41,7 +41,8 @@ ContentRunner::ContentRunner(ContentProfile* profile,
                              I18NProfile* i18n_profile,
                              base::WeakPtr<ui::Widget> window,
                              base::OwnedPtr<EngineBindingBase> binding)
-    : binding_(std::move(binding)),
+    : profile_(profile),
+      binding_(std::move(binding)),
       binding_quit_flag_(0),
       binding_reset_flag_(0),
       background_running_(false),
@@ -55,7 +56,8 @@ ContentRunner::ContentRunner(ContentProfile* profile,
   auto [render_device, render_context] = renderer::RenderDevice::Create(
       window,
       magic_enum::enum_cast<renderer::DriverType>(profile->driver_backend)
-          .value_or(renderer::DriverType::UNDEFINED));
+          .value_or(renderer::DriverType::UNDEFINED),
+      profile_->render_validation);
   render_device_ = std::move(render_device);
   device_context_ = std::move(render_context);
   canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(render_device_.get(),
@@ -169,11 +171,14 @@ void ContentRunner::TickHandlerInternal() {
         queued_event.key.windowID ==
             execution_context_->window->GetWindowID()) {
       if (queued_event.key.scancode == SDL_SCANCODE_F1) {
-        show_settings_menu_ = !show_settings_menu_;
+        show_settings_menu_ =
+            !show_settings_menu_ && !profile_->disable_settings;
       } else if (queued_event.key.scancode == SDL_SCANCODE_F2) {
-        show_fps_monitor_ = !show_fps_monitor_;
+        show_fps_monitor_ =
+            !show_fps_monitor_ && !profile_->disable_fps_monitor;
       } else if (queued_event.key.scancode == SDL_SCANCODE_F12) {
-        binding_reset_flag_.store(1);
+        if (!profile_->disable_reset)
+          binding_reset_flag_.store(1);
       }
     }
 

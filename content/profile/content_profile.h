@@ -44,37 +44,35 @@ class ContentProfile {
   bool game_debug = false;
   bool game_battle_test = false;
 
-  // Engine Kernel
+  // Engine
   APIVersion api_version = APIVersion::UNKNOWN;
   base::String default_font_path = "Fonts/Default.ttf";
-  base::String driver_backend = "UNDEFINED";
   base::String i18n_xml_path;
-  bool disable_audio = false;
+  base::Vec2i window_size;
+  base::Vec2i resolution;
 
   // GUI
   bool disable_settings = false;
   bool disable_fps_monitor = false;
   bool disable_reset = false;
 
-  // Display
-  base::Vec2i window_size;
-  base::Vec2i resolution;
-
   // Renderer
+  base::String driver_backend = "UNDEFINED";
+  bool render_validation = false;
   int32_t frame_rate = 60;
   uint32_t vsync = 1;
-  bool render_validation = false;
+  bool keep_ratio = true;
+  bool fullscreen = false;
   bool smooth_scale = false;
   bool allow_skip_frame = true;
-  bool fullscreen = false;
-  bool keep_ratio = true;
   bool background_running = true;
 
   // Platform
   bool disable_ime = false;
   base::String orientation = "LandscapeLeft LandscapeRight";
 
-  // RGSS 2/3
+  // Features
+  bool disable_audio = false;
   bool sprite_vertical_sort = true;
 
  private:
