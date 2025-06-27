@@ -126,6 +126,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   if (!viewport_rect.width || !viewport_rect.height)
     return;
 
+  // Clear bitmap
+  target->Clear(exception_state);
+
   // Submit pending canvas commands
   context()->canvas_scheduler->SubmitPendingPaintCommands();
 
@@ -188,9 +191,6 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
         controller_params.context, controller_params.screen_buffer,
         controller_params.screen_depth_stencil, controller_params.root_world,
         viewport_rect, target_color);
-
-  // Submit rendering commands
-  controller_params.context->Flush();
 }
 
 scoped_refptr<Viewport> ViewportImpl::Get_Viewport(
@@ -572,15 +572,6 @@ void ViewportImpl::GPUFrameBeginRenderPassInternal(
   // Apply render target
   render_context->SetRenderTargets(
       1, &render_target->target, render_target->depth_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  // Clear targets
-  float clear_color[] = {0, 0, 0, 0};
-  render_context->ClearRenderTarget(
-      render_target->target, clear_color,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  render_context->ClearDepthStencil(
-      render_target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup scissor region

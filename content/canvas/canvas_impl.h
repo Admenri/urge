@@ -92,7 +92,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     return observers_.Add(observer);
   }
 
- protected:
+ public:
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
   uint32_t Width(ExceptionState& exception_state) override;
