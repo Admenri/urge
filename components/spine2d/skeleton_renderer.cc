@@ -14,30 +14,6 @@ namespace spine {
 
 namespace {
 
-Diligent::TEXTURE_ADDRESS_MODE TexAddressWrap(TextureWrap wrap) {
-  switch (wrap) {
-    default:
-    case TextureWrap_MirroredRepeat:
-      return Diligent::TEXTURE_ADDRESS_MIRROR;
-    case TextureWrap_ClampToEdge:
-      return Diligent::TEXTURE_ADDRESS_CLAMP;
-    case TextureWrap_Repeat:
-      return Diligent::TEXTURE_ADDRESS_WRAP;
-  }
-}
-
-Diligent::FILTER_TYPE TexFilterWrap(TEXTURE_FILTER_ENUM wrap) {
-  switch (wrap) {
-    default:
-    case TextureFilter_Unknown:
-      return Diligent::FILTER_TYPE_UNKNOWN;
-    case TextureFilter_Nearest:
-      return Diligent::FILTER_TYPE_POINT;
-    case TextureFilter_Linear:
-      return Diligent::FILTER_TYPE_LINEAR;
-  }
-}
-
 renderer::BlendType RenderBlendTypeWrap(BlendMode mode,
                                         bool premultiplied_alpha) {
   switch (mode) {
@@ -120,20 +96,6 @@ void* DiligentTextureLoader::GPUCreateTextureInternal(
                             Diligent::USAGE_DEFAULT,
                             Diligent::BIND_SHADER_RESOURCE);
 
-  Diligent::SamplerDesc sampler_desc;
-  sampler_desc.Name = "spine2d.atlas.sampler";
-  sampler_desc.MinFilter = TexFilterWrap(min_filter);
-  sampler_desc.MagFilter = TexFilterWrap(mag_filter);
-  sampler_desc.AddressU = TexAddressWrap(uwrap);
-  sampler_desc.AddressV = TexAddressWrap(vwrap);
-
-  RRefPtr<Diligent::ISampler> sampler;
-  (*device_)->CreateSampler(sampler_desc, &sampler);
-
-  auto* atlas_view =
-      texture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-  atlas_view->SetSampler(sampler);
-
   SDL_DestroySurface(atlas_surface);
 
   return texture.Detach();
@@ -155,6 +117,7 @@ void DiligentRenderer::Update(Diligent::IDeviceContext* context,
                               spine::Skeleton* skeleton) {
   vertex_cache_.clear();
   pending_commands_ = skeleton_renderer_->render(*skeleton);
+
   RenderCommand* command = pending_commands_;
   while (command) {
     float* positions = command->positions;

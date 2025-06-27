@@ -630,12 +630,19 @@ Pipeline_Spine2D::Pipeline_Spine2D(
       {Diligent::SHADER_TYPE_PIXEL, "u_Texture",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-      {Diligent::SHADER_TYPE_PIXEL, "u_Texture_sampler",
-       Diligent::SHADER_RESOURCE_TYPE_SAMPLER,
-       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  auto binding0 = MakeResourceSignature(variables, {}, 0);
+  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+      {
+          Diligent::SHADER_TYPE_PIXEL,
+          "u_Texture",
+          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
+           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
+           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+      },
+  };
+
+  auto binding0 = MakeResourceSignature(variables, samplers, 0);
   BuildPipeline(shader_source, SpineVertex::GetLayout(), {binding0},
                 target_format, depth_stencil_format);
 }

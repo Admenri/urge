@@ -18,8 +18,8 @@ namespace spine {
 using SpineVertexBatch = renderer::BatchBuffer<renderer::SpineVertex,
                                                Diligent::BIND_VERTEX_BUFFER,
                                                Diligent::BUFFER_MODE_UNDEFINED,
-                                               Diligent::CPU_ACCESS_NONE,
-                                               Diligent::USAGE_DEFAULT>;
+                                               Diligent::CPU_ACCESS_WRITE,
+                                               Diligent::USAGE_DYNAMIC>;
 
 class DiligentTextureLoader : public TextureLoader {
  public:
