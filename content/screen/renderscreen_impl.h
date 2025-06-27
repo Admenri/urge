@@ -46,6 +46,9 @@ class RenderScreenImpl : public Graphics,
     renderer::Binding_VagueTrans transition_binding_vague;
 
     Diligent::ITexture* present_target = nullptr;
+    renderer::DynamicQuadBatch present_quad;
+    renderer::Binding_Base present_binding;
+    RRefPtr<Diligent::IBuffer> present_world;
     base::OwnedPtr<renderer::Pipeline_Present> present_pipeline;
   };
 

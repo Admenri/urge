@@ -131,6 +131,13 @@ using QuadBatch = BatchBuffer<Quad,
                               Diligent::USAGE_DEFAULT,
                               4>;
 
+using DynamicQuadBatch = BatchBuffer<Quad,
+                                     Diligent::BIND_VERTEX_BUFFER,
+                                     Diligent::BUFFER_MODE_UNDEFINED,
+                                     Diligent::CPU_ACCESS_WRITE,
+                                     Diligent::USAGE_DYNAMIC,
+                                     4>;
+
 }  // namespace renderer
 
 #endif  //! RENDERER_RESOURCE_RENDER_BUFFER_H_

@@ -613,6 +613,15 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
   agent_.present_pipeline = base::MakeOwnedPtr<renderer::Pipeline_Present>(
       **context()->render_device, swapchain_desc.ColorBufferFormat,
       swapchain_desc.DepthBufferFormat, srgb_framebuffer);
+  agent_.present_quad =
+      renderer::DynamicQuadBatch::Make(**context()->render_device);
+  agent_.present_binding = agent_.present_pipeline->CreateBinding();
+
+  // Create window screen transform
+  Diligent::CreateUniformBuffer(
+      **context()->render_device, sizeof(renderer::WorldTransform),
+      "present.world.uniform", &agent_.present_world, Diligent::USAGE_DYNAMIC,
+      Diligent::BIND_UNIFORM_BUFFER, Diligent::CPU_ACCESS_WRITE);
 
   // Create screen buffer
   GPUResetScreenBufferInternal();
@@ -703,30 +712,28 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
   auto& pipeline_set = *agent_.present_pipeline;
   auto* pipeline =
       pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
-  renderer::QuadBatch present_quads =
-      renderer::QuadBatch::Make(**context()->render_device);
-  renderer::Binding_Base present_binding = pipeline_set.CreateBinding();
-  RRefPtr<Diligent::IBuffer> present_uniform;
   RRefPtr<Diligent::ISampler> present_sampler;
 
   if (agent_.present_target) {
     // Update vertex
     renderer::Quad transient_quad;
     renderer::Quad::SetPositionRect(&transient_quad, display_viewport_);
-    renderer::Quad::SetTexCoordRectNorm(&transient_quad,
-                                        base::Rect(0, 0, 1, 1));
-    present_quads.QueueWrite(render_context, &transient_quad);
+    renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
+    agent_.present_quad.QueueWrite(render_context, &transient_quad);
 
-    // Update window screen transform
-    renderer::WorldTransform world_matrix;
-    renderer::MakeProjectionMatrix(world_matrix.projection, screen_size);
-    renderer::MakeIdentityMatrix(world_matrix.transform);
+    // Update uniform
+    {
+      void* buffer_mapping;
+      render_context->MapBuffer(agent_.present_world, Diligent::MAP_WRITE,
+                                Diligent::MAP_FLAG_DISCARD, buffer_mapping);
 
-    Diligent::CreateUniformBuffer(**context()->render_device,
-                                  sizeof(world_matrix), "present.world.uniform",
-                                  &present_uniform, Diligent::USAGE_IMMUTABLE,
-                                  Diligent::BIND_UNIFORM_BUFFER,
-                                  Diligent::CPU_ACCESS_NONE, &world_matrix);
+      auto* world_matrix =
+          static_cast<renderer::WorldTransform*>(buffer_mapping);
+      renderer::MakeProjectionMatrix(world_matrix->projection, screen_size);
+      renderer::MakeIdentityMatrix(world_matrix->transform);
+
+      render_context->UnmapBuffer(agent_.present_world, Diligent::MAP_WRITE);
+    }
 
     // Create sampler
     Diligent::SamplerDesc sampler_desc;
@@ -767,16 +774,17 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
     render_source->SetSampler(present_sampler);
 
     // Set present uniform
-    present_binding.u_transform->Set(present_uniform);
-    present_binding.u_texture->Set(render_source);
+    agent_.present_binding.u_transform->Set(agent_.present_world);
+    agent_.present_binding.u_texture->Set(render_source);
 
     // Apply pipeline state
     render_context->SetPipelineState(pipeline);
     render_context->CommitShaderResources(
-        *present_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        *agent_.present_binding,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = *present_quads;
+    Diligent::IBuffer* const vertex_buffer = *agent_.present_quad;
     render_context->SetVertexBuffers(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
