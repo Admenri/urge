@@ -94,19 +94,25 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
     base::Vec2i screen_size;
 
     // [Stage: all]
-    // Render scissor region.
-    base::Rect viewport;
+    // Current real scissor region in screen. (2D)
+    base::Rect scissor;
 
     // [Stage: all]
-    // Current display origin offset
+    // Current real display offset in screen (2D)
+    base::Vec2i offset;
+
+    // [Stage: all]
+    // Unmasked viewport size
+    base::Vec2i unmasked_viewport_size;
+    // Current viewport origin attribute (2D)
     base::Vec2i origin;
 
     // [Stage: on rendering]
-    // World transform matrix with offset.
+    // World transform matrix with offset. (2D)
     Diligent::IBuffer* root_world = nullptr;
 
     // [Stage: on rendering]
-    // Root transform matrix without any offset.
+    // Root transform matrix without any offset. (2D)
     Diligent::IBuffer* world_binding = nullptr;
   };
 

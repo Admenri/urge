@@ -528,7 +528,9 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
   controller_params.screen_buffer = render_target;
   controller_params.screen_depth_stencil = depth_stencil;
   controller_params.screen_size = context()->resolution;
-  controller_params.viewport = context()->resolution;
+  controller_params.scissor = context()->resolution;
+  controller_params.offset = -origin_;
+  controller_params.unmasked_viewport_size = context()->resolution;
   controller_params.origin = origin_;
 
   // 1) Execute pre-composite handler

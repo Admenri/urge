@@ -117,9 +117,12 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   if (flash_emitter_.IsFlashing() && flash_emitter_.IsInvalid())
     return;
 
+  // Viewport bound
+  const auto bound = rect_->AsBaseRect();
+
   // Check viewport visible
   const base::Rect viewport_rect =
-      base::MakeIntersect(bitmap_agent->size, rect_->AsBaseRect().Size());
+      base::MakeIntersect(bitmap_agent->size, bound.Size());
   const base::Vec2i offset = -origin_;
   if (viewport_rect.width <= 0 || viewport_rect.height <= 0)
     return;
@@ -133,7 +136,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   controller_params.screen_buffer = bitmap_agent->data;
   controller_params.screen_depth_stencil = bitmap_agent->depth_stencil;
   controller_params.screen_size = bitmap_agent->size;
-  controller_params.viewport = viewport_rect;
+  controller_params.scissor = viewport_rect;
+  controller_params.offset = -origin_;
+  controller_params.unmasked_viewport_size = bound.Size();
   controller_params.origin = origin_;
 
   // 0) Update uniform buffer if viewport region changed
@@ -327,30 +332,29 @@ void ViewportImpl::DrawableNodeHandlerInternal(
     return;
 
   // Current viewport region
-  base::Rect viewport_rect = rect_->AsBaseRect();
+  const auto bound = rect_->AsBaseRect();
 
   // Apply parent offset and origin
-  viewport_rect.x += params->viewport.x - params->origin.x;
-  viewport_rect.y += params->viewport.y - params->origin.y;
+  base::Rect viewport_rect = bound;
+  viewport_rect.x += params->offset.x;
+  viewport_rect.y += params->offset.y;
 
   // Real scissor region on "screen" buffer
-  viewport_rect = base::MakeIntersect(params->viewport, viewport_rect);
-
-  // Skip render if no interaction
+  viewport_rect = base::MakeIntersect(params->scissor, viewport_rect);
   if (!viewport_rect.width || !viewport_rect.height)
     return;
 
   // Setup new render params at current node
   DrawableNode::RenderControllerParams transient_params = *params;
-  transient_params.viewport = viewport_rect;
+  transient_params.scissor = viewport_rect;
+  transient_params.offset = params->offset + bound.Position() - origin_;
+  transient_params.unmasked_viewport_size = bound.Size();
   transient_params.origin = origin_;
 
   if (stage == DrawableNode::BEFORE_RENDER) {
-    // Calculate viewport real offset
-    base::Vec2i real_offset = viewport_rect.Position() - origin_;
-
     // Update self transform world uniform
-    base::Rect transform_cache_rect(real_offset, params->screen_size);
+    base::Rect transform_cache_rect(transient_params.offset,
+                                    params->screen_size);
     if (!(transform_cache_ == transform_cache_rect)) {
       transform_cache_ = transform_cache_rect;
       GPUUpdateViewportTransform(params->context, transform_cache_rect);
@@ -387,7 +391,7 @@ void ViewportImpl::DrawableNodeHandlerInternal(
     GPUViewportProcessAfterRender(params->context, params->root_world,
                                   params->screen_buffer,
                                   params->screen_depth_stencil, viewport_rect,
-                                  target_color, params->viewport);
+                                  target_color, params->scissor);
   }
 }
 
@@ -542,7 +546,7 @@ void ViewportImpl::GPUViewportProcessAfterRender(
     Diligent::ITexture* screen_depth_stencil,
     const base::Rect& effect_region,
     const base::Vec4& color,
-    const base::Rect& last_viewport) {
+    const base::Rect& last_scissor) {
   const auto tone = tone_->AsNormColor();
   const bool is_effect_valid =
       color.w != 0 || tone.x != 0 || tone.y != 0 || tone.z != 0 || tone.w != 0;
@@ -551,7 +555,7 @@ void ViewportImpl::GPUViewportProcessAfterRender(
                            root_world, effect_region, color);
 
   // Restore viewport region
-  GPUResetViewportRegion(render_context, last_viewport);
+  GPUResetViewportRegion(render_context, last_scissor);
 }
 
 void ViewportImpl::GPUFrameBeginRenderPassInternal(

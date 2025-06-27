@@ -628,7 +628,7 @@ void Tilemap2Impl::GroundNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
-    UpdateViewportInternal(params->viewport, params->origin);
+    UpdateViewportInternal(params->unmasked_viewport_size, params->origin);
 
     if (atlas_dirty_) {
       base::Vector<AtlasCompositeCommand> commands;

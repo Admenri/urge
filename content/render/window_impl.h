@@ -91,7 +91,9 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
   void GPURenderControlLayerInternal(Diligent::IDeviceContext* render_context,
                                      Diligent::IBuffer* world_binding,
                                      BitmapAgent* windowskin,
-                                     BitmapAgent* contents);
+                                     BitmapAgent* contents,
+                                     const base::Rect& last_scissor,
+                                     const base::Vec2i& last_offset);
 
   DrawableNode background_node_;
   DrawableNode control_node_;

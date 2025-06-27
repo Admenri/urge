@@ -87,7 +87,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
                                      Diligent::ITexture* screen_depth_stencil,
                                      const base::Rect& effect_region,
                                      const base::Vec4& color,
-                                     const base::Rect& last_viewport);
+                                     const base::Rect& last_scissor);
   void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
                                        BitmapAgent* render_target,
                                        const base::Vec2i& viewport_offset,

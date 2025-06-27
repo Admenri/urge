@@ -264,7 +264,7 @@ void PlaneImpl::DrawableNodeHandlerInternal(
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUUpdatePlaneQuadArrayInternal(params->context, src_rect_->AsBaseRect(),
-                                    params->viewport.Size(), scale_,
+                                    params->unmasked_viewport_size, scale_,
                                     origin_ + params->origin);
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
     GPUOnViewportRenderingInternal(params->context, params->world_binding);

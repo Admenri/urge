@@ -36,6 +36,8 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
     int32_t background_quad_offset = 0;
     int32_t controls_quad_offset = 0;
     int32_t controls_draw_count = 0;
+    int32_t cursor_quad_offset = 0;
+    int32_t cursor_draw_count = 0;
     int32_t contents_quad_offset = 0;
   };
 
@@ -100,7 +102,10 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
   void GPURenderWindowQuadsInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding,
                                     BitmapAgent* contents,
-                                    BitmapAgent* windowskin);
+                                    BitmapAgent* windowskin,
+                                    const base::Rect& padding_rect,
+                                    const base::Rect& last_scissor,
+                                    const base::Vec2i& last_offset);
 
   bool rgss3_style_ = false;
   DrawableNode node_;

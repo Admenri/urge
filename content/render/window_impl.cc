@@ -391,7 +391,8 @@ void WindowImpl::ControlNodeHandlerInternal(
                                      contents_agent);
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
     GPURenderControlLayerInternal(params->context, params->world_binding,
-                                  windowskin_agent, contents_agent);
+                                  windowskin_agent, contents_agent,
+                                  params->scissor, params->offset);
   }
 }
 
@@ -575,35 +576,18 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
   auto build_cursor_quads = [&](const base::Rect& src, const base::Rect& dst,
                                 renderer::Quad vert[9]) {
-    int32_t quads_count = 0;
-
     base::Rect texcoords[9], positions[9];
+    const base::Vec4 draw_color(cursor_opacity_norm * contents_opacity_norm);
     build_cursor_internal(src, scale_, texcoords);
     build_cursor_internal(dst, scale_, positions);
 
-    const base::Vec4 draw_color(cursor_opacity_norm * contents_opacity_norm);
-
     for (int32_t i = 0; i < 9; ++i) {
-      const auto interaction = base::MakeIntersect(positions[i], bound_);
-      {
-        const base::Vec2 texcoord_scale =
-            base::Vec2(texcoords[i].Size()) / base::Vec2(positions[i].Size());
-        const base::Vec2 texcoord_offset =
-            interaction.Position() - positions[i].Position();
-        const base::RectF final_texcoord(
-            base::Vec2(texcoords[i].Position()) +
-                texcoord_offset * texcoord_scale,
-            base::Vec2(interaction.Size()) * texcoord_scale);
-
-        renderer::Quad::SetPositionRect(&vert[i], interaction);
-        renderer::Quad::SetTexCoordRect(&vert[i], final_texcoord,
-                                        windowskin->size);
-        renderer::Quad::SetColor(&vert[i], draw_color);
-        quads_count++;
-      }
+      renderer::Quad::SetPositionRect(&vert[i], positions[i]);
+      renderer::Quad::SetTexCoordRect(&vert[i], texcoords[i], windowskin->size);
+      renderer::Quad::SetColor(&vert[i], draw_color);
     }
 
-    return quads_count;
+    return 9;
   };
 
   // Generate quads
@@ -719,21 +703,12 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
   // Contents (0-1)
   if (contents) {
-    const base::Vec2i content_offset(draw_offset.x + 8 * scale_ + origin_.x,
-                                     draw_offset.y + 8 * scale_ + origin_.y);
-    const base::Rect content_bound(
-        draw_offset.x + 8 * scale_, draw_offset.y + 8 * scale_,
-        bound_.width - 16 * scale_, bound_.height - 16 * scale_);
+    const base::Vec2i content_offset(draw_offset.x + 8 * scale_ - origin_.x,
+                                     draw_offset.y + 8 * scale_ - origin_.y);
 
-    const auto interaction = base::MakeIntersect(
-        base::Rect(content_offset, contents->size), content_bound);
-    const base::Vec2i texcoord_offset =
-        interaction.Position() - content_bound.Position();
-
-    renderer::Quad::SetPositionRect(&quads[quad_index], interaction);
-    renderer::Quad::SetTexCoordRect(
-        &quads[quad_index], base::Rect(texcoord_offset, interaction.Size()),
-        contents->size);
+    renderer::Quad::SetPositionRect(&quads[quad_index],
+                                    base::Rect(content_offset, contents->size));
+    renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
     renderer::Quad::SetColor(&quads[quad_index],
                              base::Vec4(contents_opacity_norm));
 
@@ -790,68 +765,104 @@ void WindowImpl::GPURenderControlLayerInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
     BitmapAgent* windowskin,
-    BitmapAgent* contents) {
+    BitmapAgent* contents,
+    const base::Rect& last_scissor,
+    const base::Vec2i& last_offset) {
   if (windowskin) {
-    auto& pipeline_set = context()->render_device->GetPipelines()->base;
-    auto* pipeline =
-        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+    const base::Rect clipping_region(last_offset.x + bound_.x,
+                                     last_offset.y + bound_.y, bound_.width,
+                                     bound_.height);
 
-    // Setup shader resource
-    agent_.base_binding.u_transform->Set(world_binding);
-    agent_.base_binding.u_texture->Set(windowskin->resource);
+    const auto interaction = base::MakeIntersect(clipping_region, last_scissor);
+    if (interaction.width && interaction.height) {
+      Diligent::Rect render_scissor(interaction.x, interaction.y,
+                                    interaction.x + interaction.width,
+                                    interaction.y + interaction.height);
+      render_context->SetScissorRects(1, &render_scissor, UINT32_MAX,
+                                      UINT32_MAX);
 
-    // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
-    render_context->SetVertexBuffers(
-        0, 1, &vertex_buffer, nullptr,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      auto& pipeline_set = context()->render_device->GetPipelines()->base;
+      auto* pipeline =
+          pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
-    // Apply pipeline state
-    render_context->SetPipelineState(pipeline);
-    render_context->CommitShaderResources(
-        *agent_.base_binding,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      // Setup shader resource
+      agent_.base_binding.u_transform->Set(world_binding);
+      agent_.base_binding.u_texture->Set(windowskin->resource);
 
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    render_context->DrawIndexed(draw_indexed_attribs);
+      // Apply vertex index
+      Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
+      render_context->SetVertexBuffers(
+          0, 1, &vertex_buffer, nullptr,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      render_context->SetIndexBuffer(
+          **context()->render_device->GetQuadIndex(), 0,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Apply pipeline state
+      render_context->SetPipelineState(pipeline);
+      render_context->CommitShaderResources(
+          *agent_.base_binding,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Execute render command
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      render_context->DrawIndexed(draw_indexed_attribs);
+    }
   }
 
   if (contents) {
-    auto& pipeline_set = context()->render_device->GetPipelines()->base;
-    auto* pipeline =
-        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+    const base::Rect clipping_region(last_offset.x + bound_.x + 8 * scale_,
+                                     last_offset.y + bound_.y + 8 * scale_,
+                                     bound_.width - 16 * scale_,
+                                     bound_.height - 16 * scale_);
+    const auto interaction = base::MakeIntersect(clipping_region, last_scissor);
+    if (interaction.width && interaction.height) {
+      Diligent::Rect render_scissor(interaction.x, interaction.y,
+                                    interaction.x + interaction.width,
+                                    interaction.y + interaction.height);
+      render_context->SetScissorRects(1, &render_scissor, UINT32_MAX,
+                                      UINT32_MAX);
 
-    // Setup shader resource
-    agent_.content_binding.u_transform->Set(world_binding);
-    agent_.content_binding.u_texture->Set(contents->resource);
+      auto& pipeline_set = context()->render_device->GetPipelines()->base;
+      auto* pipeline =
+          pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
-    // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
-    render_context->SetVertexBuffers(
-        0, 1, &vertex_buffer, nullptr,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      // Setup shader resource
+      agent_.content_binding.u_transform->Set(world_binding);
+      agent_.content_binding.u_texture->Set(contents->resource);
 
-    // Apply pipeline state
-    render_context->SetPipelineState(pipeline);
-    render_context->CommitShaderResources(
-        *agent_.content_binding,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      // Apply vertex index
+      Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
+      render_context->SetVertexBuffers(
+          0, 1, &vertex_buffer, nullptr,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      render_context->SetIndexBuffer(
+          **context()->render_device->GetQuadIndex(), 0,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
-    render_context->DrawIndexed(draw_indexed_attribs);
+      // Apply pipeline state
+      render_context->SetPipelineState(pipeline);
+      render_context->CommitShaderResources(
+          *agent_.content_binding,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Execute render command
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
+      render_context->DrawIndexed(draw_indexed_attribs);
+    }
+  }
+
+  if (windowskin || contents) {
+    Diligent::Rect clipping_region(last_scissor.x, last_scissor.y,
+                                   last_scissor.x + last_scissor.width,
+                                   last_scissor.y + last_scissor.height);
+    render_context->SetScissorRects(1, &clipping_region, UINT32_MAX,
+                                    UINT32_MAX);
   }
 }
 

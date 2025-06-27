@@ -570,13 +570,13 @@ void TilemapImpl::GroundNodeHandlerInternal(
     DrawableNode::RenderControllerParams* params) {
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     // Setup above layers if need.
-    if (!(last_viewport_ == params->viewport)) {
-      SetupTilemapLayersInternal(params->viewport);
-      last_viewport_ = params->viewport;
+    if (!(last_viewport_ == params->unmasked_viewport_size)) {
+      SetupTilemapLayersInternal(params->unmasked_viewport_size);
+      last_viewport_ = params->unmasked_viewport_size;
     }
 
     // Reset above layers sorting order.
-    UpdateViewportInternal(params->viewport, params->origin);
+    UpdateViewportInternal(params->unmasked_viewport_size, params->origin);
     ResetAboveLayersOrderInternal();
 
     // Generate global atlas texture if need.
