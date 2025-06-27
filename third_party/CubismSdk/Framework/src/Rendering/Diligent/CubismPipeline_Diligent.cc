@@ -254,7 +254,7 @@ void CubismPipeline_Diligent::MakePipelineStates() {
 
   // Pipeline States
   Diligent::GraphicsPipelineStateCreateInfo pipelineCreateInfo;
-  pipelineCreateInfo.ppResourceSignatures = &_signature;
+  pipelineCreateInfo.ppResourceSignatures = _signature.RawDblPtr();
   pipelineCreateInfo.ResourceSignaturesCount = 1;
 
   pipelineCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = input_layout;
