@@ -139,13 +139,6 @@ endif()
 add_subdirectory(third_party/spine2d)
 include_directories(third_party/spine2d/spine-cpp/include)
 
-## Cubism
-set(LIVE2D_CUBISM_SUPPORT OFF)
-if (EXISTS ${PROJECT_SOURCE_DIR}/third_party/CubismSdk/Core)
-  set(LIVE2D_CUBISM_SUPPORT ON)
-  add_subdirectory(third_party/CubismSdk)
-endif ()
-
 ## spdlog
 add_subdirectory(third_party/spdlog)
 
@@ -180,9 +173,6 @@ endif ()
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
 add_subdirectory(components/spine2d)
-if (LIVE2D_CUBISM_SUPPORT)
-  add_subdirectory(components/cubism)
-endif ()
 
 #-------------------------------------------------------------------------
 # * source
