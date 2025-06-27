@@ -58,7 +58,12 @@ class ContentProfile {
 
   // Renderer
   base::String driver_backend = "UNDEFINED";
-  bool render_validation = false;
+  bool render_validation =
+#if DILIGENT_DEVELOPMENT
+      true;
+#else
+      false;
+#endif
   int32_t frame_rate = 60;
   uint32_t vsync = 1;
   bool keep_ratio = true;

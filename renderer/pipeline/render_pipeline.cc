@@ -113,8 +113,7 @@ RenderPipelineBase::RenderPipelineBase(Diligent::IRenderDevice* device)
 void RenderPipelineBase::BuildPipeline(
     const ShaderSource& shader_source,
     const base::Vector<Diligent::LayoutElement>& input_layout,
-    const base::Vector<
-        Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>&
+    const base::Vector<RRefPtr<Diligent::IPipelineResourceSignature>>&
         signatures,
     Diligent::TEXTURE_FORMAT target_format,
     Diligent::TEXTURE_FORMAT depth_stencil_format) {
@@ -137,8 +136,7 @@ void RenderPipelineBase::BuildPipeline(
 
   // Make vertex shader and pixel shader
   Diligent::ShaderCreateInfo shader_desc;
-  Diligent::RefCntAutoPtr<Diligent::IShader> vertex_shader_object,
-      pixel_shader_object;
+  RRefPtr<Diligent::IShader> vertex_shader_object, pixel_shader_object;
   shader_desc.SourceLanguage = Diligent::SHADER_SOURCE_LANGUAGE_HLSL;
   shader_desc.Desc.UseCombinedTextureSamplers = Diligent::True;
   shader_desc.CompileFlags =
@@ -189,40 +187,37 @@ void RenderPipelineBase::BuildPipeline(
   pipeline_state_desc.ppResourceSignatures = raw_signatures.data();
 
   // Make all color blend type pipelines
-  for (int32_t i = 0; i < BLEND_TYPE_NUMS; ++i) {
-    pipeline_state_desc.GraphicsPipeline.BlendDesc.RenderTargets[0] =
-        GetBlendState(static_cast<BlendType>(i));
+  for (int32_t blend_index = 0; blend_index < BLEND_TYPE_NUMS; ++blend_index) {
+    for (int32_t depth_index = 0; depth_index < 2; ++depth_index) {
+      // Color blend
+      pipeline_state_desc.GraphicsPipeline.BlendDesc.RenderTargets[0] =
+          GetBlendState(static_cast<BlendType>(blend_index));
 
-    // With depth stencil test
-    {
-      pipeline_state_desc.GraphicsPipeline.DSVFormat = depth_stencil_format;
-      pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthFunc =
-          Diligent::COMPARISON_FUNC_LESS_EQUAL;
-      pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
-          Diligent::True;
+      // Depth stencil
+      if (depth_index) {
+        pipeline_state_desc.GraphicsPipeline.DSVFormat = depth_stencil_format;
+        pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthFunc =
+            Diligent::COMPARISON_FUNC_LESS_EQUAL;
+        pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
+            Diligent::True;
+      } else {
+        pipeline_state_desc.GraphicsPipeline.DSVFormat =
+            Diligent::TEX_FORMAT_UNKNOWN;
+        pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
+            Diligent::False;
+      }
 
-      Diligent::RefCntAutoPtr<Diligent::IPipelineState> pipeline_state;
+      // Make pipeline state
+      RRefPtr<Diligent::IPipelineState> pipeline_state;
       device_->CreateGraphicsPipelineState(pipeline_state_desc,
                                            &pipeline_state);
-      depth_stencil_pipelines_.push_back(pipeline_state);
-    }
 
-    // No depth stencil test
-    {
-      pipeline_state_desc.GraphicsPipeline.DSVFormat =
-          Diligent::TEX_FORMAT_UNKNOWN;
-      pipeline_state_desc.GraphicsPipeline.DepthStencilDesc.DepthEnable =
-          Diligent::False;
-
-      Diligent::RefCntAutoPtr<Diligent::IPipelineState> pipeline_state;
-      device_->CreateGraphicsPipelineState(pipeline_state_desc,
-                                           &pipeline_state);
-      flat_pipelines_.push_back(pipeline_state);
+      pipelines_[blend_index][depth_index] = pipeline_state;
     }
   }
 }
 
-Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>
+RRefPtr<Diligent::IPipelineResourceSignature>
 RenderPipelineBase::MakeResourceSignature(
     const base::Vector<Diligent::PipelineResourceDesc>& variables,
     const base::Vector<Diligent::ImmutableSamplerDesc>& samplers,
@@ -235,7 +230,7 @@ RenderPipelineBase::MakeResourceSignature(
   resource_signature_desc.BindingIndex = binding_index;
   resource_signature_desc.UseCombinedTextureSamplers = Diligent::True;
 
-  Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature> signature;
+  RRefPtr<Diligent::IPipelineResourceSignature> signature;
   device_->CreatePipelineResourceSignature(resource_signature_desc, &signature);
   return signature;
 }

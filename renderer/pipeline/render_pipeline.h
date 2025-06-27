@@ -14,6 +14,7 @@
 
 #include "renderer/layout/vertex_layout.h"
 #include "renderer/pipeline/render_binding.h"
+#include "renderer/renderer_config.h"
 
 namespace renderer {
 
@@ -54,11 +55,9 @@ class RenderPipelineBase {
   RenderPipelineBase(const RenderPipelineBase&) = default;
   RenderPipelineBase& operator=(const RenderPipelineBase&) = default;
 
-  inline Diligent::IPipelineState* GetPipeline(
-      BlendType blend,
-      bool enable_depth_stencil) const {
-    return enable_depth_stencil ? depth_stencil_pipelines_[blend]
-                                : flat_pipelines_[blend];
+  inline Diligent::IPipelineState* GetPipeline(BlendType blend,
+                                               int32_t depth_stencil) const {
+    return pipelines_[blend][depth_stencil];
   }
 
   inline Diligent::IPipelineResourceSignature* GetSignatureAt(
@@ -69,36 +68,34 @@ class RenderPipelineBase {
  protected:
   RenderPipelineBase(Diligent::IRenderDevice* device);
 
-  void BuildPipeline(const ShaderSource& shader_source,
-                     const base::Vector<Diligent::LayoutElement>& input_layout,
-                     const base::Vector<Diligent::RefCntAutoPtr<
-                         Diligent::IPipelineResourceSignature>>& signatures,
-                     Diligent::TEXTURE_FORMAT target_format,
-                     Diligent::TEXTURE_FORMAT depth_stencil_format);
+  void BuildPipeline(
+      const ShaderSource& shader_source,
+      const base::Vector<Diligent::LayoutElement>& input_layout,
+      const base::Vector<RRefPtr<Diligent::IPipelineResourceSignature>>&
+          signatures,
+      Diligent::TEXTURE_FORMAT target_format,
+      Diligent::TEXTURE_FORMAT depth_stencil_format);
 
-  Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>
-  MakeResourceSignature(
+  RRefPtr<Diligent::IPipelineResourceSignature> MakeResourceSignature(
       const base::Vector<Diligent::PipelineResourceDesc>& variables,
       const base::Vector<Diligent::ImmutableSamplerDesc>& samplers,
       uint8_t binding_index);
 
   template <typename Ty>
   Ty CreateBindingAt(size_t index) {
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> binding;
+    RRefPtr<Diligent::IShaderResourceBinding> binding;
     resource_signatures_[index]->CreateShaderResourceBinding(&binding);
     return RenderBindingBase::Create<Ty>(binding);
   }
 
  private:
-  Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device_;
+  RRefPtr<Diligent::IRenderDevice> device_;
 
-  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature>>
+  base::Vector<RRefPtr<Diligent::IPipelineResourceSignature>>
       resource_signatures_;
 
-  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>>
-      flat_pipelines_;
-  base::Vector<Diligent::RefCntAutoPtr<Diligent::IPipelineState>>
-      depth_stencil_pipelines_;
+  // [BlendType][DepthEnable]
+  RRefPtr<Diligent::IPipelineState> pipelines_[BLEND_TYPE_NUMS][2];
 };
 
 class Pipeline_Base : public RenderPipelineBase {
