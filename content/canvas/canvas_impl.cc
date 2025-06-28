@@ -47,6 +47,17 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
     return nullptr;
   }
 
+  const int32_t max_texture_size =
+      execution_context->render_device->MaxTextureSize();
+  if (surface_data->w > max_texture_size ||
+      surface_data->h > max_texture_size) {
+    exception_state.ThrowError(
+        ExceptionCode::GPU_ERROR,
+        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        surface_data->w, surface_data->h, max_texture_size);
+    return nullptr;
+  }
+
   auto* surface_duplicate =
       SDL_CreateSurface(surface_data->w, surface_data->h, surface_data->format);
   std::memcpy(surface_duplicate->pixels, surface_data->pixels,
@@ -78,6 +89,19 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to load image from iostream. (%s)",
                                SDL_GetError());
+    return nullptr;
+  }
+
+  const int32_t max_texture_size =
+      execution_context->render_device->MaxTextureSize();
+  if (memory_texture->w > max_texture_size ||
+      memory_texture->h > max_texture_size) {
+    SDL_DestroySurface(memory_texture);
+
+    exception_state.ThrowError(
+        ExceptionCode::GPU_ERROR,
+        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        memory_texture->w, memory_texture->h, max_texture_size);
     return nullptr;
   }
 
@@ -116,6 +140,17 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
               sizeof(uint32_t));
   std::memcpy(&surface_height, raw_data + sizeof(uint32_t) * 1,
               sizeof(uint32_t));
+
+  const int32_t max_texture_size =
+      execution_context->render_device->MaxTextureSize();
+  if (static_cast<int32_t>(surface_width) > max_texture_size ||
+      static_cast<int32_t>(surface_height) > max_texture_size) {
+    exception_state.ThrowError(
+        ExceptionCode::GPU_ERROR,
+        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        surface_width, surface_height, max_texture_size);
+    return nullptr;
+  }
 
   if (data.size() < sizeof(uint32_t) * 2 + surface_width * surface_height * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -162,6 +197,16 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
     return nullptr;
   }
 
+  const int32_t max_texture_size =
+      execution_context->render_device->MaxTextureSize();
+  if (size.x > max_texture_size || size.y > max_texture_size) {
+    exception_state.ThrowError(
+        ExceptionCode::GPU_ERROR,
+        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        size.x, size.y, max_texture_size);
+    return nullptr;
+  }
+
   auto* empty_surface =
       SDL_CreateSurface(size.x, size.y, kCanvasInternalFormat);
   if (!empty_surface) {
@@ -199,6 +244,19 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to load image: %s (%s)",
                                filename.c_str(), SDL_GetError());
+    return nullptr;
+  }
+
+  const int32_t max_texture_size =
+      execution_context->render_device->MaxTextureSize();
+  if (memory_texture->w > max_texture_size ||
+      memory_texture->h > max_texture_size) {
+    SDL_DestroySurface(memory_texture);
+
+    exception_state.ThrowError(
+        ExceptionCode::GPU_ERROR,
+        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        memory_texture->w, memory_texture->h, max_texture_size);
     return nullptr;
   }
 

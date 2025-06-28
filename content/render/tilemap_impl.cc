@@ -360,6 +360,8 @@ TilemapImpl::TilemapImpl(ExecutionContext* execution_context,
                           : execution_context->screen_drawable_node,
                    SortKey()),
       tilesize_(tilesize),
+      max_atlas_size_(execution_context->render_device->MaxTextureSize()),
+      max_vertical_count_(max_atlas_size_ / tilesize),
       viewport_(parent) {
   ground_node_.RegisterEventHandler(base::BindRepeating(
       &TilemapImpl::GroundNodeHandlerInternal, base::Unretained(this)));
@@ -624,6 +626,7 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
   int32_t atlas_height = 28 * tilesize_;
   if (tileset_ || tileset_->GetAgent())
     atlas_height = std::max(atlas_height, tileset_->GetAgent()->size.y);
+  atlas_height = std::min(max_atlas_size_, atlas_height);
 
   // Setup commands
   commands.clear();
@@ -849,7 +852,11 @@ void TilemapImpl::ParseMapDataInternal(
     int32_t tile_x = tileset_id % 8;
     int32_t tile_y = tileset_id / 8;
 
-    base::Vec2 atlas_offset(12 + tile_x, tile_y);
+    // Switch to next offset when reaching the hardware texture limit
+    const int32_t horizontal_offset = tile_y / max_vertical_count_;
+
+    base::Vec2 atlas_offset(12 + tile_x + 8 * horizontal_offset,
+                            tile_y - max_vertical_count_ * horizontal_offset);
     base::RectF quad_tex(atlas_offset.x * tilesize_ + 0.5f,
                          atlas_offset.y * tilesize_ + 0.5f, tilesize_ - 1.0f,
                          tilesize_ - 1.0f);

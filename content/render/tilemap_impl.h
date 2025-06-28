@@ -159,6 +159,8 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   base::Vector<DrawableNode> above_nodes_;
   Agent agent_;
   int32_t tilesize_ = 32;
+  int32_t max_atlas_size_ = 0;
+  int32_t max_vertical_count_ = 0;
   base::Rect render_viewport_;
   base::Vec2i render_offset_;
   bool atlas_dirty_ = false;

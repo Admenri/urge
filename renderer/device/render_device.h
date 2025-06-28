@@ -78,6 +78,9 @@ class RenderDevice {
   PipelineSet* GetPipelines() { return &pipelines_; }
   QuadIndexCache* GetQuadIndex() { return &quad_index_; }
 
+  // Max texture size
+  inline int32_t MaxTextureSize() const { return max_texture_size_; }
+
   // Managed mobile rendering context
   void SuspendContext();
   int32_t ResumeContext(Diligent::IDeviceContext* immediate_context);
@@ -86,12 +89,14 @@ class RenderDevice {
   friend struct base::Allocator;
   RenderDevice(base::WeakPtr<ui::Widget> window,
                const Diligent::SwapChainDesc& swapchain_desc,
+               int32_t max_texture_size,
                Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
                Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
                SDL_GLContext gl_context);
 
   base::WeakPtr<ui::Widget> window_;
   Diligent::SwapChainDesc swapchain_desc_;
+  int32_t max_texture_size_;
 
   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device_;
   Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain_;

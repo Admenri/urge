@@ -245,18 +245,21 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   // etc
   const auto& device_info = device->GetDeviceInfo();
   const auto& adapter_info = device->GetAdapterInfo();
+  const int32_t max_texture_size =
+      static_cast<int32_t>(adapter_info.Texture.MaxTexture2DDimension);
+
   LOG(INFO) << "[Renderer] DeviceType: " +
                    base::String(GetRenderDeviceTypeString(device_info.Type)) +
                    " (version "
             << device_info.APIVersion.Major << "."
             << device_info.APIVersion.Minor << ")";
   LOG(INFO) << "[Renderer] Adapter: " << adapter_info.Description;
-  LOG(INFO) << "[Renderer] MaxTexture Size: "
-            << adapter_info.Texture.MaxTexture2DDimension;
+  LOG(INFO) << "[Renderer] MaxTexture Size: " << max_texture_size;
 
   // Global render device
   base::OwnedPtr<RenderDevice> render_device = base::MakeOwnedPtr<RenderDevice>(
-      window_target, swap_chain_desc, device, swapchain, glcontext);
+      window_target, swap_chain_desc, max_texture_size, device, swapchain,
+      glcontext);
 
   return std::make_tuple(std::move(render_device), std::move(context));
 }
@@ -264,11 +267,13 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 RenderDevice::RenderDevice(
     base::WeakPtr<ui::Widget> window,
     const Diligent::SwapChainDesc& swapchain_desc,
+    int32_t max_texture_size,
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
     SDL_GLContext gl_context)
     : window_(std::move(window)),
       swapchain_desc_(swapchain_desc),
+      max_texture_size_(max_texture_size),
       device_(device),
       swapchain_(swapchain),
       pipelines_(device_,
