@@ -96,12 +96,11 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
       execution_context->render_device->MaxTextureSize();
   if (memory_texture->w > max_texture_size ||
       memory_texture->h > max_texture_size) {
-    SDL_DestroySurface(memory_texture);
-
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
         "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         memory_texture->w, memory_texture->h, max_texture_size);
+    SDL_DestroySurface(memory_texture);
     return nullptr;
   }
 
@@ -251,12 +250,11 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
       execution_context->render_device->MaxTextureSize();
   if (memory_texture->w > max_texture_size ||
       memory_texture->h > max_texture_size) {
-    SDL_DestroySurface(memory_texture);
-
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
         "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         memory_texture->w, memory_texture->h, max_texture_size);
+    SDL_DestroySurface(memory_texture);
     return nullptr;
   }
 

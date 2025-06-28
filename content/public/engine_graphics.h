@@ -101,6 +101,9 @@ class URGE_RUNTIME_API Graphics : public base::RefCounted<Graphics> {
   virtual void SetWindowIcon(scoped_refptr<Bitmap> icon,
                              ExceptionState& exception_state) = 0;
 
+  /*--urge(name:max_texture_size)--*/
+  virtual int32_t GetMaxTextureSize(ExceptionState& exception_state) = 0;
+
   /*--urge(name:render_device)--*/
   virtual scoped_refptr<GPURenderDevice> GetRenderDevice(
       ExceptionState& exception_state) = 0;

@@ -113,6 +113,7 @@ class RenderScreenImpl : public Graphics,
   uint32_t GetDisplayID(ExceptionState& exception_state) override;
   void SetWindowIcon(scoped_refptr<Bitmap> icon,
                      ExceptionState& exception_state) override;
+  int32_t GetMaxTextureSize(ExceptionState& exception_state) override;
   scoped_refptr<GPURenderDevice> GetRenderDevice(
       ExceptionState& exception_state) override;
   scoped_refptr<GPUDeviceContext> GetImmediateContext(

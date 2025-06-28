@@ -386,6 +386,10 @@ void RenderScreenImpl::SetWindowIcon(scoped_refptr<Bitmap> icon,
   SDL_SetWindowIcon(context()->window->AsSDLWindow(), icon_surface);
 }
 
+int32_t RenderScreenImpl::GetMaxTextureSize(ExceptionState& exception_state) {
+  return context()->render_device->MaxTextureSize();
+}
+
 scoped_refptr<GPURenderDevice> RenderScreenImpl::GetRenderDevice(
     ExceptionState& exception_state) {
   return base::MakeRefCounted<RenderDeviceImpl>(context(),
