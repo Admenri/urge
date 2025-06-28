@@ -861,13 +861,13 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Clamp blit region
-  const auto draw_region = base::MakeIntersect(dst_region, agent_.size);
-  if (!draw_region.width || !draw_region.height)
+  const auto blit_region = base::MakeIntersect(dst_region, agent_.size);
+  if (!blit_region.width || !blit_region.height)
     return;
 
   // Copy dst region to intermediate texture
   auto* intermediate_cache =
-      scheduler->RequireBltCacheTexture(draw_region.Size());
+      scheduler->RequireBltCacheTexture(dst_region.Size());
   const base::Vec2 intermediate_size(intermediate_cache->GetDesc().Width,
                                      intermediate_cache->GetDesc().Height);
 
@@ -875,10 +875,10 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   scheduler->SetupRenderTarget(nullptr, nullptr, false);
 
   Diligent::Box copy_region;
-  copy_region.MinX = draw_region.x;
-  copy_region.MaxX = draw_region.x + draw_region.width;
-  copy_region.MinY = draw_region.y;
-  copy_region.MaxY = draw_region.y + draw_region.height;
+  copy_region.MinX = blit_region.x;
+  copy_region.MaxX = copy_region.MinX + blit_region.width;
+  copy_region.MinY = blit_region.y;
+  copy_region.MaxY = copy_region.MinY + blit_region.height;
 
   Diligent::CopyTextureAttribs copy_attribs;
   copy_attribs.pSrcTexture = agent_.data;
@@ -888,6 +888,8 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   copy_attribs.pDstTexture = intermediate_cache;
   copy_attribs.DstTextureTransitionMode =
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_attribs.DstX = -std::min(0, dst_region.x);
+  copy_attribs.DstY = -std::min(0, dst_region.y);
   render_context->CopyTexture(copy_attribs);
 
   // Custom blend blit pipeline
@@ -897,16 +899,16 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
 
   // Make drawing vertices
   renderer::Quad transient_quad;
+  renderer::Quad::SetPositionRect(&transient_quad, dst_region);
   renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
                                   src_texture->size);
-  renderer::Quad::SetPositionRect(&transient_quad, draw_region);
 
   // Norm opacity value
   const float norm_opacity = static_cast<float>(opacity) / 255.0f;
 
   // Set dst texture uv
-  const base::Vec2 dst_uv(draw_region.width / intermediate_size.x,
-                          draw_region.height / intermediate_size.y);
+  const base::Vec2 dst_uv(dst_region.width / intermediate_size.x,
+                          dst_region.height / intermediate_size.y);
   transient_quad.vertices[0].color = base::Vec4(0, 0, 0, norm_opacity);
   transient_quad.vertices[1].color = base::Vec4(dst_uv.x, 0, 0, norm_opacity);
   transient_quad.vertices[2].color =
