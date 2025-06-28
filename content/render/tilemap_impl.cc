@@ -624,7 +624,7 @@ void TilemapImpl::AboveNodeHandlerInternal(
 base::Vec2i TilemapImpl::MakeAtlasInternal(
     base::Vector<AtlasCompositeCommand>& commands) {
   int32_t atlas_height = 28 * tilesize_;
-  if (tileset_ || tileset_->GetAgent())
+  if (tileset_ && tileset_->GetAgent())
     atlas_height = std::max(atlas_height, tileset_->GetAgent()->size.y);
   atlas_height = std::min(max_atlas_size_, atlas_height);
 
@@ -675,14 +675,16 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
   }
 
   // Tileset part
+  int32_t tileset_width = 0;
   if (tileset_ && tileset_->GetAgent()) {
-    auto tileset_size = tileset_->GetAgent()->size;
+    base::Vec2i tileset_size = tileset_->GetAgent()->size;
     base::Vec2i dst_pos(12 * tilesize_, 0);
+    tileset_width = tileset_size.x;
 
     commands.push_back({tileset_->GetAgent(), tileset_size, dst_pos});
   }
 
-  return base::Vec2i(tilesize_ * 20, atlas_height);
+  return base::Vec2i(tilesize_ * 12 + tileset_width, atlas_height);
 }
 
 void TilemapImpl::UpdateViewportInternal(const base::Rect& viewport,
