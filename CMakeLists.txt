@@ -107,6 +107,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Android")
 else()
   add_library(mri_ruby UNKNOWN IMPORTED)  
   if (CMAKE_SYSTEM_NAME STREQUAL "Windows")  
+    ## libffi for Win platform
+    add_subdirectory(third_party/libffi)
+
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
       set(RUBY_INCLUDE_PATH
         "${PROJECT_SOURCE_DIR}/third_party/ruby_extern/include/"

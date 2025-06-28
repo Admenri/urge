@@ -70,6 +70,7 @@
 extern "C" {
 void Init_zlib(void);
 void Init_ruby_prof(void);
+void Init_fiddle(void);
 void rb_call_builtin_inits();
 }
 
@@ -272,6 +273,9 @@ void BindingEngineMri::PreEarlyInitialization(
   Init_zlib();
 #if !defined(OS_ANDROID)
   Init_ruby_prof();
+#endif
+#if defined(OS_WIN)
+  Init_fiddle();
 #endif
 
   MriApplyBindingPatch();

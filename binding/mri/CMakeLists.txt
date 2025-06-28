@@ -23,6 +23,20 @@ set(GEM_EXT_RUBYPROF_SRC
 )
 endif ()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+include_directories(fiddle)
+set(GEM_EXT_FIDDLE_SRC
+  "fiddle/closure.c"
+  "fiddle/conversions.c"
+  "fiddle/fiddle.c"
+  "fiddle/function.c"
+  "fiddle/handle.c"
+  "fiddle/memory_view.c"
+  "fiddle/pinned.c"
+  "fiddle/pointer.c"
+)
+endif ()
+
 #--------------------------------------------------------------------------------
 # Autogen MRI binding source collection
 #--------------------------------------------------------------------------------
@@ -59,6 +73,7 @@ set(BINDING_MRI_SRC
   ${GENERATED_HEADERS}
 
   ${GEM_EXT_RUBYPROF_SRC}
+  ${GEM_EXT_FIDDLE_SRC}
   "zlib/zlib.c"
 )
 
@@ -70,6 +85,7 @@ target_link_libraries(binding_mri
   engine_renderer
   mri_ruby
   zlibstatic
+  ffi
 )
 
 if (ENABLE_ADMENRI_BUILD_VERSION)
