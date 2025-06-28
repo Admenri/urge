@@ -301,8 +301,13 @@ scoped_refptr<Bitmap> RenderScreenImpl::SnapToBitmap(
       CanvasImpl::Create(context(), context()->resolution, exception_state);
   BitmapAgent* texture_agent = target ? target->GetAgent() : nullptr;
 
-  if (texture_agent)
+  if (texture_agent) {
+    // Invalidate render target bitmap cache
+    target->InvalidateSurfaceCache();
+
+    // Execute rendering
     RenderFrameInternal(texture_agent->data, texture_agent->depth_stencil);
+  }
 
   return target;
 }

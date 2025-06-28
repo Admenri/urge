@@ -705,7 +705,7 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
   // Synchronize pending queue immediately,
   // blit the sourcetexture to destination texture immediately.
   src_texture->SubmitQueuedCommands();
-  SubmitQueuedCommands();
+  this->SubmitQueuedCommands();
 
   // Execute blit immediately.
   if (blend_type >= 0) {
@@ -1167,6 +1167,9 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
   render_context->DrawIndexed(draw_indexed_attribs);
+
+  // Release text surface
+  SDL_DestroySurface(text);
 }
 
 void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
@@ -1192,8 +1195,7 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad,
-                                      base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+  renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 

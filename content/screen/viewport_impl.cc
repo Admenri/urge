@@ -113,10 +113,6 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "Invalid render target.");
 
-  // Check flash status
-  if (flash_emitter_.IsFlashing() && flash_emitter_.IsInvalid())
-    return;
-
   // Viewport bound
   const auto bound = rect_->AsBaseRect();
 
@@ -140,25 +136,32 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   controller_params.screen_depth_stencil = bitmap_agent->depth_stencil;
   controller_params.screen_size = bitmap_agent->size;
 
-  // 0) Update uniform buffer if viewport region changed
+  // Update uniform buffer if viewport region changed
   base::Rect transform_cache_rect(-origin_, controller_params.screen_size);
   GPUUpdateViewportTransform(controller_params.context, transform_cache_rect);
 
-  // 0.5) Reset intermediate layer if need
+  // Reset intermediate layer if need
   GPUResetIntermediateLayer(viewport_rect.Size());
 
-  // 1) Execute pre-composite handler
+  // Execute pre-composite handler
   controller_.BroadCastNotification(DrawableNode::BEFORE_RENDER,
                                     &controller_params);
 
-  // 1.5) Update sprite batch data
+  // Update sprite batch data
   context()->sprite_batcher->SubmitBatchDataAndResetCache(
       controller_params.context);
 
-  // 2) Setup renderpass
+  // Setup renderpass
   GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent);
 
-  // 3) Notify render a frame
+  // Invalidate render target bitmap
+  render_target->InvalidateSurfaceCache();
+
+  // Skip rendering if flash
+  if (flash_emitter_.IsFlashing() && flash_emitter_.IsInvalid())
+    return;
+
+  // Notify render a frame
   ScissorStack scissor_stack(controller_params.context, viewport_rect);
   controller_params.root_world = bitmap_agent->world_buffer;
   controller_params.world_binding = agent_.world_uniform;
@@ -166,7 +169,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
                                     &controller_params);
 
-  // 4) End render pass and process after-render effect
+  // End render pass and process after-render effect
   base::Vec4 composite_color = color_->AsNormColor();
   base::Vec4 flash_color = flash_emitter_.GetColor();
   base::Vec4 target_color = composite_color;
