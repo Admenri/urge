@@ -392,7 +392,7 @@ void WindowImpl::ControlNodeHandlerInternal(
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
     GPURenderControlLayerInternal(params->context, params->world_binding,
                                   windowskin_agent, contents_agent,
-                                  params->scissor, params->offset);
+                                  params->scissors);
   }
 }
 
@@ -766,21 +766,17 @@ void WindowImpl::GPURenderControlLayerInternal(
     Diligent::IBuffer* world_binding,
     BitmapAgent* windowskin,
     BitmapAgent* contents,
-    const base::Rect& last_scissor,
-    const base::Vec2i& last_offset) {
+    ScissorStack* scissor_stack) {
+  const auto current_viewport =
+      background_node_.GetParentViewport()->bound.Position() -
+      background_node_.GetParentViewport()->origin;
+
   if (windowskin) {
-    const base::Rect clipping_region(last_offset.x + bound_.x,
-                                     last_offset.y + bound_.y, bound_.width,
-                                     bound_.height);
+    const base::Rect clipping_region(current_viewport.x + bound_.x,
+                                     current_viewport.y + bound_.y,
+                                     bound_.width, bound_.height);
 
-    const auto interaction = base::MakeIntersect(clipping_region, last_scissor);
-    if (interaction.width && interaction.height) {
-      Diligent::Rect render_scissor(interaction.x, interaction.y,
-                                    interaction.x + interaction.width,
-                                    interaction.y + interaction.height);
-      render_context->SetScissorRects(1, &render_scissor, UINT32_MAX,
-                                      UINT32_MAX);
-
+    if (scissor_stack->Push(clipping_region)) {
       auto& pipeline_set = context()->render_device->GetPipelines()->base;
       auto* pipeline =
           pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
@@ -809,22 +805,19 @@ void WindowImpl::GPURenderControlLayerInternal(
       draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
       render_context->DrawIndexed(draw_indexed_attribs);
+
+      // Restore
+      scissor_stack->Pop();
     }
   }
 
   if (contents) {
-    const base::Rect clipping_region(last_offset.x + bound_.x + 8 * scale_,
-                                     last_offset.y + bound_.y + 8 * scale_,
+    const base::Rect clipping_region(current_viewport.x + bound_.x + 8 * scale_,
+                                     current_viewport.y + bound_.y + 8 * scale_,
                                      bound_.width - 16 * scale_,
                                      bound_.height - 16 * scale_);
-    const auto interaction = base::MakeIntersect(clipping_region, last_scissor);
-    if (interaction.width && interaction.height) {
-      Diligent::Rect render_scissor(interaction.x, interaction.y,
-                                    interaction.x + interaction.width,
-                                    interaction.y + interaction.height);
-      render_context->SetScissorRects(1, &render_scissor, UINT32_MAX,
-                                      UINT32_MAX);
 
+    if (scissor_stack->Push(clipping_region)) {
       auto& pipeline_set = context()->render_device->GetPipelines()->base;
       auto* pipeline =
           pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
@@ -854,15 +847,10 @@ void WindowImpl::GPURenderControlLayerInternal(
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
       draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
-    }
-  }
 
-  if (windowskin || contents) {
-    Diligent::Rect clipping_region(last_scissor.x, last_scissor.y,
-                                   last_scissor.x + last_scissor.width,
-                                   last_scissor.y + last_scissor.height);
-    render_context->SetScissorRects(1, &clipping_region, UINT32_MAX,
-                                    UINT32_MAX);
+      // Restore
+      scissor_stack->Pop();
+    }
   }
 }
 

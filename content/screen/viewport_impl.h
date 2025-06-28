@@ -73,29 +73,20 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
   void GPUUpdateViewportTransform(Diligent::IDeviceContext* render_context,
                                   const base::Rect& region);
   void GPUResetIntermediateLayer(const base::Vec2i& effect_size);
-  void GPUResetViewportRegion(Diligent::IDeviceContext* render_context,
-                              const base::Rect& region);
   void GPUApplyViewportEffect(Diligent::IDeviceContext* render_context,
                               Diligent::ITexture* screen_buffer,
                               Diligent::ITexture* screen_depth_stencil,
                               Diligent::IBuffer* root_world,
                               const base::Rect& effect_region,
                               const base::Vec4& color);
-  void GPUViewportProcessAfterRender(Diligent::IDeviceContext* render_context,
-                                     Diligent::IBuffer* root_world,
-                                     Diligent::ITexture* screen_buffer,
-                                     Diligent::ITexture* screen_depth_stencil,
-                                     const base::Rect& effect_region,
-                                     const base::Vec4& color,
-                                     const base::Rect& last_scissor);
   void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
-                                       BitmapAgent* render_target,
-                                       const base::Rect& scissor);
+                                       BitmapAgent* render_target);
 
   DrawableNode node_;
   DrawNodeController controller_;
-  DrawableFlashController flash_emitter_;
+
   Agent agent_;
+  DrawableFlashController flash_emitter_;
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<RectImpl> rect_;
   base::Vec2i origin_;

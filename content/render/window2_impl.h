@@ -104,8 +104,7 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
                                     BitmapAgent* contents,
                                     BitmapAgent* windowskin,
                                     const base::Rect& padding_rect,
-                                    const base::Rect& last_scissor,
-                                    const base::Vec2i& last_offset);
+                                    ScissorStack* scissor_stack);
 
   bool rgss3_style_ = false;
   DrawableNode node_;

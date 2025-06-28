@@ -493,7 +493,7 @@ void Window2Impl::DrawableNodeHandlerInternal(
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
     GPURenderWindowQuadsInternal(params->context, params->world_binding,
                                  contents_agent, windowskin_agent, padding_rect,
-                                 params->scissor, params->offset);
+                                 params->scissors);
   }
 }
 
@@ -994,8 +994,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
     BitmapAgent* contents,
     BitmapAgent* windowskin,
     const base::Rect& padding_rect,
-    const base::Rect& last_scissor,
-    const base::Vec2i& last_offset) {
+    ScissorStack* scissor_stack) {
   auto& pipeline_set = context()->render_device->GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
@@ -1033,37 +1032,28 @@ void Window2Impl::GPURenderWindowQuadsInternal(
   }
 
   if (openness_ >= 255) {
+    const auto current_viewport = node_.GetParentViewport()->bound.Position() -
+                                  node_.GetParentViewport()->origin;
+
+    // Controls render pass
+    if (windowskin && agent_.controls_draw_count) {
+      render_context->SetPipelineState(pipeline);
+      render_context->CommitShaderResources(
+          *agent_.controls_binding,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Execute render command
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
+      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.FirstIndexLocation = agent_.controls_quad_offset * 6;
+      render_context->DrawIndexed(draw_indexed_attribs);
+    }
+
     const base::Rect clip_region(
-        last_offset + bound_.Position() + padding_rect.Position(),
+        current_viewport + bound_.Position() + padding_rect.Position(),
         padding_rect.Size());
-
-    const auto interaction = base::MakeIntersect(last_scissor, clip_region);
-    if (interaction.width && interaction.height) {
-      // Controls render pass
-      if (windowskin && agent_.controls_draw_count) {
-        render_context->SetPipelineState(pipeline);
-        render_context->CommitShaderResources(
-            *agent_.controls_binding,
-            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Execute render command
-        Diligent::DrawIndexedAttribs draw_indexed_attribs;
-        draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
-        draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-        draw_indexed_attribs.FirstIndexLocation =
-            agent_.controls_quad_offset * 6;
-        render_context->DrawIndexed(draw_indexed_attribs);
-      }
-
-      // Set scissor for cursor and contents
-      {
-        Diligent::Rect render_scissor(interaction.x, interaction.y,
-                                      interaction.x + interaction.width,
-                                      interaction.y + interaction.height);
-        render_context->SetScissorRects(1, &render_scissor, UINT32_MAX,
-                                        UINT32_MAX);
-      }
-
+    if (scissor_stack->Push(clip_region)) {
       // Cursor pass
       if (windowskin && agent_.cursor_draw_count) {
         render_context->SetPipelineState(pipeline);
@@ -1096,13 +1086,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
       }
 
       // Restore scissor region
-      {
-        Diligent::Rect clipping_region(last_scissor.x, last_scissor.y,
-                                       last_scissor.x + last_scissor.width,
-                                       last_scissor.y + last_scissor.height);
-        render_context->SetScissorRects(1, &clipping_region, UINT32_MAX,
-                                        UINT32_MAX);
-      }
+      scissor_stack->Pop();
     }
   }
 }

@@ -4,6 +4,8 @@
 
 #include "content/render/drawable_controller.h"
 
+#include "Graphics/GraphicsEngine/interface/DeviceContext.h"
+
 namespace content {
 
 static int64_t g_creation_stamp = 0;
@@ -17,6 +19,44 @@ SortKey::SortKey(int64_t key1, int64_t key2)
 
 SortKey::SortKey(int64_t key1, int64_t key2, int64_t key3)
     : weight{key1, key2, key3} {}
+
+ScissorStack::ScissorStack(Diligent::IDeviceContext* context,
+                           const base::Rect& first)
+    : context_(context) {
+  stack_.push(first);
+  Reset();
+}
+
+base::Rect ScissorStack::Current() {
+  return stack_.top();
+}
+
+bool ScissorStack::Push(const base::Rect& scissor) {
+  auto intersect = base::MakeIntersect(stack_.top(), scissor);
+  if (intersect.width && intersect.height) {
+    stack_.push(intersect);
+    Reset();
+
+    return true;
+  }
+
+  return false;
+}
+
+void ScissorStack::Pop() {
+  stack_.pop();
+  Reset();
+}
+
+void ScissorStack::Reset() {
+  SetScissor(stack_.top());
+}
+
+void ScissorStack::SetScissor(const base::Rect& bound) {
+  Diligent::Rect render_scissor(bound.x, bound.y, bound.x + bound.width,
+                                bound.y + bound.height);
+  context_->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+}
 
 DrawableNode::DrawableNode(DrawNodeController* controller,
                            const SortKey& default_key,
@@ -122,6 +162,10 @@ DrawableNode* DrawableNode::GetPreviousNode() {
 DrawableNode* DrawableNode::GetNextNode() {
   auto* node = next();
   return node ? node->value() : nullptr;
+}
+
+ViewportInfo* DrawableNode::GetParentViewport() {
+  return controller_ ? &controller_->CurrentViewport() : nullptr;
 }
 
 DrawNodeController::DrawNodeController() = default;

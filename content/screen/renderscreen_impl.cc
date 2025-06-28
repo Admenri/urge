@@ -301,9 +301,6 @@ scoped_refptr<Bitmap> RenderScreenImpl::SnapToBitmap(
       CanvasImpl::Create(context(), context()->resolution, exception_state);
   BitmapAgent* texture_agent = target ? target->GetAgent() : nullptr;
 
-  // Clear bitmap
-  target->Clear(exception_state);
-
   if (texture_agent)
     RenderFrameInternal(texture_agent->data, texture_agent->depth_stencil);
 
@@ -525,16 +522,16 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
   // Submit pending canvas commands
   context()->canvas_scheduler->SubmitPendingPaintCommands();
 
+  // Setup viewport
+  controller_.CurrentViewport().bound = context()->resolution;
+  controller_.CurrentViewport().origin = origin_;
+
   // Prepare for rendering context
   DrawableNode::RenderControllerParams controller_params;
   controller_params.context = context()->primary_render_context;
   controller_params.screen_buffer = render_target;
   controller_params.screen_depth_stencil = depth_stencil;
   controller_params.screen_size = context()->resolution;
-  controller_params.scissor = context()->resolution;
-  controller_params.offset = -origin_;
-  controller_params.unmasked_viewport_size = context()->resolution;
-  controller_params.origin = origin_;
 
   // 1) Execute pre-composite handler
   controller_.BroadCastNotification(DrawableNode::BEFORE_RENDER,
@@ -549,8 +546,10 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
                                   depth_stencil);
 
   // 3) Notify render a frame
+  ScissorStack scissor_stack(controller_params.context, context()->resolution);
   controller_params.root_world = agent_.root_transform;
   controller_params.world_binding = agent_.world_transform;
+  controller_params.scissors = &scissor_stack;
   controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
                                     &controller_params);
 

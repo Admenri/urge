@@ -92,8 +92,7 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
                                      Diligent::IBuffer* world_binding,
                                      BitmapAgent* windowskin,
                                      BitmapAgent* contents,
-                                     const base::Rect& last_scissor,
-                                     const base::Vec2i& last_offset);
+                                     ScissorStack* scissor_stack);
 
   DrawableNode background_node_;
   DrawableNode control_node_;

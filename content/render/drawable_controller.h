@@ -69,6 +69,39 @@ struct SortKey {
   }
 };
 
+struct ViewportInfo {
+  // Bound in screen coordinate
+  base::Rect bound;
+
+  // Origin attribute of current viewport
+  base::Vec2i origin;
+};
+
+// Stacked scissor state manager
+class ScissorStack {
+ public:
+  ScissorStack(Diligent::IDeviceContext* context, const base::Rect& first);
+
+  ScissorStack(const ScissorStack&) = delete;
+  ScissorStack& operator=(const ScissorStack&) = delete;
+
+  // Current storage scissor region
+  base::Rect Current();
+
+  // Stack operation for scissor
+  bool Push(const base::Rect& scissor);
+  void Pop();
+
+  // Reset current scissor state with storage scissor region
+  void Reset();
+
+ private:
+  void SetScissor(const base::Rect& bound);
+
+  Diligent::IDeviceContext* context_;
+  base::Stack<base::Rect> stack_;
+};
+
 // Drawable child node,
 // expect to be set in class as a node variable.
 class DrawableNode final : public base::LinkNode<DrawableNode> {
@@ -94,18 +127,8 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
     base::Vec2i screen_size;
 
     // [Stage: all]
-    // Current real scissor region in screen. (2D)
-    base::Rect scissor;
-
-    // [Stage: all]
-    // Current real display offset in screen (2D)
-    base::Vec2i offset;
-
-    // [Stage: all]
-    // Unmasked viewport size
-    base::Vec2i unmasked_viewport_size;
-    // Current viewport origin attribute (2D)
-    base::Vec2i origin;
+    // Viewport operation
+    ScissorStack* scissors = nullptr;
 
     // [Stage: on rendering]
     // World transform matrix with offset. (2D)
@@ -171,6 +194,9 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
   DrawableNode* GetPreviousNode();
   DrawableNode* GetNextNode();
 
+  // Parent viewport
+  ViewportInfo* GetParentViewport();
+
   // Debug info
   void SetDebugLabel(const base::String& label) { debug_label_ = label; }
   base::String GetDebugLabel() const { return debug_label_; }
@@ -205,6 +231,9 @@ class DrawNodeController final {
   void BroadCastNotification(DrawableNode::RenderStage nid,
                              DrawableNode::RenderControllerParams* params);
 
+  // Access current viewport info
+  inline ViewportInfo& CurrentViewport() { return viewport_; }
+
  private:
   friend class DrawableNode;
 
@@ -213,6 +242,9 @@ class DrawNodeController final {
 
   // Nodes sorted by key boardcast list (in-order, Z min to max)
   base::LinkedList<DrawableNode> children_list_;
+
+  // Node cluster attributes
+  ViewportInfo viewport_;
 };
 
 // Flash duration controller components
