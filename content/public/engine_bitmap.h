@@ -10,6 +10,8 @@
 #include "content/context/exception_state.h"
 #include "content/public/engine_color.h"
 #include "content/public/engine_font.h"
+#include "content/public/engine_gpubuffer.h"
+#include "content/public/engine_gputexture.h"
 #include "content/public/engine_iostream.h"
 #include "content/public/engine_rect.h"
 #include "content/public/engine_surface.h"
@@ -41,6 +43,12 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   static scoped_refptr<Bitmap> FromSurface(ExecutionContext* execution_context,
                                            scoped_refptr<Surface> surface,
                                            ExceptionState& exception_state);
+
+  /*--urge(name:from_texture)--*/
+  static scoped_refptr<Bitmap> FromTexture(
+      ExecutionContext* execution_context,
+      scoped_refptr<GPUTexture> gpu_texture,
+      ExceptionState& exception_state);
 
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Bitmap> FromStream(ExecutionContext* execution_context,
@@ -196,8 +204,32 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
   virtual scoped_refptr<Rect> TextSize(const base::String& str,
                                        ExceptionState& exception_state) = 0;
 
-  /*--urge(name:get_surface)--*/
-  virtual scoped_refptr<Surface> GetSurface(
+  /*--urge(name:create_surface)--*/
+  virtual scoped_refptr<Surface> CreateSurface(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:texture)--*/
+  virtual scoped_refptr<GPUTexture> GetTexture(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:depth_stencil)--*/
+  virtual scoped_refptr<GPUTexture> GetDepthStencil(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:shader_resource_view)--*/
+  virtual scoped_refptr<GPUTextureView> GetShaderResourceView(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:render_target_view)--*/
+  virtual scoped_refptr<GPUTextureView> GetRenderTargetView(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:depth_stencil_view)--*/
+  virtual scoped_refptr<GPUTextureView> GetDepthStencilView(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:world_uniform_buffer)--*/
+  virtual scoped_refptr<GPUBuffer> GetWorldUniformBuffer(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:font)--*/

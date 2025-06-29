@@ -12,6 +12,8 @@
 #include "content/common/color_impl.h"
 #include "content/common/rect_impl.h"
 #include "content/context/execution_context.h"
+#include "content/gpu/buffer_impl.h"
+#include "content/gpu/texture_impl.h"
 #include "content/io/iostream_impl.h"
 #include "content/screen/renderscreen_impl.h"
 #include "renderer/utils/texture_utils.h"
@@ -70,6 +72,24 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
 
   return base::MakeRefCounted<CanvasImpl>(execution_context, surface_duplicate,
                                           "SurfaceDataBitmap");
+}
+
+scoped_refptr<Bitmap> Bitmap::FromTexture(ExecutionContext* execution_context,
+                                          scoped_refptr<GPUTexture> gpu_texture,
+                                          ExceptionState& exception_state) {
+  auto* texture_impl = static_cast<TextureImpl*>(gpu_texture.get());
+  RRefPtr<Diligent::ITexture> texture_object;
+  if (texture_impl)
+    texture_object = texture_impl->AsRawPtr();
+
+  if (!texture_object) {
+    exception_state.ThrowError(ExceptionCode::GPU_ERROR,
+                               "Invalid GPU texture.");
+    return nullptr;
+  }
+
+  return base::MakeRefCounted<CanvasImpl>(execution_context, texture_object,
+                                          "GPUTextureBitmap");
 }
 
 scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
@@ -277,6 +297,22 @@ CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
   GPUCreateTextureWithDataInternal();
 }
 
+CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
+                       RRefPtr<Diligent::ITexture> gpu_texture,
+                       const base::String& debug_name)
+    : EngineObject(execution_context),
+      Disposable(execution_context->disposable_parent),
+      name_(debug_name),
+      surface_(nullptr),
+      font_(base::MakeRefCounted<FontImpl>(execution_context->font_context)) {
+  // Add link in scheduler node
+  context()->canvas_scheduler->children_.Append(this);
+
+  // Create renderer texture with texture
+  agent_.data = gpu_texture;
+  GPUCreateTextureWithDataInternal();
+}
+
 CanvasImpl::~CanvasImpl() {
   ExceptionState exception_state;
   Dispose(exception_state);
@@ -363,22 +399,19 @@ bool CanvasImpl::IsDisposed(ExceptionState& exception_state) {
 }
 
 uint32_t CanvasImpl::Width(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return agent_.size.x;
 }
 
 uint32_t CanvasImpl::Height(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return agent_.size.y;
 }
 
 scoped_refptr<Rect> CanvasImpl::GetRect(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return base::MakeRefCounted<RectImpl>(agent_.size);
 }
@@ -390,8 +423,7 @@ void CanvasImpl::Blt(int32_t x,
                      uint32_t opacity,
                      int32_t blend_type,
                      ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CanvasImpl* src_canvas = static_cast<CanvasImpl*>(src_bitmap.get());
   if (!src_canvas || !src_canvas->GetAgent())
@@ -414,8 +446,7 @@ void CanvasImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
                             uint32_t opacity,
                             int32_t blend_type,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CanvasImpl* src_canvas = static_cast<CanvasImpl*>(src_bitmap.get());
   if (!src_canvas || !src_canvas->GetAgent())
@@ -464,8 +495,7 @@ void CanvasImpl::GradientFillRect(int32_t x,
                                   scoped_refptr<Color> color2,
                                   bool vertical,
                                   ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (width <= 0 || height <= 0)
     return;
@@ -523,8 +553,7 @@ void CanvasImpl::GradientFillRect(scoped_refptr<Rect> rect,
 }
 
 void CanvasImpl::Clear(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   AllocateCommand<Command_Clear>();
   InvalidateSurfaceCache();
@@ -535,8 +564,7 @@ void CanvasImpl::ClearRect(int32_t x,
                            uint32_t width,
                            uint32_t height,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   auto* command = AllocateCommand<Command_GradientFillRect>();
   command->region = base::Rect(x, y, width, height);
@@ -561,8 +589,7 @@ void CanvasImpl::ClearRect(scoped_refptr<Rect> rect,
 scoped_refptr<Color> CanvasImpl::GetPixel(int32_t x,
                                           int32_t y,
                                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   if (x < 0 || x >= agent_.size.x || y < 0 || y >= agent_.size.y)
     return nullptr;
@@ -586,8 +613,7 @@ void CanvasImpl::SetPixel(int32_t x,
                           int32_t y,
                           scoped_refptr<Color> color,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (x < 0 || x >= agent_.size.x || y < 0 || y >= agent_.size.y)
     return;
@@ -618,8 +644,7 @@ void CanvasImpl::SetPixel(int32_t x,
 }
 
 void CanvasImpl::HueChange(int32_t hue, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (hue % 360 == 0)
     return;
@@ -635,8 +660,7 @@ void CanvasImpl::HueChange(int32_t hue, ExceptionState& exception_state) {
 }
 
 void CanvasImpl::Blur(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   auto* command = AllocateCommand<Command_RadialBlur>();
   command->blur = true;
@@ -647,8 +671,7 @@ void CanvasImpl::Blur(ExceptionState& exception_state) {
 void CanvasImpl::RadialBlur(int32_t angle,
                             int32_t division,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   auto* command = AllocateCommand<Command_RadialBlur>();
   command->blur = false;
@@ -665,8 +688,7 @@ void CanvasImpl::DrawText(int32_t x,
                           const base::String& str,
                           int32_t align,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   auto* font_object = static_cast<FontImpl*>(font_.get());
   if (!font_object->GetCanonicalFont(exception_state))
@@ -720,8 +742,7 @@ void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
 
 scoped_refptr<Rect> CanvasImpl::TextSize(const base::String& str,
                                          ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   TTF_Font* font =
       static_cast<FontImpl*>(font_.get())->GetCanonicalFont(exception_state);
@@ -733,12 +754,54 @@ scoped_refptr<Rect> CanvasImpl::TextSize(const base::String& str,
   return base::MakeRefCounted<RectImpl>(base::Rect(0, 0, w, h));
 }
 
-scoped_refptr<Surface> CanvasImpl::GetSurface(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+scoped_refptr<Surface> CanvasImpl::CreateSurface(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
 
   SDL_Surface* surface = RequireMemorySurface();
   return base::MakeRefCounted<SurfaceImpl>(context(), surface);
+}
+
+scoped_refptr<GPUTexture> CanvasImpl::GetTexture(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return base::MakeRefCounted<TextureImpl>(context(), agent_.data);
+}
+
+scoped_refptr<GPUTexture> CanvasImpl::GetDepthStencil(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return base::MakeRefCounted<TextureImpl>(context(), agent_.depth_stencil);
+}
+
+scoped_refptr<GPUTextureView> CanvasImpl::GetShaderResourceView(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return base::MakeRefCounted<TextureViewImpl>(context(), agent_.resource);
+}
+
+scoped_refptr<GPUTextureView> CanvasImpl::GetRenderTargetView(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return base::MakeRefCounted<TextureViewImpl>(context(), agent_.target);
+}
+
+scoped_refptr<GPUTextureView> CanvasImpl::GetDepthStencilView(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return base::MakeRefCounted<TextureViewImpl>(context(), agent_.depth_view);
+}
+
+scoped_refptr<GPUBuffer> CanvasImpl::GetWorldUniformBuffer(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return base::MakeRefCounted<BufferImpl>(context(), agent_.world_buffer);
 }
 
 void CanvasImpl::OnObjectDisposed() {
@@ -806,12 +869,15 @@ void CanvasImpl::GPUCreateTextureWithDataInternal() {
   }
 
   // Setup GPU texture
+  if (!agent_.data)
+    renderer::CreateTexture2D(
+        *render_device, &agent_.data, agent_.name, surface_,
+        Diligent::USAGE_DEFAULT,
+        Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+
   agent_.name = "bitmap.texture<\"" + name_ + "\">";
-  agent_.size = base::Vec2i(surface_->w, surface_->h);
-  renderer::CreateTexture2D(
-      *render_device, &agent_.data, agent_.name, surface_,
-      Diligent::USAGE_DEFAULT,
-      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+  agent_.size =
+      base::Vec2i(agent_.data->GetDesc().Width, agent_.data->GetDesc().Height);
   renderer::CreateTexture2D(
       *render_device, &agent_.depth_stencil, agent_.name, agent_.size,
       Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,

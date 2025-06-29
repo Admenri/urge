@@ -52,19 +52,22 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                    public EngineObject,
                    public Disposable {
  public:
-  CanvasImpl(ExecutionContext* context,
+  CanvasImpl(ExecutionContext* execution_context,
              SDL_Surface* memory_surface,
+             const base::String& debug_name);
+  CanvasImpl(ExecutionContext* execution_context,
+             RRefPtr<Diligent::ITexture> gpu_texture,
              const base::String& debug_name);
   ~CanvasImpl() override;
 
   CanvasImpl(const CanvasImpl&) = delete;
   CanvasImpl& operator=(const CanvasImpl&) = delete;
 
-  static scoped_refptr<CanvasImpl> Create(ExecutionContext* context,
+  static scoped_refptr<CanvasImpl> Create(ExecutionContext* execution_context,
                                           const base::Vec2i& size,
                                           ExceptionState& exception_state);
 
-  static scoped_refptr<CanvasImpl> Create(ExecutionContext* context,
+  static scoped_refptr<CanvasImpl> Create(ExecutionContext* execution_context,
                                           const base::String& filename,
                                           ExceptionState& exception_state);
 
@@ -187,7 +190,21 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   scoped_refptr<Rect> TextSize(const base::String& str,
                                ExceptionState& exception_state) override;
 
-  scoped_refptr<Surface> GetSurface(ExceptionState& exception_state) override;
+  scoped_refptr<Surface> CreateSurface(
+      ExceptionState& exception_state) override;
+
+  scoped_refptr<GPUTexture> GetTexture(
+      ExceptionState& exception_state) override;
+  scoped_refptr<GPUTexture> GetDepthStencil(
+      ExceptionState& exception_state) override;
+  scoped_refptr<GPUTextureView> GetShaderResourceView(
+      ExceptionState& exception_state) override;
+  scoped_refptr<GPUTextureView> GetRenderTargetView(
+      ExceptionState& exception_state) override;
+  scoped_refptr<GPUTextureView> GetDepthStencilView(
+      ExceptionState& exception_state) override;
+  scoped_refptr<GPUBuffer> GetWorldUniformBuffer(
+      ExceptionState& exception_state) override;
 
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Font, scoped_refptr<Font>);
 

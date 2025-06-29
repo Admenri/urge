@@ -346,8 +346,6 @@ struct VSInput {
   float4 InstanceRotation : ATTRIB8;
   float4 InstanceOpacity : ATTRIB9;
   float4 InstanceBushDepthAndOpacity : ATTRIB10;
-
-  uint VertexIdx : SV_VertexID;
 };
 
 )";
