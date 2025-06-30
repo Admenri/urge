@@ -67,8 +67,8 @@ class RenderDevice {
   RenderDevice& operator=(const RenderDevice&) = delete;
 
   // Device access
-  inline Diligent::IRenderDevice* operator->() { return device_; }
-  inline Diligent::IRenderDevice* operator*() { return device_; }
+  Diligent::IRenderDevice* operator->() { return device_; }
+  Diligent::IRenderDevice* operator*() { return device_; }
 
   // Device Attribute interface
   base::WeakPtr<ui::Widget> GetWindow() { return window_; }
@@ -79,7 +79,7 @@ class RenderDevice {
   QuadIndexCache* GetQuadIndex() { return &quad_index_; }
 
   // Max texture size
-  inline int32_t MaxTextureSize() const { return max_texture_size_; }
+  int32_t MaxTextureSize() const { return max_texture_size_; }
 
   // Managed mobile rendering context
   void SuspendContext();

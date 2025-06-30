@@ -19,7 +19,7 @@
 namespace renderer {
 
 #define MAKE_BINDING_FUNCTION(ty, x) \
-  inline ty CreateBinding() {        \
+  ty CreateBinding() {               \
     return CreateBindingAt<ty>(x);   \
   }
 
@@ -55,13 +55,12 @@ class RenderPipelineBase {
   RenderPipelineBase(const RenderPipelineBase&) = default;
   RenderPipelineBase& operator=(const RenderPipelineBase&) = default;
 
-  inline Diligent::IPipelineState* GetPipeline(BlendType blend,
-                                               int32_t depth_stencil) const {
+  Diligent::IPipelineState* GetPipeline(BlendType blend,
+                                        int32_t depth_stencil) const {
     return pipelines_[blend][depth_stencil];
   }
 
-  inline Diligent::IPipelineResourceSignature* GetSignatureAt(
-      size_t index) const {
+  Diligent::IPipelineResourceSignature* GetSignatureAt(size_t index) const {
     return resource_signatures_[index];
   }
 

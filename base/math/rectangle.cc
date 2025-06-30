@@ -8,18 +8,6 @@
 
 namespace base {
 
-std::ostream& operator<<(std::ostream& os, const Rect& value) {
-  os << "Rect <" << value.x << ", " << value.y << ", " << value.width << ", "
-     << value.height << ">";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const RectF& value) {
-  os << "RectF <" << value.x << ", " << value.y << ", " << value.width << ", "
-     << value.height << ">";
-  return os;
-}
-
 base::Rect MakeIntersect(const base::Rect& A, const base::Rect& B) {
   int32_t Amin, Amax, Bmin, Bmax;
   base::Rect result;
@@ -53,11 +41,6 @@ base::Rect MakeIntersect(const base::Rect& A, const base::Rect& B) {
   result.height = std::max(0, Amax - Amin);
 
   return result;
-}
-
-RectF Rect::ToFloatRect() const {
-  return RectF(static_cast<float>(x), static_cast<float>(y),
-               static_cast<float>(width), static_cast<float>(height));
 }
 
 }  // namespace base

@@ -35,24 +35,27 @@ class Vec2i {
     return *this;
   }
 
-  inline Vec2i operator-() const { return Vec2i(-x, -y); }
+  Vec2i operator-() const { return Vec2i(-x, -y); }
 
-  inline bool operator==(const Vec2i& other) const {
+  bool operator==(const Vec2i& other) const {
     return other.x == x && other.y == y;
   }
-  inline Vec2i operator+(const Vec2i& value) const {
+  bool operator!=(const Vec2i& other) const {
+    return other.x != x || other.y != y;
+  }
+  Vec2i operator+(const Vec2i& value) const {
     return Vec2i(x + value.x, y + value.y);
   }
-  inline Vec2i operator-(const Vec2i& value) const {
+  Vec2i operator-(const Vec2i& value) const {
     return Vec2i(x - value.x, y - value.y);
   }
-  inline Vec2i operator*(const Vec2i& value) const {
+  Vec2i operator*(const Vec2i& value) const {
     return Vec2i(x * value.x, y * value.y);
   }
-  inline Vec2i operator/(const Vec2i& value) const {
+  Vec2i operator/(const Vec2i& value) const {
     return Vec2i(x / value.x, y / value.y);
   }
-  inline Vec2i operator%(const Vec2i& value) const {
+  Vec2i operator%(const Vec2i& value) const {
     return Vec2i(x % value.x, y % value.y);
   }
 
@@ -81,21 +84,24 @@ class Vec2 {
     return *this;
   }
 
-  inline Vec2 operator-() const { return Vec2(-x, -y); }
+  Vec2 operator-() const { return Vec2(-x, -y); }
 
-  inline bool operator==(const Vec2& other) const {
+  bool operator==(const Vec2& other) const {
     return other.x == x && other.y == y;
   }
-  inline Vec2 operator+(const Vec2& value) const {
+  bool operator!=(const Vec2& other) const {
+    return other.x != x || other.y != y;
+  }
+  Vec2 operator+(const Vec2& value) const {
     return Vec2(x + value.x, y + value.y);
   }
-  inline Vec2 operator-(const Vec2& value) const {
+  Vec2 operator-(const Vec2& value) const {
     return Vec2(x - value.x, y - value.y);
   }
-  inline Vec2 operator*(const Vec2& value) const {
+  Vec2 operator*(const Vec2& value) const {
     return Vec2(x * value.x, y * value.y);
   }
-  inline Vec2 operator/(const Vec2& value) const {
+  Vec2 operator/(const Vec2& value) const {
     return Vec2(x / value.x, y / value.y);
   }
 
@@ -124,24 +130,27 @@ class Vec3i {
     return *this;
   }
 
-  inline Vec3i operator-() const { return Vec3i(-x, -y, -z); }
+  Vec3i operator-() const { return Vec3i(-x, -y, -z); }
 
-  inline bool operator==(const Vec3i& other) const {
+  bool operator==(const Vec3i& other) const {
     return other.x == x && other.y == y && other.z == z;
   }
-  inline Vec3i operator+(const Vec3i& value) const {
+  bool operator!=(const Vec3i& other) const {
+    return other.x != x || other.y != y || other.z != z;
+  }
+  Vec3i operator+(const Vec3i& value) const {
     return Vec3i(x + value.x, y + value.y, z + value.z);
   }
-  inline Vec3i operator-(const Vec3i& value) const {
+  Vec3i operator-(const Vec3i& value) const {
     return Vec3i(x - value.x, y - value.y, z - value.z);
   }
-  inline Vec3i operator*(const Vec3i& value) const {
+  Vec3i operator*(const Vec3i& value) const {
     return Vec3i(x * value.x, y * value.y, z * value.z);
   }
-  inline Vec3i operator/(const Vec3i& value) const {
+  Vec3i operator/(const Vec3i& value) const {
     return Vec3i(x / value.x, y / value.y, z / value.z);
   }
-  inline Vec3i operator%(const Vec3i& value) const {
+  Vec3i operator%(const Vec3i& value) const {
     return Vec3i(x % value.x, y % value.y, z % value.z);
   }
 
@@ -174,21 +183,24 @@ class Vec3 {
     return *this;
   }
 
-  inline Vec3 operator-() const { return Vec3(-x, -y, -z); }
+  Vec3 operator-() const { return Vec3(-x, -y, -z); }
 
-  inline bool operator==(const Vec3& other) const {
+  bool operator==(const Vec3& other) const {
     return other.x == x && other.y == y && other.z == z;
   }
-  inline Vec3 operator+(const Vec3& value) const {
+  bool operator!=(const Vec3& other) const {
+    return other.x != x || other.y != y || other.z != z;
+  }
+  Vec3 operator+(const Vec3& value) const {
     return Vec3(x + value.x, y + value.y, z + value.z);
   }
-  inline Vec3 operator-(const Vec3& value) const {
+  Vec3 operator-(const Vec3& value) const {
     return Vec3(x - value.x, y - value.y, z - value.z);
   }
-  inline Vec3 operator*(const Vec3& value) const {
+  Vec3 operator*(const Vec3& value) const {
     return Vec3(x * value.x, y * value.y, z * value.z);
   }
-  inline Vec3 operator/(const Vec3& value) const {
+  Vec3 operator/(const Vec3& value) const {
     return Vec3(x / value.x, y / value.y, z / value.z);
   }
 
@@ -220,24 +232,27 @@ class Vec4i {
     return *this;
   }
 
-  inline Vec4i operator-() const { return Vec4i(-x, -y, -z, -w); }
+  Vec4i operator-() const { return Vec4i(-x, -y, -z, -w); }
 
-  inline bool operator==(const Vec4i& other) const {
+  bool operator==(const Vec4i& other) const {
     return other.x == x && other.y == y && other.z == z && other.w == w;
   }
-  inline Vec4i operator+(const Vec4i& value) const {
+  bool operator!=(const Vec4i& other) const {
+    return other.x != x || other.y != y || other.z != z || other.w != w;
+  }
+  Vec4i operator+(const Vec4i& value) const {
     return Vec4i(x + value.x, y + value.y, z + value.z, w + value.w);
   }
-  inline Vec4i operator-(const Vec4i& value) const {
+  Vec4i operator-(const Vec4i& value) const {
     return Vec4i(x - value.x, y - value.y, z - value.z, w - value.w);
   }
-  inline Vec4i operator*(const Vec4i& value) const {
+  Vec4i operator*(const Vec4i& value) const {
     return Vec4i(x * value.x, y * value.y, z * value.z, w * value.w);
   }
-  inline Vec4i operator/(const Vec4i& value) const {
+  Vec4i operator/(const Vec4i& value) const {
     return Vec4i(x / value.x, y / value.y, z / value.z, w / value.w);
   }
-  inline Vec4i operator%(const Vec4i& value) const {
+  Vec4i operator%(const Vec4i& value) const {
     return Vec4i(x % value.x, y % value.y, z % value.z, w % value.w);
   }
 
@@ -273,21 +288,24 @@ class Vec4 {
     return *this;
   }
 
-  inline Vec4 operator-() const { return Vec4(-x, -y, -z, -w); }
+  Vec4 operator-() const { return Vec4(-x, -y, -z, -w); }
 
-  inline bool operator==(const Vec4& other) const {
+  bool operator==(const Vec4& other) const {
     return other.x == x && other.y == y && other.z == z && other.w == w;
   }
-  inline Vec4 operator+(const Vec4& value) const {
+  bool operator!=(const Vec4& other) const {
+    return other.x != x || other.y != y || other.z != z || other.w != w;
+  }
+  Vec4 operator+(const Vec4& value) const {
     return Vec4(x + value.x, y + value.y, z + value.z, w + value.w);
   }
-  inline Vec4 operator-(const Vec4& value) const {
+  Vec4 operator-(const Vec4& value) const {
     return Vec4(x - value.x, y - value.y, z - value.z, w - value.w);
   }
-  inline Vec4 operator*(const Vec4& value) const {
+  Vec4 operator*(const Vec4& value) const {
     return Vec4(x * value.x, y * value.y, z * value.z, w * value.w);
   }
-  inline Vec4 operator/(const Vec4& value) const {
+  Vec4 operator/(const Vec4& value) const {
     return Vec4(x / value.x, y / value.y, z / value.z, w / value.w);
   }
 

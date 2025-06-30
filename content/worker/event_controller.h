@@ -88,22 +88,22 @@ class EventController {
 
   void DispatchEvent(SDL_Event* event);
 
-  inline void PollKeyEvents(base::Vector<KeyEventData>& out) {
+  void PollKeyEvents(base::Vector<KeyEventData>& out) {
     out = key_events_;
     key_events_.clear();
   }
 
-  inline void PollMouseEvents(base::Vector<MouseEventData>& out) {
+  void PollMouseEvents(base::Vector<MouseEventData>& out) {
     out = mouse_events_;
     mouse_events_.clear();
   }
 
-  inline void PollTouchEvents(base::Vector<TouchEventData>& out) {
+  void PollTouchEvents(base::Vector<TouchEventData>& out) {
     out = touch_events_;
     touch_events_.clear();
   }
 
-  inline void PollTextInputEvents(base::Vector<TextInputEventData>& out) {
+  void PollTextInputEvents(base::Vector<TextInputEventData>& out) {
     out = text_input_events_;
     text_input_events_.clear();
   }

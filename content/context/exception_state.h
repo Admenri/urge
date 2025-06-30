@@ -61,8 +61,7 @@ class ExceptionState {
     return;
 
 template <typename Ty>
-inline bool CheckValueValid(scoped_refptr<Ty> obj,
-                            ExceptionState& exception_state) {
+bool CheckValueValid(scoped_refptr<Ty> obj, ExceptionState& exception_state) {
   if (!obj) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Invalid value object.");

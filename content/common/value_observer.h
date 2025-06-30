@@ -15,7 +15,7 @@ class ValueNotification {
 
   // Add a observer to host,
   // keep return value for observer lifespan managing.
-  inline base::CallbackListSubscription AddObserver(
+  base::CallbackListSubscription AddObserver(
       const base::RepeatingClosure& handler) {
     return observers_.Add(std::move(handler));
   }

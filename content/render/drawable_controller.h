@@ -60,7 +60,7 @@ struct SortKey {
   SortKey(int64_t key1, int64_t key2, int64_t key3);
 
   // Compare self with other for displaying under other object.
-  inline bool operator<(const SortKey& other) const {
+  bool operator<(const SortKey& other) const {
     for (int32_t i = 0; i < 3; ++i)
       if (weight[i] != other.weight[i])
         return weight[i] < other.weight[i];
@@ -232,7 +232,7 @@ class DrawNodeController final {
                              DrawableNode::RenderControllerParams* params);
 
   // Access current viewport info
-  inline ViewportInfo& CurrentViewport() { return viewport_; }
+  ViewportInfo& CurrentViewport() { return viewport_; }
 
  private:
   friend class DrawableNode;

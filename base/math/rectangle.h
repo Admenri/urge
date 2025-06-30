@@ -40,43 +40,25 @@ class Rect {
     return *this;
   }
 
-  inline bool operator==(const Rect& other) const {
+  bool operator==(const Rect& other) const {
     return other.x == x && other.y == y && other.width == width &&
            other.height == height;
   }
 
-  inline Rect operator*(const Rect& value) const {
+  bool operator!=(const Rect& other) const {
+    return other.x != x || other.y != y || other.width != width ||
+           other.height != height;
+  }
+
+  Rect operator*(const Rect& value) const {
     return Rect(x * value.x, y * value.y, width * value.width,
                 height * value.height);
   }
 
-  inline SDL_Rect ToSDLRect() const { return SDL_Rect{x, y, width, height}; }
-  RectF ToFloatRect() const;
+  SDL_Rect ToSDLRect() const { return SDL_Rect{x, y, width, height}; }
 
-  inline base::Vec2i Position() const { return base::Vec2i(x, y); }
-  inline base::Vec2i Size() const { return base::Vec2i(width, height); }
-
-  inline Rect& SetPosition(const base::Vec2i& value) {
-    x = value.x;
-    y = value.y;
-    return *this;
-  }
-
-  inline Rect& SetSize(const base::Vec2i& value) {
-    width = value.x;
-    height = value.y;
-    return *this;
-  }
-
-  inline bool IsEnclosed(const Rect& other) const {
-    return x <= other.x && y <= other.y &&
-           (x + width >= other.x + other.width) &&
-           (y + height >= other.y + other.height);
-  }
-
-  inline bool IsInvalid() const { return width <= 0 || height <= 0; }
-
-  friend std::ostream& operator<<(std::ostream& os, const Rect& value);
+  base::Vec2i Position() const { return base::Vec2i(x, y); }
+  base::Vec2i Size() const { return base::Vec2i(width, height); }
 
  public:
   int32_t x, y, width, height;
@@ -111,40 +93,23 @@ class RectF {
     return *this;
   }
 
-  inline bool operator==(const RectF& other) const {
+  bool operator==(const RectF& other) const {
     return other.x == x && other.y == y && other.width == width &&
            other.height == height;
   }
 
-  inline RectF operator*(const RectF& value) const {
+  bool operator!=(const RectF& other) const {
+    return other.x != x || other.y != y || other.width != width ||
+           other.height != height;
+  }
+
+  RectF operator*(const RectF& value) const {
     return RectF(x * value.x, y * value.y, width * value.width,
                  height * value.height);
   }
 
-  inline base::Vec2 Position() const { return base::Vec2(x, y); }
-  inline base::Vec2 Size() const { return base::Vec2(width, height); }
-
-  inline RectF& SetPosition(const base::Vec2& value) {
-    x = value.x;
-    y = value.y;
-    return *this;
-  }
-
-  inline RectF& SetSize(const base::Vec2& value) {
-    width = value.x;
-    height = value.y;
-    return *this;
-  }
-
-  inline bool IsEnclosed(const RectF& other) const {
-    return x <= other.x && y <= other.y &&
-           (x + width >= other.x + other.width) &&
-           (y + height >= other.y + other.height);
-  }
-
-  inline bool IsInvalid() const { return width <= 0 || height <= 0; }
-
-  friend std::ostream& operator<<(std::ostream& os, const RectF& value);
+  base::Vec2 Position() const { return base::Vec2(x, y); }
+  base::Vec2 Size() const { return base::Vec2(width, height); }
 
  public:
   float x, y, width, height;

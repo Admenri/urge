@@ -90,7 +90,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   }
 
   // Add a handler for observe bitmap content changing
-  inline base::CallbackListSubscription AddCanvasObserver(
+  base::CallbackListSubscription AddCanvasObserver(
       const base::RepeatingClosure& observer) {
     return observers_.Add(observer);
   }
@@ -337,7 +337,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     return command;
   }
 
-  inline void ClearPendingCommands() {
+  void ClearPendingCommands() {
     for (auto& it : blocks_) {
       std::memset(it.memory.data(), 0, kBlockMaxSize);
       it.usage = 0;

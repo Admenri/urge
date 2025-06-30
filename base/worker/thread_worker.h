@@ -17,13 +17,13 @@ class Semaphore {
  public:
   explicit Semaphore() : mutex_(), cv_(), count_(0) {}
 
-  inline void Acquire() {
+  void Acquire() {
     std::unique_lock lock(mutex_);
     ++count_;
     cv_.wait(lock, [this] { return count_ == 0; });
   }
 
-  inline void Release() {
+  void Release() {
     std::scoped_lock lock(mutex_);
     --count_;
     cv_.notify_all();
@@ -56,19 +56,19 @@ class ThreadWorker {
   bool RunsTasksInCurrentSequence();
 
   // Inline static version
-  inline static bool PostTask(ThreadWorker* worker, OnceClosure task) {
+  static bool PostTask(ThreadWorker* worker, OnceClosure task) {
     if (worker)
       return worker->PostTask(std::move(task));
     std::move(task).Run();
     return true;
   }
 
-  inline static void WaitWorkerSynchronize(ThreadWorker* worker) {
+  static void WaitWorkerSynchronize(ThreadWorker* worker) {
     if (worker)
       return worker->WaitWorkerSynchronize();
   }
 
-  inline static bool RunsTasksInCurrentSequence(ThreadWorker* worker) {
+  static bool RunsTasksInCurrentSequence(ThreadWorker* worker) {
     if (worker)
       return worker->RunsTasksInCurrentSequence();
     return true;
