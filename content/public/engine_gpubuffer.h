@@ -59,7 +59,7 @@ class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
 
   /*--urge(name:create_view)--*/
   virtual scoped_refptr<GPUBufferView> CreateView(
-      std::optional<BufferViewDesc> desc,
+      base::Optional<BufferViewDesc> desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:default_view)--*/

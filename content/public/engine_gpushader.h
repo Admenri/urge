@@ -54,12 +54,12 @@ class URGE_RUNTIME_API GPUShader : public base::RefCounted<GPUShader> {
   virtual uint32_t GetResourceCount(ExceptionState& exception_state) = 0;
 
   /*--urge(name:resource_desc)--*/
-  virtual std::optional<ShaderResourceDesc> GetResourceDesc(
+  virtual base::Optional<ShaderResourceDesc> GetResourceDesc(
       uint32_t index,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:constant_buffer_desc)--*/
-  virtual std::optional<ShaderCodeBufferDesc> GetConstantBufferDesc(
+  virtual base::Optional<ShaderCodeBufferDesc> GetConstantBufferDesc(
       uint32_t index,
       ExceptionState& exception_state) = 0;
 

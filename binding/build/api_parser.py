@@ -210,83 +210,113 @@ class APIParser:
   #  virtual scoped_refptr<xx> yy(ExceptionState& exception_state) = 0;
   #  static scoped_refptr<zz> New(ExecutionContext* execution_context,const base::String& name,uint32_t size,ExceptionState& exception_state);
   def process_member(self, lines):
-    pattern = r"""
-        ^\s*
-        (?:virtual\s+)?       # 可选的virtual关键字
-        (static\s+)?         # 捕获static关键字
-        ((?:[^$\s]|<[^>]*>)+) # 返回值类型(处理嵌套模板)
-        \s+
-        (\w+)                # 函数名
-        \(
-        ([^$]*)             # 全部参数
-        \)
-        (?:\s*=\s*0)?        # 可选的纯虚函数标记
-        \s*;\s*$
-    """
+    function_body = ''.join(lines)
 
-    match = re.search(pattern, lines, re.VERBOSE)
-    if match:
-      is_static = bool(match.group(1))
-      return_type = match.group(2).strip()
-      func_name = match.group(3)
+    # 获取原始参数列表
+    parameter_first = function_body.find('(')
+    parameter_last = function_body.find(')')
+    raw_parameters = function_body[parameter_first + 1: parameter_last]
 
-      raw_params = match.group(4)
-      params = re.sub(r'\b(?:ExecutionContext\*|ExceptionState&)\s*\w+\s*,?\s*', '', raw_params)
-      params = params.strip().rstrip(',')  # 清理多余的逗号
+    # 获取声明部分
+    method_declaration = function_body[0: function_body.find('(')]
+    method_info = method_declaration.split(' ')
 
-      params_list = []
-      for param_item in params.split(','):
-        match = re.match(r"^(.*?)\s+([a-zA-Z_]\w*)$", param_item.strip())
-        if match:
-          p_type = match.group(1).strip()
-          p_name = match.group(2).strip()
-        else:
-          continue
+    # 设置属性
+    is_static = (method_info[0] == 'static')
+    return_type = method_info[1]
+    func_name = method_info[2]
 
-        # 检查声明注释
-        optional_params = {}
-        if 'optional' in self.current_comment:
-          opts = self.current_comment['optional']
-          opts = [opts] if not isinstance(opts, list) else opts
-          for opt in opts:
-            if '=' in opt:
-              k, v = opt.split('=', 1)
-              optional_params[k.strip()] = v.strip()
+    # 分割参数列表
+    params_list = []
+    raw_params_list = raw_parameters.split(',')
+    # 解析参数列表
+    for param_iter in raw_params_list:
+      # 去除左右空格
+      param_iter = param_iter.strip()
 
-        # 过滤掉不需要的参数类型
-        if p_type not in ["ExceptionState", "ExecutionContext"]:
-          params_list.append({
-            "name": p_name,
+      # 倒找空格获取函数名和参数类型
+      last_space = param_iter.rfind(' ')
+
+      # 参数类型
+      param_type = param_iter[0: last_space].strip()
+      # 参数名称
+      param_name = param_iter[last_space + 1:].strip()
+
+      # 参数类型提纯（const ***& => ***）
+      if param_type.startswith('const'):
+        first_token = param_type.find(' ')
+        last_token = param_type.rfind('&')
+        if last_token == -1:
+          last_token = len(param_type)
+        param_type = param_type[first_token: last_token].strip()
+
+      # 递归分析
+      # 分析参数容器类型（struct array refptr）
+      self.root_param_type = None
+      def _recursive_parse_param(recursive_type):
+        if recursive_type.find('<') != -1 and recursive_type[-1] == '>':
+          r_first_token = recursive_type.find('<')
+          r_last_token = recursive_type.rfind('>')
+          p_container = recursive_type[0: r_first_token]
+          p_type = _recursive_parse_param(recursive_type[r_first_token + 1: r_last_token].strip())
+          return {
             "type": p_type,
-            "is_optional": p_name.strip() in optional_params,
-            "default_value": optional_params.get(p_name.strip(), None),
-          })
+            "container": p_container,
+          }
+        self.root_param_type = recursive_type
+        return self.root_param_type
 
-      # 寻找重载函数
-      method_name = self.current_comment.get("name", None)
-      method_func = func_name
+      # 分析类型
+      type_details = _recursive_parse_param(param_type)
 
-      # 是否存在重载函数
-      existing_overload = next(
-        (m for m in self.current_class['methods']
-         if m['name'] == method_name
-         and m['func'] == method_func
-         and m['is_static'] == is_static),
-        None
-      )
+      # 过滤部分参数
+      if param_type.startswith('ExecutionContext') or param_type.startswith('ExceptionState'):
+        continue
 
-      if existing_overload:
-        existing_overload['params'].append(params_list)
-        return
+      # 检查声明注释
+      optional_params = {}
+      if 'optional' in self.current_comment:
+        opts = self.current_comment['optional']
+        opts = [opts] if not isinstance(opts, list) else opts
+        for opt in opts:
+          if '=' in opt:
+            k, v = opt.split('=', 1)
+            optional_params[k.strip()] = v.strip()
 
-      # 添加到类数据
-      self.current_class['methods'].append({
-        "name": method_name,
-        "func": method_func,
-        "is_static": is_static,
-        "return_type": return_type,
-        "params": [params_list],
+      # 解析完成
+      params_list.append({
+        "name": param_name,
+        "type": param_type,
+        "root_type": self.root_param_type,
+        "details": type_details,
+        "is_optional": param_name.strip() in optional_params,
+        "default_value": optional_params.get(param_name.strip(), None),
       })
+
+    # 寻找重载函数
+    method_name = self.current_comment.get("name", None)
+    method_func = func_name
+
+    # 是否存在重载函数
+    existing_overload = next(
+      (m for m in self.current_class['methods']
+       if m['name'] == method_name
+       and m['func'] == method_func
+       and m['is_static'] == is_static),
+      None
+    )
+    if existing_overload:
+      existing_overload['params'].append(params_list)
+      return
+
+    # 添加到类数据
+    self.current_class['methods'].append({
+      "name": method_name,
+      "func": method_func,
+      "is_static": is_static,
+      "return_type": return_type,
+      "params": [params_list],
+    })
 
   # 单行内容的解析
   # 对于每一行内容的解析都需要访问当前解析器的上下文

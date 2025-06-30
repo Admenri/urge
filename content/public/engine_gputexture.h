@@ -67,7 +67,7 @@ class URGE_RUNTIME_API GPUTexture : public base::RefCounted<GPUTexture> {
 
   /*--urge(name:create_view)--*/
   virtual scoped_refptr<GPUTextureView> CreateView(
-      std::optional<TextureViewDesc> desc,
+      base::Optional<TextureViewDesc> desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:default_view)--*/

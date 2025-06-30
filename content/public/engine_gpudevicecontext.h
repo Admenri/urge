@@ -96,7 +96,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
   /*--urge(name:desc)--*/
-  virtual std::optional<DeviceContextDesc> GetDesc(
+  virtual base::Optional<DeviceContextDesc> GetDesc(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin)--*/
@@ -291,8 +291,8 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void UpdateTexture(scoped_refptr<GPUTexture> texture,
                              uint32_t mip_level,
                              uint32_t slice,
-                             const std::optional<ClipBox>& box,
-                             const std::optional<TextureSubResData>& data,
+                             const base::Optional<ClipBox>& box,
+                             const base::Optional<TextureSubResData>& data,
                              GPU::ResourceStateTransitionMode src_buffer_mode,
                              GPU::ResourceStateTransitionMode texture_mode,
                              ExceptionState& exception_state) = 0;
@@ -301,7 +301,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void CopyTexture(scoped_refptr<GPUTexture> src_texture,
                            uint32_t src_mip_level,
                            uint32_t src_slice,
-                           const std::optional<ClipBox>& src_box,
+                           const base::Optional<ClipBox>& src_box,
                            GPU::ResourceStateTransitionMode src_mode,
                            scoped_refptr<GPUTexture> dst_texture,
                            uint32_t dst_mip_level,
@@ -313,13 +313,13 @@ class URGE_RUNTIME_API GPUDeviceContext
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:map_texture_subresource)--*/
-  virtual std::optional<MappedTextureSubresource> MapTextureSubresource(
+  virtual base::Optional<MappedTextureSubresource> MapTextureSubresource(
       scoped_refptr<GPUTexture> texture,
       uint32_t mip_level,
       uint32_t array_slice,
       GPU::MapType map_type,
       GPU::MapFlags map_flags,
-      const std::optional<ClipBox>& map_region,
+      const base::Optional<ClipBox>& map_region,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:unmap_texture_subresource)--*/

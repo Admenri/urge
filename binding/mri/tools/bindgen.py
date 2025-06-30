@@ -241,8 +241,8 @@ class MriBindingGen:
         match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', member_type)
         decay_type = match.group(1)
         convert_func = f"MriCheckStructData<content::{decay_type}>({member_name}, k{decay_type}DataType)"
-      elif member_type.startswith("std::optional"):
-        match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
+      elif member_type.startswith("base::Optional"):
+        match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
         decay_type = match.group(1)
         convert_func = f"RBHASH2{decay_type}({member_name})"
       elif member_type.startswith("base::Vector"):
@@ -272,7 +272,7 @@ class MriBindingGen:
   # 函数名：VALUE ****2RBHASH(const ***&)
   def convert_struct_to_hash(self, struct_name):
     # 生成一个专用函数，将本类的结构体从 C++ 数据转为 Ruby 数据
-    content = f"static VALUE {struct_name}2RBHASH(const std::optional<content::{self.class_data['class']}::{struct_name}>& opt_cxx_obj) {{\n"
+    content = f"static VALUE {struct_name}2RBHASH(const base::Optional<content::{self.class_data['class']}::{struct_name}>& opt_cxx_obj) {{\n"
     content += "if (!opt_cxx_obj.has_value())\nreturn Qnil;\n"
     content += "auto& cxx_obj = *opt_cxx_obj;\n"
 
@@ -310,8 +310,8 @@ class MriBindingGen:
         match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', member_type)
         decay_type = match.group(1)
         convert_func = f"MriWrapObject<content::{decay_type}>(cxx_obj.{member_name}, k{decay_type}DataType)"
-      elif member_type.startswith("std::optional"):
-        match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
+      elif member_type.startswith("base::Optional"):
+        match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
         decay_type = match.group(1)
         convert_func = f"{decay_type}2RBHASH(cxx_obj.{member_name})"
       elif member_type.startswith("base::Vector"):
@@ -469,8 +469,8 @@ class MriBindingGen:
             ruby_type = "VALUE"
             convert_suffix += f"auto {param_name} = MriCheckStructData<content::{decay_type}>({param_name}_obj, k{decay_type}DataType);\n"
             param_name += "_obj"
-          elif param_type.startswith("std::optional") or param_type.startswith("const std::optional"):
-            match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', param_type)
+          elif param_type.startswith("base::Optional") or param_type.startswith("const base::Optional"):
+            match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', param_type)
             decay_type = match.group(1)
             parse_template += "o"
             ruby_type = "VALUE"
@@ -586,8 +586,8 @@ class MriBindingGen:
               match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', return_type)
               decay_type = match.group(1)
               content += f"VALUE _result = MriWrapObject<content::{decay_type}>(_return_value, k{decay_type}DataType);\n"
-            elif return_type.startswith("std::optional"):
-              match = re.search(r'(?:const\s+)?std::optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', return_type)
+            elif return_type.startswith("base::Optional"):
+              match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', return_type)
               decay_type = match.group(1)
               content += f"VALUE _result = {decay_type}2RBHASH(_return_value);\n"
             elif return_type.startswith("base::Vector"):
@@ -728,7 +728,7 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
     uint32_t test;
     uint32_t id = 0;
     base::String filename = "null";
-    std::optional<Size> size;
+    base::Optional<Size> size;
   };
 
   /*--urge(name:initialize)--*/

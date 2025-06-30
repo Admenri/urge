@@ -147,8 +147,8 @@ class URGE_RUNTIME_API GPURenderDevice
     bool stencil_enable = false;
     uint8_t stencil_read_mask = 0xFF;
     uint8_t stencil_write_mask = 0xFF;
-    std::optional<StencilOpDesc> front_face;
-    std::optional<StencilOpDesc> back_face;
+    base::Optional<StencilOpDesc> front_face;
+    base::Optional<StencilOpDesc> back_face;
   };
 
   /*--urge(name:InputLayoutElement)--*/
@@ -168,10 +168,10 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:GraphicsPipelineDesc)--*/
   struct GraphicsPipelineDesc {
-    std::optional<BlendStateDesc> blend_desc;
+    base::Optional<BlendStateDesc> blend_desc;
     uint32_t sample_mask;
-    std::optional<RasterizerStateDesc> rasterizer_desc;
-    std::optional<DepthStencilStateDesc> depth_stencil_desc;
+    base::Optional<RasterizerStateDesc> rasterizer_desc;
+    base::Optional<DepthStencilStateDesc> depth_stencil_desc;
     base::Vector<InputLayoutElement> input_layout;
     GPU::PrimitiveTopology primitive_topology =
         GPU::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -199,7 +199,7 @@ class URGE_RUNTIME_API GPURenderDevice
   struct ImmutableSamplerDesc {
     GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
     base::String sampler_name;
-    std::optional<SamplerDesc> desc;
+    base::Optional<SamplerDesc> desc;
   };
 
   /*--urge(name:PipelineSignatureDesc)--*/
@@ -227,34 +227,34 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
-      const std::optional<BufferDesc>& desc,
+      const base::Optional<BufferDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
-      const std::optional<BufferDesc>& desc,
-      const std::optional<BufferData>& data,
+      const base::Optional<BufferDesc>& desc,
+      const base::Optional<BufferData>& data,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_shader)--*/
   virtual scoped_refptr<GPUShader> CreateShader(
-      const std::optional<ShaderCreateInfo>& create_info,
+      const base::Optional<ShaderCreateInfo>& create_info,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_texture)--*/
   virtual scoped_refptr<GPUTexture> CreateTexture(
-      const std::optional<TextureDesc>& desc,
+      const base::Optional<TextureDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_texture)--*/
   virtual scoped_refptr<GPUTexture> CreateTexture(
-      const std::optional<TextureDesc>& desc,
-      const std::optional<TextureData>& data,
+      const base::Optional<TextureDesc>& desc,
+      const base::Optional<TextureData>& data,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_sampler)--*/
   virtual scoped_refptr<GPUSampler> CreateSampler(
-      const std::optional<SamplerDesc>& desc,
+      const base::Optional<SamplerDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_resource_mapping)--*/
@@ -265,7 +265,7 @@ class URGE_RUNTIME_API GPURenderDevice
   /*--urge(name:create_graphics_pipeline_state)--*/
   virtual scoped_refptr<GPUPipelineState> CreateGraphicsPipelineState(
       const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
-      const std::optional<GraphicsPipelineDesc>& graphics_pipeline_desc,
+      const base::Optional<GraphicsPipelineDesc>& graphics_pipeline_desc,
       scoped_refptr<GPUShader> vertex_shader,
       scoped_refptr<GPUShader> pixel_shader,
       scoped_refptr<GPUShader> domain_shader,
@@ -293,7 +293,7 @@ class URGE_RUNTIME_API GPURenderDevice
 
   /*--urge(name:create_pipeline_signature)--*/
   virtual scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
-      const std::optional<PipelineSignatureDesc>& desc,
+      const base::Optional<PipelineSignatureDesc>& desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_deferred_context)--*/

@@ -55,7 +55,7 @@ class URGE_RUNTIME_API GPUResourceVariable
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:resource_desc)--*/
-  virtual std::optional<ShaderResourceDesc> GetResourceDesc(
+  virtual base::Optional<ShaderResourceDesc> GetResourceDesc(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:index)--*/
