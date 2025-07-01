@@ -64,16 +64,16 @@ class APIParser:
 
     # 构造新的类数据
     self.current_class = {
-      "name": self.current_comment.get('name', None),
-      "class": match.group(1),
+      "decl_name": self.current_comment.get('name', None),
+      "native_name": match.group(1),
       "is_module": self.current_comment.get('is_module', False),
       "enums": [],
       "structs": [],
-      "attributes": [],
       "methods": [],
-      "is_serializable": False,
-      "is_comparable": False,
+      "attributes": [],
       "dependency": [],
+      "is_comparable": False,
+      "is_serializable": False,
     }
 
   # 解析 enum 内容的函数，
@@ -116,14 +116,58 @@ class APIParser:
 
     # 构造枚举信息
     enum_info = {
-      "name": self.current_comment.get('name', None),
-      "type": enum_name,
+      "decl_name": self.current_comment.get('name', None),
+      "native_name": enum_name,
       "range": enum_range,
       "constants": enum_constants,
     }
 
     # 添加到当前解析类数据中
     self.current_class['enums'].append(enum_info)
+
+  # 解析形参类型数据
+  # 本函数会递归解析类型的嵌套容器：
+  #  1. base::Vector<scoped_refptr<xxx>>
+  #  2. base::Optional<xxx>
+  #  3. base::Vector<xxx>
+  @staticmethod
+  def parse_variable(varname):
+    # 考虑以下情况：
+    #   1. const Type &name
+    #   2. Type name
+    split_pos = len(varname)
+    for i in range(-1, -len(varname) -1, -1):
+      if not (varname[i].isalpha() or varname[i].isalnum() or varname[i] == '_'):
+        split_pos = i
+        break
+    typename = varname[:split_pos]
+    declname = varname[split_pos + 1:]
+    # 原始类型
+    raw_type = typename
+
+    # 参数类型提纯（const ***& => ***）
+    if typename.startswith('const'):
+      first_token = typename.find(' ')
+      last_token = typename.rfind('&')
+      if last_token == -1:
+        last_token = len(typename)
+      typename = typename[first_token: last_token].strip()
+
+    # 递归分析
+    # 分析参数容器类型（struct array refptr）
+    def _recursive_parse_param(recursive_type):
+      if recursive_type.find('<') != -1 and recursive_type[-1] == '>':
+        r_first_token = recursive_type.find('<')
+        r_last_token = recursive_type.rfind('>')
+        p_container = recursive_type[0: r_first_token]
+        p_type = _recursive_parse_param(recursive_type[r_first_token + 1: r_last_token].strip())
+        return {
+          "typename": p_type,
+          "container": p_container,
+        }
+      return recursive_type
+
+    return raw_type, _recursive_parse_param(typename), declname
 
   # 解析结构体内容的函数，
   # 期望拿到的数据：
@@ -139,7 +183,10 @@ class APIParser:
     struct_members = []
 
     # 逐行解析
+    line_cache = ""
     for line in lines:
+      line = line.strip()
+
       # 解析名称
       if line.startswith('struct'):
         match = re.search(r'struct\s+(\w+)\s*\{', line)
@@ -152,30 +199,40 @@ class APIParser:
       if line.startswith('//'):
         continue
 
-      # 匹配每行信息
-      pattern = r"""
-          ^\s*
-          ([a-zA-Z_][\w:<>]*)  # 类型（可能含模板、命名空间）
-          \s+
-          ([a-zA-Z_]\w*)       # 变量名
-          \s*
-          (?:=\s*([^;]+))?     # 默认值（可选）
-          \s*;\s*$
-      """
+      # 将分布为多行的声明合并为一行处理
+      line_cache += line
 
-      # 解析内容
-      match = re.match(pattern, line.strip(), re.VERBOSE)
-      if match:
-        struct_members.append({
-          "name": match.group(2),
-          "type": match.group(1),
-          "default_value": match.group(3),
-        })
+    # 处理声明主体
+    for line in line_cache.split(';'):
+      line = line.strip()
+      if line == '':
+        continue
+
+      # 结构：
+      #  1. 类型
+      #  2. 类型 = 默认值
+      formulas = line.split('=')
+
+      # 类型名称
+      type_name = formulas[0].strip()
+      # 默认值（可能没有）
+      default_value = formulas[1].strip() if len(formulas) > 1 else None
+
+      # 解析类型名
+      type_raw, type_details, var_name = self.parse_variable(type_name)
+
+      # 单个成员解析完成
+      struct_members.append({
+        "native_name": var_name,
+        "type_raw": type_raw,
+        "type_detail": type_details,
+        "default_value": default_value,
+      })
 
     # 构造结构体信息
     struct_info = {
-      "name": self.current_comment.get('name', None),
-      "type": struct_name,
+      "decl_name": self.current_comment.get('name', None),
+      "native_name": struct_name,
       "members": struct_members,
     }
 
@@ -187,20 +244,27 @@ class APIParser:
   #  URGE_EXPORT_ATTRIBUTE(yy, type);
   #  URGE_EXPORT_STATIC_ATTRIBUTE(xx, type);
   def process_attribute(self, lines):
-    # 解析声明
-    attribute_info = {}
-    for pattern, is_static in [
-      (r'URGE_EXPORT_ATTRIBUTE\((\w+),\s*(.*?)\);?', False),
-      (r'URGE_EXPORT_STATIC_ATTRIBUTE\((\w+),\s*(.*?)\);?', True)
-    ]:
-      if match := re.match(pattern, lines):
-        attr_type = match.group(2).strip()
-        attribute_info = {
-          "name": self.current_comment.get('name', match.group(1)),
-          "func": match.group(1),
-          "value_type": attr_type,
-          "is_static": is_static
-        }
+    # 已知情况：
+    #   URGE_EXPORT_ATTRIBUTE(name, type);
+    #   URGE_EXPORT_STATIC_ATTRIBUTE(name, type);
+    lines = ''.join(lines)
+
+    # 直接取括号里的内容
+    attr_infos = lines[lines.find('(') + 1: lines.rfind(')')]
+    attr_infos = list(map(lambda x: x.strip(), attr_infos.split()))
+
+    # 属性提取
+    attr_name = attr_infos[0]
+    attr_raw, attr_type, dummy = self.parse_variable(attr_infos[1] + " attr")
+
+    # 解析类型
+    attribute_info = {
+      "decl_name": self.current_comment.get('name', attr_name),
+      "decl_func": attr_name,
+      "type_raw": attr_raw,
+      "type_detail": attr_type,
+      "is_static": lines.strip().startswith("URGE_EXPORT_STATIC_ATTRIBUTE"),
+    }
 
     # 加入当前类数据
     self.current_class['attributes'].append(attribute_info)
@@ -229,49 +293,18 @@ class APIParser:
     # 分割参数列表
     params_list = []
     raw_params_list = raw_parameters.split(',')
+
     # 解析参数列表
     for param_iter in raw_params_list:
       # 去除左右空格
       param_iter = param_iter.strip()
 
-      # 倒找空格获取函数名和参数类型
-      last_space = param_iter.rfind(' ')
-
-      # 参数类型
-      param_type = param_iter[0: last_space].strip()
-      # 参数名称
-      param_name = param_iter[last_space + 1:].strip()
-
-      # 参数类型提纯（const ***& => ***）
-      if param_type.startswith('const'):
-        first_token = param_type.find(' ')
-        last_token = param_type.rfind('&')
-        if last_token == -1:
-          last_token = len(param_type)
-        param_type = param_type[first_token: last_token].strip()
-
-      # 递归分析
-      # 分析参数容器类型（struct array refptr）
-      self.root_param_type = None
-      def _recursive_parse_param(recursive_type):
-        if recursive_type.find('<') != -1 and recursive_type[-1] == '>':
-          r_first_token = recursive_type.find('<')
-          r_last_token = recursive_type.rfind('>')
-          p_container = recursive_type[0: r_first_token]
-          p_type = _recursive_parse_param(recursive_type[r_first_token + 1: r_last_token].strip())
-          return {
-            "type": p_type,
-            "container": p_container,
-          }
-        self.root_param_type = recursive_type
-        return self.root_param_type
-
-      # 分析类型
-      type_details = _recursive_parse_param(param_type)
-
       # 过滤部分参数
-      if param_type.startswith('ExecutionContext') or param_type.startswith('ExceptionState'):
+      if param_iter.startswith('ExecutionContext') or param_iter.startswith('ExceptionState'):
         continue
+
+      # 分析类型，形参名称
+      type_raw, type_detail, var_name = self.parse_variable(param_iter)
 
       # 检查声明注释
       optional_params = {}
@@ -285,12 +318,11 @@ class APIParser:
 
       # 解析完成
       params_list.append({
-        "name": param_name,
-        "type": param_type,
-        "root_type": self.root_param_type,
-        "details": type_details,
-        "is_optional": param_name.strip() in optional_params,
-        "default_value": optional_params.get(param_name.strip(), None),
+        "native_name": var_name,
+        "type_detail": type_detail,
+        "type_raw": type_raw,
+        "is_optional": var_name in optional_params,
+        "default_value": optional_params.get(var_name, None),
       })
 
     # 寻找重载函数
@@ -300,8 +332,8 @@ class APIParser:
     # 是否存在重载函数
     existing_overload = next(
       (m for m in self.current_class['methods']
-       if m['name'] == method_name
-       and m['func'] == method_func
+       if m['decl_name'] == method_name
+       and m['native_name'] == method_func
        and m['is_static'] == is_static),
       None
     )
@@ -310,13 +342,20 @@ class APIParser:
       return
 
     # 添加到类数据
-    self.current_class['methods'].append({
-      "name": method_name,
-      "func": method_func,
-      "is_static": is_static,
-      "return_type": return_type,
+    return_type_raw, return_type_detail, dummy = self.parse_variable(return_type + " retval")
+
+    # 生成成员信息
+    member_info = {
+      "decl_name": method_name,
+      "native_name": method_func,
       "params": [params_list],
-    })
+      "is_static": is_static,
+      "return_type_detail": return_type_detail,
+      "return_type_raw": return_type_raw,
+    }
+
+    # 添加到当前类
+    self.current_class['methods'].append(member_info)
 
   # 单行内容的解析
   # 对于每一行内容的解析都需要访问当前解析器的上下文
@@ -461,64 +500,45 @@ class APIParser:
 
   # 处理当前类中的依赖类数据
   def process_dependency(self):
-    dependency = [self.current_class["class"]]
+    dependency = [self.current_class["native_name"]]
 
     # 查找顺序：
     #  结构体 -> 属性 -> 方法
+    dependency_raw = []
 
     # 结构体遍历
     structs_data = self.current_class["structs"]
     for struct in structs_data:
       for member in struct["members"]:
-        dependency.append(member["type"])
+        dependency_raw.append(member["type_raw"])
 
     # 属性遍历
     attributes_data = self.current_class["attributes"]
     for attribute in attributes_data:
-      dependency.append(attribute["value_type"])
+      dependency_raw.append(attribute["type_raw"])
 
     # 方法遍历
     methods_data = self.current_class["methods"]
     for method in methods_data:
-      dependency.append(method["return_type"])
+      dependency_raw.append(method["return_type_raw"])
       for overload in method["params"]:
         for param in overload:
-          dependency.append(param["type"])
+          dependency_raw.append(param["type_raw"])
+
+    # 分析依赖
+    for dep in dependency_raw:
+      first_sep = dep.rfind('<')
+      last_sep = dep.find('>')
+      if dep.find('scoped_refptr') != -1:
+        if first_sep >= 0 or last_sep >= 0:
+          dep = dep[first_sep + 1: last_sep]
+          dependency.append(dep)
 
     # 去重
     dependency = list(set(dependency))
 
-    # 去除基础数据类型
-    base_types = (
-      "int8_t",
-      "uint8_t",
-      "int16_t",
-      "uint16_t",
-      "int32_t",
-      "uint32_t",
-      "int64_t",
-      "uint64_t",
-      "void",
-      "bool",
-      "float",
-      "double",
-      "base::String",
-    )
-
-    result = []
-    for dep in dependency:
-      is_base_type = False
-      for ty in base_types:
-        if dep.find(ty) != -1:
-          is_base_type = True
-      if not is_base_type:
-        pattern = r"scoped_refptr<([^>]+)>"
-        match = re.search(pattern, dep)
-        if match:
-          result.append(match.group(1))
-
     # 添加到当前类数据
-    self.current_class["dependency"] = result
+    self.current_class["dependency"] = dependency
 
   # 逐行解析接口定义
   # 将整个头文件内容分割为单行后对每行进行分析
