@@ -1198,8 +1198,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   auto& pipeline_set = render_device.GetPipelines()->base;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL_PMA, true);
+  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
 
   // Reset text upload stage buffer if need
   if (!agent_.text_cache_texture || agent_.text_cache_size.x < text->w ||
