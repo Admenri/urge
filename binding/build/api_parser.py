@@ -64,8 +64,8 @@ class APIParser:
 
     # 构造新的类数据
     self.current_class = {
-      "decl_name": self.current_comment.get('name', None),
       "native_name": match.group(1),
+      "binding_name": self.current_comment.get('name', None),
       "is_module": self.current_comment.get('is_module', False),
       "enums": [],
       "structs": [],
@@ -88,6 +88,7 @@ class APIParser:
     enum_range = None
     enum_constants = []
 
+    # 统合换行代码
     intermediate_enum_code = ""
 
     # 逐行解析枚举体
@@ -108,7 +109,8 @@ class APIParser:
       # 加入多行内容
       intermediate_enum_code += line
 
-    for line in intermediate_enum_code.split(','):
+    # 解析实际常量
+    for line in intermediate_enum_code.strip().split(','):
       # 解析内容
       match = re.search(r'^\s*([A-Z_][A-Z0-9_]*)', line)
       if match:
@@ -116,9 +118,9 @@ class APIParser:
 
     # 构造枚举信息
     enum_info = {
-      "decl_name": self.current_comment.get('name', None),
       "native_name": enum_name,
       "range": enum_range,
+      "binding_name": self.current_comment.get('name', None),
       "constants": enum_constants,
     }
 
@@ -142,8 +144,9 @@ class APIParser:
         break
     typename = varname[:split_pos]
     declname = varname[split_pos + 1:]
+
     # 原始类型
-    raw_type = typename
+    type_raw = typename
 
     # 参数类型提纯（const ***& => ***）
     if typename.startswith('const'):
@@ -155,19 +158,28 @@ class APIParser:
 
     # 递归分析
     # 分析参数容器类型（struct array refptr）
+    containers = []
+    root_type = None
     def _recursive_parse_param(recursive_type):
+      nonlocal containers
+      nonlocal root_type
       if recursive_type.find('<') != -1 and recursive_type[-1] == '>':
         r_first_token = recursive_type.find('<')
         r_last_token = recursive_type.rfind('>')
-        p_container = recursive_type[0: r_first_token]
-        p_type = _recursive_parse_param(recursive_type[r_first_token + 1: r_last_token].strip())
-        return {
-          "typename": p_type,
-          "container": p_container,
-        }
-      return recursive_type
+        containers.append(recursive_type[0: r_first_token])
+        _recursive_parse_param(recursive_type[r_first_token + 1: r_last_token].strip())
+        return
+      root_type = recursive_type
 
-    return raw_type, _recursive_parse_param(typename), declname
+    # 分析
+    _recursive_parse_param(typename)
+    # 生成
+    type_detail = {
+      "root_type": root_type,
+      "containers": containers,
+    }
+
+    return type_raw, type_detail, declname
 
   # 解析结构体内容的函数，
   # 期望拿到的数据：
@@ -231,7 +243,7 @@ class APIParser:
 
     # 构造结构体信息
     struct_info = {
-      "decl_name": self.current_comment.get('name', None),
+      "binding_name": self.current_comment.get('name', None),
       "native_name": struct_name,
       "members": struct_members,
     }
@@ -252,15 +264,16 @@ class APIParser:
     # 直接取括号里的内容
     attr_infos = lines[lines.find('(') + 1: lines.rfind(')')]
     attr_infos = list(map(lambda x: x.strip(), attr_infos.split()))
+    attr_infos = ''.join(attr_infos).split(',')
 
     # 属性提取
-    attr_name = attr_infos[0]
+    attr_name = attr_infos[0].strip()
     attr_raw, attr_type, dummy = self.parse_variable(attr_infos[1] + " attr")
 
     # 解析类型
     attribute_info = {
-      "decl_name": self.current_comment.get('name', attr_name),
-      "decl_func": attr_name,
+      "binding_name": self.current_comment.get('name', attr_name),
+      "native_name": attr_name,
       "type_raw": attr_raw,
       "type_detail": attr_type,
       "is_static": lines.strip().startswith("URGE_EXPORT_STATIC_ATTRIBUTE"),
@@ -332,7 +345,7 @@ class APIParser:
     # 是否存在重载函数
     existing_overload = next(
       (m for m in self.current_class['methods']
-       if m['decl_name'] == method_name
+       if m['binding_name'] == method_name
        and m['native_name'] == method_func
        and m['is_static'] == is_static),
       None
@@ -346,12 +359,12 @@ class APIParser:
 
     # 生成成员信息
     member_info = {
-      "decl_name": method_name,
+      "binding_name": method_name,
       "native_name": method_func,
       "params": [params_list],
       "is_static": is_static,
-      "return_type_detail": return_type_detail,
       "return_type_raw": return_type_raw,
+      "return_type_detail": return_type_detail,
     }
 
     # 添加到当前类

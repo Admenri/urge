@@ -30,7 +30,7 @@ class MriBindingGen:
   # 生成头文件
   def generate_header(self):
     # C++类名
-    klass_type = self.class_data['class']
+    klass_type = self.class_data['native_name']
     # 是否为模块
     is_module = self.class_data['is_module']
     # 当前类的头文件
@@ -65,9 +65,9 @@ class MriBindingGen:
   # 生成 Ruby 函数声明部分
   def generate_body_declare(self):
     # C++类名
-    klass_type = self.class_data['class']
+    klass_type = self.class_data['native_name']
     # Ruby类名
-    klass_name = self.class_data['name']
+    klass_name = self.class_data['binding_name']
     # 是否模块
     is_module = self.class_data['is_module']
     # 是否可比较
@@ -97,8 +97,8 @@ class MriBindingGen:
     enums = self.class_data['enums']
     for enum in enums:
       for const in enum["constants"]:
-        enum_name = enum["name"]
-        enum_type = enum["type"]
+        enum_name = enum["binding_name"]
+        enum_type = enum["native_name"]
         content += f"rb_const_set(klass, rb_intern(\"{const}\"), INT2NUM(content::{klass_type}::{enum_type}::{const}));\n"
       content += "\n"
 
@@ -106,9 +106,9 @@ class MriBindingGen:
     attributes = self.class_data['attributes']
     for attr in attributes:
       # 属性 Ruby 名
-      attribute_name = attr['name']
+      attribute_name = attr['binding_name']
       # 属性 C++ 类型
-      attribute_type = attr['func']
+      attribute_type = attr['native_name']
       # 根据类的归属选择定义宏
       if not is_module:
         if not attr['is_static']:
@@ -127,9 +127,9 @@ class MriBindingGen:
     methods = self.class_data['methods']
     for method in methods:
       # 方法的 Ruby 名称
-      method_name = method['name']
+      method_name = method['binding_name']
       # 方法的 C++ 名称
-      method_func = method['func']
+      method_func = method['native_name']
 
       # 根据类的归属选择定义宏
       if not is_module:
@@ -169,15 +169,15 @@ class MriBindingGen:
     is_other_domain, domain, varname = self.parse_namespace_element(typename)
     if is_other_domain:
       for klass in self.global_classes:
-        if klass['class'] == domain:
+        if klass['native_name'] == domain:
           for enum in klass['enums']:
-            if enum['type'] == varname:
+            if enum['native_name'] == varname:
               return True
 
     deps = self.class_data['enums']
     data = []
     for dep in deps:
-      data.append(dep['type'])
+      data.append(dep['native_name'])
     return typename in data
 
   # 判断一个类型是否为 struct
@@ -185,33 +185,33 @@ class MriBindingGen:
     is_other_domain, domain, varname = self.parse_namespace_element(typename)
     if is_other_domain:
       for klass in self.global_classes:
-        if klass['class'] == domain:
+        if klass['native_name'] == domain:
           for enum in klass['structs']:
-            if enum['type'] == varname:
+            if enum['native_name'] == varname:
               return True
 
     deps = list(self.class_data['structs'])
     data = []
     for dep in deps:
-      data.append(dep['type'])
+      data.append(dep['native_name'])
     return typename in data
 
   # 生成一个函数，将 Ruby 的 Hash 转为 C++ 的 Struct
   # 函数名：*** RBHASH2****(VALUE)
   def convert_hash_to_struct(self, struct_name):
     # 生成一个专用函数，将本类的结构体从 Ruby 数据转为 C++ 数据
-    content = f"static content::{self.class_data['class']}::{struct_name} RBHASH2{struct_name}(VALUE rb_hash) {{\n"
+    content = f"static content::{self.class_data['native_name']}::{struct_name} RBHASH2{struct_name}(VALUE rb_hash) {{\n"
     # 创建一个局部变量
-    content += f"content::{self.class_data['class']}::{struct_name} result;\n\n"
+    content += f"content::{self.class_data['native_name']}::{struct_name} result;\n\n"
 
     # 从当前类的结构体中取出对应的数据
     structs = self.class_data['structs']
-    target_struct = next((x for x in structs if x['type'] == struct_name), None)
+    target_struct = next((x for x in structs if x['native_name'] == struct_name), None)
     for member in target_struct['members']:
       # 成员变量名称
-      member_name = member['name']
+      member_name = member['native_name']
       # 成员类型
-      member_type = member['type']
+      member_type = member['type_raw']
 
       # 在 Hash 中寻找指定成员
       content += f"VALUE {member_name} = rb_hash_lookup(rb_hash, ID2SYM(rb_intern(\"{member_name}\")));\n"
@@ -272,7 +272,7 @@ class MriBindingGen:
   # 函数名：VALUE ****2RBHASH(const ***&)
   def convert_struct_to_hash(self, struct_name):
     # 生成一个专用函数，将本类的结构体从 C++ 数据转为 Ruby 数据
-    content = f"static VALUE {struct_name}2RBHASH(const base::Optional<content::{self.class_data['class']}::{struct_name}>& opt_cxx_obj) {{\n"
+    content = f"static VALUE {struct_name}2RBHASH(const base::Optional<content::{self.class_data['native_name']}::{struct_name}>& opt_cxx_obj) {{\n"
     content += "if (!opt_cxx_obj.has_value())\nreturn Qnil;\n"
     content += "auto& cxx_obj = *opt_cxx_obj;\n"
 
@@ -281,12 +281,12 @@ class MriBindingGen:
 
     # 从当前类的结构体中取出对应的数据
     structs = self.class_data['structs']
-    target_struct = next((x for x in structs if x['type'] == struct_name), None)
+    target_struct = next((x for x in structs if x['native_name'] == struct_name), None)
     for member in target_struct['members']:
       # 成员变量名称
-      member_name = member['name']
+      member_name = member['native_name']
       # 成员类型
-      member_type = member['type']
+      member_type = member['type_raw']
 
       type_mapping = {
         "int8_t": "INT2NUM",
@@ -343,9 +343,9 @@ class MriBindingGen:
   # 函数定义主体部分
   def generate_body_definition(self):
     # C++类名
-    klass_type = self.class_data['class']
+    klass_type = self.class_data['native_name']
     # Ruby类名
-    klass_name = self.class_data['name']
+    klass_name = self.class_data['binding_name']
     # 是否模块
     is_module = self.class_data['is_module']
 
@@ -354,34 +354,41 @@ class MriBindingGen:
     attributes = self.class_data['attributes']
     for attr in attributes:
       # 属性 Ruby 名
-      attribute_name = attr['name']
+      attribute_name = attr['binding_name']
       # 属性 C++ 名
-      attribute_func = attr['func']
+      attribute_func = attr['native_name']
       # 是否静态
       is_static = attr['is_static']
       # 属性类型
-      attribute_type = attr['value_type']
+      attribute_type = attr['type_raw']
+      attribute_type_detail = attr['type_detail']
 
       # 定义 getter 方法模版
       attr_getter_method = {
-        "name": attribute_name,
-        "func": f"Get_{attribute_func}",
+        "binding_name": attribute_name,
+        "native_name": f"Get_{attribute_func}",
         "is_static": is_static,
-        "return_type": attribute_type,
+        "return_type_raw": attribute_type,
+        "return_type_detail": attribute_type_detail,
         "params": [[]],
       }
 
       # 定义 setter 方法模版
       attr_setter_method = {
-        "name": f"{attribute_name}=",
-        "func": f"Put_{attribute_func}",
+        "binding_name": f"{attribute_name}=",
+        "native_name": f"Put_{attribute_func}",
         "is_static": is_static,
-        "return_type": "void",
+        "return_type_raw": "void",
+        "return_type_detail": {
+          "root_type": "void",
+          "containers": [],
+        },
         "params": [
           [
             {
-              "name": "value",
-              "type": attribute_type,
+              "native_name": "value",
+              "type_raw": attribute_type,
+              "type_detail": attribute_type_detail,
               "is_optional": False,
               "default_value": None,
             }
@@ -399,7 +406,7 @@ class MriBindingGen:
     # 解析方法函数本体
     for method in methods:
       # C++ 函数名
-      method_func = method['func']
+      method_func = method['native_name']
       # 重载列表
       overloads = method['params']
       # 是否静态
@@ -426,8 +433,8 @@ class MriBindingGen:
         convert_suffix = ""
         has_optional = False
         for param in params:
-          param_name = param['name']
-          param_type = param['type']
+          param_name = param['native_name']
+          param_type = param['type_raw']
           param_is_optional = param['is_optional']
           param_default_value = param['default_value']
           ruby_type = "VALUE"
@@ -533,8 +540,8 @@ class MriBindingGen:
         # 生成调用参数列表
         calling_parameters = ""
         for param in params:
-          param_name = param['name']
-          param_type = param['type']
+          param_name = param['native_name']
+          param_type = param['type_raw']
           if self.is_type_enum(param_type):
             is_other_domain, domain, varname = self.parse_namespace_element(param_type)
             calling_parameters += f"(content::{domain if is_other_domain else klass_type}::{varname if is_other_domain else param_type})"
@@ -543,7 +550,7 @@ class MriBindingGen:
           calling_parameters += f"{param_name},"
 
         # 设置返回值前缀
-        return_type = method['return_type']
+        return_type = method['return_type_raw']
         return_suffix = ""
         if return_type != "void":
           return_suffix = "auto _return_value = "
@@ -634,9 +641,9 @@ class MriBindingGen:
   # 生成源文件
   def generate_body(self):
     # C++类名
-    klass_type = self.class_data['class']
+    klass_type = self.class_data['native_name']
     # Ruby类名
-    klass_name = self.class_data['name']
+    klass_name = self.class_data['binding_name']
     # 是否模块
     is_module = self.class_data['is_module']
     # 是否可比较
@@ -669,8 +676,8 @@ class MriBindingGen:
 
     # 添加 Hash 转为 Struct 的函数部分
     for struct in self.class_data['structs']:
-      content += self.convert_hash_to_struct(struct['type'])
-      content += self.convert_struct_to_hash(struct['type'])
+      content += self.convert_hash_to_struct(struct['native_name'])
+      content += self.convert_struct_to_hash(struct['native_name'])
 
     # 添加定义部分
     content += self.generate_body_definition()
