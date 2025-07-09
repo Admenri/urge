@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:MouseEvent)--*/
-class URGE_RUNTIME_API MouseEvent : public base::RefCounted<MouseEvent> {
+class URGE_OBJECT(MouseEvent) {
  public:
   virtual ~MouseEvent() = default;
 

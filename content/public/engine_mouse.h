@@ -13,7 +13,7 @@
 namespace content {
 
 /*--urge(name:Mouse,is_module)--*/
-class URGE_RUNTIME_API Mouse : public base::RefCounted<Mouse> {
+class URGE_OBJECT(Mouse) {
  public:
   virtual ~Mouse() = default;
 

@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Display)--*/
-class URGE_RUNTIME_API Display : public base::RefCounted<Display> {
+class URGE_OBJECT(Display) {
  public:
   virtual ~Display() = default;
 

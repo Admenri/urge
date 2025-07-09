@@ -13,8 +13,7 @@
 namespace content {
 
 /*--urge(name:TextInputEvent)--*/
-class URGE_RUNTIME_API TextInputEvent
-    : public base::RefCounted<TextInputEvent> {
+class URGE_OBJECT(TextInputEvent) {
  public:
   virtual ~TextInputEvent() = default;
 

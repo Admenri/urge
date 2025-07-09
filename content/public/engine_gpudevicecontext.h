@@ -21,73 +21,71 @@
 
 namespace content {
 
+/*--urge(name:GPUDeviceContextDesc)--*/
+struct URGE_OBJECT(GPUDeviceContextDesc) {
+  base::String name;
+  GPU::CommandQueueType queue_type = GPU::COMMAND_QUEUE_TYPE_UNKNOWN;
+  bool is_deferred = false;
+  uint8_t context_id = 0;
+  uint8_t queue_id = 0;
+  base::Vector<uint32_t> texture_copy_granularity;
+};
+
+/*--urge(name:GPUTextureSubResData)--*/
+struct URGE_OBJECT(GPUTextureSubResData) {
+  uint64_t data_ptr;
+  scoped_refptr<GPUBuffer> src_buffer;
+  uint64_t src_offset = 0;
+  uint64_t stride = 0;
+  uint64_t depth_stride = 0;
+};
+
+/*--urge(name:GPUViewport)--*/
+struct URGE_OBJECT(GPUViewport) {
+  float top_left_x = 0.0f;
+  float top_left_y = 0.0f;
+  float width = 0.0f;
+  float height = 0.0f;
+  float min_depth = 0.0f;
+  float max_depth = 1.0f;
+};
+
+/*--urge(name:GPUBox)--*/
+struct URGE_OBJECT(GPUBox) {
+  uint32_t min_x = 0;
+  uint32_t max_x = 0;
+  uint32_t min_y = 0;
+  uint32_t max_y = 0;
+  uint32_t min_z = 0;
+  uint32_t max_z = 1;
+};
+
+/*--urge(name:GPUStateTransitionDesc)--*/
+struct URGE_OBJECT(GPUStateTransitionDesc) {
+  uint64_t resource_before_ptr = 0;
+  uint64_t resource_ptr = 0;
+  uint32_t first_mip_level = 0;
+  uint32_t mip_levels_count = 0xFFFFFFFFU;
+  uint32_t first_array_slice = 0;
+  uint32_t array_slice_count = 0xFFFFFFFFU;
+  GPU::ResourceState old_state;
+  GPU::ResourceState new_state;
+  GPU::StateTransitionType transition_type =
+      GPU::STATE_TRANSITION_TYPE_IMMEDIATE;
+  GPU::StateTransitionFlags transition_flags = GPU::STATE_TRANSITION_FLAG_NONE;
+};
+
+/*--urge(name:GPUMappedTextureSubresource)--*/
+struct URGE_OBJECT(GPUMappedTextureSubresource) {
+  uint64_t data_ptr;
+  uint64_t stride = 0;
+  uint64_t depth_stride = 0;
+};
+
 /*--urge(name:GPUDeviceContext)--*/
-class URGE_RUNTIME_API GPUDeviceContext
-    : public base::RefCounted<GPUDeviceContext> {
+class URGE_OBJECT(GPUDeviceContext) {
  public:
   virtual ~GPUDeviceContext() = default;
-
-  /*--urge(name:DeviceContextDesc)--*/
-  struct DeviceContextDesc {
-    base::String name;
-    GPU::CommandQueueType queue_type = GPU::COMMAND_QUEUE_TYPE_UNKNOWN;
-    bool is_deferred = false;
-    uint8_t context_id = 0;
-    uint8_t queue_id = 0;
-    base::Vector<uint32_t> texture_copy_granularity;
-  };
-
-  /*--urge(name:TextureSubResData)--*/
-  struct TextureSubResData {
-    uint64_t data_ptr;
-    scoped_refptr<GPUBuffer> src_buffer;
-    uint64_t src_offset = 0;
-    uint64_t stride = 0;
-    uint64_t depth_stride = 0;
-  };
-
-  /*--urge(name:ClipViewport)--*/
-  struct ClipViewport {
-    float top_left_x = 0.0f;
-    float top_left_y = 0.0f;
-    float width = 0.0f;
-    float height = 0.0f;
-    float min_depth = 0.0f;
-    float max_depth = 1.0f;
-  };
-
-  /*--urge(name:ClipBox)--*/
-  struct ClipBox {
-    uint32_t min_x = 0;
-    uint32_t max_x = 0;
-    uint32_t min_y = 0;
-    uint32_t max_y = 0;
-    uint32_t min_z = 0;
-    uint32_t max_z = 1;
-  };
-
-  /*--urge(name:StateTransitionDesc)--*/
-  struct StateTransitionDesc {
-    uint64_t resource_before_ptr = 0;
-    uint64_t resource_ptr = 0;
-    uint32_t first_mip_level = 0;
-    uint32_t mip_levels_count = 0xFFFFFFFFU;
-    uint32_t first_array_slice = 0;
-    uint32_t array_slice_count = 0xFFFFFFFFU;
-    GPU::ResourceState old_state;
-    GPU::ResourceState new_state;
-    GPU::StateTransitionType transition_type =
-        GPU::STATE_TRANSITION_TYPE_IMMEDIATE;
-    GPU::StateTransitionFlags transition_flags =
-        GPU::STATE_TRANSITION_FLAG_NONE;
-  };
-
-  /*--urge(name:MappedTextureSubresource)--*/
-  struct MappedTextureSubresource {
-    uint64_t data_ptr;
-    uint64_t stride = 0;
-    uint64_t depth_stride = 0;
-  };
 
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
@@ -291,8 +289,8 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void UpdateTexture(scoped_refptr<GPUTexture> texture,
                              uint32_t mip_level,
                              uint32_t slice,
-                             const base::Optional<ClipBox>& box,
-                             const base::Optional<TextureSubResData>& data,
+                             scoped_refptr<GPUBox> box,
+                             scoped_refptr<GPUTextureSubResData> data,
                              GPU::ResourceStateTransitionMode src_buffer_mode,
                              GPU::ResourceStateTransitionMode texture_mode,
                              ExceptionState& exception_state) = 0;
@@ -301,7 +299,7 @@ class URGE_RUNTIME_API GPUDeviceContext
   virtual void CopyTexture(scoped_refptr<GPUTexture> src_texture,
                            uint32_t src_mip_level,
                            uint32_t src_slice,
-                           const base::Optional<ClipBox>& src_box,
+                           scoped_refptr<GPUBox> src_box,
                            GPU::ResourceStateTransitionMode src_mode,
                            scoped_refptr<GPUTexture> dst_texture,
                            uint32_t dst_mip_level,
@@ -313,13 +311,13 @@ class URGE_RUNTIME_API GPUDeviceContext
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:map_texture_subresource)--*/
-  virtual base::Optional<MappedTextureSubresource> MapTextureSubresource(
+  virtual scoped_refptr<GPUMappedTextureSubresource> MapTextureSubresource(
       scoped_refptr<GPUTexture> texture,
       uint32_t mip_level,
       uint32_t array_slice,
       GPU::MapType map_type,
       GPU::MapFlags map_flags,
-      const base::Optional<ClipBox>& map_region,
+      scoped_refptr<GPUBox> map_region,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:unmap_texture_subresource)--*/
@@ -337,7 +335,7 @@ class URGE_RUNTIME_API GPUDeviceContext
 
   /*--urge(name:transition_resource_states)--*/
   virtual void TransitionResourceStates(
-      const base::Vector<StateTransitionDesc>& barriers,
+      const base::Vector<scoped_refptr<GPUStateTransitionDesc>> barriers,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:resolve_texture_subresource)--*/

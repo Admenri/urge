@@ -13,7 +13,7 @@
 namespace content {
 
 /*--urge(name:GPUQuery)--*/
-class URGE_RUNTIME_API GPUQuery : public base::RefCounted<GPUQuery> {
+class URGE_OBJECT(GPUQuery) {
  public:
   virtual ~GPUQuery() = default;
 

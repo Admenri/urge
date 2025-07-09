@@ -12,18 +12,17 @@
 
 namespace content {
 
+/*--urge(name:GPUShaderResourceDesc)--*/
+struct URGE_OBJECT(GPUShaderResourceDesc) {
+  base::String name;
+  GPU::ShaderResourceType type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
+  uint32_t array_size = 0;
+};
+
 /*--urge(name:GPUResourceVariable)--*/
-class URGE_RUNTIME_API GPUResourceVariable
-    : public base::RefCounted<GPUResourceVariable> {
+class URGE_OBJECT(GPUResourceVariable) {
  public:
   virtual ~GPUResourceVariable() = default;
-
-  /*--urge(name:ShaderResourceDesc)--*/
-  struct ShaderResourceDesc {
-    base::String name;
-    GPU::ShaderResourceType type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
-    uint32_t array_size = 0;
-  };
 
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
@@ -55,7 +54,7 @@ class URGE_RUNTIME_API GPUResourceVariable
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:resource_desc)--*/
-  virtual base::Optional<ShaderResourceDesc> GetResourceDesc(
+  virtual scoped_refptr<GPUShaderResourceDesc> GetResourceDesc(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:index)--*/

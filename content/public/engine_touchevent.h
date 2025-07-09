@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:TouchEvent)--*/
-class URGE_RUNTIME_API TouchEvent : public base::RefCounted<TouchEvent> {
+class URGE_OBJECT(TouchEvent) {
  public:
   virtual ~TouchEvent() = default;
 

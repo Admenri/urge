@@ -16,7 +16,7 @@
 namespace content {
 
 /*--urge(name:Viewport)--*/
-class URGE_RUNTIME_API Viewport : public base::RefCounted<Viewport> {
+class URGE_OBJECT(Viewport) {
  public:
   virtual ~Viewport() = default;
 

@@ -14,7 +14,7 @@
 namespace content {
 
 /*--urge(name:URGE,is_module)--*/
-class URGE_RUNTIME_API URGE : public base::RefCounted<URGE> {
+class URGE_OBJECT(URGE) {
  public:
   virtual ~URGE() = default;
 

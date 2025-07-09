@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Table)--*/
-class URGE_RUNTIME_API Table : public base::RefCounted<Table> {
+class URGE_OBJECT(Table) {
  public:
   virtual ~Table() = default;
 

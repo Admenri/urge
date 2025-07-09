@@ -13,8 +13,7 @@
 namespace content {
 
 /*--urge(name:GPUResourceMapping)--*/
-class URGE_RUNTIME_API GPUResourceMapping
-    : public base::RefCounted<GPUResourceMapping> {
+class URGE_OBJECT(GPUResourceMapping) {
  public:
   virtual ~GPUResourceMapping() = default;
 

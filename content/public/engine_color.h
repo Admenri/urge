@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Color)--*/
-class URGE_RUNTIME_API Color : public base::RefCounted<Color> {
+class URGE_OBJECT(Color) {
  public:
   virtual ~Color() = default;
 

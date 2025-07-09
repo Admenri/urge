@@ -14,8 +14,7 @@
 namespace content {
 
 /*--urge(name:ImageAnimation)--*/
-class URGE_RUNTIME_API ImageAnimation
-    : public base::RefCounted<ImageAnimation> {
+class URGE_OBJECT(ImageAnimation) {
  public:
   virtual ~ImageAnimation() = default;
 

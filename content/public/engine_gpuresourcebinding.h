@@ -18,8 +18,7 @@ class GPUPipelineSignature;
 class GPUResourceMapping;
 
 /*--urge(name:GPUResourceBinding)--*/
-class URGE_RUNTIME_API GPUResourceBinding
-    : public base::RefCounted<GPUResourceBinding> {
+class URGE_OBJECT(GPUResourceBinding) {
  public:
   virtual ~GPUResourceBinding() = default;
 

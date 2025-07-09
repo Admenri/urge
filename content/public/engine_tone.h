@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Tone)--*/
-class URGE_RUNTIME_API Tone : public base::RefCounted<Tone> {
+class URGE_OBJECT(Tone) {
  public:
   virtual ~Tone() = default;
 

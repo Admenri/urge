@@ -74,15 +74,6 @@
 #include "base/memory/weak_ptr.h"
 #include "base/template_util.h"
 
-#if defined(OS_WIN)
-namespace Microsoft {
-namespace WRL {
-template <typename>
-class ComPtr;
-}  // namespace WRL
-}  // namespace Microsoft
-#endif
-
 namespace base {
 
 template <typename T>
@@ -1270,13 +1261,6 @@ template <typename T>
 struct BindUnwrapTraits<internal::PassedWrapper<T>> {
   static T Unwrap(const internal::PassedWrapper<T>& o) { return o.Take(); }
 };
-
-#if defined(OS_WIN)
-template <typename T>
-struct BindUnwrapTraits<Microsoft::WRL::ComPtr<T>> {
-  static T* Unwrap(const Microsoft::WRL::ComPtr<T>& ptr) { return ptr.Get(); }
-};
-#endif
 
 // CallbackCancellationTraits allows customization of Callback's cancellation
 // semantics. By default, callbacks are not cancellable. A specialization should

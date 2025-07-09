@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:KeyEvent)--*/
-class URGE_RUNTIME_API KeyEvent : public base::RefCounted<KeyEvent> {
+class URGE_OBJECT(KeyEvent) {
  public:
   virtual ~KeyEvent() = default;
 

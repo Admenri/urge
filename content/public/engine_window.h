@@ -14,7 +14,7 @@
 namespace content {
 
 /*--urge(name:Window)--*/
-class URGE_RUNTIME_API Window : public base::RefCounted<Window> {
+class URGE_OBJECT(Window) {
  public:
   virtual ~Window() = default;
 

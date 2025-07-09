@@ -53,8 +53,8 @@ class APIParser:
   # 构造一个新的类数据模版
   def process_class(self, line):
     # 期望的格式：
-    #  class URGE_RUNTIME_API xxxxx : public base::RefCounted<xxxxx> {
-    match = re.search(r'class\s+(?:[A-Za-z0-9_]+\s+)*([A-Za-z0-9_]+)\s*:\s*public\s+[A-Za-z0-9_:]+<\1>', line)
+    #  class URGE_OBJECT(xxxxx) {
+    match = re.search(r'class \w+\((.*?)\)', line)
     if not match: return None
 
     # 将之前的类加入类数据库
@@ -64,6 +64,7 @@ class APIParser:
 
     # 构造新的类数据
     self.current_class = {
+      "type": "class",
       "native_name": match.group(1),
       "binding_name": self.current_comment.get('name', None),
       "is_module": self.current_comment.get('is_module', False),
@@ -130,7 +131,6 @@ class APIParser:
   # 解析形参类型数据
   # 本函数会递归解析类型的嵌套容器：
   #  1. base::Vector<scoped_refptr<xxx>>
-  #  2. base::Optional<xxx>
   #  3. base::Vector<xxx>
   @staticmethod
   def parse_variable(varname):
@@ -201,7 +201,7 @@ class APIParser:
 
       # 解析名称
       if line.startswith('struct'):
-        match = re.search(r'struct\s+(\w+)\s*\{', line)
+        match = re.search(r'struct \w+\((.*?)\)', line)
         struct_name = match.group(1)
         continue
       # 末尾
@@ -241,15 +241,28 @@ class APIParser:
         "default_value": default_value,
       })
 
+    # 分析依赖
+    deps = []
+    for member in struct_members:
+      dep = member['type_raw']
+      first_sep = dep.rfind('<')
+      last_sep = dep.find('>')
+      if dep.find('scoped_refptr') != -1:
+        if first_sep >= 0 or last_sep >= 0:
+          dep = dep[first_sep + 1: last_sep]
+          deps.append(dep)
+
     # 构造结构体信息
     struct_info = {
-      "binding_name": self.current_comment.get('name', None),
+      "type": "struct",
       "native_name": struct_name,
+      "binding_name": self.current_comment.get('name', None),
       "members": struct_members,
+      "dependency": deps,
     }
 
     # 添加到当前解析类数据中
-    self.current_class['structs'].append(struct_info)
+    self.classes.append(struct_info)
 
   # 解析属性，
   # 期望拿到的数据：
@@ -516,14 +529,8 @@ class APIParser:
     dependency = [self.current_class["native_name"]]
 
     # 查找顺序：
-    #  结构体 -> 属性 -> 方法
+    #  属性 -> 方法
     dependency_raw = []
-
-    # 结构体遍历
-    structs_data = self.current_class["structs"]
-    for struct in structs_data:
-      for member in struct["members"]:
-        dependency_raw.append(member["type_raw"])
 
     # 属性遍历
     attributes_data = self.current_class["attributes"]
@@ -584,27 +591,27 @@ if __name__ == "__main__":
 
 namespace content {
 
-// IDL generator format:
-// Inhert: refcounted only.
-// Interface reference: RGSS Reference
-/*--urge(name:Bitmap)--*/
-class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
- public:
-  virtual ~Bitmap() = default;
-
   /*--urge(name:Size)--*/
-  struct Size {
+  struct URGE_OBJECT(Size) {
     uint32_t width;
     uint32_t height;
   };
   
   /*--urge(name:CreateInfo)--*/
-  struct CreateInfo {
+  struct URGE_OBJECT(CreateInfo) {
     uint32_t test;
     uint32_t id = 0;
     base::String filename = "null";
     std::optional<Size> size;
   };
+
+// IDL generator format:
+// Inhert: refcounted only.
+// Interface reference: RGSS Reference
+/*--urge(name:Bitmap)--*/
+class URGE_OBJECT(Bitmap) {
+ public:
+  virtual ~Bitmap() = default;
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,

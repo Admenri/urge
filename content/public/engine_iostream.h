@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:IOStream)--*/
-class URGE_RUNTIME_API IOStream : public base::RefCounted<IOStream> {
+class URGE_OBJECT(IOStream) {
  public:
   virtual ~IOStream() = default;
 

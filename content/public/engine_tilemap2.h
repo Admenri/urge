@@ -16,7 +16,7 @@
 namespace content {
 
 /*--urge(name:Tilemap2)--*/
-class URGE_RUNTIME_API Tilemap2 : public base::RefCounted<Tilemap2> {
+class URGE_OBJECT(Tilemap2) {
  public:
   virtual ~Tilemap2() = default;
 

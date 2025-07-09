@@ -13,7 +13,7 @@
 namespace content {
 
 /*--urge(name:GPUSampler)--*/
-class URGE_RUNTIME_API GPUSampler : public base::RefCounted<GPUSampler> {
+class URGE_OBJECT(GPUSampler) {
  public:
   virtual ~GPUSampler() = default;
 

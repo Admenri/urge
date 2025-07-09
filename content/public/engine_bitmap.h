@@ -19,7 +19,7 @@
 namespace content {
 
 /*--urge(name:Bitmap)--*/
-class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
+class URGE_OBJECT(Bitmap) {
  public:
   virtual ~Bitmap() = default;
 

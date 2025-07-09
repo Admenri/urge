@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Audio,is_module)--*/
-class URGE_RUNTIME_API Audio : public base::RefCounted<Audio> {
+class URGE_OBJECT(Audio) {
  public:
   virtual ~Audio() = default;
 

@@ -14,7 +14,7 @@
 namespace content {
 
 /*--urge(name:Plane)--*/
-class URGE_RUNTIME_API Plane : public base::RefCounted<Plane> {
+class URGE_OBJECT(Plane) {
  public:
   virtual ~Plane() = default;
 

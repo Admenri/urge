@@ -15,7 +15,11 @@ namespace content {
 struct ExecutionContext;
 }  // namespace content
 
-#define URGE_RUNTIME_API
+#define URGE_OBJECT(ty) \
+  ty:                   \
+ public                 \
+  base::RefCounted<ty>
+
 #define URGE_EXPORT_ATTRIBUTE(name, type)       \
   virtual type Get_##name(ExceptionState&) = 0; \
   virtual void Put_##name(const type&, ExceptionState&) = 0

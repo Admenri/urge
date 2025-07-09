@@ -31,10 +31,10 @@ class MriBindingGen:
   def generate_header(self):
     # C++类名
     klass_type = self.class_data['native_name']
-    # 是否为模块
-    is_module = self.class_data['is_module']
     # 当前类的头文件
     header_file = self.class_data['filename']
+    # 当前对象的类型判断
+    object_type = self.class_data['type']
 
     # 版权+注意事项声明
     content = autogen_header
@@ -53,7 +53,11 @@ class MriBindingGen:
     content += "\nnamespace binding {\n\n"
 
     # 定义导出类数据
-    if not is_module:
+
+    # 是否为模块
+    rb_data_type = (object_type == 'class' and not self.class_data['is_module'])
+    rb_data_type |= object_type == 'struct'
+    if rb_data_type:
       content += f"MRI_DECLARE_DATATYPE({klass_type});\n\n"
     content += f"void Init{klass_type}Binding();\n\n"
 
@@ -64,6 +68,40 @@ class MriBindingGen:
 
   # 生成 Ruby 函数声明部分
   def generate_body_declare(self):
+    # 当前对象的类型判断
+    object_type = self.class_data['type']
+    if object_type == 'class':
+      return self.create_class_declaration()
+    if object_type == 'struct':
+      return self.create_struct_declaration()
+
+  def create_struct_declaration(self):
+    # C++类名
+    klass_type = self.class_data['native_name']
+    # Ruby类名
+    klass_name = self.class_data['binding_name']
+    # 成员列表
+    struct_members = self.class_data['members']
+
+    # 定义函数体
+    content = f"void Init{klass_type}Binding() {{\n"
+
+    # 类定义头
+    content += f"VALUE klass = rb_define_class(\"{klass_name}\", rb_cObject);\n"
+    content += f"rb_define_alloc_func(klass, MriClassAllocate<&k{klass_type}DataType>);\n"
+    # 由于引擎每次取出对象的 Ruby ObjectID 都不一样，这里需要为每个类重载比较函数
+    content += "MriDefineMethod(klass, \"engine_id\", MriGetEngineID);\n"
+
+    # 定义成员访问
+    for member in struct_members:
+      member_name = member['native_name']
+      content += f"MRI_DECLARE_ATTRIBUTE(klass, \"{member_name}\", {klass_name}, {member_name});\n"
+
+    # 函数体结尾
+    content += "\n}\n"
+    return content
+
+  def create_class_declaration(self):
     # C++类名
     klass_type = self.class_data['native_name']
     # Ruby类名
@@ -174,121 +212,51 @@ class MriBindingGen:
             if enum['native_name'] == varname:
               return True
 
-    deps = self.class_data['enums']
+    deps = self.class_data.get('enums', None)
+    if deps is None:
+      return False
+
     data = []
     for dep in deps:
       data.append(dep['native_name'])
     return typename in data
 
-  # 判断一个类型是否为 struct
-  def is_type_struct(self, typename):
-    is_other_domain, domain, varname = self.parse_namespace_element(typename)
-    if is_other_domain:
-      for klass in self.global_classes:
-        if klass['native_name'] == domain:
-          for enum in klass['structs']:
-            if enum['native_name'] == varname:
-              return True
+  # 函数定义主体部分
+  def generate_body_definition(self):
+    # 当前对象的类型判断
+    object_type = self.class_data['type']
+    if object_type == 'class':
+      return self.create_class_content()
+    if object_type == 'struct':
+      return self.create_struct_content()
 
-    deps = list(self.class_data['structs'])
-    data = []
-    for dep in deps:
-      data.append(dep['native_name'])
-    return typename in data
+  # 生成结构体的数据
+  def create_struct_content(self):
+    # C++类名
+    klass_type = self.class_data['native_name']
+    # Ruby类名
+    klass_name = self.class_data['binding_name']
 
-  # 生成一个函数，将 Ruby 的 Hash 转为 C++ 的 Struct
-  # 函数名：*** RBHASH2****(VALUE)
-  def convert_hash_to_struct(self, struct_name):
-    # 生成一个专用函数，将本类的结构体从 Ruby 数据转为 C++ 数据
-    content = f"static content::{self.class_data['native_name']}::{struct_name} RBHASH2{struct_name}(VALUE rb_hash) {{\n"
-    # 创建一个局部变量
-    content += f"content::{self.class_data['native_name']}::{struct_name} result;\n\n"
+    # 开始生成内容
+    content = ""
 
-    # 从当前类的结构体中取出对应的数据
-    structs = self.class_data['structs']
-    target_struct = next((x for x in structs if x['native_name'] == struct_name), None)
-    for member in target_struct['members']:
-      # 成员变量名称
+    for member in self.class_data['members']:
+      # 成员函数名称
       member_name = member['native_name']
       # 成员类型
-      member_type = member['type_raw']
+      type_raw = member['type_raw']
+      type_detail = member['type_detail']
 
-      # 在 Hash 中寻找指定成员
-      content += f"VALUE {member_name} = rb_hash_lookup(rb_hash, ID2SYM(rb_intern(\"{member_name}\")));\n"
+      # ==== 取属性 ====
+      # 函数头部
+      content += f"MRI_METHOD({klass_name}_Get_{member_name}) {{\n"
+      # 检查函数数量
+      content += "if (argc > 0)\nrb_raise(rb_eArgError, \"Too many arguments for struct getter.\");\n"
+      # 获取 self
+      content += f"scoped_refptr self_obj = MriGetStructData<content::{klass_type}>(self);\n"
 
-      # 通过成员变量类型确认转换函数
-      convert_func = ""
-      if member_type.startswith("uint32_t"):
-        convert_func = f"NUM2UINT({member_name})"
-      elif member_type.startswith("int64_t"):
-        convert_func = f"NUM2LL({member_name})"
-      elif member_type.startswith("uint64_t"):
-        convert_func = f"NUM2ULL({member_name})"
-      elif member_type.startswith("int") or member_type.startswith("uint") or self.is_type_enum(member_type):
-        if self.is_type_enum(member_type):
-          convert_func = f"static_cast<decltype(result.{member_name})>(NUM2INT({member_name}))"
-        else:
-          convert_func = f"NUM2INT({member_name})"
-      elif member_type.startswith("float"):
-        convert_func = f"RFLOAT_VALUE({member_name})"
-      elif member_type.startswith("double"):
-        convert_func = f"RFLOAT_VALUE({member_name})"
-      elif member_type.startswith("bool"):
-        convert_func = f"MRI_FROM_BOOL({member_name})"
-      elif member_type.startswith("base::String"):
-        convert_func = f"MRI_FROM_STRING({member_name})"
-      elif member_type.startswith("scoped_refptr"):
-        match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', member_type)
-        decay_type = match.group(1)
-        convert_func = f"MriCheckStructData<content::{decay_type}>({member_name}, k{decay_type}DataType)"
-      elif member_type.startswith("base::Optional"):
-        match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
-        decay_type = match.group(1)
-        convert_func = f"RBHASH2{decay_type}({member_name})"
-      elif member_type.startswith("base::Vector"):
-        match = re.search(r'base::Vector<(.+)>', member_type)
-        decay_type = match.group(1)
-
-        # 萃取 base::Vector 中的类型并使用对应的转换
-        if decay_type.startswith("scoped_refptr"):
-          match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
-          match_type = match.group(1)
-          convert_func = f"RBARRAY2CXX<content::{match_type}>({member_name}, k{match_type}DataType)"
-        elif self.is_type_struct(decay_type):
-          convert_func = f"RBARRAY2CXX<decltype(result.{member_name})::value_type>({member_name}, RBHASH2{decay_type})"
-        elif self.is_type_enum(decay_type):
-          convert_func = f"RBARRAY2CXX_CONST<decltype(result.{member_name})::value_type>({member_name})"
-        else:
-          convert_func = f"RBARRAY2CXX<{decay_type}>({member_name})"
-
-      content += f"if ({member_name} != Qnil)\n"
-      content += f"  result.{member_name} = {convert_func};\n"
-
-    content += "\nreturn result;\n"
-    content += "}\n"
-    return content
-
-  # 生成一个函数，将 C++ 的 Struct 转为 Ruby 的 Hash
-  # 函数名：VALUE ****2RBHASH(const ***&)
-  def convert_struct_to_hash(self, struct_name):
-    # 生成一个专用函数，将本类的结构体从 C++ 数据转为 Ruby 数据
-    content = f"static VALUE {struct_name}2RBHASH(const base::Optional<content::{self.class_data['native_name']}::{struct_name}>& opt_cxx_obj) {{\n"
-    content += "if (!opt_cxx_obj.has_value())\nreturn Qnil;\n"
-    content += "auto& cxx_obj = *opt_cxx_obj;\n"
-
-    # 创建一个局部变量
-    content += f"VALUE result = rb_hash_new();\n\n"
-
-    # 从当前类的结构体中取出对应的数据
-    structs = self.class_data['structs']
-    target_struct = next((x for x in structs if x['native_name'] == struct_name), None)
-    for member in target_struct['members']:
-      # 成员变量名称
-      member_name = member['native_name']
-      # 成员类型
-      member_type = member['type_raw']
-
-      type_mapping = {
+      # 基础类型转换
+      basic_type_convert = {
         "int8_t": "INT2NUM",
         "uint8_t": "INT2NUM",
         "int16_t": "INT2NUM",
@@ -303,45 +271,82 @@ class MriBindingGen:
         "base::String": "MRI_STRING_VALUE",
       }
 
-      convert_func = ""
-      if self.is_type_enum(member_type):
-        convert_func = f"INT2NUM(cxx_obj.{member_name})"
-      elif member_type.startswith("scoped_refptr"):
-        match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', member_type)
-        decay_type = match.group(1)
-        convert_func = f"MriWrapObject<content::{decay_type}>(cxx_obj.{member_name}, k{decay_type}DataType)"
-      elif member_type.startswith("base::Optional"):
-        match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', member_type)
-        decay_type = match.group(1)
-        convert_func = f"{decay_type}2RBHASH(cxx_obj.{member_name})"
-      elif member_type.startswith("base::Vector"):
-        match = re.search(r'base::Vector<(.+)>', member_type)
-        decay_type = match.group(1)
+      if type_raw in basic_type_convert:
+        content += f"VALUE result = {basic_type_convert.get(type_raw)}(self_obj->{member_name});\n"
+      elif self.is_type_enum(type_raw):
+        content += f"VALUE result = INT2NUM(self_obj->{member_name});\n"
+      elif len(type_detail['containers']) == 1 and type_detail['containers'][0] == "scoped_refptr":
+        root_type = type_detail['root_type']
+        content += f"VALUE result = MriWrapObject<content::{root_type}>(self_obj->{member_name}, k{root_type}DataType);\n"
+      elif len(type_detail['containers']) > 1 and type_detail['containers'][0] == "base::Vector":
+        root_type = type_detail['root_type']
+        second_container = type_detail['containers'][1]
 
         # 萃取 base::Vector 中的类型并使用对应的转换
-        if decay_type.startswith("scoped_refptr"):
-          match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
-          match_type = match.group(1)
-          convert_func = f"CXX2RBARRAY<content::{match_type}>(cxx_obj.{member_name}, k{match_type}DataType)"
-        elif self.is_type_struct(decay_type):
-          convert_func = f"CXX2RBARRAY<decltype(cxx_obj.{member_name})::value_type>(cxx_obj.{member_name}, {decay_type}2RBHASH)"
-        elif self.is_type_enum(decay_type):
-          convert_func = f"CXX2RBARRAY<decltype(cxx_obj.{member_name})::value_type>(cxx_obj.{member_name})"
+        if second_container.startswith("scoped_refptr"):
+          content += f"VALUE result = CXX2RBARRAY<content::{root_type}>(self_obj->{member_name}, k{root_type}DataType);\n"
+        elif self.is_type_enum(root_type):
+          content += f"VALUE result = CXX2RBARRAY<int32_t>(self_obj->{member_name});\n"
         else:
-          convert_func = f"CXX2RBARRAY<{decay_type}>(cxx_obj.{member_name})"
+          content += f"VALUE result = CXX2RBARRAY<{decay_type}>(self_obj->{member_name});\n"
 
-      elif type_mapping.get(member_type, None) is not None:
-        convert_func += f"{type_mapping.get(member_type)}(cxx_obj.{member_name})"
+      # 返回值
+      content += "return result;\n"
+      # 函数尾部
+      content += "}\n\n"
 
-      # 设置数据到 Ruby Hash
-      content += f"rb_hash_aset(result, ID2SYM(rb_intern(\"{member_name}\")), {convert_func});\n"
+      # ==== 置属性 ====
+      # 函数头部
+      content += f"MRI_METHOD({klass_name}_Put_{member_name}) {{\n"
+      # 检查函数数量
+      content += "if (argc > 1)\nrb_raise(rb_eArgError, \"Too many arguments for struct setter.\");\n"
+      # 获取 self
+      content += f"scoped_refptr self_obj = MriGetStructData<content::{klass_type}>(self);\n"
 
-    content += "\nreturn result;\n"
-    content += "}\n"
+      # 基础类型转换
+      basic_type_convert = {
+        "int8_t": "NUM2INT",
+        "uint8_t": "NUM2INT",
+        "int16_t": "NUM2INT",
+        "uint16_t": "NUM2INT",
+        "int32_t": "NUM2INT",
+        "uint32_t": "NUM2UINT",
+        "int64_t": "NUM2LL",
+        "uint64_t": "NUM2ULL",
+        "bool": "MRI_FROM_BOOL",
+        "float": "NUM2DBL",
+        "double": "NUM2DBL",
+        "base::String": "MRI_FROM_STRING",
+      }
+
+      if type_raw in basic_type_convert:
+        content += f"self_obj->{member_name} = {basic_type_convert.get(type_raw)}(argv[0]);\n"
+      elif self.is_type_enum(type_raw):
+        content += f"self_obj->{member_name} = (content::{type_raw})NUM2INT(argv[0]);\n"
+      elif len(type_detail['containers']) == 1 and type_detail['containers'][0] == "scoped_refptr":
+        root_type = type_detail['root_type']
+        content += f"VALUE result = MriCheckStructData<content::{root_type}>(self_obj->{member_name}, k{root_type}DataType);\n"
+      elif len(type_detail['containers']) > 1 and type_detail['containers'][0] == "base::Vector":
+        root_type = type_detail['root_type']
+        second_container = type_detail['containers'][1]
+
+        # 萃取 base::Vector 中的类型并使用对应的转换
+        if second_container.startswith("scoped_refptr"):
+          content += f"self_obj->{member_name} = RBARRAY2CXX<content::{root_type}>(argv[0], k{root_type}DataType);\n"
+        elif self.is_type_enum(root_type):
+          content += f"self_obj->{member_name} = RBARRAY2CXX<int32_t>(argv[0]);\n"
+        else:
+          content += f"self_obj->{member_name} = RBARRAY2CXX<{decay_type}>(argv[0]);\n"
+
+      # 返回值
+      content += "return self;\n"
+      # 函数尾部
+      content += "}\n\n"
+
     return content
 
-  # 函数定义主体部分
-  def generate_body_definition(self):
+  # 生成类的数据
+  def create_class_content(self):
     # C++类名
     klass_type = self.class_data['native_name']
     # Ruby类名
@@ -476,13 +481,6 @@ class MriBindingGen:
             ruby_type = "VALUE"
             convert_suffix += f"auto {param_name} = MriCheckStructData<content::{decay_type}>({param_name}_obj, k{decay_type}DataType);\n"
             param_name += "_obj"
-          elif param_type.startswith("base::Optional") or param_type.startswith("const base::Optional"):
-            match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', param_type)
-            decay_type = match.group(1)
-            parse_template += "o"
-            ruby_type = "VALUE"
-            convert_suffix += f"auto {param_name} = RBHASH2{decay_type}(rb_check_hash_type({param_name}_obj));\n"
-            param_name += "_obj"
           elif param_type.startswith("void*") or param_type.startswith("const void*"):
             parse_template += "r"
             ruby_type = "void*"
@@ -498,8 +496,6 @@ class MriBindingGen:
               match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
               match_type = match.group(1)
               convert_func = f"RBARRAY2CXX<content::{match_type}>({param_name}_ary, k{match_type}DataType)"
-            elif self.is_type_struct(decay_type):
-              convert_func = f"RBARRAY2CXX<content::{klass_type}::{decay_type}>({param_name}_ary, RBHASH2{decay_type})"
             elif self.is_type_enum(decay_type):
               convert_func = f"RBARRAY2CXX_CONST<content::{klass_type}::{decay_type}>({param_name}_ary)"
             else:
@@ -593,10 +589,6 @@ class MriBindingGen:
               match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', return_type)
               decay_type = match.group(1)
               content += f"VALUE _result = MriWrapObject<content::{decay_type}>(_return_value, k{decay_type}DataType);\n"
-            elif return_type.startswith("base::Optional"):
-              match = re.search(r'(?:const\s+)?base::Optional\s*<\s*([^\s>]+)\s*>(?:&\s*)?', return_type)
-              decay_type = match.group(1)
-              content += f"VALUE _result = {decay_type}2RBHASH(_return_value);\n"
             elif return_type.startswith("base::Vector"):
               match = re.search(r'base::Vector<(.+)>', return_type)
               decay_type = match.group(1)
@@ -606,8 +598,6 @@ class MriBindingGen:
                 match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
                 match_type = match.group(1)
                 convert_func = f"CXX2RBARRAY<content::{match_type}>(_return_value, k{match_type}DataType)"
-              elif self.is_type_struct(decay_type):
-                convert_func = f"CXX2RBARRAY<{decay_type}>(_return_value, {decay_type}2RBHASH)"
               elif self.is_type_enum(decay_type):
                 convert_func = f"CXX2RBARRAY<int32_t>(_return_value)"
               else:
@@ -644,10 +634,8 @@ class MriBindingGen:
     klass_type = self.class_data['native_name']
     # Ruby类名
     klass_name = self.class_data['binding_name']
-    # 是否模块
-    is_module = self.class_data['is_module']
-    # 是否可比较
-    is_comparable = self.class_data['is_comparable']
+    # 类型
+    current_type = self.class_data['type']
 
     # 版权+注意事项声明
     content = autogen_header
@@ -662,22 +650,26 @@ class MriBindingGen:
     # 开始源文件内容
     content += "\nnamespace binding {\n"
 
-    if not is_module:
-      # 定义 Ruby 数据结构（仅对类有效）
+    if current_type == 'class':
+      # 是否模块
+      is_module = self.class_data['is_module']
+      # 是否可比较
+      is_comparable = self.class_data['is_comparable']
+
+      if not is_module:
+        # 定义 Ruby 数据结构（仅对类有效）
+        content += f"MRI_DEFINE_DATATYPE_REF({klass_name}, \"{klass_name}\", content::{klass_type});\n"
+
+        # 定义 Ruby 类特性
+        if is_comparable:
+          content += f"MRI_OBJECT_ID_COMPARE_CUSTOM({klass_name});\n"
+        else:
+          content += f"MRI_OBJECT_ID_COMPARE({klass_name});\n"
+    else:
+      # 定义 Ruby 数据结构（仅对结构有效）
       content += f"MRI_DEFINE_DATATYPE_REF({klass_name}, \"{klass_name}\", content::{klass_type});\n"
 
-      # 定义 Ruby 类特性
-      if is_comparable:
-        content += f"MRI_OBJECT_ID_COMPARE_CUSTOM({klass_name});\n"
-      else:
-        content += f"MRI_OBJECT_ID_COMPARE({klass_name});\n"
-
     content += "\n" * 2
-
-    # 添加 Hash 转为 Struct 的函数部分
-    for struct in self.class_data['structs']:
-      content += self.convert_hash_to_struct(struct['native_name'])
-      content += self.convert_struct_to_hash(struct['native_name'])
 
     # 添加定义部分
     content += self.generate_body_definition()

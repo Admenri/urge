@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Input,is_module)--*/
-class URGE_RUNTIME_API Input : public base::RefCounted<Input> {
+class URGE_OBJECT(Input) {
  public:
   virtual ~Input() = default;
 

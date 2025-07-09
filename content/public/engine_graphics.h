@@ -15,7 +15,7 @@
 namespace content {
 
 /*--urge(name:Graphics,is_module)--*/
-class URGE_RUNTIME_API Graphics : public base::RefCounted<Graphics> {
+class URGE_OBJECT(Graphics) {
  public:
   virtual ~Graphics() = default;
 

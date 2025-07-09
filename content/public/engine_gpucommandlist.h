@@ -13,8 +13,7 @@
 namespace content {
 
 /*--urge(name:GPUCommandList)--*/
-class URGE_RUNTIME_API GPUCommandList
-    : public base::RefCounted<GPUCommandList> {
+class URGE_OBJECT(GPUCommandList) {
  public:
   virtual ~GPUCommandList() = default;
 

@@ -13,7 +13,7 @@
 namespace content {
 
 /*--urge(name:GPUFence)--*/
-class URGE_RUNTIME_API GPUFence : public base::RefCounted<GPUFence> {
+class URGE_OBJECT(GPUFence) {
  public:
   virtual ~GPUFence() = default;
 

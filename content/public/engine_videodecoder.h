@@ -14,7 +14,7 @@
 namespace content {
 
 /*--urge(name:VideoDecoder)--*/
-class URGE_RUNTIME_API VideoDecoder : public base::RefCounted<VideoDecoder> {
+class URGE_OBJECT(VideoDecoder) {
  public:
   virtual ~VideoDecoder() = default;
 

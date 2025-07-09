@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:GPU,is_module)--*/
-class URGE_RUNTIME_API GPU : public base::RefCounted<GPU> {
+class URGE_OBJECT(GPU) {
  public:
   virtual ~GPU() = default;
 

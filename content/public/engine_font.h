@@ -15,7 +15,7 @@
 namespace content {
 
 /*--urge(name:Font)--*/
-class URGE_RUNTIME_API Font : public base::RefCounted<Font> {
+class URGE_OBJECT(Font) {
  public:
   virtual ~Font() = default;
 

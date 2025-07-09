@@ -14,7 +14,7 @@
 namespace content {
 
 /*--urge(name:Sprite)--*/
-class URGE_RUNTIME_API Sprite : public base::RefCounted<Sprite> {
+class URGE_OBJECT(Sprite) {
  public:
   virtual ~Sprite() = default;
 

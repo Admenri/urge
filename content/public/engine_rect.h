@@ -12,7 +12,7 @@
 namespace content {
 
 /*--urge(name:Rect)--*/
-class URGE_RUNTIME_API Rect : public base::RefCounted<Rect> {
+class URGE_OBJECT(Rect) {
  public:
   virtual ~Rect() = default;
 

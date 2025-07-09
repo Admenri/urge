@@ -15,7 +15,7 @@
 namespace content {
 
 /*--urge(name:Surface)--*/
-class URGE_RUNTIME_API Surface : public base::RefCounted<Surface> {
+class URGE_OBJECT(Surface) {
  public:
   virtual ~Surface() = default;
 

@@ -15,8 +15,7 @@
 namespace content {
 
 /*--urge(name:TilemapAutotile)--*/
-class URGE_RUNTIME_API TilemapAutotile
-    : public base::RefCounted<TilemapAutotile> {
+class URGE_OBJECT(TilemapAutotile) {
  public:
   virtual ~TilemapAutotile() = default;
 

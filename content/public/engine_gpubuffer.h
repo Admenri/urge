@@ -14,8 +14,29 @@ namespace content {
 
 class GPUBuffer;
 
+/*--urge(name:GPUBufferDesc)--*/
+struct URGE_OBJECT(GPUBufferDesc) {
+  uint64_t size = 0;
+  GPU::BindFlags bind_flags = GPU::BIND_NONE;
+  GPU::Usage usage = GPU::USAGE_DEFAULT;
+  GPU::CPUAccessFlags cpu_access_flags = GPU::CPU_ACCESS_NONE;
+  GPU::BufferMode mode = GPU::BUFFER_MODE_UNDEFINED;
+  uint32_t element_byte_stride = 0;
+  uint64_t immediate_context_mask = 1;
+};
+
+/*--urge(name:GPUBufferViewDesc)--*/
+struct URGE_OBJECT(GPUBufferViewDesc) {
+  GPU::BufferViewType view_type = GPU::BUFFER_VIEW_UNDEFINED;
+  GPU::ValueType value_type = GPU::VT_UNDEFINED;
+  uint8_t num_components = 0;
+  bool is_normalized = false;
+  uint64_t byte_offset = 0;
+  uint64_t byte_width = 0;
+};
+
 /*--urge(name:GPUBufferView)--*/
-class URGE_RUNTIME_API GPUBufferView : public base::RefCounted<GPUBufferView> {
+class URGE_OBJECT(GPUBufferView) {
  public:
   virtual ~GPUBufferView() = default;
 
@@ -28,25 +49,19 @@ class URGE_RUNTIME_API GPUBufferView : public base::RefCounted<GPUBufferView> {
   /*--urge(name:device_object)--*/
   virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:desc)--*/
+  virtual scoped_refptr<GPUBufferViewDesc> GetDesc(
+      ExceptionState& exception_state) = 0;
+
   /*--urge(name:buffer)--*/
   virtual scoped_refptr<GPUBuffer> GetBuffer(
       ExceptionState& exception_state) = 0;
 };
 
 /*--urge(name:GPUBuffer)--*/
-class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
+class URGE_OBJECT(GPUBuffer) {
  public:
   virtual ~GPUBuffer() = default;
-
-  /*--urge(name:BufferViewDesc)--*/
-  struct BufferViewDesc {
-    GPU::BufferViewType view_type = GPU::BUFFER_VIEW_UNDEFINED;
-    GPU::ValueType value_type = GPU::VT_UNDEFINED;
-    uint8_t num_components = 0;
-    bool is_normalized = false;
-    uint64_t byte_offset = 0;
-    uint64_t byte_width = 0;
-  };
 
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
@@ -57,9 +72,13 @@ class URGE_RUNTIME_API GPUBuffer : public base::RefCounted<GPUBuffer> {
   /*--urge(name:device_object)--*/
   virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:desc)--*/
+  virtual scoped_refptr<GPUBufferDesc> GetDesc(
+      ExceptionState& exception_state) = 0;
+
   /*--urge(name:create_view)--*/
   virtual scoped_refptr<GPUBufferView> CreateView(
-      base::Optional<BufferViewDesc> desc,
+      scoped_refptr<GPUBufferViewDesc> desc,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:default_view)--*/

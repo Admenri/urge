@@ -14,8 +14,7 @@
 namespace content {
 
 /*--urge(name:GPUPipelineState)--*/
-class URGE_RUNTIME_API GPUPipelineState
-    : public base::RefCounted<GPUPipelineState> {
+class URGE_OBJECT(GPUPipelineState) {
  public:
   virtual ~GPUPipelineState() = default;
 
