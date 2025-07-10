@@ -9,6 +9,7 @@
 #include "content/context/execution_context.h"
 #include "content/gpu/buffer_impl.h"
 #include "content/gpu/command_list_impl.h"
+#include "content/gpu/command_queue_impl.h"
 #include "content/gpu/fence_impl.h"
 #include "content/gpu/pipeline_state_impl.h"
 #include "content/gpu/query_impl.h"
@@ -36,19 +37,20 @@ bool DeviceContextImpl::IsDisposed(ExceptionState& exception_state) {
   return Disposable::IsDisposed(exception_state);
 }
 
-std::optional<GPUDeviceContext::DeviceContextDesc> DeviceContextImpl::GetDesc(
+scoped_refptr<GPUDeviceContextDesc> DeviceContextImpl::GetDesc(
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(std::nullopt);
+  DISPOSE_CHECK_RETURN(nullptr);
 
   const auto& desc = object_->GetDesc();
-  DeviceContextDesc object_desc;
-  object_desc.name = desc.Name;
-  object_desc.queue_type = static_cast<GPU::CommandQueueType>(desc.QueueType);
-  object_desc.is_deferred = desc.IsDeferred;
-  object_desc.context_id = desc.ContextId;
-  object_desc.queue_id = desc.QueueId;
-  object_desc.texture_copy_granularity.insert(
-      object_desc.texture_copy_granularity.end(),
+  auto object_desc = base::MakeRefCounted<GPUDeviceContextDesc>();
+
+  object_desc->name = desc.Name;
+  object_desc->queue_type = static_cast<GPU::CommandQueueType>(desc.QueueType);
+  object_desc->is_deferred = desc.IsDeferred;
+  object_desc->context_id = desc.ContextId;
+  object_desc->queue_id = desc.QueueId;
+  object_desc->texture_copy_granularity.insert(
+      object_desc->texture_copy_granularity.end(),
       std::begin(desc.TextureCopyGranularity),
       std::end(desc.TextureCopyGranularity));
 
@@ -154,19 +156,19 @@ void DeviceContextImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
 }
 
 void DeviceContextImpl::SetViewports(
-    const base::Vector<ClipViewport>& viewports,
+    const base::Vector<scoped_refptr<GPUViewport>>& viewports,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   base::Vector<Diligent::Viewport> objects;
   for (auto& it : viewports) {
     Diligent::Viewport element;
-    element.TopLeftX = it.top_left_x;
-    element.TopLeftY = it.top_left_y;
-    element.Width = it.width;
-    element.Height = it.height;
-    element.MinDepth = it.min_depth;
-    element.MaxDepth = it.max_depth;
+    element.TopLeftX = it->top_left_x;
+    element.TopLeftY = it->top_left_y;
+    element.Width = it->width;
+    element.Height = it->height;
+    element.MinDepth = it->min_depth;
+    element.MaxDepth = it->max_depth;
     objects.push_back(std::move(element));
   }
 
@@ -535,8 +537,8 @@ void DeviceContextImpl::UpdateTexture(
     scoped_refptr<GPUTexture> texture,
     uint32_t mip_level,
     uint32_t slice,
-    const std::optional<ClipBox>& box,
-    const std::optional<TextureSubResData>& data,
+    scoped_refptr<GPUBox> box,
+    scoped_refptr<GPUTextureSubResData> data,
     GPU::ResourceStateTransitionMode src_buffer_mode,
     GPU::ResourceStateTransitionMode texture_mode,
     ExceptionState& exception_state) {
@@ -575,7 +577,7 @@ void DeviceContextImpl::UpdateTexture(
 void DeviceContextImpl::CopyTexture(scoped_refptr<GPUTexture> src_texture,
                                     uint32_t src_mip_level,
                                     uint32_t src_slice,
-                                    const std::optional<ClipBox>& src_box,
+                                    scoped_refptr<GPUBox> src_box,
                                     GPU::ResourceStateTransitionMode src_mode,
                                     scoped_refptr<GPUTexture> dst_texture,
                                     uint32_t dst_mip_level,
@@ -619,16 +621,15 @@ void DeviceContextImpl::CopyTexture(scoped_refptr<GPUTexture> src_texture,
   object_->CopyTexture(attrib);
 }
 
-std::optional<GPUDeviceContext::MappedTextureSubresource>
-DeviceContextImpl::MapTextureSubresource(
-    scoped_refptr<GPUTexture> texture,
-    uint32_t mip_level,
-    uint32_t array_slice,
-    GPU::MapType map_type,
-    GPU::MapFlags map_flags,
-    const std::optional<ClipBox>& map_region,
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(std::nullopt);
+scoped_refptr<GPUMappedTextureSubresource>
+DeviceContextImpl::MapTextureSubresource(scoped_refptr<GPUTexture> texture,
+                                         uint32_t mip_level,
+                                         uint32_t array_slice,
+                                         GPU::MapType map_type,
+                                         GPU::MapFlags map_flags,
+                                         scoped_refptr<GPUBox> map_region,
+                                         ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
 
   auto* raw_texture = static_cast<TextureImpl*>(texture.get());
   auto* object_texture = raw_texture ? raw_texture->AsRawPtr() : nullptr;
@@ -649,10 +650,10 @@ DeviceContextImpl::MapTextureSubresource(
                                  static_cast<Diligent::MAP_FLAGS>(map_flags),
                                  &object_box, mapped);
 
-  MappedTextureSubresource result;
-  result.data_ptr = reinterpret_cast<uint64_t>(mapped.pData);
-  result.stride = mapped.Stride;
-  result.depth_stride = mapped.DepthStride;
+  auto result = base::MakeRefCounted<GPUMappedTextureSubresource>();
+  result->data_ptr = reinterpret_cast<uint64_t>(mapped.pData);
+  result->stride = mapped.Stride;
+  result->depth_stride = mapped.DepthStride;
 
   return result;
 }
@@ -687,7 +688,7 @@ void DeviceContextImpl::FinishFrame(ExceptionState& exception_state) {
 }
 
 void DeviceContextImpl::TransitionResourceStates(
-    const base::Vector<StateTransitionDesc>& barriers,
+    const base::Vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
@@ -695,19 +696,19 @@ void DeviceContextImpl::TransitionResourceStates(
   for (auto& it : barriers) {
     Diligent::StateTransitionDesc desc;
     desc.pResourceBefore =
-        reinterpret_cast<Diligent::IDeviceObject*>(it.resource_before_ptr);
+        reinterpret_cast<Diligent::IDeviceObject*>(it->resource_before_ptr);
     desc.pResource =
-        reinterpret_cast<Diligent::IDeviceObject*>(it.resource_ptr);
-    desc.FirstMipLevel = it.first_mip_level;
-    desc.MipLevelsCount = it.mip_levels_count;
-    desc.FirstArraySlice = it.first_array_slice;
-    desc.ArraySliceCount = it.array_slice_count;
-    desc.OldState = static_cast<Diligent::RESOURCE_STATE>(it.old_state);
-    desc.NewState = static_cast<Diligent::RESOURCE_STATE>(it.new_state);
+        reinterpret_cast<Diligent::IDeviceObject*>(it->resource_ptr);
+    desc.FirstMipLevel = it->first_mip_level;
+    desc.MipLevelsCount = it->mip_levels_count;
+    desc.FirstArraySlice = it->first_array_slice;
+    desc.ArraySliceCount = it->array_slice_count;
+    desc.OldState = static_cast<Diligent::RESOURCE_STATE>(it->old_state);
+    desc.NewState = static_cast<Diligent::RESOURCE_STATE>(it->new_state);
     desc.TransitionType =
-        static_cast<Diligent::STATE_TRANSITION_TYPE>(it.transition_type);
+        static_cast<Diligent::STATE_TRANSITION_TYPE>(it->transition_type);
     desc.Flags =
-        static_cast<Diligent::STATE_TRANSITION_FLAGS>(it.transition_flags);
+        static_cast<Diligent::STATE_TRANSITION_FLAGS>(it->transition_flags);
 
     objects.push_back(std::move(desc));
   }
@@ -778,6 +779,20 @@ void DeviceContextImpl::InsertDebugGroup(const base::String& name,
 
   object_->InsertDebugLabel(name.c_str(),
                             reinterpret_cast<float*>(&norm_color));
+}
+
+scoped_refptr<GPUCommandQueue> DeviceContextImpl::LockCommandQueue(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto* result = object_->LockCommandQueue();
+  return base::MakeRefCounted<CommandQueueImpl>(context(), result);
+}
+
+void DeviceContextImpl::UnlockCommandQueue(ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  object_->UnlockCommandQueue();
 }
 
 void DeviceContextImpl::OnObjectDisposed() {

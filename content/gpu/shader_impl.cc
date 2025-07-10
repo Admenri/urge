@@ -10,20 +10,20 @@ namespace content {
 
 namespace {
 
-GPUShader::ShaderCodeVariableDesc GetVariableDesc(
+scoped_refptr<GPUShaderCodeVariableDesc> GetVariableDesc(
     const Diligent::ShaderCodeVariableDesc* desc) {
-  GPUShader::ShaderCodeVariableDesc variable_desc;
-  variable_desc.name = desc->Name;
-  variable_desc.type_name = desc->TypeName;
-  variable_desc.klass = static_cast<GPU::ShaderCodeVariableClass>(desc->Class);
-  variable_desc.basic_type =
+  auto variable_desc = base::MakeRefCounted<GPUShaderCodeVariableDesc>();
+  variable_desc->name = desc->Name;
+  variable_desc->type_name = desc->TypeName;
+  variable_desc->klass = static_cast<GPU::ShaderCodeVariableClass>(desc->Class);
+  variable_desc->basic_type =
       static_cast<GPU::ShaderCodeBasicType>(desc->BasicType);
-  variable_desc.num_rows = desc->NumRows;
-  variable_desc.num_columns = desc->NumColumns;
-  variable_desc.offset = desc->Offset;
-  variable_desc.array_size = desc->ArraySize;
+  variable_desc->num_rows = desc->NumRows;
+  variable_desc->num_columns = desc->NumColumns;
+  variable_desc->offset = desc->Offset;
+  variable_desc->array_size = desc->ArraySize;
   for (uint32_t i = 0; i < desc->NumMembers; ++i)
-    variable_desc.members.push_back(GetVariableDesc(&desc->pMembers[i]));
+    variable_desc->members.push_back(GetVariableDesc(&desc->pMembers[i]));
 
   return variable_desc;
 }
@@ -54,34 +54,34 @@ uint32_t ShaderImpl::GetResourceCount(ExceptionState& exception_state) {
   return object_->GetResourceCount();
 }
 
-std::optional<GPUShader::ShaderResourceDesc> ShaderImpl::GetResourceDesc(
+scoped_refptr<GPUShaderResourceDesc> ShaderImpl::GetResourceDesc(
     uint32_t index,
     ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(std::nullopt);
+  DISPOSE_CHECK_RETURN(nullptr);
 
   Diligent::ShaderResourceDesc desc;
   object_->GetResourceDesc(index, desc);
 
-  GPUShader::ShaderResourceDesc result;
-  result.name = desc.Name;
-  result.type = static_cast<GPU::ShaderResourceType>(desc.Type);
-  result.array_size = desc.ArraySize;
+  auto result = base::MakeRefCounted<GPUShaderResourceDesc>();
+  result->name = desc.Name;
+  result->type = static_cast<GPU::ShaderResourceType>(desc.Type);
+  result->array_size = desc.ArraySize;
 
   return result;
 }
 
-std::optional<GPUShader::ShaderCodeBufferDesc>
-ShaderImpl::GetConstantBufferDesc(uint32_t index,
-                                  ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(std::nullopt);
+scoped_refptr<GPUShaderCodeBufferDesc> ShaderImpl::GetConstantBufferDesc(
+    uint32_t index,
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
 
   const Diligent::ShaderCodeBufferDesc* desc =
       object_->GetConstantBufferDesc(index);
 
-  GPUShader::ShaderCodeBufferDesc result;
-  result.byte_size = desc->Size;
+  auto result = base::MakeRefCounted<GPUShaderCodeBufferDesc>();
+  result->byte_size = desc->Size;
   for (uint32_t i = 0; i < desc->NumVariables; ++i)
-    result.variables.push_back(GetVariableDesc(&desc->pVariables[i]));
+    result->variables.push_back(GetVariableDesc(&desc->pVariables[i]));
 
   return result;
 }

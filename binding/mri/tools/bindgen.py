@@ -278,17 +278,18 @@ class MriBindingGen:
       elif len(type_detail['containers']) == 1 and type_detail['containers'][0] == "scoped_refptr":
         root_type = type_detail['root_type']
         content += f"VALUE result = MriWrapObject<content::{root_type}>(self_obj->{member_name}, k{root_type}DataType);\n"
-      elif len(type_detail['containers']) > 1 and type_detail['containers'][0] == "base::Vector":
+      elif len(type_detail['containers']) >= 1 and type_detail['containers'][0] == "base::Vector":
         root_type = type_detail['root_type']
-        second_container = type_detail['containers'][1]
+        second_container = type_detail['containers']
+        second_container = "" if len(second_container) == 1 else second_container[1]
 
         # 萃取 base::Vector 中的类型并使用对应的转换
         if second_container.startswith("scoped_refptr"):
           content += f"VALUE result = CXX2RBARRAY<content::{root_type}>(self_obj->{member_name}, k{root_type}DataType);\n"
         elif self.is_type_enum(root_type):
-          content += f"VALUE result = CXX2RBARRAY<int32_t>(self_obj->{member_name});\n"
+          content += f"VALUE result = CXX2RBARRAY<content::{root_type}>(self_obj->{member_name});\n"
         else:
-          content += f"VALUE result = CXX2RBARRAY<{decay_type}>(self_obj->{member_name});\n"
+          content += f"VALUE result = CXX2RBARRAY<{root_type}>(self_obj->{member_name});\n"
 
       # 返回值
       content += "return result;\n"
@@ -325,18 +326,19 @@ class MriBindingGen:
         content += f"self_obj->{member_name} = (content::{type_raw})NUM2INT(argv[0]);\n"
       elif len(type_detail['containers']) == 1 and type_detail['containers'][0] == "scoped_refptr":
         root_type = type_detail['root_type']
-        content += f"VALUE result = MriCheckStructData<content::{root_type}>(self_obj->{member_name}, k{root_type}DataType);\n"
-      elif len(type_detail['containers']) > 1 and type_detail['containers'][0] == "base::Vector":
+        content += f"self_obj->{member_name} = MriCheckStructData<content::{root_type}>(argv[0], k{root_type}DataType);\n"
+      elif len(type_detail['containers']) >= 1 and type_detail['containers'][0] == "base::Vector":
         root_type = type_detail['root_type']
-        second_container = type_detail['containers'][1]
+        second_container = type_detail['containers']
+        second_container = "" if len(second_container) == 1 else second_container[1]
 
         # 萃取 base::Vector 中的类型并使用对应的转换
         if second_container.startswith("scoped_refptr"):
           content += f"self_obj->{member_name} = RBARRAY2CXX<content::{root_type}>(argv[0], k{root_type}DataType);\n"
         elif self.is_type_enum(root_type):
-          content += f"self_obj->{member_name} = RBARRAY2CXX<int32_t>(argv[0]);\n"
+          content += f"self_obj->{member_name} = RBARRAY2CXX_CONST<content::{root_type}>(argv[0]);\n"
         else:
-          content += f"self_obj->{member_name} = RBARRAY2CXX<{decay_type}>(argv[0]);\n"
+          content += f"self_obj->{member_name} = RBARRAY2CXX<{root_type}>(argv[0]);\n"
 
       # 返回值
       content += "return self;\n"

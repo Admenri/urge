@@ -29,10 +29,10 @@ class ShaderImpl : public GPUShader, public EngineObject, public Disposable {
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
   uint32_t GetResourceCount(ExceptionState& exception_state) override;
-  std::optional<ShaderResourceDesc> GetResourceDesc(
+  scoped_refptr<GPUShaderResourceDesc> GetResourceDesc(
       uint32_t index,
       ExceptionState& exception_state) override;
-  std::optional<ShaderCodeBufferDesc> GetConstantBufferDesc(
+  scoped_refptr<GPUShaderCodeBufferDesc> GetConstantBufferDesc(
       uint32_t index,
       ExceptionState& exception_state) override;
   base::String GetBytecode(ExceptionState& exception_state) override;

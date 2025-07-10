@@ -31,31 +31,31 @@ class RenderDeviceImpl : public GPURenderDevice,
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
   scoped_refptr<GPUBuffer> CreateBuffer(
-      const std::optional<BufferDesc>& desc,
+      scoped_refptr<GPUBufferDesc> desc,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUBuffer> CreateBuffer(
-      const std::optional<BufferDesc>& desc,
-      const std::optional<BufferData>& data,
+      scoped_refptr<GPUBufferDesc> desc,
+      scoped_refptr<GPUBufferData> data,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUShader> CreateShader(
-      const std::optional<ShaderCreateInfo>& create_info,
+      scoped_refptr<GPUShaderCreateInfo> create_info,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUTexture> CreateTexture(
-      const std::optional<TextureDesc>& desc,
+      scoped_refptr<GPUTextureDesc> desc,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUTexture> CreateTexture(
-      const std::optional<TextureDesc>& desc,
-      const std::optional<TextureData>& data,
+      scoped_refptr<GPUTextureDesc> desc,
+      scoped_refptr<GPUTextureData> data,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUSampler> CreateSampler(
-      const std::optional<SamplerDesc>& desc,
+      scoped_refptr<GPUSamplerDesc> desc,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUResourceMapping> CreateResourceMapping(
-      const base::Vector<ResourceMappingEntry>& entries,
+      const base::Vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUPipelineState> CreateGraphicsPipelineState(
       const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
-      const std::optional<GraphicsPipelineDesc>& graphics_pipeline_desc,
+      scoped_refptr<GPUGraphicsPipelineDesc> graphics_pipeline_desc,
       scoped_refptr<GPUShader> vertex_shader,
       scoped_refptr<GPUShader> pixel_shader,
       scoped_refptr<GPUShader> domain_shader,
@@ -73,7 +73,7 @@ class RenderDeviceImpl : public GPURenderDevice,
   scoped_refptr<GPUQuery> CreateQuery(GPU::QueryType type,
                                       ExceptionState& exception_state) override;
   scoped_refptr<GPUPipelineSignature> CreatePipelineSignature(
-      const std::optional<PipelineSignatureDesc>& desc,
+      scoped_refptr<GPUPipelineSignatureDesc> desc,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUDeviceContext> CreateDeferredContext(
       ExceptionState& exception_state) override;

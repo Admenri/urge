@@ -72,17 +72,17 @@ GPU::ShaderResourceVariableType ResourceVariableImpl::GetType(
   return static_cast<GPU::ShaderResourceVariableType>(object_->GetType());
 }
 
-std::optional<GPUResourceVariable::ShaderResourceDesc>
-ResourceVariableImpl::GetResourceDesc(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(std::nullopt);
+scoped_refptr<GPUShaderResourceDesc> ResourceVariableImpl::GetResourceDesc(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
 
   Diligent::ShaderResourceDesc desc;
   object_->GetResourceDesc(desc);
 
-  GPUResourceVariable::ShaderResourceDesc result;
-  result.name = desc.Name;
-  result.type = static_cast<GPU::ShaderResourceType>(desc.Type);
-  result.array_size = desc.ArraySize;
+  auto result = base::MakeRefCounted<GPUShaderResourceDesc>();
+  result->name = desc.Name;
+  result->type = static_cast<GPU::ShaderResourceType>(desc.Type);
+  result->array_size = desc.ArraySize;
 
   return result;
 }

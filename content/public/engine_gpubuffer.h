@@ -14,27 +14,6 @@ namespace content {
 
 class GPUBuffer;
 
-/*--urge(name:GPUBufferDesc)--*/
-struct URGE_OBJECT(GPUBufferDesc) {
-  uint64_t size = 0;
-  GPU::BindFlags bind_flags = GPU::BIND_NONE;
-  GPU::Usage usage = GPU::USAGE_DEFAULT;
-  GPU::CPUAccessFlags cpu_access_flags = GPU::CPU_ACCESS_NONE;
-  GPU::BufferMode mode = GPU::BUFFER_MODE_UNDEFINED;
-  uint32_t element_byte_stride = 0;
-  uint64_t immediate_context_mask = 1;
-};
-
-/*--urge(name:GPUBufferViewDesc)--*/
-struct URGE_OBJECT(GPUBufferViewDesc) {
-  GPU::BufferViewType view_type = GPU::BUFFER_VIEW_UNDEFINED;
-  GPU::ValueType value_type = GPU::VT_UNDEFINED;
-  uint8_t num_components = 0;
-  bool is_normalized = false;
-  uint64_t byte_offset = 0;
-  uint64_t byte_width = 0;
-};
-
 /*--urge(name:GPUBufferView)--*/
 class URGE_OBJECT(GPUBufferView) {
  public:

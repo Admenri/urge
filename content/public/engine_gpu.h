@@ -11,6 +11,9 @@
 
 namespace content {
 
+class GPUBuffer;
+class GPUDeviceContext;
+
 /*--urge(name:GPU,is_module)--*/
 class URGE_OBJECT(GPU) {
  public:
@@ -703,6 +706,298 @@ class URGE_OBJECT(GPU) {
     SHADER_COMPILE_FLAG_HLSL_TO_SPIRV_VIA_GLSL = 1u << 4u,
     SHADER_COMPILE_FLAG_LAST = SHADER_COMPILE_FLAG_HLSL_TO_SPIRV_VIA_GLSL,
   };
+};
+
+/*--urge(name:GPUViewport)--*/
+struct URGE_OBJECT(GPUViewport) {
+  float top_left_x = 0.0f;
+  float top_left_y = 0.0f;
+  float width = 0.0f;
+  float height = 0.0f;
+  float min_depth = 0.0f;
+  float max_depth = 1.0f;
+};
+
+/*--urge(name:GPUBox)--*/
+struct URGE_OBJECT(GPUBox) {
+  uint32_t min_x = 0;
+  uint32_t max_x = 0;
+  uint32_t min_y = 0;
+  uint32_t max_y = 0;
+  uint32_t min_z = 0;
+  uint32_t max_z = 1;
+};
+
+/*--urge(name:GPUBufferDesc)--*/
+struct URGE_OBJECT(GPUBufferDesc) {
+  uint64_t size = 0;
+  GPU::BindFlags bind_flags = GPU::BIND_NONE;
+  GPU::Usage usage = GPU::USAGE_DEFAULT;
+  GPU::CPUAccessFlags cpu_access_flags = GPU::CPU_ACCESS_NONE;
+  GPU::BufferMode mode = GPU::BUFFER_MODE_UNDEFINED;
+  uint32_t element_byte_stride = 0;
+  uint64_t immediate_context_mask = 1;
+};
+
+/*--urge(name:GPUBufferViewDesc)--*/
+struct URGE_OBJECT(GPUBufferViewDesc) {
+  GPU::BufferViewType view_type = GPU::BUFFER_VIEW_UNDEFINED;
+  GPU::ValueType value_type = GPU::VT_UNDEFINED;
+  uint8_t num_components = 0;
+  bool is_normalized = false;
+  uint64_t byte_offset = 0;
+  uint64_t byte_width = 0;
+};
+
+/*--urge(name:GPUTextureDesc)--*/
+struct URGE_OBJECT(GPUTextureDesc) {
+  GPU::ResourceDimension type = GPU::RESOURCE_DIM_UNDEFINED;
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t depth_or_array_size = 1;
+  GPU::TextureFormat format = GPU::TEX_FORMAT_UNKNOWN;
+  uint32_t mip_levels = 1;
+  uint32_t sample_count = 1;
+  GPU::BindFlags bind_flags = GPU::BIND_NONE;
+  GPU::Usage usage = GPU::USAGE_DEFAULT;
+  GPU::CPUAccessFlags cpu_access_flags = GPU::CPU_ACCESS_NONE;
+  uint64_t immediate_context_mask = 1;
+};
+
+/*--urge(name:GPUTextureViewDesc)--*/
+struct URGE_OBJECT(GPUTextureViewDesc) {
+  GPU::TextureViewType view_type = GPU::TEXTURE_VIEW_UNDEFINED;
+  GPU::ResourceDimension texture_dim = GPU::RESOURCE_DIM_UNDEFINED;
+  GPU::TextureFormat format = GPU::TEX_FORMAT_UNKNOWN;
+  uint32_t most_detailed_mip = 0;
+  uint32_t num_mip_levels = 0;
+  uint32_t first_array_depth_slice = 0;
+  uint32_t num_array_depth_slices = 0;
+  GPU::UAVAccessFlag access_flags = GPU::UAV_ACCESS_UNSPECIFIED;
+  GPU::TextureViewFlags flags = GPU::TEXTURE_VIEW_FLAG_NONE;
+};
+
+/*--urge(name:GPUDeviceContextDesc)--*/
+struct URGE_OBJECT(GPUDeviceContextDesc) {
+  base::String name;
+  GPU::CommandQueueType queue_type = GPU::COMMAND_QUEUE_TYPE_UNKNOWN;
+  bool is_deferred = false;
+  uint8_t context_id = 0;
+  uint8_t queue_id = 0;
+  base::Vector<uint32_t> texture_copy_granularity;
+};
+
+/*--urge(name:GPUStateTransitionDesc)--*/
+struct URGE_OBJECT(GPUStateTransitionDesc) {
+  uint64_t resource_before_ptr = 0;
+  uint64_t resource_ptr = 0;
+  uint32_t first_mip_level = 0;
+  uint32_t mip_levels_count = 0xFFFFFFFFU;
+  uint32_t first_array_slice = 0;
+  uint32_t array_slice_count = 0xFFFFFFFFU;
+  GPU::ResourceState old_state;
+  GPU::ResourceState new_state;
+  GPU::StateTransitionType transition_type =
+      GPU::STATE_TRANSITION_TYPE_IMMEDIATE;
+  GPU::StateTransitionFlags transition_flags = GPU::STATE_TRANSITION_FLAG_NONE;
+};
+
+/*--urge(name:GPUMappedTextureSubresource)--*/
+struct URGE_OBJECT(GPUMappedTextureSubresource) {
+  uint64_t data_ptr;
+  uint64_t stride = 0;
+  uint64_t depth_stride = 0;
+};
+
+/*--urge(name:GPUTextureSubResData)--*/
+struct URGE_OBJECT(GPUTextureSubResData) {
+  uint64_t data_ptr;
+  scoped_refptr<GPUBuffer> src_buffer;
+  uint64_t src_offset = 0;
+  uint64_t stride = 0;
+  uint64_t depth_stride = 0;
+};
+
+/*--urge(name:GPUBufferData)--*/
+struct URGE_OBJECT(GPUBufferData) {
+  uint64_t data_ptr;
+  uint64_t data_size = 0;
+  scoped_refptr<GPUDeviceContext> context;
+};
+
+/*--urge(name:GPUTextureData)--*/
+struct URGE_OBJECT(GPUTextureData) {
+  base::Vector<scoped_refptr<GPUTextureSubResData>> resources;
+  scoped_refptr<GPUDeviceContext> context;
+};
+
+/*--urge(name:GPUSamplerDesc)--*/
+struct URGE_OBJECT(GPUSamplerDesc) {
+  GPU::FilterType min_filter = GPU::FILTER_TYPE_LINEAR;
+  GPU::FilterType mag_filter = GPU::FILTER_TYPE_LINEAR;
+  GPU::FilterType mip_filter = GPU::FILTER_TYPE_LINEAR;
+  GPU::TextureAddressMode address_u = GPU::TEXTURE_ADDRESS_CLAMP;
+  GPU::TextureAddressMode address_v = GPU::TEXTURE_ADDRESS_CLAMP;
+  GPU::TextureAddressMode address_w = GPU::TEXTURE_ADDRESS_CLAMP;
+};
+
+/*--urge(name:GPURenderTargetBlendDesc)--*/
+struct URGE_OBJECT(GPURenderTargetBlendDesc) {
+  bool blend_enable = false;
+  bool logic_operation_enable = false;
+  GPU::BlendFactor src_blend = GPU::BLEND_FACTOR_ONE;
+  GPU::BlendFactor dest_blend = GPU::BLEND_FACTOR_ZERO;
+  GPU::BlendOperation blend_op = GPU::BLEND_OPERATION_ADD;
+  GPU::BlendFactor src_blend_alpha = GPU::BLEND_FACTOR_ONE;
+  GPU::BlendFactor dest_blend_alpha = GPU::BLEND_FACTOR_ZERO;
+  GPU::BlendOperation blend_op_alpha = GPU::BLEND_OPERATION_ADD;
+  GPU::LogicOperation logic_op = GPU::LOGIC_OP_NOOP;
+  GPU::ColorMask render_target_write_mask = GPU::COLOR_MASK_ALL;
+};
+
+/*--urge(name:GPUBlendStateDesc)--*/
+struct URGE_OBJECT(GPUBlendStateDesc) {
+  bool alpha_to_coverage_enable = false;
+  bool independent_blend_enable = false;
+  base::Vector<scoped_refptr<GPURenderTargetBlendDesc>> render_targets;
+};
+
+/*--urge(name:GPURasterizerStateDesc)--*/
+struct URGE_OBJECT(GPURasterizerStateDesc) {
+  GPU::FillMode fill_mode = GPU::FILL_MODE_SOLID;
+  GPU::CullMode cull_mode = GPU::CULL_MODE_BACK;
+  bool front_counter_clockwise = false;
+  bool depth_clip_enable = true;
+  bool scissor_enable = false;
+  bool antialiased_line_enable = false;
+  int32_t depth_bias = 0;
+  float depth_bias_clamp = 0.0f;
+  float slope_scaled_depth_bias = 0.0f;
+};
+
+/*--urge(name:GPUStencilOpDesc)--*/
+struct URGE_OBJECT(GPUStencilOpDesc) {
+  GPU::StencilOp stencil_fail_op = GPU::STENCIL_OP_KEEP;
+  GPU::StencilOp stencil_depth_fail_op = GPU::STENCIL_OP_KEEP;
+  GPU::StencilOp stencil_pass_op = GPU::STENCIL_OP_KEEP;
+  GPU::ComparisonFunction stencil_func = GPU::COMPARISON_FUNC_ALWAYS;
+};
+
+/*--urge(name:GPUDepthStencilStateDesc)--*/
+struct URGE_OBJECT(GPUDepthStencilStateDesc) {
+  bool depth_enable = false;
+  bool depth_write_enable = false;
+  GPU::ComparisonFunction depth_func = GPU::COMPARISON_FUNC_LESS;
+  bool stencil_enable = false;
+  uint8_t stencil_read_mask = 0xFF;
+  uint8_t stencil_write_mask = 0xFF;
+  scoped_refptr<GPUStencilOpDesc> front_face;
+  scoped_refptr<GPUStencilOpDesc> back_face;
+};
+
+/*--urge(name:GPUInputLayoutElement)--*/
+struct URGE_OBJECT(GPUInputLayoutElement) {
+  base::String hlsl_semantic = "ATTRIB";
+  uint32_t input_index = 0;
+  uint32_t buffer_slot = 0;
+  uint32_t num_components = 0;
+  GPU::ValueType value_type = GPU::VT_FLOAT32;
+  bool is_normalized = true;
+  uint32_t relative_offset = 0xFFFFFFFFU;
+  uint32_t stride = 0xFFFFFFFFU;
+  GPU::InputElementFrequency frequency =
+      GPU::INPUT_ELEMENT_FREQUENCY_PER_VERTEX;
+  uint32_t instance_data_step_rate = 1;
+};
+
+/*--urge(name:GPUGraphicsPipelineDesc)--*/
+struct URGE_OBJECT(GPUGraphicsPipelineDesc) {
+  scoped_refptr<GPUBlendStateDesc> blend_desc;
+  uint32_t sample_mask;
+  scoped_refptr<GPURasterizerStateDesc> rasterizer_desc;
+  scoped_refptr<GPUDepthStencilStateDesc> depth_stencil_desc;
+  base::Vector<scoped_refptr<GPUInputLayoutElement>> input_layout;
+  GPU::PrimitiveTopology primitive_topology =
+      GPU::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  uint8_t num_viewports = 1;
+  uint8_t num_render_targets = 0;
+  base::Vector<GPU::TextureFormat> rtv_formats;
+  GPU::TextureFormat dsv_format = GPU::TEX_FORMAT_UNKNOWN;
+  bool readonly_dsv = false;
+  uint8_t multisample_count = 1;
+  uint8_t multisample_quality = 0;
+  uint32_t node_mask = 0;
+};
+
+/*--urge(name:GPUPipelineResourceDesc)--*/
+struct URGE_OBJECT(GPUPipelineResourceDesc) {
+  base::String name;
+  GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
+  uint32_t array_size = 1;
+  GPU::ShaderResourceType resource_type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
+  GPU::ShaderResourceVariableType var_type =
+      GPU::SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+};
+
+/*--urge(name:GPUImmutableSamplerDesc)--*/
+struct URGE_OBJECT(GPUImmutableSamplerDesc) {
+  GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
+  base::String sampler_name;
+  scoped_refptr<GPUSamplerDesc> desc;
+};
+
+/*--urge(name:GPUPipelineSignatureDesc)--*/
+struct URGE_OBJECT(GPUPipelineSignatureDesc) {
+  base::Vector<scoped_refptr<GPUPipelineResourceDesc>> resources;
+  base::Vector<scoped_refptr<GPUImmutableSamplerDesc>> samplers;
+  uint8_t binding_index = 0;
+  bool use_combined_texture_samplers = true;
+  base::String combined_sampler_suffix = "_sampler";
+  uint32_t srb_allocation_granularity = 1;
+};
+
+/*--urge(name:GPUResourceMappingEntry)--*/
+struct URGE_OBJECT(GPUResourceMappingEntry) {
+  base::String name;
+  uint64_t device_object = 0;
+  uint32_t array_index = 0;
+};
+
+/*--urge(name:GPUShaderResourceDesc)--*/
+struct URGE_OBJECT(GPUShaderResourceDesc) {
+  base::String name;
+  GPU::ShaderResourceType type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
+  uint32_t array_size = 0;
+};
+
+/*--urge(name:GPUShaderCodeVariableDesc)--*/
+struct URGE_OBJECT(GPUShaderCodeVariableDesc) {
+  base::String name;
+  base::String type_name;
+  GPU::ShaderCodeVariableClass klass = GPU::SHADER_CODE_VARIABLE_CLASS_UNKNOWN;
+  GPU::ShaderCodeBasicType basic_type = GPU::SHADER_CODE_BASIC_TYPE_UNKNOWN;
+  uint8_t num_rows = 0;
+  uint8_t num_columns = 0;
+  uint32_t offset = 0;
+  uint32_t array_size = 0;
+  base::Vector<scoped_refptr<GPUShaderCodeVariableDesc>> members;
+};
+
+/*--urge(name:GPUShaderCodeBufferDesc)--*/
+struct URGE_OBJECT(GPUShaderCodeBufferDesc) {
+  uint32_t byte_size;
+  base::Vector<scoped_refptr<GPUShaderCodeVariableDesc>> variables;
+};
+
+/*--urge(name:GPUShaderCreateInfo)--*/
+struct URGE_OBJECT(GPUShaderCreateInfo) {
+  base::String source;
+  base::String entry_point = "main";
+  GPU::ShaderType type = GPU::SHADER_TYPE_UNKNOWN;
+  bool combined_texture_samplers = true;
+  base::String combined_sampler_suffix = "_sampler";
+  GPU::ShaderSourceLanguage language = GPU::SHADER_SOURCE_LANGUAGE_DEFAULT;
+  GPU::ShaderCompileFlags compile_flags = GPU::SHADER_COMPILE_FLAG_NONE;
 };
 
 }  // namespace content

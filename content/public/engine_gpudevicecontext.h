@@ -12,6 +12,7 @@
 #include "content/public/engine_gpu.h"
 #include "content/public/engine_gpubuffer.h"
 #include "content/public/engine_gpucommandlist.h"
+#include "content/public/engine_gpucommandqueue.h"
 #include "content/public/engine_gpufence.h"
 #include "content/public/engine_gpupipelinestate.h"
 #include "content/public/engine_gpuquery.h"
@@ -20,67 +21,6 @@
 #include "content/public/engine_rect.h"
 
 namespace content {
-
-/*--urge(name:GPUDeviceContextDesc)--*/
-struct URGE_OBJECT(GPUDeviceContextDesc) {
-  base::String name;
-  GPU::CommandQueueType queue_type = GPU::COMMAND_QUEUE_TYPE_UNKNOWN;
-  bool is_deferred = false;
-  uint8_t context_id = 0;
-  uint8_t queue_id = 0;
-  base::Vector<uint32_t> texture_copy_granularity;
-};
-
-/*--urge(name:GPUTextureSubResData)--*/
-struct URGE_OBJECT(GPUTextureSubResData) {
-  uint64_t data_ptr;
-  scoped_refptr<GPUBuffer> src_buffer;
-  uint64_t src_offset = 0;
-  uint64_t stride = 0;
-  uint64_t depth_stride = 0;
-};
-
-/*--urge(name:GPUViewport)--*/
-struct URGE_OBJECT(GPUViewport) {
-  float top_left_x = 0.0f;
-  float top_left_y = 0.0f;
-  float width = 0.0f;
-  float height = 0.0f;
-  float min_depth = 0.0f;
-  float max_depth = 1.0f;
-};
-
-/*--urge(name:GPUBox)--*/
-struct URGE_OBJECT(GPUBox) {
-  uint32_t min_x = 0;
-  uint32_t max_x = 0;
-  uint32_t min_y = 0;
-  uint32_t max_y = 0;
-  uint32_t min_z = 0;
-  uint32_t max_z = 1;
-};
-
-/*--urge(name:GPUStateTransitionDesc)--*/
-struct URGE_OBJECT(GPUStateTransitionDesc) {
-  uint64_t resource_before_ptr = 0;
-  uint64_t resource_ptr = 0;
-  uint32_t first_mip_level = 0;
-  uint32_t mip_levels_count = 0xFFFFFFFFU;
-  uint32_t first_array_slice = 0;
-  uint32_t array_slice_count = 0xFFFFFFFFU;
-  GPU::ResourceState old_state;
-  GPU::ResourceState new_state;
-  GPU::StateTransitionType transition_type =
-      GPU::STATE_TRANSITION_TYPE_IMMEDIATE;
-  GPU::StateTransitionFlags transition_flags = GPU::STATE_TRANSITION_FLAG_NONE;
-};
-
-/*--urge(name:GPUMappedTextureSubresource)--*/
-struct URGE_OBJECT(GPUMappedTextureSubresource) {
-  uint64_t data_ptr;
-  uint64_t stride = 0;
-  uint64_t depth_stride = 0;
-};
 
 /*--urge(name:GPUDeviceContext)--*/
 class URGE_OBJECT(GPUDeviceContext) {
@@ -94,7 +34,7 @@ class URGE_OBJECT(GPUDeviceContext) {
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
   /*--urge(name:desc)--*/
-  virtual base::Optional<DeviceContextDesc> GetDesc(
+  virtual scoped_refptr<GPUDeviceContextDesc> GetDesc(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin)--*/
@@ -141,8 +81,9 @@ class URGE_OBJECT(GPUDeviceContext) {
                               ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_viewports)--*/
-  virtual void SetViewports(const base::Vector<ClipViewport>& viewports,
-                            ExceptionState& exception_state) = 0;
+  virtual void SetViewports(
+      const base::Vector<scoped_refptr<GPUViewport>>& viewports,
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_scissor_rects)--*/
   virtual void SetScissorRects(const base::Vector<scoped_refptr<Rect>>& rects,
@@ -335,7 +276,7 @@ class URGE_OBJECT(GPUDeviceContext) {
 
   /*--urge(name:transition_resource_states)--*/
   virtual void TransitionResourceStates(
-      const base::Vector<scoped_refptr<GPUStateTransitionDesc>> barriers,
+      const base::Vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:resolve_texture_subresource)--*/
@@ -363,6 +304,13 @@ class URGE_OBJECT(GPUDeviceContext) {
   virtual void InsertDebugGroup(const base::String& name,
                                 scoped_refptr<Color> color,
                                 ExceptionState& exception_state) = 0;
+
+  /*--urge(name:lock_command_queue)--*/
+  virtual scoped_refptr<GPUCommandQueue> LockCommandQueue(
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:unlock_command_queue)--*/
+  virtual void UnlockCommandQueue(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

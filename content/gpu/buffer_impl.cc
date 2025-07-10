@@ -34,6 +34,24 @@ uint64_t BufferViewImpl::GetDeviceObject(ExceptionState& exception_state) {
   return reinterpret_cast<uint64_t>(device_object);
 }
 
+scoped_refptr<GPUBufferViewDesc> BufferViewImpl::GetDesc(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto& object_desc = object_->GetDesc();
+  auto result = base::MakeRefCounted<GPUBufferViewDesc>();
+
+  result->view_type = static_cast<GPU::BufferViewType>(object_desc.ViewType);
+  result->value_type =
+      static_cast<GPU::ValueType>(object_desc.Format.ValueType);
+  result->num_components = object_desc.Format.NumComponents;
+  result->is_normalized = object_desc.Format.IsNormalized;
+  result->byte_offset = object_desc.ByteOffset;
+  result->byte_width = object_desc.ByteWidth;
+
+  return result;
+}
+
 scoped_refptr<GPUBuffer> BufferViewImpl::GetBuffer(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
@@ -70,8 +88,27 @@ uint64_t BufferImpl::GetDeviceObject(ExceptionState& exception_state) {
   return reinterpret_cast<uint64_t>(device_object);
 }
 
+scoped_refptr<GPUBufferDesc> BufferImpl::GetDesc(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto& object_desc = object_->GetDesc();
+  auto result = base::MakeRefCounted<GPUBufferDesc>();
+
+  result->size = object_desc.Size;
+  result->bind_flags = static_cast<GPU::BindFlags>(object_desc.BindFlags);
+  result->usage = static_cast<GPU::Usage>(object_desc.Usage);
+  result->cpu_access_flags =
+      static_cast<GPU::CPUAccessFlags>(object_desc.CPUAccessFlags);
+  result->mode = static_cast<GPU::BufferMode>(object_desc.Mode);
+  result->element_byte_stride = object_desc.ElementByteStride;
+  result->immediate_context_mask = object_desc.ImmediateContextMask;
+
+  return result;
+}
+
 scoped_refptr<GPUBufferView> BufferImpl::CreateView(
-    std::optional<BufferViewDesc> desc,
+    scoped_refptr<GPUBufferViewDesc> desc,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 

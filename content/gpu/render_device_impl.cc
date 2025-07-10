@@ -38,7 +38,7 @@ bool RenderDeviceImpl::IsDisposed(ExceptionState& exception_state) {
 }
 
 scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
-    const std::optional<BufferDesc>& desc,
+    scoped_refptr<GPUBufferDesc> desc,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -61,8 +61,8 @@ scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
 }
 
 scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
-    const std::optional<BufferDesc>& desc,
-    const std::optional<BufferData>& data,
+    scoped_refptr<GPUBufferDesc> desc,
+    scoped_refptr<GPUBufferData> data,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -94,7 +94,7 @@ scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
 }
 
 scoped_refptr<GPUShader> RenderDeviceImpl::CreateShader(
-    const std::optional<ShaderCreateInfo>& create_info,
+    scoped_refptr<GPUShaderCreateInfo> create_info,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -121,7 +121,7 @@ scoped_refptr<GPUShader> RenderDeviceImpl::CreateShader(
 }
 
 scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
-    const std::optional<TextureDesc>& desc,
+    scoped_refptr<GPUTextureDesc> desc,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -148,8 +148,8 @@ scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
 }
 
 scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
-    const std::optional<TextureDesc>& desc,
-    const std::optional<TextureData>& data,
+    scoped_refptr<GPUTextureDesc> desc,
+    scoped_refptr<GPUTextureData> data,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -176,14 +176,14 @@ scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
     auto* raw_context = static_cast<DeviceContextImpl*>(data->context.get());
 
     for (auto& it : data->resources) {
-      auto* raw_src_buffer = static_cast<BufferImpl*>(it.src_buffer.get());
+      auto* raw_src_buffer = static_cast<BufferImpl*>(it->src_buffer.get());
 
       Diligent::TextureSubResData res;
-      res.pData = reinterpret_cast<void*>(it.data_ptr);
+      res.pData = reinterpret_cast<void*>(it->data_ptr);
       res.pSrcBuffer = raw_src_buffer ? raw_src_buffer->AsRawPtr() : nullptr;
-      res.SrcOffset = it.src_offset;
-      res.Stride = it.stride;
-      res.DepthStride = it.depth_stride;
+      res.SrcOffset = it->src_offset;
+      res.Stride = it->stride;
+      res.DepthStride = it->depth_stride;
 
       subresources.push_back(res);
     }
@@ -200,7 +200,7 @@ scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
 }
 
 scoped_refptr<GPUSampler> RenderDeviceImpl::CreateSampler(
-    const std::optional<SamplerDesc>& desc,
+    scoped_refptr<GPUSamplerDesc> desc,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -227,7 +227,7 @@ scoped_refptr<GPUSampler> RenderDeviceImpl::CreateSampler(
 }
 
 scoped_refptr<GPUResourceMapping> RenderDeviceImpl::CreateResourceMapping(
-    const base::Vector<ResourceMappingEntry>& entries,
+    const base::Vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -236,10 +236,10 @@ scoped_refptr<GPUResourceMapping> RenderDeviceImpl::CreateResourceMapping(
   Diligent::ResourceMappingCreateInfo create_desc;
   for (auto& it : entries) {
     Diligent::ResourceMappingEntry entry;
-    entry.Name = it.name.c_str();
+    entry.Name = it->name.c_str();
     entry.pObject =
-        reinterpret_cast<Diligent::IDeviceObject*>(it.device_object);
-    entry.ArrayIndex = it.array_index;
+        reinterpret_cast<Diligent::IDeviceObject*>(it->device_object);
+    entry.ArrayIndex = it->array_index;
 
     object_entries.push_back(entry);
   }
@@ -254,7 +254,7 @@ scoped_refptr<GPUResourceMapping> RenderDeviceImpl::CreateResourceMapping(
 
 scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
     const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
-    const std::optional<GraphicsPipelineDesc>& graphics_pipeline_desc,
+    scoped_refptr<GPUGraphicsPipelineDesc> graphics_pipeline_desc,
     scoped_refptr<GPUShader> vertex_shader,
     scoped_refptr<GPUShader> pixel_shader,
     scoped_refptr<GPUShader> domain_shader,
@@ -281,25 +281,25 @@ scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
 
       for (uint32_t i = 0; i < desc->blend_desc->render_targets.size(); ++i) {
         auto& it = desc->blend_desc->render_targets[i];
-        object_desc.BlendDesc.RenderTargets[i].BlendEnable = it.blend_enable;
+        object_desc.BlendDesc.RenderTargets[i].BlendEnable = it->blend_enable;
         object_desc.BlendDesc.RenderTargets[i].LogicOperationEnable =
-            it.logic_operation_enable;
+            it->logic_operation_enable;
         object_desc.BlendDesc.RenderTargets[i].SrcBlend =
-            static_cast<Diligent::BLEND_FACTOR>(it.src_blend);
+            static_cast<Diligent::BLEND_FACTOR>(it->src_blend);
         object_desc.BlendDesc.RenderTargets[i].DestBlend =
-            static_cast<Diligent::BLEND_FACTOR>(it.dest_blend);
+            static_cast<Diligent::BLEND_FACTOR>(it->dest_blend);
         object_desc.BlendDesc.RenderTargets[i].BlendOp =
-            static_cast<Diligent::BLEND_OPERATION>(it.blend_op);
+            static_cast<Diligent::BLEND_OPERATION>(it->blend_op);
         object_desc.BlendDesc.RenderTargets[i].SrcBlendAlpha =
-            static_cast<Diligent::BLEND_FACTOR>(it.src_blend_alpha);
+            static_cast<Diligent::BLEND_FACTOR>(it->src_blend_alpha);
         object_desc.BlendDesc.RenderTargets[i].DestBlendAlpha =
-            static_cast<Diligent::BLEND_FACTOR>(it.dest_blend_alpha);
+            static_cast<Diligent::BLEND_FACTOR>(it->dest_blend_alpha);
         object_desc.BlendDesc.RenderTargets[i].BlendOpAlpha =
-            static_cast<Diligent::BLEND_OPERATION>(it.blend_op_alpha);
+            static_cast<Diligent::BLEND_OPERATION>(it->blend_op_alpha);
         object_desc.BlendDesc.RenderTargets[i].LogicOp =
-            static_cast<Diligent::LOGIC_OPERATION>(it.logic_op);
+            static_cast<Diligent::LOGIC_OPERATION>(it->logic_op);
         object_desc.BlendDesc.RenderTargets[i].RenderTargetWriteMask =
-            static_cast<Diligent::COLOR_MASK>(it.render_target_write_mask);
+            static_cast<Diligent::COLOR_MASK>(it->render_target_write_mask);
       }
     }
 
@@ -360,17 +360,17 @@ scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
 
     for (auto& it : desc->input_layout) {
       Diligent::LayoutElement element;
-      element.HLSLSemantic = it.hlsl_semantic.c_str();
-      element.InputIndex = it.input_index;
-      element.BufferSlot = it.buffer_slot;
-      element.NumComponents = it.num_components;
-      element.ValueType = static_cast<Diligent::VALUE_TYPE>(it.value_type);
-      element.IsNormalized = it.is_normalized;
-      element.RelativeOffset = it.relative_offset;
-      element.Stride = it.stride;
+      element.HLSLSemantic = it->hlsl_semantic.c_str();
+      element.InputIndex = it->input_index;
+      element.BufferSlot = it->buffer_slot;
+      element.NumComponents = it->num_components;
+      element.ValueType = static_cast<Diligent::VALUE_TYPE>(it->value_type);
+      element.IsNormalized = it->is_normalized;
+      element.RelativeOffset = it->relative_offset;
+      element.Stride = it->stride;
       element.Frequency =
-          static_cast<Diligent::INPUT_ELEMENT_FREQUENCY>(it.frequency);
-      element.InstanceDataStepRate = it.instance_data_step_rate;
+          static_cast<Diligent::INPUT_ELEMENT_FREQUENCY>(it->frequency);
+      element.InstanceDataStepRate = it->instance_data_step_rate;
 
       object_elements.push_back(std::move(element));
     }
@@ -483,7 +483,7 @@ scoped_refptr<GPUQuery> RenderDeviceImpl::CreateQuery(
 }
 
 scoped_refptr<GPUPipelineSignature> RenderDeviceImpl::CreatePipelineSignature(
-    const std::optional<PipelineSignatureDesc>& desc,
+    scoped_refptr<GPUPipelineSignatureDesc> desc,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
@@ -494,37 +494,37 @@ scoped_refptr<GPUPipelineSignature> RenderDeviceImpl::CreatePipelineSignature(
   if (desc) {
     for (auto& it : desc->resources) {
       Diligent::PipelineResourceDesc element;
-      element.Name = it.name.c_str();
+      element.Name = it->name.c_str();
       element.ShaderStages =
-          static_cast<Diligent::SHADER_TYPE>(it.shader_stages);
-      element.ArraySize = it.array_size;
+          static_cast<Diligent::SHADER_TYPE>(it->shader_stages);
+      element.ArraySize = it->array_size;
       element.ResourceType =
-          static_cast<Diligent::SHADER_RESOURCE_TYPE>(it.resource_type);
+          static_cast<Diligent::SHADER_RESOURCE_TYPE>(it->resource_type);
       element.VarType =
-          static_cast<Diligent::SHADER_RESOURCE_VARIABLE_TYPE>(it.var_type);
+          static_cast<Diligent::SHADER_RESOURCE_VARIABLE_TYPE>(it->var_type);
       resources_desc.push_back(std::move(element));
     }
 
     for (auto& it : desc->samplers) {
       Diligent::ImmutableSamplerDesc element;
       element.ShaderStages =
-          static_cast<Diligent::SHADER_TYPE>(it.shader_stages);
-      element.SamplerOrTextureName = it.sampler_name.c_str();
+          static_cast<Diligent::SHADER_TYPE>(it->shader_stages);
+      element.SamplerOrTextureName = it->sampler_name.c_str();
 
       Diligent::SamplerDesc sampler_create_desc;
-      if (it.desc) {
+      if (it->desc) {
         sampler_create_desc.MinFilter =
-            static_cast<Diligent::FILTER_TYPE>(it.desc->min_filter);
+            static_cast<Diligent::FILTER_TYPE>(it->desc->min_filter);
         sampler_create_desc.MagFilter =
-            static_cast<Diligent::FILTER_TYPE>(it.desc->mag_filter);
+            static_cast<Diligent::FILTER_TYPE>(it->desc->mag_filter);
         sampler_create_desc.MipFilter =
-            static_cast<Diligent::FILTER_TYPE>(it.desc->mip_filter);
+            static_cast<Diligent::FILTER_TYPE>(it->desc->mip_filter);
         sampler_create_desc.AddressU =
-            static_cast<Diligent::TEXTURE_ADDRESS_MODE>(it.desc->address_u);
+            static_cast<Diligent::TEXTURE_ADDRESS_MODE>(it->desc->address_u);
         sampler_create_desc.AddressV =
-            static_cast<Diligent::TEXTURE_ADDRESS_MODE>(it.desc->address_v);
+            static_cast<Diligent::TEXTURE_ADDRESS_MODE>(it->desc->address_v);
         sampler_create_desc.AddressW =
-            static_cast<Diligent::TEXTURE_ADDRESS_MODE>(it.desc->address_w);
+            static_cast<Diligent::TEXTURE_ADDRESS_MODE>(it->desc->address_w);
       }
 
       element.Desc = sampler_create_desc;

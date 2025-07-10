@@ -1,4 +1,5 @@
 // Copyright 2018-2025 Admenri.
+// Copyright 2018-2025 Admenri.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -32,6 +33,8 @@ class TextureViewImpl : public GPUTextureView,
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
   uint64_t GetDeviceObject(ExceptionState& exception_state) override;
+  scoped_refptr<GPUTextureViewDesc> GetDesc(
+      ExceptionState& exception_state) override;
   scoped_refptr<GPUTexture> GetTexture(
       ExceptionState& exception_state) override;
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Sampler, scoped_refptr<GPUSampler>);
@@ -58,8 +61,10 @@ class TextureImpl : public GPUTexture, public EngineObject, public Disposable {
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
   uint64_t GetDeviceObject(ExceptionState& exception_state) override;
+  scoped_refptr<GPUTextureDesc> GetDesc(
+      ExceptionState& exception_state) override;
   scoped_refptr<GPUTextureView> CreateView(
-      std::optional<TextureViewDesc> desc,
+      scoped_refptr<GPUTextureViewDesc> desc,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUTextureView> GetDefaultView(
       GPU::TextureViewType view_type,

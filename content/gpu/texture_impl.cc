@@ -35,6 +35,28 @@ uint64_t TextureViewImpl::GetDeviceObject(ExceptionState& exception_state) {
   return reinterpret_cast<uint64_t>(device_object);
 }
 
+scoped_refptr<GPUTextureViewDesc> TextureViewImpl::GetDesc(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto& object_desc = object_->GetDesc();
+  auto result = base::MakeRefCounted<GPUTextureViewDesc>();
+
+  result->view_type = static_cast<GPU::TextureViewType>(object_desc.ViewType);
+  result->texture_dim =
+      static_cast<GPU::ResourceDimension>(object_desc.TextureDim);
+  result->format = static_cast<GPU::TextureFormat>(object_desc.Format);
+  result->most_detailed_mip = object_desc.MostDetailedMip;
+  result->num_mip_levels = object_desc.NumMipLevels;
+  result->first_array_depth_slice = object_desc.FirstArrayOrDepthSlice();
+  result->num_array_depth_slices = object_desc.NumArrayOrDepthSlices();
+  result->access_flags =
+      static_cast<GPU::UAVAccessFlag>(object_desc.AccessFlags);
+  result->flags = static_cast<GPU::TextureViewFlags>(object_desc.Flags);
+
+  return result;
+}
+
 scoped_refptr<GPUTexture> TextureViewImpl::GetTexture(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
@@ -88,8 +110,31 @@ uint64_t TextureImpl::GetDeviceObject(ExceptionState& exception_state) {
   return reinterpret_cast<uint64_t>(device_object);
 }
 
+scoped_refptr<GPUTextureDesc> TextureImpl::GetDesc(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto& object_desc = object_->GetDesc();
+  auto result = base::MakeRefCounted<GPUTextureDesc>();
+
+  result->type = static_cast<GPU::ResourceDimension>(object_desc.Type);
+  result->width = object_desc.Width;
+  result->height = object_desc.Height;
+  result->depth_or_array_size = object_desc.ArraySizeOrDepth();
+  result->format = static_cast<GPU::TextureFormat>(object_desc.Format);
+  result->mip_levels = object_desc.MipLevels;
+  result->sample_count = object_desc.SampleCount;
+  result->bind_flags = static_cast<GPU::BindFlags>(object_desc.BindFlags);
+  result->usage = static_cast<GPU::Usage>(object_desc.Usage);
+  result->cpu_access_flags =
+      static_cast<GPU::CPUAccessFlags>(object_desc.CPUAccessFlags);
+  result->immediate_context_mask = object_desc.ImmediateContextMask;
+
+  return result;
+}
+
 scoped_refptr<GPUTextureView> TextureImpl::CreateView(
-    std::optional<TextureViewDesc> desc,
+    scoped_refptr<GPUTextureViewDesc> desc,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 

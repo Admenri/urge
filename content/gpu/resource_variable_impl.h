@@ -46,7 +46,7 @@ class ResourceVariableImpl : public GPUResourceVariable,
                       ExceptionState& exception_state) override;
   GPU::ShaderResourceVariableType GetType(
       ExceptionState& exception_state) override;
-  std::optional<ShaderResourceDesc> GetResourceDesc(
+  scoped_refptr<GPUShaderResourceDesc> GetResourceDesc(
       ExceptionState& exception_state) override;
   uint32_t GetIndex(ExceptionState& exception_state) override;
   uint64_t Get(uint32_t array_index, ExceptionState& exception_state) override;

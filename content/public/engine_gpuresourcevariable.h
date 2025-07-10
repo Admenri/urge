@@ -12,13 +12,6 @@
 
 namespace content {
 
-/*--urge(name:GPUShaderResourceDesc)--*/
-struct URGE_OBJECT(GPUShaderResourceDesc) {
-  base::String name;
-  GPU::ShaderResourceType type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
-  uint32_t array_size = 0;
-};
-
 /*--urge(name:GPUResourceVariable)--*/
 class URGE_OBJECT(GPUResourceVariable) {
  public:

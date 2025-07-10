@@ -35,7 +35,7 @@ class DeviceContextImpl : public GPUDeviceContext,
   bool IsDisposed(ExceptionState& exception_state) override;
 
   // GPUDeviceContext interface
-  std::optional<DeviceContextDesc> GetDesc(
+  scoped_refptr<GPUDeviceContextDesc> GetDesc(
       ExceptionState& exception_state) override;
   void Begin(uint32_t immediate_context_id,
              ExceptionState& exception_state) override;
@@ -60,7 +60,7 @@ class DeviceContextImpl : public GPUDeviceContext,
                       uint64_t byte_offset,
                       GPU::ResourceStateTransitionMode mode,
                       ExceptionState& exception_state) override;
-  void SetViewports(const base::Vector<ClipViewport>& viewports,
+  void SetViewports(const base::Vector<scoped_refptr<GPUViewport>>& viewports,
                     ExceptionState& exception_state) override;
   void SetScissorRects(const base::Vector<scoped_refptr<Rect>>& rects,
                        ExceptionState& exception_state) override;
@@ -160,15 +160,15 @@ class DeviceContextImpl : public GPUDeviceContext,
   void UpdateTexture(scoped_refptr<GPUTexture> texture,
                      uint32_t mip_level,
                      uint32_t slice,
-                     const std::optional<ClipBox>& box,
-                     const std::optional<TextureSubResData>& data,
+                     scoped_refptr<GPUBox> box,
+                     scoped_refptr<GPUTextureSubResData> data,
                      GPU::ResourceStateTransitionMode src_buffer_mode,
                      GPU::ResourceStateTransitionMode texture_mode,
                      ExceptionState& exception_state) override;
   void CopyTexture(scoped_refptr<GPUTexture> src_texture,
                    uint32_t src_mip_level,
                    uint32_t src_slice,
-                   const std::optional<ClipBox>& src_box,
+                   scoped_refptr<GPUBox> src_box,
                    GPU::ResourceStateTransitionMode src_mode,
                    scoped_refptr<GPUTexture> dst_texture,
                    uint32_t dst_mip_level,
@@ -178,13 +178,13 @@ class DeviceContextImpl : public GPUDeviceContext,
                    uint32_t dst_z,
                    GPU::ResourceStateTransitionMode dst_mode,
                    ExceptionState& exception_state) override;
-  std::optional<MappedTextureSubresource> MapTextureSubresource(
+  scoped_refptr<GPUMappedTextureSubresource> MapTextureSubresource(
       scoped_refptr<GPUTexture> texture,
       uint32_t mip_level,
       uint32_t array_slice,
       GPU::MapType map_type,
       GPU::MapFlags map_flags,
-      const std::optional<ClipBox>& map_region,
+      scoped_refptr<GPUBox> map_region,
       ExceptionState& exception_state) override;
   void UnmapTextureSubresource(scoped_refptr<GPUTexture> texture,
                                uint32_t mip_level,
@@ -194,7 +194,7 @@ class DeviceContextImpl : public GPUDeviceContext,
                     ExceptionState& exception_state) override;
   void FinishFrame(ExceptionState& exception_state) override;
   void TransitionResourceStates(
-      const base::Vector<StateTransitionDesc>& barriers,
+      const base::Vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
       ExceptionState& exception_state) override;
   void ResolveTextureSubresource(scoped_refptr<GPUTexture> src,
                                  scoped_refptr<GPUTexture> dst,
@@ -213,6 +213,9 @@ class DeviceContextImpl : public GPUDeviceContext,
   void InsertDebugGroup(const base::String& name,
                         scoped_refptr<Color> color,
                         ExceptionState& exception_state) override;
+  scoped_refptr<GPUCommandQueue> LockCommandQueue(
+      ExceptionState& exception_state) override;
+  void UnlockCommandQueue(ExceptionState& exception_state) override;
 
  private:
   void OnObjectDisposed() override;

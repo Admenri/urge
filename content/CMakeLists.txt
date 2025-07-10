@@ -40,6 +40,8 @@ set(ENGINE_CONTENT_SRC
   gpu/buffer_impl.h
   gpu/command_list_impl.cc
   gpu/command_list_impl.h
+  gpu/command_queue_impl.cc
+  gpu/command_queue_impl.h
   gpu/device_context_impl.cc
   gpu/device_context_impl.h
   gpu/fence_impl.cc
