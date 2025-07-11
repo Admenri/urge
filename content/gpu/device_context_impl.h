@@ -100,6 +100,16 @@ class DeviceContextImpl : public GPUDeviceContext,
                            GPU::ResourceStateTransitionMode counter_buffer_mode,
                            GPU::ValueType index_type,
                            ExceptionState& exception_state) override;
+  void MultiDraw(const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+                 uint32_t num_instances,
+                 uint32_t first_instance,
+                 ExceptionState& exception_state) override;
+  void MultiDrawIndexed(
+      const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+      GPU::ValueType index_type,
+      uint32_t num_instances,
+      uint32_t first_instance,
+      ExceptionState& exception_state) override;
   void DispatchCompute(uint32_t thread_group_count_x,
                        uint32_t thread_group_count_y,
                        uint32_t thread_group_count_z,

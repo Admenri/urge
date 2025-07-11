@@ -1000,6 +1000,19 @@ struct URGE_OBJECT(GPUShaderCreateInfo) {
   GPU::ShaderCompileFlags compile_flags = GPU::SHADER_COMPILE_FLAG_NONE;
 };
 
+/*--urge(name:GPUMultiDrawItem)--*/
+struct URGE_OBJECT(GPUMultiDrawItem) {
+  uint32_t num_vertices;
+  uint32_t start_vertex;
+};
+
+/*--urge(name:GPUMultiDrawIndexedItem)--*/
+struct URGE_OBJECT(GPUMultiDrawIndexedItem) {
+  uint32_t num_indices;
+  uint32_t start_index;
+  uint32_t base_vertex;
+};
+
 }  // namespace content
 
 #endif  //! CONTENT_PUBLIC_ENGINE_GPU_H_

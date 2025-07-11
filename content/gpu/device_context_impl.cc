@@ -319,6 +319,55 @@ void DeviceContextImpl::DrawIndexedIndirect(
   object_->DrawIndexedIndirect(attrib);
 }
 
+void DeviceContextImpl::MultiDraw(
+    const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+    uint32_t num_instances,
+    uint32_t first_instance,
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  base::Vector<Diligent::MultiDrawItem> object_items;
+  for (auto& item : items) {
+    Diligent::MultiDrawItem result;
+    result.NumVertices = item->num_vertices;
+    result.StartVertexLocation = item->start_vertex;
+    object_items.push_back(std::move(result));
+  }
+
+  Diligent::MultiDrawAttribs attrib;
+  attrib.DrawCount = object_items.size();
+  attrib.pDrawItems = object_items.data();
+  attrib.NumInstances = num_instances;
+  attrib.FirstInstanceLocation = first_instance;
+  object_->MultiDraw(attrib);
+}
+
+void DeviceContextImpl::MultiDrawIndexed(
+    const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+    GPU::ValueType index_type,
+    uint32_t num_instances,
+    uint32_t first_instance,
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  base::Vector<Diligent::MultiDrawIndexedItem> object_items;
+  for (auto& item : items) {
+    Diligent::MultiDrawIndexedItem result;
+    result.NumIndices = item->num_indices;
+    result.FirstIndexLocation = item->start_index;
+    result.BaseVertex = item->base_vertex;
+    object_items.push_back(std::move(result));
+  }
+
+  Diligent::MultiDrawIndexedAttribs attrib;
+  attrib.DrawCount = object_items.size();
+  attrib.pDrawItems = object_items.data();
+  attrib.IndexType = static_cast<Diligent::VALUE_TYPE>(index_type);
+  attrib.NumInstances = num_instances;
+  attrib.FirstInstanceLocation = first_instance;
+  object_->MultiDrawIndexed(attrib);
+}
+
 void DeviceContextImpl::DispatchCompute(uint32_t thread_group_count_x,
                                         uint32_t thread_group_count_y,
                                         uint32_t thread_group_count_z,

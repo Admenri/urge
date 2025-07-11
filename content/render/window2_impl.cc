@@ -57,7 +57,7 @@ Window2Impl::Window2Impl(ExecutionContext* execution_context,
                          int32_t scale_)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
-      rgss3_style_(execution_context->engine_profile->api_version ==
+      rgss3_style_(execution_context->engine_profile->api_version >=
                    ContentProfile::APIVersion::RGSS3),
       node_(parent ? parent->GetDrawableController()
                    : execution_context->screen_drawable_node,
@@ -67,6 +67,8 @@ Window2Impl::Window2Impl(ExecutionContext* execution_context,
       viewport_(parent),
       cursor_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
       bound_(bound),
+      padding_(rgss3_style_ ? 12 : 16),
+      padding_bottom_(padding_),
       back_opacity_(rgss3_style_ ? 192 : 255),
       tone_(base::MakeRefCounted<ToneImpl>(base::Vec4())) {
   node_.RegisterEventHandler(base::BindRepeating(
