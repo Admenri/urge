@@ -347,12 +347,13 @@ void ViewportImpl::Put_ResourceBinding(
   custom_binding_ = static_cast<ResourceBindingImpl*>(value.get());
   if (custom_binding_) {
     // Custom binding
-    agent_.effect.custom_binding =
+    agent_.effect.binding =
         renderer::RenderBindingBase::Create<renderer::Binding_Flat>(
             custom_binding_->AsRawPtr());
   } else {
     // Empty binding
-    agent_.effect.custom_binding = renderer::Binding_Flat();
+    agent_.effect.binding =
+        context()->render_device->GetPipelines()->viewport.CreateBinding();
   }
 }
 
@@ -539,9 +540,7 @@ void ViewportImpl::GPUApplyViewportEffect(
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup uniform params
-  renderer::Binding_Flat* effect_binding =
-      custom_binding_ ? &agent_.effect.custom_binding : &agent_.effect.binding;
-
+  renderer::Binding_Flat* effect_binding = &agent_.effect.binding;
   effect_binding->u_transform->Set(root_world);
   effect_binding->u_texture->Set(
       agent_.effect.intermediate_layer->GetDefaultView(

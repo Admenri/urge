@@ -28,8 +28,6 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
       renderer::Binding_Flat binding;
       RRefPtr<Diligent::ITexture> intermediate_layer;
       RRefPtr<Diligent::IBuffer> uniform_buffer;
-
-      renderer::Binding_Flat custom_binding;
     } effect;
   };
 
