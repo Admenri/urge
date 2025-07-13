@@ -15,15 +15,14 @@
 #include "base/math/rectangle.h"
 #include "base/math/vector.h"
 #include "base/memory/allocator.h"
+#include "renderer/renderer_config.h"
 
 namespace renderer {
 
 class RenderBindingBase {
  public:
-  using ShaderBinding =
-      Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>;
-  using ShaderVariable =
-      Diligent::RefCntAutoPtr<Diligent::IShaderResourceVariable>;
+  using ShaderBinding = Diligent::IShaderResourceBinding;
+  using ShaderVariable = Diligent::IShaderResourceVariable;
 
   virtual ~RenderBindingBase() = default;
 
@@ -31,7 +30,7 @@ class RenderBindingBase {
   RenderBindingBase& operator=(const RenderBindingBase&) = default;
 
   template <typename Ty>
-  static Ty Create(ShaderBinding binding) {
+  static Ty Create(ShaderBinding* binding) {
     return Ty(binding);
   }
 
@@ -42,10 +41,10 @@ class RenderBindingBase {
 
  protected:
   RenderBindingBase() = default;
-  RenderBindingBase(ShaderBinding binding);
+  RenderBindingBase(ShaderBinding* binding);
 
  private:
-  ShaderBinding binding_;
+  RRefPtr<ShaderBinding> binding_;
 };
 
 ///
@@ -56,36 +55,36 @@ class Binding_Base : public RenderBindingBase {
  public:
   Binding_Base() = default;
 
-  ShaderVariable u_transform;
-  ShaderVariable u_texture;
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_Base(ShaderBinding binding);
+  Binding_Base(ShaderBinding* binding);
 };
 
 class Binding_BitmapBlt : public RenderBindingBase {
  public:
   Binding_BitmapBlt() = default;
 
-  ShaderVariable u_transform;
-  ShaderVariable u_texture;
-  ShaderVariable u_dst_texture;
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_texture;
+  RRefPtr<ShaderVariable> u_dst_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_BitmapBlt(ShaderBinding binding);
+  Binding_BitmapBlt(ShaderBinding* binding);
 };
 
 class Binding_Color : public RenderBindingBase {
  public:
   Binding_Color() = default;
 
-  ShaderVariable u_transform;
+  RRefPtr<ShaderVariable> u_transform;
 
  private:
   friend class RenderBindingBase;
-  Binding_Color(ShaderBinding binding);
+  Binding_Color(ShaderBinding* binding);
 };
 
 class Binding_Flat : public RenderBindingBase {
@@ -97,13 +96,13 @@ class Binding_Flat : public RenderBindingBase {
 
   Binding_Flat() = default;
 
-  ShaderVariable u_transform;
-  ShaderVariable u_texture;
-  ShaderVariable u_params;
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_texture;
+  RRefPtr<ShaderVariable> u_params;
 
  private:
   friend class RenderBindingBase;
-  Binding_Flat(ShaderBinding binding);
+  Binding_Flat(ShaderBinding* binding);
 };
 
 class Binding_Sprite : public RenderBindingBase {
@@ -121,38 +120,38 @@ class Binding_Sprite : public RenderBindingBase {
 
   Binding_Sprite() = default;
 
-  ShaderVariable u_transform;
-  ShaderVariable u_params;
-  ShaderVariable u_texture;
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_params;
+  RRefPtr<ShaderVariable> u_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_Sprite(ShaderBinding binding);
+  Binding_Sprite(ShaderBinding* binding);
 };
 
 class Binding_AlphaTrans : public RenderBindingBase {
  public:
   Binding_AlphaTrans() = default;
 
-  ShaderVariable u_frozen_texture;
-  ShaderVariable u_current_texture;
+  RRefPtr<ShaderVariable> u_frozen_texture;
+  RRefPtr<ShaderVariable> u_current_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_AlphaTrans(ShaderBinding binding);
+  Binding_AlphaTrans(ShaderBinding* binding);
 };
 
 class Binding_VagueTrans : public RenderBindingBase {
  public:
   Binding_VagueTrans() = default;
 
-  ShaderVariable u_frozen_texture;
-  ShaderVariable u_current_texture;
-  ShaderVariable u_trans_texture;
+  RRefPtr<ShaderVariable> u_frozen_texture;
+  RRefPtr<ShaderVariable> u_current_texture;
+  RRefPtr<ShaderVariable> u_trans_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_VagueTrans(ShaderBinding binding);
+  Binding_VagueTrans(ShaderBinding* binding);
 };
 
 class Binding_Tilemap : public RenderBindingBase {
@@ -164,13 +163,13 @@ class Binding_Tilemap : public RenderBindingBase {
 
   Binding_Tilemap() = default;
 
-  ShaderVariable u_transform;
-  ShaderVariable u_params;
-  ShaderVariable u_texture;
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_params;
+  RRefPtr<ShaderVariable> u_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_Tilemap(ShaderBinding binding);
+  Binding_Tilemap(ShaderBinding* binding);
 };
 
 class Binding_Tilemap2 : public RenderBindingBase {
@@ -182,37 +181,37 @@ class Binding_Tilemap2 : public RenderBindingBase {
 
   Binding_Tilemap2() = default;
 
-  ShaderVariable u_transform;
-  ShaderVariable u_params;
-  ShaderVariable u_texture;
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_params;
+  RRefPtr<ShaderVariable> u_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_Tilemap2(ShaderBinding binding);
+  Binding_Tilemap2(ShaderBinding* binding);
 };
 
 class Binding_BitmapFilter : public RenderBindingBase {
  public:
   Binding_BitmapFilter() = default;
 
-  ShaderVariable u_texture;
+  RRefPtr<ShaderVariable> u_texture;
 
  private:
   friend class RenderBindingBase;
-  Binding_BitmapFilter(ShaderBinding binding);
+  Binding_BitmapFilter(ShaderBinding* binding);
 };
 
 class Binding_YUV : public RenderBindingBase {
  public:
   Binding_YUV() = default;
 
-  ShaderVariable u_texture_y;
-  ShaderVariable u_texture_u;
-  ShaderVariable u_texture_v;
+  RRefPtr<ShaderVariable> u_texture_y;
+  RRefPtr<ShaderVariable> u_texture_u;
+  RRefPtr<ShaderVariable> u_texture_v;
 
  private:
   friend class RenderBindingBase;
-  Binding_YUV(ShaderBinding binding);
+  Binding_YUV(ShaderBinding* binding);
 };
 
 }  // namespace renderer

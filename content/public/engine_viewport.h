@@ -10,6 +10,8 @@
 #include "content/context/exception_state.h"
 #include "content/public/engine_bitmap.h"
 #include "content/public/engine_color.h"
+#include "content/public/engine_gpupipelinestate.h"
+#include "content/public/engine_gpuresourcebinding.h"
 #include "content/public/engine_rect.h"
 #include "content/public/engine_tone.h"
 
@@ -88,6 +90,12 @@ class URGE_OBJECT(Viewport) {
 
   /*--urge(name:tone)--*/
   URGE_EXPORT_ATTRIBUTE(Tone, scoped_refptr<Tone>);
+
+  /*--urge(name:pipeline_state)--*/
+  URGE_EXPORT_ATTRIBUTE(PipelineState, scoped_refptr<GPUPipelineState>);
+
+  /*--urge(name:resource_binding)--*/
+  URGE_EXPORT_ATTRIBUTE(ResourceBinding, scoped_refptr<GPUResourceBinding>);
 };
 
 }  // namespace content

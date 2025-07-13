@@ -9,6 +9,8 @@
 #include "content/common/rect_impl.h"
 #include "content/common/tone_impl.h"
 #include "content/context/disposable.h"
+#include "content/gpu/pipeline_state_impl.h"
+#include "content/gpu/resource_binding_impl.h"
 #include "content/public/engine_viewport.h"
 #include "content/render/drawable_controller.h"
 #include "content/screen/renderscreen_impl.h"
@@ -26,6 +28,8 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
       renderer::Binding_Flat binding;
       RRefPtr<Diligent::ITexture> intermediate_layer;
       RRefPtr<Diligent::IBuffer> uniform_buffer;
+
+      renderer::Binding_Flat custom_binding;
     } effect;
   };
 
@@ -59,6 +63,10 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Color, scoped_refptr<Color>);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Tone, scoped_refptr<Tone>);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(PipelineState,
+                                  scoped_refptr<GPUPipelineState>);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(ResourceBinding,
+                                  scoped_refptr<GPUResourceBinding>);
 
   DrawNodeController* GetDrawableController() { return &controller_; }
 
@@ -93,6 +101,9 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
 
   base::Rect transform_cache_;
   base::Vec2i effect_layer_cache_;
+
+  scoped_refptr<PipelineStateImpl> custom_pipeline_;
+  scoped_refptr<ResourceBindingImpl> custom_binding_;
 
   scoped_refptr<ColorImpl> color_;
   scoped_refptr<ToneImpl> tone_;

@@ -178,8 +178,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
         (flash_color.w > composite_color.w ? flash_color : composite_color);
 
   const auto tone = tone_->AsNormColor();
-  const bool is_effect_valid = target_color.w != 0 || tone.x != 0 ||
-                               tone.y != 0 || tone.z != 0 || tone.w != 0;
+  const bool is_effect_valid = custom_pipeline_ || target_color.w != 0 ||
+                               tone.x != 0 || tone.y != 0 || tone.z != 0 ||
+                               tone.w != 0;
   if (is_effect_valid)
     GPUApplyViewportEffect(
         controller_params.context, controller_params.screen_buffer,
@@ -316,6 +317,45 @@ void ViewportImpl::Put_Tone(const scoped_refptr<Tone>& value,
   *tone_ = *ToneImpl::From(value);
 }
 
+scoped_refptr<GPUPipelineState> ViewportImpl::Get_PipelineState(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return custom_pipeline_;
+}
+
+void ViewportImpl::Put_PipelineState(
+    const scoped_refptr<GPUPipelineState>& value,
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  custom_pipeline_ = static_cast<PipelineStateImpl*>(value.get());
+}
+
+scoped_refptr<GPUResourceBinding> ViewportImpl::Get_ResourceBinding(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return custom_binding_;
+}
+
+void ViewportImpl::Put_ResourceBinding(
+    const scoped_refptr<GPUResourceBinding>& value,
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  custom_binding_ = static_cast<ResourceBindingImpl*>(value.get());
+  if (custom_binding_) {
+    // Custom binding
+    agent_.effect.custom_binding =
+        renderer::RenderBindingBase::Create<renderer::Binding_Flat>(
+            custom_binding_->AsRawPtr());
+  } else {
+    // Empty binding
+    agent_.effect.custom_binding = renderer::Binding_Flat();
+  }
+}
+
 void ViewportImpl::OnObjectDisposed() {
   node_.DisposeNode();
 
@@ -382,8 +422,9 @@ void ViewportImpl::DrawableNodeHandlerInternal(
             (flash_color.w > composite_color.w ? flash_color : composite_color);
 
       const auto tone = tone_->AsNormColor();
-      const bool is_effect_valid = target_color.w != 0 || tone.x != 0 ||
-                                   tone.y != 0 || tone.z != 0 || tone.w != 0;
+      const bool is_effect_valid = custom_pipeline_ || target_color.w != 0 ||
+                                   tone.x != 0 || tone.y != 0 || tone.z != 0 ||
+                                   tone.w != 0;
       if (is_effect_valid)
         GPUApplyViewportEffect(params->context, params->screen_buffer,
                                params->screen_depth_stencil, params->root_world,
@@ -485,8 +526,10 @@ void ViewportImpl::GPUApplyViewportEffect(
 
   // Derive effect pipeline
   auto& pipeline_set = context()->render_device->GetPipelines()->viewport;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  Diligent::IPipelineState* pipeline =
+      custom_pipeline_
+          ? custom_pipeline_->AsRawPtr()
+          : pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Apply render target
   Diligent::ITextureView* render_target_view =
@@ -496,17 +539,19 @@ void ViewportImpl::GPUApplyViewportEffect(
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup uniform params
-  agent_.effect.binding.u_transform->Set(root_world);
-  agent_.effect.binding.u_texture->Set(
+  renderer::Binding_Flat* effect_binding =
+      custom_binding_ ? &agent_.effect.custom_binding : &agent_.effect.binding;
+
+  effect_binding->u_transform->Set(root_world);
+  effect_binding->u_texture->Set(
       agent_.effect.intermediate_layer->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent_.effect.binding.u_params->Set(agent_.effect.uniform_buffer);
+  effect_binding->u_params->Set(agent_.effect.uniform_buffer);
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *agent_.effect.binding,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      **effect_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *agent_.effect.quads;

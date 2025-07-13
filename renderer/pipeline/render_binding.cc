@@ -6,17 +6,18 @@
 
 namespace renderer {
 
-RenderBindingBase::RenderBindingBase(ShaderBinding binding)
+RenderBindingBase::RenderBindingBase(ShaderBinding* binding)
     : binding_(binding) {}
 
-Binding_Base::Binding_Base(ShaderBinding binding) : RenderBindingBase(binding) {
+Binding_Base::Binding_Base(ShaderBinding* binding)
+    : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
   u_texture =
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }
 
-Binding_BitmapBlt::Binding_BitmapBlt(ShaderBinding binding)
+Binding_BitmapBlt::Binding_BitmapBlt(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
@@ -26,13 +27,14 @@ Binding_BitmapBlt::Binding_BitmapBlt(ShaderBinding binding)
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_DstTexture");
 }
 
-Binding_Color::Binding_Color(ShaderBinding binding)
+Binding_Color::Binding_Color(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
 }
 
-Binding_Flat::Binding_Flat(ShaderBinding binding) : RenderBindingBase(binding) {
+Binding_Flat::Binding_Flat(ShaderBinding* binding)
+    : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
   u_texture =
@@ -41,7 +43,7 @@ Binding_Flat::Binding_Flat(ShaderBinding binding) : RenderBindingBase(binding) {
                                         "FlatUniformConstants");
 }
 
-Binding_Sprite::Binding_Sprite(ShaderBinding binding)
+Binding_Sprite::Binding_Sprite(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
@@ -51,7 +53,7 @@ Binding_Sprite::Binding_Sprite(ShaderBinding binding)
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }
 
-Binding_AlphaTrans::Binding_AlphaTrans(ShaderBinding binding)
+Binding_AlphaTrans::Binding_AlphaTrans(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_frozen_texture = (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL,
                                                 "u_FrozenTexture");
@@ -59,7 +61,7 @@ Binding_AlphaTrans::Binding_AlphaTrans(ShaderBinding binding)
                                                  "u_CurrentTexture");
 }
 
-Binding_VagueTrans::Binding_VagueTrans(ShaderBinding binding)
+Binding_VagueTrans::Binding_VagueTrans(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_frozen_texture = (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL,
                                                 "u_FrozenTexture");
@@ -69,7 +71,7 @@ Binding_VagueTrans::Binding_VagueTrans(ShaderBinding binding)
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_TransTexture");
 }
 
-Binding_Tilemap::Binding_Tilemap(ShaderBinding binding)
+Binding_Tilemap::Binding_Tilemap(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
@@ -79,7 +81,7 @@ Binding_Tilemap::Binding_Tilemap(ShaderBinding binding)
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }
 
-Binding_Tilemap2::Binding_Tilemap2(ShaderBinding binding)
+Binding_Tilemap2::Binding_Tilemap2(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
                                            "WorldMatrixBuffer");
@@ -89,13 +91,13 @@ Binding_Tilemap2::Binding_Tilemap2(ShaderBinding binding)
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }
 
-Binding_BitmapFilter::Binding_BitmapFilter(ShaderBinding binding)
+Binding_BitmapFilter::Binding_BitmapFilter(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_texture =
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }
 
-Binding_YUV::Binding_YUV(ShaderBinding binding) : RenderBindingBase(binding) {
+Binding_YUV::Binding_YUV(ShaderBinding* binding) : RenderBindingBase(binding) {
   u_texture_y =
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_TextureY");
   u_texture_u =
