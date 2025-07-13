@@ -17,6 +17,7 @@
 
 #include "content/canvas/canvas_scheduler.h"
 #include "content/common/rect_impl.h"
+#include "content/gpu/buffer_impl.h"
 #include "content/gpu/device_context_impl.h"
 #include "content/gpu/render_device_impl.h"
 #include "content/profile/command_ids.h"
@@ -400,6 +401,14 @@ scoped_refptr<GPUDeviceContext> RenderScreenImpl::GetImmediateContext(
     ExceptionState& exception_state) {
   return base::MakeRefCounted<DeviceContextImpl>(
       context(), context()->primary_render_context);
+}
+
+scoped_refptr<GPUBuffer> RenderScreenImpl::GetGenericQuadIndexBuffer(
+    uint32_t draw_quad_count,
+    ExceptionState& exception_state) {
+  auto* quad_index = context()->render_device->GetQuadIndex();
+  quad_index->Allocate(draw_quad_count);
+  return base::MakeRefCounted<BufferImpl>(context(), **quad_index);
 }
 
 uint32_t RenderScreenImpl::Get_FrameRate(ExceptionState& exception_state) {

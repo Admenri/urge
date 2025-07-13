@@ -118,6 +118,9 @@ class RenderScreenImpl : public Graphics,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUDeviceContext> GetImmediateContext(
       ExceptionState& exception_state) override;
+  scoped_refptr<GPUBuffer> GetGenericQuadIndexBuffer(
+      uint32_t draw_quad_count,
+      ExceptionState& exception_state) override;
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(FrameRate, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(FrameCount, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Brightness, uint32_t);

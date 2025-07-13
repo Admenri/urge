@@ -112,6 +112,11 @@ class URGE_OBJECT(Graphics) {
   virtual scoped_refptr<GPUDeviceContext> GetImmediateContext(
       ExceptionState& exception_state) = 0;
 
+  /*--urge(name:generic_quad_index_buffer)--*/
+  virtual scoped_refptr<GPUBuffer> GetGenericQuadIndexBuffer(
+      uint32_t draw_quad_count,
+      ExceptionState& exception_state) = 0;
+
   /*--urge(name:frame_rate)--*/
   URGE_EXPORT_ATTRIBUTE(FrameRate, uint32_t);
 
