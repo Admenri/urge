@@ -38,6 +38,15 @@ enum BlendType {
   BLEND_TYPE_NUMS,
 };
 
+/// Pipeline create info
+///
+struct PipelineInitParams {
+  Diligent::IRenderDevice* device;
+  Diligent::SamplerDesc sampler;
+  Diligent::TEXTURE_FORMAT target_format;
+  Diligent::TEXTURE_FORMAT depth_stencil_format;
+};
+
 /// Pipeline base manager
 ///
 class RenderPipelineBase {
@@ -99,45 +108,35 @@ class RenderPipelineBase {
 
 class Pipeline_Base : public RenderPipelineBase {
  public:
-  Pipeline_Base(Diligent::IRenderDevice* device,
-                Diligent::TEXTURE_FORMAT target_format,
-                Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Base(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };
 
 class Pipeline_BitmapBlt : public RenderPipelineBase {
  public:
-  Pipeline_BitmapBlt(Diligent::IRenderDevice* device,
-                     Diligent::TEXTURE_FORMAT target_format,
-                     Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_BitmapBlt(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_BitmapBlt, 0);
 };
 
 class Pipeline_Color : public RenderPipelineBase {
  public:
-  Pipeline_Color(Diligent::IRenderDevice* device,
-                 Diligent::TEXTURE_FORMAT target_format,
-                 Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Color(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_Color, 0);
 };
 
 class Pipeline_Flat : public RenderPipelineBase {
  public:
-  Pipeline_Flat(Diligent::IRenderDevice* device,
-                Diligent::TEXTURE_FORMAT target_format,
-                Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Flat(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_Flat, 0);
 };
 
 class Pipeline_Sprite : public RenderPipelineBase {
  public:
-  Pipeline_Sprite(Diligent::IRenderDevice* device,
-                  Diligent::TEXTURE_FORMAT target_format,
-                  Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Sprite(const PipelineInitParams& init_params);
 
   Diligent::Bool storage_buffer_support = Diligent::False;
 
@@ -146,73 +145,56 @@ class Pipeline_Sprite : public RenderPipelineBase {
 
 class Pipeline_AlphaTransition : public RenderPipelineBase {
  public:
-  Pipeline_AlphaTransition(Diligent::IRenderDevice* device,
-                           Diligent::TEXTURE_FORMAT target_format,
-                           Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_AlphaTransition(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_AlphaTrans, 0);
 };
 
 class Pipeline_VagueTransition : public RenderPipelineBase {
  public:
-  Pipeline_VagueTransition(Diligent::IRenderDevice* device,
-                           Diligent::TEXTURE_FORMAT target_format,
-                           Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_VagueTransition(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_VagueTrans, 0);
 };
 
 class Pipeline_Tilemap : public RenderPipelineBase {
  public:
-  Pipeline_Tilemap(Diligent::IRenderDevice* device,
-                   Diligent::TEXTURE_FORMAT target_format,
-                   Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Tilemap(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_Tilemap, 0);
 };
 
 class Pipeline_Tilemap2 : public RenderPipelineBase {
  public:
-  Pipeline_Tilemap2(Diligent::IRenderDevice* device,
-                    Diligent::TEXTURE_FORMAT target_format,
-                    Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Tilemap2(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_Tilemap2, 0);
 };
 
 class Pipeline_BitmapHue : public RenderPipelineBase {
  public:
-  Pipeline_BitmapHue(Diligent::IRenderDevice* device,
-                     Diligent::TEXTURE_FORMAT target_format,
-                     Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_BitmapHue(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_BitmapFilter, 0);
 };
 
 class Pipeline_Spine2D : public RenderPipelineBase {
  public:
-  Pipeline_Spine2D(Diligent::IRenderDevice* device,
-                   Diligent::TEXTURE_FORMAT target_format,
-                   Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_Spine2D(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };
 
 class Pipeline_YUV : public RenderPipelineBase {
  public:
-  Pipeline_YUV(Diligent::IRenderDevice* device,
-               Diligent::TEXTURE_FORMAT target_format,
-               Diligent::TEXTURE_FORMAT depth_stencil_format);
+  Pipeline_YUV(const PipelineInitParams& init_params);
 
   MAKE_BINDING_FUNCTION(Binding_YUV, 0);
 };
 
 class Pipeline_Present : public RenderPipelineBase {
  public:
-  Pipeline_Present(Diligent::IRenderDevice* device,
-                   Diligent::TEXTURE_FORMAT target_format,
-                   Diligent::TEXTURE_FORMAT depth_stencil_format,
-                   bool manual_srgb);
+  Pipeline_Present(const PipelineInitParams& init_params, bool manual_srgb);
 
   MAKE_BINDING_FUNCTION(Binding_Base, 0);
 };

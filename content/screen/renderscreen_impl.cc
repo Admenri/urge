@@ -632,9 +632,13 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
           .ComponentType == Diligent::COMPONENT_TYPE_UNORM_SRGB;
 
   // Create screen present pipeline
+  renderer::PipelineInitParams pipeline_init_params;
+  pipeline_init_params.device = **context()->render_device;
+  pipeline_init_params.target_format = swapchain_desc.ColorBufferFormat;
+  pipeline_init_params.depth_stencil_format = swapchain_desc.DepthBufferFormat;
+
   agent_.present_pipeline = base::MakeOwnedPtr<renderer::Pipeline_Present>(
-      **context()->render_device, swapchain_desc.ColorBufferFormat,
-      swapchain_desc.DepthBufferFormat, srgb_framebuffer);
+      pipeline_init_params, srgb_framebuffer);
   agent_.present_quad =
       renderer::DynamicQuadBatch::Make(**context()->render_device);
   agent_.present_binding = agent_.present_pipeline->CreateBinding();

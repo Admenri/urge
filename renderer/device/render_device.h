@@ -22,6 +22,11 @@ enum class DriverType {
   D3D12,
 };
 
+enum class SamplerType {
+  LINEAR = 0,
+  NEAREST,
+};
+
 class RenderDevice {
  public:
   struct PipelineSet {
@@ -38,27 +43,26 @@ class RenderDevice {
     Pipeline_Spine2D spine2d;
     Pipeline_YUV yuv;
 
-    PipelineSet(Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
-                Diligent::TEXTURE_FORMAT target_format,
-                Diligent::TEXTURE_FORMAT depth_stencil_format)
-        : base(device, target_format, depth_stencil_format),
-          bitmapblt(device, target_format, depth_stencil_format),
-          color(device, target_format, depth_stencil_format),
-          viewport(device, target_format, depth_stencil_format),
-          sprite(device, target_format, depth_stencil_format),
-          alphatrans(device, target_format, depth_stencil_format),
-          mappedtrans(device, target_format, depth_stencil_format),
-          tilemap(device, target_format, depth_stencil_format),
-          tilemap2(device, target_format, depth_stencil_format),
-          bitmaphue(device, target_format, depth_stencil_format),
-          spine2d(device, target_format, depth_stencil_format),
-          yuv(device, target_format, depth_stencil_format) {}
+    PipelineSet(const PipelineInitParams& init_params)
+        : base(init_params),
+          bitmapblt(init_params),
+          color(init_params),
+          viewport(init_params),
+          sprite(init_params),
+          alphatrans(init_params),
+          mappedtrans(init_params),
+          tilemap(init_params),
+          tilemap2(init_params),
+          bitmaphue(init_params),
+          spine2d(init_params),
+          yuv(init_params) {}
   };
 
   using CreateDeviceResult = std::tuple<base::OwnedPtr<RenderDevice>,
                                         RRefPtr<Diligent::IDeviceContext>>;
   static CreateDeviceResult Create(base::WeakPtr<ui::Widget> window_target,
                                    DriverType driver_type,
+                                   SamplerType default_sampler,
                                    bool validation);
 
   ~RenderDevice();
@@ -90,6 +94,7 @@ class RenderDevice {
   RenderDevice(base::WeakPtr<ui::Widget> window,
                const Diligent::SwapChainDesc& swapchain_desc,
                int32_t max_texture_size,
+               const PipelineInitParams& pipeline_default_params,
                Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
                Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
                SDL_GLContext gl_context);

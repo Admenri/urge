@@ -58,6 +58,7 @@ class ContentProfile {
 
   // Renderer
   base::String driver_backend = "UNDEFINED";
+  int32_t pipeline_default_sampler = 0;
   bool render_validation =
 #if DILIGENT_DEVELOPMENT
       true;

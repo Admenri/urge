@@ -232,6 +232,8 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
 
   // Renderer
   driver_backend = reader->Get("Renderer", "Backend", driver_backend.c_str());
+  pipeline_default_sampler = reader->GetInteger(
+      "Renderer", "PipelineDefaultSampler", pipeline_default_sampler);
   render_validation =
       reader->GetBoolean("Renderer", "RenderValidation", render_validation);
   frame_rate = reader->GetInteger("Renderer", "FrameRate",

@@ -56,6 +56,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       window,
       magic_enum::enum_cast<renderer::DriverType>(profile->driver_backend)
           .value_or(renderer::DriverType::UNDEFINED),
+      static_cast<renderer::SamplerType>(profile->pipeline_default_sampler),
       profile_->render_validation);
   render_device_ = std::move(render_device);
   device_context_ = std::move(render_context);

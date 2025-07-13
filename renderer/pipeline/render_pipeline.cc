@@ -235,10 +235,8 @@ RenderPipelineBase::MakeResourceSignature(
   return signature;
 }
 
-Pipeline_Base::Pipeline_Base(Diligent::IRenderDevice* device,
-                             Diligent::TEXTURE_FORMAT target_format,
-                             Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_Base::Pipeline_Base(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_BaseRender, "base.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -254,22 +252,17 @@ Pipeline_Base::Pipeline_Base(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_BitmapBlt::Pipeline_BitmapBlt(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_BitmapBlt::Pipeline_BitmapBlt(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_BitmapBltRender, "bitmapblt.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -288,28 +281,22 @@ Pipeline_BitmapBlt::Pipeline_BitmapBlt(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_DstTexture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Color::Pipeline_Color(Diligent::IRenderDevice* device,
-                               Diligent::TEXTURE_FORMAT target_format,
-                               Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_Color::Pipeline_Color(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_ColorRender, "color.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -319,14 +306,12 @@ Pipeline_Color::Pipeline_Color(Diligent::IRenderDevice* device,
   };
 
   auto binding0 = MakeResourceSignature(variables, {}, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Flat::Pipeline_Flat(Diligent::IRenderDevice* device,
-                             Diligent::TEXTURE_FORMAT target_format,
-                             Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_Flat::Pipeline_Flat(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_FlatRender, "flat.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -345,22 +330,18 @@ Pipeline_Flat::Pipeline_Flat(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
-                                 Diligent::TEXTURE_FORMAT target_format,
-                                 Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
-  const auto& device_info = device->GetDeviceInfo();
+Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
+  const auto& device_info = init_params.device->GetDeviceInfo();
   storage_buffer_support =
       !(device_info.Type == Diligent::RENDER_DEVICE_TYPE_GLES);
 
@@ -420,23 +401,20 @@ Pipeline_Sprite::Pipeline_Sprite(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
   BuildPipeline(shader_source,
                 storage_buffer_support ? Vertex::GetLayout() : input_elements,
-                {binding0}, target_format, depth_stencil_format);
+                {binding0}, init_params.target_format,
+                init_params.depth_stencil_format);
 }
 
 Pipeline_AlphaTransition::Pipeline_AlphaTransition(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+    const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_AlphaTransitionRender,
                                    "alpha.trans.render"};
 
@@ -453,29 +431,23 @@ Pipeline_AlphaTransition::Pipeline_AlphaTransition(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_FrozenTexture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_CurrentTexture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
 Pipeline_VagueTransition::Pipeline_VagueTransition(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+    const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_MappingTransitionRender,
                                    "vague.trans.render"};
 
@@ -495,36 +467,27 @@ Pipeline_VagueTransition::Pipeline_VagueTransition(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_FrozenTexture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_CurrentTexture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TransTexture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Tilemap::Pipeline_Tilemap(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_Tilemap::Pipeline_Tilemap(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_TilemapRender, "tilemap.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -543,22 +506,17 @@ Pipeline_Tilemap::Pipeline_Tilemap(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Tilemap2::Pipeline_Tilemap2(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_Tilemap2::Pipeline_Tilemap2(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_Tilemap2Render, "tilemap2.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -577,22 +535,17 @@ Pipeline_Tilemap2::Pipeline_Tilemap2(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_BitmapHue::Pipeline_BitmapHue(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_BitmapHue::Pipeline_BitmapHue(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_BitmapHueRender, "hue.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -605,22 +558,17 @@ Pipeline_BitmapHue::Pipeline_BitmapHue(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Spine2D::Pipeline_Spine2D(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_Spine2D::Pipeline_Spine2D(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_Spine2DRender, "spine2d.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -636,21 +584,17 @@ Pipeline_Spine2D::Pipeline_Spine2D(
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
   BuildPipeline(shader_source, SpineVertex::GetLayout(), {binding0},
-                target_format, depth_stencil_format);
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_YUV::Pipeline_YUV(Diligent::IRenderDevice* device,
-                           Diligent::TEXTURE_FORMAT target_format,
-                           Diligent::TEXTURE_FORMAT depth_stencil_format)
-    : RenderPipelineBase(device) {
+Pipeline_YUV::Pipeline_YUV(const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_YUVRender, "yuv.render"};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
@@ -669,37 +613,28 @@ Pipeline_YUV::Pipeline_YUV(Diligent::IRenderDevice* device,
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureY",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureU",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureV",
-          {Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
-           Diligent::FILTER_TYPE_LINEAR, Diligent::TEXTURE_ADDRESS_CLAMP,
-           Diligent::TEXTURE_ADDRESS_CLAMP, Diligent::TEXTURE_ADDRESS_CLAMP},
+          init_params.sampler,
       },
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
-Pipeline_Present::Pipeline_Present(
-    Diligent::IRenderDevice* device,
-    Diligent::TEXTURE_FORMAT target_format,
-    Diligent::TEXTURE_FORMAT depth_stencil_format,
-    bool manual_srgb)
-    : RenderPipelineBase(device) {
+Pipeline_Present::Pipeline_Present(const PipelineInitParams& init_params,
+                                   bool manual_srgb)
+    : RenderPipelineBase(init_params.device) {
   base::Vector<Diligent::ShaderMacro> pixel_macros = {
       {"GAMMA_TO_LINEAR(Gamma)", kShaderGAMMA2LINEAR},
       {"SRGBA_TO_LINEAR(col)", manual_srgb ? kShaderSRGBA2LINEAR : ""},
@@ -721,8 +656,8 @@ Pipeline_Present::Pipeline_Present(
   };
 
   auto binding0 = MakeResourceSignature(variables, {}, 0);
-  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0}, target_format,
-                depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
 }  // namespace renderer

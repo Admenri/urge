@@ -105,6 +105,7 @@ using Diligent::GetEngineFactoryVk;
 RenderDevice::CreateDeviceResult RenderDevice::Create(
     base::WeakPtr<ui::Widget> window_target,
     DriverType driver_type,
+    SamplerType default_sampler,
     bool validation) {
   // Setup debugging output
   Diligent::SetDebugMessageCallback(DebugMessageOutputFunc);
@@ -256,10 +257,36 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   LOG(INFO) << "[Renderer] Adapter: " << adapter_info.Description;
   LOG(INFO) << "[Renderer] MaxTexture Size: " << max_texture_size;
 
+  // Default sampler
+  Diligent::FILTER_TYPE sampler_filter;
+  switch (default_sampler) {
+    default:
+    case renderer::SamplerType::LINEAR:
+      sampler_filter = Diligent::FILTER_TYPE_LINEAR;
+      break;
+    case renderer::SamplerType::NEAREST:
+      sampler_filter = Diligent::FILTER_TYPE_POINT;
+      break;
+  }
+
+  // Pipeline init params
+  PipelineInitParams pipeline_default_params;
+  pipeline_default_params.device = device;
+  pipeline_default_params.sampler =
+      Diligent::SamplerDesc{sampler_filter,
+                            sampler_filter,
+                            sampler_filter,
+                            Diligent::TEXTURE_ADDRESS_CLAMP,
+                            Diligent::TEXTURE_ADDRESS_CLAMP,
+                            Diligent::TEXTURE_ADDRESS_CLAMP};
+  pipeline_default_params.target_format = Diligent::TEX_FORMAT_RGBA8_UNORM;
+  pipeline_default_params.depth_stencil_format =
+      Diligent::TEX_FORMAT_D24_UNORM_S8_UINT;
+
   // Global render device
   base::OwnedPtr<RenderDevice> render_device = base::MakeOwnedPtr<RenderDevice>(
-      window_target, swap_chain_desc, max_texture_size, device, swapchain,
-      glcontext);
+      window_target, swap_chain_desc, max_texture_size, pipeline_default_params,
+      device, swapchain, glcontext);
 
   return std::make_tuple(std::move(render_device), std::move(context));
 }
@@ -268,6 +295,7 @@ RenderDevice::RenderDevice(
     base::WeakPtr<ui::Widget> window,
     const Diligent::SwapChainDesc& swapchain_desc,
     int32_t max_texture_size,
+    const PipelineInitParams& pipeline_default_params,
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
     SDL_GLContext gl_context)
@@ -276,9 +304,7 @@ RenderDevice::RenderDevice(
       max_texture_size_(max_texture_size),
       device_(device),
       swapchain_(swapchain),
-      pipelines_(device_,
-                 Diligent::TEX_FORMAT_RGBA8_UNORM,
-                 Diligent::TEX_FORMAT_D24_UNORM_S8_UINT),
+      pipelines_(pipeline_default_params),
       quad_index_(QuadIndexCache::Make(device_)),
       device_type_(device_->GetDeviceInfo().Type),
       gl_context_(gl_context) {
