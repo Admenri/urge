@@ -392,15 +392,8 @@ inline base::Vector<uint64_t> RBARRAY2CXX(VALUE ary) {
 
 template <>
 inline base::Vector<bool> RBARRAY2CXX(VALUE ary) {
-  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
-    rb_raise(rb_eArgError, "unexpect array type.");
-    return {};
-  }
-
-  base::Vector<bool> result;
-  for (long i = 0; i < RARRAY_LEN(ary); ++i)
-    result.push_back(MRI_FROM_BOOL(rb_ary_entry(ary, i)));
-  return result;
+  static_assert("avoid using vector_bool.");
+  return {};
 }
 
 template <>
@@ -485,10 +478,8 @@ inline VALUE CXX2RBARRAY(const base::Vector<uint64_t>& ary) {
 
 template <>
 inline VALUE CXX2RBARRAY(const base::Vector<bool>& ary) {
-  VALUE result = rb_ary_new();
-  for (auto it : ary)
-    rb_ary_push(result, MRI_BOOL_VALUE(it));
-  return result;
+  static_assert("avoid using vector_bool.");
+  return Qnil;
 }
 
 template <>

@@ -36,6 +36,19 @@ class URGE_OBJECT(Mesh2D) {
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:set_vertex_buffers)--*/
+  virtual void SetVertexBuffers(
+      uint32_t start_slot,
+      const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
+      const base::Vector<uint64_t>& offsets,
+      GPU::SetVertexBuffersFlags flags,
+      ExceptionState& exception_state) = 0;
+
+  /*--urge(name:set_index_buffer)--*/
+  virtual void SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
+                              uint64_t byte_offset,
+                              ExceptionState& exception_state) = 0;
+
   /*--urge(name:set_draw_attribs)--*/
   virtual void SetDrawAttribs(uint32_t num_vertices,
                               uint32_t num_instances,
@@ -100,12 +113,6 @@ class URGE_OBJECT(Mesh2D) {
 
   /*--urge(name:z)--*/
   URGE_EXPORT_ATTRIBUTE(Z, int32_t);
-
-  /*--urge(name:vertex_buffer)--*/
-  URGE_EXPORT_ATTRIBUTE(VertexBuffer, scoped_refptr<GPUBuffer>);
-
-  /*--urge(name:index_buffer)--*/
-  URGE_EXPORT_ATTRIBUTE(IndexBuffer, scoped_refptr<GPUBuffer>);
 
   /*--urge(name:pipeline_state)--*/
   URGE_EXPORT_ATTRIBUTE(PipelineState, scoped_refptr<GPUPipelineState>);

@@ -10,10 +10,24 @@
 #include "content/context/exception_state.h"
 #include "content/public/engine_bitmap.h"
 #include "content/public/engine_table.h"
-#include "content/public/engine_tilemapbitmap.h"
 #include "content/public/engine_viewport.h"
 
 namespace content {
+
+/*--urge(name:TilemapBitmap)--*/
+class URGE_OBJECT(TilemapBitmap) {
+ public:
+  virtual ~TilemapBitmap() = default;
+
+  /*--urge(name:[])--*/
+  virtual scoped_refptr<Bitmap> Get(int32_t index,
+                                    ExceptionState& exception_state) = 0;
+
+  /*--urge(name:[]=)--*/
+  virtual void Put(int32_t index,
+                   scoped_refptr<Bitmap> texture,
+                   ExceptionState& exception_state) = 0;
+};
 
 /*--urge(name:Tilemap2)--*/
 class URGE_OBJECT(Tilemap2) {

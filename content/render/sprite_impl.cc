@@ -73,8 +73,7 @@ bool SpriteImpl::IsDisposed(ExceptionState& exception_state) {
 void SpriteImpl::Flash(scoped_refptr<Color> color,
                        uint32_t duration,
                        ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   std::optional<base::Vec4> flash_color = std::nullopt;
   if (color)
@@ -83,8 +82,7 @@ void SpriteImpl::Flash(scoped_refptr<Color> color,
 }
 
 void SpriteImpl::Update(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   flash_emitter_.Update();
 
@@ -95,15 +93,13 @@ void SpriteImpl::Update(ExceptionState& exception_state) {
 }
 
 uint32_t SpriteImpl::Width(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return src_rect_->Get_Width(exception_state);
 }
 
 uint32_t SpriteImpl::Height(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return src_rect_->Get_Height(exception_state);
 }
@@ -114,8 +110,7 @@ scoped_refptr<Bitmap> SpriteImpl::Get_Bitmap(ExceptionState& exception_state) {
 
 void SpriteImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bitmap_ = CanvasImpl::FromBitmap(value);
   if (bitmap_)
@@ -123,16 +118,14 @@ void SpriteImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
 }
 
 scoped_refptr<Rect> SpriteImpl::Get_SrcRect(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return src_rect_;
 }
 
 void SpriteImpl::Put_SrcRect(const scoped_refptr<Rect>& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -146,8 +139,7 @@ scoped_refptr<Viewport> SpriteImpl::Get_Viewport(
 
 void SpriteImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                               ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (viewport_ == value)
     return;
@@ -158,44 +150,38 @@ void SpriteImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
 }
 
 bool SpriteImpl::Get_Visible(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return node_.GetVisibility();
 }
 
 void SpriteImpl::Put_Visible(const bool& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeVisibility(value);
 }
 
 int32_t SpriteImpl::Get_X(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return uniform_params_.Position.x;
 }
 
 void SpriteImpl::Put_X(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   uniform_params_.Position.x = value;
 }
 
 int32_t SpriteImpl::Get_Y(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return uniform_params_.Position.y;
 }
 
 void SpriteImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   // Set normal Y attribute for all version.
   uniform_params_.Position.y = value;
@@ -208,240 +194,208 @@ void SpriteImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
 }
 
 int32_t SpriteImpl::Get_Z(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return node_.GetSortKeys()->weight[0];
 }
 
 void SpriteImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeSortWeight(value);
 }
 
 int32_t SpriteImpl::Get_Ox(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return uniform_params_.Origin.x;
 }
 
 void SpriteImpl::Put_Ox(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   uniform_params_.Origin.x = value;
 }
 
 int32_t SpriteImpl::Get_Oy(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return uniform_params_.Origin.y;
 }
 
 void SpriteImpl::Put_Oy(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   uniform_params_.Origin.y = value;
 }
 
 float SpriteImpl::Get_ZoomX(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return uniform_params_.Scale.x;
 }
 
 void SpriteImpl::Put_ZoomX(const float& value,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   uniform_params_.Scale.x = value;
 }
 
 float SpriteImpl::Get_ZoomY(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return uniform_params_.Scale.y;
 }
 
 void SpriteImpl::Put_ZoomY(const float& value,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   uniform_params_.Scale.y = value;
 }
 
 float SpriteImpl::Get_Angle(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return angle_;
 }
 
 void SpriteImpl::Put_Angle(const float& value,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   angle_ = value;
   uniform_params_.Rotation = angle_ * kPi / 180.0f;
 }
 
 int32_t SpriteImpl::Get_WaveAmp(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return wave_.amp;
 }
 
 void SpriteImpl::Put_WaveAmp(const int32_t& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   wave_.amp = value;
 }
 
 int32_t SpriteImpl::Get_WaveLength(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return wave_.length;
 }
 
 void SpriteImpl::Put_WaveLength(const int32_t& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   wave_.length = value;
 }
 
 int32_t SpriteImpl::Get_WaveSpeed(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return wave_.speed;
 }
 
 void SpriteImpl::Put_WaveSpeed(const int32_t& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   wave_.speed = value;
 }
 
 int32_t SpriteImpl::Get_WavePhase(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return wave_.phase;
 }
 
 void SpriteImpl::Put_WavePhase(const int32_t& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   wave_.phase = value;
 }
 
 bool SpriteImpl::Get_Mirror(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return mirror_;
 }
 
 void SpriteImpl::Put_Mirror(const bool& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   mirror_ = value;
   src_rect_dirty_ = true;
 }
 
 int32_t SpriteImpl::Get_BushDepth(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return bush_.depth;
 }
 
 void SpriteImpl::Put_BushDepth(const int32_t& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bush_.depth = value;
 }
 
 int32_t SpriteImpl::Get_BushOpacity(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return bush_.opacity;
 }
 
 void SpriteImpl::Put_BushOpacity(const int32_t& value,
                                  ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bush_.opacity = std::clamp(value, 0, 255);
 }
 
 int32_t SpriteImpl::Get_Opacity(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return opacity_;
 }
 
 void SpriteImpl::Put_Opacity(const int32_t& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   opacity_ = std::clamp(value, 0, 255);
 }
 
 int32_t SpriteImpl::Get_BlendType(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return blend_type_;
 }
 
 void SpriteImpl::Put_BlendType(const int32_t& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   blend_type_ = value;
 }
 
 scoped_refptr<Color> SpriteImpl::Get_Color(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return color_;
 }
 
 void SpriteImpl::Put_Color(const scoped_refptr<Color>& value,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -449,16 +403,14 @@ void SpriteImpl::Put_Color(const scoped_refptr<Color>& value,
 }
 
 scoped_refptr<Tone> SpriteImpl::Get_Tone(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return tone_;
 }
 
 void SpriteImpl::Put_Tone(const scoped_refptr<Tone>& value,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
