@@ -64,7 +64,7 @@ class MriBindingGen:
     content += "}\n"
     content += f"\n#endif // !BINDING_MRI_AUTOGEN_{klass_type.upper()}_BINDING_H_\n"
 
-    return content, f"autogen_{klass_type.lower()}_binding.h"
+    return content, f"autogen_{klass_type.lower()}_binding.h", f"Init{klass_type}Binding()"
 
   # 生成 Ruby 函数声明部分
   def generate_body_declare(self):
