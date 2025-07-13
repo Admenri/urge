@@ -33,6 +33,10 @@ class URGE_OBJECT(GPURenderDevice) {
   /*--urge(name:disposed?)--*/
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:device_info)--*/
+  virtual scoped_refptr<GPURenderDeviceInfo> GetDeviceInfo(
+      ExceptionState& exception_state) = 0;
+
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
       scoped_refptr<GPUBufferDesc> desc,

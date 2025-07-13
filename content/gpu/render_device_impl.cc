@@ -37,6 +37,133 @@ bool RenderDeviceImpl::IsDisposed(ExceptionState& exception_state) {
   return Disposable::IsDisposed(exception_state);
 }
 
+scoped_refptr<GPURenderDeviceInfo> RenderDeviceImpl::GetDeviceInfo(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto& desc = object_->GetDeviceInfo();
+  auto result = base::MakeRefCounted<GPURenderDeviceInfo>();
+  result->type = static_cast<GPU::RenderDeviceType>(desc.Type);
+  result->api_version = (static_cast<uint32_t>(desc.APIVersion.Major) << 16) +
+                        static_cast<uint32_t>(desc.APIVersion.Minor);
+
+  result->features = base::MakeRefCounted<GPUDeviceFeatures>();
+  result->features->separable_programs =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.SeparablePrograms);
+  result->features->shader_resource_queries =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.ShaderResourceQueries);
+  result->features->wireframe_fill =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.WireframeFill);
+  result->features->multithreaded_resource_creation =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.MultithreadedResourceCreation);
+  result->features->compute_shaders =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.ComputeShaders);
+  result->features->geometry_shaders =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.GeometryShaders);
+  result->features->tessellation =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.Tessellation);
+  result->features->mesh_shaders =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.MeshShaders);
+  result->features->ray_tracing =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.RayTracing);
+  result->features->bindless_resources =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.BindlessResources);
+  result->features->occlusion_queries =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.OcclusionQueries);
+  result->features->binary_occlusion_queries =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.BinaryOcclusionQueries);
+  result->features->timestamp_queries =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.TimestampQueries);
+  result->features->pipeline_statistics_queries =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.PipelineStatisticsQueries);
+  result->features->duration_queries =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.DurationQueries);
+  result->features->depth_bias_clamp =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.DepthBiasClamp);
+  result->features->depth_clamp =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.DepthClamp);
+  result->features->independent_blend =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.IndependentBlend);
+  result->features->dual_source_blend =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.DualSourceBlend);
+  result->features->multi_viewport =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.MultiViewport);
+  result->features->texture_compression_bc =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.TextureCompressionBC);
+  result->features->texture_compression_etc2 =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.TextureCompressionETC2);
+  result->features->vertex_pipeline_uav_writes_and_atomics =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.VertexPipelineUAVWritesAndAtomics);
+  result->features->pixel_uav_writes_and_atomics =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.PixelUAVWritesAndAtomics);
+  result->features->texture_uav_extended_formats =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.TextureUAVExtendedFormats);
+  result->features->shader_float16 =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.ShaderFloat16);
+  result->features->resource_buffer_16bit_access =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.ResourceBuffer16BitAccess);
+  result->features->uniform_buffer_16bit_access =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.UniformBuffer16BitAccess);
+  result->features->shader_input_output_16 =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.ShaderInputOutput16);
+  result->features->shader_int8 =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.ShaderInt8);
+  result->features->resource_buffer_8bit_access =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.ResourceBuffer8BitAccess);
+  result->features->uniform_buffer_8bit_access =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.UniformBuffer8BitAccess);
+  result->features->shader_resource_static_arrays =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.ShaderResourceStaticArrays);
+  result->features->shader_resource_runtime_arrays =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.ShaderResourceRuntimeArrays);
+  result->features->wave_op =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.WaveOp);
+  result->features->instance_data_step_rate =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.InstanceDataStepRate);
+  result->features->native_fence =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.NativeFence);
+  result->features->tile_shaders =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.TileShaders);
+  result->features->transfer_queue_timestamp_queries =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.TransferQueueTimestampQueries);
+  result->features->variable_rate_shading =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.VariableRateShading);
+  result->features->sparse_resources =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.SparseResources);
+  result->features->subpass_framebuffer_fetch =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.SubpassFramebufferFetch);
+  result->features->texture_component_swizzle =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.TextureComponentSwizzle);
+  result->features->texture_subresource_views =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.TextureSubresourceViews);
+  result->features->native_multi_draw =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.NativeMultiDraw);
+  result->features->async_shader_compilation =
+      static_cast<GPU::DeviceFeatureState>(
+          desc.Features.AsyncShaderCompilation);
+  result->features->formatted_buffers =
+      static_cast<GPU::DeviceFeatureState>(desc.Features.FormattedBuffers);
+
+  return result;
+}
+
 scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
     scoped_refptr<GPUBufferDesc> desc,
     ExceptionState& exception_state) {

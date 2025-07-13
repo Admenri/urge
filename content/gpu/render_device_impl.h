@@ -30,6 +30,8 @@ class RenderDeviceImpl : public GPURenderDevice,
   // GPURenderDevice interface
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
+  scoped_refptr<GPURenderDeviceInfo> GetDeviceInfo(
+      ExceptionState& exception_state) override;
   scoped_refptr<GPUBuffer> CreateBuffer(
       scoped_refptr<GPUBufferDesc> desc,
       ExceptionState& exception_state) override;

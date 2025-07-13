@@ -706,6 +706,26 @@ class URGE_OBJECT(GPU) {
     SHADER_COMPILE_FLAG_HLSL_TO_SPIRV_VIA_GLSL = 1u << 4u,
     SHADER_COMPILE_FLAG_LAST = SHADER_COMPILE_FLAG_HLSL_TO_SPIRV_VIA_GLSL,
   };
+
+  /*--urge(name:DeviceFeatureState)--*/
+  enum DeviceFeatureState {
+    DEVICE_FEATURE_STATE_DISABLED = 0,
+    DEVICE_FEATURE_STATE_ENABLED = 1,
+    DEVICE_FEATURE_STATE_OPTIONAL = 2,
+  };
+
+  /*--urge(name:RenderDeviceType)--*/
+  enum RenderDeviceType {
+    RENDER_DEVICE_TYPE_UNDEFINED = 0,
+    RENDER_DEVICE_TYPE_D3D11,
+    RENDER_DEVICE_TYPE_D3D12,
+    RENDER_DEVICE_TYPE_GL,
+    RENDER_DEVICE_TYPE_GLES,
+    RENDER_DEVICE_TYPE_VULKAN,
+    RENDER_DEVICE_TYPE_METAL,
+    RENDER_DEVICE_TYPE_WEBGPU,
+    RENDER_DEVICE_TYPE_COUNT,
+  };
 };
 
 /*--urge(name:GPUViewport)--*/
@@ -1011,6 +1031,95 @@ struct URGE_OBJECT(GPUMultiDrawIndexedItem) {
   uint32_t num_indices;
   uint32_t start_index;
   uint32_t base_vertex;
+};
+
+/*--urge(name:GPUDeviceFeatures)--*/
+struct URGE_OBJECT(GPUDeviceFeatures) {
+  GPU::DeviceFeatureState separable_programs =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState shader_resource_queries =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState wireframe_fill = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState multithreaded_resource_creation =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState compute_shaders = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState geometry_shaders = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState tessellation = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState mesh_shaders = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState ray_tracing = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState bindless_resources =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState occlusion_queries =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState binary_occlusion_queries =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState timestamp_queries =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState pipeline_statistics_queries =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState duration_queries = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState depth_bias_clamp = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState depth_clamp = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState independent_blend =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState dual_source_blend =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState multi_viewport = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState texture_compression_bc =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState texture_compression_etc2 =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState vertex_pipeline_uav_writes_and_atomics =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState pixel_uav_writes_and_atomics =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState texture_uav_extended_formats =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState shader_float16 = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState resource_buffer_16bit_access =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState uniform_buffer_16bit_access =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState shader_input_output_16 =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState shader_int8 = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState resource_buffer_8bit_access =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState uniform_buffer_8bit_access =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState shader_resource_static_arrays =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState shader_resource_runtime_arrays =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState wave_op = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState instance_data_step_rate =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState native_fence = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState tile_shaders = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState transfer_queue_timestamp_queries =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState variable_rate_shading =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState sparse_resources = GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState subpass_framebuffer_fetch =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState texture_component_swizzle =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState texture_subresource_views =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState native_multi_draw =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState async_shader_compilation =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+  GPU::DeviceFeatureState formatted_buffers =
+      GPU::DEVICE_FEATURE_STATE_DISABLED;
+};
+
+/*--urge(name:GPURenderDeviceInfo)--*/
+struct URGE_OBJECT(GPURenderDeviceInfo) {
+  GPU::RenderDeviceType type = GPU::RENDER_DEVICE_TYPE_UNDEFINED;
+  uint32_t api_version = 0;
+  scoped_refptr<GPUDeviceFeatures> features;
 };
 
 }  // namespace content
