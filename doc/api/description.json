@@ -4,7 +4,6 @@
     "description": "管理引擎音频播放的模块，使用SoLoud提供音频流处理支持，目前支持MP3 WAV OGG这3种格式的数据。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -21,7 +20,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -29,7 +27,6 @@
     "description": "管理RGBA颜色的类，内部使用4个float存储数据。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -37,7 +34,6 @@
     "description": "管理字体加载的类，如果未设置引擎默认字体，则使用内置的一个纯英文字体替代。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -45,7 +41,6 @@
     "description": "管理全局图形渲染的模块，在引擎中负责管理所有可以绘制图形的类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -90,7 +85,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -147,7 +141,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -155,7 +148,6 @@
     "description": "平铺图形渲染的类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -163,7 +155,6 @@
     "description": "矩形数据。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -171,7 +162,6 @@
     "description": "2D精灵图形渲染类，在引擎内部使用批处理实现，两个Z轴相邻的精灵只要混合方式和Bitmap是一样的即可进行批处理，可利用此特性大幅提升渲染性能。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -179,7 +169,6 @@
     "description": "三维图标数据类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -187,7 +176,6 @@
     "description": "兼容 RPG Maker XP 图块数据的地图渲染类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -195,7 +183,6 @@
     "description": "兼容 RPG Maker VX (Ace) 图块数据的地图渲染类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -203,7 +190,6 @@
     "description": "色调数据类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -216,7 +202,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -224,7 +209,6 @@
     "description": "兼容 RPG Maker XP 窗口数据的渲染类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -232,7 +216,6 @@
     "description": "兼容 RPG Maker VX (Ace) 窗口数据的渲染类。",
     "methods": [],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -245,7 +228,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -270,7 +252,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   },
   {
@@ -283,7 +264,6 @@
       }
     ],
     "attributes": [],
-    "structs": [],
     "enums": []
   }
 ]
