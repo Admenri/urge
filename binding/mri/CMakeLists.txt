@@ -85,8 +85,11 @@ target_link_libraries(binding_mri
   engine_renderer
   mri_ruby
   zlibstatic
-  ffi
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_link_libraries(binding_mri PUBLIC ffi)
+endif ()
 
 if (ENABLE_ADMENRI_BUILD_VERSION)
   target_link_libraries(binding_mri PRIVATE admenri_arb)

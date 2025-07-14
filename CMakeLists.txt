@@ -157,9 +157,6 @@ add_subdirectory(third_party/webm)
 ## Mimalloc
 add_subdirectory(third_party/mimalloc)
 
-## libuv
-add_subdirectory(third_party/libuv)
-
 ## Private crypto
 set(ENABLE_ADMENRI_BUILD_VERSION False)
 set(ADMENRI_BUILD_BUNDLE_DIR ${PROJECT_SOURCE_DIR}/admenri)

@@ -151,7 +151,6 @@ target_link_libraries(engine_content
   sdl_image_loader
   sdl_ttf_render
   ocornut_imgui
-  libuv::libuv
   av1player
   soloud
 )
