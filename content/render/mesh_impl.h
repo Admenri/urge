@@ -11,7 +11,7 @@
 #include "content/gpu/buffer_impl.h"
 #include "content/gpu/pipeline_state_impl.h"
 #include "content/gpu/resource_binding_impl.h"
-#include "content/public/engine_mesh2d.h"
+#include "content/public/engine_mesh.h"
 #include "content/public/engine_plane.h"
 #include "content/render/drawable_controller.h"
 #include "content/screen/viewport_impl.h"
@@ -19,14 +19,14 @@
 
 namespace content {
 
-class Mesh2DImpl : public Mesh2D, public EngineObject, public Disposable {
+class MeshImpl : public Mesh, public EngineObject, public Disposable {
  public:
-  Mesh2DImpl(ExecutionContext* execution_context,
-             scoped_refptr<ViewportImpl> parent);
-  ~Mesh2DImpl() override;
+  MeshImpl(ExecutionContext* execution_context,
+           scoped_refptr<ViewportImpl> parent);
+  ~MeshImpl() override;
 
-  Mesh2DImpl(const Mesh2DImpl&) = delete;
-  Mesh2DImpl& operator=(const Mesh2DImpl&) = delete;
+  MeshImpl(const MeshImpl&) = delete;
+  MeshImpl& operator=(const MeshImpl&) = delete;
 
  protected:
   void SetLabel(const base::String& label,
@@ -94,7 +94,7 @@ class Mesh2DImpl : public Mesh2D, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Mesh2D"; }
+  base::String DisposedObjectName() override { return "Mesh.Drawable"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_PUBLIC_ENGINE_MESH2D_H_
-#define CONTENT_PUBLIC_ENGINE_MESH2D_H_
+#ifndef CONTENT_PUBLIC_ENGINE_MESH_H_
+#define CONTENT_PUBLIC_ENGINE_MESH_H_
 
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
@@ -16,15 +16,15 @@
 
 namespace content {
 
-/*--urge(name:Mesh2D)--*/
-class URGE_OBJECT(Mesh2D) {
+/*--urge(name:Mesh)--*/
+class URGE_OBJECT(Mesh) {
  public:
-  virtual ~Mesh2D() = default;
+  virtual ~Mesh() = default;
 
   /*--urge(name:initialize,optional:viewport=nullptr)--*/
-  static scoped_refptr<Mesh2D> New(ExecutionContext* execution_context,
-                                   scoped_refptr<Viewport> viewport,
-                                   ExceptionState& exception_state);
+  static scoped_refptr<Mesh> New(ExecutionContext* execution_context,
+                                 scoped_refptr<Viewport> viewport,
+                                 ExceptionState& exception_state);
 
   /*--urge(name:set_label)--*/
   virtual void SetLabel(const base::String& label,
@@ -123,4 +123,4 @@ class URGE_OBJECT(Mesh2D) {
 
 }  // namespace content
 
-#endif  //! CONTENT_PUBLIC_ENGINE_MESH2D_H_
+#endif  //! CONTENT_PUBLIC_ENGINE_MESH_H_

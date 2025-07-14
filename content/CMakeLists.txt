@@ -93,8 +93,8 @@ set(ENGINE_CONTENT_SRC
   profile/i18n_profile.h
   render/drawable_controller.cc
   render/drawable_controller.h
-  render/mesh2d_impl.cc
-  render/mesh2d_impl.h
+  render/mesh_impl.cc
+  render/mesh_impl.h
   render/plane_impl.cc
   render/plane_impl.h
   render/spinesprite_impl.cc

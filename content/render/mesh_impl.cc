@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "content/render/mesh2d_impl.h"
+#include "content/render/mesh_impl.h"
 
 #include "content/context/execution_context.h"
 
@@ -10,43 +10,43 @@ namespace content {
 
 static constexpr char kShaderWorldMatrixVariableName[] = "WorldMatrix";
 
-scoped_refptr<Mesh2D> Mesh2D::New(ExecutionContext* execution_context,
-                                  scoped_refptr<Viewport> viewport,
-                                  ExceptionState& exception_state) {
-  return base::MakeRefCounted<Mesh2DImpl>(execution_context,
-                                          ViewportImpl::From(viewport));
+scoped_refptr<Mesh> Mesh::New(ExecutionContext* execution_context,
+                              scoped_refptr<Viewport> viewport,
+                              ExceptionState& exception_state) {
+  return base::MakeRefCounted<MeshImpl>(execution_context,
+                                        ViewportImpl::From(viewport));
 }
 
-Mesh2DImpl::Mesh2DImpl(ExecutionContext* execution_context,
-                       scoped_refptr<ViewportImpl> parent)
+MeshImpl::MeshImpl(ExecutionContext* execution_context,
+                   scoped_refptr<ViewportImpl> parent)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
       node_(parent ? parent->GetDrawableController()
                    : execution_context->screen_drawable_node,
             SortKey()) {
   node_.RegisterEventHandler(base::BindRepeating(
-      &Mesh2DImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
+      &MeshImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
 }
 
-Mesh2DImpl::~Mesh2DImpl() {
+MeshImpl::~MeshImpl() {
   ExceptionState exception_state;
   Dispose(exception_state);
 }
 
-void Mesh2DImpl::SetLabel(const base::String& label,
-                          ExceptionState& exception_state) {
+void MeshImpl::SetLabel(const base::String& label,
+                        ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }
 
-void Mesh2DImpl::Dispose(ExceptionState& exception_state) {
+void MeshImpl::Dispose(ExceptionState& exception_state) {
   Disposable::Dispose(exception_state);
 }
 
-bool Mesh2DImpl::IsDisposed(ExceptionState& exception_state) {
+bool MeshImpl::IsDisposed(ExceptionState& exception_state) {
   return Disposable::IsDisposed(exception_state);
 }
 
-void Mesh2DImpl::SetVertexBuffers(
+void MeshImpl::SetVertexBuffers(
     uint32_t start_slot,
     const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
     const base::Vector<uint64_t>& offsets,
@@ -67,9 +67,9 @@ void Mesh2DImpl::SetVertexBuffers(
       static_cast<Diligent::SET_VERTEX_BUFFERS_FLAGS>(flags);
 }
 
-void Mesh2DImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
-                                uint64_t byte_offset,
-                                ExceptionState& exception_state) {
+void MeshImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
+                              uint64_t byte_offset,
+                              ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   auto* buffer_object = static_cast<BufferImpl*>(buffer.get());
@@ -78,11 +78,11 @@ void Mesh2DImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
   index_buffer_.byte_offset = byte_offset;
 }
 
-void Mesh2DImpl::SetDrawAttribs(uint32_t num_vertices,
-                                uint32_t num_instances,
-                                uint32_t first_vertex,
-                                uint32_t first_instance,
-                                ExceptionState& exception_state) {
+void MeshImpl::SetDrawAttribs(uint32_t num_vertices,
+                              uint32_t num_instances,
+                              uint32_t first_vertex,
+                              uint32_t first_instance,
+                              ExceptionState& exception_state) {
   DrawAttribs attribs;
   attribs.num_vertices = num_vertices;
   attribs.num_instances = num_instances;
@@ -92,13 +92,13 @@ void Mesh2DImpl::SetDrawAttribs(uint32_t num_vertices,
   draw_attribs_ = std::move(attribs);
 }
 
-void Mesh2DImpl::SetDrawAttribs(uint32_t num_indices,
-                                uint32_t num_instances,
-                                uint32_t first_index,
-                                uint32_t base_vertex,
-                                uint32_t first_instance,
-                                GPU::ValueType index_type,
-                                ExceptionState& exception_state) {
+void MeshImpl::SetDrawAttribs(uint32_t num_indices,
+                              uint32_t num_instances,
+                              uint32_t first_index,
+                              uint32_t base_vertex,
+                              uint32_t first_instance,
+                              GPU::ValueType index_type,
+                              ExceptionState& exception_state) {
   DrawIndexedAttribs attribs;
   attribs.num_indices = num_indices;
   attribs.num_instances = num_instances;
@@ -110,7 +110,7 @@ void Mesh2DImpl::SetDrawAttribs(uint32_t num_indices,
   draw_attribs_ = std::move(attribs);
 }
 
-void Mesh2DImpl::SetDrawAttribs(
+void MeshImpl::SetDrawAttribs(
     scoped_refptr<GPUBuffer> attribs_buffer,
     uint64_t draw_args_offset,
     uint32_t draw_count,
@@ -142,7 +142,7 @@ void Mesh2DImpl::SetDrawAttribs(
   draw_attribs_ = std::move(attribs);
 }
 
-void Mesh2DImpl::SetDrawAttribs(
+void MeshImpl::SetDrawAttribs(
     scoped_refptr<GPUBuffer> attribs_buffer,
     uint64_t draw_args_offset,
     uint32_t draw_count,
@@ -176,7 +176,7 @@ void Mesh2DImpl::SetDrawAttribs(
   draw_attribs_ = std::move(attribs);
 }
 
-void Mesh2DImpl::SetMultiDrawAttribs(
+void MeshImpl::SetMultiDrawAttribs(
     const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
     uint32_t num_instances,
     uint32_t first_instance,
@@ -194,7 +194,7 @@ void Mesh2DImpl::SetMultiDrawAttribs(
   draw_attribs_ = std::move(attribs);
 }
 
-void Mesh2DImpl::SetMultiDrawAttribs(
+void MeshImpl::SetMultiDrawAttribs(
     const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
     GPU::ValueType index_type,
     uint32_t num_instances,
@@ -215,13 +215,13 @@ void Mesh2DImpl::SetMultiDrawAttribs(
   draw_attribs_ = std::move(attribs);
 }
 
-scoped_refptr<Viewport> Mesh2DImpl::Get_Viewport(
+scoped_refptr<Viewport> MeshImpl::Get_Viewport(
     ExceptionState& exception_state) {
   return viewport_;
 }
 
-void Mesh2DImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                              ExceptionState& exception_state) {
+void MeshImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
+                            ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   if (viewport_ == value)
@@ -232,53 +232,52 @@ void Mesh2DImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                                    : context()->screen_drawable_node);
 }
 
-bool Mesh2DImpl::Get_Visible(ExceptionState& exception_state) {
+bool MeshImpl::Get_Visible(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(false);
 
   return node_.GetVisibility();
 }
 
-void Mesh2DImpl::Put_Visible(const bool& value,
-                             ExceptionState& exception_state) {
+void MeshImpl::Put_Visible(const bool& value, ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   node_.SetNodeVisibility(value);
 }
 
-int32_t Mesh2DImpl::Get_Z(ExceptionState& exception_state) {
+int32_t MeshImpl::Get_Z(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
 
   return node_.GetSortKeys()->weight[0];
 }
 
-void Mesh2DImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
+void MeshImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   node_.SetNodeSortWeight(value);
 }
 
-scoped_refptr<GPUPipelineState> Mesh2DImpl::Get_PipelineState(
+scoped_refptr<GPUPipelineState> MeshImpl::Get_PipelineState(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
   return pipeline_state_;
 }
 
-void Mesh2DImpl::Put_PipelineState(const scoped_refptr<GPUPipelineState>& value,
-                                   ExceptionState& exception_state) {
+void MeshImpl::Put_PipelineState(const scoped_refptr<GPUPipelineState>& value,
+                                 ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   pipeline_state_ = static_cast<PipelineStateImpl*>(value.get());
 }
 
-scoped_refptr<GPUResourceBinding> Mesh2DImpl::Get_ResourceBinding(
+scoped_refptr<GPUResourceBinding> MeshImpl::Get_ResourceBinding(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
   return resource_binding_;
 }
 
-void Mesh2DImpl::Put_ResourceBinding(
+void MeshImpl::Put_ResourceBinding(
     const scoped_refptr<GPUResourceBinding>& value,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
@@ -291,7 +290,7 @@ void Mesh2DImpl::Put_ResourceBinding(
         Diligent::SHADER_TYPE_VERTEX, kShaderWorldMatrixVariableName);
 }
 
-void Mesh2DImpl::OnObjectDisposed() {
+void MeshImpl::OnObjectDisposed() {
   node_.DisposeNode();
 
   VertexBufferAttribs empty_vertex_buffer;
@@ -302,7 +301,7 @@ void Mesh2DImpl::OnObjectDisposed() {
   resource_binding_.reset();
 }
 
-void Mesh2DImpl::DrawableNodeHandlerInternal(
+void MeshImpl::DrawableNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
   if (stage == DrawableNode::ON_RENDERING) {
@@ -311,8 +310,8 @@ void Mesh2DImpl::DrawableNodeHandlerInternal(
   }
 }
 
-void Mesh2DImpl::GPURenderInternal(Diligent::IDeviceContext* render_context,
-                                   Diligent::IBuffer* world_buffer) {
+void MeshImpl::GPURenderInternal(Diligent::IDeviceContext* render_context,
+                                 Diligent::IBuffer* world_buffer) {
   if (!pipeline_state_ || !resource_binding_)
     return;
 
