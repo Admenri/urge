@@ -190,6 +190,14 @@ inline VALUE MriGetEngineID(int argc, VALUE* argv, VALUE self) {
   return ULL2NUM(engine_id);
 }
 
+template <typename Ty>
+inline VALUE MriCommonStructNew(int argc, VALUE* argv, VALUE self) {
+  scoped_refptr new_object = base::MakeRefCounted<Ty>();
+  new_object->AddRef();
+  MriSetStructData(self, new_object.get());
+  return self;
+}
+
 template <int32_t id>
 MRI_METHOD(MriReturnInt) {
   return rb_fix_new(id);

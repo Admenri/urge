@@ -92,6 +92,9 @@ class MriBindingGen:
     # 由于引擎每次取出对象的 Ruby ObjectID 都不一样，这里需要为每个类重载比较函数
     content += "MriDefineMethod(klass, \"engine_id\", MriGetEngineID);\n"
 
+    # 初始化方法
+    content += f"MriDefineMethod(klass, \"initialize\", MriCommonStructNew<content::{klass_type}>);\n"
+
     # 定义成员访问
     for member in struct_members:
       member_name = member['native_name']

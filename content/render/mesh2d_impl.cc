@@ -313,6 +313,9 @@ void Mesh2DImpl::DrawableNodeHandlerInternal(
 
 void Mesh2DImpl::GPURenderInternal(Diligent::IDeviceContext* render_context,
                                    Diligent::IBuffer* world_buffer) {
+  if (!pipeline_state_ || !resource_binding_)
+    return;
+
   // Input Assembly
   base::Vector<Diligent::IBuffer*> buffers(vertex_buffers_.buffers.size());
   for (auto& it : vertex_buffers_.buffers)

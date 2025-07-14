@@ -210,6 +210,9 @@ class APIParser:
       # 单行注释
       if line.startswith('//'):
         continue
+      # 构造函数
+      if line.startswith(struct_name):
+        break
 
       # 将分布为多行的声明合并为一行处理
       line_cache += line
