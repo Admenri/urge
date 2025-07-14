@@ -37,7 +37,7 @@ class ContentProfile {
   base::String program_name;
 
   // Game
-  base::String window_title = "Engine Widget";
+  base::String window_title = "URGE Widget";
   base::String script_path = "Data/Scripts.rxdata";
 
   // Commandline

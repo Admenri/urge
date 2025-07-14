@@ -174,7 +174,9 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   }
 
   // Default
-  window_title = reader->Get("Game", "Title", window_title.c_str());
+  script_path = reader->Get("Game", "Scripts", script_path);
+  ReplaceStringWidth(script_path, '\\', '/');
+  window_title = reader->Get("Game", "Title", window_title);
   if (!CheckValidUTF8(window_title.c_str())) {
 #if defined(OS_WIN)
     LOG(INFO) << "[Profile] Non-UTF8 title was detected, try convert to ANSI.";
@@ -184,9 +186,6 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
     window_title = "URGE Widget";
 #endif
   }
-
-  script_path = reader->Get("Game", "Scripts", script_path.c_str());
-  ReplaceStringWidth(script_path, '\\', '/');
 
   // Engine
   api_version = static_cast<APIVersion>(reader->GetInteger(
@@ -209,19 +208,19 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
     }
   }
   default_font_path =
-      reader->Get("Engine", "DefaultFontPath", default_font_path.c_str());
+      reader->Get("Engine", "DefaultFontPath", default_font_path);
   ReplaceStringWidth(default_font_path, '\\', '/');
   i18n_xml_path =
-      reader->Get("Engine", "I18nXMLPath", base::String(app + ".xml").c_str());
+      reader->Get("Engine", "I18nXMLPath", base::String(app + ".xml"));
 
   if (api_version == APIVersion::RGSS1)
     resolution = base::Vec2i(640, 480);
   if (api_version >= APIVersion::RGSS2)
     resolution = base::Vec2i(544, 416);
-  resolution = GetVec2iFromString(
-      reader->Get("Engine", "Resolution", "").c_str(), resolution);
-  window_size = GetVec2iFromString(
-      reader->Get("Engine", "WindowSize", "").c_str(), resolution);
+  resolution =
+      GetVec2iFromString(reader->Get("Engine", "Resolution", ""), resolution);
+  window_size =
+      GetVec2iFromString(reader->Get("Engine", "WindowSize", ""), resolution);
 
   // GUI
   disable_settings =
@@ -231,7 +230,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   disable_reset = reader->GetBoolean("GUI", "DisableReset", disable_reset);
 
   // Renderer
-  driver_backend = reader->Get("Renderer", "Backend", driver_backend.c_str());
+  driver_backend = reader->Get("Renderer", "Backend", driver_backend);
   pipeline_default_sampler = reader->GetInteger(
       "Renderer", "PipelineDefaultSampler", pipeline_default_sampler);
   render_validation =
@@ -247,7 +246,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
 
   // Platform
   disable_ime = reader->GetBoolean("Platform", "DisableIME", disable_ime);
-  orientation = reader->Get("Platform", "Orientations", orientation.c_str());
+  orientation = reader->Get("Platform", "Orientations", orientation);
 
   // Features
   disable_audio = reader->GetBoolean("Features", "DisableAudio", disable_audio);
