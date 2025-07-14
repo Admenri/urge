@@ -933,7 +933,7 @@ struct URGE_OBJECT(GPUInputLayoutElement) {
 /*--urge(name:GPUGraphicsPipelineDesc)--*/
 struct URGE_OBJECT(GPUGraphicsPipelineDesc) {
   scoped_refptr<GPUBlendStateDesc> blend_desc;
-  uint32_t sample_mask;
+  uint32_t sample_mask = 0xFFFFFFFF;
   scoped_refptr<GPURasterizerStateDesc> rasterizer_desc;
   scoped_refptr<GPUDepthStencilStateDesc> depth_stencil_desc;
   base::Vector<scoped_refptr<GPUInputLayoutElement>> input_layout;

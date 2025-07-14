@@ -61,12 +61,18 @@ scoped_refptr<GPUTexture> TextureViewImpl::GetTexture(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
+  if (!object_->GetTexture())
+    return nullptr;
+
   return base::MakeRefCounted<TextureImpl>(context(), object_->GetTexture());
 }
 
 scoped_refptr<GPUSampler> TextureViewImpl::Get_Sampler(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
+
+  if (!object_->GetSampler())
+    return nullptr;
 
   return base::MakeRefCounted<SamplerImpl>(context(), object_->GetSampler());
 }
@@ -156,6 +162,9 @@ scoped_refptr<GPUTextureView> TextureImpl::CreateView(
 
   Diligent::RefCntAutoPtr<Diligent::ITextureView> result;
   object_->CreateView(createinfo_desc, &result);
+  if (!result)
+    return nullptr;
+
   return base::MakeRefCounted<TextureViewImpl>(context(), result);
 }
 
@@ -166,6 +175,8 @@ scoped_refptr<GPUTextureView> TextureImpl::GetDefaultView(
 
   auto* result = object_->GetDefaultView(
       static_cast<Diligent::TEXTURE_VIEW_TYPE>(view_type));
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<TextureViewImpl>(context(), result);
 }

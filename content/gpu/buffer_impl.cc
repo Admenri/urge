@@ -56,6 +56,9 @@ scoped_refptr<GPUBuffer> BufferViewImpl::GetBuffer(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
+  if (!object_->GetBuffer())
+    return nullptr;
+
   return base::MakeRefCounted<BufferImpl>(context(), object_->GetBuffer());
 }
 
@@ -126,6 +129,8 @@ scoped_refptr<GPUBufferView> BufferImpl::CreateView(
 
   Diligent::RefCntAutoPtr<Diligent::IBufferView> result;
   object_->CreateView(createinfo_desc, &result);
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<BufferViewImpl>(context(), result);
 }
@@ -137,6 +142,8 @@ scoped_refptr<GPUBufferView> BufferImpl::GetDefaultView(
 
   auto* result = object_->GetDefaultView(
       static_cast<Diligent::BUFFER_VIEW_TYPE>(view_type));
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<BufferViewImpl>(context(), result);
 }

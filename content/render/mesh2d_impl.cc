@@ -318,8 +318,8 @@ void Mesh2DImpl::GPURenderInternal(Diligent::IDeviceContext* render_context,
 
   // Input Assembly
   base::Vector<Diligent::IBuffer*> buffers(vertex_buffers_.buffers.size());
-  for (auto& it : vertex_buffers_.buffers)
-    buffers.push_back(it.RawPtr());
+  for (uint32_t i = 0; i < buffers.size(); ++i)
+    buffers[i] = vertex_buffers_.buffers[i].RawPtr();
 
   render_context->SetVertexBuffers(
       vertex_buffers_.start_slot, vertex_buffers_.buffers.size(),

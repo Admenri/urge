@@ -440,10 +440,12 @@ scoped_refptr<GPUCommandList> DeviceContextImpl::FinishCommandList(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
-  Diligent::RefCntAutoPtr<Diligent::ICommandList> command_list;
-  object_->FinishCommandList(&command_list);
+  Diligent::RefCntAutoPtr<Diligent::ICommandList> result;
+  object_->FinishCommandList(&result);
+  if (!result)
+    return nullptr;
 
-  return base::MakeRefCounted<CommandListImpl>(context(), command_list);
+  return base::MakeRefCounted<CommandListImpl>(context(), result);
 }
 
 void DeviceContextImpl::ExecuteCommandLists(
@@ -835,6 +837,9 @@ scoped_refptr<GPUCommandQueue> DeviceContextImpl::LockCommandQueue(
   DISPOSE_CHECK_RETURN(nullptr);
 
   auto* result = object_->LockCommandQueue();
+  if (!result)
+    return nullptr;
+
   return base::MakeRefCounted<CommandQueueImpl>(context(), result);
 }
 

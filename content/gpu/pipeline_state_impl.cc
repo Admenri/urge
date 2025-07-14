@@ -41,6 +41,8 @@ scoped_refptr<GPUPipelineSignature> PipelineStateImpl::GetResourceSignature(
   DISPOSE_CHECK_RETURN(nullptr);
 
   auto result = object_->GetResourceSignature(index);
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<PipelineSignatureImpl>(context(), result);
 }

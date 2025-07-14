@@ -35,6 +35,9 @@ scoped_refptr<GPUPipelineSignature> ResourceBindingImpl::GetPipelineSignature(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
+  if (!object_->GetPipelineResourceSignature())
+    return nullptr;
+
   return base::MakeRefCounted<PipelineSignatureImpl>(
       context(), object_->GetPipelineResourceSignature());
 }

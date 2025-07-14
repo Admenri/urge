@@ -38,6 +38,8 @@ scoped_refptr<GPUResourceBinding> PipelineSignatureImpl::CreateResourceBinding(
 
   Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> result;
   object_->CreateShaderResourceBinding(&result, init_static_resources);
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<ResourceBindingImpl>(context(), result);
 }
@@ -66,6 +68,8 @@ PipelineSignatureImpl::GetStaticVariableByName(
 
   auto result = object_->GetStaticVariableByName(
       static_cast<Diligent::SHADER_TYPE>(type), name.c_str());
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<ResourceVariableImpl>(context(), result);
 }
@@ -79,6 +83,8 @@ PipelineSignatureImpl::GetStaticVariableByIndex(
 
   auto result = object_->GetStaticVariableByIndex(
       static_cast<Diligent::SHADER_TYPE>(type), index);
+  if (!result)
+    return nullptr;
 
   return base::MakeRefCounted<ResourceVariableImpl>(context(), result);
 }

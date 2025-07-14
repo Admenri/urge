@@ -59,6 +59,7 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
         int32_t* ptr = va_arg(args_iter, int32_t*);
         switch (rb_type(arg_element)) {
           case RUBY_T_FLOAT:
+          case RUBY_T_BIGNUM:
           case RUBY_T_FIXNUM:
             *ptr = NUM2INT(arg_element);
             break;
@@ -73,6 +74,7 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
         uint32_t* ptr = va_arg(args_iter, uint32_t*);
         switch (rb_type(arg_element)) {
           case RUBY_T_FLOAT:
+          case RUBY_T_BIGNUM:
           case RUBY_T_FIXNUM:
             *ptr = NUM2UINT(arg_element);
             break;
@@ -87,6 +89,7 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
         int64_t* ptr = va_arg(args_iter, int64_t*);
         switch (rb_type(arg_element)) {
           case RUBY_T_FLOAT:
+          case RUBY_T_BIGNUM:
           case RUBY_T_FIXNUM:
             *ptr = NUM2LL(arg_element);
             break;
@@ -101,6 +104,7 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
         uint64_t* ptr = va_arg(args_iter, uint64_t*);
         switch (rb_type(arg_element)) {
           case RUBY_T_FLOAT:
+          case RUBY_T_BIGNUM:
           case RUBY_T_FIXNUM:
             *ptr = NUM2ULL(arg_element);
             break;
