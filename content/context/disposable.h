@@ -21,6 +21,17 @@
   if (CheckDisposed(exception_state)) \
     return;
 
+#define DISPOSABLE_DEFINITION(klass)        \
+  klass::~klass() {                         \
+    Disposable::Dispose();                  \
+  }                                         \
+  void klass::Dispose(ExceptionState&) {    \
+    Disposable::Dispose();                  \
+  }                                         \
+  bool klass::IsDisposed(ExceptionState&) { \
+    return Disposable::IsDisposed();        \
+  }
+
 namespace content {
 
 class Disposable;
@@ -38,8 +49,7 @@ class Disposable : public base::LinkNode<Disposable> {
   Disposable(const Disposable&) = delete;
   Disposable& operator=(const Disposable&) = delete;
 
-  void Dispose(ExceptionState& exception_state);
-  bool IsDisposed(ExceptionState& exception_state);
+  void Dispose();
   bool IsDisposed() const { return disposed_; }
 
  protected:

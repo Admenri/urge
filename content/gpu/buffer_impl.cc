@@ -14,18 +14,7 @@ BufferViewImpl::BufferViewImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-BufferViewImpl::~BufferViewImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void BufferViewImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool BufferViewImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(BufferViewImpl);
 
 uint64_t BufferViewImpl::GetDeviceObject(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
@@ -71,18 +60,7 @@ BufferImpl::BufferImpl(ExecutionContext* context, Diligent::IBuffer* object)
       Disposable(context->disposable_parent),
       object_(object) {}
 
-BufferImpl::~BufferImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void BufferImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool BufferImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(BufferImpl);
 
 uint64_t BufferImpl::GetDeviceObject(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);

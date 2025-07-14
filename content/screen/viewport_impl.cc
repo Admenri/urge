@@ -60,10 +60,7 @@ ViewportImpl::ViewportImpl(ExecutionContext* execution_context,
   GPUCreateViewportAgent();
 }
 
-ViewportImpl::~ViewportImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(ViewportImpl);
 
 scoped_refptr<ViewportImpl> ViewportImpl::From(scoped_refptr<Viewport> host) {
   return static_cast<ViewportImpl*>(host.get());
@@ -72,14 +69,6 @@ scoped_refptr<ViewportImpl> ViewportImpl::From(scoped_refptr<Viewport> host) {
 void ViewportImpl::SetLabel(const base::String& label,
                             ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
-}
-
-void ViewportImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool ViewportImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 void ViewportImpl::Flash(scoped_refptr<Color> color,

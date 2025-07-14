@@ -35,18 +35,7 @@ ShaderImpl::ShaderImpl(ExecutionContext* context, Diligent::IShader* object)
       Disposable(context->disposable_parent),
       object_(object) {}
 
-ShaderImpl::~ShaderImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void ShaderImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool ShaderImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(ShaderImpl);
 
 uint32_t ShaderImpl::GetResourceCount(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);

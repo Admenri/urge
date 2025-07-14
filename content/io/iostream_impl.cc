@@ -86,21 +86,10 @@ IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
       Disposable(execution_context->disposable_parent),
       stream_(stream) {}
 
-IOStreamImpl::~IOStreamImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(IOStreamImpl);
 
 scoped_refptr<IOStreamImpl> IOStreamImpl::From(scoped_refptr<IOStream> host) {
   return static_cast<IOStreamImpl*>(host.get());
-}
-
-void IOStreamImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool IOStreamImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 IOStream::IOStatus IOStreamImpl::GetStatus(ExceptionState& exception_state) {

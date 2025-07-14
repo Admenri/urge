@@ -339,7 +339,7 @@ void RenderScreenImpl::Reset(ExceptionState& exception_state) {
   /* Disposed all elements */
   for (auto it = disposable_elements_.tail(); it != disposable_elements_.end();
        it = it->previous()) {
-    it->value()->Dispose(exception_state);
+    it->value()->Dispose();
   }
 
   /* Reset attribute */

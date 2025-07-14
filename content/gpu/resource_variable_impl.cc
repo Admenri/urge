@@ -15,18 +15,7 @@ ResourceVariableImpl::ResourceVariableImpl(
       Disposable(context->disposable_parent),
       object_(object) {}
 
-ResourceVariableImpl::~ResourceVariableImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void ResourceVariableImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool ResourceVariableImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(ResourceVariableImpl);
 
 void ResourceVariableImpl::Set(uint64_t device_object,
                                GPU::SetShaderResourceFlags flags,

@@ -14,18 +14,7 @@ CommandQueueImpl::CommandQueueImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-CommandQueueImpl::~CommandQueueImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void CommandQueueImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool CommandQueueImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(CommandQueueImpl);
 
 uint64_t CommandQueueImpl::GetNextFenceValue(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);

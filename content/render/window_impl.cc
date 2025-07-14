@@ -39,23 +39,12 @@ WindowImpl::WindowImpl(ExecutionContext* execution_context,
   GPUCreateWindowInternal();
 }
 
-WindowImpl::~WindowImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(WindowImpl);
 
 void WindowImpl::SetLabel(const base::String& label,
                           ExceptionState& exception_state) {
   background_node_.SetDebugLabel(label);
   control_node_.SetDebugLabel(label);
-}
-
-void WindowImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool WindowImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 void WindowImpl::Update(ExceptionState& exception_state) {

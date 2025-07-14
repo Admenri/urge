@@ -81,22 +81,11 @@ Window2Impl::Window2Impl(ExecutionContext* execution_context,
   GPUCreateWindowInternal();
 }
 
-Window2Impl::~Window2Impl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(Window2Impl);
 
 void Window2Impl::SetLabel(const base::String& label,
                            ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
-}
-
-void Window2Impl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool Window2Impl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 void Window2Impl::Update(ExceptionState& exception_state) {

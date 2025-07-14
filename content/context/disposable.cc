@@ -15,22 +15,20 @@ Disposable::~Disposable() {
   base::LinkNode<Disposable>::RemoveFromList();
 }
 
-void Disposable::Dispose(ExceptionState& exception_state) {
+void Disposable::Dispose() {
   if (!disposed_) {
     OnObjectDisposed();
     disposed_ = true;
   }
 }
 
-bool Disposable::IsDisposed(ExceptionState& exception_state) {
-  return disposed_;
-}
-
 bool Disposable::CheckDisposed(ExceptionState& exception_state) {
-  if (disposed_)
+  if (disposed_) {
+    // Throw exception if need
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Disposed object: %s",
                                DisposedObjectName().c_str());
+  }
 
   return disposed_;
 }

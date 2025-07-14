@@ -15,18 +15,7 @@ TextureViewImpl::TextureViewImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-TextureViewImpl::~TextureViewImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void TextureViewImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool TextureViewImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(TextureViewImpl);
 
 uint64_t TextureViewImpl::GetDeviceObject(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
@@ -96,18 +85,7 @@ TextureImpl::TextureImpl(ExecutionContext* context, Diligent::ITexture* object)
       Disposable(context->disposable_parent),
       object_(object) {}
 
-TextureImpl::~TextureImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void TextureImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool TextureImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(TextureImpl);
 
 uint64_t TextureImpl::GetDeviceObject(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);

@@ -13,18 +13,7 @@ SamplerImpl::SamplerImpl(ExecutionContext* context, Diligent::ISampler* object)
       Disposable(context->disposable_parent),
       object_(object) {}
 
-SamplerImpl::~SamplerImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void SamplerImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool SamplerImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(SamplerImpl);
 
 void SamplerImpl::OnObjectDisposed() {
   object_.Release();

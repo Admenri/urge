@@ -18,18 +18,7 @@ ResourceBindingImpl::ResourceBindingImpl(
       Disposable(context->disposable_parent),
       object_(object) {}
 
-ResourceBindingImpl::~ResourceBindingImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void ResourceBindingImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool ResourceBindingImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(ResourceBindingImpl);
 
 scoped_refptr<GPUPipelineSignature> ResourceBindingImpl::GetPipelineSignature(
     ExceptionState& exception_state) {

@@ -369,22 +369,11 @@ TilemapImpl::TilemapImpl(ExecutionContext* execution_context,
   GPUCreateTilemapInternal();
 }
 
-TilemapImpl::~TilemapImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(TilemapImpl);
 
 void TilemapImpl::SetLabel(const base::String& label,
                            ExceptionState& exception_state) {
   ground_node_.SetDebugLabel(label);
-}
-
-void TilemapImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool TilemapImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 void TilemapImpl::Update(ExceptionState& exception_state) {

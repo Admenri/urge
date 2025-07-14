@@ -52,22 +52,11 @@ SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
   uniform_params_.Scale = base::Vec4(1.0f);
 }
 
-SpriteImpl::~SpriteImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(SpriteImpl);
 
 void SpriteImpl::SetLabel(const base::String& label,
                           ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
-}
-
-void SpriteImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool SpriteImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 void SpriteImpl::Flash(scoped_refptr<Color> color,

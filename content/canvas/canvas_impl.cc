@@ -313,10 +313,7 @@ CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
   GPUCreateTextureWithDataInternal();
 }
 
-CanvasImpl::~CanvasImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(CanvasImpl);
 
 scoped_refptr<CanvasImpl> CanvasImpl::FromBitmap(scoped_refptr<Bitmap> host) {
   return static_cast<CanvasImpl*>(host.get());
@@ -388,14 +385,6 @@ void CanvasImpl::SubmitQueuedCommands() {
   // Clear command pool,
   // no memory release.
   ClearPendingCommands();
-}
-
-void CanvasImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool CanvasImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 uint32_t CanvasImpl::Width(ExceptionState& exception_state) {

@@ -190,21 +190,10 @@ SurfaceImpl::SurfaceImpl(ExecutionContext* context, SDL_Surface* surface)
       Disposable(context->disposable_parent),
       surface_(surface) {}
 
-SurfaceImpl::~SurfaceImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(SurfaceImpl);
 
 scoped_refptr<SurfaceImpl> SurfaceImpl::From(scoped_refptr<Surface> host) {
   return static_cast<SurfaceImpl*>(host.get());
-}
-
-void SurfaceImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool SurfaceImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 uint32_t SurfaceImpl::Width(ExceptionState& exception_state) {

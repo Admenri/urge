@@ -15,18 +15,7 @@ PipelineStateImpl::PipelineStateImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-PipelineStateImpl::~PipelineStateImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void PipelineStateImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool PipelineStateImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(PipelineStateImpl);
 
 uint32_t PipelineStateImpl::GetResourceSignatureCount(
     ExceptionState& exception_state) {

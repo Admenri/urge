@@ -14,18 +14,7 @@ CommandListImpl::CommandListImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-CommandListImpl::~CommandListImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void CommandListImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool CommandListImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(CommandListImpl);
 
 void CommandListImpl::OnObjectDisposed() {
   object_.Release();

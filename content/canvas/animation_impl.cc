@@ -74,18 +74,7 @@ ImageAnimationImpl::ImageAnimationImpl(ExecutionContext* execution_context,
       Disposable(execution_context->disposable_parent),
       animation_(animation) {}
 
-ImageAnimationImpl::~ImageAnimationImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
-
-void ImageAnimationImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool ImageAnimationImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(ImageAnimationImpl);
 
 int32_t ImageAnimationImpl::Width(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))

@@ -13,18 +13,7 @@ FenceImpl::FenceImpl(ExecutionContext* context, Diligent::IFence* object)
       Disposable(context->disposable_parent),
       object_(object) {}
 
-FenceImpl::~FenceImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void FenceImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool FenceImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(FenceImpl);
 
 GPU::FenceType FenceImpl::GetType(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(GPU::FenceType());

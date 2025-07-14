@@ -13,18 +13,7 @@ QueryImpl::QueryImpl(ExecutionContext* context, Diligent::IQuery* object)
       Disposable(context->disposable_parent),
       object_(object) {}
 
-QueryImpl::~QueryImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void QueryImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool QueryImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(QueryImpl);
 
 bool QueryImpl::GetData(void* data,
                         uint32_t size,

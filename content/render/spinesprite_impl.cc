@@ -172,22 +172,11 @@ SpineSpriteImpl::SpineSpriteImpl(
       execution_context->render_device);
 }
 
-SpineSpriteImpl::~SpineSpriteImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(SpineSpriteImpl);
 
 void SpineSpriteImpl::SetLabel(const base::String& label,
                                ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
-}
-
-void SpineSpriteImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool SpineSpriteImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 base::Vector<scoped_refptr<SpineEvent>> SpineSpriteImpl::Update(

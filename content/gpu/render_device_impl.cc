@@ -24,18 +24,7 @@ RenderDeviceImpl::RenderDeviceImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-RenderDeviceImpl::~RenderDeviceImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void RenderDeviceImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool RenderDeviceImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(RenderDeviceImpl);
 
 scoped_refptr<GPURenderDeviceInfo> RenderDeviceImpl::GetDeviceInfo(
     ExceptionState& exception_state) {
@@ -230,9 +219,19 @@ scoped_refptr<GPUShader> RenderDeviceImpl::CreateShader(
   DISPOSE_CHECK_RETURN(nullptr);
 
   Diligent::ShaderCreateInfo create_desc;
+  base::Vector<Diligent::ShaderMacro> shader_macros;
   if (create_info) {
+    for (auto& macro : create_info->macros) {
+      Diligent::ShaderMacro result_macro;
+      result_macro.Name = macro->name.c_str();
+      result_macro.Definition = macro->definition.c_str();
+      shader_macros.push_back(std::move(result_macro));
+    }
+
     create_desc.Source = create_info->source.c_str();
     create_desc.EntryPoint = create_info->entry_point.c_str();
+    create_desc.Macros.Elements = shader_macros.data();
+    create_desc.Macros.Count = create_info->macros.size();
     create_desc.Desc.ShaderType =
         static_cast<Diligent::SHADER_TYPE>(create_info->type);
     create_desc.Desc.UseCombinedTextureSamplers =
@@ -243,6 +242,10 @@ scoped_refptr<GPUShader> RenderDeviceImpl::CreateShader(
         static_cast<Diligent::SHADER_SOURCE_LANGUAGE>(create_info->language);
     create_desc.CompileFlags =
         static_cast<Diligent::SHADER_COMPILE_FLAGS>(create_info->compile_flags);
+    create_desc.LoadConstantBufferReflection =
+        create_info->load_constant_buffer_reflection;
+    if (!create_info->glsl_extensions.empty())
+      create_desc.GLSLExtensions = create_info->glsl_extensions.c_str();
   }
 
   Diligent::RefCntAutoPtr<Diligent::IShader> result;

@@ -14,18 +14,7 @@ ResourceMappingImpl::ResourceMappingImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-ResourceMappingImpl::~ResourceMappingImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void ResourceMappingImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool ResourceMappingImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(ResourceMappingImpl);
 
 void ResourceMappingImpl::AddResource(const base::String& name,
                                       uint64_t device_object,

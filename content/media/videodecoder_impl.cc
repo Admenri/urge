@@ -79,18 +79,7 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
   }
 }
 
-VideoDecoderImpl::~VideoDecoderImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
-
-void VideoDecoderImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool VideoDecoderImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(VideoDecoderImpl);
 
 int32_t VideoDecoderImpl::GetWidth(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))

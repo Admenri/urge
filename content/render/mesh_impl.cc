@@ -28,22 +28,11 @@ MeshImpl::MeshImpl(ExecutionContext* execution_context,
       &MeshImpl::DrawableNodeHandlerInternal, base::Unretained(this)));
 }
 
-MeshImpl::~MeshImpl() {
-  ExceptionState exception_state;
-  Dispose(exception_state);
-}
+DISPOSABLE_DEFINITION(MeshImpl);
 
 void MeshImpl::SetLabel(const base::String& label,
                         ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
-}
-
-void MeshImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool MeshImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
 }
 
 void MeshImpl::SetVertexBuffers(

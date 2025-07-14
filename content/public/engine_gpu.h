@@ -1009,15 +1009,24 @@ struct URGE_OBJECT(GPUShaderCodeBufferDesc) {
   base::Vector<scoped_refptr<GPUShaderCodeVariableDesc>> variables;
 };
 
+/*--urge(name:GPUShaderMacros)--*/
+struct URGE_OBJECT(GPUShaderMacros) {
+  base::String name;
+  base::String definition;
+};
+
 /*--urge(name:GPUShaderCreateInfo)--*/
 struct URGE_OBJECT(GPUShaderCreateInfo) {
   base::String source;
   base::String entry_point = "main";
+  base::Vector<scoped_refptr<GPUShaderMacros>> macros;
   GPU::ShaderType type = GPU::SHADER_TYPE_UNKNOWN;
   bool combined_texture_samplers = true;
   base::String combined_sampler_suffix = "_sampler";
   GPU::ShaderSourceLanguage language = GPU::SHADER_SOURCE_LANGUAGE_DEFAULT;
   GPU::ShaderCompileFlags compile_flags = GPU::SHADER_COMPILE_FLAG_NONE;
+  bool load_constant_buffer_reflection = false;
+  base::String glsl_extensions;
 };
 
 /*--urge(name:GPUMultiDrawItem)--*/

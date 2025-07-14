@@ -24,18 +24,7 @@ DeviceContextImpl::DeviceContextImpl(ExecutionContext* context,
       Disposable(context->disposable_parent),
       object_(object) {}
 
-DeviceContextImpl::~DeviceContextImpl() {
-  ExceptionState exception_state;
-  Disposable::Dispose(exception_state);
-}
-
-void DeviceContextImpl::Dispose(ExceptionState& exception_state) {
-  Disposable::Dispose(exception_state);
-}
-
-bool DeviceContextImpl::IsDisposed(ExceptionState& exception_state) {
-  return Disposable::IsDisposed(exception_state);
-}
+DISPOSABLE_DEFINITION(DeviceContextImpl);
 
 scoped_refptr<GPUDeviceContextDesc> DeviceContextImpl::GetDesc(
     ExceptionState& exception_state) {
