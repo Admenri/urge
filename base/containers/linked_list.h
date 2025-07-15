@@ -158,6 +158,9 @@ class LinkedList {
   LinkedList(const LinkedList&) = delete;
   LinkedList& operator=(const LinkedList&) = delete;
 
+  // Prepends |e| to the head of the linked list.
+  void Prepend(LinkNode<T>* e) { e->InsertAfter(&root_); }
+
   // Appends |e| to the end of the linked list.
   void Append(LinkNode<T>* e) { e->InsertBefore(&root_); }
 

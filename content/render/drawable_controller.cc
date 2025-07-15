@@ -70,7 +70,7 @@ DrawableNode::DrawableNode(DrawNodeController* controller,
     controller_->InsertChildNodeInternal(this);
 }
 
-DrawableNode::DrawableNode(DrawableNode&& other)
+DrawableNode::DrawableNode(DrawableNode&& other) noexcept
     : controller_(other.controller_),
       handler_(std::move(other.handler_)),
       key_(std::move(other.key_)),
@@ -118,10 +118,9 @@ void DrawableNode::SetNodeSortWeight(int64_t weight1) {
 
   if (key_.weight[0] == weight1)
     return;
-  key_.weight[0] = weight1;
 
-  base::LinkNode<DrawableNode>::RemoveFromList();
-  controller_->InsertChildNodeInternal(this);
+  key_.weight[0] = weight1;
+  ReorderDrawableNodeInternal();
 }
 
 void DrawableNode::SetNodeSortWeight(int64_t weight1, int64_t weight2) {
@@ -130,11 +129,10 @@ void DrawableNode::SetNodeSortWeight(int64_t weight1, int64_t weight2) {
 
   if (key_.weight[0] == weight1 && key_.weight[1] == weight2)
     return;
+
   key_.weight[0] = weight1;
   key_.weight[1] = weight2;
-
-  base::LinkNode<DrawableNode>::RemoveFromList();
-  controller_->InsertChildNodeInternal(this);
+  ReorderDrawableNodeInternal();
 }
 
 void DrawableNode::SetNodeSortWeight(int64_t weight1,
@@ -146,12 +144,11 @@ void DrawableNode::SetNodeSortWeight(int64_t weight1,
   if (key_.weight[0] == weight1 && key_.weight[1] == weight2 &&
       key_.weight[2] == weight3)
     return;
+
   key_.weight[0] = weight1;
   key_.weight[1] = weight2;
   key_.weight[2] = weight3;
-
-  base::LinkNode<DrawableNode>::RemoveFromList();
-  controller_->InsertChildNodeInternal(this);
+  ReorderDrawableNodeInternal();
 }
 
 DrawableNode* DrawableNode::GetPreviousNode() {
@@ -166,6 +163,57 @@ DrawableNode* DrawableNode::GetNextNode() {
 
 ViewportInfo* DrawableNode::GetParentViewport() {
   return controller_ ? &controller_->CurrentViewport() : nullptr;
+}
+
+void DrawableNode::ReorderDrawableNodeInternal() {
+  DCHECK(controller_);
+
+  // Check node reordering direction
+  bool ascending_order = !GetPreviousNode() || GetNextNode()->key_ < key_;
+  bool descending_order = !GetNextNode() || GetPreviousNode()->key_ > key_;
+
+  if (!ascending_order && !descending_order) {
+    // No need to reorder, already in correct position
+    return;
+  }
+
+  // min -> max
+  if (ascending_order) {
+    DrawableNode* current_node = GetNextNode();
+    DCHECK(current_node);
+
+    // Remove from current list, and insert before the first node with a greater
+    base::LinkNode<DrawableNode>::RemoveFromList();
+    while (current_node != controller_->children_list_.end()) {
+      if (current_node->key_ > key_)
+        return base::LinkNode<DrawableNode>::InsertBefore(current_node);
+
+      current_node = current_node->GetNextNode();
+    }
+
+    // Reached the end of the list, append to the end.
+    return controller_->children_list_.Append(this);
+  }
+
+  // max -> min
+  if (descending_order) {
+    DrawableNode* current_node = GetPreviousNode();
+    DCHECK(current_node);
+
+    // Remove from current list, and insert before the first node with a greater
+    base::LinkNode<DrawableNode>::RemoveFromList();
+    while (current_node != controller_->children_list_.end()) {
+      if (current_node->key_ < key_)
+        return base::LinkNode<DrawableNode>::InsertAfter(current_node);
+
+      current_node = current_node->GetPreviousNode();
+    }
+
+    // Reached the end of the list, append to the end.
+    return controller_->children_list_.Prepend(this);
+  }
+
+  NOTREACHED();
 }
 
 DrawNodeController::DrawNodeController() = default;

@@ -67,6 +67,14 @@ struct SortKey {
 
     return false;
   }
+
+  bool operator>(const SortKey& other) const {
+    for (int32_t i = 0; i < 3; ++i)
+      if (weight[i] != other.weight[i])
+        return weight[i] > other.weight[i];
+
+    return false;
+  }
 };
 
 struct ViewportInfo {
@@ -146,7 +154,7 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
   DrawableNode(DrawNodeController* controller,
                const SortKey& default_key,
                bool visible = true);
-  DrawableNode(DrawableNode&& other);
+  DrawableNode(DrawableNode&& other) noexcept;
   ~DrawableNode();
 
   // Register the main executer for current drawable node's host
@@ -203,6 +211,7 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
 
  private:
   friend class DrawNodeController;
+  void ReorderDrawableNodeInternal();
 
   base::String debug_label_;
 
