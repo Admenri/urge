@@ -147,6 +147,9 @@ include_directories(third_party/spine2d/spine-cpp/include)
 ## spdlog
 add_subdirectory(third_party/spdlog)
 
+## miniaudio
+add_subdirectory(third_party/miniaudio)
+
 ## DAV1D
 add_subdirectory(third_party/dav1d)
 
