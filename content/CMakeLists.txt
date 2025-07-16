@@ -152,7 +152,6 @@ target_link_libraries(engine_content
   sdl_ttf_render
   ocornut_imgui
   av1player
-  soloud
 )
 
 if (MSVC)

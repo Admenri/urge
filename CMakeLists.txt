@@ -95,9 +95,11 @@ include_directories(third_party/physfs/src)
 add_subdirectory(third_party/ogg)
 add_subdirectory(third_party/vorbis)
 
-## Soloud
-add_subdirectory(third_party/soloud)
-include_directories(third_party/soloud/include)
+## Opus decoder
+set(OP_DISABLE_HTTP ON)
+set(OP_DISABLE_DOCS ON)
+add_subdirectory(third_party/opus)
+add_subdirectory(third_party/opusfile)
 
 ## CRuby-Mri (extern)
 ## TODO: Enhance ruby build ins
