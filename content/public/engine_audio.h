@@ -23,7 +23,7 @@ class URGE_OBJECT(Audio) {
   virtual void BGMPlay(const base::String& filename,
                        int32_t volume,
                        int32_t pitch,
-                       int32_t pos,
+                       uint64_t pos,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:bgm_stop)--*/
@@ -33,13 +33,13 @@ class URGE_OBJECT(Audio) {
   virtual void BGMFade(int32_t time, ExceptionState& exception_state) = 0;
 
   /*--urge(name:bgm_pos)--*/
-  virtual int32_t BGMPos(ExceptionState& exception_state) = 0;
+  virtual uint64_t BGMPos(ExceptionState& exception_state) = 0;
 
   /*--urge(name:bgs_play,optional:volume=80,optional:pitch=100,optional:pos=0)--*/
   virtual void BGSPlay(const base::String& filename,
                        int32_t volume,
                        int32_t pitch,
-                       int32_t pos,
+                       uint64_t pos,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:bgs_stop)--*/
@@ -49,7 +49,7 @@ class URGE_OBJECT(Audio) {
   virtual void BGSFade(int32_t time, ExceptionState& exception_state) = 0;
 
   /*--urge(name:bgs_pos)--*/
-  virtual int32_t BGSPos(ExceptionState& exception_state) = 0;
+  virtual uint64_t BGSPos(ExceptionState& exception_state) = 0;
 
   /*--urge(name:me_play,optional:volume=80,optional:pitch=100)--*/
   virtual void MEPlay(const base::String& filename,

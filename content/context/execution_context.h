@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "components/audioservice/audio_service.h"
 #include "components/filesystem/io_service.h"
 #include "content/canvas/canvas_scheduler.h"
 #include "content/canvas/font_context.h"
@@ -34,6 +35,7 @@ struct ExecutionContext {
   CanvasScheduler* canvas_scheduler = nullptr;
   SpriteBatch* sprite_batcher = nullptr;
   EventController* event_controller = nullptr;
+  audioservice::AudioService* audio_server = nullptr;
   DisposableCollection* disposable_parent = nullptr;
   DrawNodeController* screen_drawable_node = nullptr;
 

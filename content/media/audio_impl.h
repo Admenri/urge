@@ -5,7 +5,8 @@
 #ifndef CONTENT_MEDIA_AUDIO_IMPL_H_
 #define CONTENT_MEDIA_AUDIO_IMPL_H_
 
-#include "components/filesystem/io_service.h"
+#include "components/audioservice/audio_stream.h"
+#include "components/audioservice/sound_emit.h"
 #include "content/context/engine_object.h"
 #include "content/profile/content_profile.h"
 #include "content/profile/i18n_profile.h"
@@ -29,20 +30,20 @@ class AudioImpl : public Audio, public EngineObject {
   void BGMPlay(const base::String& filename,
                int32_t volume,
                int32_t pitch,
-               int32_t pos,
+               uint64_t pos,
                ExceptionState& exception_state) override;
   void BGMStop(ExceptionState& exception_state) override;
   void BGMFade(int32_t time, ExceptionState& exception_state) override;
-  int32_t BGMPos(ExceptionState& exception_state) override;
+  uint64_t BGMPos(ExceptionState& exception_state) override;
 
   void BGSPlay(const base::String& filename,
                int32_t volume,
                int32_t pitch,
-               int32_t pos,
+               uint64_t pos,
                ExceptionState& exception_state) override;
   void BGSStop(ExceptionState& exception_state) override;
   void BGSFade(int32_t time, ExceptionState& exception_state) override;
-  int32_t BGSPos(ExceptionState& exception_state) override;
+  uint64_t BGSPos(ExceptionState& exception_state) override;
 
   void MEPlay(const base::String& filename,
               int32_t volume,
@@ -60,8 +61,12 @@ class AudioImpl : public Audio, public EngineObject {
   void Reset(ExceptionState& exception_state) override;
 
  private:
-  filesystem::IOService* io_service_;
   I18NProfile* i18n_profile_;
+
+  base::OwnedPtr<audioservice::AudioStream> bgm_;
+  base::OwnedPtr<audioservice::AudioStream> bgs_;
+  base::OwnedPtr<audioservice::AudioStream> me_;
+  base::OwnedPtr<audioservice::SoundEmit> se_;
 };
 
 }  // namespace content

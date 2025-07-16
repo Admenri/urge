@@ -85,6 +85,7 @@ class ContentRunner {
   base::OwnedPtr<SpriteBatch> sprite_batcher_;
   base::OwnedPtr<EventController> event_controller_;
   base::OwnedPtr<Diligent::ImGuiDiligentRenderer> imgui_;
+  base::OwnedPtr<audioservice::AudioService> audio_server_;
 
   scoped_refptr<RenderScreenImpl> graphics_impl_;
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;

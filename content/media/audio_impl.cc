@@ -13,10 +13,14 @@ namespace content {
 
 AudioImpl::AudioImpl(ExecutionContext* execution_context)
     : EngineObject(execution_context),
-      io_service_(execution_context->io_service),
       i18n_profile_(execution_context->i18n_profile) {
   if (execution_context->engine_profile->disable_audio)
     return;
+
+  bgm_ = execution_context->audio_server->CreateStream();
+  bgs_ = execution_context->audio_server->CreateStream();
+  me_ = execution_context->audio_server->CreateStream();
+  se_ = execution_context->audio_server->CreateEmitter();
 }
 
 AudioImpl::~AudioImpl() {}
@@ -40,29 +44,65 @@ void AudioImpl::SetupMIDI(ExceptionState& exception_state) {
 void AudioImpl::BGMPlay(const base::String& filename,
                         int32_t volume,
                         int32_t pitch,
-                        int32_t pos,
-                        ExceptionState& exception_state) {}
+                        uint64_t pos,
+                        ExceptionState& exception_state) {
+  if (!bgm_)
+    return;
 
-void AudioImpl::BGMStop(ExceptionState& exception_state) {}
+  bgm_->Play(filename, volume, pitch, pos);
+}
 
-void AudioImpl::BGMFade(int32_t time, ExceptionState& exception_state) {}
+void AudioImpl::BGMStop(ExceptionState& exception_state) {
+  if (!bgm_)
+    return;
 
-int32_t AudioImpl::BGMPos(ExceptionState& exception_state) {
-  return 0;
+  bgm_->Stop();
+}
+
+void AudioImpl::BGMFade(int32_t time, ExceptionState& exception_state) {
+  if (!bgm_)
+    return;
+
+  bgm_->Fade(time);
+}
+
+uint64_t AudioImpl::BGMPos(ExceptionState& exception_state) {
+  if (!bgm_)
+    return 0;
+
+  return bgm_->Pos();
 }
 
 void AudioImpl::BGSPlay(const base::String& filename,
                         int32_t volume,
                         int32_t pitch,
-                        int32_t pos,
-                        ExceptionState& exception_state) {}
+                        uint64_t pos,
+                        ExceptionState& exception_state) {
+  if (!bgs_)
+    return;
 
-void AudioImpl::BGSStop(ExceptionState& exception_state) {}
+  bgs_->Play(filename, volume, pitch, pos);
+}
 
-void AudioImpl::BGSFade(int32_t time, ExceptionState& exception_state) {}
+void AudioImpl::BGSStop(ExceptionState& exception_state) {
+  if (!bgs_)
+    return;
 
-int32_t AudioImpl::BGSPos(ExceptionState& exception_state) {
-  return 0;
+  bgs_->Stop();
+}
+
+void AudioImpl::BGSFade(int32_t time, ExceptionState& exception_state) {
+  if (!bgs_)
+    return;
+
+  bgs_->Fade(time);
+}
+
+uint64_t AudioImpl::BGSPos(ExceptionState& exception_state) {
+  if (!bgs_)
+    return 0;
+
+  return bgs_->Pos();
 }
 
 void AudioImpl::MEPlay(const base::String& filename,
@@ -77,9 +117,19 @@ void AudioImpl::MEFade(int32_t time, ExceptionState& exception_state) {}
 void AudioImpl::SEPlay(const base::String& filename,
                        int32_t volume,
                        int32_t pitch,
-                       ExceptionState& exception_state) {}
+                       ExceptionState& exception_state) {
+  if (!se_)
+    return;
 
-void AudioImpl::SEStop(ExceptionState& exception_state) {}
+  se_->Play(filename, volume, pitch);
+}
+
+void AudioImpl::SEStop(ExceptionState& exception_state) {
+  if (!se_)
+    return;
+
+  se_->Stop();
+}
 
 void AudioImpl::Reset(ExceptionState& exception_state) {}
 

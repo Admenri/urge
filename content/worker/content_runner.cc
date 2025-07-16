@@ -64,6 +64,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
                                                           device_context_);
   sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
   event_controller_ = base::MakeOwnedPtr<EventController>(window);
+  audio_server_ = audioservice::AudioService::CreateServer(io_service);
 
   // Initialize execution context
   execution_context_ = base::MakeOwnedPtr<ExecutionContext>();
@@ -79,6 +80,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
   execution_context_->canvas_scheduler = canvas_scheduler_.get();
   execution_context_->sprite_batcher = sprite_batcher_.get();
   execution_context_->event_controller = event_controller_.get();
+  execution_context_->audio_server = audio_server_.get();
 
   // Create engine objects
   graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(

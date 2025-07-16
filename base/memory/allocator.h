@@ -32,7 +32,7 @@
 
 #include <list>
 #include <memory>
-#include <optional>
+#include <queue>
 #include <stack>
 #include <string>
 #include <type_traits>
@@ -144,6 +144,9 @@ constexpr bool operator!=(const STLAllocator<T>&,
   return false;
 }
 
+using String =
+    std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
+
 template <typename Ty>
 using Vector = std::vector<Ty, STLAllocator<Ty>>;
 
@@ -151,13 +154,13 @@ template <typename Ty>
 using List = std::list<Ty, STLAllocator<Ty>>;
 
 template <typename Ty>
-using Stack = std::stack<Ty, std::deque<Ty, STLAllocator<Ty>>>;
-
-using String =
-    std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
+using Deque = std::deque<Ty, STLAllocator<Ty>>;
 
 template <typename Ty>
-using Optional = std::optional<Ty>;
+using Stack = std::stack<Ty, Deque<Ty>>;
+
+template <typename Ty>
+using Queue = std::queue<Ty, Deque<Ty>>;
 
 }  // namespace base
 

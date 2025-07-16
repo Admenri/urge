@@ -177,6 +177,7 @@ endif ()
 
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
+add_subdirectory(components/audioservice)
 add_subdirectory(components/spine2d)
 
 #-------------------------------------------------------------------------
