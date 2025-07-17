@@ -98,6 +98,7 @@ add_subdirectory(third_party/vorbis)
 ## Opus decoder
 set(OP_DISABLE_HTTP ON)
 set(OP_DISABLE_DOCS ON)
+set(OP_DISABLE_EXAMPLES ON)
 add_subdirectory(third_party/opus)
 add_subdirectory(third_party/opusfile)
 

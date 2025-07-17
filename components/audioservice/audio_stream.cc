@@ -55,7 +55,7 @@ void AudioStream::Fade(int32_t time) {
 }
 
 uint64_t AudioStream::Pos() {
-  uint64_t cursor;
+  ma_uint64 cursor;
   ma_sound_get_cursor_in_pcm_frames(&handle_, &cursor);
   return cursor;
 }
