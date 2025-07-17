@@ -14,7 +14,7 @@ namespace content {
 AudioImpl::AudioImpl(ExecutionContext* execution_context)
     : EngineObject(execution_context),
       i18n_profile_(execution_context->i18n_profile) {
-  if (execution_context->engine_profile->disable_audio)
+  if (!execution_context->audio_server)
     return;
 
   // Create slots

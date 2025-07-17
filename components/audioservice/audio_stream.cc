@@ -20,7 +20,7 @@ void AudioStream::Play(const base::String& filename,
   if (filename.empty())
     return;
 
-  if (filename_ != filename) {
+  if (!ma_sound_is_playing(&handle_) || filename_ != filename) {
     // Reset cache filename
     filename_ = filename;
 

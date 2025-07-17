@@ -18,12 +18,17 @@ void SoundEmit::Play(const base::String& filename,
                      int32_t volume,
                      int32_t pitch) {
   // Clear queued sounds if the queue is too large.
-  if (sound_queue_.size() >= 10) {
+  if (sound_queue_.size() >= 20) {
     auto* invalid_voice = sound_queue_.front();
     sound_queue_.pop();
 
-    ma_sound_uninit(invalid_voice);
-    delete invalid_voice;
+    if (!ma_sound_is_playing(invalid_voice)) {
+      ma_sound_uninit(invalid_voice);
+      delete invalid_voice;
+    } else {
+      // Requeued sound handle
+      sound_queue_.push(invalid_voice);
+    }
   }
 
   // Create sound playing handle.
