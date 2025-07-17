@@ -23,15 +23,21 @@ class AudioStream {
   void Play(const base::String& filename,
             int32_t volume,
             int32_t pitch,
-            uint64_t pos);
+            uint64_t pos = 0);
   void Stop();
   void Fade(int32_t time);
   uint64_t Pos();
 
   // Pause and resume audio stream.
   // Using for me watcher.
+  bool IsPlaying();
+  bool IsPausing();
   void Pause();
   void Resume();
+
+  // Playback controller
+  bool IsLooping();
+  void SetLooping(bool looping);
 
  private:
   friend struct base::Allocator;

@@ -5,6 +5,7 @@
 #ifndef CONTENT_MEDIA_AUDIO_IMPL_H_
 #define CONTENT_MEDIA_AUDIO_IMPL_H_
 
+#include "base/worker/thread_worker.h"
 #include "components/audioservice/audio_stream.h"
 #include "components/audioservice/sound_emit.h"
 #include "content/context/engine_object.h"
@@ -61,12 +62,16 @@ class AudioImpl : public Audio, public EngineObject {
   void Reset(ExceptionState& exception_state) override;
 
  private:
+  void MeThreadMonitorInternal();
+
   I18NProfile* i18n_profile_;
 
   base::OwnedPtr<audioservice::AudioStream> bgm_;
   base::OwnedPtr<audioservice::AudioStream> bgs_;
   base::OwnedPtr<audioservice::AudioStream> me_;
   base::OwnedPtr<audioservice::SoundEmit> se_;
+
+  base::OwnedPtr<base::ThreadWorker> me_watcher_;
 };
 
 }  // namespace content

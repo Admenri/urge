@@ -21,13 +21,16 @@ void AudioStream::Play(const base::String& filename,
     return;
 
   if (filename_ != filename) {
+    // Reset cache filename
+    filename_ = filename;
+
     // Reset audio stream handle
     ma_sound_uninit(&handle_);
 
     // Create new handle
-    ma_uint32 sound_flags = MA_SOUND_FLAG_ASYNC | MA_SOUND_FLAG_LOOPING;
-    auto result = ma_sound_init_from_file(
-        engine_, filename.c_str(), sound_flags, nullptr, nullptr, &handle_);
+    auto result =
+        ma_sound_init_from_file(engine_, filename.c_str(), MA_SOUND_FLAG_ASYNC,
+                                nullptr, nullptr, &handle_);
 
     if (result != MA_SUCCESS)
       return;
@@ -57,6 +60,14 @@ uint64_t AudioStream::Pos() {
   return cursor;
 }
 
+bool AudioStream::IsPlaying() {
+  return ma_sound_is_playing(&handle_);
+}
+
+bool AudioStream::IsPausing() {
+  return cursor_ > 0;
+}
+
 void AudioStream::Pause() {
   ma_sound_get_cursor_in_pcm_frames(&handle_, &cursor_);
   ma_sound_stop(&handle_);
@@ -65,6 +76,15 @@ void AudioStream::Pause() {
 void AudioStream::Resume() {
   ma_sound_seek_to_pcm_frame(&handle_, cursor_);
   ma_sound_start(&handle_);
+  cursor_ = 0;
+}
+
+bool AudioStream::IsLooping() {
+  return ma_sound_is_looping(&handle_);
+}
+
+void AudioStream::SetLooping(bool looping) {
+  ma_sound_set_looping(&handle_, looping);
 }
 
 }  // namespace audioservice

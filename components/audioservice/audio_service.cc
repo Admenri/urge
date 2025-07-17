@@ -26,6 +26,7 @@ struct ServiceKernelData {
   ma_resource_manager resource_manager;
   ma_engine_config engine_config;
   ma_engine engine;
+  ma_log logger;
 };
 
 static ma_result VFSOpen(ma_vfs* pVFS,
@@ -136,6 +137,27 @@ static void AllocatorFree(void* p, void* pUserData) {
   return mi_free(p);
 }
 
+static void LogOutput(void* pUserData, ma_uint32 level, const char* pMessage) {
+  std::string message(pMessage);
+  if (!message.empty()) {
+    message[message.size() - 1] = '\0';
+
+    switch (level) {
+      default:
+      case MA_LOG_LEVEL_DEBUG:
+      case MA_LOG_LEVEL_INFO:
+        LOG(INFO) << "[AudioService] " << message;
+        break;
+      case MA_LOG_LEVEL_WARNING:
+        LOG(WARNING) << "[AudioService] " << message;
+        break;
+      case MA_LOG_LEVEL_ERROR:
+        LOG(ERROR) << "[AudioService] " << message;
+        break;
+    }
+  }
+}
+
 static std::array<ma_decoding_backend_vtable*, 2>
     g_audioservice_decoding_backend_vtable = {
         ma_decoding_backend_libvorbis,
@@ -177,9 +199,16 @@ base::OwnedPtr<AudioService> AudioService::CreateServer(
                                &kernel_data->resource_manager) != MA_SUCCESS)
     return nullptr;
 
+  // Logging
+  ma_log_init(&kernel_data->resource_config.allocationCallbacks,
+              &kernel_data->logger);
+  ma_log_register_callback(&kernel_data->logger,
+                           ma_log_callback{LogOutput, nullptr});
+
   // Engine config
   kernel_data->engine_config = ma_engine_config_init();
   kernel_data->engine_config.pResourceManager = &kernel_data->resource_manager;
+  kernel_data->engine_config.pLog = &kernel_data->logger;
 
   // Create canonical engine
   if (ma_engine_init(&kernel_data->engine_config, &kernel_data->engine) !=
@@ -202,6 +231,7 @@ AudioService::AudioService(ServiceKernelData* kernel) : kernel_(kernel) {}
 AudioService::~AudioService() {
   ma_resource_manager_uninit(&kernel_->resource_manager);
   ma_engine_uninit(&kernel_->engine);
+  ma_log_uninit(&kernel_->logger);
   base::Allocator::Delete(kernel_);
 }
 

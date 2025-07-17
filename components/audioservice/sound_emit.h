@@ -28,10 +28,7 @@ class SoundEmit {
   SoundEmit(ma_engine* engine);
 
   ma_engine* engine_;
-  ma_sound_group sound_group_;
-  std::unordered_map<base::String, ma_resource_manager_data_source>
-      source_cache_;
-  base::Queue<ma_sound> sound_queue_;
+  base::Queue<ma_sound*> sound_queue_;
 };
 
 }  // namespace audioservice
