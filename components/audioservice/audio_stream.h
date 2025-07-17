@@ -47,6 +47,7 @@ class AudioStream {
   base::String filename_;
   ma_sound handle_;
   ma_uint64 cursor_;
+  ma_bool32 looping_;
 };
 
 }  // namespace audioservice

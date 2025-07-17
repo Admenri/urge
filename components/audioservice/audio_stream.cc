@@ -7,7 +7,7 @@
 namespace audioservice {
 
 AudioStream::AudioStream(ma_engine* engine)
-    : engine_(engine), handle_({}), cursor_(0) {}
+    : engine_(engine), handle_({}), cursor_(0), looping_(false) {}
 
 AudioStream::~AudioStream() {
   ma_sound_uninit(&handle_);
@@ -28,9 +28,11 @@ void AudioStream::Play(const base::String& filename,
     ma_sound_uninit(&handle_);
 
     // Create new handle
-    auto result =
-        ma_sound_init_from_file(engine_, filename.c_str(), MA_SOUND_FLAG_ASYNC,
-                                nullptr, nullptr, &handle_);
+    ma_uint32 sound_flags = MA_SOUND_FLAG_ASYNC;
+    if (looping_)
+      sound_flags |= MA_SOUND_FLAG_LOOPING;
+    auto result = ma_sound_init_from_file(
+        engine_, filename.c_str(), sound_flags, nullptr, nullptr, &handle_);
 
     if (result != MA_SUCCESS)
       return;
@@ -80,11 +82,11 @@ void AudioStream::Resume() {
 }
 
 bool AudioStream::IsLooping() {
-  return ma_sound_is_looping(&handle_);
+  return looping_;
 }
 
 void AudioStream::SetLooping(bool looping) {
-  ma_sound_set_looping(&handle_, looping);
+  looping_ = looping;
 }
 
 }  // namespace audioservice
