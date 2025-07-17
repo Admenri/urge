@@ -56,6 +56,11 @@ target_link_libraries(engine_base
   spdlog::spdlog
 )
 
+target_compile_definitions(engine_base
+ PUBLIC
+  $<$<CONFIG:Debug>:URGE_DEBUG>
+)
+
 if(SDL_STATIC)
   target_link_libraries(engine_base PUBLIC SDL3::SDL3-static)
 else()

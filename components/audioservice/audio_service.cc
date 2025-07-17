@@ -143,16 +143,19 @@ static void LogOutput(void* pUserData, ma_uint32 level, const char* pMessage) {
     message[message.size() - 1] = '\0';
 
     switch (level) {
-      default:
+#ifdef URGE_DEBUG
       case MA_LOG_LEVEL_DEBUG:
       case MA_LOG_LEVEL_INFO:
         LOG(INFO) << "[AudioService] " << message;
         break;
+#endif  // !URGE_DEBUG
       case MA_LOG_LEVEL_WARNING:
         LOG(WARNING) << "[AudioService] " << message;
         break;
       case MA_LOG_LEVEL_ERROR:
         LOG(ERROR) << "[AudioService] " << message;
+        break;
+      default:
         break;
     }
   }
