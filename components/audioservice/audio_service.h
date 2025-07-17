@@ -22,8 +22,7 @@ class AudioService {
 
   // Create audio service instance.
   // Return the wrapper of miniaudio engine.
-  static base::OwnedPtr<AudioService> CreateServer(
-      filesystem::IOService* io_service);
+  static base::OwnedPtr<AudioService> Create(filesystem::IOService* io_service);
 
   // Create audio stream instance.
   // Return the wrapper of miniaudio sound.
@@ -32,6 +31,10 @@ class AudioService {
   // Create audio emitter instance.
   // Return the wrapper of miniaudio sound queue.
   base::OwnedPtr<SoundEmit> CreateEmitter();
+
+  // Global volume control
+  float GetVolume();
+  void SetVolume(float volume);
 
  private:
   friend struct base::Allocator;

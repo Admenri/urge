@@ -64,7 +64,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
                                                           device_context_);
   sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
   event_controller_ = base::MakeOwnedPtr<EventController>(window);
-  audio_server_ = audioservice::AudioService::CreateServer(io_service);
+  audio_server_ = audioservice::AudioService::Create(io_service);
 
   // Initialize execution context
   execution_context_ = base::MakeOwnedPtr<ExecutionContext>();

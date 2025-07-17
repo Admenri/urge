@@ -164,7 +164,7 @@ static std::array<ma_decoding_backend_vtable*, 2>
         ma_decoding_backend_libopus,
 };
 
-base::OwnedPtr<AudioService> AudioService::CreateServer(
+base::OwnedPtr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
   ServiceKernelData* kernel_data = base::Allocator::New<ServiceKernelData>();
 
@@ -224,6 +224,14 @@ base::OwnedPtr<AudioStream> AudioService::CreateStream() {
 
 base::OwnedPtr<SoundEmit> AudioService::CreateEmitter() {
   return base::MakeOwnedPtr<SoundEmit>(&kernel_->engine);
+}
+
+float AudioService::GetVolume() {
+  return ma_engine_get_volume(&kernel_->engine);
+}
+
+void AudioService::SetVolume(float volume) {
+  ma_engine_set_volume(&kernel_->engine, volume);
 }
 
 AudioService::AudioService(ServiceKernelData* kernel) : kernel_(kernel) {}

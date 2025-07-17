@@ -40,10 +40,11 @@ void AudioImpl::CreateButtonGUISettings() {
   if (ImGui::CollapsingHeader(
           i18n_profile_->GetI18NString(IDS_SETTINGS_AUDIO, "Audio").c_str())) {
     // Set global volume
-    float volume = 0.0f;
+    float volume = context()->audio_server->GetVolume();
     ImGui::SliderFloat(
         i18n_profile_->GetI18NString(IDS_AUDIO_VOLUME, "Volume").c_str(),
         &volume, 0, 1);
+    context()->audio_server->SetVolume(volume);
   }
 }
 
