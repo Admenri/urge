@@ -141,9 +141,10 @@ MRI_METHOD(kernel_load_data) {
 }
 
 MRI_METHOD(kernel_save_data) {
-  VALUE obj;
-  VALUE filename;
-  MriParseArgsTo(argc, argv, "oz", &obj, &filename);
+  MriCheckArgc(argc, 2);
+
+  VALUE obj = argv[0];
+  VALUE filename = argv[1];
 
   VALUE file = rb_file_open_str(filename, "wb");
   VALUE marshal_klass = rb_const_get(rb_cObject, rb_intern("Marshal"));

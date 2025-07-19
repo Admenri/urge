@@ -259,37 +259,42 @@ void RenderScreenImpl::TransitionWithBitmap(uint32_t duration,
   if (!frozen_)
     return;
 
-  // Fetch screen attribute
-  Put_Brightness(255, exception_state);
-  vague = std::clamp<uint32_t>(vague, 1, 256);
-  float vague_norm = vague / 255.0f;
+  if (duration > 0) {
+    // Reset brightness
+    brightness_ = 255;
+    // Transition attribute
+    const float vague_norm = std::clamp<uint32_t>(vague, 1, 256) / 256.0f;
 
-  // Fetch transmapping if available
-  scoped_refptr<CanvasImpl> mapping_bitmap = CanvasImpl::FromBitmap(bitmap);
-  BitmapAgent* texture_agent =
-      mapping_bitmap ? mapping_bitmap->GetAgent() : nullptr;
-  Diligent::ITextureView* transition_mapping =
-      texture_agent ? texture_agent->resource : nullptr;
+    // Derive transition mapping if available
+    scoped_refptr<CanvasImpl> mapping_bitmap = CanvasImpl::FromBitmap(bitmap);
+    BitmapAgent* texture_agent =
+        mapping_bitmap ? mapping_bitmap->GetAgent() : nullptr;
+    Diligent::ITextureView* transition_mapping =
+        texture_agent ? texture_agent->resource : nullptr;
 
-  // Get current scene snapshot for transition
-  auto* render_context = context()->primary_render_context;
-  RenderFrameInternal(agent_.transition_buffer,
-                      agent_.transition_depth_stencil);
+    // Get current scene snapshot for transition
+    auto* render_context = context()->primary_render_context;
+    RenderFrameInternal(agent_.transition_buffer,
+                        agent_.transition_depth_stencil);
 
-  // Transition render loop
-  for (uint32_t i = 0; i < duration; ++i) {
-    // Norm transition progress
-    float progress = i * (1.0f / duration);
+    // Transition render loop
+    for (uint32_t i = 0; i < duration; ++i) {
+      // Norm transition progress
+      float progress = i * (1.0f / duration);
 
-    // Render per transition frame
-    if (transition_mapping)
-      GPURenderVagueTransitionFrameInternal(render_context, transition_mapping,
-                                            progress, vague_norm);
-    else
-      GPURenderAlphaTransitionFrameInternal(render_context, progress);
+      // Render per transition frame
+      if (transition_mapping)
+        GPURenderVagueTransitionFrameInternal(
+            render_context, transition_mapping, progress, vague_norm);
+      else
+        GPURenderAlphaTransitionFrameInternal(render_context, progress);
 
-    // Present to screen
-    FrameProcessInternal(agent_.screen_buffer);
+      // Present to screen
+      FrameProcessInternal(agent_.screen_buffer);
+    }
+  } else {
+    // Update frame as common
+    Update(exception_state);
   }
 
   // Transition process complete
