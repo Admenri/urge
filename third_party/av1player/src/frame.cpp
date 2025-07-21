@@ -51,6 +51,8 @@ void Frame::resize(int id, size_t frame_width, size_t frame_height) {
 }
 
 void Frame::copyData(Frame* dst) {
+  dst->m_time = m_time;
+
   for (int i = 0; i < 3; ++i) {
     if (dst->m_width[i] != m_width[i] || dst->m_height[i] != m_height[i])
       dst->resize(i, m_width[i], m_height[i]);

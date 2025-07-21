@@ -40,22 +40,7 @@ FrameBuffer::~FrameBuffer() {
 }
 
 Frame* FrameBuffer::lockRead() {
-  double playTime = m_parent->playTime();
-  double frameTime = 1.0 / m_parent->info()->frameRate;
-
-#ifdef LIMIT_READ_TO_FRAMERATE
-  double diff = playTime - m_readTime;
-
-  if (diff < frameTime)
-    return nullptr;
-
-  m_readTime = playTime - (diff - frameTime);
-#endif
-
-  update(playTime, frameTime);
-
   m_readLock.lock();
-
   return m_readFrame;
 }
 
@@ -68,7 +53,6 @@ Frame* FrameBuffer::lockWrite(double time) {
   m_writeQueue.pop();
 
   m_writeFrame->setTime(time);
-
   return m_writeFrame;
 }
 
@@ -94,7 +78,6 @@ void FrameBuffer::update(double playTime, double frameTime) {
   m_updateLock.lock();
 
   Frame* front = m_readQueue.front();
-
   if ((playTime - front->time()) >= frameTime) {
     while (m_readQueue.size() > 0) {
       m_readQueue.pop();

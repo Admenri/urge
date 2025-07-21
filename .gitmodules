@@ -22,9 +22,6 @@
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "third_party/libyuv"]
-	path = third_party/libyuv
-	url = https://chromium.googlesource.com/libyuv/libyuv
 [submodule "third_party/opusfile"]
 	path = third_party/opusfile
 	url = https://github.com/xiph/opusfile.git

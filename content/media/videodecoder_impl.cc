@@ -193,13 +193,13 @@ void VideoDecoderImpl::Put_State(const PlayState& value,
 }
 
 void VideoDecoderImpl::OnObjectDisposed() {
+  player_.reset();
+
   if (audio_stream_)
     SDL_DestroyAudioStream(audio_stream_);
   if (audio_output_)
     SDL_CloseAudioDevice(audio_output_);
-
   audio_stream_ = nullptr;
-  player_.reset();
 
   Agent empty_agent;
   std::swap(agent_, empty_agent);
