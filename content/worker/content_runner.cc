@@ -35,10 +35,6 @@ void DrawEngineInfoGUI(I18NProfile* i18n_profile) {
 }  // namespace
 
 ContentRunner::ContentRunner(ContentProfile* profile,
-                             filesystem::IOService* io_service,
-                             ScopedFontData* font_context,
-                             I18NProfile* i18n_profile,
-                             base::WeakPtr<ui::Widget> window,
                              base::OwnedPtr<EngineBindingBase> binding)
     : profile_(profile),
       binding_(std::move(binding)),
@@ -50,65 +46,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       show_fps_monitor_(false),
       last_tick_(SDL_GetPerformanceCounter()),
       total_delta_(0),
-      frame_count_(0) {
-  // Initialize components
-  auto [render_device, render_context] = renderer::RenderDevice::Create(
-      window,
-      magic_enum::enum_cast<renderer::DriverType>(profile->driver_backend)
-          .value_or(renderer::DriverType::UNDEFINED),
-      static_cast<renderer::SamplerType>(profile->pipeline_default_sampler),
-      profile_->render_validation);
-  render_device_ = std::move(render_device);
-  device_context_ = std::move(render_context);
-  canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(render_device_.get(),
-                                                          device_context_);
-  sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
-  event_controller_ = base::MakeOwnedPtr<EventController>(window);
-  if (!profile->disable_audio) {
-    audio_server_ = audioservice::AudioService::Create(io_service);
-  } else {
-    LOG(INFO) << "[Content] Disable audio service.";
-  }
-
-  // Initialize execution context
-  execution_context_ = base::MakeOwnedPtr<ExecutionContext>();
-  execution_context_->resolution = profile->resolution;
-  execution_context_->window = window;
-  execution_context_->render_device = render_device_.get();
-  execution_context_->primary_render_context = device_context_;
-
-  execution_context_->engine_profile = profile;
-  execution_context_->font_context = font_context;
-  execution_context_->i18n_profile = i18n_profile;
-  execution_context_->io_service = io_service;
-  execution_context_->canvas_scheduler = canvas_scheduler_.get();
-  execution_context_->sprite_batcher = sprite_batcher_.get();
-  execution_context_->event_controller = event_controller_.get();
-  execution_context_->audio_server = audio_server_.get();
-
-  // Create engine objects
-  graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
-      execution_context_.get(), profile->frame_rate);
-  execution_context_->disposable_parent = graphics_impl_.get();
-  execution_context_->screen_drawable_node =
-      graphics_impl_->GetDrawableController();
-
-  keyboard_impl_ =
-      base::MakeRefCounted<KeyboardControllerImpl>(execution_context_.get());
-  audio_impl_ = base::MakeRefCounted<AudioImpl>(execution_context_.get());
-  mouse_impl_ = base::MakeRefCounted<MouseImpl>(execution_context_.get());
-  engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
-
-  // Create imgui context
-  CreateIMGUIContextInternal();
-
-  // Hook graphics event loop
-  tick_observer_ = graphics_impl_->AddTickObserver(base::BindRepeating(
-      &ContentRunner::TickHandlerInternal, base::Unretained(this)));
-
-  // Background watch
-  SDL_AddEventWatch(&ContentRunner::EventWatchHandlerInternal, this);
-}
+      frame_count_(0) {}
 
 ContentRunner::~ContentRunner() {
   // Remove watch
@@ -139,10 +77,84 @@ void ContentRunner::RunMainLoop() {
 }
 
 base::OwnedPtr<ContentRunner> ContentRunner::Create(InitParams params) {
-  auto* runner = base::Allocator::New<ContentRunner>(
-      params.profile, params.io_service, params.font_context,
-      params.i18n_profile, params.window, std::move(params.entry));
+  auto* runner = base::Allocator::New<ContentRunner>(params.profile,
+                                                     std::move(params.entry));
+  if (!runner->InitializeComponents(params.io_service, params.font_context,
+                                    params.i18n_profile, params.window))
+    return nullptr;
+
   return base::OwnedPtr<ContentRunner>(runner);
+}
+
+bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
+                                         ScopedFontData* font_context,
+                                         I18NProfile* i18n_profile,
+                                         base::WeakPtr<ui::Widget> window) {
+  // Initialize components
+  auto [render_device, render_context] = renderer::RenderDevice::Create(
+      window,
+      magic_enum::enum_cast<renderer::DriverType>(profile_->driver_backend)
+          .value_or(renderer::DriverType::UNDEFINED),
+      static_cast<renderer::SamplerType>(profile_->pipeline_default_sampler),
+      profile_->render_validation);
+  if (!render_device || !render_context)
+    return false;
+
+  render_device_ = std::move(render_device);
+  device_context_ = std::move(render_context);
+  canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(render_device_.get(),
+                                                          device_context_);
+  sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
+  event_controller_ = base::MakeOwnedPtr<EventController>(window);
+  if (!profile_->disable_audio) {
+    audio_server_ = audioservice::AudioService::Create(io_service);
+  } else {
+    LOG(INFO) << "[Content] Disable audio service.";
+  }
+
+  // Initialize execution context
+  execution_context_ = base::MakeOwnedPtr<ExecutionContext>();
+  execution_context_->resolution = profile_->resolution;
+  execution_context_->window = window;
+  execution_context_->render_device = render_device_.get();
+  execution_context_->primary_render_context = device_context_;
+
+  execution_context_->engine_profile = profile_;
+  execution_context_->font_context = font_context;
+  execution_context_->i18n_profile = i18n_profile;
+  execution_context_->io_service = io_service;
+  execution_context_->canvas_scheduler = canvas_scheduler_.get();
+  execution_context_->sprite_batcher = sprite_batcher_.get();
+  execution_context_->event_controller = event_controller_.get();
+  execution_context_->audio_server = audio_server_.get();
+
+  // Create engine objects
+  graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
+      execution_context_.get(), profile_->frame_rate);
+  execution_context_->disposable_parent = graphics_impl_.get();
+  execution_context_->screen_drawable_node =
+      graphics_impl_->GetDrawableController();
+
+  keyboard_impl_ =
+      base::MakeRefCounted<KeyboardControllerImpl>(execution_context_.get());
+  audio_impl_ = base::MakeRefCounted<AudioImpl>(execution_context_.get());
+  mouse_impl_ = base::MakeRefCounted<MouseImpl>(execution_context_.get());
+  engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
+
+  // Create imgui context
+  CreateIMGUIContextInternal();
+
+  // Hook graphics event loop
+  tick_observer_ = graphics_impl_->AddTickObserver(base::BindRepeating(
+      &ContentRunner::TickHandlerInternal, base::Unretained(this)));
+
+  // Background watch
+  if (!SDL_AddEventWatch(&ContentRunner::EventWatchHandlerInternal, this)) {
+    LOG(ERROR) << SDL_GetError();
+    return false;
+  }
+
+  return true;
 }
 
 void ContentRunner::TickHandlerInternal() {

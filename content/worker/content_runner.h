@@ -59,11 +59,11 @@ class ContentRunner {
  private:
   friend struct base::Allocator;
   ContentRunner(ContentProfile* profile,
-                filesystem::IOService* io_service,
-                ScopedFontData* font_context,
-                I18NProfile* i18n_profile,
-                base::WeakPtr<ui::Widget> window,
                 base::OwnedPtr<EngineBindingBase> binding);
+  bool InitializeComponents(filesystem::IOService* io_service,
+                            ScopedFontData* font_context,
+                            I18NProfile* i18n_profile,
+                            base::WeakPtr<ui::Widget> window);
   void TickHandlerInternal();
   void UpdateDisplayFPSInternal();
   bool RenderGUIInternal();

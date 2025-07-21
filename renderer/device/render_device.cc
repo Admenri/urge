@@ -243,6 +243,11 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   }
 #endif  // D3D12_SUPPORT
 
+  if (!device || !context || !swapchain) {
+    LOG(ERROR) << "[Renderer] Failed to create renderer.";
+    return CreateDeviceResult(nullptr, nullptr);
+  }
+
   // etc
   const auto& device_info = device->GetDeviceInfo();
   const auto& adapter_info = device->GetAdapterInfo();

@@ -43,7 +43,7 @@ static ma_result VFSOpen(ma_vfs* pVFS,
   if (openMode == MA_OPEN_MODE_READ) {
     auto open_closure = base::BindRepeating(
         [](SDL_IOStream** out, SDL_IOStream* stream,
-           const base::String& extname) -> bool {
+           const base::String&) -> bool {
           *out = stream;
           return true;
         },
@@ -70,12 +70,12 @@ static ma_result VFSOpenW(ma_vfs* pVFS,
   return VFSOpen(pVFS, utf8_path, openMode, pFile);
 }
 
-static ma_result VFSClose(ma_vfs* pVFS, ma_vfs_file file) {
+static ma_result VFSClose(ma_vfs*, ma_vfs_file file) {
   auto* io_stream = static_cast<SDL_IOStream*>(file);
   return SDL_CloseIO(io_stream) ? MA_SUCCESS : MA_ERROR;
 }
 
-static ma_result VFSRead(ma_vfs* pVFS,
+static ma_result VFSRead(ma_vfs*,
                          ma_vfs_file file,
                          void* pDst,
                          size_t sizeInBytes,
@@ -85,7 +85,7 @@ static ma_result VFSRead(ma_vfs* pVFS,
   return *pBytesRead > 0 ? MA_SUCCESS : MA_ERROR;
 }
 
-static ma_result VFSWrite(ma_vfs* pVFS,
+static ma_result VFSWrite(ma_vfs*,
                           ma_vfs_file file,
                           const void* pSrc,
                           size_t sizeInBytes,
@@ -95,7 +95,7 @@ static ma_result VFSWrite(ma_vfs* pVFS,
   return *pBytesWritten > 0 ? MA_SUCCESS : MA_ERROR;
 }
 
-static ma_result VFSSeek(ma_vfs* pVFS,
+static ma_result VFSSeek(ma_vfs*,
                          ma_vfs_file file,
                          ma_int64 offset,
                          ma_seek_origin origin) {
@@ -111,33 +111,33 @@ static ma_result VFSSeek(ma_vfs* pVFS,
   return position >= 0 ? MA_SUCCESS : MA_ERROR;
 }
 
-static ma_result VFSTell(ma_vfs* pVFS, ma_vfs_file file, ma_int64* pCursor) {
+static ma_result VFSTell(ma_vfs*, ma_vfs_file file, ma_int64* pCursor) {
   auto* io_stream = static_cast<SDL_IOStream*>(file);
 
   *pCursor = SDL_TellIO(io_stream);
   return *pCursor >= 0 ? MA_SUCCESS : MA_ERROR;
 }
 
-static ma_result VFSInfo(ma_vfs* pVFS, ma_vfs_file file, ma_file_info* pInfo) {
+static ma_result VFSInfo(ma_vfs*, ma_vfs_file file, ma_file_info* pInfo) {
   auto* io_stream = static_cast<SDL_IOStream*>(file);
 
   pInfo->sizeInBytes = SDL_GetIOSize(io_stream);
   return pInfo->sizeInBytes >= 0 ? MA_SUCCESS : MA_ERROR;
 }
 
-static void* AllocatorMalloc(size_t sz, void* pUserData) {
+static void* AllocatorMalloc(size_t sz, void*) {
   return mi_malloc(sz);
 }
 
-static void* AllocatorRealloc(void* p, size_t sz, void* pUserData) {
+static void* AllocatorRealloc(void* p, size_t sz, void*) {
   return mi_realloc(p, sz);
 }
 
-static void AllocatorFree(void* p, void* pUserData) {
+static void AllocatorFree(void* p, void*) {
   return mi_free(p);
 }
 
-static void LogOutput(void* pUserData, ma_uint32 level, const char* pMessage) {
+static void LogOutput(void*, ma_uint32 level, const char* pMessage) {
   std::string message(pMessage);
   if (!message.empty()) {
     message[message.size() - 1] = '\0';
@@ -178,7 +178,7 @@ base::OwnedPtr<AudioService> AudioService::Create(
   kernel_data->resource_config.ppCustomDecodingBackendVTables =
       g_audioservice_decoding_backend_vtable.data();
   kernel_data->resource_config.customDecodingBackendCount =
-      g_audioservice_decoding_backend_vtable.size();
+      static_cast<uint32_t>(g_audioservice_decoding_backend_vtable.size());
 
   // Custom allocators
   kernel_data->resource_config.allocationCallbacks.onMalloc = AllocatorMalloc;

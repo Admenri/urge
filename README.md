@@ -56,7 +56,10 @@ cmake --build out --target urge_engine
 - inih - https://github.com/benhoyt/inih  
 - rapidxml - https://rapidxml.sourceforge.net/  
 - magic_enum - https://github.com/Neargye/magic_enum  
-- soloud - https://github.com/jarikomppa/soloud  
+- miniaudio - https://github.com/mackron/miniaudio  
+- sav1 - https://github.com/SAV1-org/SAV1  
+- libffi - https://github.com/libffi/libffi  
+- spine-runtimes - https://github.com/EsotericSoftware/spine-runtimes  
 
 ### 外部引用
 - SDL3 - https://github.com/libsdl-org/SDL  
@@ -68,6 +71,9 @@ cmake --build out --target urge_engine
 - vorbis - https://github.com/xiph/vorbis  
 - ruby - https://github.com/ruby/ruby  
 - spdlog - https://github.com/gabime/spdlog  
+- opus - https://github.com/xiph/opus  
+- opusfile - https://github.com/xiph/opusfile  
+- mimalloc - https://github.com/microsoft/mimalloc  
 
 ## 联系方式
 

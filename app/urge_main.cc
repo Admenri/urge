@@ -186,7 +186,15 @@ int main(int argc, char* argv[]) {
 
       base::OwnedPtr<content::ContentRunner> runner =
           content::ContentRunner::Create(std::move(content_params));
-      runner->RunMainLoop();
+      if (runner) {
+        // Run main loop if no exception
+        runner->RunMainLoop();
+      } else {
+        // Throw exception when initializing
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
+                                 "Error when initialize content layer.",
+                                 nullptr);
+      }
 
       // Finalize modules at end
       runner.reset();
