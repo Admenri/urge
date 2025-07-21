@@ -60,7 +60,7 @@
 #define ALIGN_64_VAL 64
 #define ALIGN_32_VAL 32
 #define ALIGN_16_VAL 16
-#elif ARCH_X86_32 || ARCH_ARM || ARCH_AARCH64 || ARCH_PPC64LE
+#elif ARCH_AARCH64 || ARCH_ARM || ARCH_LOONGARCH || ARCH_PPC64LE || ARCH_X86_32
 /* ARM doesn't benefit from anything more than 16-byte alignment. */
 #define ALIGN_64_VAL 16
 #define ALIGN_32_VAL 16
@@ -189,9 +189,13 @@ static inline int clzll(const unsigned long long mask) {
 #ifndef static_assert
 #define CHECK_OFFSET(type, field, name) \
     struct check_##type##_##field { int x[(name == offsetof(type, field)) ? 1 : -1]; }
+#define CHECK_SIZE(type, size) \
+    struct check_##type##_size { int x[(size == sizeof(type)) ? 1 : -1]; }
 #else
 #define CHECK_OFFSET(type, field, name) \
     static_assert(name == offsetof(type, field), #field)
+#define CHECK_SIZE(type, size) \
+    static_assert(size == sizeof(type), #type)
 #endif
 
 #ifdef _MSC_VER

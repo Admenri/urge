@@ -64,18 +64,15 @@ static void decomp_tx(uint8_t (*const txa)[2 /* txsz, step */][32 /* y */][32 /*
     } else {
         const int lw = imin(2, t_dim->lw), lh = imin(2, t_dim->lh);
 
-#define set_ctx(type, dir, diridx, off, mul, rep_macro) \
+#define set_ctx(rep_macro) \
         for (int y = 0; y < t_dim->h; y++) { \
-            rep_macro(type, txa[0][0][y], off, mul * lw); \
-            rep_macro(type, txa[1][0][y], off, mul * lh); \
+            rep_macro(txa[0][0][y], 0, lw); \
+            rep_macro(txa[1][0][y], 0, lh); \
             txa[0][1][y][0] = t_dim->w; \
         }
-        case_set_upto16(t_dim->w,,, 0);
+        case_set_upto16(t_dim->lw);
 #undef set_ctx
-#define set_ctx(type, dir, diridx, off, mul, rep_macro) \
-        rep_macro(type, txa[1][1][0], off, mul * t_dim->h)
-        case_set_upto16(t_dim->w,,, 0);
-#undef set_ctx
+        dav1d_memset_pow2[t_dim->lw](txa[1][1][0], t_dim->h);
     }
 }
 
@@ -196,20 +193,8 @@ static inline void mask_edges_intra(uint16_t (*const masks)[32][3][2],
         if (inner2) masks[1][by4 + y][thl4c][1] |= inner2;
     }
 
-#define set_ctx(type, dir, diridx, off, mul, rep_macro) \
-    rep_macro(type, a, off, mul * thl4c)
-#define default_memset(dir, diridx, off, var) \
-    memset(a, thl4c, var)
-    case_set_upto32_with_default(w4,,, 0);
-#undef default_memset
-#undef set_ctx
-#define set_ctx(type, dir, diridx, off, mul, rep_macro) \
-    rep_macro(type, l, off, mul * twl4c)
-#define default_memset(dir, diridx, off, var) \
-    memset(l, twl4c, var)
-    case_set_upto32_with_default(h4,,, 0);
-#undef default_memset
-#undef set_ctx
+    dav1d_memset_likely_pow2(a, thl4c, w4);
+    dav1d_memset_likely_pow2(l, twl4c, h4);
 }
 
 static void mask_edges_chroma(uint16_t (*const masks)[32][2][2],
@@ -267,20 +252,8 @@ static void mask_edges_chroma(uint16_t (*const masks)[32][2][2],
         }
     }
 
-#define set_ctx(type, dir, diridx, off, mul, rep_macro) \
-    rep_macro(type, a, off, mul * thl4c)
-#define default_memset(dir, diridx, off, var) \
-    memset(a, thl4c, var)
-    case_set_upto32_with_default(cw4,,, 0);
-#undef default_memset
-#undef set_ctx
-#define set_ctx(type, dir, diridx, off, mul, rep_macro) \
-    rep_macro(type, l, off, mul * twl4c)
-#define default_memset(dir, diridx, off, var) \
-    memset(l, twl4c, var)
-    case_set_upto32_with_default(ch4,,, 0);
-#undef default_memset
-#undef set_ctx
+    dav1d_memset_likely_pow2(a, thl4c, cw4);
+    dav1d_memset_likely_pow2(l, twl4c, ch4);
 }
 
 void dav1d_create_lf_mask_intra(Av1Filter *const lflvl,
@@ -301,6 +274,7 @@ void dav1d_create_lf_mask_intra(Av1Filter *const lflvl,
     const int bh4 = imin(ih - by, b_dim[1]);
     const int bx4 = bx & 31;
     const int by4 = by & 31;
+    assert(bw4 >= 0 && bh4 >= 0);
 
     if (bw4 && bh4) {
         uint8_t (*level_cache_ptr)[4] = level_cache + by * b4_stride + bx;
@@ -323,6 +297,7 @@ void dav1d_create_lf_mask_intra(Av1Filter *const lflvl,
                           (b_dim[0] + ss_hor) >> ss_hor);
     const int cbh4 = imin(((ih + ss_ver) >> ss_ver) - (by >> ss_ver),
                           (b_dim[1] + ss_ver) >> ss_ver);
+    assert(cbw4 >= 0 && cbh4 >= 0);
 
     if (!cbw4 || !cbh4) return;
 
@@ -362,6 +337,7 @@ void dav1d_create_lf_mask_inter(Av1Filter *const lflvl,
     const int bh4 = imin(ih - by, b_dim[1]);
     const int bx4 = bx & 31;
     const int by4 = by & 31;
+    assert(bw4 >= 0 && bh4 >= 0);
 
     if (bw4 && bh4) {
         uint8_t (*level_cache_ptr)[4] = level_cache + by * b4_stride + bx;
@@ -385,6 +361,7 @@ void dav1d_create_lf_mask_inter(Av1Filter *const lflvl,
                           (b_dim[0] + ss_hor) >> ss_hor);
     const int cbh4 = imin(((ih + ss_ver) >> ss_ver) - (by >> ss_ver),
                           (b_dim[1] + ss_ver) >> ss_ver);
+    assert(cbw4 >= 0 && cbh4 >= 0);
 
     if (!cbw4 || !cbh4) return;
 
@@ -432,7 +409,7 @@ static void calc_lf_value(uint8_t (*const lflvl_values)[2],
     const int base = iclip(iclip(base_lvl + lf_delta, 0, 63) + seg_delta, 0, 63);
 
     if (!mr_delta) {
-        memset(lflvl_values, base, 8 * 2);
+        memset(lflvl_values, base, sizeof(*lflvl_values) * 8);
     } else {
         const int sh = base >= 32;
         lflvl_values[0][0] = lflvl_values[0][1] =
@@ -453,7 +430,7 @@ static inline void calc_lf_value_chroma(uint8_t (*const lflvl_values)[2],
                                         const Dav1dLoopfilterModeRefDeltas *const mr_delta)
 {
     if (!base_lvl)
-        memset(lflvl_values, 0, 8 * 2);
+        memset(lflvl_values, 0, sizeof(*lflvl_values) * 8);
     else
         calc_lf_value(lflvl_values, base_lvl, lf_delta, seg_delta, mr_delta);
 }
@@ -465,7 +442,7 @@ void dav1d_calc_lf_values(uint8_t (*const lflvl_values)[4][8][2],
     const int n_seg = hdr->segmentation.enabled ? 8 : 1;
 
     if (!hdr->loopfilter.level_y[0] && !hdr->loopfilter.level_y[1]) {
-        memset(lflvl_values, 0, 8 * 4 * 2 * n_seg);
+        memset(lflvl_values, 0, sizeof(*lflvl_values) * n_seg);
         return;
     }
 

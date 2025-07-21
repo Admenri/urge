@@ -106,20 +106,20 @@ void dav1d_picture_free_itut_t35(const uint8_t *const data, void *const user_dat
     struct itut_t35_ctx_context *itut_t35_ctx = user_data;
 
     for (size_t i = 0; i < itut_t35_ctx->n_itut_t35; i++)
-        free(itut_t35_ctx->itut_t35[i].payload);
-    free(itut_t35_ctx->itut_t35);
-    free(itut_t35_ctx);
+        dav1d_free(itut_t35_ctx->itut_t35[i].payload);
+    dav1d_free(itut_t35_ctx->itut_t35);
+    dav1d_free(itut_t35_ctx);
 }
 
-static int picture_alloc_with_edges(Dav1dContext *const c,
-                                    Dav1dPicture *const p,
-                                    const int w, const int h,
-                                    Dav1dSequenceHeader *const seq_hdr, Dav1dRef *const seq_hdr_ref,
-                                    Dav1dFrameHeader *const frame_hdr, Dav1dRef *const frame_hdr_ref,
-                                    const int bpc,
-                                    const Dav1dDataProps *const props,
-                                    Dav1dPicAllocator *const p_allocator,
-                                    void **const extra_ptr)
+static int picture_alloc(Dav1dContext *const c,
+                         Dav1dPicture *const p,
+                         const int w, const int h,
+                         Dav1dSequenceHeader *const seq_hdr, Dav1dRef *const seq_hdr_ref,
+                         Dav1dFrameHeader *const frame_hdr, Dav1dRef *const frame_hdr_ref,
+                         const int bpc,
+                         const Dav1dDataProps *const props,
+                         Dav1dPicAllocator *const p_allocator,
+                         void **const extra_ptr)
 {
     if (p->data[0]) {
         dav1d_log(c, "Picture already allocated!\n");
@@ -194,33 +194,39 @@ int dav1d_thread_picture_alloc(Dav1dContext *const c, Dav1dFrameContext *const f
 {
     Dav1dThreadPicture *const p = &f->sr_cur;
 
-    const int res =
-        picture_alloc_with_edges(c, &p->p, f->frame_hdr->width[1], f->frame_hdr->height,
-                                 f->seq_hdr, f->seq_hdr_ref,
-                                 f->frame_hdr, f->frame_hdr_ref,
-                                 bpc, &f->tile[0].data.m, &c->allocator,
-                                 (void **) &p->progress);
+    const int res = picture_alloc(c, &p->p, f->frame_hdr->width[1], f->frame_hdr->height,
+                                  f->seq_hdr, f->seq_hdr_ref,
+                                  f->frame_hdr, f->frame_hdr_ref,
+                                  bpc, &f->tile[0].data.m, &c->allocator,
+                                  (void **) &p->progress);
     if (res) return res;
 
-    dav1d_picture_copy_props(&p->p, c->content_light, c->content_light_ref,
-                             c->mastering_display, c->mastering_display_ref,
-                             c->itut_t35, c->itut_t35_ref, c->n_itut_t35,
-                             &f->tile[0].data.m);
-
-    // Must be removed from the context after being attached to the frame
-    dav1d_ref_dec(&c->itut_t35_ref);
-    c->itut_t35 = NULL;
-    c->n_itut_t35 = 0;
-
-    // Don't clear these flags from c->frame_flags if the frame is not visible.
+    // Don't clear these flags from c->frame_flags if the frame is not going to be output.
     // This way they will be added to the next visible frame too.
-    const int flags_mask = (f->frame_hdr->show_frame || c->output_invisible_frames)
+    const int flags_mask = ((f->frame_hdr->show_frame || c->output_invisible_frames) &&
+                            c->max_spatial_id == f->frame_hdr->spatial_id)
                            ? 0 : (PICTURE_FLAG_NEW_SEQUENCE | PICTURE_FLAG_NEW_OP_PARAMS_INFO);
     p->flags = c->frame_flags;
     c->frame_flags &= flags_mask;
 
     p->visible = f->frame_hdr->show_frame;
     p->showable = f->frame_hdr->showable_frame;
+
+    if (p->visible) {
+        // Only add HDR10+ and T35 metadata when show frame flag is enabled
+        dav1d_picture_copy_props(&p->p, c->content_light, c->content_light_ref,
+                                 c->mastering_display, c->mastering_display_ref,
+                                 c->itut_t35, c->itut_t35_ref, c->n_itut_t35,
+                                 &f->tile[0].data.m);
+
+        // Must be removed from the context after being attached to the frame
+        dav1d_ref_dec(&c->itut_t35_ref);
+        c->itut_t35 = NULL;
+        c->n_itut_t35 = 0;
+    } else {
+        dav1d_data_props_copy(&p->p.m, &f->tile[0].data.m);
+    }
+
     if (c->n_fc > 1) {
         atomic_init(&p->progress[0], 0);
         atomic_init(&p->progress[1], 0);
@@ -233,11 +239,11 @@ int dav1d_picture_alloc_copy(Dav1dContext *const c, Dav1dPicture *const dst, con
 {
     Dav1dMemPoolBuffer *const buf = (Dav1dMemPoolBuffer *)src->ref->const_data;
     struct pic_ctx_context *const pic_ctx = buf->data;
-    const int res = picture_alloc_with_edges(c, dst, w, src->p.h,
-                                             src->seq_hdr, src->seq_hdr_ref,
-                                             src->frame_hdr, src->frame_hdr_ref,
-                                             src->p.bpc, &src->m, &pic_ctx->allocator,
-                                             NULL);
+    const int res = picture_alloc(c, dst, w, src->p.h,
+                                  src->seq_hdr, src->seq_hdr_ref,
+                                  src->frame_hdr, src->frame_hdr_ref,
+                                  src->p.bpc, &src->m, &pic_ctx->allocator,
+                                  NULL);
     if (res) return res;
 
     dav1d_picture_copy_props(dst, src->content_light, src->content_light_ref,
@@ -249,12 +255,12 @@ int dav1d_picture_alloc_copy(Dav1dContext *const c, Dav1dPicture *const dst, con
 }
 
 void dav1d_picture_ref(Dav1dPicture *const dst, const Dav1dPicture *const src) {
-    validate_input(dst != NULL);
-    validate_input(dst->data[0] == NULL);
-    validate_input(src != NULL);
+    assert(dst != NULL);
+    assert(dst->data[0] == NULL);
+    assert(src != NULL);
 
     if (src->ref) {
-        validate_input(src->data[0] != NULL);
+        assert(src->data[0] != NULL);
         dav1d_ref_inc(src->ref);
     }
     if (src->frame_hdr_ref) dav1d_ref_inc(src->frame_hdr_ref);
@@ -267,12 +273,12 @@ void dav1d_picture_ref(Dav1dPicture *const dst, const Dav1dPicture *const src) {
 }
 
 void dav1d_picture_move_ref(Dav1dPicture *const dst, Dav1dPicture *const src) {
-    validate_input(dst != NULL);
-    validate_input(dst->data[0] == NULL);
-    validate_input(src != NULL);
+    assert(dst != NULL);
+    assert(dst->data[0] == NULL);
+    assert(src != NULL);
 
     if (src->ref)
-        validate_input(src->data[0] != NULL);
+        assert(src->data[0] != NULL);
 
     *dst = *src;
     memset(src, 0, sizeof(*src));

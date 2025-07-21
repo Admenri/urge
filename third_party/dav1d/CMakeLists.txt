@@ -61,7 +61,6 @@ check_cpu_architecture(x64 "DAV1D_CPU_X64")
 check_cpu_architecture(x86 "DAV1D_CPU_X86")
 check_cpu_architecture(arm32 "DAV1D_CPU_ARM32")
 check_cpu_architecture(arm64 "DAV1D_CPU_ARM64")
-check_cpu_architecture(powerpc64 "DAV1D_CPU_PPC64")
 set(ARCH_X86_64 ${DAV1D_CPU_X64})
 set(ARCH_X86_32 ${DAV1D_CPU_X86})
 if(ARCH_X86_64 OR ARCH_X86_32)
@@ -72,14 +71,12 @@ endif()
 set(ARCH_X86_32 ${DAV1D_CPU_X86})
 set(ARCH_ARM ${DAV1D_CPU_ARM32})
 set(ARCH_AARCH64 ${DAV1D_CPU_ARM64})
-set(ARCH_PPC64LE ${DAV1D_CPU_PPC64})
-list(APPEND config01_variables ARCH_X86 ARCH_X86_32 ARCH_X86_64 ARCH_ARM ARCH_AARCH64 ARCH_PPC64LE)
+list(APPEND config01_variables ARCH_X86 ARCH_X86_32 ARCH_X86_64 ARCH_ARM ARCH_AARCH64)
 
 set(DAV1D_ASM_DEFAULT OFF)
-if(DAV1D_CPU_X64 OR DAV1D_CPU_X86 OR DAV1D_CPU_ARM32 OR DAV1D_CPU_ARM64 OR DAV1D_CPU_PPC64)
+if(DAV1D_CPU_X64 OR DAV1D_CPU_X86 OR DAV1D_CPU_ARM32 OR DAV1D_CPU_ARM64)
   set(DAV1D_ASM_DEFAULT ON)
 endif()
-
 
 option(DAV1D_ASM "Build asm files, if available" ON)
 set(DAV1D_BITDEPTHS "8;16" CACHE STRING "enabled bitdepths")
@@ -277,7 +274,6 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/include/config.asm" "${config_asm}")
 if(DAV1D_ARM_ASM_PIC)
   file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/include/config.h" "#define PIC 3\n")
 endif()
-configure_file(include/dav1d/version.h.in include/dav1d/version.h)
 configure_file(include/vcs_version.h.in include/vcs_version.h)
 
 function(dav1d_add_include_directories TARGET)
@@ -307,12 +303,7 @@ set(dav1d_bitdepth_sources
   src/mc_tmpl.c
   src/recon_tmpl.c
 )
-if(DAV!D_ASM AND DAV1D_CPU_PPC64)
-  list(APPEND dav1d_bitdepth_sources
-    src/ppc/cdef_tmpl.c
-    src/ppc/looprestoration_tmpl.c
-  )
-endif()
+
 set(dav1d_depth_objects)
 foreach(depth IN LISTS DAV1D_BITDEPTHS)
   add_library(dav1d_depth_${depth} OBJECT ${dav1d_bitdepth_sources})
@@ -324,6 +315,7 @@ endforeach()
 add_library(dav1d
   src/cdf.c
   src/cpu.c
+  src/ctx.c
   src/data.c
   src/decode.c
   src/dequant_tables.c
@@ -336,6 +328,7 @@ add_library(dav1d
   src/mem.c
   src/msac.c
   src/obu.c
+  src/pal.c
   src/picture.c
   src/qm.c
   src/ref.c
@@ -386,6 +379,7 @@ if(DAV1D_ASM)
         src/arm/64/loopfilter.S
         src/arm/64/looprestoration.S
         src/arm/64/mc.S
+        src/arm/64/mc_dotprod.S
       )
     endif()
     if(DAV1D_BITDEPTH_16)
@@ -397,6 +391,7 @@ if(DAV1D_ASM)
         src/arm/64/loopfilter16.S
         src/arm/64/looprestoration16.S
         src/arm/64/mc16.S
+        src/arm/64/mc16_sve.S
       )
     endif()
   elseif(DAV1D_CPU_ARM32)
@@ -429,15 +424,15 @@ if(DAV1D_ASM)
       )
     endif()
   elseif(DAV1D_CPU_X86 OR DAV1D_CPU_X64)
+    target_sources(dav1d PRIVATE src/x86/cpu.c)
     target_sources(dav1d PRIVATE
-      src/x86/cpu.c
       src/x86/cpuid.asm
       src/x86/msac.asm
+      src/x86/pal.asm
       src/x86/refmvs.asm
       src/x86/itx_avx512.asm
       src/x86/cdef_avx2.asm
       src/x86/itx_avx2.asm
-      src/x86/looprestoration_avx2.asm
       src/x86/cdef_sse.asm
       src/x86/itx_sse.asm
     )
@@ -452,6 +447,7 @@ if(DAV1D_ASM)
         src/x86/filmgrain_avx2.asm
         src/x86/ipred_avx2.asm
         src/x86/loopfilter_avx2.asm
+        src/x86/looprestoration_avx2.asm
         src/x86/mc_avx2.asm
         src/x86/filmgrain_sse.asm
         src/x86/ipred_sse.asm
@@ -485,9 +481,6 @@ if(DAV1D_ASM)
         src/x86/mc16_sse.asm
       )
     endif()
-  elseif(DAV1D_CPU_PPC64)
-    target_sources(dav1d PRIVATE src/ppc/cpu.c)
-    target_link_options(dav1d INTERFACE -maltivec -mvsx)
   else()
     message(FATAL_ERROR "Unknown archivecture (configure with -DDAV1D_ASM=OFF)")
   endif()
