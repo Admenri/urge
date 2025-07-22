@@ -14,8 +14,7 @@ SpriteBatch::SpriteBatch(renderer::RenderDevice* device)
           device->GetPipelines()->sprite.storage_buffer_support),
       binding_(device->GetPipelines()->sprite.CreateBinding()),
       vertex_batch_(renderer::QuadBatch::Make(**device)),
-      uniform_batch_(SpriteBatchBuffer::Make(**device)),
-      instance_batch_(SpriteInstanceBatchBuffer::Make(**device)) {}
+      uniform_batch_(SpriteBatchBuffer::Make(**device)) {}
 
 SpriteBatch::~SpriteBatch() = default;
 
@@ -58,9 +57,6 @@ void SpriteBatch::SubmitBatchDataAndResetCache(
       uniform_binding_ =
           (*uniform_batch_)
               ->GetDefaultView(Diligent::BUFFER_VIEW_SHADER_RESOURCE);
-    } else {
-      instance_batch_.QueueWrite(render_context, uniform_cache_.data(),
-                                 uniform_cache_.size());
     }
   }
 

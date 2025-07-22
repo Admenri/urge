@@ -22,6 +22,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   struct Agent {
     renderer::Quad quad;
     base::Vector<renderer::Quad> wave_cache;
+    RRefPtr<Diligent::IBuffer> single_uniform;
 
     uint32_t instance_offset = 0;
     uint32_t instance_count = 0;
@@ -88,9 +89,11 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   void SrcRectChangedInternal();
   BitmapAgent* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
 
+  void GPUCreateSpriteInternal();
   void GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
                                    const base::Rect& src_rect);
-  void GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
+  void GPUUpdateBatchSpriteInternal(Diligent::IDeviceContext* render_context,
+                                    BitmapAgent* texture,
                                     BitmapAgent* next_texture,
                                     const base::Rect& src_rect);
   void GPUOnSpriteRenderingInternal(Diligent::IDeviceContext* render_context,

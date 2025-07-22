@@ -50,6 +50,8 @@ SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
 
   std::memset(&uniform_params_, 0, sizeof(uniform_params_));
   uniform_params_.Scale = base::Vec4(1.0f);
+
+  GPUCreateSpriteInternal();
 }
 
 DISPOSABLE_DEFINITION(SpriteImpl);
@@ -450,7 +452,8 @@ void SpriteImpl::DrawableNodeHandlerInternal(
     BitmapAgent* next_texture =
         GetOtherRenderBatchableTextureInternal(next_sprite);
 
-    GPUUpdateBatchSpriteInternal(current_texture, next_texture, src_rect);
+    GPUUpdateBatchSpriteInternal(params->context, current_texture, next_texture,
+                                 src_rect);
 
     wave_.dirty = false;
     src_rect_dirty_ = false;
@@ -489,6 +492,16 @@ BitmapAgent* SpriteImpl::GetOtherRenderBatchableTextureInternal(
   return other->bitmap_->GetAgent();
 }
 
+void SpriteImpl::GPUCreateSpriteInternal() {
+  const bool enable_batch = context()->sprite_batcher->IsBatchEnabled();
+  if (!enable_batch)
+    Diligent::CreateUniformBuffer(
+        **context()->render_device, sizeof(renderer::Binding_Sprite::Params),
+        "sprite.non-batch.uniform", &agent_.single_uniform,
+        Diligent::USAGE_DEFAULT, Diligent::BIND_UNIFORM_BUFFER,
+        Diligent::CPU_ACCESS_NONE);
+}
+
 void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
                                              const base::Rect& src_rect) {
   int32_t last_block_aligned_size = src_rect.height % kWaveBlockAlign;
@@ -525,9 +538,11 @@ void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
     emit_wave_block(loop_block * kWaveBlockAlign, last_block_aligned_size);
 }
 
-void SpriteImpl::GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
-                                              BitmapAgent* next_texture,
-                                              const base::Rect& src_rect) {
+void SpriteImpl::GPUUpdateBatchSpriteInternal(
+    Diligent::IDeviceContext* render_context,
+    BitmapAgent* texture,
+    BitmapAgent* next_texture,
+    const base::Rect& src_rect) {
   // Update sprite quad if need
   if (wave_.amp) {
     // Wave process if need
@@ -574,6 +589,12 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(BitmapAgent* texture,
     // Do not draw quads on current node
     agent_.instance_count = 0;
   }
+
+  // Update non batch uniform
+  if (!enable_batch)
+    render_context->UpdateBuffer(
+        agent_.single_uniform, 0, sizeof(uniform_params_), &uniform_params_,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void SpriteImpl::GPUOnSpriteRenderingInternal(
@@ -586,13 +607,21 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
     auto* pipeline = pipeline_set.GetPipeline(
         static_cast<renderer::BlendType>(blend_type_), true);
 
+    // Determine batch mode
+    const bool enable_batch = context()->sprite_batcher->IsBatchEnabled();
+
     // Setup uniform params
     context()->sprite_batcher->GetShaderBinding().u_transform->Set(
         world_binding);
     context()->sprite_batcher->GetShaderBinding().u_texture->Set(
         texture->resource);
-    context()->sprite_batcher->GetShaderBinding().u_params->Set(
-        context()->sprite_batcher->GetUniformBinding());
+    if (enable_batch) {
+      context()->sprite_batcher->GetShaderBinding().u_params->Set(
+          context()->sprite_batcher->GetUniformBinding());
+    } else {
+      context()->sprite_batcher->GetShaderBinding().u_effect->Set(
+          agent_.single_uniform);
+    }
 
     // Apply pipeline state
     render_context->SetPipelineState(pipeline);
@@ -600,15 +629,11 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
         *context()->sprite_batcher->GetShaderBinding(),
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Determine batch mode
-    const bool enable_batch = context()->sprite_batcher->IsBatchEnabled();
-
     // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer[] = {
-        context()->sprite_batcher->GetVertexBuffer(),
-        context()->sprite_batcher->GetInstanceBuffer()};
+    Diligent::IBuffer* const vertex_buffer =
+        context()->sprite_batcher->GetVertexBuffer();
     render_context->SetVertexBuffers(
-        0, 1 + !enable_batch, vertex_buffer, nullptr,
+        0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->SetIndexBuffer(
         **context()->render_device->GetQuadIndex(), 0,
@@ -626,8 +651,6 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
-      draw_indexed_attribs.NumInstances = 1;
-      draw_indexed_attribs.FirstInstanceLocation = agent_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
   }

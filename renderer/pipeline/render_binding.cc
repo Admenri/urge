@@ -49,6 +49,8 @@ Binding_Sprite::Binding_Sprite(ShaderBinding* binding)
                                            "WorldMatrixBuffer");
   u_params =
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX, "u_Params");
+  u_effect = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
+                                        "SpriteUniformConstants");
   u_texture =
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
 }

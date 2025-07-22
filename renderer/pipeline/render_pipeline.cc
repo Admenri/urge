@@ -341,19 +341,19 @@ Pipeline_Flat::Pipeline_Flat(const PipelineInitParams& init_params)
 
 Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
     : RenderPipelineBase(init_params.device) {
-  const auto& device_info = init_params.device->GetDeviceInfo();
+  //const auto& device_info = init_params.device->GetDeviceInfo();
 
-  if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GLES) {
+  //if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GLES) {
     // Disable batch on any gles platform
     storage_buffer_support = false;
-  } else if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GL) {
-    // Enable batch on available desktop platform
-    storage_buffer_support =
-        device_info.Features.VertexPipelineUAVWritesAndAtomics > 0;
-  } else {
-    // Enable batch on D3D11 D3D12 Vulkan backend
-    storage_buffer_support = true;
-  }
+  //} else if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GL) {
+  //  // Enable batch on available desktop platform
+  //  storage_buffer_support =
+  //      device_info.Features.VertexPipelineUAVWritesAndAtomics > 0;
+  //} else {
+  //  // Enable batch on D3D11 D3D12 Vulkan backend
+  //  storage_buffer_support = true;
+  //}
 
   if (!storage_buffer_support)
     LOG(INFO) << "[Pipeline] Disable sprite batch process.";
@@ -361,35 +361,8 @@ Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
   Diligent::ShaderMacro vertex_macro = {"STORAGE_BUFFER_SUPPORT",
                                         storage_buffer_support ? "1" : "0"};
 
-  const ShaderSource shader_source{storage_buffer_support
-                                       ? kHLSL_SpriteRender_Batch
-                                       : kHLSL_SpriteRender_Normal,
-                                   "sprite.render",
-                                   {vertex_macro}};
-
-  const base::Vector<Diligent::LayoutElement> input_elements = {
-      // Per Vertex
-      Diligent::LayoutElement{0, 0, 4, Diligent::VT_FLOAT32, Diligent::False},
-      Diligent::LayoutElement{1, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
-      Diligent::LayoutElement{2, 0, 4, Diligent::VT_FLOAT32, Diligent::False},
-      // Per Instance
-      Diligent::LayoutElement{3, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{4, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{5, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{6, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{7, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{8, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{9, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-      Diligent::LayoutElement{10, 1, 4, Diligent::VT_FLOAT32, Diligent::False,
-                              Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-  };
+  const ShaderSource shader_source{
+      kHLSL_SpriteRender, "sprite.render", {vertex_macro}};
 
   const base::Vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
@@ -398,8 +371,10 @@ Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
       {Diligent::SHADER_TYPE_PIXEL, "u_Texture",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-      {Diligent::SHADER_TYPE_VERTEX, "u_Params",
-       Diligent::SHADER_RESOURCE_TYPE_BUFFER_SRV,
+      {Diligent::SHADER_TYPE_VERTEX,
+       storage_buffer_support ? "u_Params" : "SpriteUniformConstants",
+       storage_buffer_support ? Diligent::SHADER_RESOURCE_TYPE_BUFFER_SRV
+                              : Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
@@ -412,10 +387,8 @@ Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
   };
 
   auto binding0 = MakeResourceSignature(variables, samplers, 0);
-  BuildPipeline(shader_source,
-                storage_buffer_support ? Vertex::GetLayout() : input_elements,
-                {binding0}, init_params.target_format,
-                init_params.depth_stencil_format);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
 }
 
 Pipeline_AlphaTransition::Pipeline_AlphaTransition(

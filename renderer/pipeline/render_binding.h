@@ -122,6 +122,7 @@ class Binding_Sprite : public RenderBindingBase {
 
   RRefPtr<ShaderVariable> u_transform;
   RRefPtr<ShaderVariable> u_params;
+  RRefPtr<ShaderVariable> u_effect;
   RRefPtr<ShaderVariable> u_texture;
 
  private:
