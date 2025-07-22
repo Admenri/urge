@@ -14,6 +14,7 @@ namespace content {
 scoped_refptr<VideoDecoder> VideoDecoder::New(
     ExecutionContext* execution_context,
     const base::String& filename,
+    int32_t max_frame_delay,
     ExceptionState& exception_state) {
   auto* io_service = execution_context->io_service;
   filesystem::IOState io_state;
@@ -24,8 +25,12 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
     return nullptr;
   }
 
+  auto playback_configure = uvpx::Player::defaultConfig();
+  playback_configure.maxFrameDelay = max_frame_delay;
+  playback_configure.decodeThreadsCount = std::thread::hardware_concurrency();
+
   base::OwnedPtr<uvpx::Player> player =
-      base::MakeOwnedPtr<uvpx::Player>(uvpx::Player::defaultConfig());
+      base::MakeOwnedPtr<uvpx::Player>(std::move(playback_configure));
   auto result = player->load(stream, 0, false);
 
   if (result == uvpx::Player::LoadResult::Success)
@@ -139,10 +144,8 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
 
   uvpx::Frame* yuv = nullptr;
   if ((yuv = player_->lockRead()) != nullptr) {
-    if (yuv->isEmpty()) {
-      player_->unlockRead();
-      return;
-    }
+    if (yuv->isEmpty())
+      return player_->unlockRead();
 
     GPURenderYUVInternal(context()->primary_render_context, yuv,
                          canvas->GetAgent());

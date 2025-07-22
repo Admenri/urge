@@ -76,17 +76,27 @@ class VideoPlayer {
 
   // threading
   std::thread m_thread;
+  std::thread m_videoThread;
   std::mutex m_updateMutex;
   std::atomic<bool> m_threadRunning;
   char m_threadErrorDesc[UVPX_THREAD_ERROR_DESC_SIZE];
 
-  std::thread startDecodingThread();
+  void startDecodingThread();
   void stopDecodingThread();
   void decodingThread();
+  void videoDecodingThread();
   void threadError(int errorState, const char* format, ...);
 
   PacketQueue m_videoQueue;
   PacketQueue m_audioQueue;
+
+  struct VideoPacketRawData {
+    uint8_t* data;
+    uint32_t size;
+    double time;
+  };
+
+  ThreadSafeQueue<VideoPacketRawData> m_videoPacketQueue;
 
   Packet* demuxPacket();
   Packet* getPacket(Packet::Type type);

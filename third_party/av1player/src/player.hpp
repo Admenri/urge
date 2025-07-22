@@ -25,12 +25,14 @@ class UVPX_EXPORT Player {
     int videoDecodeBufferSize;
     int audioDecodeBufferSize;
     int frameBufferCount;
+    int maxFrameDelay;
 
     Config()
         : decodeThreadsCount(32),
           videoDecodeBufferSize(2 * 1024 * 1024),
           audioDecodeBufferSize(4 * 1024),
-          frameBufferCount(4) {}
+          frameBufferCount(4),
+          maxFrameDelay(1) {}
   };
 
   struct Statistics {

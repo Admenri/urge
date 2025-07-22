@@ -132,7 +132,7 @@ Player::LoadResult VideoPlayer::load(SDL_IOStream* io,
       Dav1dSettings aom_config;
       if (!strcmp(codecId, "V_AV1")) {
         dav1d_default_settings(&aom_config);
-        aom_config.max_frame_delay = 1;
+        aom_config.max_frame_delay = std::max(0, m_config.maxFrameDelay);
         aom_config.n_threads = m_info.decodeThreadsCount;
       } else {
         debugLog("Unsupported video codec: %s", codecId);
@@ -148,7 +148,7 @@ Player::LoadResult VideoPlayer::load(SDL_IOStream* io,
 
       // alloc framebuffer
       m_frameBuffer = new FrameBuffer(this, m_info.width, m_info.height,
-                                      std::max(1, m_config.frameBufferCount));
+                                      std::max(32, m_config.frameBufferCount));
 
       m_decoderData.initialized = true;
       m_hasVideo = true;
@@ -336,7 +336,7 @@ void VideoPlayer::play() {
     debugLog("play: buffering video...");
 
     if (!m_threadRunning.load())
-      m_thread = startDecodingThread();
+      startDecodingThread();
 
     m_state = State::Buffering;
   }
@@ -378,7 +378,7 @@ void VideoPlayer::stop() {
     m_timer.stop();
     m_playTime = 0.0;
 
-    m_thread = startDecodingThread();
+    startDecodingThread();
   }
 }
 
@@ -439,8 +439,6 @@ void VideoPlayer::decodingThread() {
         m_videoQueue.pop();
         videoPacket = getPacket(Packet::Type::Video);
       }
-
-      m_frameBuffer->update(playTime(), 1.0 / m_info.frameRate);
     }
 
     // try to decode Audio packet(s)
@@ -467,6 +465,87 @@ void VideoPlayer::decodingThread() {
   }
 }
 
+void VideoPlayer::videoDecodingThread() {
+  debugLog("videoDecodingThread: running...");
+
+  bool needFlush = false;
+  bool needSeeking = false;
+
+  while (m_threadRunning.load()) {
+    if (m_state != State::Playing && m_state != State::Stopped &&
+        m_state != State::Buffering) {
+      std::this_thread::yield();
+      continue;
+    }
+
+    // decode video frames
+    if (m_videoPacketQueue.size() > 0) {
+      VideoPacketRawData packet = m_videoPacketQueue.front();
+      m_videoPacketQueue.pop();
+
+      if (packet.time < playTime()) {
+        free(packet.data);
+        needFlush = true;
+        continue;  // skip old packets
+      }
+
+      if (needFlush) {
+        dav1d_flush(m_decoderData.codec);
+        needFlush = false;
+        needSeeking = true;
+      }
+
+      if (needSeeking) {
+        Dav1dSequenceHeader seq_hdr;
+        if (dav1d_parse_sequence_header(&seq_hdr, packet.data, packet.size))
+          continue;
+        needSeeking = false;
+      }
+
+      Dav1dData frame_data;
+      uint8_t* buffer = dav1d_data_create(&frame_data, packet.size);
+      if (!buffer) {
+        threadError(UVPX_FAILED_TO_DECODE_FRAME, "Failed to load data.");
+        return;
+      }
+
+      // Copy frame data to buffer
+      memcpy(buffer, packet.data, packet.size);
+      free(packet.data);
+
+      int decode_result = dav1d_send_data(m_decoderData.codec, &frame_data);
+      if (decode_result < 0) {
+        threadError(UVPX_FAILED_TO_DECODE_FRAME, "Failed to send data (%d).",
+                    decode_result);
+        return;
+      }
+
+      dav1d_data_unref(&frame_data);
+
+      while (!dav1d_get_picture(m_decoderData.codec, &m_decoderData.img)) {
+        if (m_decoderData.img.p.layout != DAV1D_PIXEL_LAYOUT_I420) {
+          threadError(UVPX_UNSUPPORTED_IMAGE_FORMAT,
+                      "Unsupported image format: %d",
+                      m_decoderData.img.p.layout);
+          break;
+        }
+
+        do {
+          m_frameBuffer->update(playTime(), 1.0 / m_info.frameRate);
+          std::this_thread::yield();
+        } while (m_frameBuffer->isFull());
+
+        updateYUVData(packet.time);
+        m_framesDecoded++;
+
+        dav1d_picture_unref(&m_decoderData.img);
+      }
+    }
+
+    std::this_thread::yield();
+  }
+}
+
 /**
  * Called when some error occurs in main thread.
  */
@@ -487,9 +566,10 @@ void VideoPlayer::threadError(int errorState, const char* format, ...) {
  * Starts decoding thread.
  * @return decoding thread
  */
-std::thread VideoPlayer::startDecodingThread() {
+void VideoPlayer::startDecodingThread() {
   m_threadRunning.store(true);
-  return std::thread(&VideoPlayer::decodingThread, this);
+  m_thread = std::thread(&VideoPlayer::decodingThread, this);
+  m_videoThread = std::thread(&VideoPlayer::videoDecodingThread, this);
 }
 
 /// Stops decoding thread.
@@ -497,6 +577,7 @@ void VideoPlayer::stopDecodingThread() {
   if (m_threadRunning.load()) {
     m_threadRunning.store(false);
     m_thread.join();
+    m_videoThread.join();
   }
 }
 
@@ -609,38 +690,14 @@ void VideoPlayer::decodePacket(Packet* p) {
 
     switch (p->type()) {
       case Packet::Type::Video: {
-        Dav1dData frame_data;
-        uint8_t* buffer = dav1d_data_create(&frame_data, size);
-        if (!buffer) {
-          threadError(UVPX_FAILED_TO_DECODE_FRAME, "Failed to load data.");
-          return;
-        }
+        VideoPacketRawData rawData;
+        rawData.data = (uint8_t*)malloc(size);
+        rawData.size = size;
+        rawData.time = p->time();
 
-        // Copy frame data to buffer
-        memcpy(buffer, data, size);
-
-        decode_result = dav1d_send_data(m_decoderData.codec, &frame_data);
-        if (decode_result < 0) {
-          threadError(UVPX_FAILED_TO_DECODE_FRAME, "Failed to send data (%d).",
-                      decode_result);
-          return;
-        }
-
-        while (!dav1d_get_picture(m_decoderData.codec, &m_decoderData.img)) {
-          if (m_decoderData.img.p.layout != DAV1D_PIXEL_LAYOUT_I420) {
-            threadError(UVPX_UNSUPPORTED_IMAGE_FORMAT,
-                        "Unsupported image format: %d",
-                        m_decoderData.img.p.layout);
-            break;
-          }
-
-          updateYUVData(p->time());
-          m_framesDecoded++;
-
-          dav1d_picture_unref(&m_decoderData.img);
-        }
-
-        dav1d_data_unref(&frame_data);
+        if (rawData.data)
+          memcpy(rawData.data, data, size);
+        m_videoPacketQueue.push(rawData);
 
         break;
       }

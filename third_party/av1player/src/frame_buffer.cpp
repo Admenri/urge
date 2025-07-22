@@ -49,6 +49,9 @@ void FrameBuffer::unlockRead() {
 }
 
 Frame* FrameBuffer::lockWrite(double time) {
+  if (!m_writeQueue.size())
+    return nullptr;
+
   m_writeFrame = m_writeQueue.front();
   m_writeQueue.pop();
 
@@ -77,23 +80,25 @@ void FrameBuffer::update(double playTime, double frameTime) {
 
   m_updateLock.lock();
 
-  Frame* front = m_readQueue.front();
-  if ((playTime - front->time()) >= frameTime) {
-    while (m_readQueue.size() > 0) {
+  while (m_readQueue.size() > 0) {
+    Frame* front = m_readQueue.front();
+
+    if (std::fabs(playTime - front->time()) < frameTime / 2.0) {
+      m_readLock.lock();
+      front->copyData(m_readFrame);
+      m_readLock.unlock();
+
       m_readQueue.pop();
       m_writeQueue.push(front);
+    } else if (front->time() < playTime - frameTime) {
+      float f = front->time();
+      float n = playTime;
 
-      if (m_readQueue.size() > 0) {
-        front = m_readQueue.front();
-
-        if ((playTime - front->time()) < frameTime) {
-          m_readLock.lock();
-          front->copyData(m_readFrame);
-          m_readLock.unlock();
-
-          break;
-        }
-      }
+      // If the frame is too old, push it to write queue (discard)
+      m_readQueue.pop();
+      m_writeQueue.push(front);
+    } else {
+      break;
     }
   }
 

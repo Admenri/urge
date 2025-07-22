@@ -26,9 +26,10 @@ class URGE_OBJECT(VideoDecoder) {
     STATE_FINISHED,
   };
 
-  /*--urge(name:initialize)--*/
+  /*--urge(name:initialize,optional:max_frame_delay=1)--*/
   static scoped_refptr<VideoDecoder> New(ExecutionContext* execution_context,
                                          const base::String& filename,
+                                         int32_t max_frame_delay,
                                          ExceptionState& exception_state);
 
   /*--urge(name:dispose)--*/
