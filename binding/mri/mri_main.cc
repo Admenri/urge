@@ -238,7 +238,7 @@ void BindingEngineMri::OnMainMessageLoopRun(
   if (exception_state.HadException()) {
     base::String error_message;
     exception_state.FetchException(error_message);
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Scripts Error",
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
                              error_message.c_str(), nullptr);
   }
 }

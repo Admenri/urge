@@ -42,11 +42,16 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       binding_reset_flag_(0),
       background_running_(false),
       disable_gui_input_(false),
+#if defined(URGE_DEBUG) && defined(OS_ANDROID)
+      show_settings_menu_(true),
+#else
       show_settings_menu_(false),
+#endif
       show_fps_monitor_(false),
       last_tick_(SDL_GetPerformanceCounter()),
       total_delta_(0),
-      frame_count_(0) {}
+      frame_count_(0) {
+}
 
 ContentRunner::~ContentRunner() {
   // Remove watch
@@ -280,7 +285,11 @@ bool ContentRunner::RenderSettingsGUIInternal() {
     window_hovered = ImGui::IsWindowHovered();
 
     // Button settings
+#if !defined(OS_ANDROID)
     disable_gui_input_ = keyboard_impl_->CreateButtonGUISettings();
+#else
+    disable_gui_input_ = false;
+#endif
 
     // Graphics settings
     graphics_impl_->CreateButtonGUISettings();

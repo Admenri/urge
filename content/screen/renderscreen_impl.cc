@@ -10,6 +10,7 @@
 #include "SDL3/SDL_timer.h"
 #include "magic_enum/magic_enum.hpp"
 
+#include "Common/interface/BasicMath.hpp"
 #include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
 #if defined(OS_ANDROID)
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceGLES.h"
@@ -24,6 +25,43 @@
 #include "renderer/utils/texture_utils.h"
 
 namespace content {
+
+namespace {
+
+Diligent::float4x4 MakePresentationTransform(
+    Diligent::SURFACE_TRANSFORM pre_transform) {
+  switch (pre_transform) {
+    case Diligent::SURFACE_TRANSFORM_IDENTITY:
+      // Nothing to do
+      return Diligent::float4x4::Identity();
+    case Diligent::SURFACE_TRANSFORM_ROTATE_90:
+      // The image content is rotated 90 degrees clockwise.
+      return Diligent::float4x4::RotationZ(-Diligent::PI_F * 0.5f);
+    case Diligent::SURFACE_TRANSFORM_ROTATE_180:
+      // The image content is rotated 180 degrees clockwise.
+      return Diligent::float4x4::RotationZ(-Diligent::PI_F * 1.0f);
+    case Diligent::SURFACE_TRANSFORM_ROTATE_270:
+      // The image content is rotated 270 degrees clockwise.
+      return Diligent::float4x4::RotationZ(-Diligent::PI_F * 1.5f);
+    case Diligent::SURFACE_TRANSFORM_OPTIMAL:
+      UNEXPECTED(
+          "SURFACE_TRANSFORM_OPTIMAL is only valid as parameter during "
+          "swap chain initialization.");
+      break;
+    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR:
+    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90:
+    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180:
+    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270:
+      UNEXPECTED("Mirror transforms are not supported");
+      break;
+    default:
+      UNEXPECTED("Unknown transform");
+  }
+
+  return Diligent::float4x4::Identity();
+}
+
+}  // namespace
 
 RenderScreenImpl::RenderScreenImpl(ExecutionContext* execution_context,
                                    uint32_t frame_rate)
@@ -758,10 +796,19 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
       render_context->MapBuffer(agent_.present_world, Diligent::MAP_WRITE,
                                 Diligent::MAP_FLAG_DISCARD, buffer_mapping);
 
+      auto projection_size = screen_size;
+      auto pre_transform = swapchain->GetDesc().PreTransform;
+      if (pre_transform == Diligent::SURFACE_TRANSFORM_ROTATE_90 ||
+          pre_transform == Diligent::SURFACE_TRANSFORM_ROTATE_270)
+        std::swap(projection_size.x, projection_size.y);
+
       auto* world_matrix =
           static_cast<renderer::WorldTransform*>(buffer_mapping);
-      renderer::MakeProjectionMatrix(world_matrix->projection, screen_size);
-      renderer::MakeIdentityMatrix(world_matrix->transform);
+      renderer::MakeProjectionMatrix(world_matrix->projection, projection_size);
+
+      auto surface_transform = MakePresentationTransform(pre_transform);
+      std::memcpy(&world_matrix->transform, &surface_transform,
+                  sizeof(surface_transform));
 
       render_context->UnmapBuffer(agent_.present_world, Diligent::MAP_WRITE);
     }
