@@ -36,6 +36,10 @@ class AudioService {
   float GetVolume();
   void SetVolume(float volume);
 
+  // Device pause control
+  void PauseDevice();
+  void ResumeDevice();
+
  private:
   friend struct base::Allocator;
   ServiceKernelData* kernel_;

@@ -34,7 +34,9 @@ AudioImpl::AudioImpl(ExecutionContext* execution_context)
                                        base::Unretained(this)));
 }
 
-AudioImpl::~AudioImpl() {}
+AudioImpl::~AudioImpl() {
+  me_watcher_.reset();
+}
 
 void AudioImpl::CreateButtonGUISettings() {
   if (ImGui::CollapsingHeader(
@@ -176,10 +178,13 @@ void AudioImpl::MeThreadMonitorInternal() {
   if (!me_->IsPlaying() && bgm_->IsPausing())
     bgm_->Resume();
 
+  // Delay for yield
+  SDL_Delay(10);
+
   // Looping for watching
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  me_watcher_->PostTask(base::BindOnce(&AudioImpl::MeThreadMonitorInternal,
-                                       base::Unretained(this)));
+  if (me_watcher_)
+    me_watcher_->PostTask(base::BindOnce(&AudioImpl::MeThreadMonitorInternal,
+                                         base::Unretained(this)));
 }
 
 }  // namespace content

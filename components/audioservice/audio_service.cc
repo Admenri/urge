@@ -237,6 +237,14 @@ void AudioService::SetVolume(float volume) {
   ma_engine_set_volume(&kernel_->engine, volume);
 }
 
+void AudioService::PauseDevice() {
+  ma_device_stop(kernel_->engine.pDevice);
+}
+
+void AudioService::ResumeDevice() {
+  ma_device_start(kernel_->engine.pDevice);
+}
+
 AudioService::AudioService(ServiceKernelData* kernel) : kernel_(kernel) {}
 
 AudioService::~AudioService() {

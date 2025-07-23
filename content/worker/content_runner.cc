@@ -173,7 +173,7 @@ void ContentRunner::TickHandlerInternal() {
 
   // Poll event queue
   SDL_Event queued_event;
-  while (SDL_PollEvent(&queued_event)) {
+  while (SDL_PollEvent(&queued_event) || background_running_) {
     // Quit event
     if (queued_event.type == SDL_EVENT_QUIT)
       binding_quit_flag_.store(1);
@@ -203,12 +203,6 @@ void ContentRunner::TickHandlerInternal() {
       execution_context_->window->DispatchEvent(&queued_event);
       event_controller_->DispatchEvent(&queued_event);
     }
-  }
-
-  // Wait for background running block
-  while (background_running_) {
-    SDL_WaitEvent(&queued_event);
-    event_controller_->DispatchEvent(&queued_event);
   }
 
   // Present screen buffer
@@ -332,13 +326,13 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
 #endif
 
   const bool is_focus_lost =
-#if defined(OS_ANDROID)
+#if !defined(OS_ANDROID)
       event->type == SDL_EVENT_WINDOW_FOCUS_LOST;
 #else
       event->type == SDL_EVENT_WILL_ENTER_BACKGROUND;
 #endif
   const bool is_focus_gained =
-#if defined(OS_ANDROID)
+#if !defined(OS_ANDROID)
       event->type == SDL_EVENT_WINDOW_FOCUS_GAINED;
 #else
       event->type == SDL_EVENT_DID_ENTER_FOREGROUND;
@@ -346,17 +340,16 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
 
   if (is_focus_lost) {
     LOG(INFO) << "[Content] Enter background running.";
+    self->execution_context_->audio_server->PauseDevice();
     self->execution_context_->render_device->SuspendContext();
     self->background_running_ = true;
-    return false;
-  }
-  if (is_focus_gained) {
+  } else if (is_focus_gained) {
     LOG(INFO) << "[Content] Resume foreground running.";
     self->execution_context_->render_device->ResumeContext(
         self->execution_context_->primary_render_context);
+    self->execution_context_->audio_server->ResumeDevice();
     self->graphics_impl_->ResetFPSCounter();
     self->background_running_ = false;
-    return false;
   }
 
   return true;
