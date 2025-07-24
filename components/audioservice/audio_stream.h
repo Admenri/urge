@@ -20,10 +20,10 @@ class AudioStream {
 
   // Play audio stream from file in looping.
   // If the filename is different from the last one, it will reset the audio.
-  void Play(const base::String& filename,
-            int32_t volume,
-            int32_t pitch,
-            uint64_t pos = 0);
+  ma_result Play(const base::String& filename,
+                 int32_t volume,
+                 int32_t pitch,
+                 uint64_t pos = 0);
   void Stop();
   void Fade(int32_t time);
   uint64_t Pos();

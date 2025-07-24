@@ -62,6 +62,9 @@ class AudioImpl : public Audio, public EngineObject {
   void Reset(ExceptionState& exception_state) override;
 
  private:
+  void HandleAudioServiceError(ma_result result,
+                               const base::String& filename,
+                               ExceptionState& exception_state);
   void MeThreadMonitorInternal();
 
   I18NProfile* i18n_profile_;

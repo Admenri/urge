@@ -20,7 +20,7 @@ class SoundEmit {
   SoundEmit(const SoundEmit&) = delete;
   SoundEmit& operator=(const SoundEmit&) = delete;
 
-  void Play(const base::String& filename, int32_t volume, int32_t pitch);
+  ma_result Play(const base::String& filename, int32_t volume, int32_t pitch);
   void Stop();
 
  private:

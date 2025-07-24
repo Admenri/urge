@@ -5,6 +5,7 @@
 #include "content/media/audio_impl.h"
 
 #include "imgui/imgui.h"
+#include "magic_enum/magic_enum.hpp"
 
 #include "content/context/execution_context.h"
 #include "content/profile/command_ids.h"
@@ -63,7 +64,8 @@ void AudioImpl::BGMPlay(const base::String& filename,
   if (!bgm_)
     return;
 
-  bgm_->Play(filename, volume, pitch, pos);
+  auto result = bgm_->Play(filename, volume, pitch, pos);
+  HandleAudioServiceError(result, filename, exception_state);
 }
 
 void AudioImpl::BGMStop(ExceptionState& exception_state) {
@@ -95,7 +97,8 @@ void AudioImpl::BGSPlay(const base::String& filename,
   if (!bgs_)
     return;
 
-  bgs_->Play(filename, volume, pitch, pos);
+  auto result = bgs_->Play(filename, volume, pitch, pos);
+  HandleAudioServiceError(result, filename, exception_state);
 }
 
 void AudioImpl::BGSStop(ExceptionState& exception_state) {
@@ -126,7 +129,8 @@ void AudioImpl::MEPlay(const base::String& filename,
   if (!me_)
     return;
 
-  me_->Play(filename, volume, pitch, 0);
+  auto result = me_->Play(filename, volume, pitch, 0);
+  HandleAudioServiceError(result, filename, exception_state);
 }
 
 void AudioImpl::MEStop(ExceptionState& exception_state) {
@@ -150,7 +154,8 @@ void AudioImpl::SEPlay(const base::String& filename,
   if (!se_)
     return;
 
-  se_->Play(filename, volume, pitch);
+  auto result = se_->Play(filename, volume, pitch);
+  HandleAudioServiceError(result, filename, exception_state);
 }
 
 void AudioImpl::SEStop(ExceptionState& exception_state) {
@@ -169,6 +174,15 @@ void AudioImpl::Reset(ExceptionState& exception_state) {
     me_->Stop();
   if (se_)
     se_->Stop();
+}
+
+void AudioImpl::HandleAudioServiceError(ma_result result,
+                                        const base::String& filename,
+                                        ExceptionState& exception_state) {
+  if (result != MA_SUCCESS)
+    exception_state.ThrowError(
+        ExceptionCode::CONTENT_ERROR, "Error when playing audio: %s (%s)",
+        filename.c_str(), magic_enum::enum_name(result).data());
 }
 
 void AudioImpl::MeThreadMonitorInternal() {

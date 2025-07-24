@@ -13,12 +13,12 @@ AudioStream::~AudioStream() {
   ma_sound_uninit(&handle_);
 }
 
-void AudioStream::Play(const base::String& filename,
-                       int32_t volume,
-                       int32_t pitch,
-                       uint64_t pos) {
+ma_result AudioStream::Play(const base::String& filename,
+                            int32_t volume,
+                            int32_t pitch,
+                            uint64_t pos) {
   if (filename.empty())
-    return;
+    return MA_INVALID_ARGS;
 
   if (!ma_sound_is_playing(&handle_) || filename_ != filename) {
     // Reset cache filename
@@ -35,7 +35,7 @@ void AudioStream::Play(const base::String& filename,
         engine_, filename.c_str(), sound_flags, nullptr, nullptr, &handle_);
 
     if (result != MA_SUCCESS)
-      return;
+      return result;
   }
 
   // Set sound handle attributes
@@ -46,6 +46,8 @@ void AudioStream::Play(const base::String& filename,
 
   // Start if need
   ma_sound_start(&handle_);
+
+  return MA_SUCCESS;
 }
 
 void AudioStream::Stop() {
