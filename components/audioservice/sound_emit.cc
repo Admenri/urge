@@ -24,7 +24,7 @@ ma_result SoundEmit::Play(const base::String& filename,
 
     if (!ma_sound_is_playing(invalid_voice)) {
       ma_sound_uninit(invalid_voice);
-      delete invalid_voice;
+      base::Allocator::Delete(invalid_voice);
     } else {
       // Requeued sound handle
       sound_queue_.push(invalid_voice);
