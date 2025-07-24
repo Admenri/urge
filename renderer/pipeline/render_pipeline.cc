@@ -341,19 +341,19 @@ Pipeline_Flat::Pipeline_Flat(const PipelineInitParams& init_params)
 
 Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
     : RenderPipelineBase(init_params.device) {
-  //const auto& device_info = init_params.device->GetDeviceInfo();
+  const auto& device_info = init_params.device->GetDeviceInfo();
 
-  //if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GLES) {
-    // Disable batch on any gles platform
+  if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GLES) {
+    // Disable batch on any OGLES platform
     storage_buffer_support = false;
-  //} else if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GL) {
-  //  // Enable batch on available desktop platform
-  //  storage_buffer_support =
-  //      device_info.Features.VertexPipelineUAVWritesAndAtomics > 0;
-  //} else {
-  //  // Enable batch on D3D11 D3D12 Vulkan backend
-  //  storage_buffer_support = true;
-  //}
+  } else if (device_info.Type == Diligent::RENDER_DEVICE_TYPE_GL) {
+    // Enable batch on available OGL desktop platform
+    storage_buffer_support =
+        device_info.Features.VertexPipelineUAVWritesAndAtomics > 0;
+  } else {
+    // Enable batch on D3D11, D3D12 and Vulkan backend
+    storage_buffer_support = true;
+  }
 
   if (!storage_buffer_support)
     LOG(INFO) << "[Pipeline] Disable sprite batch process.";

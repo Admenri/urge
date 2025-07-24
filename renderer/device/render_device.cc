@@ -179,6 +179,12 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   engine_create_info.pRawMemAllocator = &g_raw_memory_allocator;
   engine_create_info.EnableValidation = validation;
 
+  // Requested features
+  engine_create_info.Features.SeparablePrograms =
+      Diligent::DEVICE_FEATURE_STATE_ENABLED;
+  engine_create_info.Features.ComputeShaders =
+      Diligent::DEVICE_FEATURE_STATE_ENABLED;
+
   // Setup primary swapchain
   swap_chain_desc.ColorBufferFormat = Diligent::TEX_FORMAT_RGBA8_UNORM;
   swap_chain_desc.PreTransform = Diligent::SURFACE_TRANSFORM_OPTIMAL;
@@ -195,6 +201,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     Diligent::EngineGLCreateInfo gl_create_info(engine_create_info);
     gl_create_info.Window = native_window;
     gl_create_info.ZeroToOneNDZ = Diligent::True;
+
     factory->CreateDeviceAndSwapChainGL(gl_create_info, &device, &context,
                                         swap_chain_desc, &swapchain);
   }
@@ -207,6 +214,9 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     auto* factory = GetEngineFactoryVk();
 
     Diligent::EngineVkCreateInfo vk_create_info(engine_create_info);
+    vk_create_info.FeaturesVk.DynamicRendering =
+        Diligent::DEVICE_FEATURE_STATE_ENABLED;
+
     factory->CreateDeviceAndContextsVk(vk_create_info, &device, &context);
     factory->CreateSwapChainVk(device, context, swap_chain_desc, native_window,
                                &swapchain);
