@@ -46,7 +46,6 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
       player_(std::move(player)),
-      audio_output_(0),
       audio_stream_(nullptr) {
   // Video info
   base::Vec2i frame_size(player_->info()->width, player_->info()->height);
@@ -69,18 +68,20 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
   LOG(INFO) << "[VideoDecoder] Frame Rate: " << info.frameRate;
 
   // Init Audio components
-  if (info.hasAudio) {
-    SDL_AudioSpec wanted_spec;
-    wanted_spec.freq = info.audioFrequency;
-    wanted_spec.format = SDL_AUDIO_F32;
-    wanted_spec.channels = info.audioChannels;
+  if (info.hasAudio && context()->audio_server) {
+    SDL_AudioSpec desired_spec;
+    desired_spec.freq = info.audioFrequency;
+    desired_spec.format = SDL_AUDIO_F32;
+    desired_spec.channels = info.audioChannels;
 
-    audio_output_ =
-        SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &wanted_spec);
-    if (audio_output_) {
-      audio_stream_ = SDL_CreateAudioStream(&wanted_spec, &wanted_spec);
-      SDL_BindAudioStream(audio_output_, audio_stream_);
-    }
+    auto device_id = context()->audio_server->GetDeviceID();
+
+    SDL_AudioSpec output_spec;
+    SDL_GetAudioDeviceFormat(device_id, &output_spec, nullptr);
+
+    audio_stream_ = SDL_CreateAudioStream(&desired_spec, &output_spec);
+    if (audio_stream_)
+      SDL_BindAudioStream(device_id, audio_stream_);
   }
 }
 
@@ -179,13 +180,14 @@ void VideoDecoderImpl::Put_State(const PlayState& value,
   switch (value) {
     case STATE_PLAYING:
       player_->play();
-      if (audio_output_)
-        SDL_ResumeAudioDevice(audio_output_);
+      if (audio_stream_)
+        SDL_BindAudioStream(context()->audio_server->GetDeviceID(),
+                            audio_stream_);
       break;
     case STATE_PAUSED:
       player_->pause();
-      if (audio_output_)
-        SDL_PauseAudioDevice(audio_output_);
+      if (audio_stream_)
+        SDL_UnbindAudioStream(audio_stream_);
       break;
     case STATE_STOPPED:
       player_->stop();
@@ -200,8 +202,6 @@ void VideoDecoderImpl::OnObjectDisposed() {
 
   if (audio_stream_)
     SDL_DestroyAudioStream(audio_stream_);
-  if (audio_output_)
-    SDL_CloseAudioDevice(audio_output_);
   audio_stream_ = nullptr;
 
   Agent empty_agent;

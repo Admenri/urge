@@ -13,16 +13,20 @@
 #include "components/audioservice/audio_stream.h"
 #include "components/audioservice/sound_emit.h"
 
+#ifndef MA_NO_DEVICE_IO
+#error URGE audio service required SDL backend
+#endif  // !MA_NO_DEVICE_IO
+
 namespace audioservice {
 
-struct VirtualFileSystem {
-  ma_vfs_callbacks callbacks;
-  filesystem::IOService* io_service;
-};
-
 struct ServiceKernelData {
+  SDL_AudioDeviceID primary_device;
+  SDL_AudioStream* engine_stream;
   ma_resource_manager_config resource_config;
-  VirtualFileSystem vfs;
+  struct VirtualFileSystem {
+    ma_vfs_callbacks callbacks;
+    filesystem::IOService* io_service;
+  } vfs;
   ma_resource_manager resource_manager;
   ma_engine_config engine_config;
   ma_engine engine;
@@ -33,7 +37,7 @@ static ma_result VFSOpen(ma_vfs* pVFS,
                          const char* pFilePath,
                          ma_uint32 openMode,
                          ma_vfs_file* pFile) {
-  auto* vfs = static_cast<VirtualFileSystem*>(pVFS);
+  auto* vfs = static_cast<ServiceKernelData::VirtualFileSystem*>(pVFS);
 
   if (openMode == (MA_OPEN_MODE_READ | MA_OPEN_MODE_WRITE))
     return MA_INVALID_ARGS;
@@ -167,9 +171,46 @@ static std::array<ma_decoding_backend_vtable*, 2>
         ma_decoding_backend_libopus,
 };
 
+static void AudioStreamDataCallback(void* userdata,
+                                    SDL_AudioStream* stream,
+                                    int additional_amount,
+                                    int total_amount) {
+  ServiceKernelData* self = static_cast<ServiceKernelData*>(userdata);
+
+  (void)total_amount;
+
+  if (additional_amount > 0) {
+    if (auto* buffer = SDL_malloc(additional_amount)) {
+      ma_uint32 buffer_size_in_frames =
+          static_cast<ma_uint32>(additional_amount) /
+          ma_get_bytes_per_frame(ma_format_f32,
+                                 ma_engine_get_channels(&self->engine));
+      ma_engine_read_pcm_frames(&self->engine, buffer, buffer_size_in_frames,
+                                nullptr);
+      SDL_PutAudioStreamData(stream, buffer, additional_amount);
+      SDL_free(buffer);
+    }
+  }
+}
+
 base::OwnedPtr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
   ServiceKernelData* kernel_data = base::Allocator::New<ServiceKernelData>();
+
+  // Device sped
+  SDL_AudioSpec device_spec;
+  if (!SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_spec,
+                                nullptr))
+    return nullptr;
+
+  // Set to f32
+  device_spec.format = SDL_AUDIO_F32;
+
+  // Init SDL device
+  kernel_data->primary_device =
+      SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_spec);
+  if (!kernel_data->primary_device)
+    return nullptr;
 
   // Initialize the resource manager configuration
   kernel_data->resource_config = ma_resource_manager_config_init();
@@ -198,25 +239,42 @@ base::OwnedPtr<AudioService> AudioService::Create(
   kernel_data->resource_config.pVFS = &kernel_data->vfs;
 
   // Create resource manager
-  if (ma_resource_manager_init(&kernel_data->resource_config,
-                               &kernel_data->resource_manager) != MA_SUCCESS)
-    return nullptr;
+  CHECK(ma_resource_manager_init(&kernel_data->resource_config,
+                                 &kernel_data->resource_manager) == MA_SUCCESS);
 
   // Logging
-  ma_log_init(&kernel_data->resource_config.allocationCallbacks,
-              &kernel_data->logger);
-  ma_log_register_callback(&kernel_data->logger,
-                           ma_log_callback{LogOutput, nullptr});
+  CHECK(ma_log_init(&kernel_data->resource_config.allocationCallbacks,
+                    &kernel_data->logger) == MA_SUCCESS);
+  CHECK(ma_log_register_callback(&kernel_data->logger,
+                                 ma_log_callback{LogOutput, nullptr}) ==
+        MA_SUCCESS);
 
   // Engine config
   kernel_data->engine_config = ma_engine_config_init();
   kernel_data->engine_config.pResourceManager = &kernel_data->resource_manager;
   kernel_data->engine_config.pLog = &kernel_data->logger;
+  kernel_data->engine_config.sampleRate = device_spec.freq;
+  kernel_data->engine_config.channels = device_spec.channels;
+  kernel_data->engine_config.noDevice = MA_TRUE;
 
   // Create canonical engine
-  if (ma_engine_init(&kernel_data->engine_config, &kernel_data->engine) !=
-      MA_SUCCESS)
+  CHECK(ma_engine_init(&kernel_data->engine_config, &kernel_data->engine) ==
+        MA_SUCCESS);
+
+  // Create audio stream
+  kernel_data->engine_stream =
+      SDL_CreateAudioStream(&device_spec, &device_spec);
+  if (!kernel_data->engine_stream) {
+    SDL_CloseAudioDevice(kernel_data->primary_device);
+    ma_engine_uninit(&kernel_data->engine);
     return nullptr;
+  }
+
+  // Setup audio stream
+  CHECK(SDL_SetAudioStreamGetCallback(kernel_data->engine_stream,
+                                      AudioStreamDataCallback, kernel_data));
+  CHECK(SDL_BindAudioStream(kernel_data->primary_device,
+                            kernel_data->engine_stream));
 
   return base::MakeOwnedPtr<AudioService>(std::move(kernel_data));
 }
@@ -238,16 +296,23 @@ void AudioService::SetVolume(float volume) {
 }
 
 void AudioService::PauseDevice() {
-  ma_device_stop(kernel_->engine.pDevice);
+  SDL_PauseAudioDevice(kernel_->primary_device);
 }
 
 void AudioService::ResumeDevice() {
-  ma_device_start(kernel_->engine.pDevice);
+  SDL_ResumeAudioDevice(kernel_->primary_device);
+}
+
+SDL_AudioDeviceID AudioService::GetDeviceID() const {
+  return kernel_->primary_device;
 }
 
 AudioService::AudioService(ServiceKernelData* kernel) : kernel_(kernel) {}
 
 AudioService::~AudioService() {
+  SDL_DestroyAudioStream(kernel_->engine_stream);
+  SDL_CloseAudioDevice(kernel_->primary_device);
+
   ma_resource_manager_uninit(&kernel_->resource_manager);
   ma_engine_uninit(&kernel_->engine);
   ma_log_uninit(&kernel_->logger);

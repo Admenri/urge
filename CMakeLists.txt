@@ -149,6 +149,7 @@ include_directories(third_party/spine2d/spine-cpp/include)
 add_subdirectory(third_party/spdlog)
 
 ## miniaudio
+set(MINIAUDIO_NO_DEVICEIO ON)
 add_subdirectory(third_party/miniaudio)
 
 ## DAV1D

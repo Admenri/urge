@@ -250,7 +250,7 @@ endif()
 add_library(miniaudio STATIC ${MINIAUDIO_SOURCE})
 target_include_directories(miniaudio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(miniaudio PRIVATE ${COMPILE_OPTIONS})
-target_compile_definitions(miniaudio PRIVATE ${COMPILE_DEFINES})
+target_compile_definitions(miniaudio PUBLIC ${COMPILE_DEFINES})
 target_link_libraries(miniaudio
  PUBLIC
   ogg

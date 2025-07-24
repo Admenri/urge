@@ -60,12 +60,10 @@ class VideoDecoderImpl : public VideoDecoder,
   Agent agent_;
 
   base::OwnedPtr<uvpx::Player> player_;
+  SDL_AudioStream* audio_stream_;
   uint64_t last_ticks_;
   int64_t counter_freq_;
   float frame_delta_;
-
-  SDL_AudioDeviceID audio_output_;
-  SDL_AudioStream* audio_stream_;
 };
 
 }  // namespace content

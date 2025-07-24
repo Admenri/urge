@@ -5,6 +5,8 @@
 #ifndef COMPONENTS_AUDIOSERVICE_AUDIO_SERVICE_H_
 #define COMPONENTS_AUDIOSERVICE_AUDIO_SERVICE_H_
 
+#include "SDL3/SDL_audio.h"
+
 #include "components/filesystem/io_service.h"
 
 namespace audioservice {
@@ -39,6 +41,9 @@ class AudioService {
   // Device pause control
   void PauseDevice();
   void ResumeDevice();
+
+  // Raw device id
+  SDL_AudioDeviceID GetDeviceID() const;
 
  private:
   friend struct base::Allocator;
