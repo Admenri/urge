@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD - style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_MEDIA_VIDEODECODER_H_
-#define CONTENT_MEDIA_VIDEODECODER_H_
+#ifndef CONTENT_RENDER_VIDEODECODER_H_
+#define CONTENT_RENDER_VIDEODECODER_H_
 
 #include "SDL3/SDL_audio.h"
 #include "av1player/src/player.hpp"
@@ -50,8 +50,7 @@ class VideoDecoderImpl : public VideoDecoder,
   void OnObjectDisposed() override;
   base::String DisposedObjectName() override { return "DAV1D/AV1 Decoder"; }
 
-  static void OnAudioData(void* userPtr, float* pcm, size_t count);
-  static void OnVideoFinished(void* userPtr);
+  static void OnAudioData(void* user_data, float* pcm, size_t count);
 
   void GPUCreateYUVFramesInternal(const base::Vec2i& size);
   void GPURenderYUVInternal(Diligent::IDeviceContext* render_context,

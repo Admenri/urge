@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD - style license that can be
 // found in the LICENSE file.
 
-#include "content/media/videodecoder_impl.h"
+#include "content/render/videodecoder_impl.h"
 
 #include "SDL3/SDL_timer.h"
-#include "av1player/src/utils.hpp"
 
 #include "content/canvas/canvas_impl.h"
 
@@ -62,7 +61,6 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
 
   // Init audio and frames
   player_->setOnAudioData(OnAudioData, this);
-  player_->setOnVideoFinished(OnVideoFinished, this);
 
   // Extract video info
   auto& info = *player_->info();
@@ -71,16 +69,18 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
   LOG(INFO) << "[VideoDecoder] Frame Rate: " << info.frameRate;
 
   // Init Audio components
-  SDL_AudioSpec wanted_spec;
-  wanted_spec.freq = info.audioFrequency;
-  wanted_spec.format = SDL_AUDIO_F32;
-  wanted_spec.channels = info.audioChannels;
+  if (info.hasAudio) {
+    SDL_AudioSpec wanted_spec;
+    wanted_spec.freq = info.audioFrequency;
+    wanted_spec.format = SDL_AUDIO_F32;
+    wanted_spec.channels = info.audioChannels;
 
-  audio_output_ =
-      SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &wanted_spec);
-  if (audio_output_) {
-    audio_stream_ = SDL_CreateAudioStream(&wanted_spec, &wanted_spec);
-    SDL_BindAudioStream(audio_output_, audio_stream_);
+    audio_output_ =
+        SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &wanted_spec);
+    if (audio_output_) {
+      audio_stream_ = SDL_CreateAudioStream(&wanted_spec, &wanted_spec);
+      SDL_BindAudioStream(audio_output_, audio_stream_);
+    }
   }
 }
 
@@ -208,15 +208,11 @@ void VideoDecoderImpl::OnObjectDisposed() {
   std::swap(agent_, empty_agent);
 }
 
-void VideoDecoderImpl::OnAudioData(void* userPtr, float* pcm, size_t count) {
-  auto* self = static_cast<VideoDecoderImpl*>(userPtr);
-  if (self->audio_stream_)
+void VideoDecoderImpl::OnAudioData(void* user_data, float* pcm, size_t count) {
+  auto* self = static_cast<VideoDecoderImpl*>(user_data);
+  if (self->audio_stream_) {
     SDL_PutAudioStreamData(self->audio_stream_, pcm, count * sizeof(float));
-}
-
-void VideoDecoderImpl::OnVideoFinished(void* userPtr) {
-  auto* self = static_cast<VideoDecoderImpl*>(userPtr);
-  uvpx::debugLog("instace: %p video play finished.", self);
+  }
 }
 
 void VideoDecoderImpl::GPUCreateYUVFramesInternal(const base::Vec2i& size) {

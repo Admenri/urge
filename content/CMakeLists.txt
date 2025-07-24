@@ -82,8 +82,6 @@ set(ENGINE_CONTENT_SRC
   io/iostream_impl.h
   media/audio_impl.cc
   media/audio_impl.h
-  media/videodecoder_impl.cc
-  media/videodecoder_impl.h
   misc/misc_system.cc
   misc/misc_system.h
   profile/command_ids.h
@@ -109,6 +107,8 @@ set(ENGINE_CONTENT_SRC
   render/tilemap2_impl.h
   render/tilequad.cc
   render/tilequad.h
+  render/videodecoder_impl.cc
+  render/videodecoder_impl.h
   render/window_impl.cc
   render/window_impl.h
   render/window2_impl.cc
