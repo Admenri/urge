@@ -73,7 +73,7 @@ void MouseImpl::SetPosition(int32_t x,
   auto& display_state = window_->GetDisplayState();
 
   base::Vec2 origin(x, y);
-  base::Vec2 pos = base::Vec2(display_state.viewport.Position()) +
+  base::Vec2 pos = display_state.viewport.Position().Recast<float>() +
                    origin / display_state.scale;
 
   SDL_WarpMouseInWindow(window_->AsSDLWindow(), pos.x, pos.y);

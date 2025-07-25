@@ -990,7 +990,6 @@ struct PSInput {
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Pos = mul(u_Transform.ProjMat, VSIn.Pos);
   PSIn.Pos = mul(u_Transform.TransMat, PSIn.Pos);
-  PSIn.Pos.y = -PSIn.Pos.y;
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }

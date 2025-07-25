@@ -9,7 +9,7 @@
 	url = https://github.com/madler/zlib.git
 [submodule "third_party/physfs"]
 	path = third_party/physfs
-	url = https://github.com/icculus/physfs.git
+	url = https://github.com/Admenri/physfs.git
 [submodule "third_party/ogg"]
 	path = third_party/ogg
 	url = https://github.com/xiph/ogg.git

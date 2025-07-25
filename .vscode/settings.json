@@ -76,5 +76,8 @@
     "typeindex": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp"
-  }
+  },
+  "C_Cpp.clang_format_style": "Chromium",
+  "C_Cpp.formatting": "clangFormat",
+  "files.encoding": "gbk"
 }

@@ -519,7 +519,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
         Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
 
     renderer::WorldTransform world_matrix;
-    renderer::MakeProjectionMatrix(world_matrix.projection, bound_.Size());
+    renderer::MakeProjectionMatrix(world_matrix.projection,
+                                   bound_.Size().Recast<float>());
     renderer::MakeIdentityMatrix(world_matrix.transform);
 
     agent_.world.Release();
@@ -594,7 +595,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
     // Stretch layer (1)
     renderer::Quad::SetPositionRect(&quads[quad_index], background_dest);
     renderer::Quad::SetTexCoordRect(&quads[quad_index], background1_src,
-                                    windowskin->size);
+                                    windowskin->size.Recast<float>());
     renderer::Quad::SetColor(&quads[quad_index],
                              base::Vec4(back_opacity_norm * opacity_norm));
     quad_index++;
@@ -626,24 +627,24 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
 
     renderer::Quad::SetPositionRect(&quads[quad_index], corner_left_top_dest);
     renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_left_top_src,
-                                    windowskin->size);
+                                    windowskin->size.Recast<float>());
     renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
     quad_index++;
     renderer::Quad::SetPositionRect(&quads[quad_index], corner_right_top_dest);
     renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_right_top_src,
-                                    windowskin->size);
+                                    windowskin->size.Recast<float>());
     renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
     quad_index++;
     renderer::Quad::SetPositionRect(&quads[quad_index],
                                     corner_left_bottom_dest);
     renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_left_bottom_src,
-                                    windowskin->size);
+                                    windowskin->size.Recast<float>());
     renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
     quad_index++;
     renderer::Quad::SetPositionRect(&quads[quad_index],
                                     corner_right_bottom_dest);
     renderer::Quad::SetTexCoordRect(&quads[quad_index], corner_right_bottom_src,
-                                    windowskin->size);
+                                    windowskin->size.Recast<float>());
     renderer::Quad::SetColor(&quads[quad_index], base::Vec4(opacity_norm));
     quad_index++;
     frames_quads_count += 4;
@@ -693,7 +694,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
           static_cast<float>(bound_.height / 2.0f) * (1.0f - openness_norm),
       bound_.width, bound_.height * openness_norm);
   renderer::Quad::SetPositionRect(&quads[quad_index], background_pos);
-  renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+  renderer::Quad::SetTexCoordRectNorm(
+      &quads[quad_index], base::RectF(base::Vec2(0), base::Vec2(1)));
   renderer::Quad::SetColor(&quads[quad_index], base::Vec4(1));
   agent_.background_quad_offset = quad_index;
   quad_index++;
@@ -736,7 +738,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetPositionRect(&quads[quad_index],
                                             arrow_left_dest);
             renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_left_src,
-                                            windowskin->size);
+                                            windowskin->size.Recast<float>());
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
@@ -745,7 +747,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
           if (origin_.y > 0) {
             renderer::Quad::SetPositionRect(&quads[quad_index], arrow_up_dest);
             renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_up_src,
-                                            windowskin->size);
+                                            windowskin->size.Recast<float>());
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
@@ -755,7 +757,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetPositionRect(&quads[quad_index],
                                             arrow_right_dest);
             renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_right_src,
-                                            windowskin->size);
+                                            windowskin->size.Recast<float>());
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
@@ -765,7 +767,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
             renderer::Quad::SetPositionRect(&quads[quad_index],
                                             arrow_down_dest);
             renderer::Quad::SetTexCoordRect(&quads[quad_index], arrow_down_src,
-                                            windowskin->size);
+                                            windowskin->size.Recast<float>());
             renderer::Quad::SetColor(&quads[quad_index],
                                      base::Vec4(contents_opacity_norm));
             quad_index++;
@@ -787,8 +789,9 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
                                     draw_offset.y + bound_.height - 8 * scale_,
                                     8 * scale_, 8 * scale_);
         renderer::Quad::SetPositionRect(&quads[quad_index], pause_dest);
-        renderer::Quad::SetTexCoordRect(
-            &quads[quad_index], pause_src[pause_index_ / 8], windowskin->size);
+        renderer::Quad::SetTexCoordRect(&quads[quad_index],
+                                        pause_src[pause_index_ / 8],
+                                        windowskin->size.Recast<float>());
         renderer::Quad::SetColor(&quads[quad_index],
                                  base::Vec4(contents_opacity_norm));
         quad_index++;
@@ -808,10 +811,11 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
           const int32_t b = t + h;
 
           int32_t i = 0;
-          quad_rects[i++] = {{l, t}, unit};                // Left-Top
-          quad_rects[i++] = {{r - unit, t}, unit};         // Right-Top
-          quad_rects[i++] = {{r - unit, b - unit}, unit};  // Right-Bottom
-          quad_rects[i++] = {{l, b - unit}, unit};         // Left-Bottom
+          quad_rects[i++] = {{l, t}, base::Vec2i(unit)};         // Left-Top
+          quad_rects[i++] = {{r - unit, t}, base::Vec2i(unit)};  // Right-Top
+          quad_rects[i++] = {{r - unit, b - unit},
+                             base::Vec2i(unit)};                 // Right-Bottom
+          quad_rects[i++] = {{l, b - unit}, base::Vec2i(unit)};  // Left-Bottom
 
           quad_rects[i++] = {l, t + unit, unit, h - unit * 2};         // Left
           quad_rects[i++] = {r - unit, t + unit, unit, h - unit * 2};  // Right
@@ -833,7 +837,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
           for (int32_t i = 0; i < 9; ++i) {
             renderer::Quad::SetPositionRect(&vert[i], positions[i]);
             renderer::Quad::SetTexCoordRect(&vert[i], texcoords[i],
-                                            windowskin->size);
+                                            windowskin->size.Recast<float>());
             renderer::Quad::SetColor(&vert[i], draw_color);
           }
 
@@ -867,7 +871,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
           draw_offset + padding_rect.Position() - origin_, contents->size);
 
       renderer::Quad::SetPositionRect(&quads[quad_index], content_region);
-      renderer::Quad::SetTexCoordRectNorm(&quads[quad_index], base::Rect(0, 1));
+      renderer::Quad::SetTexCoordRectNorm(
+          &quads[quad_index], base::RectF(base::Vec2(0), base::Vec2(1)));
       renderer::Quad::SetColor(&quads[quad_index],
                                base::Vec4(contents_opacity_norm));
       agent_.contents_quad_offset = quad_index;

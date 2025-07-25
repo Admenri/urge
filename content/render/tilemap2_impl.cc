@@ -640,7 +640,8 @@ void Tilemap2Impl::GroundNodeHandlerInternal(
       map_buffer_dirty_ = false;
     }
 
-    GPUUpdateTilemapUniformInternal(params->context, render_offset_,
+    GPUUpdateTilemapUniformInternal(params->context,
+                                    render_offset_.Recast<float>(),
                                     animation_offset_, tilesize_);
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
     GPURenderGroundLayerInternal(params->context, params->world_binding);
@@ -668,7 +669,8 @@ void Tilemap2Impl::UpdateViewportInternal(const base::Rect& viewport,
   new_viewport.height =
       (viewport_size.y / tilesize_) + !!(viewport_size.y % tilesize_) + 2;
 
-  const base::Vec2i display_offset = tilemap_origin % base::Vec2i(tilesize_);
+  const base::Vec2i display_offset(tilemap_origin.x % tilesize_,
+                                   tilemap_origin.y % tilesize_);
   render_offset_ = -display_offset - base::Vec2i(0, tilesize_);
 
   if (!(new_viewport == render_viewport_)) {
@@ -1229,8 +1231,10 @@ void Tilemap2Impl::GPUUpdateTilemapUniformInternal(
 
   renderer::Binding_Tilemap2::Params uniform;
   uniform.OffsetAndTexSize =
-      base::MakeVec4(offset, base::MakeInvert(atlas_size));
-  uniform.AnimationOffsetAndTileSize = base::MakeVec4(anim_offset, tilesize);
+      base::Vec4(offset.x, offset.y, 1.0f / atlas_size.x, 1.0f / atlas_size.y);
+  uniform.AnimationOffsetAndTileSize =
+      base::Vec4(anim_offset.x, anim_offset.y, static_cast<float>(tilesize),
+                 static_cast<float>(tilesize));
 
   render_context->UpdateBuffer(
       agent_.uniform_buffer, 0, sizeof(uniform), &uniform,

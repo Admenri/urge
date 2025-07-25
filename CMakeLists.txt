@@ -85,9 +85,11 @@ add_subdirectory(third_party/imgui)
 include_directories(third_party/imgui)
 
 ## Physfs
-set(PHYSFS_BUILD_STATIC TRUE)
-set(PHYSFS_BUILD_SHARED FALSE)
-set(PHYSFS_BUILD_DOCS FALSE)
+set(PHYSFS_BUILD_STATIC ON)
+set(PHYSFS_BUILD_SHARED OFF)
+set(PHYSFS_BUILD_SHARED OFF)
+set(PHYSFS_BUILD_TEST OFF)
+set(PHYSFS_BUILD_DOCS OFF)
 add_subdirectory(third_party/physfs)
 include_directories(third_party/physfs/src)
 
@@ -109,10 +111,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Android")
   include_directories(third_party/ruby_android/include)
 else()
   add_library(mri_ruby UNKNOWN IMPORTED)  
-  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")  
-    ## libffi for Win platform
-    add_subdirectory(third_party/libffi)
-
+  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
       set(RUBY_INCLUDE_PATH
         "${PROJECT_SOURCE_DIR}/third_party/ruby_extern/include/"

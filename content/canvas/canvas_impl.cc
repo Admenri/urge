@@ -883,7 +883,8 @@ void CanvasImpl::GPUCreateTextureWithDataInternal() {
   // Make bitmap draw transform
   // Make transform matrix uniform for discrete draw command
   renderer::WorldTransform world_matrix;
-  renderer::MakeProjectionMatrix(world_matrix.projection, agent_.size);
+  renderer::MakeProjectionMatrix(world_matrix.projection,
+                                 agent_.size.Recast<float>());
   renderer::MakeIdentityMatrix(world_matrix.transform);
 
   // Per bitmap create uniform once
@@ -925,7 +926,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   // Make drawing vertices
   renderer::Quad transient_quad;
   renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
-                                  src_texture->size);
+                                  src_texture->size.Recast<float>());
   renderer::Quad::SetPositionRect(&transient_quad, dst_region);
   renderer::Quad::SetColor(&transient_quad, blend_alpha);
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
@@ -1012,7 +1013,7 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad, dst_region);
   renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
-                                  src_texture->size);
+                                  src_texture->size.Recast<float>());
 
   // Norm opacity value
   const float norm_opacity = static_cast<float>(opacity) / 255.0f;
@@ -1241,7 +1242,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   // Make render vertices
   renderer::Quad transient_quad;
   renderer::Quad::SetTexCoordRect(&transient_quad, base::Vec2(text->w, text->h),
-                                  text_cache_size);
+                                  text_cache_size.Recast<float>());
   renderer::Quad::SetPositionRect(&transient_quad, compose_position);
   renderer::Quad::SetColor(&transient_quad, blend_alpha);
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
@@ -1307,7 +1308,8 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
+  renderer::Quad::SetTexCoordRectNorm(
+      &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 

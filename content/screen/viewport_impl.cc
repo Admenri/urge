@@ -445,9 +445,11 @@ void ViewportImpl::GPUUpdateViewportTransform(
     Diligent::IDeviceContext* render_context,
     const base::Rect& region) {
   renderer::WorldTransform world_matrix;
-  renderer::MakeProjectionMatrix(world_matrix.projection, region.Size());
-  renderer::MakeTransformMatrix(world_matrix.transform, region.Size(),
-                                region.Position());
+  renderer::MakeProjectionMatrix(world_matrix.projection,
+                                 region.Size().Recast<float>());
+  renderer::MakeTransformMatrix(world_matrix.transform,
+                                region.Size().Recast<float>(),
+                                region.Position().Recast<float>());
 
   render_context->UpdateBuffer(
       agent_.world_uniform, 0, sizeof(world_matrix), &world_matrix,
@@ -503,7 +505,7 @@ void ViewportImpl::GPUApplyViewportEffect(
   renderer::Quad::SetPositionRect(&transient_quad, effect_region);
   renderer::Quad::SetTexCoordRect(&transient_quad,
                                   base::Rect(effect_region.Size()),
-                                  agent_.effect.layer_size);
+                                  agent_.effect.layer_size.Recast<float>());
   agent_.effect.quads.QueueWrite(render_context, &transient_quad);
 
   // Update uniform data

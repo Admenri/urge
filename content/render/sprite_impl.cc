@@ -257,7 +257,7 @@ void SpriteImpl::Put_Angle(const float& value,
   DISPOSE_CHECK;
 
   angle_ = value;
-  uniform_params_.Rotation = angle_ * kPi / 180.0f;
+  uniform_params_.Rotation.x = angle_ * kPi / 180.0f;
 }
 
 int32_t SpriteImpl::Get_WaveAmp(ExceptionState& exception_state) {
@@ -438,7 +438,7 @@ void SpriteImpl::DrawableNodeHandlerInternal(
     base::Rect src_rect = src_rect_->AsBaseRect();
     uniform_params_.Color = target_color;
     uniform_params_.Tone = tone_->AsNormColor();
-    uniform_params_.Opacity = static_cast<float>(opacity_) / 255.0f;
+    uniform_params_.Opacity.x = static_cast<float>(opacity_) / 255.0f;
     uniform_params_.BushDepthAndOpacity.x =
         static_cast<float>(src_rect.y + src_rect.height - bush_.depth) /
         current_texture->size.y;
@@ -527,7 +527,7 @@ void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
     }
 
     renderer::Quad::SetPositionRect(quad, pos);
-    renderer::Quad::SetTexCoordRect(quad, tex, texture->size);
+    renderer::Quad::SetTexCoordRect(quad, tex, texture->size.Recast<float>());
     ++quad;
   };
 
@@ -558,8 +558,9 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(
       texcoord =
           base::Rect(rect.x + rect.width, rect.y, -rect.width, rect.height);
 
-    renderer::Quad::SetPositionRect(&agent_.quad, base::Vec2(rect.Size()));
-    renderer::Quad::SetTexCoordRect(&agent_.quad, texcoord, texture->size);
+    renderer::Quad::SetPositionRect(&agent_.quad, rect.Size().Recast<float>());
+    renderer::Quad::SetTexCoordRect(&agent_.quad, texcoord,
+                                    texture->size.Recast<float>());
   }
 
   // Start a batch if no context

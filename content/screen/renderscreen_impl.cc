@@ -647,8 +647,8 @@ void RenderScreenImpl::UpdateWindowViewportInternal() {
 
   // Process mouse coordinate and viewport rect
   base::WeakPtr<ui::Widget> window = context()->render_device->GetWindow();
-  window->GetDisplayState().scale =
-      base::Vec2(display_viewport_.Size()) / base::Vec2(context()->resolution);
+  window->GetDisplayState().scale = display_viewport_.Size().Recast<float>() /
+                                    context()->resolution.Recast<float>();
   window->GetDisplayState().viewport = display_viewport_;
 }
 
@@ -699,9 +699,10 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
 void RenderScreenImpl::GPUUpdateScreenWorldInternal() {
   renderer::WorldTransform world_transform;
   renderer::MakeProjectionMatrix(world_transform.projection,
-                                 context()->resolution);
+                                 context()->resolution.Recast<float>());
   renderer::MakeTransformMatrix(world_transform.transform,
-                                context()->resolution, -origin_);
+                                context()->resolution.Recast<float>(),
+                                base::Vec2(-origin_.x, -origin_.y));
 
   agent_.world_transform.Release();
   Diligent::CreateUniformBuffer(
@@ -753,7 +754,7 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
 
   renderer::WorldTransform world_transform;
   renderer::MakeProjectionMatrix(world_transform.projection,
-                                 context()->resolution);
+                                 context()->resolution.Recast<float>());
   renderer::MakeIdentityMatrix(world_transform.transform);
 
   agent_.root_transform.Release();
@@ -787,7 +788,8 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
     // Update vertex
     renderer::Quad transient_quad;
     renderer::Quad::SetPositionRect(&transient_quad, display_viewport_);
-    renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
+    renderer::Quad::SetTexCoordRectNorm(
+        &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
     agent_.present_quad.QueueWrite(render_context, &transient_quad);
 
     // Update uniform
@@ -804,7 +806,8 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
 
       auto* world_matrix =
           static_cast<renderer::WorldTransform*>(buffer_mapping);
-      renderer::MakeProjectionMatrix(world_matrix->projection, projection_size);
+      renderer::MakeProjectionMatrix(world_matrix->projection,
+                                     projection_size.Recast<float>());
 
       auto surface_transform = MakePresentationTransform(pre_transform);
       std::memcpy(&world_matrix->transform, &surface_transform,
@@ -964,7 +967,8 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
+  renderer::Quad::SetTexCoordRectNorm(
+      &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(progress));
   agent_.transition_quads.QueueWrite(render_context, &transient_quad);
 
@@ -1029,7 +1033,8 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(&transient_quad, base::Rect(0, 1));
+  renderer::Quad::SetTexCoordRectNorm(
+      &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(vague, 0, 0, progress));
   agent_.transition_quads.QueueWrite(render_context, &transient_quad);
 

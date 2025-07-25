@@ -33,7 +33,7 @@ base::String GetButtonSymbol(int argc, VALUE* argv) {
   base::String sym;
   if (FIXNUM_P(*argv)) {
     int key_id = FIX2INT(*argv);
-    for (int i = 0; i < std::size(kKeyboardBindings); ++i)
+    for (size_t i = 0; i < std::size(kKeyboardBindings); ++i)
       if (kKeyboardBindings[i].key_id == key_id)
         return kKeyboardBindings[i].name;
   } else if (SYMBOL_P(*argv)) {
@@ -79,7 +79,7 @@ void ApplyInputPatch() {
   MriDefineModuleFunction(klass, "trigger?", input_is_triggered);
   MriDefineModuleFunction(klass, "repeat?", input_is_repeated);
 
-  for (int i = 0; i < std::size(kKeyboardBindings); ++i) {
+  for (size_t i = 0; i < std::size(kKeyboardBindings); ++i) {
     auto& binding_set = kKeyboardBindings[i];
     ID key = rb_intern(binding_set.name.c_str());
     rb_const_set(klass, key, INT2FIX(binding_set.key_id));

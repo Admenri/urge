@@ -25,7 +25,6 @@ set(ENGINE_BASE_SRC
   debug/logging.h
   math/rectangle.cc
   math/rectangle.h
-  math/vector.cc
   math/vector.h
   memory/allocator.h
   memory/atomic_flag.cc
@@ -52,6 +51,8 @@ set(ENGINE_BASE_SRC
 add_library(engine_base STATIC ${ENGINE_BASE_SRC})
 target_link_libraries(engine_base
  PUBLIC
+  Diligent-BuildSettings
+  Diligent-Common
   mimalloc-static
   spdlog::spdlog
 )

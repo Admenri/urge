@@ -30,7 +30,8 @@ int32_t BuildTilesAlongAxis(TileAxis axis,
   base::Rect dest_rect = base::Rect(dest_pos, src_rect.Size());
   for (int32_t i = 0; i < full_blocks; ++i) {
     renderer::Quad* quad = quads + i;
-    renderer::Quad::SetTexCoordRect(quad, src_rect, texture_size);
+    renderer::Quad::SetTexCoordRect(quad, src_rect,
+                                    texture_size.Recast<float>());
     renderer::Quad::SetPositionRect(quad, dest_rect);
     renderer::Quad::SetColor(quad, color);
 
@@ -52,7 +53,8 @@ int32_t BuildTilesAlongAxis(TileAxis axis,
     }
 
     renderer::Quad* quad = quads + full_blocks;
-    renderer::Quad::SetTexCoordRect(quad, partial_src, texture_size);
+    renderer::Quad::SetTexCoordRect(quad, partial_src,
+                                    texture_size.Recast<float>());
     renderer::Quad::SetPositionRect(quad, dest_rect);
     renderer::Quad::SetColor(quad, color);
   }

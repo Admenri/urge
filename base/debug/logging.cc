@@ -194,9 +194,11 @@ LogMessage::~LogMessage() {
       g_logger->warn(stream_.str());
       break;
     case LOG_ERROR:
+      stream_ << "\nFile: " << file_ << " Line: " << line_;
       g_logger->error(stream_.str());
       break;
     case LOG_FATAL:
+      stream_ << "\nFile: " << file_ << " Line: " << line_;
       g_logger->critical(stream_.str());
       break;
   }

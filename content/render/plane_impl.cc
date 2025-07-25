@@ -315,7 +315,8 @@ void PlaneImpl::GPUUpdatePlaneQuadArrayInternal(
       // Set vertex properties directly through pointer
       const base::RectF pos(current_x, current_y, item_x, item_y);
       renderer::Quad::SetPositionRect(quad_ptr, pos);
-      renderer::Quad::SetTexCoordRect(quad_ptr, src_rect, texture->size);
+      renderer::Quad::SetTexCoordRect(quad_ptr, src_rect,
+                                      texture->size.Recast<float>());
       renderer::Quad::SetColor(quad_ptr, opacity_norm);
 
       // Move to next quad using pointer arithmetic
