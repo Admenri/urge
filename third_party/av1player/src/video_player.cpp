@@ -2,6 +2,8 @@
 
 #include "timer.hpp"
 
+#include "dav1d/dav1d.h"
+
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
@@ -40,6 +42,7 @@ VideoPlayer::VideoPlayer(const Player::Config& cfg)
       m_state(State::Uninitialized) {
   m_config = cfg;
   m_packetPool = new uvpx::ObjectPool<Packet>(1024 * 4);
+  m_decoderData.img = new Dav1dPicture;
 
   reset();
 }
@@ -218,6 +221,8 @@ void VideoPlayer::destroy() {
   m_videoQueue.destroy();
   m_audioQueue.destroy();
 
+  SafeDelete<Dav1dPicture>(m_decoderData.img);
+
   SafeDelete<Buffer<unsigned char>>(m_decodeBuffer);
 
   SafeDelete<FileReader>(m_reader);
@@ -289,15 +294,12 @@ void VideoPlayer::updateYUVData(double time) {
 
   for (plane = 0; plane < 3; ++plane) {
     const unsigned char* buf =
-        (const unsigned char*)m_decoderData.img.data[plane];
-    const int stride = ((plane == 0) ? m_decoderData.img.stride[0]
-                                     : m_decoderData.img.stride[1]);
-    int w = m_decoderData.img.p.w;
-    int h = m_decoderData.img.p.h;
-    if (plane > 0) {
-      w /= 2;
+        (const unsigned char*)m_decoderData.img->data[plane];
+    const int stride = ((plane == 0) ? m_decoderData.img->stride[0]
+                                     : m_decoderData.img->stride[1]);
+    int h = m_decoderData.img->p.h;
+    if (plane > 0)
       h /= 2;
-    }
 
     int y;
     curYUV->setDraw();
@@ -522,11 +524,11 @@ void VideoPlayer::videoDecodingThread() {
 
       dav1d_data_unref(&frame_data);
 
-      while (!dav1d_get_picture(m_decoderData.codec, &m_decoderData.img)) {
-        if (m_decoderData.img.p.layout != DAV1D_PIXEL_LAYOUT_I420) {
+      while (!dav1d_get_picture(m_decoderData.codec, m_decoderData.img)) {
+        if (m_decoderData.img->p.layout != DAV1D_PIXEL_LAYOUT_I420) {
           threadError(UVPX_UNSUPPORTED_IMAGE_FORMAT,
                       "Unsupported image format: %d",
-                      m_decoderData.img.p.layout);
+                      m_decoderData.img->p.layout);
           break;
         }
 
@@ -538,7 +540,7 @@ void VideoPlayer::videoDecodingThread() {
         updateYUVData(packet.time);
         m_framesDecoded++;
 
-        dav1d_picture_unref(&m_decoderData.img);
+        dav1d_picture_unref(m_decoderData.img);
       }
     }
 
@@ -683,7 +685,6 @@ void VideoPlayer::decodePacket(Packet* p) {
     const mkvparser::Block::Frame& theFrame = pBlock->GetFrame(i);
     const long size = theFrame.len;
     // const long long offset = theFrame.pos;
-    int decode_result;
 
     unsigned char* data = m_decodeBuffer->get(size);
     theFrame.Read(m_reader, data);

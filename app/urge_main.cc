@@ -11,6 +11,7 @@
 #include "SDL3_ttf/SDL_ttf.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 #include "base/memory/allocator.h"
 #include "binding/mri/mri_main.h"

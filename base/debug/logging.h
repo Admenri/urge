@@ -178,9 +178,11 @@
 #include <sstream>
 #include <string>
 
-#include "spdlog/spdlog.h"
-
 #include "base/buildflags/build.h"
+
+namespace spdlog {
+class logger;
+}
 
 namespace base {
 namespace logging {

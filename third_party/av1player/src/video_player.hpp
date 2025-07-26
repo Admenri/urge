@@ -11,8 +11,6 @@
 #include <thread>
 #include <vector>
 
-#include "dav1d/dav1d.h"
-
 #include "webm/mkvparser/mkvparser.h"
 
 #include "audio_decoder.hpp"
@@ -29,6 +27,9 @@
 
 #include "player.hpp"
 
+struct Dav1dContext;
+struct Dav1dPicture;
+
 namespace uvpx {
 
 static const double NS_PER_S = 1e9;
@@ -39,7 +40,7 @@ class VideoPlayer {
 
   struct VpxData {
     Dav1dContext* codec;
-    Dav1dPicture img;
+    Dav1dPicture* img;
     bool initialized;
   };
 

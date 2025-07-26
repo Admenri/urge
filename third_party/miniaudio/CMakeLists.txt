@@ -92,6 +92,10 @@ if(MINIAUDIO_FORCE_C89)
     endif()
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    list(APPEND COMPILE_OPTIONS -Wunused-function)
+endif()
+
 # Warnings
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     list(APPEND COMPILE_OPTIONS -Wall -Wextra -Wpedantic)

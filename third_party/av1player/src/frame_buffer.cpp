@@ -91,9 +91,6 @@ void FrameBuffer::update(double playTime, double frameTime) {
       m_readQueue.pop();
       m_writeQueue.push(front);
     } else if (front->time() < playTime - frameTime) {
-      float f = front->time();
-      float n = playTime;
-
       // If the frame is too old, push it to write queue (discard)
       m_readQueue.pop();
       m_writeQueue.push(front);

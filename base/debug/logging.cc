@@ -18,6 +18,8 @@
 #include <string.h>
 #endif
 
+#include "spdlog/spdlog.h"
+
 namespace base {
 namespace logging {
 
