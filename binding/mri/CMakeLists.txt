@@ -2,6 +2,43 @@
 cmake_minimum_required(VERSION 3.20.1)
 
 #--------------------------------------------------------------------------------
+# Ruby Interpreter import
+#--------------------------------------------------------------------------------
+
+## TODO: Enhance ruby build ins
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+  add_subdirectory(third_party/ruby_android)
+  include_directories(third_party/ruby_android/include)
+else()
+  # Find ruby headers, libs in system
+  find_package(Ruby REQUIRED)
+  set(RUBY_INCLUDE_PATH "${Ruby_INCLUDE_DIRS}")
+  set(RUBY_LIBRARY_PATH "${Ruby_LIBRARIES}")
+
+  # Find config file
+  add_library(mri_ruby UNKNOWN IMPORTED)  
+  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # Using specific configure for Windows
+    # y1s1, Ruby's Windows adaptation is similar to dogshit :(
+    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+      message(FATAL_ERROR "URGE Ruby Configure: Unsupport architecture")
+    elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set(RUBY_INCLUDE_PATH
+        "${PROJECT_SOURCE_DIR}/third_party/ruby_extern/config/"
+        ${RUBY_INCLUDE_PATH}
+      )
+    endif()
+  endif()
+
+  message(STATUS "[Binding] Ruby Include Path: ${RUBY_INCLUDE_PATH}")
+  message(STATUS "[Binding] Ruby Library: ${RUBY_LIBRARY_PATH}")
+  
+  set_target_properties(mri_ruby PROPERTIES
+                        IMPORTED_LOCATION "${RUBY_LIBRARY_PATH}"
+                        INTERFACE_INCLUDE_DIRECTORIES "${RUBY_INCLUDE_PATH}")
+endif()
+
+#--------------------------------------------------------------------------------
 # Mri Gem Ext
 #--------------------------------------------------------------------------------
 

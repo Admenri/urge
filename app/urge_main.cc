@@ -9,6 +9,7 @@
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "mimalloc.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
@@ -80,11 +81,7 @@ int main(int argc, char* argv[]) {
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_pattern("[%^%l%$] %v");
 
-  auto file_sink =
-      std::make_shared<spdlog::sinks::basic_file_sink_mt>(app + ".log", true);
-  file_sink->set_level(spdlog::level::trace);
-
-  spdlog::logger logger_sink("urgecore", {console_sink, file_sink});
+  spdlog::logger logger_sink("urgecore", {console_sink});
   base::logging::InitWithLogger(&logger_sink);
 
   std::string current_path = std::filesystem::current_path().generic_u8string();

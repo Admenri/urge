@@ -69,8 +69,7 @@ class RenderScreenImpl : public Graphics,
   void CreateButtonGUISettings();
 
   // Add tick monitor handler
-  base::CallbackListSubscription AddTickObserver(
-      const base::RepeatingClosure& handler);
+  void AddTickObserver(const base::RepeatingClosure& handler);
 
   // Global drawable parent (default)
   DrawNodeController* GetDrawableController() { return &controller_; }

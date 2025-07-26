@@ -38,14 +38,17 @@
 #include <type_traits>
 #include <vector>
 
-#include "mimalloc.h"
-
 namespace base {
 
 struct Allocator {
+  static void* Malloc(size_t size) noexcept;
+  static void* AlignedMalloc(size_t size, size_t alignment) noexcept;
+  static void* Realloc(void* mem, size_t size) noexcept;
+  static void Free(void* mem) noexcept;
+
   template <typename Ty, typename... Args>
   static inline Ty* New(Args&&... args) {
-    void* mem = mi_malloc(sizeof(Ty));
+    void* mem = Malloc(sizeof(Ty));
     if (!mem)
       return nullptr;
     return ::new (mem) Ty(std::forward<Args>(args)...);
@@ -55,7 +58,7 @@ struct Allocator {
   static inline void Delete(Ty* ptr) {
     if (ptr) {
       ptr->~Ty();
-      mi_free(ptr);
+      Free(ptr);
     }
   }
 
@@ -63,7 +66,7 @@ struct Allocator {
   static inline void Delete(const Ty* ptr) {
     if (ptr) {
       ptr->~Ty();
-      mi_free(const_cast<Ty*>(ptr));
+      Free(const_cast<Ty*>(ptr));
     }
   }
 };
@@ -112,10 +115,10 @@ class STLAllocator {
   STLAllocator& operator=(const STLAllocator&) noexcept = default;
 
   [[nodiscard]] T* allocate(size_type n) {
-    return static_cast<T*>(mi_malloc(n * sizeof(T)));
+    return static_cast<T*>(Allocator::Malloc(n * sizeof(T)));
   }
 
-  void deallocate(T* p, size_type) noexcept { mi_free(p); }
+  void deallocate(T* p, size_type) noexcept { Allocator::Free(p); }
 
   constexpr size_type max_size() const noexcept {
     return (size_type(-1) / sizeof(value_type));

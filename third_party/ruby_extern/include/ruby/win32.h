@@ -35,6 +35,7 @@ extern "C++" {			/* template without extern "C++" */
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #if !defined(_MSC_VER) || _MSC_VER >= 1400
 #include <iphlpapi.h>
 #endif
@@ -117,13 +118,23 @@ typedef unsigned int uintptr_t;
 # include <unistd.h>
 #endif
 
+#define rb_w32_iswinnt()  TRUE
+#define rb_w32_iswin95()  FALSE
+
 #define WNOHANG -1
 
 #define O_SHARE_DELETE 0x20000000 /* for rb_w32_open(), rb_w32_wopen() */
 
 typedef int clockid_t;
+#if defined(__MINGW32__)
+#undef CLOCK_PROCESS_CPUTIME_ID
+#undef CLOCK_THREAD_CPUTIME_ID
+#undef CLOCK_REALTIME_COARSE
+#endif
+#if defined(HAVE_CLOCK_GETTIME) && !defined(CLOCK_REALTIME)
 #define CLOCK_REALTIME  0
 #define CLOCK_MONOTONIC 1
+#endif
 
 #undef utime
 #undef lseek
@@ -144,8 +155,10 @@ typedef int clockid_t;
 #define open			rb_w32_uopen
 #define close(h)		rb_w32_close(h)
 #define fclose(f)		rb_w32_fclose(f)
-#define read(f, b, s)		rb_w32_read(f, b, s)
-#define write(f, b, s)		rb_w32_write(f, b, s)
+#define read(f, b, s) rb_w32_read(f, b, s)
+#define write(f, b, s) rb_w32_write(f, b, s)
+#define pread(f, b, s, o) rb_w32_pread(f, b, s, o)
+#define pwrite(f, b, s, o) rb_w32_pwrite(f, b, s, o)
 #define getpid()		rb_w32_getpid()
 #undef HAVE_GETPPID
 #define HAVE_GETPPID 1
@@ -322,7 +335,6 @@ extern int rb_w32_uaccess(const char *, int);
 extern char rb_w32_fd_is_text(int);
 extern int rb_w32_fstati128(int, struct stati128 *);
 extern int rb_w32_dup2(int, int);
-extern int rb_w32_setmode(int fd, int mode);
 
 #include <float.h>
 
@@ -399,8 +411,11 @@ extern int rb_w32_utruncate(const char *path, rb_off_t length);
 
 #undef HAVE_FTRUNCATE
 #define HAVE_FTRUNCATE 1
-#undef ftruncate
+#if defined HAVE_FTRUNCATE64
+#define ftruncate ftruncate64
+#else
 #define ftruncate rb_w32_ftruncate
+#endif
 
 #undef HAVE_TRUNCATE
 #define HAVE_TRUNCATE 1
@@ -711,6 +726,8 @@ int  rb_w32_fclose(FILE*);
 int  rb_w32_pipe(int[2]);
 ssize_t rb_w32_read(int, void *, size_t);
 ssize_t rb_w32_write(int, const void *, size_t);
+ssize_t rb_w32_pread(int, void *, size_t, rb_off_t offset);
+ssize_t rb_w32_pwrite(int, const void *, size_t, rb_off_t offset);
 rb_off_t  rb_w32_lseek(int, rb_off_t, int);
 int  rb_w32_uutime(const char *, const struct utimbuf *);
 int  rb_w32_uutimes(const char *, const struct timeval *);

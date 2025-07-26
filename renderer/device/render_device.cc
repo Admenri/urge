@@ -49,20 +49,20 @@ struct HookMemoryAllocator : public Diligent::IMemoryAllocator {
                  const Diligent::Char* dbgDescription,
                  const char* dbgFileName,
                  const Diligent::Int32 dbgLineNumber) override {
-    return mi_malloc(Size);
+    return base::Allocator::Malloc(Size);
   }
 
-  void Free(void* Ptr) override { mi_free(Ptr); }
+  void Free(void* Ptr) override { base::Allocator::Free(Ptr); }
 
   void* AllocateAligned(size_t Size,
                         size_t Alignment,
                         const Diligent::Char* dbgDescription,
                         const char* dbgFileName,
                         const Diligent::Int32 dbgLineNumber) override {
-    return mi_malloc_aligned(Size, Alignment);
+    return base::Allocator::AlignedMalloc(Size, Alignment);
   }
 
-  void FreeAligned(void* Ptr) override { mi_free(Ptr); }
+  void FreeAligned(void* Ptr) override { base::Allocator::Free(Ptr); }
 };
 
 void DILIGENT_CALL_TYPE

@@ -26,6 +26,7 @@ set(ENGINE_BASE_SRC
   math/rectangle.cc
   math/rectangle.h
   math/vector.h
+  memory/allocator.cc
   memory/allocator.h
   memory/atomic_flag.cc
   memory/atomic_flag.h

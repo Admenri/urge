@@ -67,7 +67,7 @@
  * Minor  version.   As of  writing  this  version changes  annually.   Greater
  * version doesn't mean "better"; they just mean years passed.
  */
-#define RUBY_API_VERSION_MINOR 2
+#define RUBY_API_VERSION_MINOR 4
 
 /**
  * Teeny version.  This digit  is kind of reserved these days.   Kept 0 for the
@@ -84,5 +84,76 @@
 #define RUBY_API_VERSION_CODE (RUBY_API_VERSION_MAJOR*10000+RUBY_API_VERSION_MINOR*100+RUBY_API_VERSION_TEENY)
 
 /** @} */
+
+#ifdef RUBY_EXTERN
+/* Internal note: this file could be included from verconf.mk _before_
+ * generating config.h, on Windows.  The #ifdef above is to trick such
+ * situation. */
+RBIMPL_SYMBOL_EXPORT_BEGIN()
+
+/**
+ * @name Interfaces from extension libraries.
+ *
+ * Before using these infos, think thrice whether they are really
+ * necessary or not, and if the answer was yes, think twice a week
+ * later again.
+ *
+ * @{
+ */
+
+/** API versions, in { major, minor, teeny } order.  */
+RUBY_EXTERN const int ruby_api_version[3];
+
+/**
+ * Stringised version.
+ *
+ * @note  This is  the runtime version, not  the API version.  For  instance it
+ *        was `"2.5.9"` when ::ruby_api_version was `{ 2, 5, 0 }`.
+ */
+RUBY_EXTERN const char ruby_version[];
+
+/** Date of release, in a C string. */
+RUBY_EXTERN const char ruby_release_date[];
+
+/**
+ * Target platform identifier, in a C string.
+ *
+ * @note  Seasoned  UNIX   programmers  should   beware  that   this  "platform
+ *        identifier"  is  our invention;  not  always  identical to  so-called
+ *        target triplets  that GNU systems  use.  For instance  on @shyouhei's
+ *        machine, ::ruby_platform is `"x64_64-linux"` while its target triplet
+ *        is `x86_64-pc-linux-gnu`.
+ * @note  Note also that we support Windows.
+ */
+RUBY_EXTERN const char ruby_platform[];
+
+/**
+ * This  is a  monotonic  increasing integer  that  describes specific  "patch"
+ * level.  You can know the exact changeset your binary is running by this info
+ * (and ::ruby_version), unless  this is -1.  -1 means there  is no release yet
+ * for the version; ruby is actively developed. 0 means the initial GA version.
+ */
+RUBY_EXTERN const int  ruby_patchlevel;
+
+/**
+ * This is what `ruby -v` prints to the standard error.  Something like:
+ * `"ruby 2.5.9p229 (2021-04-05 revision 67829) [x86_64-linux]"`. This doesn't
+ * include runtime options like a JIT being enabled.
+ */
+RUBY_EXTERN const char ruby_description[];
+
+/** Copyright notice. */
+RUBY_EXTERN const char ruby_copyright[];
+
+/**
+ * This  is just  `"ruby"`  for  us.  But  different  implementations can  have
+ * different strings here.
+ */
+RUBY_EXTERN const char ruby_engine[];
+
+/** @} */
+
+RBIMPL_SYMBOL_EXPORT_END()
+#endif
 
 #endif

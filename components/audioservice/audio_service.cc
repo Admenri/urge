@@ -130,15 +130,15 @@ static ma_result VFSInfo(ma_vfs*, ma_vfs_file file, ma_file_info* pInfo) {
 }
 
 static void* AllocatorMalloc(size_t sz, void*) {
-  return mi_malloc(sz);
+  return base::Allocator::Malloc(sz);
 }
 
 static void* AllocatorRealloc(void* p, size_t sz, void*) {
-  return mi_realloc(p, sz);
+  return base::Allocator::Realloc(p, sz);
 }
 
 static void AllocatorFree(void* p, void*) {
-  return mi_free(p);
+  return base::Allocator::Free(p);
 }
 
 static void LogOutput(void*, ma_uint32 level, const char* pMessage) {

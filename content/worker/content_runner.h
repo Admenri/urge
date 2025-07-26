@@ -93,7 +93,6 @@ class ContentRunner {
   scoped_refptr<MouseImpl> mouse_impl_;
   scoped_refptr<MiscSystem> engine_impl_;
 
-  base::CallbackListSubscription tick_observer_;
   std::atomic<int32_t> binding_quit_flag_;
   std::atomic<int32_t> binding_reset_flag_;
 

@@ -175,9 +175,8 @@ void RenderScreenImpl::CreateButtonGUISettings() {
   }
 }
 
-base::CallbackListSubscription RenderScreenImpl::AddTickObserver(
-    const base::RepeatingClosure& handler) {
-  return tick_observers_.Add(handler);
+void RenderScreenImpl::AddTickObserver(const base::RepeatingClosure& handler) {
+  tick_observers_.AddUnsafe(handler);
 }
 
 void RenderScreenImpl::AddDisposable(Disposable* disp) {

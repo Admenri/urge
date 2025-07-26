@@ -74,6 +74,10 @@ void ContentRunner::RunMainLoop() {
   module_context.mouse = mouse_impl_.get();
   module_context.engine = engine_impl_.get();
 
+  // Hook graphics event loop
+  graphics_impl_->AddTickObserver(base::BindRepeating(
+      &ContentRunner::TickHandlerInternal, base::Unretained(this)));
+
   // Execute main loop
   binding_->OnMainMessageLoopRun(execution_context_.get(), &module_context);
 
@@ -148,10 +152,6 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
 
   // Create imgui context
   CreateIMGUIContextInternal();
-
-  // Hook graphics event loop
-  tick_observer_ = graphics_impl_->AddTickObserver(base::BindRepeating(
-      &ContentRunner::TickHandlerInternal, base::Unretained(this)));
 
   // Background watch
   if (!SDL_AddEventWatch(&ContentRunner::EventWatchHandlerInternal, this)) {
