@@ -701,7 +701,6 @@ void RenderScreenImpl::GPUUpdateScreenWorldInternal() {
   renderer::MakeProjectionMatrix(world_transform.projection,
                                  context()->resolution.Recast<float>());
   renderer::MakeTransformMatrix(world_transform.transform,
-                                context()->resolution.Recast<float>(),
                                 base::Vec2(-origin_.x, -origin_.y));
 
   agent_.world_transform.Release();

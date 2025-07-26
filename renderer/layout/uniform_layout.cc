@@ -16,17 +16,15 @@ void MakeIdentityMatrix(float* out) {
   out[15] = 1.0f;
 }
 
-void MakeTransformMatrix(float* out,
-                         const base::Vec2& size,
-                         const base::Vec2& offset) {
+void MakeTransformMatrix(float* out, const base::Vec2& offset) {
   std::memset(out, 0, sizeof(float) * 16);
   out[0] = 1.0f;
   out[5] = 1.0f;
   out[10] = 1.0f;
   out[15] = 1.0f;
 
-  out[3] = (2.0f * offset.x) / size.x;
-  out[7] = (2.0f * offset.y) / size.y;
+  out[3] = offset.x;
+  out[7] = offset.y;
 }
 
 void MakeProjectionMatrix(float* out, const base::Vec2& size) {

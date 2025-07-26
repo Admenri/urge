@@ -1028,9 +1028,6 @@ void Window2Impl::GPURenderWindowQuadsInternal(
   }
 
   if (openness_ >= 255) {
-    const auto current_viewport = node_.GetParentViewport()->bound.Position() -
-                                  node_.GetParentViewport()->origin;
-
     // Controls render pass
     if (windowskin && agent_.controls_draw_count) {
       render_context->SetPipelineState(pipeline);
@@ -1046,6 +1043,8 @@ void Window2Impl::GPURenderWindowQuadsInternal(
       render_context->DrawIndexed(draw_indexed_attribs);
     }
 
+    const auto current_viewport = node_.GetParentViewport()->bound.Position() -
+                                  node_.GetParentViewport()->origin;
     const base::Rect clip_region(
         current_viewport + bound_.Position() + padding_rect.Position(),
         padding_rect.Size());

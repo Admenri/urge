@@ -448,7 +448,6 @@ void ViewportImpl::GPUUpdateViewportTransform(
   renderer::MakeProjectionMatrix(world_matrix.projection,
                                  region.Size().Recast<float>());
   renderer::MakeTransformMatrix(world_matrix.transform,
-                                region.Size().Recast<float>(),
                                 region.Position().Recast<float>());
 
   render_context->UpdateBuffer(

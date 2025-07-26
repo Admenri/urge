@@ -4,17 +4,28 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-      {
-          "name": "(gdb) Launch",
-          "type": "cppdbg",
-          "request": "launch",
-          "program": "${workspaceFolder}/build/app/urge_engine",
-          "args": [],
-          "stopAtEntry": false,
-          "cwd": "${workspaceFolder}/build/app",
-          "environment": [],
-          "externalConsole": false,
-          "MIMode": "gdb",
-      }
+    {
+      "name": "(gdb) Launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/out/build/app/urge_engine",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/out/build/game",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+    },
+    {
+      "name": "(win) Launch",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/out/build/app/urge_console",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/out/build/game",
+      "environment": [],
+      "console": "externalTerminal"
+    }
   ]
 }

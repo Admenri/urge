@@ -36,9 +36,7 @@ struct alignas(16) WorldTransform {
 
 void MakeIdentityMatrix(float* out);
 
-void MakeTransformMatrix(float* out,
-                         const base::Vec2& size,
-                         const base::Vec2& offset);
+void MakeTransformMatrix(float* out, const base::Vec2& offset);
 
 void MakeProjectionMatrix(float* out, const base::Vec2& size);
 
