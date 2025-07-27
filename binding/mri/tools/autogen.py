@@ -42,12 +42,10 @@ def main_process():
   # Check
   print(f"Current API Hash: {current_api_hash}")
   print(f"Local API Hash: {exist_api_hash}")
-  if current_api_hash == exist_api_hash:
-    return
-
-  # Save current api hash
-  with open(hash_file_path, "w", encoding="utf-8") as f:
-    f.write(current_api_hash.strip())
+  
+  need_bindgen = False
+  if not os.path.exists(os.path.join(out_dir, "mri_init_autogen.h")):
+    need_bindgen = True
   
   template_classes = []  
   for filepath in os.listdir(in_dir):
@@ -60,16 +58,27 @@ def main_process():
         klass['filename'] = filepath
         template_classes.append(klass)
         
-  # Gen json data
-  apis_serialized = json.dumps(template_classes, sort_keys=True)
+  if current_api_hash != exist_api_hash:
+    # Save current api hash
+    with open(hash_file_path, "w", encoding="utf-8") as f:
+      f.write(current_api_hash.strip())
+        
+    # Gen json data
+    apis_serialized = json.dumps(template_classes, sort_keys=True)
 
-  # Update bindgen json
-  try:
-    os.remove(os.path.join(idl_dir, "export_apis.json"))
-  except FileNotFoundError:
-    pass
-  with open(os.path.join(idl_dir, "export_apis.json"), "w", encoding="utf-8") as f:
-    f.write(apis_serialized)
+    # Update bindgen json
+    try:
+      os.remove(os.path.join(idl_dir, "export_apis.json"))
+    except FileNotFoundError:
+      pass
+    with open(os.path.join(idl_dir, "export_apis.json"), "w", encoding="utf-8") as f:
+      f.write(apis_serialized)
+      
+    # Reset state
+    need_bindgen = True
+
+  if not need_bindgen:
+    return
 
   for filepath in os.listdir(out_dir):
     os.remove(os.path.join(out_dir, filepath))
