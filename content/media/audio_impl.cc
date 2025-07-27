@@ -179,10 +179,15 @@ void AudioImpl::Reset(ExceptionState& exception_state) {
 void AudioImpl::HandleAudioServiceError(ma_result result,
                                         const base::String& filename,
                                         ExceptionState& exception_state) {
-  if (result != MA_SUCCESS)
+  if (result == MA_INVALID_FILE) {
+    LOG(WARNING) << "[Audio] Unsupport audio format - " << filename;
+    return;
+  } else if (result != MA_SUCCESS) {
     exception_state.ThrowError(
         ExceptionCode::CONTENT_ERROR, "Error when playing audio: %s (%s)",
         filename.c_str(), magic_enum::enum_name(result).data());
+    return;
+  }
 }
 
 void AudioImpl::MeThreadMonitorInternal() {

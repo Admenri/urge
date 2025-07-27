@@ -168,9 +168,18 @@ ViewportInfo* DrawableNode::GetParentViewport() {
 void DrawableNode::ReorderDrawableNodeInternal() {
   DCHECK(controller_);
 
+  // Fetch associate nodes
+  auto* previous_node = GetPreviousNode();
+  auto* next_node = GetNextNode();
+
+  if (!previous_node && !next_node)
+    return;
+
   // Check node reordering direction
-  bool ascending_order = !GetPreviousNode() || GetNextNode()->key_ < key_;
-  bool descending_order = !GetNextNode() || GetPreviousNode()->key_ > key_;
+  bool ascending_order =
+      !previous_node || (next_node ? (next_node->key_ < key_) : false);
+  bool descending_order =
+      !next_node || (previous_node ? (previous_node->key_ > key_) : false);
 
   if (!ascending_order && !descending_order) {
     // No need to reorder, already in correct position
@@ -179,7 +188,7 @@ void DrawableNode::ReorderDrawableNodeInternal() {
 
   // min -> max
   if (ascending_order) {
-    DrawableNode* current_node = GetNextNode();
+    DrawableNode* current_node = next_node;
     DCHECK(current_node);
 
     // Remove from current list, and insert before the first node with a greater
@@ -197,7 +206,7 @@ void DrawableNode::ReorderDrawableNodeInternal() {
 
   // max -> min
   if (descending_order) {
-    DrawableNode* current_node = GetPreviousNode();
+    DrawableNode* current_node = previous_node;
     DCHECK(current_node);
 
     // Remove from current list, and insert before the first node with a greater

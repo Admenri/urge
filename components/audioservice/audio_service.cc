@@ -59,7 +59,7 @@ static ma_result VFSOpen(ma_vfs* pVFS,
     io_stream = vfs->io_service->OpenWrite(pFilePath, &io_state);
 
   if (!io_stream || io_state.error_count)
-    return ma_result::MA_INVALID_FILE;
+    return ma_result::MA_DOES_NOT_EXIST;
 
   *pFile = io_stream;
   return MA_SUCCESS;
