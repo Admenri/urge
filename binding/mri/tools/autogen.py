@@ -15,7 +15,7 @@ def calculate_file_md5(file_path, buffer_size=8192):
       md5_hash.update(chunk)
   return md5_hash.hexdigest()
 
-if __name__ == "__main__":
+def main_process():
   in_dir = sys.argv[1]
   out_dir = sys.argv[2]
   
@@ -42,9 +42,8 @@ if __name__ == "__main__":
   # Check
   print(f"Current API Hash: {current_api_hash}")
   print(f"Local API Hash: {exist_api_hash}")
-
   if current_api_hash == exist_api_hash:
-    exit
+    return
 
   # Save current api hash
   with open(hash_file_path, "w", encoding="utf-8") as f:
@@ -120,3 +119,7 @@ inline void InitMriAutogen() {{
 
   with open(os.path.join(out_dir, "mri_init_autogen.h"), "w", encoding="utf-8") as f:
     f.write(header_content)
+
+
+if __name__ == "__main__":
+  main_process()
