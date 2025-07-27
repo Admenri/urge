@@ -1,7 +1,5 @@
 #include <fiddle.h>
 
-#include "fiddle.wrapper.h"
-
 VALUE mFiddle;
 VALUE rb_eFiddleDLError;
 VALUE rb_eFiddleError;
@@ -137,11 +135,6 @@ Init_fiddle(void)
      *
      */
     mFiddle = rb_define_module("Fiddle");
-
-    /*
-     * Lib simple wrapper
-     */
-    rb_eval_string(fiddle_wrapper);
 
     /*
      * Document-class: Fiddle::Error
@@ -680,6 +673,8 @@ Init_fiddle(void)
      * The value of Qundef
      */
     rb_define_const(mFiddle, "Qundef", INT2NUM(Qundef));
+
+    rb_eval_string("module Fiddle; if WINDOWS; def self.win32_last_error; Thread.current[:__FIDDLE_WIN32_LAST_ERROR__]; end; def self.win32_last_error= error; Thread.current[:__FIDDLE_WIN32_LAST_ERROR__] = error; end; def self.win32_last_socket_error; Thread.current[:__FIDDLE_WIN32_LAST_SOCKET_ERROR__]; end; def self.win32_last_socket_error= error; Thread.current[:__FIDDLE_WIN32_LAST_SOCKET_ERROR__] = error; end; end; def self.last_error; Thread.current[:__FIDDLE_LAST_ERROR__]; end; def self.last_error= error; Thread.current[:__DL2_LAST_ERROR__] = error; Thread.current[:__FIDDLE_LAST_ERROR__] = error; end; end");
 
     Init_fiddle_function();
     Init_fiddle_closure();

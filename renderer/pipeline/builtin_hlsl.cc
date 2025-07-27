@@ -22,8 +22,7 @@ namespace renderer {
 //   { Texture2D }
 ///
 
-const base::String kHLSL_BaseRender = R"(
-
+const base::String kHLSL_BaseRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -52,6 +51,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_BaseRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -65,7 +72,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   frag.a *= PSIn.Color.a;
   PSOut.Color = frag;
 }
-
 )";
 
 ///
@@ -85,8 +91,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D }
 ///
 
-const base::String kHLSL_BitmapBltRender = R"(
-
+const base::String kHLSL_BitmapBltRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -117,6 +122,15 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.Color = VSIn.Color;
   PSIn.Alpha = VSIn.Color.w;
 }
+)";
+
+const base::String kHLSL_BitmapBltRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : TEXCOORD1;
+  float Alpha : NORMAL0;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -141,7 +155,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   PSOut.Color.rgb = resultRGB;
   PSOut.Color.a = resultAlpha;
 }
-
 )";
 
 ///
@@ -159,8 +172,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4x4, float4x4 }
 ///
 
-const base::String kHLSL_ColorRender = R"(
-
+const base::String kHLSL_ColorRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -189,6 +201,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_ColorRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 struct PSOutput {
   float4 Color : SV_TARGET;
@@ -197,7 +217,6 @@ struct PSOutput {
 void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   PSOut.Color = PSIn.Color;
 }
-
 )";
 
 ///
@@ -217,8 +236,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4, float4 }
 ///
 
-const base::String kHLSL_FlatRender = R"(
-
+const base::String kHLSL_FlatRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -247,6 +265,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_FlatRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 struct FlatParams {
   float4 Color;
@@ -282,7 +308,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 
   PSOut.Color = frag;
 }
-
 )";
 
 ///
@@ -303,8 +328,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   < { float2, float2, float2, float, float4, float4, float, float, float } >
 ///
 
-const base::String kHLSL_SpriteRender = R"(
-
+const base::String kHLSL_SpriteRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -388,6 +412,18 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.BushDepth = effect.BushDepthAndOpacity.x;
   PSIn.BushOpacity = effect.BushDepthAndOpacity.y;
 }
+)";
+
+const base::String kHLSL_SpriteRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : NORMAL0;
+  float4 Tone : NORMAL1;
+  float Opacity : NORMAL2;
+  float BushDepth : NORMAL3;
+  float BushOpacity : NORMAL4;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -417,7 +453,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 
   PSOut.Color = frag;
 }
-
 )";
 
 ///
@@ -435,8 +470,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D, Texture2D }
 ///
 
-const base::String kHLSL_AlphaTransitionRender = R"(
-
+const base::String kHLSL_AlphaTransitionRender_Vertex = R"(
 struct VSInput {
   float4 Pos : ATTRIB0;
   float2 UV : ATTRIB1;
@@ -455,6 +489,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_AlphaTransitionRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_FrozenTexture;
 SamplerState u_FrozenTexture_sampler;
@@ -471,7 +513,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   float4 currentFrag = u_CurrentTexture.Sample(u_CurrentTexture_sampler, PSIn.UV);
   PSOut.Color = lerp(frozenFrag, currentFrag, PSIn.Color.a);
 }
-
 )";
 
 ///
@@ -489,8 +530,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D, Texture2D, Texture2D }
 ///
 
-const base::String kHLSL_MappingTransitionRender = R"(
-
+const base::String kHLSL_MappingTransitionRender_Vertex = R"(
 struct VSInput {
   float4 Pos : ATTRIB0;
   float2 UV : ATTRIB1;
@@ -509,6 +549,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_MappingTransitionRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_FrozenTexture;
 SamplerState u_FrozenTexture_sampler;
@@ -536,7 +584,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 
   PSOut.Color = lerp(currentFrag, frozenFrag, mixAlpha);
 }
-
 )";
 
 ///
@@ -556,8 +603,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float2, float2, float, float }
 ///
 
-const base::String kHLSL_TilemapRender = R"(
-
+const base::String kHLSL_TilemapRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -614,6 +660,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
                    transUV.y * u_Params.OffsetAndTexSize.w);
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_TilemapRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -627,7 +681,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   PSOut.Color.rgb = lerp(frag.rgb, PSIn.Color.rgb, PSIn.Color.a);
   PSOut.Color.a = frag.a;
 }
-
 )";
 
 ///
@@ -647,8 +700,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float2, float2, float2, float }
 ///
 
-const base::String kHLSL_Tilemap2Render = R"(
-
+const base::String kHLSL_Tilemap2Render_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -719,6 +771,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
                    transUV.y * u_Params.OffsetAndTexSize.w);
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_Tilemap2Render_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -732,7 +792,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   PSOut.Color.rgb = lerp(frag.rgb, PSIn.Color.rgb, PSIn.Color.a);
   PSOut.Color.a = frag.a;
 }
-
 )";
 
 ///
@@ -750,8 +809,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D }
 ///
 
-const base::String kHLSL_BitmapHueRender = R"(
-
+const base::String kHLSL_BitmapHueRender_Vertex = R"(
 struct VSInput {
   float4 Pos : ATTRIB0;
   float2 UV : ATTRIB1;
@@ -770,6 +828,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_BitmapHueRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -807,7 +873,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   hsv.x += PSIn.Color.a;
   PSOut.Color = float4(hsv2rgb(hsv), frag.a);
 }
-
 )";
 
 ///
@@ -825,8 +890,8 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { float4x4, float4x4 }
 //   { Texture2D }
 ///
-const base::String kHLSL_Spine2DRender = R"(
 
+const base::String kHLSL_Spine2DRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -859,6 +924,15 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.LightColor = VSIn.LightColor;
   PSIn.DarkColor = VSIn.DarkColor;
 }
+)";
+
+const base::String kHLSL_Spine2DRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 LightColor : COLOR0;
+  float4 DarkColor : COLOR1;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -873,7 +947,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   PSOut.Color.a = alpha;
   PSOut.Color.rgb = ((texColor.a - 1.0) * PSIn.DarkColor.a + 1.0 - texColor.rgb) * PSIn.DarkColor.rgb + texColor.rgb * PSIn.LightColor.rgb;
 }
-
 )";
 
 ///
@@ -891,8 +964,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   { Texture2D x 3 }
 ///
 
-const base::String kHLSL_YUVRender = R"(
-
+const base::String kHLSL_YUVRender_Vertex = R"(
 struct VSInput {
   float4 Pos : ATTRIB0;
   float2 UV : ATTRIB1;
@@ -909,6 +981,13 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   URGE_NDC_PROCESS(PSIn.Pos);
   PSIn.UV = VSIn.UV;
 }
+)";
+
+const base::String kHLSL_YUVRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+};
 
 Texture2D u_TextureY;
 SamplerState u_TextureY_sampler;
@@ -942,7 +1021,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 #endif
   PSOut.Color = float4(rgb.x, rgb.y, rgb.z, 1.0);
 }
-
 )";
 
 ///
@@ -964,8 +1042,7 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
 //   CONVERT_PS_OUTPUT_TO_GAMMA
 ///
 
-const base::String kHLSL_PresentRender = R"(
-
+const base::String kHLSL_PresentRender_Vertex = R"(
 struct WorldMatrix {
   float4x4 ProjMat;
   float4x4 TransMat;
@@ -993,6 +1070,14 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = VSIn.UV;
   PSIn.Color = VSIn.Color;
 }
+)";
+
+const base::String kHLSL_PresentRender_Pixel = R"(
+struct PSInput {
+  float4 Pos : SV_Position;
+  float2 UV : TEXCOORD0;
+  float4 Color : COLOR0;
+};
 
 Texture2D u_Texture;
 SamplerState u_Texture_sampler;
@@ -1007,7 +1092,6 @@ void PSMain(in PSInput PSIn, out PSOutput PSOut) {
   SRGBA_TO_LINEAR(frag);
   PSOut.Color = frag;
 }
-
 )";
 
 }  // namespace renderer

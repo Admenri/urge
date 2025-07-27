@@ -28,9 +28,6 @@
 [submodule "third_party/mimalloc"]
 	path = third_party/mimalloc
 	url = https://github.com/microsoft/mimalloc.git
-[submodule "binding/mri/third_party/zlib"]
-	path = binding/mri/third_party/zlib
-	url = https://github.com/madler/zlib.git
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib.git

@@ -52,7 +52,8 @@ struct PipelineInitParams {
 class RenderPipelineBase {
  public:
   struct ShaderSource {
-    base::String source;
+    base::String vertex_shader;
+    base::String pixel_shader;
     base::String name = "generic.shader";
     base::Vector<Diligent::ShaderMacro> macros = {};
     base::String vertex_entry = "VSMain";

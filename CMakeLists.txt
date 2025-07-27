@@ -120,6 +120,9 @@ add_subdirectory(third_party/av1player)
 ## Webm
 add_subdirectory(third_party/webm)
 
+## Zlib
+add_subdirectory(third_party/zlib)
+
 ## Mimalloc
 set(MI_OVERRIDE OFF)
 set(MI_BUILD_TESTS OFF)

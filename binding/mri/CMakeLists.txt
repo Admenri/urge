@@ -8,10 +8,6 @@ cmake_minimum_required(VERSION 3.20.1)
 ## 3rd
 include_directories(third_party)
 
-## Zlib
-add_subdirectory(third_party/zlib)
-include_directories(third_party/zlib)
-
 ## libffi
 add_subdirectory(third_party/libffi)
 include_directories(third_party/libffi)
