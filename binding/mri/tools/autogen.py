@@ -25,10 +25,6 @@ if __name__ == "__main__":
 
   os.makedirs(idl_dir, exist_ok=True)
   os.makedirs(out_dir, exist_ok=True)
-  try:
-    os.remove(os.path.join(idl_dir, "export_apis.json"))
-  except FileNotFoundError:
-    pass
 
   # Calculate idl MD5
   api_hash_set = []
@@ -68,7 +64,11 @@ if __name__ == "__main__":
   # Gen json data
   apis_serialized = json.dumps(template_classes, sort_keys=True)
 
-  # Update bindgen
+  # Update bindgen json
+  try:
+    os.remove(os.path.join(idl_dir, "export_apis.json"))
+  except FileNotFoundError:
+    pass
   with open(os.path.join(idl_dir, "export_apis.json"), "w", encoding="utf-8") as f:
     f.write(apis_serialized)
 
