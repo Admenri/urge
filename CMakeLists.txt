@@ -72,10 +72,6 @@ include_directories(third_party/freetype/include)
 add_subdirectory(third_party/text_render)
 include_directories(third_party/text_render/include)
 
-## Zlib
-add_subdirectory(third_party/zlib)
-include_directories(third_party/zlib)
-
 ## Diligent Engine
 add_subdirectory(third_party/DiligentCore)
 include_directories(third_party/DiligentCore)
@@ -125,6 +121,11 @@ add_subdirectory(third_party/av1player)
 add_subdirectory(third_party/webm)
 
 ## Mimalloc
+set(MI_OVERRIDE OFF)
+set(MI_BUILD_TESTS OFF)
+set(MI_BUILD_OBJECT OFF)
+set(MI_BUILD_SHARED OFF)
+set(MI_BUILD_STATIC ON)
 add_subdirectory(third_party/mimalloc)
 
 ## Private crypto

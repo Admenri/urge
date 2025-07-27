@@ -2,9 +2,21 @@
 cmake_minimum_required(VERSION 3.20.1)
 
 #--------------------------------------------------------------------------------
-# Ruby Interpreter import
+# 3rd import
 #--------------------------------------------------------------------------------
 
+## 3rd
+include_directories(third_party)
+
+## Zlib
+add_subdirectory(third_party/zlib)
+include_directories(third_party/zlib)
+
+## libffi
+add_subdirectory(third_party/libffi)
+include_directories(third_party/libffi)
+
+## cruby interpreter
 ## TODO: Enhance ruby build ins
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
   add_subdirectory(third_party/ruby_android)
@@ -24,7 +36,7 @@ else()
       message(FATAL_ERROR "URGE Ruby Configure: Unsupport architecture")
     elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
       set(RUBY_INCLUDE_PATH
-        "${PROJECT_SOURCE_DIR}/third_party/ruby_extern/config/"
+        "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_extern/config/"
         ${RUBY_INCLUDE_PATH}
       )
     endif()
@@ -44,23 +56,35 @@ endif()
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
 set(GEM_EXT_RUBYPROF_SRC
-  "ruby_prof/rp_allocation.c"
-  "ruby_prof/rp_call_tree.c"
-  "ruby_prof/rp_call_trees.c"
-  "ruby_prof/rp_measure_allocations.c"
-  "ruby_prof/rp_measure_memory.c"
-  "ruby_prof/rp_measure_process_time.c"
-  "ruby_prof/rp_measure_wall_time.c"
-  "ruby_prof/rp_measurement.c"
-  "ruby_prof/rp_method.c"
-  "ruby_prof/rp_profile.c"
-  "ruby_prof/rp_stack.c"
-  "ruby_prof/rp_thread.c"
-  "ruby_prof/ruby_prof.c"
+  "third_party/ruby_prof/rp_allocation.c"
+  "third_party/ruby_prof/rp_call_tree.c"
+  "third_party/ruby_prof/rp_call_trees.c"
+  "third_party/ruby_prof/rp_measure_allocations.c"
+  "third_party/ruby_prof/rp_measure_memory.c"
+  "third_party/ruby_prof/rp_measure_process_time.c"
+  "third_party/ruby_prof/rp_measure_wall_time.c"
+  "third_party/ruby_prof/rp_measurement.c"
+  "third_party/ruby_prof/rp_method.c"
+  "third_party/ruby_prof/rp_profile.c"
+  "third_party/ruby_prof/rp_stack.c"
+  "third_party/ruby_prof/rp_thread.c"
+  "third_party/ruby_prof/ruby_prof.c"
+)
+
+include_directories(third_party/fiddle)
+set(GEM_EXT_FIDDLE_SRC
+  "third_party/fiddle/closure.c"
+  "third_party/fiddle/conversions.c"
+  "third_party/fiddle/fiddle.c"
+  "third_party/fiddle/function.c"
+  "third_party/fiddle/handle.c"
+  "third_party/fiddle/memory_view.c"
+  "third_party/fiddle/pinned.c"
+  "third_party/fiddle/pointer.c"
 )
 endif ()
 
-set(GEM_EXT_ZLIB_SRC "zlib/zlib.c")
+set(GEM_EXT_ZLIB_SRC "third_party/zlib/zlib.c")
 
 #--------------------------------------------------------------------------------
 # Autogen MRI binding source collection
@@ -98,6 +122,7 @@ set(BINDING_MRI_SRC
   ${GENERATED_HEADERS}
 
   ${GEM_EXT_RUBYPROF_SRC}
+  ${GEM_EXT_FIDDLE_SRC}
   ${GEM_EXT_ZLIB_SRC}
 )
 
@@ -110,6 +135,10 @@ target_link_libraries(binding_mri
   mri_ruby
   zlibstatic
 )
+
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+  target_link_libraries(binding_mri PUBLIC ffi)
+endif ()
 
 if (ENABLE_ADMENRI_BUILD_VERSION)
   target_link_libraries(binding_mri PRIVATE admenri_arb)

@@ -6,6 +6,14 @@ import sys
 import os
 import json
 import bindgen as bgen
+import hashlib
+
+def calculate_file_md5(file_path, buffer_size=8192):
+  md5_hash = hashlib.md5()
+  with open(file_path, 'rb') as f:
+    while chunk := f.read(buffer_size):
+      md5_hash.update(chunk)
+  return md5_hash.hexdigest()
 
 if __name__ == "__main__":
   in_dir = sys.argv[1]
@@ -22,7 +30,31 @@ if __name__ == "__main__":
   except FileNotFoundError:
     pass
 
-  template_classes = []
+  # Calculate idl MD5
+  api_hash_set = []
+  for filepath in os.listdir(in_dir):
+    api_hash_set.append(calculate_file_md5(os.path.join(in_dir, filepath)))
+  current_api_hash = hashlib.md5(':'.join(api_hash_set).encode('utf-8')).hexdigest()
+  
+  # Check apis MD5
+  exist_api_hash = "<No Hash>"
+  hash_file_path = os.path.join(idl_dir, "api_hash.txt")
+  if os.path.exists(hash_file_path):
+    with open(hash_file_path, "r", encoding="utf-8") as f:
+      exist_api_hash = f.read().strip()
+
+  # Check
+  print(f"Current API Hash: {current_api_hash}")
+  print(f"Local API Hash: {exist_api_hash}")
+
+  if current_api_hash == exist_api_hash:
+    exit
+
+  # Save current api hash
+  with open(hash_file_path, "w", encoding="utf-8") as f:
+    f.write(current_api_hash.strip())
+  
+  template_classes = []  
   for filepath in os.listdir(in_dir):
     with open(os.path.join(in_dir, filepath), 'r', encoding='utf-8') as file:
       file_content = file.read()
@@ -32,9 +64,13 @@ if __name__ == "__main__":
       for klass in idl_parser.classes:
         klass['filename'] = filepath
         template_classes.append(klass)
+        
+  # Gen json data
+  apis_serialized = json.dumps(template_classes, sort_keys=True)
 
+  # Update bindgen
   with open(os.path.join(idl_dir, "export_apis.json"), "w", encoding="utf-8") as f:
-    f.write(json.dumps(template_classes))
+    f.write(apis_serialized)
 
   for filepath in os.listdir(out_dir):
     os.remove(os.path.join(out_dir, filepath))
