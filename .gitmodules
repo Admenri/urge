@@ -1,12 +1,12 @@
 [submodule "third_party/SDL"]
 	path = third_party/SDL
 	url = https://github.com/Admenri/SDL.git
+[submodule "third_party/DiligentCore"]
+	path = third_party/DiligentCore
+	url = https://github.com/Admenri/DiligentCore.git
 [submodule "third_party/freetype"]
 	path = third_party/freetype
 	url = https://github.com/freetype/freetype.git
-[submodule "third_party/zlib"]
-	path = third_party/zlib
-	url = https://github.com/madler/zlib.git
 [submodule "third_party/physfs"]
 	path = third_party/physfs
 	url = https://github.com/Admenri/physfs.git
@@ -16,9 +16,6 @@
 [submodule "third_party/vorbis"]
 	path = third_party/vorbis
 	url = https://github.com/xiph/vorbis.git
-[submodule "third_party/DiligentCore"]
-	path = third_party/DiligentCore
-	url = https://github.com/Admenri/DiligentCore.git
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
@@ -31,3 +28,9 @@
 [submodule "third_party/mimalloc"]
 	path = third_party/mimalloc
 	url = https://github.com/microsoft/mimalloc.git
+[submodule "binding/mri/third_party/zlib"]
+	path = binding/mri/third_party/zlib
+	url = https://github.com/madler/zlib.git
+[submodule "third_party/zlib"]
+	path = third_party/zlib
+	url = https://github.com/madler/zlib.git
