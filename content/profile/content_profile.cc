@@ -4,7 +4,6 @@
 
 #include "content/profile/content_profile.h"
 
-#include "base/debug/logging.h"
 #include "inih/INIReader.h"
 
 #if defined(OS_WIN)
@@ -155,11 +154,6 @@ void ContentProfile::LoadCommandLine(int32_t argc, char** argv) {
     if (base::String(argv[i]) == "btest")
       game_battle_test = true;
   }
-
-  if (game_debug)
-    LOG(INFO) << "[App] Running debug test.";
-  if (game_battle_test)
-    LOG(INFO) << "[App] Running battle test.";
 }
 
 bool ContentProfile::LoadConfigure(const base::String& app) {
@@ -169,7 +163,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
     if (reader->ParseError())
       return false;
   } else {
-    LOG(INFO) << "[App] Warning: No configure file found.";
+    return false;
   }
 
   // Default
@@ -180,10 +174,8 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
 
   if (!CheckValidUTF8(window_title.c_str())) {
 #if defined(OS_WIN)
-    LOG(INFO) << "[Profile] Non-UTF8 title was detected, try convert to ANSI.";
     window_title = ANSIFromUtf8(window_title);
 #else
-    LOG(INFO) << "[Profile] Non-UTF8 title was detected.";
     window_title = "URGE Widget";
 #endif
   }

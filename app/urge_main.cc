@@ -188,8 +188,10 @@ int main(int argc, char* argv[]) {
   profile->LoadCommandLine(argc, argv);
 
   if (!profile->LoadConfigure(app)) {
+    base::String error_message = "Error when parse configure file: \n";
+    error_message += ini;
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
-                             "Error when parse configure file.", nullptr);
+                             error_message.c_str(), nullptr);
     return 1;
   }
 
@@ -207,6 +209,11 @@ int main(int argc, char* argv[]) {
 
   LOG(INFO) << "[App] Current Path: " << current_path;
   LOG(INFO) << "[App] Configure File: " << ini;
+
+  if (profile->game_debug)
+    LOG(INFO) << "[App] Running debug test.";
+  if (profile->game_battle_test)
+    LOG(INFO) << "[App] Running battle test.";
 
   // Load crypto library
   io_service->LoadCryptoLibrary();
