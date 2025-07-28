@@ -28,6 +28,64 @@
 #include <unistd.h>
 #endif
 
+#if defined(OS_WIN)
+#include <windows.h>
+#include <optional>
+
+std::optional<base::String> ReadRGSSRTPPathWin(
+    content::ContentProfile::APIVersion api_version,
+    const char* valueName) {
+  base::String subKey;
+  switch (api_version) {
+    case content::ContentProfile::APIVersion::RGSS1:
+      subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS\\RTP";
+      break;
+    case content::ContentProfile::APIVersion::RGSS2:
+      subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS2\\RTP";
+      break;
+    case content::ContentProfile::APIVersion::RGSS3:
+      subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS3\\RTP";
+      break;
+    default:
+      return std::nullopt;
+  }
+
+  HKEY hKey = nullptr;
+  LONG result;
+
+  result =
+      RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey.c_str(), 0, KEY_READ, &hKey);
+  if (result != ERROR_SUCCESS) {
+    return std::nullopt;
+  }
+
+  DWORD dataType = 0;
+  BYTE data[1024] = {0};
+  DWORD dataSize = sizeof(data);
+
+  const char* nameToQuery =
+      (valueName && valueName[0] != '\0') ? valueName : "";
+
+  result =
+      RegQueryValueExA(hKey, nameToQuery, NULL, &dataType, data, &dataSize);
+
+  RegCloseKey(hKey);
+  if (result != ERROR_SUCCESS) {
+    return std::nullopt;
+  }
+
+  if (dataType == REG_SZ) {
+    const char* strValue = reinterpret_cast<const char*>(data);
+    if (strValue == nullptr || strValue[0] == '\0') {
+      return std::nullopt;
+    }
+    return base::String(strValue);
+  } else {
+    return std::nullopt;
+  }
+}
+#endif
+
 int main(int argc, char* argv[]) {
 #if defined(OS_WIN)
   // Allocate console if need
@@ -77,10 +135,10 @@ int main(int argc, char* argv[]) {
   env->DeleteLocalRef(activity_klass);
 
   // Fixed configure file
-  std::string app = "Game";
-  std::string ini = app + ".ini";
+  base::String app = "Game";
+  base::String ini = app + ".ini";
 #else
-  std::string app(argv[0]);
+  base::String app(argv[0]);
   for (size_t i = 0; i < app.size(); ++i)
     if (app[i] == '\\')
       app[i] = '/';
@@ -92,7 +150,7 @@ int main(int argc, char* argv[]) {
   last_sep = app.find_last_of('.');
   if (last_sep != std::string::npos)
     app = app.substr(0, last_sep);
-  std::string ini = app + ".ini";
+  base::String ini = app + ".ini";
 #endif  //! defined(OS_ANDROID)
 
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -113,7 +171,7 @@ int main(int argc, char* argv[]) {
   io_service->SetWritePath(current_path.c_str());
 
   filesystem::IOState io_state;
-  SDL_IOStream* inifile = io_service->OpenReadRaw(ini.c_str(), &io_state);
+  SDL_IOStream* inifile = io_service->OpenReadRaw(ini, &io_state);
   if (io_state.error_count) {
     std::string error_info = "Failed to load configure: ";
     error_info += ini;
@@ -128,20 +186,33 @@ int main(int argc, char* argv[]) {
 
   // Initialize profile
   base::OwnedPtr<content::ContentProfile> profile =
-      base::MakeOwnedPtr<content::ContentProfile>(app.c_str(), inifile);
+      base::MakeOwnedPtr<content::ContentProfile>(app, inifile);
   profile->LoadCommandLine(argc, argv);
 
-  if (!profile->LoadConfigure(app.c_str())) {
+  if (!profile->LoadConfigure(app)) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
                              "Error when parse configure file.", nullptr);
     return 1;
   }
 
   // Setup encryption resource package
-  std::string app_package = app + ".arb";
+  base::String app_package = app + ".arb";
   if (io_service->AddLoadPath(app_package.c_str(), "", false))
     LOG(INFO) << "[IOService] Encrypto pack \"" << app_package
               << "\" was added.";
+
+// Load rtp on windows
+#if defined(OS_WIN)
+  if (!profile->rtp.empty()) {
+    auto rtp_path =
+        ReadRGSSRTPPathWin(profile->api_version, profile->rtp.c_str());
+    if (rtp_path) {
+      LOG(INFO) << "[IOService] Load RTP path: " << *rtp_path;
+      if (!io_service->AddLoadPath(*rtp_path, "", true))
+        LOG(INFO) << "[IOService] Failed to load RTP.";
+    }
+  }
+#endif
 
   // Disable IME on Windows
 #if defined(OS_WIN)

@@ -4,9 +4,8 @@
 
 #include "content/profile/content_profile.h"
 
-#include "inih/INIReader.h"
-
 #include "base/debug/logging.h"
+#include "inih/INIReader.h"
 
 #if defined(OS_WIN)
 #include <windows.h>
@@ -177,6 +176,8 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   script_path = reader->Get("Game", "Scripts", script_path);
   ReplaceStringWidth(script_path, '\\', '/');
   window_title = reader->Get("Game", "Title", window_title);
+  rtp = reader->Get("Game", "RTP", rtp);
+
   if (!CheckValidUTF8(window_title.c_str())) {
 #if defined(OS_WIN)
     LOG(INFO) << "[Profile] Non-UTF8 title was detected, try convert to ANSI.";
@@ -185,6 +186,14 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
     LOG(INFO) << "[Profile] Non-UTF8 title was detected.";
     window_title = "URGE Widget";
 #endif
+  }
+
+  for (int32_t i = 1; i <= 3; ++i) {
+    base::String rtp_key = "RTP";
+    rtp_key += ('0' + i);
+
+    if (rtp.empty())
+      rtp = reader->Get("Game", rtp_key.c_str(), rtp);
   }
 
   // Engine

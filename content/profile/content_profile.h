@@ -39,6 +39,7 @@ class ContentProfile {
   // Game
   base::String window_title = "URGE Widget";
   base::String script_path = "Data/Scripts.rxdata";
+  base::String rtp;
 
   // Commandline
   bool game_debug = false;
