@@ -145,7 +145,6 @@ target_link_libraries(engine_content
   engine_base
   engine_ui
   engine_renderer
-  components_network
   components_filesystem
   components_fpslimiter
   components_audioservice
