@@ -27,7 +27,7 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/out/build/game",
       "environment": [],
-      "console": "integratedTerminal"
+      "console": "externalTerminal"
     }
   ]
 }

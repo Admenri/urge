@@ -33,11 +33,12 @@ int main(int argc, char* argv[]) {
   // Allocate console if need
   for (int i = 0; i < argc; ++i) {
     if (!std::strcmp(argv[i], "console")) {
-      // Create console
-      ::AllocConsole();
-      ::SetConsoleCP(CP_UTF8);
-      ::SetConsoleOutputCP(CP_UTF8);
-      ::SetConsoleTitleW(L"URGE Debugging Console");
+      if (!::AttachConsole(ATTACH_PARENT_PROCESS)) {
+        ::AllocConsole();
+        ::SetConsoleCP(CP_UTF8);
+        ::SetConsoleOutputCP(CP_UTF8);
+        ::SetConsoleTitleW(L"URGE Debugging Console");
+      }
 
       // Redirect std handle
       std::freopen("CONIN$", "rb", stdin);
