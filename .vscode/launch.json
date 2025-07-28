@@ -8,7 +8,7 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/out/build/app/urge_engine",
+      "program": "${workspaceFolder}/out/build/app/Game",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/out/build/game",
@@ -20,7 +20,7 @@
       "name": "(win) Launch",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/out/build/app/urge_engine",
+      "program": "${workspaceFolder}/out/build/app/Game",
       "args": [
         "console"
       ],
