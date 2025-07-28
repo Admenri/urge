@@ -17,15 +17,11 @@ set(URGE_DEP_LIBS
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   add_compile_definitions(NOMINMAX)
 
-  add_executable(urge_console urge_main.cc resources/app.rc)
-  target_link_libraries(urge_console PUBLIC ${URGE_DEP_LIBS})
-  if (URGE_SHARED_RENDERER_LIBRARY)
-    copy_required_dlls(urge_console)
-  endif ()
-
   add_executable(urge_engine WIN32 urge_main.cc resources/app.rc)
   target_link_libraries(urge_engine PUBLIC ${URGE_DEP_LIBS})
-
+  if (URGE_SHARED_RENDERER_LIBRARY)
+    copy_required_dlls(urge_engine)
+  endif ()
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_executable(urge_engine urge_main.cc)
   target_link_libraries(urge_engine PUBLIC ${URGE_DEP_LIBS})

@@ -80,6 +80,9 @@ include_directories(third_party/DiligentCore)
 add_subdirectory(third_party/imgui)
 include_directories(third_party/imgui)
 
+## libuv
+add_subdirectory(third_party/libuv)
+
 ## Physfs
 set(PHYSFS_BUILD_STATIC ON)
 set(PHYSFS_BUILD_SHARED OFF)
@@ -144,9 +147,10 @@ endif ()
 # * sub compinents
 #-------------------------------------------------------------------------
 
+add_subdirectory(components/audioservice)
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
-add_subdirectory(components/audioservice)
+add_subdirectory(components/network)
 add_subdirectory(components/spine2d)
 
 #-------------------------------------------------------------------------

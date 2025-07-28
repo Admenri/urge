@@ -30,7 +30,23 @@
 
 int main(int argc, char* argv[]) {
 #if defined(OS_WIN)
-  ::SetConsoleOutputCP(CP_UTF8);
+  // Allocate console if need
+  for (int i = 0; i < argc; ++i) {
+    if (!std::strcmp(argv[i], "console")) {
+      // Create console
+      ::AllocConsole();
+      ::SetConsoleCP(CP_UTF8);
+      ::SetConsoleOutputCP(CP_UTF8);
+      ::SetConsoleTitleW(L"URGE Debugging Console");
+
+      // Redirect std handle
+      std::freopen("CONIN$", "rb", stdin);
+      std::freopen("CONOUT$", "wb", stdout);
+      std::freopen("CONOUT$", "wb", stderr);
+
+      break;
+    }
+  }
 #endif  //! defined(OS_WIN)
 
   // Hook SDL memory function

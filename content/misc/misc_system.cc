@@ -30,9 +30,9 @@ void MiscSystem::OpenURL(const base::String& path,
 }
 
 base::String MiscSystem::Gets(ExceptionState& exception_state) {
-  base::String in;
-  std::cin >> in;
-  return in;
+  base::String in(1 << 10, 0);
+  std::fgets(in.data(), in.size(), stdin);
+  return in.c_str();
 }
 
 void MiscSystem::Puts(const base::String& message,

@@ -20,12 +20,14 @@
       "name": "(win) Launch",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/out/build/app/urge_console",
-      "args": [],
+      "program": "${workspaceFolder}/out/build/app/urge_engine",
+      "args": [
+        "console"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/out/build/game",
       "environment": [],
-      "console": "externalTerminal"
+      "console": "integratedTerminal"
     }
   ]
 }
