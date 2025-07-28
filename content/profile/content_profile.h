@@ -75,6 +75,7 @@ class ContentProfile {
   bool background_running = true;
 
   // Platform
+  bool debugging_console = false;
   bool disable_ime = false;
   base::String orientation = "LandscapeLeft LandscapeRight";
 

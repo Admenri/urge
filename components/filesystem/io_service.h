@@ -22,11 +22,14 @@ struct IOState {
 
 class IOService {
  public:
-  IOService(const base::String& argv0);
   ~IOService();
 
   IOService(const IOService&) = delete;
   IOService& operator=(const IOService&) = delete;
+
+  static base::OwnedPtr<IOService> Create(const base::String& argv0);
+
+  void LoadCryptoLibrary();
 
   bool SetWritePath(const base::String& path);
 
@@ -46,6 +49,10 @@ class IOService {
                 IOState* io_state);
   SDL_IOStream* OpenReadRaw(const base::String& filename, IOState* io_state);
   SDL_IOStream* OpenWrite(const base::String& filename, IOState* io_state);
+
+ private:
+  friend struct base::Allocator;
+  IOService() = default;
 };
 
 }  // namespace filesystem

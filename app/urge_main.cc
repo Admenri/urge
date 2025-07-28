@@ -84,6 +84,23 @@ std::optional<base::String> ReadRGSSRTPPathWin(
     return std::nullopt;
   }
 }
+
+void CreateConsoleWin() {
+  if (::GetConsoleWindow())
+    return;
+
+  if (!::AttachConsole(ATTACH_PARENT_PROCESS)) {
+    ::AllocConsole();
+    ::SetConsoleCP(CP_UTF8);
+    ::SetConsoleOutputCP(CP_UTF8);
+    ::SetConsoleTitleW(L"URGE Debugging Console");
+  }
+
+  // Redirect std handle
+  std::freopen("CONIN$", "rb", stdin);
+  std::freopen("CONOUT$", "wb", stdout);
+  std::freopen("CONOUT$", "wb", stderr);
+}
 #endif
 
 int main(int argc, char* argv[]) {
@@ -91,18 +108,7 @@ int main(int argc, char* argv[]) {
   // Allocate console if need
   for (int i = 0; i < argc; ++i) {
     if (!std::strcmp(argv[i], "console")) {
-      if (!::AttachConsole(ATTACH_PARENT_PROCESS)) {
-        ::AllocConsole();
-        ::SetConsoleCP(CP_UTF8);
-        ::SetConsoleOutputCP(CP_UTF8);
-        ::SetConsoleTitleW(L"URGE Debugging Console");
-      }
-
-      // Redirect std handle
-      std::freopen("CONIN$", "rb", stdin);
-      std::freopen("CONOUT$", "wb", stdout);
-      std::freopen("CONOUT$", "wb", stderr);
-
+      CreateConsoleWin();
       break;
     }
   }
@@ -153,20 +159,12 @@ int main(int argc, char* argv[]) {
   base::String ini = app + ".ini";
 #endif  //! defined(OS_ANDROID)
 
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_pattern("[%^%l%$] %v");
-
-  spdlog::logger logger_sink("urgecore", {console_sink});
-  base::logging::InitWithLogger(&logger_sink);
-
+  // Current path
   std::string current_path = std::filesystem::current_path().generic_u8string();
 
-  LOG(INFO) << "[App] Current Path: " << current_path;
-  LOG(INFO) << "[App] Configure File: " << ini;
-
   // Initialize filesystem
-  std::unique_ptr<filesystem::IOService> io_service =
-      std::make_unique<filesystem::IOService>(argv[0]);
+  base::OwnedPtr<filesystem::IOService> io_service =
+      filesystem::IOService::Create(argv[0]);
   io_service->AddLoadPath(current_path.c_str(), "", false);
   io_service->SetWritePath(current_path.c_str());
 
@@ -194,6 +192,24 @@ int main(int argc, char* argv[]) {
                              "Error when parse configure file.", nullptr);
     return 1;
   }
+
+#if defined(OS_WIN)
+  // Create console on windows
+  if (profile->debugging_console)
+    CreateConsoleWin();
+#endif
+
+  // Create spdlog
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  console_sink->set_pattern("[%^%l%$] %v");
+  spdlog::logger logger_sink("urgecore", {console_sink});
+  base::logging::InitWithLogger(&logger_sink);
+
+  LOG(INFO) << "[App] Current Path: " << current_path;
+  LOG(INFO) << "[App] Configure File: " << ini;
+
+  // Load crypto library
+  io_service->LoadCryptoLibrary();
 
   // Setup encryption resource package
   base::String app_package = app + ".arb";

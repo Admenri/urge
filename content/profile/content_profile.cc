@@ -254,6 +254,8 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
       reader->GetBoolean("Renderer", "BackgroundRunning", background_running);
 
   // Platform
+  debugging_console =
+      reader->GetBoolean("Platform", "DebuggingConsole", debugging_console);
   disable_ime = reader->GetBoolean("Platform", "DisableIME", disable_ime);
   orientation = reader->Get("Platform", "Orientations", orientation);
 

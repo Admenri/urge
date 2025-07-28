@@ -176,7 +176,7 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
 
 }  // namespace
 
-IOService::IOService(const base::String& argv0) {
+base::OwnedPtr<IOService> IOService::Create(const base::String& argv0) {
   const char* init_data = argv0.c_str();
 
 #if defined(OS_ANDROID)
@@ -186,26 +186,26 @@ IOService::IOService(const base::String& argv0) {
   init_data = (const char*)&ainit;
 #endif
 
-  if (!PHYSFS_init(init_data)) {
-    LOG(INFO) << "[IOService] Failed to load Physfs.";
-  } else {
-    LOG(INFO) << "[IOService] BasePath: " << PHYSFS_getBaseDir();
-  }
-
-#if HAVE_ARB_ENCRYPTO_SUPPORT
-  if (PHYSFS_registerArchiver(&admenri::admenri_archiver_arb))
-    LOG(INFO) << "[ARB] Enable ARB crypto library.";
-#endif
+  if (!PHYSFS_init(init_data))
+    return nullptr;
 
 #if defined(OS_ANDROID)
   PHYSFS_mount(PHYSFS_getBaseDir(), nullptr, 1);
   PHYSFS_setRoot(PHYSFS_getBaseDir(), "/assets");
 #endif
+
+  return base::MakeOwnedPtr<IOService>();
 }
 
 IOService::~IOService() {
-  if (!PHYSFS_deinit())
-    LOG(INFO) << "[IOService] Failed to unload Physfs.";
+  PHYSFS_deinit();
+}
+
+void IOService::LoadCryptoLibrary() {
+#if HAVE_ARB_ENCRYPTO_SUPPORT
+  if (PHYSFS_registerArchiver(&admenri::admenri_archiver_arb))
+    LOG(INFO) << "[ARB] Enable ARB crypto library.";
+#endif
 }
 
 bool IOService::SetWritePath(const base::String& path) {
