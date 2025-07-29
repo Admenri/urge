@@ -4,7 +4,7 @@
 
 #include "content/input/keyboard_controller.h"
 
-#include <fstream>
+#include "components/filesystem/io_service.h"
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_timer.h"
@@ -542,24 +542,29 @@ void KeyboardControllerImpl::TryReadBindingsInternal() {
   filepath += std::to_string(
       static_cast<int32_t>(context()->engine_profile->api_version));
 
-  std::ifstream fs(filepath.c_str(), std::ios::binary);
-  if (fs.is_open()) {
+  LOG(INFO) << "[Keyboard] Reading key binding table...";
+
+  filesystem::IOState io_state;
+  auto* fstream = context()->io_service->OpenReadRaw(filepath, &io_state);
+  if (fstream) {
     key_bindings_.clear();
 
-    uint32_t item_size;
-    fs.read(reinterpret_cast<char*>(&item_size), sizeof(item_size));
+    Uint32 item_size;
+    SDL_ReadIO(fstream, &item_size, sizeof(item_size));
     for (uint32_t i = 0; i < item_size; ++i) {
-      uint32_t token_size;
-      fs.read(reinterpret_cast<char*>(&token_size), sizeof(token_size));
+      Uint32 token_size;
+      SDL_ReadIO(fstream, &token_size, sizeof(token_size));
+
       base::String token(token_size, 0);
-      fs.read(token.data(), token_size);
+      SDL_ReadIO(fstream, token.data(), token_size);
+
       SDL_Scancode scancode;
-      fs.read(reinterpret_cast<char*>(&scancode), sizeof(scancode));
+      SDL_ReadIO(fstream, &scancode, sizeof(scancode));
 
       key_bindings_.push_back({token, scancode});
     }
 
-    fs.close();
+    SDL_CloseIO(fstream);
   }
 }
 
@@ -569,20 +574,24 @@ void KeyboardControllerImpl::StorageBindingsInternal() {
   filepath += std::to_string(
       static_cast<int32_t>(context()->engine_profile->api_version));
 
-  std::ofstream fs(filepath.c_str(), std::ios::binary);
-  if (fs.is_open()) {
-    uint32_t item_size = key_bindings_.size();
-    fs.write(reinterpret_cast<const char*>(&item_size), sizeof(item_size));
+  LOG(INFO) << "[Keyboard] Saving key binding table...";
+
+  filesystem::IOState io_state;
+  auto* fstream = context()->io_service->OpenWrite(filepath, &io_state);
+  if (fstream) {
+    Uint32 item_size = key_bindings_.size();
+    SDL_WriteIO(fstream, &item_size, sizeof(item_size));
     for (const auto& it : key_bindings_) {
       uint32_t token_size = it.sym.size();
-      fs.write(reinterpret_cast<const char*>(&token_size), sizeof(token_size));
-      fs.write(it.sym.data(), token_size);
+      SDL_WriteIO(fstream, &token_size, sizeof(token_size));
+
+      SDL_WriteIO(fstream, it.sym.data(), token_size);
 
       SDL_Scancode scancode = it.scancode;
-      fs.write(reinterpret_cast<const char*>(&scancode), sizeof(scancode));
+      SDL_WriteIO(fstream, &scancode, sizeof(scancode));
     }
 
-    fs.close();
+    SDL_CloseIO(fstream);
   }
 }
 
