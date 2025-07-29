@@ -24,7 +24,7 @@ class URGE_OBJECT(TextInputEvent) {
   };
 
   /*--urge(name:update)--*/
-  static base::Vector<scoped_refptr<TextInputEvent>> Update(
+  static std::vector<scoped_refptr<TextInputEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 
@@ -45,7 +45,7 @@ class URGE_OBJECT(TextInputEvent) {
   virtual Type GetType(ExceptionState& exception_state) = 0;
 
   /*--urge(name:text)--*/
-  virtual base::String GetText(ExceptionState& exception_state) = 0;
+  virtual std::string GetText(ExceptionState& exception_state) = 0;
 
   /*--urge(name:editing_start)--*/
   virtual int32_t GetEditingStart(ExceptionState& exception_state) = 0;

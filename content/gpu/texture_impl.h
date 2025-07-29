@@ -41,7 +41,7 @@ class TextureViewImpl : public GPUTextureView,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.TextureView"; }
+  std::string DisposedObjectName() override { return "GPU.TextureView"; }
 
   Diligent::RefCntAutoPtr<Diligent::ITextureView> object_;
 };
@@ -73,7 +73,7 @@ class TextureImpl : public GPUTexture, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.Texture"; }
+  std::string DisposedObjectName() override { return "GPU.Texture"; }
 
   Diligent::RefCntAutoPtr<Diligent::ITexture> object_;
 };

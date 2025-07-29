@@ -44,7 +44,7 @@ class ThreadWorker {
   ThreadWorker(const ThreadWorker&) = delete;
   ThreadWorker& operator=(const ThreadWorker&) = delete;
 
-  static base::OwnedPtr<ThreadWorker> Create();
+  static std::unique_ptr<ThreadWorker> Create();
 
   // Post a task closure for current worker.
   bool PostTask(OnceClosure task);
@@ -75,7 +75,6 @@ class ThreadWorker {
   }
 
  private:
-  friend struct base::Allocator;
   ThreadWorker();
   void ThreadMainFunctionInternal();
   bool DeleteOrReleaseSoonInternal(void (*deleter)(const void*),
@@ -83,7 +82,7 @@ class ThreadWorker {
 
   std::thread thread_;
   std::atomic<int32_t> quit_flag_;
-  base::OwnedPtr<QueueInternal> task_queue_;
+  std::unique_ptr<QueueInternal> task_queue_;
 };
 
 }  // namespace base

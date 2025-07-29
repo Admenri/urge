@@ -261,22 +261,22 @@ void RenderScreenImpl::Freeze(ExceptionState& exception_state) {
 }
 
 void RenderScreenImpl::Transition(ExceptionState& exception_state) {
-  Transition(10, base::String(), 40, exception_state);
+  Transition(10, std::string(), 40, exception_state);
 }
 
 void RenderScreenImpl::Transition(uint32_t duration,
                                   ExceptionState& exception_state) {
-  Transition(duration, base::String(), 40, exception_state);
+  Transition(duration, std::string(), 40, exception_state);
 }
 
 void RenderScreenImpl::Transition(uint32_t duration,
-                                  const base::String& filename,
+                                  const std::string& filename,
                                   ExceptionState& exception_state) {
   Transition(duration, filename, 40, exception_state);
 }
 
 void RenderScreenImpl::Transition(uint32_t duration,
-                                  const base::String& filename,
+                                  const std::string& filename,
                                   uint32_t vague,
                                   ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> transition_mapping = nullptr;
@@ -393,7 +393,7 @@ void RenderScreenImpl::Reset(ExceptionState& exception_state) {
   FrameReset(exception_state);
 }
 
-void RenderScreenImpl::PlayMovie(const base::String& filename,
+void RenderScreenImpl::PlayMovie(const std::string& filename,
                                  ExceptionState& exception_state) {
   exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                              "Unimplement: Graphics.play_movie");
@@ -555,12 +555,12 @@ void RenderScreenImpl::Put_Oy(const int32_t& value,
   GPUUpdateScreenWorldInternal();
 }
 
-base::String RenderScreenImpl::Get_WindowTitle(
+std::string RenderScreenImpl::Get_WindowTitle(
     ExceptionState& exception_state) {
   return SDL_GetWindowTitle(context()->window->AsSDLWindow());
 }
 
-void RenderScreenImpl::Put_WindowTitle(const base::String& value,
+void RenderScreenImpl::Put_WindowTitle(const std::string& value,
                                        ExceptionState& exception_state) {
   SDL_SetWindowTitle(context()->window->AsSDLWindow(), value.c_str());
 }
@@ -679,7 +679,7 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
   pipeline_init_params.target_format = swapchain_desc.ColorBufferFormat;
   pipeline_init_params.depth_stencil_format = swapchain_desc.DepthBufferFormat;
 
-  agent_.present_pipeline = base::MakeOwnedPtr<renderer::Pipeline_Present>(
+  agent_.present_pipeline = std::make_unique<renderer::Pipeline_Present>(
       pipeline_init_params, srgb_framebuffer);
   agent_.present_quad =
       renderer::DynamicQuadBatch::Make(**context()->render_device);

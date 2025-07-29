@@ -18,7 +18,7 @@ struct CoreFileInfo {
   bool closed;
 };
 
-VALUE CreateCoreFileFrom(const base::String& filename,
+VALUE CreateCoreFileFrom(const std::string& filename,
                          content::ExceptionState& exception_state) {
   filesystem::IOState io_state;
   SDL_IOStream* ops = g_io_service->OpenReadRaw(filename, &io_state);
@@ -112,7 +112,7 @@ MRI_METHOD(corefile_close) {
   return Qnil;
 }
 
-VALUE MriLoadData(const base::String& filename,
+VALUE MriLoadData(const std::string& filename,
                   content::ExceptionState& exception_state) {
   rb_gc_start();
 
@@ -129,7 +129,7 @@ VALUE MriLoadData(const base::String& filename,
 }
 
 MRI_METHOD(kernel_load_data) {
-  base::String filename;
+  std::string filename;
   MriParseArgsTo(argc, argv, "s", &filename);
 
   content::ExceptionState exception_state;

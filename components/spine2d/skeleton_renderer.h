@@ -7,7 +7,6 @@
 
 #include "spine/spine.h"
 
-#include "base/memory/allocator.h"
 #include "base/worker/thread_worker.h"
 #include "components/filesystem/io_service.h"
 #include "renderer/device/render_device.h"
@@ -71,8 +70,8 @@ class DiligentRenderer {
   SpineVertexBatch vertex_batch_;
   renderer::Binding_Base shader_binding_;
 
-  base::Vector<renderer::SpineVertex> vertex_cache_;
-  base::OwnedPtr<SkeletonRenderer> skeleton_renderer_;
+  std::vector<renderer::SpineVertex> vertex_cache_;
+  std::unique_ptr<SkeletonRenderer> skeleton_renderer_;
   RenderCommand* pending_commands_;
 };
 

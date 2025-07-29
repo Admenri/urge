@@ -24,25 +24,25 @@ class URGE_OBJECT(GPUResourceMapping) {
   virtual bool IsDisposed(ExceptionState& exception_state) = 0;
 
   /*--urge(name:add_resource)--*/
-  virtual void AddResource(const base::String& name,
+  virtual void AddResource(const std::string& name,
                            uint64_t device_object,
                            bool is_unique,
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:add_resource_array)--*/
-  virtual void AddResourceArray(const base::String& name,
+  virtual void AddResourceArray(const std::string& name,
                                 uint32_t start_index,
-                                const base::Vector<uint64_t>& device_objects,
+                                const std::vector<uint64_t>& device_objects,
                                 bool is_unique,
                                 ExceptionState& exception_state) = 0;
 
   /*--urge(name:remove_resource_by_name)--*/
-  virtual void RemoveResourceByName(const base::String& name,
+  virtual void RemoveResourceByName(const std::string& name,
                                     uint32_t array_index,
                                     ExceptionState& exception_state) = 0;
 
   /*--urge(name:resource)--*/
-  virtual uint64_t GetResource(const base::String& name,
+  virtual uint64_t GetResource(const std::string& name,
                                uint32_t array_index,
                                ExceptionState& exception_state) = 0;
 

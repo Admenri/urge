@@ -23,7 +23,7 @@ class URGE_OBJECT(KeyEvent) {
   };
 
   /*--urge(name:update)--*/
-  static base::Vector<scoped_refptr<KeyEvent>> Update(
+  static std::vector<scoped_refptr<KeyEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 

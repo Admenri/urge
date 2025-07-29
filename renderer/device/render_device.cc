@@ -8,6 +8,7 @@
 #include "SDL3/SDL_loadso.h"
 #include "SDL3/SDL_video.h"
 #include "magic_enum/magic_enum.hpp"
+#include "mimalloc.h"
 
 #include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
 #include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
@@ -49,20 +50,20 @@ struct HookMemoryAllocator : public Diligent::IMemoryAllocator {
                  const Diligent::Char* dbgDescription,
                  const char* dbgFileName,
                  const Diligent::Int32 dbgLineNumber) override {
-    return base::Allocator::Malloc(Size);
+    return mi_malloc(Size);
   }
 
-  void Free(void* Ptr) override { base::Allocator::Free(Ptr); }
+  void Free(void* Ptr) override { mi_free(Ptr); }
 
   void* AllocateAligned(size_t Size,
                         size_t Alignment,
                         const Diligent::Char* dbgDescription,
                         const char* dbgFileName,
                         const Diligent::Int32 dbgLineNumber) override {
-    return base::Allocator::AlignedMalloc(Size, Alignment);
+    return mi_aligned_alloc(Alignment, Size);
   }
 
-  void FreeAligned(void* Ptr) override { base::Allocator::Free(Ptr); }
+  void FreeAligned(void* Ptr) override { mi_free(Ptr); }
 };
 
 void DILIGENT_CALL_TYPE
@@ -265,7 +266,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       static_cast<int32_t>(adapter_info.Texture.MaxTexture2DDimension);
 
   LOG(INFO) << "[Renderer] DeviceType: " +
-                   base::String(GetRenderDeviceTypeString(device_info.Type)) +
+                   std::string(GetRenderDeviceTypeString(device_info.Type)) +
                    " (version "
             << device_info.APIVersion.Major << "."
             << device_info.APIVersion.Minor << ")";
@@ -299,9 +300,9 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       Diligent::TEX_FORMAT_D24_UNORM_S8_UINT;
 
   // Global render device
-  base::OwnedPtr<RenderDevice> render_device = base::MakeOwnedPtr<RenderDevice>(
-      window_target, swap_chain_desc, max_texture_size, pipeline_default_params,
-      device, swapchain, glcontext);
+  std::unique_ptr<RenderDevice> render_device(
+      new RenderDevice(window_target, swap_chain_desc, max_texture_size,
+                       pipeline_default_params, device, swapchain, glcontext));
 
   return std::make_tuple(std::move(render_device), std::move(context));
 }

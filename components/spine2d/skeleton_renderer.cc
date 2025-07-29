@@ -50,7 +50,7 @@ void DiligentTextureLoader::load(AtlasPage& page, const String& path) {
   io_service_->OpenRead(
       path.buffer(),
       base::BindRepeating(
-          [](SDL_Surface** surf, SDL_IOStream* io, const base::String& ext) {
+          [](SDL_Surface** surf, SDL_IOStream* io, const std::string& ext) {
             *surf = IMG_LoadTyped_IO(io, true, ext.c_str());
             return !!*surf;
           },
@@ -105,7 +105,7 @@ DiligentRenderer::DiligentRenderer(renderer::RenderDevice* device)
     : device_(device),
       vertex_batch_(SpineVertexBatch::Make(**device)),
       shader_binding_(device->GetPipelines()->spine2d.CreateBinding()),
-      skeleton_renderer_(base::MakeOwnedPtr<SkeletonRenderer>()),
+      skeleton_renderer_(std::make_unique<SkeletonRenderer>()),
       pending_commands_(nullptr) {}
 
 DiligentRenderer::~DiligentRenderer() {

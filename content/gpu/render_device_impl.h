@@ -53,10 +53,10 @@ class RenderDeviceImpl : public GPURenderDevice,
       scoped_refptr<GPUSamplerDesc> desc,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUResourceMapping> CreateResourceMapping(
-      const base::Vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
+      const std::vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUPipelineState> CreateGraphicsPipelineState(
-      const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+      const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
       scoped_refptr<GPUGraphicsPipelineDesc> graphics_pipeline_desc,
       scoped_refptr<GPUShader> vertex_shader,
       scoped_refptr<GPUShader> pixel_shader,
@@ -66,7 +66,7 @@ class RenderDeviceImpl : public GPURenderDevice,
       uint64_t immediate_context_mask,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUPipelineState> CreateComputePipelineState(
-      const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+      const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
       scoped_refptr<GPUShader> compute_shader,
       uint64_t immediate_context_mask,
       ExceptionState& exception_state) override;
@@ -83,7 +83,7 @@ class RenderDeviceImpl : public GPURenderDevice,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.RenderDevice"; }
+  std::string DisposedObjectName() override { return "GPU.RenderDevice"; }
 
   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> object_;
 };

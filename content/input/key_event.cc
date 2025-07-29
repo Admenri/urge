@@ -8,13 +8,13 @@
 
 namespace content {
 
-base::Vector<scoped_refptr<KeyEvent>> KeyEvent::Update(
+std::vector<scoped_refptr<KeyEvent>> KeyEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  base::Vector<EventController::KeyEventData> raw_events;
+  std::vector<EventController::KeyEventData> raw_events;
   execution_context->event_controller->PollKeyEvents(raw_events);
 
-  base::Vector<scoped_refptr<KeyEvent>> filtered_events;
+  std::vector<scoped_refptr<KeyEvent>> filtered_events;
   for (auto& it : raw_events)
     filtered_events.push_back(base::MakeRefCounted<KeyEventImpl>(it));
 

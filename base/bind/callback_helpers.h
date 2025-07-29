@@ -239,6 +239,16 @@ class DoNothing {
   }
 };
 
+///
+/// Useful for creating a Closure that will delete a pointer when invoked. Only
+/// use this when necessary. In most cases MessageLoop::DeleteSoon() is a better
+/// fit.
+///
+template <typename T>
+void DeletePointer(T* obj) {
+  delete obj;
+}
+
 }  // namespace base
 
 #endif  // BASE_BIND_CALLBACK_HELPERS_H_

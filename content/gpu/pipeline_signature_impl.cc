@@ -51,7 +51,7 @@ void PipelineSignatureImpl::BindStaticResources(
 scoped_refptr<GPUResourceVariable>
 PipelineSignatureImpl::GetStaticVariableByName(
     GPU::ShaderType type,
-    const base::String& name,
+    const std::string& name,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 

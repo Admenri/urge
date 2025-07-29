@@ -37,7 +37,7 @@ scoped_refptr<Tone> Tone::Copy(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
-                                      const base::String& data,
+                                      const std::string& data,
                                       ExceptionState& exception_state) {
   if (data.size() < sizeof(double) * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -54,11 +54,11 @@ scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
   return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, gray));
 }
 
-base::String Tone::Serialize(ExecutionContext* execution_context,
+std::string Tone::Serialize(ExecutionContext* execution_context,
                             scoped_refptr<Tone> value,
                             ExceptionState& exception_state) {
   scoped_refptr<ToneImpl> impl = ToneImpl::From(value);
-  base::String serial_data(sizeof(double) * 4, 0);
+  std::string serial_data(sizeof(double) * 4, 0);
 
   double* target_ptr = reinterpret_cast<double*>(serial_data.data());
   *(target_ptr + 0) = impl->value_.x;

@@ -169,7 +169,7 @@ VALUE MriWrapObject(scoped_refptr<Ty> ptr,
   return obj;
 }
 
-inline void MriCollectStrings(VALUE obj, base::Vector<base::String>& out) {
+inline void MriCollectStrings(VALUE obj, std::vector<std::string>& out) {
   if (RB_TYPE_P(obj, RUBY_T_STRING)) {
     out.push_back(RSTRING_PTR(obj));
     return;
@@ -204,7 +204,7 @@ MRI_METHOD(MriReturnInt) {
 }
 
 #define MRI_FROM_BOOL(v) (v != Qfalse)
-#define MRI_FROM_STRING(v) (base::String(RSTRING_PTR(v), RSTRING_LEN(v)))
+#define MRI_FROM_STRING(v) (std::string(RSTRING_PTR(v), RSTRING_LEN(v)))
 
 #define MRI_BOOL_VALUE(v) ((v) ? Qtrue : Qfalse)
 #define MRI_STRING_VALUE(v) rb_utf8_str_new(v.c_str(), (long)v.size())
@@ -231,7 +231,7 @@ MRI_METHOD(MriReturnInt) {
 
 template <typename Ty>
 MRI_METHOD(serializable_marshal_load) {
-  base::String data;
+  std::string data;
   MriParseArgsTo(argc, argv, "s", &data);
 
   content::ExceptionState exception_state;
@@ -251,7 +251,7 @@ MRI_METHOD(serializable_marshal_dump) {
   scoped_refptr obj = MriGetStructData<Ty>(self);
 
   content::ExceptionState exception_state;
-  base::String data =
+  std::string data =
       Ty::Serialize(MriGetCurrentContext(), obj, exception_state);
   MriProcessException(exception_state);
 
@@ -300,138 +300,138 @@ void MriInitSerializableBinding(VALUE klass) {
 ///
 
 template <typename Ty>
-inline base::Vector<Ty> RBARRAY2CXX(VALUE ary) {
+inline std::vector<Ty> RBARRAY2CXX(VALUE ary) {
   static_assert(false, "unsupport vector type.");
   return {};
 }
 
 template <typename Ty>
-inline base::Vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
+inline std::vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
                                                    const rb_data_type_t& type) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<scoped_refptr<Ty>> result;
+  std::vector<scoped_refptr<Ty>> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(MriCheckStructData<Ty>(rb_ary_entry(ary, i), type));
   return result;
 }
 
 template <typename Ty>
-inline base::Vector<Ty> RBARRAY2CXX(VALUE ary,
+inline std::vector<Ty> RBARRAY2CXX(VALUE ary,
                                     std::function<Ty(VALUE)> cvt_fn) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<Ty> result;
+  std::vector<Ty> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(cvt_fn(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <typename Ty>
-inline base::Vector<Ty> RBARRAY2CXX_CONST(VALUE ary) {
+inline std::vector<Ty> RBARRAY2CXX_CONST(VALUE ary) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<Ty> result;
+  std::vector<Ty> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back((Ty)NUM2INT(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<int32_t> RBARRAY2CXX(VALUE ary) {
+inline std::vector<int32_t> RBARRAY2CXX(VALUE ary) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<int32_t> result;
+  std::vector<int32_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2INT(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<uint32_t> RBARRAY2CXX(VALUE ary) {
+inline std::vector<uint32_t> RBARRAY2CXX(VALUE ary) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<uint32_t> result;
+  std::vector<uint32_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2UINT(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<int64_t> RBARRAY2CXX(VALUE ary) {
+inline std::vector<int64_t> RBARRAY2CXX(VALUE ary) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<int64_t> result;
+  std::vector<int64_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2LL(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<uint64_t> RBARRAY2CXX(VALUE ary) {
+inline std::vector<uint64_t> RBARRAY2CXX(VALUE ary) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
   }
 
-  base::Vector<uint64_t> result;
+  std::vector<uint64_t> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(NUM2LL(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<bool> RBARRAY2CXX(VALUE ary) {
+inline std::vector<bool> RBARRAY2CXX(VALUE ary) {
   static_assert("avoid using vector_bool.");
   return {};
 }
 
 template <>
-inline base::Vector<float> RBARRAY2CXX(VALUE ary) {
+inline std::vector<float> RBARRAY2CXX(VALUE ary) {
   if (RB_TYPE_P(ary, RUBY_T_FLOAT))
     return {(float)RFLOAT_VALUE(ary)};
 
-  base::Vector<float> result;
+  std::vector<float> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back((float)RFLOAT_VALUE(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<double> RBARRAY2CXX(VALUE ary) {
+inline std::vector<double> RBARRAY2CXX(VALUE ary) {
   if (RB_TYPE_P(ary, RUBY_T_FLOAT))
     return {RFLOAT_VALUE(ary)};
 
-  base::Vector<double> result;
+  std::vector<double> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(RFLOAT_VALUE(rb_ary_entry(ary, i)));
   return result;
 }
 
 template <>
-inline base::Vector<base::String> RBARRAY2CXX(VALUE ary) {
+inline std::vector<std::string> RBARRAY2CXX(VALUE ary) {
   if (RB_TYPE_P(ary, RUBY_T_STRING))
     return {MRI_FROM_STRING(ary)};
 
-  base::Vector<base::String> result;
+  std::vector<std::string> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i) {
     VALUE str = rb_ary_entry(ary, i);
     result.push_back(MRI_FROM_STRING(str));
@@ -445,7 +445,7 @@ inline base::Vector<base::String> RBARRAY2CXX(VALUE ary) {
 ///
 
 template <typename Ty>
-inline VALUE CXX2RBARRAY(const base::Vector<Ty>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<Ty>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, INT2NUM(it));
@@ -453,7 +453,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<Ty>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<int32_t>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<int32_t>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, INT2NUM(it));
@@ -461,7 +461,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<int32_t>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<uint32_t>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<uint32_t>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, UINT2NUM(it));
@@ -469,7 +469,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<uint32_t>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<int64_t>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<int64_t>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, LL2NUM(it));
@@ -477,7 +477,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<int64_t>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<uint64_t>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<uint64_t>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, ULL2NUM(it));
@@ -485,13 +485,13 @@ inline VALUE CXX2RBARRAY(const base::Vector<uint64_t>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<bool>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<bool>& ary) {
   static_assert("avoid using vector_bool.");
   return Qnil;
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<float>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<float>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, DBL2NUM(it));
@@ -499,7 +499,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<float>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<double>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<double>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, DBL2NUM(it));
@@ -507,7 +507,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<double>& ary) {
 }
 
 template <>
-inline VALUE CXX2RBARRAY(const base::Vector<base::String>& ary) {
+inline VALUE CXX2RBARRAY(const std::vector<std::string>& ary) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
     rb_ary_push(result, MRI_STRING_VALUE(it));
@@ -515,7 +515,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<base::String>& ary) {
 }
 
 template <typename Ty>
-inline VALUE CXX2RBARRAY(const base::Vector<scoped_refptr<Ty>>& ary,
+inline VALUE CXX2RBARRAY(const std::vector<scoped_refptr<Ty>>& ary,
                          const rb_data_type_t& type) {
   VALUE result = rb_ary_new();
   for (auto it : ary)
@@ -524,7 +524,7 @@ inline VALUE CXX2RBARRAY(const base::Vector<scoped_refptr<Ty>>& ary,
 }
 
 template <typename Ty>
-inline VALUE CXX2RBARRAY(const base::Vector<Ty>& ary,
+inline VALUE CXX2RBARRAY(const std::vector<Ty>& ary,
                          std::function<VALUE(const Ty&)> cvt_fn) {
   VALUE result = rb_ary_new();
   for (auto it : ary)

@@ -31,7 +31,7 @@ class URGE_OBJECT(MouseEvent) {
   };
 
   /*--urge(name:update)--*/
-  static base::Vector<scoped_refptr<MouseEvent>> Update(
+  static std::vector<scoped_refptr<MouseEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 

@@ -35,7 +35,7 @@ class FenceImpl : public GPUFence, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.Fence"; }
+  std::string DisposedObjectName() override { return "GPU.Fence"; }
 
   Diligent::RefCntAutoPtr<Diligent::IFence> object_;
 };

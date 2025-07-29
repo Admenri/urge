@@ -30,15 +30,15 @@ MeshImpl::MeshImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(MeshImpl);
 
-void MeshImpl::SetLabel(const base::String& label,
+void MeshImpl::SetLabel(const std::string& label,
                         ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }
 
 void MeshImpl::SetVertexBuffers(
     uint32_t start_slot,
-    const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
-    const base::Vector<uint64_t>& offsets,
+    const std::vector<scoped_refptr<GPUBuffer>>& buffers,
+    const std::vector<uint64_t>& offsets,
     GPU::SetVertexBuffersFlags flags,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
@@ -166,7 +166,7 @@ void MeshImpl::SetDrawAttribs(
 }
 
 void MeshImpl::SetMultiDrawAttribs(
-    const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+    const std::vector<scoped_refptr<GPUMultiDrawItem>>& items,
     uint32_t num_instances,
     uint32_t first_instance,
     ExceptionState& exception_state) {
@@ -184,7 +184,7 @@ void MeshImpl::SetMultiDrawAttribs(
 }
 
 void MeshImpl::SetMultiDrawAttribs(
-    const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+    const std::vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
     GPU::ValueType index_type,
     uint32_t num_instances,
     uint32_t first_instance,
@@ -305,7 +305,7 @@ void MeshImpl::GPURenderInternal(Diligent::IDeviceContext* render_context,
     return;
 
   // Input Assembly
-  base::Vector<Diligent::IBuffer*> buffers(vertex_buffers_.buffers.size());
+  std::vector<Diligent::IBuffer*> buffers(vertex_buffers_.buffers.size());
   for (uint32_t i = 0; i < buffers.size(); ++i)
     buffers[i] = vertex_buffers_.buffers[i].RawPtr();
 

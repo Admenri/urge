@@ -112,13 +112,13 @@ RenderPipelineBase::RenderPipelineBase(Diligent::IRenderDevice* device)
 
 void RenderPipelineBase::BuildPipeline(
     const ShaderSource& shader_source,
-    const base::Vector<Diligent::LayoutElement>& input_layout,
-    const base::Vector<RRefPtr<Diligent::IPipelineResourceSignature>>&
+    const std::vector<Diligent::LayoutElement>& input_layout,
+    const std::vector<RRefPtr<Diligent::IPipelineResourceSignature>>&
         signatures,
     Diligent::TEXTURE_FORMAT target_format,
     Diligent::TEXTURE_FORMAT depth_stencil_format) {
   // Make pipeline debug name
-  base::String pipeline_name = "pipeline<" + shader_source.name + ">";
+  std::string pipeline_name = "pipeline<" + shader_source.name + ">";
 
   // Make graphics pipeline state
   Diligent::GraphicsPipelineStateCreateInfo pipeline_state_desc;
@@ -144,7 +144,7 @@ void RenderPipelineBase::BuildPipeline(
 
   {
     // Preprocess shader source
-    base::String processed_vertex_shader = kShaderNdcProcessor;
+    std::string processed_vertex_shader = kShaderNdcProcessor;
     processed_vertex_shader.push_back('\n');
     processed_vertex_shader += shader_source.vertex_shader;
 
@@ -180,7 +180,7 @@ void RenderPipelineBase::BuildPipeline(
 
   // Setup resource signature
   resource_signatures_ = signatures;
-  base::Vector<Diligent::IPipelineResourceSignature*> raw_signatures;
+  std::vector<Diligent::IPipelineResourceSignature*> raw_signatures;
   for (const auto& it : resource_signatures_)
     raw_signatures.push_back(it);
   pipeline_state_desc.ResourceSignaturesCount = resource_signatures_.size();
@@ -219,8 +219,8 @@ void RenderPipelineBase::BuildPipeline(
 
 RRefPtr<Diligent::IPipelineResourceSignature>
 RenderPipelineBase::MakeResourceSignature(
-    const base::Vector<Diligent::PipelineResourceDesc>& variables,
-    const base::Vector<Diligent::ImmutableSamplerDesc>& samplers,
+    const std::vector<Diligent::PipelineResourceDesc>& variables,
+    const std::vector<Diligent::ImmutableSamplerDesc>& samplers,
     uint8_t binding_index) {
   Diligent::PipelineResourceSignatureDesc resource_signature_desc;
   resource_signature_desc.Resources = variables.data();
@@ -240,7 +240,7 @@ Pipeline_Base::Pipeline_Base(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_BaseRender_Vertex,
                                    kHLSL_BaseRender_Pixel, "base.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -249,7 +249,7 @@ Pipeline_Base::Pipeline_Base(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -268,7 +268,7 @@ Pipeline_BitmapBlt::Pipeline_BitmapBlt(const PipelineInitParams& init_params)
                                    kHLSL_BitmapBltRender_Pixel,
                                    "bitmapblt.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -280,7 +280,7 @@ Pipeline_BitmapBlt::Pipeline_BitmapBlt(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -303,7 +303,7 @@ Pipeline_Color::Pipeline_Color(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_ColorRender_Vertex,
                                    kHLSL_ColorRender_Pixel, "color.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -319,7 +319,7 @@ Pipeline_Flat::Pipeline_Flat(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_FlatRender_Vertex,
                                    kHLSL_FlatRender_Pixel, "flat.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -331,7 +331,7 @@ Pipeline_Flat::Pipeline_Flat(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -371,7 +371,7 @@ Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
                                    "sprite.render",
                                    {vertex_macro}};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -385,7 +385,7 @@ Pipeline_Sprite::Pipeline_Sprite(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -405,7 +405,7 @@ Pipeline_AlphaTransition::Pipeline_AlphaTransition(
                                    kHLSL_AlphaTransitionRender_Pixel,
                                    "alpha.trans.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_PIXEL, "u_FrozenTexture",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -414,7 +414,7 @@ Pipeline_AlphaTransition::Pipeline_AlphaTransition(
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_FrozenTexture",
@@ -439,7 +439,7 @@ Pipeline_VagueTransition::Pipeline_VagueTransition(
                                    kHLSL_MappingTransitionRender_Pixel,
                                    "vague.trans.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_PIXEL, "u_FrozenTexture",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -451,7 +451,7 @@ Pipeline_VagueTransition::Pipeline_VagueTransition(
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_FrozenTexture",
@@ -479,7 +479,7 @@ Pipeline_Tilemap::Pipeline_Tilemap(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_TilemapRender_Vertex,
                                    kHLSL_TilemapRender_Pixel, "tilemap.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -491,7 +491,7 @@ Pipeline_Tilemap::Pipeline_Tilemap(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -510,7 +510,7 @@ Pipeline_Tilemap2::Pipeline_Tilemap2(const PipelineInitParams& init_params)
                                    kHLSL_Tilemap2Render_Pixel,
                                    "tilemap2.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -522,7 +522,7 @@ Pipeline_Tilemap2::Pipeline_Tilemap2(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -540,13 +540,13 @@ Pipeline_BitmapHue::Pipeline_BitmapHue(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_BitmapHueRender_Vertex,
                                    kHLSL_BitmapHueRender_Pixel, "hue.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_PIXEL, "u_Texture",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -564,7 +564,7 @@ Pipeline_Spine2D::Pipeline_Spine2D(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_Spine2DRender_Vertex,
                                    kHLSL_Spine2DRender_Pixel, "spine2d.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -573,7 +573,7 @@ Pipeline_Spine2D::Pipeline_Spine2D(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_Texture",
@@ -591,7 +591,7 @@ Pipeline_YUV::Pipeline_YUV(const PipelineInitParams& init_params)
   const ShaderSource shader_source{kHLSL_YUVRender_Vertex,
                                    kHLSL_YUVRender_Pixel, "yuv.render"};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_PIXEL, "u_TextureY",
        Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
@@ -603,7 +603,7 @@ Pipeline_YUV::Pipeline_YUV(const PipelineInitParams& init_params)
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
   };
 
-  const base::Vector<Diligent::ImmutableSamplerDesc> samplers = {
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
       {
           Diligent::SHADER_TYPE_PIXEL,
           "u_TextureY",
@@ -629,7 +629,7 @@ Pipeline_YUV::Pipeline_YUV(const PipelineInitParams& init_params)
 Pipeline_Present::Pipeline_Present(const PipelineInitParams& init_params,
                                    bool manual_srgb)
     : RenderPipelineBase(init_params.device) {
-  base::Vector<Diligent::ShaderMacro> pixel_macros = {
+  std::vector<Diligent::ShaderMacro> pixel_macros = {
       {"GAMMA_TO_LINEAR(Gamma)", kShaderGAMMA2LINEAR},
       {"SRGBA_TO_LINEAR(col)", manual_srgb ? kShaderSRGBA2LINEAR : ""},
   };
@@ -638,7 +638,7 @@ Pipeline_Present::Pipeline_Present(const PipelineInitParams& init_params,
                                    kHLSL_PresentRender_Pixel, "present.render",
                                    pixel_macros};
 
-  const base::Vector<Diligent::PipelineResourceDesc> variables = {
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
       {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
        Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
        Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},

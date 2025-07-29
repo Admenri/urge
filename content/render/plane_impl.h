@@ -17,7 +17,7 @@ class PlaneImpl : public Plane, public EngineObject, public Disposable {
  public:
   struct Agent {
     renderer::QuadBatch batch;
-    base::Vector<renderer::Quad> cache;
+    std::vector<renderer::Quad> cache;
     uint32_t quad_size;
 
     renderer::Binding_Flat shader_binding;
@@ -31,7 +31,7 @@ class PlaneImpl : public Plane, public EngineObject, public Disposable {
   PlaneImpl(const PlaneImpl&) = delete;
   PlaneImpl& operator=(const PlaneImpl&) = delete;
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -53,7 +53,7 @@ class PlaneImpl : public Plane, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Plane"; }
+  std::string DisposedObjectName() override { return "Plane"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

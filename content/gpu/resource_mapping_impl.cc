@@ -16,7 +16,7 @@ ResourceMappingImpl::ResourceMappingImpl(ExecutionContext* context,
 
 DISPOSABLE_DEFINITION(ResourceMappingImpl);
 
-void ResourceMappingImpl::AddResource(const base::String& name,
+void ResourceMappingImpl::AddResource(const std::string& name,
                                       uint64_t device_object,
                                       bool is_unique,
                                       ExceptionState& exception_state) {
@@ -28,14 +28,14 @@ void ResourceMappingImpl::AddResource(const base::String& name,
 }
 
 void ResourceMappingImpl::AddResourceArray(
-    const base::String& name,
+    const std::string& name,
     uint32_t start_index,
-    const base::Vector<uint64_t>& device_objects,
+    const std::vector<uint64_t>& device_objects,
     bool is_unique,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::IDeviceObject*> objects;
+  std::vector<Diligent::IDeviceObject*> objects;
   for (auto element : device_objects)
     objects.push_back(reinterpret_cast<Diligent::IDeviceObject*>(element));
 
@@ -44,7 +44,7 @@ void ResourceMappingImpl::AddResourceArray(
 }
 
 void ResourceMappingImpl::RemoveResourceByName(
-    const base::String& name,
+    const std::string& name,
     uint32_t array_index,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
@@ -52,7 +52,7 @@ void ResourceMappingImpl::RemoveResourceByName(
   object_->RemoveResourceByName(name.c_str(), array_index);
 }
 
-uint64_t ResourceMappingImpl::GetResource(const base::String& name,
+uint64_t ResourceMappingImpl::GetResource(const std::string& name,
                                           uint32_t array_index,
                                           ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);

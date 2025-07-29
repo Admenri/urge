@@ -25,7 +25,7 @@ class URGE_OBJECT(Bitmap) {
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
-                                   const base::String& filename,
+                                   const std::string& filename,
                                    ExceptionState& exception_state);
 
   /*--urge(name:initialize)--*/
@@ -53,7 +53,7 @@ class URGE_OBJECT(Bitmap) {
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Bitmap> FromStream(ExecutionContext* execution_context,
                                           scoped_refptr<IOStream> stream,
-                                          const base::String& extname,
+                                          const std::string& extname,
                                           ExceptionState& exception_state);
 
   /*--urge(serializable)--*/
@@ -177,7 +177,7 @@ class URGE_OBJECT(Bitmap) {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const base::String& str,
+                        const std::string& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
@@ -186,22 +186,22 @@ class URGE_OBJECT(Bitmap) {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const base::String& str,
+                        const std::string& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const base::String& str,
+                        const std::string& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const base::String& str,
+                        const std::string& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:text_size)--*/
-  virtual scoped_refptr<Rect> TextSize(const base::String& str,
+  virtual scoped_refptr<Rect> TextSize(const std::string& str,
                                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_surface)--*/

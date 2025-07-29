@@ -41,7 +41,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
 
   static scoped_refptr<ViewportImpl> From(scoped_refptr<Viewport> host);
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -70,7 +70,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Viewport"; }
+  std::string DisposedObjectName() override { return "Viewport"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

@@ -53,8 +53,8 @@ class SpriteBatch {
   int32_t last_batch_index_;
   const bool support_storage_buffer_batch_;
 
-  base::Vector<renderer::Quad> quad_cache_;
-  base::Vector<renderer::Binding_Sprite::Params> uniform_cache_;
+  std::vector<renderer::Quad> quad_cache_;
+  std::vector<renderer::Binding_Sprite::Params> uniform_cache_;
 
   renderer::Binding_Sprite binding_;
   renderer::QuadBatch vertex_batch_;

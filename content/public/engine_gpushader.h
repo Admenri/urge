@@ -37,7 +37,7 @@ class URGE_OBJECT(GPUShader) {
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:bytecode)--*/
-  virtual base::String GetBytecode(ExceptionState& exception_state) = 0;
+  virtual std::string GetBytecode(ExceptionState& exception_state) = 0;
 
   /*--urge(name:status)--*/
   virtual GPU::ShaderStatus GetStatus(bool wait_for_completion,

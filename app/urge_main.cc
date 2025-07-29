@@ -14,7 +14,6 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-#include "base/memory/allocator.h"
 #include "binding/mri/mri_main.h"
 #include "components/filesystem/io_service.h"
 #include "content/canvas/font_context.h"
@@ -36,10 +35,10 @@
 #include <windows.h>
 #include <optional>
 
-std::optional<base::String> ReadRGSSRTPPathWin(
+std::optional<std::string> ReadRGSSRTPPathWin(
     content::ContentProfile::APIVersion api_version,
     const char* valueName) {
-  base::String subKey;
+  std::string subKey;
   switch (api_version) {
     case content::ContentProfile::APIVersion::RGSS1:
       subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS\\RTP";
@@ -83,7 +82,7 @@ std::optional<base::String> ReadRGSSRTPPathWin(
     if (strValue == nullptr || strValue[0] == '\0') {
       return std::nullopt;
     }
-    return base::String(strValue);
+    return std::string(strValue);
   } else {
     return std::nullopt;
   }
@@ -145,10 +144,10 @@ int main(int argc, char* argv[]) {
   env->DeleteLocalRef(activity_klass);
 
   // Fixed configure file
-  base::String app = "Game";
-  base::String ini = app + ".ini";
+  std::string app = "Game";
+  std::string ini = app + ".ini";
 #else
-  base::String app(argv[0]);
+  std::string app(argv[0]);
   for (size_t i = 0; i < app.size(); ++i)
     if (app[i] == '\\')
       app[i] = '/';
@@ -160,17 +159,17 @@ int main(int argc, char* argv[]) {
   last_sep = app.find_last_of('.');
   if (last_sep != std::string::npos)
     app = app.substr(0, last_sep);
-  base::String ini = app + ".ini";
+  std::string ini = app + ".ini";
 #endif  //! defined(OS_ANDROID)
 
   // Current path
   std::string current_path = std::filesystem::current_path().generic_u8string();
 
   // Initialize filesystem
-  base::OwnedPtr<filesystem::IOService> io_service =
+  std::unique_ptr<filesystem::IOService> io_service =
       filesystem::IOService::Create(argv[0]);
-  io_service->AddLoadPath(current_path.c_str(), "", false);
-  io_service->SetWritePath(current_path.c_str());
+  io_service->AddLoadPath(current_path, "", false);
+  io_service->SetWritePath(current_path);
 
   filesystem::IOState io_state;
   SDL_IOStream* inifile = io_service->OpenReadRaw(ini, &io_state);
@@ -187,12 +186,12 @@ int main(int argc, char* argv[]) {
   }
 
   // Initialize profile
-  base::OwnedPtr<content::ContentProfile> profile =
-      base::MakeOwnedPtr<content::ContentProfile>(app, inifile);
+  std::unique_ptr<content::ContentProfile> profile =
+      std::make_unique<content::ContentProfile>(app, inifile);
   profile->LoadCommandLine(argc, argv);
 
   if (!profile->LoadConfigure(app)) {
-    base::String error_message = "Error when parse configure file: \n";
+    std::string error_message = "Error when parse configure file: \n";
     error_message += ini;
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
                              error_message.c_str(), nullptr);
@@ -221,8 +220,8 @@ int main(int argc, char* argv[]) {
 
 // Setup encryption resource package
 #if HAVE_ARB_ENCRYPTO_SUPPORT
-  base::String app_package = app + ".arb";
-  if (admenri::LoadCryptoPackage(app_package.c_str()))
+  std::string app_package = app + ".arb";
+  if (admenri::LoadCryptoPackage(app_package))
     LOG(INFO) << "[IOService] Encrypto pack \"" << app_package << "\" added.";
 #endif
 
@@ -260,11 +259,10 @@ int main(int argc, char* argv[]) {
     // Initialize i18n profile
     auto* i18n_xml_stream =
         io_service->OpenReadRaw(profile->i18n_xml_path, nullptr);
-    auto i18n_profile =
-        base::MakeOwnedPtr<content::I18NProfile>(i18n_xml_stream);
+    auto i18n_profile = std::make_unique<content::I18NProfile>(i18n_xml_stream);
 
     // Initialize font context
-    auto font_context = base::MakeOwnedPtr<content::ScopedFontData>(
+    auto font_context = std::make_unique<content::ScopedFontData>(
         io_service.get(), profile->default_font_path);
 
     {
@@ -293,9 +291,9 @@ int main(int argc, char* argv[]) {
       content_params.font_context = font_context.get();
       content_params.i18n_profile = i18n_profile.get();
       content_params.window = widget->AsWeakPtr();
-      content_params.entry = base::MakeOwnedPtr<binding::BindingEngineMri>();
+      content_params.entry = std::make_unique<binding::BindingEngineMri>();
 
-      base::OwnedPtr<content::ContentRunner> runner =
+      std::unique_ptr<content::ContentRunner> runner =
           content::ContentRunner::Create(std::move(content_params));
       if (runner) {
         // Run main loop if no exception

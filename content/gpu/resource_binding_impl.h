@@ -44,7 +44,7 @@ class ResourceBindingImpl : public GPUResourceBinding,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUResourceVariable> GetVariableByName(
       GPU::ShaderType stage,
-      const base::String& name,
+      const std::string& name,
       ExceptionState& exception_state) override;
   uint32_t GetVariableCount(GPU::ShaderType stage,
                             ExceptionState& exception_state) override;
@@ -56,7 +56,7 @@ class ResourceBindingImpl : public GPUResourceBinding,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.ResourceBinding"; }
+  std::string DisposedObjectName() override { return "GPU.ResourceBinding"; }
 
   Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> object_;
 };

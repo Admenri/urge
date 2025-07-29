@@ -35,7 +35,7 @@ class CommandQueueImpl : public GPUCommandQueue,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.CommandQueue"; }
+  std::string DisposedObjectName() override { return "GPU.CommandQueue"; }
 
   Diligent::ICommandQueue* object_;
 };

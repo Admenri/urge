@@ -9,7 +9,6 @@
 
 #include "base/math/rectangle.h"
 #include "base/math/vector.h"
-#include "base/memory/allocator.h"
 
 namespace renderer {
 
@@ -25,7 +24,7 @@ struct Vertex {
   Vertex(const Vertex&) = default;
   Vertex& operator=(const Vertex&) = default;
 
-  static base::Vector<Diligent::LayoutElement> GetLayout();
+  static std::vector<Diligent::LayoutElement> GetLayout();
 };
 
 struct SpineVertex {
@@ -47,7 +46,7 @@ struct SpineVertex {
   SpineVertex(const SpineVertex&) = default;
   SpineVertex& operator=(const SpineVertex&) = default;
 
-  static base::Vector<Diligent::LayoutElement> GetLayout();
+  static std::vector<Diligent::LayoutElement> GetLayout();
 };
 
 struct Quad {

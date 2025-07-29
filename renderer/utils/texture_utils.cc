@@ -8,7 +8,7 @@ namespace renderer {
 
 void CreateTexture2D(Diligent::IRenderDevice* device,
                      Diligent::ITexture** texture,
-                     const base::String& name,
+                     const std::string& name,
                      const base::Vec2i& size,
                      Diligent::USAGE usage,
                      Diligent::BIND_FLAGS bind_flags,
@@ -32,7 +32,7 @@ void CreateTexture2D(Diligent::IRenderDevice* device,
 
 void CreateTexture2D(Diligent::IRenderDevice* device,
                      Diligent::ITexture** texture,
-                     const base::String& name,
+                     const std::string& name,
                      SDL_Surface* data,
                      Diligent::USAGE usage,
                      Diligent::BIND_FLAGS bind_flags,

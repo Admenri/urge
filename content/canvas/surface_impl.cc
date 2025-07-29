@@ -31,11 +31,11 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
-                                    const base::String& filename,
+                                    const std::string& filename,
                                     ExceptionState& exception_state) {
   SDL_Surface* surface_data = nullptr;
   auto file_handler = base::BindRepeating(
-      [](SDL_Surface** surf, SDL_IOStream* ops, const base::String& ext) {
+      [](SDL_Surface** surf, SDL_IOStream* ops, const std::string& ext) {
         *surf = IMG_LoadTyped_IO(ops, true, ext.c_str());
         return !!*surf;
       },
@@ -60,7 +60,7 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
-                                         const base::String& dump_data,
+                                         const std::string& dump_data,
                                          ExceptionState& exception_state) {
   if (dump_data.size() < sizeof(uint32_t) * 2) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -91,7 +91,7 @@ scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
 
 scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
                                            scoped_refptr<IOStream> stream,
-                                           const base::String& extname,
+                                           const std::string& extname,
                                            ExceptionState& exception_state) {
   auto stream_obj = IOStreamImpl::From(stream);
   if (!stream_obj || !stream_obj->GetRawStream()) {
@@ -135,7 +135,7 @@ scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
-                                            const base::String& data,
+                                            const std::string& data,
                                             ExceptionState& exception_state) {
   const uint8_t* raw_data = reinterpret_cast<const uint8_t*>(data.data());
 
@@ -165,13 +165,13 @@ scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
   return base::MakeRefCounted<SurfaceImpl>(execution_context, surface);
 }
 
-base::String Surface::Serialize(ExecutionContext* execution_context,
+std::string Surface::Serialize(ExecutionContext* execution_context,
                                 scoped_refptr<Surface> value,
                                 ExceptionState& exception_state) {
   scoped_refptr<SurfaceImpl> surface = SurfaceImpl::From(value);
   SDL_Surface* raw_surface = surface->GetRawSurface();
 
-  base::String serialized_data(
+  std::string serialized_data(
       sizeof(uint32_t) * 2 + raw_surface->pitch * raw_surface->h, 0);
 
   uint32_t surface_width = raw_surface->w, surface_height = raw_surface->h;
@@ -380,11 +380,11 @@ void SurfaceImpl::SetPixel(int32_t x,
                   color_unorm.b, color_unorm.a);
 }
 
-base::String SurfaceImpl::DumpData(ExceptionState& exception_state) {
+std::string SurfaceImpl::DumpData(ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
-    return base::String();
+    return std::string();
 
-  base::String data;
+  std::string data;
   size_t data_size = surface_->pitch * surface_->h;
   data.resize(sizeof(uint32_t) * 2 + data_size);
 
@@ -396,7 +396,7 @@ base::String SurfaceImpl::DumpData(ExceptionState& exception_state) {
   return data;
 }
 
-void SurfaceImpl::SavePNG(const base::String& filename,
+void SurfaceImpl::SavePNG(const std::string& filename,
                           ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return;

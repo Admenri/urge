@@ -24,15 +24,16 @@ class AudioService {
 
   // Create audio service instance.
   // Return the wrapper of miniaudio engine.
-  static base::OwnedPtr<AudioService> Create(filesystem::IOService* io_service);
+  static std::unique_ptr<AudioService> Create(
+      filesystem::IOService* io_service);
 
   // Create audio stream instance.
   // Return the wrapper of miniaudio sound.
-  base::OwnedPtr<AudioStream> CreateStream();
+  std::unique_ptr<AudioStream> CreateStream();
 
   // Create audio emitter instance.
   // Return the wrapper of miniaudio sound queue.
-  base::OwnedPtr<SoundEmit> CreateEmitter();
+  std::unique_ptr<SoundEmit> CreateEmitter();
 
   // Global volume control
   float GetVolume();
@@ -46,7 +47,6 @@ class AudioService {
   SDL_AudioDeviceID GetDeviceID() const;
 
  private:
-  friend struct base::Allocator;
   ServiceKernelData* kernel_;
 
   AudioService(ServiceKernelData* kernel_engine);

@@ -61,7 +61,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
     renderer::Binding_Tilemap shader_binding;
 
     int32_t ground_draw_count;
-    base::Vector<int32_t> above_draw_count;
+    std::vector<int32_t> above_draw_count;
 
     RRefPtr<Diligent::ITexture> atlas_texture;
     RRefPtr<Diligent::ITextureView> atlas_binding;
@@ -88,7 +88,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   TilemapImpl(const TilemapImpl&) = delete;
   TilemapImpl& operator=(const TilemapImpl&) = delete;
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -109,19 +109,19 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
  private:
   friend class TilemapAutotileImpl;
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Tilemap"; }
+  std::string DisposedObjectName() override { return "Tilemap"; }
   void GroundNodeHandlerInternal(DrawableNode::RenderStage stage,
                                  DrawableNode::RenderControllerParams* params);
   void AboveNodeHandlerInternal(int32_t layer_index,
                                 DrawableNode::RenderStage stage,
                                 DrawableNode::RenderControllerParams* params);
 
-  base::Vec2i MakeAtlasInternal(base::Vector<AtlasCompositeCommand>& commands);
+  base::Vec2i MakeAtlasInternal(std::vector<AtlasCompositeCommand>& commands);
   void UpdateViewportInternal(const base::Rect& viewport,
                               const base::Vec2i& viewport_origin);
   void ParseMapDataInternal(
-      base::Vector<renderer::Quad>& ground_cache,
-      base::Vector<base::Vector<renderer::Quad>>& aboves_cache);
+      std::vector<renderer::Quad>& ground_cache,
+      std::vector<std::vector<renderer::Quad>>& aboves_cache);
 
   void SetupTilemapLayersInternal(const base::Rect& viewport);
   void ResetAboveLayersOrderInternal();
@@ -133,11 +133,11 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   void GPUMakeAtlasInternal(
       Diligent::IDeviceContext* render_context,
       const base::Vec2i& atlas_size,
-      base::Vector<TilemapImpl::AtlasCompositeCommand> make_commands);
+      std::vector<TilemapImpl::AtlasCompositeCommand> make_commands);
   void GPUUploadTilesBatchInternal(
       Diligent::IDeviceContext* render_context,
-      base::Vector<renderer::Quad> ground_cache,
-      base::Vector<base::Vector<renderer::Quad>> aboves_cache);
+      std::vector<renderer::Quad> ground_cache,
+      std::vector<std::vector<renderer::Quad>> aboves_cache);
   void GPUUpdateTilemapUniformInternal(Diligent::IDeviceContext* render_context,
                                        const base::Vec2& offset,
                                        int32_t tilesize,
@@ -155,7 +155,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   };
 
   DrawableNode ground_node_;
-  base::Vector<base::OwnedPtr<DrawableNode>> above_nodes_;
+  std::vector<std::unique_ptr<DrawableNode>> above_nodes_;
   Agent agent_;
   int32_t tilesize_ = 32;
   int32_t max_atlas_size_ = 0;

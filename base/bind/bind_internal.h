@@ -69,10 +69,18 @@
 #include "base/buildflags/build.h"
 #include "base/buildflags/compiler_specific.h"
 #include "base/debug/logging.h"
-#include "base/memory/allocator.h"
 #include "base/memory/raw_scoped_refptr_mismatch_checker.h"
 #include "base/memory/weak_ptr.h"
 #include "base/template_util.h"
+
+#if defined(OS_WIN)
+namespace Microsoft {
+namespace WRL {
+template <typename>
+class ComPtr;
+}  // namespace WRL
+}  // namespace Microsoft
+#endif
 
 namespace base {
 
@@ -823,16 +831,15 @@ struct BindState final : BindStateBase {
     // IsCancellable is std::false_type if
     // CallbackCancellationTraits<>::IsCancelled returns always false.
     // Otherwise, it's std::true_type.
-    return Allocator::New<BindState>(
-        IsCancellable{}, invoke_func, std::forward<ForwardFunctor>(functor),
-        std::forward<ForwardBoundArgs>(bound_args)...);
+    return new BindState(IsCancellable{}, invoke_func,
+                         std::forward<ForwardFunctor>(functor),
+                         std::forward<ForwardBoundArgs>(bound_args)...);
   }
 
   Functor functor_;
   std::tuple<BoundArgs...> bound_args_;
 
  private:
-  friend struct base::Allocator;
   static constexpr bool is_nested_callback =
       MakeFunctorTraits<Functor>::is_callback;
 
@@ -876,7 +883,7 @@ struct BindState final : BindStateBase {
   ~BindState() = default;
 
   static void Destroy(const BindStateBase* self) {
-    Allocator::Delete(static_cast<const BindState*>(self));
+    delete static_cast<const BindState*>(self);
   }
 };
 
@@ -1261,6 +1268,13 @@ template <typename T>
 struct BindUnwrapTraits<internal::PassedWrapper<T>> {
   static T Unwrap(const internal::PassedWrapper<T>& o) { return o.Take(); }
 };
+
+#if defined(OS_WIN)
+template <typename T>
+struct BindUnwrapTraits<Microsoft::WRL::ComPtr<T>> {
+  static T* Unwrap(const Microsoft::WRL::ComPtr<T>& ptr) { return ptr.Get(); }
+};
+#endif
 
 // CallbackCancellationTraits allows customization of Callback's cancellation
 // semantics. By default, callbacks are not cancellable. A specialization should

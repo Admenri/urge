@@ -47,11 +47,11 @@ class DeviceContextImpl : public GPUDeviceContext,
                              GPU::ResourceStateTransitionMode mode,
                              ExceptionState& exception_state) override;
   void SetStencilRef(uint32_t ref, ExceptionState& exception_state) override;
-  void SetBlendFactors(const base::Vector<float>& factors,
+  void SetBlendFactors(const std::vector<float>& factors,
                        ExceptionState& exception_state) override;
   void SetVertexBuffers(uint32_t start_slot,
-                        const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
-                        const base::Vector<uint64_t>& offsets,
+                        const std::vector<scoped_refptr<GPUBuffer>>& buffers,
+                        const std::vector<uint64_t>& offsets,
                         GPU::ResourceStateTransitionMode mode,
                         GPU::SetVertexBuffersFlags flags,
                         ExceptionState& exception_state) override;
@@ -60,12 +60,12 @@ class DeviceContextImpl : public GPUDeviceContext,
                       uint64_t byte_offset,
                       GPU::ResourceStateTransitionMode mode,
                       ExceptionState& exception_state) override;
-  void SetViewports(const base::Vector<scoped_refptr<GPUViewport>>& viewports,
+  void SetViewports(const std::vector<scoped_refptr<GPUViewport>>& viewports,
                     ExceptionState& exception_state) override;
-  void SetScissorRects(const base::Vector<scoped_refptr<Rect>>& rects,
+  void SetScissorRects(const std::vector<scoped_refptr<Rect>>& rects,
                        ExceptionState& exception_state) override;
   void SetRenderTargets(
-      const base::Vector<scoped_refptr<GPUTextureView>>& render_targets,
+      const std::vector<scoped_refptr<GPUTextureView>>& render_targets,
       scoped_refptr<GPUTextureView> depth_stencil,
       GPU::ResourceStateTransitionMode mode,
       ExceptionState& exception_state) override;
@@ -100,12 +100,12 @@ class DeviceContextImpl : public GPUDeviceContext,
                            GPU::ResourceStateTransitionMode counter_buffer_mode,
                            GPU::ValueType index_type,
                            ExceptionState& exception_state) override;
-  void MultiDraw(const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+  void MultiDraw(const std::vector<scoped_refptr<GPUMultiDrawItem>>& items,
                  uint32_t num_instances,
                  uint32_t first_instance,
                  ExceptionState& exception_state) override;
   void MultiDrawIndexed(
-      const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
       GPU::ValueType index_type,
       uint32_t num_instances,
       uint32_t first_instance,
@@ -132,7 +132,7 @@ class DeviceContextImpl : public GPUDeviceContext,
   scoped_refptr<GPUCommandList> FinishCommandList(
       ExceptionState& exception_state) override;
   void ExecuteCommandLists(
-      const base::Vector<scoped_refptr<GPUCommandList>>& command_lists,
+      const std::vector<scoped_refptr<GPUCommandList>>& command_lists,
       ExceptionState& exception_state) override;
   void EnqueueSignal(scoped_refptr<GPUFence> fence,
                      uint64_t value,
@@ -204,7 +204,7 @@ class DeviceContextImpl : public GPUDeviceContext,
                     ExceptionState& exception_state) override;
   void FinishFrame(ExceptionState& exception_state) override;
   void TransitionResourceStates(
-      const base::Vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
+      const std::vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
       ExceptionState& exception_state) override;
   void ResolveTextureSubresource(scoped_refptr<GPUTexture> src,
                                  scoped_refptr<GPUTexture> dst,
@@ -216,11 +216,11 @@ class DeviceContextImpl : public GPUDeviceContext,
                                  GPU::ResourceStateTransitionMode dst_mode,
                                  GPU::TextureFormat format,
                                  ExceptionState& exception_state) override;
-  void BeginDebugGroup(const base::String& name,
+  void BeginDebugGroup(const std::string& name,
                        scoped_refptr<Color> color,
                        ExceptionState& exception_state) override;
   void EndDebugGroup(ExceptionState& exception_state) override;
-  void InsertDebugGroup(const base::String& name,
+  void InsertDebugGroup(const std::string& name,
                         scoped_refptr<Color> color,
                         ExceptionState& exception_state) override;
   scoped_refptr<GPUCommandQueue> LockCommandQueue(
@@ -229,7 +229,7 @@ class DeviceContextImpl : public GPUDeviceContext,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.DeviceContext"; }
+  std::string DisposedObjectName() override { return "GPU.DeviceContext"; }
 
   Diligent::RefCntAutoPtr<Diligent::IDeviceContext> object_;
 };

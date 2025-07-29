@@ -18,38 +18,38 @@ MiscSystem::MiscSystem(base::WeakPtr<ui::Widget> window,
 
 MiscSystem::~MiscSystem() = default;
 
-base::String MiscSystem::GetPlatform(ExceptionState& exception_state) {
+std::string MiscSystem::GetPlatform(ExceptionState& exception_state) {
   return SDL_GetPlatform();
 }
 
-void MiscSystem::OpenURL(const base::String& path,
+void MiscSystem::OpenURL(const std::string& path,
                          ExceptionState& exception_state) {
   if (!SDL_OpenURL(path.c_str()))
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, "OpenURL: %s",
                                SDL_GetError());
 }
 
-base::String MiscSystem::Gets(ExceptionState& exception_state) {
-  base::String in(1 << 10, 0);
+std::string MiscSystem::Gets(ExceptionState& exception_state) {
+  std::string in(1 << 10, 0);
   std::fgets(in.data(), in.size(), stdin);
   return in.c_str();
 }
 
-void MiscSystem::Puts(const base::String& message,
+void MiscSystem::Puts(const std::string& message,
                       ExceptionState& exception_state) {
   LOG(INFO) << message;
 }
 
-void MiscSystem::Alert(const base::String& message,
+void MiscSystem::Alert(const std::string& message,
                        ExceptionState& exception_state) {
   SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,
                            window_->GetTitle().c_str(), message.c_str(),
                            window_->AsSDLWindow());
 }
 
-bool MiscSystem::Confirm(const base::String& message,
+bool MiscSystem::Confirm(const std::string& message,
                          ExceptionState& exception_state) {
-  base::String title = window_->GetTitle();
+  std::string title = window_->GetTitle();
 
   SDL_MessageBoxData messagebox_data;
   messagebox_data.flags =
@@ -76,8 +76,8 @@ bool MiscSystem::Confirm(const base::String& message,
   return button_id;
 }
 
-bool MiscSystem::AddLoadPath(const base::String& new_path,
-                             const base::String& mount_point,
+bool MiscSystem::AddLoadPath(const std::string& new_path,
+                             const std::string& mount_point,
                              bool append_to_path,
                              ExceptionState& exception_state) {
   auto result = io_service_->AddLoadPath(new_path.c_str(), mount_point.c_str(),
@@ -92,7 +92,7 @@ bool MiscSystem::AddLoadPath(const base::String& new_path,
   return !!result;
 }
 
-bool MiscSystem::RemoveLoadPath(const base::String& old_path,
+bool MiscSystem::RemoveLoadPath(const std::string& old_path,
                                 ExceptionState& exception_state) {
   auto result = io_service_->RemoveLoadPath(old_path.c_str());
   if (!result) {
@@ -105,13 +105,13 @@ bool MiscSystem::RemoveLoadPath(const base::String& old_path,
   return !!result;
 }
 
-bool MiscSystem::IsFileExisted(const base::String& filepath,
+bool MiscSystem::IsFileExisted(const std::string& filepath,
                                ExceptionState& exception_state) {
   return io_service_->Exists(filepath);
 }
 
-base::Vector<base::String> MiscSystem::EnumDirectory(
-    const base::String& dirpath,
+std::vector<std::string> MiscSystem::EnumDirectory(
+    const std::string& dirpath,
     ExceptionState& exception_state) {
   return io_service_->EnumDir(dirpath);
 }

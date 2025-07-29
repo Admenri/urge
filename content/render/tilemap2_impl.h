@@ -90,7 +90,7 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   Tilemap2Impl(const Tilemap2Impl&) = delete;
   Tilemap2Impl& operator=(const Tilemap2Impl&) = delete;
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -111,7 +111,7 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
  private:
   friend class TilemapBitmapImpl;
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Tilemap2"; }
+  std::string DisposedObjectName() override { return "Tilemap2"; }
   void GroundNodeHandlerInternal(DrawableNode::RenderStage stage,
                                  DrawableNode::RenderControllerParams* params);
   void AboveNodeHandlerInternal(DrawableNode::RenderStage stage,
@@ -120,9 +120,9 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   void UpdateViewportInternal(const base::Rect& viewport,
                               const base::Vec2i& viewport_origin);
 
-  base::Vec2i MakeAtlasInternal(base::Vector<AtlasCompositeCommand>& commands);
-  void ParseMapDataInternal(base::Vector<renderer::Quad>& ground_cache,
-                            base::Vector<renderer::Quad>& above_cache);
+  base::Vec2i MakeAtlasInternal(std::vector<AtlasCompositeCommand>& commands);
+  void ParseMapDataInternal(std::vector<renderer::Quad>& ground_cache,
+                            std::vector<renderer::Quad>& above_cache);
 
   void AtlasModifyHandlerInternal();
   void MapDataModifyHandlerInternal();
@@ -132,10 +132,10 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
       Diligent::IDeviceContext* render_context,
       int32_t tilesize,
       const base::Vec2i& atlas_size,
-      base::Vector<Tilemap2Impl::AtlasCompositeCommand> make_commands);
+      std::vector<Tilemap2Impl::AtlasCompositeCommand> make_commands);
   void GPUUpdateQuadBatchInternal(Diligent::IDeviceContext* render_context,
-                                  base::Vector<renderer::Quad> ground_cache,
-                                  base::Vector<renderer::Quad> above_cache);
+                                  std::vector<renderer::Quad> ground_cache,
+                                  std::vector<renderer::Quad> above_cache);
   void GPUUpdateTilemapUniformInternal(Diligent::IDeviceContext* render_context,
                                        const base::Vec2& offset,
                                        const base::Vec2& anim_offset,

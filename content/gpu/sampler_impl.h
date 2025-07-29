@@ -31,7 +31,7 @@ class SamplerImpl : public GPUSampler, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.Sampler"; }
+  std::string DisposedObjectName() override { return "GPU.Sampler"; }
 
   Diligent::RefCntAutoPtr<Diligent::ISampler> object_;
 };

@@ -42,7 +42,7 @@ class URGE_OBJECT(GPUPipelineSignature) {
   /*--urge(name:static_variable_by_name)--*/
   virtual scoped_refptr<GPUResourceVariable> GetStaticVariableByName(
       GPU::ShaderType type,
-      const base::String& name,
+      const std::string& name,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:static_variable_by_index)--*/

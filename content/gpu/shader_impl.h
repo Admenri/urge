@@ -35,13 +35,13 @@ class ShaderImpl : public GPUShader, public EngineObject, public Disposable {
   scoped_refptr<GPUShaderCodeBufferDesc> GetConstantBufferDesc(
       uint32_t index,
       ExceptionState& exception_state) override;
-  base::String GetBytecode(ExceptionState& exception_state) override;
+  std::string GetBytecode(ExceptionState& exception_state) override;
   GPU::ShaderStatus GetStatus(bool wait_for_completion,
                               ExceptionState& exception_state) override;
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.Shader"; }
+  std::string DisposedObjectName() override { return "GPU.Shader"; }
 
   Diligent::RefCntAutoPtr<Diligent::IShader> object_;
 };

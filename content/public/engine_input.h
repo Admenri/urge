@@ -19,11 +19,11 @@ class URGE_OBJECT(Input) {
   /*--urge(name:update)--*/
   virtual void Update(ExceptionState& exception_state) = 0;
 
-  virtual bool IsPressed(const base::String& sym,
+  virtual bool IsPressed(const std::string& sym,
                          ExceptionState& exception_state) = 0;
-  virtual bool IsTriggered(const base::String& sym,
+  virtual bool IsTriggered(const std::string& sym,
                            ExceptionState& exception_state) = 0;
-  virtual bool IsRepeated(const base::String& sym,
+  virtual bool IsRepeated(const std::string& sym,
                           ExceptionState& exception_state) = 0;
 
   /*--urge(name:dir4)--*/
@@ -45,29 +45,29 @@ class URGE_OBJECT(Input) {
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:get_key_name)--*/
-  virtual base::String GetKeyName(int32_t scancode,
+  virtual std::string GetKeyName(int32_t scancode,
                                   ExceptionState& exception_state) = 0;
 
   /*--urge(name:get_keys_from_flag)--*/
-  virtual base::Vector<int32_t> GetKeysFromFlag(
-      const base::String& flag,
+  virtual std::vector<int32_t> GetKeysFromFlag(
+      const std::string& flag,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_keys_from_flag)--*/
-  virtual void SetKeysFromFlag(const base::String& flag,
-                               const base::Vector<int32_t>& keys,
+  virtual void SetKeysFromFlag(const std::string& flag,
+                               const std::vector<int32_t>& keys,
                                ExceptionState& exception_state) = 0;
 
   /*--urge(name:recent_pressed_keys)--*/
-  virtual base::Vector<int32_t> GetRecentPressed(
+  virtual std::vector<int32_t> GetRecentPressed(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:recent_triggered_keys)--*/
-  virtual base::Vector<int32_t> GetRecentTriggered(
+  virtual std::vector<int32_t> GetRecentTriggered(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:recent_repeated_keys)--*/
-  virtual base::Vector<int32_t> GetRecentRepeated(
+  virtual std::vector<int32_t> GetRecentRepeated(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:emulate,optional:modifier=0,optional:repeat=false)--*/

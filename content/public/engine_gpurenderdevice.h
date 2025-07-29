@@ -71,12 +71,12 @@ class URGE_OBJECT(GPURenderDevice) {
 
   /*--urge(name:create_resource_mapping)--*/
   virtual scoped_refptr<GPUResourceMapping> CreateResourceMapping(
-      const base::Vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
+      const std::vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:create_graphics_pipeline_state)--*/
   virtual scoped_refptr<GPUPipelineState> CreateGraphicsPipelineState(
-      const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+      const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
       scoped_refptr<GPUGraphicsPipelineDesc> graphics_pipeline_desc,
       scoped_refptr<GPUShader> vertex_shader,
       scoped_refptr<GPUShader> pixel_shader,
@@ -88,7 +88,7 @@ class URGE_OBJECT(GPURenderDevice) {
 
   /*--urge(name:create_compute_pipeline_state)--*/
   virtual scoped_refptr<GPUPipelineState> CreateComputePipelineState(
-      const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+      const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
       scoped_refptr<GPUShader> compute_shader,
       uint64_t immediate_context_mask,
       ExceptionState& exception_state) = 0;

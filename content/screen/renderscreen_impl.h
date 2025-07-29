@@ -49,7 +49,7 @@ class RenderScreenImpl : public Graphics,
     renderer::DynamicQuadBatch present_quad;
     renderer::Binding_Base present_binding;
     RRefPtr<Diligent::IBuffer> present_world;
-    base::OwnedPtr<renderer::Pipeline_Present> present_pipeline;
+    std::unique_ptr<renderer::Pipeline_Present> present_pipeline;
   };
 
   RenderScreenImpl(ExecutionContext* execution_context, uint32_t frame_rate);
@@ -83,10 +83,10 @@ class RenderScreenImpl : public Graphics,
   void Transition(ExceptionState& exception_state) override;
   void Transition(uint32_t duration, ExceptionState& exception_state) override;
   void Transition(uint32_t duration,
-                  const base::String& filename,
+                  const std::string& filename,
                   ExceptionState& exception_state) override;
   void Transition(uint32_t duration,
-                  const base::String& filename,
+                  const std::string& filename,
                   uint32_t vague,
                   ExceptionState& exception_state) override;
   void TransitionWithBitmap(uint32_t duration,
@@ -101,7 +101,7 @@ class RenderScreenImpl : public Graphics,
                     uint32_t height,
                     ExceptionState& exception_state) override;
   void Reset(ExceptionState& exception_state) override;
-  void PlayMovie(const base::String& filename,
+  void PlayMovie(const std::string& filename,
                  ExceptionState& exception_state) override;
   void MoveWindow(int32_t x,
                   int32_t y,
@@ -131,7 +131,7 @@ class RenderScreenImpl : public Graphics,
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(BackgroundRunning, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Ox, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
-  URGE_DECLARE_OVERRIDE_ATTRIBUTE(WindowTitle, base::String);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(WindowTitle, std::string);
 
   // DisposableCollection methods
   void AddDisposable(Disposable* disp) override;

@@ -56,7 +56,7 @@ void AudioImpl::SetupMIDI(ExceptionState& exception_state) {
   LOG(WARNING) << "[Content] Unsupport MIDI device setup.";
 }
 
-void AudioImpl::BGMPlay(const base::String& filename,
+void AudioImpl::BGMPlay(const std::string& filename,
                         int32_t volume,
                         int32_t pitch,
                         uint64_t pos,
@@ -89,7 +89,7 @@ uint64_t AudioImpl::BGMPos(ExceptionState& exception_state) {
   return bgm_->Pos();
 }
 
-void AudioImpl::BGSPlay(const base::String& filename,
+void AudioImpl::BGSPlay(const std::string& filename,
                         int32_t volume,
                         int32_t pitch,
                         uint64_t pos,
@@ -122,7 +122,7 @@ uint64_t AudioImpl::BGSPos(ExceptionState& exception_state) {
   return bgs_->Pos();
 }
 
-void AudioImpl::MEPlay(const base::String& filename,
+void AudioImpl::MEPlay(const std::string& filename,
                        int32_t volume,
                        int32_t pitch,
                        ExceptionState& exception_state) {
@@ -147,7 +147,7 @@ void AudioImpl::MEFade(int32_t time, ExceptionState& exception_state) {
   me_->Fade(time);
 }
 
-void AudioImpl::SEPlay(const base::String& filename,
+void AudioImpl::SEPlay(const std::string& filename,
                        int32_t volume,
                        int32_t pitch,
                        ExceptionState& exception_state) {
@@ -177,7 +177,7 @@ void AudioImpl::Reset(ExceptionState& exception_state) {
 }
 
 void AudioImpl::HandleAudioServiceError(ma_result result,
-                                        const base::String& filename,
+                                        const std::string& filename,
                                         ExceptionState& exception_state) {
   if (result == MA_INVALID_FILE) {
     LOG(WARNING) << "[Audio] Unsupport audio format - " << filename;

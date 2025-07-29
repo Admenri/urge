@@ -44,7 +44,7 @@ class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "IOStream"; }
+  std::string DisposedObjectName() override { return "IOStream"; }
 
   SDL_IOStream* stream_;
 };

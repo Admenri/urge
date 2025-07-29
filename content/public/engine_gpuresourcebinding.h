@@ -48,7 +48,7 @@ class URGE_OBJECT(GPUResourceBinding) {
   /*--urge(name:variable_by_name)--*/
   virtual scoped_refptr<GPUResourceVariable> GetVariableByName(
       GPU::ShaderType stage,
-      const base::String& name,
+      const std::string& name,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:variable_count)--*/

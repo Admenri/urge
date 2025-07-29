@@ -5,7 +5,7 @@
 #ifndef RENDERER_PIPELINE_BUILTIN_HLSL_H_
 #define RENDERER_PIPELINE_BUILTIN_HLSL_H_
 
-#include "base/memory/allocator.h"
+#include <string>
 
 namespace renderer {
 
@@ -24,8 +24,8 @@ namespace renderer {
 //   { float4x4, float4x4 }
 //   { Texture2D }
 ///
-extern const base::String kHLSL_BaseRender_Vertex;
-extern const base::String kHLSL_BaseRender_Pixel;
+extern const std::string kHLSL_BaseRender_Vertex;
+extern const std::string kHLSL_BaseRender_Pixel;
 
 ///
 // type:
@@ -43,8 +43,8 @@ extern const base::String kHLSL_BaseRender_Pixel;
 //   { Texture2D }
 //   { Texture2D }
 ///
-extern const base::String kHLSL_BitmapBltRender_Vertex;
-extern const base::String kHLSL_BitmapBltRender_Pixel;
+extern const std::string kHLSL_BitmapBltRender_Vertex;
+extern const std::string kHLSL_BitmapBltRender_Pixel;
 
 ///
 // type:
@@ -60,8 +60,8 @@ extern const base::String kHLSL_BitmapBltRender_Pixel;
 // resource:
 //   { float4x4, float4x4 }
 ///
-extern const base::String kHLSL_ColorRender_Vertex;
-extern const base::String kHLSL_ColorRender_Pixel;
+extern const std::string kHLSL_ColorRender_Vertex;
+extern const std::string kHLSL_ColorRender_Pixel;
 
 ///
 // type:
@@ -79,8 +79,8 @@ extern const base::String kHLSL_ColorRender_Pixel;
 //   { Texture2D }
 //   { float4, float4 }
 ///
-extern const base::String kHLSL_FlatRender_Vertex;
-extern const base::String kHLSL_FlatRender_Pixel;
+extern const std::string kHLSL_FlatRender_Vertex;
+extern const std::string kHLSL_FlatRender_Pixel;
 
 ///
 // type:
@@ -101,8 +101,8 @@ extern const base::String kHLSL_FlatRender_Pixel;
 // macros:
 //   STORAGE_BUFFER_SUPPORT
 ///
-extern const base::String kHLSL_SpriteRender_Vertex;
-extern const base::String kHLSL_SpriteRender_Pixel;
+extern const std::string kHLSL_SpriteRender_Vertex;
+extern const std::string kHLSL_SpriteRender_Pixel;
 
 ///
 // type:
@@ -118,8 +118,8 @@ extern const base::String kHLSL_SpriteRender_Pixel;
 // bind:
 //   { Texture2D, Texture2D }
 ///
-extern const base::String kHLSL_AlphaTransitionRender_Vertex;
-extern const base::String kHLSL_AlphaTransitionRender_Pixel;
+extern const std::string kHLSL_AlphaTransitionRender_Vertex;
+extern const std::string kHLSL_AlphaTransitionRender_Pixel;
 
 ///
 // type:
@@ -135,8 +135,8 @@ extern const base::String kHLSL_AlphaTransitionRender_Pixel;
 // bind:
 //   { Texture2D, Texture2D, Texture2D }
 ///
-extern const base::String kHLSL_MappingTransitionRender_Vertex;
-extern const base::String kHLSL_MappingTransitionRender_Pixel;
+extern const std::string kHLSL_MappingTransitionRender_Vertex;
+extern const std::string kHLSL_MappingTransitionRender_Pixel;
 
 ///
 // type:
@@ -154,8 +154,8 @@ extern const base::String kHLSL_MappingTransitionRender_Pixel;
 //   { Texture2D }
 //   { float2, float2, float, float }
 ///
-extern const base::String kHLSL_TilemapRender_Vertex;
-extern const base::String kHLSL_TilemapRender_Pixel;
+extern const std::string kHLSL_TilemapRender_Vertex;
+extern const std::string kHLSL_TilemapRender_Pixel;
 
 ///
 // type:
@@ -173,8 +173,8 @@ extern const base::String kHLSL_TilemapRender_Pixel;
 //   { Texture2D }
 //   { float2, float2, float2, float }
 ///
-extern const base::String kHLSL_Tilemap2Render_Vertex;
-extern const base::String kHLSL_Tilemap2Render_Pixel;
+extern const std::string kHLSL_Tilemap2Render_Vertex;
+extern const std::string kHLSL_Tilemap2Render_Pixel;
 
 ///
 // type:
@@ -190,8 +190,8 @@ extern const base::String kHLSL_Tilemap2Render_Pixel;
 // resource:
 //   { Texture2D }
 ///
-extern const base::String kHLSL_BitmapHueRender_Vertex;
-extern const base::String kHLSL_BitmapHueRender_Pixel;
+extern const std::string kHLSL_BitmapHueRender_Vertex;
+extern const std::string kHLSL_BitmapHueRender_Pixel;
 
 ///
 // type:
@@ -208,8 +208,8 @@ extern const base::String kHLSL_BitmapHueRender_Pixel;
 //   { float4x4, float4x4 }
 //   { Texture2D }
 ///
-extern const base::String kHLSL_Spine2DRender_Vertex;
-extern const base::String kHLSL_Spine2DRender_Pixel;
+extern const std::string kHLSL_Spine2DRender_Vertex;
+extern const std::string kHLSL_Spine2DRender_Pixel;
 
 ///
 // type:
@@ -225,8 +225,8 @@ extern const base::String kHLSL_Spine2DRender_Pixel;
 // resource:
 //   { Texture2D x 3 }
 ///
-extern const base::String kHLSL_YUVRender_Vertex;
-extern const base::String kHLSL_YUVRender_Pixel;
+extern const std::string kHLSL_YUVRender_Vertex;
+extern const std::string kHLSL_YUVRender_Pixel;
 
 ///
 // type:
@@ -246,8 +246,8 @@ extern const base::String kHLSL_YUVRender_Pixel;
 // macros:
 //   CONVERT_PS_OUTPUT_TO_GAMMA
 ///
-extern const base::String kHLSL_PresentRender_Vertex;
-extern const base::String kHLSL_PresentRender_Pixel;
+extern const std::string kHLSL_PresentRender_Vertex;
+extern const std::string kHLSL_PresentRender_Pixel;
 
 }  // namespace renderer
 

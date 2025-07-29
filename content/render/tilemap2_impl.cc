@@ -336,7 +336,7 @@ const Tilemap2Impl::AtlasBlock kTilemapAtlas[] = {
 const base::Rect kShadowAtlasArea = {16, 27, 16, 1};
 
 SDL_Surface* CreateShadowSet(int32_t tilesize) {
-  base::Vector<SDL_Rect> rects;
+  std::vector<SDL_Rect> rects;
   SDL_Surface* surf = SDL_CreateSurface(kShadowAtlasArea.width * tilesize,
                                         kShadowAtlasArea.height * tilesize,
                                         SDL_PIXELFORMAT_ABGR8888);
@@ -431,7 +431,7 @@ Tilemap2Impl::Tilemap2Impl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(Tilemap2Impl);
 
-void Tilemap2Impl::SetLabel(const base::String& label,
+void Tilemap2Impl::SetLabel(const std::string& label,
                             ExceptionState& exception_state) {
   ground_node_.SetDebugLabel(label);
   above_node_.SetDebugLabel(label);
@@ -622,7 +622,7 @@ void Tilemap2Impl::GroundNodeHandlerInternal(
     UpdateViewportInternal(viewport_bound, viewport_origin);
 
     if (atlas_dirty_) {
-      base::Vector<AtlasCompositeCommand> commands;
+      std::vector<AtlasCompositeCommand> commands;
       base::Vec2i atlas_size = MakeAtlasInternal(commands);
 
       GPUMakeAtlasInternal(params->context, tilesize_, atlas_size,
@@ -631,8 +631,8 @@ void Tilemap2Impl::GroundNodeHandlerInternal(
     }
 
     if (map_buffer_dirty_) {
-      base::Vector<renderer::Quad> ground_cache;
-      base::Vector<renderer::Quad> above_cache;
+      std::vector<renderer::Quad> ground_cache;
+      std::vector<renderer::Quad> above_cache;
       ParseMapDataInternal(ground_cache, above_cache);
 
       GPUUpdateQuadBatchInternal(params->context, std::move(ground_cache),
@@ -680,7 +680,7 @@ void Tilemap2Impl::UpdateViewportInternal(const base::Rect& viewport,
 }
 
 base::Vec2i Tilemap2Impl::MakeAtlasInternal(
-    base::Vector<AtlasCompositeCommand>& commands) {
+    std::vector<AtlasCompositeCommand>& commands) {
   for (size_t i = 0; i < std::size(kTilemapAtlas); ++i) {
     auto& atlas_info = kTilemapAtlas[i];
     scoped_refptr atlas_bitmap = bitmaps_[atlas_info.tile_id].bitmap;
@@ -709,8 +709,8 @@ base::Vec2i Tilemap2Impl::MakeAtlasInternal(
 //  https://web.archive.org/web/20230925131126/https://www.tktkgame.com/tkool/memo/vx/tile_id.html
 //  - RPGMV Tilemap
 void Tilemap2Impl::ParseMapDataInternal(
-    base::Vector<renderer::Quad>& ground_cache,
-    base::Vector<renderer::Quad>& above_cache) {
+    std::vector<renderer::Quad>& ground_cache,
+    std::vector<renderer::Quad>& above_cache) {
   auto value_wrap = [&](int32_t value, int32_t range) {
     int32_t res = value % range;
     return res < 0 ? res + range : res;
@@ -735,7 +735,7 @@ void Tilemap2Impl::ParseMapDataInternal(
   };
 
   auto process_quads = [&](renderer::Quad* quads, int32_t size, bool above) {
-    base::Vector<renderer::Quad>* target = above ? &above_cache : &ground_cache;
+    std::vector<renderer::Quad>* target = above ? &above_cache : &ground_cache;
     target->insert(target->end(), quads, quads + size);
   };
 
@@ -1140,7 +1140,7 @@ void Tilemap2Impl::GPUMakeAtlasInternal(
     Diligent::IDeviceContext* render_context,
     int32_t tilesize,
     const base::Vec2i& atlas_size,
-    base::Vector<Tilemap2Impl::AtlasCompositeCommand> make_commands) {
+    std::vector<Tilemap2Impl::AtlasCompositeCommand> make_commands) {
   agent_.atlas_texture.Release();
   renderer::CreateTexture2D(**context()->render_device, &agent_.atlas_texture,
                             "tilemap2.atlas", atlas_size);
@@ -1203,12 +1203,12 @@ void Tilemap2Impl::GPUMakeAtlasInternal(
 
 void Tilemap2Impl::GPUUpdateQuadBatchInternal(
     Diligent::IDeviceContext* render_context,
-    base::Vector<renderer::Quad> ground_cache,
-    base::Vector<renderer::Quad> above_cache) {
+    std::vector<renderer::Quad> ground_cache,
+    std::vector<renderer::Quad> above_cache) {
   agent_.ground_draw_count = ground_cache.size();
   agent_.above_draw_count = above_cache.size();
 
-  base::Vector<renderer::Quad> batch_data;
+  std::vector<renderer::Quad> batch_data;
   batch_data.reserve(ground_cache.size() + above_cache.size());
   batch_data.insert(batch_data.end(),
                     std::make_move_iterator(ground_cache.begin()),

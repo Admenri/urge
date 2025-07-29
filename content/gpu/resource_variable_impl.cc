@@ -27,13 +27,13 @@ void ResourceVariableImpl::Set(uint64_t device_object,
 }
 
 void ResourceVariableImpl::SetArray(
-    const base::Vector<uint64_t>& device_objects,
+    const std::vector<uint64_t>& device_objects,
     uint32_t first_element,
     GPU::SetShaderResourceFlags flags,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::IDeviceObject*> objects;
+  std::vector<Diligent::IDeviceObject*> objects;
   for (auto element : device_objects)
     objects.push_back(reinterpret_cast<Diligent::IDeviceObject*>(element));
 

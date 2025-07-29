@@ -21,7 +21,7 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
  public:
   struct Agent {
     renderer::QuadBatch batch;
-    base::Vector<renderer::Quad> cache;
+    std::vector<renderer::Quad> cache;
 
     renderer::Binding_Flat flat_binding;
     renderer::Binding_Base base_binding;
@@ -50,7 +50,7 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
   Window2Impl(const Window2Impl&) = delete;
   Window2Impl& operator=(const Window2Impl&) = delete;
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -89,7 +89,7 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Window2"; }
+  std::string DisposedObjectName() override { return "Window2"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

@@ -56,7 +56,7 @@ SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(SpriteImpl);
 
-void SpriteImpl::SetLabel(const base::String& label,
+void SpriteImpl::SetLabel(const std::string& label,
                           ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }

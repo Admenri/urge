@@ -29,7 +29,7 @@ class URGE_OBJECT(GPUResourceVariable) {
                    ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_array)--*/
-  virtual void SetArray(const base::Vector<uint64_t>& device_objects,
+  virtual void SetArray(const std::vector<uint64_t>& device_objects,
                         uint32_t first_element,
                         GPU::SetShaderResourceFlags flags,
                         ExceptionState& exception_state) = 0;

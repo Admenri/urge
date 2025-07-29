@@ -31,26 +31,26 @@ class ResourceMappingImpl : public GPUResourceMapping,
   // GPUResourceMapping interface
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
-  void AddResource(const base::String& name,
+  void AddResource(const std::string& name,
                    uint64_t device_object,
                    bool is_unique,
                    ExceptionState& exception_state) override;
-  void AddResourceArray(const base::String& name,
+  void AddResourceArray(const std::string& name,
                         uint32_t start_index,
-                        const base::Vector<uint64_t>& device_objects,
+                        const std::vector<uint64_t>& device_objects,
                         bool is_unique,
                         ExceptionState& exception_state) override;
-  void RemoveResourceByName(const base::String& name,
+  void RemoveResourceByName(const std::string& name,
                             uint32_t array_index,
                             ExceptionState& exception_state) override;
-  uint64_t GetResource(const base::String& name,
+  uint64_t GetResource(const std::string& name,
                        uint32_t array_index,
                        ExceptionState& exception_state) override;
   uint64_t GetSize(ExceptionState& exception_state) override;
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.ResourceMapping"; }
+  std::string DisposedObjectName() override { return "GPU.ResourceMapping"; }
 
   Diligent::RefCntAutoPtr<Diligent::IResourceMapping> object_;
 };

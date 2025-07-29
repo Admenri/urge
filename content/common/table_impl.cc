@@ -34,7 +34,7 @@ scoped_refptr<Table> Table::Copy(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Table> Table::Deserialize(ExecutionContext* execution_context,
-                                        const base::String& data,
+                                        const std::string& data,
                                         ExceptionState& exception_state) {
   const uint32_t* raw_ptr = reinterpret_cast<const uint32_t*>(data.data());
 
@@ -57,7 +57,7 @@ scoped_refptr<Table> Table::Deserialize(ExecutionContext* execution_context,
   return impl;
 }
 
-base::String Table::Serialize(ExecutionContext* execution_context,
+std::string Table::Serialize(ExecutionContext* execution_context,
                              scoped_refptr<Table> value,
                              ExceptionState& exception_state) {
   scoped_refptr<TableImpl> impl = static_cast<TableImpl*>(value.get());
@@ -71,7 +71,7 @@ base::String Table::Serialize(ExecutionContext* execution_context,
     dim++;
 
   uint32_t data_size = impl->x_size_ * impl->y_size_ * impl->z_size_;
-  base::String serial_data(sizeof(int32_t) * 5 + data_size * sizeof(int16_t), 0);
+  std::string serial_data(sizeof(int32_t) * 5 + data_size * sizeof(int16_t), 0);
 
   uint32_t* ptr = reinterpret_cast<uint32_t*>(serial_data.data());
   *(ptr + 0) = dim;
@@ -115,7 +115,7 @@ void TableImpl::Resize(uint32_t xsize,
                        uint32_t zsize,
                        ExceptionState& exception_state) {
   // Allocate a new table container
-  base::Vector<int16_t> new_data(xsize * ysize * zsize);
+  std::vector<int16_t> new_data(xsize * ysize * zsize);
 
   // Migrate old data to new container. (Shrink)
   for (uint32_t k = 0; k < std::min(zsize, z_size_); ++k)

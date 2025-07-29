@@ -138,7 +138,6 @@ class WeakReference {
     void DetachFromThread();
 
    private:
-    friend struct base::Allocator;
     friend class base::RefCountedThreadSafe<Flag>;
 
     ~Flag();

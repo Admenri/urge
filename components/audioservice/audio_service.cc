@@ -6,6 +6,7 @@
 
 #include <array>
 
+#include "mimalloc.h"
 #include "miniaudio/decoders/libopus/miniaudio_libopus.h"
 #include "miniaudio/decoders/libvorbis/miniaudio_libvorbis.h"
 #include "physfs.h"
@@ -47,7 +48,7 @@ static ma_result VFSOpen(ma_vfs* pVFS,
   if (openMode == MA_OPEN_MODE_READ) {
     auto open_closure = base::BindRepeating(
         [](SDL_IOStream** out, SDL_IOStream* stream,
-           const base::String&) -> bool {
+           const std::string&) -> bool {
           *out = stream;
           return true;
         },
@@ -130,15 +131,15 @@ static ma_result VFSInfo(ma_vfs*, ma_vfs_file file, ma_file_info* pInfo) {
 }
 
 static void* AllocatorMalloc(size_t sz, void*) {
-  return base::Allocator::Malloc(sz);
+  return mi_malloc(sz);
 }
 
 static void* AllocatorRealloc(void* p, size_t sz, void*) {
-  return base::Allocator::Realloc(p, sz);
+  return mi_realloc(p, sz);
 }
 
 static void AllocatorFree(void* p, void*) {
-  return base::Allocator::Free(p);
+  return mi_free(p);
 }
 
 static void LogOutput(void*, ma_uint32 level, const char* pMessage) {
@@ -193,9 +194,9 @@ static void AudioStreamDataCallback(void* userdata,
   }
 }
 
-base::OwnedPtr<AudioService> AudioService::Create(
+std::unique_ptr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
-  ServiceKernelData* kernel_data = base::Allocator::New<ServiceKernelData>();
+  ServiceKernelData* kernel_data = new ServiceKernelData;
 
   // Device sped
   SDL_AudioSpec device_spec;
@@ -276,15 +277,16 @@ base::OwnedPtr<AudioService> AudioService::Create(
   CHECK(SDL_BindAudioStream(kernel_data->primary_device,
                             kernel_data->engine_stream));
 
-  return base::MakeOwnedPtr<AudioService>(std::move(kernel_data));
+  return std::unique_ptr<AudioService>(
+      new AudioService(std::move(kernel_data)));
 }
 
-base::OwnedPtr<AudioStream> AudioService::CreateStream() {
-  return base::MakeOwnedPtr<AudioStream>(&kernel_->engine);
+std::unique_ptr<AudioStream> AudioService::CreateStream() {
+  return std::unique_ptr<AudioStream>(new AudioStream(&kernel_->engine));
 }
 
-base::OwnedPtr<SoundEmit> AudioService::CreateEmitter() {
-  return base::MakeOwnedPtr<SoundEmit>(&kernel_->engine);
+std::unique_ptr<SoundEmit> AudioService::CreateEmitter() {
+  return std::unique_ptr<SoundEmit>(new SoundEmit(&kernel_->engine));
 }
 
 float AudioService::GetVolume() {
@@ -316,7 +318,7 @@ AudioService::~AudioService() {
   ma_resource_manager_uninit(&kernel_->resource_manager);
   ma_engine_uninit(&kernel_->engine);
   ma_log_uninit(&kernel_->logger);
-  base::Allocator::Delete(kernel_);
+  delete kernel_;
 }
 
 }  // namespace audioservice

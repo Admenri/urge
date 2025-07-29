@@ -54,7 +54,7 @@ class Disposable : public base::LinkNode<Disposable> {
 
  protected:
   virtual void OnObjectDisposed() = 0;
-  virtual base::String DisposedObjectName() = 0;
+  virtual std::string DisposedObjectName() = 0;
 
   bool CheckDisposed(ExceptionState& exception_state);
 

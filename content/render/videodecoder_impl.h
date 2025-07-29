@@ -27,7 +27,7 @@ class VideoDecoderImpl : public VideoDecoder,
   };
 
   VideoDecoderImpl(ExecutionContext* execution_context,
-                   base::OwnedPtr<uvpx::Player> player);
+                   std::unique_ptr<uvpx::Player> player);
   ~VideoDecoderImpl() override;
 
   VideoDecoderImpl(const VideoDecoderImpl&) = delete;
@@ -48,7 +48,7 @@ class VideoDecoderImpl : public VideoDecoder,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "DAV1D/AV1 Decoder"; }
+  std::string DisposedObjectName() override { return "DAV1D/AV1 Decoder"; }
 
   static void OnAudioData(void* user_data, float* pcm, size_t count);
 
@@ -59,7 +59,7 @@ class VideoDecoderImpl : public VideoDecoder,
 
   Agent agent_;
 
-  base::OwnedPtr<uvpx::Player> player_;
+  std::unique_ptr<uvpx::Player> player_;
   SDL_AudioStream* audio_stream_;
   uint64_t last_ticks_;
   int64_t counter_freq_;

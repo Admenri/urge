@@ -40,7 +40,7 @@ class PipelineStateImpl : public GPUPipelineState,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.PipelineState"; }
+  std::string DisposedObjectName() override { return "GPU.PipelineState"; }
 
   Diligent::RefCntAutoPtr<Diligent::IPipelineState> object_;
 };

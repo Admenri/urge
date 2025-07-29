@@ -13,7 +13,7 @@ AudioStream::~AudioStream() {
   ma_sound_uninit(&handle_);
 }
 
-ma_result AudioStream::Play(const base::String& filename,
+ma_result AudioStream::Play(const std::string& filename,
                             int32_t volume,
                             int32_t pitch,
                             uint64_t pos) {

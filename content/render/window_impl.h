@@ -21,9 +21,9 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
  public:
   struct Agent {
     renderer::QuadBatch background_batch;
-    base::Vector<renderer::Quad> background_cache;
+    std::vector<renderer::Quad> background_cache;
     renderer::QuadBatch controls_batch;
-    base::Vector<renderer::Quad> controls_cache;
+    std::vector<renderer::Quad> controls_cache;
 
     renderer::Binding_Base base_binding;
     renderer::Binding_Base content_binding;
@@ -41,7 +41,7 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
   WindowImpl(const WindowImpl&) = delete;
   WindowImpl& operator=(const WindowImpl&) = delete;
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -69,7 +69,7 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Window"; }
+  std::string DisposedObjectName() override { return "Window"; }
   void BackgroundNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

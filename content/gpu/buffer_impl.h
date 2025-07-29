@@ -37,7 +37,7 @@ class BufferViewImpl : public GPUBufferView,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.BufferView"; }
+  std::string DisposedObjectName() override { return "GPU.BufferView"; }
 
   Diligent::RefCntAutoPtr<Diligent::IBufferView> object_;
 };
@@ -74,7 +74,7 @@ class BufferImpl : public GPUBuffer, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.Buffer"; }
+  std::string DisposedObjectName() override { return "GPU.Buffer"; }
 
   Diligent::RefCntAutoPtr<Diligent::IBuffer> object_;
 };

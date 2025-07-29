@@ -28,7 +28,7 @@ class URGE_OBJECT(VideoDecoder) {
 
   /*--urge(name:initialize,optional:max_frame_delay=1)--*/
   static scoped_refptr<VideoDecoder> New(ExecutionContext* execution_context,
-                                         const base::String& filename,
+                                         const std::string& filename,
                                          int32_t max_frame_delay,
                                          ExceptionState& exception_state);
 

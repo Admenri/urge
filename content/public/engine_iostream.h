@@ -36,14 +36,14 @@ class URGE_OBJECT(IOStream) {
   /*--urge(name:from_filesystem)--*/
   static scoped_refptr<IOStream> FromFileSystem(
       ExecutionContext* execution_context,
-      const base::String& filename,
-      const base::String& mode,
+      const std::string& filename,
+      const std::string& mode,
       ExceptionState& exception_state);
 
   /*--urge(name:from_iosystem)--*/
   static scoped_refptr<IOStream> FromIOSystem(
       ExecutionContext* execution_context,
-      const base::String& filename,
+      const std::string& filename,
       ExceptionState& exception_state);
 
   /*--urge(name:from_memory)--*/

@@ -21,7 +21,7 @@ class URGE_OBJECT(Font) {
 
   /*--urge(name:initialize,optional:size=20)--*/
   static scoped_refptr<Font> New(ExecutionContext* execution_context,
-                                 const base::String& name,
+                                 const std::string& name,
                                  uint32_t size,
                                  ExceptionState& exception_state);
 
@@ -32,11 +32,11 @@ class URGE_OBJECT(Font) {
 
   /*--urge(name:exist?)--*/
   static bool IsExisted(ExecutionContext* execution_context,
-                        const base::String& name,
+                        const std::string& name,
                         ExceptionState& exception_state);
 
   /*--urge(name:default_name)--*/
-  URGE_EXPORT_STATIC_ATTRIBUTE(DefaultName, base::Vector<base::String>);
+  URGE_EXPORT_STATIC_ATTRIBUTE(DefaultName, std::vector<std::string>);
 
   /*--urge(name:default_size)--*/
   URGE_EXPORT_STATIC_ATTRIBUTE(DefaultSize, uint32_t);
@@ -63,7 +63,7 @@ class URGE_OBJECT(Font) {
   URGE_EXPORT_STATIC_ATTRIBUTE(DefaultOutColor, scoped_refptr<Color>);
 
   /*--urge(name:name)--*/
-  URGE_EXPORT_ATTRIBUTE(Name, base::Vector<base::String>);
+  URGE_EXPORT_ATTRIBUTE(Name, std::vector<std::string>);
 
   /*--urge(name:size)--*/
   URGE_EXPORT_ATTRIBUTE(Size, uint32_t);

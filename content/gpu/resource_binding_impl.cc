@@ -63,7 +63,7 @@ GPU::ShaderResourceVariableType ResourceBindingImpl::CheckResources(
 
 scoped_refptr<GPUResourceVariable> ResourceBindingImpl::GetVariableByName(
     GPU::ShaderType stage,
-    const base::String& name,
+    const std::string& name,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 

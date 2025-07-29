@@ -46,7 +46,7 @@ class URGE_OBJECT(Viewport) {
                                      ExceptionState& exception_state);
 
   /*--urge(name:set_label)--*/
-  virtual void SetLabel(const base::String& label,
+  virtual void SetLabel(const std::string& label,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:dispose)--*/

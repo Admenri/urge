@@ -21,7 +21,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
  public:
   struct Agent {
     renderer::Quad quad;
-    base::Vector<renderer::Quad> wave_cache;
+    std::vector<renderer::Quad> wave_cache;
     RRefPtr<Diligent::IBuffer> single_uniform;
 
     uint32_t instance_offset = 0;
@@ -43,7 +43,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   SpriteImpl(const SpriteImpl&) = delete;
   SpriteImpl& operator=(const SpriteImpl&) = delete;
 
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
 
   void Dispose(ExceptionState& exception_state) override;
@@ -81,7 +81,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Sprite"; }
+  std::string DisposedObjectName() override { return "Sprite"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);

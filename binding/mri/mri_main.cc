@@ -48,8 +48,8 @@ VALUE EvalString(VALUE string, VALUE filename, int32_t* state) {
   return rb_protect(evaluate, reinterpret_cast<VALUE>(&context), state);
 }
 
-base::String InsertNewLines(const base::String& input, size_t interval) {
-  base::String result;
+std::string InsertNewLines(const std::string& input, size_t interval) {
+  std::string result;
   size_t length = input.length();
 
   for (size_t i = 0; i < length; i += interval) {
@@ -61,7 +61,7 @@ base::String InsertNewLines(const base::String& input, size_t interval) {
   return result;
 }
 
-base::String ParseExeceptionInfo(VALUE exception) {
+std::string ParseExeceptionInfo(VALUE exception) {
   VALUE exeception_name = rb_class_path(rb_obj_class(exception));
   VALUE exception_message = rb_obj_as_string(exception);
   VALUE backtrace = rb_funcall2(exception, rb_intern("backtrace"), 0, NULL);
@@ -73,7 +73,7 @@ base::String ParseExeceptionInfo(VALUE exception) {
       rb_sprintf("%" PRIsVALUE " (%" PRIsVALUE ") :\n%" PRIsVALUE,
                  backtrace_front, exeception_name, exception_message);
 
-  base::String error_info = StringValueCStr(format_errors);
+  std::string error_info = StringValueCStr(format_errors);
   return InsertNewLines(error_info, 128);
 }
 
@@ -234,7 +234,7 @@ void BindingEngineMri::OnMainMessageLoopRun(
   content::ExceptionState exception_state;
   LoadPackedScripts(profile_, exception_state);
   if (exception_state.HadException()) {
-    base::String error_message;
+    std::string error_message;
     exception_state.FetchException(error_message);
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
                              error_message.c_str(), nullptr);
@@ -244,7 +244,7 @@ void BindingEngineMri::OnMainMessageLoopRun(
 void BindingEngineMri::PostMainLoopRunning() {
   // Show exception info
   VALUE exception = rb_errinfo();
-  base::String exception_message;
+  std::string exception_message;
   if (!NIL_P(exception) && !rb_obj_is_kind_of(exception, rb_eSystemExit))
     exception_message = ParseExeceptionInfo(exception);
 
@@ -288,7 +288,7 @@ void BindingEngineMri::LoadPackedScripts(
   rb_gv_set("$RGSS_SCRIPTS", packed_scripts);
 
   int32_t scripts_count = RARRAY_LEN(packed_scripts);
-  base::String zlib_decode_buffer(0x1000, 0);
+  std::string zlib_decode_buffer(0x1000, 0);
 
   for (int32_t i = 0; i < scripts_count; ++i) {
     VALUE script = rb_ary_entry(packed_scripts, i);
@@ -340,7 +340,7 @@ void BindingEngineMri::LoadPackedScripts(
                       << StringValueCStr(script_name);
 
       int32_t state = 0;
-      base::String filename = format_filename.str().c_str();
+      std::string filename = format_filename.str().c_str();
       EvalString(
           MriStringUTF8(RSTRING_PTR(script_source), RSTRING_LEN(script_source)),
           MriStringUTF8(filename.data(), filename.size()), &state);

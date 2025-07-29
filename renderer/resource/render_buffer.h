@@ -9,7 +9,6 @@
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
 
-#include "base/memory/allocator.h"
 #include "renderer/layout/vertex_layout.h"
 #include "renderer/renderer_config.h"
 
@@ -38,7 +37,7 @@ class QuadIndexCache {
  private:
   QuadIndexCache(Diligent::IRenderDevice* device);
 
-  base::Vector<uint16_t> cache_;
+  std::vector<uint16_t> cache_;
 
   RRefPtr<Diligent::IRenderDevice> device_;
   RRefPtr<Diligent::IBuffer> buffer_;

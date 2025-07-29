@@ -15,7 +15,7 @@ namespace filesystem {
 
 namespace {
 
-void ToLower(base::String& str) {
+void ToLower(std::string& str) {
   for (size_t i = 0; i < str.size(); ++i)
     str[i] = tolower(str[i]);
 }
@@ -115,15 +115,15 @@ SDL_IOStream* WrapperRWops(PHYSFS_File* handle) {
 
 struct OpenReadEnumData {
   IOService::OpenCallback callback;
-  base::String full;
-  base::String dir;
-  base::String file;
-  base::String ext;
+  std::string full;
+  std::string dir;
+  std::string file;
+  std::string ext;
 
   bool search_complete = false;
   int match_count = 0;
 
-  base::String physfs_error;
+  std::string physfs_error;
 
   OpenReadEnumData() = default;
 };
@@ -132,23 +132,23 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
                                                     const char* origdir,
                                                     const char* fname) {
   OpenReadEnumData* enum_data = static_cast<OpenReadEnumData*>(data);
-  base::String filename(fname);
+  std::string filename(fname);
   ToLower(filename);
 
   if (enum_data->search_complete)
     return PHYSFS_ENUM_STOP;
 
   size_t it = filename.rfind(enum_data->file);
-  if (it == base::String::npos)
+  if (it == std::string::npos)
     return PHYSFS_ENUM_OK;
 
   const char last = filename[enum_data->file.size()];
   if (last != '.' && last != '/')
     return PHYSFS_ENUM_OK;
 
-  base::String fullpath;
+  std::string fullpath;
   if (*origdir) {
-    fullpath += base::String(origdir);
+    fullpath += std::string(origdir);
     fullpath += "/";
   }
   fullpath += fname;
@@ -172,7 +172,7 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
 
 }  // namespace
 
-base::OwnedPtr<IOService> IOService::Create(const base::String& argv0) {
+std::unique_ptr<IOService> IOService::Create(const std::string& argv0) {
   const char* init_data = argv0.c_str();
 
 #if defined(OS_ANDROID)
@@ -190,23 +190,23 @@ base::OwnedPtr<IOService> IOService::Create(const base::String& argv0) {
   PHYSFS_setRoot(PHYSFS_getBaseDir(), "/assets");
 #endif
 
-  return base::MakeOwnedPtr<IOService>();
+  return std::unique_ptr<IOService>(new IOService);
 }
 
 IOService::~IOService() {
   PHYSFS_deinit();
 }
 
-bool IOService::SetWritePath(const base::String& path) {
+bool IOService::SetWritePath(const std::string& path) {
   // Setup write output path
   return !!PHYSFS_setWriteDir(path.c_str());
 }
 
-int32_t IOService::AddLoadPath(const base::String& new_path,
-                               const base::String& mount_point,
+int32_t IOService::AddLoadPath(const std::string& new_path,
+                               const std::string& mount_point,
                                bool append) {
-  base::String real_filename = new_path;
-  base::String password;
+  std::string real_filename = new_path;
+  std::string password;
 
   size_t pos = new_path.find('?');
   if (pos != std::string::npos) {
@@ -226,23 +226,23 @@ int32_t IOService::AddLoadPath(const base::String& new_path,
   return result;
 }
 
-int32_t IOService::RemoveLoadPath(const base::String& old_path) {
+int32_t IOService::RemoveLoadPath(const std::string& old_path) {
   return PHYSFS_unmount(old_path.c_str());
 }
 
-bool IOService::Exists(const base::String& filename) {
+bool IOService::Exists(const std::string& filename) {
   return PHYSFS_exists(filename.c_str());
 }
 
-base::Vector<base::String> IOService::EnumDir(const base::String& dir) {
-  base::Vector<base::String> files;
+std::vector<std::string> IOService::EnumDir(const std::string& dir) {
+  std::vector<std::string> files;
 
   PHYSFS_enumerate(
       dir.c_str(),
       [](void* data, const char* origdir,
          const char* fname) -> PHYSFS_EnumerateCallbackResult {
-        base::Vector<base::String>* files =
-            static_cast<base::Vector<base::String>*>(data);
+        std::vector<std::string>* files =
+            static_cast<std::vector<std::string>*>(data);
         files->push_back(fname);
         return PHYSFS_ENUM_OK;
       },
@@ -251,25 +251,25 @@ base::Vector<base::String> IOService::EnumDir(const base::String& dir) {
   return files;
 }
 
-base::String IOService::GetLastError() {
+std::string IOService::GetLastError() {
   return PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
 }
 
-void IOService::OpenRead(const base::String& file_path,
+void IOService::OpenRead(const std::string& file_path,
                          OpenCallback callback,
                          IOState* io_state) {
-  base::String filename(file_path);
-  base::String dir, file, ext;
+  std::string filename(file_path);
+  std::string dir, file, ext;
 
   size_t last_slash_pos = filename.find_last_of('/');
-  if (last_slash_pos != base::String::npos) {
+  if (last_slash_pos != std::string::npos) {
     dir = filename.substr(0, last_slash_pos);
     file = filename.substr(last_slash_pos + 1);
   } else
     file = filename;
 
   size_t last_dot_pos = file.find_last_of('.');
-  if (last_dot_pos != base::String::npos) {
+  if (last_dot_pos != std::string::npos) {
     ext = file.substr(last_dot_pos + 1);
     file = file.substr(0, last_dot_pos);
   }
@@ -299,15 +299,15 @@ void IOService::OpenRead(const base::String& file_path,
   }
 }
 
-SDL_IOStream* IOService::OpenReadRaw(const base::String& filename,
+SDL_IOStream* IOService::OpenReadRaw(const std::string& filename,
                                      IOState* io_state) {
   PHYSFS_File* file = PHYSFS_openRead(filename.c_str());
   if (!file) {
     if (io_state) {
       io_state->error_count++;
       io_state->error_message =
-          base::String(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())) +
-          ": " + filename;
+          std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())) + ": " +
+          filename;
     }
 
     return nullptr;
@@ -316,15 +316,15 @@ SDL_IOStream* IOService::OpenReadRaw(const base::String& filename,
   return WrapperRWops(file);
 }
 
-SDL_IOStream* IOService::OpenWrite(const base::String& filename,
+SDL_IOStream* IOService::OpenWrite(const std::string& filename,
                                    IOState* io_state) {
   PHYSFS_File* file = PHYSFS_openWrite(filename.c_str());
   if (!file) {
     if (io_state) {
       io_state->error_count++;
       io_state->error_message =
-          base::String(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())) +
-          ": " + filename;
+          std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())) + ": " +
+          filename;
     }
 
     return nullptr;

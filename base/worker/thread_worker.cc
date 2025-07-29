@@ -17,7 +17,7 @@ struct ThreadWorker::QueueInternal {
 };
 
 ThreadWorker::ThreadWorker()
-    : quit_flag_(0), task_queue_(base::MakeOwnedPtr<QueueInternal>()) {}
+    : quit_flag_(0), task_queue_(std::make_unique<QueueInternal>()) {}
 
 ThreadWorker::~ThreadWorker() {
   quit_flag_.store(1);
@@ -25,8 +25,8 @@ ThreadWorker::~ThreadWorker() {
     thread_.join();
 }
 
-base::OwnedPtr<ThreadWorker> ThreadWorker::Create() {
-  base::OwnedPtr<ThreadWorker> instance = base::MakeOwnedPtr<ThreadWorker>();
+std::unique_ptr<ThreadWorker> ThreadWorker::Create() {
+  std::unique_ptr<ThreadWorker> instance(new ThreadWorker);
 
   std::thread thread(&ThreadWorker::ThreadMainFunctionInternal, instance.get());
   instance->thread_ = std::move(thread);

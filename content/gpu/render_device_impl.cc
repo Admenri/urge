@@ -219,7 +219,7 @@ scoped_refptr<GPUShader> RenderDeviceImpl::CreateShader(
   DISPOSE_CHECK_RETURN(nullptr);
 
   Diligent::ShaderCreateInfo create_desc;
-  base::Vector<Diligent::ShaderMacro> shader_macros;
+  std::vector<Diligent::ShaderMacro> shader_macros;
   if (create_info) {
     for (auto& macro : create_info->macros) {
       Diligent::ShaderMacro result_macro;
@@ -307,7 +307,7 @@ scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
     create_desc.ImmediateContextMask = desc->immediate_context_mask;
   }
 
-  base::Vector<Diligent::TextureSubResData> subresources;
+  std::vector<Diligent::TextureSubResData> subresources;
 
   Diligent::TextureData create_data;
   if (data) {
@@ -369,11 +369,11 @@ scoped_refptr<GPUSampler> RenderDeviceImpl::CreateSampler(
 }
 
 scoped_refptr<GPUResourceMapping> RenderDeviceImpl::CreateResourceMapping(
-    const base::Vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
+    const std::vector<scoped_refptr<GPUResourceMappingEntry>>& entries,
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
-  base::Vector<Diligent::ResourceMappingEntry> object_entries;
+  std::vector<Diligent::ResourceMappingEntry> object_entries;
 
   Diligent::ResourceMappingCreateInfo create_desc;
   for (auto& it : entries) {
@@ -397,7 +397,7 @@ scoped_refptr<GPUResourceMapping> RenderDeviceImpl::CreateResourceMapping(
 }
 
 scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
-    const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+    const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
     scoped_refptr<GPUGraphicsPipelineDesc> graphics_pipeline_desc,
     scoped_refptr<GPUShader> vertex_shader,
     scoped_refptr<GPUShader> pixel_shader,
@@ -410,7 +410,7 @@ scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
 
   Diligent::GraphicsPipelineStateCreateInfo create_desc;
 
-  base::Vector<Diligent::LayoutElement> object_elements;
+  std::vector<Diligent::LayoutElement> object_elements;
   if (graphics_pipeline_desc) {
     auto& desc = graphics_pipeline_desc;
     Diligent::GraphicsPipelineDesc object_desc;
@@ -544,7 +544,7 @@ scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
     create_desc.GraphicsPipeline = object_desc;
   }
 
-  base::Vector<Diligent::IPipelineResourceSignature*> object_signatures;
+  std::vector<Diligent::IPipelineResourceSignature*> object_signatures;
   for (auto& it : signatures) {
     auto* impl = static_cast<PipelineSignatureImpl*>(it.get());
     object_signatures.push_back(impl ? impl->AsRawPtr() : nullptr);
@@ -576,7 +576,7 @@ scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateGraphicsPipelineState(
 }
 
 scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateComputePipelineState(
-    const base::Vector<scoped_refptr<GPUPipelineSignature>>& signatures,
+    const std::vector<scoped_refptr<GPUPipelineSignature>>& signatures,
     scoped_refptr<GPUShader> compute_shader,
     uint64_t immediate_context_mask,
     ExceptionState& exception_state) {
@@ -584,7 +584,7 @@ scoped_refptr<GPUPipelineState> RenderDeviceImpl::CreateComputePipelineState(
 
   Diligent::ComputePipelineStateCreateInfo create_desc;
 
-  base::Vector<Diligent::IPipelineResourceSignature*> object_signatures;
+  std::vector<Diligent::IPipelineResourceSignature*> object_signatures;
   for (auto& it : signatures) {
     auto* impl = static_cast<PipelineSignatureImpl*>(it.get());
     object_signatures.push_back(impl ? impl->AsRawPtr() : nullptr);
@@ -643,8 +643,8 @@ scoped_refptr<GPUPipelineSignature> RenderDeviceImpl::CreatePipelineSignature(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
-  base::Vector<Diligent::PipelineResourceDesc> resources_desc;
-  base::Vector<Diligent::ImmutableSamplerDesc> samplers_desc;
+  std::vector<Diligent::PipelineResourceDesc> resources_desc;
+  std::vector<Diligent::ImmutableSamplerDesc> samplers_desc;
 
   Diligent::PipelineResourceSignatureDesc create_desc;
   if (desc) {

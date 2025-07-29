@@ -20,11 +20,11 @@ class I18NProfile {
   I18NProfile(const I18NProfile&) = delete;
   I18NProfile& operator=(const I18NProfile&) = delete;
 
-  base::String GetI18NString(int32_t ids, const base::String& default_value);
+  std::string GetI18NString(int32_t ids, const std::string& default_value);
 
  private:
-  base::String i18n_xml_path_;
-  std::unordered_map<int32_t, base::String> i18n_translation_;
+  std::string i18n_xml_path_;
+  std::unordered_map<int32_t, std::string> i18n_translation_;
 };
 
 }  // namespace content

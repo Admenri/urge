@@ -43,12 +43,12 @@ class URGE_OBJECT(Graphics) {
 
   /*--urge(name:transition)--*/
   virtual void Transition(uint32_t duration,
-                          const base::String& filename,
+                          const std::string& filename,
                           ExceptionState& exception_state) = 0;
 
   /*--urge(name:transition)--*/
   virtual void Transition(uint32_t duration,
-                          const base::String& filename,
+                          const std::string& filename,
                           uint32_t vague,
                           ExceptionState& exception_state) = 0;
 
@@ -80,7 +80,7 @@ class URGE_OBJECT(Graphics) {
   virtual void Reset(ExceptionState& exception_state) = 0;
 
   /*--urge(name:play_movie)--*/
-  virtual void PlayMovie(const base::String& filename,
+  virtual void PlayMovie(const std::string& filename,
                          ExceptionState& exception_state) = 0;
 
   /*--urge(name:move_window)--*/
@@ -151,7 +151,7 @@ class URGE_OBJECT(Graphics) {
   URGE_EXPORT_ATTRIBUTE(Oy, int32_t);
 
   /*--urge(name:window_title)--*/
-  URGE_EXPORT_ATTRIBUTE(WindowTitle, base::String);
+  URGE_EXPORT_ATTRIBUTE(WindowTitle, std::string);
 };
 
 }  // namespace content

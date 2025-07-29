@@ -27,7 +27,7 @@ class URGE_OBJECT(Mesh) {
                                  ExceptionState& exception_state);
 
   /*--urge(name:set_label)--*/
-  virtual void SetLabel(const base::String& label,
+  virtual void SetLabel(const std::string& label,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:dispose)--*/
@@ -39,8 +39,8 @@ class URGE_OBJECT(Mesh) {
   /*--urge(name:set_vertex_buffers)--*/
   virtual void SetVertexBuffers(
       uint32_t start_slot,
-      const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
-      const base::Vector<uint64_t>& offsets,
+      const std::vector<scoped_refptr<GPUBuffer>>& buffers,
+      const std::vector<uint64_t>& offsets,
       GPU::SetVertexBuffersFlags flags,
       ExceptionState& exception_state) = 0;
 
@@ -92,14 +92,14 @@ class URGE_OBJECT(Mesh) {
 
   /*--urge(name:set_multi_draw_attribs)--*/
   virtual void SetMultiDrawAttribs(
-      const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawItem>>& items,
       uint32_t num_instances,
       uint32_t first_instance,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_multi_draw_attribs)--*/
   virtual void SetMultiDrawAttribs(
-      const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
       GPU::ValueType index_type,
       uint32_t num_instances,
       uint32_t first_instance,

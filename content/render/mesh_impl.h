@@ -29,13 +29,13 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
   MeshImpl& operator=(const MeshImpl&) = delete;
 
  protected:
-  void SetLabel(const base::String& label,
+  void SetLabel(const std::string& label,
                 ExceptionState& exception_state) override;
   void Dispose(ExceptionState& exception_state) override;
   bool IsDisposed(ExceptionState& exception_state) override;
   void SetVertexBuffers(uint32_t start_slot,
-                        const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
-                        const base::Vector<uint64_t>& offsets,
+                        const std::vector<scoped_refptr<GPUBuffer>>& buffers,
+                        const std::vector<uint64_t>& offsets,
                         GPU::SetVertexBuffersFlags flags,
                         ExceptionState& exception_state) override;
   void SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
@@ -73,12 +73,12 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
                       GPU::ValueType index_type,
                       ExceptionState& exception_state) override;
   void SetMultiDrawAttribs(
-      const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawItem>>& items,
       uint32_t num_instances,
       uint32_t first_instance,
       ExceptionState& exception_state) override;
   void SetMultiDrawAttribs(
-      const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
       GPU::ValueType index_type,
       uint32_t num_instances,
       uint32_t first_instance,
@@ -94,7 +94,7 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Mesh.Drawable"; }
+  std::string DisposedObjectName() override { return "Mesh.Drawable"; }
   void DrawableNodeHandlerInternal(
       DrawableNode::RenderStage stage,
       DrawableNode::RenderControllerParams* params);
@@ -104,8 +104,8 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
 
   struct VertexBufferAttribs {
     uint32_t start_slot = 0;
-    base::Vector<RRefPtr<Diligent::IBuffer>> buffers;
-    base::Vector<uint64_t> offsets;
+    std::vector<RRefPtr<Diligent::IBuffer>> buffers;
+    std::vector<uint64_t> offsets;
     Diligent::SET_VERTEX_BUFFERS_FLAGS flags =
         Diligent::SET_VERTEX_BUFFERS_FLAG_NONE;
   };
@@ -155,13 +155,13 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
   };
 
   struct MultiDrawAttribs {
-    base::Vector<Diligent::MultiDrawItem> items;
+    std::vector<Diligent::MultiDrawItem> items;
     uint32_t num_instances;
     uint32_t first_instance;
   };
 
   struct MultiDrawIndexedAttribs {
-    base::Vector<Diligent::MultiDrawIndexedItem> items;
+    std::vector<Diligent::MultiDrawIndexedItem> items;
     Diligent::VALUE_TYPE index_type;
     uint32_t num_instances;
     uint32_t first_instance;

@@ -14,7 +14,6 @@
 
 #include "base/math/rectangle.h"
 #include "base/math/vector.h"
-#include "base/memory/allocator.h"
 #include "renderer/renderer_config.h"
 
 namespace renderer {

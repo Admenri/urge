@@ -62,16 +62,16 @@ bool CheckValidUTF8(const char* string) {
   return true;
 }
 
-void ReplaceStringWidth(base::String& str, char before, char after) {
+void ReplaceStringWidth(std::string& str, char before, char after) {
   for (size_t i = 0; i < str.size(); ++i)
     if (str[i] == before)
       str[i] = after;
 }
 
-base::Vec2i GetVec2iFromString(base::String in,
+base::Vec2i GetVec2iFromString(std::string in,
                                const base::Vec2i& default_value) {
   size_t sep = in.find("|");
-  if (sep != base::String::npos) {
+  if (sep != std::string::npos) {
     int32_t num1 = std::stoi(in.substr(0, sep).c_str());
     int32_t num2 = std::stoi(in.substr(sep + 1).c_str());
     return base::Vec2i(num1, num2);
@@ -98,7 +98,7 @@ char* IniStreamReader(char* str, int32_t num, void* stream) {
 }
 
 #if defined(OS_WIN)
-base::String ANSIFromUtf8(const base::String& asciiStr) {
+std::string ANSIFromUtf8(const std::string& asciiStr) {
   if (asciiStr.empty()) {
     return "";
   }
@@ -111,7 +111,7 @@ base::String ANSIFromUtf8(const base::String& asciiStr) {
                              std::to_string(GetLastError()));
   }
 
-  base::Vector<wchar_t> wstr(wcharsCount);
+  std::vector<wchar_t> wstr(wcharsCount);
   if (MultiByteToWideChar(CP_ACP, 0, asciiStr.c_str(), -1, &wstr[0],
                           wcharsCount) == 0) {
     throw std::runtime_error("MultiByteToWideChar failed: " +
@@ -126,20 +126,20 @@ base::String ANSIFromUtf8(const base::String& asciiStr) {
                              std::to_string(GetLastError()));
   }
 
-  base::Vector<char> utf8str(utf8Count);
+  std::vector<char> utf8str(utf8Count);
   if (WideCharToMultiByte(CP_UTF8, 0, &wstr[0], -1, &utf8str[0], utf8Count,
                           NULL, NULL) == 0) {
     throw std::runtime_error("WideCharToMultiByte failed: " +
                              std::to_string(GetLastError()));
   }
 
-  return base::String(&utf8str[0]);
+  return std::string(&utf8str[0]);
 }
 #endif
 
 }  // namespace
 
-ContentProfile::ContentProfile(const base::String& app, SDL_IOStream* stream)
+ContentProfile::ContentProfile(const std::string& app, SDL_IOStream* stream)
     : program_name(app), ini_stream_(stream) {}
 
 ContentProfile::~ContentProfile() = default;
@@ -149,17 +149,17 @@ void ContentProfile::LoadCommandLine(int32_t argc, char** argv) {
     args.push_back(argv[i]);
 
   for (int32_t i = 0; i < argc; i++) {
-    if (base::String(argv[i]) == "test" || base::String(argv[i]) == "debug")
+    if (std::string(argv[i]) == "test" || std::string(argv[i]) == "debug")
       game_debug = true;
-    if (base::String(argv[i]) == "btest")
+    if (std::string(argv[i]) == "btest")
       game_battle_test = true;
   }
 }
 
-bool ContentProfile::LoadConfigure(const base::String& app) {
-  base::OwnedPtr<INIReader> reader = base::MakeOwnedPtr<INIReader>();
+bool ContentProfile::LoadConfigure(const std::string& app) {
+  std::unique_ptr<INIReader> reader = std::make_unique<INIReader>();
   if (ini_stream_) {
-    reader = base::MakeOwnedPtr<INIReader>(ini_stream_, IniStreamReader);
+    reader = std::make_unique<INIReader>(ini_stream_, IniStreamReader);
     if (reader->ParseError())
       return false;
   } else {
@@ -181,7 +181,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
   }
 
   for (int32_t i = 1; i <= 3; ++i) {
-    base::String rtp_key = "RTP";
+    std::string rtp_key = "RTP";
     rtp_key += ('0' + i);
 
     if (rtp.empty())
@@ -212,7 +212,7 @@ bool ContentProfile::LoadConfigure(const base::String& app) {
       reader->Get("Engine", "DefaultFontPath", default_font_path);
   ReplaceStringWidth(default_font_path, '\\', '/');
   i18n_xml_path =
-      reader->Get("Engine", "I18nXMLPath", base::String(app + ".xml"));
+      reader->Get("Engine", "I18nXMLPath", std::string(app + ".xml"));
 
   if (api_version == APIVersion::RGSS1)
     resolution = base::Vec2i(640, 480);

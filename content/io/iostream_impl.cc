@@ -11,8 +11,8 @@ namespace content {
 
 scoped_refptr<IOStream> IOStream::FromFileSystem(
     ExecutionContext* execution_context,
-    const base::String& filename,
-    const base::String& mode,
+    const std::string& filename,
+    const std::string& mode,
     ExceptionState& exception_state) {
   auto* stream = SDL_IOFromFile(filename.c_str(), mode.c_str());
   if (!stream) {
@@ -26,7 +26,7 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
 
 scoped_refptr<IOStream> IOStream::FromIOSystem(
     ExecutionContext* execution_context,
-    const base::String& filename,
+    const std::string& filename,
     ExceptionState& exception_state) {
   filesystem::IOState io_state;
   auto* stream =

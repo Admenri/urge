@@ -35,7 +35,7 @@ PlaneImpl::PlaneImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(PlaneImpl);
 
-void PlaneImpl::SetLabel(const base::String& label,
+void PlaneImpl::SetLabel(const std::string& label,
                          ExceptionState& exception_state) {
   node_.SetDebugLabel(label);
 }

@@ -36,7 +36,7 @@ class QueryImpl : public GPUQuery, public EngineObject, public Disposable {
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.Query"; }
+  std::string DisposedObjectName() override { return "GPU.Query"; }
 
   Diligent::RefCntAutoPtr<Diligent::IQuery> object_;
 };

@@ -35,7 +35,7 @@ void DrawEngineInfoGUI(I18NProfile* i18n_profile) {
 }  // namespace
 
 ContentRunner::ContentRunner(ContentProfile* profile,
-                             base::OwnedPtr<EngineBindingBase> binding)
+                             std::unique_ptr<EngineBindingBase> binding)
     : profile_(profile),
       binding_(std::move(binding)),
       binding_quit_flag_(0),
@@ -85,14 +85,13 @@ void ContentRunner::RunMainLoop() {
   binding_->PostMainLoopRunning();
 }
 
-base::OwnedPtr<ContentRunner> ContentRunner::Create(InitParams params) {
-  auto* runner = base::Allocator::New<ContentRunner>(params.profile,
-                                                     std::move(params.entry));
+std::unique_ptr<ContentRunner> ContentRunner::Create(InitParams params) {
+  auto* runner = new ContentRunner(params.profile, std::move(params.entry));
   if (!runner->InitializeComponents(params.io_service, params.font_context,
                                     params.i18n_profile, params.window))
     return nullptr;
 
-  return base::OwnedPtr<ContentRunner>(runner);
+  return std::unique_ptr<ContentRunner>(runner);
 }
 
 bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
@@ -111,10 +110,10 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
 
   render_device_ = std::move(render_device);
   device_context_ = std::move(render_context);
-  canvas_scheduler_ = base::MakeOwnedPtr<CanvasScheduler>(render_device_.get(),
-                                                          device_context_);
-  sprite_batcher_ = base::MakeOwnedPtr<SpriteBatch>(render_device_.get());
-  event_controller_ = base::MakeOwnedPtr<EventController>(window);
+  canvas_scheduler_ =
+      std::make_unique<CanvasScheduler>(render_device_.get(), device_context_);
+  sprite_batcher_ = std::make_unique<SpriteBatch>(render_device_.get());
+  event_controller_ = std::make_unique<EventController>(window);
   if (!profile_->disable_audio) {
     audio_server_ = audioservice::AudioService::Create(io_service);
   } else {
@@ -122,7 +121,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   }
 
   // Initialize execution context
-  execution_context_ = base::MakeOwnedPtr<ExecutionContext>();
+  execution_context_ = std::make_unique<ExecutionContext>();
   execution_context_->resolution = profile_->resolution;
   execution_context_->window = window;
   execution_context_->render_device = render_device_.get();
@@ -402,8 +401,7 @@ void ContentRunner::CreateIMGUIContextInternal() {
   // Setup renderer backend
   Diligent::ImGuiDiligentCreateInfo imgui_create_info(
       **render_device, render_device->GetSwapChain()->GetDesc());
-  imgui_ =
-      base::MakeOwnedPtr<Diligent::ImGuiDiligentRenderer>(imgui_create_info);
+  imgui_ = std::make_unique<Diligent::ImGuiDiligentRenderer>(imgui_create_info);
 }
 
 void ContentRunner::DestroyIMGUIContextInternal() {

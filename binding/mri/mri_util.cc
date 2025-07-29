@@ -22,7 +22,7 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
   va_list args_iter;
   bool is_arg_optional = false;
   int count = 0;
-  base::String format(fmt);
+  std::string format(fmt);
   auto ch = format.begin();
 
   va_start(args_iter, fmt);
@@ -40,10 +40,10 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
      * u -> uint32
      * l -> int64
      * p -> uint64
-     * s -> base::String
+     * s -> std::string
      * f -> double
      * b -> bool
-     * n -> base::String
+     * n -> std::string
      * r -> void*
      */
 
@@ -118,8 +118,8 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
       case 's': {
         VALUE str = rb_obj_as_string(arg_element);
 
-        base::String* ptr = va_arg(args_iter, base::String*);
-        *ptr = base::String(RSTRING_PTR(str), RSTRING_LEN(str));
+        std::string* ptr = va_arg(args_iter, std::string*);
+        *ptr = std::string(RSTRING_PTR(str), RSTRING_LEN(str));
       }
         ++count;
         break;
@@ -161,13 +161,13 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
         ++count;
         break;
       case 'n': {
-        base::String* ptr = va_arg(args_iter, base::String*);
+        std::string* ptr = va_arg(args_iter, std::string*);
         switch (rb_type(arg_element)) {
           case RUBY_T_SYMBOL:
-            *ptr = base::String(rb_id2name(SYM2ID(arg_element)));
+            *ptr = std::string(rb_id2name(SYM2ID(arg_element)));
             break;
           case RUBY_T_STRING:
-            *ptr = base::String(RSTRING_PTR(arg_element),
+            *ptr = std::string(RSTRING_PTR(arg_element),
                                 RSTRING_LEN(arg_element));
             break;
           default:
@@ -220,7 +220,7 @@ void MriInitException(bool rgss3) {
 
 void MriProcessException(const content::ExceptionState& exception) {
   if (exception.HadException()) {
-    base::String error_message;
+    std::string error_message;
     content::ExceptionCode error_code = exception.FetchException(error_message);
     VALUE rb_eCustom = g_exception_list[error_code];
     rb_raise(rb_eCustom, "%s", error_message.c_str());

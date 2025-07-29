@@ -75,14 +75,14 @@ scoped_refptr<GPUShaderCodeBufferDesc> ShaderImpl::GetConstantBufferDesc(
   return result;
 }
 
-base::String ShaderImpl::GetBytecode(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(base::String());
+std::string ShaderImpl::GetBytecode(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(std::string());
 
   const void* byte_buffer;
   uint64_t byte_size;
   object_->GetBytecode(&byte_buffer, byte_size);
 
-  base::String buffer(byte_size, 0);
+  std::string buffer(byte_size, 0);
   std::memcpy(buffer.data(), byte_buffer, byte_size);
 
   return buffer;

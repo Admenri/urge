@@ -25,7 +25,7 @@ class URGE_OBJECT(TouchEvent) {
   };
 
   /*--urge(name:update)--*/
-  static base::Vector<scoped_refptr<TouchEvent>> Update(
+  static std::vector<scoped_refptr<TouchEvent>> Update(
       ExecutionContext* execution_context,
       ExceptionState& exception_state);
 

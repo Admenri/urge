@@ -16,7 +16,7 @@ namespace content {
 class KeyboardControllerImpl : public Input, public EngineObject {
  public:
   struct KeyBinding {
-    base::String sym;
+    std::string sym;
     SDL_Scancode scancode;
 
     bool operator==(const KeyBinding& other) {
@@ -24,7 +24,7 @@ class KeyboardControllerImpl : public Input, public EngineObject {
     }
   };
 
-  using KeySymMap = base::Vector<KeyBinding>;
+  using KeySymMap = std::vector<KeyBinding>;
   using KeyState = struct {
     bool pressed;
     bool trigger;
@@ -43,11 +43,11 @@ class KeyboardControllerImpl : public Input, public EngineObject {
 
  public:
   void Update(ExceptionState& exception_state) override;
-  bool IsPressed(const base::String& sym,
+  bool IsPressed(const std::string& sym,
                  ExceptionState& exception_state) override;
-  bool IsTriggered(const base::String& sym,
+  bool IsTriggered(const std::string& sym,
                    ExceptionState& exception_state) override;
-  bool IsRepeated(const base::String& sym,
+  bool IsRepeated(const std::string& sym,
                   ExceptionState& exception_state) override;
   int32_t Dir4(ExceptionState& exception_state) override;
   int32_t Dir8(ExceptionState& exception_state) override;
@@ -55,20 +55,20 @@ class KeyboardControllerImpl : public Input, public EngineObject {
   bool KeyPressed(int32_t scancode, ExceptionState& exception_state) override;
   bool KeyTriggered(int32_t scancode, ExceptionState& exception_state) override;
   bool KeyRepeated(int32_t scancode, ExceptionState& exception_state) override;
-  base::String GetKeyName(int32_t scancode,
+  std::string GetKeyName(int32_t scancode,
                           ExceptionState& exception_state) override;
-  base::Vector<int32_t> GetKeysFromFlag(
-      const base::String& flag,
+  std::vector<int32_t> GetKeysFromFlag(
+      const std::string& flag,
       ExceptionState& exception_state) override;
-  void SetKeysFromFlag(const base::String& flag,
-                       const base::Vector<int32_t>& keys,
+  void SetKeysFromFlag(const std::string& flag,
+                       const std::vector<int32_t>& keys,
                        ExceptionState& exception_state) override;
 
-  base::Vector<int32_t> GetRecentPressed(
+  std::vector<int32_t> GetRecentPressed(
       ExceptionState& exception_state) override;
-  base::Vector<int32_t> GetRecentTriggered(
+  std::vector<int32_t> GetRecentTriggered(
       ExceptionState& exception_state) override;
-  base::Vector<int32_t> GetRecentRepeated(
+  std::vector<int32_t> GetRecentRepeated(
       ExceptionState& exception_state) override;
 
   bool Emulate(int32_t scancode,

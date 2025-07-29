@@ -5,9 +5,10 @@
 #ifndef COMPONENTS_AUDIOSERVICE_AUDIO_STREAM_H_
 #define COMPONENTS_AUDIOSERVICE_AUDIO_STREAM_H_
 
-#include "miniaudio.h"
+#include <stdint.h>
+#include <string>
 
-#include "base/memory/allocator.h"
+#include "miniaudio.h"
 
 namespace audioservice {
 
@@ -20,7 +21,7 @@ class AudioStream {
 
   // Play audio stream from file in looping.
   // If the filename is different from the last one, it will reset the audio.
-  ma_result Play(const base::String& filename,
+  ma_result Play(const std::string& filename,
                  int32_t volume,
                  int32_t pitch,
                  uint64_t pos = 0);
@@ -40,11 +41,11 @@ class AudioStream {
   void SetLooping(bool looping);
 
  private:
-  friend struct base::Allocator;
+  friend class AudioService;
   AudioStream(ma_engine* engine);
 
   ma_engine* engine_;
-  base::String filename_;
+  std::string filename_;
   ma_sound handle_;
   ma_uint64 cursor_;
   ma_bool32 looping_;

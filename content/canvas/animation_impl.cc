@@ -12,11 +12,11 @@ namespace content {
 
 scoped_refptr<ImageAnimation> ImageAnimation::New(
     ExecutionContext* execution_context,
-    const base::String& filename,
+    const std::string& filename,
     ExceptionState& exception_state) {
   IMG_Animation* animation_data = nullptr;
   auto file_handler = base::BindRepeating(
-      [](IMG_Animation** anim, SDL_IOStream* ops, const base::String& ext) {
+      [](IMG_Animation** anim, SDL_IOStream* ops, const std::string& ext) {
         *anim = IMG_LoadAnimationTyped_IO(ops, true, ext.c_str());
         return !!*anim;
       },
@@ -46,7 +46,7 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
 scoped_refptr<ImageAnimation> ImageAnimation::New(
     ExecutionContext* execution_context,
     scoped_refptr<IOStream> stream,
-    const base::String& extname,
+    const std::string& extname,
     ExceptionState& exception_state) {
   auto stream_obj = IOStreamImpl::From(stream);
   if (!stream_obj || !stream_obj->GetRawStream()) {
@@ -90,12 +90,12 @@ int32_t ImageAnimationImpl::Height(ExceptionState& exception_state) {
   return animation_->h;
 }
 
-base::Vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
+std::vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
     ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return {};
 
-  base::Vector<scoped_refptr<Surface>> result;
+  std::vector<scoped_refptr<Surface>> result;
   for (int32_t i = 0; i < animation_->count; ++i) {
     auto* origin_surface = animation_->frames[i];
     auto* duplicate_surface = SDL_CreateSurface(
@@ -110,12 +110,12 @@ base::Vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
   return result;
 }
 
-base::Vector<int32_t> ImageAnimationImpl::GetDelays(
+std::vector<int32_t> ImageAnimationImpl::GetDelays(
     ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return {};
 
-  base::Vector<int32_t> result;
+  std::vector<int32_t> result;
   for (int32_t i = 0; i < animation_->count; ++i)
     result.push_back(animation_->delays[i]);
 

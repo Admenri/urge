@@ -20,8 +20,8 @@ void RenderShadowSurface(SDL_Surface*& in, const SDL_Color& color) {
 }
 
 TTF_Font* ReadFontFromMemory(
-    const std::map<base::String, std::pair<int64_t, void*>>& mem_fonts,
-    const base::String& path,
+    const std::map<std::string, std::pair<int64_t, void*>>& mem_fonts,
+    const std::string& path,
     int32_t size) {
   auto it = mem_fonts.find(path);
   if (it != mem_fonts.end()) {
@@ -35,7 +35,7 @@ TTF_Font* ReadFontFromMemory(
 }  // namespace
 
 scoped_refptr<Font> Font::New(ExecutionContext* execution_context,
-                              const base::String& name,
+                              const std::string& name,
                               uint32_t size,
                               ExceptionState& exception_state) {
   return base::MakeRefCounted<FontImpl>(name, size,
@@ -49,20 +49,20 @@ scoped_refptr<Font> Font::Copy(ExecutionContext* execution_context,
 }
 
 bool Font::IsExisted(ExecutionContext* execution_context,
-                     const base::String& name,
+                     const std::string& name,
                      ExceptionState& exception_state) {
   return execution_context->font_context->IsFontExisted(name);
 }
 
 URGE_DECLARE_STATIC_ATTRIBUTE_READ(Font,
                                    DefaultName,
-                                   base::Vector<base::String>) {
+                                   std::vector<std::string>) {
   return execution_context->font_context->default_name;
 }
 
 URGE_DECLARE_STATIC_ATTRIBUTE_WRITE(Font,
                                     DefaultName,
-                                    base::Vector<base::String>) {
+                                    std::vector<std::string>) {
   execution_context->font_context->default_name = value;
 }
 
@@ -134,11 +134,11 @@ URGE_DECLARE_STATIC_ATTRIBUTE_WRITE(Font,
   *execution_context->font_context->default_out_color = *ColorImpl::From(value);
 }
 
-base::Vector<base::String> FontImpl::Get_Name(ExceptionState& exception_state) {
+std::vector<std::string> FontImpl::Get_Name(ExceptionState& exception_state) {
   return name_;
 }
 
-void FontImpl::Put_Name(const base::Vector<base::String>& value,
+void FontImpl::Put_Name(const std::vector<std::string>& value,
                         ExceptionState& exception_state) {
   name_ = value;
   font_ = nullptr;
@@ -229,7 +229,7 @@ FontImpl::FontImpl(ScopedFontData* parent)
   out_color_->Set(parent->default_out_color, exception_state);
 }
 
-FontImpl::FontImpl(const base::String& name,
+FontImpl::FontImpl(const std::string& name,
                    uint32_t size,
                    ScopedFontData* parent)
     : name_({name}),
@@ -300,7 +300,7 @@ TTF_Font* FontImpl::GetCanonicalFont(ExceptionState& exception_state) {
   return font_;
 }
 
-SDL_Surface* FontImpl::RenderText(const base::String& text,
+SDL_Surface* FontImpl::RenderText(const std::string& text,
                                   uint8_t* font_opacity,
                                   ExceptionState& exception_state) {
   // Get font from current attribute
@@ -355,7 +355,7 @@ SDL_Surface* FontImpl::RenderText(const base::String& text,
 }
 
 void FontImpl::LoadFontInternal(ExceptionState& exception_state) {
-  base::Vector<base::String> load_names(name_);
+  std::vector<std::string> load_names(name_);
   load_names.push_back(parent_->default_font);
 
   auto& font_cache = parent_->font_cache;
@@ -381,7 +381,7 @@ void FontImpl::LoadFontInternal(ExceptionState& exception_state) {
   }
 
   // Failed to load font
-  base::String font_names;
+  std::string font_names;
   for (auto& it : name_)
     font_names = font_names + it + " ";
 

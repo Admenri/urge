@@ -9,13 +9,13 @@
 
 namespace content {
 
-base::Vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
+std::vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  base::Vector<EventController::TextInputEventData> raw_events;
+  std::vector<EventController::TextInputEventData> raw_events;
   execution_context->event_controller->PollTextInputEvents(raw_events);
 
-  base::Vector<scoped_refptr<TextInputEvent>> filtered_events;
+  std::vector<scoped_refptr<TextInputEvent>> filtered_events;
   for (auto& it : raw_events)
     filtered_events.push_back(base::MakeRefCounted<TextInputEventImpl>(it));
 
@@ -65,7 +65,7 @@ TextInputEvent::Type TextInputEventImpl::GetType(
   return event_.type;
 }
 
-base::String TextInputEventImpl::GetText(ExceptionState& exception_state) {
+std::string TextInputEventImpl::GetText(ExceptionState& exception_state) {
   return event_.text;
 }
 

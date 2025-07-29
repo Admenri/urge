@@ -43,7 +43,7 @@ class ExceptionState {
   bool HadException() const { return had_exception_; }
 
   // Fetch info for binding throw exception
-  ExceptionCode FetchException(base::String& message) const {
+  ExceptionCode FetchException(std::string& message) const {
     message = message_;
     return code_;
   }
@@ -53,7 +53,7 @@ class ExceptionState {
  private:
   int32_t had_exception_;
   ExceptionCode code_;
-  base::String message_;
+  std::string message_;
 };
 
 #define CHECK_ATTRIBUTE_VALUE                  \

@@ -96,7 +96,7 @@ void DeviceContextImpl::SetStencilRef(uint32_t ref,
   object_->SetStencilRef(ref);
 }
 
-void DeviceContextImpl::SetBlendFactors(const base::Vector<float>& factors,
+void DeviceContextImpl::SetBlendFactors(const std::vector<float>& factors,
                                         ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
@@ -105,14 +105,14 @@ void DeviceContextImpl::SetBlendFactors(const base::Vector<float>& factors,
 
 void DeviceContextImpl::SetVertexBuffers(
     uint32_t start_slot,
-    const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
-    const base::Vector<uint64_t>& offsets,
+    const std::vector<scoped_refptr<GPUBuffer>>& buffers,
+    const std::vector<uint64_t>& offsets,
     GPU::ResourceStateTransitionMode mode,
     GPU::SetVertexBuffersFlags flags,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::IBuffer*> objects;
+  std::vector<Diligent::IBuffer*> objects;
   for (auto& it : buffers) {
     auto* impl = static_cast<BufferImpl*>(it.get());
     objects.push_back(impl ? impl->AsRawPtr() : nullptr);
@@ -145,11 +145,11 @@ void DeviceContextImpl::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
 }
 
 void DeviceContextImpl::SetViewports(
-    const base::Vector<scoped_refptr<GPUViewport>>& viewports,
+    const std::vector<scoped_refptr<GPUViewport>>& viewports,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::Viewport> objects;
+  std::vector<Diligent::Viewport> objects;
   for (auto& it : viewports) {
     Diligent::Viewport element;
     element.TopLeftX = it->top_left_x;
@@ -165,11 +165,11 @@ void DeviceContextImpl::SetViewports(
 }
 
 void DeviceContextImpl::SetScissorRects(
-    const base::Vector<scoped_refptr<Rect>>& rects,
+    const std::vector<scoped_refptr<Rect>>& rects,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::Rect> objects;
+  std::vector<Diligent::Rect> objects;
   for (auto& it : rects) {
     auto rect = RectImpl::From(it)->AsBaseRect();
     Diligent::Rect element;
@@ -185,13 +185,13 @@ void DeviceContextImpl::SetScissorRects(
 }
 
 void DeviceContextImpl::SetRenderTargets(
-    const base::Vector<scoped_refptr<GPUTextureView>>& render_targets,
+    const std::vector<scoped_refptr<GPUTextureView>>& render_targets,
     scoped_refptr<GPUTextureView> depth_stencil,
     GPU::ResourceStateTransitionMode mode,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::ITextureView*> objects;
+  std::vector<Diligent::ITextureView*> objects;
   for (auto& it : render_targets) {
     auto* impl = static_cast<TextureViewImpl*>(it.get());
     objects.push_back(impl ? impl->AsRawPtr() : nullptr);
@@ -309,13 +309,13 @@ void DeviceContextImpl::DrawIndexedIndirect(
 }
 
 void DeviceContextImpl::MultiDraw(
-    const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+    const std::vector<scoped_refptr<GPUMultiDrawItem>>& items,
     uint32_t num_instances,
     uint32_t first_instance,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::MultiDrawItem> object_items;
+  std::vector<Diligent::MultiDrawItem> object_items;
   for (auto& item : items) {
     Diligent::MultiDrawItem result;
     result.NumVertices = item->num_vertices;
@@ -332,14 +332,14 @@ void DeviceContextImpl::MultiDraw(
 }
 
 void DeviceContextImpl::MultiDrawIndexed(
-    const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+    const std::vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
     GPU::ValueType index_type,
     uint32_t num_instances,
     uint32_t first_instance,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::MultiDrawIndexedItem> object_items;
+  std::vector<Diligent::MultiDrawIndexedItem> object_items;
   for (auto& item : items) {
     Diligent::MultiDrawIndexedItem result;
     result.NumIndices = item->num_indices;
@@ -438,11 +438,11 @@ scoped_refptr<GPUCommandList> DeviceContextImpl::FinishCommandList(
 }
 
 void DeviceContextImpl::ExecuteCommandLists(
-    const base::Vector<scoped_refptr<GPUCommandList>>& command_lists,
+    const std::vector<scoped_refptr<GPUCommandList>>& command_lists,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::ICommandList*> objects;
+  std::vector<Diligent::ICommandList*> objects;
   for (auto& it : command_lists) {
     auto* impl = static_cast<CommandListImpl*>(it.get());
     objects.push_back(impl ? impl->AsRawPtr() : nullptr);
@@ -728,11 +728,11 @@ void DeviceContextImpl::FinishFrame(ExceptionState& exception_state) {
 }
 
 void DeviceContextImpl::TransitionResourceStates(
-    const base::Vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
+    const std::vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
     ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  base::Vector<Diligent::StateTransitionDesc> objects;
+  std::vector<Diligent::StateTransitionDesc> objects;
   for (auto& it : barriers) {
     Diligent::StateTransitionDesc desc;
     desc.pResourceBefore =
@@ -790,7 +790,7 @@ void DeviceContextImpl::ResolveTextureSubresource(
                                      attrib);
 }
 
-void DeviceContextImpl::BeginDebugGroup(const base::String& name,
+void DeviceContextImpl::BeginDebugGroup(const std::string& name,
                                         scoped_refptr<Color> color,
                                         ExceptionState& exception_state) {
   DISPOSE_CHECK;
@@ -808,7 +808,7 @@ void DeviceContextImpl::EndDebugGroup(ExceptionState& exception_state) {
   object_->EndDebugGroup();
 }
 
-void DeviceContextImpl::InsertDebugGroup(const base::String& name,
+void DeviceContextImpl::InsertDebugGroup(const std::string& name,
                                          scoped_refptr<Color> color,
                                          ExceptionState& exception_state) {
   DISPOSE_CHECK;

@@ -27,18 +27,18 @@ class URGE_OBJECT(Surface) {
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Surface> New(ExecutionContext* execution_context,
-                                    const base::String& filename,
+                                    const std::string& filename,
                                     ExceptionState& exception_state);
 
   /*--urge(name:from_dump)--*/
   static scoped_refptr<Surface> FromDump(ExecutionContext* execution_context,
-                                         const base::String& dump_data,
+                                         const std::string& dump_data,
                                          ExceptionState& exception_state);
 
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Surface> FromStream(ExecutionContext* execution_context,
                                            scoped_refptr<IOStream> stream,
-                                           const base::String& extname,
+                                           const std::string& extname,
                                            ExceptionState& exception_state);
 
   /*--urge(name:initialize_copy)--*/
@@ -118,10 +118,10 @@ class URGE_OBJECT(Surface) {
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:dump_data)--*/
-  virtual base::String DumpData(ExceptionState& exception_state) = 0;
+  virtual std::string DumpData(ExceptionState& exception_state) = 0;
 
   /*--urge(name:save_png)--*/
-  virtual void SavePNG(const base::String& filename,
+  virtual void SavePNG(const std::string& filename,
                        ExceptionState& exception_state) = 0;
 };
 

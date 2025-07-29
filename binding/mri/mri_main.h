@@ -14,7 +14,7 @@ namespace binding {
 
 class BindingEngineMri : public content::EngineBindingBase {
  public:
-  using BacktraceData = std::map<base::String, base::String>;
+  using BacktraceData = std::map<std::string, std::string>;
 
   BindingEngineMri();
   ~BindingEngineMri() override;

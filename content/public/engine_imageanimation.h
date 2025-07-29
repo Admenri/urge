@@ -20,13 +20,13 @@ class URGE_OBJECT(ImageAnimation) {
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<ImageAnimation> New(ExecutionContext* execution_context,
-                                           const base::String& filename,
+                                           const std::string& filename,
                                            ExceptionState& exception_state);
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<ImageAnimation> New(ExecutionContext* execution_context,
                                            scoped_refptr<IOStream> stream,
-                                           const base::String& extname,
+                                           const std::string& extname,
                                            ExceptionState& exception_state);
 
   /*--urge(name:dispose)--*/
@@ -42,11 +42,11 @@ class URGE_OBJECT(ImageAnimation) {
   virtual int32_t Height(ExceptionState& exception_state) = 0;
 
   /*--urge(name:frames)--*/
-  virtual base::Vector<scoped_refptr<Surface>> GetFrames(
+  virtual std::vector<scoped_refptr<Surface>> GetFrames(
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:delays)--*/
-  virtual base::Vector<int32_t> GetDelays(ExceptionState& exception_state) = 0;
+  virtual std::vector<int32_t> GetDelays(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

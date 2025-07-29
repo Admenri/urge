@@ -7,7 +7,6 @@
 
 #include <tuple>
 
-#include "base/memory/allocator.h"
 #include "renderer/pipeline/render_pipeline.h"
 #include "renderer/resource/render_buffer.h"
 #include "ui/widget/widget.h"
@@ -58,7 +57,7 @@ class RenderDevice {
           yuv(init_params) {}
   };
 
-  using CreateDeviceResult = std::tuple<base::OwnedPtr<RenderDevice>,
+  using CreateDeviceResult = std::tuple<std::unique_ptr<RenderDevice>,
                                         RRefPtr<Diligent::IDeviceContext>>;
   static CreateDeviceResult Create(base::WeakPtr<ui::Widget> window_target,
                                    DriverType driver_type,
@@ -90,7 +89,6 @@ class RenderDevice {
   int32_t ResumeContext(Diligent::IDeviceContext* immediate_context);
 
  private:
-  friend struct base::Allocator;
   RenderDevice(base::WeakPtr<ui::Widget> window,
                const Diligent::SwapChainDesc& swapchain_desc,
                int32_t max_texture_size,

@@ -43,7 +43,6 @@
 
 #include "base/buildflags/compiler_specific.h"
 #include "base/debug/logging.h"
-#include "base/memory/allocator.h"
 
 template <class T>
 class scoped_refptr;
@@ -126,7 +125,7 @@ scoped_refptr<T> AdoptRefIfNeeded(T* obj, StartRefCountFromOneTag) {
 // object into a scoped_refptr<T>.
 template <typename T, typename... Args>
 scoped_refptr<T> MakeRefCounted(Args&&... args) {
-  T* obj = Allocator::New<T>(std::forward<Args>(args)...);
+  T* obj = new T(std::forward<Args>(args)...);
   return subtle::AdoptRefIfNeeded(obj, T::kRefCountPreference);
 }
 

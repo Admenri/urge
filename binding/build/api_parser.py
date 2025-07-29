@@ -130,8 +130,8 @@ class APIParser:
 
   # 解析形参类型数据
   # 本函数会递归解析类型的嵌套容器：
-  #  1. base::Vector<scoped_refptr<xxx>>
-  #  3. base::Vector<xxx>
+  #  1. std::vector<scoped_refptr<xxx>>
+  #  3. std::vector<xxx>
   @staticmethod
   def parse_variable(varname):
     # 考虑以下情况：
@@ -187,7 +187,7 @@ class APIParser:
   #    // xxx
   #    int32_t param1;
   #    std::optional<Struct2> param2;
-  #    base::String param3 = "default";
+  #    std::string param3 = "default";
   #    scoped_refptr<Klass1> param4 = nullptr;
   #  };
   def process_struct(self, lines):
@@ -301,7 +301,7 @@ class APIParser:
   # 解析成员函数信息
   # 期望输入：
   #  virtual scoped_refptr<xx> yy(ExceptionState& exception_state) = 0;
-  #  static scoped_refptr<zz> New(ExecutionContext* execution_context,const base::String& name,uint32_t size,ExceptionState& exception_state);
+  #  static scoped_refptr<zz> New(ExecutionContext* execution_context,const std::string& name,uint32_t size,ExceptionState& exception_state);
   def process_member(self, lines):
     function_body = ''.join(lines)
 
@@ -604,7 +604,7 @@ namespace content {
   struct URGE_OBJECT(CreateInfo) {
     uint32_t test;
     uint32_t id = 0;
-    base::String filename = "null";
+    std::string filename = "null";
     std::optional<Size> size;
   };
 
@@ -618,7 +618,7 @@ class URGE_OBJECT(Bitmap) {
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
-                                   const base::String& filename,
+                                   const std::string& filename,
                                    const std::vector<scoped_refptr<Test>> test,
                                    ExceptionState& exception_state);
 
@@ -641,7 +641,7 @@ class URGE_OBJECT(Bitmap) {
   /*--urge(name:from_stream)--*/
   static scoped_refptr<Bitmap> FromStream(ExecutionContext* execution_context,
                                           scoped_refptr<IOStream> stream,
-                                          const base::String& extname,
+                                          const std::string& extname,
                                           ExceptionState& exception_state);
 
   /*--urge(serializable)--*/
@@ -765,7 +765,7 @@ class URGE_OBJECT(Bitmap) {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const base::String& str,
+                        const std::string& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
@@ -774,22 +774,22 @@ class URGE_OBJECT(Bitmap) {
                         int32_t y,
                         uint32_t width,
                         uint32_t height,
-                        const base::String& str,
+                        const std::string& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const base::String& str,
+                        const std::string& str,
                         int32_t align,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:draw_text)--*/
   virtual void DrawText(scoped_refptr<Rect> rect,
-                        const base::String& str,
+                        const std::string& str,
                         ExceptionState& exception_state) = 0;
 
   /*--urge(name:text_size)--*/
-  virtual scoped_refptr<Rect> TextSize(const base::String& str,
+  virtual scoped_refptr<Rect> TextSize(const std::string& str,
                                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:get_surface)--*/

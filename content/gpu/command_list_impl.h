@@ -32,7 +32,7 @@ class CommandListImpl : public GPUCommandList,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.CommandList"; }
+  std::string DisposedObjectName() override { return "GPU.CommandList"; }
 
   Diligent::RefCntAutoPtr<Diligent::ICommandList> object_;
 };

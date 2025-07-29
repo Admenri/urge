@@ -40,7 +40,7 @@ class PipelineSignatureImpl : public GPUPipelineSignature,
                            ExceptionState& exception_state) override;
   scoped_refptr<GPUResourceVariable> GetStaticVariableByName(
       GPU::ShaderType type,
-      const base::String& name,
+      const std::string& name,
       ExceptionState& exception_state) override;
   scoped_refptr<GPUResourceVariable> GetStaticVariableByIndex(
       GPU::ShaderType type,
@@ -57,7 +57,7 @@ class PipelineSignatureImpl : public GPUPipelineSignature,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.PipelineSignature"; }
+  std::string DisposedObjectName() override { return "GPU.PipelineSignature"; }
 
   Diligent::RefCntAutoPtr<Diligent::IPipelineResourceSignature> object_;
 };

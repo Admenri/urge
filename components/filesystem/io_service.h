@@ -15,7 +15,7 @@ namespace filesystem {
 
 struct IOState {
   int32_t error_count;
-  base::String error_message;
+  std::string error_message;
 
   IOState() : error_count(0) {}
 };
@@ -27,29 +27,28 @@ class IOService {
   IOService(const IOService&) = delete;
   IOService& operator=(const IOService&) = delete;
 
-  static base::OwnedPtr<IOService> Create(const base::String& argv0);
+  static std::unique_ptr<IOService> Create(const std::string& argv0);
 
-  bool SetWritePath(const base::String& path);
+  bool SetWritePath(const std::string& path);
 
-  int32_t AddLoadPath(const base::String& new_path,
-                      const base::String& mount_point,
+  int32_t AddLoadPath(const std::string& new_path,
+                      const std::string& mount_point,
                       bool append = true);
-  int32_t RemoveLoadPath(const base::String& old_path);
-  bool Exists(const base::String& filename);
-  base::Vector<base::String> EnumDir(const base::String& dir);
+  int32_t RemoveLoadPath(const std::string& old_path);
+  bool Exists(const std::string& filename);
+  std::vector<std::string> EnumDir(const std::string& dir);
 
-  base::String GetLastError();
+  std::string GetLastError();
 
   using OpenCallback =
-      base::RepeatingCallback<bool(SDL_IOStream*, const base::String&)>;
-  void OpenRead(const base::String& file_path,
+      base::RepeatingCallback<bool(SDL_IOStream*, const std::string&)>;
+  void OpenRead(const std::string& file_path,
                 OpenCallback callback,
                 IOState* io_state);
-  SDL_IOStream* OpenReadRaw(const base::String& filename, IOState* io_state);
-  SDL_IOStream* OpenWrite(const base::String& filename, IOState* io_state);
+  SDL_IOStream* OpenReadRaw(const std::string& filename, IOState* io_state);
+  SDL_IOStream* OpenWrite(const std::string& filename, IOState* io_state);
 
  private:
-  friend struct base::Allocator;
   IOService() = default;
 };
 

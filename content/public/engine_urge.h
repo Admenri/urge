@@ -19,44 +19,44 @@ class URGE_OBJECT(URGE) {
   virtual ~URGE() = default;
 
   /*--urge(name:platform)--*/
-  virtual base::String GetPlatform(ExceptionState& exception_state) = 0;
+  virtual std::string GetPlatform(ExceptionState& exception_state) = 0;
 
   /*--urge(name:open_url)--*/
-  virtual void OpenURL(const base::String& path,
+  virtual void OpenURL(const std::string& path,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:gets)--*/
-  virtual base::String Gets(ExceptionState& exception_state) = 0;
+  virtual std::string Gets(ExceptionState& exception_state) = 0;
 
   /*--urge(name:puts)--*/
-  virtual void Puts(const base::String& message,
+  virtual void Puts(const std::string& message,
                     ExceptionState& exception_state) = 0;
 
   /*--urge(name:alert)--*/
-  virtual void Alert(const base::String& message,
+  virtual void Alert(const std::string& message,
                      ExceptionState& exception_state) = 0;
 
   /*--urge(name:confirm)--*/
-  virtual bool Confirm(const base::String& message,
+  virtual bool Confirm(const std::string& message,
                        ExceptionState& exception_state) = 0;
 
   /*--urge(name:add_load_path)--*/
-  virtual bool AddLoadPath(const base::String& new_path,
-                           const base::String& mount_point,
+  virtual bool AddLoadPath(const std::string& new_path,
+                           const std::string& mount_point,
                            bool append_to_path,
                            ExceptionState& exception_state) = 0;
 
   /*--urge(name:remove_load_path)--*/
-  virtual bool RemoveLoadPath(const base::String& old_path,
+  virtual bool RemoveLoadPath(const std::string& old_path,
                               ExceptionState& exception_state) = 0;
 
   /*--urge(name:file_exist?)--*/
-  virtual bool IsFileExisted(const base::String& filepath,
+  virtual bool IsFileExisted(const std::string& filepath,
                              ExceptionState& exception_state) = 0;
 
   /*--urge(name:enum_directory)--*/
-  virtual base::Vector<base::String> EnumDirectory(
-      const base::String& dirpath,
+  virtual std::vector<std::string> EnumDirectory(
+      const std::string& dirpath,
       ExceptionState& exception_state) = 0;
 };
 

@@ -34,7 +34,7 @@ class ResourceVariableImpl : public GPUResourceVariable,
   void Set(uint64_t device_object,
            GPU::SetShaderResourceFlags flags,
            ExceptionState& exception_state) override;
-  void SetArray(const base::Vector<uint64_t>& device_objects,
+  void SetArray(const std::vector<uint64_t>& device_objects,
                 uint32_t first_element,
                 GPU::SetShaderResourceFlags flags,
                 ExceptionState& exception_state) override;
@@ -53,7 +53,7 @@ class ResourceVariableImpl : public GPUResourceVariable,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "GPU.ResourceVariable"; }
+  std::string DisposedObjectName() override { return "GPU.ResourceVariable"; }
 
   Diligent::RefCntAutoPtr<Diligent::IShaderResourceVariable> object_;
 };

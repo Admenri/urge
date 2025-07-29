@@ -5,11 +5,11 @@
 #ifndef COMPONENTS_AUDIOSERVICE_SOUND_EMIT_H_
 #define COMPONENTS_AUDIOSERVICE_SOUND_EMIT_H_
 
+#include <queue>
+#include <string>
 #include <unordered_map>
 
 #include "miniaudio.h"
-
-#include "base/memory/allocator.h"
 
 namespace audioservice {
 
@@ -20,15 +20,15 @@ class SoundEmit {
   SoundEmit(const SoundEmit&) = delete;
   SoundEmit& operator=(const SoundEmit&) = delete;
 
-  ma_result Play(const base::String& filename, int32_t volume, int32_t pitch);
+  ma_result Play(const std::string& filename, int32_t volume, int32_t pitch);
   void Stop();
 
  private:
-  friend struct base::Allocator;
+  friend class AudioService;
   SoundEmit(ma_engine* engine);
 
   ma_engine* engine_;
-  base::Queue<ma_sound*> sound_queue_;
+  std::queue<ma_sound*> sound_queue_;
 };
 
 }  // namespace audioservice

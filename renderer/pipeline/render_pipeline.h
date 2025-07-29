@@ -52,12 +52,12 @@ struct PipelineInitParams {
 class RenderPipelineBase {
  public:
   struct ShaderSource {
-    base::String vertex_shader;
-    base::String pixel_shader;
-    base::String name = "generic.shader";
-    base::Vector<Diligent::ShaderMacro> macros = {};
-    base::String vertex_entry = "VSMain";
-    base::String pixel_entry = "PSMain";
+    std::string vertex_shader;
+    std::string pixel_shader;
+    std::string name = "generic.shader";
+    std::vector<Diligent::ShaderMacro> macros = {};
+    std::string vertex_entry = "VSMain";
+    std::string pixel_entry = "PSMain";
   };
 
   virtual ~RenderPipelineBase() = default;
@@ -79,15 +79,15 @@ class RenderPipelineBase {
 
   void BuildPipeline(
       const ShaderSource& shader_source,
-      const base::Vector<Diligent::LayoutElement>& input_layout,
-      const base::Vector<RRefPtr<Diligent::IPipelineResourceSignature>>&
+      const std::vector<Diligent::LayoutElement>& input_layout,
+      const std::vector<RRefPtr<Diligent::IPipelineResourceSignature>>&
           signatures,
       Diligent::TEXTURE_FORMAT target_format,
       Diligent::TEXTURE_FORMAT depth_stencil_format);
 
   RRefPtr<Diligent::IPipelineResourceSignature> MakeResourceSignature(
-      const base::Vector<Diligent::PipelineResourceDesc>& variables,
-      const base::Vector<Diligent::ImmutableSamplerDesc>& samplers,
+      const std::vector<Diligent::PipelineResourceDesc>& variables,
+      const std::vector<Diligent::ImmutableSamplerDesc>& samplers,
       uint8_t binding_index);
 
   template <typename Ty>
@@ -100,7 +100,7 @@ class RenderPipelineBase {
  private:
   RRefPtr<Diligent::IRenderDevice> device_;
 
-  base::Vector<RRefPtr<Diligent::IPipelineResourceSignature>>
+  std::vector<RRefPtr<Diligent::IPipelineResourceSignature>>
       resource_signatures_;
 
   // [BlendType][DepthEnable]

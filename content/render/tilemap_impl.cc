@@ -371,7 +371,7 @@ TilemapImpl::TilemapImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(TilemapImpl);
 
-void TilemapImpl::SetLabel(const base::String& label,
+void TilemapImpl::SetLabel(const std::string& label,
                            ExceptionState& exception_state) {
   ground_node_.SetDebugLabel(label);
 }
@@ -574,7 +574,7 @@ void TilemapImpl::GroundNodeHandlerInternal(
 
     // Generate global atlas texture if need.
     if (atlas_dirty_) {
-      base::Vector<AtlasCompositeCommand> commands;
+      std::vector<AtlasCompositeCommand> commands;
       base::Vec2i size = MakeAtlasInternal(commands);
 
       GPUMakeAtlasInternal(params->context, size, std::move(commands));
@@ -583,8 +583,8 @@ void TilemapImpl::GroundNodeHandlerInternal(
 
     // Parse and generate map buffer if need.
     if (map_buffer_dirty_) {
-      base::Vector<renderer::Quad> ground_cache;
-      base::Vector<base::Vector<renderer::Quad>> aboves_cache;
+      std::vector<renderer::Quad> ground_cache;
+      std::vector<std::vector<renderer::Quad>> aboves_cache;
       ParseMapDataInternal(ground_cache, aboves_cache);
 
       GPUUploadTilesBatchInternal(params->context, std::move(ground_cache),
@@ -612,7 +612,7 @@ void TilemapImpl::AboveNodeHandlerInternal(
 }
 
 base::Vec2i TilemapImpl::MakeAtlasInternal(
-    base::Vector<AtlasCompositeCommand>& commands) {
+    std::vector<AtlasCompositeCommand>& commands) {
   int32_t atlas_height = 28 * tilesize_;
   if (tileset_ && tileset_->GetAgent())
     atlas_height = std::max(atlas_height, tileset_->GetAgent()->size.y);
@@ -701,8 +701,8 @@ void TilemapImpl::UpdateViewportInternal(const base::Rect& viewport,
 }
 
 void TilemapImpl::ParseMapDataInternal(
-    base::Vector<renderer::Quad>& ground_cache,
-    base::Vector<base::Vector<renderer::Quad>>& aboves_cache) {
+    std::vector<renderer::Quad>& ground_cache,
+    std::vector<std::vector<renderer::Quad>>& aboves_cache) {
   auto set_autotile_pos = [&](base::RectF& pos, int32_t index) {
     switch (index) {
       case 0:  // Left Top
@@ -735,7 +735,7 @@ void TilemapImpl::ParseMapDataInternal(
 
   auto process_autotile = [&](const base::Vec2i& pos, int16_t tile_id,
                               const base::Vec4& color,
-                              base::Vector<renderer::Quad>* target) {
+                              std::vector<renderer::Quad>* target) {
     // Autotile (0-7)
     int32_t autotile_id = tile_id / 48 - 1;
     // Pattern (0-47)
@@ -818,7 +818,7 @@ void TilemapImpl::ParseMapDataInternal(
     if (priority == -1)
       return;
 
-    base::Vector<renderer::Quad>* target;
+    std::vector<renderer::Quad>* target;
     if (!priority) {
       // Ground layer
       target = &ground_cache;
@@ -888,7 +888,7 @@ void TilemapImpl::SetupTilemapLayersInternal(const base::Rect& viewport) {
   int32_t above_layers_count =
       (viewport.height / tilesize_) + !!(viewport.height % tilesize_) + 7;
   for (int32_t i = 0; i < above_layers_count; ++i) {
-    auto above_node = base::MakeOwnedPtr<DrawableNode>(
+    auto above_node = std::make_unique<DrawableNode>(
         ground_node_.GetController(), SortKey(64));
     above_node->RegisterEventHandler(base::BindRepeating(
         &TilemapImpl::AboveNodeHandlerInternal, base::Unretained(this), i));
@@ -925,7 +925,7 @@ void TilemapImpl::GPUCreateTilemapInternal() {
 void TilemapImpl::GPUMakeAtlasInternal(
     Diligent::IDeviceContext* render_context,
     const base::Vec2i& atlas_size,
-    base::Vector<TilemapImpl::AtlasCompositeCommand> make_commands) {
+    std::vector<TilemapImpl::AtlasCompositeCommand> make_commands) {
   renderer::CreateTexture2D(**context()->render_device, &agent_.atlas_texture,
                             "tilemap.atlas", atlas_size);
   agent_.atlas_binding = agent_.atlas_texture->GetDefaultView(
@@ -962,9 +962,9 @@ void TilemapImpl::GPUMakeAtlasInternal(
 
 void TilemapImpl::GPUUploadTilesBatchInternal(
     Diligent::IDeviceContext* render_context,
-    base::Vector<renderer::Quad> ground_cache,
-    base::Vector<base::Vector<renderer::Quad>> aboves_cache) {
-  base::Vector<renderer::Quad> total_quads;
+    std::vector<renderer::Quad> ground_cache,
+    std::vector<std::vector<renderer::Quad>> aboves_cache) {
+  std::vector<renderer::Quad> total_quads;
   agent_.ground_draw_count = ground_cache.size();
 
   int32_t offset = ground_cache.size();

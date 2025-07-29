@@ -59,14 +59,14 @@ class URGE_OBJECT(GPUDeviceContext) {
   virtual void SetStencilRef(uint32_t ref, ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_blend_factors)--*/
-  virtual void SetBlendFactors(const base::Vector<float>& factors,
+  virtual void SetBlendFactors(const std::vector<float>& factors,
                                ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_vertex_buffers)--*/
   virtual void SetVertexBuffers(
       uint32_t start_slot,
-      const base::Vector<scoped_refptr<GPUBuffer>>& buffers,
-      const base::Vector<uint64_t>& offsets,
+      const std::vector<scoped_refptr<GPUBuffer>>& buffers,
+      const std::vector<uint64_t>& offsets,
       GPU::ResourceStateTransitionMode mode,
       GPU::SetVertexBuffersFlags flags,
       ExceptionState& exception_state) = 0;
@@ -82,16 +82,16 @@ class URGE_OBJECT(GPUDeviceContext) {
 
   /*--urge(name:set_viewports)--*/
   virtual void SetViewports(
-      const base::Vector<scoped_refptr<GPUViewport>>& viewports,
+      const std::vector<scoped_refptr<GPUViewport>>& viewports,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_scissor_rects)--*/
-  virtual void SetScissorRects(const base::Vector<scoped_refptr<Rect>>& rects,
+  virtual void SetScissorRects(const std::vector<scoped_refptr<Rect>>& rects,
                                ExceptionState& exception_state) = 0;
 
   /*--urge(name:set_render_targets)--*/
   virtual void SetRenderTargets(
-      const base::Vector<scoped_refptr<GPUTextureView>>& render_targets,
+      const std::vector<scoped_refptr<GPUTextureView>>& render_targets,
       scoped_refptr<GPUTextureView> depth_stencil,
       GPU::ResourceStateTransitionMode mode,
       ExceptionState& exception_state) = 0;
@@ -139,14 +139,14 @@ class URGE_OBJECT(GPUDeviceContext) {
 
   /*--urge(name:multi_draw)--*/
   virtual void MultiDraw(
-      const base::Vector<scoped_refptr<GPUMultiDrawItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawItem>>& items,
       uint32_t num_instances,
       uint32_t first_instance,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:multi_draw_indexed)--*/
   virtual void MultiDrawIndexed(
-      const base::Vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
+      const std::vector<scoped_refptr<GPUMultiDrawIndexedItem>>& items,
       GPU::ValueType index_type,
       uint32_t num_instances,
       uint32_t first_instance,
@@ -185,7 +185,7 @@ class URGE_OBJECT(GPUDeviceContext) {
 
   /*--urge(name:execute_command_lists)--*/
   virtual void ExecuteCommandLists(
-      const base::Vector<scoped_refptr<GPUCommandList>>& command_lists,
+      const std::vector<scoped_refptr<GPUCommandList>>& command_lists,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:enqueue_signal)--*/
@@ -291,7 +291,7 @@ class URGE_OBJECT(GPUDeviceContext) {
 
   /*--urge(name:transition_resource_states)--*/
   virtual void TransitionResourceStates(
-      const base::Vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
+      const std::vector<scoped_refptr<GPUStateTransitionDesc>>& barriers,
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:resolve_texture_subresource)--*/
@@ -308,7 +308,7 @@ class URGE_OBJECT(GPUDeviceContext) {
       ExceptionState& exception_state) = 0;
 
   /*--urge(name:begin_debug_group)--*/
-  virtual void BeginDebugGroup(const base::String& name,
+  virtual void BeginDebugGroup(const std::string& name,
                                scoped_refptr<Color> color,
                                ExceptionState& exception_state) = 0;
 
@@ -316,7 +316,7 @@ class URGE_OBJECT(GPUDeviceContext) {
   virtual void EndDebugGroup(ExceptionState& exception_state) = 0;
 
   /*--urge(name:insert_debug_group)--*/
-  virtual void InsertDebugGroup(const base::String& name,
+  virtual void InsertDebugGroup(const std::string& name,
                                 scoped_refptr<Color> color,
                                 ExceptionState& exception_state) = 0;
 

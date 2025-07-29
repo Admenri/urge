@@ -8,13 +8,13 @@
 
 namespace content {
 
-base::Vector<scoped_refptr<MouseEvent>> MouseEvent::Update(
+std::vector<scoped_refptr<MouseEvent>> MouseEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  base::Vector<EventController::MouseEventData> raw_events;
+  std::vector<EventController::MouseEventData> raw_events;
   execution_context->event_controller->PollMouseEvents(raw_events);
 
-  base::Vector<scoped_refptr<MouseEvent>> filtered_events;
+  std::vector<scoped_refptr<MouseEvent>> filtered_events;
   for (auto& it : raw_events)
     filtered_events.push_back(base::MakeRefCounted<MouseEventImpl>(it));
 

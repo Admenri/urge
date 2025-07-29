@@ -20,17 +20,17 @@ std::pair<int64_t, void*> ReadFontToMemory(SDL_IOStream* io) {
 }  // namespace
 
 ScopedFontData::ScopedFontData(filesystem::IOService* io,
-                               const base::String& default_font_name)
+                               const std::string& default_font_name)
     : default_color(base::MakeRefCounted<ColorImpl>(
           base::Vec4(255.0f, 255.0f, 255.0f, 255.0f))),
       default_out_color(
           base::MakeRefCounted<ColorImpl>(base::Vec4(0, 0, 0, 255.0f))) {
   // Get font load dir and default font
-  base::String filename = default_font_name;
-  base::String dir("."), file;
+  std::string filename = default_font_name;
+  std::string dir("."), file;
 
   size_t last_slash_pos = filename.find_last_of('/');
-  if (last_slash_pos != base::String::npos) {
+  if (last_slash_pos != std::string::npos) {
     dir = filename.substr(0, last_slash_pos);
     file = filename.substr(last_slash_pos + 1);
   } else
@@ -44,9 +44,9 @@ ScopedFontData::ScopedFontData(filesystem::IOService* io,
   LOG(INFO) << "[Font] Default Font: " << file;
 
   // Load all font to memory as cache
-  base::Vector<base::String> font_files = io->EnumDir(dir);
+  std::vector<std::string> font_files = io->EnumDir(dir);
   for (auto& it : font_files) {
-    base::String filepath = dir + it;
+    std::string filepath = dir + it;
     SDL_IOStream* font_stream = io->OpenReadRaw(filepath, nullptr);
     if (font_stream) {
       // Cached in memory
@@ -80,7 +80,7 @@ ScopedFontData::~ScopedFontData() {
     SDL_free(it.second.second);
 }
 
-bool ScopedFontData::IsFontExisted(const base::String& name) {
+bool ScopedFontData::IsFontExisted(const std::string& name) {
   return data_cache.find(name) != data_cache.end();
 }
 

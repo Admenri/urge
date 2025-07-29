@@ -10,7 +10,6 @@
 #include "SDL3/SDL_iostream.h"
 
 #include "base/math/vector.h"
-#include "base/memory/allocator.h"
 
 namespace content {
 
@@ -23,23 +22,23 @@ class ContentProfile {
     RGSS3,
   };
 
-  ContentProfile(const base::String& app, SDL_IOStream* stream);
+  ContentProfile(const std::string& app, SDL_IOStream* stream);
   ~ContentProfile();
 
   ContentProfile(const ContentProfile&) = delete;
   ContentProfile& operator=(const ContentProfile&) = delete;
 
   void LoadCommandLine(int32_t argc, char** argv);
-  bool LoadConfigure(const base::String& app);
+  bool LoadConfigure(const std::string& app);
 
   // App
-  base::Vector<base::String> args;
-  base::String program_name;
+  std::vector<std::string> args;
+  std::string program_name;
 
   // Game
-  base::String window_title = "URGE Widget";
-  base::String script_path = "Data/Scripts.rxdata";
-  base::String rtp;
+  std::string window_title = "URGE Widget";
+  std::string script_path = "Data/Scripts.rxdata";
+  std::string rtp;
 
   // Commandline
   bool game_debug = false;
@@ -47,8 +46,8 @@ class ContentProfile {
 
   // Engine
   APIVersion api_version = APIVersion::UNKNOWN;
-  base::String default_font_path = "Fonts/Default.ttf";
-  base::String i18n_xml_path;
+  std::string default_font_path = "Fonts/Default.ttf";
+  std::string i18n_xml_path;
   base::Vec2i window_size;
   base::Vec2i resolution;
 
@@ -58,7 +57,7 @@ class ContentProfile {
   bool disable_reset = false;
 
   // Renderer
-  base::String driver_backend = "UNDEFINED";
+  std::string driver_backend = "UNDEFINED";
   int32_t pipeline_default_sampler = 0;
   bool render_validation =
 #if DILIGENT_DEVELOPMENT
@@ -77,7 +76,7 @@ class ContentProfile {
   // Platform
   bool debugging_console = false;
   bool disable_ime = false;
-  base::String orientation = "LandscapeLeft LandscapeRight";
+  std::string orientation = "LandscapeLeft LandscapeRight";
 
   // Features
   bool disable_audio = false;

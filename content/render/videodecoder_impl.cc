@@ -12,7 +12,7 @@ namespace content {
 
 scoped_refptr<VideoDecoder> VideoDecoder::New(
     ExecutionContext* execution_context,
-    const base::String& filename,
+    const std::string& filename,
     int32_t max_frame_delay,
     ExceptionState& exception_state) {
   auto* io_service = execution_context->io_service;
@@ -28,8 +28,8 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
   playback_configure.maxFrameDelay = max_frame_delay;
   playback_configure.decodeThreadsCount = std::thread::hardware_concurrency();
 
-  base::OwnedPtr<uvpx::Player> player =
-      base::MakeOwnedPtr<uvpx::Player>(std::move(playback_configure));
+  std::unique_ptr<uvpx::Player> player =
+      std::make_unique<uvpx::Player>(std::move(playback_configure));
   auto result = player->load(stream, 0, false);
 
   if (result == uvpx::Player::LoadResult::Success)
@@ -42,7 +42,7 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
 }
 
 VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
-                                   base::OwnedPtr<uvpx::Player> player)
+                                   std::unique_ptr<uvpx::Player> player)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
       player_(std::move(player)),

@@ -44,7 +44,7 @@ class ContentRunner {
 
     // Binding boot entry,
     // require an unique one.
-    base::OwnedPtr<EngineBindingBase> entry;
+    std::unique_ptr<EngineBindingBase> entry;
   };
 
   ~ContentRunner();
@@ -52,14 +52,13 @@ class ContentRunner {
   ContentRunner(const ContentRunner&) = delete;
   ContentRunner& operator=(const ContentRunner&) = delete;
 
-  static base::OwnedPtr<ContentRunner> Create(InitParams params);
+  static std::unique_ptr<ContentRunner> Create(InitParams params);
 
   void RunMainLoop();
 
  private:
-  friend struct base::Allocator;
   ContentRunner(ContentProfile* profile,
-                base::OwnedPtr<EngineBindingBase> binding);
+                std::unique_ptr<EngineBindingBase> binding);
   bool InitializeComponents(filesystem::IOService* io_service,
                             ScopedFontData* font_context,
                             I18NProfile* i18n_profile,
@@ -76,16 +75,16 @@ class ContentRunner {
   void DestroyIMGUIContextInternal();
 
   ContentProfile* profile_;
-  base::OwnedPtr<ExecutionContext> execution_context_;
-  base::OwnedPtr<EngineBindingBase> binding_;
+  std::unique_ptr<ExecutionContext> execution_context_;
+  std::unique_ptr<EngineBindingBase> binding_;
 
-  base::OwnedPtr<renderer::RenderDevice> render_device_;
+  std::unique_ptr<renderer::RenderDevice> render_device_;
   RRefPtr<Diligent::IDeviceContext> device_context_;
-  base::OwnedPtr<CanvasScheduler> canvas_scheduler_;
-  base::OwnedPtr<SpriteBatch> sprite_batcher_;
-  base::OwnedPtr<EventController> event_controller_;
-  base::OwnedPtr<Diligent::ImGuiDiligentRenderer> imgui_;
-  base::OwnedPtr<audioservice::AudioService> audio_server_;
+  std::unique_ptr<CanvasScheduler> canvas_scheduler_;
+  std::unique_ptr<SpriteBatch> sprite_batcher_;
+  std::unique_ptr<EventController> event_controller_;
+  std::unique_ptr<Diligent::ImGuiDiligentRenderer> imgui_;
+  std::unique_ptr<audioservice::AudioService> audio_server_;
 
   scoped_refptr<RenderScreenImpl> graphics_impl_;
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;
@@ -104,7 +103,7 @@ class ContentRunner {
   uint64_t last_tick_;
   int64_t total_delta_;
   int32_t frame_count_;
-  base::Vector<float> fps_history_;
+  std::vector<float> fps_history_;
 };
 
 }  // namespace content

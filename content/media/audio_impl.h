@@ -28,7 +28,7 @@ class AudioImpl : public Audio, public EngineObject {
  public:
   void SetupMIDI(ExceptionState& exception_state) override;
 
-  void BGMPlay(const base::String& filename,
+  void BGMPlay(const std::string& filename,
                int32_t volume,
                int32_t pitch,
                uint64_t pos,
@@ -37,7 +37,7 @@ class AudioImpl : public Audio, public EngineObject {
   void BGMFade(int32_t time, ExceptionState& exception_state) override;
   uint64_t BGMPos(ExceptionState& exception_state) override;
 
-  void BGSPlay(const base::String& filename,
+  void BGSPlay(const std::string& filename,
                int32_t volume,
                int32_t pitch,
                uint64_t pos,
@@ -46,14 +46,14 @@ class AudioImpl : public Audio, public EngineObject {
   void BGSFade(int32_t time, ExceptionState& exception_state) override;
   uint64_t BGSPos(ExceptionState& exception_state) override;
 
-  void MEPlay(const base::String& filename,
+  void MEPlay(const std::string& filename,
               int32_t volume,
               int32_t pitch,
               ExceptionState& exception_state) override;
   void MEStop(ExceptionState& exception_state) override;
   void MEFade(int32_t time, ExceptionState& exception_state) override;
 
-  void SEPlay(const base::String& filename,
+  void SEPlay(const std::string& filename,
               int32_t volume,
               int32_t pitch,
               ExceptionState& exception_state) override;
@@ -63,18 +63,18 @@ class AudioImpl : public Audio, public EngineObject {
 
  private:
   void HandleAudioServiceError(ma_result result,
-                               const base::String& filename,
+                               const std::string& filename,
                                ExceptionState& exception_state);
   void MeThreadMonitorInternal();
 
   I18NProfile* i18n_profile_;
 
-  base::OwnedPtr<audioservice::AudioStream> bgm_;
-  base::OwnedPtr<audioservice::AudioStream> bgs_;
-  base::OwnedPtr<audioservice::AudioStream> me_;
-  base::OwnedPtr<audioservice::SoundEmit> se_;
+  std::unique_ptr<audioservice::AudioStream> bgm_;
+  std::unique_ptr<audioservice::AudioStream> bgs_;
+  std::unique_ptr<audioservice::AudioStream> me_;
+  std::unique_ptr<audioservice::SoundEmit> se_;
 
-  base::OwnedPtr<base::ThreadWorker> me_watcher_;
+  std::unique_ptr<base::ThreadWorker> me_watcher_;
 };
 
 }  // namespace content

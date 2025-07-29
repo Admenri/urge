@@ -24,7 +24,7 @@ static constexpr SDL_PixelFormat kCanvasInternalFormat =
     SDL_PIXELFORMAT_ABGR8888;
 
 scoped_refptr<Bitmap> Bitmap::New(ExecutionContext* execution_context,
-                                  const base::String& filename,
+                                  const std::string& filename,
                                   ExceptionState& exception_state) {
   return CanvasImpl::Create(execution_context, filename, exception_state);
 }
@@ -94,7 +94,7 @@ scoped_refptr<Bitmap> Bitmap::FromTexture(ExecutionContext* execution_context,
 
 scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
                                          scoped_refptr<IOStream> stream,
-                                         const base::String& extname,
+                                         const std::string& extname,
                                          ExceptionState& exception_state) {
   auto stream_obj = IOStreamImpl::From(stream);
   if (!stream_obj || !stream_obj->GetRawStream()) {
@@ -144,7 +144,7 @@ scoped_refptr<Bitmap> Bitmap::Copy(ExecutionContext* execution_context,
 }
 
 scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
-                                          const base::String& data,
+                                          const std::string& data,
                                           ExceptionState& exception_state) {
   const uint8_t* raw_data = reinterpret_cast<const uint8_t*>(data.data());
 
@@ -186,13 +186,13 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
                                           "MemoryData");
 }
 
-base::String Bitmap::Serialize(ExecutionContext* execution_context,
+std::string Bitmap::Serialize(ExecutionContext* execution_context,
                                scoped_refptr<Bitmap> value,
                                ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> bitmap = CanvasImpl::FromBitmap(value);
   SDL_Surface* surface = bitmap->RequireMemorySurface();
 
-  base::String serialized_data(
+  std::string serialized_data(
       sizeof(uint32_t) * 2 + surface->pitch * surface->h, 0);
 
   uint32_t surface_width = surface->w, surface_height = surface->h;
@@ -239,11 +239,11 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
 
 scoped_refptr<CanvasImpl> CanvasImpl::Create(
     ExecutionContext* execution_context,
-    const base::String& filename,
+    const std::string& filename,
     ExceptionState& exception_state) {
   SDL_Surface* memory_texture = nullptr;
   auto file_handler = base::BindRepeating(
-      [](SDL_Surface** surf, SDL_IOStream* ops, const base::String& ext) {
+      [](SDL_Surface** surf, SDL_IOStream* ops, const std::string& ext) {
         *surf = IMG_LoadTyped_IO(ops, true, ext.c_str());
         return !!*surf;
       },
@@ -284,7 +284,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
 
 CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
                        SDL_Surface* memory_surface,
-                       const base::String& debug_name)
+                       const std::string& debug_name)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
       name_(debug_name),
@@ -299,7 +299,7 @@ CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
 
 CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
                        RRefPtr<Diligent::ITexture> gpu_texture,
-                       const base::String& debug_name)
+                       const std::string& debug_name)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
       name_(debug_name),
@@ -674,7 +674,7 @@ void CanvasImpl::DrawText(int32_t x,
                           int32_t y,
                           uint32_t width,
                           uint32_t height,
-                          const base::String& str,
+                          const std::string& str,
                           int32_t align,
                           ExceptionState& exception_state) {
   DISPOSE_CHECK;
@@ -703,13 +703,13 @@ void CanvasImpl::DrawText(int32_t x,
                           int32_t y,
                           uint32_t width,
                           uint32_t height,
-                          const base::String& str,
+                          const std::string& str,
                           ExceptionState& exception_state) {
   DrawText(x, y, width, height, str, 0, exception_state);
 }
 
 void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
-                          const base::String& str,
+                          const std::string& str,
                           int32_t align,
                           ExceptionState& exception_state) {
   DrawText(rect->Get_X(exception_state), rect->Get_Y(exception_state),
@@ -718,7 +718,7 @@ void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
 }
 
 void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
-                          const base::String& str,
+                          const std::string& str,
                           ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -729,7 +729,7 @@ void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
            str, 0, exception_state);
 }
 
-scoped_refptr<Rect> CanvasImpl::TextSize(const base::String& str,
+scoped_refptr<Rect> CanvasImpl::TextSize(const std::string& str,
                                          ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 

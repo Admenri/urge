@@ -21,29 +21,29 @@ class MiscSystem : public URGE {
   MiscSystem& operator=(const MiscSystem&) = delete;
 
  public:
-  base::String GetPlatform(ExceptionState& exception_state) override;
-  void OpenURL(const base::String& path,
+  std::string GetPlatform(ExceptionState& exception_state) override;
+  void OpenURL(const std::string& path,
                ExceptionState& exception_state) override;
 
-  base::String Gets(ExceptionState& exception_state) override;
-  void Puts(const base::String& message,
+  std::string Gets(ExceptionState& exception_state) override;
+  void Puts(const std::string& message,
             ExceptionState& exception_state) override;
 
-  void Alert(const base::String& message,
+  void Alert(const std::string& message,
              ExceptionState& exception_state) override;
-  bool Confirm(const base::String& message,
+  bool Confirm(const std::string& message,
                ExceptionState& exception_state) override;
 
-  bool AddLoadPath(const base::String& new_path,
-                   const base::String& mount_point,
+  bool AddLoadPath(const std::string& new_path,
+                   const std::string& mount_point,
                    bool append_to_path,
                    ExceptionState& exception_state) override;
-  bool RemoveLoadPath(const base::String& old_path,
+  bool RemoveLoadPath(const std::string& old_path,
                       ExceptionState& exception_state) override;
-  bool IsFileExisted(const base::String& filepath,
+  bool IsFileExisted(const std::string& filepath,
                      ExceptionState& exception_state) override;
-  base::Vector<base::String> EnumDirectory(
-      const base::String& dirpath,
+  std::vector<std::string> EnumDirectory(
+      const std::string& dirpath,
       ExceptionState& exception_state) override;
 
  private:

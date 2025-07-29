@@ -14,7 +14,7 @@ SoundEmit::~SoundEmit() {
   Stop();
 }
 
-ma_result SoundEmit::Play(const base::String& filename,
+ma_result SoundEmit::Play(const std::string& filename,
                           int32_t volume,
                           int32_t pitch) {
   // Clear queued sounds if the queue is too large.
@@ -24,7 +24,7 @@ ma_result SoundEmit::Play(const base::String& filename,
 
     if (!ma_sound_is_playing(invalid_voice)) {
       ma_sound_uninit(invalid_voice);
-      base::Allocator::Delete(invalid_voice);
+      delete invalid_voice;
     } else {
       // Requeued sound handle
       sound_queue_.push(invalid_voice);
@@ -32,7 +32,7 @@ ma_result SoundEmit::Play(const base::String& filename,
   }
 
   // Create sound playing handle.
-  ma_sound* sound_handle = base::Allocator::New<ma_sound>();
+  ma_sound* sound_handle = new ma_sound;
   auto result = ma_sound_init_from_file(
       engine_, filename.c_str(), MA_SOUND_FLAG_ASYNC | MA_SOUND_FLAG_STREAM,
       nullptr, nullptr, sound_handle);
@@ -52,7 +52,7 @@ ma_result SoundEmit::Play(const base::String& filename,
 
   // When loading failed
   ma_sound_uninit(sound_handle);
-  base::Allocator::Delete(sound_handle);
+  delete sound_handle;
 
   return result;
 }
@@ -63,7 +63,7 @@ void SoundEmit::Stop() {
     sound_queue_.pop();
 
     ma_sound_uninit(sound_handle);
-    base::Allocator::Delete(sound_handle);
+    delete sound_handle;
   }
 }
 

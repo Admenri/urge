@@ -799,12 +799,12 @@ struct URGE_OBJECT(GPUTextureViewDesc) {
 
 /*--urge(name:GPUDeviceContextDesc)--*/
 struct URGE_OBJECT(GPUDeviceContextDesc) {
-  base::String name;
+  std::string name;
   GPU::CommandQueueType queue_type = GPU::COMMAND_QUEUE_TYPE_UNKNOWN;
   bool is_deferred = false;
   uint8_t context_id = 0;
   uint8_t queue_id = 0;
-  base::Vector<uint32_t> texture_copy_granularity;
+  std::vector<uint32_t> texture_copy_granularity;
 };
 
 /*--urge(name:GPUStateTransitionDesc)--*/
@@ -847,7 +847,7 @@ struct URGE_OBJECT(GPUBufferData) {
 
 /*--urge(name:GPUTextureData)--*/
 struct URGE_OBJECT(GPUTextureData) {
-  base::Vector<scoped_refptr<GPUTextureSubResData>> resources;
+  std::vector<scoped_refptr<GPUTextureSubResData>> resources;
   scoped_refptr<GPUDeviceContext> context;
 };
 
@@ -879,7 +879,7 @@ struct URGE_OBJECT(GPURenderTargetBlendDesc) {
 struct URGE_OBJECT(GPUBlendStateDesc) {
   bool alpha_to_coverage_enable = false;
   bool independent_blend_enable = false;
-  base::Vector<scoped_refptr<GPURenderTargetBlendDesc>> render_targets;
+  std::vector<scoped_refptr<GPURenderTargetBlendDesc>> render_targets;
 };
 
 /*--urge(name:GPURasterizerStateDesc)--*/
@@ -917,7 +917,7 @@ struct URGE_OBJECT(GPUDepthStencilStateDesc) {
 
 /*--urge(name:GPUInputLayoutElement)--*/
 struct URGE_OBJECT(GPUInputLayoutElement) {
-  base::String hlsl_semantic = "ATTRIB";
+  std::string hlsl_semantic = "ATTRIB";
   uint32_t input_index = 0;
   uint32_t buffer_slot = 0;
   uint32_t num_components = 0;
@@ -936,12 +936,12 @@ struct URGE_OBJECT(GPUGraphicsPipelineDesc) {
   uint32_t sample_mask = 0xFFFFFFFF;
   scoped_refptr<GPURasterizerStateDesc> rasterizer_desc;
   scoped_refptr<GPUDepthStencilStateDesc> depth_stencil_desc;
-  base::Vector<scoped_refptr<GPUInputLayoutElement>> input_layout;
+  std::vector<scoped_refptr<GPUInputLayoutElement>> input_layout;
   GPU::PrimitiveTopology primitive_topology =
       GPU::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   uint8_t num_viewports = 1;
   uint8_t num_render_targets = 0;
-  base::Vector<GPU::TextureFormat> rtv_formats;
+  std::vector<GPU::TextureFormat> rtv_formats;
   GPU::TextureFormat dsv_format = GPU::TEX_FORMAT_UNKNOWN;
   bool readonly_dsv = false;
   uint8_t multisample_count = 1;
@@ -951,7 +951,7 @@ struct URGE_OBJECT(GPUGraphicsPipelineDesc) {
 
 /*--urge(name:GPUPipelineResourceDesc)--*/
 struct URGE_OBJECT(GPUPipelineResourceDesc) {
-  base::String name;
+  std::string name;
   GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
   uint32_t array_size = 1;
   GPU::ShaderResourceType resource_type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
@@ -962,71 +962,71 @@ struct URGE_OBJECT(GPUPipelineResourceDesc) {
 /*--urge(name:GPUImmutableSamplerDesc)--*/
 struct URGE_OBJECT(GPUImmutableSamplerDesc) {
   GPU::ShaderType shader_stages = GPU::SHADER_TYPE_UNKNOWN;
-  base::String sampler_name;
+  std::string sampler_name;
   scoped_refptr<GPUSamplerDesc> desc;
 };
 
 /*--urge(name:GPUPipelineSignatureDesc)--*/
 struct URGE_OBJECT(GPUPipelineSignatureDesc) {
-  base::Vector<scoped_refptr<GPUPipelineResourceDesc>> resources;
-  base::Vector<scoped_refptr<GPUImmutableSamplerDesc>> samplers;
+  std::vector<scoped_refptr<GPUPipelineResourceDesc>> resources;
+  std::vector<scoped_refptr<GPUImmutableSamplerDesc>> samplers;
   uint8_t binding_index = 0;
   bool use_combined_texture_samplers = true;
-  base::String combined_sampler_suffix = "_sampler";
+  std::string combined_sampler_suffix = "_sampler";
   uint32_t srb_allocation_granularity = 1;
 };
 
 /*--urge(name:GPUResourceMappingEntry)--*/
 struct URGE_OBJECT(GPUResourceMappingEntry) {
-  base::String name;
+  std::string name;
   uint64_t device_object = 0;
   uint32_t array_index = 0;
 };
 
 /*--urge(name:GPUShaderResourceDesc)--*/
 struct URGE_OBJECT(GPUShaderResourceDesc) {
-  base::String name;
+  std::string name;
   GPU::ShaderResourceType type = GPU::SHADER_RESOURCE_TYPE_UNKNOWN;
   uint32_t array_size = 0;
 };
 
 /*--urge(name:GPUShaderCodeVariableDesc)--*/
 struct URGE_OBJECT(GPUShaderCodeVariableDesc) {
-  base::String name;
-  base::String type_name;
+  std::string name;
+  std::string type_name;
   GPU::ShaderCodeVariableClass klass = GPU::SHADER_CODE_VARIABLE_CLASS_UNKNOWN;
   GPU::ShaderCodeBasicType basic_type = GPU::SHADER_CODE_BASIC_TYPE_UNKNOWN;
   uint8_t num_rows = 0;
   uint8_t num_columns = 0;
   uint32_t offset = 0;
   uint32_t array_size = 0;
-  base::Vector<scoped_refptr<GPUShaderCodeVariableDesc>> members;
+  std::vector<scoped_refptr<GPUShaderCodeVariableDesc>> members;
 };
 
 /*--urge(name:GPUShaderCodeBufferDesc)--*/
 struct URGE_OBJECT(GPUShaderCodeBufferDesc) {
   uint32_t byte_size;
-  base::Vector<scoped_refptr<GPUShaderCodeVariableDesc>> variables;
+  std::vector<scoped_refptr<GPUShaderCodeVariableDesc>> variables;
 };
 
 /*--urge(name:GPUShaderMacros)--*/
 struct URGE_OBJECT(GPUShaderMacros) {
-  base::String name;
-  base::String definition;
+  std::string name;
+  std::string definition;
 };
 
 /*--urge(name:GPUShaderCreateInfo)--*/
 struct URGE_OBJECT(GPUShaderCreateInfo) {
-  base::String source;
-  base::String entry_point = "main";
-  base::Vector<scoped_refptr<GPUShaderMacros>> macros;
+  std::string source;
+  std::string entry_point = "main";
+  std::vector<scoped_refptr<GPUShaderMacros>> macros;
   GPU::ShaderType type = GPU::SHADER_TYPE_UNKNOWN;
   bool combined_texture_samplers = true;
-  base::String combined_sampler_suffix = "_sampler";
+  std::string combined_sampler_suffix = "_sampler";
   GPU::ShaderSourceLanguage language = GPU::SHADER_SOURCE_LANGUAGE_DEFAULT;
   GPU::ShaderCompileFlags compile_flags = GPU::SHADER_COMPILE_FLAG_NONE;
   bool load_constant_buffer_reflection = false;
-  base::String glsl_extensions;
+  std::string glsl_extensions;
 };
 
 /*--urge(name:GPUMultiDrawItem)--*/

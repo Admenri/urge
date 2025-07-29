@@ -23,7 +23,7 @@ constexpr int32_t kBlockMaxSize = 4096;
 
 struct BitmapAgent {
   // Debug name
-  base::String name;
+  std::string name;
 
   // Bitmap texture data
   base::Vec2i size;
@@ -54,10 +54,10 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
  public:
   CanvasImpl(ExecutionContext* execution_context,
              SDL_Surface* memory_surface,
-             const base::String& debug_name);
+             const std::string& debug_name);
   CanvasImpl(ExecutionContext* execution_context,
              RRefPtr<Diligent::ITexture> gpu_texture,
-             const base::String& debug_name);
+             const std::string& debug_name);
   ~CanvasImpl() override;
 
   CanvasImpl(const CanvasImpl&) = delete;
@@ -68,13 +68,13 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                                           ExceptionState& exception_state);
 
   static scoped_refptr<CanvasImpl> Create(ExecutionContext* execution_context,
-                                          const base::String& filename,
+                                          const std::string& filename,
                                           ExceptionState& exception_state);
 
   static scoped_refptr<CanvasImpl> FromBitmap(scoped_refptr<Bitmap> host);
 
   // For debugging usage
-  base::String GetCanvasName() const { return name_; }
+  std::string GetCanvasName() const { return name_; }
 
   // Synchronize pending commands and fetch texture to buffer.
   // Read buffer for surface pixels data.
@@ -171,23 +171,23 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                 int32_t y,
                 uint32_t width,
                 uint32_t height,
-                const base::String& str,
+                const std::string& str,
                 int32_t align,
                 ExceptionState& exception_state) override;
   void DrawText(int32_t x,
                 int32_t y,
                 uint32_t width,
                 uint32_t height,
-                const base::String& str,
+                const std::string& str,
                 ExceptionState& exception_state) override;
   void DrawText(scoped_refptr<Rect> rect,
-                const base::String& str,
+                const std::string& str,
                 int32_t align,
                 ExceptionState& exception_state) override;
   void DrawText(scoped_refptr<Rect> rect,
-                const base::String& str,
+                const std::string& str,
                 ExceptionState& exception_state) override;
-  scoped_refptr<Rect> TextSize(const base::String& str,
+  scoped_refptr<Rect> TextSize(const std::string& str,
                                ExceptionState& exception_state) override;
 
   scoped_refptr<Surface> CreateSurface(
@@ -210,7 +210,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
  private:
   void OnObjectDisposed() override;
-  base::String DisposedObjectName() override { return "Bitmap"; }
+  std::string DisposedObjectName() override { return "Bitmap"; }
   void BlitTextureInternal(const base::Rect& dst_rect,
                            CanvasImpl* src_texture,
                            const base::Rect& src_rect,
@@ -295,7 +295,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
   struct CommandBlock {
     uint32_t usage = 0;
-    base::Vector<uint8_t> memory;
+    std::vector<uint8_t> memory;
   };
 
   template <typename Ty>
@@ -350,12 +350,12 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
   BitmapAgent agent_;
 
-  base::String name_;
+  std::string name_;
   SDL_Surface* surface_;
 
   Command* commands_ = nullptr;
   Command* last_command_ = nullptr;
-  base::Vector<CommandBlock> blocks_;
+  std::vector<CommandBlock> blocks_;
   uint32_t current_block_ = 0;
 
   base::RepeatingClosureList observers_;
