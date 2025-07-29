@@ -155,7 +155,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   };
 
   DrawableNode ground_node_;
-  base::Vector<DrawableNode> above_nodes_;
+  base::Vector<base::OwnedPtr<DrawableNode>> above_nodes_;
   Agent agent_;
   int32_t tilesize_ = 32;
   int32_t max_atlas_size_ = 0;

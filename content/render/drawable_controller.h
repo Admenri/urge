@@ -154,8 +154,11 @@ class DrawableNode final : public base::LinkNode<DrawableNode> {
   DrawableNode(DrawNodeController* controller,
                const SortKey& default_key,
                bool visible = true);
-  DrawableNode(DrawableNode&& other) noexcept;
   ~DrawableNode();
+
+  DrawableNode(DrawableNode&&) = delete;
+  DrawableNode(const DrawableNode&) = delete;
+  DrawableNode& operator=(const DrawableNode&) = delete;
 
   // Register the main executer for current drawable node's host
   void RegisterEventHandler(const NotificationHandler& handler);

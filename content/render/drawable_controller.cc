@@ -70,14 +70,6 @@ DrawableNode::DrawableNode(DrawNodeController* controller,
     controller_->InsertChildNodeInternal(this);
 }
 
-DrawableNode::DrawableNode(DrawableNode&& other) noexcept
-    : controller_(other.controller_),
-      handler_(std::move(other.handler_)),
-      key_(std::move(other.key_)),
-      visible_(other.visible_),
-      batch_id_(other.batch_id_),
-      batch_self_(other.batch_self_) {}
-
 DrawableNode::~DrawableNode() {
   DisposeNode();
 }

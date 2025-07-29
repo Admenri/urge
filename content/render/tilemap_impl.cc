@@ -413,7 +413,7 @@ void TilemapImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                                        : context()->screen_drawable_node;
   ground_node_.RebindController(controller);
   for (auto& it : above_nodes_)
-    it.RebindController(controller);
+    it->RebindController(controller);
 }
 
 scoped_refptr<Bitmap> TilemapImpl::Get_Tileset(
@@ -513,7 +513,7 @@ void TilemapImpl::Put_Visible(const bool& value,
 
   ground_node_.SetNodeVisibility(value);
   for (auto& it : above_nodes_)
-    it.SetNodeVisibility(value);
+    it->SetNodeVisibility(value);
 }
 
 int32_t TilemapImpl::Get_Ox(ExceptionState& exception_state) {
@@ -888,8 +888,9 @@ void TilemapImpl::SetupTilemapLayersInternal(const base::Rect& viewport) {
   int32_t above_layers_count =
       (viewport.height / tilesize_) + !!(viewport.height % tilesize_) + 7;
   for (int32_t i = 0; i < above_layers_count; ++i) {
-    DrawableNode above_node(ground_node_.GetController(), SortKey());
-    above_node.RegisterEventHandler(base::BindRepeating(
+    auto above_node = base::MakeOwnedPtr<DrawableNode>(
+        ground_node_.GetController(), SortKey(64));
+    above_node->RegisterEventHandler(base::BindRepeating(
         &TilemapImpl::AboveNodeHandlerInternal, base::Unretained(this), i));
     above_nodes_.push_back(std::move(above_node));
   }
@@ -898,7 +899,7 @@ void TilemapImpl::SetupTilemapLayersInternal(const base::Rect& viewport) {
 void TilemapImpl::ResetAboveLayersOrderInternal() {
   for (int32_t i = 0; i < static_cast<int32_t>(above_nodes_.size()); ++i) {
     int32_t layer_order = 32 * (i + render_viewport_.y + 1) - origin_.y;
-    above_nodes_[i].SetNodeSortWeight(layer_order);
+    above_nodes_[i]->SetNodeSortWeight(layer_order);
   }
 }
 
@@ -1004,7 +1005,7 @@ void TilemapImpl::GPUUpdateTilemapUniformInternal(
 
   renderer::Binding_Tilemap::Params uniform;
   uniform.OffsetAndTexSize =
-      base::Vec4(offset.y, offset.x, 1.0f / atlas_size.x, 1.0f / atlas_size.y);
+      base::Vec4(offset.x, offset.y, 1.0f / atlas_size.x, 1.0f / atlas_size.y);
   uniform.AnimateIndexAndTileSize.x = anim_index / 16;
   uniform.AnimateIndexAndTileSize.y = tilesize;
 
