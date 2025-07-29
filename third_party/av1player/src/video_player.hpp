@@ -11,6 +11,7 @@
 #include <thread>
 #include <vector>
 
+#include "dav1d/dav1d.h"
 #include "webm/mkvparser/mkvparser.h"
 
 #include "audio_decoder.hpp"
@@ -40,7 +41,7 @@ class VideoPlayer {
 
   struct VpxData {
     Dav1dContext* codec;
-    Dav1dPicture* img;
+    Dav1dPicture img;
     bool initialized;
   };
 

@@ -2,8 +2,6 @@
 
 #include "timer.hpp"
 
-#include "dav1d/dav1d.h"
-
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
@@ -42,7 +40,6 @@ VideoPlayer::VideoPlayer(const Player::Config& cfg)
       m_state(State::Uninitialized) {
   m_config = cfg;
   m_packetPool = new uvpx::ObjectPool<Packet>(1024 * 4);
-  m_decoderData.img = new Dav1dPicture;
 
   reset();
 }
@@ -221,8 +218,6 @@ void VideoPlayer::destroy() {
   m_videoQueue.destroy();
   m_audioQueue.destroy();
 
-  SafeDelete<Dav1dPicture>(m_decoderData.img);
-
   SafeDelete<Buffer<unsigned char>>(m_decodeBuffer);
 
   SafeDelete<FileReader>(m_reader);
@@ -294,10 +289,10 @@ void VideoPlayer::updateYUVData(double time) {
 
   for (plane = 0; plane < 3; ++plane) {
     const unsigned char* buf =
-        (const unsigned char*)m_decoderData.img->data[plane];
-    const int stride = ((plane == 0) ? m_decoderData.img->stride[0]
-                                     : m_decoderData.img->stride[1]);
-    int h = m_decoderData.img->p.h;
+        (const unsigned char*)m_decoderData.img.data[plane];
+    const int stride = ((plane == 0) ? m_decoderData.img.stride[0]
+                                     : m_decoderData.img.stride[1]);
+    int h = m_decoderData.img.p.h;
     if (plane > 0)
       h /= 2;
 
@@ -483,10 +478,10 @@ void VideoPlayer::videoDecodingThread() {
     // decode video frames
     if (m_videoPacketQueue.size() > 0) {
       VideoPacketRawData packet = m_videoPacketQueue.front();
-      m_videoPacketQueue.pop();
 
       if (packet.time < playTime()) {
         free(packet.data);
+        m_videoPacketQueue.pop();
         needFlush = true;
         continue;  // skip old packets
       }
@@ -499,8 +494,11 @@ void VideoPlayer::videoDecodingThread() {
 
       if (needSeeking) {
         Dav1dSequenceHeader seq_hdr;
-        if (dav1d_parse_sequence_header(&seq_hdr, packet.data, packet.size))
+        if (dav1d_parse_sequence_header(&seq_hdr, packet.data, packet.size)) {
+          free(packet.data);
+          m_videoPacketQueue.pop();
           continue;
+        }
         needSeeking = false;
       }
 
@@ -514,34 +512,45 @@ void VideoPlayer::videoDecodingThread() {
       // Copy frame data to buffer
       memcpy(buffer, packet.data, packet.size);
       free(packet.data);
+      m_videoPacketQueue.pop();
 
-      int decode_result = dav1d_send_data(m_decoderData.codec, &frame_data);
-      if (decode_result < 0) {
-        threadError(UVPX_FAILED_TO_DECODE_FRAME, "Failed to send data (%d).",
-                    decode_result);
-        return;
-      }
+      int decode_result = 0;
+      int fetch_result = 0;
 
-      dav1d_data_unref(&frame_data);
-
-      while (!dav1d_get_picture(m_decoderData.codec, m_decoderData.img)) {
-        if (m_decoderData.img->p.layout != DAV1D_PIXEL_LAYOUT_I420) {
-          threadError(UVPX_UNSUPPORTED_IMAGE_FORMAT,
-                      "Unsupported image format: %d",
-                      m_decoderData.img->p.layout);
-          break;
+      do {
+        decode_result = dav1d_send_data(m_decoderData.codec, &frame_data);
+        if (decode_result < 0 && decode_result != DAV1D_ERR(EAGAIN)) {
+          threadError(UVPX_FAILED_TO_DECODE_FRAME, "Failed to send data (%d).",
+                      decode_result);
+          return;
         }
 
-        do {
-          m_frameBuffer->update(playTime(), 1.0 / m_info.frameRate);
-          std::this_thread::yield();
-        } while (m_frameBuffer->isFull());
+        fetch_result =
+            dav1d_get_picture(m_decoderData.codec, &m_decoderData.img);
+        if (!fetch_result) {
+          if (m_decoderData.img.p.layout != DAV1D_PIXEL_LAYOUT_I420) {
+            threadError(UVPX_UNSUPPORTED_IMAGE_FORMAT,
+                        "Unsupported image format: %d",
+                        m_decoderData.img.p.layout);
+            return;
+          }
 
-        updateYUVData(packet.time);
-        m_framesDecoded++;
+          do {
+            m_frameBuffer->update(playTime(), 1.0 / m_info.frameRate);
+            std::this_thread::yield();
+          } while (m_frameBuffer->isFull());
 
-        dav1d_picture_unref(m_decoderData.img);
-      }
+          updateYUVData(packet.time);
+          m_framesDecoded++;
+
+          dav1d_picture_unref(&m_decoderData.img);
+        }
+
+        // printf("time: %f, send: %d, fetch: %d\n", packet.time, decode_result,
+        //        fetch_result);
+      } while (decode_result != 0 && m_threadRunning.load());
+
+      dav1d_data_unref(&frame_data);
     }
 
     std::this_thread::yield();
@@ -684,7 +693,6 @@ void VideoPlayer::decodePacket(Packet* p) {
   for (int i = 0; i < frameCount; ++i) {
     const mkvparser::Block::Frame& theFrame = pBlock->GetFrame(i);
     const long size = theFrame.len;
-    // const long long offset = theFrame.pos;
 
     unsigned char* data = m_decodeBuffer->get(size);
     theFrame.Read(m_reader, data);
@@ -695,9 +703,9 @@ void VideoPlayer::decodePacket(Packet* p) {
         rawData.data = (uint8_t*)malloc(size);
         rawData.size = size;
         rawData.time = p->time();
-
         if (rawData.data)
           memcpy(rawData.data, data, size);
+
         m_videoPacketQueue.push(rawData);
 
         break;
