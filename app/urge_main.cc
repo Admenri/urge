@@ -22,6 +22,10 @@
 #include "content/worker/content_runner.h"
 #include "ui/widget/widget.h"
 
+#if HAVE_ARB_ENCRYPTO_SUPPORT
+#include "admenri/encryption/encrypt_arb.h"
+#endif
+
 #if defined(OS_ANDROID)
 #include <jni.h>
 #include <sys/system_properties.h>
@@ -215,14 +219,12 @@ int main(int argc, char* argv[]) {
   if (profile->game_battle_test)
     LOG(INFO) << "[App] Running battle test.";
 
-  // Load crypto library
-  io_service->LoadCryptoLibrary();
-
-  // Setup encryption resource package
+// Setup encryption resource package
+#if HAVE_ARB_ENCRYPTO_SUPPORT
   base::String app_package = app + ".arb";
-  if (io_service->AddLoadPath(app_package.c_str(), "", false))
-    LOG(INFO) << "[IOService] Encrypto pack \"" << app_package
-              << "\" was added.";
+  if (admenri::LoadCryptoPackage(app_package.c_str()))
+    LOG(INFO) << "[IOService] Encrypto pack \"" << app_package << "\" added.";
+#endif
 
 // Load rtp on windows
 #if defined(OS_WIN)

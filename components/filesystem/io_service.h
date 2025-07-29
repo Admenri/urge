@@ -29,8 +29,6 @@ class IOService {
 
   static base::OwnedPtr<IOService> Create(const base::String& argv0);
 
-  void LoadCryptoLibrary();
-
   bool SetWritePath(const base::String& path);
 
   int32_t AddLoadPath(const base::String& new_path,

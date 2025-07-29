@@ -16,8 +16,3 @@ target_link_libraries(components_filesystem
   engine_base
   physfs-static
 )
-
-if (ENABLE_ADMENRI_BUILD_VERSION)
-  target_link_libraries(components_filesystem PRIVATE admenri_arb)
-  target_compile_definitions(components_filesystem PRIVATE HAVE_ARB_ENCRYPTO_SUPPORT=1)
-endif ()

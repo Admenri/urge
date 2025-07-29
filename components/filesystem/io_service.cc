@@ -11,10 +11,6 @@
 #include <jni.h>
 #endif
 
-#if HAVE_ARB_ENCRYPTO_SUPPORT
-#include "admenri/encryption/encrypt_arb.h"
-#endif
-
 namespace filesystem {
 
 namespace {
@@ -201,13 +197,6 @@ IOService::~IOService() {
   PHYSFS_deinit();
 }
 
-void IOService::LoadCryptoLibrary() {
-#if HAVE_ARB_ENCRYPTO_SUPPORT
-  if (PHYSFS_registerArchiver(&admenri::admenri_archiver_arb))
-    LOG(INFO) << "[ARB] Enable ARB crypto library.";
-#endif
-}
-
 bool IOService::SetWritePath(const base::String& path) {
   // Setup write output path
   return !!PHYSFS_setWriteDir(path.c_str());
@@ -216,7 +205,25 @@ bool IOService::SetWritePath(const base::String& path) {
 int32_t IOService::AddLoadPath(const base::String& new_path,
                                const base::String& mount_point,
                                bool append) {
-  return PHYSFS_mount(new_path.c_str(), mount_point.c_str(), append);
+  base::String real_filename = new_path;
+  base::String password;
+
+  size_t pos = new_path.find('?');
+  if (pos != std::string::npos) {
+    real_filename = new_path.substr(0, pos);
+    password = new_path.substr(pos + 1);
+  }
+
+  if (!password.empty())
+    PHYSFS_setZipPassword(password.c_str());
+  else
+    PHYSFS_setZipPassword(nullptr);
+
+  int result = PHYSFS_mount(real_filename.c_str(), mount_point.c_str(), append);
+
+  PHYSFS_setZipPassword(nullptr);
+
+  return result;
 }
 
 int32_t IOService::RemoveLoadPath(const base::String& old_path) {
