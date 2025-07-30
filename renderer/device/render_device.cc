@@ -181,10 +181,11 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   engine_create_info.EnableValidation = validation;
 
   // Requested features
-  engine_create_info.Features.SeparablePrograms =
-      Diligent::DEVICE_FEATURE_STATE_ENABLED;
+  if (driver_type != DriverType::OPENGL)
+    engine_create_info.Features.SeparablePrograms =
+        Diligent::DEVICE_FEATURE_STATE_OPTIONAL;
   engine_create_info.Features.ComputeShaders =
-      Diligent::DEVICE_FEATURE_STATE_ENABLED;
+      Diligent::DEVICE_FEATURE_STATE_OPTIONAL;
 
   // Setup primary swapchain
   swap_chain_desc.ColorBufferFormat = Diligent::TEX_FORMAT_RGBA8_UNORM;

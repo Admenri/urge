@@ -10,6 +10,7 @@
 #include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "mimalloc.h"
+#include "spdlog/sinks/android_sink.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
@@ -207,7 +208,26 @@ int main(int argc, char* argv[]) {
   // Create spdlog
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_pattern("[%^%l%$] %v");
-  spdlog::logger logger_sink("urgecore", {console_sink});
+
+#if defined(OS_ANDROID)
+  auto android_sink =
+      std::make_shared<spdlog::sinks::android_sink_mt>("urgecore");
+  android_sink->set_pattern("[%^%l%$] %v");
+
+  auto file_sink =
+      std::make_shared<spdlog::sinks::basic_file_sink_mt>(app + ".log", true);
+  file_sink->set_level(spdlog::level::trace);
+#endif
+
+  spdlog::sinks_init_list logger_sinks = {
+      console_sink,
+#if defined(OS_ANDROID)
+      android_sink,
+      file_sink,
+#endif
+  };
+
+  spdlog::logger logger_sink("urgecore", logger_sinks);
   base::logging::InitWithLogger(&logger_sink);
 
   LOG(INFO) << "[App] Current Path: " << current_path;
@@ -301,8 +321,7 @@ int main(int argc, char* argv[]) {
       } else {
         // Throw exception when initializing
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
-                                 "Error when initialize content layer.",
-                                 nullptr);
+                                 "Error when creating content layer.", nullptr);
       }
 
       // Finalize modules at end

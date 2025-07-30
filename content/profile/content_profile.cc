@@ -4,6 +4,8 @@
 
 #include "content/profile/content_profile.h"
 
+#include "base/buildflags/build.h"
+
 #include "inih/INIReader.h"
 
 #if defined(OS_WIN)
