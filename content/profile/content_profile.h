@@ -38,7 +38,6 @@ class ContentProfile {
   // Game
   std::string window_title = "URGE Widget";
   std::string script_path = "Data/Scripts.rxdata";
-  std::string rtp;
 
   // Commandline
   bool game_debug = false;

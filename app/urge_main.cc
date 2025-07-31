@@ -34,60 +34,6 @@
 
 #if defined(OS_WIN)
 #include <windows.h>
-#include <optional>
-
-std::optional<std::string> ReadRGSSRTPPathWin(
-    content::ContentProfile::APIVersion api_version,
-    const char* valueName) {
-  std::string subKey;
-  switch (api_version) {
-    case content::ContentProfile::APIVersion::RGSS1:
-      subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS\\RTP";
-      break;
-    case content::ContentProfile::APIVersion::RGSS2:
-      subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS2\\RTP";
-      break;
-    case content::ContentProfile::APIVersion::RGSS3:
-      subKey = "SOFTWARE\\WOW6432Node\\Enterbrain\\RGSS3\\RTP";
-      break;
-    default:
-      return std::nullopt;
-  }
-
-  HKEY hKey = nullptr;
-  LONG result;
-
-  result =
-      RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey.c_str(), 0, KEY_READ, &hKey);
-  if (result != ERROR_SUCCESS) {
-    return std::nullopt;
-  }
-
-  DWORD dataType = 0;
-  BYTE data[1024] = {0};
-  DWORD dataSize = sizeof(data);
-
-  const char* nameToQuery =
-      (valueName && valueName[0] != '\0') ? valueName : "";
-
-  result =
-      RegQueryValueExA(hKey, nameToQuery, NULL, &dataType, data, &dataSize);
-
-  RegCloseKey(hKey);
-  if (result != ERROR_SUCCESS) {
-    return std::nullopt;
-  }
-
-  if (dataType == REG_SZ) {
-    const char* strValue = reinterpret_cast<const char*>(data);
-    if (strValue == nullptr || strValue[0] == '\0') {
-      return std::nullopt;
-    }
-    return std::string(strValue);
-  } else {
-    return std::nullopt;
-  }
-}
 
 void CreateConsoleWin() {
   if (::GetConsoleWindow())
@@ -243,19 +189,6 @@ int main(int argc, char* argv[]) {
   std::string app_package = app + ".arb";
   if (admenri::LoadCryptoPackage(app_package))
     LOG(INFO) << "[IOService] Encrypto pack \"" << app_package << "\" added.";
-#endif
-
-// Load rtp on windows
-#if defined(OS_WIN)
-  if (!profile->rtp.empty()) {
-    auto rtp_path =
-        ReadRGSSRTPPathWin(profile->api_version, profile->rtp.c_str());
-    if (rtp_path) {
-      LOG(INFO) << "[IOService] Load RTP path: " << *rtp_path;
-      if (!io_service->AddLoadPath(*rtp_path, "", true))
-        LOG(INFO) << "[IOService] Failed to load RTP.";
-    }
-  }
 #endif
 
   // Disable IME on Windows

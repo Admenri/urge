@@ -21,8 +21,7 @@ ThreadWorker::ThreadWorker()
 
 ThreadWorker::~ThreadWorker() {
   quit_flag_.store(1);
-  if (thread_.joinable())
-    thread_.join();
+  thread_.join();
 }
 
 std::unique_ptr<ThreadWorker> ThreadWorker::Create() {

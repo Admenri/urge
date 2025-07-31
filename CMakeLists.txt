@@ -123,6 +123,9 @@ add_subdirectory(third_party/webm)
 ## Zlib
 add_subdirectory(third_party/zlib)
 
+## Asio
+include_directories(third_party/asio/include)
+
 ## Mimalloc
 set(MI_OVERRIDE OFF)
 set(MI_BUILD_TESTS OFF)
@@ -147,6 +150,7 @@ endif ()
 add_subdirectory(components/audioservice)
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
+add_subdirectory(components/network)
 add_subdirectory(components/spine2d)
 
 #-------------------------------------------------------------------------

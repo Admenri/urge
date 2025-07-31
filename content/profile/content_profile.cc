@@ -172,22 +172,12 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
   script_path = reader->Get("Game", "Scripts", script_path);
   ReplaceStringWidth(script_path, '\\', '/');
   window_title = reader->Get("Game", "Title", window_title);
-  rtp = reader->Get("Game", "RTP", rtp);
-
   if (!CheckValidUTF8(window_title.c_str())) {
 #if defined(OS_WIN)
     window_title = ANSIFromUtf8(window_title);
 #else
     window_title = "URGE Widget";
 #endif
-  }
-
-  for (int32_t i = 1; i <= 3; ++i) {
-    std::string rtp_key = "RTP";
-    rtp_key += ('0' + i);
-
-    if (rtp.empty())
-      rtp = reader->Get("Game", rtp_key.c_str(), rtp);
   }
 
   // Engine

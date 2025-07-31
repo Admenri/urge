@@ -85,6 +85,7 @@ class ContentRunner {
   std::unique_ptr<EventController> event_controller_;
   std::unique_ptr<Diligent::ImGuiDiligentRenderer> imgui_;
   std::unique_ptr<audioservice::AudioService> audio_server_;
+  std::unique_ptr<network::NetworkService> network_service_;
 
   scoped_refptr<RenderScreenImpl> graphics_impl_;
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;
