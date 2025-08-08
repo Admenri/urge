@@ -737,6 +737,7 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
         ImVec2(display_viewport_.width, display_viewport_.height));
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Game", nullptr,
                  ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
@@ -749,7 +750,7 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
                  ImVec2(display_viewport_.width, display_viewport_.height));
 
     ImGui::End();
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar(3);
 
     ImGui::Render();
     gui_renderer->CheckDeviceObjects();
