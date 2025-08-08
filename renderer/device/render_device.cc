@@ -217,7 +217,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 
     Diligent::EngineVkCreateInfo vk_create_info(engine_create_info);
     vk_create_info.FeaturesVk.DynamicRendering =
-        Diligent::DEVICE_FEATURE_STATE_ENABLED;
+        Diligent::DEVICE_FEATURE_STATE_OPTIONAL;
 
     factory->CreateDeviceAndContextsVk(vk_create_info, &device, &context);
     factory->CreateSwapChainVk(device, context, swap_chain_desc, native_window,

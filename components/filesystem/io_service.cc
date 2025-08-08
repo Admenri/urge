@@ -185,11 +185,6 @@ std::unique_ptr<IOService> IOService::Create(const std::string& argv0) {
   if (!PHYSFS_init(init_data))
     return nullptr;
 
-#if defined(OS_ANDROID)
-  PHYSFS_mount(PHYSFS_getBaseDir(), nullptr, 1);
-  PHYSFS_setRoot(PHYSFS_getBaseDir(), "/assets");
-#endif
-
   return std::unique_ptr<IOService>(new IOService);
 }
 

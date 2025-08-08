@@ -30,6 +30,40 @@
 #include <jni.h>
 #include <sys/system_properties.h>
 #include <unistd.h>
+
+static int g_pfd[2];
+static pthread_t g_android_stdio_thread;
+
+static void* StdioTransferThreadFunc(void*) {
+  ssize_t rdsz;
+  char buf[128];
+  while ((rdsz = read(g_pfd[0], buf, sizeof buf - 1)) > 0) {
+    if (buf[rdsz - 1] == '\n')
+      --rdsz;
+    buf[rdsz] = 0; /* add null-terminator */
+    __android_log_write(ANDROID_LOG_DEBUG, "urge-stdio", buf);
+  }
+  return 0;
+}
+
+int SetupAndroidStudioTransfer() {
+  /* make stdout line-buffered and stderr unbuffered */
+  setvbuf(stdout, 0, _IOLBF, 0);
+  setvbuf(stderr, 0, _IONBF, 0);
+
+  /* create the pipe and redirect stdout and stderr */
+  pipe(g_pfd);
+  dup2(g_pfd[1], 1);
+  dup2(g_pfd[1], 2);
+
+  /* spawn the logging thread */
+  if (pthread_create(&g_android_stdio_thread, 0, StdioTransferThreadFunc, 0) ==
+      -1)
+    return -1;
+  pthread_detach(g_android_stdio_thread);
+  return 0;
+}
+
 #endif
 
 #if defined(OS_WIN)
@@ -63,6 +97,10 @@ int main(int argc, char* argv[]) {
     }
   }
 #endif  //! defined(OS_WIN)
+
+#if defined(OS_ANDROID)
+  SetupAndroidStudioTransfer();
+#endif  // !defined(OS_ANDROID)
 
   // Hook SDL memory function
   SDL_SetMemoryFunctions(mi_malloc, mi_calloc, mi_realloc, mi_free);
@@ -151,10 +189,7 @@ int main(int argc, char* argv[]) {
     CreateConsoleWin();
 #endif
 
-  // Create spdlog
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_pattern("[%^%l%$] %v");
-
+  // Create spdlog logger
 #if defined(OS_ANDROID)
   auto android_sink =
       std::make_shared<spdlog::sinks::android_sink_mt>("urgecore");
@@ -163,13 +198,17 @@ int main(int argc, char* argv[]) {
   auto file_sink =
       std::make_shared<spdlog::sinks::basic_file_sink_mt>(app + ".log", true);
   file_sink->set_level(spdlog::level::trace);
+#else
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  console_sink->set_pattern("[%^%l%$] %v");
 #endif
 
   spdlog::sinks_init_list logger_sinks = {
-      console_sink,
 #if defined(OS_ANDROID)
       android_sink,
       file_sink,
+#else
+      console_sink,
 #endif
   };
 

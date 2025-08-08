@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.libsdl.app.SDLActivity;
+import com.admenri.urge.AssetExtractor;
 
 public class URGEMain extends SDLActivity {
     private static final String TAG = "URGEActivity";
@@ -41,20 +42,8 @@ public class URGEMain extends SDLActivity {
         // Setup packages
         String currentMD5 = getApkMD5(context);
         if (!checkMD5Consistent(context, currentMD5)) {
-            AssetManager assets = context.getAssets();
-            try {
-                String[] rootFiles = assets.list("");
-                assert rootFiles != null;
-                for (String file : rootFiles) {
-                    String[] dirFiles = assets.list(file);
-                    if (dirFiles == null || dirFiles.length == 0) {
-                        Log.i(TAG, "Extracting: " + file);
-                        copySingleFile(context, file, GAME_PATH);
-                    }
-                }
-            } catch (IOException e) {
-                Log.e(TAG, e.toString());
-            }
+            // Extracting new files (override if file was existed)
+            AssetExtractor.extractAssets(this, true);
         }
 
         // Update resource md5
