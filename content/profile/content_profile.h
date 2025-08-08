@@ -68,7 +68,6 @@ class ContentProfile {
   uint32_t vsync = 1;
   bool keep_ratio = true;
   bool fullscreen = false;
-  bool smooth_scale = false;
   bool allow_skip_frame = true;
   bool background_running = true;
 

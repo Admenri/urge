@@ -261,9 +261,6 @@ bool ContentRunner::RenderGUIInternal() {
   if (show_fps_monitor_)
     RenderFPSMonitorGUIInternal();
 
-  // Final gui render
-  ImGui::Render();
-
   return window_hovered;
 }
 

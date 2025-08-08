@@ -228,27 +228,6 @@ extern const std::string kHLSL_Spine2DRender_Pixel;
 extern const std::string kHLSL_YUVRender_Vertex;
 extern const std::string kHLSL_YUVRender_Pixel;
 
-///
-// type:
-//   present shader
-///
-// entry:
-//   vertex: VSMain
-//   pixel: PSMain
-///
-// vertex:
-//   <float4, float2, float4>
-///
-// resource:
-//   { float4x4, float4x4 }
-//   { Texture2D }
-//
-// macros:
-//   CONVERT_PS_OUTPUT_TO_GAMMA
-///
-extern const std::string kHLSL_PresentRender_Vertex;
-extern const std::string kHLSL_PresentRender_Pixel;
-
 }  // namespace renderer
 
 #endif  // !RENDERER_PIPELINE_BUILTIN_HLSL_H_

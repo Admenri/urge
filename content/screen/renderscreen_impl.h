@@ -46,10 +46,6 @@ class RenderScreenImpl : public Graphics,
     renderer::Binding_VagueTrans transition_binding_vague;
 
     Diligent::ITexture* present_target = nullptr;
-    renderer::DynamicQuadBatch present_quad;
-    renderer::Binding_Base present_binding;
-    RRefPtr<Diligent::IBuffer> present_world;
-    std::unique_ptr<renderer::Pipeline_Present> present_pipeline;
   };
 
   RenderScreenImpl(ExecutionContext* execution_context, uint32_t frame_rate);
@@ -127,7 +123,6 @@ class RenderScreenImpl : public Graphics,
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Fullscreen, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Skipframe, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(KeepRatio, bool);
-  URGE_DECLARE_OVERRIDE_ATTRIBUTE(SmoothScale, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(BackgroundRunning, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Ox, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);

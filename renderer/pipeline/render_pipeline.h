@@ -193,13 +193,6 @@ class Pipeline_YUV : public RenderPipelineBase {
   MAKE_BINDING_FUNCTION(Binding_YUV, 0);
 };
 
-class Pipeline_Present : public RenderPipelineBase {
- public:
-  Pipeline_Present(const PipelineInitParams& init_params, bool manual_srgb);
-
-  MAKE_BINDING_FUNCTION(Binding_Base, 0);
-};
-
 }  // namespace renderer
 
 #endif  //! RENDERER_PIPELINE_RENDER_PIPELINE_H_

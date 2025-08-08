@@ -26,43 +26,6 @@
 
 namespace content {
 
-namespace {
-
-Diligent::float4x4 MakePresentationTransform(
-    Diligent::SURFACE_TRANSFORM pre_transform) {
-  switch (pre_transform) {
-    case Diligent::SURFACE_TRANSFORM_IDENTITY:
-      // Nothing to do
-      return Diligent::float4x4::Identity();
-    case Diligent::SURFACE_TRANSFORM_ROTATE_90:
-      // The image content is rotated 90 degrees clockwise.
-      return Diligent::float4x4::RotationZ(-Diligent::PI_F * 0.5f);
-    case Diligent::SURFACE_TRANSFORM_ROTATE_180:
-      // The image content is rotated 180 degrees clockwise.
-      return Diligent::float4x4::RotationZ(-Diligent::PI_F * 1.0f);
-    case Diligent::SURFACE_TRANSFORM_ROTATE_270:
-      // The image content is rotated 270 degrees clockwise.
-      return Diligent::float4x4::RotationZ(-Diligent::PI_F * 1.5f);
-    case Diligent::SURFACE_TRANSFORM_OPTIMAL:
-      UNEXPECTED(
-          "SURFACE_TRANSFORM_OPTIMAL is only valid as parameter during "
-          "swap chain initialization.");
-      break;
-    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR:
-    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90:
-    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180:
-    case Diligent::SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270:
-      UNEXPECTED("Mirror transforms are not supported");
-      break;
-    default:
-      UNEXPECTED("Unknown transform");
-  }
-
-  return Diligent::float4x4::Identity();
-}
-
-}  // namespace
-
 RenderScreenImpl::RenderScreenImpl(ExecutionContext* execution_context,
                                    uint32_t frame_rate)
     : EngineObject(execution_context),
@@ -110,26 +73,28 @@ void RenderScreenImpl::CreateButtonGUISettings() {
               ->i18n_profile->GetI18NString(IDS_SETTINGS_GRAPHICS, "Graphics")
               .c_str())) {
     ImGui::TextWrapped(
-        "%s: %s",
+        "%s: %s (%d.%d)",
+        context()
+            ->i18n_profile->GetI18NString(IDS_GRAPHICS_BACKEND, "Backend")
+            .c_str(),
+        Diligent::GetRenderDeviceTypeString(device_info.Type),
+        device_info.APIVersion.Major, device_info.APIVersion.Minor);
+    ImGui::Separator();
+    ImGui::TextWrapped(
+        "%s: %s (PCI: %X)",
         context()
             ->i18n_profile->GetI18NString(IDS_GRAPHICS_RENDERER, "Renderer")
             .c_str(),
-        Diligent::GetRenderDeviceTypeString(device_info.Type));
+        adapter_info.Description, adapter_info.DeviceId);
     ImGui::Separator();
     ImGui::TextWrapped(
-        "%s: %s",
+        "%s: %s (PCI: %X)",
         context()
             ->i18n_profile->GetI18NString(IDS_GRAPHICS_VENDOR, "Vendor")
             .c_str(),
-        magic_enum::enum_name(adapter_info.Vendor).data());
-    ImGui::Separator();
-    ImGui::TextWrapped(
-        "%s: %s",
-        context()
-            ->i18n_profile
-            ->GetI18NString(IDS_GRAPHICS_DESCRIPTION, "Description")
-            .c_str(),
-        adapter_info.Description);
+        magic_enum::enum_name(adapter_info.Vendor).data() +
+            sizeof("ADAPTER_VENDOR"),
+        adapter_info.VendorId);
     ImGui::Separator();
 
     // Keep Ratio
@@ -138,14 +103,6 @@ void RenderScreenImpl::CreateButtonGUISettings() {
             ->i18n_profile->GetI18NString(IDS_GRAPHICS_KEEP_RATIO, "Keep Ratio")
             .c_str(),
         &settings_profile.keep_ratio);
-
-    // Smooth Scale
-    ImGui::Checkbox(
-        context()
-            ->i18n_profile
-            ->GetI18NString(IDS_GRAPHICS_SMOOTH_SCALE, "Smooth Scale")
-            .c_str(),
-        &settings_profile.smooth_scale);
 
     // Skip Frame
     ImGui::Checkbox(
@@ -517,15 +474,6 @@ void RenderScreenImpl::Put_KeepRatio(const bool& value,
   context()->engine_profile->keep_ratio = value;
 }
 
-bool RenderScreenImpl::Get_SmoothScale(ExceptionState& exception_state) {
-  return context()->engine_profile->smooth_scale;
-}
-
-void RenderScreenImpl::Put_SmoothScale(const bool& value,
-                                       ExceptionState& exception_state) {
-  context()->engine_profile->smooth_scale = value;
-}
-
 bool RenderScreenImpl::Get_BackgroundRunning(ExceptionState& exception_state) {
   return context()->engine_profile->background_running;
 }
@@ -555,8 +503,7 @@ void RenderScreenImpl::Put_Oy(const int32_t& value,
   GPUUpdateScreenWorldInternal();
 }
 
-std::string RenderScreenImpl::Get_WindowTitle(
-    ExceptionState& exception_state) {
+std::string RenderScreenImpl::Get_WindowTitle(ExceptionState& exception_state) {
   return SDL_GetWindowTitle(context()->window->AsSDLWindow());
 }
 
@@ -679,18 +626,6 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
   pipeline_init_params.target_format = swapchain_desc.ColorBufferFormat;
   pipeline_init_params.depth_stencil_format = swapchain_desc.DepthBufferFormat;
 
-  agent_.present_pipeline = std::make_unique<renderer::Pipeline_Present>(
-      pipeline_init_params, srgb_framebuffer);
-  agent_.present_quad =
-      renderer::DynamicQuadBatch::Make(**context()->render_device);
-  agent_.present_binding = agent_.present_pipeline->CreateBinding();
-
-  // Create window screen transform
-  Diligent::CreateUniformBuffer(
-      **context()->render_device, sizeof(renderer::WorldTransform),
-      "present.world.uniform", &agent_.present_world, Diligent::USAGE_DYNAMIC,
-      Diligent::BIND_UNIFORM_BUFFER, Diligent::CPU_ACCESS_WRITE);
-
   // Create screen buffer
   GPUResetScreenBufferInternal();
 }
@@ -777,110 +712,49 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
   base::Vec2i screen_size(swapchain->GetDesc().Width,
                           swapchain->GetDesc().Height);
 
-  auto& pipeline_set = *agent_.present_pipeline;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
-  RRefPtr<Diligent::ISampler> present_sampler;
-
-  if (agent_.present_target) {
-    // Update vertex
-    renderer::Quad transient_quad;
-    renderer::Quad::SetPositionRect(&transient_quad, display_viewport_);
-    renderer::Quad::SetTexCoordRectNorm(
-        &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
-    agent_.present_quad.QueueWrite(render_context, &transient_quad);
-
-    // Update uniform
-    {
-      void* buffer_mapping;
-      render_context->MapBuffer(agent_.present_world, Diligent::MAP_WRITE,
-                                Diligent::MAP_FLAG_DISCARD, buffer_mapping);
-
-      auto projection_size = screen_size;
-      auto pre_transform = swapchain->GetDesc().PreTransform;
-      if (pre_transform == Diligent::SURFACE_TRANSFORM_ROTATE_90 ||
-          pre_transform == Diligent::SURFACE_TRANSFORM_ROTATE_270)
-        std::swap(projection_size.x, projection_size.y);
-
-      auto* world_matrix =
-          static_cast<renderer::WorldTransform*>(buffer_mapping);
-      renderer::MakeProjectionMatrix(world_matrix->projection,
-                                     projection_size.Recast<float>());
-
-      auto surface_transform = MakePresentationTransform(pre_transform);
-      std::memcpy(&world_matrix->transform, &surface_transform,
-                  sizeof(surface_transform));
-
-      render_context->UnmapBuffer(agent_.present_world, Diligent::MAP_WRITE);
-    }
-
-    // Create sampler
-    Diligent::SamplerDesc sampler_desc;
-    sampler_desc.Name = "present.sampler";
-    sampler_desc.MinFilter = context()->engine_profile->smooth_scale
-                                 ? Diligent::FILTER_TYPE_LINEAR
-                                 : Diligent::FILTER_TYPE_POINT;
-    sampler_desc.MagFilter = sampler_desc.MinFilter;
-    sampler_desc.MipFilter = sampler_desc.MinFilter;
-    (*context()->render_device)->CreateSampler(sampler_desc, &present_sampler);
-  }
-
-  // Update gui device objects if need
-  if (gui_renderer) {
-    gui_renderer->CheckDeviceObjects();
-  }
-
   // Prepare for rendering
-  float clear_color[] = {0, 0, 0, 1};
-  render_context->SetRenderTargets(
-      1, &render_target_view, depth_stencil_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  render_context->ClearDepthStencil(
-      depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  render_context->ClearRenderTarget(
-      render_target_view, clear_color,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  {
+    float clear_color[] = {0, 0, 0, 1};
+    render_context->SetRenderTargets(
+        1, &render_target_view, depth_stencil_view,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->ClearDepthStencil(
+        depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->ClearRenderTarget(
+        render_target_view, clear_color,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  }
 
   // Apply present scissor
   Diligent::Rect present_scissor(0, 0, screen_size.x, screen_size.y);
   render_context->SetScissorRects(1, &present_scissor, UINT32_MAX, UINT32_MAX);
 
-  // Start screen render
-  if (agent_.present_target) {
+  // Render GUI if need
+  {
+    ImGui::SetNextWindowPos(ImVec2(display_viewport_.x, display_viewport_.y));
+    ImGui::SetNextWindowSize(
+        ImVec2(display_viewport_.width, display_viewport_.height));
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("Game", nullptr,
+                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
+                     ImGuiWindowFlags_NoResize |
+                     ImGuiWindowFlags_NoBringToFrontOnFocus);
+
     auto* render_source = agent_.present_target->GetDefaultView(
         Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-    render_source->SetSampler(present_sampler);
+    ImGui::Image(reinterpret_cast<ImTextureID>(render_source),
+                 ImVec2(display_viewport_.width, display_viewport_.height));
 
-    // Set present uniform
-    agent_.present_binding.u_transform->Set(agent_.present_world);
-    agent_.present_binding.u_texture->Set(render_source);
+    ImGui::End();
+    ImGui::PopStyleVar(2);
 
-    // Apply pipeline state
-    render_context->SetPipelineState(pipeline);
-    render_context->CommitShaderResources(
-        *agent_.present_binding,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = *agent_.present_quad;
-    render_context->SetVertexBuffers(
-        0, 1, &vertex_buffer, nullptr,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Execute render command
-    Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
-    render_context->DrawIndexed(draw_indexed_attribs);
-  }
-
-  // Render GUI if need
-  if (gui_renderer)
+    ImGui::Render();
+    gui_renderer->CheckDeviceObjects();
     gui_renderer->RenderDrawData(render_context, ImGui::GetDrawData());
+  }
 
   // Flush command buffer and present GPU surface
   swapchain->Present(context()->engine_profile->vsync);
