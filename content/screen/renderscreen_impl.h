@@ -44,8 +44,6 @@ class RenderScreenImpl : public Graphics,
     renderer::QuadBatch transition_quads;
     renderer::Binding_AlphaTrans transition_binding_alpha;
     renderer::Binding_VagueTrans transition_binding_vague;
-
-    Diligent::ITexture* present_target = nullptr;
   };
 
   RenderScreenImpl(ExecutionContext* execution_context, uint32_t frame_rate);
@@ -65,7 +63,10 @@ class RenderScreenImpl : public Graphics,
   void CreateButtonGUISettings();
 
   // Add tick monitor handler
-  void AddTickObserver(const base::RepeatingClosure& handler);
+  using FrameTickHandler = base::RepeatingCallback<void(Diligent::ITexture*)>;
+  void SetupTicker(const FrameTickHandler& handler) {
+    frame_tick_handler_ = handler;
+  }
 
   // Global drawable parent (default)
   DrawNodeController* GetDrawableController() { return &controller_; }
@@ -135,7 +136,6 @@ class RenderScreenImpl : public Graphics,
   void FrameProcessInternal(Diligent::ITexture* present_target);
   void RenderFrameInternal(Diligent::ITexture* render_target,
                            Diligent::ITexture* depth_stencil);
-  void UpdateWindowViewportInternal();
 
   void GPUCreateGraphicsHostInternal();
   void GPUUpdateScreenWorldInternal();
@@ -160,12 +160,10 @@ class RenderScreenImpl : public Graphics,
   DrawNodeController controller_;
 
   fpslimiter::FPSLimiter limiter_;
-  base::RepeatingClosureList tick_observers_;
+  FrameTickHandler frame_tick_handler_;
   base::LinkedList<Disposable> disposable_elements_;
 
   bool frozen_;
-  base::Rect display_viewport_;
-  base::Vec2i window_size_;
   int32_t brightness_;
   uint64_t frame_count_;
   uint32_t frame_rate_;

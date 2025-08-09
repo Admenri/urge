@@ -63,9 +63,10 @@ class ContentRunner {
                             ScopedFontData* font_context,
                             I18NProfile* i18n_profile,
                             base::WeakPtr<ui::Widget> window);
-  void TickHandlerInternal();
+  void TickHandlerInternal(Diligent::ITexture* present_buffer);
   void UpdateDisplayFPSInternal();
-  bool RenderGUIInternal();
+  void UpdateWindowViewportInternal();
+  bool RenderGUIInternal(Diligent::ITexture* present_buffer);
   bool RenderSettingsGUIInternal();
   void RenderFPSMonitorGUIInternal();
 
@@ -100,6 +101,8 @@ class ContentRunner {
   bool disable_gui_input_;
   bool show_settings_menu_;
   bool show_fps_monitor_;
+
+  base::Rect display_viewport_;
 
   uint64_t last_tick_;
   int64_t total_delta_;

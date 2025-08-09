@@ -37,9 +37,6 @@ RenderScreenImpl::RenderScreenImpl(ExecutionContext* execution_context,
   // Setup render device on render thread if possible
   GPUCreateGraphicsHostInternal();
 
-  // Initialize viewport
-  UpdateWindowViewportInternal();
-
   // Initialize fps limiter
   limiter_.Reset();
 }
@@ -50,9 +47,6 @@ void RenderScreenImpl::PresentScreenBuffer(
     Diligent::ImGuiDiligentRenderer* gui_renderer) {
   // Determine wait delay time
   limiter_.Delay();
-
-  // Update drawing viewport
-  UpdateWindowViewportInternal();
 
   // Present to screen surface
   GPUPresentScreenBufferInternal(context()->primary_render_context,
@@ -130,10 +124,6 @@ void RenderScreenImpl::CreateButtonGUISettings() {
                         .c_str(),
                     &settings_profile.background_running);
   }
-}
-
-void RenderScreenImpl::AddTickObserver(const base::RepeatingClosure& handler) {
-  tick_observers_.AddUnsafe(handler);
 }
 
 void RenderScreenImpl::AddDisposable(Disposable* disp) {
@@ -514,14 +504,11 @@ void RenderScreenImpl::Put_WindowTitle(const std::string& value,
 
 void RenderScreenImpl::FrameProcessInternal(
     Diligent::ITexture* present_target) {
-  // Setup target
-  agent_.present_target = present_target;
-
   // Increase frame render count
   ++frame_count_;
 
   // Tick callback
-  tick_observers_.Notify();
+  frame_tick_handler_.Run(present_target);
 }
 
 void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
@@ -562,40 +549,6 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
 
   // 4) End render pass and process after-render effect
   GPUFrameEndRenderPassInternal(controller_params.context);
-}
-
-void RenderScreenImpl::UpdateWindowViewportInternal() {
-  auto window_size = context()->window->GetSize();
-
-  if (!(window_size == window_size_)) {
-    window_size_ = window_size;
-
-    // Resize screen surface
-    auto* swapchain = context()->render_device->GetSwapChain();
-    swapchain->Resize(window_size_.x, window_size_.y);
-  }
-
-  // Update real display viewport
-  float window_ratio = static_cast<float>(window_size.x) / window_size.y;
-  float screen_ratio =
-      static_cast<float>(context()->resolution.x) / context()->resolution.y;
-
-  display_viewport_.width = window_size.x;
-  display_viewport_.height = window_size.y;
-
-  if (screen_ratio > window_ratio)
-    display_viewport_.height = display_viewport_.width / screen_ratio;
-  else if (screen_ratio < window_ratio)
-    display_viewport_.width = display_viewport_.height * screen_ratio;
-
-  display_viewport_.x = (window_size.x - display_viewport_.width) / 2.0f;
-  display_viewport_.y = (window_size.y - display_viewport_.height) / 2.0f;
-
-  // Process mouse coordinate and viewport rect
-  base::WeakPtr<ui::Widget> window = context()->render_device->GetWindow();
-  window->GetDisplayState().scale = display_viewport_.Size().Recast<float>() /
-                                    context()->resolution.Recast<float>();
-  window->GetDisplayState().viewport = display_viewport_;
 }
 
 void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
@@ -730,32 +683,9 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
   Diligent::Rect present_scissor(0, 0, screen_size.x, screen_size.y);
   render_context->SetScissorRects(1, &present_scissor, UINT32_MAX, UINT32_MAX);
 
-  // Render GUI if need
-  {
-    ImGui::SetNextWindowPos(ImVec2(display_viewport_.x, display_viewport_.y));
-    ImGui::SetNextWindowSize(
-        ImVec2(display_viewport_.width, display_viewport_.height));
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Game", nullptr,
-                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
-                     ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus);
-
-    auto* render_source = agent_.present_target->GetDefaultView(
-        Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-    ImGui::Image(reinterpret_cast<ImTextureID>(render_source),
-                 ImVec2(display_viewport_.width, display_viewport_.height));
-
-    ImGui::End();
-    ImGui::PopStyleVar(3);
-
-    ImGui::Render();
-    gui_renderer->CheckDeviceObjects();
-    gui_renderer->RenderDrawData(render_context, ImGui::GetDrawData());
-  }
+  // Render GUI and present
+  gui_renderer->CheckDeviceObjects();
+  gui_renderer->RenderDrawData(render_context, ImGui::GetDrawData());
 
   // Flush command buffer and present GPU surface
   swapchain->Present(context()->engine_profile->vsync);

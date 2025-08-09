@@ -75,7 +75,7 @@ void ContentRunner::RunMainLoop() {
   module_context.engine = engine_impl_.get();
 
   // Hook graphics event loop
-  graphics_impl_->AddTickObserver(base::BindRepeating(
+  graphics_impl_->SetupTicker(base::BindRepeating(
       &ContentRunner::TickHandlerInternal, base::Unretained(this)));
 
   // Execute main loop
@@ -152,6 +152,9 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   // Create imgui context
   CreateIMGUIContextInternal();
 
+  // Initialize viewport
+  UpdateWindowViewportInternal();
+
   // Background watch
   if (!SDL_AddEventWatch(&ContentRunner::EventWatchHandlerInternal, this)) {
     LOG(ERROR) << SDL_GetError();
@@ -161,14 +164,17 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   return true;
 }
 
-void ContentRunner::TickHandlerInternal() {
+void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
   frame_count_++;
 
   // Update fps
   UpdateDisplayFPSInternal();
 
+  // Update swapchain & viewport
+  UpdateWindowViewportInternal();
+
   // Render GUI if need
-  bool handle_event = !RenderGUIInternal();
+  bool handle_event = !RenderGUIInternal(present_buffer);
 
   // Poll event queue
   SDL_Event queued_event;
@@ -238,7 +244,41 @@ void ContentRunner::UpdateDisplayFPSInternal() {
   }
 }
 
-bool ContentRunner::RenderGUIInternal() {
+void ContentRunner::UpdateWindowViewportInternal() {
+  auto& window = execution_context_->window;
+  const auto& resolution = execution_context_->resolution;
+  const auto window_size = window->GetSize();
+  auto* swapchain = render_device_->GetSwapChain();
+
+  if (window_size.x != static_cast<int32_t>(swapchain->GetDesc().Width) ||
+      window_size.y != static_cast<int32_t>(swapchain->GetDesc().Height)) {
+    // Resize screen surface
+    swapchain->Resize(window_size.x, window_size.y,
+                      Diligent::SURFACE_TRANSFORM_OPTIMAL);
+  }
+
+  // Update real display viewport
+  float window_ratio = static_cast<float>(window_size.x) / window_size.y;
+  float screen_ratio = static_cast<float>(resolution.x) / resolution.y;
+
+  display_viewport_.width = window_size.x;
+  display_viewport_.height = window_size.y;
+
+  if (screen_ratio > window_ratio)
+    display_viewport_.height = display_viewport_.width / screen_ratio;
+  else if (screen_ratio < window_ratio)
+    display_viewport_.width = display_viewport_.height * screen_ratio;
+
+  display_viewport_.x = (window_size.x - display_viewport_.width) / 2.0f;
+  display_viewport_.y = (window_size.y - display_viewport_.height) / 2.0f;
+
+  // Process mouse coordinate and viewport rect
+  window->GetDisplayState().scale =
+      display_viewport_.Size().Recast<float>() / resolution.Recast<float>();
+  window->GetDisplayState().viewport = display_viewport_;
+}
+
+bool ContentRunner::RenderGUIInternal(Diligent::ITexture* present_buffer) {
   bool window_hovered = false;
 
   // Setup renderer new frame
@@ -260,6 +300,32 @@ bool ContentRunner::RenderGUIInternal() {
   // Render fps monitor
   if (show_fps_monitor_)
     RenderFPSMonitorGUIInternal();
+
+  // Present game window
+  ImGui::SetNextWindowPos(ImVec2(display_viewport_.x, display_viewport_.y));
+  ImGui::SetNextWindowSize(
+      ImVec2(display_viewport_.width, display_viewport_.height));
+
+  // Primary viewport
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGui::Begin("Game", nullptr,
+               ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
+                   ImGuiWindowFlags_NoResize |
+                   ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+  // Viewer image component
+  auto* render_source =
+      present_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+  ImGui::Image(reinterpret_cast<ImTextureID>(render_source),
+               ImVec2(display_viewport_.width, display_viewport_.height));
+
+  ImGui::End();
+  ImGui::PopStyleVar(3);
+
+  // Render gui
+  ImGui::Render();
 
   return window_hovered;
 }
