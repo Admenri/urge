@@ -82,6 +82,8 @@ set(ENGINE_CONTENT_SRC
   io/iostream_impl.h
   media/audio_impl.cc
   media/audio_impl.h
+  media/audio_stream_impl.cc
+  media/audio_stream_impl.h
   misc/misc_system.cc
   misc/misc_system.h
   profile/command_ids.h

@@ -309,6 +309,10 @@ SDL_AudioDeviceID AudioService::GetDeviceID() const {
   return kernel_->primary_device;
 }
 
+ma_engine* AudioService::GetRawEngine() {
+  return &kernel_->engine;
+}
+
 AudioService::AudioService(ServiceKernelData* kernel) : kernel_(kernel) {}
 
 AudioService::~AudioService() {

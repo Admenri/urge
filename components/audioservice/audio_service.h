@@ -9,6 +9,8 @@
 
 #include "components/filesystem/io_service.h"
 
+struct ma_engine;
+
 namespace audioservice {
 
 struct ServiceKernelData;
@@ -45,6 +47,9 @@ class AudioService {
 
   // Raw device id
   SDL_AudioDeviceID GetDeviceID() const;
+
+  // Raw miniaudio engine
+  ma_engine* GetRawEngine();
 
  private:
   ServiceKernelData* kernel_;
