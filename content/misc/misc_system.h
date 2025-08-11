@@ -6,6 +6,7 @@
 #define CONTENT_MISC_MISC_SYSTEM_H_
 
 #include "components/filesystem/io_service.h"
+#include "content/profile/content_profile.h"
 #include "content/public/engine_urge.h"
 #include "ui/widget/widget.h"
 
@@ -13,7 +14,8 @@ namespace content {
 
 class MiscSystem : public URGE {
  public:
-  MiscSystem(base::WeakPtr<ui::Widget> window,
+  MiscSystem(ContentProfile* profile,
+             base::WeakPtr<ui::Widget> window,
              filesystem::IOService* io_service);
   ~MiscSystem() override;
 
@@ -21,7 +23,10 @@ class MiscSystem : public URGE {
   MiscSystem& operator=(const MiscSystem&) = delete;
 
  public:
+  std::string GetBuildDate(ExceptionState& exception_state) override;
+  std::string GetRevision(ExceptionState& exception_state) override;
   std::string GetPlatform(ExceptionState& exception_state) override;
+  int32_t GetAPIVersion(ExceptionState& exception_state) override;
   void OpenURL(const std::string& path,
                ExceptionState& exception_state) override;
 
@@ -47,6 +52,7 @@ class MiscSystem : public URGE {
       ExceptionState& exception_state) override;
 
  private:
+  ContentProfile* profile_;
   base::WeakPtr<ui::Widget> window_;
   filesystem::IOService* io_service_;
 };

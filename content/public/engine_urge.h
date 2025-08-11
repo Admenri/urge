@@ -18,8 +18,17 @@ class URGE_OBJECT(URGE) {
  public:
   virtual ~URGE() = default;
 
+  /*--urge(name:build_date)--*/
+  virtual std::string GetBuildDate(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:revision)--*/
+  virtual std::string GetRevision(ExceptionState& exception_state) = 0;
+
   /*--urge(name:platform)--*/
   virtual std::string GetPlatform(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:api_version)--*/
+  virtual int32_t GetAPIVersion(ExceptionState& exception_state) = 0;
 
   /*--urge(name:open_url)--*/
   virtual void OpenURL(const std::string& path,

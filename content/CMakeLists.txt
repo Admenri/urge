@@ -163,3 +163,5 @@ if (MSVC)
 else ()
   target_compile_options(engine_content PRIVATE -Werror)
 endif ()
+
+add_dependencies(engine_content version_target)

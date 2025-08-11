@@ -8,6 +8,7 @@
 #include "imgui/imgui.h"
 #include "magic_enum/magic_enum.hpp"
 
+#include "components/version/version.h"
 #include "content/context/execution_context.h"
 #include "content/profile/command_ids.h"
 
@@ -24,6 +25,10 @@ void DrawEngineInfoGUI(I18NProfile* i18n_profile) {
     ImGui::TextWrapped(
         "The URGE is licensed under the BSD-2-Clause License, see LICENSE for "
         "more information.");
+    ImGui::Separator();
+    ImGui::Text("Revision: %s", URGE_GIT_REVISION);
+    ImGui::Text("Build: %s", URGE_BUILD_DATE);
+    ImGui::Separator();
 
     if (ImGui::Button("Website"))
       SDL_OpenURL("https://urge.admenri.com/");
@@ -147,7 +152,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       base::MakeRefCounted<KeyboardControllerImpl>(execution_context_.get());
   audio_impl_ = base::MakeRefCounted<AudioImpl>(execution_context_.get());
   mouse_impl_ = base::MakeRefCounted<MouseImpl>(execution_context_.get());
-  engine_impl_ = base::MakeRefCounted<MiscSystem>(window, io_service);
+  engine_impl_ = base::MakeRefCounted<MiscSystem>(profile_, window, io_service);
 
   // Create imgui context
   CreateIMGUIContextInternal();
@@ -160,6 +165,9 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
     LOG(ERROR) << SDL_GetError();
     return false;
   }
+
+  LOG(INFO) << "[Engine] Git Revision: " << URGE_GIT_REVISION;
+  LOG(INFO) << "[Engine] Build Date: " << URGE_BUILD_DATE;
 
   return true;
 }

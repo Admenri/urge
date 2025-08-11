@@ -10,16 +10,31 @@
 #include "SDL3/SDL_misc.h"
 #include "SDL3/SDL_platform.h"
 
+#include "components/version/version.h"
+
 namespace content {
 
-MiscSystem::MiscSystem(base::WeakPtr<ui::Widget> window,
+MiscSystem::MiscSystem(ContentProfile* profile,
+                       base::WeakPtr<ui::Widget> window,
                        filesystem::IOService* io_service)
-    : window_(window), io_service_(io_service) {}
+    : profile_(profile), window_(window), io_service_(io_service) {}
 
 MiscSystem::~MiscSystem() = default;
 
+std::string MiscSystem::GetBuildDate(ExceptionState& exception_state) {
+  return URGE_BUILD_DATE;
+}
+
+std::string MiscSystem::GetRevision(ExceptionState& exception_state) {
+  return URGE_GIT_REVISION;
+}
+
 std::string MiscSystem::GetPlatform(ExceptionState& exception_state) {
   return SDL_GetPlatform();
+}
+
+int32_t MiscSystem::GetAPIVersion(ExceptionState& exception_state) {
+  return static_cast<int32_t>(profile_->api_version);
 }
 
 void MiscSystem::OpenURL(const std::string& path,
