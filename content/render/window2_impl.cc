@@ -828,11 +828,13 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
         auto build_cursor_quads = [&](const base::Rect& src,
                                       const base::Rect& dst,
                                       renderer::Quad vert[9]) {
+          const int32_t cursor_scale = scale_ >= 4 ? scale_ * 2 : 4;
+
           base::Rect texcoords[9], positions[9];
           const base::Vec4 draw_color(cursor_opacity_norm *
                                       contents_opacity_norm);
-          build_cursor_internal(src, scale_, texcoords);
-          build_cursor_internal(dst, scale_, positions);
+          build_cursor_internal(src, cursor_scale, texcoords);
+          build_cursor_internal(dst, cursor_scale, positions);
 
           for (int32_t i = 0; i < 9; ++i) {
             renderer::Quad::SetPositionRect(&vert[i], positions[i]);
