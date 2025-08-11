@@ -4,6 +4,8 @@
 
 #include "content/gpu/render_device_impl.h"
 
+#include "magic_enum/magic_enum.hpp"
+
 #include "content/context/execution_context.h"
 #include "content/gpu/buffer_impl.h"
 #include "content/gpu/device_context_impl.h"
@@ -32,6 +34,7 @@ scoped_refptr<GPURenderDeviceInfo> RenderDeviceImpl::GetDeviceInfo(
 
   auto& desc = object_->GetDeviceInfo();
   auto result = base::MakeRefCounted<GPURenderDeviceInfo>();
+
   result->type = static_cast<GPU::RenderDeviceType>(desc.Type);
   result->api_version = (static_cast<uint32_t>(desc.APIVersion.Major) << 16) +
                         static_cast<uint32_t>(desc.APIVersion.Minor);
@@ -153,6 +156,22 @@ scoped_refptr<GPURenderDeviceInfo> RenderDeviceImpl::GetDeviceInfo(
   return result;
 }
 
+scoped_refptr<GPUGraphicsAdapterInfo> RenderDeviceImpl::GetAdapterInfo(
+    ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  auto& desc = object_->GetAdapterInfo();
+  auto result = base::MakeRefCounted<GPUGraphicsAdapterInfo>();
+
+  result->description = desc.Description;
+  result->adapter_type = magic_enum::enum_name(desc.Type);
+  result->adapter_vendor = magic_enum::enum_name(desc.Vendor);
+  result->vendor_id = desc.VendorId;
+  result->device_id = desc.DeviceId;
+
+  return result;
+}
+
 scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
     scoped_refptr<GPUBufferDesc> desc,
     ExceptionState& exception_state) {
@@ -198,10 +217,9 @@ scoped_refptr<GPUBuffer> RenderDeviceImpl::CreateBuffer(
 
   Diligent::BufferData create_data;
   if (data) {
-    auto* raw_context = static_cast<DeviceContextImpl*>(data->context.get());
-
     create_data.pData = reinterpret_cast<void*>(data->data_ptr);
     create_data.DataSize = data->data_size;
+    auto* raw_context = static_cast<DeviceContextImpl*>(data->context.get());
     create_data.pContext = raw_context ? raw_context->AsRawPtr() : nullptr;
   }
 
@@ -311,13 +329,10 @@ scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
 
   Diligent::TextureData create_data;
   if (data) {
-    auto* raw_context = static_cast<DeviceContextImpl*>(data->context.get());
-
     for (auto& it : data->resources) {
-      auto* raw_src_buffer = static_cast<BufferImpl*>(it->src_buffer.get());
-
       Diligent::TextureSubResData res;
       res.pData = reinterpret_cast<void*>(it->data_ptr);
+      auto* raw_src_buffer = static_cast<BufferImpl*>(it->src_buffer.get());
       res.pSrcBuffer = raw_src_buffer ? raw_src_buffer->AsRawPtr() : nullptr;
       res.SrcOffset = it->src_offset;
       res.Stride = it->stride;
@@ -328,6 +343,7 @@ scoped_refptr<GPUTexture> RenderDeviceImpl::CreateTexture(
 
     create_data.NumSubresources = subresources.size();
     create_data.pSubResources = subresources.data();
+    auto* raw_context = static_cast<DeviceContextImpl*>(data->context.get());
     create_data.pContext = raw_context ? raw_context->AsRawPtr() : nullptr;
   }
 
@@ -374,7 +390,6 @@ scoped_refptr<GPUResourceMapping> RenderDeviceImpl::CreateResourceMapping(
   DISPOSE_CHECK_RETURN(nullptr);
 
   std::vector<Diligent::ResourceMappingEntry> object_entries;
-
   Diligent::ResourceMappingCreateInfo create_desc;
   for (auto& it : entries) {
     Diligent::ResourceMappingEntry entry;

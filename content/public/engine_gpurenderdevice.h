@@ -37,6 +37,10 @@ class URGE_OBJECT(GPURenderDevice) {
   virtual scoped_refptr<GPURenderDeviceInfo> GetDeviceInfo(
       ExceptionState& exception_state) = 0;
 
+  /*--urge(name:adapter_info)--*/
+  virtual scoped_refptr<GPUGraphicsAdapterInfo> GetAdapterInfo(
+      ExceptionState& exception_state) = 0;
+
   /*--urge(name:create_buffer)--*/
   virtual scoped_refptr<GPUBuffer> CreateBuffer(
       scoped_refptr<GPUBufferDesc> desc,

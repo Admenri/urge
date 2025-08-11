@@ -32,6 +32,8 @@ class RenderDeviceImpl : public GPURenderDevice,
   bool IsDisposed(ExceptionState& exception_state) override;
   scoped_refptr<GPURenderDeviceInfo> GetDeviceInfo(
       ExceptionState& exception_state) override;
+  scoped_refptr<GPUGraphicsAdapterInfo> GetAdapterInfo(
+      ExceptionState& exception_state) override;
   scoped_refptr<GPUBuffer> CreateBuffer(
       scoped_refptr<GPUBufferDesc> desc,
       ExceptionState& exception_state) override;

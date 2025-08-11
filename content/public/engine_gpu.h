@@ -1131,6 +1131,15 @@ struct URGE_OBJECT(GPURenderDeviceInfo) {
   scoped_refptr<GPUDeviceFeatures> features;
 };
 
+/*--urge(name:GPUGraphicsAdapterInfo)--*/
+struct URGE_OBJECT(GPUGraphicsAdapterInfo) {
+  std::string description;
+  std::string adapter_type;
+  std::string adapter_vendor;
+  uint32_t vendor_id;
+  uint32_t device_id;
+};
+
 }  // namespace content
 
 #endif  //! CONTENT_PUBLIC_ENGINE_GPU_H_

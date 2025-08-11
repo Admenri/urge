@@ -33,7 +33,7 @@ scoped_refptr<AudioStream> AudioStream::New(ExecutionContext* execution_context,
 AudioStreamImpl::AudioStreamImpl(ExecutionContext* execution_context,
                                  std::unique_ptr<ma_sound> handle)
     : EngineObject(execution_context),
-      Disposable(nullptr),
+      Disposable(execution_context->disposable_parent),
       handle_(std::move(handle)) {}
 
 DISPOSABLE_DEFINITION(AudioStreamImpl);
