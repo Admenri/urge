@@ -1095,7 +1095,7 @@ static SDL_Surface *load_xpm(char **xpm, SDL_IOStream *src, bool force_32bit)
         for (;;) {
             char nametype;
             char *colname;
-            Uint32 argb, pixel;
+            Uint32 argb, pixelvalue;
 
             SKIPSPACE(p);
             if (!*p) {
@@ -1120,14 +1120,14 @@ static SDL_Surface *load_xpm(char **xpm, SDL_IOStream *src, bool force_32bit)
                 c->r = (Uint8)(argb >> 16);
                 c->g = (Uint8)(argb >> 8);
                 c->b = (Uint8)(argb);
-                pixel = index;
+                pixelvalue = index;
                 if (argb == 0x00000000) {
-                    SDL_SetSurfaceColorKey(image, true, pixel);
+                    SDL_SetSurfaceColorKey(image, true, pixelvalue);
                 }
             } else {
-                pixel = argb;
+                pixelvalue = argb;
             }
-            add_colorhash(colors, nextkey, cpp, pixel);
+            add_colorhash(colors, nextkey, cpp, pixelvalue);
             nextkey += cpp;
             break;
         }
@@ -1208,30 +1208,30 @@ SDL_Surface *IMG_ReadXPMFromArrayToRGB888(char **xpm)
 }
 
 #else  /* not LOAD_XPM */
-#if defined(_MSC_VER) && _MSC_VER >= 1300
-#pragma warning(disable : 4100) /* warning C4100: 'op' : unreferenced formal parameter */
-#endif
 
 /* See if an image is contained in a data source */
 bool IMG_isXPM(SDL_IOStream *src)
 {
+    (void)src;
     return false;
 }
-
 
 /* Load a XPM type image from an SDL datasource */
 SDL_Surface *IMG_LoadXPM_IO(SDL_IOStream *src)
 {
+    (void)src;
     return NULL;
 }
 
 SDL_Surface *IMG_ReadXPMFromArray(char **xpm)
 {
+    (void)xpm;
     return NULL;
 }
 
 SDL_Surface *IMG_ReadXPMFromArrayToRGB888(char **xpm)
 {
+    (void)xpm;
     return NULL;
 }
 

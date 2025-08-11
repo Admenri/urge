@@ -62,6 +62,10 @@ endif ()
 add_subdirectory(third_party/SDL)
 include_directories(third_party/SDL/include)
 
+## Diligent Engine
+add_subdirectory(third_party/DiligentCore)
+include_directories(third_party/DiligentCore)
+
 ## image loader (SDL_image)
 add_subdirectory(third_party/image_loader)
 include_directories(third_party/image_loader/include)
@@ -71,10 +75,6 @@ add_subdirectory(third_party/freetype)
 include_directories(third_party/freetype/include)
 add_subdirectory(third_party/text_render)
 include_directories(third_party/text_render/include)
-
-## Diligent Engine
-add_subdirectory(third_party/DiligentCore)
-include_directories(third_party/DiligentCore)
 
 ## IMGUI
 add_subdirectory(third_party/imgui)
@@ -89,17 +89,6 @@ set(PHYSFS_BUILD_DOCS OFF)
 add_subdirectory(third_party/physfs)
 include_directories(third_party/physfs/src)
 
-## Vorbis OGG
-add_subdirectory(third_party/ogg)
-add_subdirectory(third_party/vorbis)
-
-## Opus decoder
-set(OP_DISABLE_HTTP ON)
-set(OP_DISABLE_DOCS ON)
-set(OP_DISABLE_EXAMPLES ON)
-add_subdirectory(third_party/opus)
-add_subdirectory(third_party/opusfile)
-
 ## Spine2D
 add_subdirectory(third_party/spine2d)
 include_directories(third_party/spine2d/spine-cpp/include)
@@ -111,20 +100,30 @@ add_subdirectory(third_party/spdlog)
 set(MINIAUDIO_NO_DEVICEIO ON)
 add_subdirectory(third_party/miniaudio)
 
-## DAV1D
-add_subdirectory(third_party/dav1d)
-
-## AOMPLAYER
-add_subdirectory(third_party/av1player)
-
-## Webm
-add_subdirectory(third_party/webm)
+## Asio
+include_directories(third_party/asio/include)
 
 ## Zlib
 add_subdirectory(third_party/zlib)
 
-## Asio
-include_directories(third_party/asio/include)
+## Media
+### Vorbis OGG
+add_subdirectory(third_party/ogg)
+add_subdirectory(third_party/vorbis)
+### Opus decoder
+set(OP_DISABLE_HTTP ON)
+set(OP_DISABLE_DOCS ON)
+set(OP_DISABLE_EXAMPLES ON)
+add_subdirectory(third_party/opus)
+add_subdirectory(third_party/opusfile)
+### DAV1D
+add_subdirectory(third_party/dav1d)
+### WebP
+add_subdirectory(third_party/libwebp)
+### Webm
+add_subdirectory(third_party/webm)
+### AOMPLAYER
+add_subdirectory(third_party/av1player)
 
 ## Mimalloc
 set(MI_OVERRIDE OFF)
