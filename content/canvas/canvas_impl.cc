@@ -187,8 +187,8 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
 }
 
 std::string Bitmap::Serialize(ExecutionContext* execution_context,
-                               scoped_refptr<Bitmap> value,
-                               ExceptionState& exception_state) {
+                              scoped_refptr<Bitmap> value,
+                              ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> bitmap = CanvasImpl::FromBitmap(value);
   SDL_Surface* surface = bitmap->RequireMemorySurface();
 
@@ -253,9 +253,9 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
   execution_context->io_service->OpenRead(filename, file_handler, &io_state);
 
   if (io_state.error_count) {
-    exception_state.ThrowError(ExceptionCode::IO_ERROR,
-                               "Failed to read file: %s (%s)", filename.c_str(),
-                               io_state.error_message.c_str());
+    exception_state.ThrowError(ExceptionCode::IO_ERROR, "%s: %s",
+                               io_state.error_message.c_str(),
+                               filename.c_str());
     return nullptr;
   }
 

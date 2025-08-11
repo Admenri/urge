@@ -10,6 +10,8 @@
 
 namespace content {
 
+constexpr SDL_PixelFormat kSurfaceInternalFormat = SDL_PIXELFORMAT_ABGR8888;
+
 scoped_refptr<ImageAnimation> ImageAnimation::New(
     ExecutionContext* execution_context,
     const std::string& filename,
@@ -26,9 +28,9 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
   execution_context->io_service->OpenRead(filename, file_handler, &io_state);
 
   if (io_state.error_count) {
-    exception_state.ThrowError(ExceptionCode::IO_ERROR,
-                               "Failed to read file: %s (%s)", filename.c_str(),
-                               io_state.error_message.c_str());
+    exception_state.ThrowError(ExceptionCode::IO_ERROR, "%s: %s",
+                               io_state.error_message.c_str(),
+                               filename.c_str());
     return nullptr;
   }
 
@@ -98,10 +100,13 @@ std::vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
   std::vector<scoped_refptr<Surface>> result;
   for (int32_t i = 0; i < animation_->count; ++i) {
     auto* origin_surface = animation_->frames[i];
+
     auto* duplicate_surface = SDL_CreateSurface(
-        origin_surface->w, origin_surface->h, origin_surface->format);
-    std::memcpy(duplicate_surface->pixels, origin_surface->pixels,
-                origin_surface->pitch * origin_surface->h);
+        origin_surface->w, origin_surface->h, kSurfaceInternalFormat);
+    SDL_ConvertPixels(origin_surface->w, origin_surface->h,
+                      origin_surface->format, origin_surface->pixels,
+                      origin_surface->pitch, kSurfaceInternalFormat,
+                      duplicate_surface->pixels, duplicate_surface->pitch);
 
     result.push_back(
         base::MakeRefCounted<SurfaceImpl>(context(), duplicate_surface));

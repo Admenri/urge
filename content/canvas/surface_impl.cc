@@ -17,6 +17,14 @@ namespace content {
 
 constexpr SDL_PixelFormat kSurfaceInternalFormat = SDL_PIXELFORMAT_ABGR8888;
 
+static void MakeSureSurfaceFormat(SDL_Surface*& surface) {
+  if (surface->format != kSurfaceInternalFormat) {
+    auto* converted_data = SDL_ConvertSurface(surface, kSurfaceInternalFormat);
+    SDL_DestroySurface(surface);
+    surface = converted_data;
+  }
+}
+
 scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
                                     uint32_t width,
                                     uint32_t height,
@@ -45,8 +53,9 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
   execution_context->io_service->OpenRead(filename, file_handler, &io_state);
 
   if (io_state.error_count) {
-    exception_state.ThrowError(ExceptionCode::IO_ERROR, "%s",
-                               io_state.error_message.c_str());
+    exception_state.ThrowError(ExceptionCode::IO_ERROR, "%s: %s",
+                               io_state.error_message.c_str(),
+                               filename.c_str());
     return nullptr;
   }
 
@@ -55,6 +64,9 @@ scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
                                SDL_GetError());
     return nullptr;
   }
+
+  // Make format correct for data required
+  MakeSureSurfaceFormat(surface_data);
 
   return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
 }
@@ -108,6 +120,9 @@ scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
                                SDL_GetError());
     return nullptr;
   }
+
+  // Make format correct for data required
+  MakeSureSurfaceFormat(memory_texture);
 
   return base::MakeRefCounted<SurfaceImpl>(execution_context, memory_texture);
 }
@@ -166,8 +181,8 @@ scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
 }
 
 std::string Surface::Serialize(ExecutionContext* execution_context,
-                                scoped_refptr<Surface> value,
-                                ExceptionState& exception_state) {
+                               scoped_refptr<Surface> value,
+                               ExceptionState& exception_state) {
   scoped_refptr<SurfaceImpl> surface = SurfaceImpl::From(value);
   SDL_Surface* raw_surface = surface->GetRawSurface();
 
