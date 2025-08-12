@@ -126,10 +126,6 @@ void RenderScreenImpl::CreateButtonGUISettings() {
   }
 }
 
-void RenderScreenImpl::AddDisposable(Disposable* disp) {
-  disposable_elements_.Append(disp);
-}
-
 void RenderScreenImpl::Update(ExceptionState& exception_state) {
   const bool frozen_render = frozen_;
   const bool need_skip_frame = limiter_.RequireFrameSkip() &&
@@ -324,12 +320,6 @@ void RenderScreenImpl::ResizeScreen(uint32_t width,
 void RenderScreenImpl::Reset(ExceptionState& exception_state) {
   /* Reset freeze */
   frozen_ = false;
-
-  /* Disposed all elements */
-  for (auto it = disposable_elements_.tail(); it != disposable_elements_.end();
-       it = it->previous()) {
-    it->value()->Dispose();
-  }
 
   /* Reset attribute */
   frame_rate_ = context()->engine_profile->api_version ==

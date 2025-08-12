@@ -2,31 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_MISC_MISC_SYSTEM_H_
-#define CONTENT_MISC_MISC_SYSTEM_H_
+#ifndef CONTENT_UTILITY_ENGINE_IMPL_H_
+#define CONTENT_UTILITY_ENGINE_IMPL_H_
 
 #include "components/filesystem/io_service.h"
+#include "content/context/disposable.h"
+#include "content/context/engine_object.h"
 #include "content/profile/content_profile.h"
 #include "content/public/engine_urge.h"
 #include "ui/widget/widget.h"
 
 namespace content {
 
-class MiscSystem : public URGE {
+class EngineImpl : public URGE,
+                   public EngineObject,
+                   public DisposableCollection {
  public:
-  MiscSystem(ContentProfile* profile,
-             base::WeakPtr<ui::Widget> window,
-             filesystem::IOService* io_service);
-  ~MiscSystem() override;
+  EngineImpl(ExecutionContext* execution_context);
+  ~EngineImpl() override;
 
-  MiscSystem(const MiscSystem&) = delete;
-  MiscSystem& operator=(const MiscSystem&) = delete;
+  EngineImpl(const EngineImpl&) = delete;
+  EngineImpl& operator=(const EngineImpl&) = delete;
 
  public:
+  // URGE methods:
   std::string GetBuildDate(ExceptionState& exception_state) override;
   std::string GetRevision(ExceptionState& exception_state) override;
   std::string GetPlatform(ExceptionState& exception_state) override;
   int32_t GetAPIVersion(ExceptionState& exception_state) override;
+
+  void Reset(ExceptionState& exception_state) override;
+
   void OpenURL(const std::string& path,
                ExceptionState& exception_state) override;
 
@@ -51,12 +57,13 @@ class MiscSystem : public URGE {
       const std::string& dirpath,
       ExceptionState& exception_state) override;
 
+  // DisposableCollection methods:
+  void AddDisposable(Disposable* disp) override;
+
  private:
-  ContentProfile* profile_;
-  base::WeakPtr<ui::Widget> window_;
-  filesystem::IOService* io_service_;
+  base::LinkedList<Disposable> disposable_elements_;
 };
 
 }  // namespace content
 
-#endif  //! CONTENT_MISC_MISC_SYSTEM_H_
+#endif  //! CONTENT_UTILITY_ENGINE_IMPL_H_

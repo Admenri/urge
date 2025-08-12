@@ -22,9 +22,7 @@
 
 namespace content {
 
-class RenderScreenImpl : public Graphics,
-                         public EngineObject,
-                         public DisposableCollection {
+class RenderScreenImpl : public Graphics, public EngineObject {
  public:
   struct Agent {
     RRefPtr<Diligent::ITexture> screen_buffer;
@@ -129,9 +127,6 @@ class RenderScreenImpl : public Graphics,
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(WindowTitle, std::string);
 
-  // DisposableCollection methods
-  void AddDisposable(Disposable* disp) override;
-
  private:
   void FrameProcessInternal(Diligent::ITexture* present_target);
   void RenderFrameInternal(Diligent::ITexture* render_target,
@@ -161,7 +156,6 @@ class RenderScreenImpl : public Graphics,
 
   fpslimiter::FPSLimiter limiter_;
   FrameTickHandler frame_tick_handler_;
-  base::LinkedList<Disposable> disposable_elements_;
 
   bool frozen_;
   int32_t brightness_;

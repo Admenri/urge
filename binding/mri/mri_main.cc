@@ -81,6 +81,7 @@ void MriProcessReset() {
   content::ExceptionState exception_state;
   MriGetGlobalModules()->Graphics->Reset(exception_state);
   MriGetGlobalModules()->Audio->Reset(exception_state);
+  MriGetGlobalModules()->URGE->Reset(exception_state);
   MriProcessException(exception_state);
 }
 

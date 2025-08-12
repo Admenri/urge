@@ -13,10 +13,10 @@
 #include "content/input/keyboard_controller.h"
 #include "content/input/mouse_controller.h"
 #include "content/media/audio_impl.h"
-#include "content/misc/misc_system.h"
 #include "content/profile/content_profile.h"
 #include "content/profile/i18n_profile.h"
 #include "content/screen/renderscreen_impl.h"
+#include "content/utility/engine_impl.h"
 #include "content/worker/engine_binding.h"
 #include "content/worker/event_controller.h"
 #include "ui/widget/widget.h"
@@ -92,7 +92,7 @@ class ContentRunner {
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;
   scoped_refptr<AudioImpl> audio_impl_;
   scoped_refptr<MouseImpl> mouse_impl_;
-  scoped_refptr<MiscSystem> engine_impl_;
+  scoped_refptr<EngineImpl> engine_impl_;
 
   std::atomic<int32_t> binding_quit_flag_;
   std::atomic<int32_t> binding_reset_flag_;

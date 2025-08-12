@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "content/misc/misc_system.h"
+#include "content/utility/engine_impl.h"
 
 #include <iostream>
 
@@ -11,65 +11,73 @@
 #include "SDL3/SDL_platform.h"
 
 #include "components/version/version.h"
+#include "content/context/execution_context.h"
 
 namespace content {
 
-MiscSystem::MiscSystem(ContentProfile* profile,
-                       base::WeakPtr<ui::Widget> window,
-                       filesystem::IOService* io_service)
-    : profile_(profile), window_(window), io_service_(io_service) {}
+EngineImpl::EngineImpl(ExecutionContext* execution_context)
+    : EngineObject(execution_context) {}
 
-MiscSystem::~MiscSystem() = default;
+EngineImpl::~EngineImpl() = default;
 
-std::string MiscSystem::GetBuildDate(ExceptionState& exception_state) {
+std::string EngineImpl::GetBuildDate(ExceptionState& exception_state) {
   return URGE_BUILD_DATE;
 }
 
-std::string MiscSystem::GetRevision(ExceptionState& exception_state) {
+std::string EngineImpl::GetRevision(ExceptionState& exception_state) {
   return URGE_GIT_REVISION;
 }
 
-std::string MiscSystem::GetPlatform(ExceptionState& exception_state) {
+std::string EngineImpl::GetPlatform(ExceptionState& exception_state) {
   return SDL_GetPlatform();
 }
 
-int32_t MiscSystem::GetAPIVersion(ExceptionState& exception_state) {
-  return static_cast<int32_t>(profile_->api_version);
+int32_t EngineImpl::GetAPIVersion(ExceptionState& exception_state) {
+  return static_cast<int32_t>(context()->engine_profile->api_version);
 }
 
-void MiscSystem::OpenURL(const std::string& path,
+void EngineImpl::Reset(ExceptionState& exception_state) {
+  for (auto it = disposable_elements_.tail(); it != disposable_elements_.end();
+       it = it->previous()) {
+    // Dispose all registered object.
+    // Calling when f12 triggering.
+    it->value()->Dispose();
+  }
+}
+
+void EngineImpl::OpenURL(const std::string& path,
                          ExceptionState& exception_state) {
   if (!SDL_OpenURL(path.c_str()))
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, "OpenURL: %s",
                                SDL_GetError());
 }
 
-std::string MiscSystem::Gets(ExceptionState& exception_state) {
+std::string EngineImpl::Gets(ExceptionState& exception_state) {
   std::string in(1 << 10, 0);
   std::fgets(in.data(), in.size(), stdin);
   return in.c_str();
 }
 
-void MiscSystem::Puts(const std::string& message,
+void EngineImpl::Puts(const std::string& message,
                       ExceptionState& exception_state) {
   LOG(INFO) << message;
 }
 
-void MiscSystem::Alert(const std::string& message,
+void EngineImpl::Alert(const std::string& message,
                        ExceptionState& exception_state) {
   SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,
-                           window_->GetTitle().c_str(), message.c_str(),
-                           window_->AsSDLWindow());
+                           context()->window->GetTitle().c_str(),
+                           message.c_str(), context()->window->AsSDLWindow());
 }
 
-bool MiscSystem::Confirm(const std::string& message,
+bool EngineImpl::Confirm(const std::string& message,
                          ExceptionState& exception_state) {
-  std::string title = window_->GetTitle();
+  std::string title = context()->window->GetTitle();
 
   SDL_MessageBoxData messagebox_data;
   messagebox_data.flags =
       SDL_MESSAGEBOX_INFORMATION | SDL_MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT;
-  messagebox_data.window = window_->AsSDLWindow();
+  messagebox_data.window = context()->window->AsSDLWindow();
   messagebox_data.title = title.c_str();
   messagebox_data.message = message.c_str();
 
@@ -91,44 +99,48 @@ bool MiscSystem::Confirm(const std::string& message,
   return button_id;
 }
 
-bool MiscSystem::AddLoadPath(const std::string& new_path,
+bool EngineImpl::AddLoadPath(const std::string& new_path,
                              const std::string& mount_point,
                              bool append_to_path,
                              ExceptionState& exception_state) {
-  auto result = io_service_->AddLoadPath(new_path.c_str(), mount_point.c_str(),
-                                         append_to_path);
+  auto result = context()->io_service->AddLoadPath(
+      new_path.c_str(), mount_point.c_str(), append_to_path);
   if (!result) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to add path: %s",
-                               io_service_->GetLastError().c_str());
+                               context()->io_service->GetLastError().c_str());
     return false;
   }
 
   return !!result;
 }
 
-bool MiscSystem::RemoveLoadPath(const std::string& old_path,
+bool EngineImpl::RemoveLoadPath(const std::string& old_path,
                                 ExceptionState& exception_state) {
-  auto result = io_service_->RemoveLoadPath(old_path.c_str());
+  auto result = context()->io_service->RemoveLoadPath(old_path.c_str());
   if (!result) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to remove path: %s",
-                               io_service_->GetLastError().c_str());
+                               context()->io_service->GetLastError().c_str());
     return false;
   }
 
   return !!result;
 }
 
-bool MiscSystem::IsFileExisted(const std::string& filepath,
+bool EngineImpl::IsFileExisted(const std::string& filepath,
                                ExceptionState& exception_state) {
-  return io_service_->Exists(filepath);
+  return context()->io_service->Exists(filepath);
 }
 
-std::vector<std::string> MiscSystem::EnumDirectory(
+std::vector<std::string> EngineImpl::EnumDirectory(
     const std::string& dirpath,
     ExceptionState& exception_state) {
-  return io_service_->EnumDir(dirpath);
+  return context()->io_service->EnumDir(dirpath);
+}
+
+void EngineImpl::AddDisposable(Disposable* disp) {
+  disposable_elements_.Append(disp);
 }
 
 }  // namespace content

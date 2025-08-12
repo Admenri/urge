@@ -142,9 +142,11 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   execution_context_->audio_server = audio_server_.get();
 
   // Create engine objects
+  engine_impl_ = base::MakeRefCounted<EngineImpl>(execution_context_.get());
+  execution_context_->disposable_parent = engine_impl_.get();
+
   graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
       execution_context_.get(), profile_->frame_rate);
-  execution_context_->disposable_parent = graphics_impl_.get();
   execution_context_->screen_drawable_node =
       graphics_impl_->GetDrawableController();
 
@@ -152,7 +154,6 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       base::MakeRefCounted<KeyboardControllerImpl>(execution_context_.get());
   audio_impl_ = base::MakeRefCounted<AudioImpl>(execution_context_.get());
   mouse_impl_ = base::MakeRefCounted<MouseImpl>(execution_context_.get());
-  engine_impl_ = base::MakeRefCounted<MiscSystem>(profile_, window, io_service);
 
   // Create imgui context
   CreateIMGUIContextInternal();

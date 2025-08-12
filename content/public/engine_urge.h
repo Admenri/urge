@@ -30,6 +30,9 @@ class URGE_OBJECT(URGE) {
   /*--urge(name:api_version)--*/
   virtual int32_t GetAPIVersion(ExceptionState& exception_state) = 0;
 
+  /*--urge(name:reset)--*/
+  virtual void Reset(ExceptionState& exception_state) = 0;
+
   /*--urge(name:open_url)--*/
   virtual void OpenURL(const std::string& path,
                        ExceptionState& exception_state) = 0;

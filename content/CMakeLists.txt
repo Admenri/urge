@@ -84,8 +84,6 @@ set(ENGINE_CONTENT_SRC
   media/audio_impl.h
   media/audio_stream_impl.cc
   media/audio_stream_impl.h
-  misc/misc_system.cc
-  misc/misc_system.h
   profile/command_ids.h
   profile/content_profile.cc
   profile/content_profile.h
@@ -121,6 +119,8 @@ set(ENGINE_CONTENT_SRC
   screen/renderscreen_impl.h
   screen/viewport_impl.cc
   screen/viewport_impl.h
+  utility/engine_impl.cc
+  utility/engine_impl.h
   worker/content_runner.cc
   worker/content_runner.h
   worker/engine_binding.cc
