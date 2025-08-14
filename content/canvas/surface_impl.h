@@ -7,6 +7,7 @@
 
 #include "SDL3/SDL_surface.h"
 
+#include "content/canvas/font_impl.h"
 #include "content/context/disposable.h"
 #include "content/context/engine_object.h"
 #include "content/public/engine_surface.h"
@@ -66,15 +67,39 @@ class SurfaceImpl : public Surface, public EngineObject, public Disposable {
                 int32_t y,
                 scoped_refptr<Color> color,
                 ExceptionState& exception_state) override;
+  void DrawText(int32_t x,
+                int32_t y,
+                uint32_t width,
+                uint32_t height,
+                const std::string& str,
+                int32_t align,
+                ExceptionState& exception_state) override;
+  void DrawText(int32_t x,
+                int32_t y,
+                uint32_t width,
+                uint32_t height,
+                const std::string& str,
+                ExceptionState& exception_state) override;
+  void DrawText(scoped_refptr<Rect> rect,
+                const std::string& str,
+                int32_t align,
+                ExceptionState& exception_state) override;
+  void DrawText(scoped_refptr<Rect> rect,
+                const std::string& str,
+                ExceptionState& exception_state) override;
+  scoped_refptr<Rect> TextSize(const std::string& str,
+                               ExceptionState& exception_state) override;
   std::string DumpData(ExceptionState& exception_state) override;
   void SavePNG(const std::string& filename,
                ExceptionState& exception_state) override;
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(Font, scoped_refptr<Font>);
 
  private:
   void OnObjectDisposed() override;
   std::string DisposedObjectName() override { return "Surface"; }
 
   SDL_Surface* surface_;
+  scoped_refptr<FontImpl> font_;
 };
 
 }  // namespace content

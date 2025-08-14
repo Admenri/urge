@@ -51,6 +51,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
              ExceptionState& exception_state) override;
   void Update(ExceptionState& exception_state) override;
   void Render(scoped_refptr<Bitmap> target,
+              bool clear_target,
               ExceptionState& exception_state) override;
 
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Viewport, scoped_refptr<Viewport>);
@@ -86,7 +87,8 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
                               const base::Rect& effect_region,
                               const base::Vec4& color);
   void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
-                                       BitmapAgent* render_target);
+                                       BitmapAgent* render_target,
+                                       bool clear_target);
 
   DrawableNode node_;
   DrawNodeController controller_;

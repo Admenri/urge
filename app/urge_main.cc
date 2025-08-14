@@ -148,13 +148,15 @@ int main(int argc, char* argv[]) {
 #endif  //! defined(OS_ANDROID)
 
   // Current path
-  std::string current_path = std::filesystem::current_path().generic_u8string();
+  std::u8string current_path =
+      std::filesystem::current_path().generic_u8string();
 
   // Initialize filesystem
   std::unique_ptr<filesystem::IOService> io_service =
       filesystem::IOService::Create(argv[0]);
-  io_service->AddLoadPath(current_path, "", false);
-  io_service->SetWritePath(current_path);
+  io_service->AddLoadPath(reinterpret_cast<const char*>(current_path.c_str()),
+                          "", false);
+  io_service->SetWritePath(reinterpret_cast<const char*>(current_path.c_str()));
 
   filesystem::IOState io_state;
   SDL_IOStream* inifile = io_service->OpenReadRaw(ini, &io_state);
@@ -163,7 +165,7 @@ int main(int argc, char* argv[]) {
     error_info += ini;
     error_info += '\n';
     error_info += "Current path: ";
-    error_info += current_path;
+    error_info += reinterpret_cast<const char*>(current_path.c_str());
 
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE", error_info.c_str(),
                              nullptr);
@@ -215,7 +217,8 @@ int main(int argc, char* argv[]) {
   spdlog::logger logger_sink("urgecore", logger_sinks);
   base::logging::InitWithLogger(&logger_sink);
 
-  LOG(INFO) << "[App] Current Path: " << current_path;
+  LOG(INFO) << "[App] Current Path: "
+            << reinterpret_cast<const char*>(current_path.c_str());
   LOG(INFO) << "[App] Configure File: " << ini;
 
   if (profile->game_debug)

@@ -91,6 +91,7 @@ void ViewportImpl::Update(ExceptionState& exception_state) {
 }
 
 void ViewportImpl::Render(scoped_refptr<Bitmap> target,
+                          bool clear_target,
                           ExceptionState& exception_state) {
   if (CheckDisposed(exception_state))
     return;
@@ -141,7 +142,8 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
       controller_params.context);
 
   // Setup renderpass
-  GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent);
+  GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent,
+                                  clear_target);
 
   // Invalidate render target bitmap
   render_target->InvalidateSurfaceCache();
@@ -568,18 +570,21 @@ void ViewportImpl::GPUApplyViewportEffect(
 
 void ViewportImpl::GPUFrameBeginRenderPassInternal(
     Diligent::IDeviceContext* render_context,
-    BitmapAgent* render_target) {
+    BitmapAgent* render_target,
+    bool clear_target) {
   render_context->SetRenderTargets(
       1, &render_target->target, render_target->depth_view,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  float clear_color[] = {0, 0, 0, 0};
-  render_context->ClearRenderTarget(
-      render_target->target, clear_color,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  render_context->ClearDepthStencil(
-      render_target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  if (clear_target) {
+    float clear_color[] = {0, 0, 0, 0};
+    render_context->ClearRenderTarget(
+        render_target->target, clear_color,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    render_context->ClearDepthStencil(
+        render_target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  }
 }
 
 }  // namespace content

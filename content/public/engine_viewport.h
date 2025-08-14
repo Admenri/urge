@@ -63,8 +63,9 @@ class URGE_OBJECT(Viewport) {
   /*--urge(name:update)--*/
   virtual void Update(ExceptionState& exception_state) = 0;
 
-  /*--urge(name:render)--*/
+  /*--urge(name:render,optional:clear_target=true)--*/
   virtual void Render(scoped_refptr<Bitmap> target,
+                      bool clear_target,
                       ExceptionState& exception_state) = 0;
 
   /*--urge(name:viewport)--*/

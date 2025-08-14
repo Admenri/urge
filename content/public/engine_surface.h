@@ -9,6 +9,7 @@
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
 #include "content/public/engine_color.h"
+#include "content/public/engine_font.h"
 #include "content/public/engine_iostream.h"
 #include "content/public/engine_rect.h"
 
@@ -117,12 +118,47 @@ class URGE_OBJECT(Surface) {
                         scoped_refptr<Color> color,
                         ExceptionState& exception_state) = 0;
 
+  /*--urge(name:draw_text)--*/
+  virtual void DrawText(int32_t x,
+                        int32_t y,
+                        uint32_t width,
+                        uint32_t height,
+                        const std::string& str,
+                        int32_t align,
+                        ExceptionState& exception_state) = 0;
+
+  /*--urge(name:draw_text)--*/
+  virtual void DrawText(int32_t x,
+                        int32_t y,
+                        uint32_t width,
+                        uint32_t height,
+                        const std::string& str,
+                        ExceptionState& exception_state) = 0;
+
+  /*--urge(name:draw_text)--*/
+  virtual void DrawText(scoped_refptr<Rect> rect,
+                        const std::string& str,
+                        int32_t align,
+                        ExceptionState& exception_state) = 0;
+
+  /*--urge(name:draw_text)--*/
+  virtual void DrawText(scoped_refptr<Rect> rect,
+                        const std::string& str,
+                        ExceptionState& exception_state) = 0;
+
+  /*--urge(name:text_size)--*/
+  virtual scoped_refptr<Rect> TextSize(const std::string& str,
+                                       ExceptionState& exception_state) = 0;
+
   /*--urge(name:dump_data)--*/
   virtual std::string DumpData(ExceptionState& exception_state) = 0;
 
   /*--urge(name:save_png)--*/
   virtual void SavePNG(const std::string& filename,
                        ExceptionState& exception_state) = 0;
+
+  /*--urge(name:font)--*/
+  URGE_EXPORT_ATTRIBUTE(Font, scoped_refptr<Font>);
 };
 
 }  // namespace content

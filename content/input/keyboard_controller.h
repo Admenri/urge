@@ -19,7 +19,7 @@ class KeyboardControllerImpl : public Input, public EngineObject {
     std::string sym;
     SDL_Scancode scancode;
 
-    bool operator==(const KeyBinding& other) {
+    bool operator==(const KeyBinding& other) const {
       return sym == other.sym && scancode == other.scancode;
     }
   };
@@ -56,7 +56,7 @@ class KeyboardControllerImpl : public Input, public EngineObject {
   bool KeyTriggered(int32_t scancode, ExceptionState& exception_state) override;
   bool KeyRepeated(int32_t scancode, ExceptionState& exception_state) override;
   std::string GetKeyName(int32_t scancode,
-                          ExceptionState& exception_state) override;
+                         ExceptionState& exception_state) override;
   std::vector<int32_t> GetKeysFromFlag(
       const std::string& flag,
       ExceptionState& exception_state) override;

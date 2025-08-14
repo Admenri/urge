@@ -203,7 +203,8 @@ std::string Surface::Serialize(ExecutionContext* execution_context,
 SurfaceImpl::SurfaceImpl(ExecutionContext* context, SDL_Surface* surface)
     : EngineObject(context),
       Disposable(context->disposable_parent),
-      surface_(surface) {}
+      surface_(surface),
+      font_(base::MakeRefCounted<FontImpl>(context->font_context)) {}
 
 DISPOSABLE_DEFINITION(SurfaceImpl);
 
@@ -212,22 +213,19 @@ scoped_refptr<SurfaceImpl> SurfaceImpl::From(scoped_refptr<Surface> host) {
 }
 
 uint32_t SurfaceImpl::Width(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return surface_->w;
 }
 
 uint32_t SurfaceImpl::Height(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return surface_->h;
 }
 
 scoped_refptr<Rect> SurfaceImpl::GetRect(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return base::MakeRefCounted<RectImpl>(
       base::Rect(0, 0, surface_->w, surface_->h));
@@ -239,8 +237,7 @@ void SurfaceImpl::Blt(int32_t x,
                       scoped_refptr<Rect> src_rect,
                       uint32_t opacity,
                       ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   auto* src_raw_surface = SurfaceImpl::From(src_surface)->GetRawSurface();
   if (!src_raw_surface)
@@ -254,6 +251,8 @@ void SurfaceImpl::Blt(int32_t x,
   auto src_region = RectImpl::From(src_rect)->AsSDLRect();
   SDL_Rect dest_pos = {x, y, 0, 0};
 
+  SDL_SetSurfaceAlphaMod(src_raw_surface, static_cast<Uint8>(opacity));
+  SDL_SetSurfaceBlendMode(src_raw_surface, SDL_BLENDMODE_BLEND);
   SDL_BlitSurface(src_raw_surface, &src_region, surface_, &dest_pos);
 }
 
@@ -262,8 +261,7 @@ void SurfaceImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
                              scoped_refptr<Rect> src_rect,
                              uint32_t opacity,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (!dest_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -283,6 +281,8 @@ void SurfaceImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
   auto src_region = RectImpl::From(src_rect)->AsSDLRect();
   auto dest_region = RectImpl::From(dest_rect)->AsSDLRect();
 
+  SDL_SetSurfaceAlphaMod(src_raw_surface, static_cast<Uint8>(opacity));
+  SDL_SetSurfaceBlendMode(src_raw_surface, SDL_BLENDMODE_BLEND);
   SDL_BlitSurfaceScaled(src_raw_surface, &src_region, surface_, &dest_region,
                         SDL_SCALEMODE_LINEAR);
 }
@@ -293,8 +293,7 @@ void SurfaceImpl::FillRect(int32_t x,
                            uint32_t height,
                            scoped_refptr<Color> color,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (!color)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -313,6 +312,8 @@ void SurfaceImpl::FillRect(int32_t x,
 void SurfaceImpl::FillRect(scoped_refptr<Rect> rect,
                            scoped_refptr<Color> color,
                            ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "Invalid rect object.");
@@ -323,8 +324,7 @@ void SurfaceImpl::FillRect(scoped_refptr<Rect> rect,
 }
 
 void SurfaceImpl::Clear(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   SDL_ClearSurface(surface_, 0, 0, 0, 0);
 }
@@ -334,8 +334,7 @@ void SurfaceImpl::ClearRect(int32_t x,
                             uint32_t width,
                             uint32_t height,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   SDL_Rect rect{x, y, static_cast<int32_t>(width),
                 static_cast<int32_t>(height)};
@@ -344,6 +343,8 @@ void SurfaceImpl::ClearRect(int32_t x,
 
 void SurfaceImpl::ClearRect(scoped_refptr<Rect> rect,
                             ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "Invalid rect object.");
@@ -356,8 +357,7 @@ void SurfaceImpl::ClearRect(scoped_refptr<Rect> rect,
 scoped_refptr<Color> SurfaceImpl::GetPixel(int32_t x,
                                            int32_t y,
                                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   auto* pixel_detail = SDL_GetPixelFormatDetails(surface_->format);
   int32_t bpp = pixel_detail->bytes_per_pixel;
@@ -377,8 +377,7 @@ void SurfaceImpl::SetPixel(int32_t x,
                            int32_t y,
                            scoped_refptr<Color> color,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (!color)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -395,9 +394,85 @@ void SurfaceImpl::SetPixel(int32_t x,
                   color_unorm.b, color_unorm.a);
 }
 
+void SurfaceImpl::DrawText(int32_t x,
+                           int32_t y,
+                           uint32_t width,
+                           uint32_t height,
+                           const std::string& str,
+                           int32_t align,
+                           ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  auto* font_object = static_cast<FontImpl*>(font_.get());
+  if (!font_object->GetCanonicalFont(exception_state))
+    return;
+
+  uint8_t font_opacity = 0;
+  auto* text_surface =
+      font_object->RenderText(str, &font_opacity, exception_state);
+  if (!text_surface)
+    return;
+
+  SDL_Rect dest_rect{
+      x,
+      y,
+      static_cast<int32_t>(width),
+      static_cast<int32_t>(height),
+  };
+
+  SDL_SetSurfaceAlphaMod(text_surface, font_opacity);
+  SDL_SetSurfaceBlendMode(text_surface, SDL_BLENDMODE_BLEND);
+  SDL_BlitSurfaceScaled(text_surface, nullptr, surface_, &dest_rect,
+                        SDL_SCALEMODE_LINEAR);
+  SDL_DestroySurface(text_surface);
+}
+
+void SurfaceImpl::DrawText(int32_t x,
+                           int32_t y,
+                           uint32_t width,
+                           uint32_t height,
+                           const std::string& str,
+                           ExceptionState& exception_state) {
+  DrawText(x, y, width, height, str, 0, exception_state);
+}
+
+void SurfaceImpl::DrawText(scoped_refptr<Rect> rect,
+                           const std::string& str,
+                           int32_t align,
+                           ExceptionState& exception_state) {
+  DrawText(rect->Get_X(exception_state), rect->Get_Y(exception_state),
+           rect->Get_Width(exception_state), rect->Get_Height(exception_state),
+           str, align, exception_state);
+}
+
+void SurfaceImpl::DrawText(scoped_refptr<Rect> rect,
+                           const std::string& str,
+                           ExceptionState& exception_state) {
+  if (!rect)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "Invalid rect object.");
+
+  DrawText(rect->Get_X(exception_state), rect->Get_Y(exception_state),
+           rect->Get_Width(exception_state), rect->Get_Height(exception_state),
+           str, 0, exception_state);
+}
+
+scoped_refptr<Rect> SurfaceImpl::TextSize(const std::string& str,
+                                          ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  TTF_Font* font =
+      static_cast<FontImpl*>(font_.get())->GetCanonicalFont(exception_state);
+  if (!font)
+    return nullptr;
+
+  int32_t w, h;
+  TTF_GetStringSize(font, str.c_str(), str.size(), &w, &h);
+  return base::MakeRefCounted<RectImpl>(base::Rect(0, 0, w, h));
+}
+
 std::string SurfaceImpl::DumpData(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return std::string();
+  DISPOSE_CHECK_RETURN(std::string());
 
   std::string data;
   size_t data_size = surface_->pitch * surface_->h;
@@ -413,8 +488,7 @@ std::string SurfaceImpl::DumpData(ExceptionState& exception_state) {
 
 void SurfaceImpl::SavePNG(const std::string& filename,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   filesystem::IOState io_state;
   auto* out_stream = context()->io_service->OpenWrite(filename, &io_state);
@@ -425,6 +499,19 @@ void SurfaceImpl::SavePNG(const std::string& filename,
   if (!IMG_SavePNG_IO(surface_, out_stream, true))
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, "%s",
                                SDL_GetError());
+}
+
+scoped_refptr<Font> SurfaceImpl::Get_Font(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return font_;
+}
+
+void SurfaceImpl::Put_Font(const scoped_refptr<Font>& value,
+                           ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  *font_ = *FontImpl::From(value);
 }
 
 void SurfaceImpl::OnObjectDisposed() {

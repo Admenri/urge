@@ -793,6 +793,19 @@ scoped_refptr<GPUBuffer> CanvasImpl::GetWorldUniformBuffer(
   return base::MakeRefCounted<BufferImpl>(context(), agent_.world_buffer);
 }
 
+scoped_refptr<Font> CanvasImpl::Get_Font(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(nullptr);
+
+  return font_;
+}
+
+void CanvasImpl::Put_Font(const scoped_refptr<Font>& value,
+                          ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  *font_ = *FontImpl::From(value);
+}
+
 void CanvasImpl::OnObjectDisposed() {
   // Unlink from canvas scheduler
   base::LinkNode<CanvasImpl>::RemoveFromList();
@@ -829,21 +842,6 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
 
   // Invalidate memory cache
   InvalidateSurfaceCache();
-}
-
-scoped_refptr<Font> CanvasImpl::Get_Font(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
-
-  return font_;
-}
-
-void CanvasImpl::Put_Font(const scoped_refptr<Font>& value,
-                          ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
-
-  *font_ = *FontImpl::From(value);
 }
 
 void CanvasImpl::GPUCreateTextureWithDataInternal() {
