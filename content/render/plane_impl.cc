@@ -46,8 +46,7 @@ scoped_refptr<Bitmap> PlaneImpl::Get_Bitmap(ExceptionState& exception_state) {
 
 void PlaneImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bitmap_ = CanvasImpl::FromBitmap(value);
   if (bitmap_)
@@ -55,16 +54,14 @@ void PlaneImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
 }
 
 scoped_refptr<Rect> PlaneImpl::Get_SrcRect(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return src_rect_;
 }
 
 void PlaneImpl::Put_SrcRect(const scoped_refptr<Rect>& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -78,8 +75,7 @@ scoped_refptr<Viewport> PlaneImpl::Get_Viewport(
 
 void PlaneImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (viewport_ == value)
     return;
@@ -90,131 +86,113 @@ void PlaneImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
 }
 
 bool PlaneImpl::Get_Visible(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return node_.GetVisibility();
 }
 
 void PlaneImpl::Put_Visible(const bool& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeVisibility(value);
 }
 
 int32_t PlaneImpl::Get_Z(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return node_.GetSortKeys()->weight[0];
 }
 
 void PlaneImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeSortWeight(value);
 }
 
 int32_t PlaneImpl::Get_Ox(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.x;
 }
 
 void PlaneImpl::Put_Ox(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.x = value;
 }
 
 int32_t PlaneImpl::Get_Oy(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.y;
 }
 
 void PlaneImpl::Put_Oy(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.y = value;
 }
 
 float PlaneImpl::Get_ZoomX(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return scale_.x;
 }
 
 void PlaneImpl::Put_ZoomX(const float& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   scale_.x = value;
 }
 
 float PlaneImpl::Get_ZoomY(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return scale_.y;
 }
 
 void PlaneImpl::Put_ZoomY(const float& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   scale_.y = value;
 }
 
 int32_t PlaneImpl::Get_Opacity(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return opacity_;
 }
 
 void PlaneImpl::Put_Opacity(const int32_t& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   opacity_ = std::clamp(value, 0, 255);
 }
 
 int32_t PlaneImpl::Get_BlendType(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return blend_type_;
 }
 
 void PlaneImpl::Put_BlendType(const int32_t& value,
                               ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   blend_type_ = value;
 }
 
 scoped_refptr<Color> PlaneImpl::Get_Color(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return color_;
 }
 
 void PlaneImpl::Put_Color(const scoped_refptr<Color>& value,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -222,16 +200,14 @@ void PlaneImpl::Put_Color(const scoped_refptr<Color>& value,
 }
 
 scoped_refptr<Tone> PlaneImpl::Get_Tone(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return tone_;
 }
 
 void PlaneImpl::Put_Tone(const scoped_refptr<Tone>& value,
                          ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 

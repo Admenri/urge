@@ -438,8 +438,7 @@ void Tilemap2Impl::SetLabel(const std::string& label,
 }
 
 void Tilemap2Impl::Update(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (++frame_index_ >= 30 * 3 * 4)
     frame_index_ = 0;
@@ -468,16 +467,14 @@ scoped_refptr<TilemapBitmap> Tilemap2Impl::Bitmaps(
 
 scoped_refptr<Table> Tilemap2Impl::Get_MapData(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return map_data_;
 }
 
 void Tilemap2Impl::Put_MapData(const scoped_refptr<Table>& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -489,16 +486,14 @@ void Tilemap2Impl::Put_MapData(const scoped_refptr<Table>& value,
 
 scoped_refptr<Table> Tilemap2Impl::Get_FlashData(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return flash_data_;
 }
 
 void Tilemap2Impl::Put_FlashData(const scoped_refptr<Table>& value,
                                  ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -519,16 +514,14 @@ void Tilemap2Impl::Put_Passages(const scoped_refptr<Table>& value,
 }
 
 scoped_refptr<Table> Tilemap2Impl::Get_Flags(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return flags_;
 }
 
 void Tilemap2Impl::Put_Flags(const scoped_refptr<Table>& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -545,8 +538,7 @@ scoped_refptr<Viewport> Tilemap2Impl::Get_Viewport(
 
 void Tilemap2Impl::Put_Viewport(const scoped_refptr<Viewport>& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (viewport_ == value)
     return;
@@ -560,47 +552,41 @@ void Tilemap2Impl::Put_Viewport(const scoped_refptr<Viewport>& value,
 }
 
 bool Tilemap2Impl::Get_Visible(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return ground_node_.GetVisibility();
 }
 
 void Tilemap2Impl::Put_Visible(const bool& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   ground_node_.SetNodeVisibility(value);
   above_node_.SetNodeVisibility(value);
 }
 
 int32_t Tilemap2Impl::Get_Ox(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.x;
 }
 
 void Tilemap2Impl::Put_Ox(const int32_t& value,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.x = value;
 }
 
 int32_t Tilemap2Impl::Get_Oy(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.y;
 }
 
 void Tilemap2Impl::Put_Oy(const int32_t& value,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.y = value;
 }

@@ -48,8 +48,7 @@ void WindowImpl::SetLabel(const std::string& label,
 }
 
 void WindowImpl::Update(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   ++pause_index_;
   if (pause_index_ >= 32)
@@ -76,8 +75,7 @@ scoped_refptr<Viewport> WindowImpl::Get_Viewport(
 
 void WindowImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                               ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (viewport_ == value)
     return;
@@ -97,8 +95,7 @@ scoped_refptr<Bitmap> WindowImpl::Get_Windowskin(
 
 void WindowImpl::Put_Windowskin(const scoped_refptr<Bitmap>& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   windowskin_ = CanvasImpl::FromBitmap(value);
 }
@@ -110,39 +107,34 @@ scoped_refptr<Bitmap> WindowImpl::Get_Contents(
 
 void WindowImpl::Put_Contents(const scoped_refptr<Bitmap>& value,
                               ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   contents_ = CanvasImpl::FromBitmap(value);
 }
 
 bool WindowImpl::Get_Stretch(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return stretch_;
 }
 
 void WindowImpl::Put_Stretch(const bool& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   stretch_ = value;
 }
 
 scoped_refptr<Rect> WindowImpl::Get_CursorRect(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return cursor_rect_;
 }
 
 void WindowImpl::Put_CursorRect(const scoped_refptr<Rect>& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -150,192 +142,166 @@ void WindowImpl::Put_CursorRect(const scoped_refptr<Rect>& value,
 }
 
 bool WindowImpl::Get_Active(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return active_;
 }
 
 void WindowImpl::Put_Active(const bool& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   active_ = value;
 }
 
 bool WindowImpl::Get_Visible(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return background_node_.GetVisibility();
 }
 
 void WindowImpl::Put_Visible(const bool& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   background_node_.SetNodeVisibility(value);
   control_node_.SetNodeVisibility(value);
 }
 
 bool WindowImpl::Get_Pause(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return pause_;
 }
 
 void WindowImpl::Put_Pause(const bool& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   pause_ = value;
 }
 
 int32_t WindowImpl::Get_X(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return bound_.x;
 }
 
 void WindowImpl::Put_X(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bound_.x = value;
 }
 
 int32_t WindowImpl::Get_Y(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return bound_.y;
 }
 
 void WindowImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bound_.y = value;
 }
 
 int32_t WindowImpl::Get_Width(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return bound_.width;
 }
 
 void WindowImpl::Put_Width(const int32_t& value,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bound_.width = value;
 }
 
 int32_t WindowImpl::Get_Height(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return bound_.height;
 }
 
 void WindowImpl::Put_Height(const int32_t& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   bound_.height = value;
 }
 
 int32_t WindowImpl::Get_Z(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return background_node_.GetSortKeys()->weight[0];
 }
 
 void WindowImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   background_node_.SetNodeSortWeight(value);
   control_node_.SetNodeSortWeight(value + 2);
 }
 
 int32_t WindowImpl::Get_Ox(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.x;
 }
 
 void WindowImpl::Put_Ox(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.x = value;
 }
 
 int32_t WindowImpl::Get_Oy(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.y;
 }
 
 void WindowImpl::Put_Oy(const int32_t& value, ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.y = value;
 }
 
 int32_t WindowImpl::Get_Opacity(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return opacity_;
 }
 
 void WindowImpl::Put_Opacity(const int32_t& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   opacity_ = std::clamp(value, 0, 255);
 }
 
 int32_t WindowImpl::Get_BackOpacity(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return back_opacity_;
 }
 
 void WindowImpl::Put_BackOpacity(const int32_t& value,
                                  ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   back_opacity_ = std::clamp(value, 0, 255);
 }
 
 int32_t WindowImpl::Get_ContentsOpacity(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return contents_opacity_;
 }
 
 void WindowImpl::Put_ContentsOpacity(const int32_t& value,
                                      ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   contents_opacity_ = std::clamp(value, 0, 255);
 }

@@ -88,43 +88,37 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
 DISPOSABLE_DEFINITION(VideoDecoderImpl);
 
 int32_t VideoDecoderImpl::GetWidth(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return player_->info()->width;
 }
 
 int32_t VideoDecoderImpl::GetHeight(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return player_->info()->height;
 }
 
 float VideoDecoderImpl::GetDuration(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0.0f;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return player_->info()->duration;
 }
 
 float VideoDecoderImpl::GetFrameRate(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0.0f;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return player_->info()->frameRate;
 }
 
 bool VideoDecoderImpl::HasAudio(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return player_->info()->hasAudio;
 }
 
 void VideoDecoderImpl::Update(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   // Update frame delta
   player_->update(frame_delta_);
@@ -157,8 +151,7 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
 
 VideoDecoder::PlayState VideoDecoderImpl::Get_State(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return PlayState();
+  DISPOSE_CHECK_RETURN(STATE_FINISHED);
 
   if (player_->isPlaying())
     return STATE_PLAYING;
@@ -174,8 +167,7 @@ VideoDecoder::PlayState VideoDecoderImpl::Get_State(
 
 void VideoDecoderImpl::Put_State(const PlayState& value,
                                  ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   switch (value) {
     case STATE_PLAYING:

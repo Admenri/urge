@@ -79,23 +79,20 @@ ImageAnimationImpl::ImageAnimationImpl(ExecutionContext* execution_context,
 DISPOSABLE_DEFINITION(ImageAnimationImpl);
 
 int32_t ImageAnimationImpl::Width(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return animation_->w;
 }
 
 int32_t ImageAnimationImpl::Height(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return animation_->h;
 }
 
 std::vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return {};
+  DISPOSE_CHECK_RETURN({});
 
   std::vector<scoped_refptr<Surface>> result;
   for (int32_t i = 0; i < animation_->count; ++i) {
@@ -117,8 +114,7 @@ std::vector<scoped_refptr<Surface>> ImageAnimationImpl::GetFrames(
 
 std::vector<int32_t> ImageAnimationImpl::GetDelays(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return {};
+  DISPOSE_CHECK_RETURN({});
 
   std::vector<int32_t> result;
   for (int32_t i = 0; i < animation_->count; ++i)

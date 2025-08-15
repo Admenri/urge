@@ -22,7 +22,7 @@ void Disposable::Dispose() {
   }
 }
 
-bool Disposable::CheckDisposed(ExceptionState& exception_state) {
+bool Disposable::CheckIfDisposed(ExceptionState& exception_state) {
   if (disposed_) {
     // Throw exception if need
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,

@@ -93,15 +93,13 @@ scoped_refptr<IOStreamImpl> IOStreamImpl::From(scoped_refptr<IOStream> host) {
 }
 
 IOStream::IOStatus IOStreamImpl::GetStatus(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return STATUS_ERROR;
+  DISPOSE_CHECK_RETURN(STATUS_ERROR);
 
   return static_cast<IOStatus>(SDL_GetIOStatus(stream_));
 }
 
 int64_t IOStreamImpl::GetSize(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return SDL_GetIOSize(stream_);
 }
@@ -109,15 +107,13 @@ int64_t IOStreamImpl::GetSize(ExceptionState& exception_state) {
 int64_t IOStreamImpl::Seek(int64_t offset,
                            IOWhence whence,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return SDL_SeekIO(stream_, offset, static_cast<SDL_IOWhence>(whence));
 }
 
 int64_t IOStreamImpl::Tell(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return SDL_TellIO(stream_);
 }
@@ -125,8 +121,7 @@ int64_t IOStreamImpl::Tell(ExceptionState& exception_state) {
 int64_t IOStreamImpl::Read(void* buffer,
                            int64_t size,
                            ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return static_cast<int64_t>(SDL_ReadIO(stream_, buffer, size));
 }
@@ -134,15 +129,13 @@ int64_t IOStreamImpl::Read(void* buffer,
 int64_t IOStreamImpl::Write(const void* buffer,
                             int64_t size,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return static_cast<int64_t>(SDL_WriteIO(stream_, buffer, size));
 }
 
 bool IOStreamImpl::Flush(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return SDL_FlushIO(stream_);
 }

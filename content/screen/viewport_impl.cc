@@ -74,8 +74,7 @@ void ViewportImpl::SetLabel(const std::string& label,
 void ViewportImpl::Flash(scoped_refptr<Color> color,
                          uint32_t duration,
                          ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   std::optional<base::Vec4> flash_color = std::nullopt;
   if (color)
@@ -84,8 +83,7 @@ void ViewportImpl::Flash(scoped_refptr<Color> color,
 }
 
 void ViewportImpl::Update(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   flash_emitter_.Update();
 }
@@ -93,8 +91,7 @@ void ViewportImpl::Update(ExceptionState& exception_state) {
 void ViewportImpl::Render(scoped_refptr<Bitmap> target,
                           bool clear_target,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   scoped_refptr<CanvasImpl> render_target = CanvasImpl::FromBitmap(target);
   BitmapAgent* bitmap_agent =
@@ -181,16 +178,14 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
 
 scoped_refptr<Viewport> ViewportImpl::Get_Viewport(
     ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return viewport_;
 }
 
 void ViewportImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   viewport_ = ViewportImpl::From(value);
   node_.RebindController(viewport_ ? viewport_->GetDrawableController()
@@ -198,16 +193,14 @@ void ViewportImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
 }
 
 scoped_refptr<Rect> ViewportImpl::Get_Rect(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return rect_;
 }
 
 void ViewportImpl::Put_Rect(const scoped_refptr<Rect>& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -215,76 +208,66 @@ void ViewportImpl::Put_Rect(const scoped_refptr<Rect>& value,
 }
 
 bool ViewportImpl::Get_Visible(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return node_.GetVisibility();
 }
 
 void ViewportImpl::Put_Visible(const bool& value,
                                ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeVisibility(value);
 }
 
 int32_t ViewportImpl::Get_Z(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return static_cast<int32_t>(node_.GetSortKeys()->weight[0]);
 }
 
 void ViewportImpl::Put_Z(const int32_t& value,
                          ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeSortWeight(value);
 }
 
 int32_t ViewportImpl::Get_Ox(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.x;
 }
 
 void ViewportImpl::Put_Ox(const int32_t& value,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.x = value;
 }
 
 int32_t ViewportImpl::Get_Oy(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return origin_.y;
 }
 
 void ViewportImpl::Put_Oy(const int32_t& value,
                           ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   origin_.y = value;
 }
 
 scoped_refptr<Color> ViewportImpl::Get_Color(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return color_;
 }
 
 void ViewportImpl::Put_Color(const scoped_refptr<Color>& value,
                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 
@@ -292,16 +275,14 @@ void ViewportImpl::Put_Color(const scoped_refptr<Color>& value,
 }
 
 scoped_refptr<Tone> ViewportImpl::Get_Tone(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return nullptr;
+  DISPOSE_CHECK_RETURN(nullptr);
 
   return tone_;
 }
 
 void ViewportImpl::Put_Tone(const scoped_refptr<Tone>& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   CHECK_ATTRIBUTE_VALUE;
 

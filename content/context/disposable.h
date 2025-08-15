@@ -13,12 +13,12 @@
 #include "base/containers/linked_list.h"
 #include "content/context/exception_state.h"
 
-#define DISPOSE_CHECK_RETURN(v)       \
-  if (CheckDisposed(exception_state)) \
+#define DISPOSE_CHECK_RETURN(v)         \
+  if (CheckIfDisposed(exception_state)) \
     return v;
 
-#define DISPOSE_CHECK                 \
-  if (CheckDisposed(exception_state)) \
+#define DISPOSE_CHECK                   \
+  if (CheckIfDisposed(exception_state)) \
     return;
 
 #define DISPOSABLE_DEFINITION(klass)        \
@@ -56,7 +56,7 @@ class Disposable : public base::LinkNode<Disposable> {
   virtual void OnObjectDisposed() = 0;
   virtual std::string DisposedObjectName() = 0;
 
-  bool CheckDisposed(ExceptionState& exception_state);
+  bool CheckIfDisposed(ExceptionState& exception_state);
 
  private:
   int32_t disposed_;

@@ -61,7 +61,7 @@ scoped_refptr<SpineSprite> SpineSprite::New(
           execution_context->render_device, io_service);
   std::unique_ptr<spine::Atlas> atlas =
       std::make_unique<spine::Atlas>(atlas_data.data(), atlas_data.size(),
-                                       dir.c_str(), texture_loader.get(), true);
+                                     dir.c_str(), texture_loader.get(), true);
 
   std::string skeleton_loading_error;
   spine::SkeletonData* skeleton_data_ptr = nullptr;
@@ -264,8 +264,7 @@ scoped_refptr<Viewport> SpineSpriteImpl::Get_Viewport(
 
 void SpineSpriteImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
                                    ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   if (viewport_ == value)
     return;
@@ -276,106 +275,92 @@ void SpineSpriteImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
 }
 
 bool SpineSpriteImpl::Get_Visible(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return node_.GetVisibility();
 }
 
 void SpineSpriteImpl::Put_Visible(const bool& value,
                                   ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeVisibility(value);
 }
 
 float SpineSpriteImpl::Get_X(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0.0f;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return skeleton_->getX();
 }
 
 void SpineSpriteImpl::Put_X(const float& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   skeleton_->setX(value);
 }
 
 float SpineSpriteImpl::Get_Y(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0.0f;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return skeleton_->getY();
 }
 
 void SpineSpriteImpl::Put_Y(const float& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   skeleton_->setY(value);
 }
 
 int32_t SpineSpriteImpl::Get_Z(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0;
+  DISPOSE_CHECK_RETURN(0);
 
   return node_.GetSortKeys()->weight[0];
 }
 
 void SpineSpriteImpl::Put_Z(const int32_t& value,
                             ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   node_.SetNodeSortWeight(value);
 }
 
 float SpineSpriteImpl::Get_ZoomX(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0.0f;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return skeleton_->getScaleX();
 }
 
 void SpineSpriteImpl::Put_ZoomX(const float& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   skeleton_->setScaleX(value);
 }
 
 float SpineSpriteImpl::Get_ZoomY(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return 0.0f;
+  DISPOSE_CHECK_RETURN(0.0f);
 
   return skeleton_->getScaleY();
 }
 
 void SpineSpriteImpl::Put_ZoomY(const float& value,
                                 ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   skeleton_->setScaleY(value);
 }
 
 bool SpineSpriteImpl::Get_PremultipliedAlpha(ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return false;
+  DISPOSE_CHECK_RETURN(false);
 
   return premultiplied_alpha_;
 }
 
 void SpineSpriteImpl::Put_PremultipliedAlpha(const bool& value,
                                              ExceptionState& exception_state) {
-  if (CheckDisposed(exception_state))
-    return;
+  DISPOSE_CHECK;
 
   premultiplied_alpha_ = value;
 }
