@@ -71,6 +71,11 @@ add_subdirectory(third_party/image_loader)
 include_directories(third_party/image_loader/include)
 
 ## text render (SDL_ttf)
+set(FT_DISABLE_HARFBUZZ ON)
+set(FT_DISABLE_PNG ON)
+set(FT_DISABLE_ZLIB ON)
+set(FT_DISABLE_BZIP2 ON)
+set(FT_DISABLE_BROTLI ON)
 add_subdirectory(third_party/freetype)
 include_directories(third_party/freetype/include)
 add_subdirectory(third_party/text_render)
@@ -81,11 +86,6 @@ add_subdirectory(third_party/imgui)
 include_directories(third_party/imgui)
 
 ## Physfs
-set(PHYSFS_BUILD_STATIC ON)
-set(PHYSFS_BUILD_SHARED OFF)
-set(PHYSFS_BUILD_SHARED OFF)
-set(PHYSFS_BUILD_TEST OFF)
-set(PHYSFS_BUILD_DOCS OFF)
 add_subdirectory(third_party/physfs)
 include_directories(third_party/physfs/src)
 
