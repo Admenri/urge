@@ -119,50 +119,73 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   // Setup specific platform window handle
   SDL_GLContext glcontext = nullptr;
 #if defined(OS_WIN)
-  if (driver_type == DriverType::UNDEFINED)
-    driver_type = DriverType::D3D11;
-
   native_window.hWnd = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 #elif defined(OS_LINUX)
-  if (driver_type == DriverType::UNDEFINED)
-    driver_type = DriverType::OPENGL;
+  // Xlib Display
+  void* xdisplay = SDL_GetPointerProperty(
+      window_properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+  int64_t xwindow = SDL_GetNumberProperty(window_properties,
+                                          SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
 
-  {
-    // Xlib Display
-    void* xdisplay = SDL_GetPointerProperty(
-        window_properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
-    int64_t xwindow = SDL_GetNumberProperty(
-        window_properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+  glcontext = SDL_GL_CreateContext(window_target->AsSDLWindow());
+  SDL_GL_MakeCurrent(window_target->AsSDLWindow(), glcontext);
 
-    glcontext = SDL_GL_CreateContext(window_target->AsSDLWindow());
-    SDL_GL_MakeCurrent(window_target->AsSDLWindow(), glcontext);
+  // Get XCBConnect from Xlib
+  const char* xcb_library_name = SDL_GetHint(SDL_HINT_X11_XCB_LIBRARY);
+  if (!xcb_library_name || !*xcb_library_name)
+    xcb_library_name = DEFAULT_X11_XCB;
 
-    // Get XCBConnect from Xlib
-    const char* xcb_library_name = SDL_GetHint(SDL_HINT_X11_XCB_LIBRARY);
-    if (!xcb_library_name || !*xcb_library_name)
-      xcb_library_name = DEFAULT_X11_XCB;
+  SDL_SharedObject* xlib_xcb_library = SDL_LoadObject(xcb_library_name);
+  PFN_XGetXCBConnection xgetxcb_func = nullptr;
+  if (xlib_xcb_library)
+    xgetxcb_func = (PFN_XGetXCBConnection)SDL_LoadFunction(xlib_xcb_library,
+                                                           "XGetXCBConnection");
 
-    SDL_SharedObject* xlib_xcb_library = SDL_LoadObject(xcb_library_name);
-    PFN_XGetXCBConnection xgetxcb_func = nullptr;
-    if (xlib_xcb_library)
-      xgetxcb_func = (PFN_XGetXCBConnection)SDL_LoadFunction(
-          xlib_xcb_library, "XGetXCBConnection");
-
-    // Setup native window
-    native_window.WindowId = static_cast<uint32_t>(xwindow);
-    native_window.pDisplay = xdisplay;
-    native_window.pXCBConnection =
-        xgetxcb_func ? xgetxcb_func(xdisplay) : nullptr;
-  }
+  // Setup native window
+  native_window.WindowId = static_cast<uint32_t>(xwindow);
+  native_window.pDisplay = xdisplay;
+  native_window.pXCBConnection =
+      xgetxcb_func ? xgetxcb_func(xdisplay) : nullptr;
 #elif defined(OS_ANDROID)
-  if (driver_type == DriverType::UNDEFINED)
-    driver_type = DriverType::OPENGL;
-
   native_window.pAWindow = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
 #else
-#error "unsupport platform selected."
+#error "Unsupport Platform"
+#endif
+
+// Correction backend settings
+#if defined(OS_WIN)
+  switch (driver_type) {
+    case DriverType::OPENGL:
+    case DriverType::VULKAN:
+    case DriverType::D3D11:
+    case DriverType::D3D12:
+      break;
+    default:
+      driver_type = DriverType::D3D11;
+      break;
+  }
+#elif defined(OS_LINUX)
+  switch (driver_type) {
+    case DriverType::OPENGL:
+    case DriverType::VULKAN:
+      break;
+    default:
+      driver_type = DriverType::OPENGL;
+      break;
+  }
+#elif defined(OS_ANDROID)
+  switch (driver_type) {
+    case DriverType::OPENGL:
+    case DriverType::VULKAN:
+      break;
+    default:
+      driver_type = DriverType::OPENGL;
+      break;
+  }
+#else
+#error "Unsupport Platform"
 #endif
 
   Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device;
@@ -192,68 +215,79 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   swap_chain_desc.PreTransform = Diligent::SURFACE_TRANSFORM_OPTIMAL;
   swap_chain_desc.IsPrimary = Diligent::True;
 
-// Initialize specific graphics api
+  // Create device and fallback when error
+  size_t creating_retry_count = 0;
+  do {
 #if GL_SUPPORTED || GLES_SUPPORTED
-  if (driver_type == DriverType::OPENGL) {
+    if (driver_type == DriverType::OPENGL) {
 #if ENGINE_DLL
-    auto GetEngineFactoryOpenGL = Diligent::LoadGraphicsEngineOpenGL();
+      auto GetEngineFactoryOpenGL = Diligent::LoadGraphicsEngineOpenGL();
 #endif
-    auto* factory = GetEngineFactoryOpenGL();
+      auto* factory = GetEngineFactoryOpenGL();
 
-    Diligent::EngineGLCreateInfo gl_create_info(engine_create_info);
-    gl_create_info.Window = native_window;
-    gl_create_info.ZeroToOneNDZ = Diligent::True;
+      Diligent::EngineGLCreateInfo gl_create_info(engine_create_info);
+      gl_create_info.Window = native_window;
+      gl_create_info.ZeroToOneNDZ = Diligent::True;
 
-    factory->CreateDeviceAndSwapChainGL(gl_create_info, &device, &context,
-                                        swap_chain_desc, &swapchain);
-  }
+      factory->CreateDeviceAndSwapChainGL(gl_create_info, &device, &context,
+                                          swap_chain_desc, &swapchain);
+    }
 #endif  // OPENGL_SUPPORT
 #if VULKAN_SUPPORTED
-  if (driver_type == DriverType::VULKAN) {
+    if (driver_type == DriverType::VULKAN) {
 #if ENGINE_DLL
-    auto GetEngineFactoryVk = Diligent::LoadGraphicsEngineVk();
+      auto GetEngineFactoryVk = Diligent::LoadGraphicsEngineVk();
 #endif
-    auto* factory = GetEngineFactoryVk();
+      auto* factory = GetEngineFactoryVk();
 
-    Diligent::EngineVkCreateInfo vk_create_info(engine_create_info);
-    vk_create_info.FeaturesVk.DynamicRendering =
-        Diligent::DEVICE_FEATURE_STATE_OPTIONAL;
+      Diligent::EngineVkCreateInfo vk_create_info(engine_create_info);
+      vk_create_info.FeaturesVk.DynamicRendering =
+          Diligent::DEVICE_FEATURE_STATE_OPTIONAL;
 
-    factory->CreateDeviceAndContextsVk(vk_create_info, &device, &context);
-    factory->CreateSwapChainVk(device, context, swap_chain_desc, native_window,
-                               &swapchain);
-  }
+      factory->CreateDeviceAndContextsVk(vk_create_info, &device, &context);
+      factory->CreateSwapChainVk(device, context, swap_chain_desc,
+                                 native_window, &swapchain);
+    }
 #endif  // VULKAN_SUPPORT
 #if D3D11_SUPPORTED
-  if (driver_type == DriverType::D3D11) {
+    if (driver_type == DriverType::D3D11) {
 #if ENGINE_DLL
-    auto GetEngineFactoryD3D11 = Diligent::LoadGraphicsEngineD3D11();
+      auto GetEngineFactoryD3D11 = Diligent::LoadGraphicsEngineD3D11();
 #endif
-    auto* pFactory = GetEngineFactoryD3D11();
+      auto* pFactory = GetEngineFactoryD3D11();
 
-    Diligent::EngineD3D11CreateInfo d3d11_create_info(engine_create_info);
-    pFactory->CreateDeviceAndContextsD3D11(d3d11_create_info, &device,
-                                           &context);
-    pFactory->CreateSwapChainD3D11(device, context, swap_chain_desc,
-                                   fullscreen_mode_desc, native_window,
-                                   &swapchain);
-  }
+      Diligent::EngineD3D11CreateInfo d3d11_create_info(engine_create_info);
+      pFactory->CreateDeviceAndContextsD3D11(d3d11_create_info, &device,
+                                             &context);
+      pFactory->CreateSwapChainD3D11(device, context, swap_chain_desc,
+                                     fullscreen_mode_desc, native_window,
+                                     &swapchain);
+    }
 #endif  // D3D11_SUPPORT
 #if D3D12_SUPPORTED
-  if (driver_type == DriverType::D3D12) {
+    if (driver_type == DriverType::D3D12) {
 #if ENGINE_DLL
-    auto GetEngineFactoryD3D12 = Diligent::LoadGraphicsEngineD3D12();
+      auto GetEngineFactoryD3D12 = Diligent::LoadGraphicsEngineD3D12();
 #endif
-    auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+      auto* pFactoryD3D12 = GetEngineFactoryD3D12();
 
-    Diligent::EngineD3D12CreateInfo d3d12_create_info(engine_create_info);
-    pFactoryD3D12->CreateDeviceAndContextsD3D12(d3d12_create_info, &device,
-                                                &context);
-    pFactoryD3D12->CreateSwapChainD3D12(device, context, swap_chain_desc,
-                                        fullscreen_mode_desc, native_window,
-                                        &swapchain);
-  }
+      Diligent::EngineD3D12CreateInfo d3d12_create_info(engine_create_info);
+      pFactoryD3D12->CreateDeviceAndContextsD3D12(d3d12_create_info, &device,
+                                                  &context);
+      pFactoryD3D12->CreateSwapChainD3D12(device, context, swap_chain_desc,
+                                          fullscreen_mode_desc, native_window,
+                                          &swapchain);
+    }
 #endif  // D3D12_SUPPORT
+
+    if (device && context && swapchain) {
+      // Success
+      break;
+    }
+
+    // Fallback
+    driver_type = static_cast<DriverType>(creating_retry_count++);
+  } while (creating_retry_count < static_cast<size_t>(DriverType::kNums));
 
   if (!device || !context || !swapchain) {
     LOG(ERROR) << "[Renderer] Failed to create renderer.";

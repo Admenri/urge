@@ -110,8 +110,10 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
           .value_or(renderer::DriverType::UNDEFINED),
       static_cast<renderer::SamplerType>(profile_->pipeline_default_sampler),
       profile_->render_validation);
-  if (!render_device || !render_context)
+  if (!render_device || !render_context) {
+    LOG(ERROR) << "[Content] Error when creating video device.";
     return false;
+  }
 
   render_device_ = std::move(render_device);
   device_context_ = std::move(render_context);
@@ -119,6 +121,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       std::make_unique<CanvasScheduler>(render_device_.get(), device_context_);
   sprite_batcher_ = std::make_unique<SpriteBatch>(render_device_.get());
   event_controller_ = std::make_unique<EventController>(window);
+
   network_service_ = network::NetworkService::LaunchService();
   if (!profile_->disable_audio) {
     LOG(INFO) << "[Content] Launching audio service...";
@@ -163,7 +166,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
 
   // Background watch
   if (!SDL_AddEventWatch(&ContentRunner::EventWatchHandlerInternal, this)) {
-    LOG(ERROR) << SDL_GetError();
+    LOG(ERROR) << "[Engine] " << SDL_GetError();
     return false;
   }
 

@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
       } else {
         // Throw exception when initializing
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE",
-                                 "Error when creating content layer.", nullptr);
+                                 "Failed to load engine.", nullptr);
       }
 
       // Finalize modules at end

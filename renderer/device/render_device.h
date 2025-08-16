@@ -19,6 +19,8 @@ enum class DriverType {
   VULKAN,
   D3D11,
   D3D12,
+
+  kNums,
 };
 
 enum class SamplerType {
