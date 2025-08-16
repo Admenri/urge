@@ -79,6 +79,7 @@ else()
     endif()
 
     if(APPLE) # [cite: 13]
+        enable_language(ASM)
         target_sources(ffi PRIVATE
             src/x86/darwin.S
             src/x86/darwin64.S
@@ -117,6 +118,7 @@ else()
             target_compile_options(ffi PRIVATE /wd4267)
         endif()
     elseif(OS_NAME MATCHES "linux|freebsd|openbsd|solaris") # [cite: 17]
+        enable_language(ASM)
         target_sources(ffi PRIVATE
             src/x86/unix64.S
             src/x86/sysv.S

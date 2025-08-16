@@ -167,8 +167,8 @@ int MriParseArgsTo(int argc, VALUE* argv, const char* fmt, ...) {
             *ptr = std::string(rb_id2name(SYM2ID(arg_element)));
             break;
           case RUBY_T_STRING:
-            *ptr = std::string(RSTRING_PTR(arg_element),
-                                RSTRING_LEN(arg_element));
+            *ptr =
+                std::string(RSTRING_PTR(arg_element), RSTRING_LEN(arg_element));
             break;
           default:
             rb_raise(rb_eTypeError, "Argument %d: Expected symbol", count);

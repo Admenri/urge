@@ -133,7 +133,12 @@ target_link_libraries(binding_mri
 )
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+  # desktop only
   target_link_libraries(binding_mri PUBLIC ffi)
+  # fiddle definitions for linux
+  if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_compile_definitions(binding_mri PRIVATE HAVE_SYS_MMAN_H HAVE_DLFCN_H)
+  endif ()
 endif ()
 
 if (ENABLE_ADMENRI_BUILD_VERSION)

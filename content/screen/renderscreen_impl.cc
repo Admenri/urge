@@ -250,7 +250,7 @@ void RenderScreenImpl::TransitionWithBitmap(uint32_t duration,
     BitmapAgent* texture_agent =
         mapping_bitmap ? mapping_bitmap->GetAgent() : nullptr;
     Diligent::ITextureView* transition_mapping =
-        texture_agent ? texture_agent->resource : nullptr;
+        texture_agent ? texture_agent->resource.RawPtr() : nullptr;
 
     // Get current scene snapshot for transition
     auto* render_context = context()->primary_render_context;

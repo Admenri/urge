@@ -339,7 +339,7 @@ class MriBindingGen:
         if second_container.startswith("scoped_refptr"):
           content += f"self_obj->{member_name} = RBARRAY2CXX<content::{root_type}>(argv[0], k{root_type}DataType);\n"
         elif self.is_type_enum(root_type):
-          content += f"self_obj->{member_name} = RBARRAY2CXX_CONST<content::{root_type}>(argv[0]);\n"
+          content += f"self_obj->{member_name} = RBARRAY2CXX<content::{root_type}>(argv[0]);\n"
         else:
           content += f"self_obj->{member_name} = RBARRAY2CXX<{root_type}>(argv[0]);\n"
 
@@ -502,7 +502,7 @@ class MriBindingGen:
               match_type = match.group(1)
               convert_func = f"RBARRAY2CXX<content::{match_type}>({param_name}_ary, k{match_type}DataType)"
             elif self.is_type_enum(decay_type):
-              convert_func = f"RBARRAY2CXX_CONST<content::{klass_type}::{decay_type}>({param_name}_ary)"
+              convert_func = f"RBARRAY2CXX<content::{klass_type}::{decay_type}>({param_name}_ary)"
             else:
               convert_func = f"RBARRAY2CXX<{decay_type}>({param_name}_ary)"
 

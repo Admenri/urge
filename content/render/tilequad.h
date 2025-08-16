@@ -10,7 +10,10 @@
 
 namespace content {
 
-using TileAxis = enum { HORIZONTAL, VERTICAL };
+enum class TileAxis {
+  HORIZONTAL = 0,
+  VERTICAL,
+};
 
 // Get required quadangle's tile count.
 int32_t CalculateQuadTileCount(int32_t tile, int32_t dest);

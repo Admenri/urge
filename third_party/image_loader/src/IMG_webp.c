@@ -179,11 +179,13 @@ static bool IMG_InitWEBP(void)
         FUNCTION_LOADER_LIBWEBP(WebPFree, void (*)(void *))
 
         // Muxing functions
+#if SAVE_WEBP
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderNewInternal, WebPAnimEncoder * (*)(int, int, const WebPAnimEncoderOptions *, int))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderOptionsInitInternal, int (*)(WebPAnimEncoderOptions *, int))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderAdd, int (*)(WebPAnimEncoder *, WebPPicture *, int, const WebPConfig *))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderAssemble, int (*)(WebPAnimEncoder *, WebPData *))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderDelete, void (*)(WebPAnimEncoder *))
+#endif // SAVE_WEBP
     }
     ++lib.loaded;
 

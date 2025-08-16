@@ -301,13 +301,20 @@ void MriInitSerializableBinding(VALUE klass) {
 
 template <typename Ty>
 inline std::vector<Ty> RBARRAY2CXX(VALUE ary) {
-  static_assert(false, "unsupport vector type.");
-  return {};
+  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
+    rb_raise(rb_eArgError, "unexpect array type.");
+    return {};
+  }
+
+  std::vector<Ty> result;
+  for (long i = 0; i < RARRAY_LEN(ary); ++i)
+    result.push_back((Ty)NUM2INT(rb_ary_entry(ary, i)));
+  return result;
 }
 
 template <typename Ty>
 inline std::vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
-                                                   const rb_data_type_t& type) {
+                                                  const rb_data_type_t& type) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
@@ -320,8 +327,7 @@ inline std::vector<scoped_refptr<Ty>> RBARRAY2CXX(VALUE ary,
 }
 
 template <typename Ty>
-inline std::vector<Ty> RBARRAY2CXX(VALUE ary,
-                                    std::function<Ty(VALUE)> cvt_fn) {
+inline std::vector<Ty> RBARRAY2CXX(VALUE ary, std::function<Ty(VALUE)> cvt_fn) {
   if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
     rb_raise(rb_eArgError, "unexpect array type.");
     return {};
@@ -330,19 +336,6 @@ inline std::vector<Ty> RBARRAY2CXX(VALUE ary,
   std::vector<Ty> result;
   for (long i = 0; i < RARRAY_LEN(ary); ++i)
     result.push_back(cvt_fn(rb_ary_entry(ary, i)));
-  return result;
-}
-
-template <typename Ty>
-inline std::vector<Ty> RBARRAY2CXX_CONST(VALUE ary) {
-  if (!RB_TYPE_P(ary, RUBY_T_ARRAY)) {
-    rb_raise(rb_eArgError, "unexpect array type.");
-    return {};
-  }
-
-  std::vector<Ty> result;
-  for (long i = 0; i < RARRAY_LEN(ary); ++i)
-    result.push_back((Ty)NUM2INT(rb_ary_entry(ary, i)));
   return result;
 }
 
