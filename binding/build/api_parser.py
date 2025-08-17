@@ -71,6 +71,7 @@ class APIParser:
       "enums": [],
       "structs": [],
       "methods": [],
+      "closures": [],
       "attributes": [],
       "dependency": [],
       "is_comparable": False,
@@ -298,6 +299,53 @@ class APIParser:
     # 加入当前类数据
     self.current_class['attributes'].append(attribute_info)
 
+  # 解析闭包，
+  # 期望拿到的数据：
+  #  using TestCallback1 = base::OnceCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
+  #  using TestCallback2 = base::RepeatingCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
+  def process_closure(self, lines):
+    lines = ''.join(lines)
+
+    # 直接取括号里的内容
+    closure_infos = lines[lines.find('(') + 1: lines.rfind(')')]
+    closure_infos = list(map(lambda x: x.strip(), closure_infos.split()))
+    closure_infos = ''.join(closure_infos).split(',')
+
+    # 判断闭包类型
+    is_repeating = lines.find("base::Repeating") != -1
+    is_once = lines.find("base::Once") != -1
+
+    # 生成信息
+    closure_type_info = []
+    for info in closure_infos:
+      attr_raw, attr_type, dummy = self.parse_variable(info + " type")
+      closure_type_info.append({
+        "type_raw": attr_raw,
+        "type_detail": attr_type,
+      })
+
+    # 返回值类型
+    return_type_raw = lines[lines.find('<') + 1: lines.rfind('(')].strip()
+    return_type_raw, return_type, dummy = self.parse_variable(return_type_raw + " type")
+
+    # 闭包类型名
+    native_name = lines[lines.find(' ') + 1: lines.rfind('=')].strip()
+
+    # 生成信息
+    closure_body = {
+      "binding_name": self.current_comment.get('name', native_name),
+      "native_name": native_name,
+      "arguments": closure_type_info,
+      "return": {
+        "type_raw": return_type_raw,
+        "type_detail": return_type,
+      },
+    }
+
+    # 添加到当前类
+    print(closure_body)
+    self.current_class['closures'].append(closure_body)
+
   # 解析成员函数信息
   # 期望输入：
   #  virtual scoped_refptr<xx> yy(ExceptionState& exception_state) = 0;
@@ -437,6 +485,15 @@ class APIParser:
         self.parsing_mode = ""
       return
 
+    # 处理回调闭包
+    if self.parsing_mode == "closure.parsing":
+      self.buffer += line
+      if ';' in line:
+        # 结束属性解析
+        self.process_closure(self.buffer)
+        self.parsing_mode = ""
+      return
+
     # 处理成员函数定义
     if self.parsing_mode == "member.parsing":
       self.buffer += line
@@ -491,6 +548,17 @@ class APIParser:
         # 由于编码风格直接多行
         self.list_cache = [line]
         self.parsing_mode = "struct.parsing"
+        return
+
+      # 检测回调闭包（多次+单次）
+      if line.startswith("using") and (line.find("base::Repeating") != -1 or line.find("base::Once") != -1):
+        if ';' not in line:
+          self.buffer = line
+          self.parsing_mode = "closure.parsing"
+        else:
+          # 仅占一行的情况
+          self.process_closure(line)
+          self.parsing_mode = ""
         return
 
       # 检测属性 "URGE_EXPORT_ATTRIBUTE" "URGE_EXPORT_STATIC_ATTRIBUTE"
@@ -615,6 +683,12 @@ namespace content {
 class URGE_OBJECT(Bitmap) {
  public:
   virtual ~Bitmap() = default;
+
+  /*--urge()--*/
+  using TestCallback1 = base::OnceCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
+  
+  /*--urge()--*/
+  using TestCallback2 = base::RepeatingCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
