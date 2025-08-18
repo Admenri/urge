@@ -15,8 +15,6 @@ namespace content {
 struct ExecutionContext;
 }  // namespace content
 
-
-
 #define URGE_OBJECT(ty) \
   ty:                   \
  public                 \
@@ -28,11 +26,11 @@ struct ExecutionContext;
 #define URGE_EXPORT_STATIC_ATTRIBUTE(name, type)              \
   static type Get_##name(ExecutionContext*, ExceptionState&); \
   static void Put_##name(ExecutionContext*, const type&, ExceptionState&)
-#define URGE_EXPORT_SERIALIZABLE(type)                                  \
-  static scoped_refptr<type> Deserialize(                               \
-      ExecutionContext*, const std::string&, ExceptionState&);         \
-  static std::string Serialize(ExecutionContext*, scoped_refptr<type>, \
-                                ExceptionState&)
+#define URGE_EXPORT_SERIALIZABLE(type)                                         \
+  static scoped_refptr<type> Deserialize(ExecutionContext*,                    \
+                                         const std::string&, ExceptionState&); \
+  static std::string Serialize(ExecutionContext*, scoped_refptr<type>,         \
+                               ExceptionState&)
 #define URGE_EXPORT_COMPARABLE(type) \
   virtual bool CompareWithOther(scoped_refptr<type>, ExceptionState&) = 0;
 

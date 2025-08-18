@@ -301,7 +301,6 @@ class APIParser:
 
   # 解析闭包，
   # 期望拿到的数据：
-  #  using TestCallback1 = base::OnceCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
   #  using TestCallback2 = base::RepeatingCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
   def process_closure(self, lines):
     lines = ''.join(lines)
@@ -310,10 +309,6 @@ class APIParser:
     closure_infos = lines[lines.find('(') + 1: lines.rfind(')')]
     closure_infos = list(map(lambda x: x.strip(), closure_infos.split()))
     closure_infos = ''.join(closure_infos).split(',')
-
-    # 判断闭包类型
-    is_repeating = lines.find("base::Repeating") != -1
-    is_once = lines.find("base::Once") != -1
 
     # 生成信息
     closure_type_info = []
@@ -343,7 +338,6 @@ class APIParser:
     }
 
     # 添加到当前类
-    print(closure_body)
     self.current_class['closures'].append(closure_body)
 
   # 解析成员函数信息
@@ -551,7 +545,7 @@ class APIParser:
         return
 
       # 检测回调闭包（多次+单次）
-      if line.startswith("using") and (line.find("base::Repeating") != -1 or line.find("base::Once") != -1):
+      if line.startswith("using") and line.find("base::Repeating") != -1:
         if ';' not in line:
           self.buffer = line
           self.parsing_mode = "closure.parsing"

@@ -50,6 +50,23 @@ struct GlobalModules {
 GlobalModules* MriGetGlobalModules();
 content::ExecutionContext* MriGetCurrentContext();
 
+struct MRIObjectAliveKeeping : public base::RefCounted<MRIObjectAliveKeeping> {
+  VALUE object;
+
+  MRIObjectAliveKeeping(VALUE host_object) : object(host_object) {
+    DCHECK(host_object);
+    rb_gc_register_address(&object);
+  }
+
+  ~MRIObjectAliveKeeping() {
+    if (object)
+      rb_gc_unregister_address(&object);
+  }
+
+  MRIObjectAliveKeeping(const MRIObjectAliveKeeping&) = delete;
+  MRIObjectAliveKeeping& operator=(const MRIObjectAliveKeeping&) = delete;
+};
+
 #if RAPI_FULL >= 270
 #define DEF_TYPE_RESERVED 0,
 #else

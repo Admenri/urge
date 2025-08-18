@@ -224,6 +224,25 @@ class MriBindingGen:
       data.append(dep['native_name'])
     return typename in data
 
+    # 判断一个类型是否为 (once|repeating) callback
+  def is_type_closure(self, typename):
+    is_other_domain, domain, varname = self.parse_namespace_element(typename)
+    if is_other_domain:
+      for klass in self.global_classes:
+        if klass['native_name'] == domain:
+          for enum in klass['closures']:
+            if enum['native_name'] == varname:
+              return True
+
+    deps = self.class_data.get('closures', None)
+    if deps is None:
+      return False
+
+    data = []
+    for dep in deps:
+      data.append(dep['native_name'])
+    return typename in data
+
   # 函数定义主体部分
   def generate_body_definition(self):
     # 当前对象的类型判断
@@ -455,7 +474,127 @@ class MriBindingGen:
           has_optional = param_is_optional
 
           # 识别 C++ 类型对应的 Ruby 类型
-          if param_type == "uint32_t":
+          if self.is_type_closure(param_type):
+            # 查找枚举信息
+            current_closure = None
+            for closure in self.class_data['closures']:
+              if closure['native_name'] == param_type:
+                current_closure = closure
+                break
+
+            # 合成参数列表
+            types_list = []
+            for it in current_closure['arguments']:
+              types_list.append(it['type_raw'])
+
+            # 合成形参列表
+            arguments_list = ""
+            arg_index = 0
+            for ty in types_list:
+              arguments_list += f", {ty} param{arg_index}"
+              arg_index += 1
+
+            # 合成实参列表
+            calling_parameters = ""
+            arg_index = 0
+            for ty in types_list:
+              # 普通返回值处理
+              type_mapping = {
+                "int8_t": "INT2NUM",
+                "uint8_t": "INT2NUM",
+                "int16_t": "INT2NUM",
+                "uint16_t": "INT2NUM",
+                "int32_t": "INT2NUM",
+                "uint32_t": "UINT2NUM",
+                "int64_t": "LL2NUM",
+                "uint64_t": "ULL2NUM",
+                "bool": "MRI_BOOL_VALUE",
+                "float": "DBL2NUM",
+                "double": "DBL2NUM",
+                "std::string": "MRI_STRING_VALUE",
+              }
+
+              if self.is_type_enum(ty):
+                calling_parameters += f", INT2NUM(param{arg_index})"
+              elif ty.startswith("scoped_refptr"):
+                match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', ty)
+                decay_type = match.group(1)
+                calling_parameters += f", MriWrapObject<content::{decay_type}>(param{arg_index}, k{decay_type}DataType)"
+              elif ty.startswith("std::vector"):
+                match = re.search(r'std::vector<(.+)>', ty)
+                decay_type = match.group(1)
+
+                # 萃取 std::vector 中的类型并使用对应的转换
+                if decay_type.startswith("scoped_refptr"):
+                  match = re.search(r'scoped_refptr\s*<\s*([^\s>]+)\s*>', decay_type)
+                  match_type = match.group(1)
+                  convert_func = f"CXX2RBARRAY<content::{match_type}>(param{arg_index}, k{match_type}DataType)"
+                elif self.is_type_enum(decay_type):
+                  convert_func = f"CXX2RBARRAY<int32_t>(param{arg_index})"
+                else:
+                  convert_func = f"CXX2RBARRAY<{decay_type}>(param{arg_index})"
+
+                calling_parameters += ", " + convert_func
+              elif type_mapping.get(ty, None) is not None:
+                calling_parameters += f", {type_mapping.get(ty)}(param{arg_index})"
+
+              # 下一个参数
+              arg_index += 1
+
+            # 生成返回值
+            return_type_raw = current_closure['return']['type_raw']
+            return_type_detail = current_closure['return']['type_detail']
+            return_convert_raw = ""
+
+            # 基础类型转换
+            basic_type_convert = {
+              "int8_t": "NUM2INT",
+              "uint8_t": "NUM2INT",
+              "int16_t": "NUM2INT",
+              "uint16_t": "NUM2INT",
+              "int32_t": "NUM2INT",
+              "uint32_t": "NUM2UINT",
+              "int64_t": "NUM2LL",
+              "uint64_t": "NUM2ULL",
+              "bool": "MRI_FROM_BOOL",
+              "float": "NUM2DBL",
+              "double": "NUM2DBL",
+              "std::string": "MRI_FROM_STRING",
+            }
+
+            if return_type_raw in basic_type_convert:
+              return_convert_raw += f"{basic_type_convert.get(return_type_raw)}(_return_value)"
+            elif self.is_type_enum(return_type_raw):
+              return_convert_raw += f"(content::{return_type_raw})NUM2INT(_return_value)"
+            elif len(return_type_detail['containers']) == 1 and return_type_detail['containers'][0] == "scoped_refptr":
+              root_type = return_type_detail['root_type']
+              return_convert_raw += f"MriCheckStructData<content::{root_type}>(_return_value, k{root_type}DataType)"
+            elif len(return_type_detail['containers']) >= 1 and return_type_detail['containers'][0] == "std::vector":
+              root_type = return_type_detail['root_type']
+              second_container = return_type_detail['containers']
+              second_container = "" if len(second_container) == 1 else second_container[1]
+
+              # 萃取 std::vector 中的类型并使用对应的转换
+              if second_container.startswith("scoped_refptr"):
+                return_convert_raw += f"RBARRAY2CXX<content::{root_type}>(_return_value, k{root_type}DataType)"
+              elif self.is_type_enum(root_type):
+                return_convert_raw += f"RBARRAY2CXX<content::{root_type}>(_return_value)"
+              else:
+                return_convert_raw += f"RBARRAY2CXX<{root_type}>(_return_value)"
+
+            # 生成调用ruby函数的lambda
+            lambda_template = f"""
+            [](scoped_refptr<MRIObjectAliveKeeping> self {arguments_list}) -> {current_closure['return']['type_raw']} {{
+              VALUE _return_value = rb_funcall(self->object, rb_intern("call"), {len(types_list)} {calling_parameters});
+              return {return_convert_raw};
+            }}
+            """
+
+            parse_template += "o"
+            ruby_type = "VALUE"
+            convert_suffix += f"auto {param_name} = base::BindRepeating({lambda_template}, base::MakeRefCounted<MRIObjectAliveKeeping>({param_name}_obj));\n"
+            param_name += "_obj"
+          elif param_type == "uint32_t":
             parse_template += "u"
             ruby_type = "uint32_t"
           elif param_type == "int64_t":
@@ -765,6 +904,12 @@ class URGE_RUNTIME_API Bitmap : public base::RefCounted<Bitmap> {
 
   /*--urge(serializable)--*/
   URGE_EXPORT_SERIALIZABLE(Bitmap);
+
+  /*--urge()--*/
+  using TestCallback = base::RepeatingCallback<void(int32_t)>;
+
+  /*--urge(name:async_test)--*/
+  virtual void AsyncTest(const TestCallback& callback, ExceptionState& exception_state) = 0;
 
   /*--urge(name:dispose)--*/
   virtual void Dispose(ExceptionState& exception_state) = 0;
