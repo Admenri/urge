@@ -9,7 +9,6 @@
 
 #include "components/audioservice/audio_service.h"
 #include "components/filesystem/io_service.h"
-#include "components/network/public/network_service.h"
 #include "content/canvas/canvas_scheduler.h"
 #include "content/canvas/font_context.h"
 #include "content/context/disposable.h"
@@ -37,7 +36,6 @@ struct ExecutionContext {
   SpriteBatch* sprite_batcher = nullptr;
   EventController* event_controller = nullptr;
   audioservice::AudioService* audio_server = nullptr;
-  network::NetworkService* network_service = nullptr;
   DisposableCollection* disposable_parent = nullptr;
   DrawNodeController* screen_drawable_node = nullptr;
 

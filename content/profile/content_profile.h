@@ -76,10 +76,6 @@ class ContentProfile {
   bool disable_ime = false;
   std::string orientation = "LandscapeLeft LandscapeRight";
 
-  // Features
-  bool disable_audio = false;
-  bool sprite_vertical_sort = true;
-
  private:
   SDL_IOStream* ini_stream_;
 };

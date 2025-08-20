@@ -242,11 +242,7 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
   disable_ime = reader->GetBoolean("Platform", "DisableIME", disable_ime);
   orientation = reader->Get("Platform", "Orientations", orientation);
 
-  // Features
-  disable_audio = reader->GetBoolean("Features", "DisableAudio", disable_audio);
-  sprite_vertical_sort = reader->GetBoolean("Features", "SpriteVerticalSort",
-                                            sprite_vertical_sort);
-
+  // End of parsing
   if (ini_stream_)
     SDL_CloseIO(ini_stream_);
 

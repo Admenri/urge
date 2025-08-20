@@ -117,16 +117,12 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
 
   render_device_ = std::move(render_device);
   device_context_ = std::move(render_context);
+
   canvas_scheduler_ =
       std::make_unique<CanvasScheduler>(render_device_.get(), device_context_);
   sprite_batcher_ = std::make_unique<SpriteBatch>(render_device_.get());
   event_controller_ = std::make_unique<EventController>(window);
-
-  network_service_ = network::NetworkService::LaunchService();
-  if (!profile_->disable_audio) {
-    LOG(INFO) << "[Content] Launching audio service...";
-    audio_server_ = audioservice::AudioService::Create(io_service);
-  }
+  audio_server_ = audioservice::AudioService::Create(io_service);
 
   // Initialize execution context
   execution_context_ = std::make_unique<ExecutionContext>();

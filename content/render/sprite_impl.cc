@@ -34,9 +34,8 @@ SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
       node_(parent ? parent->GetDrawableController()
                    : execution_context->screen_drawable_node,
             SortKey()),
-      rgss2_style_(execution_context->engine_profile->sprite_vertical_sort &&
-                   execution_context->engine_profile->api_version >=
-                       ContentProfile::APIVersion::RGSS2),
+      rgss2_style_(execution_context->engine_profile->api_version >=
+                   ContentProfile::APIVersion::RGSS2),
       viewport_(parent),
       src_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),

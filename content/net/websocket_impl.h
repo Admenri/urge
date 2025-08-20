@@ -25,6 +25,7 @@ class WebSocketImpl : public WebSocket, public EngineObject {
              const std::string& reason,
              ExceptionState& exception_state) override;
   void Send(const std::string& message,
+            MessageType type,
             ExceptionState& exception_state) override;
   ReadyState GetReadyState(ExceptionState& exception_state) override;
   std::string GetProtocol(ExceptionState& exception_state) override;

@@ -62,6 +62,7 @@ class URGE_OBJECT(WebSocket) {
 
   /*--urge(name:send)--*/
   virtual void Send(const std::string& message,
+                    MessageType type,
                     ExceptionState& exception_state) = 0;
 
   /*--urge(name:ready_state)--*/

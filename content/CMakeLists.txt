@@ -155,7 +155,6 @@ target_link_libraries(engine_content
   components_fpslimiter
   components_audioservice
   components_spine2drenderer
-  components_network
   sdl_image_loader
   sdl_ttf_render
   ocornut_imgui

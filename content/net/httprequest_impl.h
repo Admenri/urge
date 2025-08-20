@@ -20,6 +20,7 @@ class HTTPRequestImpl : public HTTPRequest, public EngineObject {
 
   void Open(const std::string& method,
             const std::string& url,
+            const std::string& mime_type,
             const std::string& username,
             const std::string& password,
             ExceptionState& exception_state) override;
@@ -29,9 +30,7 @@ class HTTPRequestImpl : public HTTPRequest, public EngineObject {
   void SetRequestHeader(const std::string& key,
                         const std::string& value,
                         ExceptionState& exception_state) override;
-  void OverrideMimeType(const std::string& mime_type,
-                        ExceptionState& exception_state) override;
-  std::string GetResponseHeader(ExceptionState& exception_state) override;
+  std::string GetResponse(ExceptionState& exception_state) override;
   std::string GetResponseHeader(const std::string& header,
                                 ExceptionState& exception_state) override;
   ReadyState GetReadyState(ExceptionState& exception_state) override;

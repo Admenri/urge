@@ -37,6 +37,7 @@ class URGE_OBJECT(HTTPRequest) {
   /*--urge(name:open,optional:username="",optional:password="")--*/
   virtual void Open(const std::string& method,
                     const std::string& url,
+                    const std::string& mime_type,
                     const std::string& username,
                     const std::string& password,
                     ExceptionState& exception_state) = 0;
@@ -57,12 +58,8 @@ class URGE_OBJECT(HTTPRequest) {
                                 const std::string& value,
                                 ExceptionState& exception_state) = 0;
 
-  /*--urge(name:override_mime_type)--*/
-  virtual void OverrideMimeType(const std::string& mime_type,
-                                ExceptionState& exception_state) = 0;
-
-  /*--urge(name:response_header)--*/
-  virtual std::string GetResponseHeader(ExceptionState& exception_state) = 0;
+  /*--urge(name:response)--*/
+  virtual std::string GetResponse(ExceptionState& exception_state) = 0;
 
   /*--urge(name:response_header)--*/
   virtual std::string GetResponseHeader(const std::string& header,
