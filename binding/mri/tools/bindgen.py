@@ -491,6 +491,9 @@ class MriBindingGen:
             arguments_list = ""
             arg_index = 0
             for ty in types_list:
+              if self.is_type_enum(ty):
+                is_other_domain, domain, varname = self.parse_namespace_element(ty)
+                ty = f"content::{domain}::{ty}" if is_other_domain else f"content::{klass_type}::{ty}"
               arguments_list += f", {ty} param{arg_index}"
               arg_index += 1
 
@@ -498,6 +501,10 @@ class MriBindingGen:
             calling_parameters = ""
             arg_index = 0
             for ty in types_list:
+              ty = ty.strip()
+              if ty.find("const") != -1:
+                ty = ty[ty.find(' ') + 1: ty.rfind('&')].strip()
+
               # 普通返回值处理
               type_mapping = {
                 "int8_t": "INT2NUM",

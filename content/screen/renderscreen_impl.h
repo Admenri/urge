@@ -96,8 +96,6 @@ class RenderScreenImpl : public Graphics, public EngineObject {
                     uint32_t height,
                     ExceptionState& exception_state) override;
   void Reset(ExceptionState& exception_state) override;
-  void PlayMovie(const std::string& filename,
-                 ExceptionState& exception_state) override;
   void MoveWindow(int32_t x,
                   int32_t y,
                   int32_t width,

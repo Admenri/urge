@@ -330,12 +330,6 @@ void RenderScreenImpl::Reset(ExceptionState& exception_state) {
   FrameReset(exception_state);
 }
 
-void RenderScreenImpl::PlayMovie(const std::string& filename,
-                                 ExceptionState& exception_state) {
-  exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                             "Unimplement: Graphics.play_movie");
-}
-
 void RenderScreenImpl::MoveWindow(int32_t x,
                                   int32_t y,
                                   int32_t width,

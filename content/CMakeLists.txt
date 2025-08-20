@@ -84,6 +84,10 @@ set(ENGINE_CONTENT_SRC
   media/audio_impl.h
   media/audio_stream_impl.cc
   media/audio_stream_impl.h
+  net/httprequest_impl.cc
+  net/httprequest_impl.h
+  net/websocket_impl.cc
+  net/websocket_impl.h
   profile/command_ids.h
   profile/content_profile.cc
   profile/content_profile.h

@@ -308,12 +308,13 @@ class APIParser:
     # 直接取括号里的内容
     closure_infos = lines[lines.find('(') + 1: lines.rfind(')')]
     closure_infos = list(map(lambda x: x.strip(), closure_infos.split()))
-    closure_infos = ''.join(closure_infos).split(',')
+    if len(closure_infos) > 0:
+      closure_infos = ' '.join(closure_infos).split(',')
 
     # 生成信息
     closure_type_info = []
     for info in closure_infos:
-      attr_raw, attr_type, dummy = self.parse_variable(info + " type")
+      attr_raw, attr_type, dummy = self.parse_variable(info)
       closure_type_info.append({
         "type_raw": attr_raw,
         "type_detail": attr_type,
@@ -545,7 +546,7 @@ class APIParser:
         return
 
       # 检测回调闭包（多次+单次）
-      if line.startswith("using") and line.find("base::Repeating") != -1:
+      if line.startswith("using") or line.find("base::Repeating") != -1:
         if ';' not in line:
           self.buffer = line
           self.parsing_mode = "closure.parsing"
@@ -641,236 +642,92 @@ if __name__ == "__main__":
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_PUBLIC_ENGINE_BITMAP_H_
-#define CONTENT_PUBLIC_ENGINE_BITMAP_H_
+#ifndef CONTENT_PUBLIC_ENGINE_WEBSOCKET_H_
+#define CONTENT_PUBLIC_ENGINE_WEBSOCKET_H_
 
+#include "base/bind/callback.h"
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
-#include "content/context/execution_context.h"
-#include "content/public/engine_color.h"
-#include "content/public/engine_font.h"
-#include "content/public/engine_iostream.h"
-#include "content/public/engine_rect.h"
-#include "content/public/engine_surface.h"
 
 namespace content {
 
-  /*--urge(name:Size)--*/
-  struct URGE_OBJECT(Size) {
-    uint32_t width;
-    uint32_t height;
-  };
-  
-  /*--urge(name:CreateInfo)--*/
-  struct URGE_OBJECT(CreateInfo) {
-    uint32_t test;
-    uint32_t id = 0;
-    std::string filename = "null";
-    std::optional<Size> size;
-  };
-
-// IDL generator format:
-// Inhert: refcounted only.
-// Interface reference: RGSS Reference
-/*--urge(name:Bitmap)--*/
-class URGE_OBJECT(Bitmap) {
+/*--urge(name:WebSocket)--*/
+class URGE_OBJECT(WebSocket) {
  public:
-  virtual ~Bitmap() = default;
+  virtual ~WebSocket() = default;
 
-  /*--urge()--*/
-  using TestCallback1 = base::OnceCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
-  
-  /*--urge()--*/
-  using TestCallback2 = base::RepeatingCallback<void(int32_t, EnumValue, scoped_refptr<Test>)>;
+  /*--urge(name:ReadyState)--*/
+  enum ReadyState {
+    STATE_CONNECTING = 0,
+    STATE_OPEN = 1,
+    STATE_CLOSING = 2,
+    STATE_CLOSED = 3,
+  };
+
+  /*--urge(name:OpenHandler)--*/
+  using OpenHandler = base::RepeatingCallback<void()>;
+
+  /*--urge(name:ErrorHandler)--*/
+  using ErrorHandler = base::RepeatingCallback<void()>;
+
+  /*--urge(name:MessageHandler)--*/
+  using MessageHandler = base::RepeatingCallback<void(const std::string&)>;
+
+  /*--urge(name:CloseHandler)--*/
+  using CloseHandler =
+      base::RepeatingCallback<void(int32_t, const std::string&)>;
 
   /*--urge(name:initialize)--*/
-  static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
-                                   const std::string& filename,
-                                   const std::vector<scoped_refptr<Test>> test,
-                                   ExceptionState& exception_state);
+  static scoped_refptr<WebSocket> New(ExecutionContext* execution_context,
+                                      ExceptionState& exception_state);
 
-  /*--urge(name:initialize)--*/
-  static scoped_refptr<Bitmap> New(ExecutionContext* execution_context,
-                                   uint32_t width,
-                                   uint32_t height,
-                                   ExceptionState& exception_state);
+  /*--urge(name:connect)--*/
+  virtual void Connect(const std::string& url,
+                       const std::vector<std::string>& protocols,
+                       ExceptionState& exception_state) = 0;
 
-  /*--urge(name:initialize_copy)--*/
-  static scoped_refptr<Bitmap> Copy(ExecutionContext* execution_context,
-                                    scoped_refptr<Bitmap> other,
-                                    ExceptionState& exception_state);
+  /*--urge(name:close)--*/
+  virtual void Close(int32_t code,
+                     const std::string& reason,
+                     ExceptionState& exception_state) = 0;
 
-  /*--urge(name:from_surface)--*/
-  static scoped_refptr<Bitmap> FromSurface(ExecutionContext* execution_context,
-                                           scoped_refptr<Surface> surface,
-                                           ExceptionState& exception_state);
+  /*--urge(name:send)--*/
+  virtual void Send(const std::string& message,
+                    ExceptionState& exception_state) = 0;
 
-  /*--urge(name:from_stream)--*/
-  static scoped_refptr<Bitmap> FromStream(ExecutionContext* execution_context,
-                                          scoped_refptr<IOStream> stream,
-                                          const std::string& extname,
-                                          ExceptionState& exception_state);
+  /*--urge(name:ready_state)--*/
+  virtual ReadyState GetReadyState(ExceptionState& exception_state) = 0;
 
-  /*--urge(serializable)--*/
-  URGE_EXPORT_SERIALIZABLE(Bitmap);
+  /*--urge(name:protocol)--*/
+  virtual std::string GetProtocol(ExceptionState& exception_state) = 0;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
+  /*--urge(name:url)--*/
+  virtual std::string GetURL(ExceptionState& exception_state) = 0;
 
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(name:buffered_amount)--*/
+  virtual uint32_t GetBufferedAmount(ExceptionState& exception_state) = 0;
 
-  /*--urge(name:width)--*/
-  virtual uint32_t Width(ExceptionState& exception_state) = 0;
+  /*--urge(name:set_open_handler)--*/
+  virtual void SetOpenHandler(OpenHandler handler,
+                              ExceptionState& exception_state) = 0;
 
-  /*--urge(name:height)--*/
-  virtual uint32_t Height(ExceptionState& exception_state) = 0;
+  /*--urge(name:set_error_handler)--*/
+  virtual void SetErrorHandler(ErrorHandler handler,
+                               ExceptionState& exception_state) = 0;
 
-  /*--urge(name:rect)--*/
-  virtual scoped_refptr<Rect> GetRect(ExceptionState& exception_state) = 0;
+  /*--urge(name:set_message_handler)--*/
+  virtual void SetMessageHandler(MessageHandler handler,
+                                 ExceptionState& exception_state) = 0;
 
-  /*--urge(name:blt,optional:opacity=255,optional:blend_type=0)--*/
-  virtual void Blt(int32_t x,
-                   int32_t y,
-                   scoped_refptr<Bitmap> src_bitmap,
-                   scoped_refptr<Rect> src_rect,
-                   uint32_t opacity,
-                   int32_t blend_type,
-                   ExceptionState& exception_state) = 0;
-
-  /*--urge(name:stretch_blt,optional:opacity=255,optional:blend_type=0)--*/
-  virtual void StretchBlt(scoped_refptr<Rect> dest_rect,
-                          scoped_refptr<Bitmap> src_bitmap,
-                          scoped_refptr<Rect> src_rect,
-                          uint32_t opacity,
-                          int32_t blend_type,
-                          ExceptionState& exception_state) = 0;
-
-  /*--urge(name:fill_rect)--*/
-  virtual void FillRect(int32_t x,
-                        int32_t y,
-                        uint32_t width,
-                        uint32_t height,
-                        scoped_refptr<Color> color,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:fill_rect)--*/
-  virtual void FillRect(scoped_refptr<Rect> rect,
-                        scoped_refptr<Color> color,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:gradient_fill_rect)--*/
-  virtual void GradientFillRect(int32_t x,
-                                int32_t y,
-                                uint32_t width,
-                                uint32_t height,
-                                scoped_refptr<Color> color1,
-                                scoped_refptr<Color> color2,
-                                bool vertical,
-                                ExceptionState& exception_state) = 0;
-
-  /*--urge(name:gradient_fill_rect)--*/
-  virtual void GradientFillRect(int32_t x,
-                                int32_t y,
-                                uint32_t width,
-                                uint32_t height,
-                                scoped_refptr<Color> color1,
-                                scoped_refptr<Color> color2,
-                                ExceptionState& exception_state) = 0;
-
-  /*--urge(name:gradient_fill_rect)--*/
-  virtual void GradientFillRect(scoped_refptr<Rect> rect,
-                                scoped_refptr<Color> color1,
-                                scoped_refptr<Color> color2,
-                                bool vertical,
-                                ExceptionState& exception_state) = 0;
-
-  /*--urge(name:gradient_fill_rect)--*/
-  virtual void GradientFillRect(scoped_refptr<Rect> rect,
-                                scoped_refptr<Color> color1,
-                                scoped_refptr<Color> color2,
-                                ExceptionState& exception_state) = 0;
-
-  /*--urge(name:clear)--*/
-  virtual void Clear(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:clear_rect)--*/
-  virtual void ClearRect(int32_t x,
-                         int32_t y,
-                         uint32_t width,
-                         uint32_t height,
-                         ExceptionState& exception_state) = 0;
-
-  /*--urge(name:clear_rect)--*/
-  virtual void ClearRect(scoped_refptr<Rect> rect,
-                         ExceptionState& exception_state) = 0;
-
-  /*--urge(name:get_pixel)--*/
-  virtual scoped_refptr<Color> GetPixel(int32_t x,
-                                        int32_t y,
-                                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:set_pixel)--*/
-  virtual void SetPixel(int32_t x,
-                        int32_t y,
-                        scoped_refptr<Color> color,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:hue_change)--*/
-  virtual void HueChange(int32_t hue, ExceptionState& exception_state) = 0;
-
-  /*--urge(name:blur)--*/
-  virtual void Blur(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:radial_blur)--*/
-  virtual void RadialBlur(int32_t angle,
-                          int32_t division,
-                          ExceptionState& exception_state) = 0;
-
-  /*--urge(name:draw_text)--*/
-  virtual void DrawText(int32_t x,
-                        int32_t y,
-                        uint32_t width,
-                        uint32_t height,
-                        const std::string& str,
-                        int32_t align,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:draw_text)--*/
-  virtual void DrawText(int32_t x,
-                        int32_t y,
-                        uint32_t width,
-                        uint32_t height,
-                        const std::string& str,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:draw_text)--*/
-  virtual void DrawText(scoped_refptr<Rect> rect,
-                        const std::string& str,
-                        int32_t align,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:draw_text)--*/
-  virtual void DrawText(scoped_refptr<Rect> rect,
-                        const std::string& str,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:text_size)--*/
-  virtual scoped_refptr<Rect> TextSize(const std::string& str,
-                                       ExceptionState& exception_state) = 0;
-
-  /*--urge(name:get_surface)--*/
-  virtual scoped_refptr<Surface> GetSurface(
-      ExceptionState& exception_state) = 0;
-
-  /*--urge(name:font)--*/
-  URGE_EXPORT_ATTRIBUTE(Font, scoped_refptr<Font>);
+  /*--urge(name:set_close_handler)--*/
+  virtual void SetCloseHandler(CloseHandler handler,
+                               ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content
 
-#endif  //! CONTENT_PUBLIC_ENGINE_BITMAP_H_
+#endif  //! CONTENT_PUBLIC_ENGINE_WEBSOCKET_H_
     """
 
   parser = APIParser()
