@@ -907,7 +907,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
 
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       render_context->DrawIndexed(draw_indexed_attribs);
       quads_draw_offset++;
     }
@@ -921,7 +922,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
 
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = tiled_quads_count * 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
       quads_draw_offset += tiled_quads_count;
@@ -936,7 +938,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
     {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = frames_quads_count * 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
@@ -981,7 +984,8 @@ void Window2Impl::GPURenderWindowQuadsInternal(
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+    draw_indexed_attribs.IndexType =
+        context()->render_device->GetQuadIndex()->GetIndexType();
     draw_indexed_attribs.FirstIndexLocation = agent_.background_quad_offset * 6;
     render_context->DrawIndexed(draw_indexed_attribs);
   }
@@ -997,7 +1001,8 @@ void Window2Impl::GPURenderWindowQuadsInternal(
       // Execute render command
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = agent_.controls_quad_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
@@ -1018,7 +1023,8 @@ void Window2Impl::GPURenderWindowQuadsInternal(
         // Execute render command
         Diligent::DrawIndexedAttribs draw_indexed_attribs;
         draw_indexed_attribs.NumIndices = agent_.cursor_draw_count * 6;
-        draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+        draw_indexed_attribs.IndexType =
+            context()->render_device->GetQuadIndex()->GetIndexType();
         draw_indexed_attribs.FirstIndexLocation = agent_.cursor_quad_offset * 6;
         render_context->DrawIndexed(draw_indexed_attribs);
       }
@@ -1033,7 +1039,8 @@ void Window2Impl::GPURenderWindowQuadsInternal(
         // Execute render command
         Diligent::DrawIndexedAttribs draw_indexed_attribs;
         draw_indexed_attribs.NumIndices = 6;
-        draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+        draw_indexed_attribs.IndexType =
+            context()->render_device->GetQuadIndex()->GetIndexType();
         draw_indexed_attribs.FirstIndexLocation =
             agent_.contents_quad_offset * 6;
         render_context->DrawIndexed(draw_indexed_attribs);

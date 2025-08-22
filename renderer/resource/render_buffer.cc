@@ -9,6 +9,16 @@
 
 namespace renderer {
 
+constexpr size_t IndexSizeInByte(Diligent::VALUE_TYPE type) {
+  switch (type) {
+    default:
+    case Diligent::VT_UINT16:
+      return 2;
+    case Diligent::VT_UINT32:
+      return 4;
+  }
+}
+
 // Primitive draw order:
 //   Data: 6 index to 4 vertex
 //   View:
@@ -18,26 +28,32 @@ namespace renderer {
 //    |   \|
 //  3 +----+ 2
 // order: lt -> rt -> rb -> lb
-static std::array<QuadIndexCache::IndexFormat, 6> kQuadrangleDrawIndices = {
+static std::array<uint32_t, 6> kQuadrangleDrawIndices = {
     0, 1, 2, 2, 3, 0,
 };
 
-QuadIndexCache::QuadIndexCache(Diligent::IRenderDevice* device)
-    : device_(device) {}
+QuadIndexCache::QuadIndexCache(Diligent::IRenderDevice* device,
+                               Diligent::VALUE_TYPE type)
+    : type_(type), index_count_(0), device_(device) {}
 
 void QuadIndexCache::Allocate(size_t quadrangle_size) {
-  size_t required_indices_size =
-      quadrangle_size * kQuadrangleDrawIndices.size();
+  size_t required_indices = quadrangle_size * kQuadrangleDrawIndices.size();
 
   // Generate
-  if (cache_.size() < required_indices_size) {
-    cache_.clear();
-    cache_.reserve(required_indices_size);
-    for (size_t i = 0; i < quadrangle_size; ++i)
-      for (const auto& it : kQuadrangleDrawIndices)
-        cache_.push_back(static_cast<QuadIndexCache::IndexFormat>(i * 4 + it));
+  if (index_count_ < required_indices) {
+    index_count_ = required_indices;
+    cache_.resize(required_indices * IndexSizeInByte(type_));
+    auto* index_ptr = cache_.data();
+    for (size_t i = 0; i < quadrangle_size; ++i) {
+      for (const auto& it : kQuadrangleDrawIndices) {
+        // Align to maximum size
+        *reinterpret_cast<uint32_t*>(index_ptr) =
+            static_cast<uint32_t>(i * 4 + it);
+        index_ptr += IndexSizeInByte(type_);
+      }
+    }
 
-    // Reset old buffer
+    // Reset buffer
     buffer_.Release();
   }
 
@@ -48,8 +64,7 @@ void QuadIndexCache::Allocate(size_t quadrangle_size) {
     buffer_desc.Name = "quad.index.buffer";
     buffer_desc.Usage = Diligent::USAGE_IMMUTABLE;
     buffer_desc.BindFlags = Diligent::BIND_INDEX_BUFFER;
-    buffer_desc.Size = required_indices_size *
-                       sizeof(decltype(kQuadrangleDrawIndices)::value_type);
+    buffer_desc.Size = required_indices * IndexSizeInByte(type_);
 
     // Upload new index data
     Diligent::BufferData buffer_data;

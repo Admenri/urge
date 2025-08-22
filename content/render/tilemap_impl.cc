@@ -1033,7 +1033,8 @@ void TilemapImpl::GPURenderGroundLayerInternal(
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6 * agent_.ground_draw_count;
-    draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+    draw_indexed_attribs.IndexType =
+        context()->render_device->GetQuadIndex()->GetIndexType();
     render_context->DrawIndexed(draw_indexed_attribs);
   }
 }
@@ -1078,7 +1079,8 @@ void TilemapImpl::GPURenderAboveLayerInternal(
       // Execute render command
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6 * draw_count;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = draw_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
     }

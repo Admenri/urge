@@ -325,7 +325,7 @@ void VideoDecoderImpl::GPURenderYUVInternal(
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 

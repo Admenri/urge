@@ -16,12 +16,10 @@ namespace renderer {
 
 class QuadIndexCache {
  public:
-  using IndexFormat = uint16_t;
-  static const Diligent::VALUE_TYPE kValueType = Diligent::VT_UINT16;
-
   // Make quad index(6) buffer cache
-  static QuadIndexCache Make(RRefPtr<Diligent::IRenderDevice> device) {
-    return QuadIndexCache(device);
+  static QuadIndexCache Make(RRefPtr<Diligent::IRenderDevice> device,
+                             Diligent::VALUE_TYPE type = Diligent::VT_UINT16) {
+    return QuadIndexCache(device, type);
   }
 
   QuadIndexCache(const QuadIndexCache&) = delete;
@@ -31,13 +29,18 @@ class QuadIndexCache {
   // |quadrangle_size| is the count not the byte size.
   void Allocate(size_t quadrangle_size);
 
+  // Current using index type
+  Diligent::VALUE_TYPE GetIndexType() const { return type_; }
+
   bool operator()() const { return buffer_; }
   Diligent::IBuffer* operator*() { return buffer_; }
 
  private:
-  QuadIndexCache(Diligent::IRenderDevice* device);
+  QuadIndexCache(Diligent::IRenderDevice* device, Diligent::VALUE_TYPE type);
 
-  std::vector<uint16_t> cache_;
+  Diligent::VALUE_TYPE type_;
+  size_t index_count_;
+  std::vector<uint8_t> cache_;
 
   RRefPtr<Diligent::IRenderDevice> device_;
   RRefPtr<Diligent::IBuffer> buffer_;

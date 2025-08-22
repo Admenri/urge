@@ -64,6 +64,7 @@ class ContentProfile {
 #else
       false;
 #endif
+  bool u32_draw_index = true;
   int32_t frame_rate = 60;
   uint32_t vsync = 1;
   bool keep_ratio = true;

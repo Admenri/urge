@@ -64,6 +64,7 @@ class RenderDevice {
   static CreateDeviceResult Create(base::WeakPtr<ui::Widget> window_target,
                                    DriverType driver_type,
                                    SamplerType default_sampler,
+                                   bool u32_draw_index,
                                    bool validation);
 
   ~RenderDevice();
@@ -91,9 +92,10 @@ class RenderDevice {
   int32_t ResumeContext(Diligent::IDeviceContext* immediate_context);
 
  private:
-  RenderDevice(base::WeakPtr<ui::Widget> window,
-               const Diligent::SwapChainDesc& swapchain_desc,
+  RenderDevice(bool u32_draw_index,
                int32_t max_texture_size,
+               base::WeakPtr<ui::Widget> window,
+               const Diligent::SwapChainDesc& swapchain_desc,
                const PipelineInitParams& pipeline_default_params,
                Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
                Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,

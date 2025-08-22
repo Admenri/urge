@@ -643,13 +643,15 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
     if (enable_batch) {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6 * agent_.instance_count;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     } else {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
-      draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+      draw_indexed_attribs.IndexType =
+          context()->render_device->GetQuadIndex()->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     }

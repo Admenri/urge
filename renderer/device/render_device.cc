@@ -107,6 +107,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     base::WeakPtr<ui::Widget> window_target,
     DriverType driver_type,
     SamplerType default_sampler,
+    bool u32_draw_index,
     bool validation) {
   // Setup debugging output
   Diligent::SetDebugMessageCallback(DebugMessageOutputFunc);
@@ -335,17 +336,18 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       Diligent::TEX_FORMAT_D24_UNORM_S8_UINT;
 
   // Global render device
-  std::unique_ptr<RenderDevice> render_device(
-      new RenderDevice(window_target, swap_chain_desc, max_texture_size,
-                       pipeline_default_params, device, swapchain, glcontext));
+  std::unique_ptr<RenderDevice> render_device(new RenderDevice(
+      u32_draw_index, max_texture_size, window_target, swap_chain_desc,
+      pipeline_default_params, device, swapchain, glcontext));
 
   return std::make_tuple(std::move(render_device), std::move(context));
 }
 
 RenderDevice::RenderDevice(
+    bool u32_draw_index,
+    int32_t max_texture_size,
     base::WeakPtr<ui::Widget> window,
     const Diligent::SwapChainDesc& swapchain_desc,
-    int32_t max_texture_size,
     const PipelineInitParams& pipeline_default_params,
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> device,
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> swapchain,
@@ -356,7 +358,9 @@ RenderDevice::RenderDevice(
       device_(device),
       swapchain_(swapchain),
       pipelines_(pipeline_default_params),
-      quad_index_(QuadIndexCache::Make(device_)),
+      quad_index_(QuadIndexCache::Make(
+          device_,
+          u32_draw_index ? Diligent::VT_UINT32 : Diligent::VT_UINT16)),
       device_type_(device_->GetDeviceInfo().Type),
       gl_context_(gl_context) {
   quad_index_.Allocate(1 << 10);

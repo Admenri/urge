@@ -228,6 +228,8 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
       "Renderer", "PipelineDefaultSampler", pipeline_default_sampler);
   render_validation =
       reader->GetBoolean("Renderer", "RenderValidation", render_validation);
+  u32_draw_index =
+      reader->GetBoolean("Renderer", "LargeDrawIndex", u32_draw_index);
   frame_rate = reader->GetInteger("Renderer", "FrameRate",
                                   (api_version == APIVersion::RGSS1) ? 40 : 60);
   allow_skip_frame =

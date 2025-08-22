@@ -110,7 +110,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       magic_enum::enum_cast<renderer::DriverType>(profile_->driver_backend)
           .value_or(renderer::DriverType::UNDEFINED),
       static_cast<renderer::SamplerType>(profile_->pipeline_default_sampler),
-      profile_->render_validation);
+      profile_->u32_draw_index, profile_->render_validation);
   if (!render_device || !render_context) {
     LOG(ERROR) << "[Content] Error when creating video device.";
     return false;

@@ -958,7 +958,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1060,7 +1060,7 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1173,7 +1173,7 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1276,7 +1276,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 
   // Release text surface
@@ -1340,7 +1340,7 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = renderer::QuadIndexCache::kValueType;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
