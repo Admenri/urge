@@ -12,6 +12,7 @@
 #include "content/canvas/canvas_scheduler.h"
 #include "content/canvas/font_context.h"
 #include "content/context/disposable.h"
+#include "content/net/network_context.h"
 #include "content/profile/content_profile.h"
 #include "content/profile/i18n_profile.h"
 #include "content/render/drawable_controller.h"
@@ -38,6 +39,7 @@ struct ExecutionContext {
   audioservice::AudioService* audio_server = nullptr;
   DisposableCollection* disposable_parent = nullptr;
   DrawNodeController* screen_drawable_node = nullptr;
+  NetworkContext* network_context = nullptr;
 
   ExecutionContext();
   ~ExecutionContext();

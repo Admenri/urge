@@ -10,6 +10,7 @@
 
 #include "components/version/version.h"
 #include "content/context/execution_context.h"
+#include "content/net/network_context.h"
 #include "content/profile/command_ids.h"
 
 namespace content {
@@ -123,6 +124,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   sprite_batcher_ = std::make_unique<SpriteBatch>(render_device_.get());
   event_controller_ = std::make_unique<EventController>(window);
   audio_server_ = audioservice::AudioService::Create(io_service);
+  network_context_ = std::make_unique<NetworkContext>();
 
   // Initialize execution context
   execution_context_ = std::make_unique<ExecutionContext>();
@@ -139,6 +141,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   execution_context_->sprite_batcher = sprite_batcher_.get();
   execution_context_->event_controller = event_controller_.get();
   execution_context_->audio_server = audio_server_.get();
+  execution_context_->network_context = network_context_.get();
 
   // Create engine objects
   engine_impl_ = base::MakeRefCounted<EngineImpl>(execution_context_.get());

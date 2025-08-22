@@ -610,6 +610,13 @@ class APIParser:
       for overload in method["params"]:
         for param in overload:
           dependency_raw.append(param["type_raw"])
+          
+    # 闭包遍历
+    closures_data = self.current_class["closures"]
+    for closure in closures_data:
+      dependency_raw.append(closure["return"]["type_raw"])
+      for arg in closure["arguments"]:
+        dependency_raw.append(arg["type_raw"])
 
     # 分析依赖
     for dep in dependency_raw:

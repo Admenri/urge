@@ -494,6 +494,8 @@ class MriBindingGen:
               if self.is_type_enum(ty):
                 is_other_domain, domain, varname = self.parse_namespace_element(ty)
                 ty = f"content::{domain}::{ty}" if is_other_domain else f"content::{klass_type}::{ty}"
+              elif ty.startswith("scoped_refptr"):
+                ty = ty.replace("scoped_refptr<", "scoped_refptr<content::")
               arguments_list += f", {ty} param{arg_index}"
               arg_index += 1
 

@@ -6,13 +6,14 @@
 #define CONTENT_NET_WEBSOCKET_IMPL_H_
 
 #include "content/context/engine_object.h"
+#include "content/net/network_context.h"
 #include "content/public/engine_websocket.h"
 
 namespace content {
 
 class WebSocketImpl : public WebSocket, public EngineObject {
  public:
-  WebSocketImpl();
+  WebSocketImpl(ExecutionContext* execution_context);
   ~WebSocketImpl() override;
 
   WebSocketImpl(const WebSocketImpl&) = delete;
