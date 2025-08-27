@@ -84,8 +84,6 @@ set(ENGINE_CONTENT_SRC
   media/audio_impl.h
   media/audio_stream_impl.cc
   media/audio_stream_impl.h
-  net/network_context.cc
-  net/network_context.h
   profile/command_ids.h
   profile/content_profile.cc
   profile/content_profile.h
@@ -158,9 +156,6 @@ target_link_libraries(engine_content
   ocornut_imgui
   av1player
 )
-
-# For asio windows platform
-target_compile_definitions(engine_content PUBLIC _WIN32_WINNT=0x0601)
 
 if (MSVC)
   target_compile_options(engine_content PRIVATE /WX /wd4267 /wd4244)
