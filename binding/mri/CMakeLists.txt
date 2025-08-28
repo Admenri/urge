@@ -9,8 +9,10 @@ cmake_minimum_required(VERSION 3.20.1)
 include_directories(third_party)
 
 ## libffi
-add_subdirectory(third_party/libffi)
-include_directories(third_party/libffi)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  add_subdirectory(third_party/libffi)
+  include_directories(third_party/libffi)
+endif()
 
 ## cruby interpreter
 ## TODO: Enhance ruby build ins
@@ -18,10 +20,20 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Android")
   add_subdirectory(third_party/ruby_android)
   include_directories(third_party/ruby_android/include)
 else()
-  # Find ruby headers, libs in system
-  find_package(Ruby REQUIRED)
-  set(RUBY_INCLUDE_PATH "${Ruby_INCLUDE_DIRS}")
-  set(RUBY_LIBRARY_PATH "${Ruby_LIBRARIES}")
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    # Find ruby headers, libs in system
+    find_package(Ruby REQUIRED)
+    set(RUBY_INCLUDE_PATH "${Ruby_INCLUDE_DIRS}")
+    set(RUBY_LIBRARY_PATH "${Ruby_LIBRARIES}")
+  else()
+    set(RUBY_INCLUDE_PATH
+      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/include/ruby-3.4.0"
+      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/include/ruby-3.4.0/wasm32-emscripten"
+    )
+    set(RUBY_LIBRARY_PATH
+      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/lib/libruby-static.a"
+    )
+  endif()
 
   # Find config file
   add_library(mri_ruby UNKNOWN IMPORTED)  
@@ -35,8 +47,8 @@ else()
         "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_extern/config/"
         ${RUBY_INCLUDE_PATH}
       )
-    endif()
-  endif()
+    endif ()
+  endif ()
 
   message(STATUS "[Binding] Ruby Include Path: ${RUBY_INCLUDE_PATH}")
   message(STATUS "[Binding] Ruby Library: ${RUBY_LIBRARY_PATH}")
@@ -50,7 +62,7 @@ endif()
 # Mri Gem Ext
 #--------------------------------------------------------------------------------
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 set(GEM_EXT_RUBYPROF_SRC
   "third_party/ruby_prof/rp_allocation.c"
   "third_party/ruby_prof/rp_call_tree.c"
@@ -132,7 +144,7 @@ target_link_libraries(binding_mri
   zlibstatic
 )
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   # desktop only
   target_link_libraries(binding_mri PUBLIC ffi)
   # fiddle definitions for linux

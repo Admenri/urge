@@ -6,13 +6,15 @@
 #define CONTENT_RENDER_VIDEODECODER_H_
 
 #include "SDL3/SDL_audio.h"
-#include "av1player/src/player.hpp"
 
 #include "base/memory/ref_counted.h"
 #include "components/filesystem/io_service.h"
 #include "content/context/disposable.h"
 #include "content/public/engine_videodecoder.h"
 #include "content/screen/renderscreen_impl.h"
+
+#if !defined(OS_EMSCRIPTEN)
+#include "av1player/src/player.hpp"
 
 namespace content {
 
@@ -67,5 +69,6 @@ class VideoDecoderImpl : public VideoDecoder,
 };
 
 }  // namespace content
+#endif  //! defined(OS_EMSCRIPTEN)
 
 #endif  //! CONTENT_MEDIA_VIDEODECODER_H_

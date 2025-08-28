@@ -10,6 +10,20 @@
 
 namespace content {
 
+#if defined(OS_EMSCRIPTEN)
+
+scoped_refptr<VideoDecoder> VideoDecoder::New(
+    ExecutionContext* execution_context,
+    const std::string& filename,
+    int32_t max_frame_delay,
+    ExceptionState& exception_state) {
+  exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                             "Unsupport video playback.");
+  return nullptr;
+}
+
+#else  //! OS_EMSCRIPTEN
+
 scoped_refptr<VideoDecoder> VideoDecoder::New(
     ExecutionContext* execution_context,
     const std::string& filename,
@@ -328,5 +342,7 @@ void VideoDecoderImpl::GPURenderYUVInternal(
   draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
+
+#endif  // !OS_EMSCRIPTEN
 
 }  // namespace content

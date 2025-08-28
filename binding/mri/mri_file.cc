@@ -13,6 +13,8 @@ filesystem::IOService* g_io_service = nullptr;
 
 namespace {
 
+constexpr char kMarshalLoadAlias[] = "_load_utf8_alias_";
+
 struct CoreFileInfo {
   SDL_IOStream* ops;
   bool closed;
@@ -48,18 +50,11 @@ void CoreFileFreeInstance(void* ptr) {
   delete info;
 }
 
-VALUE StringForceUTF8(VALUE arg) {
-  if (RB_TYPE_P(arg, RUBY_T_STRING) && ENCODING_IS_ASCII8BIT(arg))
-    rb_enc_associate_index(arg, rb_utf8_encindex());
-
-  return arg;
-}
-
-VALUE Utf8CustomProc(VALUE arg, VALUE proc) {
-  VALUE obj = StringForceUTF8(arg);
-  obj = rb_funcall2(proc, rb_intern("call"), 1, &obj);
-
-  return obj;
+VALUE StringForceUTF8(RB_BLOCK_CALL_FUNC_ARGLIST(yieldarg, procarg)) {
+  if (RB_TYPE_P(yieldarg, RUBY_T_STRING) && ENCODING_IS_ASCII8BIT(yieldarg))
+    rb_enc_associate_index(yieldarg, rb_utf8_encindex());
+  return NIL_P(procarg) ? yieldarg
+                        : rb_funcall2(procarg, rb_intern("call"), 1, &yieldarg);
 }
 
 }  // namespace
@@ -114,14 +109,11 @@ MRI_METHOD(corefile_close) {
 
 VALUE MriLoadData(const std::string& filename,
                   content::ExceptionState& exception_state) {
-  rb_gc_start();
-
   VALUE port = CreateCoreFileFrom(filename, exception_state);
   if (exception_state.HadException())
     return Qnil;
 
   VALUE marshal_klass = rb_const_get(rb_cObject, rb_intern("Marshal"));
-
   VALUE result = rb_funcall2(marshal_klass, rb_intern("load"), 1, &port);
   rb_funcall2(port, rb_intern("close"), 0, NULL);
 
@@ -133,7 +125,6 @@ MRI_METHOD(kernel_load_data) {
   MriParseArgsTo(argc, argv, "s", &filename);
 
   content::ExceptionState exception_state;
-
   VALUE data = MriLoadData(filename, exception_state);
   MriProcessException(exception_state);
 
@@ -148,10 +139,8 @@ MRI_METHOD(kernel_save_data) {
 
   VALUE file = rb_file_open_str(filename, "wb");
   VALUE marshal_klass = rb_const_get(rb_cObject, rb_intern("Marshal"));
-
   VALUE v[] = {obj, file};
   rb_funcall2(marshal_klass, rb_intern("dump"), 2, v);
-
   rb_io_close(file);
 
   return Qnil;
@@ -159,19 +148,11 @@ MRI_METHOD(kernel_save_data) {
 
 MRI_METHOD(marshal_load_utf8) {
   VALUE port, proc = Qnil;
-
   MriParseArgsTo(argc, argv, "o|o", &port, &proc);
 
-  VALUE utf8Proc;
-  if (NIL_P(proc))
-    utf8Proc = rb_proc_new(RUBY_METHOD_FUNC(StringForceUTF8), Qnil);
-  else
-    utf8Proc = rb_proc_new(RUBY_METHOD_FUNC(Utf8CustomProc), proc);
-
-  VALUE marsh = rb_const_get(rb_cObject, rb_intern("Marshal"));
-
-  VALUE v[] = {port, utf8Proc};
-  return rb_funcall2(marsh, rb_intern("load_utf8_alias_"), 2, v);
+  VALUE marshal_klass = rb_const_get(rb_cObject, rb_intern("Marshal"));
+  VALUE v[] = {port, rb_proc_new(StringForceUTF8, proc)};
+  return rb_funcall2(marshal_klass, rb_intern(kMarshalLoadAlias), 2, v);
 }
 
 void InitCoreFileBinding() {
@@ -187,8 +168,7 @@ void InitCoreFileBinding() {
   MriDefineModuleFunction(rb_mKernel, "save_data", kernel_save_data);
 
   VALUE marshal_klass = rb_const_get(rb_cObject, rb_intern("Marshal"));
-  rb_define_alias(rb_singleton_class(marshal_klass), "load_utf8_alias_",
-                  "load");
+  rb_define_alias(rb_singleton_class(marshal_klass), kMarshalLoadAlias, "load");
   MriDefineModuleFunction(marshal_klass, "load", marshal_load_utf8);
 }
 

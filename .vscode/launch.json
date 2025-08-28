@@ -11,7 +11,7 @@
       "program": "${workspaceFolder}/out/build/app/Game",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/out/build/game",
+      "cwd": "${workspaceFolder}/out/game",
       "environment": [],
       "externalConsole": false,
       "MIMode": "gdb",
@@ -25,7 +25,7 @@
         "console"
       ],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/out/build/game",
+      "cwd": "${workspaceFolder}/out/game",
       "environment": [],
       "console": "externalTerminal"
     }

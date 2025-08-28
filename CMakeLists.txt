@@ -63,6 +63,7 @@ add_subdirectory(third_party/SDL)
 include_directories(third_party/SDL/include)
 
 ## Diligent Engine
+set(DILIGENT_NO_WEBGPU ON)
 add_subdirectory(third_party/DiligentCore)
 include_directories(third_party/DiligentCore)
 
@@ -104,6 +105,7 @@ add_subdirectory(third_party/miniaudio)
 include_directories(third_party/asio/include)
 
 ## Zlib
+set(ZLIB_BUILD_SHARED OFF)
 add_subdirectory(third_party/zlib)
 
 ## Media
@@ -116,22 +118,16 @@ set(OP_DISABLE_DOCS ON)
 set(OP_DISABLE_EXAMPLES ON)
 add_subdirectory(third_party/opus)
 add_subdirectory(third_party/opusfile)
-### DAV1D
-add_subdirectory(third_party/dav1d)
 ### WebP
 add_subdirectory(third_party/libwebp)
-### Webm
-add_subdirectory(third_party/webm)
-### AOMPLAYER
-add_subdirectory(third_party/av1player)
-
-## Mimalloc
-set(MI_OVERRIDE OFF)
-set(MI_BUILD_TESTS OFF)
-set(MI_BUILD_OBJECT OFF)
-set(MI_BUILD_SHARED OFF)
-set(MI_BUILD_STATIC ON)
-add_subdirectory(third_party/mimalloc)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  ### DAV1D
+  add_subdirectory(third_party/dav1d)
+  ### Webm
+  add_subdirectory(third_party/webm)
+  ### AOMPLAYER
+  add_subdirectory(third_party/av1player)
+endif()
 
 ## Private crypto
 set(ENABLE_ADMENRI_BUILD_VERSION False)

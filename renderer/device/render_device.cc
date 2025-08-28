@@ -8,13 +8,20 @@
 #include "SDL3/SDL_loadso.h"
 #include "SDL3/SDL_video.h"
 #include "magic_enum/magic_enum.hpp"
-#include "mimalloc.h"
 
 #include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
-#include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
-#include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
+#if GL_SUPPORTED || GLES_SUPPORTED
 #include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
+#endif  //! GL_SUPPORTED || GLES_SUPPORTED
+#if VULKAN_SUPPORTED
 #include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
+#endif  // !VULKAN_SUPPORTED
+#if D3D11_SUPPORTED
+#include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
+#endif  //! D3D11_SUPPORTED
+#if D3D12_SUPPORTED
+#include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
+#endif  // !D3D12_SUPPORTED
 #include "Primitives/interface/DebugOutput.h"
 
 #include "base/debug/logging.h"
@@ -45,27 +52,6 @@ namespace renderer {
 
 namespace {
 
-struct HookMemoryAllocator : public Diligent::IMemoryAllocator {
-  void* Allocate(size_t Size,
-                 const Diligent::Char* dbgDescription,
-                 const char* dbgFileName,
-                 const Diligent::Int32 dbgLineNumber) override {
-    return mi_malloc(Size);
-  }
-
-  void Free(void* Ptr) override { mi_free(Ptr); }
-
-  void* AllocateAligned(size_t Size,
-                        size_t Alignment,
-                        const Diligent::Char* dbgDescription,
-                        const char* dbgFileName,
-                        const Diligent::Int32 dbgLineNumber) override {
-    return mi_aligned_alloc(Alignment, Size);
-  }
-
-  void FreeAligned(void* Ptr) override { mi_free(Ptr); }
-};
-
 void DILIGENT_CALL_TYPE
 DebugMessageOutputFunc(Diligent::DEBUG_MESSAGE_SEVERITY Severity,
                        const Diligent::Char* Message,
@@ -92,16 +78,7 @@ DebugMessageOutputFunc(Diligent::DEBUG_MESSAGE_SEVERITY Severity,
   }
 }
 
-HookMemoryAllocator g_raw_memory_allocator;
-
 }  // namespace
-
-#if !ENGINE_DLL
-using Diligent::GetEngineFactoryD3D11;
-using Diligent::GetEngineFactoryD3D12;
-using Diligent::GetEngineFactoryOpenGL;
-using Diligent::GetEngineFactoryVk;
-#endif
 
 RenderDevice::CreateDeviceResult RenderDevice::Create(
     base::WeakPtr<ui::Widget> window_target,
@@ -151,6 +128,10 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 #elif defined(OS_ANDROID)
   native_window.pAWindow = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
+#elif defined(OS_EMSCRIPTEN)
+  native_window.pCanvasId = SDL_GetStringProperty(
+      window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING,
+      "#canvas");
 #else
 #error "Unsupport Platform"
 #endif
@@ -185,6 +166,9 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       driver_type = DriverType::OPENGL;
       break;
   }
+#elif defined(OS_EMSCRIPTEN)
+  // TODO: WebGPU support
+  driver_type = DriverType::OPENGL;
 #else
 #error "Unsupport Platform"
 #endif
@@ -200,8 +184,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   Diligent::FullScreenModeDesc fullscreen_mode_desc;
 #endif
 
-  // Hook raw memory allocator
-  engine_create_info.pRawMemAllocator = &g_raw_memory_allocator;
+  // Setup renderer create info
   engine_create_info.EnableValidation = validation;
 
   // Requested features
@@ -223,12 +206,16 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     if (driver_type == DriverType::OPENGL) {
 #if ENGINE_DLL
       auto GetEngineFactoryOpenGL = Diligent::LoadGraphicsEngineOpenGL();
+#else
+      using Diligent::GetEngineFactoryOpenGL;
 #endif
       auto* factory = GetEngineFactoryOpenGL();
 
       Diligent::EngineGLCreateInfo gl_create_info(engine_create_info);
       gl_create_info.Window = native_window;
+#if !defined(OS_EMSCRIPTEN)
       gl_create_info.ZeroToOneNDZ = Diligent::True;
+#endif
 
       factory->CreateDeviceAndSwapChainGL(gl_create_info, &device, &context,
                                           swap_chain_desc, &swapchain);
@@ -238,6 +225,8 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     if (driver_type == DriverType::VULKAN) {
 #if ENGINE_DLL
       auto GetEngineFactoryVk = Diligent::LoadGraphicsEngineVk();
+#else
+      using Diligent::GetEngineFactoryVk;
 #endif
       auto* factory = GetEngineFactoryVk();
 
@@ -254,6 +243,8 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     if (driver_type == DriverType::D3D11) {
 #if ENGINE_DLL
       auto GetEngineFactoryD3D11 = Diligent::LoadGraphicsEngineD3D11();
+#else
+      using Diligent::GetEngineFactoryD3D11;
 #endif
       auto* pFactory = GetEngineFactoryD3D11();
 
@@ -269,6 +260,8 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
     if (driver_type == DriverType::D3D12) {
 #if ENGINE_DLL
       auto GetEngineFactoryD3D12 = Diligent::LoadGraphicsEngineD3D12();
+#else
+      using Diligent::GetEngineFactoryD3D12;
 #endif
       auto* pFactoryD3D12 = GetEngineFactoryD3D12();
 

@@ -11,16 +11,6 @@ namespace renderer {
 
 namespace {
 
-constexpr char kShaderGAMMA2LINEAR[] =
-    "((Gamma) < 0.04045 ? (Gamma) / 12.92 : pow(max((Gamma) + 0.055, 0.0) / "
-    "1.055, 2.4))";
-
-constexpr char kShaderSRGBA2LINEAR[] =
-    "col.r = GAMMA_TO_LINEAR(col.r); "
-    "col.g = GAMMA_TO_LINEAR(col.g); "
-    "col.b = GAMMA_TO_LINEAR(col.b); "
-    "col.a = 1.0 - GAMMA_TO_LINEAR(1.0 - col.a);";
-
 constexpr char kShaderNdcProcessor[] = R"(
 #if defined(DESKTOP_GL) || defined(GL_ES)
 #define URGE_NDC_PROCESS(var) var.y = -var.y

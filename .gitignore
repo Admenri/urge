@@ -1,7 +1,7 @@
 ﻿/.vs
 /.idea
 /build
-/out/build
+/out
 /app/android/.gradle
 /app/android/.idea
 /app/android/build
@@ -10,5 +10,7 @@
 /app/android/app/.cxx
 /app/android/app/src/main/assets
 /app/android/app/release
+/app/emscripten/
 /admenri
+ruby_wasm
 __pycache__

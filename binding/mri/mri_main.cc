@@ -175,7 +175,7 @@ void BindingEngineMri::PreEarlyInitialization(
   InitMriAutogen();
 
   Init_zlib();
-#if !defined(OS_ANDROID)
+#if !defined(OS_ANDROID) && !defined(OS_EMSCRIPTEN)
   Init_ruby_prof();
   Init_fiddle();
 #endif

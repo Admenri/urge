@@ -154,8 +154,11 @@ target_link_libraries(engine_content
   sdl_image_loader
   sdl_ttf_render
   ocornut_imgui
-  av1player
 )
+
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  target_link_libraries(engine_content PUBLIC av1player)
+endif()
 
 if (MSVC)
   target_compile_options(engine_content PRIVATE /WX /wd4267 /wd4244)

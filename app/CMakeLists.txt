@@ -31,6 +31,30 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
   add_library(main SHARED urge_main.cc)
   target_link_libraries(main PUBLIC ${URGE_DEP_LIBS})
   set(APP_TARGET main)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  # Emscripten with "index.html" for executable file
+  add_executable(index urge_main.cc)
+  target_link_libraries(index PUBLIC ${URGE_DEP_LIBS})
+  
+  # Emscripten resource package
+  set(EMSCRIPTEN_PRELOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/emscripten)
+  # Make link flags
+  set(EMSCRIPTEN_LINK_FLAGS "--bind --preload-file=${EMSCRIPTEN_PRELOAD_DIR}@/ -sASYNCIFY=1 -sFORCE_FILESYSTEM=1 -sWASM=1 -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH=1")
+  # Setup logging verbose
+  if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASSERTIONS=0")
+  else ()
+    set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASSERTIONS=2")
+  endif ()
+  # Stack size
+  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASYNCIFY_STACK_SIZE=16384")
+
+  # Setup index.html
+  set(APP_TARGET index)
+  set_target_properties(index PROPERTIES
+    SUFFIX ".html"
+    LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS}"
+  )
 endif ()
 
 if (ENABLE_ADMENRI_BUILD_VERSION)

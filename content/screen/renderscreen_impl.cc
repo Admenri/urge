@@ -553,9 +553,6 @@ void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
   // we need to manually convert pixel shader output to gamma space.
   auto* swapchain = context()->render_device->GetSwapChain();
   const auto& swapchain_desc = swapchain->GetDesc();
-  const auto srgb_framebuffer =
-      Diligent::GetTextureFormatAttribs(swapchain_desc.ColorBufferFormat)
-          .ComponentType == Diligent::COMPONENT_TYPE_UNORM_SRGB;
 
   // Create screen present pipeline
   renderer::PipelineInitParams pipeline_init_params;

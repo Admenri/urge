@@ -4,8 +4,6 @@
 
 #include "base/worker/thread_worker.h"
 
-#include "mimalloc-override.h"
-
 #include "concurrentqueue/blockingconcurrentqueue.h"
 
 namespace base {

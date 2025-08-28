@@ -6,7 +6,6 @@
 
 #include <array>
 
-#include "mimalloc.h"
 #include "miniaudio/decoders/libopus/miniaudio_libopus.h"
 #include "miniaudio/decoders/libvorbis/miniaudio_libvorbis.h"
 #include "physfs.h"
@@ -131,15 +130,15 @@ static ma_result VFSInfo(ma_vfs*, ma_vfs_file file, ma_file_info* pInfo) {
 }
 
 static void* AllocatorMalloc(size_t sz, void*) {
-  return mi_malloc(sz);
+  return std::malloc(sz);
 }
 
 static void* AllocatorRealloc(void* p, size_t sz, void*) {
-  return mi_realloc(p, sz);
+  return std::realloc(p, sz);
 }
 
 static void AllocatorFree(void* p, void*) {
-  return mi_free(p);
+  return std::free(p);
 }
 
 static void LogOutput(void*, ma_uint32 level, const char* pMessage) {
@@ -196,6 +195,10 @@ static void AudioStreamDataCallback(void* userdata,
 
 std::unique_ptr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
+#if defined(OS_EMSCRIPTEN)
+  LOG(INFO) << "[AudioService] Disable audio module on emscripten.";
+  return nullptr;
+#else
   ServiceKernelData* kernel_data = new ServiceKernelData;
 
   // Device sped
@@ -279,6 +282,7 @@ std::unique_ptr<AudioService> AudioService::Create(
 
   return std::unique_ptr<AudioService>(
       new AudioService(std::move(kernel_data)));
+#endif  //! OS_EMSCRIPTEN
 }
 
 std::unique_ptr<AudioStream> AudioService::CreateStream() {

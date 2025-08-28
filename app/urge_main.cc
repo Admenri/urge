@@ -9,7 +9,6 @@
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
-#include "mimalloc.h"
 #include "spdlog/sinks/android_sink.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -102,9 +101,6 @@ int main(int argc, char* argv[]) {
   SetupAndroidStudioTransfer();
 #endif  // !defined(OS_ANDROID)
 
-  // Hook SDL memory function
-  SDL_SetMemoryFunctions(mi_malloc, mi_calloc, mi_realloc, mi_free);
-
 #if defined(OS_ANDROID)
   // Get GAME_PATH string field from JNI (MainActivity.java)
   JNIEnv* env = (JNIEnv*)SDL_GetAndroidJNIEnv();
@@ -129,6 +125,9 @@ int main(int argc, char* argv[]) {
   env->DeleteLocalRef(activity_klass);
 
   // Fixed configure file
+  std::string app = "Game";
+  std::string ini = app + ".ini";
+#elif defined(OS_EMSCRIPTEN)
   std::string app = "Game";
   std::string ini = app + ".ini";
 #else
@@ -269,7 +268,12 @@ int main(int argc, char* argv[]) {
 #endif
       widget_params.size = profile->window_size;
       widget_params.resizable = true;
-      widget_params.hpixeldensity = true;
+      widget_params.hpixeldensity =
+#if !defined(OS_EMSCRIPTEN)
+          true;
+#else
+          false;
+#endif
       widget_params.fullscreen =
 #if defined(OS_ANDROID)
           true;

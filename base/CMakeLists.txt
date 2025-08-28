@@ -52,7 +52,6 @@ target_link_libraries(engine_base
  PUBLIC
   Diligent-BuildSettings
   Diligent-Common
-  mimalloc-static
   spdlog::spdlog
 )
 
