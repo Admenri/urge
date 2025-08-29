@@ -16,13 +16,30 @@
 namespace fpslimiter {
 
 FPSLimiter::FPSLimiter(int frame_rate)
-    : last_tick_count_(SDL_GetPerformanceCounter()),
+    : disabled_(
+#if defined(OS_EMSCRIPTEN)
+          true
+#else
+          false
+#endif
+          ),
+      last_tick_count_(SDL_GetPerformanceCounter()),
       tick_freq_(SDL_GetPerformanceFrequency()),
       tick_freq_ns_((double)tick_freq_ / NS_PER_S),
-      skip_last_(SDL_GetPerformanceCounter()),
+      skip_last_(last_tick_count_),
       skip_ideal_diff_(0),
       skip_reset_flag_(false) {
   SetFrameRate(frame_rate);
+}
+
+void FPSLimiter::SetDisabled(bool disable) {
+  disabled_ = disable;
+  if (!disabled_) {
+    last_tick_count_ = SDL_GetPerformanceCounter();
+    skip_last_ = last_tick_count_;
+    skip_ideal_diff_ = 0;
+    skip_reset_flag_ = false;
+  }
 }
 
 void FPSLimiter::SetFrameRate(int frame_rate) {
@@ -30,6 +47,9 @@ void FPSLimiter::SetFrameRate(int frame_rate) {
 }
 
 void FPSLimiter::Delay() {
+  if (disabled_)
+    return;
+
   {
     int64_t frame_delta = SDL_GetPerformanceCounter() - last_tick_count_;
     int64_t delay_tick = ticks_per_frame_ - frame_delta;
@@ -56,11 +76,14 @@ void FPSLimiter::Delay() {
 }
 
 bool FPSLimiter::RequireFrameSkip() {
+  if (disabled_)
+    return false;
   return skip_ideal_diff_ > ticks_per_frame_;
 }
 
 void FPSLimiter::Reset() {
-  skip_reset_flag_ = true;
+  if (!disabled_)
+    skip_reset_flag_ = true;
 }
 
 }  // namespace fpslimiter

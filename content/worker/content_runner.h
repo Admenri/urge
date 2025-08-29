@@ -21,6 +21,11 @@
 #include "content/worker/event_controller.h"
 #include "ui/widget/widget.h"
 
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten/emscripten.h>
+#include <emscripten/fiber.h>
+#endif  // OS_EMSCRIPTEN
+
 namespace content {
 
 class ContentRunner {
@@ -107,6 +112,14 @@ class ContentRunner {
   int64_t total_delta_;
   int32_t frame_count_;
   std::vector<float> fps_history_;
+
+#if defined(OS_EMSCRIPTEN)
+#define ASYNCIFY_STACK_SIZE 65536
+  emscripten_fiber_t primary_fiber_, main_loop_fiber_;
+  char primary_asyncify_stack_[ASYNCIFY_STACK_SIZE];
+  char main_asyncify_stack_[ASYNCIFY_STACK_SIZE];
+  alignas(16) char main_stack_[ASYNCIFY_STACK_SIZE];
+#endif  //! OS_EMSCRIPTEN
 };
 
 }  // namespace content

@@ -16,12 +16,16 @@ class FPSLimiter {
   FPSLimiter(const FPSLimiter&) = delete;
   FPSLimiter& operator=(const FPSLimiter&) = delete;
 
+  void SetDisabled(bool disable);
+  bool IsDisabled() const { return disabled_; }
+
   void SetFrameRate(int frame_rate);
   void Delay();
   bool RequireFrameSkip();
   void Reset();
 
  private:
+  bool disabled_;
   uint64_t last_tick_count_;
   int64_t ticks_per_frame_;
   const uint64_t tick_freq_;

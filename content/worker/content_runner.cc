@@ -67,27 +67,54 @@ ContentRunner::~ContentRunner() {
 }
 
 void ContentRunner::RunMainLoop() {
-  // Before running loop handler
-  binding_->PreEarlyInitialization(execution_context_->engine_profile,
-                                   execution_context_->io_service);
+#if defined(OS_EMSCRIPTEN)
+  auto main_loop_proc = std::function<void()>([this]() {
+#endif  // !OS_EMSCRIPTEN
+    // Make module context
+    EngineBindingBase::ScopedModuleContext module_context;
+    module_context.graphics = graphics_impl_.get();
+    module_context.input = keyboard_impl_.get();
+    module_context.audio = audio_impl_.get();
+    module_context.mouse = mouse_impl_.get();
+    module_context.engine = engine_impl_.get();
 
-  // Make module context
-  EngineBindingBase::ScopedModuleContext module_context;
-  module_context.graphics = graphics_impl_.get();
-  module_context.input = keyboard_impl_.get();
-  module_context.audio = audio_impl_.get();
-  module_context.mouse = mouse_impl_.get();
-  module_context.engine = engine_impl_.get();
+    // Binding lifecycle
+    binding_->PreEarlyInitialization(execution_context_->engine_profile,
+                                     execution_context_->io_service);
+    binding_->OnMainMessageLoopRun(execution_context_.get(), &module_context);
+    binding_->PostMainLoopRunning();
 
-  // Hook graphics event loop
-  graphics_impl_->SetupTicker(base::BindRepeating(
-      &ContentRunner::TickHandlerInternal, base::Unretained(this)));
+#if defined(OS_EMSCRIPTEN)
+    // End of emscripten looping
+    emscripten_cancel_main_loop();
+    emscripten_fiber_swap(&main_loop_fiber_, &primary_fiber_);
+  });
 
-  // Execute main loop
-  binding_->OnMainMessageLoopRun(execution_context_.get(), &module_context);
+  // Create fiber for emscripten
+  emscripten_fiber_init_from_current_context(&primary_fiber_,
+                                             primary_asyncify_stack_,
+                                             sizeof(primary_asyncify_stack_));
+  emscripten_fiber_init(
+      &main_loop_fiber_,
+      [](void* proc) {
+        auto* lambda_proc = static_cast<std::function<void()>*>(proc);
+        (*lambda_proc)();
+      },
+      &main_loop_proc, main_stack_, sizeof(main_stack_), main_asyncify_stack_,
+      sizeof(main_asyncify_stack_));
 
-  // End of running
-  binding_->PostMainLoopRunning();
+  // Start main loop
+  struct SwitchContext {
+    emscripten_fiber_t *primary_fiber, *main_loop_fiber;
+  } context = {&primary_fiber_, &main_loop_fiber_};
+  emscripten_set_main_loop_arg(
+      [](void* context) {
+        emscripten_fiber_swap(
+            static_cast<SwitchContext*>(context)->primary_fiber,
+            static_cast<SwitchContext*>(context)->main_loop_fiber);
+      },
+      &context, 0, true);
+#endif  // !OS_EMSCRIPTEN
 }
 
 std::unique_ptr<ContentRunner> ContentRunner::Create(InitParams params) {
@@ -144,11 +171,15 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   engine_impl_ = base::MakeRefCounted<EngineImpl>(execution_context_.get());
   execution_context_->disposable_parent = engine_impl_.get();
 
+  // Create and hook graphics event loop
   graphics_impl_ = base::MakeRefCounted<RenderScreenImpl>(
       execution_context_.get(), profile_->frame_rate);
+  graphics_impl_->SetupTicker(base::BindRepeating(
+      &ContentRunner::TickHandlerInternal, base::Unretained(this)));
   execution_context_->screen_drawable_node =
       graphics_impl_->GetDrawableController();
 
+  // Other modules
   keyboard_impl_ =
       base::MakeRefCounted<KeyboardControllerImpl>(execution_context_.get());
   audio_impl_ = base::MakeRefCounted<AudioImpl>(execution_context_.get());
@@ -229,6 +260,11 @@ void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
     binding_reset_flag_.store(0);
     binding_->ResetSignalRequired();
   }
+
+#if defined(OS_EMSCRIPTEN)
+  // Switch to primary fiber
+  emscripten_fiber_swap(&main_loop_fiber_, &primary_fiber_);
+#endif  //! OS_EMSCRIPTEN
 }
 
 void ContentRunner::UpdateDisplayFPSInternal() {

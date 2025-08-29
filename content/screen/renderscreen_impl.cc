@@ -45,9 +45,6 @@ RenderScreenImpl::~RenderScreenImpl() = default;
 
 void RenderScreenImpl::PresentScreenBuffer(
     Diligent::ImGuiDiligentRenderer* gui_renderer) {
-  // Determine wait delay time
-  limiter_.Delay();
-
   // Present to screen surface
   GPUPresentScreenBufferInternal(context()->primary_render_context,
                                  gui_renderer);
@@ -490,6 +487,9 @@ void RenderScreenImpl::FrameProcessInternal(
     Diligent::ITexture* present_target) {
   // Increase frame render count
   ++frame_count_;
+
+  // Determine wait delay time
+  limiter_.Delay();
 
   // Tick callback
   frame_tick_handler_.Run(present_target);
