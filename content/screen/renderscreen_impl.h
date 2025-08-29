@@ -69,6 +69,9 @@ class RenderScreenImpl : public Graphics, public EngineObject {
   // Global drawable parent (default)
   DrawNodeController* GetDrawableController() { return &controller_; }
 
+  // Current frame rate
+  int32_t FrameRate() const { return frame_rate_; }
+
  public:
   void Update(ExceptionState& exception_state) override;
   void Wait(uint32_t duration, ExceptionState& exception_state) override;

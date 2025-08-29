@@ -55,7 +55,13 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       show_fps_monitor_(false),
       last_tick_(SDL_GetPerformanceCounter()),
       total_delta_(0),
-      frame_count_(0) {
+      frame_count_(0),
+#if defined(OS_EMSCRIPTEN)
+      elapsed_time_(0.0),
+      smooth_delta_time_(1.0),
+      last_count_time_(SDL_GetPerformanceCounter())
+#endif  //! OS_EMSCRIPTEN
+{
 }
 
 ContentRunner::~ContentRunner() {
@@ -68,7 +74,8 @@ ContentRunner::~ContentRunner() {
 
 void ContentRunner::RunMainLoop() {
 #if defined(OS_EMSCRIPTEN)
-  auto main_loop_proc = std::function<void()>([this]() {
+  using EmscriptenClosure = std::function<void()>;
+  auto main_loop_proc = EmscriptenClosure([this]() {
 #endif  // !OS_EMSCRIPTEN
     // Make module context
     EngineBindingBase::ScopedModuleContext module_context;
@@ -97,23 +104,38 @@ void ContentRunner::RunMainLoop() {
   emscripten_fiber_init(
       &main_loop_fiber_,
       [](void* proc) {
-        auto* lambda_proc = static_cast<std::function<void()>*>(proc);
+        auto* lambda_proc = static_cast<EmscriptenClosure*>(proc);
         (*lambda_proc)();
       },
       &main_loop_proc, main_stack_, sizeof(main_stack_), main_asyncify_stack_,
       sizeof(main_asyncify_stack_));
 
+  auto execute_main_loop = EmscriptenClosure([this]() {
+    // Determine update repeat time
+    const uint64_t now_time = SDL_GetPerformanceCounter();
+    const uint64_t delta_time = now_time - last_count_time_;
+    last_count_time_ = now_time;
+
+    // Calculate smooth frame rate
+    const double desired_delta_time =
+        SDL_GetPerformanceFrequency() / graphics_impl_->FrameRate();
+    const double delta_rate =
+        delta_time / static_cast<double>(desired_delta_time);
+    const int repeat_time = DetermineRepeatNumberInternal(delta_rate);
+
+    for (int i = 0; i < repeat_time; ++i) {
+      // Run real rendering loop
+      emscripten_fiber_swap(&primary_fiber_, &main_loop_fiber_);
+    }
+  });
+
   // Start main loop
-  struct SwitchContext {
-    emscripten_fiber_t *primary_fiber, *main_loop_fiber;
-  } context = {&primary_fiber_, &main_loop_fiber_};
   emscripten_set_main_loop_arg(
-      [](void* context) {
-        emscripten_fiber_swap(
-            static_cast<SwitchContext*>(context)->primary_fiber,
-            static_cast<SwitchContext*>(context)->main_loop_fiber);
+      [](void* proc) {
+        auto* lambda_proc = static_cast<EmscriptenClosure*>(proc);
+        (*lambda_proc)();
       },
-      &context, 0, true);
+      &execute_main_loop, 0, true);
 #endif  // !OS_EMSCRIPTEN
 }
 
@@ -516,6 +538,24 @@ void ContentRunner::DestroyIMGUIContextInternal() {
 
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
+}
+
+int32_t ContentRunner::DetermineRepeatNumberInternal(double delta_rate) {
+  smooth_delta_time_ *= 0.8;
+  smooth_delta_time_ += std::fmin(delta_rate, 2) * 0.2;
+
+  if (smooth_delta_time_ >= 0.9) {
+    elapsed_time_ = 0;
+    return std::round(smooth_delta_time_);
+  } else {
+    elapsed_time_ += delta_rate;
+    if (elapsed_time_ >= 1) {
+      elapsed_time_ -= 1;
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 }  // namespace content

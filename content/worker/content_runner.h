@@ -114,6 +114,11 @@ class ContentRunner {
   std::vector<float> fps_history_;
 
 #if defined(OS_EMSCRIPTEN)
+  int32_t DetermineRepeatNumberInternal(double delta_rate);
+  double elapsed_time_;
+  double smooth_delta_time_;
+  uint64_t last_count_time_;
+
 #define ASYNCIFY_STACK_SIZE 65536
   emscripten_fiber_t primary_fiber_, main_loop_fiber_;
   char primary_asyncify_stack_[ASYNCIFY_STACK_SIZE];
