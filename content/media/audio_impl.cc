@@ -29,10 +29,12 @@ AudioImpl::AudioImpl(ExecutionContext* execution_context)
   bgs_->SetLooping(true);
   me_->SetLooping(false);
 
+#if !defined(OS_EMSCRIPTEN)
   // Setup watcher
   me_watcher_ = base::ThreadWorker::Create();
   me_watcher_->PostTask(base::BindOnce(&AudioImpl::MeThreadMonitorInternal,
                                        base::Unretained(this)));
+#endif  // !OS_EMSCRIPTEN
 }
 
 AudioImpl::~AudioImpl() {
@@ -40,6 +42,9 @@ AudioImpl::~AudioImpl() {
 }
 
 void AudioImpl::CreateButtonGUISettings() {
+  if (!context()->audio_server)
+    return;
+
   if (ImGui::CollapsingHeader(
           i18n_profile_->GetI18NString(IDS_SETTINGS_AUDIO, "Audio").c_str())) {
     // Set global volume
@@ -197,6 +202,7 @@ void AudioImpl::MeThreadMonitorInternal() {
   if (!me_->IsPlaying() && bgm_->IsPausing())
     bgm_->Resume();
 
+#if !defined(OS_EMSCRIPTEN)
   // Delay for yield
   SDL_Delay(10);
 
@@ -204,6 +210,7 @@ void AudioImpl::MeThreadMonitorInternal() {
   if (me_watcher_)
     me_watcher_->PostTask(base::BindOnce(&AudioImpl::MeThreadMonitorInternal,
                                          base::Unretained(this)));
+#endif  // !OS_EMSCRIPTEN
 }
 
 }  // namespace content

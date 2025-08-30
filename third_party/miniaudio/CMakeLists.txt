@@ -263,3 +263,7 @@ target_link_libraries(miniaudio
   opus
   opusfile
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  target_compile_definitions(miniaudio PUBLIC MA_ENABLE_AUDIO_WORKLETS)
+endif()

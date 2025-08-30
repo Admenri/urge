@@ -130,6 +130,10 @@ void ContentRunner::RunMainLoop() {
     for (int32_t i = 0; i < repeat_time; ++i) {
       emscripten_fiber_swap(&primary_fiber_, &main_loop_fiber_);
     }
+
+    // Update audio thread
+    if (audio_server_)
+      audio_impl_->MeThreadMonitorInternal();
   });
 
   // Start main loop
@@ -456,7 +460,7 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
   ContentRunner* self = static_cast<ContentRunner*>(userdata);
 
 #if !defined(OS_ANDROID) && !defined(OS_EMSCRIPTEN)
-  if (self->execution_context_->engine_profile->background_running)
+  if (self->profile_->background_running)
     return true;
 #endif
 
@@ -475,16 +479,16 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
 
   if (is_focus_lost) {
     LOG(INFO) << "[Content] Enter background running.";
-    if (self->execution_context_->audio_server)
-      self->execution_context_->audio_server->PauseDevice();
+    if (self->audio_server_)
+      self->audio_server_->PauseDevice();
     self->execution_context_->render_device->SuspendContext();
     self->background_running_ = true;
   } else if (is_focus_gained) {
     LOG(INFO) << "[Content] Resume foreground running.";
     self->execution_context_->render_device->ResumeContext(
         self->execution_context_->primary_render_context);
-    if (self->execution_context_->audio_server)
-      self->execution_context_->audio_server->ResumeDevice();
+    if (self->audio_server_)
+      self->audio_server_->ResumeDevice();
     self->graphics_impl_->ResetFPSCounter();
     self->background_running_ = false;
 

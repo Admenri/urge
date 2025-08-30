@@ -24,6 +24,7 @@ class AudioImpl : public Audio, public EngineObject {
   AudioImpl& operator=(const AudioImpl&) = delete;
 
   void CreateButtonGUISettings();
+  void MeThreadMonitorInternal();
 
  public:
   void SetupMIDI(ExceptionState& exception_state) override;
@@ -65,16 +66,14 @@ class AudioImpl : public Audio, public EngineObject {
   void HandleAudioServiceError(ma_result result,
                                const std::string& filename,
                                ExceptionState& exception_state);
-  void MeThreadMonitorInternal();
 
   I18NProfile* i18n_profile_;
+  std::unique_ptr<base::ThreadWorker> me_watcher_;
 
   std::unique_ptr<audioservice::AudioStream> bgm_;
   std::unique_ptr<audioservice::AudioStream> bgs_;
   std::unique_ptr<audioservice::AudioStream> me_;
   std::unique_ptr<audioservice::SoundEmit> se_;
-
-  std::unique_ptr<base::ThreadWorker> me_watcher_;
 };
 
 }  // namespace content
