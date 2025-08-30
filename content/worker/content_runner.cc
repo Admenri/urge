@@ -111,6 +111,10 @@ void ContentRunner::RunMainLoop() {
       sizeof(main_asyncify_stack_));
 
   auto execute_main_loop = EmscriptenClosure([this]() {
+    // Pause rendering when enter background on emscripten
+    if (background_running_)
+      return;
+
     // Determine update repeat time
     const uint64_t now_time = SDL_GetPerformanceCounter();
     const uint64_t delta_time = now_time - last_count_time_;
@@ -121,10 +125,9 @@ void ContentRunner::RunMainLoop() {
         SDL_GetPerformanceFrequency() / graphics_impl_->FrameRate();
     const double delta_rate =
         delta_time / static_cast<double>(desired_delta_time);
-    const int repeat_time = DetermineRepeatNumberInternal(delta_rate);
+    const int32_t repeat_time = DetermineRepeatNumberInternal(delta_rate);
 
-    for (int i = 0; i < repeat_time; ++i) {
-      // Run real rendering loop
+    for (int32_t i = 0; i < repeat_time; ++i) {
       emscripten_fiber_swap(&primary_fiber_, &main_loop_fiber_);
     }
   });
@@ -239,7 +242,11 @@ void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
 
   // Poll event queue
   SDL_Event queued_event;
-  while (SDL_PollEvent(&queued_event) || background_running_) {
+  while (SDL_PollEvent(&queued_event)
+#if defined(OS_EMSCRIPTEN)
+         || background_running_
+#endif  //! OS_EMSCRIPTEN
+  ) {
     // Quit event
     if (queued_event.type == SDL_EVENT_QUIT)
       binding_quit_flag_.store(1);
@@ -448,7 +455,7 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
                                               SDL_Event* event) {
   ContentRunner* self = static_cast<ContentRunner*>(userdata);
 
-#if !defined(OS_ANDROID)
+#if !defined(OS_ANDROID) && !defined(OS_EMSCRIPTEN)
   if (self->execution_context_->engine_profile->background_running)
     return true;
 #endif
@@ -468,16 +475,25 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
 
   if (is_focus_lost) {
     LOG(INFO) << "[Content] Enter background running.";
-    self->execution_context_->audio_server->PauseDevice();
+    if (self->execution_context_->audio_server)
+      self->execution_context_->audio_server->PauseDevice();
     self->execution_context_->render_device->SuspendContext();
     self->background_running_ = true;
   } else if (is_focus_gained) {
     LOG(INFO) << "[Content] Resume foreground running.";
     self->execution_context_->render_device->ResumeContext(
         self->execution_context_->primary_render_context);
-    self->execution_context_->audio_server->ResumeDevice();
+    if (self->execution_context_->audio_server)
+      self->execution_context_->audio_server->ResumeDevice();
     self->graphics_impl_->ResetFPSCounter();
     self->background_running_ = false;
+
+#if defined(OS_EMSCRIPTEN)
+    LOG(INFO) << "[Emscripten] Reset elapsed frame time.";
+    self->elapsed_time_ = 0.0;
+    self->smooth_delta_time_ = 1.0;
+    self->last_count_time_ = SDL_GetPerformanceCounter();
+#endif  // !OS_EMSCRIPTEN
   }
 
   return true;

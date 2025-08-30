@@ -14,6 +14,9 @@ include_directories("${PROJECT_SOURCE_DIR}")
 #--------------------------------------------------------------------------------
 
 option(URGE_SHARED_RENDERER_LIBRARY "Use Dynamic Renderer Library in Engine Building" OFF)
+if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  add_compile_options(-pthread)
+endif ()
 
 #--------------------------------------------------------------------------------
 # Platform and compiler check
