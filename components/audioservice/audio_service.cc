@@ -195,10 +195,6 @@ static void AudioStreamDataCallback(void* userdata,
 
 std::unique_ptr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
-#if defined(OS_EMSCRIPTEN)
-  LOG(INFO) << "[AudioService] Disable audio module on emscripten.";
-  return nullptr;
-#else
   ServiceKernelData* kernel_data = new ServiceKernelData;
 
   // Device sped
@@ -282,7 +278,6 @@ std::unique_ptr<AudioService> AudioService::Create(
 
   return std::unique_ptr<AudioService>(
       new AudioService(std::move(kernel_data)));
-#endif  //! OS_EMSCRIPTEN
 }
 
 std::unique_ptr<AudioStream> AudioService::CreateStream() {
