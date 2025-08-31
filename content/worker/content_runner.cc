@@ -55,8 +55,9 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       show_fps_monitor_(false),
       last_tick_(SDL_GetPerformanceCounter()),
       total_delta_(0),
-      frame_count_(0),
+      frame_count_(0)
 #if defined(OS_EMSCRIPTEN)
+      ,
       elapsed_time_(0.0),
       smooth_delta_time_(1.0),
       last_count_time_(SDL_GetPerformanceCounter())
@@ -567,6 +568,7 @@ void ContentRunner::DestroyIMGUIContextInternal() {
   ImGui::DestroyContext();
 }
 
+#if defined(OS_EMSCRIPTEN)
 int32_t ContentRunner::DetermineRepeatNumberInternal(double delta_rate) {
   smooth_delta_time_ *= 0.8;
   smooth_delta_time_ += std::fmin(delta_rate, 2) * 0.2;
@@ -584,5 +586,6 @@ int32_t ContentRunner::DetermineRepeatNumberInternal(double delta_rate) {
 
   return 0;
 }
+#endif  // !OS_EMSCRIPTEN
 
 }  // namespace content
