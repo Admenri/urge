@@ -27,6 +27,10 @@
 #endif  //! WEBGPU_SUPPORTED
 #include "Primitives/interface/DebugOutput.h"
 
+#if PLATFORM_WEB
+#include <emscripten/html5_webgpu.h>
+#endif
+
 #include "base/debug/logging.h"
 #include "ui/widget/widget.h"
 
@@ -292,8 +296,20 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       auto* pFactoryWebGPU = GetEngineFactoryWebGPU();
 
       Diligent::EngineWebGPUCreateInfo webgpu_create_info(engine_create_info);
+      webgpu_create_info.Features.AsyncShaderCompilation =
+          Diligent::DEVICE_FEATURE_STATE_DISABLED;
+
+#if PLATFORM_WEB
+      WGPUInstance wgpuInstance = wgpuCreateInstance(nullptr);
+      WGPUDevice wgpuDevice = emscripten_webgpu_get_device();
+      pFactoryWebGPU->AttachToWebGPUDevice(wgpuInstance, nullptr, wgpuDevice,
+                                           webgpu_create_info, &device,
+                                           &context);
+#else
       pFactoryWebGPU->CreateDeviceAndContextsWebGPU(webgpu_create_info, &device,
                                                     &context);
+#endif
+
       pFactoryWebGPU->CreateSwapChainWebGPU(device, context, swap_chain_desc,
                                             native_window, &swapchain);
     }
