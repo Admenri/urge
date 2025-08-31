@@ -66,7 +66,6 @@ add_subdirectory(third_party/SDL)
 include_directories(third_party/SDL/include)
 
 ## Diligent Engine
-set(DILIGENT_NO_WEBGPU ON)
 add_subdirectory(third_party/DiligentCore)
 include_directories(third_party/DiligentCore)
 

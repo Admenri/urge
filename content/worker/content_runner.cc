@@ -120,16 +120,23 @@ void ContentRunner::RunMainLoop() {
     const uint64_t delta_time = now_time - last_count_time_;
     last_count_time_ = now_time;
 
-    // Calculate smooth frame rate
+    // Desired frame time
     const double desired_delta_time =
         SDL_GetPerformanceFrequency() / graphics_impl_->FrameRate();
+
+    // Discard frames if need
+    if (delta_time > desired_delta_time * 2) {
+      elapsed_time_ = 0.0;
+      smooth_delta_time_ = 1.0;
+    }
+
+    // Calculate smooth frame rate
     const double delta_rate =
         delta_time / static_cast<double>(desired_delta_time);
     const int32_t repeat_time = DetermineRepeatNumberInternal(delta_rate);
 
-    for (int32_t i = 0; i < repeat_time; ++i) {
+    for (int32_t i = 0; i < repeat_time; ++i)
       emscripten_fiber_swap(&primary_fiber_, &main_loop_fiber_);
-    }
 
     // Update audio thread
     if (audio_server_)
@@ -459,7 +466,7 @@ bool ContentRunner::EventWatchHandlerInternal(void* userdata,
                                               SDL_Event* event) {
   ContentRunner* self = static_cast<ContentRunner*>(userdata);
 
-#if !defined(OS_ANDROID) && !defined(OS_EMSCRIPTEN)
+#if !defined(OS_ANDROID)
   if (self->profile_->background_running)
     return true;
 #endif

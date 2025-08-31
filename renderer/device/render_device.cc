@@ -22,6 +22,9 @@
 #if D3D12_SUPPORTED
 #include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
 #endif  // !D3D12_SUPPORTED
+#if WEBGPU_SUPPORTED
+#include "Graphics/GraphicsEngineWebGPU/interface/EngineFactoryWebGPU.h"
+#endif  //! WEBGPU_SUPPORTED
 #include "Primitives/interface/DebugOutput.h"
 
 #include "base/debug/logging.h"
@@ -167,8 +170,14 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       break;
   }
 #elif defined(OS_EMSCRIPTEN)
-  // TODO: WebGPU support
-  driver_type = DriverType::OPENGL;
+  switch (driver_type) {
+    case DriverType::OPENGL:
+    case DriverType::WEBGPU:
+      break;
+    default:
+      driver_type = DriverType::OPENGL;
+      break;
+  }
 #else
 #error "Unsupport Platform"
 #endif
@@ -273,6 +282,22 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
                                           &swapchain);
     }
 #endif  // D3D12_SUPPORT
+#if WEBGPU_SUPPORTED
+    if (driver_type == DriverType::WEBGPU) {
+#if ENGINE_DLL
+      auto GetEngineFactoryWebGPU = Diligent::LoadGraphicsEngineWebGPU();
+#else
+      using Diligent::GetEngineFactoryWebGPU;
+#endif
+      auto* pFactoryWebGPU = GetEngineFactoryWebGPU();
+
+      Diligent::EngineWebGPUCreateInfo webgpu_create_info(engine_create_info);
+      pFactoryWebGPU->CreateDeviceAndContextsWebGPU(webgpu_create_info, &device,
+                                                    &context);
+      pFactoryWebGPU->CreateSwapChainWebGPU(device, context, swap_chain_desc,
+                                            native_window, &swapchain);
+    }
+#endif  // WEBGPU_SUPPORTED
 
     if (device && context && swapchain) {
       // Success

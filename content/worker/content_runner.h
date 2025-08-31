@@ -119,7 +119,7 @@ class ContentRunner {
   double smooth_delta_time_;
   uint64_t last_count_time_;
 
-#define ASYNCIFY_STACK_SIZE 32 * 1024 * 1024
+#define ASYNCIFY_STACK_SIZE 16 * 1024 * 1024
   emscripten_fiber_t primary_fiber_, main_loop_fiber_;
   char primary_asyncify_stack_[ASYNCIFY_STACK_SIZE];
   char main_asyncify_stack_[ASYNCIFY_STACK_SIZE];

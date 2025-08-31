@@ -19,7 +19,7 @@ enum class DriverType {
   VULKAN,
   D3D11,
   D3D12,
-
+  WEBGPU,
   kNums,
 };
 
