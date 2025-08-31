@@ -448,6 +448,8 @@ int32_t RenderDevice::ResumeContext(
 
 #if ENGINE_DLL
       auto GetEngineFactoryVk = Diligent::LoadGraphicsEngineVk();
+#else
+      using Diligent::GetEngineFactoryVk;
 #endif
       auto* factory = GetEngineFactoryVk();
       factory->CreateSwapChainVk(device_, immediate_context, swapchain_desc_,
