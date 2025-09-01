@@ -26,6 +26,20 @@
         android:name="android.hardware.type.pc"
         android:required="false" />
 
+    <!-- Audio recording support -->
+    <!-- if you want to record audio, uncomment this. -->
+    <!-- <uses-permission android:name="android.permission.RECORD_AUDIO" /> -->
+    <!-- <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" /> -->
+
+    <!-- Camera support -->
+    <!-- if you want to record video, uncomment this. -->
+    <!--
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" />
+    -->
+
     <!-- Allow downloading to the external storage on Android 5.1 and older -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -54,9 +68,9 @@
 
     <application
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
-        android:isGame="true"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
 
@@ -65,7 +79,9 @@
             android:alwaysRetainTaskState="true"
             android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:exported="true"
-            android:launchMode="singleInstance">
+            android:label="@string/app_name"
+            android:launchMode="singleInstance"
+            android:preferMinimalPostProcessing="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.LocaleList;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
@@ -1330,10 +1331,17 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
      * This method is called by SDL using JNI.
      */
     public static boolean isChromebook() {
-        if (getContext() == null) {
-            return false;
+        // https://stackoverflow.com/questions/39784415/how-to-detect-programmatically-if-android-app-is-running-in-chrome-book-or-in
+        if (getContext() != null) {
+            if (getContext().getPackageManager().hasSystemFeature("org.chromium.arc")
+                || getContext().getPackageManager().hasSystemFeature("org.chromium.arc.device_management")) {
+                return true;
+            }
         }
-        return getContext().getPackageManager().hasSystemFeature("org.chromium.arc.device_management");
+
+        // Running on AVD emulator
+        boolean isChromebookEmulator = (Build.MODEL != null && Build.MODEL.startsWith("sdk_gpc_"));
+        return isChromebookEmulator;
     }
 
     /**
@@ -2115,6 +2123,44 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     static class SDLFileDialogState {
         int requestCode;
         boolean multipleChoice;
+    }
+
+    /**
+     * This method is called by SDL using JNI.
+     */
+    public static String getPreferredLocales() {
+        String result = "";
+        if (Build.VERSION.SDK_INT >= 24 /* Android 7 (N) */) {
+            LocaleList locales = LocaleList.getAdjustedDefault();
+            for (int i = 0; i < locales.size(); i++) {
+                if (i != 0) result += ",";
+                result += formatLocale(locales.get(i));
+            }
+        } else if (mCurrentLocale != null) {
+            result = formatLocale(mCurrentLocale);
+        }
+        return result;
+    }
+
+    public static String formatLocale(Locale locale) {
+        String result = "";
+        String lang = "";
+        if (locale.getLanguage() == "in") {
+            // Indonesian is "id" according to ISO 639.2, but on Android is "in" because of Java backwards compatibility
+            lang = "id";
+        } else if (locale.getLanguage() == "") {
+            // Make sure language is never empty
+            lang = "und";
+        } else {
+            lang = locale.getLanguage();
+        }
+
+        if (locale.getCountry() == "") {
+            result = lang;
+        } else {
+            result = lang + "_" + locale.getCountry();
+        }
+        return result;
     }
 }
 
