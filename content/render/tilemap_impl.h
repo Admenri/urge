@@ -105,6 +105,8 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Visible, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Ox, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(RepeatX, bool);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(RepeatY, bool);
 
  private:
   friend class TilemapAutotileImpl;
@@ -182,6 +184,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   scoped_refptr<TableImpl> priorities_;
   std::array<AutotileInfo, 7> autotiles_;
   base::Vec2i origin_;
+  base::Vec2i repeat_;
 
   base::WeakPtrFactory<TilemapImpl> weak_ptr_factory_{this};
 };

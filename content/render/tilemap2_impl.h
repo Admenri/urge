@@ -107,6 +107,8 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Visible, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Ox, int32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Oy, int32_t);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(RepeatX, bool);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(RepeatY, bool);
 
  private:
   friend class TilemapBitmapImpl;
@@ -170,6 +172,7 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   scoped_refptr<TableImpl> flags_;
   scoped_refptr<ViewportImpl> viewport_;
   base::Vec2i origin_;
+  base::Vec2i repeat_;
 
   base::CallbackListSubscription map_data_observer_;
   base::CallbackListSubscription flash_data_observer_;

@@ -362,7 +362,8 @@ TilemapImpl::TilemapImpl(ExecutionContext* execution_context,
       tilesize_(tilesize),
       max_atlas_size_(execution_context->render_device->MaxTextureSize()),
       max_vertical_count_(max_atlas_size_ / tilesize),
-      viewport_(parent) {
+      viewport_(parent),
+      repeat_(1) {
   ground_node_.RegisterEventHandler(base::BindRepeating(
       &TilemapImpl::GroundNodeHandlerInternal, base::Unretained(this)));
 
@@ -531,6 +532,32 @@ void TilemapImpl::Put_Oy(const int32_t& value,
 
   origin_.y = value;
   map_buffer_dirty_ = true;
+}
+
+bool TilemapImpl::Get_RepeatX(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(false);
+
+  return repeat_.x;
+}
+
+void TilemapImpl::Put_RepeatX(const bool& value,
+                              ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  repeat_.x = value;
+}
+
+bool TilemapImpl::Get_RepeatY(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(false);
+
+  return repeat_.y;
+}
+
+void TilemapImpl::Put_RepeatY(const bool& value,
+                              ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  repeat_.y = value;
 }
 
 void TilemapImpl::OnObjectDisposed() {
@@ -787,7 +814,15 @@ void TilemapImpl::ParseMapDataInternal(
     if (!t)
       return 0;
 
-    return t->value(value_wrap(x, t->x_size()), value_wrap(y, t->y_size()), z);
+    auto tile_x = repeat_.x ? value_wrap(x, t->x_size()) : x;
+    auto tile_y = repeat_.y ? value_wrap(y, t->y_size()) : y;
+
+    if (!repeat_.x && (x < 0 || x >= static_cast<int32_t>(t->x_size())))
+      return 0;
+    if (!repeat_.y && (y < 0 || y >= static_cast<int32_t>(t->x_size())))
+      return 0;
+
+    return t->value(tile_x, tile_y, z);
   };
 
   auto process_tile = [&](const base::Vec2i& pos, int32_t z) {

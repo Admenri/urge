@@ -420,7 +420,8 @@ Tilemap2Impl::Tilemap2Impl(ExecutionContext* execution_context,
                          : execution_context->screen_drawable_node,
                   SortKey(200)),
       tilesize_(tilesize),
-      viewport_(parent) {
+      viewport_(parent),
+      repeat_(1) {
   ground_node_.RegisterEventHandler(base::BindRepeating(
       &Tilemap2Impl::GroundNodeHandlerInternal, base::Unretained(this)));
   above_node_.RegisterEventHandler(base::BindRepeating(
@@ -591,6 +592,32 @@ void Tilemap2Impl::Put_Oy(const int32_t& value,
   origin_.y = value;
 }
 
+bool Tilemap2Impl::Get_RepeatX(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(false);
+
+  return repeat_.x;
+}
+
+void Tilemap2Impl::Put_RepeatX(const bool& value,
+                               ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  repeat_.x = value;
+}
+
+bool Tilemap2Impl::Get_RepeatY(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(false);
+
+  return repeat_.y;
+}
+
+void Tilemap2Impl::Put_RepeatY(const bool& value,
+                               ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  repeat_.y = value;
+}
+
 void Tilemap2Impl::OnObjectDisposed() {
   ground_node_.DisposeNode();
   above_node_.DisposeNode();
@@ -707,17 +734,26 @@ void Tilemap2Impl::ParseMapDataInternal(
     if (!t)
       return 0;
 
-    return t->value(value_wrap(x, t->x_size()), value_wrap(y, t->y_size()), z);
+    auto tile_x = repeat_.x ? value_wrap(x, t->x_size()) : x;
+    auto tile_y = repeat_.y ? value_wrap(y, t->y_size()) : y;
+
+    if (!repeat_.x && (x < 0 || x >= static_cast<int32_t>(t->x_size())))
+      return 0;
+    if (!repeat_.y && (y < 0 || y >= static_cast<int32_t>(t->x_size())))
+      return 0;
+
+    return t->value(tile_x, tile_y, z);
   };
 
-  auto get_map_flag = [&](scoped_refptr<TableImpl> t, int32_t x) -> int16_t {
+  auto get_map_flag = [&](scoped_refptr<TableImpl> t,
+                          int32_t tile_id) -> int16_t {
     if (!t)
       return 0;
 
-    if (x < 0 || x >= static_cast<int32_t>(t->x_size()))
+    if (tile_id < 0 || tile_id >= static_cast<int32_t>(t->x_size()))
       return 0;
 
-    return t->value(x, 0, 0);
+    return t->value(tile_id, 0, 0);
   };
 
   auto process_quads = [&](renderer::Quad* quads, int32_t size, bool above) {

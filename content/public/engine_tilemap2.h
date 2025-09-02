@@ -80,6 +80,12 @@ class URGE_OBJECT(Tilemap2) {
 
   /*--urge(name:oy)--*/
   URGE_EXPORT_ATTRIBUTE(Oy, int32_t);
+
+  /*--urge(name:repeat_x)--*/
+  URGE_EXPORT_ATTRIBUTE(RepeatX, bool);
+
+  /*--urge(name:repeat_y)--*/
+  URGE_EXPORT_ATTRIBUTE(RepeatY, bool);
 };
 
 }  // namespace content
