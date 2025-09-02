@@ -19,7 +19,7 @@ class URGE_OBJECT(Font) {
  public:
   virtual ~Font() = default;
 
-  /*--urge(name:initialize,optional:size=20)--*/
+  /*--urge(name:initialize,optional:name="",optional:size=20)--*/
   static scoped_refptr<Font> New(ExecutionContext* execution_context,
                                  const std::string& name,
                                  uint32_t size,
