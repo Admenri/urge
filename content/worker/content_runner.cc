@@ -255,7 +255,7 @@ void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
   // Poll event queue
   SDL_Event queued_event;
   while (SDL_PollEvent(&queued_event)
-#if defined(OS_EMSCRIPTEN)
+#if !defined(OS_EMSCRIPTEN)
          || background_running_
 #endif  //! OS_EMSCRIPTEN
   ) {
