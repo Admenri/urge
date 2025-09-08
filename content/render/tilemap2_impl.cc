@@ -420,6 +420,8 @@ Tilemap2Impl::Tilemap2Impl(ExecutionContext* execution_context,
                          : execution_context->screen_drawable_node,
                   SortKey(200)),
       tilesize_(tilesize),
+      enable_shadow_layer_(context()->engine_profile->api_version >=
+                           ContentProfile::APIVersion::RGSS3),
       viewport_(parent),
       repeat_(1) {
   ground_node_.RegisterEventHandler(base::BindRepeating(
@@ -1076,9 +1078,33 @@ void Tilemap2Impl::ParseMapDataInternal(
 
   auto process_shadow_layer = [&](int32_t ox, int32_t oy, int32_t w,
                                   int32_t h) {
-    for (int32_t y = 0; y < h; ++y)
-      for (int32_t x = 0; x < w; ++x)
-        process_shadow_tile(get_wrap_data(map_data_, x + ox, y + oy, 3), x, y);
+    if (enable_shadow_layer_) {
+      // Get shadow data from map_data[z=3] on RGSS3
+      for (int32_t y = 0; y < h; ++y) {
+        for (int32_t x = 0; x < w; ++x) {
+          int16_t shadow_id = get_wrap_data(map_data_, x + ox, y + oy, 3);
+          process_shadow_tile(shadow_id, x, y);
+        }
+      }
+    } else {
+      // Calculate shadow region on RGSS2
+      for (int32_t y = 1; y < h; ++y) {
+        for (int32_t x = 1; x < w; ++x) {
+          int16_t wall_top =
+              get_wrap_data(map_data_, x + ox - 1, y + oy - 1, 0);
+          int16_t wall_bottom = get_wrap_data(map_data_, x + ox - 1, y + oy, 0);
+          int16_t current_tile = get_wrap_data(map_data_, x + ox, y + oy, 0);
+
+          // Draw shadow if wall in A3,A4 region
+          if ((wall_top >= 0x1100 && wall_top < 0x2000) &&
+              (wall_bottom >= 0x1100 && wall_bottom < 0x2000) &&
+              !(current_tile >= 0x1100 && current_tile < 0x2000)) {
+            // Fixed left shadow on RGSS2
+            process_shadow_tile(0x05, x, y);
+          }
+        }
+      }
+    }
   };
 
   auto process_common_layer = [&](int32_t ox, int32_t oy, int32_t w, int32_t h,
@@ -1124,9 +1150,7 @@ void Tilemap2Impl::ParseMapDataInternal(
     process_common_layer(ox, oy, w, h, 1);
 
     // Shadow area (3)
-    if (context()->engine_profile->api_version >=
-        ContentProfile::APIVersion::RGSS3)
-      process_shadow_layer(ox, oy, w, h);
+    process_shadow_layer(ox, oy, w, h);
 
     // BCDE area (2)
     process_common_layer(ox, oy, w, h, 2);

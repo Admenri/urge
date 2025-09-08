@@ -165,6 +165,7 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   int32_t frame_index_ = 0;
   bool atlas_dirty_ = false;
   bool map_buffer_dirty_ = false;
+  bool enable_shadow_layer_ = false;
 
   std::array<BitmapInfo, 9> bitmaps_;
   scoped_refptr<TableImpl> map_data_;

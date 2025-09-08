@@ -67,7 +67,8 @@ int32_t BuildTiles(const base::Rect& src_rect,
                    const base::Vec4& color,
                    const base::Vec2i& texture_size,
                    renderer::Quad* quads) {
-  if (src_rect.width && src_rect.height && dest_rect.width && dest_rect.height)
+  if (!src_rect.width || !src_rect.height || !dest_rect.width ||
+      !dest_rect.height)
     return 0;
 
   const int32_t full_rows = dest_rect.height / src_rect.height;
