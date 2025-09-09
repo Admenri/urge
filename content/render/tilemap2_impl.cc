@@ -1088,8 +1088,12 @@ void Tilemap2Impl::ParseMapDataInternal(
       }
     } else {
       // Calculate shadow region on RGSS2
-      for (int32_t y = 1; y < h; ++y) {
-        for (int32_t x = 1; x < w; ++x) {
+      for (int32_t y = 0; y < h; ++y) {
+        for (int32_t x = 0; x < w; ++x) {
+          if ((x + ox) % map_data_->x_size() == 0 ||
+              (y + oy) % map_data_->y_size() == 0)
+            continue;
+
           int16_t wall_top =
               get_wrap_data(map_data_, x + ox - 1, y + oy - 1, 0);
           int16_t wall_bottom = get_wrap_data(map_data_, x + ox - 1, y + oy, 0);
