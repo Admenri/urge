@@ -420,8 +420,8 @@ Tilemap2Impl::Tilemap2Impl(ExecutionContext* execution_context,
                          : execution_context->screen_drawable_node,
                   SortKey(200)),
       tilesize_(tilesize),
-      enable_shadow_layer_(context()->engine_profile->api_version >=
-                           ContentProfile::APIVersion::RGSS3),
+      rgss3_style_(context()->engine_profile->api_version >=
+                   ContentProfile::APIVersion::RGSS3),
       viewport_(parent),
       repeat_(1) {
   ground_node_.RegisterEventHandler(base::BindRepeating(
@@ -1056,8 +1056,7 @@ void Tilemap2Impl::ParseMapDataInternal(
                                  int16_t under_tile_id) {
     int16_t flag = get_map_flag(flags_, tile_id);
     bool over_player = (flag & 0x10) && (z >= 2);
-    bool is_table = (context()->engine_profile->api_version >=
-                     ContentProfile::APIVersion::RGSS3)
+    bool is_table = rgss3_style_
                         ? (flag & 0x80)
                         : (tile_id - 0x0B00) % (8 * 0x30) >= (7 * 0x30);
 
@@ -1078,7 +1077,7 @@ void Tilemap2Impl::ParseMapDataInternal(
 
   auto process_shadow_layer = [&](int32_t ox, int32_t oy, int32_t w,
                                   int32_t h) {
-    if (enable_shadow_layer_) {
+    if (rgss3_style_) {
       // Get shadow data from map_data[z=3] on RGSS3
       for (int32_t y = 0; y < h; ++y) {
         for (int32_t x = 0; x < w; ++x) {
