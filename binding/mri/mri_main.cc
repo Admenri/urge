@@ -154,7 +154,7 @@ void BindingEngineMri::PreEarlyInitialization(
   g_io_service = io_service;
 
   int32_t argc = 0;
-  char** argv = 0;
+  char** argv = nullptr;
   ruby_sysinit(&argc, &argv);
 
   RUBY_INIT_STACK;
@@ -181,22 +181,6 @@ void BindingEngineMri::PreEarlyInitialization(
 #endif
 
   MriApplyBindingPatch();
-
-  if (profile->api_version < content::ContentProfile::APIVersion::RGSS3) {
-    if constexpr (sizeof(void*) == 4) {
-      MriDefineMethod(rb_cNilClass, "id", MriReturnInt<4>);
-      MriDefineMethod(rb_cTrueClass, "id", MriReturnInt<2>);
-    } else if constexpr (sizeof(void*) == 8) {
-      MriDefineMethod(rb_cNilClass, "id", MriReturnInt<8>);
-      MriDefineMethod(rb_cTrueClass, "id", MriReturnInt<20>);
-    } else {
-      NOTREACHED();
-    }
-
-    rb_const_set(rb_cObject, rb_intern("TRUE"), Qtrue);
-    rb_const_set(rb_cObject, rb_intern("FALSE"), Qfalse);
-    rb_const_set(rb_cObject, rb_intern("NIL"), Qnil);
-  }
 
   MriDefineModuleFunction(rb_mKernel, "rgss_main", MRI_RGSSMain);
   MriDefineModuleFunction(rb_mKernel, "rgss_stop", MRI_RGSSStop);

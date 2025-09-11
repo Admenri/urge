@@ -91,17 +91,18 @@ void Window2Impl::SetLabel(const std::string& label,
 void Window2Impl::Update(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  if (!active_)
-    return;
+  if (pause_)
+    pause_index_ = (++pause_index_) % 32;
 
-  pause_index_ = ++pause_index_ % 32;
-  cursor_opacity_ += cursor_fade_ ? -8 : 8;
-  if (cursor_opacity_ > 255) {
-    cursor_opacity_ = 255;
-    cursor_fade_ = true;
-  } else if (cursor_opacity_ < 128) {
-    cursor_opacity_ = 128;
-    cursor_fade_ = false;
+  if (active_) {
+    cursor_opacity_ += cursor_fade_ ? -8 : 8;
+    if (cursor_opacity_ > 255) {
+      cursor_opacity_ = 255;
+      cursor_fade_ = true;
+    } else if (cursor_opacity_ < 128) {
+      cursor_opacity_ = 128;
+      cursor_fade_ = false;
+    }
   }
 }
 
