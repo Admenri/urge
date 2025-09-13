@@ -226,9 +226,6 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 
       Diligent::EngineGLCreateInfo gl_create_info(engine_create_info);
       gl_create_info.Window = native_window;
-#if !defined(OS_EMSCRIPTEN)
-      gl_create_info.ZeroToOneNDZ = Diligent::True;
-#endif
 
       factory->CreateDeviceAndSwapChainGL(gl_create_info, &device, &context,
                                           swap_chain_desc, &swapchain);
