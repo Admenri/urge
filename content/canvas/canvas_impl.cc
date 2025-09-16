@@ -1185,9 +1185,6 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
-  auto& pipeline_set = render_device.GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
-
   // Reset text upload stage buffer if need
   if (!agent_.text_cache_texture || agent_.text_cache_size.x < text->w ||
       agent_.text_cache_size.y < text->h) {
@@ -1236,13 +1233,68 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   const base::Vec2i text_cache_size(
       agent_.text_cache_texture->GetDesc().Width,
       agent_.text_cache_texture->GetDesc().Height);
+  const base::Vec2i text_surface_size(text->w, text->h);
 
-  // Make render vertices
+  // Release text surface
+  SDL_DestroySurface(text);
+
+  // Clamp blit region
+  const auto blit_region = base::MakeIntersect(compose_position, agent_.size);
+  if (!blit_region.width || !blit_region.height)
+    return;
+
+  // Copy dst region to intermediate texture
+  auto* intermediate_cache =
+      scheduler->RequireBltCacheTexture(compose_position.Size());
+  const base::Vec2 intermediate_size(intermediate_cache->GetDesc().Width,
+                                     intermediate_cache->GetDesc().Height);
+
+  // Reset render targets
+  scheduler->SetupRenderTarget(nullptr, nullptr, false);
+
+  Diligent::Box copy_region;
+  copy_region.MinX = blit_region.x;
+  copy_region.MaxX = copy_region.MinX + blit_region.width;
+  copy_region.MinY = blit_region.y;
+  copy_region.MaxY = copy_region.MinY + blit_region.height;
+
+  Diligent::CopyTextureAttribs copy_attribs;
+  copy_attribs.pSrcTexture = agent_.data;
+  copy_attribs.pSrcBox = &copy_region;
+  copy_attribs.SrcTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_attribs.pDstTexture = intermediate_cache;
+  copy_attribs.DstTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_attribs.DstX = -std::min(0, compose_position.x);
+  copy_attribs.DstY = -std::min(0, compose_position.y);
+  render_context->CopyTexture(copy_attribs);
+
+  // Custom blend blit pipeline
+  auto& pipeline_set = render_device.GetPipelines()->bitmapblt;
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+
+  // Make drawing vertices
   renderer::Quad transient_quad;
-  renderer::Quad::SetTexCoordRect(&transient_quad, base::Vec2(text->w, text->h),
-                                  text_cache_size.Recast<float>());
   renderer::Quad::SetPositionRect(&transient_quad, compose_position);
-  renderer::Quad::SetColor(&transient_quad, blend_alpha);
+  renderer::Quad::SetTexCoordRect(&transient_quad,
+                                  base::Rect(text_surface_size),
+                                  text_cache_size.Recast<float>());
+
+  // Norm opacity value
+  const float norm_opacity = static_cast<float>(opacity) / 255.0f;
+
+  // Set dst texture uv
+  const base::Vec2 dst_uv(compose_position.width / intermediate_size.x,
+                          compose_position.height / intermediate_size.y);
+  transient_quad.vertices[0].color = base::Vec4(0, 0, 0, norm_opacity);
+  transient_quad.vertices[1].color = base::Vec4(dst_uv.x, 0, 0, norm_opacity);
+  transient_quad.vertices[2].color =
+      base::Vec4(dst_uv.x, dst_uv.y, 0, norm_opacity);
+  transient_quad.vertices[3].color = base::Vec4(0, dst_uv.y, 0, norm_opacity);
+
+  // Update vertices
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
@@ -1253,15 +1305,18 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Setup uniform params
-  scheduler->base_binding().u_transform->Set(agent_.world_buffer);
-  scheduler->base_binding().u_texture->Set(
+  scheduler->blt_binding().u_transform->Set(agent_.world_buffer);
+  scheduler->blt_binding().u_texture->Set(
       agent_.text_cache_texture->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  scheduler->blt_binding().u_dst_texture->Set(
+      intermediate_cache->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->base_binding(),
+      *scheduler->blt_binding(),
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
@@ -1278,9 +1333,6 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   draw_indexed_attribs.NumIndices = 6;
   draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
-
-  // Release text surface
-  SDL_DestroySurface(text);
 }
 
 void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
