@@ -43,12 +43,16 @@ void CanvasScheduler::SetupRenderTarget(Diligent::ITextureView* render_target,
     // Apply clear buffer if need
     if (clear_target) {
       float clear_color[] = {0, 0, 0, 0};
-      context_->ClearDepthStencil(
-          depth_stencil, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
-          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
       context_->ClearRenderTarget(
           render_target, clear_color,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      if (depth_stencil) {
+        // Clear depth buffer if need
+        context_->ClearDepthStencil(
+            depth_stencil, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+            Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      }
     }
 
     return;

@@ -915,7 +915,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   // Custom blend blit pipeline
   auto& pipeline_set = render_device.GetPipelines()->base;
   auto* pipeline = pipeline_set.GetPipeline(
-      static_cast<renderer::BlendType>(blend_type), true);
+      static_cast<renderer::BlendType>(blend_type), false);
 
   // Norm opacity value
   base::Vec4 blend_alpha;
@@ -930,7 +930,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
+  scheduler->SetupRenderTarget(agent_.target, nullptr, false);
 
   // Push scissor
   Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
@@ -1005,7 +1005,7 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   // Custom blend blit pipeline
   auto& pipeline_set = render_device.GetPipelines()->bitmapblt;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Make drawing vertices
   renderer::Quad transient_quad;
@@ -1029,7 +1029,7 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
+  scheduler->SetupRenderTarget(agent_.target, nullptr, false);
 
   // Push scissor
   Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
@@ -1113,8 +1113,7 @@ void CanvasImpl::GPUFetchTexturePixelsDataInternal() {
 
 void CanvasImpl::GPUCanvasClearInternal() {
   // Clear all data in texture
-  context()->canvas_scheduler->SetupRenderTarget(agent_.target,
-                                                 agent_.depth_view, true);
+  context()->canvas_scheduler->SetupRenderTarget(agent_.target, nullptr, true);
 }
 
 void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
@@ -1127,7 +1126,7 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
 
   auto& pipeline_set = render_device.GetPipelines()->color;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Make transient vertices data
   renderer::Quad transient_quad;
@@ -1146,7 +1145,7 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
+  scheduler->SetupRenderTarget(agent_.target, nullptr, false);
 
   // Push scissor
   Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
@@ -1273,7 +1272,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   // Custom blend blit pipeline
   auto& pipeline_set = render_device.GetPipelines()->bitmapblt;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   // Make drawing vertices
   renderer::Quad transient_quad;
@@ -1298,7 +1297,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
+  scheduler->SetupRenderTarget(agent_.target, nullptr, false);
 
   // Push scissor
   Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
@@ -1342,7 +1341,7 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
 
   auto& pipeline_set = render_device.GetPipelines()->bitmaphue;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
 
   GPUResetEffectLayerIfNeed();
 
@@ -1364,7 +1363,7 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(agent_.target, agent_.depth_view, false);
+  scheduler->SetupRenderTarget(agent_.target, nullptr, false);
 
   // Push scissor
   Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
