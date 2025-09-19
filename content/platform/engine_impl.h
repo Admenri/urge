@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_UTILITY_ENGINE_IMPL_H_
-#define CONTENT_UTILITY_ENGINE_IMPL_H_
+#ifndef CONTENT_PLATFORM_ENGINE_IMPL_H_
+#define CONTENT_PLATFORM_ENGINE_IMPL_H_
 
 #include "components/filesystem/io_service.h"
 #include "content/context/disposable.h"
@@ -66,4 +66,4 @@ class EngineImpl : public URGE,
 
 }  // namespace content
 
-#endif  //! CONTENT_UTILITY_ENGINE_IMPL_H_
+#endif  //! CONTENT_PLATFORM_ENGINE_IMPL_H_

@@ -4,118 +4,142 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>Emscripten-Generated Code</title>
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <title>URGE for Web</title>
   <style>
-    .emscripten {
-      padding-right: 0;
-      margin-left: auto;
-      margin-right: auto;
-      display: block;
-    }
-
-    textarea.emscripten {
-      font-family: monospace;
-      width: 80%;
-    }
-
-    div.emscripten {
-      text-align: center;
-    }
-
-    div.emscripten_border {
-      border: 1px solid black;
-    }
-
-    /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-    canvas.emscripten {
-      border: 0px none;
+    body {
       background-color: black;
+      margin: 0;
+      padding: 0;
+      height: 100vh
     }
 
-    .spinner {
-      height: 50px;
-      width: 50px;
-      margin: 0px auto;
-      -webkit-animation: rotation .8s linear infinite;
-      -moz-animation: rotation .8s linear infinite;
-      -o-animation: rotation .8s linear infinite;
-      animation: rotation 0.8s linear infinite;
-      border-left: 10px solid rgb(0, 150, 240);
-      border-right: 10px solid rgb(0, 150, 240);
-      border-bottom: 10px solid rgb(0, 150, 240);
-      border-top: 10px solid rgb(100, 0, 200);
-      border-radius: 100%;
-      background-color: rgb(200, 100, 250);
+    #canvas {
+      background-color: black;
+      padding: 0;
+      margin: 0 auto;
+      display: block;
+      border: 0px none;
+      height: 100%;
+      max-height: 100vh;
+      max-width: 100vw;
     }
 
-    @-webkit-keyframes rotation {
-      from {
-        -webkit-transform: rotate(0deg);
-      }
-
-      to {
-        -webkit-transform: rotate(360deg);
-      }
+    #progress {
+      background-color: white;
+      opacity: 0.6;
+      position: fixed;
+      bottom: 4px;
+      left: 4px;
+      color: black;
+      padding: 4px 12px;
+      border-radius: 4px;
     }
 
-    @-moz-keyframes rotation {
-      from {
-        -moz-transform: rotate(0deg);
-      }
-
-      to {
-        -moz-transform: rotate(360deg);
-      }
+    #fullscreen {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      opacity: 0.6;
+      cursor: pointer;
     }
 
-    @-o-keyframes rotation {
-      from {
-        -o-transform: rotate(0deg);
-      }
-
-      to {
-        -o-transform: rotate(360deg);
-      }
+    #fullscreen:hover {
+      opacity: 1;
     }
 
-    @keyframes rotation {
-      from {
-        transform: rotate(0deg);
-      }
-
-      to {
-        transform: rotate(360deg);
-      }
+    #fullscreen>svg {
+      height: 24px;
+      width: 24px;
     }
   </style>
 </head>
 
 <body>
-  <hr />
-  <figure style="overflow:visible;" id="spinner">
-    <div class="spinner"></div>
-    <center style="margin-top:0.5em"><strong>emscripten</strong></center>
-  </figure>
-  <div class="emscripten" id="status">Downloading...</div>
-  <div class="emscripten">
-    <progress value="0" max="100" id="progress" hidden=1></progress>
-  </div>
-  <div class="emscripten_border">
-    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
-  </div>
-  <hr />
-  <div class="emscripten">
-    <input type="checkbox" id="resize">Resize canvas
-    <input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer
-    &nbsp;&nbsp;&nbsp;
-    <input type="button" value="Fullscreen"
-      onclick="Module.requestFullscreen(document.getElementById('pointerLock').checked, 
-                                                                                document.getElementById('resize').checked)">
+  <canvas class="urge" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+  <div class="urge" id="progress">Loading...</div>
+  <div onclick="Module.requestFullscreen(true, true)" id="fullscreen">
+    <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24">
+      <path fill="white"
+        d="m19.5,0h-9c-2.481,0-4.5,2.019-4.5,4.5v7.5h-2.5c-1.93,0-3.5,1.57-3.5,3.5v5c0,1.93,1.57,3.5,3.5,3.5h5c1.93,0,3.5-1.57,3.5-3.5v-2.5h7.5c2.481,0,4.5-2.019,4.5-4.5V4.5c0-2.481-2.019-4.5-4.5-4.5Zm-8.5,20.5c0,1.379-1.122,2.5-2.5,2.5H3.5c-1.378,0-2.5-1.121-2.5-2.5v-5c0-1.379,1.122-2.5,2.5-2.5h2.5v.5c0,2.481,2.019,4.5,4.5,4.5h.5v2.5Zm-.738-6.771s.002.004.004.006.004.002.005.004c.45.452.729,1.075.729,1.762v1.5h-.5c-1.93,0-3.5-1.57-3.5-3.5v-.5h1.5c.687,0,1.31.279,1.762.729Zm12.738-.229c0,1.93-1.57,3.5-3.5,3.5h-7.5v-1.5c0-.785-.269-1.502-.707-2.086l6.707-6.707v4.293c0,.276.224.5.5.5s.5-.224.5-.5v-4.5c0-.827-.673-1.5-1.5-1.5h-4.5c-.276,0-.5.224-.5.5s.224.5.5.5h4.292l-6.706,6.707c-.584-.438-1.302-.707-2.086-.707h-1.5v-7.5c0-1.93,1.57-3.5,3.5-3.5h9c1.93,0,3.5,1.57,3.5,3.5v9Z" />
+    </svg>
   </div>
 
-  <hr />
-  <textarea class="emscripten" id="output" rows="8"></textarea>
-  <hr>
+  <script type='text/javascript'>
+    var progressElement = document.getElementById('progress');
+    var canvasElement = document.getElementById('canvas');
+
+    // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+    // application robust, you may want to override this behavior before shipping!
+    // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+    canvasElement.addEventListener("webglcontextlost", (e) => {
+      alert('WebGL context lost. You will need to reload the page.');
+      e.preventDefault();
+    }, false);
+
+    var Module = {
+      print(...args) {
+        // These replacements are necessary if you render to raw HTML
+        //text = text.replace(/&/g, "&amp;");
+        //text = text.replace(/</g, "&lt;");
+        //text = text.replace(/>/g, "&gt;");
+        //text = text.replace('\n', '<br>', 'g');
+        console.log(...args);
+      },
+      canvas: canvasElement,
+      setStatus(text) {
+        progressElement.innerHTML = text;
+        progressElement.style.display = (text == "" ? 'none' : '');
+      },
+      totalDependencies: 0,
+      monitorRunDependencies(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+      }
+    };
+
+    // Init WebGPU in asynchronization
+    var initWebGPUDevice = (async () => {
+      const requiredFeatures = [
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "texture-compression-bc",
+        "indirect-first-instance",
+        "shader-f16",
+        "rg11b10ufloat-renderable",
+        "bgra8unorm-storage",
+        "float32-filterable",
+        "unorm16-texture-formats",
+        "snorm16-texture-formats",
+      ];
+
+      const adapter = await navigator.gpu.requestAdapter();
+      const device = await adapter.requestDevice({
+        requiredFeatures: requiredFeatures.filter(feature => adapter.features.has(feature)),
+        requiredLimits: {
+          maxColorAttachmentBytesPerSample: adapter.limits.maxColorAttachmentBytesPerSample
+        }
+      });
+      return device;
+    })();
+
+    // Init WebGPU if available
+    initWebGPUDevice.then(device => {
+      Module.preinitializedWebGPUDevice = device;
+    }).catch(error => {
+      Module.preinitializedWebGPUDevice = null;
+      Module.print("Failed to initialize WebGPU.");
+    });
+
+    window.onerror = () => {
+      Module.setStatus('Exception thrown, see JavaScript console');
+      spinnerElement.style.display = 'none';
+      Module.setStatus = (text) => {
+        if (text) console.error('[post-exception status] ' + text);
+      };
+    };
+  </script>
 
   <script type='text/javascript'>
     /*! coi-serviceworker v0.1.7 - Guido Zuidhof and contributors, licensed under MIT */
@@ -265,102 +289,6 @@
     }
   </script>
 
-  <script type='text/javascript'>
-    var statusElement = document.getElementById('status');
-    var progressElement = document.getElementById('progress');
-    var spinnerElement = document.getElementById('spinner');
-    var canvasElement = document.getElementById('canvas');
-    var outputElement = document.getElementById('output');
-    if (outputElement) outputElement.value = ''; // clear browser cache
-
-    // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-    // application robust, you may want to override this behavior before shipping!
-    // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-    canvasElement.addEventListener("webglcontextlost", (e) => {
-      alert('WebGL context lost. You will need to reload the page.');
-      e.preventDefault();
-    }, false);
-
-    var Module = {
-      print(...args) {
-        // These replacements are necessary if you render to raw HTML
-        //text = text.replace(/&/g, "&amp;");
-        //text = text.replace(/</g, "&lt;");
-        //text = text.replace(/>/g, "&gt;");
-        //text = text.replace('\n', '<br>', 'g');
-        console.log(...args);
-        if (outputElement) {
-          var text = args.join(' ');
-          outputElement.value += text + "\n";
-          outputElement.scrollTop = outputElement.scrollHeight; // focus on bottom
-        }
-      },
-      canvas: canvasElement,
-      setStatus(text) {
-        Module.setStatus.last ??= { time: Date.now(), text: '' };
-        if (text === Module.setStatus.last.text) return;
-        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-        var now = Date.now();
-        if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
-        Module.setStatus.last.time = now;
-        Module.setStatus.last.text = text;
-        if (m) {
-          text = m[1];
-          progressElement.value = parseInt(m[2]) * 100;
-          progressElement.max = parseInt(m[4]) * 100;
-          progressElement.hidden = false;
-          spinnerElement.hidden = false;
-        } else {
-          progressElement.value = null;
-          progressElement.max = null;
-          progressElement.hidden = true;
-          if (!text) spinnerElement.hidden = true;
-        }
-        statusElement.innerHTML = text;
-      },
-      totalDependencies: 0,
-      monitorRunDependencies(left) {
-        this.totalDependencies = Math.max(this.totalDependencies, left);
-        Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
-      }
-    };
-
-    var initWebGPUDevice = (async () => {
-      const requiredFeatures = [
-        "depth-clip-control",
-        "depth32float-stencil8",
-        "texture-compression-bc",
-        "indirect-first-instance",
-        "shader-f16",
-        "rg11b10ufloat-renderable",
-        "bgra8unorm-storage",
-        "float32-filterable",
-        "unorm16-texture-formats",
-        "snorm16-texture-formats",
-      ];
-
-      const adapter = await navigator.gpu.requestAdapter();
-      const device = await adapter.requestDevice({
-        requiredFeatures: requiredFeatures.filter(feature => adapter.features.has(feature)),
-        requiredLimits: {
-          maxColorAttachmentBytesPerSample: adapter.limits.maxColorAttachmentBytesPerSample
-        }
-      });
-      return device;
-    })();
-
-    window.onerror = () => {
-      Module.setStatus('Exception thrown, see JavaScript console');
-      spinnerElement.style.display = 'none';
-      Module.setStatus = (text) => {
-        if (text) console.error('[post-exception status] ' + text);
-      };
-    };
-
-    Module.setStatus('Downloading...');
-
-    initWebGPUDevice.then(device => { Module.preinitializedWebGPUDevice = device });
-  </script>
   {{{ SCRIPT }}}
 </body>
 
