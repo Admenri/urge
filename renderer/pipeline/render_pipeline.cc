@@ -11,14 +11,6 @@ namespace renderer {
 
 namespace {
 
-constexpr char kShaderNdcProcessor[] = R"(
-#if defined(DESKTOP_GL) || defined(GL_ES)
-#define URGE_NDC_PROCESS(var) var.y = -var.y
-#else
-#define URGE_NDC_PROCESS(x)
-#endif // ! DESKTOP_GL || GL_ES
-)";
-
 Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
   Diligent::RenderTargetBlendDesc state;
   switch (type) {
@@ -133,17 +125,12 @@ void RenderPipelineBase::BuildPipeline(
       Diligent::SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
   {
-    // Preprocess shader source
-    std::string processed_vertex_shader = kShaderNdcProcessor;
-    processed_vertex_shader.push_back('\n');
-    processed_vertex_shader += shader_source.vertex_shader;
-
     // Vertex shader
     shader_desc.Desc.ShaderType = Diligent::SHADER_TYPE_VERTEX;
     shader_desc.EntryPoint = shader_source.vertex_entry.c_str();
     shader_desc.Desc.Name = shader_source.name.c_str();
-    shader_desc.Source = processed_vertex_shader.c_str();
-    shader_desc.SourceLength = processed_vertex_shader.size();
+    shader_desc.Source = shader_source.vertex_shader.c_str();
+    shader_desc.SourceLength = shader_source.vertex_shader.size();
     shader_desc.Macros.Count = shader_source.macros.size();
     shader_desc.Macros.Elements = shader_source.macros.data();
     device_->CreateShader(shader_desc, &vertex_shader_object);
@@ -182,6 +169,11 @@ void RenderPipelineBase::BuildPipeline(
       // Color blend
       pipeline_state_desc.GraphicsPipeline.BlendDesc.RenderTargets[0] =
           GetBlendState(static_cast<BlendType>(blend_index));
+
+      pipeline_state_desc.GraphicsPipeline.RasterizerDesc.CullMode =
+          Diligent::CULL_MODE_FRONT;
+      pipeline_state_desc.GraphicsPipeline.RasterizerDesc
+          .FrontCounterClockwise = Diligent::True;
 
       // Depth stencil
       if (depth_index) {

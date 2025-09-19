@@ -225,6 +225,7 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
       auto* factory = GetEngineFactoryOpenGL();
 
       Diligent::EngineGLCreateInfo gl_create_info(engine_create_info);
+      gl_create_info.ZeroToOneNDZ = Diligent::True;
       gl_create_info.Window = native_window;
 
       factory->CreateDeviceAndSwapChainGL(gl_create_info, &device, &context,

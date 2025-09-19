@@ -30,6 +30,14 @@
 #include <sys/system_properties.h>
 #include <unistd.h>
 
+#if defined(OS_WIN)
+#include <windows.h>
+extern "C" {
+__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif  //! OS_WIN
+
 static int g_pfd[2];
 static pthread_t g_android_stdio_thread;
 
