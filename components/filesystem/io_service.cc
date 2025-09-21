@@ -115,14 +115,12 @@ SDL_IOStream* WrapperRWops(PHYSFS_File* handle) {
 
 struct OpenReadEnumData {
   IOService::OpenCallback callback;
-  std::string full;
-  std::string dir;
-  std::string file;
-  std::string ext;
+  std::string full_path;
+  std::string dir_path;
+  std::string file_name;
+  size_t last_dot = std::string::npos;
 
-  bool search_complete = false;
   int match_count = 0;
-
   std::string physfs_error;
 
   OpenReadEnumData() = default;
@@ -133,18 +131,25 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
                                                     const char* fname) {
   OpenReadEnumData* enum_data = static_cast<OpenReadEnumData*>(data);
   std::string filename(fname);
+
+  // Windows is case sensitive.
+  // The best approach is to emulate this behavior on other operating systems.
   ToLower(filename);
 
-  if (enum_data->search_complete)
-    return PHYSFS_ENUM_STOP;
+  if (filename != enum_data->file_name) {
+    size_t match_iter = filename.rfind(enum_data->file_name);
+    if (match_iter == std::string::npos)
+      return PHYSFS_ENUM_OK;
 
-  size_t it = filename.rfind(enum_data->file);
-  if (it == std::string::npos)
-    return PHYSFS_ENUM_OK;
-
-  const char last = filename[enum_data->file.size()];
-  if (last != '.' && last != '/')
-    return PHYSFS_ENUM_OK;
+    const size_t last_dot = filename.rfind('.');
+    if (last_dot != std::string::npos &&
+        enum_data->last_dot != std::string::npos) {
+      if (last_dot != enum_data->last_dot) {
+        // Extname length does not match
+        return PHYSFS_ENUM_OK;
+      }
+    }
+  }
 
   std::string fullpath;
   if (*origdir) {
@@ -155,16 +160,17 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
 
   PHYSFS_File* file = PHYSFS_openRead(fullpath.c_str());
   if (!file) {
-    enum_data->search_complete = true;
     enum_data->physfs_error = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
-
     return PHYSFS_ENUM_ERROR;
   }
 
-  SDL_IOStream* ops = WrapperRWops(file);
   // Free on user callback side
-  if (enum_data->callback.Run(ops, FindFileExtName(filename.c_str())))
-    enum_data->search_complete = true;
+  SDL_IOStream* ops = WrapperRWops(file);
+  if (enum_data->callback.Run(ops, FindFileExtName(filename.c_str()))) {
+    // Matched and stop
+    enum_data->match_count++;
+    return PHYSFS_ENUM_STOP;
+  }
 
   enum_data->match_count++;
   return PHYSFS_ENUM_OK;
@@ -253,29 +259,24 @@ std::string IOService::GetLastError() {
 void IOService::OpenRead(const std::string& file_path,
                          OpenCallback callback,
                          IOState* io_state) {
-  std::string filename(file_path);
-  std::string dir, file, ext;
+  std::string dir, file;
 
-  size_t last_slash_pos = filename.find_last_of('/');
+  const size_t last_slash_pos = file_path.find_last_of('/');
   if (last_slash_pos != std::string::npos) {
-    dir = filename.substr(0, last_slash_pos);
-    file = filename.substr(last_slash_pos + 1);
-  } else
-    file = filename;
-
-  size_t last_dot_pos = file.find_last_of('.');
-  if (last_dot_pos != std::string::npos) {
-    ext = file.substr(last_dot_pos + 1);
-    file = file.substr(0, last_dot_pos);
+    dir = file_path.substr(0, last_slash_pos);
+    file = file_path.substr(last_slash_pos + 1);
+  } else {
+    dir = ".";
+    file = file_path;
   }
 
   OpenReadEnumData data;
   data.callback = callback;
-  data.full = filename;
-  data.dir = dir;
-  data.file = file;
-  ToLower(data.file);
-  data.ext = ext;
+  data.full_path = file_path;
+  data.dir_path = dir;
+  data.file_name = file;
+  ToLower(data.file_name);
+  data.last_dot = file.rfind('.');
 
   if (!PHYSFS_enumerate(dir.c_str(), OpenReadEnumCallback, &data))
     LOG(INFO) << "[IOService] "
