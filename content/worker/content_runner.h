@@ -106,8 +106,6 @@ class ContentRunner {
   bool show_settings_menu_;
   bool show_fps_monitor_;
 
-  base::Rect display_viewport_;
-
   uint64_t last_tick_;
   int64_t total_delta_;
   int32_t frame_count_;
@@ -125,6 +123,8 @@ class ContentRunner {
   char main_asyncify_stack_[ASYNCIFY_STACK_SIZE];
   alignas(16) char main_stack_[ASYNCIFY_STACK_SIZE];
 #endif  //! OS_EMSCRIPTEN
+
+  base::Rect display_viewport_;
 };
 
 }  // namespace content

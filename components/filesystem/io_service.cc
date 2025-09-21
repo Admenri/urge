@@ -11,6 +11,22 @@
 #include <jni.h>
 #endif
 
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten.h>
+
+EM_JS(void, emjs_load_file_async, (const char* filePath), {
+  const asyncLoader = (wakeUp) => {
+    window.fetchLazyAsset(UTF8ToString(filePath), wakeUp);
+  };
+
+  Asyncify.handleSleep(asyncLoader);
+});
+
+EM_JS(bool, emjs_is_file_cached, (const char* filePath), {
+  return window.isAsyncFileCached(UTF8ToString(filePath));
+});
+#endif
+
 namespace filesystem {
 
 namespace {
@@ -253,8 +269,12 @@ std::string IOService::GetLastError() {
 void IOService::OpenRead(const std::string& file_path,
                          OpenCallback callback,
                          IOState* io_state) {
-  std::string dir, file;
+#if defined(OS_EMSCRIPTEN)
+  if (!emjs_is_file_cached(file_path.c_str()))
+    emjs_load_file_async(file_path.c_str());
+#endif
 
+  std::string dir, file;
   const size_t last_slash_pos = file_path.find_last_of('/');
   if (last_slash_pos != std::string::npos) {
     dir = file_path.substr(0, last_slash_pos);
@@ -291,6 +311,11 @@ void IOService::OpenRead(const std::string& file_path,
 
 SDL_IOStream* IOService::OpenReadRaw(const std::string& filename,
                                      IOState* io_state) {
+#if defined(OS_EMSCRIPTEN)
+  if (!emjs_is_file_cached(filename.c_str()))
+    emjs_load_file_async(filename.c_str());
+#endif
+
   PHYSFS_File* file = PHYSFS_openRead(filename.c_str());
   if (!file) {
     if (io_state) {

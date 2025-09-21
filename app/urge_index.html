@@ -66,6 +66,8 @@
     </svg>
   </div>
 
+  <script type='text/javascript' src="async_mapping.js"></script>
+
   <script type='text/javascript'>
     var progressElement = document.getElementById('progress');
     var canvasElement = document.getElementById('canvas');
@@ -134,10 +136,102 @@
 
     window.onerror = () => {
       Module.setStatus('Exception thrown, see JavaScript console');
-      spinnerElement.style.display = 'none';
       Module.setStatus = (text) => {
         if (text) console.error('[post-exception status] ' + text);
       };
+    };
+
+    // Find filename in 'asyncMappingData'
+    const findFileInAsyncMapping = (filename) => {
+      const mapping = asyncMappingData;
+      const lowerFilename = filename.toLowerCase();
+
+      const directValue = mapping[lowerFilename];
+      if (directValue != undefined)
+        return directValue;
+
+      for (const key in mapping) {
+        if (mapping.hasOwnProperty(key)) {
+          const dotIndex = key.lastIndexOf('.');
+          const keyFilename = key.substring(0, dotIndex).toLowerCase();
+          if (keyFilename === lowerFilename)
+            return asyncMappingData[key];
+        }
+      }
+
+      return null;
+    };
+
+    // Reference: components/filesystem/emscripten/async_preload.cc
+    window.asyncMappingFileCache = {};
+    window.isAsyncFileCached = (inFilepath) => {
+      // Make emscripten path
+      const pathComponents = inFilepath.replace(/\\/g, '/').split('/').filter(part => part && part.trim() !== '');
+      const fileName = pathComponents.pop();
+      const parentPath = pathComponents.join('/');
+      const filepath = (parentPath === '' ? fileName : parentPath + '/' + fileName);
+
+      // Find with async mapping
+      const mappingFile = findFileInAsyncMapping(filepath);
+      return asyncMappingFileCache.hasOwnProperty(mappingFile);
+    };
+    window.fetchLazyAsset = (inFilepath, completeCallback) => {
+      // Make emscripten path
+      const pathComponents = inFilepath.replace(/\\/g, '/').split('/').filter(part => part && part.trim() !== '');
+      const fileName = pathComponents.pop();
+      const parentPath = pathComponents.join('/');
+      const filepath = (parentPath === '' ? fileName : parentPath + '/' + fileName);
+
+      // Find mapping in preload list
+      const mappingFile = findFileInAsyncMapping(filepath);
+      if (mappingFile == null) {
+        console.log(`Missing file: ${filepath}`);
+        completeCallback();
+        return;
+      }
+
+      // Cache current file
+      window.asyncMappingFileCache[mappingFile] = true;
+
+      // Create dir if need
+      try {
+        FS.stat('/' + parentPath);
+      } catch (err) {
+        var makePath = "";
+        pathComponents.forEach((dir) => {
+          makePath += '/' + dir;
+          try {
+            FS.mkdir(makePath);
+          } catch (e) {
+            // Directory exists, no action
+          }
+        });
+      }
+
+      // Fetch and preload file
+      const onLoad = () => {
+        Module.setStatus('');
+        completeCallback();
+      }
+
+      const onError = (err) => {
+        console.error(err);
+        completeCallback();
+      };
+
+      const preFinish = () => {
+        try {
+          FS.unlink(filepath);
+        } catch (err) {
+          // No action
+        }
+      }
+
+      Module.setStatus(`Loading - ${fileName}`);
+
+      // Load async asset
+      const loadURL = '/assets/' + mappingFile;
+      FS.createPreloadedFile(parentPath, fileName, loadURL, true, true, onLoad, onError, false, false, preFinish);
     };
   </script>
 

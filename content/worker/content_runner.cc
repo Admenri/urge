@@ -47,22 +47,17 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       binding_reset_flag_(0),
       background_running_(false),
       disable_gui_input_(false),
-#if defined(URGE_DEBUG) && defined(OS_ANDROID)
-      show_settings_menu_(true),
-#else
       show_settings_menu_(false),
-#endif
       show_fps_monitor_(false),
       last_tick_(SDL_GetPerformanceCounter()),
       total_delta_(0),
-      frame_count_(0)
+      frame_count_(0),
 #if defined(OS_EMSCRIPTEN)
-      ,
       elapsed_time_(0.0),
       smooth_delta_time_(1.0),
-      last_count_time_(SDL_GetPerformanceCounter())
+      last_count_time_(SDL_GetPerformanceCounter()),
 #endif  //! OS_EMSCRIPTEN
-{
+      display_viewport_() {
 }
 
 ContentRunner::~ContentRunner() {

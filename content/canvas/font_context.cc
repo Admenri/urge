@@ -45,6 +45,9 @@ ScopedFontData::ScopedFontData(filesystem::IOService* io,
 
   // Load all font to memory as cache
   std::vector<std::string> font_files = io->EnumDir(dir);
+  if (font_files.empty())
+    font_files.push_back(default_font);
+
   for (auto& it : font_files) {
     std::string filepath = dir + it;
     SDL_IOStream* font_stream = io->OpenReadRaw(filepath, nullptr);

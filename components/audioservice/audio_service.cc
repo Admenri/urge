@@ -195,6 +195,10 @@ static void AudioStreamDataCallback(void* userdata,
 
 std::unique_ptr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
+#if defined(OS_EMSCRIPTEN)
+  return nullptr;
+#endif  // !OS_EMSCRIPTEN
+
   ServiceKernelData* kernel_data = new ServiceKernelData;
 
   // Device sped

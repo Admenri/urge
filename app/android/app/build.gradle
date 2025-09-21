@@ -8,8 +8,8 @@ android {
   defaultConfig {
     minSdkVersion 21
     targetSdkVersion 35
-    versionCode 17
-    versionName "20250831"
+    versionCode 18
+    versionName "20250921"
     externalNativeBuild {
       ndkBuild {
         arguments "APP_PLATFORM=android-21"
