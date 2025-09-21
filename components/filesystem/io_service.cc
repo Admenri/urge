@@ -137,17 +137,11 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
   ToLower(filename);
 
   if (filename != enum_data->file_name) {
-    size_t match_iter = filename.rfind(enum_data->file_name);
-    if (match_iter == std::string::npos)
+    // Match filename without extname
+    std::string filename_noext = filename.substr(0, filename.rfind('.'));
+    if (filename_noext != enum_data->file_name) {
+      // Without extname mismatch
       return PHYSFS_ENUM_OK;
-
-    const size_t last_dot = filename.rfind('.');
-    if (last_dot != std::string::npos &&
-        enum_data->last_dot != std::string::npos) {
-      if (last_dot != enum_data->last_dot) {
-        // Extname length does not match
-        return PHYSFS_ENUM_OK;
-      }
     }
   }
 
