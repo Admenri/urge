@@ -162,7 +162,25 @@
       return null;
     };
 
-    // Reference: components/filesystem/emscripten/async_preload.cc
+    const createPreloadedFile = (parent, name, url, canRead, canWrite, onload, onerror) => {
+      var fullname = PATH_FS.resolve(PATH.join2(parent, name));
+
+      const processData = (byteArray) => {
+        const finish = (byteArray) => {
+          FS_createDataFile(parent, name, byteArray, canRead, canWrite, false);
+          onload?.();
+        };
+
+        if (FS_handledByPreloadPlugin(byteArray, fullname, finish, onerror))
+          return;
+
+        finish(byteArray);
+      };
+
+      asyncLoad(url).then(processData, onerror);
+    };
+
+    // Reference: components/filesystem/io_service.cc
     window.asyncMappingFileCache = {};
     window.isAsyncFileCached = (inFilepath) => {
       // Make emscripten path
@@ -188,10 +206,10 @@
         console.log(`Missing file: ${filepath}`);
         completeCallback();
         return;
+      } else {
+        // Setup cache current file
+        window.asyncMappingFileCache[mappingFile] = true;
       }
-
-      // Cache current file
-      window.asyncMappingFileCache[mappingFile] = true;
 
       // Create dir if need
       try {
@@ -212,26 +230,18 @@
       const onLoad = () => {
         Module.setStatus('');
         completeCallback();
-      }
+      };
 
       const onError = (err) => {
-        console.error(err);
+        Module.setStatus(`Load Error: ${fileName}`);
+        console.log(`fetchLazyAsset: ${err}`);
         completeCallback();
       };
 
-      const preFinish = () => {
-        try {
-          FS.unlink(filepath);
-        } catch (err) {
-          // No action
-        }
-      }
-
-      Module.setStatus(`Loading - ${fileName}`);
-
       // Load async asset
+      Module.setStatus(`Loading... ${fileName}`);
       const loadURL = '/assets/' + mappingFile;
-      FS.createPreloadedFile(parentPath, fileName, loadURL, true, true, onLoad, onError, false, false, preFinish);
+      createPreloadedFile(parentPath, fileName, loadURL, true, true, onLoad, onError);
     };
   </script>
 
