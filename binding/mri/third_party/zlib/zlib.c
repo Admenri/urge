@@ -546,7 +546,7 @@ rb_zlib_crc_table(VALUE obj)
     VALUE dst;
     int i;
 
-    crctbl = get_crc_table();
+    crctbl = (const z_crc_t *)get_crc_table();
     dst = rb_ary_new2(256);
 
     for (i = 0; i < 256; i++) {

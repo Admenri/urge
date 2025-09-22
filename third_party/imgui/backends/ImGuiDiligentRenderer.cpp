@@ -705,7 +705,7 @@ void ImGuiDiligentRenderer::CreateDeviceObjects() {
   SamplerDesc SamLinearWrap;
   SamLinearWrap.MinFilter = m_MinFilter;
   SamLinearWrap.MagFilter = m_MagFilter;
-  SamLinearWrap.MagFilter = m_MagFilter;
+  SamLinearWrap.MipFilter = m_MipFilter;
   SamLinearWrap.AddressU = TEXTURE_ADDRESS_WRAP;
   SamLinearWrap.AddressV = TEXTURE_ADDRESS_WRAP;
   SamLinearWrap.AddressW = TEXTURE_ADDRESS_WRAP;
