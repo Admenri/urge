@@ -237,6 +237,8 @@ bool ContentProfile::LoadConfigure(const std::string& app) {
   fullscreen = reader->GetBoolean("Renderer", "Fullscreen", fullscreen);
   background_running =
       reader->GetBoolean("Renderer", "BackgroundRunning", background_running);
+  smooth_scale_present = reader->GetBoolean("Renderer", "SmoothScalePresent",
+                                            smooth_scale_present);
 
   // Platform
   debugging_console =

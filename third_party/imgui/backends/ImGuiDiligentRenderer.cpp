@@ -14,78 +14,87 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  In no event and under no legal theory, whether in tort (including negligence),
- *  contract, or otherwise, unless required by applicable law (such as deliberate
- *  and grossly negligent acts) or agreed to in writing, shall any Contributor be
- *  liable for any damages, including any direct, indirect, special, incidental,
- *  or consequential damages of any character arising as a result of this License or
- *  out of the use or inability to use the software (including but not limited to damages
- *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and
- *  all other commercial damages or losses), even if such Contributor has been advised
- *  of the possibility of such damages.
+ *  In no event and under no legal theory, whether in tort (including
+ * negligence), contract, or otherwise, unless required by applicable law (such
+ * as deliberate and grossly negligent acts) or agreed to in writing, shall any
+ * Contributor be liable for any damages, including any direct, indirect,
+ * special, incidental, or consequential damages of any character arising as a
+ * result of this License or out of the use or inability to use the software
+ * (including but not limited to damages for loss of goodwill, work stoppage,
+ * computer failure or malfunction, or any and all other commercial damages or
+ * losses), even if such Contributor has been advised of the possibility of such
+ * damages.
  */
 
 #include <cstddef>
+
+// clang-format off
 #include "ImGuiDiligentRenderer.hpp"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "MapHelper.hpp"
-#include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
 #include "ScopedDebugGroup.hpp"
 
-namespace Diligent
-{
+#include "Graphics/GraphicsAccessories/interface/GraphicsAccessories.hpp"
+// clang-format on
 
-ImGuiDiligentCreateInfo::ImGuiDiligentCreateInfo(IRenderDevice* _pDevice,
-                                                 TEXTURE_FORMAT _BackBufferFmt,
-                                                 TEXTURE_FORMAT _DepthBufferFmt) noexcept :
-    pDevice{_pDevice},
-    BackBufferFmt{_BackBufferFmt},
-    DepthBufferFmt{_DepthBufferFmt}
-{}
+namespace Diligent {
 
-ImGuiDiligentCreateInfo::ImGuiDiligentCreateInfo(IRenderDevice*       _pDevice,
-                                                 const SwapChainDesc& _SCDesc) noexcept :
-    ImGuiDiligentCreateInfo{_pDevice, _SCDesc.ColorBufferFormat, _SCDesc.DepthBufferFormat}
-{}
+ImGuiDiligentCreateInfo::ImGuiDiligentCreateInfo(
+    IRenderDevice* _pDevice,
+    TEXTURE_FORMAT _BackBufferFmt,
+    TEXTURE_FORMAT _DepthBufferFmt) noexcept
+    : pDevice{_pDevice},
+      BackBufferFmt{_BackBufferFmt},
+      DepthBufferFmt{_DepthBufferFmt} {}
+
+ImGuiDiligentCreateInfo::ImGuiDiligentCreateInfo(
+    IRenderDevice* _pDevice,
+    const SwapChainDesc& _SCDesc) noexcept
+    : ImGuiDiligentCreateInfo{_pDevice, _SCDesc.ColorBufferFormat,
+                              _SCDesc.DepthBufferFormat} {}
 
 // Intentionally or not, all imgui examples render everything in sRGB space.
-// Whether imgui expected it or not, the display engine then transforms colors to linear space
-// https://stackoverflow.com/a/66401423/4347276
-// We, however, (correctly) render everything in linear space letting the GPU to transform colors to sRGB,
-// so that the display engine then properly shows them.
+// Whether imgui expected it or not, the display engine then transforms colors
+// to linear space https://stackoverflow.com/a/66401423/4347276 We, however,
+// (correctly) render everything in linear space letting the GPU to transform
+// colors to sRGB, so that the display engine then properly shows them.
 //
-// As a result, there is a problem with alpha-blending: imgui performs blending directly in gamma-space, and
-// gamma-to-linear conversion is done by the display engine:
+// As a result, there is a problem with alpha-blending: imgui performs blending
+// directly in gamma-space, and gamma-to-linear conversion is done by the
+// display engine:
 //
 //   Px_im = GammaToLinear(Src * A + Dst * (1 - A))                     (1)
 //
-// If we only convert imgui colors from sRGB to linear, we will be performing the following (normally)
-// correct blending:
+// If we only convert imgui colors from sRGB to linear, we will be performing
+// the following (normally) correct blending:
 //
 //   Px_dg = GammaToLinear(Src) * A + GammaToLinear(Dst) * (1 - A)      (2)
 //
-// However in case of imgui, this produces significantly different colors. Consider black background (Dst = 0):
+// However in case of imgui, this produces significantly different colors.
+// Consider black background (Dst = 0):
 //
 //   Px_im = GammaToLinear(Src * A)
 //   Px_dg = GammaToLinear(Src) * A
 //
 // We use the following equation that approximates (1):
 //
-//   Px_dg = GammaToLinear(Src * A) + GammaToLinear(Dst) * GammaToLinear(1 - A)  (3)
+//   Px_dg = GammaToLinear(Src * A) + GammaToLinear(Dst) * GammaToLinear(1 - A)
+//   (3)
 //
-// Clearly (3) is not quite the same thing as (1), however it works surprisingly well in practice.
-// Color pickers, in particular look properly.
+// Clearly (3) is not quite the same thing as (1), however it works surprisingly
+// well in practice. Color pickers, in particular look properly.
 
-
-// Note that approximate gamma-to-linear conversion pow(gamma, 2.2) produces considerably different colors.
-static constexpr char GAMMA_TO_LINEAR[] = "((Gamma) < 0.04045 ? (Gamma) / 12.92 : pow(max((Gamma) + 0.055, 0.0) / 1.055, 2.4))";
+// Note that approximate gamma-to-linear conversion pow(gamma, 2.2) produces
+// considerably different colors.
+static constexpr char GAMMA_TO_LINEAR[] =
+    "((Gamma) < 0.04045 ? (Gamma) / 12.92 : pow(max((Gamma) + 0.055, 0.0) / "
+    "1.055, 2.4))";
 static constexpr char SRGBA_TO_LINEAR[] =
     "col.r = GAMMA_TO_LINEAR(col.r); "
     "col.g = GAMMA_TO_LINEAR(col.g); "
     "col.b = GAMMA_TO_LINEAR(col.b); "
     "col.a = 1.0 - GAMMA_TO_LINEAR(1.0 - col.a);";
-
 
 static constexpr char VertexShaderHLSL[] = R"(
 cbuffer Constants
@@ -134,7 +143,6 @@ float4 main(in PSInput PSIn) : SV_Target
     return col;
 }
 )";
-
 
 static constexpr char VertexShaderGLSL[] = R"(
 #ifdef VULKAN
@@ -194,7 +202,6 @@ void main()
     psout_col = col;
 }
 )";
-
 
 static constexpr char VertexShaderWGSL[] = R"(
 struct Constants {
@@ -446,7 +453,6 @@ static constexpr uint32_t FragmentShader_Gamma_SPIRV[] =
 
 // clang-format on
 
-
 static constexpr char ShadersMSL[] = R"(
 #include <metal_stdlib>
 #include <simd/simd.h>
@@ -500,456 +506,466 @@ fragment PSOut ps_main(VSOut in [[stage_in]],
 }
 )";
 
-ImGuiDiligentRenderer::ImGuiDiligentRenderer(const ImGuiDiligentCreateInfo& CI) :
-    // clang-format off
+ImGuiDiligentRenderer::ImGuiDiligentRenderer(const ImGuiDiligentCreateInfo& CI)
+    :  // clang-format off
     m_pDevice            {CI.pDevice},
     m_BackBufferFmt      {CI.BackBufferFmt},
     m_DepthBufferFmt     {CI.DepthBufferFmt},
+    m_MinFilter          {CI.MinFilter},
+    m_MagFilter          {CI.MagFilter},
+    m_MipFilter          {CI.MipFilter},
     m_VertexBufferSize   {CI.InitialVertexBufferSize},
     m_IndexBufferSize    {CI.InitialIndexBufferSize},
-    m_ColorConversionMode{CI.ColorConversion}
-// clang-format on
+    m_ColorConversionMode{CI.ColorConversion}  // clang-format on
 {
-    //Check base vertex support
-    m_BaseVertexSupported = m_pDevice->GetAdapterInfo().DrawCommand.CapFlags & DRAW_COMMAND_CAP_FLAG_BASE_VERTEX;
+  // Check base vertex support
+  m_BaseVertexSupported = m_pDevice->GetAdapterInfo().DrawCommand.CapFlags &
+                          DRAW_COMMAND_CAP_FLAG_BASE_VERTEX;
 
-    // Setup back-end capabilities flags
-    IMGUI_CHECKVERSION();
-    ImGuiIO& IO = ImGui::GetIO();
+  // Setup back-end capabilities flags
+  IMGUI_CHECKVERSION();
+  ImGuiIO& IO = ImGui::GetIO();
 
-    IO.BackendRendererName = "ImGuiDiligentRenderer";
-    if (m_BaseVertexSupported)
-        IO.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
+  IO.BackendRendererName = "ImGuiDiligentRenderer";
+  if (m_BaseVertexSupported)
+    IO.BackendFlags |=
+        ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the
+                                                 // ImDrawCmd::VtxOffset field,
+                                                 // allowing for large meshes.
 
+  CreateDeviceObjects();
+}
+
+ImGuiDiligentRenderer::~ImGuiDiligentRenderer() {}
+
+void ImGuiDiligentRenderer::NewFrame(Uint32 RenderSurfaceWidth,
+                                     Uint32 RenderSurfaceHeight,
+                                     SURFACE_TRANSFORM SurfacePreTransform) {
+  m_RenderSurfaceWidth = RenderSurfaceWidth;
+  m_RenderSurfaceHeight = RenderSurfaceHeight;
+  m_SurfacePreTransform = SurfacePreTransform;
+}
+
+void ImGuiDiligentRenderer::InvalidateDeviceObjects() {
+  m_pVB.Release();
+  m_pIB.Release();
+  m_pVertexConstantBuffer.Release();
+  m_pPSO.Release();
+  m_pFontSRV.Release();
+  m_pSRB.Release();
+}
+
+void ImGuiDiligentRenderer::CreateDeviceObjects() {
+  InvalidateDeviceObjects();
+
+  ShaderCreateInfo ShaderCI;
+  ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_DEFAULT;
+
+  const auto SrgbFramebuffer =
+      GetTextureFormatAttribs(m_BackBufferFmt).ComponentType ==
+      COMPONENT_TYPE_UNORM_SRGB;
+  const auto ManualSrgb =
+      (m_ColorConversionMode == IMGUI_COLOR_CONVERSION_MODE_AUTO &&
+       SrgbFramebuffer) ||
+      (m_ColorConversionMode == IMGUI_COLOR_CONVERSION_MODE_SRGB_TO_LINEAR);
+
+  if (ManualSrgb) {
+    static constexpr ShaderMacro Macros[] = {
+        {"GAMMA_TO_LINEAR(Gamma)", GAMMA_TO_LINEAR},
+        {"SRGBA_TO_LINEAR(col)", SRGBA_TO_LINEAR},
+    };
+    ShaderCI.Macros = {Macros, _countof(Macros)};
+  } else {
+    static constexpr ShaderMacro Macros[] = {
+        {"SRGBA_TO_LINEAR(col)", ""},
+    };
+    ShaderCI.Macros = {Macros, _countof(Macros)};
+  }
+
+  const auto DeviceType = m_pDevice->GetDeviceInfo().Type;
+
+  RefCntAutoPtr<IShader> pVS;
+  {
+    ShaderCI.Desc = {"Imgui VS", SHADER_TYPE_VERTEX, true};
+    switch (DeviceType) {
+      case RENDER_DEVICE_TYPE_VULKAN:
+        ShaderCI.ByteCode = VertexShader_SPIRV;
+        ShaderCI.ByteCodeSize = sizeof(VertexShader_SPIRV);
+        break;
+
+      case RENDER_DEVICE_TYPE_D3D11:
+      case RENDER_DEVICE_TYPE_D3D12:
+        ShaderCI.Source = VertexShaderHLSL;
+        break;
+
+      case RENDER_DEVICE_TYPE_GL:
+      case RENDER_DEVICE_TYPE_GLES:
+        ShaderCI.Source = VertexShaderGLSL;
+        break;
+
+      case RENDER_DEVICE_TYPE_WEBGPU:
+        ShaderCI.Source = VertexShaderWGSL;
+        ShaderCI.Macros = {};
+        break;
+
+      case RENDER_DEVICE_TYPE_METAL:
+        ShaderCI.Source = ShadersMSL;
+        ShaderCI.EntryPoint = "vs_main";
+        break;
+
+      default:
+        UNEXPECTED("Unknown render device type");
+    }
+    m_pDevice->CreateShader(ShaderCI, &pVS);
+  }
+
+  RefCntAutoPtr<IShader> pPS;
+  {
+    ShaderCI.Desc = {"Imgui PS", SHADER_TYPE_PIXEL, true};
+    switch (DeviceType) {
+      case RENDER_DEVICE_TYPE_VULKAN:
+        if (ManualSrgb) {
+          ShaderCI.ByteCode = FragmentShader_Gamma_SPIRV;
+          ShaderCI.ByteCodeSize = sizeof(FragmentShader_Gamma_SPIRV);
+        } else {
+          ShaderCI.ByteCode = FragmentShader_SPIRV;
+          ShaderCI.ByteCodeSize = sizeof(FragmentShader_SPIRV);
+        }
+        break;
+
+      case RENDER_DEVICE_TYPE_D3D11:
+      case RENDER_DEVICE_TYPE_D3D12:
+        ShaderCI.Source = PixelShaderHLSL;
+        break;
+
+      case RENDER_DEVICE_TYPE_GL:
+      case RENDER_DEVICE_TYPE_GLES:
+        ShaderCI.Source = PixelShaderGLSL;
+        break;
+
+      case RENDER_DEVICE_TYPE_WEBGPU:
+        ShaderCI.Source = ManualSrgb ? PixelShaderWGSL_Gamma : PixelShaderWGSL;
+        ShaderCI.Macros = {};
+        break;
+
+      case RENDER_DEVICE_TYPE_METAL:
+        ShaderCI.Source = ShadersMSL;
+        ShaderCI.EntryPoint = "ps_main";
+        break;
+
+      default:
+        UNEXPECTED("Unknown render device type");
+    }
+    m_pDevice->CreateShader(ShaderCI, &pPS);
+  }
+
+  GraphicsPipelineStateCreateInfo PSOCreateInfo;
+
+  PSOCreateInfo.PSODesc.Name = "ImGUI PSO";
+  auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
+
+  GraphicsPipeline.NumRenderTargets = 1;
+  GraphicsPipeline.RTVFormats[0] = m_BackBufferFmt;
+  GraphicsPipeline.DSVFormat = m_DepthBufferFmt;
+  GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+  PSOCreateInfo.pVS = pVS;
+  PSOCreateInfo.pPS = pPS;
+
+  GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+  GraphicsPipeline.RasterizerDesc.ScissorEnable = True;
+  GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+
+  auto& RT0 = GraphicsPipeline.BlendDesc.RenderTargets[0];
+  RT0.BlendEnable = True;
+  // Use alpha-premultiplied blending, see eq. (3).
+  RT0.SrcBlend = BLEND_FACTOR_ONE;
+  RT0.DestBlend = BLEND_FACTOR_INV_SRC_ALPHA;
+  RT0.BlendOp = BLEND_OPERATION_ADD;
+  RT0.SrcBlendAlpha = BLEND_FACTOR_ONE;
+  RT0.DestBlendAlpha = BLEND_FACTOR_INV_SRC_ALPHA;
+  RT0.BlendOpAlpha = BLEND_OPERATION_ADD;
+  RT0.RenderTargetWriteMask = COLOR_MASK_ALL;
+
+  LayoutElement VSInputs[]  //
+      {
+          {0, 0, 2, VT_FLOAT32},     // pos
+          {1, 0, 2, VT_FLOAT32},     // uv
+          {2, 0, 4, VT_UINT8, True}  // col
+      };
+  GraphicsPipeline.InputLayout.NumElements = _countof(VSInputs);
+  GraphicsPipeline.InputLayout.LayoutElements = VSInputs;
+
+  ShaderResourceVariableDesc Variables[] = {
+      {SHADER_TYPE_PIXEL, "Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}  //
+  };
+  PSOCreateInfo.PSODesc.ResourceLayout.Variables = Variables;
+  PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Variables);
+
+  SamplerDesc SamLinearWrap;
+  SamLinearWrap.MinFilter = m_MinFilter;
+  SamLinearWrap.MagFilter = m_MagFilter;
+  SamLinearWrap.MagFilter = m_MagFilter;
+  SamLinearWrap.AddressU = TEXTURE_ADDRESS_WRAP;
+  SamLinearWrap.AddressV = TEXTURE_ADDRESS_WRAP;
+  SamLinearWrap.AddressW = TEXTURE_ADDRESS_WRAP;
+  ImmutableSamplerDesc ImtblSamplers[] = {
+      {SHADER_TYPE_PIXEL, "Texture", SamLinearWrap}  //
+  };
+  PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers = ImtblSamplers;
+  PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers =
+      _countof(ImtblSamplers);
+
+  m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
+
+  {
+    BufferDesc BuffDesc;
+    BuffDesc.Size = sizeof(float4x4);
+    BuffDesc.Usage = USAGE_DYNAMIC;
+    BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
+    BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pVertexConstantBuffer);
+  }
+  m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")
+      ->Set(m_pVertexConstantBuffer);
+
+  CreateFontsTexture();
+}
+
+void ImGuiDiligentRenderer::CreateFontsTexture() {
+  // Build texture atlas
+  ImGuiIO& IO = ImGui::GetIO();
+
+  unsigned char* pData = nullptr;
+  int Width = 0;
+  int Weight = 0;
+  IO.Fonts->GetTexDataAsRGBA32(&pData, &Width, &Weight);
+
+  TextureDesc FontTexDesc;
+  FontTexDesc.Name = "Imgui font texture";
+  FontTexDesc.Type = RESOURCE_DIM_TEX_2D;
+  FontTexDesc.Width = static_cast<Uint32>(Width);
+  FontTexDesc.Height = static_cast<Uint32>(Weight);
+  FontTexDesc.Format = TEX_FORMAT_RGBA8_UNORM;
+  FontTexDesc.BindFlags = BIND_SHADER_RESOURCE;
+  FontTexDesc.Usage = USAGE_IMMUTABLE;
+
+  TextureSubResData Mip0Data[] = {{pData, 4 * Uint64{FontTexDesc.Width}}};
+  TextureData InitData(Mip0Data, _countof(Mip0Data));
+
+  RefCntAutoPtr<ITexture> pFontTex;
+  m_pDevice->CreateTexture(FontTexDesc, &InitData, &pFontTex);
+  m_pFontSRV = pFontTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+  m_pSRB.Release();
+  m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
+  m_pTextureVar = m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "Texture");
+  VERIFY_EXPR(m_pTextureVar != nullptr);
+
+  // Store our identifier
+  IO.Fonts->TexID = reinterpret_cast<ImTextureID>(m_pFontSRV.RawPtr());
+}
+
+float4 ImGuiDiligentRenderer::TransformClipRect(const ImVec2& DisplaySize,
+                                                const float4& rect) const {
+  switch (m_SurfacePreTransform) {
+    case SURFACE_TRANSFORM_IDENTITY:
+      return rect;
+
+    case SURFACE_TRANSFORM_ROTATE_90: {
+      // The image content is rotated 90 degrees clockwise. The origin is in the
+      // left-top corner.
+      //
+      //                                                             DsplSz.y
+      //                a.x                                            -a.y a.y
+      //                Old origin
+      //              0---->| 0------->|<------| /
+      //           0__|_____|____________________ 0__|________|_______|/
+      //            | |     '                    |                | |        ' |
+      //        a.y | |     '                    |            a.x | |        ' |
+      //           _V_|_ _ _a____b               |               _V_|_ _d'___a'
+      //           |
+      //            A |     |    |               |                  |   |    | |
+      //  DsplSz.y  | |     |____|               |                  |   |____| |
+      //    -a.y    | |     d    c               |                  |   c'   b'
+      //    |
+      //           _|_|__________________________|                  | |
+      //              A                                             | |
+      //              |-----> Y'                                    | |
+      //         New Origin |________________|
+      //
+      float2 a{rect.x, rect.y};
+      float2 c{rect.z, rect.w};
+      return float4  //
+          {
+              DisplaySize.y - c.y,  // min_x = c'.x
+              a.x,                  // min_y = a'.y
+              DisplaySize.y - a.y,  // max_x = a'.x
+              c.x                   // max_y = c'.y
+          };
+    }
+
+    case SURFACE_TRANSFORM_ROTATE_180: {
+      // The image content is rotated 180 degrees clockwise. The origin is in
+      // the left-top corner.
+      //
+      //                a.x DsplSz.x - a.x
+      //              0---->| 0------------------>|
+      //           0__|_____|____________________                 0_
+      //           _|___________________|______
+      //            | |     '                    |                  | | '      |
+      //        a.y | |     '                    |        DsplSz.y  | | c'___d'
+      //        |
+      //           _V_|_ _ _a____b               |          -a.y    | | |    | |
+      //              |     |    |               |                 _V_|_ _ _ _ _
+      //              _ _ |____|      | |     |____|               | | b'   a' |
+      //              |     d    c               |                    | |
+      //              |__________________________| |__________________________|
+      //                                         A A | |
+      //                                     New Origin Old Origin
+      float2 a{rect.x, rect.y};
+      float2 c{rect.z, rect.w};
+      return float4  //
+          {
+              DisplaySize.x - c.x,  // min_x = c'.x
+              DisplaySize.y - c.y,  // min_y = c'.y
+              DisplaySize.x - a.x,  // max_x = a'.x
+              DisplaySize.y - a.y   // max_y = a'.y
+          };
+    }
+
+    case SURFACE_TRANSFORM_ROTATE_270: {
+      // The image content is rotated 270 degrees clockwise. The origin is in
+      // the left-top corner.
+      //
+      //              0  a.x     DsplSz.x-a.x   New Origin              a.y
+      //              |---->|<-------------------|                    0----->|
+      //          0_ _|_____|____________________V                 0
+      //          _|______|_________
+      //            | |     '                    |                  | |      ' |
+      //            | |     '                    |                  | |      ' |
+      //        a.y_V_|_ _ _a____b               |        DsplSz.x  | |      ' |
+      //              |     |    |               |          -a.x    | |      ' |
+      //              |     |____|               |                  | | b'___c'
+      //              | |     d    c               |                  | |      |
+      //              |    |
+      //  DsplSz.y _ _|__________________________|                 _V_|_ _ _
+      //  |____|    |
+      //                                                              |      a'
+      //                                                              d'   | | |
+      //                                                              |________________|
+      //                                                              A
+      //                                                              |
+      //                                                            Old origin
+      float2 a{rect.x, rect.y};
+      float2 c{rect.z, rect.w};
+      return float4  //
+          {
+              a.y,                  // min_x = a'.x
+              DisplaySize.x - c.x,  // min_y = c'.y
+              c.y,                  // max_x = c'.x
+              DisplaySize.x - a.x   // max_y = a'.y
+          };
+    }
+
+    case SURFACE_TRANSFORM_OPTIMAL:
+      UNEXPECTED(
+          "SURFACE_TRANSFORM_OPTIMAL is only valid as parameter during swap "
+          "chain initialization.");
+      return rect;
+
+    case SURFACE_TRANSFORM_HORIZONTAL_MIRROR:
+    case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90:
+    case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180:
+    case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270:
+      UNEXPECTED("Mirror transforms are not supported");
+      return rect;
+
+    default:
+      UNEXPECTED("Unknown transform");
+      return rect;
+  }
+}
+
+void ImGuiDiligentRenderer::CheckDeviceObjects() {
+  if (!m_pPSO)
     CreateDeviceObjects();
 }
 
-ImGuiDiligentRenderer::~ImGuiDiligentRenderer()
-{
-}
+void ImGuiDiligentRenderer::RenderDrawData(IDeviceContext* pCtx,
+                                           ImDrawData* pDrawData) {
+  ScopedDebugGroup DebugGroup{pCtx, "ImGui"};
 
-void ImGuiDiligentRenderer::NewFrame(Uint32            RenderSurfaceWidth,
-                                     Uint32            RenderSurfaceHeight,
-                                     SURFACE_TRANSFORM SurfacePreTransform)
-{
-    m_RenderSurfaceWidth  = RenderSurfaceWidth;
-    m_RenderSurfaceHeight = RenderSurfaceHeight;
-    m_SurfacePreTransform = SurfacePreTransform;
-}
+  // Avoid rendering when minimized
+  if (pDrawData->DisplaySize.x <= 0.0f || pDrawData->DisplaySize.y <= 0.0f ||
+      pDrawData->CmdListsCount == 0)
+    return;
 
-void ImGuiDiligentRenderer::InvalidateDeviceObjects()
-{
+  // Create and grow vertex/index buffers if needed
+  if (!m_pVB ||
+      static_cast<int>(m_VertexBufferSize) < pDrawData->TotalVtxCount) {
     m_pVB.Release();
+    while (static_cast<int>(m_VertexBufferSize) < pDrawData->TotalVtxCount)
+      m_VertexBufferSize *= 2;
+
+    BufferDesc VBDesc;
+    VBDesc.Name = "Imgui vertex buffer";
+    VBDesc.BindFlags = BIND_VERTEX_BUFFER;
+    VBDesc.Size = m_VertexBufferSize * sizeof(ImDrawVert);
+    VBDesc.Usage = USAGE_DYNAMIC;
+    VBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    m_pDevice->CreateBuffer(VBDesc, nullptr, &m_pVB);
+  }
+
+  if (!m_pIB ||
+      static_cast<int>(m_IndexBufferSize) < pDrawData->TotalIdxCount) {
     m_pIB.Release();
-    m_pVertexConstantBuffer.Release();
-    m_pPSO.Release();
-    m_pFontSRV.Release();
-    m_pSRB.Release();
-}
+    while (static_cast<int>(m_IndexBufferSize) < pDrawData->TotalIdxCount)
+      m_IndexBufferSize *= 2;
 
-void ImGuiDiligentRenderer::CreateDeviceObjects()
-{
-    InvalidateDeviceObjects();
+    BufferDesc IBDesc;
+    IBDesc.Name = "Imgui index buffer";
+    IBDesc.BindFlags = BIND_INDEX_BUFFER;
+    IBDesc.Size = m_IndexBufferSize * sizeof(ImDrawIdx);
+    IBDesc.Usage = USAGE_DYNAMIC;
+    IBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    m_pDevice->CreateBuffer(IBDesc, nullptr, &m_pIB);
+  }
 
-    ShaderCreateInfo ShaderCI;
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_DEFAULT;
+  {
+    MapHelper<ImDrawVert> Vertices(pCtx, m_pVB, MAP_WRITE, MAP_FLAG_DISCARD);
+    MapHelper<ImDrawIdx> Indices(pCtx, m_pIB, MAP_WRITE, MAP_FLAG_DISCARD);
+    if (!Vertices || !Indices)
+      return;
 
-    const auto SrgbFramebuffer = GetTextureFormatAttribs(m_BackBufferFmt).ComponentType == COMPONENT_TYPE_UNORM_SRGB;
-    const auto ManualSrgb      = (m_ColorConversionMode == IMGUI_COLOR_CONVERSION_MODE_AUTO && SrgbFramebuffer) || (m_ColorConversionMode == IMGUI_COLOR_CONVERSION_MODE_SRGB_TO_LINEAR);
-
-    if (ManualSrgb)
-    {
-        static constexpr ShaderMacro Macros[] =
-            {
-                {"GAMMA_TO_LINEAR(Gamma)", GAMMA_TO_LINEAR},
-                {"SRGBA_TO_LINEAR(col)", SRGBA_TO_LINEAR},
-            };
-        ShaderCI.Macros = {Macros, _countof(Macros)};
+    ImDrawVert* pVtxDst = Vertices;
+    ImDrawIdx* pIdxDst = Indices;
+    for (Int32 CmdListID = 0; CmdListID < pDrawData->CmdListsCount;
+         CmdListID++) {
+      const ImDrawList* pCmdList = pDrawData->CmdLists[CmdListID];
+      memcpy(pVtxDst, pCmdList->VtxBuffer.Data,
+             pCmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+      memcpy(pIdxDst, pCmdList->IdxBuffer.Data,
+             pCmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+      pVtxDst += pCmdList->VtxBuffer.Size;
+      pIdxDst += pCmdList->IdxBuffer.Size;
     }
-    else
-    {
-        static constexpr ShaderMacro Macros[] =
-            {
-                {"SRGBA_TO_LINEAR(col)", ""},
-            };
-        ShaderCI.Macros = {Macros, _countof(Macros)};
-    }
+  }
 
-    const auto DeviceType = m_pDevice->GetDeviceInfo().Type;
+  // Setup orthographic projection matrix into our constant buffer
+  // Our visible imgui space lies from pDrawData->DisplayPos (top left) to
+  // pDrawData->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is
+  // (0,0) for single viewport apps.
+  {
+    // DisplaySize always refers to the logical dimensions that account for
+    // pre-transform, hence the aspect ratio will be correct after applying
+    // appropriate rotation.
+    float L = pDrawData->DisplayPos.x;
+    float R = pDrawData->DisplayPos.x + pDrawData->DisplaySize.x;
+    float T = pDrawData->DisplayPos.y;
+    float B = pDrawData->DisplayPos.y + pDrawData->DisplaySize.y;
 
-    RefCntAutoPtr<IShader> pVS;
-    {
-        ShaderCI.Desc = {"Imgui VS", SHADER_TYPE_VERTEX, true};
-        switch (DeviceType)
-        {
-            case RENDER_DEVICE_TYPE_VULKAN:
-                ShaderCI.ByteCode     = VertexShader_SPIRV;
-                ShaderCI.ByteCodeSize = sizeof(VertexShader_SPIRV);
-                break;
-
-            case RENDER_DEVICE_TYPE_D3D11:
-            case RENDER_DEVICE_TYPE_D3D12:
-                ShaderCI.Source = VertexShaderHLSL;
-                break;
-
-            case RENDER_DEVICE_TYPE_GL:
-            case RENDER_DEVICE_TYPE_GLES:
-                ShaderCI.Source = VertexShaderGLSL;
-                break;
-
-            case RENDER_DEVICE_TYPE_WEBGPU:
-                ShaderCI.Source = VertexShaderWGSL;
-                ShaderCI.Macros = {};
-                break;
-
-            case RENDER_DEVICE_TYPE_METAL:
-                ShaderCI.Source     = ShadersMSL;
-                ShaderCI.EntryPoint = "vs_main";
-                break;
-
-            default:
-                UNEXPECTED("Unknown render device type");
-        }
-        m_pDevice->CreateShader(ShaderCI, &pVS);
-    }
-
-    RefCntAutoPtr<IShader> pPS;
-    {
-        ShaderCI.Desc = {"Imgui PS", SHADER_TYPE_PIXEL, true};
-        switch (DeviceType)
-        {
-            case RENDER_DEVICE_TYPE_VULKAN:
-                if (ManualSrgb)
-                {
-                    ShaderCI.ByteCode     = FragmentShader_Gamma_SPIRV;
-                    ShaderCI.ByteCodeSize = sizeof(FragmentShader_Gamma_SPIRV);
-                }
-                else
-                {
-                    ShaderCI.ByteCode     = FragmentShader_SPIRV;
-                    ShaderCI.ByteCodeSize = sizeof(FragmentShader_SPIRV);
-                }
-                break;
-
-            case RENDER_DEVICE_TYPE_D3D11:
-            case RENDER_DEVICE_TYPE_D3D12:
-                ShaderCI.Source = PixelShaderHLSL;
-                break;
-
-            case RENDER_DEVICE_TYPE_GL:
-            case RENDER_DEVICE_TYPE_GLES:
-                ShaderCI.Source = PixelShaderGLSL;
-                break;
-
-            case RENDER_DEVICE_TYPE_WEBGPU:
-                ShaderCI.Source = ManualSrgb ? PixelShaderWGSL_Gamma : PixelShaderWGSL;
-                ShaderCI.Macros = {};
-                break;
-
-            case RENDER_DEVICE_TYPE_METAL:
-                ShaderCI.Source     = ShadersMSL;
-                ShaderCI.EntryPoint = "ps_main";
-                break;
-
-            default:
-                UNEXPECTED("Unknown render device type");
-        }
-        m_pDevice->CreateShader(ShaderCI, &pPS);
-    }
-
-    GraphicsPipelineStateCreateInfo PSOCreateInfo;
-
-    PSOCreateInfo.PSODesc.Name = "ImGUI PSO";
-    auto& GraphicsPipeline     = PSOCreateInfo.GraphicsPipeline;
-
-    GraphicsPipeline.NumRenderTargets  = 1;
-    GraphicsPipeline.RTVFormats[0]     = m_BackBufferFmt;
-    GraphicsPipeline.DSVFormat         = m_DepthBufferFmt;
-    GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-    PSOCreateInfo.pVS = pVS;
-    PSOCreateInfo.pPS = pPS;
-
-    GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
-    GraphicsPipeline.RasterizerDesc.ScissorEnable = True;
-    GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-
-    auto& RT0       = GraphicsPipeline.BlendDesc.RenderTargets[0];
-    RT0.BlendEnable = True;
-    // Use alpha-premultiplied blending, see eq. (3).
-    RT0.SrcBlend              = BLEND_FACTOR_ONE;
-    RT0.DestBlend             = BLEND_FACTOR_INV_SRC_ALPHA;
-    RT0.BlendOp               = BLEND_OPERATION_ADD;
-    RT0.SrcBlendAlpha         = BLEND_FACTOR_ONE;
-    RT0.DestBlendAlpha        = BLEND_FACTOR_INV_SRC_ALPHA;
-    RT0.BlendOpAlpha          = BLEND_OPERATION_ADD;
-    RT0.RenderTargetWriteMask = COLOR_MASK_ALL;
-
-    LayoutElement VSInputs[] //
-        {
-            {0, 0, 2, VT_FLOAT32},    // pos
-            {1, 0, 2, VT_FLOAT32},    // uv
-            {2, 0, 4, VT_UINT8, True} // col
-        };
-    GraphicsPipeline.InputLayout.NumElements    = _countof(VSInputs);
-    GraphicsPipeline.InputLayout.LayoutElements = VSInputs;
-
-    ShaderResourceVariableDesc Variables[] =
-        {
-            {SHADER_TYPE_PIXEL, "Texture", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC} //
-        };
-    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Variables;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Variables);
-
-    SamplerDesc SamLinearWrap;
-    SamLinearWrap.AddressU = TEXTURE_ADDRESS_WRAP;
-    SamLinearWrap.AddressV = TEXTURE_ADDRESS_WRAP;
-    SamLinearWrap.AddressW = TEXTURE_ADDRESS_WRAP;
-    ImmutableSamplerDesc ImtblSamplers[] =
-        {
-            {SHADER_TYPE_PIXEL, "Texture", SamLinearWrap} //
-        };
-    PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
-
-    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
-
-    {
-        BufferDesc BuffDesc;
-        BuffDesc.Size           = sizeof(float4x4);
-        BuffDesc.Usage          = USAGE_DYNAMIC;
-        BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
-        BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pVertexConstantBuffer);
-    }
-    m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_pVertexConstantBuffer);
-
-    CreateFontsTexture();
-}
-
-void ImGuiDiligentRenderer::CreateFontsTexture()
-{
-    // Build texture atlas
-    ImGuiIO& IO = ImGui::GetIO();
-
-    unsigned char* pData  = nullptr;
-    int            Width  = 0;
-    int            Weight = 0;
-    IO.Fonts->GetTexDataAsRGBA32(&pData, &Width, &Weight);
-
-    TextureDesc FontTexDesc;
-    FontTexDesc.Name      = "Imgui font texture";
-    FontTexDesc.Type      = RESOURCE_DIM_TEX_2D;
-    FontTexDesc.Width     = static_cast<Uint32>(Width);
-    FontTexDesc.Height    = static_cast<Uint32>(Weight);
-    FontTexDesc.Format    = TEX_FORMAT_RGBA8_UNORM;
-    FontTexDesc.BindFlags = BIND_SHADER_RESOURCE;
-    FontTexDesc.Usage     = USAGE_IMMUTABLE;
-
-    TextureSubResData Mip0Data[] = {{pData, 4 * Uint64{FontTexDesc.Width}}};
-    TextureData       InitData(Mip0Data, _countof(Mip0Data));
-
-    RefCntAutoPtr<ITexture> pFontTex;
-    m_pDevice->CreateTexture(FontTexDesc, &InitData, &pFontTex);
-    m_pFontSRV = pFontTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-
-    m_pSRB.Release();
-    m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
-    m_pTextureVar = m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "Texture");
-    VERIFY_EXPR(m_pTextureVar != nullptr);
-
-    // Store our identifier
-    IO.Fonts->TexID = reinterpret_cast<ImTextureID>(m_pFontSRV.RawPtr());
-}
-
-float4 ImGuiDiligentRenderer::TransformClipRect(const ImVec2& DisplaySize, const float4& rect) const
-{
-    switch (m_SurfacePreTransform)
-    {
-        case SURFACE_TRANSFORM_IDENTITY:
-            return rect;
-
-        case SURFACE_TRANSFORM_ROTATE_90:
-        {
-            // The image content is rotated 90 degrees clockwise. The origin is in the left-top corner.
-            //
-            //                                                             DsplSz.y
-            //                a.x                                            -a.y     a.y     Old origin
-            //              0---->|                                       0------->|<------| /
-            //           0__|_____|____________________                0__|________|_______|/
-            //            | |     '                    |                | |        '       |
-            //        a.y | |     '                    |            a.x | |        '       |
-            //           _V_|_ _ _a____b               |               _V_|_ _d'___a'      |
-            //            A |     |    |               |                  |   |    |       |
-            //  DsplSz.y  | |     |____|               |                  |   |____|       |
-            //    -a.y    | |     d    c               |                  |   c'   b'      |
-            //           _|_|__________________________|                  |                |
-            //              A                                             |                |
-            //              |-----> Y'                                    |                |
-            //         New Origin                                         |________________|
-            //
-            float2 a{rect.x, rect.y};
-            float2 c{rect.z, rect.w};
-            return float4 //
-                {
-                    DisplaySize.y - c.y, // min_x = c'.x
-                    a.x,                 // min_y = a'.y
-                    DisplaySize.y - a.y, // max_x = a'.x
-                    c.x                  // max_y = c'.y
-                };
-        }
-
-        case SURFACE_TRANSFORM_ROTATE_180:
-        {
-            // The image content is rotated 180 degrees clockwise. The origin is in the left-top corner.
-            //
-            //                a.x                                               DsplSz.x - a.x
-            //              0---->|                                         0------------------>|
-            //           0__|_____|____________________                 0_ _|___________________|______
-            //            | |     '                    |                  | |                   '      |
-            //        a.y | |     '                    |        DsplSz.y  | |              c'___d'     |
-            //           _V_|_ _ _a____b               |          -a.y    | |              |    |      |
-            //              |     |    |               |                 _V_|_ _ _ _ _ _ _ |____|      |
-            //              |     |____|               |                    |              b'   a'     |
-            //              |     d    c               |                    |                          |
-            //              |__________________________|                    |__________________________|
-            //                                         A                                               A
-            //                                         |                                               |
-            //                                     New Origin                                      Old Origin
-            float2 a{rect.x, rect.y};
-            float2 c{rect.z, rect.w};
-            return float4 //
-                {
-                    DisplaySize.x - c.x, // min_x = c'.x
-                    DisplaySize.y - c.y, // min_y = c'.y
-                    DisplaySize.x - a.x, // max_x = a'.x
-                    DisplaySize.y - a.y  // max_y = a'.y
-                };
-        }
-
-        case SURFACE_TRANSFORM_ROTATE_270:
-        {
-            // The image content is rotated 270 degrees clockwise. The origin is in the left-top corner.
-            //
-            //              0  a.x     DsplSz.x-a.x   New Origin              a.y
-            //              |---->|<-------------------|                    0----->|
-            //          0_ _|_____|____________________V                 0 _|______|_________
-            //            | |     '                    |                  | |      '         |
-            //            | |     '                    |                  | |      '         |
-            //        a.y_V_|_ _ _a____b               |        DsplSz.x  | |      '         |
-            //              |     |    |               |          -a.x    | |      '         |
-            //              |     |____|               |                  | |      b'___c'   |
-            //              |     d    c               |                  | |      |    |    |
-            //  DsplSz.y _ _|__________________________|                 _V_|_ _ _ |____|    |
-            //                                                              |      a'   d'   |
-            //                                                              |                |
-            //                                                              |________________|
-            //                                                              A
-            //                                                              |
-            //                                                            Old origin
-            float2 a{rect.x, rect.y};
-            float2 c{rect.z, rect.w};
-            return float4 //
-                {
-                    a.y,                 // min_x = a'.x
-                    DisplaySize.x - c.x, // min_y = c'.y
-                    c.y,                 // max_x = c'.x
-                    DisplaySize.x - a.x  // max_y = a'.y
-                };
-        }
-
-        case SURFACE_TRANSFORM_OPTIMAL:
-            UNEXPECTED("SURFACE_TRANSFORM_OPTIMAL is only valid as parameter during swap chain initialization.");
-            return rect;
-
-        case SURFACE_TRANSFORM_HORIZONTAL_MIRROR:
-        case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90:
-        case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180:
-        case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270:
-            UNEXPECTED("Mirror transforms are not supported");
-            return rect;
-
-        default:
-            UNEXPECTED("Unknown transform");
-            return rect;
-    }
-}
-
-void ImGuiDiligentRenderer::CheckDeviceObjects()
-{
-    if (!m_pPSO)
-        CreateDeviceObjects();
-}
-
-void ImGuiDiligentRenderer::RenderDrawData(IDeviceContext* pCtx, ImDrawData* pDrawData)
-{
-    ScopedDebugGroup DebugGroup{pCtx, "ImGui"};
-
-    // Avoid rendering when minimized
-    if (pDrawData->DisplaySize.x <= 0.0f || pDrawData->DisplaySize.y <= 0.0f || pDrawData->CmdListsCount == 0)
-        return;
-
-    // Create and grow vertex/index buffers if needed
-    if (!m_pVB || static_cast<int>(m_VertexBufferSize) < pDrawData->TotalVtxCount)
-    {
-        m_pVB.Release();
-        while (static_cast<int>(m_VertexBufferSize) < pDrawData->TotalVtxCount)
-            m_VertexBufferSize *= 2;
-
-        BufferDesc VBDesc;
-        VBDesc.Name           = "Imgui vertex buffer";
-        VBDesc.BindFlags      = BIND_VERTEX_BUFFER;
-        VBDesc.Size           = m_VertexBufferSize * sizeof(ImDrawVert);
-        VBDesc.Usage          = USAGE_DYNAMIC;
-        VBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        m_pDevice->CreateBuffer(VBDesc, nullptr, &m_pVB);
-    }
-
-    if (!m_pIB || static_cast<int>(m_IndexBufferSize) < pDrawData->TotalIdxCount)
-    {
-        m_pIB.Release();
-        while (static_cast<int>(m_IndexBufferSize) < pDrawData->TotalIdxCount)
-            m_IndexBufferSize *= 2;
-
-        BufferDesc IBDesc;
-        IBDesc.Name           = "Imgui index buffer";
-        IBDesc.BindFlags      = BIND_INDEX_BUFFER;
-        IBDesc.Size           = m_IndexBufferSize * sizeof(ImDrawIdx);
-        IBDesc.Usage          = USAGE_DYNAMIC;
-        IBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        m_pDevice->CreateBuffer(IBDesc, nullptr, &m_pIB);
-    }
-
-    {
-        MapHelper<ImDrawVert> Vertices(pCtx, m_pVB, MAP_WRITE, MAP_FLAG_DISCARD);
-        MapHelper<ImDrawIdx>  Indices(pCtx, m_pIB, MAP_WRITE, MAP_FLAG_DISCARD);
-        if (!Vertices || !Indices)
-            return;
-
-        ImDrawVert* pVtxDst = Vertices;
-        ImDrawIdx*  pIdxDst = Indices;
-        for (Int32 CmdListID = 0; CmdListID < pDrawData->CmdListsCount; CmdListID++)
-        {
-            const ImDrawList* pCmdList = pDrawData->CmdLists[CmdListID];
-            memcpy(pVtxDst, pCmdList->VtxBuffer.Data, pCmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-            memcpy(pIdxDst, pCmdList->IdxBuffer.Data, pCmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
-            pVtxDst += pCmdList->VtxBuffer.Size;
-            pIdxDst += pCmdList->IdxBuffer.Size;
-        }
-    }
-
-    // Setup orthographic projection matrix into our constant buffer
-    // Our visible imgui space lies from pDrawData->DisplayPos (top left) to pDrawData->DisplayPos+data_data->DisplaySize (bottom right).
-    // DisplayPos is (0,0) for single viewport apps.
-    {
-        // DisplaySize always refers to the logical dimensions that account for pre-transform, hence
-        // the aspect ratio will be correct after applying appropriate rotation.
-        float L = pDrawData->DisplayPos.x;
-        float R = pDrawData->DisplayPos.x + pDrawData->DisplaySize.x;
-        float T = pDrawData->DisplayPos.y;
-        float B = pDrawData->DisplayPos.y + pDrawData->DisplaySize.y;
-
-        // clang-format off
+    // clang-format off
         float4x4 Projection
         {
             2.0f / (R - L),                  0.0f,   0.0f,   0.0f,
@@ -957,155 +973,166 @@ void ImGuiDiligentRenderer::RenderDrawData(IDeviceContext* pCtx, ImDrawData* pDr
             0.0f,                            0.0f,   0.5f,   0.0f,
             (R + L) / (L - R),  (T + B) / (B - T),   0.5f,   1.0f
         };
-        // clang-format on
+    // clang-format on
 
-        // Bake pre-transform into projection
-        switch (m_SurfacePreTransform)
-        {
-            case SURFACE_TRANSFORM_IDENTITY:
-                // Nothing to do
-                break;
+    // Bake pre-transform into projection
+    switch (m_SurfacePreTransform) {
+      case SURFACE_TRANSFORM_IDENTITY:
+        // Nothing to do
+        break;
 
-            case SURFACE_TRANSFORM_ROTATE_90:
-                // The image content is rotated 90 degrees clockwise.
-                Projection *= float4x4::RotationZ(-PI_F * 0.5f);
-                break;
+      case SURFACE_TRANSFORM_ROTATE_90:
+        // The image content is rotated 90 degrees clockwise.
+        Projection *= float4x4::RotationZ(-PI_F * 0.5f);
+        break;
 
-            case SURFACE_TRANSFORM_ROTATE_180:
-                // The image content is rotated 180 degrees clockwise.
-                Projection *= float4x4::RotationZ(-PI_F * 1.0f);
-                break;
+      case SURFACE_TRANSFORM_ROTATE_180:
+        // The image content is rotated 180 degrees clockwise.
+        Projection *= float4x4::RotationZ(-PI_F * 1.0f);
+        break;
 
-            case SURFACE_TRANSFORM_ROTATE_270:
-                // The image content is rotated 270 degrees clockwise.
-                Projection *= float4x4::RotationZ(-PI_F * 1.5f);
-                break;
+      case SURFACE_TRANSFORM_ROTATE_270:
+        // The image content is rotated 270 degrees clockwise.
+        Projection *= float4x4::RotationZ(-PI_F * 1.5f);
+        break;
 
-            case SURFACE_TRANSFORM_OPTIMAL:
-                UNEXPECTED("SURFACE_TRANSFORM_OPTIMAL is only valid as parameter during swap chain initialization.");
-                break;
+      case SURFACE_TRANSFORM_OPTIMAL:
+        UNEXPECTED(
+            "SURFACE_TRANSFORM_OPTIMAL is only valid as parameter during swap "
+            "chain initialization.");
+        break;
 
-            case SURFACE_TRANSFORM_HORIZONTAL_MIRROR:
-            case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90:
-            case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180:
-            case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270:
-                UNEXPECTED("Mirror transforms are not supported");
-                break;
+      case SURFACE_TRANSFORM_HORIZONTAL_MIRROR:
+      case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90:
+      case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180:
+      case SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270:
+        UNEXPECTED("Mirror transforms are not supported");
+        break;
 
-            default:
-                UNEXPECTED("Unknown transform");
-        }
-
-        MapHelper<float4x4> CBData(pCtx, m_pVertexConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
-        if (!CBData)
-            return;
-
-        *CBData = Projection;
+      default:
+        UNEXPECTED("Unknown transform");
     }
 
-    auto SetupRenderState = [&]() //
-    {
-        // Setup shader and vertex buffers
-        IBuffer* pVBs[] = {m_pVB};
-        pCtx->SetVertexBuffers(0, 1, pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
-        pCtx->SetIndexBuffer(m_pIB, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        pCtx->SetPipelineState(m_pPSO);
+    MapHelper<float4x4> CBData(pCtx, m_pVertexConstantBuffer, MAP_WRITE,
+                               MAP_FLAG_DISCARD);
+    if (!CBData)
+      return;
 
-        const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
-        pCtx->SetBlendFactors(blend_factor);
+    *CBData = Projection;
+  }
 
-        Viewport vp;
-        vp.TopLeftX = 0;
-        vp.TopLeftY = 0;
-        vp.Width    = static_cast<float>(m_RenderSurfaceWidth);
-        vp.Height   = static_cast<float>(m_RenderSurfaceHeight);
-        vp.MinDepth = 0.0f;
-        vp.MaxDepth = 1.0f;
-        pCtx->SetViewports(1, &vp, m_RenderSurfaceWidth, m_RenderSurfaceHeight);
-    };
+  auto SetupRenderState = [&]()  //
+  {
+    // Setup shader and vertex buffers
+    IBuffer* pVBs[] = {m_pVB};
+    pCtx->SetVertexBuffers(0, 1, pVBs, nullptr,
+                           RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                           SET_VERTEX_BUFFERS_FLAG_RESET);
+    pCtx->SetIndexBuffer(m_pIB, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    pCtx->SetPipelineState(m_pPSO);
 
-    SetupRenderState();
+    const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
+    pCtx->SetBlendFactors(blend_factor);
 
-    // Render command lists
-    // (Because we merged all buffers into a single one, we maintain our own offset into them)
-    Uint32 GlobalIdxOffset = 0;
-    Uint32 GlobalVtxOffset = 0;
+    Viewport vp;
+    vp.TopLeftX = 0;
+    vp.TopLeftY = 0;
+    vp.Width = static_cast<float>(m_RenderSurfaceWidth);
+    vp.Height = static_cast<float>(m_RenderSurfaceHeight);
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    pCtx->SetViewports(1, &vp, m_RenderSurfaceWidth, m_RenderSurfaceHeight);
+  };
 
-    ITextureView* pLastTextureView = nullptr;
-    for (Int32 CmdListID = 0; CmdListID < pDrawData->CmdListsCount; CmdListID++)
-    {
-        const ImDrawList* pCmdList = pDrawData->CmdLists[CmdListID];
-        for (Int32 CmdID = 0; CmdID < pCmdList->CmdBuffer.Size; CmdID++)
-        {
-            const ImDrawCmd* pCmd = &pCmdList->CmdBuffer[CmdID];
-            if (pCmd->UserCallback != NULL)
+  SetupRenderState();
+
+  // Render command lists
+  // (Because we merged all buffers into a single one, we maintain our own
+  // offset into them)
+  Uint32 GlobalIdxOffset = 0;
+  Uint32 GlobalVtxOffset = 0;
+
+  ITextureView* pLastTextureView = nullptr;
+  for (Int32 CmdListID = 0; CmdListID < pDrawData->CmdListsCount; CmdListID++) {
+    const ImDrawList* pCmdList = pDrawData->CmdLists[CmdListID];
+    for (Int32 CmdID = 0; CmdID < pCmdList->CmdBuffer.Size; CmdID++) {
+      const ImDrawCmd* pCmd = &pCmdList->CmdBuffer[CmdID];
+      if (pCmd->UserCallback != NULL) {
+        // User callback, registered via ImDrawList::AddCallback()
+        // (ImDrawCallback_ResetRenderState is a special callback value used by
+        // the user to request the renderer to reset render state.)
+        if (pCmd->UserCallback == ImDrawCallback_ResetRenderState)
+          SetupRenderState();
+        else
+          pCmd->UserCallback(pCmdList, pCmd);
+      } else {
+        if (pCmd->ElemCount == 0)
+          continue;
+
+        // Apply scissor/clipping rectangle
+        float4 ClipRect  //
             {
-                // User callback, registered via ImDrawList::AddCallback()
-                // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
-                if (pCmd->UserCallback == ImDrawCallback_ResetRenderState)
-                    SetupRenderState();
-                else
-                    pCmd->UserCallback(pCmdList, pCmd);
-            }
-            else
+                (pCmd->ClipRect.x - pDrawData->DisplayPos.x) *
+                    pDrawData->FramebufferScale.x,
+                (pCmd->ClipRect.y - pDrawData->DisplayPos.y) *
+                    pDrawData->FramebufferScale.y,
+                (pCmd->ClipRect.z - pDrawData->DisplayPos.x) *
+                    pDrawData->FramebufferScale.x,
+                (pCmd->ClipRect.w - pDrawData->DisplayPos.y) *
+                    pDrawData->FramebufferScale.y  //
+            };
+        // Apply pretransform
+        ClipRect = TransformClipRect(pDrawData->DisplaySize, ClipRect);
+
+        Rect Scissor  //
             {
-                if (pCmd->ElemCount == 0)
-                    continue;
+                static_cast<Int32>(ClipRect.x), static_cast<Int32>(ClipRect.y),
+                static_cast<Int32>(ClipRect.z),
+                static_cast<Int32>(ClipRect.w)  //
+            };
+        Scissor.left = std::max(Scissor.left, 0);
+        Scissor.top = std::max(Scissor.top, 0);
+        Scissor.right =
+            std::min(Scissor.right, static_cast<Int32>(m_RenderSurfaceWidth));
+        Scissor.bottom =
+            std::min(Scissor.bottom, static_cast<Int32>(m_RenderSurfaceHeight));
+        if (!Scissor.IsValid())
+          continue;
+        pCtx->SetScissorRects(1, &Scissor, m_RenderSurfaceWidth,
+                              m_RenderSurfaceHeight);
 
-                // Apply scissor/clipping rectangle
-                float4 ClipRect //
-                    {
-                        (pCmd->ClipRect.x - pDrawData->DisplayPos.x) * pDrawData->FramebufferScale.x,
-                        (pCmd->ClipRect.y - pDrawData->DisplayPos.y) * pDrawData->FramebufferScale.y,
-                        (pCmd->ClipRect.z - pDrawData->DisplayPos.x) * pDrawData->FramebufferScale.x,
-                        (pCmd->ClipRect.w - pDrawData->DisplayPos.y) * pDrawData->FramebufferScale.y //
-                    };
-                // Apply pretransform
-                ClipRect = TransformClipRect(pDrawData->DisplaySize, ClipRect);
-
-                Rect Scissor //
-                    {
-                        static_cast<Int32>(ClipRect.x),
-                        static_cast<Int32>(ClipRect.y),
-                        static_cast<Int32>(ClipRect.z),
-                        static_cast<Int32>(ClipRect.w) //
-                    };
-                Scissor.left   = std::max(Scissor.left, 0);
-                Scissor.top    = std::max(Scissor.top, 0);
-                Scissor.right  = std::min(Scissor.right, static_cast<Int32>(m_RenderSurfaceWidth));
-                Scissor.bottom = std::min(Scissor.bottom, static_cast<Int32>(m_RenderSurfaceHeight));
-                if (!Scissor.IsValid())
-                    continue;
-                pCtx->SetScissorRects(1, &Scissor, m_RenderSurfaceWidth, m_RenderSurfaceHeight);
-
-                // Bind texture
-                auto* pTextureView = reinterpret_cast<ITextureView*>(pCmd->TextureId);
-                VERIFY_EXPR(pTextureView);
-                if (pTextureView != pLastTextureView)
-                {
-                    pLastTextureView = pTextureView;
-                    m_pTextureVar->Set(pTextureView);
-                    pCtx->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-                }
-
-                DrawIndexedAttribs DrawAttrs{pCmd->ElemCount, sizeof(ImDrawIdx) == sizeof(Uint16) ? VT_UINT16 : VT_UINT32, DRAW_FLAG_VERIFY_STATES};
-                DrawAttrs.FirstIndexLocation = pCmd->IdxOffset + GlobalIdxOffset;
-                if (m_BaseVertexSupported)
-                {
-                    DrawAttrs.BaseVertex = pCmd->VtxOffset + GlobalVtxOffset;
-                }
-                else
-                {
-                    IBuffer* pVBs[]       = {m_pVB};
-                    Uint64   VtxOffsets[] = {sizeof(ImDrawVert) * (size_t{pCmd->VtxOffset} + size_t{GlobalVtxOffset})};
-                    pCtx->SetVertexBuffers(0, 1, pVBs, VtxOffsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_NONE);
-                }
-                pCtx->DrawIndexed(DrawAttrs);
-            }
+        // Bind texture
+        auto* pTextureView = reinterpret_cast<ITextureView*>(pCmd->TextureId);
+        VERIFY_EXPR(pTextureView);
+        if (pTextureView != pLastTextureView) {
+          pLastTextureView = pTextureView;
+          m_pTextureVar->Set(pTextureView);
+          pCtx->CommitShaderResources(
+              m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         }
-        GlobalIdxOffset += pCmdList->IdxBuffer.Size;
-        GlobalVtxOffset += pCmdList->VtxBuffer.Size;
+
+        DrawIndexedAttribs DrawAttrs{
+            pCmd->ElemCount,
+            sizeof(ImDrawIdx) == sizeof(Uint16) ? VT_UINT16 : VT_UINT32,
+            DRAW_FLAG_VERIFY_STATES};
+        DrawAttrs.FirstIndexLocation = pCmd->IdxOffset + GlobalIdxOffset;
+        if (m_BaseVertexSupported) {
+          DrawAttrs.BaseVertex = pCmd->VtxOffset + GlobalVtxOffset;
+        } else {
+          IBuffer* pVBs[] = {m_pVB};
+          Uint64 VtxOffsets[] = {
+              sizeof(ImDrawVert) *
+              (size_t{pCmd->VtxOffset} + size_t{GlobalVtxOffset})};
+          pCtx->SetVertexBuffers(0, 1, pVBs, VtxOffsets,
+                                 RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                 SET_VERTEX_BUFFERS_FLAG_NONE);
+        }
+        pCtx->DrawIndexed(DrawAttrs);
+      }
     }
+    GlobalIdxOffset += pCmdList->IdxBuffer.Size;
+    GlobalVtxOffset += pCmdList->VtxBuffer.Size;
+  }
 }
 
-} // namespace Diligent
+}  // namespace Diligent

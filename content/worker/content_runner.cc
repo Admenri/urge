@@ -553,6 +553,11 @@ void ContentRunner::CreateIMGUIContextInternal() {
   // Setup renderer backend
   Diligent::ImGuiDiligentCreateInfo imgui_create_info(
       **render_device, render_device->GetSwapChain()->GetDesc());
+  imgui_create_info.MinFilter = profile_->smooth_scale_present
+                                    ? Diligent::FILTER_TYPE_LINEAR
+                                    : Diligent::FILTER_TYPE_POINT;
+  imgui_create_info.MagFilter = imgui_create_info.MinFilter;
+  imgui_create_info.MipFilter = imgui_create_info.MagFilter;
   imgui_ = std::make_unique<Diligent::ImGuiDiligentRenderer>(imgui_create_info);
 }
 
