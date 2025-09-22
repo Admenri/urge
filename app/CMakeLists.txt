@@ -49,7 +49,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   # Asyncify
   set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASYNCIFY=1 -sASYNCIFY_IMPORTS=emjs_load_file_async")
   # Stack size
-  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sSTACK_SIZE=16MB -sASYNCIFY_STACK_SIZE=16MB -sTOTAL_MEMORY=128MB -sMAXIMUM_MEMORY=1073741824")
+  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sSTACK_SIZE=16777216 -sASYNCIFY_STACK_SIZE=16777216 -sINITIAL_MEMORY=67108864")
   # Shell
   set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} --shell-file ${EMSCRIPTEN_SHELL_TEMPLATE}")
 
@@ -58,6 +58,16 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   set_target_properties(index PROPERTIES
     SUFFIX ".html"
     LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS}"
+  )
+
+  # Assets
+  add_custom_command(
+    TARGET index
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/coi-serviceworker.js"
+            "${CMAKE_CURRENT_BINARY_DIR}/coi-serviceworker.js"
+    COMMENT "Copying emscripten assets."
   )
 endif ()
 
