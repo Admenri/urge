@@ -16,11 +16,14 @@ def get_relative_unix_paths(root_dir, verbose):
     if item.is_file():
       filepath = item.relative_to(root_path)
       rel_path = str(filepath).replace('\\', '/')
-      rel_key = rel_path.lower()
+      file_size = item.stat().st_size
       if verbose:
-        print(f"Path: {rel_key} -> {rel_path}")
-      rel_paths[rel_key] = rel_path
-
+        print(f"File: {rel_path}, Size: {file_size}")
+      rel_paths[rel_path.lower()] = {
+        "path": rel_path,
+        "size": file_size,
+        "preload": False,
+      }
   return rel_paths
 
 
