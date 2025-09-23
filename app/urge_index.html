@@ -15,18 +15,82 @@
       height: 100vh
     }
 
+    .spinner {
+      height: 50px;
+      width: 50px;
+      margin: 0px auto;
+      -webkit-animation: rotation .8s linear infinite;
+      -moz-animation: rotation .8s linear infinite;
+      -o-animation: rotation .8s linear infinite;
+      animation: rotation 0.8s linear infinite;
+      border-left: 10px solid rgb(0, 150, 240);
+      border-right: 10px solid rgb(0, 150, 240);
+      border-bottom: 10px solid rgb(0, 150, 240);
+      border-top: 10px solid rgb(100, 0, 200);
+      border-radius: 100%;
+      background-color: rgb(200, 100, 250);
+    }
+
+    @-webkit-keyframes rotation {
+      from {
+        -webkit-transform: rotate(0deg);
+      }
+
+      to {
+        -webkit-transform: rotate(360deg);
+      }
+    }
+
+    @-moz-keyframes rotation {
+      from {
+        -moz-transform: rotate(0deg);
+      }
+
+      to {
+        -moz-transform: rotate(360deg);
+      }
+    }
+
+    @-o-keyframes rotation {
+      from {
+        -o-transform: rotate(0deg);
+      }
+
+      to {
+        -o-transform: rotate(360deg);
+      }
+    }
+
+    @keyframes rotation {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #spinner {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      opacity: 0.6;
+    }
+
     #canvas {
       background-color: black;
       padding: 0;
       margin: 0 auto;
       display: block;
       border: 0px none;
+      width: 100%;
       height: 100%;
       max-height: 100vh;
       max-width: 100vw;
     }
 
-    #progress {
+    #status {
       background-color: white;
       opacity: 0.6;
       position: fixed;
@@ -58,8 +122,12 @@
 
 <body>
   <canvas class="urge" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
-  <div class="urge" id="progress">Loading...</div>
-  <div onclick="Module.requestFullscreen(true, true)" id="fullscreen">
+  <figure class="urge" style="overflow:visible;" id="spinner">
+    <div class="spinner"></div>
+    <center style="margin-top:0.5em"></center>
+  </figure>
+  <div class="urge" id="status">Loading...</div>
+  <div onclick="toggleFullscreen()" id="fullscreen">
     <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24">
       <path fill="white"
         d="m19.5,0h-9c-2.481,0-4.5,2.019-4.5,4.5v7.5h-2.5c-1.93,0-3.5,1.57-3.5,3.5v5c0,1.93,1.57,3.5,3.5,3.5h5c1.93,0,3.5-1.57,3.5-3.5v-2.5h7.5c2.481,0,4.5-2.019,4.5-4.5V4.5c0-2.481-2.019-4.5-4.5-4.5Zm-8.5,20.5c0,1.379-1.122,2.5-2.5,2.5H3.5c-1.378,0-2.5-1.121-2.5-2.5v-5c0-1.379,1.122-2.5,2.5-2.5h2.5v.5c0,2.481,2.019,4.5,4.5,4.5h.5v2.5Zm-.738-6.771s.002.004.004.006.004.002.005.004c.45.452.729,1.075.729,1.762v1.5h-.5c-1.93,0-3.5-1.57-3.5-3.5v-.5h1.5c.687,0,1.31.279,1.762.729Zm12.738-.229c0,1.93-1.57,3.5-3.5,3.5h-7.5v-1.5c0-.785-.269-1.502-.707-2.086l6.707-6.707v4.293c0,.276.224.5.5.5s.5-.224.5-.5v-4.5c0-.827-.673-1.5-1.5-1.5h-4.5c-.276,0-.5.224-.5.5s.224.5.5.5h4.292l-6.706,6.707c-.584-.438-1.302-.707-2.086-.707h-1.5v-7.5c0-1.93,1.57-3.5,3.5-3.5h9c1.93,0,3.5,1.57,3.5,3.5v9Z" />
@@ -69,8 +137,20 @@
   <script type='text/javascript' src="async_mapping.js"></script>
 
   <script type='text/javascript'>
-    var progressElement = document.getElementById('progress');
+    var fullscreenElement = document.getElementById('fullscreen');
+    var spinnerElement = document.getElementById('spinner');
+    var statusElement = document.getElementById('status');
     var canvasElement = document.getElementById('canvas');
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.body.requestFullscreen();
+        fullscreenElement.style.rotate = '180deg';
+      } else {
+        document.exitFullscreen();
+        fullscreenElement.style.rotate = '0deg';
+      }
+    }
 
     // As a default initial behavior, pop up an alert when webgl context is lost. To make your
     // application robust, you may want to override this behavior before shipping!
@@ -81,6 +161,8 @@
     }, false);
 
     var Module = {
+      canvas: canvasElement,
+      noAudioDecoding: true,
       print(...args) {
         // These replacements are necessary if you render to raw HTML
         //text = text.replace(/&/g, "&amp;");
@@ -89,16 +171,15 @@
         //text = text.replace('\n', '<br>', 'g');
         console.log(...args);
       },
-      canvas: canvasElement,
-      setStatus(text) {
-        progressElement.innerHTML = text;
-        progressElement.style.display = (text == "" ? 'none' : '');
+      printErr(text) {
+        spinnerElement.style.display = 'none';
+        if (arguments.length > 1)
+          text = Array.prototype.slice.call(arguments).join(' ');
+        console.error(text);
       },
-      totalDependencies: 0,
-      monitorRunDependencies(left) {
-        this.totalDependencies = Math.max(this.totalDependencies, left);
-        Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
-      }
+      setStatus(text) {
+        console.log(text);
+      },
     };
 
     // Init WebGPU in asynchronization
@@ -133,13 +214,6 @@
       Module.preinitializedWebGPUDevice = null;
       Module.print("Failed to initialize WebGPU.");
     });
-
-    window.onerror = () => {
-      Module.setStatus('Exception thrown, see JavaScript console');
-      Module.setStatus = (text) => {
-        if (text) console.error('[post-exception status] ' + text);
-      };
-    };
 
     // Find filename in 'asyncMappingData'
     const findFileInAsyncMapping = (filename) => {
@@ -185,7 +259,7 @@
       // Find mapping in preload list
       const mappingFile = findFileInAsyncMapping(filepath);
       if (mappingFile == null) {
-        console.log(`Missing file: ${filepath}`);
+        console.log(`Missing File: ${filepath}`);
         completeCallback();
         return;
       } else {
@@ -208,20 +282,44 @@
         });
       }
 
-      // Fetch and preload file
-      const onLoad = () => {
-        console.log(`Downloaded: ${mappingFile}`);
-        completeCallback();
-      };
-
-      const onError = (err) => {
-        console.error(`Failed to fetch file - ${mappingFile}: ${err}`);
-        completeCallback();
-      };
-
       // Load async asset
       const loadURL = 'assets/' + mappingFile;
-      FS.createPreloadedFile(parentPath, fileName, loadURL, true, true, onLoad, onError, false, false);
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = "arraybuffer";
+      xhr.withCredentials = true;
+
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          console.log(`Downloaded: ${mappingFile}`);
+          FS_createDataFile(parentPath, fileName, new Uint8Array(xhr.response), true, true, false);
+        } else {
+          // Fetch error
+          console.error(`Download Error: ${mappingFile} - ${xhr.statusText}`);
+        }
+
+        // Resume asyncify context
+        spinnerElement.hidden = true;
+        statusElement.hidden = true;
+        completeCallback();
+      };
+
+      xhr.onerror = function () {
+        spinnerElement.hidden = true;
+        statusElement.hidden = true;
+        console.error(`Download Error: ${mappingFile} - ${xhr.statusText}`);
+        completeCallback();
+      };
+
+      xhr.onprogress = function (event) {
+        const loaded = Math.round(event.loaded / 1024);
+        const total = Math.round(event.total / 1024);
+        statusElement.innerHTML = `${fileName} - ${loaded}KB / ${total}KB`;
+        statusElement.hidden = false;
+      };
+
+      spinnerElement.hidden = false;
+      xhr.open('GET', loadURL);
+      xhr.send();
     };
   </script>
 
