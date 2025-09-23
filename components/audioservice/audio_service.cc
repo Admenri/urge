@@ -129,18 +129,6 @@ static ma_result VFSInfo(ma_vfs*, ma_vfs_file file, ma_file_info* pInfo) {
   return pInfo->sizeInBytes >= 0 ? MA_SUCCESS : MA_ERROR;
 }
 
-static void* AllocatorMalloc(size_t sz, void*) {
-  return std::malloc(sz);
-}
-
-static void* AllocatorRealloc(void* p, size_t sz, void*) {
-  return std::realloc(p, sz);
-}
-
-static void AllocatorFree(void* p, void*) {
-  return std::free(p);
-}
-
 static void LogOutput(void*, ma_uint32 level, const char* pMessage) {
   std::string message(pMessage);
   if (!message.empty()) {
@@ -195,10 +183,6 @@ static void AudioStreamDataCallback(void* userdata,
 
 std::unique_ptr<AudioService> AudioService::Create(
     filesystem::IOService* io_service) {
-#if defined(OS_EMSCRIPTEN)
-  return nullptr;
-#endif  // !OS_EMSCRIPTEN
-
   ServiceKernelData* kernel_data = new ServiceKernelData;
 
   // Device sped
@@ -225,11 +209,6 @@ std::unique_ptr<AudioService> AudioService::Create(
   kernel_data->resource_config.customDecodingBackendCount =
       static_cast<uint32_t>(g_audioservice_decoding_backend_vtable.size());
 
-  // Custom allocators
-  kernel_data->resource_config.allocationCallbacks.onMalloc = AllocatorMalloc;
-  kernel_data->resource_config.allocationCallbacks.onRealloc = AllocatorRealloc;
-  kernel_data->resource_config.allocationCallbacks.onFree = AllocatorFree;
-
   // Custom virtual file system
   kernel_data->vfs.callbacks.onOpen = VFSOpen;
   kernel_data->vfs.callbacks.onOpenW = VFSOpenW;
@@ -241,6 +220,11 @@ std::unique_ptr<AudioService> AudioService::Create(
   kernel_data->vfs.callbacks.onInfo = VFSInfo;
   kernel_data->vfs.io_service = io_service;
   kernel_data->resource_config.pVFS = &kernel_data->vfs;
+
+#if defined(OS_EMSCRIPTEN)
+  kernel_data->resource_config.jobThreadCount = 0;
+  kernel_data->resource_config.flags |= MA_RESOURCE_MANAGER_FLAG_NO_THREADING;
+#endif  // !OS_EMSCRIPTEN
 
   // Create resource manager
   CHECK(ma_resource_manager_init(&kernel_data->resource_config,
