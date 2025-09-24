@@ -26,9 +26,12 @@ else()
     set(RUBY_INCLUDE_PATH "${Ruby_INCLUDE_DIRS}")
     set(RUBY_LIBRARY_PATH "${Ruby_LIBRARIES}")
   else()
+    file(GLOB WASM_INCLUDE_SUBDIRS LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/include/*")
+    list(GET WASM_INCLUDE_SUBDIRS 0 WASM_INCLUDE_FIRST_SUBDIR)
+    message(STATUS "Ruby.WASM Include Dir: ${WASM_INCLUDE_FIRST_SUBDIR}")
     set(RUBY_INCLUDE_PATH
-      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/include/ruby-3.4.0"
-      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/include/ruby-3.4.0/wasm32-emscripten"
+      "${WASM_INCLUDE_FIRST_SUBDIR}"
+      "${WASM_INCLUDE_FIRST_SUBDIR}/wasm32-emscripten"
     )
     set(RUBY_LIBRARY_PATH
       "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ruby_wasm/lib/libruby-static.a"
