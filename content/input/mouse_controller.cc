@@ -124,6 +124,10 @@ void MouseImpl::SetCursor(scoped_refptr<Bitmap> cursor,
   }
 }
 
+bool MouseImpl::Capture(bool enable, ExceptionState& exception_state) {
+  return SDL_CaptureMouse(enable);
+}
+
 bool MouseImpl::Get_Visible(ExceptionState& exception_state) {
   return window_->GetMouseState().visible;
 }

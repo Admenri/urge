@@ -52,6 +52,8 @@ class MouseImpl : public Mouse, public EngineObject {
                  int32_t hot_y,
                  ExceptionState& exception_state) override;
 
+  bool Capture(bool enable, ExceptionState& exception_state) override;
+
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Visible, bool);
 
  private:

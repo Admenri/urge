@@ -58,6 +58,9 @@ class URGE_OBJECT(Mouse) {
                          int32_t hot_y,
                          ExceptionState& exception_state) = 0;
 
+  /*--urge(name:capture)--*/
+  virtual bool Capture(bool enable, ExceptionState& exception_state) = 0;
+
   /*--urge(name:visible)--*/
   URGE_EXPORT_ATTRIBUTE(Visible, bool);
 };
