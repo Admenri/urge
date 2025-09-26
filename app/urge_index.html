@@ -142,6 +142,8 @@
     var spinnerElement = document.getElementById('spinner');
     var statusElement = document.getElementById('status');
     var canvasElement = document.getElementById('canvas');
+    statusElement.hidden = true;
+    spinnerElement.hidden = true;
 
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
@@ -161,6 +163,72 @@
       e.preventDefault();
     }, false);
 
+
+    // Emscripten module
+    var Module = {
+      noImageDecoding: true,
+      noAudioDecoding: true,
+      canvas: canvasElement,
+      print(...args) {
+        // These replacements are necessary if you render to raw HTML
+        //text = text.replace(/&/g, "&amp;");
+        //text = text.replace(/</g, "&lt;");
+        //text = text.replace(/>/g, "&gt;");
+        //text = text.replace('\n', '<br>', 'g');
+        console.log(...args);
+      },
+      printErr(text) {
+        spinnerElement.style.display = 'none';
+        if (arguments.length > 1)
+          text = Array.prototype.slice.call(arguments).join(' ');
+        console.error(text);
+      },
+      setStatus(text) {
+        console.log(text);
+      },
+      totalDependencies: 0,
+      monitorRunDependencies(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        if (left)
+          statusElement.innerHTML = 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')';
+        spinnerElement.hidden = !left;
+        statusElement.hidden = !left;
+      },
+    };
+
+    // Init WebGPU in asynchronization
+    const initializeWebGPUDevice = () => {
+      (async () => {
+        const requiredFeatures = [
+          "depth-clip-control",
+          "depth32float-stencil8",
+          "texture-compression-bc",
+          "indirect-first-instance",
+          "shader-f16",
+          "rg11b10ufloat-renderable",
+          "bgra8unorm-storage",
+          "float32-filterable",
+          "unorm16-texture-formats",
+          "snorm16-texture-formats",
+        ];
+
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice({
+          requiredFeatures: requiredFeatures.filter(feature => adapter.features.has(feature)),
+          requiredLimits: {
+            maxColorAttachmentBytesPerSample: adapter.limits.maxColorAttachmentBytesPerSample
+          }
+        });
+        return device;
+      })().then(device => {
+        Module.preinitializedWebGPUDevice = device;
+      }).catch(error => {
+        Module.preinitializedWebGPUDevice = null;
+        Module.print("Failed to initialize WebGPU.");
+      });
+    };
+
+    // Preload process
     const resourcePreload = () => {
       for (const key in asyncMappingData) {
         const item = asyncMappingData[key];
@@ -187,66 +255,33 @@
         }
 
         const loadURL = 'assets/' + fullPath;
-        console.log(`Preload File: ${fullPath}`);
-        FS.createPreloadedFile(parentPath, fileName, loadURL, true, true);
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = "arraybuffer";
+        xhr.withCredentials = true;
+
+        const onEnd = () => {
+          Module.removeRunDependency(fullPath);
+        };
+
+        xhr.onload = function () {
+          console.log(`Preloaded: ${fullPath}`);
+          FS_createDataFile(parentPath, fileName, new Uint8Array(xhr.response), true, true, false);
+          onEnd();
+        };
+
+        xhr.onerror = function () {
+          console.log(`Error When Preload: ${fullPath}`);
+          onEnd();
+        };
+
+        Module.addRunDependency(fullPath);
+        xhr.open('GET', loadURL);
+        xhr.send();
       }
     };
 
-    var Module = {
-      canvas: canvasElement,
-      noAudioDecoding: true,
-      preRun: [resourcePreload],
-      print(...args) {
-        // These replacements are necessary if you render to raw HTML
-        //text = text.replace(/&/g, "&amp;");
-        //text = text.replace(/</g, "&lt;");
-        //text = text.replace(/>/g, "&gt;");
-        //text = text.replace('\n', '<br>', 'g');
-        console.log(...args);
-      },
-      printErr(text) {
-        spinnerElement.style.display = 'none';
-        if (arguments.length > 1)
-          text = Array.prototype.slice.call(arguments).join(' ');
-        console.error(text);
-      },
-      setStatus(text) {
-        console.log(text);
-      },
-    };
-
-    // Init WebGPU in asynchronization
-    var initWebGPUDevice = (async () => {
-      const requiredFeatures = [
-        "depth-clip-control",
-        "depth32float-stencil8",
-        "texture-compression-bc",
-        "indirect-first-instance",
-        "shader-f16",
-        "rg11b10ufloat-renderable",
-        "bgra8unorm-storage",
-        "float32-filterable",
-        "unorm16-texture-formats",
-        "snorm16-texture-formats",
-      ];
-
-      const adapter = await navigator.gpu.requestAdapter();
-      const device = await adapter.requestDevice({
-        requiredFeatures: requiredFeatures.filter(feature => adapter.features.has(feature)),
-        requiredLimits: {
-          maxColorAttachmentBytesPerSample: adapter.limits.maxColorAttachmentBytesPerSample
-        }
-      });
-      return device;
-    })();
-
-    // Init WebGPU if available
-    initWebGPUDevice.then(device => {
-      Module.preinitializedWebGPUDevice = device;
-    }).catch(error => {
-      Module.preinitializedWebGPUDevice = null;
-      Module.print("Failed to initialize WebGPU.");
-    });
+    // Prerun stage
+    Module.preRun = [initializeWebGPUDevice, resourcePreload];
 
     // Find filename in 'asyncMappingData'
     const findFileInAsyncMapping = (filename) => {
@@ -326,36 +361,30 @@
       xhr.responseType = "arraybuffer";
       xhr.withCredentials = true;
 
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          console.log(`Downloaded: ${mappingFile.path}`);
-          FS_createDataFile(parentPath, fileName, new Uint8Array(xhr.response), true, true, false);
-        } else {
-          // Fetch error
-          console.error(`Download Error: ${mappingFile.path} - ${xhr.statusText}`);
-        }
-
-        // Resume asyncify context
+      const onEnd = () => {
         spinnerElement.hidden = true;
         statusElement.hidden = true;
         completeCallback();
+      };
+
+      xhr.onload = function () {
+        console.log(`Downloaded: ${mappingFile.path}`);
+        FS_createDataFile(parentPath, fileName, new Uint8Array(xhr.response), true, true, false);
+        onEnd();
       };
 
       xhr.onerror = function () {
-        spinnerElement.hidden = true;
-        statusElement.hidden = true;
         console.error(`Download Error: ${mappingFile.path} - ${xhr.statusText}`);
-        completeCallback();
+        onEnd();
       };
 
       xhr.onprogress = function (event) {
-        const loaded = Math.round(event.loaded / 1024);
-        const total = Math.round(event.total / 1024);
-        statusElement.innerHTML = `${fileName} - ${loaded}KB / ${total}KB`;
+        statusElement.innerHTML = `${fileName} - (${event.loaded} / ${event.total})`;
         statusElement.hidden = false;
       };
 
       spinnerElement.hidden = false;
+      statusElement.hidden = false;
       xhr.open('GET', loadURL);
       xhr.send();
     };
