@@ -75,6 +75,20 @@ class Binding_BitmapBlt : public RenderBindingBase {
   Binding_BitmapBlt(ShaderBinding* binding);
 };
 
+class Binding_BitmapClipBlt : public RenderBindingBase {
+ public:
+  Binding_BitmapClipBlt() = default;
+
+  RRefPtr<ShaderVariable> u_transform;
+  RRefPtr<ShaderVariable> u_texture;
+  RRefPtr<ShaderVariable> u_clip_texture;
+  RRefPtr<ShaderVariable> u_dst_texture;
+
+ private:
+  friend class RenderBindingBase;
+  Binding_BitmapClipBlt(ShaderBinding* binding);
+};
+
 class Binding_Color : public RenderBindingBase {
  public:
   Binding_Color() = default;

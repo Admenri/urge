@@ -33,6 +33,7 @@ class RenderDevice {
   struct PipelineSet {
     Pipeline_Base base;
     Pipeline_BitmapBlt bitmapblt;
+    Pipeline_BitmapClipBlt bitmapclipblt;
     Pipeline_Color color;
     Pipeline_Flat viewport;
     Pipeline_Sprite sprite;
@@ -47,6 +48,7 @@ class RenderDevice {
     PipelineSet(const PipelineInitParams& init_params)
         : base(init_params),
           bitmapblt(init_params),
+          bitmapclipblt(init_params),
           color(init_params),
           viewport(init_params),
           sprite(init_params),

@@ -454,6 +454,35 @@ void CanvasImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
                       opacity);
 }
 
+void CanvasImpl::ClipBlt(scoped_refptr<Rect> dest_rect,
+                         scoped_refptr<Bitmap> src_bitmap,
+                         scoped_refptr<Rect> src_rect,
+                         scoped_refptr<Bitmap> clip_bitmap,
+                         ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  CanvasImpl* src_canvas = static_cast<CanvasImpl*>(src_bitmap.get());
+  if (!src_canvas || !src_canvas->GetAgent())
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid blt source");
+
+  CanvasImpl* clip_canvas = static_cast<CanvasImpl*>(clip_bitmap.get());
+  if (!clip_canvas || !clip_canvas->GetAgent())
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid clip source");
+
+  if (!dest_rect)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid destination rect object");
+
+  if (!src_rect)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid source rect object");
+
+  ClipTextureInternal(RectImpl::From(dest_rect)->AsBaseRect(), src_canvas,
+                      RectImpl::From(src_rect)->AsBaseRect(), clip_canvas);
+}
+
 void CanvasImpl::FillRect(int32_t x,
                           int32_t y,
                           uint32_t width,
@@ -849,6 +878,23 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
   InvalidateSurfaceCache();
 }
 
+void CanvasImpl::ClipTextureInternal(const base::Rect& dst_rect,
+                                     CanvasImpl* src_texture,
+                                     const base::Rect& src_rect,
+                                     CanvasImpl* clip_texture) {
+  // Synchronize pending queue immediately,
+  // blit the sourcetexture to destination texture immediately.
+  src_texture->SubmitQueuedCommands();
+  this->SubmitQueuedCommands();
+
+  // Execute clip blit immediately.
+  GPUClipTextureInternal(dst_rect, &src_texture->agent_, src_rect,
+                         &clip_texture->agent_);
+
+  // Invalidate memory cache
+  InvalidateSurfaceCache();
+}
+
 void CanvasImpl::GPUCreateTextureWithDataInternal() {
   auto* scheduler = context()->canvas_scheduler;
   auto& render_device = *scheduler->GetRenderDevice();
@@ -1051,6 +1097,105 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
       *scheduler->blt_binding(),
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Apply vertex index
+  Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
+  render_context->SetVertexBuffers(
+      0, 1, &vertex_buffer, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->SetIndexBuffer(
+      **render_device.GetQuadIndex(), 0,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+  // Execute render command
+  Diligent::DrawIndexedAttribs draw_indexed_attribs;
+  draw_indexed_attribs.NumIndices = 6;
+  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  render_context->DrawIndexed(draw_indexed_attribs);
+}
+
+void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
+                                        BitmapAgent* src_texture,
+                                        const base::Rect& src_region,
+                                        BitmapAgent* clip_texture) {
+  auto* scheduler = context()->canvas_scheduler;
+  auto& render_device = *scheduler->GetRenderDevice();
+  auto* render_context = scheduler->GetDiscreteRenderContext();
+
+  // Clamp blit region
+  const auto blit_region = base::MakeIntersect(dst_region, agent_.size);
+  if (!blit_region.width || !blit_region.height)
+    return;
+
+  // Copy dst region to intermediate texture
+  auto* intermediate_cache =
+      scheduler->RequireBltCacheTexture(dst_region.Size());
+  const base::Vec2 intermediate_size(intermediate_cache->GetDesc().Width,
+                                     intermediate_cache->GetDesc().Height);
+
+  // Reset render targets
+  scheduler->SetupRenderTarget(nullptr, nullptr, false);
+
+  Diligent::Box copy_region;
+  copy_region.MinX = blit_region.x;
+  copy_region.MaxX = copy_region.MinX + blit_region.width;
+  copy_region.MinY = blit_region.y;
+  copy_region.MaxY = copy_region.MinY + blit_region.height;
+
+  Diligent::CopyTextureAttribs copy_attribs;
+  copy_attribs.pSrcTexture = agent_.data;
+  copy_attribs.pSrcBox = &copy_region;
+  copy_attribs.SrcTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_attribs.pDstTexture = intermediate_cache;
+  copy_attribs.DstTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_attribs.DstX = -std::min(0, dst_region.x);
+  copy_attribs.DstY = -std::min(0, dst_region.y);
+  render_context->CopyTexture(copy_attribs);
+
+  // Custom blend blit pipeline
+  auto& pipeline_set = render_device.GetPipelines()->bitmapclipblt;
+  auto* pipeline =
+      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+
+  // Make drawing vertices
+  renderer::Quad transient_quad;
+  renderer::Quad::SetPositionRect(&transient_quad, dst_region);
+  renderer::Quad::SetTexCoordRect(&transient_quad, src_region,
+                                  src_texture->size.Recast<float>());
+
+  // Set dst texture uv
+  const base::Vec2 dst_uv(dst_region.width / intermediate_size.x,
+                          dst_region.height / intermediate_size.y);
+  transient_quad.vertices[0].color = base::Vec4(0, 0, 0, 0);
+  transient_quad.vertices[1].color = base::Vec4(dst_uv.x, 0, 0, 0);
+  transient_quad.vertices[2].color = base::Vec4(dst_uv.x, dst_uv.y, 0, 0);
+  transient_quad.vertices[3].color = base::Vec4(0, dst_uv.y, 0, 0);
+
+  // Update vertices
+  scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
+
+  // Setup render target
+  scheduler->SetupRenderTarget(agent_.target, nullptr, false);
+
+  // Push scissor
+  Diligent::Rect render_scissor(0, 0, agent_.size.x, agent_.size.y);
+  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+
+  // Setup uniform params
+  scheduler->clip_blt_binding().u_transform->Set(agent_.world_buffer);
+  scheduler->clip_blt_binding().u_texture->Set(src_texture->resource);
+  scheduler->clip_blt_binding().u_clip_texture->Set(clip_texture->resource);
+  scheduler->clip_blt_binding().u_dst_texture->Set(
+      intermediate_cache->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+
+  // Apply pipeline state
+  render_context->SetPipelineState(pipeline);
+  render_context->CommitShaderResources(
+      *scheduler->clip_blt_binding(),
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index

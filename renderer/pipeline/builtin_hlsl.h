@@ -48,6 +48,26 @@ extern const std::string kHLSL_BitmapBltRender_Pixel;
 
 ///
 // type:
+//   bitmapclipblt shader
+///
+// entry:
+//   vertex: VSMain
+//   pixel: PSMain
+///
+// vertex:
+//   <float4, float2, float4>
+///
+// resource:
+//   { float4x4, float4x4 }
+//   { Texture2D }
+//   { Texture2D }
+//   { Texture2D }
+///
+extern const std::string kHLSL_BitmapClipBltRender_Vertex;
+extern const std::string kHLSL_BitmapClipBltRender_Pixel;
+
+///
+// type:
 //   color shader
 ///
 // entry:

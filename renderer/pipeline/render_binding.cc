@@ -27,6 +27,17 @@ Binding_BitmapBlt::Binding_BitmapBlt(ShaderBinding* binding)
       (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_DstTexture");
 }
 
+Binding_BitmapClipBlt::Binding_BitmapClipBlt(ShaderBinding* binding)
+    : RenderBindingBase(binding) {
+  u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
+                                           "WorldMatrixBuffer");
+  u_texture =
+      (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_Texture");
+  u_clip_texture =
+      (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_ClipTexture");
+  u_dst_texture =
+      (*this)->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "u_DstTexture");
+}
 Binding_Color::Binding_Color(ShaderBinding* binding)
     : RenderBindingBase(binding) {
   u_transform = (*this)->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,

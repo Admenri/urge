@@ -114,6 +114,11 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                   uint32_t opacity,
                   int32_t blend_type,
                   ExceptionState& exception_state) override;
+  void ClipBlt(scoped_refptr<Rect> dest_rect,
+               scoped_refptr<Bitmap> src_bitmap,
+               scoped_refptr<Rect> src_rect,
+               scoped_refptr<Bitmap> clip_bitmap,
+               ExceptionState& exception_state) override;
   void FillRect(int32_t x,
                 int32_t y,
                 uint32_t width,
@@ -216,6 +221,10 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                            const base::Rect& src_rect,
                            int32_t blend_type,
                            uint32_t opacity);
+  void ClipTextureInternal(const base::Rect& dst_rect,
+                           CanvasImpl* src_texture,
+                           const base::Rect& src_rect,
+                           CanvasImpl* clip_texture);
 
   void GPUCreateTextureWithDataInternal();
   void GPUResetEffectLayerIfNeed();
@@ -228,6 +237,10 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                                          BitmapAgent* src_texture,
                                          const base::Rect& src_region,
                                          uint32_t opacity);
+  void GPUClipTextureInternal(const base::Rect& dst_region,
+                              BitmapAgent* src_texture,
+                              const base::Rect& src_region,
+                              BitmapAgent* clip_texture);
   void GPUFetchTexturePixelsDataInternal();
   void GPUCanvasClearInternal();
   void GPUCanvasGradientFillRectInternal(const base::Rect& region,

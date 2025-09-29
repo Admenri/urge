@@ -45,6 +45,9 @@ class CanvasScheduler {
   renderer::Binding_Base& base_binding() { return generic_base_binding_; }
   renderer::Binding_Color& color_binding() { return generic_color_binding_; }
   renderer::Binding_BitmapBlt& blt_binding() { return generic_blt_binding_; }
+  renderer::Binding_BitmapClipBlt& clip_blt_binding() {
+    return generic_clip_blt_binding_;
+  }
   renderer::Binding_BitmapFilter& hue_binding() { return generic_hue_binding_; }
 
  private:
@@ -58,6 +61,7 @@ class CanvasScheduler {
   renderer::Binding_Base generic_base_binding_;
   renderer::Binding_Color generic_color_binding_;
   renderer::Binding_BitmapBlt generic_blt_binding_;
+  renderer::Binding_BitmapClipBlt generic_clip_blt_binding_;
   renderer::Binding_BitmapFilter generic_hue_binding_;
 
   renderer::QuadBatch common_quad_batch_;

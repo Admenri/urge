@@ -91,6 +91,13 @@ class URGE_OBJECT(Bitmap) {
                           int32_t blend_type,
                           ExceptionState& exception_state) = 0;
 
+  /*--urge(name:clip_blt)--*/
+  virtual void ClipBlt(scoped_refptr<Rect> dest_rect,
+                       scoped_refptr<Bitmap> src_bitmap,
+                       scoped_refptr<Rect> src_rect,
+                       scoped_refptr<Bitmap> clip_bitmap,
+                       ExceptionState& exception_state) = 0;
+
   /*--urge(name:fill_rect)--*/
   virtual void FillRect(int32_t x,
                         int32_t y,

@@ -15,6 +15,8 @@ CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
       generic_base_binding_(device_->GetPipelines()->base.CreateBinding()),
       generic_color_binding_(device_->GetPipelines()->color.CreateBinding()),
       generic_blt_binding_(device_->GetPipelines()->bitmapblt.CreateBinding()),
+      generic_clip_blt_binding_(
+          device_->GetPipelines()->bitmapclipblt.CreateBinding()),
       generic_hue_binding_(device_->GetPipelines()->bitmaphue.CreateBinding()),
       common_quad_batch_(renderer::QuadBatch::Make(**device_)) {
   // Create initial blt cache

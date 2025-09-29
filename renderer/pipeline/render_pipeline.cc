@@ -280,6 +280,51 @@ Pipeline_BitmapBlt::Pipeline_BitmapBlt(const PipelineInitParams& init_params)
                 init_params.target_format, init_params.depth_stencil_format);
 }
 
+Pipeline_BitmapClipBlt::Pipeline_BitmapClipBlt(
+    const PipelineInitParams& init_params)
+    : RenderPipelineBase(init_params.device) {
+  const ShaderSource shader_source{kHLSL_BitmapClipBltRender_Vertex,
+                                   kHLSL_BitmapClipBltRender_Pixel,
+                                   "bitmapclipblt.render"};
+
+  const std::vector<Diligent::PipelineResourceDesc> variables = {
+      {Diligent::SHADER_TYPE_VERTEX, "WorldMatrixBuffer",
+       Diligent::SHADER_RESOURCE_TYPE_CONSTANT_BUFFER,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {Diligent::SHADER_TYPE_PIXEL, "u_Texture",
+       Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {Diligent::SHADER_TYPE_PIXEL, "u_ClipTexture",
+       Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+      {Diligent::SHADER_TYPE_PIXEL, "u_DstTexture",
+       Diligent::SHADER_RESOURCE_TYPE_TEXTURE_SRV,
+       Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+  };
+
+  const std::vector<Diligent::ImmutableSamplerDesc> samplers = {
+      {
+          Diligent::SHADER_TYPE_PIXEL,
+          "u_Texture",
+          init_params.sampler,
+      },
+      {
+          Diligent::SHADER_TYPE_PIXEL,
+          "u_ClipTexture",
+          init_params.sampler,
+      },
+      {
+          Diligent::SHADER_TYPE_PIXEL,
+          "u_DstTexture",
+          init_params.sampler,
+      },
+  };
+
+  auto binding0 = MakeResourceSignature(variables, samplers, 0);
+  BuildPipeline(shader_source, Vertex::GetLayout(), {binding0},
+                init_params.target_format, init_params.depth_stencil_format);
+}
+
 Pipeline_Color::Pipeline_Color(const PipelineInitParams& init_params)
     : RenderPipelineBase(init_params.device) {
   const ShaderSource shader_source{kHLSL_ColorRender_Vertex,

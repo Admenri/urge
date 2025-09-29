@@ -121,6 +121,13 @@ class Pipeline_BitmapBlt : public RenderPipelineBase {
   MAKE_BINDING_FUNCTION(Binding_BitmapBlt, 0);
 };
 
+class Pipeline_BitmapClipBlt : public RenderPipelineBase {
+ public:
+  Pipeline_BitmapClipBlt(const PipelineInitParams& init_params);
+
+  MAKE_BINDING_FUNCTION(Binding_BitmapClipBlt, 0);
+};
+
 class Pipeline_Color : public RenderPipelineBase {
  public:
   Pipeline_Color(const PipelineInitParams& init_params);
