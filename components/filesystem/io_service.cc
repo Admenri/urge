@@ -280,7 +280,7 @@ void IOService::OpenRead(const std::string& file_path,
     dir = file_path.substr(0, last_slash_pos);
     file = file_path.substr(last_slash_pos + 1);
   } else {
-    dir = ".";
+    // Dir = ""
     file = file_path;
   }
 
