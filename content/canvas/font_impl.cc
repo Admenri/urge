@@ -119,6 +119,7 @@ URGE_DECLARE_STATIC_ATTRIBUTE_READ(Font, DefaultColor, scoped_refptr<Color>) {
 }
 
 URGE_DECLARE_STATIC_ATTRIBUTE_WRITE(Font, DefaultColor, scoped_refptr<Color>) {
+  CHECK_ATTRIBUTE_VALUE;
   *execution_context->font_context->default_color = *ColorImpl::From(value);
 }
 
@@ -131,6 +132,7 @@ URGE_DECLARE_STATIC_ATTRIBUTE_READ(Font,
 URGE_DECLARE_STATIC_ATTRIBUTE_WRITE(Font,
                                     DefaultOutColor,
                                     scoped_refptr<Color>) {
+  CHECK_ATTRIBUTE_VALUE;
   *execution_context->font_context->default_out_color = *ColorImpl::From(value);
 }
 
@@ -200,6 +202,7 @@ scoped_refptr<Color> FontImpl::Get_Color(ExceptionState& exception_state) {
 
 void FontImpl::Put_Color(const scoped_refptr<Color>& value,
                          ExceptionState& exception_state) {
+  CHECK_ATTRIBUTE_VALUE;
   *color_ = *ColorImpl::From(value);
 }
 
@@ -209,6 +212,7 @@ scoped_refptr<Color> FontImpl::Get_OutColor(ExceptionState& exception_state) {
 
 void FontImpl::Put_OutColor(const scoped_refptr<Color>& value,
                             ExceptionState& exception_state) {
+  CHECK_ATTRIBUTE_VALUE;
   *out_color_ = *ColorImpl::From(value);
 }
 
@@ -387,7 +391,7 @@ void FontImpl::LoadFontInternal(ExceptionState& exception_state) {
 
   // Throw font not find error
   exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                             "Failed to load font: %s", font_names.c_str());
+                             "failed to load font: %s", font_names.c_str());
 }
 
 void FontImpl::EnsureFontSurfaceFormatInternal(SDL_Surface*& surf) {

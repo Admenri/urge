@@ -189,7 +189,7 @@ void AudioImpl::HandleAudioServiceError(ma_result result,
     return;
   } else if (result != MA_SUCCESS) {
     exception_state.ThrowError(
-        ExceptionCode::CONTENT_ERROR, "Error when playing audio: %s (%s)",
+        ExceptionCode::CONTENT_ERROR, "error when playing audio: %s (%s)",
         filename.c_str(), magic_enum::enum_name(result).data());
     return;
   }

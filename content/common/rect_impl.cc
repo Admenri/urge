@@ -31,7 +31,7 @@ scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
                                       ExceptionState& exception_state) {
   if (data.size() < sizeof(int32_t) * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid data length, size: %d", data.size());
+                               "invalid data length, size: %d", data.size());
     return nullptr;
   }
 
@@ -65,6 +65,9 @@ scoped_refptr<RectImpl> RectImpl::From(scoped_refptr<Rect> host) {
 
 bool RectImpl::CompareWithOther(scoped_refptr<Rect> other,
                                 ExceptionState& exception_state) {
+  if (!other)
+    return false;
+
   return static_cast<RectImpl*>(other.get())->rect_ == rect_;
 }
 
@@ -78,6 +81,10 @@ void RectImpl::Set(int32_t x,
 }
 
 void RectImpl::Set(scoped_refptr<Rect> other, ExceptionState& exception_state) {
+  if (!other)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid value");
+
   rect_ = static_cast<RectImpl*>(other.get())->rect_;
   NotifyObservers();
 }

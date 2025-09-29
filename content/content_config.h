@@ -49,4 +49,9 @@ struct ExecutionContext;
   void klass::Put_##name(ExecutionContext* execution_context,  \
                          const type& value, ExceptionState& exception_state)
 
+#define URGE_ATTRIBUTE_VALUE_CHECK(v)                               \
+  if (!v)                                                           \
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, \
+                                      "attribute value is null");
+
 #endif  //! CONTENT_CONTENT_CONFIG_H_

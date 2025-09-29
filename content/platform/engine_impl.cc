@@ -107,7 +107,7 @@ bool EngineImpl::AddLoadPath(const std::string& new_path,
       new_path.c_str(), mount_point.c_str(), append_to_path);
   if (!result) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to add path: %s",
+                               "failed to add path: %s",
                                context()->io_service->GetLastError().c_str());
     return false;
   }
@@ -120,7 +120,7 @@ bool EngineImpl::RemoveLoadPath(const std::string& old_path,
   auto result = context()->io_service->RemoveLoadPath(old_path.c_str());
   if (!result) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to remove path: %s",
+                               "failed to remove path: %s",
                                context()->io_service->GetLastError().c_str());
     return false;
   }

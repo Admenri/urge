@@ -98,7 +98,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
       render_target ? render_target->GetAgent() : nullptr;
   if (!bitmap_agent)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid render target.");
+                                      "invalid render target");
 
   // Viewport bound
   const auto bound = rect_->AsBaseRect();

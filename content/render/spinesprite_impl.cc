@@ -205,7 +205,7 @@ void SpineSpriteImpl::SetAnimation(int32_t track_index,
                                    ExceptionState& exception_state) {
   if (!animation_state_->setAnimation(track_index, name.c_str(), loop))
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to find track entry: %d", track_index);
+                               "failed to find track entry: %d", track_index);
 }
 
 void SpineSpriteImpl::SetAnimationAlpha(int32_t track_index,
@@ -215,7 +215,7 @@ void SpineSpriteImpl::SetAnimationAlpha(int32_t track_index,
 
   if (track_index < 0 || track_index >= static_cast<int32_t>(tracks.size()))
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid track index: %d", track_index);
+                                      "invalid track index: %d", track_index);
 
   tracks[track_index]->setAlpha(alpha);
 }
@@ -233,7 +233,7 @@ void SpineSpriteImpl::SetSkin(const std::vector<std::string>& skin_array,
     auto* skin = skeleton_data_->findSkin(skin_name.c_str());
     if (!skin)
       return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                        "Failed to find skin: %s",
+                                        "failed to find skin: %s",
                                         skin_name.c_str());
 
     new_skin_set->addSkin(skin);
@@ -250,7 +250,7 @@ void SpineSpriteImpl::SetBonePosition(const std::string& bone_name,
   auto* bone = skeleton_->findBone(bone_name.c_str());
   if (!bone)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Failed to find bone: %s",
+                                      "failed to find bone: %s",
                                       bone_name.c_str());
 
   bone->setX(x);

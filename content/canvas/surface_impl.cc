@@ -76,7 +76,7 @@ scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
                                          ExceptionState& exception_state) {
   if (dump_data.size() < sizeof(uint32_t) * 2) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid surface header dump data.");
+                               "invalid surface header dump data");
     return nullptr;
   }
 
@@ -85,7 +85,7 @@ scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
 
   if (dump_data.size() < sizeof(uint32_t) * 2 + width * height * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid surface body dump data.");
+                               "invalid surface body dump data");
     return nullptr;
   }
 
@@ -108,7 +108,7 @@ scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
   auto stream_obj = IOStreamImpl::From(stream);
   if (!stream_obj || !stream_obj->GetRawStream()) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid iostream input.");
+                               "invalid iostream input");
     return nullptr;
   }
 
@@ -133,7 +133,7 @@ scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
   auto* src_surf = SurfaceImpl::From(other)->GetRawSurface();
   if (!src_surf) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid copy surface target.");
+                               "invalid copy surface target");
     return nullptr;
   }
 
@@ -156,7 +156,7 @@ scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
 
   if (data.size() < sizeof(uint32_t) * 2) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid bitmap header data.");
+                               "invalid bitmap header data");
     return nullptr;
   }
 
@@ -168,7 +168,7 @@ scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
 
   if (data.size() < sizeof(uint32_t) * 2 + surface_width * surface_height * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid bitmap dump data.");
+                               "invalid bitmap dump data");
     return nullptr;
   }
 
@@ -242,11 +242,11 @@ void SurfaceImpl::Blt(int32_t x,
   auto* src_raw_surface = SurfaceImpl::From(src_surface)->GetRawSurface();
   if (!src_raw_surface)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid blt source.");
+                                      "invalid blt source");
 
   if (!src_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid source rect.");
+                                      "invalid source rect");
 
   auto src_region = RectImpl::From(src_rect)->AsSDLRect();
   SDL_Rect dest_pos = {x, y, 0, 0};
@@ -265,16 +265,16 @@ void SurfaceImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
 
   if (!dest_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid destination rect.");
+                                      "invalid destination rect");
 
   if (!src_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid source rect.");
+                                      "invalid source rect");
 
   auto* src_raw_surface = SurfaceImpl::From(src_surface)->GetRawSurface();
   if (!src_raw_surface) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid blt source.");
+                               "invalid blt source");
     return;
   }
 
@@ -297,7 +297,7 @@ void SurfaceImpl::FillRect(int32_t x,
 
   if (!color)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid color object.");
+                                      "invalid color object");
 
   auto sdl_color = ColorImpl::From(color)->AsSDLColor();
   auto color32 =
@@ -316,7 +316,7 @@ void SurfaceImpl::FillRect(scoped_refptr<Rect> rect,
 
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   FillRect(rect->Get_X(exception_state), rect->Get_Y(exception_state),
            rect->Get_Width(exception_state), rect->Get_Height(exception_state),
@@ -347,7 +347,7 @@ void SurfaceImpl::ClearRect(scoped_refptr<Rect> rect,
 
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   ClearRect(rect->Get_X(exception_state), rect->Get_Y(exception_state),
             rect->Get_Width(exception_state), rect->Get_Height(exception_state),
@@ -381,7 +381,7 @@ void SurfaceImpl::SetPixel(int32_t x,
 
   if (!color)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid color object.");
+                                      "invalid color object");
 
   scoped_refptr<ColorImpl> color_obj = ColorImpl::From(color.get());
   const SDL_Color color_unorm = color_obj->AsSDLColor();
@@ -450,7 +450,7 @@ void SurfaceImpl::DrawText(scoped_refptr<Rect> rect,
                            ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   DrawText(rect->Get_X(exception_state), rect->Get_Y(exception_state),
            rect->Get_Width(exception_state), rect->Get_Height(exception_state),

@@ -45,7 +45,7 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
       surface_target ? surface_target->GetRawSurface() : nullptr;
   if (!surface_data) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid surface target.");
+                               "invalid surface target");
     return nullptr;
   }
 
@@ -55,7 +55,7 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
       surface_data->h > max_texture_size) {
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
-        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        "texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         surface_data->w, surface_data->h, max_texture_size);
     return nullptr;
   }
@@ -66,7 +66,7 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
               surface_data->pitch * surface_data->h);
   if (!surface_duplicate) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to copy surface data.");
+                               "failed to copy surface data");
     return nullptr;
   }
 
@@ -83,8 +83,7 @@ scoped_refptr<Bitmap> Bitmap::FromTexture(ExecutionContext* execution_context,
     texture_object = texture_impl->AsRawPtr();
 
   if (!texture_object) {
-    exception_state.ThrowError(ExceptionCode::GPU_ERROR,
-                               "Invalid GPU texture.");
+    exception_state.ThrowError(ExceptionCode::GPU_ERROR, "invalid GPU texture");
     return nullptr;
   }
 
@@ -99,7 +98,7 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
   auto stream_obj = IOStreamImpl::From(stream);
   if (!stream_obj || !stream_obj->GetRawStream()) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid iostream input.");
+                               "invalid iostream input");
     return nullptr;
   }
 
@@ -107,7 +106,7 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
       IMG_LoadTyped_IO(stream_obj->GetRawStream(), false, extname.c_str());
   if (!memory_texture) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to load image from iostream. (%s)",
+                               "failed to load image from iostream (%s)",
                                SDL_GetError());
     return nullptr;
   }
@@ -118,7 +117,7 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
       memory_texture->h > max_texture_size) {
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
-        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        "texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         memory_texture->w, memory_texture->h, max_texture_size);
     SDL_DestroySurface(memory_texture);
     return nullptr;
@@ -150,7 +149,7 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
 
   if (data.size() < sizeof(uint32_t) * 2) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid bitmap header data.");
+                               "invalid bitmap header data");
     return nullptr;
   }
 
@@ -166,14 +165,14 @@ scoped_refptr<Bitmap> Bitmap::Deserialize(ExecutionContext* execution_context,
       static_cast<int32_t>(surface_height) > max_texture_size) {
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
-        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        "texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         surface_width, surface_height, max_texture_size);
     return nullptr;
   }
 
   if (data.size() < sizeof(uint32_t) * 2 + surface_width * surface_height * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid bitmap dump data.");
+                               "invalid bitmap dump data");
     return nullptr;
   }
 
@@ -212,7 +211,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
     ExceptionState& exception_state) {
   if (size.x <= 0 || size.y <= 0) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid bitmap size: %dx%d", size.x, size.y);
+                               "invalid bitmap size: %dx%d", size.x, size.y);
     return nullptr;
   }
 
@@ -221,7 +220,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
   if (size.x > max_texture_size || size.y > max_texture_size) {
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
-        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        "texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         size.x, size.y, max_texture_size);
     return nullptr;
   }
@@ -261,7 +260,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
 
   if (!memory_texture) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to load image: %s (%s)",
+                               "failed to load image: %s (%s)",
                                filename.c_str(), SDL_GetError());
     return nullptr;
   }
@@ -272,7 +271,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
       memory_texture->h > max_texture_size) {
     exception_state.ThrowError(
         ExceptionCode::GPU_ERROR,
-        "Texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
+        "texture size exceeds hardware limit: %dx%d (GPU max support: %d)",
         memory_texture->w, memory_texture->h, max_texture_size);
     SDL_DestroySurface(memory_texture);
     return nullptr;
@@ -417,11 +416,11 @@ void CanvasImpl::Blt(int32_t x,
   CanvasImpl* src_canvas = static_cast<CanvasImpl*>(src_bitmap.get());
   if (!src_canvas || !src_canvas->GetAgent())
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid blt source.");
+                                      "invalid blt source");
 
   if (!src_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid source rect object.");
+                                      "invalid source rect object");
 
   BlitTextureInternal(base::Rect(x, y, src_rect->Get_Width(exception_state),
                                  src_rect->Get_Height(exception_state)),
@@ -440,15 +439,15 @@ void CanvasImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
   CanvasImpl* src_canvas = static_cast<CanvasImpl*>(src_bitmap.get());
   if (!src_canvas || !src_canvas->GetAgent())
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid blt source.");
+                                      "invalid blt source");
 
   if (!dest_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid destination rect object.");
+                                      "invalid destination rect object");
 
   if (!src_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid source rect object.");
+                                      "invalid source rect object");
 
   BlitTextureInternal(RectImpl::From(dest_rect)->AsBaseRect(), src_canvas,
                       RectImpl::From(src_rect)->AsBaseRect(), blend_type,
@@ -469,7 +468,7 @@ void CanvasImpl::FillRect(scoped_refptr<Rect> rect,
                           ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   FillRect(rect->Get_X(exception_state), rect->Get_Y(exception_state),
            rect->Get_Width(exception_state), rect->Get_Height(exception_state),
@@ -491,7 +490,7 @@ void CanvasImpl::GradientFillRect(int32_t x,
 
   if (!color1 || !color2)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid color object.");
+                                      "invalid color object");
 
   auto* command = AllocateCommand<Command_GradientFillRect>();
   command->region = base::Rect(x, y, width, height);
@@ -519,7 +518,7 @@ void CanvasImpl::GradientFillRect(scoped_refptr<Rect> rect,
                                   ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   GradientFillRect(rect->Get_X(exception_state), rect->Get_Y(exception_state),
                    rect->Get_Width(exception_state),
@@ -533,7 +532,7 @@ void CanvasImpl::GradientFillRect(scoped_refptr<Rect> rect,
                                   ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   GradientFillRect(rect->Get_X(exception_state), rect->Get_Y(exception_state),
                    rect->Get_Width(exception_state),
@@ -568,7 +567,7 @@ void CanvasImpl::ClearRect(scoped_refptr<Rect> rect,
                            ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   ClearRect(rect->Get_X(exception_state), rect->Get_Y(exception_state),
             rect->Get_Width(exception_state), rect->Get_Height(exception_state),
@@ -609,7 +608,7 @@ void CanvasImpl::SetPixel(int32_t x,
 
   if (!color)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid color object.");
+                                      "invalid color object");
 
   scoped_refptr<ColorImpl> color_obj = ColorImpl::From(color.get());
 
@@ -712,6 +711,10 @@ void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
                           const std::string& str,
                           int32_t align,
                           ExceptionState& exception_state) {
+  if (!rect)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid rect object");
+
   DrawText(rect->Get_X(exception_state), rect->Get_Y(exception_state),
            rect->Get_Width(exception_state), rect->Get_Height(exception_state),
            str, align, exception_state);
@@ -722,7 +725,7 @@ void CanvasImpl::DrawText(scoped_refptr<Rect> rect,
                           ExceptionState& exception_state) {
   if (!rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid rect object.");
+                                      "invalid rect object");
 
   DrawText(rect->Get_X(exception_state), rect->Get_Y(exception_state),
            rect->Get_Width(exception_state), rect->Get_Height(exception_state),
@@ -802,6 +805,8 @@ scoped_refptr<Font> CanvasImpl::Get_Font(ExceptionState& exception_state) {
 void CanvasImpl::Put_Font(const scoped_refptr<Font>& value,
                           ExceptionState& exception_state) {
   DISPOSE_CHECK;
+
+  CHECK_ATTRIBUTE_VALUE;
 
   *font_ = *FontImpl::From(value);
 }

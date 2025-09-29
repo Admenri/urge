@@ -41,7 +41,7 @@ scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
                                       ExceptionState& exception_state) {
   if (data.size() < sizeof(double) * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid data length, size: %d", data.size());
+                               "invalid data length, size: %d", data.size());
     return nullptr;
   }
 
@@ -91,6 +91,9 @@ scoped_refptr<ToneImpl> ToneImpl::From(scoped_refptr<Tone> host) {
 
 bool ToneImpl::CompareWithOther(scoped_refptr<Tone> other,
                                 ExceptionState& exception_state) {
+  if (!other)
+    return false;
+
   return static_cast<ToneImpl*>(other.get())->value_ == value_;
 }
 
@@ -114,6 +117,10 @@ void ToneImpl::Set(float red,
 }
 
 void ToneImpl::Set(scoped_refptr<Tone> other, ExceptionState& exception_state) {
+  if (!other)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid value");
+
   value_ = static_cast<ToneImpl*>(other.get())->value_;
   NotifyObservers();
 }

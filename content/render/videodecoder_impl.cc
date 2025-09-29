@@ -18,7 +18,7 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
     int32_t max_frame_delay,
     ExceptionState& exception_state) {
   exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                             "Unsupport video playback.");
+                             "unsupport video playback");
   return nullptr;
 }
 
@@ -51,7 +51,7 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
                                                   std::move(player));
 
   exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                             "Failed to load video decoder.");
+                             "failed to load video decoder");
   return nullptr;
 }
 
@@ -149,7 +149,7 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
   auto canvas = CanvasImpl::FromBitmap(target);
   if (!canvas || !canvas->GetAgent())
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Invalid render target.");
+                                      "invalid render target");
 
   uvpx::Frame* yuv = nullptr;
   if ((yuv = player_->lockRead()) != nullptr) {

@@ -41,7 +41,7 @@ scoped_refptr<Color> Color::Deserialize(ExecutionContext* execution_context,
                                         ExceptionState& exception_state) {
   if (data.size() < sizeof(double) * 4) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid data length, size: %d", data.size());
+                               "invalid data length, size: %d", data.size());
     return nullptr;
   }
 
@@ -91,6 +91,9 @@ scoped_refptr<ColorImpl> ColorImpl::From(scoped_refptr<Color> host) {
 
 bool ColorImpl::CompareWithOther(scoped_refptr<Color> other,
                                  ExceptionState& exception_state) {
+  if (!other)
+    return false;
+
   return static_cast<ColorImpl*>(other.get())->value_ == value_;
 }
 
@@ -115,6 +118,10 @@ void ColorImpl::Set(float red,
 
 void ColorImpl::Set(scoped_refptr<Color> other,
                     ExceptionState& exception_state) {
+  if (!other)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid value");
+
   value_ = static_cast<ColorImpl*>(other.get())->value_;
   NotifyObservers();
 }

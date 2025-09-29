@@ -26,7 +26,7 @@ bool Disposable::CheckIfDisposed(ExceptionState& exception_state) {
   if (disposed_) {
     // Throw exception if need
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Disposed object: %s",
+                               "disposed object: %s",
                                DisposedObjectName().c_str());
   }
 

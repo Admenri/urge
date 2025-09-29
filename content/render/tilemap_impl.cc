@@ -319,7 +319,7 @@ scoped_refptr<Bitmap> TilemapAutotileImpl::Get(
   auto& autotiles = tilemap_->autotiles_;
   if (index < 0 || index >= static_cast<int32_t>(autotiles.size())) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Out range of autotiles.");
+                               "out range of autotiles");
     return nullptr;
   }
 
@@ -335,7 +335,7 @@ void TilemapAutotileImpl::Put(int32_t index,
   auto& autotiles = tilemap_->autotiles_;
   if (index < 0 || index >= static_cast<int32_t>(autotiles.size()))
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Out range of autotiles.");
+                                      "out range of autotiles");
 
   autotiles[index].bitmap = CanvasImpl::FromBitmap(texture);
   autotiles[index].observer = autotiles[index].bitmap->AddCanvasObserver(

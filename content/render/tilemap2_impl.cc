@@ -376,7 +376,7 @@ scoped_refptr<Bitmap> TilemapBitmapImpl::Get(int32_t index,
   auto& bitmaps = tilemap_->bitmaps_;
   if (index < 0 || index >= static_cast<int32_t>(bitmaps.size())) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Out range of bitmaps.");
+                               "out range of bitmaps");
     return nullptr;
   }
 
@@ -392,7 +392,7 @@ void TilemapBitmapImpl::Put(int32_t index,
   auto& bitmaps = tilemap_->bitmaps_;
   if (index < 0 || index >= static_cast<int32_t>(bitmaps.size()))
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "Out range of bitmaps.");
+                                      "out range of bitmaps");
 
   bitmaps[index].bitmap = CanvasImpl::FromBitmap(texture);
   bitmaps[index].observer = bitmaps[index].bitmap->AddCanvasObserver(

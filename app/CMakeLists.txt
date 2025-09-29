@@ -67,7 +67,15 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     COMMAND ${CMAKE_COMMAND} -E copy
             "${CMAKE_CURRENT_SOURCE_DIR}/coi-serviceworker.js"
             "${CMAKE_CURRENT_BINARY_DIR}/coi-serviceworker.js"
-    COMMENT "Copying emscripten assets."
+    COMMENT "Copying coi-serviceworker.js"
+  )
+  add_custom_command(
+    TARGET index
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/localforage.min.js"
+            "${CMAKE_CURRENT_BINARY_DIR}/localforage.min.js"
+    COMMENT "Copying localforage.min.js"
   )
 endif ()
 

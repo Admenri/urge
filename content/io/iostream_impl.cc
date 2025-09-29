@@ -17,7 +17,7 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
   auto* stream = SDL_IOFromFile(filename.c_str(), mode.c_str());
   if (!stream) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to open file: %s", SDL_GetError());
+                               "failed to open file: %s", SDL_GetError());
     return nullptr;
   }
 
@@ -33,7 +33,7 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
       execution_context->io_service->OpenReadRaw(filename.c_str(), &io_state);
   if (io_state.error_count) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to load from iosystem: %s",
+                               "failed to load from iosystem: %s",
                                io_state.error_message.c_str());
     return nullptr;
   }
@@ -49,7 +49,7 @@ scoped_refptr<IOStream> IOStream::FromMemory(
   auto* stream = SDL_IOFromMem(target_buffer, buffer_size);
   if (!stream) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to open file: %s", SDL_GetError());
+                               "failed to open file: %s", SDL_GetError());
     return nullptr;
   }
 

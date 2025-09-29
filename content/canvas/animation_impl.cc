@@ -36,7 +36,7 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
 
   if (!animation_data) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to load animation image: %s (%s)",
+                               "failed to load animation image: %s (%s)",
                                filename.c_str(), SDL_GetError());
     return nullptr;
   }
@@ -53,7 +53,7 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
   auto stream_obj = IOStreamImpl::From(stream);
   if (!stream_obj || !stream_obj->GetRawStream()) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Invalid iostream input.");
+                               "invalid iostream input");
     return nullptr;
   }
 
@@ -61,7 +61,7 @@ scoped_refptr<ImageAnimation> ImageAnimation::New(
       stream_obj->GetRawStream(), false, extname.c_str());
   if (!memory_animation) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "Failed to load animation from iostream. (%s)",
+                               "failed to load animation from iostream (%s)",
                                SDL_GetError());
     return nullptr;
   }
