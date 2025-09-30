@@ -65,9 +65,9 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     TARGET index
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/coi-serviceworker.js"
-            "${CMAKE_CURRENT_BINARY_DIR}/coi-serviceworker.js"
-    COMMENT "Copying coi-serviceworker.js"
+            "${CMAKE_CURRENT_SOURCE_DIR}/urge-helper.js"
+            "${CMAKE_CURRENT_BINARY_DIR}/urge-helper.js"
+    COMMENT "Copying urge-helper.js"
   )
   add_custom_command(
     TARGET index
