@@ -22,7 +22,7 @@ using SpriteBatchBuffer =
 
 class SpriteBatch {
  public:
-  SpriteBatch(renderer::RenderDevice* device);
+  SpriteBatch(renderer::RenderDevice* device, renderer::PipelineSet* loader);
   ~SpriteBatch();
 
   SpriteBatch(const SpriteBatch&) = delete;
@@ -43,12 +43,12 @@ class SpriteBatch {
   void EndBatch(uint32_t* instance_offset, uint32_t* instance_count);
 
   // Summit pending batch data to rendering queue
-  void SubmitBatchDataAndResetCache(Diligent::IDeviceContext* render_context);
+  void SubmitBatchDataAndResetCache(renderer::QuadIndexCache* quad_cache,
+                                    Diligent::IDeviceContext* render_context);
 
   bool IsBatchEnabled() const { return support_storage_buffer_batch_; }
 
  private:
-  renderer::RenderDevice* device_;
   BitmapAgent* current_texture_;
   int32_t last_batch_index_;
   const bool support_storage_buffer_batch_;

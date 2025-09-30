@@ -6,13 +6,12 @@
 
 namespace content {
 
-SpriteBatch::SpriteBatch(renderer::RenderDevice* device)
-    : device_(device),
-      current_texture_(nullptr),
+SpriteBatch::SpriteBatch(renderer::RenderDevice* device,
+                         renderer::PipelineSet* loader)
+    : current_texture_(nullptr),
       last_batch_index_(-1),
-      support_storage_buffer_batch_(
-          device->GetPipelines()->sprite.storage_buffer_support),
-      binding_(device->GetPipelines()->sprite.CreateBinding()),
+      support_storage_buffer_batch_(loader->sprite.storage_buffer_support),
+      binding_(loader->sprite.CreateBinding()),
       vertex_batch_(renderer::QuadBatch::Make(**device)),
       uniform_batch_(SpriteBatchBuffer::Make(**device)) {}
 
@@ -41,9 +40,10 @@ void SpriteBatch::EndBatch(uint32_t* instance_offset,
 }
 
 void SpriteBatch::SubmitBatchDataAndResetCache(
+    renderer::QuadIndexCache* quad_cache,
     Diligent::IDeviceContext* render_context) {
   // Setup index buffer
-  device_->GetQuadIndex()->Allocate(uniform_cache_.size());
+  quad_cache->Allocate(uniform_cache_.size());
 
   // Upload data and rebuild binding
   if (quad_cache_.size())

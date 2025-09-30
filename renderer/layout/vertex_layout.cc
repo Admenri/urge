@@ -19,21 +19,6 @@ std::vector<Diligent::LayoutElement> Vertex::GetLayout() {
   return input_elements;
 }
 
-std::vector<Diligent::LayoutElement> SpineVertex::GetLayout() {
-  static std::vector<Diligent::LayoutElement> input_elements = {
-      /* Position Vec2 */
-      Diligent::LayoutElement{0, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
-      /* LightColor Vec4 */
-      Diligent::LayoutElement{1, 0, 4, Diligent::VT_UINT8, Diligent::True},
-      /* Texcoord Vec2 */
-      Diligent::LayoutElement{2, 0, 2, Diligent::VT_FLOAT32, Diligent::False},
-      /* DarkColor Vec4 */
-      Diligent::LayoutElement{3, 0, 4, Diligent::VT_UINT8, Diligent::True},
-  };
-
-  return input_elements;
-}
-
 void Quad::SetPositionRect(Quad* data, const base::RectF& pos) {
   int32_t i = 0;
   data->vertices[i++].position = base::Vec4(pos.x, pos.y, 0, 1);

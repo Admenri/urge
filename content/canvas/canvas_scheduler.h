@@ -17,7 +17,8 @@ class CanvasScheduler {
  public:
   // All bitmap/canvas draw command will be encoded on this worker.
   CanvasScheduler(renderer::RenderDevice* render_device,
-                  Diligent::IDeviceContext* primary_context);
+                  Diligent::IDeviceContext* primary_context,
+                  renderer::PipelineSet* loader);
   ~CanvasScheduler();
 
   CanvasScheduler(const CanvasScheduler&) = delete;

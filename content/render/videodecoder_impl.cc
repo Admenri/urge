@@ -245,7 +245,8 @@ void VideoDecoderImpl::GPUCreateYUVFramesInternal(const base::Vec2i& size) {
   render_device->CreateTexture(texture_desc, nullptr, &agent_.v);
 
   agent_.batch = renderer::QuadBatch::Make(*render_device, 1);
-  agent_.shader_binding = render_device.GetPipelines()->yuv.CreateBinding();
+  agent_.shader_binding =
+      context()->render.pipeline_loader->yuv.CreateBinding();
 }
 
 void VideoDecoderImpl::GPURenderYUVInternal(
@@ -284,10 +285,7 @@ void VideoDecoderImpl::GPURenderYUVInternal(
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Render to target
-  auto& render_device = *context()->render_device;
-  auto& pipeline_set = render_device.GetPipelines()->yuv;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, true);
+  auto* pipeline = context()->render.pipeline_states->yuv.RawPtr();
 
   // Make transient vertices data
   renderer::Quad transient_quad;
@@ -333,13 +331,13 @@ void VideoDecoderImpl::GPURenderYUVInternal(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 

@@ -449,7 +449,7 @@ void Window2Impl::DrawableNodeHandlerInternal(
 void Window2Impl::GPUCreateWindowInternal() {
   agent_.batch = renderer::QuadBatch::Make(**context()->render_device);
 
-  auto* pipelines = context()->render_device->GetPipelines();
+  auto& pipelines = context()->render.pipeline_loader;
   agent_.flat_binding = pipelines->viewport.CreateBinding();
   agent_.base_binding = pipelines->base.CreateBinding();
   agent_.background_binding = pipelines->base.CreateBinding();
@@ -844,7 +844,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
   agent_.batch.QueueWrite(render_context, quads.data(), quads.size());
 
   // Make sure index buffer count
-  context()->render_device->GetQuadIndex()->Allocate(quad_index);
+  context()->render.quad_index->Allocate(quad_index);
 
   // Update background tone uniform buffer
   renderer::Binding_Flat::Params uniform;
@@ -855,15 +855,12 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Prepare render pipelines
-  auto& pipeline_set_tone = context()->render_device->GetPipelines()->viewport;
-  auto& pipeline_set_base = context()->render_device->GetPipelines()->base;
-
   auto* pipeline_tone =
-      pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+      context()->render.pipeline_states->window2.viewport.RawPtr();
   auto* pipeline_tone_alpha =
-      pipeline_set_tone.GetPipeline(renderer::BLEND_TYPE_KEEP_ALPHA, false);
+      context()->render.pipeline_states->window2.viewport_alpha.RawPtr();
   auto* pipeline_base =
-      pipeline_set_base.GetPipeline(renderer::BLEND_TYPE_NORMAL, false);
+      context()->render.pipeline_states->window2.base.RawPtr();
 
   // Setup render pass
   auto* render_target_view =
@@ -890,7 +887,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
+        **context()->render.quad_index, 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Reset scissor test
@@ -909,7 +906,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       render_context->DrawIndexed(draw_indexed_attribs);
       quads_draw_offset++;
     }
@@ -924,7 +921,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = tiled_quads_count * 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
       quads_draw_offset += tiled_quads_count;
@@ -940,7 +937,7 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = frames_quads_count * 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = quads_draw_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
@@ -954,8 +951,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
     BitmapAgent* windowskin,
     const base::Rect& padding_rect,
     ScissorStack* scissor_stack) {
-  auto& pipeline_set = context()->render_device->GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+  auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
   // Setup shader binding
   agent_.background_binding.u_transform->Set(world_binding);
@@ -972,7 +968,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **context()->render_device->GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Background render pass
@@ -986,7 +982,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6;
     draw_indexed_attribs.IndexType =
-        context()->render_device->GetQuadIndex()->GetIndexType();
+        context()->render.quad_index->GetIndexType();
     draw_indexed_attribs.FirstIndexLocation = agent_.background_quad_offset * 6;
     render_context->DrawIndexed(draw_indexed_attribs);
   }
@@ -1003,7 +999,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = agent_.controls_quad_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
@@ -1025,7 +1021,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
         Diligent::DrawIndexedAttribs draw_indexed_attribs;
         draw_indexed_attribs.NumIndices = agent_.cursor_draw_count * 6;
         draw_indexed_attribs.IndexType =
-            context()->render_device->GetQuadIndex()->GetIndexType();
+            context()->render.quad_index->GetIndexType();
         draw_indexed_attribs.FirstIndexLocation = agent_.cursor_quad_offset * 6;
         render_context->DrawIndexed(draw_indexed_attribs);
       }
@@ -1041,7 +1037,7 @@ void Window2Impl::GPURenderWindowQuadsInternal(
         Diligent::DrawIndexedAttribs draw_indexed_attribs;
         draw_indexed_attribs.NumIndices = 6;
         draw_indexed_attribs.IndexType =
-            context()->render_device->GetQuadIndex()->GetIndexType();
+            context()->render.quad_index->GetIndexType();
         draw_indexed_attribs.FirstIndexLocation =
             agent_.contents_quad_offset * 6;
         render_context->DrawIndexed(draw_indexed_attribs);

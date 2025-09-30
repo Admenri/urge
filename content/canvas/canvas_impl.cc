@@ -864,8 +864,7 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
 
   // Execute blit immediately.
   if (blend_type >= 0) {
-    blend_type =
-        std::clamp<int32_t>(blend_type, 0, renderer::BLEND_TYPE_NUMS - 1);
+    blend_type = std::clamp<int32_t>(blend_type, 0, BLEND_TYPE_NUMS - 1);
     GPUBlendBlitTextureInternal(dst_rect, &src_texture->agent_, src_rect,
                                 blend_type, opacity);
   } else {
@@ -964,9 +963,8 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Custom blend blit pipeline
-  auto& pipeline_set = render_device.GetPipelines()->base;
-  auto* pipeline = pipeline_set.GetPipeline(
-      static_cast<renderer::BlendType>(blend_type), false);
+  auto* pipeline =
+      context()->render.pipeline_states->bitmap.base[blend_type].RawPtr();
 
   // Norm opacity value
   base::Vec4 blend_alpha;
@@ -1003,13 +1001,13 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1054,9 +1052,7 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   render_context->CopyTexture(copy_attribs);
 
   // Custom blend blit pipeline
-  auto& pipeline_set = render_device.GetPipelines()->bitmapblt;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  auto* pipeline = context()->render.pipeline_states->bitmap.bitmapblt.RawPtr();
 
   // Make drawing vertices
   renderer::Quad transient_quad;
@@ -1105,13 +1101,13 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1156,9 +1152,8 @@ void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
   render_context->CopyTexture(copy_attribs);
 
   // Custom blend blit pipeline
-  auto& pipeline_set = render_device.GetPipelines()->bitmapclipblt;
   auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+      context()->render.pipeline_states->bitmap.bitmapclip.RawPtr();
 
   // Make drawing vertices
   renderer::Quad transient_quad;
@@ -1204,13 +1199,13 @@ void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1274,9 +1269,8 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
-  auto& pipeline_set = render_device.GetPipelines()->color;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  // Pipeline state
+  auto* pipeline = context()->render.pipeline_states->bitmap.color.RawPtr();
 
   // Make transient vertices data
   renderer::Quad transient_quad;
@@ -1316,13 +1310,13 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1420,9 +1414,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   render_context->CopyTexture(copy_attribs);
 
   // Custom blend blit pipeline
-  auto& pipeline_set = render_device.GetPipelines()->bitmapblt;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  auto* pipeline = context()->render.pipeline_states->bitmap.bitmapblt.RawPtr();
 
   // Make drawing vertices
   renderer::Quad transient_quad;
@@ -1474,13 +1466,13 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -1489,9 +1481,8 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
-  auto& pipeline_set = render_device.GetPipelines()->bitmaphue;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  // Pipeline state
+  auto* pipeline = context()->render.pipeline_states->bitmap.bitmaphue.RawPtr();
 
   GPUResetEffectLayerIfNeed();
 
@@ -1535,13 +1526,13 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 

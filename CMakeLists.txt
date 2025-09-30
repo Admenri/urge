@@ -92,10 +92,6 @@ include_directories(third_party/imgui)
 add_subdirectory(third_party/physfs)
 include_directories(third_party/physfs/src)
 
-## Spine2D
-add_subdirectory(third_party/spine2d)
-include_directories(third_party/spine2d/spine-cpp/include)
-
 ## spdlog
 add_subdirectory(third_party/spdlog)
 
@@ -147,7 +143,6 @@ endif ()
 add_subdirectory(components/audioservice)
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
-add_subdirectory(components/spine2d)
 add_subdirectory(components/version)
 
 #-------------------------------------------------------------------------

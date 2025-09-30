@@ -95,10 +95,10 @@ set(ENGINE_CONTENT_SRC
   render/drawable_controller.h
   render/mesh_impl.cc
   render/mesh_impl.h
+  render/pipeline_collection.cc
+  render/pipeline_collection.h
   render/plane_impl.cc
   render/plane_impl.h
-  render/spinesprite_impl.cc
-  render/spinesprite_impl.h
   render/sprite_batch.cc
   render/sprite_batch.h
   render/sprite_impl.cc
@@ -150,7 +150,6 @@ target_link_libraries(engine_content
   components_filesystem
   components_fpslimiter
   components_audioservice
-  components_spine2drenderer
   sdl_image_loader
   sdl_ttf_render
   ocornut_imgui

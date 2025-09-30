@@ -356,10 +356,9 @@ void WindowImpl::GPUCreateWindowInternal() {
       renderer::QuadBatch::Make(**context()->render_device);
   agent_.controls_batch = renderer::QuadBatch::Make(**context()->render_device);
 
-  agent_.base_binding =
-      context()->render_device->GetPipelines()->base.CreateBinding();
+  agent_.base_binding = context()->render.pipeline_loader->base.CreateBinding();
   agent_.content_binding =
-      context()->render_device->GetPipelines()->base.CreateBinding();
+      context()->render.pipeline_loader->base.CreateBinding();
 }
 
 void WindowImpl::GPUCompositeBackgroundLayerInternal(
@@ -678,7 +677,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
   }
 
   // Make sure index buffer count
-  context()->render_device->GetQuadIndex()->Allocate(quad_index);
+  context()->render.quad_index->Allocate(quad_index);
 
   // Update vertex buffer
   if (!quads.empty())
@@ -691,9 +690,7 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
     Diligent::IBuffer* world_binding,
     BitmapAgent* windowskin) {
   if (windowskin) {
-    auto& pipeline_set = context()->render_device->GetPipelines()->base;
-    auto* pipeline =
-        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+    auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
     // Setup shader resource
     agent_.base_binding.u_transform->Set(world_binding);
@@ -705,7 +702,7 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
+        **context()->render.quad_index, 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply pipeline state
@@ -718,7 +715,7 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = agent_.background_draw_count * 6;
     draw_indexed_attribs.IndexType =
-        context()->render_device->GetQuadIndex()->GetIndexType();
+        context()->render.quad_index->GetIndexType();
     render_context->DrawIndexed(draw_indexed_attribs);
   }
 }
@@ -739,9 +736,7 @@ void WindowImpl::GPURenderControlLayerInternal(
                                      bound_.width, bound_.height);
 
     if (scissor_stack->Push(clipping_region)) {
-      auto& pipeline_set = context()->render_device->GetPipelines()->base;
-      auto* pipeline =
-          pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+      auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
       // Setup shader resource
       agent_.base_binding.u_transform->Set(world_binding);
@@ -753,7 +748,7 @@ void WindowImpl::GPURenderControlLayerInternal(
           0, 1, &vertex_buffer, nullptr,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
       render_context->SetIndexBuffer(
-          **context()->render_device->GetQuadIndex(), 0,
+          **context()->render.quad_index, 0,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       // Apply pipeline state
@@ -766,7 +761,7 @@ void WindowImpl::GPURenderControlLayerInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       render_context->DrawIndexed(draw_indexed_attribs);
 
       // Restore
@@ -781,9 +776,7 @@ void WindowImpl::GPURenderControlLayerInternal(
                                      bound_.height - 16 * scale_);
 
     if (scissor_stack->Push(clipping_region)) {
-      auto& pipeline_set = context()->render_device->GetPipelines()->base;
-      auto* pipeline =
-          pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+      auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
       // Setup shader resource
       agent_.content_binding.u_transform->Set(world_binding);
@@ -795,7 +788,7 @@ void WindowImpl::GPURenderControlLayerInternal(
           0, 1, &vertex_buffer, nullptr,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
       render_context->SetIndexBuffer(
-          **context()->render_device->GetQuadIndex(), 0,
+          **context()->render.quad_index, 0,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       // Apply pipeline state
@@ -808,7 +801,7 @@ void WindowImpl::GPURenderControlLayerInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
 

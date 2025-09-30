@@ -15,9 +15,11 @@
 #include "content/profile/content_profile.h"
 #include "content/profile/i18n_profile.h"
 #include "content/render/drawable_controller.h"
+#include "content/render/pipeline_collection.h"
 #include "content/render/sprite_batch.h"
 #include "content/worker/event_controller.h"
 #include "renderer/device/render_device.h"
+#include "renderer/resource/render_buffer.h"
 #include "ui/widget/widget.h"
 
 namespace content {
@@ -27,6 +29,12 @@ struct ExecutionContext {
   base::WeakPtr<ui::Widget> window;
   renderer::RenderDevice* render_device;
   Diligent::IDeviceContext* primary_render_context;
+
+  struct {
+    std::unique_ptr<renderer::QuadIndexCache> quad_index;
+    std::unique_ptr<renderer::PipelineSet> pipeline_loader;
+    std::unique_ptr<PipelineCollection> pipeline_states;
+  } render;
 
   ContentProfile* engine_profile = nullptr;
   ScopedFontData* font_context = nullptr;

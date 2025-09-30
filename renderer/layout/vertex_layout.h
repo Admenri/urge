@@ -27,28 +27,6 @@ struct Vertex {
   static std::vector<Diligent::LayoutElement> GetLayout();
 };
 
-struct SpineVertex {
-  base::Vec2 position;
-  uint32_t light_color;
-  base::Vec2 texcoord;
-  uint32_t dark_color;
-
-  SpineVertex() : position(0), light_color(0), texcoord(0), dark_color(0) {}
-  SpineVertex(const base::Vec2& pos,
-              uint32_t lightcolor,
-              const base::Vec2& tex,
-              uint32_t darkcolor)
-      : position(pos),
-        light_color(lightcolor),
-        texcoord(tex),
-        dark_color(darkcolor) {}
-
-  SpineVertex(const SpineVertex&) = default;
-  SpineVertex& operator=(const SpineVertex&) = default;
-
-  static std::vector<Diligent::LayoutElement> GetLayout();
-};
-
 struct Quad {
   Vertex vertices[4];
 

@@ -9,15 +9,15 @@
 namespace content {
 
 CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
-                                 Diligent::IDeviceContext* primary_context)
+                                 Diligent::IDeviceContext* primary_context,
+                                 renderer::PipelineSet* loader)
     : device_(render_device),
       context_(primary_context),
-      generic_base_binding_(device_->GetPipelines()->base.CreateBinding()),
-      generic_color_binding_(device_->GetPipelines()->color.CreateBinding()),
-      generic_blt_binding_(device_->GetPipelines()->bitmapblt.CreateBinding()),
-      generic_clip_blt_binding_(
-          device_->GetPipelines()->bitmapclipblt.CreateBinding()),
-      generic_hue_binding_(device_->GetPipelines()->bitmaphue.CreateBinding()),
+      generic_base_binding_(loader->base.CreateBinding()),
+      generic_color_binding_(loader->color.CreateBinding()),
+      generic_blt_binding_(loader->bitmapblt.CreateBinding()),
+      generic_clip_blt_binding_(loader->bitmapclipblt.CreateBinding()),
+      generic_hue_binding_(loader->bitmaphue.CreateBinding()),
       common_quad_batch_(renderer::QuadBatch::Make(**device_)) {
   // Create initial blt cache
   renderer::CreateTexture2D(**device_, &generic_blt_texture_,

@@ -934,7 +934,7 @@ void TilemapImpl::MapDataModifyHandlerInternal() {
 void TilemapImpl::GPUCreateTilemapInternal() {
   agent_.batch = renderer::QuadBatch::Make(**context()->render_device);
   agent_.shader_binding =
-      context()->render_device->GetPipelines()->tilemap.CreateBinding();
+      context()->render.pipeline_loader->tilemap.CreateBinding();
 
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(renderer::Binding_Tilemap::Params),
@@ -1011,7 +1011,7 @@ void TilemapImpl::GPUUploadTilesBatchInternal(
                             total_quads.size());
 
     // Allocate quad index
-    context()->render_device->GetQuadIndex()->Allocate(offset);
+    context()->render.quad_index->Allocate(offset);
   }
 }
 
@@ -1041,9 +1041,7 @@ void TilemapImpl::GPURenderGroundLayerInternal(
     return;
 
   if (agent_.ground_draw_count) {
-    auto& pipeline_set = context()->render_device->GetPipelines()->tilemap;
-    auto* pipeline =
-        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+    auto* pipeline = context()->render.pipeline_states->tilemap.RawPtr();
 
     // Setup uniform params
     agent_.shader_binding.u_transform->Set(world_binding);
@@ -1062,14 +1060,14 @@ void TilemapImpl::GPURenderGroundLayerInternal(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
+        **context()->render.quad_index, 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6 * agent_.ground_draw_count;
     draw_indexed_attribs.IndexType =
-        context()->render_device->GetQuadIndex()->GetIndexType();
+        context()->render.quad_index->GetIndexType();
     render_context->DrawIndexed(draw_indexed_attribs);
   }
 }
@@ -1087,9 +1085,7 @@ void TilemapImpl::GPURenderAboveLayerInternal(
       for (int32_t i = 0; i < index; ++i)
         draw_offset += agent_.above_draw_count[i];
 
-      auto& pipeline_set = context()->render_device->GetPipelines()->tilemap;
-      auto* pipeline =
-          pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+      auto* pipeline = context()->render.pipeline_states->tilemap.RawPtr();
 
       // Setup uniform params
       agent_.shader_binding.u_transform->Set(world_binding);
@@ -1108,14 +1104,14 @@ void TilemapImpl::GPURenderAboveLayerInternal(
           0, 1, &vertex_buffer, nullptr,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
       render_context->SetIndexBuffer(
-          **context()->render_device->GetQuadIndex(), 0,
+          **context()->render.quad_index, 0,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       // Execute render command
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6 * draw_count;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = draw_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
     }

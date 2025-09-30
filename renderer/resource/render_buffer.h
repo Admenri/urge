@@ -17,10 +17,8 @@ namespace renderer {
 class QuadIndexCache {
  public:
   // Make quad index(6) buffer cache
-  static QuadIndexCache Make(RRefPtr<Diligent::IRenderDevice> device,
-                             Diligent::VALUE_TYPE type = Diligent::VT_UINT16) {
-    return QuadIndexCache(device, type);
-  }
+  QuadIndexCache(Diligent::IRenderDevice* device,
+                 Diligent::VALUE_TYPE type = Diligent::VT_UINT16);
 
   QuadIndexCache(const QuadIndexCache&) = delete;
   QuadIndexCache& operator=(const QuadIndexCache&) = delete;
@@ -36,8 +34,6 @@ class QuadIndexCache {
   Diligent::IBuffer* operator*() { return buffer_; }
 
  private:
-  QuadIndexCache(Diligent::IRenderDevice* device, Diligent::VALUE_TYPE type);
-
   Diligent::VALUE_TYPE type_;
   size_t index_count_;
   std::vector<uint8_t> cache_;

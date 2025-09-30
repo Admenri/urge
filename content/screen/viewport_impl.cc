@@ -136,7 +136,7 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
 
   // Update sprite batch data
   context()->sprite_batcher->SubmitBatchDataAndResetCache(
-      controller_params.context);
+      context()->render.quad_index.get(), controller_params.context);
 
   // Setup renderpass
   GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent,
@@ -325,7 +325,7 @@ void ViewportImpl::Put_ResourceBinding(
   } else {
     // Empty binding
     agent_.effect.binding =
-        context()->render_device->GetPipelines()->viewport.CreateBinding();
+        context()->render.pipeline_loader->viewport.CreateBinding();
   }
 }
 
@@ -421,7 +421,7 @@ void ViewportImpl::GPUCreateViewportAgent() {
 
   agent_.effect.quads = renderer::QuadBatch::Make(**context()->render_device);
   agent_.effect.binding =
-      context()->render_device->GetPipelines()->viewport.CreateBinding();
+      context()->render.pipeline_loader->viewport.CreateBinding();
 }
 
 void ViewportImpl::GPUUpdateViewportTransform(
@@ -499,11 +499,10 @@ void ViewportImpl::GPUApplyViewportEffect(
       &transient_uniform, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Derive effect pipeline
-  auto& pipeline_set = context()->render_device->GetPipelines()->viewport;
   Diligent::IPipelineState* pipeline =
       custom_pipeline_
           ? custom_pipeline_->AsRawPtr()
-          : pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+          : context()->render.pipeline_states->viewport_flat.RawPtr();
 
   // Apply render target
   Diligent::ITextureView* render_target_view =
@@ -531,14 +530,13 @@ void ViewportImpl::GPUApplyViewportEffect(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **context()->render_device->GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType =
-      context()->render_device->GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 
   // Restore depth test buffer

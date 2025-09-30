@@ -59,7 +59,6 @@ cmake --build out --target Game
 - imgui - https://github.com/ocornut/imgui  
 - miniaudio - https://github.com/mackron/miniaudio  
 - physfs - https://github.com/icculus/physfs  
-- spine-runtimes - https://github.com/EsotericSoftware/spine-runtimes  
 - SDL_ttf - https://github.com/libsdl-org/SDL_ttf  
 ### base/third_party
 - concurrentqueue - https://github.com/cameron314/concurrentqueue  

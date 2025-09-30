@@ -239,7 +239,7 @@ void PlaneImpl::DrawableNodeHandlerInternal(
 void PlaneImpl::GPUCreatePlaneInternal() {
   agent_.batch = renderer::QuadBatch::Make(**context()->render_device);
   agent_.shader_binding =
-      context()->render_device->GetPipelines()->viewport.CreateBinding();
+      context()->render.pipeline_loader->viewport.CreateBinding();
 
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(renderer::Binding_Flat::Params),
@@ -303,7 +303,7 @@ void PlaneImpl::GPUUpdatePlaneQuadArrayInternal(
   }
 
   auto& render_device = *context()->render_device;
-  render_device.GetQuadIndex()->Allocate(quad_size);
+  context()->render.quad_index->Allocate(quad_size);
   agent_.quad_size = quad_size;
   agent_.batch.QueueWrite(render_context, agent_.cache.data(),
                           agent_.cache.size());
@@ -323,10 +323,8 @@ void PlaneImpl::GPUOnViewportRenderingInternal(
   auto* texture = bitmap_->GetAgent();
 
   // Render device etc
-  auto& render_device = *context()->render_device;
-  auto& pipeline_set = render_device.GetPipelines()->viewport;
-  auto* pipeline = pipeline_set.GetPipeline(
-      static_cast<renderer::BlendType>(blend_type_), true);
+  auto* pipeline =
+      context()->render.pipeline_states->viewport[blend_type_].RawPtr();
 
   // Setup uniform params
   agent_.shader_binding.u_transform->Set(world_binding);
@@ -345,13 +343,13 @@ void PlaneImpl::GPUOnViewportRenderingInternal(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **render_device.GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6 * agent_.cache.size();
-  draw_indexed_attribs.IndexType = render_device.GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 

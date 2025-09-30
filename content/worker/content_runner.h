@@ -68,6 +68,7 @@ class ContentRunner {
                             ScopedFontData* font_context,
                             I18NProfile* i18n_profile,
                             base::WeakPtr<ui::Widget> window);
+  void CreateRenderComponents();
   void TickHandlerInternal(Diligent::ITexture* present_buffer);
   void UpdateDisplayFPSInternal();
   void UpdateWindowViewportInternal();

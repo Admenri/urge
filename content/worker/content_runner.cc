@@ -167,8 +167,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       window,
       magic_enum::enum_cast<renderer::DriverType>(profile_->driver_backend)
           .value_or(renderer::DriverType::UNDEFINED),
-      static_cast<renderer::SamplerType>(profile_->pipeline_default_sampler),
-      profile_->u32_draw_index, profile_->render_validation);
+      profile_->render_validation);
   if (!render_device || !render_context) {
     LOG(ERROR) << "[Content] Error when creating video device.";
     return false;
@@ -177,12 +176,6 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   render_device_ = std::move(render_device);
   device_context_ = std::move(render_context);
 
-  canvas_scheduler_ =
-      std::make_unique<CanvasScheduler>(render_device_.get(), device_context_);
-  sprite_batcher_ = std::make_unique<SpriteBatch>(render_device_.get());
-  event_controller_ = std::make_unique<EventController>(window);
-  audio_server_ = audioservice::AudioService::Create(io_service);
-
   // Initialize execution context
   execution_context_ = std::make_unique<ExecutionContext>();
   execution_context_->resolution = profile_->resolution;
@@ -190,6 +183,18 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   execution_context_->render_device = render_device_.get();
   execution_context_->primary_render_context = device_context_;
 
+  // Rendering components
+  CreateRenderComponents();
+
+  canvas_scheduler_ = std::make_unique<CanvasScheduler>(
+      render_device_.get(), device_context_,
+      execution_context_->render.pipeline_loader.get());
+  sprite_batcher_ = std::make_unique<SpriteBatch>(
+      render_device_.get(), execution_context_->render.pipeline_loader.get());
+  event_controller_ = std::make_unique<EventController>(window);
+  audio_server_ = audioservice::AudioService::Create(io_service);
+
+  // System components
   execution_context_->engine_profile = profile_;
   execution_context_->font_context = font_context;
   execution_context_->i18n_profile = i18n_profile;
@@ -233,6 +238,37 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   LOG(INFO) << "[Engine] Build Date: " << URGE_BUILD_DATE;
 
   return true;
+}
+
+void ContentRunner::CreateRenderComponents() {
+  // Generic quad index cache
+  execution_context_->render.quad_index =
+      std::make_unique<renderer::QuadIndexCache>(
+          **execution_context_->render_device,
+          profile_->u32_draw_index ? Diligent::VT_UINT32 : Diligent::VT_UINT16);
+  execution_context_->render.quad_index->Allocate(1 << 10);
+
+  // Pipeline loaders
+  renderer::PipelineInitParams pipeline_params;
+  pipeline_params.render_device = **execution_context_->render_device;
+
+  // Default sampler
+  auto sampler_filter =
+      static_cast<Diligent::FILTER_TYPE>(profile_->pipeline_default_sampler);
+  pipeline_params.immutable_sampler =
+      Diligent::SamplerDesc{sampler_filter,
+                            sampler_filter,
+                            sampler_filter,
+                            Diligent::TEXTURE_ADDRESS_CLAMP,
+                            Diligent::TEXTURE_ADDRESS_CLAMP,
+                            Diligent::TEXTURE_ADDRESS_CLAMP};
+  execution_context_->render.pipeline_loader =
+      std::make_unique<renderer::PipelineSet>(pipeline_params);
+
+  // Pipeline states
+  auto* loader = execution_context_->render.pipeline_loader.get();
+  execution_context_->render.pipeline_states =
+      std::make_unique<PipelineCollection>(loader);
 }
 
 void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {

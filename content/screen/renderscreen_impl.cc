@@ -376,7 +376,7 @@ scoped_refptr<GPUDeviceContext> RenderScreenImpl::GetImmediateContext(
 scoped_refptr<GPUBuffer> RenderScreenImpl::GetGenericQuadIndexBuffer(
     uint32_t draw_quad_count,
     ExceptionState& exception_state) {
-  auto* quad_index = context()->render_device->GetQuadIndex();
+  auto& quad_index = context()->render.quad_index;
   quad_index->Allocate(draw_quad_count);
   return base::MakeRefCounted<BufferImpl>(context(), **quad_index);
 }
@@ -517,7 +517,7 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
 
   // 1.5) Update sprite batch data
   context()->sprite_batcher->SubmitBatchDataAndResetCache(
-      controller_params.context);
+      context()->render.quad_index.get(), controller_params.context);
 
   // 2) Setup renderpass
   GPUFrameBeginRenderPassInternal(controller_params.context, render_target,
@@ -536,29 +536,18 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
 }
 
 void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
-  // Get pipeline manager
-  auto* pipelines = context()->render_device->GetPipelines();
-
   // Create generic quads batch
   agent_.transition_quads =
       renderer::QuadBatch::Make(**context()->render_device);
   agent_.effect_quads = renderer::QuadBatch::Make(**context()->render_device);
 
   // Create generic shader binding
-  agent_.transition_binding_alpha = pipelines->alphatrans.CreateBinding();
-  agent_.transition_binding_vague = pipelines->mappedtrans.CreateBinding();
-  agent_.effect_binding = pipelines->color.CreateBinding();
-
-  // If the swap chain color buffer format is a non-sRGB UNORM format,
-  // we need to manually convert pixel shader output to gamma space.
-  auto* swapchain = context()->render_device->GetSwapChain();
-  const auto& swapchain_desc = swapchain->GetDesc();
-
-  // Create screen present pipeline
-  renderer::PipelineInitParams pipeline_init_params;
-  pipeline_init_params.device = **context()->render_device;
-  pipeline_init_params.target_format = swapchain_desc.ColorBufferFormat;
-  pipeline_init_params.depth_stencil_format = swapchain_desc.DepthBufferFormat;
+  agent_.transition_binding_alpha =
+      context()->render.pipeline_loader->alphatrans.CreateBinding();
+  agent_.transition_binding_vague =
+      context()->render.pipeline_loader->mappedtrans.CreateBinding();
+  agent_.effect_binding =
+      context()->render.pipeline_loader->color.CreateBinding();
 
   // Create screen buffer
   GPUResetScreenBufferInternal();
@@ -714,9 +703,7 @@ void RenderScreenImpl::GPUFrameEndRenderPassInternal(
   // Render screen effect if need
   if (brightness_ < 255) {
     // Apply brightness effect
-    auto& pipeline_set = context()->render_device->GetPipelines()->color;
-    auto* pipeline =
-        pipeline_set.GetPipeline(renderer::BLEND_TYPE_NORMAL, true);
+    auto* pipeline = context()->render.pipeline_states->brightness.RawPtr();
 
     // Set world transform
     agent_.effect_binding.u_transform->Set(agent_.world_transform);
@@ -733,14 +720,14 @@ void RenderScreenImpl::GPUFrameEndRenderPassInternal(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
+        **context()->render.quad_index, 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
     draw_indexed_attribs.NumIndices = 6;
     draw_indexed_attribs.IndexType =
-        context()->render_device->GetQuadIndex()->GetIndexType();
+        context()->render.quad_index->GetIndexType();
     render_context->DrawIndexed(draw_indexed_attribs);
   }
 }
@@ -775,9 +762,7 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Derive pipeline sets
-  auto& pipeline_set = context()->render_device->GetPipelines()->alphatrans;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  auto* pipeline = context()->render.pipeline_states->alpha_transition.RawPtr();
 
   // Set uniform texture
   agent_.transition_binding_alpha.u_current_texture->Set(
@@ -799,14 +784,13 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **context()->render_device->GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType =
-      context()->render_device->GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 
@@ -842,9 +826,7 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 
   // Derive pipeline sets
-  auto& pipeline_set = context()->render_device->GetPipelines()->mappedtrans;
-  auto* pipeline =
-      pipeline_set.GetPipeline(renderer::BLEND_TYPE_NO_BLEND, false);
+  auto* pipeline = context()->render.pipeline_states->vague_transition.RawPtr();
 
   // Set uniform texture
   agent_.transition_binding_vague.u_current_texture->Set(
@@ -867,14 +849,13 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->SetIndexBuffer(
-      **context()->render_device->GetQuadIndex(), 0,
+      **context()->render.quad_index, 0,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Execute render command
   Diligent::DrawIndexedAttribs draw_indexed_attribs;
   draw_indexed_attribs.NumIndices = 6;
-  draw_indexed_attribs.IndexType =
-      context()->render_device->GetQuadIndex()->GetIndexType();
+  draw_indexed_attribs.IndexType = context()->render.quad_index->GetIndexType();
   render_context->DrawIndexed(draw_indexed_attribs);
 }
 

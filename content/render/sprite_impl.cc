@@ -603,9 +603,8 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
     BitmapAgent* texture) {
   if (agent_.instance_count) {
     // Batch draw
-    auto& pipeline_set = context()->render_device->GetPipelines()->sprite;
-    auto* pipeline = pipeline_set.GetPipeline(
-        static_cast<renderer::BlendType>(blend_type_), true);
+    auto* pipeline =
+        context()->render.pipeline_states->sprite[blend_type_].RawPtr();
 
     // Determine batch mode
     const bool enable_batch = context()->sprite_batcher->IsBatchEnabled();
@@ -636,7 +635,7 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->SetIndexBuffer(
-        **context()->render_device->GetQuadIndex(), 0,
+        **context()->render.quad_index, 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
@@ -644,14 +643,14 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6 * agent_.instance_count;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     } else {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType =
-          context()->render_device->GetQuadIndex()->GetIndexType();
+          context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
