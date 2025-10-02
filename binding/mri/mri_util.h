@@ -58,10 +58,7 @@ struct MRIObjectAliveKeeping : public base::RefCounted<MRIObjectAliveKeeping> {
     rb_gc_register_address(&object);
   }
 
-  ~MRIObjectAliveKeeping() {
-    if (object)
-      rb_gc_unregister_address(&object);
-  }
+  ~MRIObjectAliveKeeping() { rb_gc_unregister_address(&object); }
 
   MRIObjectAliveKeeping(const MRIObjectAliveKeeping&) = delete;
   MRIObjectAliveKeeping& operator=(const MRIObjectAliveKeeping&) = delete;

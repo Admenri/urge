@@ -602,6 +602,8 @@ class MriBindingGen:
             parse_template += "o"
             ruby_type = "VALUE"
             convert_suffix += f"auto {param_name} = base::BindRepeating({lambda_template}, base::MakeRefCounted<MRIObjectAliveKeeping>({param_name}_obj));\n"
+            convert_suffix += f"using {param_name}Type = decltype({param_name});\n"
+            convert_suffix += f"if (NIL_P({param_name}_obj)) {param_name} = {param_name}Type();\n"
             param_name += "_obj"
           elif param_type == "uint32_t":
             parse_template += "u"
