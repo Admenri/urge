@@ -5,8 +5,7 @@
 // tree. An additional intellectual property rights grant can be found
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
-
-#include "third_party/webm/common/file_util.h"
+#include "common/file_util.h"
 
 #include <sys/stat.h>
 #ifndef _MSC_VER
@@ -18,6 +17,7 @@
 #include <cstring>
 #include <fstream>
 #include <ios>
+#include <new>
 #include <string>
 
 namespace libwebm {
@@ -29,7 +29,10 @@ std::string GetTempFileName() {
                                              : ".") +
       "/libwebm_temp.XXXXXX";
   char* temp_file_name_template =
-      new char[temp_file_name_template_str.length() + 1];
+      new (std::nothrow) char[temp_file_name_template_str.length() + 1];
+  if (!temp_file_name_template) {
+    return std::string();
+  }
   memset(temp_file_name_template, 0, temp_file_name_template_str.length() + 1);
   temp_file_name_template_str.copy(temp_file_name_template,
                                    temp_file_name_template_str.length(), 0);

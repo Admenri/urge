@@ -6,10 +6,11 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "third_party/webm/mkvmuxer/mkvmuxer.h"
+#include "mkvmuxer/mkvmuxer.h"
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <cfloat>
 #include <climits>
 #include <cstdio>
@@ -21,10 +22,10 @@
 #include <string>
 #include <vector>
 
-#include "third_party/webm/common/webmids.h"
-#include "third_party/webm/mkvmuxer/mkvmuxerutil.h"
-#include "third_party/webm/mkvmuxer/mkvwriter.h"
-#include "third_party/webm/mkvparser/mkvparser.h"
+#include "common/webmids.h"
+#include "mkvmuxer/mkvmuxerutil.h"
+#include "mkvmuxer/mkvwriter.h"
+#include "mkvparser/mkvparser.h"
 
 namespace mkvmuxer {
 
@@ -77,7 +78,7 @@ bool CopyChromaticity(const PrimaryChromaticity* src,
     return false;
 
   dst->reset(new (std::nothrow) PrimaryChromaticity(src->x(), src->y()));
-  if (!dst->get())
+  if (!dst)
     return false;
 
   return true;
@@ -152,12 +153,17 @@ bool ChunkedCopy(mkvparser::IMkvReader* source, mkvmuxer::IMkvWriter* dst,
                  int64_t start, int64_t size) {
   // TODO(vigneshv): Check if this is a reasonable value.
   const uint32_t kBufSize = 2048;
-  uint8_t* buf = new uint8_t[kBufSize];
+  uint8_t* buf = new (std::nothrow) uint8_t[kBufSize];
+  if (!buf) {
+    return false;
+  }
   int64_t offset = start;
   while (size > 0) {
     const int64_t read_len = (size > kBufSize) ? kBufSize : size;
-    if (source->Read(offset, static_cast<long>(read_len), buf))
+    if (source->Read(offset, static_cast<long>(read_len), buf)) {
+      delete[] buf;
       return false;
+    }
     dst->Write(buf, static_cast<uint32_t>(read_len));
     offset += read_len;
     size -= read_len;
@@ -644,6 +650,93 @@ uint64_t ContentEncoding::EncryptionSize() const {
 
 ///////////////////////////////////////////////////////////////
 //
+// BlockAdditionMapping Class
+BlockAdditionMapping::BlockAdditionMapping(uint64_t value, const char* name,
+                                           uint64_t type,
+                                           const uint8* extra_data,
+                                           uint64_t extra_data_size)
+    : value_(value), type_(type), extra_data_size_(extra_data_size) {
+  if (name) {
+    const size_t length = strlen(name) + 1;
+    char* temp_str = new (std::nothrow) char[length];  // NOLINT
+    if (!temp_str)
+      return;
+
+    memcpy(temp_str, name, length - 1);
+    temp_str[length - 1] = '\0';
+
+    name_ = temp_str;
+  } else {
+    name_ = NULL;
+  }
+  if (extra_data && extra_data_size_) {
+    uint8_t* temp = new (std::nothrow) uint8_t[extra_data_size];  // NOLINT
+    if (!temp)
+      return;
+    memcpy(temp, extra_data, static_cast<size_t>(extra_data_size));
+    extra_data_ = temp;
+  } else {
+    extra_data_ = NULL;
+    extra_data_size_ = 0;
+  }
+}
+
+BlockAdditionMapping::~BlockAdditionMapping() {
+  delete[] name_;
+  delete[] extra_data_;
+}
+
+uint64_t BlockAdditionMapping::PayloadSize() const {
+  return EbmlElementSize(libwebm::kMkvBlockAddIdValue,
+                         static_cast<uint64>(value_)) +
+         (name_ ? EbmlElementSize(libwebm::kMkvBlockAddIdName, name_) : 0) +
+         EbmlElementSize(libwebm::kMkvBlockAddIdType,
+                         static_cast<uint64>(type_)) +
+         (extra_data_
+              ? EbmlElementSize(libwebm::kMkvBlockAddIdExtraData, extra_data_,
+                                static_cast<uint64>(extra_data_size_))
+              : 0);
+}
+
+uint64_t BlockAdditionMapping::Size() const {
+  const uint64_t payload_size = PayloadSize();
+  return EbmlMasterElementSize(libwebm::kMkvBlockAdditionMapping,
+                               payload_size) +
+         payload_size;
+}
+
+bool BlockAdditionMapping::Write(IMkvWriter* writer) const {
+  const uint64_t size = Size();
+  const int64_t payload_position = writer->Position();
+  if (payload_position < 0)
+    return false;
+
+  if (!WriteEbmlMasterElement(writer, libwebm::kMkvBlockAdditionMapping,
+                              PayloadSize()))
+    return false;
+  if (!WriteEbmlElement(writer, libwebm::kMkvBlockAddIdValue,
+                        static_cast<uint64>(value_)))
+    return false;
+  if (name_ && !WriteEbmlElement(writer, libwebm::kMkvBlockAddIdName, name_))
+    return false;
+  if (!WriteEbmlElement(writer, libwebm::kMkvBlockAddIdType,
+                        static_cast<uint64>(type_)))
+    return false;
+  if (extra_data_ &&
+      !WriteEbmlElement(writer, libwebm::kMkvBlockAddIdExtraData, extra_data_,
+                        static_cast<uint64>(extra_data_size_)))
+    return false;
+
+  const int64_t stop_position = writer->Position();
+  if (stop_position < 0 ||
+      stop_position - payload_position != static_cast<int64_t>(size))
+    return false;
+
+  return true;
+}
+
+///////////////////////////////////////////////////////////////
+//
 // Track Class
 
 Track::Track(unsigned int* seed)
@@ -714,6 +807,18 @@ ContentEncoding* Track::GetContentEncodingByIndex(uint32_t index) const {
   return content_encoding_entries_[index];
 }
 
+bool Track::AddBlockAdditionMapping(uint64_t value, const char* name,
+                                    uint64_t type, const uint8_t* extra_data,
+                                    uint64_t extra_data_size) {
+  if ((extra_data_size && !extra_data) || (!extra_data_size && extra_data)) {
+    return false;
+  }
+  block_addition_mappings_.emplace_back(value, name, type, extra_data,
+                                        extra_data_size);
+  max_block_additional_id_ = std::max(max_block_additional_id_, value);
+  return true;
+}
+
 uint64_t Track::PayloadSize() const {
   uint64_t size =
       EbmlElementSize(libwebm::kMkvTrackNumber, static_cast<uint64>(number_));
@@ -744,7 +849,9 @@ uint64_t Track::PayloadSize() const {
     size += EbmlElementSize(libwebm::kMkvDefaultDuration,
                             static_cast<uint64>(default_duration_));
   }
-
+  for (const auto& block_addition_mapping : block_addition_mappings_) {
+    size += block_addition_mapping.Size();
+  }
   if (content_encoding_entries_size_ > 0) {
     uint64_t content_encodings_size = 0;
     for (uint32_t i = 0; i < content_encoding_entries_size_; ++i) {
@@ -871,6 +978,11 @@ bool Track::Write(IMkvWriter* writer) const {
   if (stop_position < 0 ||
       stop_position - payload_position != static_cast<int64_t>(size))
     return false;
+
+  for (const auto& block_addition_mapping : block_addition_mappings_) {
+    if (!block_addition_mapping.Write(writer))
+      return false;
+  }
 
   if (content_encoding_entries_size_ > 0) {
     uint64_t content_encodings_size = 0;
@@ -1232,8 +1344,9 @@ bool Colour::Write(IMkvWriter* writer) const {
 }
 
 bool Colour::SetMasteringMetadata(const MasteringMetadata& mastering_metadata) {
-  std::unique_ptr<MasteringMetadata> mm_ptr(new MasteringMetadata());
-  if (!mm_ptr.get())
+  std::unique_ptr<MasteringMetadata> mm_ptr(new (std::nothrow)
+                                                MasteringMetadata());
+  if (!mm_ptr)
     return false;
 
   mm_ptr->set_luminance_max(mastering_metadata.luminance_max());
@@ -1558,8 +1671,8 @@ void VideoTrack::set_colour_space(const char* colour_space) {
 }
 
 bool VideoTrack::SetColour(const Colour& colour) {
-  std::unique_ptr<Colour> colour_ptr(new Colour());
-  if (!colour_ptr.get())
+  std::unique_ptr<Colour> colour_ptr(new (std::nothrow) Colour());
+  if (!colour_ptr)
     return false;
 
   if (colour.mastering_metadata()) {
@@ -1586,8 +1699,8 @@ bool VideoTrack::SetColour(const Colour& colour) {
 }
 
 bool VideoTrack::SetProjection(const Projection& projection) {
-  std::unique_ptr<Projection> projection_ptr(new Projection());
-  if (!projection_ptr.get())
+  std::unique_ptr<Projection> projection_ptr(new (std::nothrow) Projection());
+  if (!projection_ptr)
     return false;
 
   if (projection.private_data()) {
@@ -2672,7 +2785,10 @@ bool Cluster::QueueOrWriteFrame(const Frame* const frame) {
 
   // Queue the current frame.
   uint64_t track_number = frame->track_number();
-  Frame* const frame_to_store = new Frame();
+  Frame* const frame_to_store = new (std::nothrow) Frame();
+  if (!frame_to_store) {
+    return false;
+  }
   frame_to_store->CopyFrom(*frame);
   stored_frames_[track_number].push_back(frame_to_store);
 
@@ -3572,8 +3688,13 @@ bool Segment::AddGenericFrame(const Frame* frame) {
     return false;
 
   if (new_cuepoint_ && cues_track_ == frame->track_number()) {
-    if (!AddCuePoint(frame->timestamp(), cues_track_))
+    // Only add a cue point at the start of a cluster if the frame is a
+    // keyframe.
+    if (frame->is_key() && !AddCuePoint(frame->timestamp(), cues_track_)) {
       return false;
+    } else {
+      new_cuepoint_ = false;
+    }
   }
 
   last_timestamp_ = frame->timestamp();
@@ -4009,7 +4130,7 @@ bool Segment::UpdateChunkName(const char* ext, char** name) const {
   memcpy(&str[chunking_base_name_length], ext_chk, ext_chk_length);
   str[chunking_base_name_length + ext_chk_length] = '\0';
 
-  delete[] * name;
+  delete[] *name;
   *name = str;
 
   return true;
@@ -4086,9 +4207,13 @@ int Segment::WriteFramesAll() {
     }
 
     if (new_cuepoint_ && cues_track_ == frame->track_number()) {
-      if (!AddCuePoint(frame->timestamp(), cues_track_)) {
+      // Only add a cue point at the start of a cluster if the frame is a
+      // keyframe.
+      if (frame->is_key() && !AddCuePoint(frame->timestamp(), cues_track_)) {
         delete frame;
         continue;
+      } else {
+        new_cuepoint_ = false;
       }
     }
 

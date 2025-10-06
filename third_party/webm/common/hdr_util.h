@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "third_party/webm/mkvmuxer/mkvmuxer.h"
+#include "mkvmuxer/mkvmuxer.h"
 
 namespace mkvparser {
 struct Colour;

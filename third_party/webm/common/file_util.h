@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "third_party/webm/mkvmuxer/mkvmuxertypes.h"  // LIBWEBM_DISALLOW_COPY_AND_ASSIGN()
+#include "mkvmuxer/mkvmuxertypes.h"  // LIBWEBM_DISALLOW_COPY_AND_ASSIGN()
 
 namespace libwebm {
 

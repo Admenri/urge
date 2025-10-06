@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "third_party/webm/mkvmuxer/mkvmuxerutil.h"
+#include "mkvmuxer/mkvmuxerutil.h"
 
 #ifdef __ANDROID__
 #include <fcntl.h>
@@ -21,9 +21,9 @@
 #include <ctime>
 #include <new>
 
-#include "third_party/webm/common/webmids.h"
-#include "third_party/webm/mkvmuxer/mkvmuxer.h"
-#include "third_party/webm/mkvmuxer/mkvwriter.h"
+#include "common/webmids.h"
+#include "mkvmuxer/mkvmuxer.h"
+#include "mkvmuxer/mkvwriter.h"
 
 namespace mkvmuxer {
 
@@ -607,7 +607,7 @@ uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {
 void GetVersion(int32* major, int32* minor, int32* build, int32* revision) {
   *major = 0;
   *minor = 3;
-  *build = 3;
+  *build = 4;
   *revision = 0;
 }
 
@@ -621,7 +621,7 @@ uint64 MakeUID(unsigned int* seed) {
 #ifdef _WIN32
     (void)seed;
     const int32 nn = rand();
-#elif __ANDROID__
+#elif defined(__ANDROID__)
     (void)seed;
     int32 temp_num = 1;
     int fd = open("/dev/urandom", O_RDONLY);

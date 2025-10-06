@@ -25,3 +25,4 @@ set(WEBM_SOURCE
 )
 
 add_library(libwebm STATIC ${WEBM_SOURCE})
+target_include_directories(libwebm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

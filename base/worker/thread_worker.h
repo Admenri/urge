@@ -18,13 +18,13 @@ class Semaphore {
   explicit Semaphore() : mutex_(), cv_(), count_(0) {}
 
   void Acquire() {
-    std::unique_lock lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     ++count_;
     cv_.wait(lock, [this] { return count_ == 0; });
   }
 
   void Release() {
-    std::scoped_lock lock(mutex_);
+    std::scoped_lock<std::mutex> lock(mutex_);
     --count_;
     cv_.notify_all();
   }

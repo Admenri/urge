@@ -10,7 +10,7 @@
 
 #include <cstdio>
 
-#include "third_party/webm/mkvparser/mkvparser.h"
+#include "mkvparser/mkvparser.h"
 
 namespace mkvparser {
 

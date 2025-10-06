@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "third_party/webm/mkvmuxer/mkvwriter.h"
+#include "mkvmuxer/mkvwriter.h"
 
 #include <sys/types.h>
 
@@ -80,8 +80,14 @@ int32 MkvWriter::Position(int64 position) {
   return _fseeki64(file_, position, SEEK_SET);
 #elif defined(_WIN32)
   return fseeko64(file_, static_cast<off_t>(position), SEEK_SET);
-#else
+#elif !(defined(__ANDROID__) && __ANDROID_API__ < 24 && !defined(__LP64__) && \
+        defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64)
+  // POSIX.1 has fseeko and ftello. fseeko and ftello are not available before
+  // Android API level 24. See
+  // https://android.googlesource.com/platform/bionic/+/main/docs/32-bit-abi.md
   return fseeko(file_, static_cast<off_t>(position), SEEK_SET);
+#else
+  return fseek(file_, static_cast<long>(position), SEEK_SET);
 #endif
 }
 
