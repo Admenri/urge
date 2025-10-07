@@ -4,6 +4,7 @@
 
 #include "content/render/tilemap_impl.h"
 
+#include "content/context/execution_context.h"
 #include "renderer/utils/texture_utils.h"
 
 namespace content {
@@ -626,8 +627,8 @@ void TilemapImpl::AboveNodeHandlerInternal(
 base::Vec2i TilemapImpl::MakeAtlasInternal(
     std::vector<AtlasCompositeCommand>& commands) {
   int32_t atlas_height = 28 * tilesize_;
-  if (tileset_ && tileset_->GetAgent())
-    atlas_height = std::max(atlas_height, tileset_->GetAgent()->size.y);
+  if (Disposable::IsValid(tileset_.get()))
+    atlas_height = std::max(atlas_height, tileset_->GetGPUData()->size.y);
   atlas_height = std::min(max_atlas_size_, atlas_height);
 
   // Setup commands
@@ -636,12 +637,12 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
   // Autotile part
   int32_t offset = 0;
   for (auto& it : autotiles_) {
-    if (!it.bitmap || !it.bitmap->GetAgent()) {
+    if (!Disposable::IsValid(it.bitmap.get())) {
       ++offset;
       continue;
     }
 
-    auto autotile_size = it.bitmap->GetAgent()->size;
+    auto autotile_size = it.bitmap->GetGPUData()->size;
     base::Vec2i dst_pos(0, offset * tilesize_ * 4);
 
     if (autotile_size.x > 3 * tilesize_ && autotile_size.y > tilesize_) {
@@ -662,7 +663,7 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
                               base::Vec2i(tilesize_));
         base::Vec2i single_dst(base::Vec2i(tilesize_ * i * 3, 0));
 
-        commands.push_back({it.bitmap->GetAgent(), single_src, single_dst});
+        commands.push_back({it.bitmap->GetGPUData(), single_src, single_dst});
       }
 
       ++offset;
@@ -671,19 +672,19 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
       NOTREACHED();
     }
 
-    commands.push_back({it.bitmap->GetAgent(), autotile_size, dst_pos});
+    commands.push_back({it.bitmap->GetGPUData(), autotile_size, dst_pos});
 
     ++offset;
   }
 
   // Tileset part
   int32_t tileset_width = 0;
-  if (tileset_ && tileset_->GetAgent()) {
-    base::Vec2i tileset_size = tileset_->GetAgent()->size;
+  if (Disposable::IsValid(tileset_.get())) {
+    base::Vec2i tileset_size = tileset_->GetGPUData()->size;
     base::Vec2i dst_pos(12 * tilesize_, 0);
     tileset_width = tileset_size.x;
 
-    commands.push_back({tileset_->GetAgent(), tileset_size, dst_pos});
+    commands.push_back({tileset_->GetGPUData(), tileset_size, dst_pos});
   }
 
   return base::Vec2i(tilesize_ * 12 + tileset_width, atlas_height);
@@ -755,7 +756,7 @@ void TilemapImpl::ParseMapDataInternal(
 
     // Autotile invalid check
     AutotileInfo& info = autotiles_[autotile_id];
-    if (!info.bitmap || !info.bitmap->GetAgent())
+    if (!Disposable::IsValid(info.bitmap.get()))
       return;
 
     // Generate from autotile type

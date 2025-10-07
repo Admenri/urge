@@ -7,6 +7,7 @@
 #include "content/canvas/canvas_impl.h"
 #include "content/canvas/canvas_scheduler.h"
 #include "content/common/rect_impl.h"
+#include "content/context/execution_context.h"
 #include "renderer/utils/texture_utils.h"
 
 namespace content {
@@ -94,8 +95,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   DISPOSE_CHECK;
 
   scoped_refptr<CanvasImpl> render_target = CanvasImpl::FromBitmap(target);
-  BitmapAgent* bitmap_agent =
-      render_target ? render_target->GetAgent() : nullptr;
+  GPUBitmapData* bitmap_agent = nullptr;
+  if (Disposable::IsValid(render_target.get()))
+    bitmap_agent = render_target->GetGPUData();
   if (!bitmap_agent)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid render target");
@@ -550,7 +552,7 @@ void ViewportImpl::GPUApplyViewportEffect(
 
 void ViewportImpl::GPUFrameBeginRenderPassInternal(
     Diligent::IDeviceContext* render_context,
-    BitmapAgent* render_target,
+    GPUBitmapData* render_target,
     bool clear_target) {
   render_context->SetRenderTargets(
       1, &render_target->target, render_target->depth_view,

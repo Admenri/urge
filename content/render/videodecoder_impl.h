@@ -57,7 +57,7 @@ class VideoDecoderImpl : public VideoDecoder,
   void GPUCreateYUVFramesInternal(const base::Vec2i& size);
   void GPURenderYUVInternal(Diligent::IDeviceContext* render_context,
                             uvpx::Frame* data,
-                            BitmapAgent* target);
+                            GPUBitmapData* target);
 
   Agent agent_;
 

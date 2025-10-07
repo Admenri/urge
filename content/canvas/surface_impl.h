@@ -14,6 +14,8 @@
 
 namespace content {
 
+// Memory bitmap data operator, usually combines with gpu bitmap.
+// It has the completed ownership of a SDL surface.
 class SurfaceImpl : public Surface, public EngineObject, public Disposable {
  public:
   SurfaceImpl(ExecutionContext* context, SDL_Surface* surface);
@@ -24,7 +26,8 @@ class SurfaceImpl : public Surface, public EngineObject, public Disposable {
 
   static scoped_refptr<SurfaceImpl> From(scoped_refptr<Surface> host);
 
-  SDL_Surface* GetRawSurface() const { return surface_; }
+  SDL_Surface* operator->() const { return surface_; }
+  SDL_Surface* operator*() const { return surface_; }
 
  public:
   void Dispose(ExceptionState& exception_state) override;

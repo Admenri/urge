@@ -7,6 +7,7 @@
 #include "SDL3_image/SDL_image.h"
 
 #include "components/filesystem/io_service.h"
+#include "content/canvas/image_utils.h"
 #include "content/common/color_impl.h"
 #include "content/common/rect_impl.h"
 #include "content/context/execution_context.h"
@@ -15,105 +16,74 @@
 
 namespace content {
 
-constexpr SDL_PixelFormat kSurfaceInternalFormat = SDL_PIXELFORMAT_ABGR8888;
-
-static void MakeSureSurfaceFormat(SDL_Surface*& surface) {
-  if (surface->format != kSurfaceInternalFormat) {
-    auto* converted_data = SDL_ConvertSurface(surface, kSurfaceInternalFormat);
-    SDL_DestroySurface(surface);
-    surface = converted_data;
-  }
-}
-
+// static
 scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
                                     uint32_t width,
                                     uint32_t height,
                                     ExceptionState& exception_state) {
-  auto* surface_data = SDL_CreateSurface(width, height, kSurfaceInternalFormat);
-  if (!surface_data) {
+  auto* surface_obj = SDL_CreateSurface(width, height, kSurfaceInternalFormat);
+  if (!surface_obj) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, SDL_GetError());
     return nullptr;
   }
 
-  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_obj);
 }
 
+// static
 scoped_refptr<Surface> Surface::New(ExecutionContext* execution_context,
                                     const std::string& filename,
                                     ExceptionState& exception_state) {
-  SDL_Surface* surface_data = nullptr;
+  SDL_Surface* surface_obj = nullptr;
   auto file_handler = base::BindRepeating(
-      [](SDL_Surface** surf, SDL_IOStream* ops, const std::string& ext) {
-        *surf = IMG_LoadTyped_IO(ops, true, ext.c_str());
-        return !!*surf;
+      [](SDL_Surface** out, SDL_IOStream* ops, const std::string& ext) {
+        *out = IMG_LoadTyped_IO(ops, true, ext.c_str());
+        return !!*out;
       },
-      &surface_data);
+      &surface_obj);
 
   filesystem::IOState io_state;
   execution_context->io_service->OpenRead(filename, file_handler, &io_state);
-
   if (io_state.error_count) {
-    exception_state.ThrowError(ExceptionCode::IO_ERROR, "%s: %s",
+    exception_state.ThrowError(ExceptionCode::IO_ERROR, "%s (%s)",
                                io_state.error_message.c_str(),
                                filename.c_str());
     return nullptr;
   }
 
-  if (!surface_data) {
+  if (!surface_obj) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, "%s",
                                SDL_GetError());
     return nullptr;
   }
 
   // Make format correct for data required
-  MakeSureSurfaceFormat(surface_data);
+  MakeSureSurfaceFormat(surface_obj);
 
-  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_obj);
 }
 
+// static
 scoped_refptr<Surface> Surface::FromDump(ExecutionContext* execution_context,
                                          const std::string& dump_data,
                                          ExceptionState& exception_state) {
-  if (dump_data.size() < sizeof(uint32_t) * 2) {
-    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "invalid surface header dump data");
-    return nullptr;
-  }
-
-  auto* raw_data = reinterpret_cast<const uint32_t*>(dump_data.data());
-  uint32_t width = *(raw_data + 0), height = *(raw_data + 1);
-
-  if (dump_data.size() < sizeof(uint32_t) * 2 + width * height * 4) {
-    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "invalid surface body dump data");
-    return nullptr;
-  }
-
-  auto* surface_data = SDL_CreateSurface(width, height, kSurfaceInternalFormat);
-  if (!surface_data) {
-    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, SDL_GetError());
-    return nullptr;
-  }
-
-  std::memcpy(surface_data->pixels, raw_data + 2,
-              surface_data->pitch * surface_data->h);
-
-  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
+  return Surface::Deserialize(execution_context, dump_data, exception_state);
 }
 
+// static
 scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
                                            scoped_refptr<IOStream> stream,
                                            const std::string& extname,
                                            ExceptionState& exception_state) {
   auto stream_obj = IOStreamImpl::From(stream);
-  if (!stream_obj || !stream_obj->GetRawStream()) {
+  if (!Disposable::IsValid(stream_obj.get())) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "invalid iostream input");
     return nullptr;
   }
 
   SDL_Surface* memory_texture =
-      IMG_LoadTyped_IO(stream_obj->GetRawStream(), false, extname.c_str());
+      IMG_LoadTyped_IO(**stream_obj, false, extname.c_str());
   if (!memory_texture) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "Failed to load image from iostream. (%s)",
@@ -127,84 +97,94 @@ scoped_refptr<Surface> Surface::FromStream(ExecutionContext* execution_context,
   return base::MakeRefCounted<SurfaceImpl>(execution_context, memory_texture);
 }
 
+// static
 scoped_refptr<Surface> Surface::Copy(ExecutionContext* execution_context,
                                      scoped_refptr<Surface> other,
                                      ExceptionState& exception_state) {
-  auto* src_surf = SurfaceImpl::From(other)->GetRawSurface();
-  if (!src_surf) {
+  auto* src_surface = **SurfaceImpl::From(other);
+  if (!src_surface) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                "invalid copy surface target");
     return nullptr;
   }
 
-  auto* dst_surf =
-      SDL_CreateSurface(src_surf->w, src_surf->h, src_surf->format);
-  std::memcpy(dst_surf->pixels, src_surf->pixels,
-              src_surf->pitch * src_surf->h);
-  if (!dst_surf) {
+  auto* dst_surface = SDL_DuplicateSurface(src_surface);
+  if (!dst_surface) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, SDL_GetError());
     return nullptr;
   }
 
-  return base::MakeRefCounted<SurfaceImpl>(execution_context, dst_surf);
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, dst_surface);
 }
 
+// static
 scoped_refptr<Surface> Surface::Deserialize(ExecutionContext* execution_context,
                                             const std::string& data,
                                             ExceptionState& exception_state) {
-  const uint8_t* raw_data = reinterpret_cast<const uint8_t*>(data.data());
-
+  // Surface dump data structure:
+  //  [4Bytes uint32le width][4Bytes uint32le height][(w * h)Bytes void* pixels]
+  //  Pixel Format: ABGR8888
   if (data.size() < sizeof(uint32_t) * 2) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "invalid bitmap header data");
+                               "invalid surface header dump data");
     return nullptr;
   }
 
-  uint32_t surface_width = 0, surface_height = 0;
-  std::memcpy(&surface_width, raw_data + sizeof(uint32_t) * 0,
-              sizeof(uint32_t));
-  std::memcpy(&surface_height, raw_data + sizeof(uint32_t) * 1,
-              sizeof(uint32_t));
+  const auto* raw_data = reinterpret_cast<const uint32_t*>(data.data());
+  const uint32_t width = *(raw_data + 0), height = *(raw_data + 1);
+  const uint32_t pixel_size = width * height * 4;
 
-  if (data.size() < sizeof(uint32_t) * 2 + surface_width * surface_height * 4) {
+  if (data.size() < sizeof(uint32_t) * 2 + pixel_size) {
     exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "invalid bitmap dump data");
+                               "invalid surface body dump data");
     return nullptr;
   }
 
-  SDL_Surface* surface =
-      SDL_CreateSurface(surface_width, surface_height, kSurfaceInternalFormat);
-  std::memcpy(surface->pixels, raw_data + sizeof(uint32_t) * 2,
-              surface->pitch * surface->h);
+  auto* surface_data = SDL_CreateSurface(width, height, kSurfaceInternalFormat);
+  if (!surface_data) {
+    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, SDL_GetError());
+    return nullptr;
+  }
 
-  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface);
+  if (pixel_size)
+    std::memcpy(surface_data->pixels, raw_data + 2, pixel_size);
+
+  return base::MakeRefCounted<SurfaceImpl>(execution_context, surface_data);
 }
 
+// static
 std::string Surface::Serialize(ExecutionContext* execution_context,
                                scoped_refptr<Surface> value,
                                ExceptionState& exception_state) {
-  scoped_refptr<SurfaceImpl> surface = SurfaceImpl::From(value);
-  SDL_Surface* raw_surface = surface->GetRawSurface();
+  // Assumed value is not null.
+  SDL_Surface* raw_surface = **SurfaceImpl::From(value);
 
-  std::string serialized_data(
-      sizeof(uint32_t) * 2 + raw_surface->pitch * raw_surface->h, 0);
+  const uint32_t pixel_size = raw_surface->w * raw_surface->h * 4;
+  std::string serialized_data(sizeof(uint32_t) * 2 + pixel_size, 0);
 
-  uint32_t surface_width = raw_surface->w, surface_height = raw_surface->h;
+  const uint32_t surface_width = raw_surface->w,
+                 surface_height = raw_surface->h;
   std::memcpy(serialized_data.data() + sizeof(uint32_t) * 0, &surface_width,
               sizeof(uint32_t));
   std::memcpy(serialized_data.data() + sizeof(uint32_t) * 1, &surface_height,
               sizeof(uint32_t));
-  std::memcpy(serialized_data.data() + sizeof(uint32_t) * 2,
-              raw_surface->pixels, raw_surface->pitch * raw_surface->h);
+  if (pixel_size)
+    std::memcpy(serialized_data.data() + sizeof(uint32_t) * 2,
+                raw_surface->pixels, pixel_size);
 
   return serialized_data;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Surface Implement
 
 SurfaceImpl::SurfaceImpl(ExecutionContext* context, SDL_Surface* surface)
     : EngineObject(context),
       Disposable(context->disposable_parent),
       surface_(surface),
-      font_(base::MakeRefCounted<FontImpl>(context->font_context)) {}
+      font_(base::MakeRefCounted<FontImpl>(context->font_context)) {
+  DCHECK(surface_);
+}
 
 DISPOSABLE_DEFINITION(SurfaceImpl);
 
@@ -214,19 +194,16 @@ scoped_refptr<SurfaceImpl> SurfaceImpl::From(scoped_refptr<Surface> host) {
 
 uint32_t SurfaceImpl::Width(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
-
   return surface_->w;
 }
 
 uint32_t SurfaceImpl::Height(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
-
   return surface_->h;
 }
 
 scoped_refptr<Rect> SurfaceImpl::GetRect(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
-
   return base::MakeRefCounted<RectImpl>(
       base::Rect(0, 0, surface_->w, surface_->h));
 }
@@ -239,17 +216,18 @@ void SurfaceImpl::Blt(int32_t x,
                       ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  auto* src_raw_surface = SurfaceImpl::From(src_surface)->GetRawSurface();
-  if (!src_raw_surface)
-    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                                      "invalid blt source");
-
   if (!src_rect)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid source rect");
 
-  auto src_region = RectImpl::From(src_rect)->AsSDLRect();
-  SDL_Rect dest_pos = {x, y, 0, 0};
+  auto src_surface_obj = SurfaceImpl::From(src_surface);
+  if (!Disposable::IsValid(src_surface_obj.get()))
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid source surface");
+
+  auto* src_raw_surface = **src_surface_obj;
+  const auto src_region = RectImpl::From(src_rect)->AsSDLRect();
+  const SDL_Rect dest_pos = {x, y, 0, 0};
 
   SDL_SetSurfaceAlphaMod(src_raw_surface, static_cast<Uint8>(opacity));
   SDL_SetSurfaceBlendMode(src_raw_surface, SDL_BLENDMODE_BLEND);
@@ -271,17 +249,16 @@ void SurfaceImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid source rect");
 
-  auto* src_raw_surface = SurfaceImpl::From(src_surface)->GetRawSurface();
-  if (!src_raw_surface) {
-    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
-                               "invalid blt source");
-    return;
-  }
+  auto src_surface_obj = SurfaceImpl::From(src_surface);
+  if (!Disposable::IsValid(src_surface_obj.get()))
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid source surface");
 
-  auto src_region = RectImpl::From(src_rect)->AsSDLRect();
-  auto dest_region = RectImpl::From(dest_rect)->AsSDLRect();
+  auto src_raw_surface = **src_surface_obj;
+  const auto src_region = RectImpl::From(src_rect)->AsSDLRect();
+  const auto dest_region = RectImpl::From(dest_rect)->AsSDLRect();
 
-  SDL_SetSurfaceAlphaMod(src_raw_surface, static_cast<Uint8>(opacity));
+  SDL_SetSurfaceAlphaMod(src_raw_surface, std::clamp<Uint8>(opacity, 0, 255));
   SDL_SetSurfaceBlendMode(src_raw_surface, SDL_BLENDMODE_BLEND);
   SDL_BlitSurfaceScaled(src_raw_surface, &src_region, surface_, &dest_region,
                         SDL_SCALEMODE_LINEAR);
@@ -299,13 +276,13 @@ void SurfaceImpl::FillRect(int32_t x,
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid color object");
 
-  auto sdl_color = ColorImpl::From(color)->AsSDLColor();
-  auto color32 =
+  const auto sdl_color = ColorImpl::From(color)->AsSDLColor();
+  const auto color32 =
       SDL_MapRGBA(SDL_GetPixelFormatDetails(surface_->format), nullptr,
                   sdl_color.r, sdl_color.g, sdl_color.b, sdl_color.a);
+  const SDL_Rect rect{x, y, static_cast<int32_t>(width),
+                      static_cast<int32_t>(height)};
 
-  SDL_Rect rect{x, y, static_cast<int32_t>(width),
-                static_cast<int32_t>(height)};
   SDL_FillSurfaceRect(surface_, &rect, color32);
 }
 
@@ -336,8 +313,8 @@ void SurfaceImpl::ClearRect(int32_t x,
                             ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  SDL_Rect rect{x, y, static_cast<int32_t>(width),
-                static_cast<int32_t>(height)};
+  const SDL_Rect rect{x, y, static_cast<int32_t>(width),
+                      static_cast<int32_t>(height)};
   SDL_FillSurfaceRect(surface_, &rect, 0);
 }
 
@@ -359,14 +336,14 @@ scoped_refptr<Color> SurfaceImpl::GetPixel(int32_t x,
                                            ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
-  auto* pixel_detail = SDL_GetPixelFormatDetails(surface_->format);
-  int32_t bpp = pixel_detail->bytes_per_pixel;
-  uint8_t* pixel = static_cast<uint8_t*>(surface_->pixels) +
-                   static_cast<size_t>(y) * surface_->pitch +
-                   static_cast<size_t>(x) * bpp;
+  const auto* pixel_detail = SDL_GetPixelFormatDetails(surface_->format);
+  const int32_t bpp = pixel_detail->bytes_per_pixel;
+  const uint8_t* pixel = static_cast<uint8_t*>(surface_->pixels) +
+                         static_cast<size_t>(y) * surface_->pitch +
+                         static_cast<size_t>(x) * bpp;
 
   uint8_t color[4];
-  SDL_GetRGBA(*reinterpret_cast<uint32_t*>(pixel), pixel_detail, nullptr,
+  SDL_GetRGBA(*reinterpret_cast<const uint32_t*>(pixel), pixel_detail, nullptr,
               &color[0], &color[1], &color[2], &color[3]);
 
   return base::MakeRefCounted<ColorImpl>(
@@ -385,8 +362,8 @@ void SurfaceImpl::SetPixel(int32_t x,
 
   scoped_refptr<ColorImpl> color_obj = ColorImpl::From(color.get());
   const SDL_Color color_unorm = color_obj->AsSDLColor();
-  auto* pixel_detail = SDL_GetPixelFormatDetails(surface_->format);
-  int bpp = pixel_detail->bytes_per_pixel;
+  const auto* pixel_detail = SDL_GetPixelFormatDetails(surface_->format);
+  const int32_t bpp = pixel_detail->bytes_per_pixel;
   uint8_t* pixel =
       static_cast<uint8_t*>(surface_->pixels) + y * surface_->pitch + x * bpp;
   *reinterpret_cast<uint32_t*>(pixel) =
@@ -474,16 +451,7 @@ scoped_refptr<Rect> SurfaceImpl::TextSize(const std::string& str,
 std::string SurfaceImpl::DumpData(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(std::string());
 
-  std::string data;
-  size_t data_size = surface_->pitch * surface_->h;
-  data.resize(sizeof(uint32_t) * 2 + data_size);
-
-  auto* raw_data = reinterpret_cast<uint32_t*>(data.data());
-  *(raw_data + 0) = surface_->w;
-  *(raw_data + 1) = surface_->h;
-  std::memcpy(data.data(), surface_->pixels, data_size);
-
-  return data;
+  return Surface::Serialize(context(), this, exception_state);
 }
 
 void SurfaceImpl::SavePNG(const std::string& filename,

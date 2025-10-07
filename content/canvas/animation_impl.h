@@ -13,6 +13,7 @@
 
 namespace content {
 
+// Animated image support.
 class ImageAnimationImpl : public ImageAnimation,
                            public EngineObject,
                            public Disposable {

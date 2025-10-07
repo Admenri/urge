@@ -79,19 +79,19 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
   void GPUCreateWindowInternal();
   void GPUCompositeBackgroundLayerInternal(
       Diligent::IDeviceContext* render_context,
-      BitmapAgent* windowskin);
+      GPUBitmapData* windowskin);
   void GPUCompositeControlLayerInternal(
       Diligent::IDeviceContext* render_context,
-      BitmapAgent* windowskin,
-      BitmapAgent* contents);
+      GPUBitmapData* windowskin,
+      GPUBitmapData* contents);
   void GPURenderBackgroundLayerInternal(
       Diligent::IDeviceContext* render_context,
       Diligent::IBuffer* world_binding,
-      BitmapAgent* windowskin);
+      GPUBitmapData* windowskin);
   void GPURenderControlLayerInternal(Diligent::IDeviceContext* render_context,
                                      Diligent::IBuffer* world_binding,
-                                     BitmapAgent* windowskin,
-                                     BitmapAgent* contents,
+                                     GPUBitmapData* windowskin,
+                                     GPUBitmapData* contents,
                                      ScissorStack* scissor_stack);
 
   DrawableNode background_node_;

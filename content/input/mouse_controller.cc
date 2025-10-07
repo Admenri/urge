@@ -112,7 +112,7 @@ void MouseImpl::SetCursor(scoped_refptr<Bitmap> cursor,
                           int32_t hot_y,
                           ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> bitmap = CanvasImpl::FromBitmap(cursor);
-  if (bitmap && bitmap->GetAgent()) {
+  if (Disposable::IsValid(bitmap.get())) {
     SDL_Cursor* cur =
         SDL_CreateColorCursor(bitmap->RequireMemorySurface(), hot_x, hot_y);
     SDL_SetCursor(cur);

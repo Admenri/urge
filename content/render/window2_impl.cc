@@ -4,6 +4,7 @@
 
 #include "content/render/window2_impl.h"
 
+#include "content/context/execution_context.h"
 #include "content/render/tilequad.h"
 #include "renderer/utils/texture_utils.h"
 
@@ -428,9 +429,11 @@ void Window2Impl::DrawableNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  BitmapAgent* windowskin_agent =
-      windowskin_ ? windowskin_->GetAgent() : nullptr;
-  BitmapAgent* contents_agent = contents_ ? contents_->GetAgent() : nullptr;
+  GPUBitmapData* windowskin_agent = Disposable::IsValid(windowskin_.get())
+                                        ? windowskin_->GetGPUData()
+                                        : nullptr;
+  GPUBitmapData* contents_agent =
+      Disposable::IsValid(contents_.get()) ? contents_->GetGPUData() : nullptr;
 
   base::Rect padding_rect =
       base::Rect(padding_, padding_, std::max(0, bound_.width - padding_ * 2),
@@ -463,8 +466,8 @@ void Window2Impl::GPUCreateWindowInternal() {
 
 void Window2Impl::GPUCompositeWindowQuadsInternal(
     Diligent::IDeviceContext* render_context,
-    BitmapAgent* contents,
-    BitmapAgent* windowskin,
+    GPUBitmapData* contents,
+    GPUBitmapData* windowskin,
     const base::Rect& padding_rect) {
   // Reset texture if size changed
   if (!agent_.texture ||
@@ -947,8 +950,8 @@ void Window2Impl::GPUCompositeWindowQuadsInternal(
 void Window2Impl::GPURenderWindowQuadsInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    BitmapAgent* contents,
-    BitmapAgent* windowskin,
+    GPUBitmapData* contents,
+    GPUBitmapData* windowskin,
     const base::Rect& padding_rect,
     ScissorStack* scissor_stack) {
   auto* pipeline = context()->render.pipeline_states->window.RawPtr();

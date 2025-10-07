@@ -18,6 +18,7 @@
 
 #include "content/canvas/canvas_scheduler.h"
 #include "content/common/rect_impl.h"
+#include "content/context/execution_context.h"
 #include "content/gpu/buffer_impl.h"
 #include "content/gpu/device_context_impl.h"
 #include "content/gpu/render_device_impl.h"
@@ -244,8 +245,9 @@ void RenderScreenImpl::TransitionWithBitmap(uint32_t duration,
 
     // Derive transition mapping if available
     scoped_refptr<CanvasImpl> mapping_bitmap = CanvasImpl::FromBitmap(bitmap);
-    BitmapAgent* texture_agent =
-        mapping_bitmap ? mapping_bitmap->GetAgent() : nullptr;
+    GPUBitmapData* texture_agent = Disposable::IsValid(mapping_bitmap.get())
+                                       ? mapping_bitmap->GetGPUData()
+                                       : nullptr;
     Diligent::ITextureView* transition_mapping =
         texture_agent ? texture_agent->resource.RawPtr() : nullptr;
 
@@ -282,7 +284,8 @@ scoped_refptr<Bitmap> RenderScreenImpl::SnapToBitmap(
     ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> target =
       CanvasImpl::Create(context(), context()->resolution, exception_state);
-  BitmapAgent* texture_agent = target ? target->GetAgent() : nullptr;
+  GPUBitmapData* texture_agent =
+      Disposable::IsValid(target.get()) ? target->GetGPUData() : nullptr;
 
   if (texture_agent) {
     // Invalidate render target bitmap cache

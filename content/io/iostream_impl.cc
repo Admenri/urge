@@ -9,6 +9,7 @@
 
 namespace content {
 
+// static
 scoped_refptr<IOStream> IOStream::FromFileSystem(
     ExecutionContext* execution_context,
     const std::string& filename,
@@ -24,6 +25,7 @@ scoped_refptr<IOStream> IOStream::FromFileSystem(
   return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
+// static
 scoped_refptr<IOStream> IOStream::FromIOSystem(
     ExecutionContext* execution_context,
     const std::string& filename,
@@ -38,9 +40,13 @@ scoped_refptr<IOStream> IOStream::FromIOSystem(
     return nullptr;
   }
 
+  if (!stream)
+    return nullptr;
+
   return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
+// static
 scoped_refptr<IOStream> IOStream::FromMemory(
     ExecutionContext* execution_context,
     void* target_buffer,
@@ -56,12 +62,29 @@ scoped_refptr<IOStream> IOStream::FromMemory(
   return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
 }
 
+// static
+scoped_refptr<IOStream> IOStream::FromDynamicMemory(
+    ExecutionContext* execution_context,
+    ExceptionState& exception_state) {
+  auto* stream = SDL_IOFromDynamicMem();
+  if (!stream) {
+    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                               "failed to creat dynamic memory: %s",
+                               SDL_GetError());
+    return nullptr;
+  }
+
+  return base::MakeRefCounted<IOStreamImpl>(execution_context, stream);
+}
+
+// static
 uint64_t IOStream::StringToPointer(ExecutionContext* execution_context,
                                    const void* source,
                                    ExceptionState& exception_state) {
   return reinterpret_cast<uint64_t>(source);
 }
 
+// static
 uint64_t IOStream::CopyMemoryFromPtr(ExecutionContext* execution_context,
                                      void* dest,
                                      uint64_t source_ptr,
@@ -71,6 +94,7 @@ uint64_t IOStream::CopyMemoryFromPtr(ExecutionContext* execution_context,
       SDL_memcpy(dest, reinterpret_cast<void*>(source_ptr), byte_size));
 }
 
+// static
 uint64_t IOStream::CopyMemoryToPtr(ExecutionContext* execution_context,
                                    uint64_t dest_ptr,
                                    const void* source,
@@ -80,11 +104,16 @@ uint64_t IOStream::CopyMemoryToPtr(ExecutionContext* execution_context,
       SDL_memcpy(reinterpret_cast<void*>(dest_ptr), source, byte_size));
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Surface Implement
+
 IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
                            SDL_IOStream* stream)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
-      stream_(stream) {}
+      stream_(stream) {
+  DCHECK(stream_);
+}
 
 DISPOSABLE_DEFINITION(IOStreamImpl);
 

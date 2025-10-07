@@ -77,7 +77,7 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   };
 
   struct AtlasCompositeCommand {
-    BitmapAgent* texture;
+    GPUBitmapData* texture;
     base::Rect src_rect;
     base::Vec2i dst_pos;
   };

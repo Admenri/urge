@@ -52,6 +52,10 @@ class Disposable : public base::LinkNode<Disposable> {
   void Dispose();
   bool IsDisposed() const { return disposed_; }
 
+  static bool IsValid(Disposable* other) {
+    return other && !other->IsDisposed();
+  }
+
  protected:
   virtual void OnObjectDisposed() = 0;
   virtual std::string DisposedObjectName() = 0;

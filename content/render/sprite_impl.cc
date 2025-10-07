@@ -4,6 +4,7 @@
 
 #include "content/render/sprite_impl.h"
 
+#include "content/context/execution_context.h"
 #include "content/screen/renderscreen_impl.h"
 #include "content/screen/viewport_impl.h"
 
@@ -103,8 +104,8 @@ void SpriteImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
   DISPOSE_CHECK;
 
   bitmap_ = CanvasImpl::FromBitmap(value);
-  if (bitmap_)
-    src_rect_->SetBase(bitmap_->GetAgent()->size);
+  if (Disposable::IsValid(bitmap_.get()))
+    src_rect_->SetBase(bitmap_->GetGPUData()->size);
 }
 
 scoped_refptr<Rect> SpriteImpl::Get_SrcRect(ExceptionState& exception_state) {
@@ -417,7 +418,8 @@ void SpriteImpl::OnObjectDisposed() {
 void SpriteImpl::DrawableNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
-  BitmapAgent* current_texture = bitmap_ ? bitmap_->GetAgent() : nullptr;
+  GPUBitmapData* current_texture =
+      Disposable::IsValid(bitmap_.get()) ? bitmap_->GetGPUData() : nullptr;
   if (!current_texture)
     return;
 
@@ -448,7 +450,7 @@ void SpriteImpl::DrawableNodeHandlerInternal(
     DrawableNode* next_node = node_.GetNextNode();
     SpriteImpl* next_sprite =
         next_node ? next_node->CastToNode<SpriteImpl>() : nullptr;
-    BitmapAgent* next_texture =
+    GPUBitmapData* next_texture =
         GetOtherRenderBatchableTextureInternal(next_sprite);
 
     GPUUpdateBatchSpriteInternal(params->context, current_texture, next_texture,
@@ -466,7 +468,7 @@ void SpriteImpl::SrcRectChangedInternal() {
   src_rect_dirty_ = true;
 }
 
-BitmapAgent* SpriteImpl::GetOtherRenderBatchableTextureInternal(
+GPUBitmapData* SpriteImpl::GetOtherRenderBatchableTextureInternal(
     SpriteImpl* other) {
   // Disable batch if other is not a sprite
   if (!other)
@@ -488,7 +490,7 @@ BitmapAgent* SpriteImpl::GetOtherRenderBatchableTextureInternal(
   if (other->flash_emitter_.IsFlashing() && other->flash_emitter_.IsInvalid())
     return nullptr;
 
-  return other->bitmap_->GetAgent();
+  return other->bitmap_->GetGPUData();
 }
 
 void SpriteImpl::GPUCreateSpriteInternal() {
@@ -501,7 +503,7 @@ void SpriteImpl::GPUCreateSpriteInternal() {
         Diligent::CPU_ACCESS_NONE);
 }
 
-void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
+void SpriteImpl::GPUUpdateWaveSpriteInternal(GPUBitmapData* texture,
                                              const base::Rect& src_rect) {
   int32_t last_block_aligned_size = src_rect.height % kWaveBlockAlign;
   int32_t loop_block = src_rect.height / kWaveBlockAlign;
@@ -539,8 +541,8 @@ void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapAgent* texture,
 
 void SpriteImpl::GPUUpdateBatchSpriteInternal(
     Diligent::IDeviceContext* render_context,
-    BitmapAgent* texture,
-    BitmapAgent* next_texture,
+    GPUBitmapData* texture,
+    GPUBitmapData* next_texture,
     const base::Rect& src_rect) {
   // Update sprite quad if need
   if (wave_.amp) {
@@ -600,7 +602,7 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(
 void SpriteImpl::GPUOnSpriteRenderingInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    BitmapAgent* texture) {
+    GPUBitmapData* texture) {
   if (agent_.instance_count) {
     // Batch draw
     auto* pipeline =

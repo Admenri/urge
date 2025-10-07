@@ -87,7 +87,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
                               const base::Rect& effect_region,
                               const base::Vec4& color);
   void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
-                                       BitmapAgent* render_target,
+                                       GPUBitmapData* render_target,
                                        bool clear_target);
 
   DrawableNode node_;

@@ -4,6 +4,7 @@
 
 #include "content/render/tilemap2_impl.h"
 
+#include "content/context/execution_context.h"
 #include "renderer/utils/texture_utils.h"
 
 namespace content {
@@ -700,7 +701,7 @@ base::Vec2i Tilemap2Impl::MakeAtlasInternal(
     auto& atlas_info = kTilemapAtlas[i];
     scoped_refptr atlas_bitmap = bitmaps_[atlas_info.tile_id].bitmap;
 
-    if (!atlas_bitmap || !atlas_bitmap->GetAgent())
+    if (!Disposable::IsValid(atlas_bitmap.get()))
       continue;
 
     base::Rect src_rect(atlas_info.src_rect.x * tilesize_,
@@ -713,7 +714,7 @@ base::Vec2i Tilemap2Impl::MakeAtlasInternal(
     AtlasCompositeCommand command;
     command.src_rect = src_rect;
     command.dst_pos = dst_pos;
-    command.texture = atlas_bitmap->GetAgent();
+    command.texture = atlas_bitmap->GetGPUData();
     commands.push_back(std::move(command));
   }
 

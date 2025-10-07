@@ -7,6 +7,7 @@
 #include "SDL3/SDL_timer.h"
 
 #include "content/canvas/canvas_impl.h"
+#include "content/context/execution_context.h"
 
 namespace content {
 
@@ -147,7 +148,7 @@ void VideoDecoderImpl::Update(ExceptionState& exception_state) {
 void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
                               ExceptionState& exception_state) {
   auto canvas = CanvasImpl::FromBitmap(target);
-  if (!canvas || !canvas->GetAgent())
+  if (!Disposable::IsValid(canvas.get()))
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid render target");
 
@@ -157,7 +158,7 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
       return player_->unlockRead();
 
     GPURenderYUVInternal(context()->primary_render_context, yuv,
-                         canvas->GetAgent());
+                         canvas->GetGPUData());
 
     player_->unlockRead();
   }
@@ -252,7 +253,7 @@ void VideoDecoderImpl::GPUCreateYUVFramesInternal(const base::Vec2i& size) {
 void VideoDecoderImpl::GPURenderYUVInternal(
     Diligent::IDeviceContext* render_context,
     uvpx::Frame* data,
-    BitmapAgent* target) {
+    GPUBitmapData* target) {
   // Update yuv planes
   Diligent::Box dest_box;
   Diligent::TextureSubResData sub_res_data;

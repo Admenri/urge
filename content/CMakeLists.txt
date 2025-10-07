@@ -18,6 +18,7 @@ set(ENGINE_CONTENT_SRC
   canvas/font_context.h
   canvas/font_impl.cc
   canvas/font_impl.h
+  canvas/image_utils.h
   canvas/surface_impl.cc
   canvas/surface_impl.h
   common/color_impl.cc

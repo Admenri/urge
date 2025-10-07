@@ -7,7 +7,6 @@
 
 #include "base/worker/thread_worker.h"
 #include "content/canvas/canvas_impl.h"
-#include "content/context/execution_context.h"
 #include "renderer/device/render_device.h"
 #include "renderer/resource/render_buffer.h"
 

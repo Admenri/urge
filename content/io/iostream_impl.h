@@ -13,6 +13,8 @@
 
 namespace content {
 
+// Wrapper of SDL_iostream.
+// Provides data stream operation support.
 class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
  public:
   IOStreamImpl(ExecutionContext* execution_context, SDL_IOStream* stream);
@@ -23,7 +25,8 @@ class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
 
   static scoped_refptr<IOStreamImpl> From(scoped_refptr<IOStream> host);
 
-  SDL_IOStream* GetRawStream() const { return stream_; }
+  SDL_IOStream* operator->() const { return stream_; }
+  SDL_IOStream* operator*() const { return stream_; }
 
  public:
   void Dispose(ExceptionState& exception_state) override;

@@ -21,7 +21,7 @@ namespace content {
 
 constexpr int32_t kBlockMaxSize = 4096;
 
-struct BitmapAgent {
+struct GPUBitmapData {
   // Debug name
   std::string name;
 
@@ -45,8 +45,8 @@ struct BitmapAgent {
   RRefPtr<Diligent::ITexture> effect_layer;
 };
 
-class CanvasScheduler;
-
+// Wrapper of GPU texture, collection of bitmap operation.
+// Pixel operation will take too cost because GPU-CPU sync.
 class CanvasImpl : public base::LinkNode<CanvasImpl>,
                    public Bitmap,
                    public EngineObject,
@@ -54,6 +54,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
  public:
   CanvasImpl(ExecutionContext* execution_context,
              SDL_Surface* memory_surface,
+             bool has_ownership,
              const std::string& debug_name);
   CanvasImpl(ExecutionContext* execution_context,
              RRefPtr<Diligent::ITexture> gpu_texture,
@@ -67,14 +68,12 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                                           const base::Vec2i& size,
                                           ExceptionState& exception_state);
 
+  // Also be used in Graphics::Transition
   static scoped_refptr<CanvasImpl> Create(ExecutionContext* execution_context,
                                           const std::string& filename,
                                           ExceptionState& exception_state);
 
   static scoped_refptr<CanvasImpl> FromBitmap(scoped_refptr<Bitmap> host);
-
-  // For debugging usage
-  std::string GetCanvasName() const { return name_; }
 
   // Synchronize pending commands and fetch texture to buffer.
   // Read buffer for surface pixels data.
@@ -85,8 +84,8 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   void SubmitQueuedCommands();
 
   // Require render texture (maybe null after disposed)
-  BitmapAgent* GetAgent() {
-    return Disposable::IsDisposed() ? nullptr : &agent_;
+  GPUBitmapData* GetGPUData() {
+    return Disposable::IsDisposed() ? nullptr : &gpu_;
   }
 
   // Add a handler for observe bitmap content changing
@@ -216,6 +215,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
  private:
   void OnObjectDisposed() override;
   std::string DisposedObjectName() override { return "Bitmap"; }
+
   void BlitTextureInternal(const base::Rect& dst_rect,
                            CanvasImpl* src_texture,
                            const base::Rect& src_rect,
@@ -226,21 +226,22 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                            const base::Rect& src_rect,
                            CanvasImpl* clip_texture);
 
-  void GPUCreateTextureWithDataInternal();
+  void GPUCreateTextureInternal(SDL_Surface* texture_data);
   void GPUResetEffectLayerIfNeed();
+
   void GPUBlendBlitTextureInternal(const base::Rect& dst_region,
-                                   BitmapAgent* src_texture,
+                                   GPUBitmapData* src_texture,
                                    const base::Rect& src_region,
                                    int32_t blend_type,
                                    uint32_t opacity);
   void GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
-                                         BitmapAgent* src_texture,
+                                         GPUBitmapData* src_texture,
                                          const base::Rect& src_region,
                                          uint32_t opacity);
   void GPUClipTextureInternal(const base::Rect& dst_region,
-                              BitmapAgent* src_texture,
+                              GPUBitmapData* src_texture,
                               const base::Rect& src_region,
-                              BitmapAgent* clip_texture);
+                              GPUBitmapData* clip_texture);
   void GPUFetchTexturePixelsDataInternal();
   void GPUCanvasClearInternal();
   void GPUCanvasGradientFillRectInternal(const base::Rect& region,
@@ -361,16 +362,16 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     current_block_ = 0;
   }
 
-  BitmapAgent agent_;
+  GPUBitmapData gpu_;
+  SDL_Surface* surface_cache_;
 
-  std::string name_;
-  SDL_Surface* surface_;
-
+  // Command list storage chain
   Command* commands_ = nullptr;
   Command* last_command_ = nullptr;
   std::vector<CommandBlock> blocks_;
   uint32_t current_block_ = 0;
 
+  // Attribute
   base::RepeatingClosureList observers_;
   scoped_refptr<FontImpl> font_;
 };

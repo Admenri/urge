@@ -96,13 +96,13 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
 
   void GPUCreateWindowInternal();
   void GPUCompositeWindowQuadsInternal(Diligent::IDeviceContext* render_context,
-                                       BitmapAgent* contents,
-                                       BitmapAgent* windowskin,
+                                       GPUBitmapData* contents,
+                                       GPUBitmapData* windowskin,
                                        const base::Rect& padding_rect);
   void GPURenderWindowQuadsInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding,
-                                    BitmapAgent* contents,
-                                    BitmapAgent* windowskin,
+                                    GPUBitmapData* contents,
+                                    GPUBitmapData* windowskin,
                                     const base::Rect& padding_rect,
                                     ScissorStack* scissor_stack);
 

@@ -4,6 +4,7 @@
 
 #include "content/render/window_impl.h"
 
+#include "content/context/execution_context.h"
 #include "content/render/tilequad.h"
 #include "renderer/utils/texture_utils.h"
 
@@ -320,8 +321,9 @@ void WindowImpl::BackgroundNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  BitmapAgent* windowskin_agent =
-      windowskin_ ? windowskin_->GetAgent() : nullptr;
+  GPUBitmapData* windowskin_agent = Disposable::IsValid(windowskin_.get())
+                                        ? windowskin_->GetGPUData()
+                                        : nullptr;
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUCompositeBackgroundLayerInternal(params->context, windowskin_agent);
@@ -337,9 +339,11 @@ void WindowImpl::ControlNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  BitmapAgent* windowskin_agent =
-      windowskin_ ? windowskin_->GetAgent() : nullptr;
-  BitmapAgent* contents_agent = contents_ ? contents_->GetAgent() : nullptr;
+  GPUBitmapData* windowskin_agent = Disposable::IsValid(windowskin_.get())
+                                        ? windowskin_->GetGPUData()
+                                        : nullptr;
+  GPUBitmapData* contents_agent =
+      Disposable::IsValid(contents_.get()) ? contents_->GetGPUData() : nullptr;
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUCompositeControlLayerInternal(params->context, windowskin_agent,
@@ -363,7 +367,7 @@ void WindowImpl::GPUCreateWindowInternal() {
 
 void WindowImpl::GPUCompositeBackgroundLayerInternal(
     Diligent::IDeviceContext* render_context,
-    BitmapAgent* windowskin) {
+    GPUBitmapData* windowskin) {
   const base::Vec2i& draw_offset = bound_.Position();
 
   // Generate background quads
@@ -499,8 +503,8 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
 
 void WindowImpl::GPUCompositeControlLayerInternal(
     Diligent::IDeviceContext* render_context,
-    BitmapAgent* windowskin,
-    BitmapAgent* contents) {
+    GPUBitmapData* windowskin,
+    GPUBitmapData* contents) {
   const float contents_opacity_norm = contents_opacity_ / 255.0f;
   const float cursor_opacity_norm = cursor_opacity_ / 255.0f;
 
@@ -688,7 +692,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 void WindowImpl::GPURenderBackgroundLayerInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    BitmapAgent* windowskin) {
+    GPUBitmapData* windowskin) {
   if (windowskin) {
     auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
@@ -723,8 +727,8 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
 void WindowImpl::GPURenderControlLayerInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    BitmapAgent* windowskin,
-    BitmapAgent* contents,
+    GPUBitmapData* windowskin,
+    GPUBitmapData* contents,
     ScissorStack* scissor_stack) {
   const auto current_viewport =
       background_node_.GetParentViewport()->bound.Position() -

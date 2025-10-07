@@ -52,6 +52,11 @@ class URGE_OBJECT(IOStream) {
                                             int64_t buffer_size,
                                             ExceptionState& exception_state);
 
+  /*--urge(name:from_dynamic_memory)--*/
+  static scoped_refptr<IOStream> FromDynamicMemory(
+      ExecutionContext* execution_context,
+      ExceptionState& exception_state);
+
   /*--urge(name:string_as_pointer)--*/
   static uint64_t StringToPointer(ExecutionContext* execution_context,
                                   const void* source,

@@ -5,6 +5,7 @@
 #include "content/render/drawable_impl.h"
 
 #include "content/common/rect_impl.h"
+#include "content/context/execution_context.h"
 #include "content/gpu/buffer_impl.h"
 #include "content/gpu/device_context_impl.h"
 #include "content/gpu/texture_impl.h"

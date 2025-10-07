@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+#include "content/context/execution_context.h"
+
 namespace content {
 
 scoped_refptr<Plane> Plane::New(ExecutionContext* execution_context,
@@ -49,8 +51,8 @@ void PlaneImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
   DISPOSE_CHECK;
 
   bitmap_ = CanvasImpl::FromBitmap(value);
-  if (bitmap_)
-    src_rect_->SetBase(bitmap_->GetAgent()->size);
+  if (Disposable::IsValid(bitmap_.get()))
+    src_rect_->SetBase(bitmap_->GetGPUData()->size);
 }
 
 scoped_refptr<Rect> PlaneImpl::Get_SrcRect(ExceptionState& exception_state) {
@@ -224,7 +226,7 @@ void PlaneImpl::OnObjectDisposed() {
 void PlaneImpl::DrawableNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
-  if (!bitmap_ || !bitmap_->GetAgent())
+  if (!Disposable::IsValid(bitmap_.get()))
     return;
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
@@ -253,7 +255,7 @@ void PlaneImpl::GPUUpdatePlaneQuadArrayInternal(
     const base::Vec2& scale,
     const base::Vec2i& origin) {
   // Source texture
-  auto* texture = bitmap_->GetAgent();
+  auto* texture = bitmap_->GetGPUData();
 
   // Pre-calculate tile dimensions with scaling
   const float item_x =
@@ -320,7 +322,7 @@ void PlaneImpl::GPUOnViewportRenderingInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding) {
   // Source texture
-  auto* texture = bitmap_->GetAgent();
+  auto* texture = bitmap_->GetGPUData();
 
   // Render device etc
   auto* pipeline =

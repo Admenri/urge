@@ -216,6 +216,9 @@ void FontImpl::Put_OutColor(const scoped_refptr<Color>& value,
   *out_color_ = *ColorImpl::From(value);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Font Implement
+
 FontImpl::FontImpl(ScopedFontData* parent)
     : name_(parent->default_name),
       size_(parent->default_size),
