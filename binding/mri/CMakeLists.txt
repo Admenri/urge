@@ -129,6 +129,9 @@ set(BINDING_MRI_SRC
   binding_patch.cc
   binding_patch.h
 
+  platform/mri_emscripten.cc
+  platform/mri_emscripten.h
+
   ${GENERATED_SOURCES}
   ${GENERATED_HEADERS}
 

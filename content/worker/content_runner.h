@@ -8,6 +8,7 @@
 #include "imgui/backends/ImGuiDiligentRenderer.hpp"
 
 #include "base/worker/thread_worker.h"
+#include "components/audioservice/audio_service.h"
 #include "components/filesystem/io_service.h"
 #include "content/canvas/font_context.h"
 #include "content/input/keyboard_controller.h"

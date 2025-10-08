@@ -13,6 +13,7 @@
 #include "binding/mri/binding_patch.h"
 #include "binding/mri/mri_file.h"
 #include "binding/mri/mri_init_autogen.h"
+#include "binding/mri/platform/mri_emscripten.h"
 
 #ifdef HAVE_GET_MACHINE_HASH
 #include "admenri/machineid/machineid.h"
@@ -181,6 +182,10 @@ void BindingEngineMri::PreEarlyInitialization(
 #endif
 
   MriApplyBindingPatch();
+
+#if defined(OS_EMSCRIPTEN)
+  InitEmscriptenBinding();
+#endif  // OS_EMSCRIPTEN
 
   MriDefineModuleFunction(rb_mKernel, "rgss_main", MRI_RGSSMain);
   MriDefineModuleFunction(rb_mKernel, "rgss_stop", MRI_RGSSStop);
