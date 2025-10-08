@@ -160,6 +160,7 @@ void InitEmscriptenBinding() {
   MriDefineModuleFunction(module, "is_preload_file_cached",
                           em_is_preload_file_cached);
 }
-#endif  // OS_EMSCRIPTEN
 
 }  // namespace binding
+
+#endif  // OS_EMSCRIPTEN
