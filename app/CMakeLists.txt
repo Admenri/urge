@@ -47,7 +47,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASSERTIONS=2")
   endif ()
   # Asyncify
-  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASYNCIFY=1 -sASYNCIFY_IMPORTS=['emjs_load_file_async','emjs_storage_save_file','emjs_storage_load_file','emjs_storage_load_all_files']")
+  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sASYNCIFY=1 -sASYNCIFY_IMPORTS=['emjs_load_file_async','emjs_storage_save_file','emjs_storage_load_file','emjs_storage_load_all_files','emjs_storage_clear']")
   # Stack size
   set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sSTACK_SIZE=16777216 -sASYNCIFY_STACK_SIZE=16777216 -sINITIAL_MEMORY=67108864")
   # Shell
