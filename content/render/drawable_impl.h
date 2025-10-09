@@ -16,6 +16,10 @@ class RenderScissorStackImpl : public RenderScissorStack {
   RenderScissorStackImpl(const RenderScissorStackImpl&) = delete;
   RenderScissorStackImpl& operator=(const RenderScissorStackImpl&) = delete;
 
+  // Reset internal rawptr state
+  void ResetState() { stack_ = nullptr; }
+
+ public:
   scoped_refptr<Rect> GetCurrent(ExceptionState& exception_state) override;
   void Push(scoped_refptr<Rect> region,
             ExceptionState& exception_state) override;
@@ -23,7 +27,6 @@ class RenderScissorStackImpl : public RenderScissorStack {
   void Reset(ExceptionState& exception_state) override;
 
  private:
-  // [Dangerous] Temporary object, only valid during rendering.
   ScissorStack* stack_;
 };
 

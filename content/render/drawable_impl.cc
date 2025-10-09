@@ -13,18 +13,30 @@
 namespace content {
 
 RenderScissorStackImpl::RenderScissorStackImpl(ScissorStack* stack)
-    : stack_(stack) {}
+    : stack_(stack) {
+  DCHECK(stack_);
+}
 
 RenderScissorStackImpl::~RenderScissorStackImpl() = default;
 
 scoped_refptr<Rect> RenderScissorStackImpl::GetCurrent(
     ExceptionState& exception_state) {
+  if (!stack_) {
+    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                               "invalid scissor state");
+    return nullptr;
+  }
+
   return base::MakeRefCounted<RectImpl>(stack_->Current());
 }
 
 void RenderScissorStackImpl::RenderScissorStackImpl::Push(
     scoped_refptr<Rect> region,
     ExceptionState& exception_state) {
+  if (!stack_)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid scissor state");
+
   auto region_obj = RectImpl::From(region);
   if (!region_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
@@ -34,10 +46,18 @@ void RenderScissorStackImpl::RenderScissorStackImpl::Push(
 }
 
 void RenderScissorStackImpl::Pop(ExceptionState& exception_state) {
+  if (!stack_)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid scissor state");
+
   stack_->Pop();
 }
 
 void RenderScissorStackImpl::Reset(ExceptionState& exception_state) {
+  if (!stack_)
+    return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                                      "invalid scissor state");
+
   stack_->Reset();
 }
 
@@ -147,6 +167,10 @@ void DrawableImpl::OnObjectDisposed() {
 void DrawableImpl::DrawableNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
+  auto scissor_state =
+      base::MakeRefCounted<RenderScissorStackImpl>(params->scissors);
+
+  // Make rendering params
   auto params_obj = base::MakeRefCounted<DrawableRenderParams>();
   params_obj->context =
       base::MakeRefCounted<DeviceContextImpl>(context(), params->context);
@@ -156,13 +180,13 @@ void DrawableImpl::DrawableNodeHandlerInternal(
       context(), params->screen_depth_stencil);
   params_obj->screen_width = params->screen_size.x;
   params_obj->screen_height = params->screen_size.y;
-  params_obj->scissors_stack =
-      base::MakeRefCounted<RenderScissorStackImpl>(params->scissors);
+  params_obj->scissors_stack = scissor_state;
   params_obj->root_world =
       base::MakeRefCounted<BufferImpl>(context(), params->root_world);
   params_obj->world_binding =
       base::MakeRefCounted<BufferImpl>(context(), params->world_binding);
 
+  // Call render process
   switch (stage) {
     case DrawableNode::RenderStage::BEFORE_RENDER:
       if (!callbacks_[STAGE_BEFORE_RENDER].is_null())
@@ -179,6 +203,9 @@ void DrawableImpl::DrawableNodeHandlerInternal(
     default:
       break;
   }
+
+  // Reset scissor state after rendering
+  scissor_state->ResetState();
 }
 
 }  // namespace content
