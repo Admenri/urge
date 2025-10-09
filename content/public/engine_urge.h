@@ -70,6 +70,13 @@ class URGE_OBJECT(URGE) {
   virtual std::vector<std::string> EnumDirectory(
       const std::string& dirpath,
       ExceptionState& exception_state) = 0;
+
+  /*--urge(name:get_clipboard_text)--*/
+  virtual std::string GetClipboardText(ExceptionState& exception_state) = 0;
+
+  /*--urge(name:set_clipboard_text)--*/
+  virtual void SetClipboardText(const std::string& text,
+                                ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

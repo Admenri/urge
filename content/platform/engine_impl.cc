@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+#include "SDL3/SDL_clipboard.h"
 #include "SDL3/SDL_messagebox.h"
 #include "SDL3/SDL_misc.h"
 #include "SDL3/SDL_platform.h"
@@ -137,6 +138,15 @@ std::vector<std::string> EngineImpl::EnumDirectory(
     const std::string& dirpath,
     ExceptionState& exception_state) {
   return context()->io_service->EnumDir(dirpath);
+}
+
+std::string EngineImpl::GetClipboardText(ExceptionState& exception_state) {
+  return SDL_GetClipboardText();
+}
+
+void EngineImpl::SetClipboardText(const std::string& text,
+                                  ExceptionState& exception_state) {
+  SDL_SetClipboardText(text.c_str());
 }
 
 void EngineImpl::AddDisposable(Disposable* disp) {

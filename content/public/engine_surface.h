@@ -157,6 +157,9 @@ class URGE_OBJECT(Surface) {
   virtual void SavePNG(const std::string& filename,
                        ExceptionState& exception_state) = 0;
 
+  /*--urge(name:save_png_data)--*/
+  virtual std::string SavePNGData(ExceptionState& exception_state) = 0;
+
   /*--urge(name:font)--*/
   URGE_EXPORT_ATTRIBUTE(Font, scoped_refptr<Font>);
 };

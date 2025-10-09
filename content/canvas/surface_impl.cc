@@ -469,6 +469,21 @@ void SurfaceImpl::SavePNG(const std::string& filename,
                                SDL_GetError());
 }
 
+std::string SurfaceImpl::SavePNGData(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(std::string());
+
+  auto* out_stream = SDL_IOFromDynamicMem();
+  if (!IMG_SavePNG_IO(surface_, out_stream, false))
+    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR, "%s",
+                               SDL_GetError());
+
+  auto image_size = SDL_GetIOSize(out_stream);
+  std::string result(image_size, 0);
+  SDL_ReadIO(out_stream, result.data(), image_size);
+
+  return result;
+}
+
 scoped_refptr<Font> SurfaceImpl::Get_Font(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 

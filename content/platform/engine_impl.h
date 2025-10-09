@@ -57,6 +57,10 @@ class EngineImpl : public URGE,
       const std::string& dirpath,
       ExceptionState& exception_state) override;
 
+  std::string GetClipboardText(ExceptionState& exception_state) override;
+  void SetClipboardText(const std::string& text,
+                        ExceptionState& exception_state) override;
+
   // DisposableCollection methods:
   void AddDisposable(Disposable* disp) override;
 
