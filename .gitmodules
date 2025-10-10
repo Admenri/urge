@@ -28,3 +28,6 @@
 [submodule "third_party/libwebp"]
 	path = third_party/libwebp
 	url = https://github.com/webmproject/libwebp
+[submodule "third_party/boringssl"]
+	path = third_party/boringssl
+	url = https://github.com/google/boringssl
