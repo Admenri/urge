@@ -18,9 +18,10 @@ class URGE_OBJECT(Sprite) {
  public:
   virtual ~Sprite() = default;
 
-  /*--urge(name:initialize,optional:viewport=nullptr)--*/
+  /*--urge(name:initialize,optional:viewport=nullptr,optional:disable_vertical_sort=false)--*/
   static scoped_refptr<Sprite> New(ExecutionContext* execution_context,
                                    scoped_refptr<Viewport> viewport,
+                                   bool disable_vertical_sort,
                                    ExceptionState& exception_state);
 
   /*--urge(name:set_label)--*/

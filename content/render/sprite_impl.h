@@ -37,7 +37,8 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   };
 
   SpriteImpl(ExecutionContext* execution_context,
-             scoped_refptr<ViewportImpl> parent);
+             scoped_refptr<ViewportImpl> parent,
+             bool disable_vertical_sort);
   ~SpriteImpl() override;
 
   SpriteImpl(const SpriteImpl&) = delete;
@@ -104,6 +105,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   DrawableFlashController flash_emitter_;
   Agent agent_;
   bool rgss2_style_;
+  bool disable_vertical_sort_;
 
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<CanvasImpl> bitmap_;

@@ -23,13 +23,15 @@ inline float DegreesToRadians(float degrees) {
 
 scoped_refptr<Sprite> Sprite::New(ExecutionContext* execution_context,
                                   scoped_refptr<Viewport> viewport,
+                                  bool disable_vertical_sort,
                                   ExceptionState& exception_state) {
-  return base::MakeRefCounted<SpriteImpl>(execution_context,
-                                          ViewportImpl::From(viewport));
+  return base::MakeRefCounted<SpriteImpl>(
+      execution_context, ViewportImpl::From(viewport), disable_vertical_sort);
 }
 
 SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
-                       scoped_refptr<ViewportImpl> parent)
+                       scoped_refptr<ViewportImpl> parent,
+                       bool disable_vertical_sort)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
       node_(parent ? parent->GetDrawableController()
@@ -37,6 +39,7 @@ SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
             SortKey()),
       rgss2_style_(execution_context->engine_profile->api_version >=
                    ContentProfile::APIVersion::RGSS2),
+      disable_vertical_sort_(disable_vertical_sort),
       viewport_(parent),
       src_rect_(base::MakeRefCounted<RectImpl>(base::Rect())),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
@@ -178,7 +181,7 @@ void SpriteImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
   uniform_params_.Position.y = value;
 
   // Sort with Z and Y attribute on RGSS 2/3.
-  if (rgss2_style_) {
+  if (rgss2_style_ && !disable_vertical_sort_) {
     int64_t current_order = node_.GetSortKeys()->weight[0];
     node_.SetNodeSortWeight(current_order, value);
   }
