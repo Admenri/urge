@@ -193,6 +193,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       render_device_.get(), execution_context_->render.pipeline_loader.get());
   event_controller_ = std::make_unique<EventController>(window);
   audio_server_ = audioservice::AudioService::Create(io_service);
+  network_service_ = network::NetworkService::Create();
 
   // System components
   execution_context_->engine_profile = profile_;
@@ -203,6 +204,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   execution_context_->sprite_batcher = sprite_batcher_.get();
   execution_context_->event_controller = event_controller_.get();
   execution_context_->audio_server = audio_server_.get();
+  execution_context_->network_service = network_service_.get();
 
   // Create engine objects
   engine_impl_ = base::MakeRefCounted<EngineImpl>(execution_context_.get());

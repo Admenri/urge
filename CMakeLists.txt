@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.21)
 # Project Setup
 #--------------------------------------------------------------------------------
 
-project(URGE)
+project(URGE LANGUAGES C CXX ASM)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -99,8 +99,11 @@ add_subdirectory(third_party/spdlog)
 set(MINIAUDIO_NO_DEVICEIO ON)
 add_subdirectory(third_party/miniaudio)
 
-## Asio
+## ASIO
 include_directories(third_party/asio/include)
+
+## BoringSSL
+add_subdirectory(third_party/boringssl)
 
 ## Zlib
 set(ZLIB_BUILD_SHARED OFF)
@@ -143,6 +146,7 @@ endif ()
 add_subdirectory(components/audioservice)
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
+add_subdirectory(components/network)
 add_subdirectory(components/version)
 
 #-------------------------------------------------------------------------

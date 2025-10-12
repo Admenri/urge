@@ -9,7 +9,9 @@ namespace content {
 // static
 scoped_refptr<WebSocket> WebSocket::New(ExecutionContext* execution_context,
                                         const std::string& url,
-                                        ExceptionState& exception_state) {}
+                                        ExceptionState& exception_state) {
+  return nullptr;
+}
 
 WebSocketImpl::WebSocketImpl(ExecutionContext* execution_context)
     : EngineObject(execution_context),

@@ -10,6 +10,7 @@
 #include "base/worker/thread_worker.h"
 #include "components/audioservice/audio_service.h"
 #include "components/filesystem/io_service.h"
+#include "components/network/public/network_service.h"
 #include "content/canvas/font_context.h"
 #include "content/input/keyboard_controller.h"
 #include "content/input/mouse_controller.h"
@@ -93,6 +94,7 @@ class ContentRunner {
   std::unique_ptr<EventController> event_controller_;
   std::unique_ptr<Diligent::ImGuiDiligentRenderer> imgui_;
   std::unique_ptr<audioservice::AudioService> audio_server_;
+  std::unique_ptr<network::NetworkService> network_service_;
 
   scoped_refptr<RenderScreenImpl> graphics_impl_;
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;
