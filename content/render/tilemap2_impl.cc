@@ -687,9 +687,13 @@ void Tilemap2Impl::UpdateViewportInternal(const base::Rect& viewport,
 
   const base::Vec2i display_offset(tilemap_origin.x % tilesize_,
                                    tilemap_origin.y % tilesize_);
-  render_offset_ = -display_offset - base::Vec2i(0, tilesize_);
+  render_offset_ = -display_offset;
+  render_offset_.y -= tilesize_;
 
-  if (!(new_viewport == render_viewport_)) {
+  // Apply viewport origin
+  render_offset_ += viewport_origin;
+
+  if (new_viewport != render_viewport_) {
     render_viewport_ = new_viewport;
     map_buffer_dirty_ = true;
   }
@@ -1065,7 +1069,7 @@ void Tilemap2Impl::ParseMapDataInternal(
       return process_tile_A1(tile_id, color, x, y, over_player);
     if (tile_id >= 0x0B00 && tile_id < 0x1100)  // A2
       return process_tile_A2(tile_id, color, x, y, over_player, is_table,
-                             under_tile_id >= 0x1700 && under_tile_id < 0x2000);
+                             under_tile_id >= 0x1100 && under_tile_id < 0x2000);
     if (tile_id >= 0x1100 && tile_id < 0x1700)  // A3
       return process_tile_A3(tile_id, color, x, y, over_player);
     if (tile_id >= 0x1700 && tile_id < 0x2000)  // A4
@@ -1094,15 +1098,20 @@ void Tilemap2Impl::ParseMapDataInternal(
               (y + oy) % map_data_->y_size() == 0)
             continue;
 
-          int16_t wall_top =
+          const int16_t wall_top =
               get_wrap_data(map_data_, x + ox - 1, y + oy - 1, 0);
-          int16_t wall_bottom = get_wrap_data(map_data_, x + ox - 1, y + oy, 0);
-          int16_t current_tile = get_wrap_data(map_data_, x + ox, y + oy, 0);
+          const int16_t wall_bottom =
+              get_wrap_data(map_data_, x + ox - 1, y + oy, 0);
+          const int16_t current_tile =
+              get_wrap_data(map_data_, x + ox, y + oy, 0);
 
-          // Draw shadow if wall in A3,A4 region
+          const bool shadow_floor =
+              (current_tile >= 0x0B00 && current_tile < 0x1100) ||
+              (current_tile >= 0x0600 && current_tile < 0x0680);
+
+          // Draw shadow if wall in A2, A5 region
           if ((wall_top >= 0x1100 && wall_top < 0x2000) &&
-              (wall_bottom >= 0x1100 && wall_bottom < 0x2000) &&
-              !(current_tile >= 0x1100 && current_tile < 0x2000)) {
+              (wall_bottom >= 0x1100 && wall_bottom < 0x2000) && shadow_floor) {
             // Fixed left shadow on RGSS2
             process_shadow_tile(0x05, x, y);
           }

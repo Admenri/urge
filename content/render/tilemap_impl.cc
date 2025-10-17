@@ -576,7 +576,7 @@ void TilemapImpl::GroundNodeHandlerInternal(
     // Setup above layers if need.
     const auto viewport_bound = ground_node_.GetParentViewport()->bound;
     const auto viewport_origin = ground_node_.GetParentViewport()->origin;
-    if (!(last_viewport_ == viewport_bound)) {
+    if (last_viewport_ != viewport_bound) {
       SetupTilemapLayersInternal(viewport_bound);
       last_viewport_ = viewport_bound;
     }
@@ -705,9 +705,13 @@ void TilemapImpl::UpdateViewportInternal(const base::Rect& viewport,
 
   const base::Vec2i display_offset(tilemap_origin.x % tilesize_,
                                    tilemap_origin.y % tilesize_);
-  render_offset_ = -display_offset - base::Vec2i(0, tilesize_);
+  render_offset_ = -display_offset;
+  render_offset_.y -= tilesize_;
 
-  if (!(new_viewport == render_viewport_)) {
+  // Apply viewport origin
+  render_offset_ += viewport_origin;
+
+  if (new_viewport != render_viewport_) {
     render_viewport_ = new_viewport;
     map_buffer_dirty_ = true;
   }

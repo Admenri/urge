@@ -312,7 +312,8 @@ void BindingEngineMri::LoadPackedScripts(
     }
 
     if (zlib_result != Z_OK) {
-      LOG(INFO) << "Error when decoding: " << StringValueCStr(script_name);
+      LOG(INFO) << "[Binding] Error when decoding: "
+                << StringValueCStr(script_name);
       break;
     }
 
