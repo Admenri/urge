@@ -167,7 +167,7 @@ class APIParser:
       if recursive_type.find('<') != -1 and recursive_type[-1] == '>':
         r_first_token = recursive_type.find('<')
         r_last_token = recursive_type.rfind('>')
-        containers.append(recursive_type[0: r_first_token])
+        containers.append(recursive_type[0: r_first_token].strip())
         _recursive_parse_param(recursive_type[r_first_token + 1: r_last_token].strip())
         return
       root_type = recursive_type
@@ -176,7 +176,7 @@ class APIParser:
     _recursive_parse_param(typename)
     # 生成
     type_detail = {
-      "root_type": root_type,
+      "root_type": root_type.strip(),
       "containers": containers,
     }
 
@@ -316,7 +316,7 @@ class APIParser:
     for info in closure_infos:
       attr_raw, attr_type, dummy = self.parse_variable(info)
       closure_type_info.append({
-        "type_raw": attr_raw,
+        "type_raw": attr_raw.strip(),
         "type_detail": attr_type,
       })
 
@@ -333,7 +333,7 @@ class APIParser:
       "native_name": native_name,
       "arguments": closure_type_info,
       "return": {
-        "type_raw": return_type_raw,
+        "type_raw": return_type_raw.strip(),
         "type_detail": return_type,
       },
     }

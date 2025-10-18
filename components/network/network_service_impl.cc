@@ -13,30 +13,59 @@ std::unique_ptr<NetworkService> NetworkService::Create() {
   return std::unique_ptr<NetworkServiceImpl>(new NetworkServiceImpl());
 }
 
-NetworkServiceImpl::NetworkServiceImpl()
-    : worker_(base::ThreadWorker::Create()),
-      context_(std::make_unique<asio::io_context>()) {
+NetworkServiceImpl::NetworkServiceImpl() : quit_flag_(0) {
   // Run loop
-  worker_->PostTask(base::BindOnce(&NetworkServiceImpl::MainLoopingInternal,
-                                   base::Unretained(this)));
+  worker_ = std::thread(&NetworkServiceImpl::MainLoopingInternal, this);
+
+  // Sync for initializing
+  base::Semaphore semaphore;
+  runner_queue_.enqueue(base::BindOnce(
+      [](base::Semaphore* semaphore) { semaphore->Release(); }, &semaphore));
+  semaphore.Acquire();
 }
 
 NetworkServiceImpl::~NetworkServiceImpl() {
-  worker_.reset();
-  context_.reset();
+  quit_flag_.store(1);
+  worker_.join();
 }
 
-std::unique_ptr<WebsocketClient> NetworkServiceImpl::CreateWebsocketClient() {
-  return nullptr;
+void* NetworkServiceImpl::GetIOContext() {
+  return context_.get();
+}
+
+void NetworkServiceImpl::PushEvent(base::OnceClosure task) {
+  if (!task.is_null())
+    dispatch_queue_.enqueue(std::move(task));
+}
+
+void NetworkServiceImpl::DispatchEvent() {
+  base::OnceClosure task;
+  if (dispatch_queue_.try_dequeue(task) && !task.is_null()) {
+    // Dispatch event from network thread
+    std::move(task).Run();
+  }
+}
+
+void NetworkServiceImpl::PostNetworkTask(base::OnceClosure task) {
+  if (!task.is_null())
+    runner_queue_.enqueue(std::move(task));
 }
 
 void NetworkServiceImpl::MainLoopingInternal() {
-  if (!context_->poll())
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  context_ = std::make_unique<asio::io_context>();
 
-  if (worker_)
-    worker_->PostTask(base::BindOnce(&NetworkServiceImpl::MainLoopingInternal,
-                                     base::Unretained(this)));
+  while (!quit_flag_.load()) {
+    context_->poll();
+
+    base::OnceClosure task;
+    if (!runner_queue_.try_dequeue(task))
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    if (!task.is_null())
+      std::move(task).Run();
+  }
+
+  context_.reset();
 }
 
 }  // namespace network

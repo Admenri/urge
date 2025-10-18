@@ -274,6 +274,10 @@ void ContentRunner::CreateRenderComponents() {
 }
 
 void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
+  // Update network service queue
+  network_service_->DispatchEvent();
+
+  // Increase frame step
   frame_count_++;
 
   // Update fps

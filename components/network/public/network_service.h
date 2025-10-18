@@ -7,7 +7,8 @@
 
 #include <memory>
 
-#include "components/network/public/websocket_client.h"
+#include "base/bind/callback.h"
+#include "base/worker/thread_worker.h"
 
 namespace network {
 
@@ -18,8 +19,17 @@ class NetworkService {
   // Create global network service instance
   static std::unique_ptr<NetworkService> Create();
 
-  // Create websocket client instance
-  virtual std::unique_ptr<WebsocketClient> CreateWebsocketClient() = 0;
+  // ASIO Context
+  virtual void* GetIOContext() = 0;
+
+  // Push back a task on dispatching queue
+  virtual void PushEvent(base::OnceClosure task) = 0;
+
+  // Dispatch async event on current thread
+  virtual void DispatchEvent() = 0;
+
+  // Network thread
+  virtual void PostNetworkTask(base::OnceClosure task) = 0;
 };
 
 }  // namespace network

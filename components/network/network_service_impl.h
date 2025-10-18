@@ -9,8 +9,8 @@
 #include <thread>
 
 #include "asio.hpp"
+#include "concurrentqueue/concurrentqueue.h"
 
-#include "base/worker/thread_worker.h"
 #include "components/network/public/network_service.h"
 
 namespace network {
@@ -24,13 +24,20 @@ class NetworkServiceImpl : public NetworkService {
   NetworkServiceImpl& operator=(const NetworkServiceImpl&) = delete;
 
  protected:
-  std::unique_ptr<WebsocketClient> CreateWebsocketClient() override;
+  void* GetIOContext() override;
+  void PushEvent(base::OnceClosure task) override;
+  void DispatchEvent() override;
+  void PostNetworkTask(base::OnceClosure task) override;
 
  private:
   void MainLoopingInternal();
 
-  std::unique_ptr<base::ThreadWorker> worker_;
+  std::thread worker_;
+  std::atomic<int32_t> quit_flag_;
   std::unique_ptr<asio::io_context> context_;
+
+  moodycamel::ConcurrentQueue<base::OnceClosure> runner_queue_;
+  moodycamel::ConcurrentQueue<base::OnceClosure> dispatch_queue_;
 };
 
 }  // namespace network

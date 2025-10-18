@@ -9,7 +9,6 @@
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
 #include "content/context/exception_state.h"
-#include "content/public/engine_iostream.h"
 
 namespace content {
 
@@ -26,6 +25,12 @@ class URGE_OBJECT(WebSocket) {
     READY_STATE_CLOSE,
   };
 
+  /*--urge(name:MessageType)--*/
+  enum MessageType {
+    MESSAGE_TYPE_TEXT = 0,
+    MESSAGE_TYPE_BINARY,
+  };
+
   /*--urge(name:OpenHandler)--*/
   using OpenHandler = base::RepeatingCallback<void()>;
 
@@ -38,7 +43,7 @@ class URGE_OBJECT(WebSocket) {
 
   /*--urge(name:MessageHandler)--*/
   using MessageHandler =
-      base::RepeatingCallback<void(scoped_refptr<IOStream> data)>;
+      base::RepeatingCallback<void(const std::string& data, MessageType type)>;
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<WebSocket> New(ExecutionContext* execution_context,
@@ -65,7 +70,8 @@ class URGE_OBJECT(WebSocket) {
   virtual ReadyState GetReadyState(ExceptionState& exception_state) = 0;
 
   /*--urge(name:send)--*/
-  virtual void Send(scoped_refptr<IOStream> data,
+  virtual void Send(const std::string& data,
+                    MessageType type,
                     ExceptionState& exception_state) = 0;
 
   /*--urge(name:close,optional:code=0,optional:reason="")--*/
