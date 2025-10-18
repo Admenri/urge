@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "websocketpp/client.hpp"
-#include "websocketpp/config/asio_client.hpp"
+#include "websocketpp/config/asio_no_tls_client.hpp"
 
 #include "content/context/engine_object.h"
 #include "content/public/engine_websocket.h"

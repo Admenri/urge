@@ -12,14 +12,10 @@ set(COMPONENTS_NETWORK_SRC
 )
 
 add_library(components_network STATIC ${COMPONENTS_NETWORK_SRC})
+target_link_libraries(components_network PUBLIC engine_base)
 target_compile_definitions(components_network
  PUBLIC
   ASIO_STANDALONE=1
   WIN32_LEAN_AND_MEAN=1
   _WIN32_WINNT=0x601
-)
-target_link_libraries(components_network
- PUBLIC
-  engine_base
-  ssl
 )

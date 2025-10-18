@@ -102,9 +102,6 @@ add_subdirectory(third_party/miniaudio)
 ## ASIO
 include_directories(third_party/asio/include)
 
-## BoringSSL
-add_subdirectory(third_party/boringssl)
-
 ## Zlib
 set(ZLIB_BUILD_SHARED OFF)
 add_subdirectory(third_party/zlib)
