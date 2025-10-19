@@ -459,8 +459,6 @@ void Tilemap2Impl::Update(ExceptionState& exception_state) {
 
   flash_timer_ = ++flash_timer_ % 32;
   flash_opacity_ = std::abs(16 - flash_timer_) * 8 + 32;
-  if (flash_count_)
-    map_buffer_dirty_ = true;
 }
 
 scoped_refptr<TilemapBitmap> Tilemap2Impl::Bitmaps(
@@ -1140,12 +1138,9 @@ void Tilemap2Impl::ParseMapDataInternal(
         // Process tile flash
         base::Vec4 blend_color;
         if (flash_color) {
-          const float blue = ((flash_color & 0x000F) >> 0) / 0xF;
-          const float green = ((flash_color & 0x00F0) >> 4) / 0xF;
-          const float red = ((flash_color & 0x0F00) >> 8) / 0xF;
-          blend_color = base::Vec4(red, green, blue, flash_opacity_ / 255.0f);
-
-          ++flash_count_;
+          blend_color.b = ((flash_color & 0x000F) >> 0) / 0xF;
+          blend_color.g = ((flash_color & 0x00F0) >> 4) / 0xF;
+          blend_color.r = ((flash_color & 0x0F00) >> 8) / 0xF;
         }
 
         // Process tile (non-shadow tile)
@@ -1168,9 +1163,6 @@ void Tilemap2Impl::ParseMapDataInternal(
     // BCDE area (2)
     process_common_layer(ox, oy, w, h, 2);
   };
-
-  // Reset flash quads
-  flash_count_ = 0;
 
   // Process tilemap data
   read_tilemap(render_viewport_);
@@ -1291,9 +1283,9 @@ void Tilemap2Impl::GPUUpdateTilemapUniformInternal(
   renderer::Binding_Tilemap2::Params uniform;
   uniform.OffsetAndTexSize =
       base::Vec4(offset.x, offset.y, 1.0f / atlas_size.x, 1.0f / atlas_size.y);
-  uniform.AnimationOffsetAndTileSize =
+  uniform.AnimationOffsetAndTileSizeAndFlashAlpha =
       base::Vec4(anim_offset.x, anim_offset.y, static_cast<float>(tilesize),
-                 static_cast<float>(tilesize));
+                 flash_opacity_ / 255.0f);
 
   render_context->UpdateBuffer(
       agent_.uniform_buffer, 0, sizeof(uniform), &uniform,

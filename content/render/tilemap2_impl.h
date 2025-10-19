@@ -159,7 +159,6 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   base::Rect render_viewport_;
   base::Vec2i render_offset_;
   base::Vec2 animation_offset_;
-  int32_t flash_count_ = 0;
   int32_t flash_timer_ = 0;
   int32_t flash_opacity_ = 0;
   int32_t frame_index_ = 0;
