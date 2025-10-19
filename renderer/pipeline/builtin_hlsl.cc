@@ -711,7 +711,7 @@ cbuffer WorldMatrixBuffer {
 
 struct TilemapParams {
   float4 OffsetAndTexSize;
-  float4 AnimateIndexAndTileSize;
+  float4 AnimateIndexAndTileSizeAndFlashAlpha;
 };
 
 cbuffer TilemapUniformBuffer {
@@ -730,23 +730,18 @@ struct PSInput {
   float4 Color : COLOR0;
 };
 
-static const float2 kAutotileArea = float2(3.0, 28.0);
-
 void VSMain(in VSInput VSIn, out PSInput PSIn) {
   float4 transPos = VSIn.Pos;
   float2 transUV = VSIn.UV;
+  float frameCount = VSIn.Color.a;
 
   // Apply offset
   transPos.x += u_Params.OffsetAndTexSize.x;
   transPos.y += u_Params.OffsetAndTexSize.y;
 
   // Animated area
-  float tile_size = u_Params.AnimateIndexAndTileSize.y;
-  float addition = (transUV.x <= kAutotileArea.x * tile_size &&
-                    transUV.y <= kAutotileArea.y * tile_size)
-                       ? 1.0
-                       : 0.0;
-  transUV.x += 3.0 * tile_size * u_Params.AnimateIndexAndTileSize.x * addition;
+  float tile_size = u_Params.AnimateIndexAndTileSizeAndFlashAlpha.y;
+  transUV.x += 3.0 * tile_size * fmod(u_Params.AnimateIndexAndTileSizeAndFlashAlpha.x, frameCount);
 
   // Setup pixel shader params
   PSIn.Pos = mul(u_Transform.TransMat, transPos);
@@ -755,6 +750,9 @@ void VSMain(in VSInput VSIn, out PSInput PSIn) {
   PSIn.UV = float2(transUV.x * u_Params.OffsetAndTexSize.z,
                    transUV.y * u_Params.OffsetAndTexSize.w);
   PSIn.Color = VSIn.Color;
+  PSIn.Color.a = ((PSIn.Color.r == 0.0) && (PSIn.Color.g == 0.0) && (PSIn.Color.b == 0.0))
+                 ? 0.0
+                 : u_Params.AnimateIndexAndTileSizeAndFlashAlpha.z;
 }
 )";
 

@@ -75,9 +75,8 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   };
 
   enum class AutotileType {
-    ANIMATED = 0,
-    STATIC,
-    SINGLE_ANIMATED,
+    COMMON = 0,
+    SINGLE,
   };
 
   TilemapImpl(ExecutionContext* execution_context,
@@ -152,7 +151,8 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
 
   struct AutotileInfo {
     scoped_refptr<CanvasImpl> bitmap;
-    AutotileType type = AutotileType::ANIMATED;
+    AutotileType type = AutotileType::COMMON;
+    int32_t animation_frame_count;
     base::CallbackListSubscription observer;
   };
 
@@ -167,8 +167,9 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   bool atlas_dirty_ = false;
   bool map_buffer_dirty_ = false;
   base::Rect last_viewport_;
+  int32_t max_anim_index_ = 1;
+  int32_t max_autotile_frame_count_ = 1;
   int32_t anim_index_ = 0;
-  int32_t flash_count_ = 0;
   int32_t flash_timer_ = 0;
   int32_t flash_opacity_ = 0;
 

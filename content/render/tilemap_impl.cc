@@ -381,12 +381,10 @@ void TilemapImpl::SetLabel(const std::string& label,
 void TilemapImpl::Update(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  anim_index_ = ++anim_index_ % 64;
+  anim_index_ = ++anim_index_ % (max_anim_index_ * 16);
 
   flash_timer_ = ++flash_timer_ % 32;
   flash_opacity_ = std::abs(16 - flash_timer_) * 8 + 32;
-  if (flash_count_)
-    map_buffer_dirty_ = true;
 }
 
 scoped_refptr<TilemapAutotile> TilemapImpl::Autotiles(
@@ -630,33 +628,30 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
   if (Disposable::IsValid(tileset_.get()))
     atlas_height = std::max(atlas_height, tileset_->GetGPUData()->size.y);
   atlas_height = std::min(max_atlas_size_, atlas_height);
+  max_anim_index_ = 1;
 
   // Setup commands
   commands.clear();
 
   // Autotile part
-  int32_t offset = 0;
+  int32_t autotile_offset = 0;
   for (auto& it : autotiles_) {
     if (!Disposable::IsValid(it.bitmap.get())) {
-      ++offset;
+      ++autotile_offset;
       continue;
     }
 
-    auto autotile_size = it.bitmap->GetGPUData()->size;
-    base::Vec2i dst_pos(0, offset * tilesize_ * 4);
+    const auto autotile_size = it.bitmap->GetGPUData()->size;
+    const base::Vec2i dst_pos(0, autotile_offset * tilesize_ * 4);
 
-    if (autotile_size.x > 3 * tilesize_ && autotile_size.y > tilesize_) {
-      // Animated autotile
-      it.type = AutotileType::ANIMATED;
-    } else if (autotile_size.x <= 3 * tilesize_ &&
-               autotile_size.y > tilesize_) {
-      // Static autotile
-      dst_pos.x += tilesize_ * 3;
-      it.type = AutotileType::STATIC;
-    } else if (autotile_size.x <= 4 * tilesize_ &&
-               autotile_size.y <= tilesize_) {
-      // Single animated tile
-      it.type = AutotileType::SINGLE_ANIMATED;
+    if (autotile_size.y >= tilesize_ * 4) {
+      // Animated autotile (3 * 4)
+      it.type = AutotileType::COMMON;
+      it.animation_frame_count = autotile_size.x / (3 * tilesize_);
+    } else if (autotile_size.y <= tilesize_) {
+      // Single animated tile (1 * 1)
+      it.type = AutotileType::SINGLE;
+      it.animation_frame_count = autotile_size.x / tilesize_;
 
       for (int32_t i = 0; i < 4; ++i) {
         base::Rect single_src(base::Vec2i(tilesize_ * i, 0),
@@ -666,28 +661,35 @@ base::Vec2i TilemapImpl::MakeAtlasInternal(
         commands.push_back({it.bitmap->GetGPUData(), single_src, single_dst});
       }
 
-      ++offset;
+      ++autotile_offset;
       continue;
     } else {
       NOTREACHED();
     }
 
-    commands.push_back({it.bitmap->GetGPUData(), autotile_size, dst_pos});
+    // Make tileset offset
+    max_autotile_frame_count_ =
+        std::max(max_autotile_frame_count_, it.animation_frame_count);
 
-    ++offset;
+    // Make anim loop count
+    max_anim_index_ *= it.animation_frame_count;
+
+    commands.push_back({it.bitmap->GetGPUData(), autotile_size, dst_pos});
+    ++autotile_offset;
   }
 
   // Tileset part
   int32_t tileset_width = 0;
   if (Disposable::IsValid(tileset_.get())) {
     base::Vec2i tileset_size = tileset_->GetGPUData()->size;
-    base::Vec2i dst_pos(12 * tilesize_, 0);
+    base::Vec2i dst_pos(3 * tilesize_ * max_autotile_frame_count_, 0);
     tileset_width = tileset_size.x;
 
     commands.push_back({tileset_->GetGPUData(), tileset_size, dst_pos});
   }
 
-  return base::Vec2i(tilesize_ * 12 + tileset_width, atlas_height);
+  return base::Vec2i(3 * tilesize_ * max_autotile_frame_count_ + tileset_width,
+                     atlas_height);
 }
 
 void TilemapImpl::UpdateViewportInternal(const base::Rect& viewport,
@@ -763,10 +765,13 @@ void TilemapImpl::ParseMapDataInternal(
     if (!Disposable::IsValid(info.bitmap.get()))
       return;
 
+    // Blend color + frame count
+    base::Vec4 blend_color_and_frame_count = color;
+    blend_color_and_frame_count.a = info.animation_frame_count;
+
     // Generate from autotile type
     switch (info.type) {
-      case AutotileType::ANIMATED:
-      case AutotileType::STATIC: {
+      case AutotileType::COMMON: {
         const base::Vec2* autotile_src_pos = kAutotileSrcRegular[pattern_id];
         for (int32_t i = 0; i < 4; ++i) {
           base::RectF tex_src(autotile_src_pos[i], base::Vec2(0.5f));
@@ -775,8 +780,7 @@ void TilemapImpl::ParseMapDataInternal(
           tex_src.width = tex_src.width * tilesize_ - 1.0f;
           tex_src.height = tex_src.height * tilesize_ - 1.0f;
 
-          if (info.type == AutotileType::STATIC)
-            tex_src.x += 3 * tilesize_;
+          // Horizontal offset (4 * tileSize)
           tex_src.y += autotile_id * 4 * tilesize_;
 
           base::RectF chunk_pos(pos.x * tilesize_, pos.y * tilesize_,
@@ -786,11 +790,11 @@ void TilemapImpl::ParseMapDataInternal(
           renderer::Quad quad;
           renderer::Quad::SetPositionRect(&quad, chunk_pos);
           renderer::Quad::SetTexCoordRectNorm(&quad, tex_src);
-          renderer::Quad::SetColor(&quad, color);
+          renderer::Quad::SetColor(&quad, blend_color_and_frame_count);
           target->push_back(quad);
         }
       } break;
-      case AutotileType::SINGLE_ANIMATED: {
+      case AutotileType::SINGLE: {
         const base::RectF single_tex(0.5f,
                                      0.5f + autotile_id * tilesize_ * 4.0f,
                                      tilesize_ - 1.0f, tilesize_ - 1.0f);
@@ -800,7 +804,7 @@ void TilemapImpl::ParseMapDataInternal(
         renderer::Quad quad;
         renderer::Quad::SetPositionRect(&quad, single_pos);
         renderer::Quad::SetTexCoordRectNorm(&quad, single_tex);
-        renderer::Quad::SetColor(&quad, color);
+        renderer::Quad::SetColor(&quad, blend_color_and_frame_count);
         target->push_back(quad);
       } break;
       default:
@@ -852,19 +856,20 @@ void TilemapImpl::ParseMapDataInternal(
       target = &aboves_cache[pos.y + priority];
     }
 
-    // Composite flash color
-    base::Vec4 blend_color;
-    if (flash_color) {
-      const float blue = ((flash_color & 0x000F) >> 0) / 0xF;
-      const float green = ((flash_color & 0x00F0) >> 4) / 0xF;
-      const float red = ((flash_color & 0x0F00) >> 8) / 0xF;
-      blend_color = base::Vec4(red, green, blue, flash_opacity_ / 255.0f);
+    // Flash color & Frame count
+    base::Vec4 blend_color_and_frame_count;
+    blend_color_and_frame_count.a = 1.0f;
 
-      ++flash_count_;
+    // Composite flash color
+    if (flash_color) {
+      blend_color_and_frame_count.b = ((flash_color & 0x000F) >> 0) / 0xF;
+      blend_color_and_frame_count.g = ((flash_color & 0x00F0) >> 4) / 0xF;
+      blend_color_and_frame_count.r = ((flash_color & 0x0F00) >> 8) / 0xF;
     }
 
     if (tile_id < 48 * 8)
-      return process_autotile(pos, tile_id, blend_color, target);
+      return process_autotile(pos, tile_id, blend_color_and_frame_count,
+                              target);
 
     int32_t tileset_id = tile_id - 48 * 8;
     int32_t tile_x = tileset_id % 8;
@@ -873,8 +878,9 @@ void TilemapImpl::ParseMapDataInternal(
     // Switch to next offset when reaching the hardware texture limit
     const int32_t horizontal_offset = tile_y / max_vertical_count_;
 
-    base::Vec2 atlas_offset(12 + tile_x + 8 * horizontal_offset,
-                            tile_y - max_vertical_count_ * horizontal_offset);
+    base::Vec2 atlas_offset(
+        tile_x + 3 * max_autotile_frame_count_ + 8 * horizontal_offset,
+        tile_y - max_vertical_count_ * horizontal_offset);
     base::RectF quad_tex(atlas_offset.x * tilesize_ + 0.5f,
                          atlas_offset.y * tilesize_ + 0.5f, tilesize_ - 1.0f,
                          tilesize_ - 1.0f);
@@ -884,7 +890,7 @@ void TilemapImpl::ParseMapDataInternal(
     renderer::Quad quad;
     renderer::Quad::SetPositionRect(&quad, quad_pos);
     renderer::Quad::SetTexCoordRectNorm(&quad, quad_tex);
-    renderer::Quad::SetColor(&quad, blend_color);
+    renderer::Quad::SetColor(&quad, blend_color_and_frame_count);
     target->push_back(quad);
   };
 
@@ -898,9 +904,6 @@ void TilemapImpl::ParseMapDataInternal(
   // Process map buffer
   int32_t above_layers_count = render_viewport_.height + 5;
   aboves_cache.resize(above_layers_count);
-
-  // Reset flash quads
-  flash_count_ = 0;
 
   // Begin to parse buffer data
   process_buffer();
@@ -1031,8 +1034,9 @@ void TilemapImpl::GPUUpdateTilemapUniformInternal(
   renderer::Binding_Tilemap::Params uniform;
   uniform.OffsetAndTexSize =
       base::Vec4(offset.x, offset.y, 1.0f / atlas_size.x, 1.0f / atlas_size.y);
-  uniform.AnimateIndexAndTileSize.x = anim_index / 16;
-  uniform.AnimateIndexAndTileSize.y = tilesize;
+  uniform.AnimateIndexAndTileSizeAndFlashAlpha.x = anim_index / 16;
+  uniform.AnimateIndexAndTileSizeAndFlashAlpha.y = tilesize;
+  uniform.AnimateIndexAndTileSizeAndFlashAlpha.z = flash_opacity_ / 255.0f;
 
   render_context->UpdateBuffer(
       agent_.uniform_buffer, 0, sizeof(uniform), &uniform,

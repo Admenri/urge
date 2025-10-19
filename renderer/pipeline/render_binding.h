@@ -172,7 +172,7 @@ class Binding_Tilemap : public RenderBindingBase {
  public:
   struct Params {
     base::Vec4 OffsetAndTexSize;
-    base::Vec4 AnimateIndexAndTileSize;
+    base::Vec4 AnimateIndexAndTileSizeAndFlashAlpha;
   };
 
   Binding_Tilemap() = default;
