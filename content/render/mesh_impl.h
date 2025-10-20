@@ -87,6 +87,7 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Viewport, scoped_refptr<Viewport>);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Visible, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Z, int32_t);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(UniformName, std::string);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(PipelineState,
                                   scoped_refptr<GPUPipelineState>);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(ResourceBinding,
@@ -170,6 +171,7 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
   DrawableNode node_;
   scoped_refptr<ViewportImpl> viewport_;
 
+  std::string uniform_name_ = "WorldMatrix";
   VertexBufferAttribs vertex_buffers_;
   IndexBufferAttribs index_buffer_;
   scoped_refptr<PipelineStateImpl> pipeline_state_;

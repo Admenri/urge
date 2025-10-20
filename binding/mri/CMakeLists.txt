@@ -9,9 +9,13 @@ cmake_minimum_required(VERSION 3.20.1)
 include_directories(third_party)
 
 ## libffi
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   add_subdirectory(third_party/libffi)
   include_directories(third_party/libffi)
+  set(MRI_ENABLE_LIBFFI ON)
+else ()
+  # Disable libffi on non-windows platform
+  set(MRI_ENABLE_LIBFFI OFF)
 endif()
 
 ## cruby interpreter
@@ -66,33 +70,35 @@ endif()
 #--------------------------------------------------------------------------------
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-set(GEM_EXT_RUBYPROF_SRC
-  "third_party/ruby_prof/rp_allocation.c"
-  "third_party/ruby_prof/rp_call_tree.c"
-  "third_party/ruby_prof/rp_call_trees.c"
-  "third_party/ruby_prof/rp_measure_allocations.c"
-  "third_party/ruby_prof/rp_measure_memory.c"
-  "third_party/ruby_prof/rp_measure_process_time.c"
-  "third_party/ruby_prof/rp_measure_wall_time.c"
-  "third_party/ruby_prof/rp_measurement.c"
-  "third_party/ruby_prof/rp_method.c"
-  "third_party/ruby_prof/rp_profile.c"
-  "third_party/ruby_prof/rp_stack.c"
-  "third_party/ruby_prof/rp_thread.c"
-  "third_party/ruby_prof/ruby_prof.c"
-)
+  set(GEM_EXT_RUBYPROF_SRC
+    "third_party/ruby_prof/rp_allocation.c"
+    "third_party/ruby_prof/rp_call_tree.c"
+    "third_party/ruby_prof/rp_call_trees.c"
+    "third_party/ruby_prof/rp_measure_allocations.c"
+    "third_party/ruby_prof/rp_measure_memory.c"
+    "third_party/ruby_prof/rp_measure_process_time.c"
+    "third_party/ruby_prof/rp_measure_wall_time.c"
+    "third_party/ruby_prof/rp_measurement.c"
+    "third_party/ruby_prof/rp_method.c"
+    "third_party/ruby_prof/rp_profile.c"
+    "third_party/ruby_prof/rp_stack.c"
+    "third_party/ruby_prof/rp_thread.c"
+    "third_party/ruby_prof/ruby_prof.c"
+  )
+endif ()
 
-include_directories(third_party/fiddle)
-set(GEM_EXT_FIDDLE_SRC
-  "third_party/fiddle/closure.c"
-  "third_party/fiddle/conversions.c"
-  "third_party/fiddle/fiddle.c"
-  "third_party/fiddle/function.c"
-  "third_party/fiddle/handle.c"
-  "third_party/fiddle/memory_view.c"
-  "third_party/fiddle/pinned.c"
-  "third_party/fiddle/pointer.c"
-)
+if (MRI_ENABLE_LIBFFI)
+  include_directories(third_party/fiddle)
+  set(GEM_EXT_FIDDLE_SRC
+    "third_party/fiddle/closure.c"
+    "third_party/fiddle/conversions.c"
+    "third_party/fiddle/fiddle.c"
+    "third_party/fiddle/function.c"
+    "third_party/fiddle/handle.c"
+    "third_party/fiddle/memory_view.c"
+    "third_party/fiddle/pinned.c"
+    "third_party/fiddle/pointer.c"
+  )
 endif ()
 
 set(GEM_EXT_ZLIB_SRC "third_party/zlib/zlib.c")
@@ -150,8 +156,7 @@ target_link_libraries(binding_mri
   zlibstatic
 )
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  # desktop only
+if (MRI_ENABLE_LIBFFI)
   target_link_libraries(binding_mri PUBLIC ffi)
   # fiddle definitions for linux
   if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

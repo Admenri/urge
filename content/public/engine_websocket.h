@@ -32,18 +32,25 @@ class URGE_OBJECT(WebSocket) {
   };
 
   /*--urge(name:OpenHandler)--*/
-  using OpenHandler = base::RepeatingCallback<void()>;
+  using OpenHandler =
+      base::RepeatingCallback<void(scoped_refptr<WebSocket> itself)>;
 
   /*--urge(name:CloseHandler)--*/
   using CloseHandler =
-      base::RepeatingCallback<void(int32_t code, const std::string& reason)>;
+      base::RepeatingCallback<void(scoped_refptr<WebSocket> itself,
+                                   int32_t code,
+                                   const std::string& reason)>;
 
   /*--urge(name:ErrorHandler)--*/
-  using ErrorHandler = base::RepeatingCallback<void(const std::string& reason)>;
+  using ErrorHandler =
+      base::RepeatingCallback<void(scoped_refptr<WebSocket> itself,
+                                   const std::string& reason)>;
 
   /*--urge(name:MessageHandler)--*/
   using MessageHandler =
-      base::RepeatingCallback<void(const std::string& data, MessageType type)>;
+      base::RepeatingCallback<void(scoped_refptr<WebSocket> itself,
+                                   const std::string& data,
+                                   MessageType type)>;
 
   /*--urge(name:initialize)--*/
   static scoped_refptr<WebSocket> New(ExecutionContext* execution_context,

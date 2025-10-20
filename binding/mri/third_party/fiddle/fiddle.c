@@ -1,5 +1,30 @@
 #include <fiddle.h>
 
+const char kFiddleWrapper[] = 
+"module Fiddle\n"
+"  if WINDOWS\n"
+"    def self.win32_last_error\n"
+"      Thread.current[:__FIDDLE_WIN32_LAST_ERROR__]\n"
+"    end\n"
+"    def self.win32_last_error= error\n"
+"      Thread.current[:__FIDDLE_WIN32_LAST_ERROR__] = error\n"
+"    end\n"
+"    def self.win32_last_socket_error\n"
+"      Thread.current[:__FIDDLE_WIN32_LAST_SOCKET_ERROR__]\n"
+"    end\n"
+"    def self.win32_last_socket_error= error\n"
+"      Thread.current[:__FIDDLE_WIN32_LAST_SOCKET_ERROR__] = error\n"
+"    end\n"
+"  end\n"
+"  def self.last_error\n"
+"    Thread.current[:__FIDDLE_LAST_ERROR__]\n"
+"  end\n"
+"  def self.last_error= error\n"
+"    Thread.current[:__DL2_LAST_ERROR__] = error\n"
+"    Thread.current[:__FIDDLE_LAST_ERROR__] = error\n"
+"  end\n"
+"end";
+
 VALUE mFiddle;
 VALUE rb_eFiddleDLError;
 VALUE rb_eFiddleError;
@@ -685,5 +710,8 @@ Init_fiddle(void)
 #ifdef HAVE_RUBY_MEMORY_VIEW_H
     Init_fiddle_memory_view();
 #endif
+
+    // Wrapper
+    rb_eval_string(kFiddleWrapper);
 }
 /* vim: set noet sws=4 sw=4: */

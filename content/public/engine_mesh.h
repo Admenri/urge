@@ -114,6 +114,9 @@ class URGE_OBJECT(Mesh) {
   /*--urge(name:z)--*/
   URGE_EXPORT_ATTRIBUTE(Z, int32_t);
 
+  /*--urge(name:uniform_name)--*/
+  URGE_EXPORT_ATTRIBUTE(UniformName, std::string);
+
   /*--urge(name:pipeline_state)--*/
   URGE_EXPORT_ATTRIBUTE(PipelineState, scoped_refptr<GPUPipelineState>);
 

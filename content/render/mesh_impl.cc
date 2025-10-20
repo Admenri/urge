@@ -8,8 +8,6 @@
 
 namespace content {
 
-static constexpr char kShaderWorldMatrixVariableName[] = "WorldMatrix";
-
 scoped_refptr<Mesh> Mesh::New(ExecutionContext* execution_context,
                               scoped_refptr<Viewport> viewport,
                               ExceptionState& exception_state) {
@@ -245,6 +243,19 @@ void MeshImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
   node_.SetNodeSortWeight(value);
 }
 
+std::string MeshImpl::Get_UniformName(ExceptionState& exception_state) {
+  DISPOSE_CHECK_RETURN(0);
+
+  return uniform_name_;
+}
+
+void MeshImpl::Put_UniformName(const std::string& value,
+                               ExceptionState& exception_state) {
+  DISPOSE_CHECK;
+
+  uniform_name_ = value;
+}
+
 scoped_refptr<GPUPipelineState> MeshImpl::Get_PipelineState(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
@@ -275,8 +286,8 @@ void MeshImpl::Put_ResourceBinding(
 
   // Set world binding
   if (auto* binding = resource_binding_->AsRawPtr())
-    world_variable_ = binding->GetVariableByName(
-        Diligent::SHADER_TYPE_VERTEX, kShaderWorldMatrixVariableName);
+    world_variable_ = binding->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
+                                                 uniform_name_.c_str());
 }
 
 void MeshImpl::OnObjectDisposed() {

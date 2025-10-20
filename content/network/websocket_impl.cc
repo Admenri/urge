@@ -145,19 +145,20 @@ void WebSocketImpl::CloseConnectInternal(int32_t code,
                                          const std::string& reason) {}
 
 void WebSocketImpl::OpenHandlerInternal(websocketpp::connection_hdl handle) {
-  context()->network_service->PushEvent(open_handler_);
+  context()->network_service->PushEvent(
+      base::BindRepeating(open_handler_, scoped_refptr(this)));
 }
 
 void WebSocketImpl::CloseHandlerInternal(websocketpp::connection_hdl handle) {
   auto ec = client_->get_con_from_hdl(handle)->get_ec();
-  context()->network_service->PushEvent(
-      base::BindRepeating(close_handler_, ec.value(), ec.message()));
+  context()->network_service->PushEvent(base::BindRepeating(
+      close_handler_, scoped_refptr(this), ec.value(), ec.message()));
 }
 
 void WebSocketImpl::ErrorHandlerInternal(websocketpp::connection_hdl handle) {
   auto ec = client_->get_con_from_hdl(handle)->get_ec();
   context()->network_service->PushEvent(
-      base::BindRepeating(error_handler_, ec.message()));
+      base::BindRepeating(error_handler_, scoped_refptr(this), ec.message()));
 }
 
 void WebSocketImpl::MessageHandlerInternal(
@@ -171,8 +172,8 @@ void WebSocketImpl::MessageHandlerInternal(
   }
 
   auto& payload = message->get_payload();
-  context()->network_service->PushEvent(
-      base::BindRepeating(message_handler_, payload, opcode));
+  context()->network_service->PushEvent(base::BindRepeating(
+      message_handler_, scoped_refptr(this), payload, opcode));
 }
 
 }  // namespace content
