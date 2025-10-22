@@ -15,6 +15,8 @@
 
 namespace content {
 
+struct WebSocketAgent;
+
 class WebSocketImpl : public WebSocket, public EngineObject {
  public:
   WebSocketImpl(ExecutionContext* execution_context, const std::string& url);
@@ -24,9 +26,6 @@ class WebSocketImpl : public WebSocket, public EngineObject {
   WebSocketImpl& operator=(const WebSocketImpl&) = delete;
 
  public:
-  using ClientPtr = websocketpp::client<websocketpp::config::asio_client>;
-  using ConnectPtr = websocketpp::connection<websocketpp::config::asio_client>;
-
   void SetOpenHandler(OpenHandler callback,
                       ExceptionState& exception_state) override;
   void SetCloseHandler(CloseHandler callback,
@@ -44,10 +43,33 @@ class WebSocketImpl : public WebSocket, public EngineObject {
              ExceptionState& exception_state) override;
 
  private:
+  friend struct WebSocketAgent;
   void CreateConnectInternal(const std::string& url);
 
-  void SendPayloadInternal(std::string payload, MessageType type);
-  void CloseConnectInternal(int32_t code, const std::string& reason);
+  WebSocketAgent* agent_;
+
+  OpenHandler open_handler_;
+  CloseHandler close_handler_;
+  ErrorHandler error_handler_;
+  MessageHandler message_handler_;
+
+  base::WeakPtrFactory<WebSocketImpl> weak_ptr_factory_{this};
+};
+
+struct WebSocketAgent {
+  using ClientPtr = websocketpp::client<websocketpp::config::asio_client>;
+  using ConnectPtr = websocketpp::connection<websocketpp::config::asio_client>;
+
+  ExecutionContext* context_;
+  base::WeakPtr<WebSocketImpl> self_;
+  std::unique_ptr<ClientPtr> client_;
+  std::shared_ptr<ConnectPtr> connect_;
+
+  WebSocketAgent(ExecutionContext* execution_context,
+                 base::WeakPtr<WebSocketImpl> self,
+                 const std::string& url);
+
+  void CreateConnectInternal(const std::string& url);
 
   void OpenHandlerInternal(websocketpp::connection_hdl handle);
   void CloseHandlerInternal(websocketpp::connection_hdl handle);
@@ -55,14 +77,6 @@ class WebSocketImpl : public WebSocket, public EngineObject {
   void MessageHandlerInternal(
       websocketpp::connection_hdl handle,
       websocketpp::config::asio_client::message_type::ptr message);
-
-  std::unique_ptr<ClientPtr> client_;
-  std::shared_ptr<ConnectPtr> primary_connect_;
-
-  OpenHandler open_handler_;
-  CloseHandler close_handler_;
-  ErrorHandler error_handler_;
-  MessageHandler message_handler_;
 };
 
 }  // namespace content

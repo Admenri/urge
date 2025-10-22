@@ -13,39 +13,38 @@
 
 namespace content {
 
+/*--urge(name:HTTPRequestOptions)--*/
+struct URGE_OBJECT(HTTPRequestOptions) {
+  std::string method;
+  std::string headers;
+  scoped_refptr<IOStream> body;
+};
+
 /*--urge(name:HTTPRequest)--*/
 class URGE_OBJECT(HTTPRequest) {
  public:
   virtual ~HTTPRequest() = default;
 
-  /*--urge(name:ReadyState)--*/
-  enum ReadyState {
-    READY_STATE_UNSENT = 0,
-    READY_STATE_OPENED,
-    READY_STATE_HEADERS_RECEIVED,
-    READY_STATE_LOADING,
-    READY_STATE_DONE,
-  };
-
-  /*--urge(name:ReadyStateHandler)--*/
-  using ReadyStateHandler =
+  /*--urge(name:OnLoadHandler)--*/
+  using OnLoadHandler =
       base::RepeatingCallback<void(scoped_refptr<HTTPRequest> itself)>;
 
-  /*--urge(name:initialize)--*/
-  static scoped_refptr<HTTPRequest> New(ExecutionContext* execution_context,
-                                        ExceptionState& exception_state);
+  /*--urge(name:OnErrorHandler)--*/
+  using OnErrorHandler =
+      base::RepeatingCallback<void(scoped_refptr<HTTPRequest> itself,
+                                   const std::string& reason)>;
 
-  /*--urge(name:set_ready_state_handler)--*/
-  virtual void SetReadyStateHandler(ReadyStateHandler callback,
-                                    ExceptionState& exception_state) = 0;
+  /*--urge(name:fetch)--*/
+  static scoped_refptr<HTTPRequest> Fetch(
+      ExecutionContext* execution_context,
+      const std::string& url,
+      scoped_refptr<HTTPRequestOptions> options,
+      OnLoadHandler onload_callback,
+      OnErrorHandler error_callback,
+      ExceptionState& exception_state);
 
-  /*--urge(name:set_request_header)--*/
-  virtual void SetRequestHeader(const std::string& key,
-                                const std::string& value,
-                                ExceptionState& exception_state) = 0;
-
-  /*--urge(name:ready_state)--*/
-  virtual ReadyState GetReadyState(ExceptionState& exception_state) = 0;
+  /*--urge(name:abort)--*/
+  virtual void Abort(ExceptionState& exception_state) = 0;
 
   /*--urge(name:status_code)--*/
   virtual int32_t GetStatusCode(ExceptionState& exception_state) = 0;
@@ -59,18 +58,6 @@ class URGE_OBJECT(HTTPRequest) {
   /*--urge(name:response)--*/
   virtual scoped_refptr<IOStream> GetResponse(
       ExceptionState& exception_state) = 0;
-
-  /*--urge(name:open)--*/
-  virtual void Open(const std::string& method,
-                    const std::string& url,
-                    ExceptionState& exception_state) = 0;
-
-  /*--urge(name:send,optional:body=nullptr)--*/
-  virtual void Send(scoped_refptr<IOStream> body,
-                    ExceptionState& exception_state) = 0;
-
-  /*--urge(name:abort)--*/
-  virtual void Abort(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

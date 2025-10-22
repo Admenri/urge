@@ -8,17 +8,6 @@
 
 namespace content {
 
-namespace {
-
-void DestroyConnectInternal(
-    std::unique_ptr<WebSocketImpl::ClientPtr> client,
-    std::shared_ptr<WebSocketImpl::ConnectPtr> connect) {
-  connect.reset();
-  client.reset();
-}
-
-}  // namespace
-
 // static
 scoped_refptr<WebSocket> WebSocket::New(ExecutionContext* execution_context,
                                         const std::string& url,
@@ -29,14 +18,13 @@ scoped_refptr<WebSocket> WebSocket::New(ExecutionContext* execution_context,
 WebSocketImpl::WebSocketImpl(ExecutionContext* execution_context,
                              const std::string& url)
     : EngineObject(execution_context) {
-  context()->network_service->PostNetworkTask(base::BindOnce(
-      &WebSocketImpl::CreateConnectInternal, base::Unretained(this), url));
+  agent_ = new WebSocketAgent(execution_context, weak_ptr_factory_.GetWeakPtr(),
+                              url);
 }
 
 WebSocketImpl::~WebSocketImpl() {
   context()->network_service->PostNetworkTask(
-      base::BindOnce(&DestroyConnectInternal, std::move(client_),
-                     std::move(primary_connect_)));
+      base::BindOnce([](WebSocketAgent* agent) { delete agent; }, agent_));
 }
 
 void WebSocketImpl::SetOpenHandler(OpenHandler callback,
@@ -61,10 +49,10 @@ void WebSocketImpl::SetMessageHandler(MessageHandler callback,
 
 WebSocket::ReadyState WebSocketImpl::GetReadyState(
     ExceptionState& exception_state) {
-  if (!primary_connect_)
+  if (!agent_->connect_)
     return READY_STATE_CONNECTING;
 
-  auto ready_state = primary_connect_->get_state();
+  auto ready_state = agent_->connect_->get_state();
   switch (ready_state) {
     default:
     case websocketpp::session::state::value::connecting:
@@ -81,24 +69,49 @@ WebSocket::ReadyState WebSocketImpl::GetReadyState(
 void WebSocketImpl::Send(const std::string& data,
                          MessageType type,
                          ExceptionState& exception_state) {
-  context()->network_service->PostNetworkTask(
-      base::BindOnce(&WebSocketImpl::SendPayloadInternal,
-                     base::Unretained(this), std::move(data), type));
+  if (!agent_->connect_)
+    return;
+
+  context()->network_service->PostNetworkTask(base::BindOnce(
+      [](WebSocketAgent* agent, const std::string& data, MessageType type) {
+        websocketpp::frame::opcode::value opcode;
+        if (type == MessageType::MESSAGE_TYPE_TEXT) {
+          opcode = websocketpp::frame::opcode::TEXT;
+        } else {
+          opcode = websocketpp::frame::opcode::BINARY;
+        }
+
+        agent->connect_->send(data, opcode);
+      },
+      agent_, std::move(data), type));
 }
 
 void WebSocketImpl::Close(int32_t code,
                           const std::string& reason,
                           ExceptionState& exception_state) {
-  context()->network_service->PostNetworkTask(
-      base::BindOnce(&WebSocketImpl::CloseConnectInternal,
-                     base::Unretained(this), code, reason));
+  if (!agent_->connect_)
+    return;
+
+  context()->network_service->PostNetworkTask(base::BindOnce(
+      [](WebSocketAgent* agent, int32_t code, const std::string& reason) {
+        agent->connect_->close(code, reason);
+      },
+      agent_, code, reason));
 }
 
 // network thread
-void WebSocketImpl::CreateConnectInternal(const std::string& url) {
+WebSocketAgent::WebSocketAgent(ExecutionContext* execution_context,
+                               base::WeakPtr<WebSocketImpl> self,
+                               const std::string& url)
+    : context_(execution_context), self_(self) {
+  context_->network_service->PushEvent(base::BindOnce(
+      &WebSocketAgent::CreateConnectInternal, base::Unretained(this), url));
+}
+
+void WebSocketAgent::CreateConnectInternal(const std::string& url) {
   // Network service context
-  auto* io_context = static_cast<asio::io_context*>(
-      context()->network_service->GetIOContext());
+  auto* io_context =
+      static_cast<asio::io_context*>(context_->network_service->GetIOContext());
 
   // Initialize client
   client_ =
@@ -106,20 +119,19 @@ void WebSocketImpl::CreateConnectInternal(const std::string& url) {
   client_->clear_access_channels(websocketpp::log::alevel::all);
   client_->clear_error_channels(websocketpp::log::elevel::all);
   client_->init_asio(io_context);
-  client_->start_perpetual();
 
   // Setup handlers
   client_->set_open_handler(
-      websocketpp::lib::bind(&WebSocketImpl::OpenHandlerInternal, this,
+      websocketpp::lib::bind(&WebSocketAgent::OpenHandlerInternal, this,
                              websocketpp::lib::placeholders::_1));
   client_->set_close_handler(
-      websocketpp::lib::bind(&WebSocketImpl::CloseHandlerInternal, this,
+      websocketpp::lib::bind(&WebSocketAgent::CloseHandlerInternal, this,
                              websocketpp::lib::placeholders::_1));
   client_->set_fail_handler(
-      websocketpp::lib::bind(&WebSocketImpl::ErrorHandlerInternal, this,
+      websocketpp::lib::bind(&WebSocketAgent::ErrorHandlerInternal, this,
                              websocketpp::lib::placeholders::_1));
   client_->set_message_handler(websocketpp::lib::bind(
-      &WebSocketImpl::MessageHandlerInternal, this,
+      &WebSocketAgent::MessageHandlerInternal, this,
       websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
 
   // Setup connection
@@ -127,53 +139,52 @@ void WebSocketImpl::CreateConnectInternal(const std::string& url) {
   auto con = client_->get_connection(url, ec);
 
   // Connection
-  primary_connect_ = client_->connect(con);
+  connect_ = client_->connect(con);
 }
 
-void WebSocketImpl::SendPayloadInternal(std::string payload, MessageType type) {
-  websocketpp::frame::opcode::value opcode;
-  if (type == MessageType::MESSAGE_TYPE_TEXT) {
-    opcode = websocketpp::frame::opcode::TEXT;
-  } else {
-    opcode = websocketpp::frame::opcode::BINARY;
-  }
+void WebSocketAgent::OpenHandlerInternal(websocketpp::connection_hdl handle) {
+  if (!self_)
+    return;
 
-  primary_connect_->send(std::move(payload), opcode);
+  context_->network_service->PushEvent(
+      base::BindRepeating(self_->open_handler_, scoped_refptr(self_.get())));
 }
 
-void WebSocketImpl::CloseConnectInternal(int32_t code,
-                                         const std::string& reason) {}
+void WebSocketAgent::CloseHandlerInternal(websocketpp::connection_hdl handle) {
+  if (!self_)
+    return;
 
-void WebSocketImpl::OpenHandlerInternal(websocketpp::connection_hdl handle) {
-  context()->network_service->PushEvent(
-      base::BindRepeating(open_handler_, scoped_refptr(this)));
-}
-
-void WebSocketImpl::CloseHandlerInternal(websocketpp::connection_hdl handle) {
   auto ec = client_->get_con_from_hdl(handle)->get_ec();
-  context()->network_service->PushEvent(base::BindRepeating(
-      close_handler_, scoped_refptr(this), ec.value(), ec.message()));
+  context_->network_service->PushEvent(
+      base::BindRepeating(self_->close_handler_, scoped_refptr(self_.get()),
+                          ec.value(), ec.message()));
 }
 
-void WebSocketImpl::ErrorHandlerInternal(websocketpp::connection_hdl handle) {
+void WebSocketAgent::ErrorHandlerInternal(websocketpp::connection_hdl handle) {
+  if (!self_)
+    return;
+
   auto ec = client_->get_con_from_hdl(handle)->get_ec();
-  context()->network_service->PushEvent(
-      base::BindRepeating(error_handler_, scoped_refptr(this), ec.message()));
+  context_->network_service->PushEvent(base::BindRepeating(
+      self_->error_handler_, scoped_refptr(self_.get()), ec.message()));
 }
 
-void WebSocketImpl::MessageHandlerInternal(
+void WebSocketAgent::MessageHandlerInternal(
     websocketpp::connection_hdl handle,
     websocketpp::config::asio_client::message_type::ptr message) {
-  MessageType opcode;
+  if (!self_)
+    return;
+
+  WebSocket::MessageType opcode;
   if (message->get_opcode() == websocketpp::frame::opcode::TEXT) {
-    opcode = MessageType::MESSAGE_TYPE_TEXT;
+    opcode = WebSocket::MESSAGE_TYPE_TEXT;
   } else {
-    opcode = MessageType::MESSAGE_TYPE_BINARY;
+    opcode = WebSocket::MESSAGE_TYPE_BINARY;
   }
 
   auto& payload = message->get_payload();
-  context()->network_service->PushEvent(base::BindRepeating(
-      message_handler_, scoped_refptr(this), payload, opcode));
+  context_->network_service->PushEvent(base::BindRepeating(
+      self_->message_handler_, scoped_refptr(self_.get()), payload, opcode));
 }
 
 }  // namespace content

@@ -169,18 +169,26 @@ void BindingEngineMri::PreEarlyInitialization(
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
   rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
 
+  // internal exception
   MriInitException(profile->api_version >=
                    content::ContentProfile::APIVersion::RGSS3);
 
+  // marshal data reader
   InitCoreFileBinding();
+
+  // URGE autogen bindings
   InitMriAutogen();
 
+  // C extensions
   Init_zlib();
 #if !defined(OS_ANDROID) && !defined(OS_EMSCRIPTEN)
   Init_ruby_prof();
+#if defined(OS_WIN)
   Init_fiddle();
 #endif
+#endif
 
+  // Autogen binding patching
   MriApplyBindingPatch();
 
 #if defined(OS_EMSCRIPTEN)

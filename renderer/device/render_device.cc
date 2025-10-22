@@ -38,19 +38,6 @@
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceGLES.h"
 #endif
 
-#if defined(OS_LINUX)
-using PFN_XGetXCBConnection = void* (*)(void*);
-
-#ifdef SDL_PLATFORM_OPENBSD
-#define DEFAULT_VULKAN "libvulkan.so"
-#define DEFAULT_X11_XCB "libX11-xcb.so"
-#else
-#define DEFAULT_VULKAN "libvulkan.so.1"
-#define DEFAULT_X11_XCB "libX11-xcb.so.1"
-#endif
-
-#endif  // OS_LINUX
-
 namespace renderer {
 
 //--------------------------------------------------------------------------------------
@@ -105,25 +92,27 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
   native_window.hWnd = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 #elif defined(OS_LINUX)
-  // Xlib Display
+  // Xlib Display Port
   void* xdisplay = SDL_GetPointerProperty(
       window_properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
   int64_t xwindow = SDL_GetNumberProperty(window_properties,
                                           SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
 
+  // OpenGL context
   glcontext = SDL_GL_CreateContext(window_target->AsSDLWindow());
   SDL_GL_MakeCurrent(window_target->AsSDLWindow(), glcontext);
 
-  // Get XCBConnect from Xlib
-  const char* xcb_library_name = SDL_GetHint(SDL_HINT_X11_XCB_LIBRARY);
-  if (!xcb_library_name || !*xcb_library_name)
-    xcb_library_name = DEFAULT_X11_XCB;
+  // Get XCBConnect from Xlib for Vulkan
+  SDL_SharedObject* xlib_xcb_library = SDL_LoadObject("libX11-xcb.so");
+  if (!xlib_xcb_library)
+    xlib_xcb_library = SDL_LoadObject("libX11-xcb.so.1");
 
-  SDL_SharedObject* xlib_xcb_library = SDL_LoadObject(xcb_library_name);
-  PFN_XGetXCBConnection xgetxcb_func = nullptr;
+  // Get proc address
+  using XGetXCBConnection = void* (*)(void*);
+  XGetXCBConnection xgetxcb_func = nullptr;
   if (xlib_xcb_library)
-    xgetxcb_func = (PFN_XGetXCBConnection)SDL_LoadFunction(xlib_xcb_library,
-                                                           "XGetXCBConnection");
+    xgetxcb_func = (XGetXCBConnection)SDL_LoadFunction(xlib_xcb_library,
+                                                       "XGetXCBConnection");
 
   // Setup native window
   native_window.WindowId = static_cast<uint32_t>(xwindow);

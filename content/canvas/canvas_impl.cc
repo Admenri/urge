@@ -962,7 +962,6 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
                                              int32_t blend_type,
                                              uint32_t opacity) {
   auto* scheduler = context()->canvas_scheduler;
-  auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Custom blend blit pipeline
@@ -1019,7 +1018,6 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
                                                    const base::Rect& src_region,
                                                    uint32_t opacity) {
   auto* scheduler = context()->canvas_scheduler;
-  auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Clamp blit region
@@ -1120,7 +1118,6 @@ void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
                                         const base::Rect& src_region,
                                         GPUBitmapData* clip_texture) {
   auto* scheduler = context()->canvas_scheduler;
-  auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Clamp blit region
@@ -1270,7 +1267,6 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
                                                    const base::Vec4& color2,
                                                    bool vertical) {
   auto* scheduler = context()->canvas_scheduler;
-  auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Pipeline state
@@ -1479,7 +1475,6 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
 
 void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   auto* scheduler = context()->canvas_scheduler;
-  auto& render_device = *scheduler->GetRenderDevice();
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
   // Pipeline state
