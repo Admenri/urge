@@ -85,10 +85,6 @@ set(ENGINE_CONTENT_SRC
   media/audio_impl.h
   media/audio_stream_impl.cc
   media/audio_stream_impl.h
-  network/httprequest_impl.cc
-  network/httprequest_impl.h
-  network/websocket_impl.cc
-  network/websocket_impl.h
   platform/engine_impl.cc
   platform/engine_impl.h
   profile/command_ids.h
@@ -139,6 +135,24 @@ set(ENGINE_CONTENT_SRC
   ${RUNTIMEAPI_HEADERS}
 )
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  set(ENGINE_CONTENT_SRC
+    ${ENGINE_CONTENT_SRC}
+    network/emscripten/httprequest_impl.cc
+    network/emscripten/httprequest_impl.h
+    network/emscripten/websocket_impl.cc
+    network/emscripten/websocket_impl.h
+  )
+else ()
+  set(ENGINE_CONTENT_SRC
+    ${ENGINE_CONTENT_SRC}
+    network/httprequest_impl.cc
+    network/httprequest_impl.h
+    network/websocket_impl.cc
+    network/websocket_impl.h
+  )
+endif ()
+
 #--------------------------------------------------------------------------------
 # Embeded program resource
 #--------------------------------------------------------------------------------
@@ -154,7 +168,6 @@ target_link_libraries(engine_content
   engine_base
   engine_ui
   engine_renderer
-  components_network
   components_filesystem
   components_fpslimiter
   components_audioservice
@@ -164,7 +177,11 @@ target_link_libraries(engine_content
 )
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  target_link_libraries(engine_content PUBLIC av1player)
+  target_link_libraries(engine_content
+   PUBLIC
+    av1player
+    components_network
+  )
 endif()
 
 if (MSVC)

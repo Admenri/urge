@@ -193,7 +193,9 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       render_device_.get(), execution_context_->render.pipeline_loader.get());
   event_controller_ = std::make_unique<EventController>(window);
   audio_server_ = audioservice::AudioService::Create(io_service);
+#if !defined(OS_EMSCRIPTEN)
   network_service_ = network::NetworkService::Create();
+#endif
 
   // System components
   execution_context_->engine_profile = profile_;
@@ -204,7 +206,9 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
   execution_context_->sprite_batcher = sprite_batcher_.get();
   execution_context_->event_controller = event_controller_.get();
   execution_context_->audio_server = audio_server_.get();
+#if !defined(OS_EMSCRIPTEN)
   execution_context_->network_service = network_service_.get();
+#endif
 
   // Create engine objects
   engine_impl_ = base::MakeRefCounted<EngineImpl>(execution_context_.get());
@@ -274,8 +278,10 @@ void ContentRunner::CreateRenderComponents() {
 }
 
 void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
+#if !defined(OS_EMSCRIPTEN)
   // Update network service queue
   network_service_->DispatchEvent();
+#endif
 
   // Increase frame step
   frame_count_++;

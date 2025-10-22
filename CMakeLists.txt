@@ -100,7 +100,9 @@ set(MINIAUDIO_NO_DEVICEIO ON)
 add_subdirectory(third_party/miniaudio)
 
 ## ASIO
-include_directories(third_party/asio/include)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  include_directories(third_party/asio/include)
+endif ()
 
 ## Zlib
 set(ZLIB_BUILD_SHARED OFF)
@@ -143,8 +145,11 @@ endif ()
 add_subdirectory(components/audioservice)
 add_subdirectory(components/filesystem)
 add_subdirectory(components/fpslimiter)
-add_subdirectory(components/network)
 add_subdirectory(components/version)
+
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  add_subdirectory(components/network)
+endif ()
 
 #-------------------------------------------------------------------------
 # * source

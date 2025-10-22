@@ -45,9 +45,11 @@ struct ExecutionContext {
   SpriteBatch* sprite_batcher = nullptr;
   EventController* event_controller = nullptr;
   audioservice::AudioService* audio_server = nullptr;
-  network::NetworkService* network_service = nullptr;
   DisposableCollection* disposable_parent = nullptr;
   DrawNodeController* screen_drawable_node = nullptr;
+#if !defined(OS_EMSCRIPTEN)
+  network::NetworkService* network_service = nullptr;
+#endif
 
   ExecutionContext();
   ~ExecutionContext();

@@ -63,7 +63,7 @@ std::string HTTPRequestImpl::GetStatusText(ExceptionState& exception_state) {
   return agent_->status_text_;
 }
 
-std::string HTTPRequestImpl::GetResponseHeaders(
+std::vector<std::string> HTTPRequestImpl::GetResponseHeaders(
     ExceptionState& exception_state) {
   return agent_->response_headers_;
 }
@@ -86,9 +86,8 @@ HTTPRequestAgent::HTTPRequestAgent(ExecutionContext* execution_context,
   request_stream << "Accept: */*\r\n";
   request_stream << "Connection: close\r\n";
 
-  if (!self_->options_->headers.empty()) {
-    request_stream << self_->options_->headers;
-  }
+  for (const auto& it : self_->options_->headers)
+    request_stream << it;
 
   request_stream << "\r\n";
 
@@ -191,8 +190,11 @@ void HTTPRequestAgent::HandleReadHeaders(const std::error_code& err) {
     std::istream response_stream(&response_);
 
     std::string header;
-    while (std::getline(response_stream, header) && header != "\r")
-      response_headers_ += header + "\r\n";
+    while (std::getline(response_stream, header) && header != "\r") {
+      if (header.back() == '\r')
+        header.pop_back();
+      response_headers_.push_back(header);
+    }
 
     // Start reading remaining data until EOF.
     asio::async_read(*socket_, response_, asio::transfer_at_least(1),

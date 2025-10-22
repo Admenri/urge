@@ -5,6 +5,8 @@
 #ifndef CONTENT_PUBLIC_ENGINE_HTTPREQUEST_H_
 #define CONTENT_PUBLIC_ENGINE_HTTPREQUEST_H_
 
+#include <vector>
+
 #include "base/bind/callback.h"
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
@@ -16,7 +18,7 @@ namespace content {
 /*--urge(name:HTTPRequestOptions)--*/
 struct URGE_OBJECT(HTTPRequestOptions) {
   std::string method;
-  std::string headers;
+  std::vector<std::string> headers;
   scoped_refptr<IOStream> body;
 };
 
@@ -53,7 +55,8 @@ class URGE_OBJECT(HTTPRequest) {
   virtual std::string GetStatusText(ExceptionState& exception_state) = 0;
 
   /*--urge(name:response_headers)--*/
-  virtual std::string GetResponseHeaders(ExceptionState& exception_state) = 0;
+  virtual std::vector<std::string> GetResponseHeaders(
+      ExceptionState& exception_state) = 0;
 
   /*--urge(name:response)--*/
   virtual scoped_refptr<IOStream> GetResponse(

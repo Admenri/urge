@@ -33,7 +33,8 @@ class HTTPRequestImpl : public HTTPRequest, public EngineObject {
   void Abort(ExceptionState& exception_state) override;
   int32_t GetStatusCode(ExceptionState& exception_state) override;
   std::string GetStatusText(ExceptionState& exception_state) override;
-  std::string GetResponseHeaders(ExceptionState& exception_state) override;
+  std::vector<std::string> GetResponseHeaders(
+      ExceptionState& exception_state) override;
   scoped_refptr<IOStream> GetResponse(ExceptionState& exception_state) override;
 
  private:
@@ -62,7 +63,7 @@ struct HTTPRequestAgent {
   std::string http_version_;
   int32_t status_code_;
   std::string status_text_;
-  std::string response_headers_;
+  std::vector<std::string> response_headers_;
 
   scoped_refptr<IOStreamImpl> response_stream_;
 
