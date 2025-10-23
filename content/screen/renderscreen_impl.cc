@@ -384,6 +384,12 @@ scoped_refptr<GPUBuffer> RenderScreenImpl::GetGenericQuadIndexBuffer(
   return base::MakeRefCounted<BufferImpl>(context(), **quad_index);
 }
 
+GPU::ValueType RenderScreenImpl::GetInternalIndexType(
+    ExceptionState& exception_state) {
+  auto& quad_index = context()->render.quad_index;
+  return static_cast<GPU::ValueType>(quad_index->GetIndexType());
+}
+
 uint32_t RenderScreenImpl::Get_FrameRate(ExceptionState& exception_state) {
   return frame_rate_;
 }

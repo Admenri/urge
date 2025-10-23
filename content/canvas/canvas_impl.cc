@@ -791,12 +791,18 @@ scoped_refptr<GPUTexture> CanvasImpl::GetTexture(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
+  // Submit pending draw commands
+  SubmitQueuedCommands();
+
   return base::MakeRefCounted<TextureImpl>(context(), gpu_.data);
 }
 
 scoped_refptr<GPUTexture> CanvasImpl::GetDepthStencil(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
+
+  // Submit pending draw commands
+  SubmitQueuedCommands();
 
   return base::MakeRefCounted<TextureImpl>(context(), gpu_.depth_stencil);
 }
@@ -805,6 +811,9 @@ scoped_refptr<GPUTextureView> CanvasImpl::GetShaderResourceView(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
+  // Submit pending draw commands
+  SubmitQueuedCommands();
+
   return base::MakeRefCounted<TextureViewImpl>(context(), gpu_.resource);
 }
 
@@ -812,12 +821,18 @@ scoped_refptr<GPUTextureView> CanvasImpl::GetRenderTargetView(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
 
+  // Submit pending draw commands
+  SubmitQueuedCommands();
+
   return base::MakeRefCounted<TextureViewImpl>(context(), gpu_.target);
 }
 
 scoped_refptr<GPUTextureView> CanvasImpl::GetDepthStencilView(
     ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(nullptr);
+
+  // Submit pending draw commands
+  SubmitQueuedCommands();
 
   return base::MakeRefCounted<TextureViewImpl>(context(), gpu_.depth_view);
 }

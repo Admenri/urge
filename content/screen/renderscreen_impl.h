@@ -116,6 +116,7 @@ class RenderScreenImpl : public Graphics, public EngineObject {
   scoped_refptr<GPUBuffer> GetGenericQuadIndexBuffer(
       uint32_t draw_quad_count,
       ExceptionState& exception_state) override;
+  GPU::ValueType GetInternalIndexType(ExceptionState& exception_state) override;
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(FrameRate, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(FrameCount, uint32_t);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Brightness, uint32_t);

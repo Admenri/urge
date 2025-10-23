@@ -113,6 +113,10 @@ class URGE_OBJECT(Graphics) {
       uint32_t draw_quad_count,
       ExceptionState& exception_state) = 0;
 
+  /*--urge(name:internal_index_type)--*/
+  virtual GPU::ValueType GetInternalIndexType(
+      ExceptionState& exception_state) = 0;
+
   /*--urge(name:frame_rate)--*/
   URGE_EXPORT_ATTRIBUTE(FrameRate, uint32_t);
 
