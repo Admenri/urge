@@ -41,8 +41,8 @@ Diligent::RenderTargetBlendDesc GetBlendState(BlendType type) {
       state.BlendOp = Diligent::BLEND_OPERATION_ADD;
       state.SrcBlend = Diligent::BLEND_FACTOR_DEST_COLOR;
       state.DestBlend = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
-      state.SrcBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
-      state.DestBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
+      state.SrcBlendAlpha = Diligent::BLEND_FACTOR_ZERO;
+      state.DestBlendAlpha = Diligent::BLEND_FACTOR_ONE;
       break;
     case BLEND_TYPE_KEEP_ALPHA:
       state.BlendEnable = Diligent::True;
