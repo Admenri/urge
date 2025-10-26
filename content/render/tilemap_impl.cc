@@ -543,7 +543,10 @@ void TilemapImpl::Put_RepeatX(const bool& value,
                               ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  repeat_.x = value;
+  if (repeat_.x != value) {
+    repeat_.x = value;
+    map_buffer_dirty_ = true;
+  }
 }
 
 bool TilemapImpl::Get_RepeatY(ExceptionState& exception_state) {
@@ -556,7 +559,10 @@ void TilemapImpl::Put_RepeatY(const bool& value,
                               ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  repeat_.y = value;
+  if (repeat_.y == value) {
+    repeat_.y = value;
+    map_buffer_dirty_ = true;
+  }
 }
 
 void TilemapImpl::OnObjectDisposed() {
