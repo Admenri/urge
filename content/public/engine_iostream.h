@@ -76,11 +76,8 @@ class URGE_OBJECT(IOStream) {
                                   uint64_t byte_size,
                                   ExceptionState& exception_state);
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:status)--*/
   virtual IOStatus GetStatus(ExceptionState& exception_state) = 0;

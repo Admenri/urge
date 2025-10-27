@@ -28,8 +28,7 @@ class BufferViewImpl : public GPUBufferView,
   Diligent::IBufferView* AsRawPtr() const { return object_; }
 
  protected:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint64_t GetDeviceObject(ExceptionState& exception_state) override;
   scoped_refptr<GPUBufferViewDesc> GetDesc(
       ExceptionState& exception_state) override;
@@ -53,8 +52,7 @@ class BufferImpl : public GPUBuffer, public EngineObject, public Disposable {
   Diligent::IBuffer* AsRawPtr() const { return object_; }
 
  protected:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint64_t GetDeviceObject(ExceptionState& exception_state) override;
   scoped_refptr<GPUBufferDesc> GetDesc(
       ExceptionState& exception_state) override;

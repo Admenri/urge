@@ -84,11 +84,6 @@ Window2Impl::Window2Impl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(Window2Impl);
 
-void Window2Impl::SetLabel(const std::string& label,
-                           ExceptionState& exception_state) {
-  node_.SetDebugLabel(label);
-}
-
 void Window2Impl::Update(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 

@@ -35,8 +35,7 @@ class VideoDecoderImpl : public VideoDecoder,
   VideoDecoderImpl(const VideoDecoderImpl&) = delete;
   VideoDecoderImpl& operator=(const VideoDecoderImpl&) = delete;
 
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   int32_t GetWidth(ExceptionState& exception_state) override;
   int32_t GetHeight(ExceptionState& exception_state) override;
   float GetDuration(ExceptionState& exception_state) override;

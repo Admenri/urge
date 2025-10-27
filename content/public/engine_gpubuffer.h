@@ -19,11 +19,8 @@ class URGE_OBJECT(GPUBufferView) {
  public:
   virtual ~GPUBufferView() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:device_object)--*/
   virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;
@@ -42,11 +39,8 @@ class URGE_OBJECT(GPUBuffer) {
  public:
   virtual ~GPUBuffer() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:device_object)--*/
   virtual uint64_t GetDeviceObject(ExceptionState& exception_state) = 0;

@@ -29,8 +29,7 @@ class PipelineStateImpl : public GPUPipelineState,
 
  protected:
   // GPUPipelineState interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint32_t GetResourceSignatureCount(ExceptionState& exception_state) override;
   scoped_refptr<GPUPipelineSignature> GetResourceSignature(
       uint32_t index,

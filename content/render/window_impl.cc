@@ -42,12 +42,6 @@ WindowImpl::WindowImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(WindowImpl);
 
-void WindowImpl::SetLabel(const std::string& label,
-                          ExceptionState& exception_state) {
-  background_node_.SetDebugLabel(label);
-  control_node_.SetDebugLabel(label);
-}
-
 void WindowImpl::Update(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 

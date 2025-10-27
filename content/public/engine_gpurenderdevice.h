@@ -27,11 +27,8 @@ class URGE_OBJECT(GPURenderDevice) {
  public:
   virtual ~GPURenderDevice() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:device_info)--*/
   virtual scoped_refptr<GPURenderDeviceInfo> GetDeviceInfo(

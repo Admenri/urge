@@ -29,11 +29,8 @@ class URGE_OBJECT(ImageAnimation) {
                                            const std::string& extname,
                                            ExceptionState& exception_state);
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:width)--*/
   virtual int32_t Width(ExceptionState& exception_state) = 0;

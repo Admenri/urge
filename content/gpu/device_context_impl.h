@@ -31,8 +31,7 @@ class DeviceContextImpl : public GPUDeviceContext,
 
  protected:
   // Disposable interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
 
   // GPUDeviceContext interface
   scoped_refptr<GPUDeviceContextDesc> GetDesc(

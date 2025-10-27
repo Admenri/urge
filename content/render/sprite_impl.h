@@ -44,11 +44,7 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
   SpriteImpl(const SpriteImpl&) = delete;
   SpriteImpl& operator=(const SpriteImpl&) = delete;
 
-  void SetLabel(const std::string& label,
-                ExceptionState& exception_state) override;
-
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void Flash(scoped_refptr<Color> color,
              uint32_t duration,
              ExceptionState& exception_state) override;

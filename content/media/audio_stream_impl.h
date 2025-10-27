@@ -24,8 +24,7 @@ class AudioStreamImpl : public AudioStream,
   AudioStreamImpl& operator=(const AudioStreamImpl&) = delete;
 
  public:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void Start(ExceptionState& exception_state) override;
   void Stop(ExceptionState& exception_state) override;
   void Seek(float time, ExceptionState& exception_state) override;

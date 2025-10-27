@@ -29,8 +29,7 @@ class IOStreamImpl : public IOStream, public EngineObject, public Disposable {
   SDL_IOStream* operator*() const { return stream_; }
 
  public:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   IOStatus GetStatus(ExceptionState& exception_state) override;
   int64_t GetSize(ExceptionState& exception_state) override;
   int64_t Seek(int64_t offset,

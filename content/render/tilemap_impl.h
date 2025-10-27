@@ -87,11 +87,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   TilemapImpl(const TilemapImpl&) = delete;
   TilemapImpl& operator=(const TilemapImpl&) = delete;
 
-  void SetLabel(const std::string& label,
-                ExceptionState& exception_state) override;
-
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void Update(ExceptionState& exception_state) override;
   scoped_refptr<TilemapAutotile> Autotiles(
       ExceptionState& exception_state) override;

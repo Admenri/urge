@@ -26,8 +26,7 @@ class SamplerImpl : public GPUSampler, public EngineObject, public Disposable {
 
  protected:
   // GPUSampler interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
 
  private:
   void OnObjectDisposed() override;

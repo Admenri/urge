@@ -27,8 +27,7 @@ class CommandListImpl : public GPUCommandList,
   Diligent::ICommandList* AsRawPtr() const { return object_; }
 
  protected:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
 
  private:
   void OnObjectDisposed() override;

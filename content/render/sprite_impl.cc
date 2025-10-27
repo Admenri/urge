@@ -59,11 +59,6 @@ SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(SpriteImpl);
 
-void SpriteImpl::SetLabel(const std::string& label,
-                          ExceptionState& exception_state) {
-  node_.SetDebugLabel(label);
-}
-
 void SpriteImpl::Flash(scoped_refptr<Color> color,
                        uint32_t duration,
                        ExceptionState& exception_state) {

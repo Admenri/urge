@@ -30,8 +30,7 @@ class TextureViewImpl : public GPUTextureView,
 
  protected:
   // GPUTextureView interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint64_t GetDeviceObject(ExceptionState& exception_state) override;
   scoped_refptr<GPUTextureViewDesc> GetDesc(
       ExceptionState& exception_state) override;
@@ -58,8 +57,7 @@ class TextureImpl : public GPUTexture, public EngineObject, public Disposable {
 
  protected:
   // GPUTexture interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint64_t GetDeviceObject(ExceptionState& exception_state) override;
   scoped_refptr<GPUTextureDesc> GetDesc(
       ExceptionState& exception_state) override;

@@ -74,6 +74,7 @@ class APIParser:
       "closures": [],
       "attributes": [],
       "dependency": [],
+      "is_disposable": False,
       "is_comparable": False,
       "is_serializable": False,
     }
@@ -565,6 +566,12 @@ class APIParser:
           # 仅占一行的情况
           self.process_attribute(line)
           self.parsing_mode = ""
+        return
+
+      # 检测属性：URGE_EXPORT_DISPOSABLE
+      if line.startswith("URGE_EXPORT_DISPOSABLE"):
+        self.current_class["is_disposable"] = True
+        self.parsing_mode = ""
         return
 
       # 检测属性：URGE_EXPORT_SERIALIZABLE

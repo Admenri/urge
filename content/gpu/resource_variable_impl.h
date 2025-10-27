@@ -29,8 +29,7 @@ class ResourceVariableImpl : public GPUResourceVariable,
 
  protected:
   // GPUResourceVariable interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void Set(uint64_t device_object,
            GPU::SetShaderResourceFlags flags,
            ExceptionState& exception_state) override;

@@ -29,8 +29,7 @@ class ResourceBindingImpl : public GPUResourceBinding,
 
  protected:
   // GPUResourceBinding interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   scoped_refptr<GPUPipelineSignature> GetPipelineSignature(
       ExceptionState& exception_state) override;
   void BindResources(GPU::ShaderType shader_type,

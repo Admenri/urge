@@ -41,11 +41,7 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
   WindowImpl(const WindowImpl&) = delete;
   WindowImpl& operator=(const WindowImpl&) = delete;
 
-  void SetLabel(const std::string& label,
-                ExceptionState& exception_state) override;
-
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void Update(ExceptionState& exception_state) override;
 
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Viewport, scoped_refptr<Viewport>);

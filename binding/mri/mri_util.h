@@ -212,11 +212,6 @@ inline VALUE MriCommonStructNew(int argc, VALUE* argv, VALUE self) {
   return self;
 }
 
-template <int32_t id>
-MRI_METHOD(MriReturnInt) {
-  return rb_fix_new(id);
-}
-
 #define MRI_FROM_BOOL(v) (v != Qfalse)
 #define MRI_FROM_STRING(v) (std::string(RSTRING_PTR(v), RSTRING_LEN(v)))
 
@@ -276,6 +271,34 @@ template <typename Ty>
 void MriInitSerializableBinding(VALUE klass) {
   MriDefineClassMethod(klass, "_load", serializable_marshal_load<Ty>);
   MriDefineMethod(klass, "_dump", serializable_marshal_dump<Ty>);
+}
+
+template <typename Ty>
+MRI_METHOD(disposable_dispose) {
+  scoped_refptr obj = MriGetStructData<Ty>(self);
+
+  content::ExceptionState exception_state;
+  obj->Dispose(exception_state);
+  MriProcessException(exception_state);
+
+  return self;
+}
+
+template <typename Ty>
+MRI_METHOD(disposable_is_disposed) {
+  scoped_refptr obj = MriGetStructData<Ty>(self);
+
+  content::ExceptionState exception_state;
+  auto result = obj->IsDisposed(exception_state);
+  MriProcessException(exception_state);
+
+  return MRI_BOOL_VALUE(result);
+}
+
+template <typename Ty>
+void MriInitDisposableBinding(VALUE klass) {
+  MriDefineMethod(klass, "dispose", disposable_dispose<Ty>);
+  MriDefineMethod(klass, "disposed?", disposable_is_disposed<Ty>);
 }
 
 ///

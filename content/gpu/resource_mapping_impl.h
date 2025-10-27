@@ -29,8 +29,7 @@ class ResourceMappingImpl : public GPUResourceMapping,
 
  protected:
   // GPUResourceMapping interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void AddResource(const std::string& name,
                    uint64_t device_object,
                    bool is_unique,

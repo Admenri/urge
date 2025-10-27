@@ -81,11 +81,6 @@ DrawableImpl::DrawableImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(DrawableImpl);
 
-void DrawableImpl::SetLabel(const std::string& label,
-                            ExceptionState& exception_state) {
-  node_.SetDebugLabel(label);
-}
-
 scoped_refptr<Rect> DrawableImpl::GetParentRect(
     ExceptionState& exception_state) {
   auto* parent = node_.GetParentViewport();

@@ -29,10 +29,7 @@ class MeshImpl : public Mesh, public EngineObject, public Disposable {
   MeshImpl& operator=(const MeshImpl&) = delete;
 
  protected:
-  void SetLabel(const std::string& label,
-                ExceptionState& exception_state) override;
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void SetVertexBuffers(uint32_t start_slot,
                         const std::vector<scoped_refptr<GPUBuffer>>& buffers,
                         const std::vector<uint64_t>& offsets,

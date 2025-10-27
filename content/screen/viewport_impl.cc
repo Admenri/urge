@@ -67,11 +67,6 @@ scoped_refptr<ViewportImpl> ViewportImpl::From(scoped_refptr<Viewport> host) {
   return static_cast<ViewportImpl*>(host.get());
 }
 
-void ViewportImpl::SetLabel(const std::string& label,
-                            ExceptionState& exception_state) {
-  node_.SetDebugLabel(label);
-}
-
 void ViewportImpl::Flash(scoped_refptr<Color> color,
                          uint32_t duration,
                          ExceptionState& exception_state) {

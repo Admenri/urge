@@ -26,8 +26,7 @@ class FenceImpl : public GPUFence, public EngineObject, public Disposable {
 
  protected:
   // GPUFence interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   GPU::FenceType GetType(ExceptionState& exception_state) override;
   uint64_t GetCompletedValue(ExceptionState& exception_state) override;
   void Signal(uint64_t value, ExceptionState& exception_state) override;

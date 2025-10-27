@@ -28,8 +28,7 @@ class RenderDeviceImpl : public GPURenderDevice,
 
  protected:
   // GPURenderDevice interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   scoped_refptr<GPURenderDeviceInfo> GetDeviceInfo(
       ExceptionState& exception_state) override;
   scoped_refptr<GPUGraphicsAdapterInfo> GetAdapterInfo(

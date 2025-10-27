@@ -26,8 +26,7 @@ class QueryImpl : public GPUQuery, public EngineObject, public Disposable {
 
  protected:
   // GPUQuery interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   bool GetData(void* data,
                uint32_t size,
                bool auto_invalidate,

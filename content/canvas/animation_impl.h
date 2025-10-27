@@ -26,8 +26,7 @@ class ImageAnimationImpl : public ImageAnimation,
   ImageAnimationImpl& operator=(const ImageAnimationImpl&) = delete;
 
  public:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   int32_t Width(ExceptionState& exception_state) override;
   int32_t Height(ExceptionState& exception_state) override;
   std::vector<scoped_refptr<Surface>> GetFrames(

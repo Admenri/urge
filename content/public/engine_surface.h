@@ -50,11 +50,8 @@ class URGE_OBJECT(Surface) {
   /*--urge(serializable)--*/
   URGE_EXPORT_SERIALIZABLE(Surface);
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:width)--*/
   virtual uint32_t Width(ExceptionState& exception_state) = 0;

@@ -37,11 +37,6 @@ PlaneImpl::PlaneImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(PlaneImpl);
 
-void PlaneImpl::SetLabel(const std::string& label,
-                         ExceptionState& exception_state) {
-  node_.SetDebugLabel(label);
-}
-
 scoped_refptr<Bitmap> PlaneImpl::Get_Bitmap(ExceptionState& exception_state) {
   return bitmap_;
 }

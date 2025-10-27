@@ -23,15 +23,8 @@ class URGE_OBJECT(Plane) {
                                   scoped_refptr<Viewport> viewport,
                                   ExceptionState& exception_state);
 
-  /*--urge(name:set_label)--*/
-  virtual void SetLabel(const std::string& label,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:bitmap)--*/
   URGE_EXPORT_ATTRIBUTE(Bitmap, scoped_refptr<Bitmap>);

@@ -17,11 +17,8 @@ class URGE_OBJECT(GPUFence) {
  public:
   virtual ~GPUFence() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:type)--*/
   virtual GPU::FenceType GetType(ExceptionState& exception_state) = 0;

@@ -40,15 +40,8 @@ class URGE_OBJECT(Tilemap2) {
                                      int32_t tilesize,
                                      ExceptionState& exception_state);
 
-  /*--urge(name:set_label)--*/
-  virtual void SetLabel(const std::string& label,
-                        ExceptionState& exception_state) = 0;
-
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:update)--*/
   virtual void Update(ExceptionState& exception_state) = 0;

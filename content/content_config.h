@@ -34,6 +34,13 @@ struct ExecutionContext;
 #define URGE_EXPORT_COMPARABLE(type) \
   virtual bool CompareWithOther(scoped_refptr<type>, ExceptionState&) = 0;
 
+#define URGE_EXPORT_DISPOSABLE                               \
+  virtual void Dispose(ExceptionState& exception_state) = 0; \
+  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+#define URGE_DECLARE_DISPOSABLE                           \
+  void Dispose(ExceptionState& exception_state) override; \
+  bool IsDisposed(ExceptionState& exception_state) override;
+
 #define URGE_DECLARE_OVERRIDE_ATTRIBUTE(name, type) \
   type Get_##name(ExceptionState&) override;        \
   void Put_##name(const type&, ExceptionState&) override

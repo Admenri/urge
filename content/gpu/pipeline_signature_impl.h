@@ -29,8 +29,7 @@ class PipelineSignatureImpl : public GPUPipelineSignature,
 
  protected:
   // GPUPipelineSignature interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   scoped_refptr<GPUResourceBinding> CreateResourceBinding(
       bool init_static_resources,
       ExceptionState& exception_state) override;

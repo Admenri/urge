@@ -26,8 +26,7 @@ class ShaderImpl : public GPUShader, public EngineObject, public Disposable {
 
  protected:
   // GPUShader interface
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint32_t GetResourceCount(ExceptionState& exception_state) override;
   scoped_refptr<GPUShaderResourceDesc> GetResourceDesc(
       uint32_t index,

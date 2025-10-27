@@ -373,11 +373,6 @@ TilemapImpl::TilemapImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(TilemapImpl);
 
-void TilemapImpl::SetLabel(const std::string& label,
-                           ExceptionState& exception_state) {
-  ground_node_.SetDebugLabel(label);
-}
-
 void TilemapImpl::Update(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 

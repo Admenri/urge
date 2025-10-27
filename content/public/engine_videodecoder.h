@@ -32,11 +32,8 @@ class URGE_OBJECT(VideoDecoder) {
                                          int32_t max_frame_delay,
                                          ExceptionState& exception_state);
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:width)--*/
   virtual int32_t GetWidth(ExceptionState& exception_state) = 0;

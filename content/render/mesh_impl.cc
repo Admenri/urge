@@ -28,11 +28,6 @@ MeshImpl::MeshImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(MeshImpl);
 
-void MeshImpl::SetLabel(const std::string& label,
-                        ExceptionState& exception_state) {
-  node_.SetDebugLabel(label);
-}
-
 void MeshImpl::SetVertexBuffers(
     uint32_t start_slot,
     const std::vector<scoped_refptr<GPUBuffer>>& buffers,

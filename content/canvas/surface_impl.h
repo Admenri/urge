@@ -30,8 +30,7 @@ class SurfaceImpl : public Surface, public EngineObject, public Disposable {
   SDL_Surface* operator*() const { return surface_; }
 
  public:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint32_t Width(ExceptionState& exception_state) override;
   uint32_t Height(ExceptionState& exception_state) override;
   scoped_refptr<Rect> GetRect(ExceptionState& exception_state) override;

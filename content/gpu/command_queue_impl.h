@@ -27,8 +27,7 @@ class CommandQueueImpl : public GPUCommandQueue,
   Diligent::ICommandQueue* AsRawPtr() const { return object_; }
 
  protected:
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   uint64_t GetNextFenceValue(ExceptionState& exception_state) override;
   uint64_t GetCompletedFenceValue(ExceptionState& exception_state) override;
   uint64_t WaitForIdle(ExceptionState& exception_state) override;

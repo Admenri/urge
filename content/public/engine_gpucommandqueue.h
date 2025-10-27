@@ -17,11 +17,8 @@ class URGE_OBJECT(GPUCommandQueue) {
  public:
   virtual ~GPUCommandQueue() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:next_fence_value)--*/
   virtual uint64_t GetNextFenceValue(ExceptionState& exception_state) = 0;

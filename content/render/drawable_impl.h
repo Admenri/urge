@@ -39,10 +39,7 @@ class DrawableImpl : public Drawable, public EngineObject, public Disposable {
   DrawableImpl(const DrawableImpl&) = delete;
   DrawableImpl& operator=(const DrawableImpl&) = delete;
 
-  void SetLabel(const std::string& label,
-                ExceptionState& exception_state) override;
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   scoped_refptr<Rect> GetParentRect(ExceptionState& exception_state) override;
   int32_t GetParentOX(ExceptionState& exception_state) override;
   int32_t GetParentOY(ExceptionState& exception_state) override;

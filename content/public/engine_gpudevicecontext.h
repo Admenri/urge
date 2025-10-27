@@ -27,11 +27,8 @@ class URGE_OBJECT(GPUDeviceContext) {
  public:
   virtual ~GPUDeviceContext() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:desc)--*/
   virtual scoped_refptr<GPUDeviceContextDesc> GetDesc(

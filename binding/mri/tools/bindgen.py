@@ -115,6 +115,8 @@ class MriBindingGen:
     is_comparable = self.class_data['is_comparable']
     # 是否可序列化
     is_serializable = self.class_data['is_serializable']
+    # 是否可手动释放
+    is_disposable = self.class_data['is_disposable']
 
     # 定义函数体
     content = f"void Init{klass_type}Binding() {{\n"
@@ -133,6 +135,8 @@ class MriBindingGen:
     # 类特性定义
     if is_serializable:
       content += f"MriInitSerializableBinding<content::{klass_type}>(klass);\n"
+    if is_disposable:
+      content += f"MriInitDisposableBinding<content::{klass_type}>(klass);\n"
 
     # 枚举常量定义
     enums = self.class_data['enums']

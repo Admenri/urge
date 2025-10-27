@@ -41,11 +41,7 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
 
   static scoped_refptr<ViewportImpl> From(scoped_refptr<Viewport> host);
 
-  void SetLabel(const std::string& label,
-                ExceptionState& exception_state) override;
-
-  void Dispose(ExceptionState& exception_state) override;
-  bool IsDisposed(ExceptionState& exception_state) override;
+  URGE_DECLARE_DISPOSABLE;
   void Flash(scoped_refptr<Color> color,
              uint32_t duration,
              ExceptionState& exception_state) override;

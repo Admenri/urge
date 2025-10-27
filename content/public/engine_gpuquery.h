@@ -17,11 +17,8 @@ class URGE_OBJECT(GPUQuery) {
  public:
   virtual ~GPUQuery() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:data)--*/
   virtual bool GetData(void* data,

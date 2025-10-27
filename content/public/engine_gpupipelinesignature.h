@@ -22,11 +22,8 @@ class URGE_OBJECT(GPUPipelineSignature) {
  public:
   virtual ~GPUPipelineSignature() = default;
 
-  /*--urge(name:dispose)--*/
-  virtual void Dispose(ExceptionState& exception_state) = 0;
-
-  /*--urge(name:disposed?)--*/
-  virtual bool IsDisposed(ExceptionState& exception_state) = 0;
+  /*--urge(disposable)--*/
+  URGE_EXPORT_DISPOSABLE;
 
   /*--urge(name:create_resource_binding)--*/
   virtual scoped_refptr<GPUResourceBinding> CreateResourceBinding(
