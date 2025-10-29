@@ -69,18 +69,14 @@ scoped_refptr<Bitmap> Bitmap::FromSurface(ExecutionContext* execution_context,
 scoped_refptr<Bitmap> Bitmap::FromTexture(ExecutionContext* execution_context,
                                           scoped_refptr<GPUTexture> gpu_texture,
                                           ExceptionState& exception_state) {
-  auto* texture_impl = static_cast<TextureImpl*>(gpu_texture.get());
-  RRefPtr<Diligent::ITexture> texture_object;
-  if (texture_impl)
-    texture_object = texture_impl->AsRawPtr();
-
-  if (!texture_object) {
+  auto* texture_obj = static_cast<TextureImpl*>(gpu_texture.get());
+  if (!Disposable::IsValid(texture_obj)) {
     exception_state.ThrowError(ExceptionCode::GPU_ERROR, "invalid GPU texture");
     return nullptr;
   }
 
-  return base::MakeRefCounted<CanvasImpl>(execution_context, texture_object,
-                                          "GPUTexture.Bitmap");
+  return base::MakeRefCounted<CanvasImpl>(
+      execution_context, texture_obj->AsRawPtr(), "GPUTexture.Bitmap");
 }
 
 // static
@@ -117,7 +113,7 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
   }
 
   return base::MakeRefCounted<CanvasImpl>(execution_context, memory_texture,
-                                          true, "IOStreamBitmap");
+                                          true, "IOStream.Bitmap");
 }
 
 // static
@@ -230,7 +226,7 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
   }
 
   return base::MakeRefCounted<CanvasImpl>(execution_context, empty_surface,
-                                          true, "SizeBitmap");
+                                          true, "Empty.Bitmap");
 }
 
 // static
@@ -240,9 +236,9 @@ scoped_refptr<CanvasImpl> CanvasImpl::Create(
     ExceptionState& exception_state) {
   SDL_Surface* memory_texture = nullptr;
   auto file_handler = base::BindRepeating(
-      [](SDL_Surface** surf, SDL_IOStream* ops, const std::string& ext) {
-        *surf = IMG_LoadTyped_IO(ops, true, ext.c_str());
-        return !!*surf;
+      [](SDL_Surface** surface, SDL_IOStream* stream, const std::string& ext) {
+        *surface = IMG_LoadTyped_IO(stream, true, ext.c_str());
+        return !!*surface;
       },
       &memory_texture);
 
@@ -303,7 +299,7 @@ CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
 }
 
 CanvasImpl::CanvasImpl(ExecutionContext* execution_context,
-                       RRefPtr<Diligent::ITexture> gpu_texture,
+                       Diligent::ITexture* gpu_texture,
                        const std::string& debug_name)
     : EngineObject(execution_context),
       Disposable(execution_context->disposable_parent),
@@ -366,18 +362,13 @@ void CanvasImpl::SubmitQueuedCommands() {
         const auto* c = static_cast<Command_HueChange*>(command_sequence);
         GPUCanvasHueChange(c->hue);
       } break;
-      case CommandID::RADIAL_BLUR: {
-        const auto* c = static_cast<Command_RadialBlur*>(command_sequence);
-        // TODO:
-        std::ignore = c;
-      } break;
       case CommandID::DRAW_TEXT: {
         const auto* c = static_cast<Command_DrawText*>(command_sequence);
         GPUCanvasDrawTextSurfaceInternal(c->region, c->text, c->opacity,
                                          c->align);
       } break;
       default:
-        break;
+        NOTREACHED();
     }
 
     command_sequence = command_sequence->next;
@@ -420,15 +411,15 @@ void CanvasImpl::Blt(int32_t x,
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid blt source");
 
-  if (!src_rect)
+  auto src_rect_obj = RectImpl::From(src_rect);
+  if (!src_rect_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid source rect object");
 
-  const base::Rect blit_region(x, y, src_rect->Get_Width(exception_state),
-                               src_rect->Get_Height(exception_state));
-  BlitTextureInternal(blit_region, src_bitmap_obj.get(),
-                      RectImpl::From(src_rect)->AsBaseRect(), blend_type,
-                      opacity);
+  const auto src_rect_base = src_rect_obj->AsBaseRect();
+  const base::Rect blit_region(x, y, src_rect_base.width, src_rect_base.height);
+  BlitTextureInternal(blit_region, src_bitmap_obj.get(), src_rect_base,
+                      blend_type, opacity);
 }
 
 void CanvasImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
@@ -444,17 +435,18 @@ void CanvasImpl::StretchBlt(scoped_refptr<Rect> dest_rect,
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid blt source");
 
-  if (!dest_rect)
+  auto dest_rect_obj = RectImpl::From(dest_rect);
+  if (!dest_rect_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid destination rect object");
 
-  if (!src_rect)
+  auto src_rect_obj = RectImpl::From(src_rect);
+  if (!src_rect_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid source rect object");
 
-  BlitTextureInternal(
-      RectImpl::From(dest_rect)->AsBaseRect(), src_bitmap_obj.get(),
-      RectImpl::From(src_rect)->AsBaseRect(), blend_type, opacity);
+  BlitTextureInternal(dest_rect_obj->AsBaseRect(), src_bitmap_obj.get(),
+                      src_rect_obj->AsBaseRect(), blend_type, opacity);
 }
 
 void CanvasImpl::ClipBlt(scoped_refptr<Rect> dest_rect,
@@ -474,17 +466,18 @@ void CanvasImpl::ClipBlt(scoped_refptr<Rect> dest_rect,
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid clip source");
 
-  if (!dest_rect)
+  auto dest_rect_obj = RectImpl::From(dest_rect);
+  if (!dest_rect_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid destination rect object");
 
-  if (!src_rect)
+  auto src_rect_obj = RectImpl::From(src_rect);
+  if (!src_rect_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid source rect object");
 
-  ClipTextureInternal(
-      RectImpl::From(dest_rect)->AsBaseRect(), src_bitmap_obj.get(),
-      RectImpl::From(src_rect)->AsBaseRect(), clip_bitmap_obj.get());
+  ClipTextureInternal(dest_rect_obj->AsBaseRect(), src_bitmap_obj.get(),
+                      src_rect_obj->AsBaseRect(), clip_bitmap_obj.get());
 }
 
 void CanvasImpl::FillRect(int32_t x,
@@ -577,6 +570,7 @@ void CanvasImpl::Clear(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   AllocateCommand<Command_Clear>();
+
   InvalidateSurfaceCache();
 }
 
@@ -639,11 +633,10 @@ void CanvasImpl::SetPixel(int32_t x,
   if (x < 0 || x >= gpu_.size.x || y < 0 || y >= gpu_.size.y)
     return;
 
-  if (!color)
+  auto color_obj = ColorImpl::From(color.get());
+  if (!color_obj)
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid color object");
-
-  scoped_refptr<ColorImpl> color_obj = ColorImpl::From(color.get());
 
   auto* command = AllocateCommand<Command_GradientFillRect>();
   command->region = base::Rect(x, y, 1, 1);
@@ -651,16 +644,18 @@ void CanvasImpl::SetPixel(int32_t x,
   command->color2 = command->color1;
   command->vertical = false;
 
-  SDL_Surface* surface = RequireMemorySurface();
-  if (surface) {
-    const SDL_Color color_unorm = color_obj->AsSDLColor();
-    auto* pixel_detail = SDL_GetPixelFormatDetails(surface->format);
-    int bpp = pixel_detail->bytes_per_pixel;
-    uint8_t* pixel =
-        static_cast<uint8_t*>(surface->pixels) + y * surface->pitch + x * bpp;
-    *reinterpret_cast<uint32_t*>(pixel) =
-        SDL_MapRGBA(pixel_detail, nullptr, color_unorm.r, color_unorm.g,
-                    color_unorm.b, color_unorm.a);
+  if (surface_cache_) {
+    SDL_Surface* surface = RequireMemorySurface();
+    if (surface) {
+      const SDL_Color color_unorm = color_obj->AsSDLColor();
+      auto* pixel_detail = SDL_GetPixelFormatDetails(surface->format);
+      int bpp = pixel_detail->bytes_per_pixel;
+      uint8_t* pixel =
+          static_cast<uint8_t*>(surface->pixels) + y * surface->pitch + x * bpp;
+      *reinterpret_cast<uint32_t*>(pixel) =
+          SDL_MapRGBA(pixel_detail, nullptr, color_unorm.r, color_unorm.g,
+                      color_unorm.b, color_unorm.a);
+    }
   }
 }
 
@@ -669,7 +664,6 @@ void CanvasImpl::HueChange(int32_t hue, ExceptionState& exception_state) {
 
   if (hue % 360 == 0)
     return;
-
   while (hue < 0)
     hue += 359;
   hue %= 359;
@@ -683,10 +677,7 @@ void CanvasImpl::HueChange(int32_t hue, ExceptionState& exception_state) {
 void CanvasImpl::Blur(ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  auto* command = AllocateCommand<Command_RadialBlur>();
-  command->blur = true;
-
-  InvalidateSurfaceCache();
+  // TODO:
 }
 
 void CanvasImpl::RadialBlur(int32_t angle,
@@ -694,12 +685,7 @@ void CanvasImpl::RadialBlur(int32_t angle,
                             ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  auto* command = AllocateCommand<Command_RadialBlur>();
-  command->blur = false;
-  command->angle = angle;
-  command->division = division;
-
-  InvalidateSurfaceCache();
+  // TODO:
 }
 
 void CanvasImpl::DrawText(int32_t x,
@@ -794,6 +780,9 @@ scoped_refptr<GPUTexture> CanvasImpl::GetTexture(
   // Submit pending draw commands
   SubmitQueuedCommands();
 
+  // Clear surface cache
+  InvalidateSurfaceCache();
+
   return base::MakeRefCounted<TextureImpl>(context(), gpu_.data);
 }
 
@@ -804,7 +793,10 @@ scoped_refptr<GPUTexture> CanvasImpl::GetDepthStencil(
   // Submit pending draw commands
   SubmitQueuedCommands();
 
-  return base::MakeRefCounted<TextureImpl>(context(), gpu_.depth_stencil);
+  // Clear surface cache
+  InvalidateSurfaceCache();
+
+  return base::MakeRefCounted<TextureImpl>(context(), gpu_.depth);
 }
 
 scoped_refptr<GPUTextureView> CanvasImpl::GetShaderResourceView(
@@ -814,7 +806,11 @@ scoped_refptr<GPUTextureView> CanvasImpl::GetShaderResourceView(
   // Submit pending draw commands
   SubmitQueuedCommands();
 
-  return base::MakeRefCounted<TextureViewImpl>(context(), gpu_.resource);
+  // Clear surface cache
+  InvalidateSurfaceCache();
+
+  return base::MakeRefCounted<TextureViewImpl>(context(),
+                                               gpu_.shader_resource_view);
 }
 
 scoped_refptr<GPUTextureView> CanvasImpl::GetRenderTargetView(
@@ -824,7 +820,11 @@ scoped_refptr<GPUTextureView> CanvasImpl::GetRenderTargetView(
   // Submit pending draw commands
   SubmitQueuedCommands();
 
-  return base::MakeRefCounted<TextureViewImpl>(context(), gpu_.target);
+  // Clear surface cache
+  InvalidateSurfaceCache();
+
+  return base::MakeRefCounted<TextureViewImpl>(context(),
+                                               gpu_.render_target_view);
 }
 
 scoped_refptr<GPUTextureView> CanvasImpl::GetDepthStencilView(
@@ -834,7 +834,11 @@ scoped_refptr<GPUTextureView> CanvasImpl::GetDepthStencilView(
   // Submit pending draw commands
   SubmitQueuedCommands();
 
-  return base::MakeRefCounted<TextureViewImpl>(context(), gpu_.depth_view);
+  // Clear surface cache
+  InvalidateSurfaceCache();
+
+  return base::MakeRefCounted<TextureViewImpl>(context(),
+                                               gpu_.depth_stencil_view);
 }
 
 scoped_refptr<GPUBuffer> CanvasImpl::GetWorldUniformBuffer(
@@ -844,20 +848,19 @@ scoped_refptr<GPUBuffer> CanvasImpl::GetWorldUniformBuffer(
   return base::MakeRefCounted<BufferImpl>(context(), gpu_.world_buffer);
 }
 
-scoped_refptr<Font> CanvasImpl::Get_Font(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return font_;
-}
-
-void CanvasImpl::Put_Font(const scoped_refptr<Font>& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *font_ = *FontImpl::From(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Font,
+    scoped_refptr<Font>,
+    CanvasImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return font_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *font_ = *FontImpl::From(value);
+    });
 
 void CanvasImpl::OnObjectDisposed() {
   // Unlink from canvas scheduler
@@ -867,8 +870,8 @@ void CanvasImpl::OnObjectDisposed() {
   InvalidateSurfaceCache();
 
   // Destroy GPU texture
-  GPUBitmapData empty_agent;
-  std::swap(gpu_, empty_agent);
+  GPUData empty_data;
+  std::swap(gpu_, empty_data);
 }
 
 void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
@@ -879,7 +882,7 @@ void CanvasImpl::BlitTextureInternal(const base::Rect& dst_rect,
   // Synchronize pending queue immediately,
   // blit the sourcetexture to destination texture immediately.
   src_texture->SubmitQueuedCommands();
-  this->SubmitQueuedCommands();
+  SubmitQueuedCommands();
 
   // Execute blit immediately.
   if (blend_type >= 0) {
@@ -903,7 +906,7 @@ void CanvasImpl::ClipTextureInternal(const base::Rect& dst_rect,
   // Synchronize pending queue immediately,
   // blit the sourcetexture to destination texture immediately.
   src_texture->SubmitQueuedCommands();
-  this->SubmitQueuedCommands();
+  SubmitQueuedCommands();
 
   // Execute clip blit immediately.
   GPUClipTextureInternal(dst_rect, &src_texture->gpu_, src_rect,
@@ -935,16 +938,17 @@ void CanvasImpl::GPUCreateTextureInternal(SDL_Surface* texture_data) {
 
   // Depth-Stencil
   renderer::CreateTexture2D(
-      *render_device, &gpu_.depth_stencil, gpu_.name, gpu_.size,
+      *render_device, &gpu_.depth, gpu_.name, gpu_.size,
       Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
       Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
 
   // Setup access texture view
-  gpu_.resource =
+  gpu_.shader_resource_view =
       gpu_.data->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-  gpu_.target = gpu_.data->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-  gpu_.depth_view =
-      gpu_.depth_stencil->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
+  gpu_.render_target_view =
+      gpu_.data->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  gpu_.depth_stencil_view =
+      gpu_.depth->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL);
 
   // Make bitmap draw transform
   // Make transform matrix uniform for discrete draw command
@@ -960,19 +964,8 @@ void CanvasImpl::GPUCreateTextureInternal(SDL_Surface* texture_data) {
       Diligent::BIND_UNIFORM_BUFFER, Diligent::CPU_ACCESS_WRITE, &world_matrix);
 }
 
-void CanvasImpl::GPUResetEffectLayerIfNeed() {
-  auto* scheduler = context()->canvas_scheduler;
-  auto& render_device = *scheduler->GetRenderDevice();
-
-  // Create an intermediate layer if bitmap need filter effect,
-  // the bitmap is fixed size, it is unnecessary to reset effect layer.
-  if (!gpu_.effect_layer)
-    renderer::CreateTexture2D(*render_device, &gpu_.effect_layer,
-                              "bitmap.filter.intermediate", gpu_.size);
-}
-
 void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
-                                             GPUBitmapData* src_texture,
+                                             GPUData* src_texture,
                                              const base::Rect& src_region,
                                              int32_t blend_type,
                                              uint32_t opacity) {
@@ -996,15 +989,11 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(gpu_.target, nullptr, false);
-
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, gpu_.size.x, gpu_.size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
   scheduler->base_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->base_binding().u_texture->Set(src_texture->resource);
+  scheduler->base_binding().u_texture->Set(src_texture->shader_resource_view);
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
@@ -1029,7 +1018,7 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
 }
 
 void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
-                                                   GPUBitmapData* src_texture,
+                                                   GPUData* src_texture,
                                                    const base::Rect& src_region,
                                                    uint32_t opacity) {
   auto* scheduler = context()->canvas_scheduler;
@@ -1093,15 +1082,11 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(gpu_.target, nullptr, false);
-
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, gpu_.size.x, gpu_.size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
   scheduler->blt_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->blt_binding().u_texture->Set(src_texture->resource);
+  scheduler->blt_binding().u_texture->Set(src_texture->shader_resource_view);
   scheduler->blt_binding().u_dst_texture->Set(
       intermediate_cache->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
@@ -1129,9 +1114,9 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
 }
 
 void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
-                                        GPUBitmapData* src_texture,
+                                        GPUData* src_texture,
                                         const base::Rect& src_region,
-                                        GPUBitmapData* clip_texture) {
+                                        GPUData* clip_texture) {
   auto* scheduler = context()->canvas_scheduler;
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
@@ -1189,16 +1174,14 @@ void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(gpu_.target, nullptr, false);
-
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, gpu_.size.x, gpu_.size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
   scheduler->clip_blt_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->clip_blt_binding().u_texture->Set(src_texture->resource);
-  scheduler->clip_blt_binding().u_clip_texture->Set(clip_texture->resource);
+  scheduler->clip_blt_binding().u_texture->Set(
+      src_texture->shader_resource_view);
+  scheduler->clip_blt_binding().u_clip_texture->Set(
+      clip_texture->shader_resource_view);
   scheduler->clip_blt_binding().u_dst_texture->Set(
       intermediate_cache->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
@@ -1274,7 +1257,8 @@ void CanvasImpl::GPUFetchTexturePixelsDataInternal() {
 
 void CanvasImpl::GPUCanvasClearInternal() {
   // Clear all data in texture
-  context()->canvas_scheduler->SetupRenderTarget(gpu_.target, nullptr, true);
+  context()->canvas_scheduler->SetupRenderTarget(gpu_.render_target_view,
+                                                 nullptr, true);
 }
 
 void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
@@ -1304,11 +1288,7 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(gpu_.target, nullptr, false);
-
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, gpu_.size.x, gpu_.size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
   scheduler->color_binding().u_transform->Set(gpu_.world_buffer);
@@ -1451,11 +1431,7 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(gpu_.target, nullptr, false);
-
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, gpu_.size.x, gpu_.size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
   scheduler->blt_binding().u_transform->Set(gpu_.world_buffer);
@@ -1492,17 +1468,20 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   auto* scheduler = context()->canvas_scheduler;
   auto* render_context = scheduler->GetDiscreteRenderContext();
 
+  // Intermediate layer
+  auto* intermediate_effect_layer =
+      scheduler->RequireBltCacheTexture(gpu_.size);
+
   // Pipeline state
   auto* pipeline = context()->render.pipeline_states->bitmap.bitmaphue.RawPtr();
-
-  GPUResetEffectLayerIfNeed();
 
   // Copy current texture to stage intermediate texture
   scheduler->SetupRenderTarget(nullptr, nullptr, false);
 
   Diligent::CopyTextureAttribs copy_texture_attribs(
       gpu_.data, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-      gpu_.effect_layer, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      intermediate_effect_layer,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->CopyTexture(copy_texture_attribs);
 
   // Make transient vertices
@@ -1515,15 +1494,12 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
   // Setup render target
-  scheduler->SetupRenderTarget(gpu_.target, nullptr, false);
-
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, gpu_.size.x, gpu_.size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->hue_binding().u_texture->Set(gpu_.effect_layer->GetDefaultView(
-      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  scheduler->hue_binding().u_texture->Set(
+      intermediate_effect_layer->GetDefaultView(
+          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);

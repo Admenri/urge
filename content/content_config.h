@@ -45,9 +45,10 @@ struct ExecutionContext;
   type Get_##name(ExceptionState&) override;        \
   void Put_##name(const type&, ExceptionState&) override
 
-#define URGE_DEFINE_OVERRIDE_ATTRIBUTE(name, type, klass)    \
-  type klass::Get_##name(ExceptionState& exception_state) {} \
-  void klass::Put_##name(const type& value, ExceptionState& exception_state) {}
+#define URGE_DEFINE_OVERRIDE_ATTRIBUTE(name, type, klass, getter, setter)    \
+  type klass::Get_##name(ExceptionState& exception_state) getter;            \
+  void klass::Put_##name(const type& value, ExceptionState& exception_state) \
+      setter;
 
 #define URGE_DECLARE_STATIC_ATTRIBUTE_READ(klass, name, type) \
   type klass::Get_##name(ExecutionContext* execution_context, \

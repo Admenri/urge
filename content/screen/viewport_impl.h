@@ -19,7 +19,7 @@ namespace content {
 
 class ViewportImpl : public Viewport, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     RRefPtr<Diligent::IBuffer> world_uniform;
 
     struct {
@@ -82,14 +82,16 @@ class ViewportImpl : public Viewport, public EngineObject, public Disposable {
                               Diligent::IBuffer* root_world,
                               const base::Rect& effect_region,
                               const base::Vec4& color);
-  void GPUFrameBeginRenderPassInternal(Diligent::IDeviceContext* render_context,
-                                       GPUBitmapData* render_target,
-                                       bool clear_target);
+  void GPUFrameBeginRenderPassInternal(
+      Diligent::IDeviceContext* render_context,
+      Diligent::ITextureView* render_target_view,
+      Diligent::ITextureView* depth_stencil_view,
+      bool clear_target);
 
+  GPUData gpu_;
   DrawableNode node_;
   DrawNodeController controller_;
 
-  Agent agent_;
   DrawableFlashController flash_emitter_;
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<RectImpl> rect_;

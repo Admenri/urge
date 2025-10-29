@@ -19,7 +19,7 @@ namespace content {
 
 class Window2Impl : public Window2, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     renderer::QuadBatch batch;
     std::vector<renderer::Quad> cache;
 
@@ -92,19 +92,20 @@ class Window2Impl : public Window2, public EngineObject, public Disposable {
 
   void GPUCreateWindowInternal();
   void GPUCompositeWindowQuadsInternal(Diligent::IDeviceContext* render_context,
-                                       GPUBitmapData* contents,
-                                       GPUBitmapData* windowskin,
+                                       BitmapTexture* contents,
+                                       BitmapTexture* windowskin,
                                        const base::Rect& padding_rect);
   void GPURenderWindowQuadsInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding,
-                                    GPUBitmapData* contents,
-                                    GPUBitmapData* windowskin,
+                                    BitmapTexture* contents,
+                                    BitmapTexture* windowskin,
                                     const base::Rect& padding_rect,
                                     ScissorStack* scissor_stack);
 
   bool rgss3_style_ = false;
+  GPUData gpu_;
   DrawableNode node_;
-  Agent agent_;
+
   int32_t scale_ = 2;
   int32_t pause_index_ = 0;
   int32_t cursor_opacity_ = 255;

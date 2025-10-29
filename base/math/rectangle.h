@@ -32,6 +32,8 @@ class Rect {
     height = other.height;
   }
 
+  bool operator()() const { return width && height; }
+
   Rect& operator=(const Rect& other) {
     x = other.x;
     y = other.y;
@@ -84,6 +86,8 @@ class RectF {
     width = other.width;
     height = other.height;
   }
+
+  bool operator()() const { return width && height; }
 
   RectF& operator=(const RectF& other) {
     x = other.x;

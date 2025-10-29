@@ -21,6 +21,7 @@ inline float DegreesToRadians(float degrees) {
 
 }  // namespace
 
+// static
 scoped_refptr<Sprite> Sprite::New(ExecutionContext* execution_context,
                                   scoped_refptr<Viewport> viewport,
                                   bool disable_vertical_sort,
@@ -28,6 +29,9 @@ scoped_refptr<Sprite> Sprite::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<SpriteImpl>(
       execution_context, ViewportImpl::From(viewport), disable_vertical_sort);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// SpriteImpl Implement
 
 SpriteImpl::SpriteImpl(ExecutionContext* execution_context,
                        scoped_refptr<ViewportImpl> parent,
@@ -103,7 +107,7 @@ void SpriteImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
 
   bitmap_ = CanvasImpl::FromBitmap(value);
   if (Disposable::IsValid(bitmap_.get()))
-    src_rect_->SetBase(bitmap_->GetGPUData()->size);
+    src_rect_->SetBase((**bitmap_)->size);
 }
 
 scoped_refptr<Rect> SpriteImpl::Get_SrcRect(ExceptionState& exception_state) {
@@ -409,15 +413,15 @@ void SpriteImpl::Put_Tone(const scoped_refptr<Tone>& value,
 void SpriteImpl::OnObjectDisposed() {
   node_.DisposeNode();
 
-  Agent empty_agent;
-  std::swap(agent_, empty_agent);
+  GPUData empty_data;
+  std::swap(gpu_, empty_data);
 }
 
 void SpriteImpl::DrawableNodeHandlerInternal(
     DrawableNode::RenderStage stage,
     DrawableNode::RenderControllerParams* params) {
-  GPUBitmapData* current_texture =
-      Disposable::IsValid(bitmap_.get()) ? bitmap_->GetGPUData() : nullptr;
+  BitmapTexture* current_texture =
+      Disposable::IsValid(bitmap_.get()) ? **bitmap_ : nullptr;
   if (!current_texture)
     return;
 
@@ -448,7 +452,7 @@ void SpriteImpl::DrawableNodeHandlerInternal(
     DrawableNode* next_node = node_.GetNextNode();
     SpriteImpl* next_sprite =
         next_node ? next_node->CastToNode<SpriteImpl>() : nullptr;
-    GPUBitmapData* next_texture =
+    BitmapTexture* next_texture =
         GetOtherRenderBatchableTextureInternal(next_sprite);
 
     GPUUpdateBatchSpriteInternal(params->context, current_texture, next_texture,
@@ -466,7 +470,7 @@ void SpriteImpl::SrcRectChangedInternal() {
   src_rect_dirty_ = true;
 }
 
-GPUBitmapData* SpriteImpl::GetOtherRenderBatchableTextureInternal(
+BitmapTexture* SpriteImpl::GetOtherRenderBatchableTextureInternal(
     SpriteImpl* other) {
   // Disable batch if other is not a sprite
   if (!other)
@@ -488,7 +492,7 @@ GPUBitmapData* SpriteImpl::GetOtherRenderBatchableTextureInternal(
   if (other->flash_emitter_.IsFlashing() && other->flash_emitter_.IsInvalid())
     return nullptr;
 
-  return other->bitmap_->GetGPUData();
+  return **other->bitmap_;
 }
 
 void SpriteImpl::GPUCreateSpriteInternal() {
@@ -496,20 +500,20 @@ void SpriteImpl::GPUCreateSpriteInternal() {
   if (!enable_batch)
     Diligent::CreateUniformBuffer(
         **context()->render_device, sizeof(renderer::Binding_Sprite::Params),
-        "sprite.non-batch.uniform", &agent_.single_uniform,
+        "sprite.non-batch.uniform", &gpu_.single_uniform,
         Diligent::USAGE_DEFAULT, Diligent::BIND_UNIFORM_BUFFER,
         Diligent::CPU_ACCESS_NONE);
 }
 
-void SpriteImpl::GPUUpdateWaveSpriteInternal(GPUBitmapData* texture,
+void SpriteImpl::GPUUpdateWaveSpriteInternal(BitmapTexture* texture,
                                              const base::Rect& src_rect) {
   int32_t last_block_aligned_size = src_rect.height % kWaveBlockAlign;
   int32_t loop_block = src_rect.height / kWaveBlockAlign;
   int32_t block_count = loop_block + !!last_block_aligned_size;
   float wave_phase = DegreesToRadians(wave_.phase);
 
-  agent_.wave_cache.resize(block_count);
-  renderer::Quad* quad = agent_.wave_cache.data();
+  gpu_.wave_cache.resize(block_count);
+  renderer::Quad* quad = gpu_.wave_cache.data();
 
   auto emit_wave_block = [&](int32_t block_y, int32_t block_size) {
     float wave_offset =
@@ -539,8 +543,8 @@ void SpriteImpl::GPUUpdateWaveSpriteInternal(GPUBitmapData* texture,
 
 void SpriteImpl::GPUUpdateBatchSpriteInternal(
     Diligent::IDeviceContext* render_context,
-    GPUBitmapData* texture,
-    GPUBitmapData* next_texture,
+    BitmapTexture* texture,
+    BitmapTexture* next_texture,
     const base::Rect& src_rect) {
   // Update sprite quad if need
   if (wave_.amp) {
@@ -557,8 +561,8 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(
       texcoord =
           base::Rect(rect.x + rect.width, rect.y, -rect.width, rect.height);
 
-    renderer::Quad::SetPositionRect(&agent_.quad, rect.Size().Recast<float>());
-    renderer::Quad::SetTexCoordRect(&agent_.quad, texcoord,
+    renderer::Quad::SetPositionRect(&gpu_.quad, rect.Size().Recast<float>());
+    renderer::Quad::SetTexCoordRect(&gpu_.quad, texcoord,
                                     texture->size.Recast<float>());
   }
 
@@ -569,10 +573,10 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(
   // Push this node into batch scheduler if batchable
   if (texture == context()->sprite_batcher->GetCurrentTexture()) {
     if (wave_.amp) {
-      for (const auto& it : agent_.wave_cache)
+      for (const auto& it : gpu_.wave_cache)
         context()->sprite_batcher->PushSprite(it, uniform_params_);
     } else {
-      context()->sprite_batcher->PushSprite(agent_.quad, uniform_params_);
+      context()->sprite_batcher->PushSprite(gpu_.quad, uniform_params_);
     }
   }
 
@@ -583,25 +587,25 @@ void SpriteImpl::GPUUpdateBatchSpriteInternal(
   if (!enable_batch || (context()->sprite_batcher->GetCurrentTexture() &&
                         next_texture != texture)) {
     // Execute batch draw info on this node
-    context()->sprite_batcher->EndBatch(&agent_.instance_offset,
-                                        &agent_.instance_count);
+    context()->sprite_batcher->EndBatch(&gpu_.instance_offset,
+                                        &gpu_.instance_count);
   } else {
     // Do not draw quads on current node
-    agent_.instance_count = 0;
+    gpu_.instance_count = 0;
   }
 
   // Update non batch uniform
   if (!enable_batch)
     render_context->UpdateBuffer(
-        agent_.single_uniform, 0, sizeof(uniform_params_), &uniform_params_,
+        gpu_.single_uniform, 0, sizeof(uniform_params_), &uniform_params_,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void SpriteImpl::GPUOnSpriteRenderingInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    GPUBitmapData* texture) {
-  if (agent_.instance_count) {
+    BitmapTexture* texture) {
+  if (gpu_.instance_count) {
     // Batch draw
     auto* pipeline =
         context()->render.pipeline_states->sprite[blend_type_].RawPtr();
@@ -613,13 +617,13 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
     context()->sprite_batcher->GetShaderBinding().u_transform->Set(
         world_binding);
     context()->sprite_batcher->GetShaderBinding().u_texture->Set(
-        texture->resource);
+        texture->shader_resource_view);
     if (enable_batch) {
       context()->sprite_batcher->GetShaderBinding().u_params->Set(
           context()->sprite_batcher->GetUniformBinding());
     } else {
       context()->sprite_batcher->GetShaderBinding().u_effect->Set(
-          agent_.single_uniform);
+          gpu_.single_uniform);
     }
 
     // Apply pipeline state
@@ -641,17 +645,17 @@ void SpriteImpl::GPUOnSpriteRenderingInternal(
     // Execute render command
     if (enable_batch) {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
-      draw_indexed_attribs.NumIndices = 6 * agent_.instance_count;
+      draw_indexed_attribs.NumIndices = 6 * gpu_.instance_count;
       draw_indexed_attribs.IndexType =
           context()->render.quad_index->GetIndexType();
-      draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
+      draw_indexed_attribs.FirstIndexLocation = 6 * gpu_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     } else {
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType =
           context()->render.quad_index->GetIndexType();
-      draw_indexed_attribs.FirstIndexLocation = 6 * agent_.instance_offset;
+      draw_indexed_attribs.FirstIndexLocation = 6 * gpu_.instance_offset;
       render_context->DrawIndexed(draw_indexed_attribs);
     }
   }

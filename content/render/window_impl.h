@@ -19,7 +19,7 @@ namespace content {
 
 class WindowImpl : public Window, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     renderer::QuadBatch background_batch;
     std::vector<renderer::Quad> background_cache;
     renderer::QuadBatch controls_batch;
@@ -75,24 +75,25 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
   void GPUCreateWindowInternal();
   void GPUCompositeBackgroundLayerInternal(
       Diligent::IDeviceContext* render_context,
-      GPUBitmapData* windowskin);
+      BitmapTexture* windowskin);
   void GPUCompositeControlLayerInternal(
       Diligent::IDeviceContext* render_context,
-      GPUBitmapData* windowskin,
-      GPUBitmapData* contents);
+      BitmapTexture* windowskin,
+      BitmapTexture* contents);
   void GPURenderBackgroundLayerInternal(
       Diligent::IDeviceContext* render_context,
       Diligent::IBuffer* world_binding,
-      GPUBitmapData* windowskin);
+      BitmapTexture* windowskin);
   void GPURenderControlLayerInternal(Diligent::IDeviceContext* render_context,
                                      Diligent::IBuffer* world_binding,
-                                     GPUBitmapData* windowskin,
-                                     GPUBitmapData* contents,
+                                     BitmapTexture* windowskin,
+                                     BitmapTexture* contents,
                                      ScissorStack* scissor_stack);
 
+  GPUData gpu_;
   DrawableNode background_node_;
   DrawableNode control_node_;
-  Agent agent_;
+
   int32_t scale_ = 2;
   int32_t pause_index_ = 0;
   int32_t cursor_opacity_ = 255;

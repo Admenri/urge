@@ -6,9 +6,12 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// SpriteBatch Implement
+
 SpriteBatch::SpriteBatch(renderer::RenderDevice* device,
                          renderer::PipelineSet* loader)
-    : current_texture_(nullptr),
+    : current_texture_(TextureID()),
       last_batch_index_(-1),
       support_storage_buffer_batch_(loader->sprite.storage_buffer_support),
       binding_(loader->sprite.CreateBinding()),
@@ -17,7 +20,7 @@ SpriteBatch::SpriteBatch(renderer::RenderDevice* device,
 
 SpriteBatch::~SpriteBatch() = default;
 
-void SpriteBatch::BeginBatch(GPUBitmapData* texture) {
+void SpriteBatch::BeginBatch(TextureID texture) {
   current_texture_ = texture;
   last_batch_index_ = uniform_cache_.size();
 }
@@ -35,7 +38,7 @@ void SpriteBatch::EndBatch(uint32_t* instance_offset,
   *instance_offset = last_batch_index_;
   *instance_count = draw_count;
 
-  current_texture_ = nullptr;
+  current_texture_ = TextureID();
   last_batch_index_ = -1;
 }
 

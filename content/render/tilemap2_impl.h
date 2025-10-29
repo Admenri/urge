@@ -45,7 +45,7 @@ class TilemapBitmapImpl : public TilemapBitmap {
 
 class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     renderer::QuadBatch batch;
     renderer::Binding_Tilemap2 shader_binding;
 
@@ -77,7 +77,7 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
   };
 
   struct AtlasCompositeCommand {
-    GPUBitmapData* texture;
+    BitmapTexture* texture;
     base::Rect src_rect;
     base::Vec2i dst_pos;
   };
@@ -148,9 +148,10 @@ class Tilemap2Impl : public Tilemap2, public EngineObject, public Disposable {
     base::CallbackListSubscription observer;
   };
 
+  GPUData gpu_;
   DrawableNode ground_node_;
   DrawableNode above_node_;
-  Agent agent_;
+
   int32_t tilesize_ = 32;
   base::Rect render_viewport_;
   base::Vec2i render_offset_;

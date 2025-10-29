@@ -28,14 +28,15 @@ class SpriteBatch {
   SpriteBatch(const SpriteBatch&) = delete;
   SpriteBatch& operator=(const SpriteBatch&) = delete;
 
-  GPUBitmapData* GetCurrentTexture() const { return current_texture_; }
+  using TextureID = void*;
+  TextureID GetCurrentTexture() const { return current_texture_; }
 
   renderer::Binding_Sprite& GetShaderBinding() { return binding_; }
   Diligent::IBuffer* GetVertexBuffer() { return *vertex_batch_; }
   Diligent::IBufferView* GetUniformBinding() { return uniform_binding_; }
 
   // Setup a sprite batch
-  void BeginBatch(GPUBitmapData* texture);
+  void BeginBatch(TextureID texture);
 
   void PushSprite(const renderer::Quad& quad,
                   const renderer::Binding_Sprite::Params& uniform);
@@ -49,7 +50,7 @@ class SpriteBatch {
   bool IsBatchEnabled() const { return support_storage_buffer_batch_; }
 
  private:
-  GPUBitmapData* current_texture_;
+  TextureID current_texture_;
   int32_t last_batch_index_;
   const bool support_storage_buffer_batch_;
 

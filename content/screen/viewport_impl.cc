@@ -12,12 +12,14 @@
 
 namespace content {
 
+// static
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       ExceptionState& exception_state) {
   return base::MakeRefCounted<ViewportImpl>(execution_context, nullptr,
                                             execution_context->resolution);
 }
 
+// static
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       scoped_refptr<Rect> rect,
                                       ExceptionState& exception_state) {
@@ -25,6 +27,7 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                             RectImpl::From(rect)->AsBaseRect());
 }
 
+// static
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       int32_t x,
                                       int32_t y,
@@ -35,6 +38,7 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                             base::Rect(x, y, width, height));
 }
 
+// static
 scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
                                       scoped_refptr<Viewport> parent,
                                       scoped_refptr<Rect> rect,
@@ -43,6 +47,9 @@ scoped_refptr<Viewport> Viewport::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<ViewportImpl>(
       execution_context, ViewportImpl::From(parent), region->AsBaseRect());
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// ViewportImpl Implement
 
 ViewportImpl::ViewportImpl(ExecutionContext* execution_context,
                            scoped_refptr<ViewportImpl> parent,
@@ -89,21 +96,21 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
                           ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
-  scoped_refptr<CanvasImpl> render_target = CanvasImpl::FromBitmap(target);
-  GPUBitmapData* bitmap_agent = nullptr;
-  if (Disposable::IsValid(render_target.get()))
-    bitmap_agent = render_target->GetGPUData();
-  if (!bitmap_agent)
+  auto render_target = CanvasImpl::FromBitmap(target);
+  if (!Disposable::IsValid(render_target.get()))
     return exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
                                       "invalid render target");
+
+  // Internal bitmap gpu data
+  auto* bitmap_data = **render_target;
 
   // Viewport bound
   const auto bound = rect_->AsBaseRect();
 
   // Check viewport visible
   const base::Rect viewport_rect =
-      base::MakeIntersect(bitmap_agent->size, bound.Size());
-  if (!viewport_rect.width || !viewport_rect.height)
+      base::MakeIntersect(bitmap_data->size, bound.Size());
+  if (!viewport_rect())
     return;
 
   // Submit pending canvas commands
@@ -116,9 +123,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
   // Prepare for rendering context
   DrawableNode::RenderControllerParams controller_params;
   controller_params.context = context()->primary_render_context;
-  controller_params.screen_buffer = bitmap_agent->data;
-  controller_params.screen_depth_stencil = bitmap_agent->depth_stencil;
-  controller_params.screen_size = bitmap_agent->size;
+  controller_params.screen_buffer = bitmap_data->data;
+  controller_params.screen_depth_stencil = bitmap_data->depth;
+  controller_params.screen_size = bitmap_data->size;
 
   // Update uniform buffer if viewport region changed
   base::Rect transform_cache_rect(-origin_, controller_params.screen_size);
@@ -136,8 +143,9 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
       context()->render.quad_index.get(), controller_params.context);
 
   // Setup renderpass
-  GPUFrameBeginRenderPassInternal(controller_params.context, bitmap_agent,
-                                  clear_target);
+  GPUFrameBeginRenderPassInternal(
+      controller_params.context, bitmap_data->render_target_view,
+      bitmap_data->depth_stencil_view, clear_target);
 
   // Invalidate render target bitmap
   render_target->InvalidateSurfaceCache();
@@ -148,8 +156,8 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
 
   // Notify render a frame
   ScissorStack scissor_stack(controller_params.context, viewport_rect);
-  controller_params.root_world = bitmap_agent->world_buffer;
-  controller_params.world_binding = agent_.world_uniform;
+  controller_params.root_world = bitmap_data->world_buffer;
+  controller_params.world_binding = gpu_.world_uniform;
   controller_params.scissors = &scissor_stack;
   controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
                                     &controller_params);
@@ -198,7 +206,6 @@ scoped_refptr<Rect> ViewportImpl::Get_Rect(ExceptionState& exception_state) {
 void ViewportImpl::Put_Rect(const scoped_refptr<Rect>& value,
                             ExceptionState& exception_state) {
   DISPOSE_CHECK;
-
   CHECK_ATTRIBUTE_VALUE;
 
   *rect_ = *RectImpl::From(value);
@@ -316,12 +323,12 @@ void ViewportImpl::Put_ResourceBinding(
   custom_binding_ = static_cast<ResourceBindingImpl*>(value.get());
   if (custom_binding_) {
     // Custom binding
-    agent_.effect.binding =
+    gpu_.effect.binding =
         renderer::RenderBindingBase::Create<renderer::Binding_Flat>(
             custom_binding_->AsRawPtr());
   } else {
     // Empty binding
-    agent_.effect.binding =
+    gpu_.effect.binding =
         context()->render.pipeline_loader->viewport.CreateBinding();
   }
 }
@@ -329,10 +336,8 @@ void ViewportImpl::Put_ResourceBinding(
 void ViewportImpl::OnObjectDisposed() {
   node_.DisposeNode();
 
-  Agent empty_agent;
-  std::swap(agent_, empty_agent);
-
-  viewport_.reset();
+  GPUData empty_data;
+  std::swap(gpu_, empty_data);
 }
 
 void ViewportImpl::DrawableNodeHandlerInternal(
@@ -377,7 +382,7 @@ void ViewportImpl::DrawableNodeHandlerInternal(
       DrawableNode::RenderControllerParams transient_params = *params;
 
       // Setup viewport world uniform
-      transient_params.world_binding = agent_.world_uniform;
+      transient_params.world_binding = gpu_.world_uniform;
 
       // Notify children for executing rendering commands
       controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
@@ -410,14 +415,13 @@ void ViewportImpl::DrawableNodeHandlerInternal(
 void ViewportImpl::GPUCreateViewportAgent() {
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(renderer::WorldTransform),
-      "viewport.world", &agent_.world_uniform, Diligent::USAGE_DEFAULT);
+      "viewport.world", &gpu_.world_uniform, Diligent::USAGE_DEFAULT);
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(renderer::Binding_Flat::Params),
-      "viewport.effect", &agent_.effect.uniform_buffer,
-      Diligent::USAGE_DEFAULT);
+      "viewport.effect", &gpu_.effect.uniform_buffer, Diligent::USAGE_DEFAULT);
 
-  agent_.effect.quads = renderer::QuadBatch::Make(**context()->render_device);
-  agent_.effect.binding =
+  gpu_.effect.quads = renderer::QuadBatch::Make(**context()->render_device);
+  gpu_.effect.binding =
       context()->render.pipeline_loader->viewport.CreateBinding();
 }
 
@@ -431,24 +435,24 @@ void ViewportImpl::GPUUpdateViewportTransform(
                                 region.Position().Recast<float>());
 
   render_context->UpdateBuffer(
-      agent_.world_uniform, 0, sizeof(world_matrix), &world_matrix,
+      gpu_.world_uniform, 0, sizeof(world_matrix), &world_matrix,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 void ViewportImpl::GPUResetIntermediateLayer(const base::Vec2i& effect_size) {
-  auto effect_layer = agent_.effect.intermediate_layer;
+  auto effect_layer = gpu_.effect.intermediate_layer;
   if (!effect_layer ||
       static_cast<int32_t>(effect_layer->GetDesc().Width) < effect_size.x ||
       static_cast<int32_t>(effect_layer->GetDesc().Height) < effect_size.y) {
-    agent_.effect.layer_size.x = std::max<int32_t>(
+    gpu_.effect.layer_size.x = std::max<int32_t>(
         effect_size.x, effect_layer ? effect_layer->GetDesc().Width : 0);
-    agent_.effect.layer_size.y = std::max<int32_t>(
+    gpu_.effect.layer_size.y = std::max<int32_t>(
         effect_size.y, effect_layer ? effect_layer->GetDesc().Height : 0);
 
-    agent_.effect.intermediate_layer.Release();
+    gpu_.effect.intermediate_layer.Release();
     renderer::CreateTexture2D(
-        **context()->render_device, &agent_.effect.intermediate_layer,
-        "viewport.intermediate.layer", agent_.effect.layer_size);
+        **context()->render_device, &gpu_.effect.intermediate_layer,
+        "viewport.intermediate.layer", gpu_.effect.layer_size);
   }
 }
 
@@ -474,7 +478,7 @@ void ViewportImpl::GPUApplyViewportEffect(
   copy_texture_attribs.pSrcBox = &box;
   copy_texture_attribs.SrcTextureTransitionMode =
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-  copy_texture_attribs.pDstTexture = agent_.effect.intermediate_layer;
+  copy_texture_attribs.pDstTexture = gpu_.effect.intermediate_layer;
   copy_texture_attribs.DstTextureTransitionMode =
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
   render_context->CopyTexture(copy_texture_attribs);
@@ -484,15 +488,15 @@ void ViewportImpl::GPUApplyViewportEffect(
   renderer::Quad::SetPositionRect(&transient_quad, effect_region);
   renderer::Quad::SetTexCoordRect(&transient_quad,
                                   base::Rect(effect_region.Size()),
-                                  agent_.effect.layer_size.Recast<float>());
-  agent_.effect.quads.QueueWrite(render_context, &transient_quad);
+                                  gpu_.effect.layer_size.Recast<float>());
+  gpu_.effect.quads.QueueWrite(render_context, &transient_quad);
 
   // Update uniform data
   renderer::Binding_Flat::Params transient_uniform;
   transient_uniform.Color = color;
   transient_uniform.Tone = tone_->AsNormColor();
   render_context->UpdateBuffer(
-      agent_.effect.uniform_buffer, 0, sizeof(transient_uniform),
+      gpu_.effect.uniform_buffer, 0, sizeof(transient_uniform),
       &transient_uniform, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Derive effect pipeline
@@ -509,12 +513,11 @@ void ViewportImpl::GPUApplyViewportEffect(
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Setup uniform params
-  renderer::Binding_Flat* effect_binding = &agent_.effect.binding;
+  renderer::Binding_Flat* effect_binding = &gpu_.effect.binding;
   effect_binding->u_transform->Set(root_world);
-  effect_binding->u_texture->Set(
-      agent_.effect.intermediate_layer->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  effect_binding->u_params->Set(agent_.effect.uniform_buffer);
+  effect_binding->u_texture->Set(gpu_.effect.intermediate_layer->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  effect_binding->u_params->Set(gpu_.effect.uniform_buffer);
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
@@ -522,7 +525,7 @@ void ViewportImpl::GPUApplyViewportEffect(
       **effect_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = *agent_.effect.quads;
+  Diligent::IBuffer* const vertex_buffer = *gpu_.effect.quads;
   render_context->SetVertexBuffers(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -547,19 +550,20 @@ void ViewportImpl::GPUApplyViewportEffect(
 
 void ViewportImpl::GPUFrameBeginRenderPassInternal(
     Diligent::IDeviceContext* render_context,
-    GPUBitmapData* render_target,
+    Diligent::ITextureView* render_target_view,
+    Diligent::ITextureView* depth_stencil_view,
     bool clear_target) {
   render_context->SetRenderTargets(
-      1, &render_target->target, render_target->depth_view,
+      1, &render_target_view, depth_stencil_view,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   if (clear_target) {
     float clear_color[] = {0, 0, 0, 0};
     render_context->ClearRenderTarget(
-        render_target->target, clear_color,
+        render_target_view, clear_color,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     render_context->ClearDepthStencil(
-        render_target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+        depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   }
 }

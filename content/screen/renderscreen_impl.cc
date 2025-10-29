@@ -27,6 +27,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// RenderScreenImpl Implement
+
 RenderScreenImpl::RenderScreenImpl(ExecutionContext* execution_context,
                                    uint32_t frame_rate)
     : EngineObject(execution_context),
@@ -132,7 +135,7 @@ void RenderScreenImpl::Update(ExceptionState& exception_state) {
   if (!frozen_render && !need_skip_frame) {
     // Render a frame and push into render queue
     // This function only encodes the render commands
-    RenderFrameInternal(agent_.screen_buffer, agent_.screen_depth_stencil);
+    RenderFrameInternal(gpu_.screen_buffer, gpu_.screen_depth_stencil);
   }
 
   if (need_skip_frame)
@@ -140,7 +143,7 @@ void RenderScreenImpl::Update(ExceptionState& exception_state) {
 
   // Process frame delay
   // This calling will yield to event coroutine and present
-  FrameProcessInternal(agent_.screen_buffer);
+  FrameProcessInternal(gpu_.screen_buffer);
 }
 
 void RenderScreenImpl::Wait(uint32_t duration,
@@ -158,7 +161,7 @@ void RenderScreenImpl::FadeOut(uint32_t duration,
     brightness_ = current_brightness -
                   current_brightness * (i / static_cast<float>(duration));
     if (frozen_) {
-      FrameProcessInternal(agent_.frozen_buffer);
+      FrameProcessInternal(gpu_.frozen_buffer);
     } else {
       Update(exception_state);
     }
@@ -180,7 +183,7 @@ void RenderScreenImpl::FadeIn(uint32_t duration,
         current_brightness + diff * (i / static_cast<float>(duration));
 
     if (frozen_) {
-      FrameProcessInternal(agent_.frozen_buffer);
+      FrameProcessInternal(gpu_.frozen_buffer);
     } else {
       Update(exception_state);
     }
@@ -194,7 +197,7 @@ void RenderScreenImpl::FadeIn(uint32_t duration,
 void RenderScreenImpl::Freeze(ExceptionState& exception_state) {
   if (!frozen_) {
     // Get frozen scene snapshot for transition
-    RenderFrameInternal(agent_.frozen_buffer, agent_.frozen_depth_stencil);
+    RenderFrameInternal(gpu_.frozen_buffer, gpu_.frozen_depth_stencil);
 
     // Set forzen flag for blocking frame update
     frozen_ = true;
@@ -245,16 +248,14 @@ void RenderScreenImpl::TransitionWithBitmap(uint32_t duration,
 
     // Derive transition mapping if available
     scoped_refptr<CanvasImpl> mapping_bitmap = CanvasImpl::FromBitmap(bitmap);
-    GPUBitmapData* texture_agent = Disposable::IsValid(mapping_bitmap.get())
-                                       ? mapping_bitmap->GetGPUData()
-                                       : nullptr;
+    BitmapTexture* texture_agent =
+        Disposable::IsValid(mapping_bitmap.get()) ? **mapping_bitmap : nullptr;
     Diligent::ITextureView* transition_mapping =
-        texture_agent ? texture_agent->resource.RawPtr() : nullptr;
+        texture_agent ? texture_agent->shader_resource_view.RawPtr() : nullptr;
 
     // Get current scene snapshot for transition
     auto* render_context = context()->primary_render_context;
-    RenderFrameInternal(agent_.transition_buffer,
-                        agent_.transition_depth_stencil);
+    RenderFrameInternal(gpu_.transition_buffer, gpu_.transition_depth_stencil);
 
     // Transition render loop
     for (uint32_t i = 0; i < duration; ++i) {
@@ -269,7 +270,7 @@ void RenderScreenImpl::TransitionWithBitmap(uint32_t duration,
         GPURenderAlphaTransitionFrameInternal(render_context, progress);
 
       // Present to screen
-      FrameProcessInternal(agent_.screen_buffer);
+      FrameProcessInternal(gpu_.screen_buffer);
     }
   } else {
     // Update frame as common
@@ -284,15 +285,15 @@ scoped_refptr<Bitmap> RenderScreenImpl::SnapToBitmap(
     ExceptionState& exception_state) {
   scoped_refptr<CanvasImpl> target =
       CanvasImpl::Create(context(), context()->resolution, exception_state);
-  GPUBitmapData* texture_agent =
-      Disposable::IsValid(target.get()) ? target->GetGPUData() : nullptr;
+  BitmapTexture* texture_agent =
+      Disposable::IsValid(target.get()) ? **target : nullptr;
 
   if (texture_agent) {
     // Invalidate render target bitmap cache
     target->InvalidateSurfaceCache();
 
     // Execute rendering
-    RenderFrameInternal(texture_agent->data, texture_agent->depth_stencil);
+    RenderFrameInternal(texture_agent->data, texture_agent->depth);
   }
 
   return target;
@@ -534,8 +535,8 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
 
   // 3) Notify render a frame
   ScissorStack scissor_stack(controller_params.context, context()->resolution);
-  controller_params.root_world = agent_.root_transform;
-  controller_params.world_binding = agent_.world_transform;
+  controller_params.root_world = gpu_.root_transform;
+  controller_params.world_binding = gpu_.world_transform;
   controller_params.scissors = &scissor_stack;
   controller_.BroadCastNotification(DrawableNode::ON_RENDERING,
                                     &controller_params);
@@ -546,16 +547,15 @@ void RenderScreenImpl::RenderFrameInternal(Diligent::ITexture* render_target,
 
 void RenderScreenImpl::GPUCreateGraphicsHostInternal() {
   // Create generic quads batch
-  agent_.transition_quads =
-      renderer::QuadBatch::Make(**context()->render_device);
-  agent_.effect_quads = renderer::QuadBatch::Make(**context()->render_device);
+  gpu_.transition_quads = renderer::QuadBatch::Make(**context()->render_device);
+  gpu_.effect_quads = renderer::QuadBatch::Make(**context()->render_device);
 
   // Create generic shader binding
-  agent_.transition_binding_alpha =
+  gpu_.transition_binding_alpha =
       context()->render.pipeline_loader->alphatrans.CreateBinding();
-  agent_.transition_binding_vague =
+  gpu_.transition_binding_vague =
       context()->render.pipeline_loader->mappedtrans.CreateBinding();
-  agent_.effect_binding =
+  gpu_.effect_binding =
       context()->render.pipeline_loader->color.CreateBinding();
 
   // Create screen buffer
@@ -569,10 +569,10 @@ void RenderScreenImpl::GPUUpdateScreenWorldInternal() {
   renderer::MakeTransformMatrix(world_transform.transform,
                                 base::Vec2(-origin_.x, -origin_.y));
 
-  agent_.world_transform.Release();
+  gpu_.world_transform.Release();
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(world_transform),
-      "graphics.world.transform", &agent_.world_transform,
+      "graphics.world.transform", &gpu_.world_transform,
       Diligent::USAGE_IMMUTABLE, Diligent::BIND_UNIFORM_BUFFER,
       Diligent::CPU_ACCESS_NONE, &world_transform);
 }
@@ -581,38 +581,37 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
   constexpr Diligent::BIND_FLAGS bind_flags =
       Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
 
-  agent_.screen_buffer.Release();
-  agent_.screen_depth_stencil.Release();
-  agent_.frozen_buffer.Release();
-  agent_.frozen_depth_stencil.Release();
-  agent_.transition_buffer.Release();
-  agent_.transition_depth_stencil.Release();
+  gpu_.screen_buffer.Release();
+  gpu_.screen_depth_stencil.Release();
+  gpu_.frozen_buffer.Release();
+  gpu_.frozen_depth_stencil.Release();
+  gpu_.transition_buffer.Release();
+  gpu_.transition_depth_stencil.Release();
 
   // Color attachment
-  renderer::CreateTexture2D(**context()->render_device, &agent_.screen_buffer,
+  renderer::CreateTexture2D(**context()->render_device, &gpu_.screen_buffer,
                             "screen.main.buffer", context()->resolution,
                             Diligent::USAGE_DEFAULT, bind_flags);
-  renderer::CreateTexture2D(**context()->render_device, &agent_.frozen_buffer,
+  renderer::CreateTexture2D(**context()->render_device, &gpu_.frozen_buffer,
                             "screen.frozen.buffer", context()->resolution,
                             Diligent::USAGE_DEFAULT, bind_flags);
-  renderer::CreateTexture2D(**context()->render_device,
-                            &agent_.transition_buffer,
+  renderer::CreateTexture2D(**context()->render_device, &gpu_.transition_buffer,
                             "screen.transition.buffer", context()->resolution,
                             Diligent::USAGE_DEFAULT, bind_flags);
 
   // Depth stencil
   renderer::CreateTexture2D(
-      **context()->render_device, &agent_.screen_depth_stencil,
+      **context()->render_device, &gpu_.screen_depth_stencil,
       "screen.main.depth_stencil", context()->resolution,
       Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
       Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
   renderer::CreateTexture2D(
-      **context()->render_device, &agent_.frozen_depth_stencil,
+      **context()->render_device, &gpu_.frozen_depth_stencil,
       "screen.frozen.depth_stencil", context()->resolution,
       Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
       Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
   renderer::CreateTexture2D(
-      **context()->render_device, &agent_.transition_depth_stencil,
+      **context()->render_device, &gpu_.transition_depth_stencil,
       "screen.transition.depth_stencil", context()->resolution,
       Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
       Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
@@ -622,10 +621,10 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
                                  context()->resolution.Recast<float>());
   renderer::MakeIdentityMatrix(world_transform.transform);
 
-  agent_.root_transform.Release();
+  gpu_.root_transform.Release();
   Diligent::CreateUniformBuffer(
       **context()->render_device, sizeof(world_transform),
-      "graphics.root.transform", &agent_.root_transform,
+      "graphics.root.transform", &gpu_.root_transform,
       Diligent::USAGE_IMMUTABLE, Diligent::BIND_UNIFORM_BUFFER,
       Diligent::CPU_ACCESS_NONE, &world_transform);
 
@@ -681,7 +680,7 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
                                     base::Rect(context()->resolution));
     renderer::Quad::SetColor(&effect_quad,
                              base::Vec4(0, 0, 0, (255 - brightness_) / 255.0f));
-    agent_.effect_quads.QueueWrite(render_context, &effect_quad);
+    gpu_.effect_quads.QueueWrite(render_context, &effect_quad);
   }
 
   // Setup render pass
@@ -715,16 +714,16 @@ void RenderScreenImpl::GPUFrameEndRenderPassInternal(
     auto* pipeline = context()->render.pipeline_states->brightness.RawPtr();
 
     // Set world transform
-    agent_.effect_binding.u_transform->Set(agent_.world_transform);
+    gpu_.effect_binding.u_transform->Set(gpu_.world_transform);
 
     // Apply pipeline state
     render_context->SetPipelineState(pipeline);
     render_context->CommitShaderResources(
-        *agent_.effect_binding,
+        *gpu_.effect_binding,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = *agent_.effect_quads;
+    Diligent::IBuffer* const vertex_buffer = *gpu_.effect_quads;
     render_context->SetVertexBuffers(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -751,11 +750,11 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   renderer::Quad::SetTexCoordRectNorm(
       &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(progress));
-  agent_.transition_quads.QueueWrite(render_context, &transient_quad);
+  gpu_.transition_quads.QueueWrite(render_context, &transient_quad);
 
   // Composite transition frame
-  auto render_target_view = agent_.screen_buffer->GetDefaultView(
-      Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  auto render_target_view =
+      gpu_.screen_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
   render_context->SetRenderTargets(
       1, &render_target_view, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -764,31 +763,28 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
       render_target_view, clear_color,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  base::Vec2i resolution(agent_.screen_buffer->GetDesc().Width,
-                         agent_.screen_buffer->GetDesc().Height);
-
-  Diligent::Rect render_scissor(0, 0, resolution.x, resolution.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  base::Vec2i resolution(gpu_.screen_buffer->GetDesc().Width,
+                         gpu_.screen_buffer->GetDesc().Height);
 
   // Derive pipeline sets
   auto* pipeline = context()->render.pipeline_states->alpha_transition.RawPtr();
 
   // Set uniform texture
-  agent_.transition_binding_alpha.u_current_texture->Set(
-      agent_.transition_buffer->GetDefaultView(
+  gpu_.transition_binding_alpha.u_current_texture->Set(
+      gpu_.transition_buffer->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent_.transition_binding_alpha.u_frozen_texture->Set(
-      agent_.frozen_buffer->GetDefaultView(
+  gpu_.transition_binding_alpha.u_frozen_texture->Set(
+      gpu_.frozen_buffer->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *agent_.transition_binding_alpha,
+      *gpu_.transition_binding_alpha,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = *agent_.transition_quads;
+  Diligent::IBuffer* const vertex_buffer = *gpu_.transition_quads;
   render_context->SetVertexBuffers(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -815,11 +811,11 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   renderer::Quad::SetTexCoordRectNorm(
       &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(vague, 0, 0, progress));
-  agent_.transition_quads.QueueWrite(render_context, &transient_quad);
+  gpu_.transition_quads.QueueWrite(render_context, &transient_quad);
 
   // Composite transition frame
-  auto render_target_view = agent_.screen_buffer->GetDefaultView(
-      Diligent::TEXTURE_VIEW_RENDER_TARGET);
+  auto render_target_view =
+      gpu_.screen_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
   render_context->SetRenderTargets(
       1, &render_target_view, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -828,32 +824,29 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
       render_target_view, clear_color,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  base::Vec2i resolution(agent_.screen_buffer->GetDesc().Width,
-                         agent_.screen_buffer->GetDesc().Height);
-
-  Diligent::Rect render_scissor(0, 0, resolution.x, resolution.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
+  base::Vec2i resolution(gpu_.screen_buffer->GetDesc().Width,
+                         gpu_.screen_buffer->GetDesc().Height);
 
   // Derive pipeline sets
   auto* pipeline = context()->render.pipeline_states->vague_transition.RawPtr();
 
   // Set uniform texture
-  agent_.transition_binding_vague.u_current_texture->Set(
-      agent_.transition_buffer->GetDefaultView(
+  gpu_.transition_binding_vague.u_current_texture->Set(
+      gpu_.transition_buffer->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent_.transition_binding_vague.u_frozen_texture->Set(
-      agent_.frozen_buffer->GetDefaultView(
+  gpu_.transition_binding_vague.u_frozen_texture->Set(
+      gpu_.frozen_buffer->GetDefaultView(
           Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent_.transition_binding_vague.u_trans_texture->Set(trans_mapping);
+  gpu_.transition_binding_vague.u_trans_texture->Set(trans_mapping);
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *agent_.transition_binding_vague,
+      *gpu_.transition_binding_vague,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = *agent_.transition_quads;
+  Diligent::IBuffer* const vertex_buffer = *gpu_.transition_quads;
   render_context->SetVertexBuffers(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

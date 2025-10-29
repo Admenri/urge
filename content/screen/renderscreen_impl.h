@@ -24,7 +24,7 @@ namespace content {
 
 class RenderScreenImpl : public Graphics, public EngineObject {
  public:
-  struct Agent {
+  struct GPUData {
     RRefPtr<Diligent::ITexture> screen_buffer;
     RRefPtr<Diligent::ITexture> frozen_buffer;
     RRefPtr<Diligent::ITexture> transition_buffer;
@@ -153,7 +153,7 @@ class RenderScreenImpl : public Graphics, public EngineObject {
       float progress,
       float vague);
 
-  Agent agent_;
+  GPUData gpu_;
   DrawNodeController controller_;
 
   fpslimiter::FPSLimiter limiter_;

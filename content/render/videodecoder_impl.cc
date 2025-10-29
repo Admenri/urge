@@ -13,6 +13,7 @@ namespace content {
 
 #if defined(OS_EMSCRIPTEN)
 
+// static
 scoped_refptr<VideoDecoder> VideoDecoder::New(
     ExecutionContext* execution_context,
     const std::string& filename,
@@ -25,6 +26,7 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
 
 #else  //! OS_EMSCRIPTEN
 
+// static
 scoped_refptr<VideoDecoder> VideoDecoder::New(
     ExecutionContext* execution_context,
     const std::string& filename,
@@ -56,6 +58,9 @@ scoped_refptr<VideoDecoder> VideoDecoder::New(
   return nullptr;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// VideoDecoderImpl Implement
+
 VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
                                    std::unique_ptr<uvpx::Player> player)
     : EngineObject(execution_context),
@@ -65,7 +70,7 @@ VideoDecoderImpl::VideoDecoderImpl(ExecutionContext* execution_context,
   // Video info
   base::Vec2i frame_size(player_->info()->width, player_->info()->height);
 
-  // Create agent
+  // Create frames texture
   GPUCreateYUVFramesInternal(frame_size);
 
   // Initialize timer
@@ -157,8 +162,9 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
     if (yuv->isEmpty())
       return player_->unlockRead();
 
-    GPURenderYUVInternal(context()->primary_render_context, yuv,
-                         canvas->GetGPUData());
+    // Render YUV plane to bitmap
+    GPURenderYUVInternal(context()->primary_render_context,
+                         (**canvas)->render_target_view, yuv);
 
     player_->unlockRead();
   }
@@ -211,8 +217,8 @@ void VideoDecoderImpl::OnObjectDisposed() {
     SDL_DestroyAudioStream(audio_stream_);
   audio_stream_ = nullptr;
 
-  Agent empty_agent;
-  std::swap(agent_, empty_agent);
+  GPUData empty_data;
+  std::swap(gpu_, empty_data);
 }
 
 void VideoDecoderImpl::OnAudioData(void* user_data, float* pcm, size_t count) {
@@ -235,53 +241,52 @@ void VideoDecoderImpl::GPUCreateYUVFramesInternal(const base::Vec2i& size) {
   texture_desc.Name = "y.plane";
   texture_desc.Width = size.x;
   texture_desc.Height = size.y;
-  render_device->CreateTexture(texture_desc, nullptr, &agent_.y);
+  render_device->CreateTexture(texture_desc, nullptr, &gpu_.y);
 
   texture_desc.Name = "u.plane";
   texture_desc.Width = (size.x + 1) / 2;
   texture_desc.Height = (size.y + 1) / 2;
-  render_device->CreateTexture(texture_desc, nullptr, &agent_.u);
+  render_device->CreateTexture(texture_desc, nullptr, &gpu_.u);
 
   texture_desc.Name = "v.plane";
-  render_device->CreateTexture(texture_desc, nullptr, &agent_.v);
+  render_device->CreateTexture(texture_desc, nullptr, &gpu_.v);
 
-  agent_.batch = renderer::QuadBatch::Make(*render_device, 1);
-  agent_.shader_binding =
-      context()->render.pipeline_loader->yuv.CreateBinding();
+  gpu_.batch = renderer::QuadBatch::Make(*render_device, 1);
+  gpu_.shader_binding = context()->render.pipeline_loader->yuv.CreateBinding();
 }
 
 void VideoDecoderImpl::GPURenderYUVInternal(
     Diligent::IDeviceContext* render_context,
-    uvpx::Frame* data,
-    GPUBitmapData* target) {
+    Diligent::ITextureView* render_target_view,
+    uvpx::Frame* data) {
   // Update yuv planes
   Diligent::Box dest_box;
   Diligent::TextureSubResData sub_res_data;
 
-  dest_box.MaxX = agent_.y->GetDesc().Width;
-  dest_box.MaxY = agent_.y->GetDesc().Height;
+  dest_box.MaxX = gpu_.y->GetDesc().Width;
+  dest_box.MaxY = gpu_.y->GetDesc().Height;
   sub_res_data.pData = data->plane(0);
   sub_res_data.Stride = data->width(0);
   render_context->UpdateTexture(
-      agent_.y, 0, 0, dest_box, sub_res_data,
+      gpu_.y, 0, 0, dest_box, sub_res_data,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  dest_box.MaxX = agent_.u->GetDesc().Width;
-  dest_box.MaxY = agent_.u->GetDesc().Height;
+  dest_box.MaxX = gpu_.u->GetDesc().Width;
+  dest_box.MaxY = gpu_.u->GetDesc().Height;
   sub_res_data.pData = data->plane(1);
   sub_res_data.Stride = data->width(1);
   render_context->UpdateTexture(
-      agent_.u, 0, 0, dest_box, sub_res_data,
+      gpu_.u, 0, 0, dest_box, sub_res_data,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  dest_box.MaxX = agent_.v->GetDesc().Width;
-  dest_box.MaxY = agent_.v->GetDesc().Height;
+  dest_box.MaxX = gpu_.v->GetDesc().Width;
+  dest_box.MaxY = gpu_.v->GetDesc().Height;
   sub_res_data.pData = data->plane(2);
   sub_res_data.Stride = data->width(2);
   render_context->UpdateTexture(
-      agent_.v, 0, 0, dest_box, sub_res_data,
+      gpu_.v, 0, 0, dest_box, sub_res_data,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -294,40 +299,33 @@ void VideoDecoderImpl::GPURenderYUVInternal(
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
   renderer::Quad::SetTexCoordRectNorm(&transient_quad,
                                       base::RectF(0.0f, 0.0f, 1.0f, 1.0f));
-  agent_.batch.QueueWrite(render_context, &transient_quad);
+  gpu_.batch.QueueWrite(render_context, &transient_quad);
 
   // Setup render target
   float clear_color[] = {0, 0, 0, 0};
   render_context->SetRenderTargets(
-      1, &target->target, target->depth_view,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  render_context->ClearDepthStencil(
-      target->depth_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
+      1, &render_target_view, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->ClearRenderTarget(
-      target->target, clear_color,
+      render_target_view, clear_color,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  // Push scissor
-  Diligent::Rect render_scissor(0, 0, target->size.x, target->size.y);
-  render_context->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
-
   // Setup uniform params
-  agent_.shader_binding.u_texture_y->Set(
-      agent_.y->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent_.shader_binding.u_texture_u->Set(
-      agent_.u->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  agent_.shader_binding.u_texture_v->Set(
-      agent_.v->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.shader_binding.u_texture_y->Set(
+      gpu_.y->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.shader_binding.u_texture_u->Set(
+      gpu_.u->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.shader_binding.u_texture_v->Set(
+      gpu_.v->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *agent_.shader_binding,
+      *gpu_.shader_binding,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
-  Diligent::IBuffer* const vertex_buffer = *agent_.batch;
+  Diligent::IBuffer* const vertex_buffer = *gpu_.batch;
   render_context->SetVertexBuffers(
       0, 1, &vertex_buffer, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

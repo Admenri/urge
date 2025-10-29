@@ -12,6 +12,17 @@
 
 namespace content {
 
+// static
+scoped_refptr<Drawable> Drawable::New(ExecutionContext* execution_context,
+                                      scoped_refptr<Viewport> viewport,
+                                      ExceptionState& exception_state) {
+  return base::MakeRefCounted<DrawableImpl>(execution_context,
+                                            ViewportImpl::From(viewport));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// RenderScissorStackImpl Implement
+
 RenderScissorStackImpl::RenderScissorStackImpl(ScissorStack* stack)
     : stack_(stack) {
   DCHECK(stack_);
@@ -61,12 +72,8 @@ void RenderScissorStackImpl::Reset(ExceptionState& exception_state) {
   stack_->Reset();
 }
 
-scoped_refptr<Drawable> Drawable::New(ExecutionContext* execution_context,
-                                      scoped_refptr<Viewport> viewport,
-                                      ExceptionState& exception_state) {
-  return base::MakeRefCounted<DrawableImpl>(execution_context,
-                                            ViewportImpl::From(viewport));
-}
+///////////////////////////////////////////////////////////////////////////////
+// DrawableImpl Implement
 
 DrawableImpl::DrawableImpl(ExecutionContext* execution_context,
                            scoped_refptr<ViewportImpl> parent)
@@ -112,51 +119,50 @@ void DrawableImpl::SetupRender(Stage stage,
     callbacks_[stage] = callback;
 }
 
-scoped_refptr<Viewport> DrawableImpl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    DrawableImpl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
+      if (viewport_ != value) {
+        viewport_ = ViewportImpl::From(value);
+        node_.RebindController(viewport_ ? viewport_->GetDrawableController()
+                                         : context()->screen_drawable_node);
+      }
+    });
 
-void DrawableImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    DrawableImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeVisibility(value);
+    });
 
-  if (viewport_ == value)
-    return;
-
-  viewport_ = ViewportImpl::From(value);
-  node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : context()->screen_drawable_node);
-}
-
-bool DrawableImpl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return node_.GetVisibility();
-}
-
-void DrawableImpl::Put_Visible(const bool& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeVisibility(value);
-}
-
-int32_t DrawableImpl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return node_.GetSortKeys()->weight[0];
-}
-
-void DrawableImpl::Put_Z(const int32_t& value,
-                         ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeSortWeight(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    DrawableImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return node_.GetSortKeys()->weight[0];
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeSortWeight(value);
+    });
 
 void DrawableImpl::OnObjectDisposed() {
   node_.DisposeNode();
+  for (auto& it : callbacks_)
+    it = RenderCallback();
 }
 
 void DrawableImpl::DrawableNodeHandlerInternal(

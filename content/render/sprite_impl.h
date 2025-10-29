@@ -19,7 +19,7 @@ namespace content {
 
 class SpriteImpl : public Sprite, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     renderer::Quad quad;
     std::vector<renderer::Quad> wave_cache;
     RRefPtr<Diligent::IBuffer> single_uniform;
@@ -84,22 +84,23 @@ class SpriteImpl : public Sprite, public EngineObject, public Disposable {
       DrawableNode::RenderControllerParams* params);
 
   void SrcRectChangedInternal();
-  GPUBitmapData* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
+  BitmapTexture* GetOtherRenderBatchableTextureInternal(SpriteImpl* other);
 
   void GPUCreateSpriteInternal();
-  void GPUUpdateWaveSpriteInternal(GPUBitmapData* texture,
+  void GPUUpdateWaveSpriteInternal(BitmapTexture* texture,
                                    const base::Rect& src_rect);
   void GPUUpdateBatchSpriteInternal(Diligent::IDeviceContext* render_context,
-                                    GPUBitmapData* texture,
-                                    GPUBitmapData* next_texture,
+                                    BitmapTexture* texture,
+                                    BitmapTexture* next_texture,
                                     const base::Rect& src_rect);
   void GPUOnSpriteRenderingInternal(Diligent::IDeviceContext* render_context,
                                     Diligent::IBuffer* world_binding,
-                                    GPUBitmapData* texture);
+                                    BitmapTexture* texture);
 
+  GPUData gpu_;
   DrawableNode node_;
   DrawableFlashController flash_emitter_;
-  Agent agent_;
+
   bool rgss2_style_;
   bool disable_vertical_sort_;
 

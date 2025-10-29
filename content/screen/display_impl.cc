@@ -6,6 +6,7 @@
 
 namespace content {
 
+// static
 std::vector<scoped_refptr<Display>> Display::GetAll(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
@@ -19,16 +20,21 @@ std::vector<scoped_refptr<Display>> Display::GetAll(
   return result;
 }
 
+// static
 scoped_refptr<Display> Display::GetPrimary(ExecutionContext* execution_context,
                                            ExceptionState& exception_state) {
   return base::MakeRefCounted<DisplayImpl>(SDL_GetPrimaryDisplay());
 }
 
+// static
 scoped_refptr<Display> Display::GetFromID(ExecutionContext* execution_context,
                                           uint32_t display_id,
                                           ExceptionState& exception_state) {
   return base::MakeRefCounted<DisplayImpl>(display_id);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// DisplayImpl Implement
 
 DisplayImpl::DisplayImpl(SDL_DisplayID display)
     : display_(display), mode_(SDL_GetDesktopDisplayMode(display)) {}

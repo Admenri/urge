@@ -19,31 +19,8 @@
 
 namespace content {
 
-constexpr int32_t kBlockMaxSize = 4096;
-
-struct GPUBitmapData {
-  // Debug name
-  std::string name;
-
-  // Bitmap texture data
-  base::Vec2i size;
-  RRefPtr<Diligent::ITexture> data;
-  RRefPtr<Diligent::ITextureView> resource;
-  RRefPtr<Diligent::ITextureView> target;
-
-  RRefPtr<Diligent::ITexture> depth_stencil;
-  RRefPtr<Diligent::ITextureView> depth_view;
-
-  // Shader binding cache data
-  RRefPtr<Diligent::IBuffer> world_buffer;
-
-  // Text drawing cache texture
-  base::Vec2i text_cache_size;
-  RRefPtr<Diligent::ITexture> text_cache_texture;
-
-  // Filter effect intermediate layer
-  RRefPtr<Diligent::ITexture> effect_layer;
-};
+// Canvas command pool block size
+constexpr int32_t kCanvasPoolBlockMaxSize = 4096;
 
 // Wrapper of GPU texture, collection of bitmap operation.
 // Pixel operation will take too cost because GPU-CPU sync.
@@ -52,27 +29,51 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                    public EngineObject,
                    public Disposable {
  public:
+  struct GPUData {
+    // Debug name
+    std::string name;
+
+    // Bitmap texture data
+    base::Vec2i size;
+    RRefPtr<Diligent::ITexture> data;
+    RRefPtr<Diligent::ITexture> depth;
+
+    // Texture view
+    RRefPtr<Diligent::ITextureView> shader_resource_view;
+    RRefPtr<Diligent::ITextureView> render_target_view;
+    RRefPtr<Diligent::ITextureView> depth_stencil_view;
+
+    // Texture based world transform
+    RRefPtr<Diligent::IBuffer> world_buffer;
+
+    // Text drawing cache texture
+    base::Vec2i text_cache_size;
+    RRefPtr<Diligent::ITexture> text_cache_texture;
+  };
+
   CanvasImpl(ExecutionContext* execution_context,
              SDL_Surface* memory_surface,
              bool has_ownership,
              const std::string& debug_name);
   CanvasImpl(ExecutionContext* execution_context,
-             RRefPtr<Diligent::ITexture> gpu_texture,
+             Diligent::ITexture* gpu_texture,
              const std::string& debug_name);
   ~CanvasImpl() override;
 
   CanvasImpl(const CanvasImpl&) = delete;
   CanvasImpl& operator=(const CanvasImpl&) = delete;
 
+  // Empty texture data upload
   static scoped_refptr<CanvasImpl> Create(ExecutionContext* execution_context,
                                           const base::Vec2i& size,
                                           ExceptionState& exception_state);
 
-  // Also be used in Graphics::Transition
+  // Also in Graphics::Transition
   static scoped_refptr<CanvasImpl> Create(ExecutionContext* execution_context,
                                           const std::string& filename,
                                           ExceptionState& exception_state);
 
+  // Cast from engine export to internal
   static scoped_refptr<CanvasImpl> FromBitmap(scoped_refptr<Bitmap> host);
 
   // Synchronize pending commands and fetch texture to buffer.
@@ -84,9 +85,8 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   void SubmitQueuedCommands();
 
   // Require render texture (maybe null after disposed)
-  GPUBitmapData* GetGPUData() {
-    return Disposable::IsDisposed() ? nullptr : &gpu_;
-  }
+  GPUData* operator->() { return Disposable::IsDisposed() ? nullptr : &gpu_; }
+  GPUData* operator*() { return Disposable::IsDisposed() ? nullptr : &gpu_; }
 
   // Add a handler for observe bitmap content changing
   base::CallbackListSubscription AddCanvasObserver(
@@ -226,21 +226,19 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                            CanvasImpl* clip_texture);
 
   void GPUCreateTextureInternal(SDL_Surface* texture_data);
-  void GPUResetEffectLayerIfNeed();
-
   void GPUBlendBlitTextureInternal(const base::Rect& dst_region,
-                                   GPUBitmapData* src_texture,
+                                   GPUData* src_texture,
                                    const base::Rect& src_region,
                                    int32_t blend_type,
                                    uint32_t opacity);
   void GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
-                                         GPUBitmapData* src_texture,
+                                         GPUData* src_texture,
                                          const base::Rect& src_region,
                                          uint32_t opacity);
   void GPUClipTextureInternal(const base::Rect& dst_region,
-                              GPUBitmapData* src_texture,
+                              GPUData* src_texture,
                               const base::Rect& src_region,
-                              GPUBitmapData* clip_texture);
+                              GPUData* clip_texture);
   void GPUFetchTexturePixelsDataInternal();
   void GPUCanvasClearInternal();
   void GPUCanvasGradientFillRectInternal(const base::Rect& region,
@@ -253,12 +251,12 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
                                         int32_t align);
   void GPUCanvasHueChange(int32_t hue);
 
+  // Sequenced command id
   enum class CommandID {
     NONE = 0,
     CLEAR,
     GRADIENT_FILL_RECT,
     HUE_CHANGE,
-    RADIAL_BLUR,
     DRAW_TEXT,
   };
 
@@ -289,14 +287,6 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     Command_HueChange() : Command(CommandID::HUE_CHANGE) {}
   };
 
-  struct Command_RadialBlur : public Command {
-    bool blur;
-    int32_t angle;
-    int32_t division;
-
-    Command_RadialBlur() : Command(CommandID::RADIAL_BLUR) {}
-  };
-
   struct Command_DrawText : public Command {
     base::Rect region;
     SDL_Surface* text;
@@ -318,13 +308,13 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
       // Allocate new block.
       if (current_block_ >= (uint32_t)blocks_.size()) {
         CommandBlock cb;
-        cb.memory.assign(kBlockMaxSize, 0);
+        cb.memory.assign(kCanvasPoolBlockMaxSize, 0);
         blocks_.push_back(std::move(cb));
       }
 
       // Step into next block
       CommandBlock* block = &blocks_[current_block_];
-      size_t left_space = kBlockMaxSize - block->usage;
+      size_t left_space = kCanvasPoolBlockMaxSize - block->usage;
       if (left_space < sizeof(Ty)) {
         // Allocate new block if no enough memory.
         // Discard remain memory space.
@@ -352,7 +342,7 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
 
   void ClearPendingCommands() {
     for (auto& it : blocks_) {
-      std::memset(it.memory.data(), 0, kBlockMaxSize);
+      std::memset(it.memory.data(), 0, kCanvasPoolBlockMaxSize);
       it.usage = 0;
     }
 
@@ -361,7 +351,8 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     current_block_ = 0;
   }
 
-  GPUBitmapData gpu_;
+  // Texture data
+  GPUData gpu_;
   SDL_Surface* surface_cache_;
 
   // Command list storage chain
@@ -374,6 +365,9 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
   base::RepeatingClosureList observers_;
   scoped_refptr<FontImpl> font_;
 };
+
+// Alias canvas gpu data
+using BitmapTexture = CanvasImpl::GPUData;
 
 }  // namespace content
 

@@ -10,6 +10,7 @@
 
 namespace content {
 
+// static
 scoped_refptr<Window> Window::New(ExecutionContext* execution_context,
                                   scoped_refptr<Viewport> viewport,
                                   int32_t scale_,
@@ -17,6 +18,9 @@ scoped_refptr<Window> Window::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<WindowImpl>(
       execution_context, ViewportImpl::From(viewport), std::max(1, scale_));
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// WindowImpl Implement
 
 WindowImpl::WindowImpl(ExecutionContext* execution_context,
                        scoped_refptr<ViewportImpl> parent,
@@ -305,8 +309,8 @@ void WindowImpl::OnObjectDisposed() {
   background_node_.DisposeNode();
   control_node_.DisposeNode();
 
-  Agent empty_agent;
-  std::swap(agent_, empty_agent);
+  GPUData empty_data;
+  std::swap(gpu_, empty_data);
 }
 
 void WindowImpl::BackgroundNodeHandlerInternal(
@@ -315,9 +319,8 @@ void WindowImpl::BackgroundNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  GPUBitmapData* windowskin_agent = Disposable::IsValid(windowskin_.get())
-                                        ? windowskin_->GetGPUData()
-                                        : nullptr;
+  BitmapTexture* windowskin_agent =
+      Disposable::IsValid(windowskin_.get()) ? **windowskin_ : nullptr;
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUCompositeBackgroundLayerInternal(params->context, windowskin_agent);
@@ -333,11 +336,10 @@ void WindowImpl::ControlNodeHandlerInternal(
   if (bound_.width <= 4 || bound_.height <= 4)
     return;
 
-  GPUBitmapData* windowskin_agent = Disposable::IsValid(windowskin_.get())
-                                        ? windowskin_->GetGPUData()
-                                        : nullptr;
-  GPUBitmapData* contents_agent =
-      Disposable::IsValid(contents_.get()) ? contents_->GetGPUData() : nullptr;
+  BitmapTexture* windowskin_agent =
+      Disposable::IsValid(windowskin_.get()) ? **windowskin_ : nullptr;
+  BitmapTexture* contents_agent =
+      Disposable::IsValid(contents_.get()) ? **contents_ : nullptr;
 
   if (stage == DrawableNode::RenderStage::BEFORE_RENDER) {
     GPUCompositeControlLayerInternal(params->context, windowskin_agent,
@@ -350,18 +352,17 @@ void WindowImpl::ControlNodeHandlerInternal(
 }
 
 void WindowImpl::GPUCreateWindowInternal() {
-  agent_.background_batch =
-      renderer::QuadBatch::Make(**context()->render_device);
-  agent_.controls_batch = renderer::QuadBatch::Make(**context()->render_device);
+  gpu_.background_batch = renderer::QuadBatch::Make(**context()->render_device);
+  gpu_.controls_batch = renderer::QuadBatch::Make(**context()->render_device);
 
-  agent_.base_binding = context()->render.pipeline_loader->base.CreateBinding();
-  agent_.content_binding =
+  gpu_.base_binding = context()->render.pipeline_loader->base.CreateBinding();
+  gpu_.content_binding =
       context()->render.pipeline_loader->base.CreateBinding();
 }
 
 void WindowImpl::GPUCompositeBackgroundLayerInternal(
     Diligent::IDeviceContext* render_context,
-    GPUBitmapData* windowskin) {
+    BitmapTexture* windowskin) {
   const base::Vec2i& draw_offset = bound_.Position();
 
   // Generate background quads
@@ -388,7 +389,7 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
     quad_count += CalculateQuadTileCount(16 * scale_, vertical_frame_size) * 2;
 
     // Resize cache
-    auto& quads = agent_.background_cache;
+    auto& quads = gpu_.background_cache;
     quads.resize(quad_count);
 
     // Draw attributes
@@ -486,19 +487,19 @@ void WindowImpl::GPUCompositeBackgroundLayerInternal(
   }
 
   // Make sure quads drawcall count
-  agent_.background_draw_count = quad_index;
+  gpu_.background_draw_count = quad_index;
 
   // Update vertex buffer
-  if (!agent_.background_cache.empty())
-    agent_.background_batch.QueueWrite(render_context,
-                                       agent_.background_cache.data(),
-                                       agent_.background_cache.size());
+  if (!gpu_.background_cache.empty())
+    gpu_.background_batch.QueueWrite(render_context,
+                                     gpu_.background_cache.data(),
+                                     gpu_.background_cache.size());
 }
 
 void WindowImpl::GPUCompositeControlLayerInternal(
     Diligent::IDeviceContext* render_context,
-    GPUBitmapData* windowskin,
-    GPUBitmapData* contents) {
+    BitmapTexture* windowskin,
+    BitmapTexture* contents) {
   const float contents_opacity_norm = contents_opacity_ / 255.0f;
   const float cursor_opacity_norm = cursor_opacity_ / 255.0f;
 
@@ -546,7 +547,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
   // Generate quads
   const base::Vec2i draw_offset = bound_.Position();
-  auto& quads = agent_.controls_cache;
+  auto& quads = gpu_.controls_cache;
   quads.resize(9 + 4 + 1 + 1);
   int32_t quad_index = 0;
 
@@ -655,7 +656,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
     }
 
     // Make sure controls quads count
-    agent_.controls_draw_count = quad_index;
+    gpu_.controls_draw_count = quad_index;
   }
 
   // Contents (0-1)
@@ -671,7 +672,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
                              base::Vec4(contents_opacity_norm));
 
     // Make sure contents quad offset
-    agent_.contents_quad_offset = quad_index;
+    gpu_.contents_quad_offset = quad_index;
   }
 
   // Make sure index buffer count
@@ -679,23 +680,22 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
   // Update vertex buffer
   if (!quads.empty())
-    agent_.controls_batch.QueueWrite(render_context, quads.data(),
-                                     quads.size());
+    gpu_.controls_batch.QueueWrite(render_context, quads.data(), quads.size());
 }
 
 void WindowImpl::GPURenderBackgroundLayerInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    GPUBitmapData* windowskin) {
+    BitmapTexture* windowskin) {
   if (windowskin) {
     auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
     // Setup shader resource
-    agent_.base_binding.u_transform->Set(world_binding);
-    agent_.base_binding.u_texture->Set(windowskin->resource);
+    gpu_.base_binding.u_transform->Set(world_binding);
+    gpu_.base_binding.u_texture->Set(windowskin->shader_resource_view);
 
     // Apply vertex index
-    Diligent::IBuffer* const vertex_buffer = *agent_.background_batch;
+    Diligent::IBuffer* const vertex_buffer = *gpu_.background_batch;
     render_context->SetVertexBuffers(
         0, 1, &vertex_buffer, nullptr,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -706,12 +706,12 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
     // Apply pipeline state
     render_context->SetPipelineState(pipeline);
     render_context->CommitShaderResources(
-        *agent_.base_binding,
+        *gpu_.base_binding,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Execute render command
     Diligent::DrawIndexedAttribs draw_indexed_attribs;
-    draw_indexed_attribs.NumIndices = agent_.background_draw_count * 6;
+    draw_indexed_attribs.NumIndices = gpu_.background_draw_count * 6;
     draw_indexed_attribs.IndexType =
         context()->render.quad_index->GetIndexType();
     render_context->DrawIndexed(draw_indexed_attribs);
@@ -721,8 +721,8 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
 void WindowImpl::GPURenderControlLayerInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::IBuffer* world_binding,
-    GPUBitmapData* windowskin,
-    GPUBitmapData* contents,
+    BitmapTexture* windowskin,
+    BitmapTexture* contents,
     ScissorStack* scissor_stack) {
   const auto current_viewport =
       background_node_.GetParentViewport()->bound.Position() -
@@ -737,11 +737,11 @@ void WindowImpl::GPURenderControlLayerInternal(
       auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
       // Setup shader resource
-      agent_.base_binding.u_transform->Set(world_binding);
-      agent_.base_binding.u_texture->Set(windowskin->resource);
+      gpu_.base_binding.u_transform->Set(world_binding);
+      gpu_.base_binding.u_texture->Set(windowskin->shader_resource_view);
 
       // Apply vertex index
-      Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
+      Diligent::IBuffer* const vertex_buffer = *gpu_.controls_batch;
       render_context->SetVertexBuffers(
           0, 1, &vertex_buffer, nullptr,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -752,12 +752,12 @@ void WindowImpl::GPURenderControlLayerInternal(
       // Apply pipeline state
       render_context->SetPipelineState(pipeline);
       render_context->CommitShaderResources(
-          *agent_.base_binding,
+          *gpu_.base_binding,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       // Execute render command
       Diligent::DrawIndexedAttribs draw_indexed_attribs;
-      draw_indexed_attribs.NumIndices = agent_.controls_draw_count * 6;
+      draw_indexed_attribs.NumIndices = gpu_.controls_draw_count * 6;
       draw_indexed_attribs.IndexType =
           context()->render.quad_index->GetIndexType();
       render_context->DrawIndexed(draw_indexed_attribs);
@@ -777,11 +777,11 @@ void WindowImpl::GPURenderControlLayerInternal(
       auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
       // Setup shader resource
-      agent_.content_binding.u_transform->Set(world_binding);
-      agent_.content_binding.u_texture->Set(contents->resource);
+      gpu_.content_binding.u_transform->Set(world_binding);
+      gpu_.content_binding.u_texture->Set(contents->shader_resource_view);
 
       // Apply vertex index
-      Diligent::IBuffer* const vertex_buffer = *agent_.controls_batch;
+      Diligent::IBuffer* const vertex_buffer = *gpu_.controls_batch;
       render_context->SetVertexBuffers(
           0, 1, &vertex_buffer, nullptr,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -792,7 +792,7 @@ void WindowImpl::GPURenderControlLayerInternal(
       // Apply pipeline state
       render_context->SetPipelineState(pipeline);
       render_context->CommitShaderResources(
-          *agent_.content_binding,
+          *gpu_.content_binding,
           Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
       // Execute render command
@@ -800,7 +800,7 @@ void WindowImpl::GPURenderControlLayerInternal(
       draw_indexed_attribs.NumIndices = 6;
       draw_indexed_attribs.IndexType =
           context()->render.quad_index->GetIndexType();
-      draw_indexed_attribs.FirstIndexLocation = agent_.contents_quad_offset * 6;
+      draw_indexed_attribs.FirstIndexLocation = gpu_.contents_quad_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
 
       // Restore

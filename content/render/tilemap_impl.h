@@ -56,7 +56,7 @@ class TilemapAutotileImpl : public TilemapAutotile {
 
 class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     renderer::QuadBatch batch;
     renderer::Binding_Tilemap shader_binding;
 
@@ -69,7 +69,7 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
   };
 
   struct AtlasCompositeCommand {
-    GPUBitmapData* texture;
+    BitmapTexture* texture;
     base::Rect src_rect;
     base::Vec2i dst_pos;
   };
@@ -152,22 +152,23 @@ class TilemapImpl : public Tilemap, public EngineObject, public Disposable {
     base::CallbackListSubscription observer;
   };
 
+  GPUData gpu_;
   DrawableNode ground_node_;
   std::vector<std::unique_ptr<DrawableNode>> above_nodes_;
-  Agent agent_;
+
   int32_t tilesize_ = 32;
   int32_t max_atlas_size_ = 0;
   int32_t max_vertical_count_ = 0;
+  base::Rect last_viewport_;
   base::Rect render_viewport_;
   base::Vec2i render_offset_;
-  bool atlas_dirty_ = false;
-  bool map_buffer_dirty_ = false;
-  base::Rect last_viewport_;
   int32_t max_anim_index_ = 1;
   int32_t max_autotile_frame_count_ = 1;
   int32_t anim_index_ = 0;
   int32_t flash_timer_ = 0;
   int32_t flash_opacity_ = 0;
+  bool atlas_dirty_ = false;
+  bool map_buffer_dirty_ = false;
 
   base::CallbackListSubscription tileset_observer_;
   base::CallbackListSubscription map_data_observer_;

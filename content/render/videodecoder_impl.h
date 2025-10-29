@@ -22,7 +22,7 @@ class VideoDecoderImpl : public VideoDecoder,
                          public EngineObject,
                          public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     RRefPtr<Diligent::ITexture> y, u, v;
     renderer::QuadBatch batch;
     renderer::Binding_YUV shader_binding;
@@ -55,10 +55,10 @@ class VideoDecoderImpl : public VideoDecoder,
 
   void GPUCreateYUVFramesInternal(const base::Vec2i& size);
   void GPURenderYUVInternal(Diligent::IDeviceContext* render_context,
-                            uvpx::Frame* data,
-                            GPUBitmapData* target);
+                            Diligent::ITextureView* render_target_view,
+                            uvpx::Frame* data);
 
-  Agent agent_;
+  GPUData gpu_;
 
   std::unique_ptr<uvpx::Player> player_;
   SDL_AudioStream* audio_stream_;

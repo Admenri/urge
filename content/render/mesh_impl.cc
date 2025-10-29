@@ -8,12 +8,16 @@
 
 namespace content {
 
+// static
 scoped_refptr<Mesh> Mesh::New(ExecutionContext* execution_context,
                               scoped_refptr<Viewport> viewport,
                               ExceptionState& exception_state) {
   return base::MakeRefCounted<MeshImpl>(execution_context,
                                         ViewportImpl::From(viewport));
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// MeshImpl Implement
 
 MeshImpl::MeshImpl(ExecutionContext* execution_context,
                    scoped_refptr<ViewportImpl> parent)
@@ -197,93 +201,90 @@ void MeshImpl::SetMultiDrawAttribs(
   draw_attribs_ = std::move(attribs);
 }
 
-scoped_refptr<Viewport> MeshImpl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    MeshImpl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
+      if (viewport_ != value) {
+        viewport_ = ViewportImpl::From(value);
+        node_.RebindController(viewport_ ? viewport_->GetDrawableController()
+                                         : context()->screen_drawable_node);
+      }
+    });
 
-void MeshImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    MeshImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeVisibility(value);
+    });
 
-  if (viewport_ == value)
-    return;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    MeshImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-  viewport_ = ViewportImpl::From(value);
-  node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : context()->screen_drawable_node);
-}
+      return node_.GetSortKeys()->weight[0];
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeSortWeight(value);
+    });
 
-bool MeshImpl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    UniformName,
+    std::string,
+    MeshImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return uniform_name_;
+    },
+    {
+      DISPOSE_CHECK;
+      uniform_name_ = value;
+    });
 
-  return node_.GetVisibility();
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    PipelineState,
+    scoped_refptr<GPUPipelineState>,
+    MeshImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return pipeline_state_;
+    },
+    {
+      DISPOSE_CHECK;
+      pipeline_state_ = static_cast<PipelineStateImpl*>(value.get());
+    });
 
-void MeshImpl::Put_Visible(const bool& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ResourceBinding,
+    scoped_refptr<GPUResourceBinding>,
+    MeshImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return resource_binding_;
+    },
+    {
+      DISPOSE_CHECK;
+      resource_binding_ = static_cast<ResourceBindingImpl*>(value.get());
 
-  node_.SetNodeVisibility(value);
-}
-
-int32_t MeshImpl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return node_.GetSortKeys()->weight[0];
-}
-
-void MeshImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeSortWeight(value);
-}
-
-std::string MeshImpl::Get_UniformName(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return uniform_name_;
-}
-
-void MeshImpl::Put_UniformName(const std::string& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  uniform_name_ = value;
-}
-
-scoped_refptr<GPUPipelineState> MeshImpl::Get_PipelineState(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return pipeline_state_;
-}
-
-void MeshImpl::Put_PipelineState(const scoped_refptr<GPUPipelineState>& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  pipeline_state_ = static_cast<PipelineStateImpl*>(value.get());
-}
-
-scoped_refptr<GPUResourceBinding> MeshImpl::Get_ResourceBinding(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return resource_binding_;
-}
-
-void MeshImpl::Put_ResourceBinding(
-    const scoped_refptr<GPUResourceBinding>& value,
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  resource_binding_ = static_cast<ResourceBindingImpl*>(value.get());
-
-  // Set world binding
-  if (auto* binding = resource_binding_->AsRawPtr())
-    world_variable_ = binding->GetVariableByName(Diligent::SHADER_TYPE_VERTEX,
-                                                 uniform_name_.c_str());
-}
+      // Set world binding
+      if (auto* binding = resource_binding_->AsRawPtr())
+        world_variable_ = binding->GetVariableByName(
+            Diligent::SHADER_TYPE_VERTEX, uniform_name_.c_str());
+    });
 
 void MeshImpl::OnObjectDisposed() {
   node_.DisposeNode();

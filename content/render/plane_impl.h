@@ -15,7 +15,7 @@ namespace content {
 
 class PlaneImpl : public Plane, public EngineObject, public Disposable {
  public:
-  struct Agent {
+  struct GPUData {
     renderer::QuadBatch batch;
     std::vector<renderer::Quad> cache;
     uint32_t quad_size;
@@ -64,7 +64,7 @@ class PlaneImpl : public Plane, public EngineObject, public Disposable {
                                       Diligent::IBuffer* world_binding);
 
   DrawableNode node_;
-  Agent agent_;
+  GPUData gpu_;
 
   scoped_refptr<ViewportImpl> viewport_;
   scoped_refptr<RectImpl> src_rect_;

@@ -60,7 +60,7 @@ class DrawableImpl : public Drawable, public EngineObject, public Disposable {
 
   DrawableNode node_;
 
-  RenderCallback callbacks_[STAGE_NUMS];
+  std::array<RenderCallback, STAGE_NUMS> callbacks_;
   scoped_refptr<ViewportImpl> viewport_;
 };
 
