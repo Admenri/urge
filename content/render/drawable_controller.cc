@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// SortKey Implement
+
 static int64_t g_creation_stamp = 0;
 
 SortKey::SortKey() : weight{0, 0, ++g_creation_stamp} {}
@@ -19,6 +22,9 @@ SortKey::SortKey(int64_t key1, int64_t key2)
 
 SortKey::SortKey(int64_t key1, int64_t key2, int64_t key3)
     : weight{key1, key2, key3} {}
+
+///////////////////////////////////////////////////////////////////////////////
+// ScissorStack Implement
 
 ScissorStack::ScissorStack(Diligent::IDeviceContext* context,
                            const base::Rect& first)
@@ -57,6 +63,9 @@ void ScissorStack::SetScissor(const base::Rect& bound) {
                                 bound.y + bound.height);
   context_->SetScissorRects(1, &render_scissor, UINT32_MAX, UINT32_MAX);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// DrawableNode Implement
 
 DrawableNode::DrawableNode(DrawNodeController* controller,
                            const SortKey& default_key,
