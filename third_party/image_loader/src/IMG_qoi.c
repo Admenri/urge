@@ -72,7 +72,7 @@ SDL_Surface *IMG_LoadQOI_IO(SDL_IOStream *src)
     qoi_desc image_info;
     SDL_Surface *surface = NULL;
 
-    data = (void *)SDL_LoadFile_IO(src, &size, false);
+    data = SDL_LoadFile_IO(src, &size, false);
     if ( !data ) {
         return NULL;
     }
@@ -120,6 +120,7 @@ bool IMG_isQOI(SDL_IOStream *src)
 SDL_Surface *IMG_LoadQOI_IO(SDL_IOStream *src)
 {
     (void)src;
+    SDL_SetError("SDL_image built without QOI support");
     return NULL;
 }
 

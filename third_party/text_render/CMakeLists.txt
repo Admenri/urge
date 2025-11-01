@@ -11,4 +11,5 @@ add_library(sdl_ttf_render STATIC
 )
 
 target_include_directories(sdl_ttf_render PUBLIC include)
-target_link_libraries(sdl_ttf_render PRIVATE freetype)
+target_link_libraries(sdl_ttf_render PRIVATE freetype harfbuzz)
+target_compile_definitions(sdl_ttf_render PUBLIC TTF_USE_HARFBUZZ=1)

@@ -19,24 +19,25 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-typedef struct IMG_AnimationEncoderContext IMG_AnimationEncoderContext;
+/**
+ * This file contains the XML management functions for SDL_image.
+ *
+ * It provides functions to parse and manage XML data, which can be used
+ * for various purposes such as configuration, metadata, or other structured data.
+ */
 
-struct IMG_AnimationEncoder
-{
-    SDL_IOStream *dst;
-    Sint64 start;
-    bool closeio;
-    int quality;
-    int timebase_numerator;
-    int timebase_denominator;
-    Uint64 accumulated_pts;
-
-    bool (*AddFrame)(IMG_AnimationEncoder *encoder, SDL_Surface *surface, Uint64 duration);
-    bool (*Close)(IMG_AnimationEncoder *encoder);
-
-    IMG_AnimationEncoderContext *ctx;
-};
-
-extern Uint64 IMG_TimebaseDuration(Uint64 pts, Uint64 duration, Uint64 src_numerator, Uint64 src_denominator, Uint64 dst_numerator, Uint64 dst_denominator);
-extern Uint64 IMG_GetEncoderDuration(IMG_AnimationEncoder *encoder, Uint64 duration, Uint64 timebase_denominator);
-extern bool IMG_HasMetadata(SDL_PropertiesID props);
+#ifndef IMG_XML_MAN
+#define IMG_XML_MAN
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern char *__xmlman_GetXMPDescription(const uint8_t *data, size_t len);
+extern char *__xmlman_GetXMPCopyright(const uint8_t *data, size_t len);
+extern char *__xmlman_GetXMPTitle(const uint8_t *data, size_t len);
+extern char *__xmlman_GetXMPCreator(const uint8_t *data, size_t len);
+extern char *__xmlman_GetXMPCreateDate(const uint8_t *data, size_t len);
+extern uint8_t *__xmlman_ConstructXMPWithRDFDescription(const char *dctitle, const char *dccreator, const char *dcdescription, const char *dcrights, const char *xmpcreatedate, size_t *outlen);
+#ifdef __cplusplus
+}
+#endif
+#endif /* IMG_XML_MAN */

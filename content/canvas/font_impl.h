@@ -41,16 +41,17 @@ class FontImpl : public Font {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Italic, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Outline, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Shadow, bool);
+  URGE_DECLARE_OVERRIDE_ATTRIBUTE(Solid, bool);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Color, scoped_refptr<Color>);
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(OutColor, scoped_refptr<Color>);
-  URGE_DECLARE_OVERRIDE_ATTRIBUTE(Solid, bool);
 
  private:
   void LoadFontInternal(ExceptionState& exception_state);
   void EnsureFontSurfaceFormatInternal(SDL_Surface*& surf);
+  void SetupFontFallbackInternal();
 
   std::vector<std::string> name_;
-  int32_t size_;
+  uint32_t size_;
   bool bold_;
   bool italic_;
   bool outline_;

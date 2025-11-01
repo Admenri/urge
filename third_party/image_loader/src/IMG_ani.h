@@ -19,24 +19,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-typedef struct IMG_AnimationEncoderContext IMG_AnimationEncoderContext;
+extern bool IMG_CreateANIAnimationEncoder(IMG_AnimationEncoder *encoder, SDL_PropertiesID props);
+extern bool IMG_CreateANIAnimationDecoder(IMG_AnimationDecoder *decoder, SDL_PropertiesID props);
 
-struct IMG_AnimationEncoder
-{
-    SDL_IOStream *dst;
-    Sint64 start;
-    bool closeio;
-    int quality;
-    int timebase_numerator;
-    int timebase_denominator;
-    Uint64 accumulated_pts;
-
-    bool (*AddFrame)(IMG_AnimationEncoder *encoder, SDL_Surface *surface, Uint64 duration);
-    bool (*Close)(IMG_AnimationEncoder *encoder);
-
-    IMG_AnimationEncoderContext *ctx;
-};
-
-extern Uint64 IMG_TimebaseDuration(Uint64 pts, Uint64 duration, Uint64 src_numerator, Uint64 src_denominator, Uint64 dst_numerator, Uint64 dst_denominator);
-extern Uint64 IMG_GetEncoderDuration(IMG_AnimationEncoder *encoder, Uint64 duration, Uint64 timebase_denominator);
-extern bool IMG_HasMetadata(SDL_PropertiesID props);

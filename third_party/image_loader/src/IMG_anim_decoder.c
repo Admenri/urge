@@ -22,10 +22,11 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "IMG_anim_decoder.h"
-#include "IMG_webp.h"
-#include "IMG_libpng.h"
-#include "IMG_gif.h"
+#include "IMG_ani.h"
 #include "IMG_avif.h"
+#include "IMG_gif.h"
+#include "IMG_libpng.h"
+#include "IMG_webp.h"
 
 IMG_AnimationDecoder *IMG_CreateAnimationDecoder(const char *file)
 {
@@ -131,16 +132,23 @@ IMG_AnimationDecoder *IMG_CreateAnimationDecoderWithProperties(SDL_PropertiesID 
     decoder->closeio = closeio;
     decoder->timebase_numerator = timebase_numerator;
     decoder->timebase_denominator = timebase_denominator;
+    decoder->props = SDL_CreateProperties();
+    if (!decoder->props) {
+        SDL_SetError("Failed to create properties for animation decoder");
+        goto error;
+    }
 
     bool result = false;
-    if (SDL_strcasecmp(type, "webp") == 0) {
-        result = IMG_CreateWEBPAnimationDecoder(decoder, props);
-    } else if (SDL_strcasecmp(type, "png") == 0) {
+    if (SDL_strcasecmp(type, "ani") == 0) {
+        result = IMG_CreateANIAnimationDecoder(decoder, props);
+    } else if (SDL_strcasecmp(type, "apng") == 0 || SDL_strcasecmp(type, "png") == 0) {
         result = IMG_CreateAPNGAnimationDecoder(decoder, props);
-    } else if (SDL_strcasecmp(type, "gif") == 0) {
-        result = IMG_CreateGIFAnimationDecoder(decoder, props);
     } else if (SDL_strcasecmp(type, "avifs") == 0) {
         result = IMG_CreateAVIFAnimationDecoder(decoder, props);
+    } else if (SDL_strcasecmp(type, "gif") == 0) {
+        result = IMG_CreateGIFAnimationDecoder(decoder, props);
+    } else if (SDL_strcasecmp(type, "webp") == 0) {
+        result = IMG_CreateWEBPAnimationDecoder(decoder, props);
     } else {
         SDL_SetError("Unrecognized output type");
     }
@@ -163,10 +171,20 @@ error:
     return NULL;
 }
 
-bool IMG_GetAnimationDecoderFrame(IMG_AnimationDecoder *decoder, SDL_Surface **frame, Uint64 *pts)
+SDL_PropertiesID IMG_GetAnimationDecoderProperties(IMG_AnimationDecoder *decoder)
+{
+    if (!decoder) {
+        SDL_InvalidParamError("decoder");
+        return 0;
+    }
+
+    return decoder->props;
+}
+
+bool IMG_GetAnimationDecoderFrame(IMG_AnimationDecoder *decoder, SDL_Surface **frame, Uint64 *duration)
 {
     SDL_Surface *temp_frame = NULL;
-    Uint64 temp_pts;
+    Uint64 temp_duration;
 
     if (!decoder) {
         return SDL_InvalidParamError("decoder");
@@ -175,15 +193,45 @@ bool IMG_GetAnimationDecoderFrame(IMG_AnimationDecoder *decoder, SDL_Surface **f
     if (!frame) {
         frame = &temp_frame;
     }
-    if (!pts) {
-        pts = &temp_pts;
+    if (!duration) {
+        duration = &temp_duration;
     }
 
-    bool result = decoder->GetNextFrame(decoder, frame, pts);
+    // Reset the status before trying to get the next frame
+    decoder->status = IMG_DECODER_STATUS_OK;
+
+    bool result = decoder->GetNextFrame(decoder, frame, duration);
     if (temp_frame) {
         SDL_DestroySurface(temp_frame);
     }
+
+    if (!result) {
+        if (decoder->status == IMG_DECODER_STATUS_COMPLETE) {
+            SDL_ClearError();
+        } else {
+            decoder->status = IMG_DECODER_STATUS_FAILED;
+        }
+        *frame = NULL;
+        *duration = 0;
+    }
     return result;
+}
+
+IMG_AnimationDecoderStatus IMG_GetAnimationDecoderStatus(IMG_AnimationDecoder* decoder)
+{
+    if (!decoder) {
+        return IMG_DECODER_STATUS_INVALID;
+    }
+    return decoder->status;
+}
+
+bool IMG_ResetAnimationDecoder(IMG_AnimationDecoder *decoder)
+{
+    if (!decoder) {
+        return SDL_InvalidParamError("decoder");
+    }
+
+    return decoder->Reset(decoder);
 }
 
 bool IMG_CloseAnimationDecoder(IMG_AnimationDecoder *decoder)
@@ -198,18 +246,20 @@ bool IMG_CloseAnimationDecoder(IMG_AnimationDecoder *decoder)
         result &= SDL_CloseIO(decoder->src);
     }
 
-    SDL_free(decoder);
+    if (decoder->props) {
+        SDL_DestroyProperties(decoder->props);
+        decoder->props = 0;
+    }
 
+    SDL_free(decoder);
     return result;
 }
 
-bool IMG_ResetAnimationDecoder(IMG_AnimationDecoder *decoder)
+Uint64 IMG_GetDecoderDuration(IMG_AnimationDecoder *decoder, Uint64 duration, Uint64 timebase_denominator)
 {
-    if (!decoder) {
-        return SDL_InvalidParamError("decoder");
-    }
-
-    return decoder->Reset(decoder);
+    Uint64 value = IMG_TimebaseDuration(decoder->accumulated_pts, duration, 1, timebase_denominator, decoder->timebase_numerator, decoder->timebase_denominator);
+    decoder->accumulated_pts += duration;
+    return value;
 }
 
 IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int maxFrames)
@@ -220,7 +270,7 @@ IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int 
     }
 
     // We do not rely on the metadata for the count of available frames because some
-    // formats like GIF only supports continous decoding and doesn't have any data that
+    // formats like GIF only supports continuous decoding and doesn't have any data that
     // states the total available frames inside the binary data.
     //
     // For this reason , we will decode frames until we reach the end of the stream or
@@ -229,7 +279,7 @@ IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int 
     int actualCount = 0;
     int currentCount = 32;
     SDL_Surface **frames = (SDL_Surface **)SDL_calloc(currentCount, sizeof(*frames));
-    Sint64 *delays = (Sint64 *)SDL_calloc(currentCount, sizeof(*delays));
+    Uint64 *delays = (Uint64 *)SDL_calloc(currentCount, sizeof(*delays));
     if (!frames || !delays) {
         goto error;
     }
@@ -239,14 +289,13 @@ IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int 
             break;
         }
 
-        Uint64 pts = 0;
-        SDL_Surface *nextFrame;
-        if (!IMG_GetAnimationDecoderFrame(decoder, &nextFrame, &pts)) {
-            goto error;
-        }
-
-        if (!nextFrame) {
-            // No more frames available or an error occurred.
+        Uint64 duration = 0;
+        SDL_Surface *nextFrame = NULL;
+        if (!IMG_GetAnimationDecoderFrame(decoder, &nextFrame, &duration)) {
+            if (IMG_GetAnimationDecoderStatus(decoder) == IMG_DECODER_STATUS_FAILED) {
+                goto error;
+            }
+            // Decoding complete
             break;
         }
 
@@ -258,7 +307,7 @@ IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int 
             }
             frames = tempFrames;
 
-            Sint64 *tempDelays = (Sint64 *)SDL_realloc(delays, currentCount * sizeof(*delays));
+            Uint64 *tempDelays = (Uint64 *)SDL_realloc(delays, currentCount * sizeof(*delays));
             if (!tempDelays) {
                 goto error;
             }
@@ -266,7 +315,7 @@ IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int 
         }
 
         frames[actualCount] = nextFrame;
-        delays[actualCount] = pts;
+        delays[actualCount] = duration;
         ++actualCount;
     }
 
@@ -295,16 +344,7 @@ IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int 
     }
     for (int i = 0; i < anim->count; ++i) {
         anim->frames[i] = frames[i];
-
-        if (i < anim->count - 1) {
-            anim->delays[i] = (int)(delays[i + 1] - delays[i]);
-        } else if (i > 0) {
-            // Assuming consistent frame timing
-            anim->delays[i] = anim->delays[i - 1];
-        } else {
-            // Assuming single frame of 60 FPS animation
-            anim->delays[i] = 16;
-        }
+        anim->delays[i] = (int)delays[i];
     }
 
     SDL_free(frames);
@@ -325,4 +365,29 @@ error:
     SDL_free(delays);
     IMG_CloseAnimationDecoder(decoder);
     return NULL;
+}
+
+IMG_Animation *IMG_LoadANIAnimation_IO(SDL_IOStream *src)
+{
+    return IMG_DecodeAsAnimation(src, "ani", 0);
+}
+
+IMG_Animation *IMG_LoadAPNGAnimation_IO(SDL_IOStream *src)
+{
+    return IMG_DecodeAsAnimation(src, "png", 0);
+}
+
+IMG_Animation *IMG_LoadAVIFAnimation_IO(SDL_IOStream *src)
+{
+    return IMG_DecodeAsAnimation(src, "avifs", 0);
+}
+
+IMG_Animation *IMG_LoadGIFAnimation_IO(SDL_IOStream *src)
+{
+    return IMG_DecodeAsAnimation(src, "gif", 0);
+}
+
+IMG_Animation *IMG_LoadWEBPAnimation_IO(SDL_IOStream *src)
+{
+    return IMG_DecodeAsAnimation(src, "webp", 0);
 }

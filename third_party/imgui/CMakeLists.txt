@@ -29,5 +29,5 @@ add_library(ocornut_imgui
   ${IMGUI_MISC_SOURCE}
 )
 
-target_link_libraries(ocornut_imgui PUBLIC engine_renderer)
+target_link_libraries(ocornut_imgui PUBLIC engine_renderer freetype)
 target_include_directories(ocornut_imgui PRIVATE .)

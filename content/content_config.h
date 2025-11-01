@@ -50,12 +50,12 @@ struct ExecutionContext;
   void klass::Put_##name(const type& value, ExceptionState& exception_state) \
       setter;
 
-#define URGE_DECLARE_STATIC_ATTRIBUTE_READ(klass, name, type) \
-  type klass::Get_##name(ExecutionContext* execution_context, \
-                         ExceptionState& exception_state)
-#define URGE_DECLARE_STATIC_ATTRIBUTE_WRITE(klass, name, type) \
-  void klass::Put_##name(ExecutionContext* execution_context,  \
-                         const type& value, ExceptionState& exception_state)
+#define URGE_DEFINE_STATIC_ATTRIBUTE(klass, name, type, getter, setter)      \
+  type klass::Get_##name(ExecutionContext* execution_context,                \
+                         ExceptionState& exception_state) getter;            \
+  void klass::Put_##name(ExecutionContext* execution_context,                \
+                         const type& value, ExceptionState& exception_state) \
+      setter;
 
 #define URGE_ATTRIBUTE_VALUE_CHECK(v)                               \
   if (!v)                                                           \

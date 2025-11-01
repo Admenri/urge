@@ -22,6 +22,8 @@
 /* This is a GIF image file loading framework */
 
 #include <SDL3_image/SDL_image.h>
+
+#include "IMG_gif.h"
 #include "IMG_anim_encoder.h"
 #include "IMG_anim_decoder.h"
 
@@ -147,9 +149,9 @@ static int DoExtension(SDL_IOStream * src, int label, State_t * state);
 static int GetDataBlock(SDL_IOStream * src, unsigned char *buf, State_t * state);
 static int GetCode(SDL_IOStream * src, int code_size, int flag, State_t * state);
 static int LWZReadByte(SDL_IOStream * src, int flag, int input_code_size, State_t * state);
-static Image *ReadImage(SDL_IOStream * src, int len, int height, int,
-			unsigned char cmap[3][MAXCOLORMAPSIZE],
-			int gray, int interlace, int ignore, State_t * state);
+static Image *ReadImage(SDL_IOStream *src, int len, int height, int cmapSize,
+          unsigned char cmap[3][MAXCOLORMAPSIZE],
+          int gray, int interlace, int ignore, State_t *state);
 
 static int
 ReadColorMap(SDL_IOStream *src, int number,
@@ -403,16 +405,16 @@ ReadImage(SDL_IOStream * src, int len, int height, int cmapSize,
           int gray, int interlace, int ignore, State_t * state)
 {
     Image *image;
-    SDL_Palette *palette;
     unsigned char c;
-    int i, v;
+    int v;
     int xpos = 0, ypos = 0, pass = 0;
+    int transparent_index;
+    Uint8 *dst;
+    int pixel_count = 0;
+    int total_pixels = len * height;
 
     (void) gray; /* unused */
 
-    /*
-    **  Initialize the compression routines
-     */
     if (!ReadOK(src, &c, 1)) {
         RWSetMsg("EOF / read error on image data");
         return NULL;
@@ -421,33 +423,45 @@ ReadImage(SDL_IOStream * src, int len, int height, int cmapSize,
         RWSetMsg("error reading image");
         return NULL;
     }
-    /*
-    **  If this is an "uninteresting picture" ignore it.
-     */
+
     if (ignore) {
         while (LWZReadByte(src, FALSE, c, state) >= 0)
             ;
         return NULL;
     }
-    image = ImageNewCmap(len, height, cmapSize);
+
+    /* Create RGBA32 surface with frame dimensions */
+    image = SDL_CreateSurface(len, height, SDL_PIXELFORMAT_RGBA32);
     if (!image) {
         return NULL;
     }
 
-    palette = SDL_CreateSurfacePalette(image);
-    if (!palette) {
-        return NULL;
-    }
-    if (cmapSize > palette->ncolors) {
-        cmapSize = palette->ncolors;
-    }
-    palette->ncolors = cmapSize;
-    for (i = 0; i < cmapSize; i++) {
-        ImageSetCmap(image, i, cmap[CM_RED][i], cmap[CM_GREEN][i], cmap[CM_BLUE][i]);
-    }
+    /* Initialize entire surface to transparent */
+    SDL_memset(image->pixels, 0, image->pitch * height);
 
-    while ((v = LWZReadByte(src, FALSE, c, state)) >= 0) {
-        ((Uint8 *)image->pixels)[xpos + ypos * image->pitch] = (Uint8)v;
+    transparent_index = state->Gif89.transparent;
+
+    /* Decode and convert to RGBA */
+    while ((v = LWZReadByte(src, FALSE, c, state)) >= 0 && pixel_count < total_pixels) {
+        dst = (Uint8 *)image->pixels + (ypos * image->pitch) + (xpos * 4);
+
+        /* Only write non-transparent pixels */
+        if (transparent_index < 0 || v != transparent_index) {
+            if (v < cmapSize) {
+                dst[0] = cmap[CM_RED][v];
+                dst[1] = cmap[CM_GREEN][v];
+                dst[2] = cmap[CM_BLUE][v];
+                dst[3] = 255;  /* Opaque */
+            } else {
+                /* Invalid color index */
+                dst[0] = 255;
+                dst[1] = 0;
+                dst[2] = 255;
+                dst[3] = 255;
+            }
+        }
+
+        pixel_count++;
         ++xpos;
         if (xpos == len) {
             xpos = 0;
@@ -464,7 +478,6 @@ ReadImage(SDL_IOStream * src, int len, int height, int cmapSize,
                     ypos += 2;
                     break;
                 }
-
                 if (ypos >= height) {
                     ++pass;
                     switch (pass) {
@@ -489,15 +502,8 @@ ReadImage(SDL_IOStream * src, int len, int height, int cmapSize,
             break;
     }
 
-  fini:
-
+fini:
     return image;
-}
-
-/* Load a GIF type animation from an SDL datasource */
-IMG_Animation *IMG_LoadGIFAnimation_IO(SDL_IOStream *src)
-{
-    return IMG_DecodeAsAnimation(src, "gif", 0);
 }
 
 struct IMG_AnimationDecoderContext
@@ -531,13 +537,14 @@ struct IMG_AnimationDecoderContext
     bool global_grayscale;
 
     /* Frame info */
+    Uint64 last_duration;        /* The duration of the previous frame */
     int last_disposal;           /* Disposal method from previous frame */
     int restore_frame;           /* Frame to restore when using DISPOSE_PREVIOUS */
 
-    Sint64 last_pts;
+    bool ignore_props;
 };
 
-static bool IMG_AnimationDecoderReset_Internal(IMG_AnimationDecoder* decoder)
+static bool IMG_AnimationDecoderReset_Internal(IMG_AnimationDecoder *decoder)
 {
     IMG_AnimationDecoderContext* ctx = decoder->ctx;
     if (SDL_SeekIO(decoder->src, decoder->start, SDL_IO_SEEK_SET) < 0) {
@@ -570,19 +577,18 @@ static bool IMG_AnimationDecoderReset_Internal(IMG_AnimationDecoder* decoder)
     return true;
 }
 
-static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *decoder, SDL_Surface **frame, Uint64 *pts)
+static bool IMG_AnimationDecoderGetGIFHeader(IMG_AnimationDecoder *decoder, char**comment, int *loopCount)
 {
-    *pts = 0;
-    *frame = NULL;
-    IMG_AnimationDecoderContext *ctx = decoder->ctx;
-    SDL_IOStream *src = decoder->src;
-    unsigned char c;
-    int framesLoaded = 0;
-
-    if (ctx->got_eof) {
-        return true;
+    if (comment) {
+        *comment = NULL;
     }
 
+    if (loopCount) {
+        *loopCount = 0;
+    }
+
+    IMG_AnimationDecoderContext *ctx = decoder->ctx;
+    SDL_IOStream *src = decoder->src;
     if (!ctx->got_header) {
         if (!ReadOK(src, ctx->buf, 6)) {
             return SDL_SetError("Error reading GIF magic number");
@@ -624,6 +630,125 @@ static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *deco
             ctx->state.GifScreen.GrayScale = ctx->global_grayscale;
         }
 
+        if (!ctx->ignore_props) {
+            Uint64 stream_pos = SDL_TellIO(src);
+            bool processing_extensions = true;
+
+            while (processing_extensions) {
+                uint8_t block_type;
+                if (!ReadOK(src, &block_type, 1)) {
+                    return SDL_SetError("Error reading GIF block type");
+                }
+
+                switch (block_type) {
+                case 0x21: // Extension Introducer
+                {
+                    uint8_t extension_label;
+                    if (!ReadOK(src, &extension_label, 1)) {
+                        return SDL_SetError("Error reading GIF extension label");
+                    }
+
+                    switch (extension_label) {
+                    case 0xFF: // Application Extension
+                    {
+                        // Read the application block size first (should be 11 for "NETSCAPE2.0")
+                        Uint8 app_block_size;
+                        if (!ReadOK(src, &app_block_size, 1)) {
+                            return SDL_SetError("Error reading application extension block size");
+                        }
+
+                        Uint8 app_data[256];
+                        if (!ReadOK(src, app_data, app_block_size)) {
+                            return SDL_SetError("Error reading GIF application extension block");
+                        }
+
+                        // Check for NETSCAPE2.0 extension (loop count)
+                        if (app_block_size == 11 &&
+                            SDL_strncmp((char *)app_data, "NETSCAPE2.0", 11) == 0) {
+
+                            Uint8 sub_block_size;
+                            if (!ReadOK(src, &sub_block_size, 1)) {
+                                return SDL_SetError("Error reading Netscape sub-block size");
+                            }
+                            if (sub_block_size == 3) {
+                                Uint8 sub_block_data[3];
+                                if (!ReadOK(src, sub_block_data, 3)) {
+                                    return SDL_SetError("Error reading Netscape sub-block data");
+                                }
+                                if (sub_block_data[0] == 0x01 && loopCount) {
+                                    *loopCount = LM_to_uint(sub_block_data[1], sub_block_data[2]);
+                                }
+                                // Terminator
+                                if (!ReadOK(src, &sub_block_size, 1) || sub_block_size != 0x00) {
+                                    return SDL_SetError("Netscape extension block not terminated correctly");
+                                }
+                            } else {
+                                // Skip unexpected sub-block sizes
+                                SDL_SeekIO(src, sub_block_size, SDL_IO_SEEK_CUR);
+                                Uint8 terminator;
+                                if (!ReadOK(src, &terminator, 1) || terminator != 0) {
+                                    return SDL_SetError("Extension block not terminated correctly");
+                                }
+                            }
+                        } else {
+                            // Skip all sub-blocks for non-Netscape extensions
+                            Uint8 sub_block_size;
+                            while (ReadOK(src, &sub_block_size, 1) && sub_block_size > 0) {
+                                SDL_SeekIO(src, sub_block_size, SDL_IO_SEEK_CUR);
+                            }
+                        }
+                    } break;
+
+                    case 0xFE: // Comment Extension
+                    {
+                        if (comment) {
+                            char *c = NULL;
+                            Uint8 sub_block_size;
+                            size_t current_len = 0;
+                            while (ReadOK(src, &sub_block_size, 1) && sub_block_size > 0) {
+                                size_t new_len = current_len + sub_block_size;
+                                char *temp_comment = SDL_realloc(c, new_len + 1);
+                                if (!temp_comment) {
+                                    return SDL_SetError("Failed to allocate memory for GIF comment");
+                                }
+                                c = temp_comment;
+                                if (!ReadOK(src, c + current_len, sub_block_size)) {
+                                    return SDL_SetError("Error reading GIF comment data");
+                                }
+                                current_len = new_len;
+                            }
+                            if (c && current_len > 0) {
+                                c[current_len] = '\0';
+                            }
+
+                            *comment = c;
+                        }
+                    } break;
+
+                    default: // Other extensions
+                    {
+                        Uint8 sub_block_size;
+                        while (ReadOK(src, &sub_block_size, 1) && sub_block_size > 0) {
+                            SDL_SeekIO(src, sub_block_size, SDL_IO_SEEK_CUR);
+                        }
+                    } break;
+                    }
+                } break;
+
+                case 0x2C: // Image Descriptor
+                    processing_extensions = false;
+                    break;
+
+                case 0x3B: // Trailer
+                    return SDL_SetError("GIF file contains no images");
+
+                default: // Unknown block type
+                    return SDL_SetError("Unknown GIF block type: 0x%02X", block_type);
+                }
+            }
+            SDL_SeekIO(src, stream_pos, SDL_IO_SEEK_SET);
+        }
+
         if (!ctx->canvas) {
             ctx->canvas = SDL_CreateSurface(ctx->width, ctx->height, SDL_PIXELFORMAT_RGBA32);
             if (!ctx->canvas) {
@@ -651,6 +776,24 @@ static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *deco
         }
 
         ctx->got_header = true;
+    }
+    return true;
+}
+
+static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *decoder, SDL_Surface **frame, Uint64 *duration)
+{
+    IMG_AnimationDecoderContext *ctx = decoder->ctx;
+    SDL_IOStream *src = decoder->src;
+    unsigned char c;
+    int framesLoaded = 0;
+
+    if (ctx->got_eof) {
+        decoder->status = IMG_DECODER_STATUS_COMPLETE;
+        return false;
+    }
+
+    if (!IMG_AnimationDecoderGetGIFHeader(decoder, NULL, NULL)) {
+        return false;
     }
 
     int framesToLoad = 1;
@@ -744,19 +887,18 @@ static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *deco
                               BitSet(ctx->buf[8], INTERLACE), 0, &ctx->state);
         }
 
-        if (!image) {
-            // TODO:
-            // Error reading image, but we'll continue with what we have, or should we??
-            continue;
-        }
+      if (!image) {
+          // Incorrect animation is harder to detect than a direct failure,
+          // so it's better to fail than try to animate a GIF without a,
+          // full set of frames it has in the file.
 
-        /* Apply transparency if needed */
-        if (ctx->state.Gif89.transparent >= 0) {
-            if (!SDL_SetSurfaceColorKey(image, true, ctx->state.Gif89.transparent)) {
-                SDL_DestroySurface(image);
-                return SDL_SetError("Failed to set transparency on frame");
-            }
-        }
+          // Only set the error if ReadImage did not do it.
+          if (SDL_GetError()[0] == '\0') {
+              return SDL_SetError("Failed to decode frame.");
+          }
+
+          return false;
+      }
 
         /* Composite the frame onto the canvas */
         SDL_Rect dest = { left, top, width, height };
@@ -772,14 +914,15 @@ static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *deco
             return SDL_SetError("Failed to duplicate frame surface");
         }
 
-        if (ctx->current_frame == 0) {
-            *pts = 0;
+        if (ctx->state.Gif89.delayTime < 0 && ctx->last_duration) {
+            *duration = ctx->last_duration;
         } else if (ctx->state.Gif89.delayTime < 2) {
-            *pts = decoder->ctx->last_pts += decoder->timebase_denominator * decoder->timebase_denominator * 10;
+            /* Default animation delay, matching browser and Qt */
+            *duration = IMG_GetDecoderDuration(decoder, 10, 100);
         } else {
-            int millisecond_delay = ctx->state.Gif89.delayTime * 10;
-            *pts = decoder->ctx->last_pts += millisecond_delay * decoder->timebase_denominator / (1000 * decoder->timebase_numerator);
+            *duration = IMG_GetDecoderDuration(decoder, ctx->state.Gif89.delayTime, 100);
         }
+        ctx->last_duration = *duration;
 
         ctx->last_disposal = ctx->state.Gif89.disposal;
 
@@ -795,7 +938,11 @@ static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *deco
         ctx->frame_count++;
     }
 
-    if (framesLoaded == 0 && !ctx->got_eof) {
+    if (framesLoaded == 0) {
+        if (ctx->got_eof) {
+            decoder->status = IMG_DECODER_STATUS_COMPLETE;
+            return false;
+        }
         return SDL_SetError("Failed to load any frames");
     }
 
@@ -803,7 +950,7 @@ static bool IMG_AnimationDecoderGetNextFrame_Internal(IMG_AnimationDecoder *deco
     return true;
 }
 
-static bool IMG_AnimationDecoderClose_Internal(IMG_AnimationDecoder* decoder)
+static bool IMG_AnimationDecoderClose_Internal(IMG_AnimationDecoder *decoder)
 {
     IMG_AnimationDecoderContext* ctx = decoder->ctx;
     if (ctx->canvas) {
@@ -820,11 +967,9 @@ static bool IMG_AnimationDecoderClose_Internal(IMG_AnimationDecoder* decoder)
     return true;
 }
 
-bool IMG_CreateGIFAnimationDecoder(IMG_AnimationDecoder* decoder, SDL_PropertiesID props)
+bool IMG_CreateGIFAnimationDecoder(IMG_AnimationDecoder *decoder, SDL_PropertiesID props)
 {
-    (void)props;
-
-    IMG_AnimationDecoderContext* ctx = (IMG_AnimationDecoderContext*)SDL_calloc(1, sizeof(IMG_AnimationDecoderContext));
+    IMG_AnimationDecoderContext *ctx = (IMG_AnimationDecoderContext*)SDL_calloc(1, sizeof(IMG_AnimationDecoderContext));
     if (!ctx) {
         return SDL_SetError("Out of memory for GIF decoder context");
     }
@@ -849,22 +994,35 @@ bool IMG_CreateGIFAnimationDecoder(IMG_AnimationDecoder* decoder, SDL_Properties
     decoder->GetNextFrame = IMG_AnimationDecoderGetNextFrame_Internal;
     decoder->Close = IMG_AnimationDecoderClose_Internal;
 
+    char *comment = NULL;
+    int loop_count = 0;
+    if (!IMG_AnimationDecoderGetGIFHeader(decoder, &comment, &loop_count)) {
+        return false;
+    }
+
+    bool ignoreProps = SDL_GetBooleanProperty(props, IMG_PROP_METADATA_IGNORE_PROPS_BOOLEAN, false);
+    ctx->ignore_props = ignoreProps;
+    if (!ignoreProps) {
+        // Set well-defined properties.
+        SDL_SetNumberProperty(decoder->props, IMG_PROP_METADATA_LOOP_COUNT_NUMBER, (Sint64)loop_count);
+
+        // Get other well-defined properties and set them in our props.
+        if (comment) {
+            SDL_SetStringProperty(decoder->props, IMG_PROP_METADATA_DESCRIPTION_STRING, comment);
+        }
+    }
+    SDL_free(comment);
+
     return true;
 }
 
 #else
 
-/* Load a GIF type animation from an SDL datasource */
-IMG_Animation *IMG_LoadGIFAnimation_IO(SDL_IOStream *src)
-{
-    (void)src;
-    return NULL;
-}
-
 bool IMG_CreateGIFAnimationDecoder(IMG_AnimationDecoder *decoder, SDL_PropertiesID props)
 {
     (void)decoder;
     (void)props;
+    SDL_SetError("SDL_image built without GIF support");
     return false;
 }
 
@@ -927,6 +1085,7 @@ bool IMG_isGIF(SDL_IOStream *src)
 SDL_Surface *IMG_LoadGIF_IO(SDL_IOStream *src)
 {
     (void)src;
+    SDL_SetError("SDL_image built without GIF support");
     return NULL;
 }
 
@@ -1010,11 +1169,11 @@ struct IMG_AnimationEncoderContext
     uint8_t globalColorTable[256][3];
     uint16_t numGlobalColors;
     int transparentColorIndex;
-    uint16_t loopCount;
     bool firstFrame;
     uint8_t colorMapLUT[32][32][32];
     bool lut_initialized;
     bool use_lut;
+    SDL_PropertiesID metadata;
 };
 
 #define LZW_MAX_CODES 4096
@@ -2324,6 +2483,47 @@ static int writeNetscapeLoopExtension(SDL_IOStream *io, uint16_t loopCount)
     return 0;
 }
 
+static int writeCommentExtension(SDL_IOStream *io, const char *comment)
+{
+    if (!io || !comment || SDL_strlen(comment) == 0) {
+        return 0;
+    }
+
+    size_t remaining = SDL_strlen(comment);
+    const char *current_pos = comment;
+
+    // Extension Introducer: 0x21
+    if (!writeByte(io, 0x21)) {
+        return -1;
+    }
+    // Comment Extension Label: 0xFE
+    if (!writeByte(io, 0xFE)) {
+        return -1;
+    }
+
+    // Write the comment in sub-blocks of up to 255 bytes
+    while (remaining > 0) {
+        Uint8 sub_block_size = (remaining > 255) ? 255 : (Uint8)remaining;
+        if (!writeByte(io, sub_block_size)) {
+            return -1;
+        }
+
+        if (SDL_WriteIO(io, current_pos, sub_block_size) != sub_block_size) {
+            return -1;
+        }
+
+        remaining -= sub_block_size;
+        current_pos += sub_block_size;
+    }
+
+    // Block Terminator: 0x00
+    if (!writeByte(io, 0x00)) {
+        return -1;
+    }
+
+    return 0;
+}
+
 static int writeGifTrailer(SDL_IOStream *io)
 {
     if (!io)
@@ -2337,7 +2537,7 @@ static int writeGifTrailer(SDL_IOStream *io)
     return 0;
 }
 
-static bool AnimationEncoder_AddFrame(struct IMG_AnimationEncoder *encoder, SDL_Surface *surface, Uint64 pts)
+static bool AnimationEncoder_AddFrame(IMG_AnimationEncoder *encoder, SDL_Surface *surface, Uint64 duration)
 {
     IMG_AnimationEncoderContext *ctx = encoder->ctx;
     SDL_IOStream *io = encoder->dst;
@@ -2398,8 +2598,21 @@ static bool AnimationEncoder_AddFrame(struct IMG_AnimationEncoder *encoder, SDL_
             goto error;
         }
 
-        if (writeNetscapeLoopExtension(io, ctx->loopCount) != 0) {
+        int loopCount = 0;
+        const char *description = NULL;
+        if (ctx->metadata) {
+            loopCount = (int)SDL_max(SDL_GetNumberProperty(ctx->metadata, IMG_PROP_METADATA_LOOP_COUNT_NUMBER, 0), 0);
+            description = SDL_GetStringProperty(ctx->metadata, IMG_PROP_METADATA_DESCRIPTION_STRING, NULL);
+        }
+
+        if (writeNetscapeLoopExtension(io, loopCount) != 0) {
             goto error;
+        }
+
+        if (description) {
+            if (writeCommentExtension(io, description) != 0) {
+                goto error;
+            }
         }
 
     } else {
@@ -2422,16 +2635,9 @@ static bool AnimationEncoder_AddFrame(struct IMG_AnimationEncoder *encoder, SDL_
         }
     }
 
-    Uint64 delay_delta = (ctx->firstFrame) ? encoder->first_pts : (pts - encoder->last_pts);
-    uint16_t delayTime = (uint16_t)((delay_delta * encoder->timebase_numerator * 100) /
-                                    encoder->timebase_denominator);
-
-    if (!ctx->firstFrame && delayTime < 2) {
-        delayTime = 10; // A common default for very fast frames
-    }
-
+    uint16_t resolvedDuration = (uint16_t)IMG_GetEncoderDuration(encoder, duration, 100);
     uint8_t disposalMethod = (ctx->transparentColorIndex != -1) ? 2 : 1;
-    if (writeGraphicsControlExtension(io, delayTime, ctx->transparentColorIndex, disposalMethod) != 0) {
+    if (writeGraphicsControlExtension(io, resolvedDuration, ctx->transparentColorIndex, disposalMethod) != 0) {
         goto error;
     }
 
@@ -2474,7 +2680,7 @@ static bool AnimationEncoder_AddFrame(struct IMG_AnimationEncoder *encoder, SDL_
     if (ctx->firstFrame) {
         ctx->firstFrame = false;
     }
-    encoder->last_pts = pts;
+
     return true;
 
 error:
@@ -2483,11 +2689,16 @@ error:
     return false;
 }
 
-static bool AnimationEncoder_End(struct IMG_AnimationEncoder *encoder)
+static bool AnimationEncoder_End(IMG_AnimationEncoder *encoder)
 {
     IMG_AnimationEncoderContext *ctx = encoder->ctx;
     SDL_IOStream *io = encoder->dst;
     bool success = true;
+
+    if (ctx->metadata) {
+        SDL_DestroyProperties(ctx->metadata);
+        ctx->metadata = 0;
+    }
 
     if (io) {
         if (writeGifTrailer(io) != 0) {
@@ -2504,38 +2715,27 @@ static bool AnimationEncoder_End(struct IMG_AnimationEncoder *encoder)
 
     return success;
 }
-#endif /* SAVE_GIF */
 
-bool IMG_CreateGIFAnimationEncoder(struct IMG_AnimationEncoder *encoder, SDL_PropertiesID props)
+bool IMG_CreateGIFAnimationEncoder(IMG_AnimationEncoder *encoder, SDL_PropertiesID props)
 {
-#if !SAVE_GIF
-    return SDL_SetError("GIF animation saving is not enabled in this build.");
-#else
     IMG_AnimationEncoderContext *ctx;
-    int loop_count;
     int transparent_index = -1;
     uint16_t num_global_colors = 256;
-
-    loop_count = (int)SDL_GetNumberProperty(props, "loop_count", 0);
 
     transparent_index = (int)SDL_GetNumberProperty(props, "transparent_color_index", -1);
     Sint64 globalcolors = SDL_GetNumberProperty(props, "num_colors", 256);
     if (globalcolors <= 1 || (globalcolors & (globalcolors - 1)) != 0 || globalcolors > 256) {
-        SDL_SetError("GIF stream property 'num_colors' must be a power of 2 (starting from 2, up to 256).");
-        return false;
+        return SDL_SetError("GIF stream property 'num_colors' must be a power of 2 (starting from 2, up to 256).");
     }
 
     num_global_colors = (uint16_t)globalcolors;
 
     if (transparent_index >= (int)num_global_colors) {
-        SDL_SetError("Transparent color index %d exceeds palette size %d",
-                     transparent_index, num_global_colors);
-        return false;
+        return SDL_SetError("Transparent color index %d exceeds palette size %d", transparent_index, num_global_colors);
     }
 
     ctx = (IMG_AnimationEncoderContext *)SDL_calloc(1, sizeof(IMG_AnimationEncoderContext));
     if (!ctx) {
-        SDL_SetError("Failed to allocate animation stream context.");
         return false;
     }
 
@@ -2544,11 +2744,24 @@ bool IMG_CreateGIFAnimationEncoder(struct IMG_AnimationEncoder *encoder, SDL_Pro
     else if (encoder->quality > 100)
         encoder->quality = 100;
 
+    bool ignoreProps = SDL_GetBooleanProperty(props, IMG_PROP_METADATA_IGNORE_PROPS_BOOLEAN, false);
+    if (!ignoreProps) {
+        ctx->metadata = SDL_CreateProperties();
+        if (!ctx->metadata) {
+            SDL_free(ctx);
+            return false;
+        }
+        if (!SDL_CopyProperties(props, ctx->metadata)) {
+            SDL_DestroyProperties(ctx->metadata);
+            SDL_free(ctx);
+            return false;
+        }
+    }
+
     ctx->width = 0;
     ctx->height = 0;
     ctx->numGlobalColors = num_global_colors;
     ctx->transparentColorIndex = transparent_index;
-    ctx->loopCount = (uint16_t)loop_count;
     ctx->firstFrame = true;
     ctx->use_lut = SDL_GetBooleanProperty(props, "use_lut", false);
 
@@ -2557,10 +2770,7 @@ bool IMG_CreateGIFAnimationEncoder(struct IMG_AnimationEncoder *encoder, SDL_Pro
     encoder->Close = AnimationEncoder_End;
 
     return true;
-#endif /*!SAVE_GIF*/
 }
-
-#ifdef SAVE_GIF
 
 bool IMG_SaveGIF_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
 {
@@ -2584,10 +2794,21 @@ bool IMG_SaveGIF_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
 bool IMG_SaveGIF(SDL_Surface *surface, const char *file)
 {
     SDL_IOStream *dst = SDL_IOFromFile(file, "wb");
-    return IMG_SaveGIF_IO(surface, dst, true);
+    if (dst) {
+        return IMG_SaveGIF_IO(surface, dst, true);
+    } else {
+        return false;
+    }
 }
 
 #else
+
+bool IMG_CreateGIFAnimationEncoder(IMG_AnimationEncoder *encoder, SDL_PropertiesID props)
+{
+    (void)encoder;
+    (void)props;
+    return SDL_SetError("SDL_image built without GIF save support");
+}
 
 bool IMG_SaveGIF_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
 {

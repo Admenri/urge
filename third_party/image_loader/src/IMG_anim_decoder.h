@@ -23,17 +23,23 @@ typedef struct IMG_AnimationDecoderContext IMG_AnimationDecoderContext;
 
 struct IMG_AnimationDecoder
 {
+    IMG_AnimationDecoderStatus status;
+    SDL_PropertiesID props;
     SDL_IOStream *src;
     Sint64 start;
     bool closeio;
     int timebase_numerator;
     int timebase_denominator;
+    Uint64 accumulated_pts;
 
-    bool (*GetNextFrame)(IMG_AnimationDecoder *decoder, SDL_Surface** frame, Uint64* pts);
+    bool (*GetNextFrame)(IMG_AnimationDecoder *decoder, SDL_Surface **frame, Uint64 *duration);
     bool (*Reset)(IMG_AnimationDecoder *decoder);
     bool (*Close)(IMG_AnimationDecoder *decoder);
 
     IMG_AnimationDecoderContext *ctx;
 };
+
+extern Uint64 IMG_TimebaseDuration(Uint64 pts, Uint64 duration, Uint64 src_numerator, Uint64 src_denominator, Uint64 dst_numerator, Uint64 dst_denominator);
+extern Uint64 IMG_GetDecoderDuration(IMG_AnimationDecoder *decoder, Uint64 duration, Uint64 timebase_denominator);
 
 extern IMG_Animation *IMG_DecodeAsAnimation(SDL_IOStream *src, const char *format, int maxFrames);
