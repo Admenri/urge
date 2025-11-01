@@ -41,179 +41,202 @@ PlaneImpl::PlaneImpl(ExecutionContext* execution_context,
 
 DISPOSABLE_DEFINITION(PlaneImpl);
 
-scoped_refptr<Bitmap> PlaneImpl::Get_Bitmap(ExceptionState& exception_state) {
-  return bitmap_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Bitmap,
+    scoped_refptr<Bitmap>,
+    PlaneImpl,
+    { return bitmap_; },
+    {
+      DISPOSE_CHECK;
 
-void PlaneImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      bitmap_ = CanvasImpl::FromBitmap(value);
+      if (Disposable::IsValid(bitmap_.get()))
+        src_rect_->SetBase((**bitmap_)->size);
+    });
 
-  bitmap_ = CanvasImpl::FromBitmap(value);
-  if (Disposable::IsValid(bitmap_.get()))
-    src_rect_->SetBase((**bitmap_)->size);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    SrcRect,
+    scoped_refptr<Rect>,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return src_rect_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *src_rect_ = *RectImpl::From(value);
+    });
 
-scoped_refptr<Rect> PlaneImpl::Get_SrcRect(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    PlaneImpl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
 
-  return src_rect_;
-}
+      if (viewport_ == value)
+        return;
 
-void PlaneImpl::Put_SrcRect(const scoped_refptr<Rect>& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      viewport_ = ViewportImpl::From(value);
+      node_.RebindController(viewport_ ? viewport_->GetDrawableController()
+                                       : context()->screen_drawable_node);
+    });
 
-  CHECK_ATTRIBUTE_VALUE;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
 
-  *src_rect_ = *RectImpl::From(value);
-}
+      return node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
 
-scoped_refptr<Viewport> PlaneImpl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
+      node_.SetNodeVisibility(value);
+    });
 
-void PlaneImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-  if (viewport_ == value)
-    return;
+      return node_.GetSortKeys()->weight[0];
+    },
+    {
+      DISPOSE_CHECK;
 
-  viewport_ = ViewportImpl::From(value);
-  node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : context()->screen_drawable_node);
-}
+      node_.SetNodeSortWeight(value);
+    });
 
-bool PlaneImpl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-  return node_.GetVisibility();
-}
+      return origin_.x;
+    },
+    {
+      DISPOSE_CHECK;
 
-void PlaneImpl::Put_Visible(const bool& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      origin_.x = value;
+    });
 
-  node_.SetNodeVisibility(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-int32_t PlaneImpl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+      return origin_.y;
+    },
+    {
+      DISPOSE_CHECK;
 
-  return node_.GetSortKeys()->weight[0];
-}
+      origin_.y = value;
+    });
 
-void PlaneImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ZoomX,
+    float,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
 
-  node_.SetNodeSortWeight(value);
-}
+      return scale_.x;
+    },
+    {
+      DISPOSE_CHECK;
 
-int32_t PlaneImpl::Get_Ox(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+      scale_.x = value;
+    });
 
-  return origin_.x;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ZoomY,
+    float,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
 
-void PlaneImpl::Put_Ox(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      return scale_.y;
+    },
+    {
+      DISPOSE_CHECK;
 
-  origin_.x = value;
-}
+      scale_.y = value;
+    });
 
-int32_t PlaneImpl::Get_Oy(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Opacity,
+    int32_t,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-  return origin_.y;
-}
+      return opacity_;
+    },
+    {
+      DISPOSE_CHECK;
 
-void PlaneImpl::Put_Oy(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      opacity_ = std::clamp(value, 0, 255);
+    });
 
-  origin_.y = value;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BlendType,
+    int32_t,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-float PlaneImpl::Get_ZoomX(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
+      return blend_type_;
+    },
+    {
+      DISPOSE_CHECK;
 
-  return scale_.x;
-}
+      blend_type_ = value;
+    });
 
-void PlaneImpl::Put_ZoomX(const float& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Color,
+    scoped_refptr<Color>,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  scale_.x = value;
-}
+      return color_;
+    },
+    {
+      DISPOSE_CHECK;
 
-float PlaneImpl::Get_ZoomY(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
+      CHECK_ATTRIBUTE_VALUE;
 
-  return scale_.y;
-}
+      *color_ = *ColorImpl::From(value);
+    });
 
-void PlaneImpl::Put_ZoomY(const float& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Tone,
+    scoped_refptr<Tone>,
+    PlaneImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  scale_.y = value;
-}
+      return tone_;
+    },
+    {
+      DISPOSE_CHECK;
 
-int32_t PlaneImpl::Get_Opacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+      CHECK_ATTRIBUTE_VALUE;
 
-  return opacity_;
-}
-
-void PlaneImpl::Put_Opacity(const int32_t& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t PlaneImpl::Get_BlendType(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return blend_type_;
-}
-
-void PlaneImpl::Put_BlendType(const int32_t& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  blend_type_ = value;
-}
-
-scoped_refptr<Color> PlaneImpl::Get_Color(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return color_;
-}
-
-void PlaneImpl::Put_Color(const scoped_refptr<Color>& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *color_ = *ColorImpl::From(value);
-}
-
-scoped_refptr<Tone> PlaneImpl::Get_Tone(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return tone_;
-}
-
-void PlaneImpl::Put_Tone(const scoped_refptr<Tone>& value,
-                         ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *tone_ = *ToneImpl::From(value);
-}
+      *tone_ = *ToneImpl::From(value);
+    });
 
 void PlaneImpl::OnObjectDisposed() {
   node_.DisposeNode();

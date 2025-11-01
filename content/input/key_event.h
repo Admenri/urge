@@ -19,6 +19,7 @@ class KeyEventImpl : public KeyEvent {
   KeyEventImpl(const KeyEventImpl&) = delete;
   KeyEventImpl& operator=(const KeyEventImpl&) = delete;
 
+ protected:
   Type GetType(ExceptionState& exception_state) override;
   int32_t GetDeviceID(ExceptionState& exception_state) override;
   int32_t GetScancode(ExceptionState& exception_state) override;

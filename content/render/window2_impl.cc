@@ -128,296 +128,289 @@ bool Window2Impl::IsClosed(ExceptionState& exception_state) {
   return openness_ == 0;
 }
 
-scoped_refptr<Viewport> Window2Impl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
-
-void Window2Impl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  if (viewport_ == value)
-    return;
-
-  viewport_ = ViewportImpl::From(value);
-  node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : context()->screen_drawable_node);
-}
-
-scoped_refptr<Bitmap> Window2Impl::Get_Windowskin(
-    ExceptionState& exception_state) {
-  return windowskin_;
-}
-
-void Window2Impl::Put_Windowskin(const scoped_refptr<Bitmap>& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  windowskin_ = CanvasImpl::FromBitmap(value);
-}
-
-scoped_refptr<Bitmap> Window2Impl::Get_Contents(
-    ExceptionState& exception_state) {
-  return contents_;
-}
-
-void Window2Impl::Put_Contents(const scoped_refptr<Bitmap>& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  contents_ = CanvasImpl::FromBitmap(value);
-}
-
-scoped_refptr<Rect> Window2Impl::Get_CursorRect(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return cursor_rect_;
-}
-
-void Window2Impl::Put_CursorRect(const scoped_refptr<Rect>& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *cursor_rect_ = *RectImpl::From(value);
-}
-
-bool Window2Impl::Get_Active(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return active_;
-}
-
-void Window2Impl::Put_Active(const bool& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  active_ = value;
-}
-
-bool Window2Impl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return node_.GetVisibility();
-}
-
-void Window2Impl::Put_Visible(const bool& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeVisibility(value);
-}
-
-bool Window2Impl::Get_ArrowsVisible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return arrows_visible_;
-}
-
-void Window2Impl::Put_ArrowsVisible(const bool& value,
-                                    ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  arrows_visible_ = value;
-}
-
-bool Window2Impl::Get_Pause(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return pause_;
-}
-
-void Window2Impl::Put_Pause(const bool& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  pause_ = value;
-}
-
-int32_t Window2Impl::Get_X(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.x;
-}
-
-void Window2Impl::Put_X(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.x = value;
-}
-
-int32_t Window2Impl::Get_Y(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.y;
-}
-
-void Window2Impl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.y = value;
-}
-
-int32_t Window2Impl::Get_Width(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.width;
-}
-
-void Window2Impl::Put_Width(const int32_t& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.width = value;
-}
-
-int32_t Window2Impl::Get_Height(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.height;
-}
-
-void Window2Impl::Put_Height(const int32_t& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.height = value;
-}
-
-int32_t Window2Impl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return node_.GetSortKeys()->weight[0];
-}
-
-void Window2Impl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeSortWeight(value);
-}
-
-int32_t Window2Impl::Get_Ox(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return origin_.x;
-}
-
-void Window2Impl::Put_Ox(const int32_t& value,
-                         ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  origin_.x = value;
-}
-
-int32_t Window2Impl::Get_Oy(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return origin_.y;
-}
-
-void Window2Impl::Put_Oy(const int32_t& value,
-                         ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  origin_.y = value;
-}
-
-int32_t Window2Impl::Get_Padding(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return padding_;
-}
-
-void Window2Impl::Put_Padding(const int32_t& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  padding_ = value;
-  padding_bottom_ = padding_;
-}
-
-int32_t Window2Impl::Get_PaddingBottom(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return padding_bottom_;
-}
-
-void Window2Impl::Put_PaddingBottom(const int32_t& value,
-                                    ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  padding_bottom_ = value;
-}
-
-int32_t Window2Impl::Get_Opacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return opacity_;
-}
-
-void Window2Impl::Put_Opacity(const int32_t& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t Window2Impl::Get_BackOpacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return back_opacity_;
-}
-
-void Window2Impl::Put_BackOpacity(const int32_t& value,
-                                  ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  back_opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t Window2Impl::Get_ContentsOpacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return contents_opacity_;
-}
-
-void Window2Impl::Put_ContentsOpacity(const int32_t& value,
-                                      ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  contents_opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t Window2Impl::Get_Openness(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return openness_;
-}
-
-void Window2Impl::Put_Openness(const int32_t& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  openness_ = std::clamp(value, 0, 255);
-}
-
-scoped_refptr<Tone> Window2Impl::Get_Tone(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return tone_;
-}
-
-void Window2Impl::Put_Tone(const scoped_refptr<Tone>& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *tone_ = *ToneImpl::From(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    Window2Impl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
+      if (viewport_ == value)
+        return;
+      viewport_ = ViewportImpl::From(value);
+      node_.RebindController(viewport_ ? viewport_->GetDrawableController()
+                                       : context()->screen_drawable_node);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Windowskin,
+    scoped_refptr<Bitmap>,
+    Window2Impl,
+    { return windowskin_; },
+    {
+      DISPOSE_CHECK;
+      windowskin_ = CanvasImpl::FromBitmap(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Contents,
+    scoped_refptr<Bitmap>,
+    Window2Impl,
+    { return contents_; },
+    {
+      DISPOSE_CHECK;
+      contents_ = CanvasImpl::FromBitmap(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    CursorRect,
+    scoped_refptr<Rect>,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return cursor_rect_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *cursor_rect_ = *RectImpl::From(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Active,
+    bool,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return active_;
+    },
+    {
+      DISPOSE_CHECK;
+      active_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeVisibility(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ArrowsVisible,
+    bool,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return arrows_visible_;
+    },
+    {
+      DISPOSE_CHECK;
+      arrows_visible_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Pause,
+    bool,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return pause_;
+    },
+    {
+      DISPOSE_CHECK;
+      pause_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    X,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.x;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Y,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.y;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.y = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Width,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.width;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.width = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Height,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.height;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.height = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return node_.GetSortKeys()->weight[0];
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeSortWeight(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return origin_.x;
+    },
+    {
+      DISPOSE_CHECK;
+      origin_.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return origin_.y;
+    },
+    {
+      DISPOSE_CHECK;
+      origin_.y = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Padding,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return padding_;
+    },
+    {
+      DISPOSE_CHECK;
+      padding_ = value;
+      padding_bottom_ = padding_;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    PaddingBottom,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return padding_bottom_;
+    },
+    {
+      DISPOSE_CHECK;
+      padding_bottom_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Opacity,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      opacity_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BackOpacity,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return back_opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      back_opacity_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ContentsOpacity,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return contents_opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      contents_opacity_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Openness,
+    int32_t,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return openness_;
+    },
+    {
+      DISPOSE_CHECK;
+      openness_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Tone,
+    scoped_refptr<Tone>,
+    Window2Impl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return tone_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *tone_ = *ToneImpl::From(value);
+    });
 
 void Window2Impl::OnObjectDisposed() {
   node_.DisposeNode();

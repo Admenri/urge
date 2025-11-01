@@ -391,107 +391,93 @@ GPU::ValueType RenderScreenImpl::GetInternalIndexType(
   return static_cast<GPU::ValueType>(quad_index->GetIndexType());
 }
 
-uint32_t RenderScreenImpl::Get_FrameRate(ExceptionState& exception_state) {
-  return frame_rate_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    FrameRate,
+    uint32_t,
+    RenderScreenImpl,
+    { return frame_rate_; },
+    {
+      frame_rate_ = value;
+      limiter_.SetFrameRate(frame_rate_);
+    });
 
-void RenderScreenImpl::Put_FrameRate(const uint32_t& rate,
-                                     ExceptionState& exception_state) {
-  frame_rate_ = rate;
-  limiter_.SetFrameRate(frame_rate_);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    FrameCount,
+    uint32_t,
+    RenderScreenImpl,
+    { return frame_count_; },
+    { frame_count_ = value; });
 
-uint32_t RenderScreenImpl::Get_FrameCount(ExceptionState& exception_state) {
-  return frame_count_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Brightness,
+    uint32_t,
+    RenderScreenImpl,
+    { return brightness_; },
+    { brightness_ = std::clamp<uint32_t>(value, 0, 255); });
 
-void RenderScreenImpl::Put_FrameCount(const uint32_t& count,
-                                      ExceptionState& exception_state) {
-  frame_count_ = count;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    VSync,
+    uint32_t,
+    RenderScreenImpl,
+    { return context()->engine_profile->vsync; },
+    {
+      context()->engine_profile->vsync = std::clamp<uint32_t>(value, 0, 255);
+    });
 
-uint32_t RenderScreenImpl::Get_Brightness(ExceptionState& exception_state) {
-  return brightness_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Fullscreen,
+    bool,
+    RenderScreenImpl,
+    { return context()->window->IsFullscreen(); },
+    { context()->window->SetFullscreen(value); });
 
-void RenderScreenImpl::Put_Brightness(const uint32_t& value,
-                                      ExceptionState& exception_state) {
-  brightness_ = std::clamp<uint32_t>(value, 0, 255);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Skipframe,
+    bool,
+    RenderScreenImpl,
+    { return context()->engine_profile->allow_skip_frame; },
+    { context()->engine_profile->allow_skip_frame = value; });
 
-uint32_t RenderScreenImpl::Get_VSync(ExceptionState& exception_state) {
-  return context()->engine_profile->vsync;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    KeepRatio,
+    bool,
+    RenderScreenImpl,
+    { return context()->engine_profile->keep_ratio; },
+    { context()->engine_profile->keep_ratio = value; });
 
-void RenderScreenImpl::Put_VSync(const uint32_t& value,
-                                 ExceptionState& exception_state) {
-  context()->engine_profile->vsync = std::clamp<uint32_t>(value, 0, 255);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BackgroundRunning,
+    bool,
+    RenderScreenImpl,
+    { return context()->engine_profile->background_running; },
+    { context()->engine_profile->background_running = value; });
 
-bool RenderScreenImpl::Get_Fullscreen(ExceptionState& exception_state) {
-  return context()->window->IsFullscreen();
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    RenderScreenImpl,
+    { return origin_.x; },
+    {
+      origin_.x = value;
+      GPUUpdateScreenWorldInternal();
+    });
 
-void RenderScreenImpl::Put_Fullscreen(const bool& value,
-                                      ExceptionState& exception_state) {
-  context()->window->SetFullscreen(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    RenderScreenImpl,
+    { return origin_.y; },
+    {
+      origin_.y = value;
+      GPUUpdateScreenWorldInternal();
+    });
 
-bool RenderScreenImpl::Get_Skipframe(ExceptionState& exception_state) {
-  return context()->engine_profile->allow_skip_frame;
-}
-
-void RenderScreenImpl::Put_Skipframe(const bool& value,
-                                     ExceptionState& exception_state) {
-  context()->engine_profile->allow_skip_frame = value;
-}
-
-bool RenderScreenImpl::Get_KeepRatio(ExceptionState& exception_state) {
-  return context()->engine_profile->keep_ratio;
-}
-
-void RenderScreenImpl::Put_KeepRatio(const bool& value,
-                                     ExceptionState& exception_state) {
-  context()->engine_profile->keep_ratio = value;
-}
-
-bool RenderScreenImpl::Get_BackgroundRunning(ExceptionState& exception_state) {
-  return context()->engine_profile->background_running;
-}
-
-void RenderScreenImpl::Put_BackgroundRunning(const bool& value,
-                                             ExceptionState& exception_state) {
-  context()->engine_profile->background_running = value;
-}
-
-int32_t RenderScreenImpl::Get_Ox(ExceptionState& exception_state) {
-  return origin_.x;
-}
-
-void RenderScreenImpl::Put_Ox(const int32_t& value,
-                              ExceptionState& exception_state) {
-  origin_.x = value;
-  GPUUpdateScreenWorldInternal();
-}
-
-int32_t RenderScreenImpl::Get_Oy(ExceptionState& exception_state) {
-  return origin_.y;
-}
-
-void RenderScreenImpl::Put_Oy(const int32_t& value,
-                              ExceptionState& exception_state) {
-  origin_.y = value;
-  GPUUpdateScreenWorldInternal();
-}
-
-std::string RenderScreenImpl::Get_WindowTitle(ExceptionState& exception_state) {
-  return SDL_GetWindowTitle(context()->window->AsSDLWindow());
-}
-
-void RenderScreenImpl::Put_WindowTitle(const std::string& value,
-                                       ExceptionState& exception_state) {
-  SDL_SetWindowTitle(context()->window->AsSDLWindow(), value.c_str());
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    WindowTitle,
+    std::string,
+    RenderScreenImpl,
+    { return SDL_GetWindowTitle(context()->window->AsSDLWindow()); },
+    { SDL_SetWindowTitle(context()->window->AsSDLWindow(), value.c_str()); });
 
 void RenderScreenImpl::FrameProcessInternal(
     Diligent::ITexture* present_target) {

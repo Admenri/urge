@@ -6,11 +6,13 @@
 
 namespace content {
 
+// static
 scoped_refptr<Rect> Rect::New(ExecutionContext* execution_context,
                               ExceptionState& exception_state) {
   return base::MakeRefCounted<RectImpl>(base::Rect());
 }
 
+// static
 scoped_refptr<Rect> Rect::New(ExecutionContext* execution_context,
                               int32_t x,
                               int32_t y,
@@ -20,12 +22,14 @@ scoped_refptr<Rect> Rect::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<RectImpl>(base::Rect(x, y, width, height));
 }
 
+// static
 scoped_refptr<Rect> Rect::Copy(ExecutionContext* execution_context,
                                scoped_refptr<Rect> other,
                                ExceptionState& exception_state) {
   return base::MakeRefCounted<RectImpl>(*static_cast<RectImpl*>(other.get()));
 }
 
+// static
 scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
                                       const std::string& data,
                                       ExceptionState& exception_state) {
@@ -40,6 +44,7 @@ scoped_refptr<Rect> Rect::Deserialize(ExecutionContext* execution_context,
       base::Rect(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3)));
 }
 
+// static
 std::string Rect::Serialize(ExecutionContext* execution_context,
                             scoped_refptr<Rect> value,
                             ExceptionState& exception_state) {
@@ -48,6 +53,9 @@ std::string Rect::Serialize(ExecutionContext* execution_context,
   std::memcpy(serial_data.data(), &impl->rect_, sizeof(base::Rect));
   return serial_data;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// RectImpl Implement
 
 RectImpl::RectImpl(const base::Rect& rect) : rect_(rect) {}
 
@@ -110,50 +118,52 @@ SDL_Rect RectImpl::AsSDLRect() {
   return SDL_Rect{rect_.x, rect_.y, rect_.width, rect_.height};
 }
 
-int32_t RectImpl::Get_X(ExceptionState& exception_state) {
-  return rect_.x;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    X,
+    int32_t,
+    RectImpl,
+    { return rect_.x; },
+    {
+      if (rect_.x != value) {
+        rect_.x = value;
+        NotifyObservers();
+      }
+    });
 
-void RectImpl::Put_X(const int32_t& value, ExceptionState& exception_state) {
-  if (rect_.x != value) {
-    rect_.x = value;
-    NotifyObservers();
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Y,
+    int32_t,
+    RectImpl,
+    { return rect_.y; },
+    {
+      if (rect_.y != value) {
+        rect_.y = value;
+        NotifyObservers();
+      }
+    });
 
-int32_t RectImpl::Get_Y(ExceptionState& exception_state) {
-  return rect_.y;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Width,
+    int32_t,
+    RectImpl,
+    { return rect_.width; },
+    {
+      if (rect_.width != value) {
+        rect_.width = value;
+        NotifyObservers();
+      }
+    });
 
-void RectImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
-  if (rect_.y != value) {
-    rect_.y = value;
-    NotifyObservers();
-  }
-}
-
-int32_t RectImpl::Get_Width(ExceptionState& exception_state) {
-  return rect_.width;
-}
-
-void RectImpl::Put_Width(const int32_t& value,
-                         ExceptionState& exception_state) {
-  if (rect_.width != value) {
-    rect_.width = value;
-    NotifyObservers();
-  }
-}
-
-int32_t RectImpl::Get_Height(ExceptionState& exception_state) {
-  return rect_.height;
-}
-
-void RectImpl::Put_Height(const int32_t& value,
-                          ExceptionState& exception_state) {
-  if (rect_.height != value) {
-    rect_.height = value;
-    NotifyObservers();
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Height,
+    int32_t,
+    RectImpl,
+    { return rect_.height; },
+    {
+      if (rect_.height != value) {
+        rect_.height = value;
+        NotifyObservers();
+      }
+    });
 
 }  // namespace content

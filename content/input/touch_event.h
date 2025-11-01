@@ -19,6 +19,7 @@ class TouchEventImpl : public TouchEvent {
   TouchEventImpl(const TouchEventImpl&) = delete;
   TouchEventImpl& operator=(const TouchEventImpl&) = delete;
 
+ protected:
   Type GetType(ExceptionState& exception_state) override;
   int32_t GetDeviceID(ExceptionState& exception_state) override;
   int32_t GetFinger(ExceptionState& exception_state) override;

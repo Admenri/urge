@@ -30,28 +30,24 @@ class MouseImpl : public Mouse, public EngineObject {
   MouseImpl(const MouseImpl&) = delete;
   MouseImpl& operator=(const MouseImpl&) = delete;
 
+ protected:
   void Update(ExceptionState& exception_state) override;
-
   int32_t GetX(ExceptionState& exception_state) override;
   int32_t GetY(ExceptionState& exception_state) override;
   void SetPosition(int32_t x,
                    int32_t y,
                    ExceptionState& exception_state) override;
-
   bool IsDown(int32_t button, ExceptionState& exception_state) override;
   bool IsUp(int32_t button, ExceptionState& exception_state) override;
   bool IsDouble(int32_t button, ExceptionState& exception_state) override;
   bool IsPressed(int32_t button, ExceptionState& exception_state) override;
   bool IsMoved(ExceptionState& exception_state) override;
-
   int32_t GetScrollX(ExceptionState& exception_state) override;
   int32_t GetScrollY(ExceptionState& exception_state) override;
-
   void SetCursor(scoped_refptr<Bitmap> cursor,
                  int32_t hot_x,
                  int32_t hot_y,
                  ExceptionState& exception_state) override;
-
   bool Capture(bool enable, ExceptionState& exception_state) override;
 
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Visible, bool);

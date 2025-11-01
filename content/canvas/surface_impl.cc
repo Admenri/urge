@@ -484,18 +484,19 @@ std::string SurfaceImpl::SavePNGData(ExceptionState& exception_state) {
   return result;
 }
 
-scoped_refptr<Font> SurfaceImpl::Get_Font(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return font_;
-}
-
-void SurfaceImpl::Put_Font(const scoped_refptr<Font>& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  *font_ = *FontImpl::From(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Font,
+    scoped_refptr<Font>,
+    SurfaceImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return font_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *font_ = *FontImpl::From(value);
+    });
 
 void SurfaceImpl::OnObjectDisposed() {
   SDL_DestroySurface(surface_);

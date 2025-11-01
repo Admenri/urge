@@ -18,6 +18,7 @@ class TextInputEventImpl : public TextInputEvent {
   TextInputEventImpl(const TextInputEventImpl&) = delete;
   TextInputEventImpl& operator=(const TextInputEventImpl&) = delete;
 
+ protected:
   Type GetType(ExceptionState& exception_state) override;
   std::string GetText(ExceptionState& exception_state) override;
   int32_t GetEditingStart(ExceptionState& exception_state) override;

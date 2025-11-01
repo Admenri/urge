@@ -6,12 +6,14 @@
 
 namespace content {
 
+// static
 scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
                                 uint32_t xsize,
                                 ExceptionState& exception_state) {
   return base::MakeRefCounted<TableImpl>(xsize, 1, 1);
 }
 
+// static
 scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
                                 uint32_t xsize,
                                 uint32_t ysize,
@@ -19,6 +21,7 @@ scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<TableImpl>(xsize, ysize, 1);
 }
 
+// static
 scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
                                 uint32_t xsize,
                                 uint32_t ysize,
@@ -27,12 +30,14 @@ scoped_refptr<Table> Table::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<TableImpl>(xsize, ysize, zsize);
 }
 
+// static
 scoped_refptr<Table> Table::Copy(ExecutionContext* execution_context,
                                  scoped_refptr<Table> other,
                                  ExceptionState& exception_state) {
   return base::MakeRefCounted<TableImpl>(*static_cast<TableImpl*>(other.get()));
 }
 
+// static
 scoped_refptr<Table> Table::Deserialize(ExecutionContext* execution_context,
                                         const std::string& data,
                                         ExceptionState& exception_state) {
@@ -57,6 +62,7 @@ scoped_refptr<Table> Table::Deserialize(ExecutionContext* execution_context,
   return impl;
 }
 
+// static
 std::string Table::Serialize(ExecutionContext* execution_context,
                              scoped_refptr<Table> value,
                              ExceptionState& exception_state) {
@@ -83,6 +89,9 @@ std::string Table::Serialize(ExecutionContext* execution_context,
 
   return serial_data;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// TableImpl Implement
 
 TableImpl::TableImpl(uint32_t xsize, uint32_t ysize, uint32_t zsize)
     : x_size_(xsize),

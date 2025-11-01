@@ -56,25 +56,27 @@ scoped_refptr<GPUTexture> TextureViewImpl::GetTexture(
   return base::MakeRefCounted<TextureImpl>(context(), object_->GetTexture());
 }
 
-scoped_refptr<GPUSampler> TextureViewImpl::Get_Sampler(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Sampler,
+    scoped_refptr<GPUSampler>,
+    TextureViewImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  if (!object_->GetSampler())
-    return nullptr;
+      if (!object_->GetSampler())
+        return nullptr;
 
-  return base::MakeRefCounted<SamplerImpl>(context(), object_->GetSampler());
-}
+      return base::MakeRefCounted<SamplerImpl>(context(),
+                                               object_->GetSampler());
+    },
+    {
+      DISPOSE_CHECK;
 
-void TextureViewImpl::Put_Sampler(const scoped_refptr<GPUSampler>& value,
-                                  ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      auto* raw_sampler = static_cast<SamplerImpl*>(value.get());
+      auto* object_sampler = raw_sampler ? raw_sampler->AsRawPtr() : nullptr;
 
-  auto* raw_sampler = static_cast<SamplerImpl*>(value.get());
-  auto* object_sampler = raw_sampler ? raw_sampler->AsRawPtr() : nullptr;
-
-  object_->SetSampler(object_sampler);
-}
+      object_->SetSampler(object_sampler);
+    });
 
 void TextureViewImpl::OnObjectDisposed() {
   object_.Release();
@@ -159,18 +161,20 @@ scoped_refptr<GPUTextureView> TextureImpl::GetDefaultView(
   return base::MakeRefCounted<TextureViewImpl>(context(), result);
 }
 
-GPU::ResourceState TextureImpl::Get_State(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(GPU::ResourceState());
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    State,
+    GPU::ResourceState,
+    TextureImpl,
+    {
+      DISPOSE_CHECK_RETURN(GPU::ResourceState());
 
-  return static_cast<GPU::ResourceState>(object_->GetState());
-}
+      return static_cast<GPU::ResourceState>(object_->GetState());
+    },
+    {
+      DISPOSE_CHECK;
 
-void TextureImpl::Put_State(const GPU::ResourceState& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  object_->SetState(static_cast<Diligent::RESOURCE_STATE>(value));
-}
+      object_->SetState(static_cast<Diligent::RESOURCE_STATE>(value));
+    });
 
 void TextureImpl::OnObjectDisposed() {
   object_.Release();

@@ -468,163 +468,152 @@ scoped_refptr<TilemapBitmap> Tilemap2Impl::Bitmaps(
       weak_ptr_factory_.GetWeakPtr());
 }
 
-scoped_refptr<Table> Tilemap2Impl::Get_MapData(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    MapData,
+    scoped_refptr<Table>,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return map_data_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      map_data_ = TableImpl::From(value);
+      map_data_observer_ = map_data_->AddObserver(base::BindRepeating(
+          &Tilemap2Impl::MapDataModifyHandlerInternal, base::Unretained(this)));
+      map_buffer_dirty_ = true;
+    });
 
-  return map_data_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    FlashData,
+    scoped_refptr<Table>,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return flash_data_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      flash_data_ = TableImpl::From(value);
+      flash_data_observer_ = flash_data_->AddObserver(base::BindRepeating(
+          &Tilemap2Impl::MapDataModifyHandlerInternal, base::Unretained(this)));
+      map_buffer_dirty_ = true;
+    });
 
-void Tilemap2Impl::Put_MapData(const scoped_refptr<Table>& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Passages,
+    scoped_refptr<Table>,
+    Tilemap2Impl,
+    { return Get_Flags(exception_state); },
+    { Put_Flags(value, exception_state); });
 
-  CHECK_ATTRIBUTE_VALUE;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Flags,
+    scoped_refptr<Table>,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return flags_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      flags_ = TableImpl::From(value);
+      flags_observer_ = flags_->AddObserver(base::BindRepeating(
+          &Tilemap2Impl::MapDataModifyHandlerInternal, base::Unretained(this)));
+      map_buffer_dirty_ = true;
+    });
 
-  map_data_ = TableImpl::From(value);
-  map_data_observer_ = map_data_->AddObserver(base::BindRepeating(
-      &Tilemap2Impl::MapDataModifyHandlerInternal, base::Unretained(this)));
-  map_buffer_dirty_ = true;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    Tilemap2Impl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
+      if (viewport_ == value)
+        return;
+      viewport_ = ViewportImpl::From(value);
+      DrawNodeController* controller = viewport_
+                                           ? viewport_->GetDrawableController()
+                                           : context()->screen_drawable_node;
+      ground_node_.RebindController(controller);
+      above_node_.RebindController(controller);
+    });
 
-scoped_refptr<Table> Tilemap2Impl::Get_FlashData(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return ground_node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
+      ground_node_.SetNodeVisibility(value);
+      above_node_.SetNodeVisibility(value);
+    });
 
-  return flash_data_;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return origin_.x;
+    },
+    {
+      DISPOSE_CHECK;
+      origin_.x = value;
+    });
 
-void Tilemap2Impl::Put_FlashData(const scoped_refptr<Table>& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return origin_.y;
+    },
+    {
+      DISPOSE_CHECK;
+      origin_.y = value;
+    });
 
-  CHECK_ATTRIBUTE_VALUE;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    RepeatX,
+    bool,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return repeat_.x;
+    },
+    {
+      DISPOSE_CHECK;
+      if (repeat_.x != value) {
+        repeat_.x = value;
+        map_buffer_dirty_ = true;
+      }
+    });
 
-  flash_data_ = TableImpl::From(value);
-  flash_data_observer_ = flash_data_->AddObserver(base::BindRepeating(
-      &Tilemap2Impl::MapDataModifyHandlerInternal, base::Unretained(this)));
-  map_buffer_dirty_ = true;
-}
-
-scoped_refptr<Table> Tilemap2Impl::Get_Passages(
-    ExceptionState& exception_state) {
-  return Get_Flags(exception_state);
-}
-
-void Tilemap2Impl::Put_Passages(const scoped_refptr<Table>& value,
-                                ExceptionState& exception_state) {
-  Put_Flags(value, exception_state);
-}
-
-scoped_refptr<Table> Tilemap2Impl::Get_Flags(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return flags_;
-}
-
-void Tilemap2Impl::Put_Flags(const scoped_refptr<Table>& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  flags_ = TableImpl::From(value);
-  flags_observer_ = flags_->AddObserver(base::BindRepeating(
-      &Tilemap2Impl::MapDataModifyHandlerInternal, base::Unretained(this)));
-  map_buffer_dirty_ = true;
-}
-
-scoped_refptr<Viewport> Tilemap2Impl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
-
-void Tilemap2Impl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  if (viewport_ == value)
-    return;
-
-  viewport_ = ViewportImpl::From(value);
-  DrawNodeController* controller = viewport_
-                                       ? viewport_->GetDrawableController()
-                                       : context()->screen_drawable_node;
-  ground_node_.RebindController(controller);
-  above_node_.RebindController(controller);
-}
-
-bool Tilemap2Impl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return ground_node_.GetVisibility();
-}
-
-void Tilemap2Impl::Put_Visible(const bool& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  ground_node_.SetNodeVisibility(value);
-  above_node_.SetNodeVisibility(value);
-}
-
-int32_t Tilemap2Impl::Get_Ox(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return origin_.x;
-}
-
-void Tilemap2Impl::Put_Ox(const int32_t& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  origin_.x = value;
-}
-
-int32_t Tilemap2Impl::Get_Oy(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return origin_.y;
-}
-
-void Tilemap2Impl::Put_Oy(const int32_t& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  origin_.y = value;
-}
-
-bool Tilemap2Impl::Get_RepeatX(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return repeat_.x;
-}
-
-void Tilemap2Impl::Put_RepeatX(const bool& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  if (repeat_.x != value) {
-    repeat_.x = value;
-    map_buffer_dirty_ = true;
-  }
-}
-
-bool Tilemap2Impl::Get_RepeatY(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return repeat_.y;
-}
-
-void Tilemap2Impl::Put_RepeatY(const bool& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  if (repeat_.y == value) {
-    repeat_.y = value;
-    map_buffer_dirty_ = true;
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    RepeatY,
+    bool,
+    Tilemap2Impl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return repeat_.y;
+    },
+    {
+      DISPOSE_CHECK;
+      if (repeat_.y != value) {
+        repeat_.y = value;
+        map_buffer_dirty_ = true;
+      }
+    });
 
 void Tilemap2Impl::OnObjectDisposed() {
   ground_node_.DisposeNode();

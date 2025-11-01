@@ -97,318 +97,315 @@ uint32_t SpriteImpl::Height(ExceptionState& exception_state) {
   return src_rect_->Get_Height(exception_state);
 }
 
-scoped_refptr<Bitmap> SpriteImpl::Get_Bitmap(ExceptionState& exception_state) {
-  return bitmap_;
-}
-
-void SpriteImpl::Put_Bitmap(const scoped_refptr<Bitmap>& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bitmap_ = CanvasImpl::FromBitmap(value);
-  if (Disposable::IsValid(bitmap_.get()))
-    src_rect_->SetBase((**bitmap_)->size);
-}
-
-scoped_refptr<Rect> SpriteImpl::Get_SrcRect(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return src_rect_;
-}
-
-void SpriteImpl::Put_SrcRect(const scoped_refptr<Rect>& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *src_rect_ = *RectImpl::From(value);
-}
-
-scoped_refptr<Viewport> SpriteImpl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
-
-void SpriteImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  if (viewport_ == value)
-    return;
-
-  viewport_ = ViewportImpl::From(value);
-  node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : context()->screen_drawable_node);
-}
-
-bool SpriteImpl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return node_.GetVisibility();
-}
-
-void SpriteImpl::Put_Visible(const bool& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeVisibility(value);
-}
-
-int32_t SpriteImpl::Get_X(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return uniform_params_.Position.x;
-}
-
-void SpriteImpl::Put_X(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  uniform_params_.Position.x = value;
-}
-
-int32_t SpriteImpl::Get_Y(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return uniform_params_.Position.y;
-}
-
-void SpriteImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  // Set normal Y attribute for all version.
-  uniform_params_.Position.y = value;
-
-  // Sort with Z and Y attribute on RGSS 2/3.
-  if (rgss2_style_ && !disable_vertical_sort_) {
-    int64_t current_order = node_.GetSortKeys()->weight[0];
-    node_.SetNodeSortWeight(current_order, value);
-  }
-}
-
-int32_t SpriteImpl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return node_.GetSortKeys()->weight[0];
-}
-
-void SpriteImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  node_.SetNodeSortWeight(value);
-}
-
-int32_t SpriteImpl::Get_Ox(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return uniform_params_.Origin.x;
-}
-
-void SpriteImpl::Put_Ox(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  uniform_params_.Origin.x = value;
-}
-
-int32_t SpriteImpl::Get_Oy(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return uniform_params_.Origin.y;
-}
-
-void SpriteImpl::Put_Oy(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  uniform_params_.Origin.y = value;
-}
-
-float SpriteImpl::Get_ZoomX(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
-
-  return uniform_params_.Scale.x;
-}
-
-void SpriteImpl::Put_ZoomX(const float& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  uniform_params_.Scale.x = value;
-}
-
-float SpriteImpl::Get_ZoomY(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
-
-  return uniform_params_.Scale.y;
-}
-
-void SpriteImpl::Put_ZoomY(const float& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  uniform_params_.Scale.y = value;
-}
-
-float SpriteImpl::Get_Angle(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
-
-  return angle_;
-}
-
-void SpriteImpl::Put_Angle(const float& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  angle_ = value;
-  uniform_params_.Rotation.x = angle_ * kPi / 180.0f;
-}
-
-int32_t SpriteImpl::Get_WaveAmp(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return wave_.amp;
-}
-
-void SpriteImpl::Put_WaveAmp(const int32_t& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  wave_.amp = value;
-}
-
-int32_t SpriteImpl::Get_WaveLength(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return wave_.length;
-}
-
-void SpriteImpl::Put_WaveLength(const int32_t& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  wave_.length = value;
-}
-
-int32_t SpriteImpl::Get_WaveSpeed(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return wave_.speed;
-}
-
-void SpriteImpl::Put_WaveSpeed(const int32_t& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  wave_.speed = value;
-}
-
-int32_t SpriteImpl::Get_WavePhase(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return wave_.phase;
-}
-
-void SpriteImpl::Put_WavePhase(const int32_t& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  wave_.phase = value;
-}
-
-bool SpriteImpl::Get_Mirror(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return mirror_;
-}
-
-void SpriteImpl::Put_Mirror(const bool& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  mirror_ = value;
-  src_rect_dirty_ = true;
-}
-
-int32_t SpriteImpl::Get_BushDepth(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bush_.depth;
-}
-
-void SpriteImpl::Put_BushDepth(const int32_t& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bush_.depth = value;
-}
-
-int32_t SpriteImpl::Get_BushOpacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bush_.opacity;
-}
-
-void SpriteImpl::Put_BushOpacity(const int32_t& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bush_.opacity = std::clamp(value, 0, 255);
-}
-
-int32_t SpriteImpl::Get_Opacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return opacity_;
-}
-
-void SpriteImpl::Put_Opacity(const int32_t& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t SpriteImpl::Get_BlendType(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return blend_type_;
-}
-
-void SpriteImpl::Put_BlendType(const int32_t& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  blend_type_ = value;
-}
-
-scoped_refptr<Color> SpriteImpl::Get_Color(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return color_;
-}
-
-void SpriteImpl::Put_Color(const scoped_refptr<Color>& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *color_ = *ColorImpl::From(value);
-}
-
-scoped_refptr<Tone> SpriteImpl::Get_Tone(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return tone_;
-}
-
-void SpriteImpl::Put_Tone(const scoped_refptr<Tone>& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *tone_ = *ToneImpl::From(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Bitmap,
+    scoped_refptr<Bitmap>,
+    SpriteImpl,
+    { return bitmap_; },
+    {
+      DISPOSE_CHECK;
+      bitmap_ = CanvasImpl::FromBitmap(value);
+      if (Disposable::IsValid(bitmap_.get()))
+        src_rect_->SetBase((**bitmap_)->size);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    SrcRect,
+    scoped_refptr<Rect>,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return src_rect_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *src_rect_ = *RectImpl::From(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    SpriteImpl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
+      if (viewport_ != value) {
+        viewport_ = ViewportImpl::From(value);
+        node_.RebindController(viewport_ ? viewport_->GetDrawableController()
+                                         : context()->screen_drawable_node);
+      }
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeVisibility(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    X,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return uniform_params_.Position.x;
+    },
+    {
+      DISPOSE_CHECK;
+      uniform_params_.Position.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Y,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return uniform_params_.Position.y;
+    },
+    {
+      DISPOSE_CHECK;
+      // Set normal Y attribute for all version
+      uniform_params_.Position.y = value;
+      // Sort with Z and Y attribute on RGSS 2/3
+      if (rgss2_style_ && !disable_vertical_sort_) {
+        int64_t current_order = node_.GetSortKeys()->weight[0];
+        node_.SetNodeSortWeight(current_order, value);
+      }
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return node_.GetSortKeys()->weight[0];
+    },
+    {
+      DISPOSE_CHECK;
+      node_.SetNodeSortWeight(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return uniform_params_.Origin.x;
+    },
+    {
+      DISPOSE_CHECK;
+      uniform_params_.Origin.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return uniform_params_.Origin.y;
+    },
+    {
+      DISPOSE_CHECK;
+      uniform_params_.Origin.y = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ZoomX,
+    float,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
+      return uniform_params_.Scale.x;
+    },
+    {
+      DISPOSE_CHECK;
+      uniform_params_.Scale.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ZoomY,
+    float,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
+      return uniform_params_.Scale.y;
+    },
+    {
+      DISPOSE_CHECK;
+      uniform_params_.Scale.y = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Angle,
+    float,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
+      return angle_;
+    },
+    {
+      DISPOSE_CHECK;
+      angle_ = value;
+      uniform_params_.Rotation.x = angle_ * kPi / 180.0f;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    WaveAmp,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return wave_.amp;
+    },
+    {
+      DISPOSE_CHECK;
+      wave_.amp = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    WaveLength,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return wave_.length;
+    },
+    {
+      DISPOSE_CHECK;
+      wave_.length = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    WaveSpeed,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return wave_.speed;
+    },
+    {
+      DISPOSE_CHECK;
+      wave_.speed = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    WavePhase,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return wave_.phase;
+    },
+    {
+      DISPOSE_CHECK;
+      wave_.phase = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Mirror,
+    bool,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return mirror_;
+    },
+    {
+      DISPOSE_CHECK;
+      mirror_ = value;
+      src_rect_dirty_ = true;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BushDepth,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bush_.depth;
+    },
+    {
+      DISPOSE_CHECK;
+      bush_.depth = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BushOpacity,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bush_.opacity;
+    },
+    {
+      DISPOSE_CHECK;
+      bush_.opacity = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Opacity,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      opacity_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BlendType,
+    int32_t,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return blend_type_;
+    },
+    {
+      DISPOSE_CHECK;
+      blend_type_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Color,
+    scoped_refptr<Color>,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return color_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *color_ = *ColorImpl::From(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Tone,
+    scoped_refptr<Tone>,
+    SpriteImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return tone_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *tone_ = *ToneImpl::From(value);
+    });
 
 void SpriteImpl::OnObjectDisposed() {
   node_.DisposeNode();

@@ -100,57 +100,65 @@ void AudioStreamImpl::SetStopTime(uint64_t time,
   ma_sound_set_stop_time_in_pcm_frames(handle_.get(), time);
 }
 
-float AudioStreamImpl::Get_Volume(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Volume,
+    float,
+    AudioStreamImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
 
-  return ma_sound_get_volume(handle_.get());
-}
+      return ma_sound_get_volume(handle_.get());
+    },
+    {
+      DISPOSE_CHECK;
 
-void AudioStreamImpl::Put_Volume(const float& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      ma_sound_set_volume(handle_.get(), value);
+    });
 
-  ma_sound_set_volume(handle_.get(), value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Pan,
+    float,
+    AudioStreamImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
 
-float AudioStreamImpl::Get_Pan(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
+      return ma_sound_get_pan(handle_.get());
+    },
+    {
+      DISPOSE_CHECK;
 
-  return ma_sound_get_pan(handle_.get());
-}
+      ma_sound_set_pan(handle_.get(), value);
+    });
 
-void AudioStreamImpl::Put_Pan(const float& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Pitch,
+    float,
+    AudioStreamImpl,
+    {
+      DISPOSE_CHECK_RETURN(0.0f);
 
-  ma_sound_set_pan(handle_.get(), value);
-}
+      return ma_sound_get_pitch(handle_.get());
+    },
+    {
+      DISPOSE_CHECK;
 
-float AudioStreamImpl::Get_Pitch(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0.0f);
+      ma_sound_set_pitch(handle_.get(), value);
+    });
 
-  return ma_sound_get_pitch(handle_.get());
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Loop,
+    bool,
+    AudioStreamImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
 
-void AudioStreamImpl::Put_Pitch(const float& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      return ma_sound_is_looping(handle_.get());
+    },
+    {
+      DISPOSE_CHECK;
 
-  ma_sound_set_pitch(handle_.get(), value);
-}
-
-bool AudioStreamImpl::Get_Loop(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return ma_sound_is_looping(handle_.get());
-}
-
-void AudioStreamImpl::Put_Loop(const bool& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  ma_sound_set_looping(handle_.get(), value);
-}
+      ma_sound_set_looping(handle_.get(), value);
+    });
 
 void AudioStreamImpl::OnObjectDisposed() {
   ma_sound_uninit(handle_.get());

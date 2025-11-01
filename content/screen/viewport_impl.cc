@@ -181,157 +181,172 @@ void ViewportImpl::Render(scoped_refptr<Bitmap> target,
         viewport_rect, target_color);
 }
 
-scoped_refptr<Viewport> ViewportImpl::Get_Viewport(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  return viewport_;
-}
+      return viewport_;
+    },
+    {
+      DISPOSE_CHECK;
 
-void ViewportImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      viewport_ = ViewportImpl::From(value);
+      node_.RebindController(viewport_ ? viewport_->GetDrawableController()
+                                       : context()->screen_drawable_node);
+    });
 
-  viewport_ = ViewportImpl::From(value);
-  node_.RebindController(viewport_ ? viewport_->GetDrawableController()
-                                   : context()->screen_drawable_node);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Rect,
+    scoped_refptr<Rect>,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-scoped_refptr<Rect> ViewportImpl::Get_Rect(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+      return rect_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
 
-  return rect_;
-}
+      *rect_ = *RectImpl::From(value);
+    });
 
-void ViewportImpl::Put_Rect(const scoped_refptr<Rect>& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-  CHECK_ATTRIBUTE_VALUE;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
 
-  *rect_ = *RectImpl::From(value);
-}
+      return node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
 
-bool ViewportImpl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
+      node_.SetNodeVisibility(value);
+    });
 
-  return node_.GetVisibility();
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-void ViewportImpl::Put_Visible(const bool& value,
-                               ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      return static_cast<int32_t>(node_.GetSortKeys()->weight[0]);
+    },
+    {
+      DISPOSE_CHECK;
 
-  node_.SetNodeVisibility(value);
-}
+      node_.SetNodeSortWeight(value);
+    });
 
-int32_t ViewportImpl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-  return static_cast<int32_t>(node_.GetSortKeys()->weight[0]);
-}
+      return origin_.x;
+    },
+    {
+      DISPOSE_CHECK;
 
-void ViewportImpl::Put_Z(const int32_t& value,
-                         ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+      origin_.x = value;
+    });
 
-  node_.SetNodeSortWeight(value);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
 
-int32_t ViewportImpl::Get_Ox(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+      return origin_.y;
+    },
+    {
+      DISPOSE_CHECK;
 
-  return origin_.x;
-}
+      origin_.y = value;
+    });
 
-void ViewportImpl::Put_Ox(const int32_t& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Color,
+    scoped_refptr<Color>,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  origin_.x = value;
-}
+      return color_;
+    },
+    {
+      DISPOSE_CHECK;
 
-int32_t ViewportImpl::Get_Oy(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
+      CHECK_ATTRIBUTE_VALUE;
 
-  return origin_.y;
-}
+      *color_ = *ColorImpl::From(value);
+    });
 
-void ViewportImpl::Put_Oy(const int32_t& value,
-                          ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Tone,
+    scoped_refptr<Tone>,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  origin_.y = value;
-}
+      return tone_;
+    },
+    {
+      DISPOSE_CHECK;
 
-scoped_refptr<Color> ViewportImpl::Get_Color(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+      CHECK_ATTRIBUTE_VALUE;
 
-  return color_;
-}
+      *tone_ = *ToneImpl::From(value);
+    });
 
-void ViewportImpl::Put_Color(const scoped_refptr<Color>& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    PipelineState,
+    scoped_refptr<GPUPipelineState>,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  CHECK_ATTRIBUTE_VALUE;
+      return custom_pipeline_;
+    },
+    {
+      DISPOSE_CHECK;
 
-  *color_ = *ColorImpl::From(value);
-}
+      custom_pipeline_ = static_cast<PipelineStateImpl*>(value.get());
+    });
 
-scoped_refptr<Tone> ViewportImpl::Get_Tone(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ResourceBinding,
+    scoped_refptr<GPUResourceBinding>,
+    ViewportImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
 
-  return tone_;
-}
+      return custom_binding_;
+    },
+    {
+      DISPOSE_CHECK;
 
-void ViewportImpl::Put_Tone(const scoped_refptr<Tone>& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *tone_ = *ToneImpl::From(value);
-}
-
-scoped_refptr<GPUPipelineState> ViewportImpl::Get_PipelineState(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return custom_pipeline_;
-}
-
-void ViewportImpl::Put_PipelineState(
-    const scoped_refptr<GPUPipelineState>& value,
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  custom_pipeline_ = static_cast<PipelineStateImpl*>(value.get());
-}
-
-scoped_refptr<GPUResourceBinding> ViewportImpl::Get_ResourceBinding(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return custom_binding_;
-}
-
-void ViewportImpl::Put_ResourceBinding(
-    const scoped_refptr<GPUResourceBinding>& value,
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  custom_binding_ = static_cast<ResourceBindingImpl*>(value.get());
-  if (custom_binding_) {
-    // Custom binding
-    gpu_.effect.binding =
-        renderer::RenderBindingBase::Create<renderer::Binding_Flat>(
-            custom_binding_->AsRawPtr());
-  } else {
-    // Empty binding
-    gpu_.effect.binding =
-        context()->render.pipeline_loader->viewport.CreateBinding();
-  }
-}
+      custom_binding_ = static_cast<ResourceBindingImpl*>(value.get());
+      if (custom_binding_) {
+        // Custom binding
+        gpu_.effect.binding =
+            renderer::RenderBindingBase::Create<renderer::Binding_Flat>(
+                custom_binding_->AsRawPtr());
+      } else {
+        // Empty binding
+        gpu_.effect.binding =
+            context()->render.pipeline_loader->viewport.CreateBinding();
+      }
+    });
 
 void ViewportImpl::OnObjectDisposed() {
   node_.DisposeNode();

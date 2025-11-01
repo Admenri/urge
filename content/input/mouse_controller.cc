@@ -128,13 +128,11 @@ bool MouseImpl::Capture(bool enable, ExceptionState& exception_state) {
   return SDL_CaptureMouse(enable);
 }
 
-bool MouseImpl::Get_Visible(ExceptionState& exception_state) {
-  return window_->GetMouseState().visible;
-}
-
-void MouseImpl::Put_Visible(const bool& value,
-                            ExceptionState& exception_state) {
-  window_->GetMouseState().visible = value;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    MouseImpl,
+    { return window_->GetMouseState().visible; },
+    { window_->GetMouseState().visible = value; });
 
 }  // namespace content

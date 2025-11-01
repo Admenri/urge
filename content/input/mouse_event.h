@@ -19,6 +19,7 @@ class MouseEventImpl : public MouseEvent {
   MouseEventImpl(const MouseEventImpl&) = delete;
   MouseEventImpl& operator=(const MouseEventImpl&) = delete;
 
+ protected:
   Type GetType(ExceptionState& exception_state) override;
   int32_t GetMouseID(ExceptionState& exception_state) override;
   int32_t GetX(ExceptionState& exception_state) override;

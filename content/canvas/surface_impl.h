@@ -95,6 +95,7 @@ class SurfaceImpl : public Surface, public EngineObject, public Disposable {
   void SavePNG(const std::string& filename,
                ExceptionState& exception_state) override;
   std::string SavePNGData(ExceptionState& exception_state) override;
+
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Font, scoped_refptr<Font>);
 
  private:

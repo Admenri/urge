@@ -38,7 +38,7 @@ class Disposable;
 
 class DisposableCollection {
  public:
-  virtual void AddDisposable(Disposable* disp) = 0;
+  virtual void AddDisposable(Disposable* parent) = 0;
 };
 
 class Disposable : public base::LinkNode<Disposable> {
@@ -52,6 +52,8 @@ class Disposable : public base::LinkNode<Disposable> {
   void Dispose();
   bool IsDisposed() const { return disposed_; }
 
+  // Disposable::IsValid(obj.get())
+  // For disposable object validation.
   static bool IsValid(Disposable* other) {
     return other && !other->IsDisposed();
   }
@@ -60,6 +62,7 @@ class Disposable : public base::LinkNode<Disposable> {
   virtual void OnObjectDisposed() = 0;
   virtual std::string DisposedObjectName() = 0;
 
+  // Return true if disposed.
   bool CheckIfDisposed(ExceptionState& exception_state);
 
  private:

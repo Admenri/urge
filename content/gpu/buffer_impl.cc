@@ -142,18 +142,18 @@ void BufferImpl::InvalidateMappedRange(uint64_t start_offset,
   object_->InvalidateMappedRange(start_offset, size);
 }
 
-GPU::ResourceState BufferImpl::Get_State(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(GPU::ResourceState());
-
-  return static_cast<GPU::ResourceState>(object_->GetState());
-}
-
-void BufferImpl::Put_State(const GPU::ResourceState& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  object_->SetState(static_cast<Diligent::RESOURCE_STATE>(value));
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    State,
+    GPU::ResourceState,
+    BufferImpl,
+    {
+      DISPOSE_CHECK_RETURN(GPU::ResourceState());
+      return static_cast<GPU::ResourceState>(object_->GetState());
+    },
+    {
+      DISPOSE_CHECK;
+      object_->SetState(static_cast<Diligent::RESOURCE_STATE>(value));
+    });
 
 void BufferImpl::OnObjectDisposed() {
   object_.Release();

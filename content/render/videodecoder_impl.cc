@@ -170,45 +170,46 @@ void VideoDecoderImpl::Render(scoped_refptr<Bitmap> target,
   }
 }
 
-VideoDecoder::PlayState VideoDecoderImpl::Get_State(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(STATE_FINISHED);
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    State,
+    VideoDecoder::PlayState,
+    VideoDecoderImpl,
+    {
+      DISPOSE_CHECK_RETURN(STATE_FINISHED);
 
-  if (player_->isPlaying())
-    return STATE_PLAYING;
-  else if (player_->isPaused())
-    return STATE_PAUSED;
-  else if (player_->isStopped())
-    return STATE_STOPPED;
-  else if (player_->isFinished())
-    return STATE_FINISHED;
-  else
-    return PlayState();
-}
+      if (player_->isPlaying())
+        return STATE_PLAYING;
+      else if (player_->isPaused())
+        return STATE_PAUSED;
+      else if (player_->isStopped())
+        return STATE_STOPPED;
+      else if (player_->isFinished())
+        return STATE_FINISHED;
+      else
+        return PlayState();
+    },
+    {
+      DISPOSE_CHECK;
 
-void VideoDecoderImpl::Put_State(const PlayState& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  switch (value) {
-    case STATE_PLAYING:
-      player_->play();
-      if (audio_stream_)
-        SDL_BindAudioStream(context()->audio_server->GetDeviceID(),
-                            audio_stream_);
-      break;
-    case STATE_PAUSED:
-      player_->pause();
-      if (audio_stream_)
-        SDL_UnbindAudioStream(audio_stream_);
-      break;
-    case STATE_STOPPED:
-      player_->stop();
-      break;
-    default:
-      break;
-  }
-}
+      switch (value) {
+        case STATE_PLAYING:
+          player_->play();
+          if (audio_stream_)
+            SDL_BindAudioStream(context()->audio_server->GetDeviceID(),
+                                audio_stream_);
+          break;
+        case STATE_PAUSED:
+          player_->pause();
+          if (audio_stream_)
+            SDL_UnbindAudioStream(audio_stream_);
+          break;
+        case STATE_STOPPED:
+          player_->stop();
+          break;
+        default:
+          break;
+      }
+    });
 
 void VideoDecoderImpl::OnObjectDisposed() {
   player_.reset();

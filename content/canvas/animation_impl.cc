@@ -86,11 +86,13 @@ DISPOSABLE_DEFINITION(ImageAnimationImpl);
 
 int32_t ImageAnimationImpl::Width(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
+
   return animation_->w;
 }
 
 int32_t ImageAnimationImpl::Height(ExceptionState& exception_state) {
   DISPOSE_CHECK_RETURN(0);
+
   return animation_->h;
 }
 

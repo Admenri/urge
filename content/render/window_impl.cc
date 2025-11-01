@@ -67,243 +67,240 @@ void WindowImpl::Update(ExceptionState& exception_state) {
   }
 }
 
-scoped_refptr<Viewport> WindowImpl::Get_Viewport(
-    ExceptionState& exception_state) {
-  return viewport_;
-}
-
-void WindowImpl::Put_Viewport(const scoped_refptr<Viewport>& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  if (viewport_ == value)
-    return;
-
-  viewport_ = ViewportImpl::From(value);
-  DrawNodeController* controller = viewport_
-                                       ? viewport_->GetDrawableController()
-                                       : context()->screen_drawable_node;
-  background_node_.RebindController(controller);
-  control_node_.RebindController(controller);
-}
-
-scoped_refptr<Bitmap> WindowImpl::Get_Windowskin(
-    ExceptionState& exception_state) {
-  return windowskin_;
-}
-
-void WindowImpl::Put_Windowskin(const scoped_refptr<Bitmap>& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  windowskin_ = CanvasImpl::FromBitmap(value);
-}
-
-scoped_refptr<Bitmap> WindowImpl::Get_Contents(
-    ExceptionState& exception_state) {
-  return contents_;
-}
-
-void WindowImpl::Put_Contents(const scoped_refptr<Bitmap>& value,
-                              ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  contents_ = CanvasImpl::FromBitmap(value);
-}
-
-bool WindowImpl::Get_Stretch(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return stretch_;
-}
-
-void WindowImpl::Put_Stretch(const bool& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  stretch_ = value;
-}
-
-scoped_refptr<Rect> WindowImpl::Get_CursorRect(
-    ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(nullptr);
-
-  return cursor_rect_;
-}
-
-void WindowImpl::Put_CursorRect(const scoped_refptr<Rect>& value,
-                                ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  CHECK_ATTRIBUTE_VALUE;
-
-  *cursor_rect_ = *RectImpl::From(value);
-}
-
-bool WindowImpl::Get_Active(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return active_;
-}
-
-void WindowImpl::Put_Active(const bool& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  active_ = value;
-}
-
-bool WindowImpl::Get_Visible(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return background_node_.GetVisibility();
-}
-
-void WindowImpl::Put_Visible(const bool& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  background_node_.SetNodeVisibility(value);
-  control_node_.SetNodeVisibility(value);
-}
-
-bool WindowImpl::Get_Pause(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(false);
-
-  return pause_;
-}
-
-void WindowImpl::Put_Pause(const bool& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  pause_ = value;
-}
-
-int32_t WindowImpl::Get_X(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.x;
-}
-
-void WindowImpl::Put_X(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.x = value;
-}
-
-int32_t WindowImpl::Get_Y(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.y;
-}
-
-void WindowImpl::Put_Y(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.y = value;
-}
-
-int32_t WindowImpl::Get_Width(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.width;
-}
-
-void WindowImpl::Put_Width(const int32_t& value,
-                           ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.width = value;
-}
-
-int32_t WindowImpl::Get_Height(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return bound_.height;
-}
-
-void WindowImpl::Put_Height(const int32_t& value,
-                            ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  bound_.height = value;
-}
-
-int32_t WindowImpl::Get_Z(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return background_node_.GetSortKeys()->weight[0];
-}
-
-void WindowImpl::Put_Z(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  background_node_.SetNodeSortWeight(value);
-  control_node_.SetNodeSortWeight(value + 2);
-}
-
-int32_t WindowImpl::Get_Ox(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return origin_.x;
-}
-
-void WindowImpl::Put_Ox(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  origin_.x = value;
-}
-
-int32_t WindowImpl::Get_Oy(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return origin_.y;
-}
-
-void WindowImpl::Put_Oy(const int32_t& value, ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  origin_.y = value;
-}
-
-int32_t WindowImpl::Get_Opacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return opacity_;
-}
-
-void WindowImpl::Put_Opacity(const int32_t& value,
-                             ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t WindowImpl::Get_BackOpacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return back_opacity_;
-}
-
-void WindowImpl::Put_BackOpacity(const int32_t& value,
-                                 ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  back_opacity_ = std::clamp(value, 0, 255);
-}
-
-int32_t WindowImpl::Get_ContentsOpacity(ExceptionState& exception_state) {
-  DISPOSE_CHECK_RETURN(0);
-
-  return contents_opacity_;
-}
-
-void WindowImpl::Put_ContentsOpacity(const int32_t& value,
-                                     ExceptionState& exception_state) {
-  DISPOSE_CHECK;
-
-  contents_opacity_ = std::clamp(value, 0, 255);
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Viewport,
+    scoped_refptr<Viewport>,
+    WindowImpl,
+    { return viewport_; },
+    {
+      DISPOSE_CHECK;
+      if (viewport_ == value)
+        return;
+      viewport_ = ViewportImpl::From(value);
+      DrawNodeController* controller = viewport_
+                                           ? viewport_->GetDrawableController()
+                                           : context()->screen_drawable_node;
+      background_node_.RebindController(controller);
+      control_node_.RebindController(controller);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Windowskin,
+    scoped_refptr<Bitmap>,
+    WindowImpl,
+    { return windowskin_; },
+    {
+      DISPOSE_CHECK;
+      windowskin_ = CanvasImpl::FromBitmap(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Contents,
+    scoped_refptr<Bitmap>,
+    WindowImpl,
+    { return contents_; },
+    {
+      DISPOSE_CHECK;
+      contents_ = CanvasImpl::FromBitmap(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Stretch,
+    bool,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return stretch_;
+    },
+    {
+      DISPOSE_CHECK;
+      stretch_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    CursorRect,
+    scoped_refptr<Rect>,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(nullptr);
+      return cursor_rect_;
+    },
+    {
+      DISPOSE_CHECK;
+      CHECK_ATTRIBUTE_VALUE;
+      *cursor_rect_ = *RectImpl::From(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Active,
+    bool,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return active_;
+    },
+    {
+      DISPOSE_CHECK;
+      active_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Visible,
+    bool,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return background_node_.GetVisibility();
+    },
+    {
+      DISPOSE_CHECK;
+      background_node_.SetNodeVisibility(value);
+      control_node_.SetNodeVisibility(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Pause,
+    bool,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(false);
+      return pause_;
+    },
+    {
+      DISPOSE_CHECK;
+      pause_ = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    X,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.x;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Y,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.y;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.y = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Width,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.width;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.width = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Height,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return bound_.height;
+    },
+    {
+      DISPOSE_CHECK;
+      bound_.height = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Z,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return background_node_.GetSortKeys()->weight[0];
+    },
+    {
+      DISPOSE_CHECK;
+      background_node_.SetNodeSortWeight(value);
+      control_node_.SetNodeSortWeight(value + 2);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Ox,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return origin_.x;
+    },
+    {
+      DISPOSE_CHECK;
+      origin_.x = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Oy,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return origin_.y;
+    },
+    {
+      DISPOSE_CHECK;
+      origin_.y = value;
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Opacity,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      opacity_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    BackOpacity,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return back_opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      back_opacity_ = std::clamp(value, 0, 255);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    ContentsOpacity,
+    int32_t,
+    WindowImpl,
+    {
+      DISPOSE_CHECK_RETURN(0);
+      return contents_opacity_;
+    },
+    {
+      DISPOSE_CHECK;
+      contents_opacity_ = std::clamp(value, 0, 255);
+    });
 
 void WindowImpl::OnObjectDisposed() {
   background_node_.DisposeNode();

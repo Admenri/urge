@@ -8,11 +8,13 @@
 
 namespace content {
 
+// static
 scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
                               ExceptionState& exception_state) {
   return base::MakeRefCounted<ToneImpl>(base::Vec4(0));
 }
 
+// static
 scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
                               float red,
                               float green,
@@ -22,6 +24,7 @@ scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, gray));
 }
 
+// static
 scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
                               float red,
                               float green,
@@ -30,12 +33,14 @@ scoped_refptr<Tone> Tone::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, 0.0f));
 }
 
+// static
 scoped_refptr<Tone> Tone::Copy(ExecutionContext* execution_context,
                                scoped_refptr<Tone> other,
                                ExceptionState& exception_state) {
   return base::MakeRefCounted<ToneImpl>(*static_cast<ToneImpl*>(other.get()));
 }
 
+// static
 scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
                                       const std::string& data,
                                       ExceptionState& exception_state) {
@@ -54,6 +59,7 @@ scoped_refptr<Tone> Tone::Deserialize(ExecutionContext* execution_context,
   return base::MakeRefCounted<ToneImpl>(base::Vec4(red, green, blue, gray));
 }
 
+// static
 std::string Tone::Serialize(ExecutionContext* execution_context,
                             scoped_refptr<Tone> value,
                             ExceptionState& exception_state) {
@@ -68,6 +74,9 @@ std::string Tone::Serialize(ExecutionContext* execution_context,
 
   return serial_data;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// ToneImpl Implement
 
 ToneImpl::ToneImpl(const base::Vec4& value) : value_(value), dirty_(true) {
   value_.x = std::clamp(value_.x, -255.0f, 255.0f);
@@ -142,48 +151,52 @@ void ToneImpl::NotifyObservers() {
   dirty_ = true;
 }
 
-float ToneImpl::Get_Red(ExceptionState& exception_state) {
-  return value_.x;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Red,
+    float,
+    ToneImpl,
+    { return value_.x; },
+    {
+      if (value_.x != value) {
+        value_.x = std::clamp(value, -255.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
-void ToneImpl::Put_Red(const float& value, ExceptionState& exception_state) {
-  if (value_.x != value) {
-    value_.x = std::clamp(value, -255.0f, 255.0f);
-    NotifyObservers();
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Green,
+    float,
+    ToneImpl,
+    { return value_.y; },
+    {
+      if (value_.y != value) {
+        value_.y = std::clamp(value, -255.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
-float ToneImpl::Get_Green(ExceptionState& exception_state) {
-  return value_.y;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Blue,
+    float,
+    ToneImpl,
+    { return value_.z; },
+    {
+      if (value_.z != value) {
+        value_.z = std::clamp(value, -255.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
-void ToneImpl::Put_Green(const float& value, ExceptionState& exception_state) {
-  if (value_.y != value) {
-    value_.y = std::clamp(value, -255.0f, 255.0f);
-    NotifyObservers();
-  }
-}
-
-float ToneImpl::Get_Blue(ExceptionState& exception_state) {
-  return value_.z;
-}
-
-void ToneImpl::Put_Blue(const float& value, ExceptionState& exception_state) {
-  if (value_.z != value) {
-    value_.z = std::clamp(value, -255.0f, 255.0f);
-    NotifyObservers();
-  }
-}
-
-float ToneImpl::Get_Gray(ExceptionState& exception_state) {
-  return value_.w;
-}
-
-void ToneImpl::Put_Gray(const float& value, ExceptionState& exception_state) {
-  if (value_.w != value) {
-    value_.w = std::clamp(value, 0.0f, 255.0f);
-    NotifyObservers();
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Gray,
+    float,
+    ToneImpl,
+    { return value_.w; },
+    {
+      if (value_.w != value) {
+        value_.w = std::clamp(value, 0.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
 }  // namespace content

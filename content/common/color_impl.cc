@@ -8,11 +8,13 @@
 
 namespace content {
 
+// static
 scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
                                 ExceptionState& exception_state) {
   return base::MakeRefCounted<ColorImpl>(base::Vec4(0));
 }
 
+// static
 scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
                                 float red,
                                 float green,
@@ -22,6 +24,7 @@ scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<ColorImpl>(base::Vec4(red, green, blue, alpha));
 }
 
+// static
 scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
                                 float red,
                                 float green,
@@ -30,12 +33,14 @@ scoped_refptr<Color> Color::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<ColorImpl>(base::Vec4(red, green, blue, 255.0f));
 }
 
+// static
 scoped_refptr<Color> Color::Copy(ExecutionContext* execution_context,
                                  scoped_refptr<Color> other,
                                  ExceptionState& exception_state) {
   return base::MakeRefCounted<ColorImpl>(*static_cast<ColorImpl*>(other.get()));
 }
 
+// static
 scoped_refptr<Color> Color::Deserialize(ExecutionContext* execution_context,
                                         const std::string& data,
                                         ExceptionState& exception_state) {
@@ -54,6 +59,7 @@ scoped_refptr<Color> Color::Deserialize(ExecutionContext* execution_context,
   return base::MakeRefCounted<ColorImpl>(base::Vec4(red, green, blue, alpha));
 }
 
+// static
 std::string Color::Serialize(ExecutionContext* execution_context,
                              scoped_refptr<Color> value,
                              ExceptionState& exception_state) {
@@ -68,6 +74,9 @@ std::string Color::Serialize(ExecutionContext* execution_context,
 
   return serial_data;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// ColorImpl Implement
 
 ColorImpl::ColorImpl(const base::Vec4& value) : value_(value), dirty_(true) {
   value_.x = std::clamp(value_.x, 0.0f, 255.0f);
@@ -148,48 +157,52 @@ void ColorImpl::NotifyObservers() {
   dirty_ = true;
 }
 
-float ColorImpl::Get_Red(ExceptionState& exception_state) {
-  return value_.x;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Red,
+    float,
+    ColorImpl,
+    { return value_.x; },
+    {
+      if (value_.x != value) {
+        value_.x = std::clamp(value, 0.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
-void ColorImpl::Put_Red(const float& value, ExceptionState& exception_state) {
-  if (value_.x != value) {
-    value_.x = std::clamp(value, 0.0f, 255.0f);
-    NotifyObservers();
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Green,
+    float,
+    ColorImpl,
+    { return value_.y; },
+    {
+      if (value_.y != value) {
+        value_.y = std::clamp(value, 0.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
-float ColorImpl::Get_Green(ExceptionState& exception_state) {
-  return value_.y;
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Blue,
+    float,
+    ColorImpl,
+    { return value_.z; },
+    {
+      if (value_.z != value) {
+        value_.z = std::clamp(value, 0.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
-void ColorImpl::Put_Green(const float& value, ExceptionState& exception_state) {
-  if (value_.y != value) {
-    value_.y = std::clamp(value, 0.0f, 255.0f);
-    NotifyObservers();
-  }
-}
-
-float ColorImpl::Get_Blue(ExceptionState& exception_state) {
-  return value_.z;
-}
-
-void ColorImpl::Put_Blue(const float& value, ExceptionState& exception_state) {
-  if (value_.z != value) {
-    value_.z = std::clamp(value, 0.0f, 255.0f);
-    NotifyObservers();
-  }
-}
-
-float ColorImpl::Get_Alpha(ExceptionState& exception_state) {
-  return value_.w;
-}
-
-void ColorImpl::Put_Alpha(const float& value, ExceptionState& exception_state) {
-  if (value_.w != value) {
-    value_.w = std::clamp(value, 0.0f, 255.0f);
-    NotifyObservers();
-  }
-}
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    Alpha,
+    float,
+    ColorImpl,
+    { return value_.w; },
+    {
+      if (value_.w != value) {
+        value_.w = std::clamp(value, 0.0f, 255.0f);
+        NotifyObservers();
+      }
+    });
 
 }  // namespace content
