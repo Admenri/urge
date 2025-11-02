@@ -1488,8 +1488,10 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   renderer::Quad transient_quad;
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
-  renderer::Quad::SetTexCoordRectNorm(
-      &transient_quad, base::RectF(base::Vec2(0), base::Vec2(1)));
+  renderer::Quad::SetTexCoordRect(
+      &transient_quad, base::RectF(gpu_.size),
+      base::Vec2(intermediate_effect_layer->GetDesc().Width,
+                 intermediate_effect_layer->GetDesc().Height));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
   scheduler->quad_batch().QueueWrite(render_context, &transient_quad);
 
