@@ -186,6 +186,8 @@ RenderDevice::CreateDeviceResult RenderDevice::Create(
 
   // Setup renderer create info
   engine_create_info.EnableValidation = validation;
+  if (engine_create_info.EnableValidation)
+    LOG(INFO) << "[Renderer] Enable renderer validation.";
 
   // Requested features
   if (driver_type != DriverType::OPENGL)

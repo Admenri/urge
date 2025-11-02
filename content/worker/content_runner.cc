@@ -261,6 +261,9 @@ void ContentRunner::CreateRenderComponents() {
   // Default sampler
   auto sampler_filter =
       static_cast<Diligent::FILTER_TYPE>(profile_->pipeline_default_sampler);
+  if (sampler_filter == Diligent::FILTER_TYPE_UNKNOWN)
+    sampler_filter = Diligent::FILTER_TYPE_POINT;
+
   pipeline_params.immutable_sampler =
       Diligent::SamplerDesc{sampler_filter,
                             sampler_filter,

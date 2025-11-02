@@ -192,17 +192,20 @@ static bool IMG_InitWEBP(void)
         // Free function required for cleanup after muxing.
         FUNCTION_LOADER_LIBWEBP(WebPFree, void (*)(void *))
 
+#if SAVE_WEBP
         // Muxing functions
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderNewInternal, WebPAnimEncoder * (*)(int, int, const WebPAnimEncoderOptions *, int))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderOptionsInitInternal, int (*)(WebPAnimEncoderOptions *, int))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderAdd, int (*)(WebPAnimEncoder *, WebPPicture *, int, const WebPConfig *))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderAssemble, int (*)(WebPAnimEncoder *, WebPData *))
         FUNCTION_LOADER_LIBWEBPMUX(WebPAnimEncoderDelete, void (*)(WebPAnimEncoder *))
+#endif
 
         // Used for extracting EXIF & XMP chunks.
         FUNCTION_LOADER_LIBWEBPDEMUX(WebPDemuxGetChunk, int (*)(const WebPDemuxer *dmux, const char fourcc[4], int chunk_number, WebPChunkIterator *iter))
         FUNCTION_LOADER_LIBWEBPDEMUX(WebPDemuxReleaseChunkIterator, void (*)(WebPChunkIterator* iter))
 
+#if SAVE_WEBP
         // Used for setting EXIF & XMP chunks and for loop count.
         FUNCTION_LOADER_LIBWEBPMUX(WebPMuxCreateInternal, WebPMux * (*)(const WebPData*, int, int))
         FUNCTION_LOADER_LIBWEBPMUX(WebPMuxDelete, void (*)(WebPMux* mux))
@@ -210,6 +213,7 @@ static bool IMG_InitWEBP(void)
         FUNCTION_LOADER_LIBWEBPMUX(WebPMuxGetAnimationParams, WebPMuxError (*)(const WebPMux* mux, WebPMuxAnimParams* params))
         FUNCTION_LOADER_LIBWEBPMUX(WebPMuxSetAnimationParams, WebPMuxError (*)(WebPMux* mux, const WebPMuxAnimParams* params))
         FUNCTION_LOADER_LIBWEBPMUX(WebPMuxAssemble, WebPMuxError (*)(WebPMux* mux, WebPData* assembled_data))
+#endif
     }
     ++lib.loaded;
 

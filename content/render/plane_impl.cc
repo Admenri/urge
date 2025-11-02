@@ -326,7 +326,6 @@ void PlaneImpl::GPUUpdatePlaneQuadArrayInternal(
     current_y += item_y;  // Y-axis accumulation
   }
 
-  auto& render_device = *context()->render_device;
   context()->render.quad_index->Allocate(quad_size);
   gpu_.quad_size = quad_size;
   gpu_.batch.QueueWrite(render_context, gpu_.cache.data(), gpu_.cache.size());
