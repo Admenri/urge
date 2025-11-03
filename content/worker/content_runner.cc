@@ -590,7 +590,8 @@ void ContentRunner::CreateIMGUIContextInternal() {
   ImFontConfig font_config;
   font_config.FontDataOwnedByAtlas = false;
   io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
-  io.Fonts->TexDesiredWidth = max_texture_size;
+  io.Fonts->TexMaxWidth = max_texture_size;
+  io.Fonts->TexMaxHeight = max_texture_size;
   io.Fonts->AddFontFromMemoryTTF(const_cast<void*>(font_data), font_data_size,
                                  16.0f * window_scale, &font_config,
                                  io.Fonts->GetGlyphRangesChineseFull());

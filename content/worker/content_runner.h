@@ -5,7 +5,7 @@
 #ifndef CONTENT_WORKER_CONTENT_RUNNER_H_
 #define CONTENT_WORKER_CONTENT_RUNNER_H_
 
-#include "imgui/backends/ImGuiDiligentRenderer.hpp"
+#include "imgui/backends/imgui_impl_diligent.h"
 
 #include "base/worker/thread_worker.h"
 #include "components/audioservice/audio_service.h"

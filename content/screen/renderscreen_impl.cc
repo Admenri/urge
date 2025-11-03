@@ -648,7 +648,6 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
   render_context->SetScissorRects(1, &present_scissor, UINT32_MAX, UINT32_MAX);
 
   // Render GUI and present
-  gui_renderer->CheckDeviceObjects();
   gui_renderer->RenderDrawData(render_context, ImGui::GetDrawData());
 
   // Flush command buffer and present GPU surface

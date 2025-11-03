@@ -14,7 +14,7 @@ set(IMGUI_MAIN_SOURCE
 )
 
 set(IMGUI_BACKEND_SOURCE
-  backends/ImGuiDiligentRenderer.cpp
+  backends/imgui_impl_diligent.cc
   backends/imgui_impl_sdl3.cpp
 )
 

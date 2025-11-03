@@ -5,7 +5,7 @@
 #ifndef CONTENT_SCREEN_RENDERSCREEN_IMPL_H_
 #define CONTENT_SCREEN_RENDERSCREEN_IMPL_H_
 
-#include "backends/ImGuiDiligentRenderer.hpp"
+#include "imgui/backends/imgui_impl_diligent.h"
 
 #include "base/worker/thread_worker.h"
 #include "components/fpslimiter/fpslimiter.h"
