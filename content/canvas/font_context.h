@@ -29,6 +29,7 @@ struct ScopedFontData {
   bool default_solid = false;
   scoped_refptr<ColorImpl> default_color = nullptr;
   scoped_refptr<ColorImpl> default_out_color = nullptr;
+  scoped_refptr<ColorImpl> default_gradient_color = nullptr;
 
   std::map<std::pair<std::string, int32_t>, TTF_Font*> font_cache;
   std::map<std::string, std::pair<int64_t, void*>> data_cache;

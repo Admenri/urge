@@ -146,6 +146,17 @@ URGE_DEFINE_STATIC_ATTRIBUTE(
           *ColorImpl::From(value);
     });
 
+URGE_DEFINE_STATIC_ATTRIBUTE(
+    Font,
+    DefaultGradientColor,
+    scoped_refptr<Color>,
+    { return execution_context->font_context->default_gradient_color; },
+    {
+      CHECK_ATTRIBUTE_VALUE;
+      *execution_context->font_context->default_gradient_color =
+          *ColorImpl::From(value);
+    });
+
 ///////////////////////////////////////////////////////////////////////////////
 // Font Implement
 
@@ -159,10 +170,12 @@ FontImpl::FontImpl(ScopedFontData* parent)
       solid_(parent->default_solid),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       out_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      gradient_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       parent_(parent),
       font_(nullptr) {
   *color_ = *parent->default_color;
   *out_color_ = *parent->default_out_color;
+  *gradient_color_ = *parent->default_gradient_color;
 }
 
 FontImpl::FontImpl(const std::string& name,
@@ -177,10 +190,12 @@ FontImpl::FontImpl(const std::string& name,
       solid_(parent->default_solid),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       out_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      gradient_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       parent_(parent),
       font_(nullptr) {
   *color_ = *parent->default_color;
   *out_color_ = *parent->default_out_color;
+  *gradient_color_ = *parent->default_gradient_color;
 }
 
 FontImpl::FontImpl(const FontImpl& other)
@@ -193,10 +208,12 @@ FontImpl::FontImpl(const FontImpl& other)
       solid_(other.solid_),
       color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       out_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
+      gradient_color_(base::MakeRefCounted<ColorImpl>(base::Vec4())),
       parent_(other.parent_),
       font_(nullptr) {
   *color_ = *other.color_;
   *out_color_ = *other.out_color_;
+  *gradient_color_ = *other.gradient_color_;
 }
 
 FontImpl& FontImpl::operator=(const FontImpl& other) {
@@ -209,6 +226,7 @@ FontImpl& FontImpl::operator=(const FontImpl& other) {
   solid_ = other.solid_;
   *color_ = *other.color_;
   *out_color_ = *other.out_color_;
+  *gradient_color_ = *other.gradient_color_;
   font_ = nullptr;
   return *this;
 }
@@ -262,6 +280,44 @@ SDL_Surface* FontImpl::RenderText(const std::string& text,
   if (!text_surface)
     return nullptr;
 
+  // Gradient effect
+  EnsureFontSurfaceFormatInternal(text_surface);
+  const SDL_Color gradient_top_color = color_->AsSDLColor();
+  const SDL_Color gradient_bottom_color = gradient_color_->AsSDLColor();
+  if (gradient_bottom_color.a) {
+    if (gradient_top_color.r != gradient_bottom_color.r ||
+        gradient_top_color.g != gradient_bottom_color.g ||
+        gradient_top_color.b != gradient_bottom_color.b) {
+      const auto pitch = text_surface->pitch / 4;
+      const auto* pixel_detail =
+          SDL_GetPixelFormatDetails(text_surface->format);
+      auto* pixels = static_cast<uint32_t*>(text_surface->pixels);
+      const float gradient_alpha = gradient_bottom_color.a / 255.0f;
+
+      for (int32_t y = 0; y < text_surface->h; ++y) {
+        for (int32_t x = 0; x < text_surface->w; ++x) {
+          uint8_t r, g, b, a;
+          SDL_GetRGBA(pixels[x + y * pitch], pixel_detail, nullptr, &r, &g, &b,
+                      &a);
+
+          if (a) {
+            const float progress =
+                (static_cast<float>(y) / text_surface->h) * gradient_alpha;
+            r = gradient_bottom_color.r * progress +
+                gradient_top_color.r * (1.0f - progress);
+            g = gradient_bottom_color.g * progress +
+                gradient_top_color.g * (1.0f - progress);
+            b = gradient_bottom_color.b * progress +
+                gradient_top_color.b * (1.0f - progress);
+
+            pixels[x + y * pitch] =
+                SDL_MapRGBA(pixel_detail, nullptr, r, g, b, a);
+          }
+        }
+      }
+    }
+  }
+
   if (outline_) {
     // Outline shape render
     SDL_Surface* outline_surface = nullptr;
@@ -293,7 +349,6 @@ SDL_Surface* FontImpl::RenderText(const std::string& text,
   }
 
   EnsureFontSurfaceFormatInternal(text_surface);
-
   if (shadow_)
     RenderShadowSurface(text_surface, font_color);
 
@@ -373,6 +428,16 @@ URGE_DEFINE_OVERRIDE_ATTRIBUTE(
     {
       CHECK_ATTRIBUTE_VALUE;
       *out_color_ = *ColorImpl::From(value);
+    });
+
+URGE_DEFINE_OVERRIDE_ATTRIBUTE(
+    GradientColor,
+    scoped_refptr<Color>,
+    FontImpl,
+    { return gradient_color_; },
+    {
+      CHECK_ATTRIBUTE_VALUE;
+      *gradient_color_ = *ColorImpl::From(value);
     });
 
 void FontImpl::LoadFontInternal(ExceptionState& exception_state) {

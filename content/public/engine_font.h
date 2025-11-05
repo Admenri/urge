@@ -62,6 +62,9 @@ class URGE_OBJECT(Font) {
   /*--urge(name:default_out_color)--*/
   URGE_EXPORT_STATIC_ATTRIBUTE(DefaultOutColor, scoped_refptr<Color>);
 
+  /*--urge(name:default_gradient_color)--*/
+  URGE_EXPORT_STATIC_ATTRIBUTE(DefaultGradientColor, scoped_refptr<Color>);
+
   /*--urge(name:name)--*/
   URGE_EXPORT_ATTRIBUTE(Name, std::vector<std::string>);
 
@@ -88,6 +91,9 @@ class URGE_OBJECT(Font) {
 
   /*--urge(name:out_color)--*/
   URGE_EXPORT_ATTRIBUTE(OutColor, scoped_refptr<Color>);
+
+  /*--urge(name:gradient_color)--*/
+  URGE_EXPORT_ATTRIBUTE(GradientColor, scoped_refptr<Color>);
 };
 
 }  // namespace content
