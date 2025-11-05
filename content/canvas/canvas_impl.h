@@ -49,6 +49,13 @@ class CanvasImpl : public base::LinkNode<CanvasImpl>,
     // Text drawing cache texture
     base::Vec2i text_cache_size;
     RRefPtr<Diligent::ITexture> text_cache_texture;
+
+    // Resource binding
+    renderer::Binding_Base base_binding;
+    renderer::Binding_Color color_binding;
+    renderer::Binding_BitmapBlt blt_binding;
+    renderer::Binding_BitmapClipBlt clipblt_binding;
+    renderer::Binding_BitmapFilter hue_binding;
   };
 
   CanvasImpl(ExecutionContext* execution_context,

@@ -962,6 +962,14 @@ void CanvasImpl::GPUCreateTextureInternal(SDL_Surface* texture_data) {
       *render_device, sizeof(world_matrix), "bitmap.binding.world",
       &gpu_.world_buffer, Diligent::USAGE_IMMUTABLE,
       Diligent::BIND_UNIFORM_BUFFER, Diligent::CPU_ACCESS_WRITE, &world_matrix);
+
+  // Binding table
+  auto& loader = context()->render.pipeline_loader;
+  gpu_.base_binding = loader->base.CreateBinding();
+  gpu_.color_binding = loader->color.CreateBinding();
+  gpu_.blt_binding = loader->bitmapblt.CreateBinding();
+  gpu_.clipblt_binding = loader->bitmapclipblt.CreateBinding();
+  gpu_.hue_binding = loader->bitmaphue.CreateBinding();
 }
 
 void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
@@ -992,14 +1000,13 @@ void CanvasImpl::GPUBlendBlitTextureInternal(const base::Rect& dst_region,
   scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->base_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->base_binding().u_texture->Set(src_texture->shader_resource_view);
+  gpu_.base_binding.u_transform->Set(gpu_.world_buffer);
+  gpu_.base_binding.u_texture->Set(src_texture->shader_resource_view);
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->base_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      *gpu_.base_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
@@ -1085,17 +1092,15 @@ void CanvasImpl::GPUApproximateBlitTextureInternal(const base::Rect& dst_region,
   scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->blt_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->blt_binding().u_texture->Set(src_texture->shader_resource_view);
-  scheduler->blt_binding().u_dst_texture->Set(
-      intermediate_cache->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.blt_binding.u_transform->Set(gpu_.world_buffer);
+  gpu_.blt_binding.u_texture->Set(src_texture->shader_resource_view);
+  gpu_.blt_binding.u_dst_texture->Set(intermediate_cache->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->blt_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      *gpu_.blt_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
@@ -1177,19 +1182,16 @@ void CanvasImpl::GPUClipTextureInternal(const base::Rect& dst_region,
   scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->clip_blt_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->clip_blt_binding().u_texture->Set(
-      src_texture->shader_resource_view);
-  scheduler->clip_blt_binding().u_clip_texture->Set(
-      clip_texture->shader_resource_view);
-  scheduler->clip_blt_binding().u_dst_texture->Set(
-      intermediate_cache->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.clipblt_binding.u_transform->Set(gpu_.world_buffer);
+  gpu_.clipblt_binding.u_texture->Set(src_texture->shader_resource_view);
+  gpu_.clipblt_binding.u_clip_texture->Set(clip_texture->shader_resource_view);
+  gpu_.clipblt_binding.u_dst_texture->Set(intermediate_cache->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->clip_blt_binding(),
+      *gpu_.clipblt_binding,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
@@ -1291,13 +1293,12 @@ void CanvasImpl::GPUCanvasGradientFillRectInternal(const base::Rect& region,
   scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->color_binding().u_transform->Set(gpu_.world_buffer);
+  gpu_.color_binding.u_transform->Set(gpu_.world_buffer);
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->color_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      *gpu_.color_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
@@ -1434,19 +1435,16 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->blt_binding().u_transform->Set(gpu_.world_buffer);
-  scheduler->blt_binding().u_texture->Set(
-      gpu_.text_cache_texture->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
-  scheduler->blt_binding().u_dst_texture->Set(
-      intermediate_cache->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.blt_binding.u_transform->Set(gpu_.world_buffer);
+  gpu_.blt_binding.u_texture->Set(gpu_.text_cache_texture->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.blt_binding.u_dst_texture->Set(intermediate_cache->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->blt_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      *gpu_.blt_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();
@@ -1499,15 +1497,13 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   scheduler->SetupRenderTarget(gpu_.render_target_view, nullptr, false);
 
   // Setup uniform params
-  scheduler->hue_binding().u_texture->Set(
-      intermediate_effect_layer->GetDefaultView(
-          Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
+  gpu_.hue_binding.u_texture->Set(intermediate_effect_layer->GetDefaultView(
+      Diligent::TEXTURE_VIEW_SHADER_RESOURCE));
 
   // Apply pipeline state
   render_context->SetPipelineState(pipeline);
   render_context->CommitShaderResources(
-      *scheduler->hue_binding(),
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+      *gpu_.hue_binding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply vertex index
   Diligent::IBuffer* const vertex_buffer = *scheduler->quad_batch();

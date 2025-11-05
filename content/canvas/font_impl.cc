@@ -16,7 +16,23 @@ constexpr float kFontRealScale = 0.9f;
 namespace {
 
 void RenderShadowSurface(SDL_Surface*& in, const SDL_Color& color) {
-  // TODO:
+  auto* dest = SDL_CreateSurface(in->w, in->h, in->format);
+
+  SDL_Rect dest_rect{1, 1, 0, 0};
+  SDL_SetSurfaceBlendMode(dest, SDL_BLENDMODE_NONE);
+  SDL_BlitSurface(in, nullptr, dest, &dest_rect);
+
+  auto* pixels = static_cast<uint32_t*>(dest->pixels);
+  auto pitch = dest->pitch / 4;
+  for (int32_t y = 0; y < dest->h; ++y)
+    for (int32_t x = 0; x < dest->w; ++x)
+      pixels[x + y * pitch] &= 0xFF000000;
+
+  SDL_SetSurfaceBlendMode(dest, SDL_BLENDMODE_BLEND);
+  SDL_BlitSurface(in, nullptr, dest, nullptr);
+
+  SDL_DestroySurface(in);
+  in = dest;
 }
 
 TTF_Font* ReadFontFromMemory(
@@ -246,9 +262,6 @@ SDL_Surface* FontImpl::RenderText(const std::string& text,
   if (!text_surface)
     return nullptr;
 
-  if (shadow_)
-    RenderShadowSurface(text_surface, font_color);
-
   if (outline_) {
     // Outline shape render
     SDL_Surface* outline_surface = nullptr;
@@ -280,6 +293,10 @@ SDL_Surface* FontImpl::RenderText(const std::string& text,
   }
 
   EnsureFontSurfaceFormatInternal(text_surface);
+
+  if (shadow_)
+    RenderShadowSurface(text_surface, font_color);
+
   return text_surface;
 }
 

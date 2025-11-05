@@ -13,11 +13,6 @@ CanvasScheduler::CanvasScheduler(renderer::RenderDevice* render_device,
                                  renderer::PipelineSet* loader)
     : device_(render_device),
       context_(primary_context),
-      generic_base_binding_(loader->base.CreateBinding()),
-      generic_color_binding_(loader->color.CreateBinding()),
-      generic_blt_binding_(loader->bitmapblt.CreateBinding()),
-      generic_clip_blt_binding_(loader->bitmapclipblt.CreateBinding()),
-      generic_hue_binding_(loader->bitmaphue.CreateBinding()),
       common_quad_batch_(renderer::QuadBatch::Make(**device_)) {
   // Create initial blt cache
   renderer::CreateTexture2D(**device_, &generic_blt_texture_,

@@ -71,7 +71,7 @@ class ContentProfile {
   bool fullscreen = false;
   bool allow_skip_frame = true;
   bool background_running = true;
-  bool smooth_scale_present = true;
+  bool smooth_scale_present = false;
 
   // Platform
   bool debugging_console = false;

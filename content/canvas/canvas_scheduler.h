@@ -41,14 +41,8 @@ class CanvasScheduler {
   renderer::RenderDevice* GetRenderDevice();
   Diligent::IDeviceContext* GetDiscreteRenderContext();
 
+  // Generic quadangle buffer
   renderer::QuadBatch& quad_batch() { return common_quad_batch_; }
-  renderer::Binding_Base& base_binding() { return generic_base_binding_; }
-  renderer::Binding_Color& color_binding() { return generic_color_binding_; }
-  renderer::Binding_BitmapBlt& blt_binding() { return generic_blt_binding_; }
-  renderer::Binding_BitmapClipBlt& clip_blt_binding() {
-    return generic_clip_blt_binding_;
-  }
-  renderer::Binding_BitmapFilter& hue_binding() { return generic_hue_binding_; }
 
  private:
   friend class CanvasImpl;
@@ -57,12 +51,6 @@ class CanvasScheduler {
 
   renderer::RenderDevice* device_;
   Diligent::IDeviceContext* context_;
-
-  renderer::Binding_Base generic_base_binding_;
-  renderer::Binding_Color generic_color_binding_;
-  renderer::Binding_BitmapBlt generic_blt_binding_;
-  renderer::Binding_BitmapClipBlt generic_clip_blt_binding_;
-  renderer::Binding_BitmapFilter generic_hue_binding_;
 
   renderer::QuadBatch common_quad_batch_;
   RRefPtr<Diligent::ITexture> generic_blt_texture_;
