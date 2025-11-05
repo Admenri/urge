@@ -21,8 +21,7 @@
 
 extern "C" {
 void Init_zlib(void);
-void Init_fiddle(void);
-void Init_ruby_prof(void);
+void Init_ffi_c(void);
 void rb_call_builtin_inits();
 }
 
@@ -181,11 +180,8 @@ void BindingEngineMri::PreEarlyInitialization(
 
   // C extensions
   Init_zlib();
-#if !defined(OS_ANDROID) && !defined(OS_EMSCRIPTEN)
-  Init_ruby_prof();
 #if defined(OS_WIN)
-  Init_fiddle();
-#endif
+  Init_ffi_c();
 #endif
 
   // Autogen binding patching

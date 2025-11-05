@@ -69,39 +69,11 @@ endif()
 # Mri Gem Ext
 #--------------------------------------------------------------------------------
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  set(GEM_EXT_RUBYPROF_SRC
-    "third_party/ruby_prof/rp_allocation.c"
-    "third_party/ruby_prof/rp_call_tree.c"
-    "third_party/ruby_prof/rp_call_trees.c"
-    "third_party/ruby_prof/rp_measure_allocations.c"
-    "third_party/ruby_prof/rp_measure_memory.c"
-    "third_party/ruby_prof/rp_measure_process_time.c"
-    "third_party/ruby_prof/rp_measure_wall_time.c"
-    "third_party/ruby_prof/rp_measurement.c"
-    "third_party/ruby_prof/rp_method.c"
-    "third_party/ruby_prof/rp_profile.c"
-    "third_party/ruby_prof/rp_stack.c"
-    "third_party/ruby_prof/rp_thread.c"
-    "third_party/ruby_prof/ruby_prof.c"
-  )
-endif ()
-
 if (MRI_ENABLE_LIBFFI)
-  include_directories(third_party/fiddle)
-  set(GEM_EXT_FIDDLE_SRC
-    "third_party/fiddle/closure.c"
-    "third_party/fiddle/conversions.c"
-    "third_party/fiddle/fiddle.c"
-    "third_party/fiddle/function.c"
-    "third_party/fiddle/handle.c"
-    "third_party/fiddle/memory_view.c"
-    "third_party/fiddle/pinned.c"
-    "third_party/fiddle/pointer.c"
-  )
+  add_subdirectory(third_party/rbffi)
 endif ()
 
-set(GEM_EXT_ZLIB_SRC "third_party/zlib/zlib.c")
+add_subdirectory(third_party/zlib)
 
 #--------------------------------------------------------------------------------
 # Autogen MRI binding source collection
@@ -140,10 +112,6 @@ set(BINDING_MRI_SRC
 
   ${GENERATED_SOURCES}
   ${GENERATED_HEADERS}
-
-  ${GEM_EXT_RUBYPROF_SRC}
-  ${GEM_EXT_FIDDLE_SRC}
-  ${GEM_EXT_ZLIB_SRC}
 )
 
 add_library(binding_mri STATIC ${BINDING_MRI_SRC})
@@ -153,15 +121,11 @@ target_link_libraries(binding_mri
   engine_content
   engine_renderer
   mri_ruby
-  zlibstatic
+  rb_zlib
 )
 
 if (MRI_ENABLE_LIBFFI)
-  target_link_libraries(binding_mri PUBLIC ffi)
-  # fiddle definitions for linux
-  if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_compile_definitions(binding_mri PRIVATE HAVE_SYS_MMAN_H HAVE_DLFCN_H)
-  endif ()
+  target_link_libraries(binding_mri PUBLIC rb_ffi)
 endif ()
 
 if (ENABLE_ADMENRI_BUILD_VERSION)
