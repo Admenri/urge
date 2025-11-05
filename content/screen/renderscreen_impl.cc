@@ -564,9 +564,7 @@ void RenderScreenImpl::GPUUpdateScreenWorldInternal() {
 }
 
 void RenderScreenImpl::GPUResetScreenBufferInternal() {
-  constexpr Diligent::BIND_FLAGS bind_flags =
-      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE;
-
+  // Reset original buffer
   gpu_.screen_buffer.Release();
   gpu_.screen_depth_stencil.Release();
   gpu_.frozen_buffer.Release();
@@ -575,15 +573,19 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
   gpu_.transition_depth_stencil.Release();
 
   // Color attachment
-  renderer::CreateTexture2D(**context()->render_device, &gpu_.screen_buffer,
-                            "screen.main.buffer", context()->resolution,
-                            Diligent::USAGE_DEFAULT, bind_flags);
-  renderer::CreateTexture2D(**context()->render_device, &gpu_.frozen_buffer,
-                            "screen.frozen.buffer", context()->resolution,
-                            Diligent::USAGE_DEFAULT, bind_flags);
-  renderer::CreateTexture2D(**context()->render_device, &gpu_.transition_buffer,
-                            "screen.transition.buffer", context()->resolution,
-                            Diligent::USAGE_DEFAULT, bind_flags);
+  renderer::CreateTexture2D(
+      **context()->render_device, &gpu_.screen_buffer, "screen.main.buffer",
+      context()->resolution, Diligent::USAGE_DEFAULT,
+      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+  renderer::CreateTexture2D(
+      **context()->render_device, &gpu_.frozen_buffer, "screen.frozen.buffer",
+      context()->resolution, Diligent::USAGE_DEFAULT,
+      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
+  renderer::CreateTexture2D(
+      **context()->render_device, &gpu_.transition_buffer,
+      "screen.transition.buffer", context()->resolution,
+      Diligent::USAGE_DEFAULT,
+      Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
 
   // Depth stencil
   renderer::CreateTexture2D(
@@ -602,6 +604,7 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
       Diligent::USAGE_DEFAULT, Diligent::BIND_DEPTH_STENCIL,
       Diligent::CPU_ACCESS_NONE, Diligent::TEX_FORMAT_D24_UNORM_S8_UINT);
 
+  // Root transform
   renderer::WorldTransform world_transform;
   renderer::MakeProjectionMatrix(world_transform.projection,
                                  context()->resolution.Recast<float>());
@@ -614,37 +617,29 @@ void RenderScreenImpl::GPUResetScreenBufferInternal() {
       Diligent::USAGE_IMMUTABLE, Diligent::BIND_UNIFORM_BUFFER,
       Diligent::CPU_ACCESS_NONE, &world_transform);
 
+  // Offset transform
   GPUUpdateScreenWorldInternal();
 }
 
 void RenderScreenImpl::GPUPresentScreenBufferInternal(
     Diligent::IDeviceContext* render_context,
     Diligent::ImGuiDiligentRenderer* gui_renderer) {
-  // Initial device attribute
+  // Initial swapchain attribute
   Diligent::ISwapChain* swapchain = context()->render_device->GetSwapChain();
-
-  // Setup render params
   auto* render_target_view = swapchain->GetCurrentBackBufferRTV();
-  auto* depth_stencil_view = swapchain->GetDepthBufferDSV();
-  base::Vec2i screen_size(swapchain->GetDesc().Width,
-                          swapchain->GetDesc().Height);
 
   // Prepare for rendering
-  {
-    float clear_color[] = {0, 0, 0, 1};
-    render_context->SetRenderTargets(
-        1, &render_target_view, depth_stencil_view,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    render_context->ClearDepthStencil(
-        depth_stencil_view, Diligent::CLEAR_DEPTH_FLAG, 1.0f, 0,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    render_context->ClearRenderTarget(
-        render_target_view, clear_color,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  }
+  float clear_color[] = {0, 0, 0, 1};
+  render_context->SetRenderTargets(
+      1, &render_target_view, nullptr,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  render_context->ClearRenderTarget(
+      render_target_view, clear_color,
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
   // Apply present scissor
-  Diligent::Rect present_scissor(0, 0, screen_size.x, screen_size.y);
+  Diligent::Rect present_scissor(0, 0, swapchain->GetDesc().Width,
+                                 swapchain->GetDesc().Height);
   render_context->SetScissorRects(1, &present_scissor, UINT32_MAX, UINT32_MAX);
 
   // Render GUI and present
@@ -677,7 +672,7 @@ void RenderScreenImpl::GPUFrameBeginRenderPassInternal(
       1, &render_target_view, depth_stencil_view,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-  const float clear_color[] = {0, 0, 0, 1.0f};
+  const float clear_color[] = {0.0f, 0.0f, 0.0f, 1.0f};
   render_context->ClearRenderTarget(
       render_target_view, clear_color,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -743,13 +738,10 @@ void RenderScreenImpl::GPURenderAlphaTransitionFrameInternal(
   render_context->SetRenderTargets(
       1, &render_target_view, nullptr,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-  const float clear_color[] = {0, 0, 0, 1};
+  const float clear_color[] = {0.0f, 0.0f, 0.0f, 1.0f};
   render_context->ClearRenderTarget(
       render_target_view, clear_color,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  base::Vec2i resolution(gpu_.screen_buffer->GetDesc().Width,
-                         gpu_.screen_buffer->GetDesc().Height);
 
   // Derive pipeline sets
   auto* pipeline = context()->render.pipeline_states->alpha_transition.RawPtr();
@@ -808,9 +800,6 @@ void RenderScreenImpl::GPURenderVagueTransitionFrameInternal(
   render_context->ClearRenderTarget(
       render_target_view, clear_color,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-  base::Vec2i resolution(gpu_.screen_buffer->GetDesc().Width,
-                         gpu_.screen_buffer->GetDesc().Height);
 
   // Derive pipeline sets
   auto* pipeline = context()->render.pipeline_states->vague_transition.RawPtr();

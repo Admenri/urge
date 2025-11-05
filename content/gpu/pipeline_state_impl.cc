@@ -9,6 +9,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// PipelineStateImpl Implement
+
 PipelineStateImpl::PipelineStateImpl(ExecutionContext* context,
                                      Diligent::IPipelineState* object)
     : EngineObject(context),

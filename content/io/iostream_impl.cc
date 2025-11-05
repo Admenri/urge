@@ -105,7 +105,7 @@ uint64_t IOStream::CopyMemoryToPtr(ExecutionContext* execution_context,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Surface Implement
+// IOStreamImpl Implement
 
 IOStreamImpl::IOStreamImpl(ExecutionContext* execution_context,
                            SDL_IOStream* stream)

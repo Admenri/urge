@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// QueryImpl Implement
+
 QueryImpl::QueryImpl(ExecutionContext* context, Diligent::IQuery* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),

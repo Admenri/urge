@@ -10,6 +10,7 @@
 
 namespace content {
 
+// static
 scoped_refptr<AudioStream> AudioStream::New(ExecutionContext* execution_context,
                                             const std::string& filename,
                                             ExceptionState& exception_state) {
@@ -29,6 +30,9 @@ scoped_refptr<AudioStream> AudioStream::New(ExecutionContext* execution_context,
   return base::MakeRefCounted<AudioStreamImpl>(execution_context,
                                                std::move(sound_handle));
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// AudioStreamImpl Implement
 
 AudioStreamImpl::AudioStreamImpl(ExecutionContext* execution_context,
                                  std::unique_ptr<ma_sound> handle)

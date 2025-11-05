@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// SamplerImpl Implement
+
 SamplerImpl::SamplerImpl(ExecutionContext* context, Diligent::ISampler* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),

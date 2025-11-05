@@ -11,6 +11,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// PipelineSignatureImpl Implement
+
 PipelineSignatureImpl::PipelineSignatureImpl(
     ExecutionContext* context,
     Diligent::IPipelineResourceSignature* object)

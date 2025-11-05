@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// CommandQueueImpl Implement
+
 CommandQueueImpl::CommandQueueImpl(ExecutionContext* context,
                                    Diligent::ICommandQueue* object)
     : EngineObject(context),

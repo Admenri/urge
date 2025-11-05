@@ -9,6 +9,7 @@
 
 namespace content {
 
+// static
 std::vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
@@ -22,6 +23,7 @@ std::vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
   return filtered_events;
 }
 
+// static
 bool TextInputEvent::Enable(ExecutionContext* execution_context,
                             scoped_refptr<Rect> region,
                             ExceptionState& exception_state) {
@@ -36,6 +38,7 @@ bool TextInputEvent::Enable(ExecutionContext* execution_context,
   return SDL_StartTextInput(host_window);
 }
 
+// static
 bool TextInputEvent::IsActivated(ExecutionContext* execution_context,
                                  ExceptionState& exception_state) {
   auto base_window = execution_context->event_controller->GetHostWidget();
@@ -44,6 +47,7 @@ bool TextInputEvent::IsActivated(ExecutionContext* execution_context,
   return SDL_TextInputActive(host_window);
 }
 
+// static
 bool TextInputEvent::Disable(ExecutionContext* execution_context,
                              ExceptionState& exception_state) {
   auto base_window = execution_context->event_controller->GetHostWidget();
@@ -53,6 +57,9 @@ bool TextInputEvent::Disable(ExecutionContext* execution_context,
   SDL_SetTextInputArea(host_window, nullptr, 0);
   return result;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// TextInputEventImpl Implement
 
 TextInputEventImpl::TextInputEventImpl(
     EventController::TextInputEventData event)

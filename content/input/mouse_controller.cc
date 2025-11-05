@@ -11,6 +11,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// MouseImpl Implement
+
 MouseImpl::MouseImpl(ExecutionContext* execution_context)
     : EngineObject(execution_context), window_(execution_context->window) {
   // Initial mouse state

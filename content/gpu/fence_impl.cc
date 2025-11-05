@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// FenceImpl Implement
+
 FenceImpl::FenceImpl(ExecutionContext* context, Diligent::IFence* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),

@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// CommandListImpl Implement
+
 CommandListImpl::CommandListImpl(ExecutionContext* context,
                                  Diligent::ICommandList* object)
     : EngineObject(context),

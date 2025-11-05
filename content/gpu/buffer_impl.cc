@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// BufferViewImpl Implement
+
 BufferViewImpl::BufferViewImpl(ExecutionContext* context,
                                Diligent::IBufferView* object)
     : EngineObject(context),
@@ -54,6 +57,9 @@ scoped_refptr<GPUBuffer> BufferViewImpl::GetBuffer(
 void BufferViewImpl::OnObjectDisposed() {
   object_.Release();
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// BufferImpl Implement
 
 BufferImpl::BufferImpl(ExecutionContext* context, Diligent::IBuffer* object)
     : EngineObject(context),

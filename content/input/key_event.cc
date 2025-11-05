@@ -8,6 +8,7 @@
 
 namespace content {
 
+// static
 std::vector<scoped_refptr<KeyEvent>> KeyEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
@@ -20,6 +21,9 @@ std::vector<scoped_refptr<KeyEvent>> KeyEvent::Update(
 
   return filtered_events;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// KeyEventImpl Implement
 
 KeyEventImpl::KeyEventImpl(EventController::KeyEventData event)
     : event_(event) {}

@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// ResourceMappingImpl Implement
+
 ResourceMappingImpl::ResourceMappingImpl(ExecutionContext* context,
                                          Diligent::IResourceMapping* object)
     : EngineObject(context),

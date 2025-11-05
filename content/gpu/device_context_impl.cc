@@ -18,6 +18,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// DeviceContextImpl Implement
+
 DeviceContextImpl::DeviceContextImpl(ExecutionContext* context,
                                      Diligent::IDeviceContext* object)
     : EngineObject(context),

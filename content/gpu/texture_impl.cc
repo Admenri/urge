@@ -9,6 +9,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// TextureViewImpl Implement
+
 TextureViewImpl::TextureViewImpl(ExecutionContext* context,
                                  Diligent::ITextureView* object)
     : EngineObject(context),
@@ -81,6 +84,9 @@ URGE_DEFINE_OVERRIDE_ATTRIBUTE(
 void TextureViewImpl::OnObjectDisposed() {
   object_.Release();
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// TextureImpl Implement
 
 TextureImpl::TextureImpl(ExecutionContext* context, Diligent::ITexture* object)
     : EngineObject(context),

@@ -8,6 +8,7 @@
 
 namespace content {
 
+// static
 std::vector<scoped_refptr<MouseEvent>> MouseEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
@@ -20,6 +21,9 @@ std::vector<scoped_refptr<MouseEvent>> MouseEvent::Update(
 
   return filtered_events;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// MouseEventImpl Implement
 
 MouseEventImpl::MouseEventImpl(EventController::MouseEventData event)
     : event_(event) {}

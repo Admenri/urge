@@ -8,6 +8,7 @@
 
 namespace content {
 
+// static
 std::vector<scoped_refptr<TouchEvent>> TouchEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
@@ -20,6 +21,9 @@ std::vector<scoped_refptr<TouchEvent>> TouchEvent::Update(
 
   return filtered_events;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// TouchEventImpl Implement
 
 TouchEventImpl::TouchEventImpl(EventController::TouchEventData event)
     : event_(event) {}

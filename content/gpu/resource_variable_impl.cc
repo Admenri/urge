@@ -8,6 +8,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// ResourceVariableImpl Implement
+
 ResourceVariableImpl::ResourceVariableImpl(
     ExecutionContext* context,
     Diligent::IShaderResourceVariable* object)
@@ -26,11 +29,10 @@ void ResourceVariableImpl::Set(uint64_t device_object,
                static_cast<Diligent::SET_SHADER_RESOURCE_FLAGS>(flags));
 }
 
-void ResourceVariableImpl::SetArray(
-    const std::vector<uint64_t>& device_objects,
-    uint32_t first_element,
-    GPU::SetShaderResourceFlags flags,
-    ExceptionState& exception_state) {
+void ResourceVariableImpl::SetArray(const std::vector<uint64_t>& device_objects,
+                                    uint32_t first_element,
+                                    GPU::SetShaderResourceFlags flags,
+                                    ExceptionState& exception_state) {
   DISPOSE_CHECK;
 
   std::vector<Diligent::IDeviceObject*> objects;

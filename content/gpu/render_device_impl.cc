@@ -20,6 +20,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// RenderDeviceImpl Implement
+
 RenderDeviceImpl::RenderDeviceImpl(ExecutionContext* context,
                                    Diligent::IRenderDevice* object)
     : EngineObject(context),

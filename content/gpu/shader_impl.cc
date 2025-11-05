@@ -30,6 +30,9 @@ scoped_refptr<GPUShaderCodeVariableDesc> GetVariableDesc(
 
 }  // namespace
 
+///////////////////////////////////////////////////////////////////////////////
+// ShaderImpl Implement
+
 ShaderImpl::ShaderImpl(ExecutionContext* context, Diligent::IShader* object)
     : EngineObject(context),
       Disposable(context->disposable_parent),

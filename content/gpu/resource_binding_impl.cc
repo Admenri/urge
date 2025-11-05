@@ -11,6 +11,9 @@
 
 namespace content {
 
+///////////////////////////////////////////////////////////////////////////////
+// ResourceBindingImpl Implement
+
 ResourceBindingImpl::ResourceBindingImpl(
     ExecutionContext* context,
     Diligent::IShaderResourceBinding* object)
