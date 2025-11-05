@@ -545,5 +545,10 @@ rbffi_Pointer_Init(VALUE moduleFFI)
      * NULL pointer
      */
     rb_define_const(rbffi_PointerClass, "NULL", rbffi_NullPointerSingleton);
+
+    /*
+     * Pointer size in bytes
+     */
+    rb_define_const(rbffi_PointerClass, "SIZE", UINT2NUM(sizeof(void*)));
 }
 

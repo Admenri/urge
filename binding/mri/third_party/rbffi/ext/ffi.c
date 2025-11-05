@@ -28,6 +28,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ffi_wrapper.rb.bin"
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <ruby.h>
@@ -94,4 +96,6 @@ Init_ffi_c(void)
     rbffi_Variadic_Init(moduleFFI);
     rbffi_Types_Init(moduleFFI);
     rbffi_MappedType_Init(moduleFFI);
+
+    rb_eval_string(ffi_wrapper);
 }
