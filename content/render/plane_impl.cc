@@ -346,7 +346,7 @@ void PlaneImpl::GPUOnViewportRenderingInternal(
 
   // Render device etc
   auto* pipeline =
-      context()->render.pipeline_states->viewport[blend_type_].RawPtr();
+      context()->render.pipeline_states->plane[blend_type_].RawPtr();
 
   // Setup uniform params
   gpu_.shader_binding.u_transform->Set(world_binding);

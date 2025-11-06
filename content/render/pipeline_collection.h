@@ -34,7 +34,7 @@ struct PipelineCollection {
     PipelineObject bitmaphue;
   } bitmap;
 
-  std::array<PipelineObject, BLEND_TYPE_NUMS> viewport;
+  std::array<PipelineObject, BLEND_TYPE_NUMS> plane;
   std::array<PipelineObject, BLEND_TYPE_NUMS> sprite;
 
   PipelineObject viewport_flat;

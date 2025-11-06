@@ -120,14 +120,20 @@ scoped_refptr<Bitmap> Bitmap::FromStream(ExecutionContext* execution_context,
 scoped_refptr<Bitmap> Bitmap::Copy(ExecutionContext* execution_context,
                                    scoped_refptr<Bitmap> other,
                                    ExceptionState& exception_state) {
-  scoped_refptr<Bitmap> duplicate_bitmap =
-      Bitmap::New(execution_context, other->Width(exception_state),
-                  other->Height(exception_state), exception_state);
+  auto other_obj = CanvasImpl::FromBitmap(other);
+  if (!Disposable::IsValid(other_obj.get())) {
+    exception_state.ThrowError(ExceptionCode::CONTENT_ERROR,
+                               "invalid source bitmap");
+    return nullptr;
+  }
+
+  auto duplicate_bitmap = CanvasImpl::Create(
+      execution_context, (**other_obj)->size, exception_state);
   if (!duplicate_bitmap)
     return nullptr;
 
-  duplicate_bitmap->Blt(0, 0, other, other->GetRect(exception_state), 255, 0,
-                        exception_state);
+  duplicate_bitmap->Blt(0, 0, other_obj, other_obj->GetRect(exception_state),
+                        255, BLEND_TYPE_NO_BLEND, exception_state);
 
   return duplicate_bitmap;
 }
@@ -931,8 +937,7 @@ void CanvasImpl::GPUCreateTextureInternal(SDL_Surface* texture_data) {
         Diligent::BIND_RENDER_TARGET | Diligent::BIND_SHADER_RESOURCE);
   }
 
-  // Bitmap fixed size
-  DCHECK(gpu_.data.RawPtr());
+  // Bitmap size
   gpu_.size =
       base::Vec2i(gpu_.data->GetDesc().Width, gpu_.data->GetDesc().Height);
 
@@ -1382,8 +1387,6 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   // Copy dst region to intermediate texture
   auto* intermediate_cache =
       scheduler->RequireBltCacheTexture(compose_position.Size());
-  const base::Vec2 intermediate_size(intermediate_cache->GetDesc().Width,
-                                     intermediate_cache->GetDesc().Height);
 
   // Reset render targets
   scheduler->SetupRenderTarget(nullptr, nullptr, false);
@@ -1420,8 +1423,9 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   const float norm_opacity = static_cast<float>(opacity) / 255.0f;
 
   // Set dst texture uv
-  const base::Vec2 dst_uv(compose_position.width / intermediate_size.x,
-                          compose_position.height / intermediate_size.y);
+  const base::Vec2 dst_uv(
+      compose_position.width / intermediate_cache->GetDesc().Width,
+      compose_position.height / intermediate_cache->GetDesc().Height);
   transient_quad.vertices[0].color = base::Vec4(0, 0, 0, norm_opacity);
   transient_quad.vertices[1].color = base::Vec4(dst_uv.x, 0, 0, norm_opacity);
   transient_quad.vertices[2].color =
@@ -1476,10 +1480,16 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   // Copy current texture to stage intermediate texture
   scheduler->SetupRenderTarget(nullptr, nullptr, false);
 
-  Diligent::CopyTextureAttribs copy_texture_attribs(
-      gpu_.data, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-      intermediate_effect_layer,
-      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+  Diligent::CopyTextureAttribs copy_texture_attribs;
+  copy_texture_attribs.pSrcTexture = gpu_.data;
+  copy_texture_attribs.pSrcBox = nullptr;
+  copy_texture_attribs.SrcTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+  copy_texture_attribs.pDstTexture = intermediate_effect_layer;
+  copy_texture_attribs.DstX = 0;
+  copy_texture_attribs.DstY = 0;
+  copy_texture_attribs.DstTextureTransitionMode =
+      Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
   render_context->CopyTexture(copy_texture_attribs);
 
   // Make transient vertices
@@ -1487,7 +1497,7 @@ void CanvasImpl::GPUCanvasHueChange(int32_t hue) {
   renderer::Quad::SetPositionRect(&transient_quad,
                                   base::RectF(-1.0f, 1.0f, 2.0f, -2.0f));
   renderer::Quad::SetTexCoordRect(
-      &transient_quad, base::RectF(gpu_.size),
+      &transient_quad, gpu_.size.Recast<float>(),
       base::Vec2(intermediate_effect_layer->GetDesc().Width,
                  intermediate_effect_layer->GetDesc().Height));
   renderer::Quad::SetColor(&transient_quad, base::Vec4(hue / 360.0f));
