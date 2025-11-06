@@ -1423,9 +1423,10 @@ void CanvasImpl::GPUCanvasDrawTextSurfaceInternal(const base::Rect& region,
   const float norm_opacity = static_cast<float>(opacity) / 255.0f;
 
   // Set dst texture uv
-  const base::Vec2 dst_uv(
-      compose_position.width / intermediate_cache->GetDesc().Width,
-      compose_position.height / intermediate_cache->GetDesc().Height);
+  const base::Vec2 dst_uv(static_cast<float>(compose_position.width) /
+                              intermediate_cache->GetDesc().Width,
+                          static_cast<float>(compose_position.height) /
+                              intermediate_cache->GetDesc().Height);
   transient_quad.vertices[0].color = base::Vec4(0, 0, 0, norm_opacity);
   transient_quad.vertices[1].color = base::Vec4(dst_uv.x, 0, 0, norm_opacity);
   transient_quad.vertices[2].color =
