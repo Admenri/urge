@@ -49,6 +49,8 @@ struct PipelineCollection {
   PipelineObject yuv;
 
   PipelineObject window;
+  PipelineObject window_with_stencil;
+  PipelineObject color_write_stencil;
   struct {
     PipelineObject viewport;
     PipelineObject viewport_alpha;

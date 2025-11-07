@@ -72,6 +72,13 @@ Diligent::DepthStencilStateDesc GetDefaultDepthStencilState(bool enable_depth) {
   return depth_stencil_state;
 }
 
+Diligent::RasterizerStateDesc Get2DRasterizerState() {
+  Diligent::RasterizerStateDesc rasterizer_state;
+  rasterizer_state.CullMode = Diligent::CULL_MODE_NONE;
+  rasterizer_state.FrontCounterClockwise = Diligent::True;
+  return rasterizer_state;
+}
+
 }  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -90,9 +97,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(false);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::False;  // No scissor test
 
     // Base (blend + no depth)
@@ -141,9 +146,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(true);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
 
     loader->viewport.BuildPipeline(
@@ -162,9 +165,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(true);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
 
     loader->sprite.BuildPipeline(&sprite[i], blend_state, rasterizer_state,
@@ -182,9 +183,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(false);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::False;  // No scissor test
 
     // Base with blend
@@ -203,9 +202,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(true);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::False;  // No scissor test
 
     loader->color.BuildPipeline(&brightness, blend_state, rasterizer_state,
@@ -223,9 +220,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(true);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
 
     loader->tilemap.BuildPipeline(&tilemap, blend_state, rasterizer_state,
@@ -246,9 +241,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(false);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::False;  // With scissor test
 
     loader->alphatrans.BuildPipeline(
@@ -269,9 +262,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(false);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::False;  // With scissor test
 
     loader->yuv.BuildPipeline(&yuv, blend_state, rasterizer_state,
@@ -289,9 +280,7 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(true);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
 
     // Base with blend
@@ -299,9 +288,56 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
                                depth_stencil_state, primitive_topology,
                                {target_format}, depth_stencil_format,
                                default_sample);
+
+    // Enable stencil (Read-only)
+    depth_stencil_state.StencilEnable = Diligent::True;
+    depth_stencil_state.StencilWriteMask = 0x00;
+    depth_stencil_state.StencilReadMask = 0xFF;
+
+    // Pass stencil test if ref value
+    depth_stencil_state.FrontFace.StencilFunc = Diligent::COMPARISON_FUNC_EQUAL;
+    depth_stencil_state.BackFace = depth_stencil_state.FrontFace;
+
+    // Stencil with blend
+    loader->base.BuildPipeline(&window_with_stencil, blend_state,
+                               rasterizer_state, depth_stencil_state,
+                               primitive_topology, {target_format},
+                               depth_stencil_format, default_sample);
   }
 
-  {  // Window (base texture render) - with scissor - no depth
+  {  // Color stencil write - no scissor - with depth
+     // Enable depth test
+    Diligent::DepthStencilStateDesc depth_stencil_state =
+        GetDefaultDepthStencilState(true);
+
+    // Enable stencil (Read-only)
+    depth_stencil_state.StencilEnable = Diligent::True;
+    depth_stencil_state.StencilWriteMask = 0xFF;
+    depth_stencil_state.StencilReadMask = 0x00;
+
+    // Always write stencil ref value
+    depth_stencil_state.FrontFace.StencilFailOp = Diligent::STENCIL_OP_REPLACE;
+    depth_stencil_state.FrontFace.StencilDepthFailOp =
+        Diligent::STENCIL_OP_REPLACE;
+    depth_stencil_state.FrontFace.StencilPassOp = Diligent::STENCIL_OP_REPLACE;
+    depth_stencil_state.BackFace = depth_stencil_state.FrontFace;
+
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
+    rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
+
+    // No color write
+    Diligent::BlendStateDesc blend_state;
+    blend_state.RenderTargets[0].BlendEnable = Diligent::True;
+    blend_state.RenderTargets[0].RenderTargetWriteMask =
+        Diligent::COLOR_MASK_NONE;
+
+    loader->color.BuildPipeline(&color_write_stencil, blend_state,
+                                rasterizer_state, depth_stencil_state,
+                                primitive_topology, {target_format},
+                                depth_stencil_format, default_sample);
+  }
+
+  {  // Window (base texture render) - no scissor - no depth
     // With blend
     Diligent::BlendStateDesc blend_state;
     blend_state.RenderTargets[0] = GetBlendState(BLEND_TYPE_NORMAL);
@@ -310,10 +346,8 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::DepthStencilStateDesc depth_stencil_state =
         GetDefaultDepthStencilState(false);
 
-    Diligent::RasterizerStateDesc rasterizer_state;
-    rasterizer_state.CullMode = Diligent::CULL_MODE_FRONT;
-    rasterizer_state.FrontCounterClockwise = Diligent::True;
-    rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
+    Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
+    rasterizer_state.ScissorEnable = Diligent::False;  // No scissor test
 
     loader->viewport.BuildPipeline(
         &window2.viewport, blend_state, rasterizer_state, depth_stencil_state,

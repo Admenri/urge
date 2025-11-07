@@ -25,10 +25,12 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
     renderer::QuadBatch controls_batch;
     std::vector<renderer::Quad> controls_cache;
 
+    renderer::Binding_Color color_binding;
     renderer::Binding_Base base_binding;
     renderer::Binding_Base content_binding;
 
     int32_t background_draw_count = 0;
+    int32_t mask_quad_offset = 0;
     int32_t controls_draw_count = 0;
     int32_t contents_quad_offset = 0;
   };
@@ -85,10 +87,10 @@ class WindowImpl : public Window, public EngineObject, public Disposable {
       Diligent::IBuffer* world_binding,
       BitmapTexture* windowskin);
   void GPURenderControlLayerInternal(Diligent::IDeviceContext* render_context,
+                                     Diligent::ITexture* depth_stencil,
                                      Diligent::IBuffer* world_binding,
                                      BitmapTexture* windowskin,
-                                     BitmapTexture* contents,
-                                     ScissorStack* scissor_stack);
+                                     BitmapTexture* contents);
 
   GPUData gpu_;
   DrawableNode background_node_;

@@ -342,9 +342,9 @@ void WindowImpl::ControlNodeHandlerInternal(
     GPUCompositeControlLayerInternal(params->context, windowskin_agent,
                                      contents_agent);
   } else if (stage == DrawableNode::RenderStage::ON_RENDERING) {
-    GPURenderControlLayerInternal(params->context, params->world_binding,
-                                  windowskin_agent, contents_agent,
-                                  params->scissors);
+    GPURenderControlLayerInternal(params->context, params->screen_depth_stencil,
+                                  params->world_binding, windowskin_agent,
+                                  contents_agent);
   }
 }
 
@@ -352,6 +352,7 @@ void WindowImpl::GPUCreateWindowInternal() {
   gpu_.background_batch = renderer::QuadBatch::Make(**context()->render_device);
   gpu_.controls_batch = renderer::QuadBatch::Make(**context()->render_device);
 
+  gpu_.color_binding = context()->render.pipeline_loader->color.CreateBinding();
   gpu_.base_binding = context()->render.pipeline_loader->base.CreateBinding();
   gpu_.content_binding =
       context()->render.pipeline_loader->base.CreateBinding();
@@ -545,7 +546,7 @@ void WindowImpl::GPUCompositeControlLayerInternal(
   // Generate quads
   const base::Vec2i draw_offset = bound_.Position();
   auto& quads = gpu_.controls_cache;
-  quads.resize(9 + 4 + 1 + 1);
+  quads.resize(9 + 4 + 1 + 1 + 1);
   int32_t quad_index = 0;
 
   if (windowskin) {
@@ -670,14 +671,22 @@ void WindowImpl::GPUCompositeControlLayerInternal(
 
     // Make sure contents quad offset
     gpu_.contents_quad_offset = quad_index;
+    quad_index++;
   }
+
+  // Window stencil mask quad (1)
+  const base::Rect stencil_mask_bound(
+      bound_.x + 8 * scale_, bound_.y + 8 * scale_, bound_.width - 16 * scale_,
+      bound_.height - 16 * scale_);
+  renderer::Quad::SetPositionRect(&quads[quad_index], stencil_mask_bound);
+  gpu_.mask_quad_offset = quad_index;
+  quad_index++;
 
   // Make sure index buffer count
   context()->render.quad_index->Allocate(quad_index);
 
   // Update vertex buffer
-  if (!quads.empty())
-    gpu_.controls_batch.QueueWrite(render_context, quads.data(), quads.size());
+  gpu_.controls_batch.QueueWrite(render_context, quads.data(), quads.size());
 }
 
 void WindowImpl::GPURenderBackgroundLayerInternal(
@@ -717,10 +726,10 @@ void WindowImpl::GPURenderBackgroundLayerInternal(
 
 void WindowImpl::GPURenderControlLayerInternal(
     Diligent::IDeviceContext* render_context,
+    Diligent::ITexture* depth_stencil,
     Diligent::IBuffer* world_binding,
     BitmapTexture* windowskin,
-    BitmapTexture* contents,
-    ScissorStack* scissor_stack) {
+    BitmapTexture* contents) {
   const auto current_viewport =
       background_node_.GetParentViewport()->bound.Position() -
       background_node_.GetParentViewport()->origin;
@@ -730,7 +739,7 @@ void WindowImpl::GPURenderControlLayerInternal(
                                      current_viewport.y + bound_.y,
                                      bound_.width, bound_.height);
 
-    if (scissor_stack->Push(clipping_region)) {
+    if (clipping_region()) {
       auto* pipeline = context()->render.pipeline_states->window.RawPtr();
 
       // Setup shader resource
@@ -758,9 +767,6 @@ void WindowImpl::GPURenderControlLayerInternal(
       draw_indexed_attribs.IndexType =
           context()->render.quad_index->GetIndexType();
       render_context->DrawIndexed(draw_indexed_attribs);
-
-      // Restore
-      scissor_stack->Pop();
     }
   }
 
@@ -770,8 +776,44 @@ void WindowImpl::GPURenderControlLayerInternal(
                                      bound_.width - 16 * scale_,
                                      bound_.height - 16 * scale_);
 
-    if (scissor_stack->Push(clipping_region)) {
-      auto* pipeline = context()->render.pipeline_states->window.RawPtr();
+    if (clipping_region()) {
+      auto* pipeline =
+          context()->render.pipeline_states->color_write_stencil.RawPtr();
+
+      // Clear stencil buffer
+      render_context->ClearDepthStencil(
+          depth_stencil->GetDefaultView(Diligent::TEXTURE_VIEW_DEPTH_STENCIL),
+          Diligent::CLEAR_STENCIL_FLAG, 0.0f, 0,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Shader resource
+      gpu_.color_binding.u_transform->Set(world_binding);
+
+      render_context->SetPipelineState(pipeline);
+      render_context->CommitShaderResources(
+          *gpu_.color_binding,
+          Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+      // Set stencil ref value
+      render_context->SetStencilRef(0xFF);
+
+      // Execute render command
+      Diligent::DrawIndexedAttribs draw_indexed_attribs;
+      draw_indexed_attribs.NumIndices = 6;
+      draw_indexed_attribs.IndexType =
+          context()->render.quad_index->GetIndexType();
+      draw_indexed_attribs.FirstIndexLocation = gpu_.mask_quad_offset * 6;
+      render_context->DrawIndexed(draw_indexed_attribs);
+    } else {
+      return;
+    }
+
+    {
+      auto* pipeline =
+          context()->render.pipeline_states->window_with_stencil.RawPtr();
+
+      // Set stencil value
+      render_context->SetStencilRef(0xFF);
 
       // Setup shader resource
       gpu_.content_binding.u_transform->Set(world_binding);
@@ -799,9 +841,6 @@ void WindowImpl::GPURenderControlLayerInternal(
           context()->render.quad_index->GetIndexType();
       draw_indexed_attribs.FirstIndexLocation = gpu_.contents_quad_offset * 6;
       render_context->DrawIndexed(draw_indexed_attribs);
-
-      // Restore
-      scissor_stack->Pop();
     }
   }
 }

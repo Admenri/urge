@@ -616,6 +616,7 @@ void ContentRunner::CreateIMGUIContextInternal() {
 void ContentRunner::DestroyIMGUIContextInternal() {
   imgui_.reset();
 
+  ImGui::DestroyPlatformWindows();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
 }

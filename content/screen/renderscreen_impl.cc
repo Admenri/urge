@@ -627,11 +627,12 @@ void RenderScreenImpl::GPUPresentScreenBufferInternal(
   // Initial swapchain attribute
   Diligent::ISwapChain* swapchain = context()->render_device->GetSwapChain();
   auto* render_target_view = swapchain->GetCurrentBackBufferRTV();
+  auto* depth_stencil_view = swapchain->GetDepthBufferDSV();
 
   // Prepare for rendering
   float clear_color[] = {0, 0, 0, 1};
   render_context->SetRenderTargets(
-      1, &render_target_view, nullptr,
+      1, &render_target_view, depth_stencil_view,
       Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
   render_context->ClearRenderTarget(
       render_target_view, clear_color,
