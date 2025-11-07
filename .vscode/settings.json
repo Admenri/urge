@@ -108,6 +108,7 @@
   "C_Cpp.formatting": "clangFormat",
   "cmake.configureArgs": [
     "-DDILIGENT_CLANG_RELEASE_COMPILE_OPTIONS=-msse3",
-    "-DDILIGENT_MSVC_RELEASE_COMPILE_OPTIONS=/GL"
+    "-DDILIGENT_MSVC_RELEASE_COMPILE_OPTIONS=/GL",
+    "-DDILIGENT_DEVELOPMENT=ON"
   ]
 }

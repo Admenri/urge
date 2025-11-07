@@ -570,6 +570,7 @@ void ContentRunner::CreateIMGUIContextInternal() {
   io.IniFilename = nullptr;
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   // Apply DPI Settings
   int32_t display_w, display_h;
@@ -578,7 +579,8 @@ void ContentRunner::CreateIMGUIContextInternal() {
   io.DisplaySize =
       ImVec2(static_cast<float>(display_w), static_cast<float>(display_h));
   io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
-  float window_scale =
+
+  const float window_scale =
       SDL_GetWindowDisplayScale(execution_context_->window->AsSDLWindow());
   ImGui::GetStyle().ScaleAllSizes(window_scale);
 
@@ -597,7 +599,7 @@ void ContentRunner::CreateIMGUIContextInternal() {
                                  io.Fonts->GetGlyphRangesChineseFull());
 
   // Setup Dear ImGui style
-  ImGui::StyleColorsDark();
+  ImGui::StyleColorsClassic();
 
   // Setup imgui platform backends
   ImGui_ImplSDL3_InitForOther(execution_context_->window->AsSDLWindow());

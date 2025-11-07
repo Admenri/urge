@@ -149,10 +149,10 @@ PipelineCollection::PipelineCollection(renderer::PipelineSet* loader) {
     Diligent::RasterizerStateDesc rasterizer_state = Get2DRasterizerState();
     rasterizer_state.ScissorEnable = Diligent::True;  // With scissor test
 
-    loader->viewport.BuildPipeline(
-        &plane[i], blend_state, rasterizer_state, depth_stencil_state,
-        primitive_topology, {target_format}, Diligent::TEX_FORMAT_UNKNOWN,
-        default_sample);
+    loader->viewport.BuildPipeline(&plane[i], blend_state, rasterizer_state,
+                                   depth_stencil_state, primitive_topology,
+                                   {target_format}, depth_stencil_format,
+                                   default_sample);
   }
 
   // Sprite - with scissor - with depth
