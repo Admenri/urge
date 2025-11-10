@@ -1,4 +1,4 @@
-// dear imgui, v1.92.5 WIP
+// dear imgui, v1.92.4
 // (drawing and font code)
 
 /*
@@ -5029,9 +5029,7 @@ const ImWchar*  ImFontAtlas::GetGlyphRangesVietnamese()
 
 void ImFontGlyphRangesBuilder::AddText(const char* text, const char* text_end)
 {
-    if (text_end == NULL)
-        text_end = text + strlen(text);
-    while (text < text_end)
+    while (text_end ? (text < text_end) : *text)
     {
         unsigned int c = 0;
         int c_len = ImTextCharFromUtf8(&c, text, text_end);
