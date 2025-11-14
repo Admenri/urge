@@ -12,8 +12,8 @@ namespace content {
 std::vector<scoped_refptr<KeyEvent>> KeyEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  std::vector<EventController::KeyEventData> raw_events;
-  execution_context->event_controller->PollKeyEvents(raw_events);
+  std::vector<EventController::KeyEventData> raw_events =
+      execution_context->event_controller->key_events();
 
   std::vector<scoped_refptr<KeyEvent>> filtered_events;
   for (auto& it : raw_events)
@@ -51,11 +51,11 @@ int32_t KeyEventImpl::GetModifier(ExceptionState& exception_state) {
 }
 
 bool KeyEventImpl::GetDown(ExceptionState& exception_state) {
-  return event_.down;
+  return event_.is_down;
 }
 
 bool KeyEventImpl::GetRepeat(ExceptionState& exception_state) {
-  return event_.repeat;
+  return event_.is_repeat;
 }
 
 }  // namespace content

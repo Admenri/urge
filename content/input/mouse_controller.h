@@ -10,6 +10,7 @@
 #include "content/context/engine_object.h"
 #include "content/profile/content_profile.h"
 #include "content/public/engine_mouse.h"
+#include "content/worker/event_controller.h"
 #include "ui/widget/widget.h"
 
 namespace content {
@@ -30,20 +31,21 @@ class MouseImpl : public Mouse, public EngineObject {
   MouseImpl(const MouseImpl&) = delete;
   MouseImpl& operator=(const MouseImpl&) = delete;
 
+  void ProcessEvent(
+      const std::optional<EventController::MouseEventData>& event);
+
  protected:
   void Update(ExceptionState& exception_state) override;
-  int32_t GetX(ExceptionState& exception_state) override;
-  int32_t GetY(ExceptionState& exception_state) override;
-  void SetPosition(int32_t x,
-                   int32_t y,
-                   ExceptionState& exception_state) override;
+  float GetX(ExceptionState& exception_state) override;
+  float GetY(ExceptionState& exception_state) override;
+  void SetPosition(float x, float y, ExceptionState& exception_state) override;
   bool IsDown(int32_t button, ExceptionState& exception_state) override;
   bool IsUp(int32_t button, ExceptionState& exception_state) override;
   bool IsDouble(int32_t button, ExceptionState& exception_state) override;
   bool IsPressed(int32_t button, ExceptionState& exception_state) override;
   bool IsMoved(ExceptionState& exception_state) override;
-  int32_t GetScrollX(ExceptionState& exception_state) override;
-  int32_t GetScrollY(ExceptionState& exception_state) override;
+  float GetScrollX(ExceptionState& exception_state) override;
+  float GetScrollY(ExceptionState& exception_state) override;
   void SetCursor(scoped_refptr<Bitmap> cursor,
                  int32_t hot_x,
                  int32_t hot_y,
@@ -53,22 +55,31 @@ class MouseImpl : public Mouse, public EngineObject {
   URGE_DECLARE_OVERRIDE_ATTRIBUTE(Visible, bool);
 
  private:
-  struct BindingState {
-    bool up = false;
-    bool down = false;
-    int32_t click_count = 0;
-    bool pressed = false;
-  };
+  void UpdateInternal();
 
   struct MouseState {
-    float last_x = 0, last_y = 0;
-    bool moved = false;
-    int32_t scroll_x = 0, scroll_y = 0;
-    int32_t last_scroll_x = 0, last_scroll_y = 0;
+    base::Vec2 position;
+    base::Vec2 scroll;
+    std::array<bool, MOUSE_BUTTON_COUNT> states;
+    std::array<uint8_t, MOUSE_BUTTON_COUNT> clicks;
+  };
+
+  struct BindingState {
+    int32_t up = 0;
+    int32_t down = 0;
+    int32_t pressed = 0;
+    int32_t click_count = 0;
+  };
+
+  struct {
+    base::Vec2 last_position;
+    base::Vec2 scroll;
+    base::Vec2 last_scroll;
+    int32_t is_moved = 0;
   } entity_state_;
 
-  base::WeakPtr<ui::Widget> window_;
-  std::array<BindingState, sizeof(ui::Widget::MouseState::states)> states_;
+  MouseState raw_state_;
+  std::array<BindingState, MOUSE_BUTTON_COUNT> states_;
 };
 
 }  // namespace content

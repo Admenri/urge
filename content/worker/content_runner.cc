@@ -46,7 +46,6 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       binding_quit_flag_(0),
       binding_reset_flag_(0),
       background_running_(false),
-      disable_gui_input_(false),
       show_settings_menu_(false),
       show_fps_monitor_(false),
       last_tick_(SDL_GetPerformanceCounter()),
@@ -57,7 +56,7 @@ ContentRunner::ContentRunner(ContentProfile* profile,
       smooth_delta_time_(1.0),
       last_count_time_(SDL_GetPerformanceCounter()),
 #endif  //! OS_EMSCRIPTEN
-      display_viewport_() {
+      screen_bound_() {
 }
 
 ContentRunner::~ContentRunner() {
@@ -191,7 +190,7 @@ bool ContentRunner::InitializeComponents(filesystem::IOService* io_service,
       execution_context_->render.pipeline_loader.get());
   sprite_batcher_ = std::make_unique<SpriteBatch>(
       render_device_.get(), execution_context_->render.pipeline_loader.get());
-  event_controller_ = std::make_unique<EventController>(window);
+  event_controller_ = std::make_unique<EventController>();
   audio_server_ = audioservice::AudioService::Create(io_service);
 #if !defined(OS_EMSCRIPTEN)
   network_service_ = network::NetworkService::Create();
@@ -281,6 +280,9 @@ void ContentRunner::CreateRenderComponents() {
 }
 
 void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
+  // Poll event
+  UpdateEventInternal();
+
 #if !defined(OS_EMSCRIPTEN)
   // Update network service queue
   network_service_->DispatchEvent();
@@ -295,46 +297,8 @@ void ContentRunner::TickHandlerInternal(Diligent::ITexture* present_buffer) {
   // Update swapchain & viewport
   UpdateWindowViewportInternal();
 
-  // Render GUI if need
-  bool handle_event = !RenderGUIInternal(present_buffer);
-
-  // Poll event queue
-  SDL_Event queued_event;
-  while (SDL_PollEvent(&queued_event)
-#if !defined(OS_EMSCRIPTEN)
-         || background_running_
-#endif  //! OS_EMSCRIPTEN
-  ) {
-    // Quit event
-    if (queued_event.type == SDL_EVENT_QUIT)
-      binding_quit_flag_.store(1);
-
-    // GUI event process
-    if (!disable_gui_input_)
-      ImGui_ImplSDL3_ProcessEvent(&queued_event);
-
-    // Shortcut
-    if (queued_event.type == SDL_EVENT_KEY_UP &&
-        queued_event.key.windowID ==
-            execution_context_->window->GetWindowID()) {
-      if (queued_event.key.scancode == SDL_SCANCODE_F1) {
-        show_settings_menu_ =
-            !show_settings_menu_ && !profile_->disable_settings;
-      } else if (queued_event.key.scancode == SDL_SCANCODE_F2) {
-        show_fps_monitor_ =
-            !show_fps_monitor_ && !profile_->disable_fps_monitor;
-      } else if (queued_event.key.scancode == SDL_SCANCODE_F12) {
-        if (!profile_->disable_reset)
-          binding_reset_flag_.store(1);
-      }
-    }
-
-    // Widget event
-    if (handle_event) {
-      execution_context_->window->DispatchEvent(&queued_event);
-      event_controller_->DispatchEvent(&queued_event);
-    }
-  }
+  // Render engine primitive UI
+  RenderGUIInternal(present_buffer);
 
   // Present screen buffer
   graphics_impl_->PresentScreenBuffer(imgui_.get());
@@ -377,7 +341,6 @@ void ContentRunner::UpdateDisplayFPSInternal() {
 
 void ContentRunner::UpdateWindowViewportInternal() {
   auto& window = execution_context_->window;
-  const auto& resolution = execution_context_->resolution;
   const auto window_size = window->GetSize();
   auto* swapchain = render_device_->GetSwapChain();
 
@@ -387,31 +350,9 @@ void ContentRunner::UpdateWindowViewportInternal() {
     swapchain->Resize(window_size.x, window_size.y,
                       Diligent::SURFACE_TRANSFORM_OPTIMAL);
   }
-
-  // Update real display viewport
-  float window_ratio = static_cast<float>(window_size.x) / window_size.y;
-  float screen_ratio = static_cast<float>(resolution.x) / resolution.y;
-
-  display_viewport_.width = window_size.x;
-  display_viewport_.height = window_size.y;
-
-  if (screen_ratio > window_ratio)
-    display_viewport_.height = display_viewport_.width / screen_ratio;
-  else if (screen_ratio < window_ratio)
-    display_viewport_.width = display_viewport_.height * screen_ratio;
-
-  display_viewport_.x = (window_size.x - display_viewport_.width) / 2.0f;
-  display_viewport_.y = (window_size.y - display_viewport_.height) / 2.0f;
-
-  // Process mouse coordinate and viewport rect
-  window->GetDisplayState().scale =
-      display_viewport_.Size().Recast<float>() / resolution.Recast<float>();
-  window->GetDisplayState().viewport = display_viewport_;
 }
 
-bool ContentRunner::RenderGUIInternal(Diligent::ITexture* present_buffer) {
-  bool window_hovered = false;
-
+void ContentRunner::RenderGUIInternal(Diligent::ITexture* present_buffer) {
   // Setup renderer new frame
   const Diligent::SwapChainDesc& swapchain_desc =
       execution_context_->render_device->GetSwapChain()->GetDesc();
@@ -426,58 +367,92 @@ bool ContentRunner::RenderGUIInternal(Diligent::ITexture* present_buffer) {
 
   // Render settings menu
   if (show_settings_menu_)
-    window_hovered |= RenderSettingsGUIInternal();
+    RenderSettingsGUIInternal();
 
   // Render fps monitor
   if (show_fps_monitor_)
     RenderFPSMonitorGUIInternal();
 
   // Present game window
-  ImGui::SetNextWindowPos(ImVec2(display_viewport_.x, display_viewport_.y));
-  ImGui::SetNextWindowSize(
-      ImVec2(display_viewport_.width, display_viewport_.height));
+  ImGui::SetNextWindowPos(ImVec2(0, 0));
+  ImGui::SetNextWindowSize(ImVec2(swapchain_desc.Width, swapchain_desc.Height));
 
   // Primary viewport
+  bool process_game_input = false;
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Game", nullptr,
-               ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
-                   ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_NoBringToFrontOnFocus);
+  if (ImGui::Begin("Game", nullptr,
+                   ImGuiWindowFlags_NoBackground |
+                       ImGuiWindowFlags_NoDecoration |
+                       ImGuiWindowFlags_NoResize |
+                       ImGuiWindowFlags_NoBringToFrontOnFocus)) {
+    auto client_max = ImGui::GetWindowContentRegionMax();
+    auto client_min = ImGui::GetWindowContentRegionMin();
 
-  // Viewer image component
-  auto* render_source =
-      present_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-  ImGui::Image(reinterpret_cast<ImTextureID>(render_source),
-               ImVec2(display_viewport_.width, display_viewport_.height));
+    // Update real display viewport for game screen
+    const auto window_size =
+        base::Vec2i(client_max.x - client_min.x, client_max.y - client_min.y);
+    const auto screen_size = execution_context_->resolution;
 
+    const float window_ratio =
+        static_cast<float>(window_size.x) / window_size.y;
+    const float screen_ratio =
+        static_cast<float>(screen_size.x) / screen_size.y;
+
+    ImVec2 display_size(window_size.x, window_size.y);
+    if (screen_ratio > window_ratio)
+      display_size.y = display_size.x / screen_ratio;
+    if (screen_ratio < window_ratio)
+      display_size.x = display_size.y * screen_ratio;
+
+    ImVec2 display_pos((window_size.x - display_size.x) / 2.0f,
+                       (window_size.y - display_size.y) / 2.0f);
+    display_pos.x += client_min.x;
+    display_pos.y += client_min.y;
+
+    // Viewer image component
+    auto* screen_image_view =
+        present_buffer->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+    auto tex_id = reinterpret_cast<ImTextureID>(screen_image_view);
+    ImGui::SetCursorPos(display_pos);
+    ImGui::Image(tex_id, display_size);
+
+    // Input region
+    const auto widget_min = ImGui::GetItemRectMin();
+    const auto widget_max = ImGui::GetItemRectMax();
+    screen_bound_.x = widget_min.x;
+    screen_bound_.y = widget_min.y;
+    screen_bound_.width = widget_max.x - widget_min.x;
+    screen_bound_.height = widget_max.y - widget_min.y;
+
+    process_game_input = ImGui::IsWindowHovered();
+  }
   ImGui::End();
   ImGui::PopStyleVar(3);
 
+  // Enable input dispatch for input & mouse
+  if (process_game_input) {
+    for (auto& it : event_controller_->key_events())
+      keyboard_impl_->ProcessEvent(it);
+    for (auto& it : event_controller_->mouse_events())
+      mouse_impl_->ProcessEvent(it);
+  } else {
+    keyboard_impl_->ProcessEvent(std::nullopt);
+    mouse_impl_->ProcessEvent(std::nullopt);
+  }
+
   // Render gui
   ImGui::Render();
-
-  return window_hovered;
 }
 
-bool ContentRunner::RenderSettingsGUIInternal() {
+void ContentRunner::RenderSettingsGUIInternal() {
   ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_FirstUseEver);
 
-  bool window_hovered = false;
   if (ImGui::Begin(execution_context_->i18n_profile
                        ->GetI18NString(IDS_MENU_SETTINGS, "Settings")
                        .c_str())) {
-    window_hovered = ImGui::IsWindowHovered();
-
-    // Button settings
-#if !defined(OS_ANDROID)
-    disable_gui_input_ = keyboard_impl_->CreateButtonGUISettings();
-#else
-    disable_gui_input_ = false;
-#endif
-
     // Graphics settings
     graphics_impl_->CreateButtonGUISettings();
 
@@ -487,11 +462,7 @@ bool ContentRunner::RenderSettingsGUIInternal() {
     // Engine Info
     DrawEngineInfoGUI(execution_context_->i18n_profile);
   }
-
-  // End window create
   ImGui::End();
-
-  return window_hovered;
 }
 
 void ContentRunner::RenderFPSMonitorGUIInternal() {
@@ -504,15 +475,56 @@ void ContentRunner::RenderFPSMonitorGUIInternal() {
                          static_cast<int32_t>(fps_history_.size()), 0, nullptr,
                          0.0f, FLT_MAX, ImVec2(300, 80));
   }
-
-  // End window render
   ImGui::End();
+}
+
+void ContentRunner::UpdateEventInternal() {
+  // Clear pending events
+  event_controller_->ClearPendingEvents();
+
+  // Poll event queue
+  SDL_Event queued_event;
+  while (SDL_PollEvent(&queued_event)
+#if !defined(OS_EMSCRIPTEN)
+         || background_running_
+#endif  //! OS_EMSCRIPTEN
+  ) {
+    // Quit event
+    if (queued_event.type == SDL_EVENT_QUIT) {
+      binding_quit_flag_.store(1);
+      break;
+    }
+
+    // GUI event process
+    ImGui_ImplSDL3_ProcessEvent(&queued_event);
+
+    // Shortcut process
+    if (queued_event.type == SDL_EVENT_KEY_UP &&
+        queued_event.key.windowID ==
+            execution_context_->window->GetWindowID()) {
+      if (queued_event.key.scancode == SDL_SCANCODE_F1) {
+        show_settings_menu_ =
+            !show_settings_menu_ && !profile_->disable_settings;
+      } else if (queued_event.key.scancode == SDL_SCANCODE_F2) {
+        show_fps_monitor_ =
+            !show_fps_monitor_ && !profile_->disable_fps_monitor;
+      } else if (queued_event.key.scancode == SDL_SCANCODE_F12) {
+        if (!profile_->disable_reset)
+          binding_reset_flag_.store(1);
+      }
+    }
+
+    // Game input process
+    const auto window_size = execution_context_->window->GetSize();
+    const auto screen_size = execution_context_->resolution;
+    event_controller_->DispatchEvent(&queued_event, window_size, screen_size,
+                                     screen_bound_);
+  }
 }
 
 bool ContentRunner::EventWatchHandlerInternal(void* userdata,
                                               SDL_Event* event) {
   ContentRunner* self = static_cast<ContentRunner*>(userdata);
-
 #if !defined(OS_ANDROID)
   if (self->profile_->background_running)
     return true;
@@ -617,7 +629,6 @@ void ContentRunner::CreateIMGUIContextInternal() {
 
 void ContentRunner::DestroyIMGUIContextInternal() {
   imgui_.reset();
-
   ImGui::DestroyPlatformWindows();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();

@@ -74,9 +74,11 @@ class ContentRunner {
   void TickHandlerInternal(Diligent::ITexture* present_buffer);
   void UpdateDisplayFPSInternal();
   void UpdateWindowViewportInternal();
-  bool RenderGUIInternal(Diligent::ITexture* present_buffer);
-  bool RenderSettingsGUIInternal();
+  void RenderGUIInternal(Diligent::ITexture* present_buffer);
+  void RenderSettingsGUIInternal();
   void RenderFPSMonitorGUIInternal();
+
+  void UpdateEventInternal();
 
   static bool EventWatchHandlerInternal(void* userdata, SDL_Event* event);
 
@@ -92,9 +94,10 @@ class ContentRunner {
   std::unique_ptr<CanvasScheduler> canvas_scheduler_;
   std::unique_ptr<SpriteBatch> sprite_batcher_;
   std::unique_ptr<EventController> event_controller_;
-  std::unique_ptr<Diligent::ImGuiDiligentRenderer> imgui_;
   std::unique_ptr<audioservice::AudioService> audio_server_;
   std::unique_ptr<network::NetworkService> network_service_;
+
+  std::unique_ptr<Diligent::ImGuiDiligentRenderer> imgui_;
 
   scoped_refptr<RenderScreenImpl> graphics_impl_;
   scoped_refptr<KeyboardControllerImpl> keyboard_impl_;
@@ -106,7 +109,6 @@ class ContentRunner {
   std::atomic<int32_t> binding_reset_flag_;
 
   bool background_running_;
-  bool disable_gui_input_;
   bool show_settings_menu_;
   bool show_fps_monitor_;
 
@@ -128,7 +130,7 @@ class ContentRunner {
   alignas(16) char main_stack_[ASYNCIFY_STACK_SIZE];
 #endif  //! OS_EMSCRIPTEN
 
-  base::Rect display_viewport_;
+  base::Rect screen_bound_;
 };
 
 }  // namespace content

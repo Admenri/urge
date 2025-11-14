@@ -39,23 +39,14 @@ const KeyboardControllerImpl::KeyBinding kDefaultKeyboardBindings[] = {
     {"R", SDL_SCANCODE_W},
 };
 
-const int32_t kDefaultKeyboardBindingsSize =
-    sizeof(kDefaultKeyboardBindings) / sizeof(kDefaultKeyboardBindings[0]);
-
 const KeyboardControllerImpl::KeyBinding kKeyboardBindings1[] = {
     {"A", SDL_SCANCODE_Z},
     {"C", SDL_SCANCODE_C},
 };
 
-const int32_t kKeyboardBindings1Size =
-    sizeof(kKeyboardBindings1) / sizeof(kKeyboardBindings1[0]);
-
 const KeyboardControllerImpl::KeyBinding kKeyboardBindings2[] = {
     {"C", SDL_SCANCODE_Z},
 };
-
-const int32_t kKeyboardBindings2Size =
-    sizeof(kKeyboardBindings2) / sizeof(kKeyboardBindings2[0]);
 
 const std::string kArrowDirsSymbol[] = {
     "DOWN",
@@ -63,9 +54,6 @@ const std::string kArrowDirsSymbol[] = {
     "RIGHT",
     "UP",
 };
-
-const int32_t kArrowDirsSymbolSize =
-    sizeof(kArrowDirsSymbol) / sizeof(kArrowDirsSymbol[0]);
 
 const std::array<std::string, 12> kButtonItems = {
     "A", "B", "C", "X", "Y", "Z", "L", "R", "DOWN", "LEFT", "RIGHT", "UP",
@@ -78,177 +66,41 @@ const std::array<std::string, 12> kButtonItems = {
 
 KeyboardControllerImpl::KeyboardControllerImpl(
     ExecutionContext* execution_context)
-    : EngineObject(execution_context), disable_gui_key_input_(false) {
-  std::memset(key_states_.data(), 0, key_states_.size() * sizeof(KeyState));
-  std::memset(recent_key_states_.data(), 0,
-              recent_key_states_.size() * sizeof(KeyState));
-
+    : EngineObject(execution_context) {
   /* Apply default keyboard bindings */
-  for (int32_t i = 0; i < kDefaultKeyboardBindingsSize; ++i)
+  for (size_t i = 0; i < std::size(kDefaultKeyboardBindings); ++i)
     key_bindings_.push_back(kDefaultKeyboardBindings[i]);
 
   if (execution_context->engine_profile->api_version ==
       ContentProfile::APIVersion::RGSS1)
-    for (int32_t i = 0; i < kKeyboardBindings1Size; ++i)
+    for (size_t i = 0; i < std::size(kKeyboardBindings1); ++i)
       key_bindings_.push_back(kKeyboardBindings1[i]);
 
   if (execution_context->engine_profile->api_version >=
       ContentProfile::APIVersion::RGSS2)
-    for (int32_t i = 0; i < kKeyboardBindings2Size; ++i)
+    for (size_t i = 0; i < std::size(kKeyboardBindings2); ++i)
       key_bindings_.push_back(kKeyboardBindings2[i]);
-
-  TryReadBindingsInternal();
-  setting_bindings_ = key_bindings_;
 }
 
 KeyboardControllerImpl::~KeyboardControllerImpl() = default;
+
+void KeyboardControllerImpl::ProcessEvent(
+    const std::optional<EventController::KeyEventData>& event) {
+  if (event) {
+    raw_states_[event->scancode] = event->is_down;
+  } else {
+    for (auto& it : raw_states_)
+      it = false;
+  }
+}
 
 void KeyboardControllerImpl::ApplyKeySymBinding(const KeySymMap& keysyms) {
   key_bindings_ = keysyms;
 }
 
-bool KeyboardControllerImpl::CreateButtonGUISettings() {
-  static int32_t selected_button = 0, selected_binding = -1;
-  disable_gui_key_input_ = (selected_binding != -1);
-
-  if (ImGui::CollapsingHeader(
-          context()
-              ->i18n_profile->GetI18NString(IDS_SETTINGS_BUTTON, "Button")
-              .c_str())) {
-    auto list_height = 6 * ImGui::GetTextLineHeightWithSpacing();
-    // Button name list box
-    if (ImGui::BeginListBox(
-            "##button_list",
-            ImVec2(ImGui::CalcItemWidth() / 2.0f, list_height + 64))) {
-      for (size_t i = 0; i < kButtonItems.size(); ++i) {
-        if (ImGui::Selectable(kButtonItems[i].c_str(),
-                              static_cast<int32_t>(i) == selected_button)) {
-          selected_button = i;
-          selected_binding = -1;
-        }
-      }
-
-      ImGui::EndListBox();
-    }
-
-    ImGui::SameLine();
-    std::string button_name = kButtonItems[selected_button];
-
-    // Binding list box
-    {
-      ImGui::BeginGroup();
-      if (ImGui::BeginListBox("##binding_list",
-                              ImVec2(-FLT_MIN, list_height))) {
-        for (size_t i = 0; i < setting_bindings_.size(); ++i) {
-          auto& it = setting_bindings_[i];
-          if (it.sym == button_name) {
-            const bool is_select =
-                (selected_binding == static_cast<int32_t>(i));
-
-            // Generate button sign
-            std::string display_button_name = SDL_GetScancodeName(it.scancode);
-            if (it.scancode == SDL_SCANCODE_UNKNOWN)
-              display_button_name = "<x>";
-            if (is_select)
-              display_button_name = "<...>";
-            display_button_name += "##";
-            display_button_name.push_back(i);
-
-            // Find conflict bindings
-            int32_t conflict_count = -1;
-            for (auto& item : setting_bindings_)
-              if (item == it)
-                conflict_count++;
-
-            // Draw selectable
-            const bool is_conflict = !!conflict_count;
-            if (is_conflict)
-              ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-
-            if (ImGui::Selectable(display_button_name.c_str(), is_select)) {
-              selected_binding = (is_select ? -1 : i);
-            }
-
-            if (is_conflict)
-              ImGui::PopStyleColor();
-          }
-        }
-
-        ImGui::EndListBox();
-      }
-
-      // Get any keys state for binding
-      if (disable_gui_key_input_) {
-        for (int32_t code = 0; code < SDL_SCANCODE_COUNT; ++code) {
-          bool key_pressed =
-              context()->window->GetKeyState(static_cast<SDL_Scancode>(code));
-          if (key_pressed) {
-            setting_bindings_[selected_binding].scancode =
-                static_cast<SDL_Scancode>(code);
-            selected_binding = -1;
-          }
-        }
-      }
-
-      // Add binding
-      if (ImGui::Button(context()
-                            ->i18n_profile->GetI18NString(IDS_BUTTON_ADD, "Add")
-                            .c_str())) {
-        selected_binding = -1;
-        setting_bindings_.push_back(
-            KeyBinding{button_name, SDL_SCANCODE_UNKNOWN});
-      }
-
-      ImGui::SameLine();
-
-      // Remove binding
-      if (selected_binding >= 0 &&
-          ImGui::Button(
-              context()
-                  ->i18n_profile->GetI18NString(IDS_BUTTON_REMOVE, "Remove")
-                  .c_str())) {
-        auto it = setting_bindings_.begin();
-        for (int32_t i = 0; i < selected_binding; ++i)
-          it++;
-
-        setting_bindings_.erase(it);
-        selected_binding = -1;
-      }
-
-      ImGui::EndGroup();
-    }
-
-    if (ImGui::Button(
-            context()
-                ->i18n_profile
-                ->GetI18NString(IDS_BUTTON_SAVE_SETTINGS, "Save Settings")
-                .c_str())) {
-      key_bindings_ = setting_bindings_;
-      selected_binding = -1;
-
-      StorageBindingsInternal();
-    }
-
-    ImGui::SameLine();
-    if (ImGui::Button(
-            context()
-                ->i18n_profile
-                ->GetI18NString(IDS_BUTTON_RESET_SETTINGS, "Reset Settings")
-                .c_str())) {
-      setting_bindings_ = key_bindings_;
-      selected_binding = -1;
-
-      StorageBindingsInternal();
-    }
-  }
-
-  return disable_gui_key_input_;
-}
-
 void KeyboardControllerImpl::Update(ExceptionState& exception_state) {
   for (int32_t i = 0; i < SDL_SCANCODE_COUNT; ++i) {
-    bool key_pressed =
-        context()->window->GetKeyState(static_cast<SDL_Scancode>(i));
+    bool key_pressed = raw_states_[static_cast<SDL_Scancode>(i)];
 
     /* Update key state with elder state */
     key_states_[i].trigger = !key_states_[i].pressed && key_pressed;
@@ -444,9 +296,9 @@ bool KeyboardControllerImpl::Emulate(int32_t scancode,
 }
 
 void KeyboardControllerImpl::UpdateDir4Internal() {
-  bool key_states[kArrowDirsSymbolSize] = {0};
+  bool key_states[std::size(kArrowDirsSymbol)] = {0};
   for (auto& it : key_bindings_)
-    for (int32_t i = 0; i < kArrowDirsSymbolSize; ++i)
+    for (size_t i = 0; i < std::size(kArrowDirsSymbol); ++i)
       if (it.sym == kArrowDirsSymbol[i])
         key_states[i] |= key_states_[it.scancode].pressed;
 
@@ -503,9 +355,9 @@ void KeyboardControllerImpl::UpdateDir4Internal() {
 }
 
 void KeyboardControllerImpl::UpdateDir8Internal() {
-  bool key_states[kArrowDirsSymbolSize] = {0};
+  bool key_states[std::size(kArrowDirsSymbol)] = {0};
   for (auto& it : key_bindings_)
-    for (int32_t i = 0; i < kArrowDirsSymbolSize; ++i)
+    for (size_t i = 0; i < std::size(kArrowDirsSymbol); ++i)
       if (it.sym == kArrowDirsSymbol[i])
         key_states[i] |= key_states_[it.scancode].pressed;
 

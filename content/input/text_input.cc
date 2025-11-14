@@ -13,8 +13,8 @@ namespace content {
 std::vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  std::vector<EventController::TextInputEventData> raw_events;
-  execution_context->event_controller->PollTextInputEvents(raw_events);
+  std::vector<EventController::TextInputEventData> raw_events =
+      execution_context->event_controller->text_input_events();
 
   std::vector<scoped_refptr<TextInputEvent>> filtered_events;
   for (auto& it : raw_events)
@@ -27,7 +27,7 @@ std::vector<scoped_refptr<TextInputEvent>> TextInputEvent::Update(
 bool TextInputEvent::Enable(ExecutionContext* execution_context,
                             scoped_refptr<Rect> region,
                             ExceptionState& exception_state) {
-  auto base_window = execution_context->event_controller->GetHostWidget();
+  auto base_window = execution_context->window;
   auto* host_window = base_window->AsSDLWindow();
 
   if (region) {
@@ -41,7 +41,7 @@ bool TextInputEvent::Enable(ExecutionContext* execution_context,
 // static
 bool TextInputEvent::IsActivated(ExecutionContext* execution_context,
                                  ExceptionState& exception_state) {
-  auto base_window = execution_context->event_controller->GetHostWidget();
+  auto base_window = execution_context->window;
   auto* host_window = base_window->AsSDLWindow();
 
   return SDL_TextInputActive(host_window);
@@ -50,7 +50,7 @@ bool TextInputEvent::IsActivated(ExecutionContext* execution_context,
 // static
 bool TextInputEvent::Disable(ExecutionContext* execution_context,
                              ExceptionState& exception_state) {
-  auto base_window = execution_context->event_controller->GetHostWidget();
+  auto base_window = execution_context->window;
   auto* host_window = base_window->AsSDLWindow();
 
   bool result = SDL_StopTextInput(host_window);

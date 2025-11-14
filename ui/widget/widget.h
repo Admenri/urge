@@ -24,39 +24,8 @@ struct SDL_Window;
 
 namespace ui {
 
-#define MAX_FINGERS 10
-#define MOUSE_BUTTON_COUNT 32
-
 class Widget {
  public:
-  struct MouseState {
-    // Ratio position in window
-    float x, y;
-    int scroll_x;
-    int scroll_y;
-    bool states[MOUSE_BUTTON_COUNT];
-    uint8_t clicks[MOUSE_BUTTON_COUNT];
-    bool visible;
-    bool in_window;
-    bool focused;
-
-    MouseState()
-        : x(0),
-          y(0),
-          scroll_x(0),
-          scroll_y(0),
-          states{0},
-          clicks{0},
-          visible(true),
-          in_window(false),
-          focused(false) {}
-  };
-
-  struct DisplayState {
-    base::Vec2 scale;
-    base::Rect viewport;
-  };
-
   enum class WindowPlacement {
     Show = 0,
     Hide,
@@ -74,7 +43,6 @@ class Widget {
     std::string title;
 
     bool resizable = false;
-
     bool fullscreen =
 #if defined(OS_ANDROID)
         true;
@@ -96,14 +64,12 @@ class Widget {
     bool hpixeldensity = false;
     bool borderless = false;
     bool always_on_top = false;
-
-    bool initial_grab = false;
-    bool opengl = false;
+    bool dpi_awareness = true;
 
     WindowPlacement window_state = WindowPlacement::Show;
   };
 
-  Widget(bool disable_dispatcher);
+  Widget();
   virtual ~Widget();
 
   Widget(const Widget&) = delete;
@@ -126,28 +92,11 @@ class Widget {
   static Widget* FromWindowID(SDL_WindowID window_id);
   SDL_WindowID GetWindowID() const { return window_id_; }
 
-  DisplayState& GetDisplayState() { return display_state_; }
-  bool GetKeyState(::SDL_Scancode scancode) const;
-  void EmulateKeyState(::SDL_Scancode scancode, bool pressed);
-  MouseState& GetMouseState() { return mouse_state_; }
-
-  std::string FetchInputText();
-
-  bool DispatchEvent(SDL_Event* event);
-
  private:
   static bool SDLCALL UIEventDispatcher(void* userdata, SDL_Event* event);
 
   SDL_Window* window_;
   SDL_WindowID window_id_;
-  base::CallbackListSubscription ui_dispatcher_binding_;
-
-  DisplayState display_state_;
-  bool key_states_[SDL_SCANCODE_COUNT]{0};
-  MouseState mouse_state_;
-
-  std::mutex text_lock_;
-  std::string text_buffer_;
 
   base::WeakPtrFactory<Widget> weak_ptr_factory_{this};
 };

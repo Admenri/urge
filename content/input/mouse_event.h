@@ -22,17 +22,17 @@ class MouseEventImpl : public MouseEvent {
  protected:
   Type GetType(ExceptionState& exception_state) override;
   int32_t GetMouseID(ExceptionState& exception_state) override;
-  int32_t GetX(ExceptionState& exception_state) override;
-  int32_t GetY(ExceptionState& exception_state) override;
+  float GetX(ExceptionState& exception_state) override;
+  float GetY(ExceptionState& exception_state) override;
   int32_t GetButton(ExceptionState& exception_state) override;
   bool GetButtonDown(ExceptionState& exception_state) override;
   int32_t GetButtonClicks(ExceptionState& exception_state) override;
   int32_t GetMotion(ExceptionState& exception_state) override;
-  int32_t GetMotionX(ExceptionState& exception_state) override;
-  int32_t GetMotionY(ExceptionState& exception_state) override;
+  float GetMotionX(ExceptionState& exception_state) override;
+  float GetMotionY(ExceptionState& exception_state) override;
   WheelState GetWheel(ExceptionState& exception_state) override;
-  int32_t GetWheelX(ExceptionState& exception_state) override;
-  int32_t GetWheelY(ExceptionState& exception_state) override;
+  float GetWheelX(ExceptionState& exception_state) override;
+  float GetWheelY(ExceptionState& exception_state) override;
 
  private:
   EventController::MouseEventData event_;

@@ -23,10 +23,10 @@ class TouchEventImpl : public TouchEvent {
   Type GetType(ExceptionState& exception_state) override;
   int32_t GetDeviceID(ExceptionState& exception_state) override;
   int32_t GetFinger(ExceptionState& exception_state) override;
-  int32_t GetX(ExceptionState& exception_state) override;
-  int32_t GetY(ExceptionState& exception_state) override;
-  int32_t GetDeltaX(ExceptionState& exception_state) override;
-  int32_t GetDeltaY(ExceptionState& exception_state) override;
+  float GetX(ExceptionState& exception_state) override;
+  float GetY(ExceptionState& exception_state) override;
+  float GetDeltaX(ExceptionState& exception_state) override;
+  float GetDeltaY(ExceptionState& exception_state) override;
   float GetPressure(ExceptionState& exception_state) override;
 
  private:

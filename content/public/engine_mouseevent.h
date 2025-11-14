@@ -42,10 +42,10 @@ class URGE_OBJECT(MouseEvent) {
   virtual int32_t GetMouseID(ExceptionState& exception_state) = 0;
 
   /*--urge(name:x)--*/
-  virtual int32_t GetX(ExceptionState& exception_state) = 0;
+  virtual float GetX(ExceptionState& exception_state) = 0;
 
   /*--urge(name:y)--*/
-  virtual int32_t GetY(ExceptionState& exception_state) = 0;
+  virtual float GetY(ExceptionState& exception_state) = 0;
 
   /*--urge(name:button)--*/
   virtual int32_t GetButton(ExceptionState& exception_state) = 0;
@@ -60,19 +60,19 @@ class URGE_OBJECT(MouseEvent) {
   virtual int32_t GetMotion(ExceptionState& exception_state) = 0;
 
   /*--urge(name:motion_x)--*/
-  virtual int32_t GetMotionX(ExceptionState& exception_state) = 0;
+  virtual float GetMotionX(ExceptionState& exception_state) = 0;
 
   /*--urge(name:motion_y)--*/
-  virtual int32_t GetMotionY(ExceptionState& exception_state) = 0;
+  virtual float GetMotionY(ExceptionState& exception_state) = 0;
 
   /*--urge(name:wheel)--*/
   virtual WheelState GetWheel(ExceptionState& exception_state) = 0;
 
   /*--urge(name:wheel_x)--*/
-  virtual int32_t GetWheelX(ExceptionState& exception_state) = 0;
+  virtual float GetWheelX(ExceptionState& exception_state) = 0;
 
   /*--urge(name:wheel_y)--*/
-  virtual int32_t GetWheelY(ExceptionState& exception_state) = 0;
+  virtual float GetWheelY(ExceptionState& exception_state) = 0;
 };
 
 }  // namespace content

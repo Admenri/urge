@@ -39,16 +39,16 @@ class URGE_OBJECT(TouchEvent) {
   virtual int32_t GetFinger(ExceptionState& exception_state) = 0;
 
   /*--urge(name:x)--*/
-  virtual int32_t GetX(ExceptionState& exception_state) = 0;
+  virtual float GetX(ExceptionState& exception_state) = 0;
 
   /*--urge(name:y)--*/
-  virtual int32_t GetY(ExceptionState& exception_state) = 0;
+  virtual float GetY(ExceptionState& exception_state) = 0;
 
   /*--urge(name:dx)--*/
-  virtual int32_t GetDeltaX(ExceptionState& exception_state) = 0;
+  virtual float GetDeltaX(ExceptionState& exception_state) = 0;
 
   /*--urge(name:dy)--*/
-  virtual int32_t GetDeltaY(ExceptionState& exception_state) = 0;
+  virtual float GetDeltaY(ExceptionState& exception_state) = 0;
 
   /*--urge(name:pressure)--*/
   virtual float GetPressure(ExceptionState& exception_state) = 0;

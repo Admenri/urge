@@ -12,8 +12,8 @@ namespace content {
 std::vector<scoped_refptr<MouseEvent>> MouseEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  std::vector<EventController::MouseEventData> raw_events;
-  execution_context->event_controller->PollMouseEvents(raw_events);
+  std::vector<EventController::MouseEventData> raw_events =
+      execution_context->event_controller->mouse_events();
 
   std::vector<scoped_refptr<MouseEvent>> filtered_events;
   for (auto& it : raw_events)
@@ -38,12 +38,12 @@ int32_t MouseEventImpl::GetMouseID(ExceptionState& exception_state) {
   return event_.mouse_id;
 }
 
-int32_t MouseEventImpl::GetX(ExceptionState& exception_state) {
-  return event_.x;
+float MouseEventImpl::GetX(ExceptionState& exception_state) {
+  return event_.relative_position.x;
 }
 
-int32_t MouseEventImpl::GetY(ExceptionState& exception_state) {
-  return event_.y;
+float MouseEventImpl::GetY(ExceptionState& exception_state) {
+  return event_.relative_position.y;
 }
 
 int32_t MouseEventImpl::GetButton(ExceptionState& exception_state) {
@@ -51,7 +51,7 @@ int32_t MouseEventImpl::GetButton(ExceptionState& exception_state) {
 }
 
 bool MouseEventImpl::GetButtonDown(ExceptionState& exception_state) {
-  return event_.button_down;
+  return event_.button_is_down;
 }
 
 int32_t MouseEventImpl::GetButtonClicks(ExceptionState& exception_state) {
@@ -62,12 +62,12 @@ int32_t MouseEventImpl::GetMotion(ExceptionState& exception_state) {
   return event_.motion_state;
 }
 
-int32_t MouseEventImpl::GetMotionX(ExceptionState& exception_state) {
-  return event_.motion_relx;
+float MouseEventImpl::GetMotionX(ExceptionState& exception_state) {
+  return event_.relative_offset.x;
 }
 
-int32_t MouseEventImpl::GetMotionY(ExceptionState& exception_state) {
-  return event_.motion_rely;
+float MouseEventImpl::GetMotionY(ExceptionState& exception_state) {
+  return event_.relative_offset.y;
 }
 
 MouseEvent::WheelState MouseEventImpl::GetWheel(
@@ -75,12 +75,12 @@ MouseEvent::WheelState MouseEventImpl::GetWheel(
   return event_.wheel_dir;
 }
 
-int32_t MouseEventImpl::GetWheelX(ExceptionState& exception_state) {
-  return event_.wheel_x;
+float MouseEventImpl::GetWheelX(ExceptionState& exception_state) {
+  return event_.wheel_offset.x;
 }
 
-int32_t MouseEventImpl::GetWheelY(ExceptionState& exception_state) {
-  return event_.wheel_y;
+float MouseEventImpl::GetWheelY(ExceptionState& exception_state) {
+  return event_.wheel_offset.y;
 }
 
 }  // namespace content

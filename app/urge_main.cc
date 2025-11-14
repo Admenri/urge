@@ -269,7 +269,7 @@ int main(int argc, char* argv[]) {
 
     {
       // Initialize engine main widget
-      std::unique_ptr<ui::Widget> widget(new ui::Widget(true));
+      std::unique_ptr<ui::Widget> widget(new ui::Widget);
       ui::Widget::InitParams widget_params;
 #if defined(OS_LINUX)
       widget_params.opengl = profile->driver_backend == "OPENGL";

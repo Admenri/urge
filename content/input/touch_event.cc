@@ -12,8 +12,8 @@ namespace content {
 std::vector<scoped_refptr<TouchEvent>> TouchEvent::Update(
     ExecutionContext* execution_context,
     ExceptionState& exception_state) {
-  std::vector<EventController::TouchEventData> raw_events;
-  execution_context->event_controller->PollTouchEvents(raw_events);
+  std::vector<EventController::TouchEventData> raw_events =
+      execution_context->event_controller->touch_events();
 
   std::vector<scoped_refptr<TouchEvent>> filtered_events;
   for (auto& it : raw_events)
@@ -42,20 +42,20 @@ int32_t TouchEventImpl::GetFinger(ExceptionState& exception_state) {
   return event_.finger;
 }
 
-int32_t TouchEventImpl::GetX(ExceptionState& exception_state) {
-  return event_.x;
+float TouchEventImpl::GetX(ExceptionState& exception_state) {
+  return event_.relative_position.x;
 }
 
-int32_t TouchEventImpl::GetY(ExceptionState& exception_state) {
-  return event_.y;
+float TouchEventImpl::GetY(ExceptionState& exception_state) {
+  return event_.relative_position.y;
 }
 
-int32_t TouchEventImpl::GetDeltaX(ExceptionState& exception_state) {
-  return event_.dx;
+float TouchEventImpl::GetDeltaX(ExceptionState& exception_state) {
+  return event_.delta_offset.x;
 }
 
-int32_t TouchEventImpl::GetDeltaY(ExceptionState& exception_state) {
-  return event_.dy;
+float TouchEventImpl::GetDeltaY(ExceptionState& exception_state) {
+  return event_.delta_offset.y;
 }
 
 float TouchEventImpl::GetPressure(ExceptionState& exception_state) {
