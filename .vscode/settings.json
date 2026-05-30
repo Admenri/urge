@@ -1,0 +1,5 @@
+{
+  "C_Cpp.clang_format_fallbackStyle": "Chromium",
+  "C_Cpp.clang_format_style": "Chromium",
+  "C_Cpp.formatting": "clangFormat"
+}

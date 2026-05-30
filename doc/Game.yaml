@@ -1,0 +1,15 @@
+core:
+  apiVersion: 1
+  scripts: Data/Scripts.rxdata
+
+window:
+  title: Project1
+  size: [640, 480]
+  resizable: false
+
+render:
+  backend: d3d12
+  validation: false
+
+font:
+  default: Fonts/Default.ttf

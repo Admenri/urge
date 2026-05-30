@@ -1,0 +1,13 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "magic_enum",
+    hdrs = glob(["include/magic_enum/*.hpp"]),
+    includes = ["include"],
+)
