@@ -67,7 +67,7 @@ class GPUQueue : public Object {
 ///
 
 URGE_BINDING()
-struct GPUBindGroupEntry {
+struct GPUBindGroupEntry : public Object {
   uint32_t binding = 0;
   scoped_refptr<GPUBuffer> buffer = nullptr;
   uint64_t offset = 0;
@@ -77,26 +77,26 @@ struct GPUBindGroupEntry {
 };
 
 URGE_BINDING()
-struct GPUBindGroupDescriptor {
+struct GPUBindGroupDescriptor : public Object {
   estring label = {};
   scoped_refptr<GPUBindGroupLayout> layout = nullptr;
   earray<estruct<GPUBindGroupEntry>> entries = {};
 };
 
 URGE_BINDING()
-struct BufferBindingLayout {
+struct BufferBindingLayout : public Object {
   GPU::BufferBindingType type = GPU::BufferBindingType::Undefined;
   bool hasDynamicOffset = false;
   uint64_t minBindingSize = 0;
 };
 
 URGE_BINDING()
-struct SamplerBindingLayout {
+struct SamplerBindingLayout : public Object {
   GPU::SamplerBindingType type = GPU::SamplerBindingType::Undefined;
 };
 
 URGE_BINDING()
-struct TextureBindingLayout {
+struct TextureBindingLayout : public Object {
   GPU::TextureSampleType sampleType = GPU::TextureSampleType::Undefined;
   GPU::TextureViewDimension viewDimension =
       GPU::TextureViewDimension::Undefined;
@@ -104,7 +104,7 @@ struct TextureBindingLayout {
 };
 
 URGE_BINDING()
-struct StorageTextureBindingLayout {
+struct StorageTextureBindingLayout : public Object {
   GPU::StorageTextureAccess access = GPU::StorageTextureAccess::Undefined;
   GPU::TextureFormat format = GPU::TextureFormat::Undefined;
   GPU::TextureViewDimension viewDimension =
@@ -112,7 +112,7 @@ struct StorageTextureBindingLayout {
 };
 
 URGE_BINDING()
-struct GPUBindGroupLayoutEntry {
+struct GPUBindGroupLayoutEntry : public Object {
   uint32_t binding = 0;
   GPU::ShaderStage visibility = GPU::ShaderStage::None;
   uint32_t bindingArraySize = 0;
@@ -123,13 +123,13 @@ struct GPUBindGroupLayoutEntry {
 };
 
 URGE_BINDING()
-struct GPUBindGroupLayoutDescriptor {
+struct GPUBindGroupLayoutDescriptor : public Object {
   estring label = {};
   earray<estruct<GPUBindGroupLayoutEntry>> entries = {};
 };
 
 URGE_BINDING()
-struct GPUBufferDescriptor {
+struct GPUBufferDescriptor : public Object {
   estring label = {};
   GPU::BufferUsage usage = GPU::BufferUsage::None;
   uint64_t size = 0;
@@ -137,80 +137,80 @@ struct GPUBufferDescriptor {
 };
 
 URGE_BINDING()
-struct GPUCommandEncoderDescriptor {
+struct GPUCommandEncoderDescriptor : public Object {
   estring label = {};
 };
 
 URGE_BINDING()
-struct GPUConstantEntry {
+struct GPUConstantEntry : public Object {
   estring key = {};
   double value = 0;
 };
 
 URGE_BINDING()
-struct GPUComputeState {
+struct GPUComputeState : public Object {
   scoped_refptr<GPUShaderModule> module = nullptr;
   estring entryPoint = {};
   earray<estruct<GPUConstantEntry>> constants = {};
 };
 
 URGE_BINDING()
-struct GPUComputePipelineDescriptor {
+struct GPUComputePipelineDescriptor : public Object {
   estring label = {};
   scoped_refptr<GPUPipelineLayout> layout = nullptr;
   estruct<GPUComputeState> compute = nullptr;
 };
 
 URGE_BINDING()
-struct GPUPipelineLayoutDescriptor {
+struct GPUPipelineLayoutDescriptor : public Object {
   estring label = {};
   earray<scoped_refptr<GPUBindGroupLayout>> bindGroupLayouts = {};
   uint32_t immediateSize = 0;
 };
 
 URGE_BINDING()
-struct GPUQuerySetDescriptor {
+struct GPUQuerySetDescriptor : public Object {
   estring label = {};
   GPU::QueryType type = {};
   uint32_t count = 0;
 };
 
 URGE_BINDING()
-struct GPUVertexAttribute {
+struct GPUVertexAttribute : public Object {
   GPU::VertexFormat format = {};
   uint64_t offset = 0;
   uint32_t shaderLocation = 0;
 };
 
 URGE_BINDING()
-struct GPUVertexBufferLayout {
+struct GPUVertexBufferLayout : public Object {
   GPU::VertexStepMode stepMode = GPU::VertexStepMode::Undefined;
   uint64_t arrayStride = 0;
   earray<estruct<GPUVertexAttribute>> attributes = {};
 };
 
 URGE_BINDING()
-struct GPUBlendComponent {
+struct GPUBlendComponent : public Object {
   GPU::BlendOperation operation = GPU::BlendOperation::Undefined;
   GPU::BlendFactor srcFactor = GPU::BlendFactor::Undefined;
   GPU::BlendFactor dstFactor = GPU::BlendFactor::Undefined;
 };
 
 URGE_BINDING()
-struct GPUBlendState {
+struct GPUBlendState : public Object {
   GPUBlendComponent color = {};
   GPUBlendComponent alpha = {};
 };
 
 URGE_BINDING()
-struct GPUColorTargetState {
+struct GPUColorTargetState : public Object {
   GPU::TextureFormat format = GPU::TextureFormat::Undefined;
   estruct<GPUBlendState> blend = nullptr;
   GPU::ColorWriteMask writeMask = GPU::ColorWriteMask::All;
 };
 
 URGE_BINDING()
-struct GPUVertexState {
+struct GPUVertexState : public Object {
   scoped_refptr<GPUShaderModule> module = nullptr;
   estring entryPoint = {};
   earray<estruct<GPUConstantEntry>> constants = {};
@@ -218,7 +218,7 @@ struct GPUVertexState {
 };
 
 URGE_BINDING()
-struct GPUFragmentState {
+struct GPUFragmentState : public Object {
   scoped_refptr<GPUShaderModule> module = nullptr;
   estring entryPoint = {};
   earray<estruct<GPUConstantEntry>> constants = {};
@@ -226,7 +226,7 @@ struct GPUFragmentState {
 };
 
 URGE_BINDING()
-struct GPUPrimitiveState {
+struct GPUPrimitiveState : public Object {
   GPU::PrimitiveTopology topology = GPU::PrimitiveTopology::Undefined;
   GPU::IndexFormat stripIndexFormat = GPU::IndexFormat::Undefined;
   GPU::FrontFace frontFace = GPU::FrontFace::Undefined;
@@ -235,7 +235,7 @@ struct GPUPrimitiveState {
 };
 
 URGE_BINDING()
-struct GPUStencilFaceState {
+struct GPUStencilFaceState : public Object {
   GPU::CompareFunction compare = GPU::CompareFunction::Undefined;
   GPU::StencilOperation failOp = GPU::StencilOperation::Undefined;
   GPU::StencilOperation depthFailOp = GPU::StencilOperation::Undefined;
@@ -243,7 +243,7 @@ struct GPUStencilFaceState {
 };
 
 URGE_BINDING()
-struct GPUDepthStencilState {
+struct GPUDepthStencilState : public Object {
   GPU::TextureFormat format = GPU::TextureFormat::Undefined;
   bool depthWriteEnabled = false;
   GPU::CompareFunction depthCompare = GPU::CompareFunction::Undefined;
@@ -257,14 +257,14 @@ struct GPUDepthStencilState {
 };
 
 URGE_BINDING()
-struct GPUMultisampleState {
+struct GPUMultisampleState : public Object {
   uint32_t count = 1;
   uint32_t mask = 0xFFFFFFFF;
   bool alphaToCoverageEnabled = false;
 };
 
 URGE_BINDING()
-struct GPURenderPipelineDescriptor {
+struct GPURenderPipelineDescriptor : public Object {
   estring label = {};
   scoped_refptr<GPUPipelineLayout> layout = nullptr;
   estruct<GPUVertexState> vertex = nullptr;
@@ -275,7 +275,7 @@ struct GPURenderPipelineDescriptor {
 };
 
 URGE_BINDING()
-struct GPUSamplerDescriptor {
+struct GPUSamplerDescriptor : public Object {
   estring label = {};
   GPU::AddressMode addressModeU = GPU::AddressMode::Undefined;
   GPU::AddressMode addressModeV = GPU::AddressMode::Undefined;
@@ -290,13 +290,13 @@ struct GPUSamplerDescriptor {
 };
 
 URGE_BINDING()
-struct GPUShaderModuleDescriptor {
+struct GPUShaderModuleDescriptor : public Object {
   estring label = {};
   estring wgslCode = {};
 };
 
 URGE_BINDING()
-struct GPUTextureDescriptor {
+struct GPUTextureDescriptor : public Object {
   estring label = {};
   GPU::TextureUsage usage = GPU::TextureUsage::None;
   GPU::TextureDimension dimension = GPU::TextureDimension::Undefined;
@@ -308,7 +308,7 @@ struct GPUTextureDescriptor {
 };
 
 URGE_BINDING()
-struct GPULimits {
+struct GPULimits : public Object {
   epointer reservedParam;
   uint32_t maxTextureDimension1D;
   uint32_t maxTextureDimension2D;
@@ -461,7 +461,7 @@ class GPUDevice : public Object {
   wgpu::Device object_;
 
   std::vector<std::string> features_;
-  GPULimits limits_;
+  estruct<GPULimits> limits_;
 };
 
 }  // namespace content

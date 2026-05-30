@@ -15,21 +15,21 @@ namespace content {
 #define WGPU_PTR(x) (x ? x->handle() : nullptr)
 
 URGE_BINDING()
-struct GPUExtent3D {
+struct GPUExtent3D : public Object {
   uint32_t width = 0;
   uint32_t height = 1;
   uint32_t depthOrArrayLayers = 1;
 };
 
 URGE_BINDING()
-struct GPUOrigin3D {
+struct GPUOrigin3D : public Object {
   uint32_t x = 0;
   uint32_t y = 0;
   uint32_t z = 0;
 };
 
 URGE_BINDING()
-struct GPUColor {
+struct GPUColor : public Object {
   double r = 0;
   double g = 0;
   double b = 0;
@@ -37,7 +37,7 @@ struct GPUColor {
 };
 
 URGE_BINDING()
-class GPU : public Object {
+class GPU : public Singleton<GPU> {
  public:
   URGE_BINDING()
   enum class MapAsyncStatus : uint32_t {

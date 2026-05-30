@@ -131,7 +131,7 @@ class GPURenderPassEncoder : public Object {
                     URGE_EXCEPTION);
 
   URGE_BINDING()
-  void SetBlendConstant(GPUColor* color, URGE_EXCEPTION);
+  void SetBlendConstant(estruct<GPUColor> color, URGE_EXCEPTION);
 
   URGE_BINDING()
   void SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
@@ -181,20 +181,20 @@ class GPURenderPassEncoder : public Object {
 ///
 
 URGE_BINDING()
-struct GPUTexelCopyBufferLayout {
+struct GPUTexelCopyBufferLayout : public Object {
   uint64_t offset = 0;
   uint32_t bytesPerRow = WGPU_COPY_STRIDE_UNDEFINED;
   uint32_t rowsPerImage = WGPU_COPY_STRIDE_UNDEFINED;
 };
 
 URGE_BINDING()
-struct GPUTexelCopyBufferInfo {
+struct GPUTexelCopyBufferInfo : public Object {
   estruct<GPUTexelCopyBufferLayout> layout = nullptr;
   scoped_refptr<GPUBuffer> buffer = nullptr;
 };
 
 URGE_BINDING()
-struct GPUTexelCopyTextureInfo {
+struct GPUTexelCopyTextureInfo : public Object {
   scoped_refptr<GPUTexture> texture = nullptr;
   uint32_t mipLevel = 0;
   estruct<GPUOrigin3D> origin = nullptr;
@@ -202,20 +202,20 @@ struct GPUTexelCopyTextureInfo {
 };
 
 URGE_BINDING()
-struct GPUPassTimestampWrites {
+struct GPUPassTimestampWrites : public Object {
   scoped_refptr<GPUQuerySet> querySet = nullptr;
   uint32_t beginningOfPassWriteIndex = WGPU_QUERY_SET_INDEX_UNDEFINED;
   uint32_t endOfPassWriteIndex = WGPU_QUERY_SET_INDEX_UNDEFINED;
 };
 
 URGE_BINDING()
-struct GPUComputePassDescriptor {
+struct GPUComputePassDescriptor : public Object {
   estring label = {};
   estruct<GPUPassTimestampWrites> timestampWrites = nullptr;
 };
 
 URGE_BINDING()
-struct GPURenderPassColorAttachment {
+struct GPURenderPassColorAttachment : public Object {
   scoped_refptr<GPUTextureView> view = nullptr;
   uint32_t depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
   scoped_refptr<GPUTextureView> resolveTarget = nullptr;
@@ -225,7 +225,7 @@ struct GPURenderPassColorAttachment {
 };
 
 URGE_BINDING()
-struct GPURenderPassDepthStencilAttachment {
+struct GPURenderPassDepthStencilAttachment : public Object {
   scoped_refptr<GPUTextureView> view = nullptr;
   GPU::LoadOp depthLoadOp = GPU::LoadOp::Undefined;
   GPU::StoreOp depthStoreOp = GPU::StoreOp::Undefined;
@@ -238,7 +238,7 @@ struct GPURenderPassDepthStencilAttachment {
 };
 
 URGE_BINDING()
-struct GPURenderPassDescriptor {
+struct GPURenderPassDescriptor : public Object {
   estring label = {};
   earray<estruct<GPURenderPassColorAttachment>> colorAttachments = {};
   estruct<GPURenderPassDepthStencilAttachment> depthStencilAttachment = nullptr;
@@ -247,7 +247,7 @@ struct GPURenderPassDescriptor {
 };
 
 URGE_BINDING()
-struct GPUCommandBufferDescriptor {
+struct GPUCommandBufferDescriptor : public Object {
   estring label = {};
 };
 

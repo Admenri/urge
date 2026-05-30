@@ -88,7 +88,8 @@ void GPUQueue::WriteTexture(estruct<GPUTexelCopyTextureInfo> destination,
 /// GPU Device
 ///
 
-GPUDevice::GPUDevice(wgpu::Device object) : object_(object) {}
+GPUDevice::GPUDevice(wgpu::Device object)
+    : object_(object), limits_(Object::Create<GPULimits>()) {}
 
 void GPUDevice::SetLabel(estring label, URGE_EXCEPTION) {
   object_.SetLabel(label);
@@ -737,6 +738,8 @@ scoped_refptr<GPUTexture> GPUDevice::CreateTexture(
 
 scoped_refptr<GPUQueue> GPUDevice::GetQueue(URGE_EXCEPTION) {
   auto queue = object_.GetQueue();
+  if (!queue)
+    return nullptr;
   return Object::Create<GPUQueue>(queue);
 }
 
@@ -779,10 +782,10 @@ earray<estring> GPUDevice::GetFeatures(URGE_EXCEPTION) {
 }
 
 estruct<GPULimits> GPUDevice::GetLimits(URGE_EXCEPTION) {
-  static_assert(sizeof(GPULimits) == sizeof(WGPULimits),
+  static_assert(sizeof(GPULimits) == sizeof(WGPULimits) + sizeof(Object),
                 "limit structure updated required.");
   object_.GetLimits(reinterpret_cast<wgpu::Limits*>(&limits_));
-  return &limits_;
+  return limits_;
 }
 
 }  // namespace content

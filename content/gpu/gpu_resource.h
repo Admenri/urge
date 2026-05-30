@@ -94,7 +94,7 @@ class GPUTextureView : public Object {
 ///
 
 URGE_BINDING()
-struct GPUTextureViewDescriptor {
+struct GPUTextureViewDescriptor : public Object {
   estring label = {};
   GPU::TextureFormat format = GPU::TextureFormat::Undefined;
   GPU::TextureViewDimension dimension = GPU::TextureViewDimension::Undefined;

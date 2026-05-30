@@ -101,7 +101,6 @@ scoped_refptr<GPUTextureView> GPUTexture::CreateView(
   auto view = object_.CreateView(&create_desc);
   if (!view)
     return nullptr;
-
   return Object::Create<GPUTextureView>(view);
 }
 

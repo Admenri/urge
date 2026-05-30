@@ -138,7 +138,8 @@ void GPURenderPassEncoder::SetBindGroup(uint32_t group_index,
                        dynamic_offsets.data());
 }
 
-void GPURenderPassEncoder::SetBlendConstant(GPUColor* color, URGE_EXCEPTION) {
+void GPURenderPassEncoder::SetBlendConstant(estruct<GPUColor> color,
+                                            URGE_EXCEPTION) {
   wgpu::Color raw_color;
   if (color)
     raw_color = {color->r, color->g, color->b, color->a};
@@ -225,6 +226,8 @@ scoped_refptr<GPUComputePassEncoder> GPUCommandEncoder::BeginComputePass(
   }
 
   auto result = object_.BeginComputePass(&create_desc);
+  if (!result)
+    return nullptr;
   return Object::Create<GPUComputePassEncoder>(result);
 }
 
@@ -285,6 +288,8 @@ scoped_refptr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
   }
 
   auto result = object_.BeginRenderPass(&create_desc);
+  if (!result)
+    return nullptr;
   return Object::Create<GPURenderPassEncoder>(result);
 }
 
@@ -437,7 +442,7 @@ void GPUCommandEncoder::WriteTimestamp(scoped_refptr<GPUQuerySet> query_set,
 }
 
 scoped_refptr<GPUCommandBuffer> GPUCommandEncoder::Finish(
-    GPUCommandBufferDescriptor* descriptor,
+    estruct<GPUCommandBufferDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::CommandBufferDescriptor create_desc;
   if (descriptor) {
@@ -445,7 +450,9 @@ scoped_refptr<GPUCommandBuffer> GPUCommandEncoder::Finish(
   }
 
   auto result = object_.Finish(descriptor ? &create_desc : nullptr);
-  return Object::Create<GPUCommandBuffer>();
+  if (!result)
+    return nullptr;
+  return Object::Create<GPUCommandBuffer>(result);
 }
 
 }  // namespace content

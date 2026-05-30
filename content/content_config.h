@@ -29,6 +29,6 @@
 template <typename Ty>
 using earray = std::span<Ty>;
 template <typename Ty>
-using estruct = Ty*;
+using estruct = scoped_refptr<Ty>;
 using estring = std::string_view;
 using epointer = void*;
