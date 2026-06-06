@@ -30,8 +30,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 endif ()
 
-option(URGE_BINDING_BACKEND "URGE script interpreter backend (default: CRUBY)" "CRUBY")
-
 #--------------------------------------------------------------------------------
 # Other definitions
 #--------------------------------------------------------------------------------
