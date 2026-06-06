@@ -7,6 +7,11 @@
  - URGE uses WebGPU specification as the rendering hardware interface backend, which supports modern graphics APIs like D3D12/Vulkan.  
  - URGE can be used on popular platforms like Windows, Linux, Android and Emscripten.  
 
+## Legacy Version
+
+ You can find legacy version in `legacy` branch.  
+ In principle, we will not continue to maintain branches of older versions.  
+
 ## Contract
 
 - Mail: admenri@qq.com  
