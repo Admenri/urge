@@ -23,13 +23,6 @@ const glm::mat4x4& Camera::GetProjectionMatrix() {
   return projection_;
 }
 
-glm::mat4x4 Camera::GetViewMatrix() {
-  auto model_matrix = GetModelMatrix();
-
-  // glm::affineInverse instead of glm::inverse
-  return glm::affineInverse(model_matrix);
-}
-
 URGE_ATTRIBUTE_DEFINE(
     Camera,
     Near,

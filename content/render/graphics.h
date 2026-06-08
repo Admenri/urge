@@ -20,10 +20,13 @@ class Graphics : public Singleton<Graphics> {
   Graphics(const Graphics&) = delete;
   Graphics& operator=(const Graphics&) = delete;
 
+  // Window target
   base::WeakPtr<ui::Widget> window() { return window_->AsWeakPtr(); }
 
+  // GFX Device access
   renderer::RenderDevice* gfx() { return gfx_.get(); }
 
+  // Frame iteration present
   void Present();
 
  public:

@@ -34,8 +34,6 @@ target_sources(engine_content
   resource/material.h
   resource/mesh.cc
   resource/mesh.h
-  resource/texture.cc
-  resource/texture.h
   scene/node_link.cc
   scene/node_link.h
   scene/node.cc

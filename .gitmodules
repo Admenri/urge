@@ -1,0 +1,18 @@
+[submodule "third_party/SDL"]
+	path = third_party/SDL
+	url = https://github.com/libsdl-org/SDL.git
+[submodule "third_party/SDL_ttf"]
+	path = third_party/SDL_ttf
+	url = https://github.com/libsdl-org/SDL_ttf.git
+[submodule "third_party/spdlog"]
+	path = third_party/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "third_party/physfs"]
+	path = third_party/physfs
+	url = https://github.com/icculus/physfs.git
+[submodule "third_party/yaml-cpp"]
+	path = third_party/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "third_party/wgpu-cmake/wgpu-native"]
+	path = third_party/wgpu-cmake/wgpu-native
+	url = https://github.com/gfx-rs/wgpu-native.git

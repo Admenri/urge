@@ -20,38 +20,20 @@ Viewport::Viewport(const glm::ivec2& size) : size_(size) {}
 
 URGE_ATTRIBUTE_DEFINE(
     Viewport,
-    Camera,
-    scoped_refptr<Camera>,
-    { return camera_; },
-    { camera_ = value; });
+    WorldRoot,
+    scoped_refptr<Node>,
+    { return root_; },
+    { root_ = value; });
+
+URGE_ATTRIBUTE_DEFINE(
+    Viewport,
+    Process,
+    scoped_refptr<RenderProcess>,
+    { return process_; },
+    { process_ = value; });
 
 scoped_refptr<Vector2i> Viewport::GetSize(URGE_EXCEPTION) {
   return base::MakeRefCounted<Vector2i>(size_);
 }
-
-///
-/// ViewportContainer
-///
-
-// static
-scoped_refptr<ViewportContainer> ViewportContainer::New(URGE_EXCEPTION) {
-  return base::MakeRefCounted<ViewportContainer>();
-}
-
-ViewportContainer::ViewportContainer() : Node() {}
-
-URGE_ATTRIBUTE_DEFINE(
-    ViewportContainer,
-    Region,
-    scoped_refptr<Rect>,
-    { return region_; },
-    { region_->Set(value, exception_state); });
-
-URGE_ATTRIBUTE_DEFINE(
-    ViewportContainer,
-    Viewport,
-    scoped_refptr<Viewport>,
-    { return viewport_; },
-    { viewport_ = value; });
 
 }  // namespace content

@@ -19,7 +19,7 @@ Quaternion::Quaternion() : value_() {}
 URGE_ATTRIBUTE_DEFINE(
     Quaternion,
     W,
-    float,
+    double,
     { return value_.w; },
     {
       value_.w = value;
@@ -29,7 +29,7 @@ URGE_ATTRIBUTE_DEFINE(
 URGE_ATTRIBUTE_DEFINE(
     Quaternion,
     X,
-    float,
+    double,
     { return value_.x; },
     {
       value_.x = value;
@@ -39,7 +39,7 @@ URGE_ATTRIBUTE_DEFINE(
 URGE_ATTRIBUTE_DEFINE(
     Quaternion,
     Y,
-    float,
+    double,
     { return value_.y; },
     {
       value_.y = value;
@@ -49,10 +49,20 @@ URGE_ATTRIBUTE_DEFINE(
 URGE_ATTRIBUTE_DEFINE(
     Quaternion,
     Z,
-    float,
+    double,
     { return value_.z; },
     {
       value_.z = value;
+      on_change();
+    });
+
+URGE_ATTRIBUTE_DEFINE(
+    Quaternion,
+    Euler,
+    scoped_refptr<Vector3d>,
+    { return Object::Create<Vector3d>(glm::eulerAngles(value_)); },
+    {
+      value_ = glm::dquat(value->data());
       on_change();
     });
 
@@ -62,23 +72,14 @@ Quaternion& Quaternion::Set(scoped_refptr<Quaternion> value, URGE_EXCEPTION) {
   return *this;
 }
 
-void Quaternion::SetEuler(scoped_refptr<Vector3> rotation, URGE_EXCEPTION) {
-  value_ = glm::quat(rotation->data());
-  on_change();
-}
-
-scoped_refptr<Vector3> Quaternion::GetEuler(URGE_EXCEPTION) {
-  return Object::Create<Vector3>(glm::eulerAngles(value_));
-}
-
 ///
 /// Transform
 ///
 
 Transform::Transform()
-    : position_(Object::Create<Vector3>()),
+    : position_(Object::Create<Vector3d>()),
       quaternion_(Object::Create<Quaternion>()),
-      scale_(Object::Create<Vector3>(glm::vec3(1.0f))) {
+      scale_(Object::Create<Vector3d>(glm::dvec3(1.0))) {
   auto value_change_handler =
       base::BindRepeating(&Transform::on_change, base::Unretained(this));
 
@@ -87,22 +88,23 @@ Transform::Transform()
   scale_->set_change_handler(value_change_handler);
 }
 
-glm::mat4x4 Transform::GetModelMatrix() {
+glm::dmat4x4 Transform::GetModelMatrix() {
   const auto& position = position_->data();
   const auto& quaternion = quaternion_->data();
   const auto& scale = scale_->data();
 
-  glm::mat4 model(1.0f);
+  glm::dmat4 model(1.0);
   model = glm::translate(model, position);
   model = model * glm::mat4_cast(quaternion);
   model = glm::scale(model, scale);
+
   return model;
 }
 
 URGE_ATTRIBUTE_DEFINE(
     Transform,
     Position,
-    scoped_refptr<Vector3>,
+    scoped_refptr<Vector3d>,
     { return position_; },
     { position_->Set(value, exception_state); });
 
@@ -116,7 +118,7 @@ URGE_ATTRIBUTE_DEFINE(
 URGE_ATTRIBUTE_DEFINE(
     Transform,
     Scale,
-    scoped_refptr<Vector3>,
+    scoped_refptr<Vector3d>,
     { return scale_; },
     { scale_->Set(value, exception_state); });
 

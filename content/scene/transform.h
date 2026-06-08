@@ -20,36 +20,33 @@ class Quaternion : public Constant {
   Quaternion(const Quaternion&) = delete;
   Quaternion& operator=(const Quaternion&) = delete;
 
-  const glm::quat& data() const { return value_; }
-  void set_data(const glm::quat& value) {
+  const glm::dquat& data() const { return value_; }
+  void set_data(const glm::dquat& value) {
     value_ = value;
     on_change();
   }
 
  public:
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(W, float);
+  URGE_ATTRIBUTE_DECLARE(W, double);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(X, float);
+  URGE_ATTRIBUTE_DECLARE(X, double);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Y, float);
+  URGE_ATTRIBUTE_DECLARE(Y, double);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Z, float);
+  URGE_ATTRIBUTE_DECLARE(Z, double);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Euler, scoped_refptr<Vector3d>);
 
   URGE_BINDING()
   Quaternion& Set(scoped_refptr<Quaternion> value, URGE_EXCEPTION);
 
-  URGE_BINDING()
-  void SetEuler(scoped_refptr<Vector3> rotation, URGE_EXCEPTION);
-
-  URGE_BINDING()
-  scoped_refptr<Vector3> GetEuler(URGE_EXCEPTION);
-
  private:
-  glm::quat value_;
+  glm::dquat value_;
 };
 
 URGE_BINDING()
@@ -60,22 +57,22 @@ class Transform : public Constant {
   Transform(const Transform&) = delete;
   Transform& operator=(const Transform&) = delete;
 
-  glm::mat4x4 GetModelMatrix();
+  glm::dmat4x4 GetModelMatrix();
 
  public:
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Position, scoped_refptr<Vector3>);
+  URGE_ATTRIBUTE_DECLARE(Position, scoped_refptr<Vector3d>);
 
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Quaternion, scoped_refptr<Quaternion>);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Scale, scoped_refptr<Vector3>);
+  URGE_ATTRIBUTE_DECLARE(Scale, scoped_refptr<Vector3d>);
 
  private:
-  scoped_refptr<Vector3> position_;
+  scoped_refptr<Vector3d> position_;
   scoped_refptr<Quaternion> quaternion_;
-  scoped_refptr<Vector3> scale_;
+  scoped_refptr<Vector3d> scale_;
 };
 
 }  // namespace content

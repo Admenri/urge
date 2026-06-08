@@ -84,19 +84,19 @@ struct GPUBindGroupDescriptor : public Object {
 };
 
 URGE_BINDING()
-struct BufferBindingLayout : public Object {
+struct GPUBufferBindingLayout : public Object {
   GPU::BufferBindingType type = GPU::BufferBindingType::Undefined;
   bool hasDynamicOffset = false;
   uint64_t minBindingSize = 0;
 };
 
 URGE_BINDING()
-struct SamplerBindingLayout : public Object {
+struct GPUSamplerBindingLayout : public Object {
   GPU::SamplerBindingType type = GPU::SamplerBindingType::Undefined;
 };
 
 URGE_BINDING()
-struct TextureBindingLayout : public Object {
+struct GPUTextureBindingLayout : public Object {
   GPU::TextureSampleType sampleType = GPU::TextureSampleType::Undefined;
   GPU::TextureViewDimension viewDimension =
       GPU::TextureViewDimension::Undefined;
@@ -104,7 +104,7 @@ struct TextureBindingLayout : public Object {
 };
 
 URGE_BINDING()
-struct StorageTextureBindingLayout : public Object {
+struct GPUStorageTextureBindingLayout : public Object {
   GPU::StorageTextureAccess access = GPU::StorageTextureAccess::Undefined;
   GPU::TextureFormat format = GPU::TextureFormat::Undefined;
   GPU::TextureViewDimension viewDimension =
@@ -116,10 +116,10 @@ struct GPUBindGroupLayoutEntry : public Object {
   uint32_t binding = 0;
   GPU::ShaderStage visibility = GPU::ShaderStage::None;
   uint32_t bindingArraySize = 0;
-  estruct<BufferBindingLayout> buffer = nullptr;
-  estruct<SamplerBindingLayout> sampler = nullptr;
-  estruct<TextureBindingLayout> texture = nullptr;
-  estruct<StorageTextureBindingLayout> storageTexture = nullptr;
+  estruct<GPUBufferBindingLayout> buffer = nullptr;
+  estruct<GPUSamplerBindingLayout> sampler = nullptr;
+  estruct<GPUTextureBindingLayout> texture = nullptr;
+  estruct<GPUStorageTextureBindingLayout> storageTexture = nullptr;
 };
 
 URGE_BINDING()

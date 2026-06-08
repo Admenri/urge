@@ -26,7 +26,7 @@ Node::~Node() {
   Dispose();
 }
 
-const glm::mat4x4& Node::GetModelMatrix() {
+const glm::dmat4x4& Node::GetModelMatrix() {
   if (transform_dirty_) {
     transform_dirty_ = false;
 

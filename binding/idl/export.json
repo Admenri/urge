@@ -207,6 +207,113 @@
       "enums": {},
       "callbacks": {}
     },
+    "Vector2d": {
+      "filepath": "common/vector.h",
+      "parent": "Constant",
+      "members": {
+        "New": [
+          {
+            "static": true,
+            "params": [],
+            "return": "scoped_refptr<Vector2d>"
+          },
+          {
+            "static": true,
+            "params": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              }
+            ],
+            "return": "scoped_refptr<Vector2d>"
+          }
+        ],
+        "Copy": {
+          "static": true,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "scoped_refptr<Vector2d>"
+        },
+        "Equal": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "bool"
+        },
+        "Set": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "Vector2d&"
+        },
+        "Add": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "Vector2d&"
+        },
+        "Sub": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "Vector2d&"
+        },
+        "Mul": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "Vector2d&"
+        },
+        "Div": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector2d>"
+            }
+          ],
+          "return": "Vector2d&"
+        }
+      },
+      "attributes": {
+        "X": {
+          "value": "double"
+        },
+        "Y": {
+          "value": "double"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
     "Vector2i": {
       "filepath": "common/vector.h",
       "parent": "Constant",
@@ -423,6 +530,120 @@
         },
         "Z": {
           "value": "float"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
+    "Vector3d": {
+      "filepath": "common/vector.h",
+      "parent": "Constant",
+      "members": {
+        "New": [
+          {
+            "static": true,
+            "params": [],
+            "return": "scoped_refptr<Vector3d>"
+          },
+          {
+            "static": true,
+            "params": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              }
+            ],
+            "return": "scoped_refptr<Vector3d>"
+          }
+        ],
+        "Copy": {
+          "static": true,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "scoped_refptr<Vector3d>"
+        },
+        "Equal": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "bool"
+        },
+        "Set": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "Vector3d&"
+        },
+        "Add": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "Vector3d&"
+        },
+        "Sub": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "Vector3d&"
+        },
+        "Mul": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "Vector3d&"
+        },
+        "Div": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector3d>"
+            }
+          ],
+          "return": "Vector3d&"
+        }
+      },
+      "attributes": {
+        "X": {
+          "value": "double"
+        },
+        "Y": {
+          "value": "double"
+        },
+        "Z": {
+          "value": "double"
         }
       },
       "enums": {},
@@ -658,6 +879,127 @@
         },
         "W": {
           "value": "float"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
+    "Vector4d": {
+      "filepath": "common/vector.h",
+      "parent": "Constant",
+      "members": {
+        "New": [
+          {
+            "static": true,
+            "params": [],
+            "return": "scoped_refptr<Vector4d>"
+          },
+          {
+            "static": true,
+            "params": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              },
+              {
+                "name": "w",
+                "type": "double"
+              }
+            ],
+            "return": "scoped_refptr<Vector4d>"
+          }
+        ],
+        "Copy": {
+          "static": true,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "scoped_refptr<Vector4d>"
+        },
+        "Equal": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "bool"
+        },
+        "Set": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "Vector4d&"
+        },
+        "Add": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "Vector4d&"
+        },
+        "Sub": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "Vector4d&"
+        },
+        "Mul": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "Vector4d&"
+        },
+        "Div": {
+          "static": false,
+          "params": [
+            {
+              "name": "other",
+              "type": "scoped_refptr<Vector4d>"
+            }
+          ],
+          "return": "Vector4d&"
+        }
+      },
+      "attributes": {
+        "X": {
+          "value": "double"
+        },
+        "Y": {
+          "value": "double"
+        },
+        "Z": {
+          "value": "double"
+        },
+        "W": {
+          "value": "double"
         }
       },
       "enums": {},
@@ -2753,6 +3095,78 @@
       "enums": {},
       "callbacks": {}
     },
+    "RenderContext": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {
+        "GetDevice": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUDevice>"
+        },
+        "GetQueue": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUQueue>"
+        },
+        "GetRenderTargetView": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUTextureView>"
+        },
+        "GetDepthStencilView": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUTextureView>"
+        },
+        "DrawRenderers": {
+          "static": false,
+          "params": [
+            {
+              "name": "pass",
+              "type": "scoped_refptr<GPURenderPassEncoder>"
+            }
+          ],
+          "return": "void"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "RenderProcess": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {
+        "New": {
+          "static": true,
+          "params": [
+            {
+              "name": "callback",
+              "type": "RenderCallback"
+            }
+          ],
+          "return": "scoped_refptr<RenderProcess>"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {
+        "RenderCallback": {
+          "return": "void",
+          "params": [
+            {
+              "name": "context",
+              "type": "scoped_refptr<RenderContext>"
+            },
+            {
+              "name": "cameras",
+              "type": "earray<scoped_refptr<Camera>>"
+            }
+          ]
+        }
+      }
+    },
     "Viewport": {
       "filepath": "render/viewport.h",
       "parent": "Object",
@@ -2774,31 +3188,152 @@
         }
       },
       "attributes": {
-        "Camera": {
-          "value": "scoped_refptr<Camera>"
+        "WorldRoot": {
+          "value": "scoped_refptr<Node>"
+        },
+        "Process": {
+          "value": "scoped_refptr<RenderProcess>"
         }
       },
       "enums": {},
       "callbacks": {}
     },
-    "ViewportContainer": {
-      "filepath": "render/viewport.h",
-      "parent": "Node",
+    "Material": {
+      "filepath": "resource/material.h",
+      "parent": "Object",
       "members": {
         "New": {
           "static": true,
           "params": [],
-          "return": "scoped_refptr<ViewportContainer>"
+          "return": "scoped_refptr<Material>"
+        },
+        "AddPass": {
+          "static": false,
+          "params": [
+            {
+              "name": "pass",
+              "type": "estruct<ShaderPass>"
+            }
+          ],
+          "return": "void"
+        },
+        "RemovePass": {
+          "static": false,
+          "params": [
+            {
+              "name": "name",
+              "type": "estring"
+            }
+          ],
+          "return": "void"
+        },
+        "GetAllPassNames": {
+          "static": false,
+          "params": [],
+          "return": "earray<estring>"
+        },
+        "SetupBindData": {
+          "static": false,
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            },
+            {
+              "name": "group",
+              "type": "scoped_refptr<GPUBindGroup>"
+            },
+            {
+              "name": "offsets",
+              "type": "earray<uint32_t>"
+            }
+          ],
+          "return": "void"
         }
       },
       "attributes": {
-        "Region": {
-          "value": "scoped_refptr<Rect>"
-        },
-        "Viewport": {
-          "value": "scoped_refptr<Viewport>"
+        "RenderQueue": {
+          "value": "uint32_t"
         }
       },
+      "enums": {},
+      "callbacks": {}
+    },
+    "Mesh": {
+      "filepath": "resource/mesh.h",
+      "parent": "Object",
+      "members": {
+        "New": {
+          "static": true,
+          "params": [
+            {
+              "name": "vertex_counts",
+              "type": "earray<uint32_t>"
+            },
+            {
+              "name": "index_count",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "scoped_refptr<Mesh>"
+        },
+        "GetVertices": {
+          "static": false,
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "epointer"
+        },
+        "GetVertexCount": {
+          "static": false,
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "uint32_t"
+        },
+        "GetIndices": {
+          "static": false,
+          "params": [],
+          "return": "epointer"
+        },
+        "GetIndexCount": {
+          "static": false,
+          "params": [],
+          "return": "uint32_t"
+        },
+        "SetupSubMeshData": {
+          "static": false,
+          "params": [
+            {
+              "name": "data",
+              "type": "earray<estruct<SubMesh>>"
+            }
+          ],
+          "return": "void"
+        },
+        "GetSubMeshAt": {
+          "static": false,
+          "params": [
+            {
+              "name": "index",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "estruct<SubMesh>"
+        },
+        "GetSubMeshCount": {
+          "static": false,
+          "params": [],
+          "return": "uint32_t"
+        }
+      },
+      "attributes": {},
       "enums": {},
       "callbacks": {}
     },
@@ -2867,35 +3402,23 @@
             }
           ],
           "return": "Quaternion&"
-        },
-        "SetEuler": {
-          "static": false,
-          "params": [
-            {
-              "name": "rotation",
-              "type": "scoped_refptr<Vector3>"
-            }
-          ],
-          "return": "void"
-        },
-        "GetEuler": {
-          "static": false,
-          "params": [],
-          "return": "scoped_refptr<Vector3>"
         }
       },
       "attributes": {
         "W": {
-          "value": "float"
+          "value": "double"
         },
         "X": {
-          "value": "float"
+          "value": "double"
         },
         "Y": {
-          "value": "float"
+          "value": "double"
         },
         "Z": {
-          "value": "float"
+          "value": "double"
+        },
+        "Euler": {
+          "value": "scoped_refptr<Vector3d>"
         }
       },
       "enums": {},
@@ -2907,13 +3430,13 @@
       "members": {},
       "attributes": {
         "Position": {
-          "value": "scoped_refptr<Vector3>"
+          "value": "scoped_refptr<Vector3d>"
         },
         "Quaternion": {
           "value": "scoped_refptr<Quaternion>"
         },
         "Scale": {
-          "value": "scoped_refptr<Vector3>"
+          "value": "scoped_refptr<Vector3d>"
         }
       },
       "enums": {},
@@ -3199,7 +3722,7 @@
         }
       ]
     },
-    "BufferBindingLayout": {
+    "GPUBufferBindingLayout": {
       "filepath": "gpu/gpu_device.h",
       "params": [
         {
@@ -3216,7 +3739,7 @@
         }
       ]
     },
-    "SamplerBindingLayout": {
+    "GPUSamplerBindingLayout": {
       "filepath": "gpu/gpu_device.h",
       "params": [
         {
@@ -3225,7 +3748,7 @@
         }
       ]
     },
-    "TextureBindingLayout": {
+    "GPUTextureBindingLayout": {
       "filepath": "gpu/gpu_device.h",
       "params": [
         {
@@ -3242,7 +3765,7 @@
         }
       ]
     },
-    "StorageTextureBindingLayout": {
+    "GPUStorageTextureBindingLayout": {
       "filepath": "gpu/gpu_device.h",
       "params": [
         {
@@ -3276,19 +3799,19 @@
         },
         {
           "name": "buffer",
-          "type": "estruct<BufferBindingLayout>"
+          "type": "estruct<GPUBufferBindingLayout>"
         },
         {
           "name": "sampler",
-          "type": "estruct<SamplerBindingLayout>"
+          "type": "estruct<GPUSamplerBindingLayout>"
         },
         {
           "name": "texture",
-          "type": "estruct<TextureBindingLayout>"
+          "type": "estruct<GPUTextureBindingLayout>"
         },
         {
           "name": "storageTexture",
-          "type": "estruct<StorageTextureBindingLayout>"
+          "type": "estruct<GPUStorageTextureBindingLayout>"
         }
       ]
     },
@@ -3922,6 +4445,60 @@
         {
           "name": "usage",
           "type": "GPU::TextureUsage"
+        }
+      ]
+    },
+    "ShaderPass": {
+      "filepath": "resource/material.h",
+      "params": [
+        {
+          "name": "name",
+          "type": "estring"
+        },
+        {
+          "name": "tags",
+          "type": "emap<estring, estring>"
+        },
+        {
+          "name": "pipeline",
+          "type": "scoped_refptr<GPURenderPipeline>"
+        },
+        {
+          "name": "stencilRef",
+          "type": "uint32_t"
+        }
+      ]
+    },
+    "SubMesh": {
+      "filepath": "resource/mesh.h",
+      "params": [
+        {
+          "name": "vertexSlot",
+          "type": "uint32_t"
+        },
+        {
+          "name": "materialSlot",
+          "type": "uint32_t"
+        },
+        {
+          "name": "indexStart",
+          "type": "uint32_t"
+        },
+        {
+          "name": "indexCount",
+          "type": "uint32_t"
+        },
+        {
+          "name": "vertexStart",
+          "type": "uint32_t"
+        },
+        {
+          "name": "vertexCount",
+          "type": "uint32_t"
+        },
+        {
+          "name": "name",
+          "type": "estring"
         }
       ]
     }

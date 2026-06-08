@@ -24,7 +24,7 @@ class Node : public Disposable {
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
 
-  const glm::mat4x4& GetModelMatrix();
+  const glm::dmat4x4& GetModelMatrix();
 
  public:
   URGE_BINDING()
@@ -70,7 +70,7 @@ class Node : public Disposable {
   scoped_refptr<Transform> transform_;
 
   std::string name_;
-  glm::mat4x4 model_;
+  glm::dmat4x4 model_;
 
   bool transform_dirty_;
 };

@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 // Using for parser binding signature
 #define URGE_BINDING(...)
@@ -30,5 +31,7 @@ template <typename Ty>
 using earray = std::span<Ty>;
 template <typename Ty>
 using estruct = scoped_refptr<Ty>;
+template <typename K, typename V>
+using emap = std::unordered_map<K, V>;
 using estring = std::string_view;
 using epointer = void*;

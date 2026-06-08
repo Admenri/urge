@@ -4,4 +4,52 @@
 
 #pragma once
 
-namespace content {}
+#include "content/gpu/gpu_device.h"
+#include "content/gpu/gpu_resource.h"
+#include "content/render/camera.h"
+#include "content/scene/node.h"
+
+namespace content {
+
+URGE_BINDING()
+struct ShaderPass : public Object {
+  estring name;
+  emap<estring, estring> tags;
+  scoped_refptr<GPURenderPipeline> pipeline;
+  uint32_t stencilRef = 0;
+};
+
+URGE_BINDING()
+class Material : public Object {
+ public:
+  Material();
+
+  Material(const Material&) = delete;
+  Material& operator=(const Material&) = delete;
+
+ public:
+  URGE_BINDING()
+  static scoped_refptr<Material> New(URGE_EXCEPTION);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(RenderQueue, uint32_t);
+
+  URGE_BINDING()
+  void AddPass(estruct<ShaderPass> pass, URGE_EXCEPTION);
+
+  URGE_BINDING()
+  void RemovePass(estring name, URGE_EXCEPTION);
+
+  URGE_BINDING()
+  earray<estring> GetAllPassNames(URGE_EXCEPTION);
+
+  URGE_BINDING()
+  void SetupBindData(uint32_t slot,
+                     scoped_refptr<GPUBindGroup> group,
+                     earray<uint32_t> offsets,
+                     URGE_EXCEPTION);
+
+ private:
+};
+
+}  // namespace content

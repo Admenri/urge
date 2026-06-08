@@ -19,7 +19,6 @@ class Camera : public Node {
 
  public:
   const glm::mat4x4& GetProjectionMatrix();
-  glm::mat4x4 GetViewMatrix();
 
  public:
   URGE_BINDING() URGE_ATTRIBUTE_DECLARE(Near, float);
