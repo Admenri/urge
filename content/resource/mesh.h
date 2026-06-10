@@ -13,7 +13,7 @@
 namespace content {
 
 URGE_BINDING()
-struct SubMesh {
+struct SubMesh : public Object {
   uint32_t vertexSlot = 0;
   uint32_t materialSlot = 0;
   uint32_t indexStart = 0;
@@ -33,7 +33,7 @@ class Mesh : public Object {
 
  public:
   URGE_BINDING()
-  static scoped_refptr<Mesh> New(earray<uint32_t> vertex_counts,
+  static scoped_refptr<Mesh> New(uint32_t vertex_bytes,
                                  uint32_t index_count,
                                  URGE_EXCEPTION);
 

@@ -12,7 +12,12 @@ namespace content {
 /// CameraBase
 ///
 
-Camera::Camera() : Node(), projection_dirty_(true), near_(0.1f), far_(2000.f) {}
+Camera::Camera()
+    : Node(),
+      projection_dirty_(true),
+      culling_mask_(std::numeric_limits<uint64_t>::max()),
+      near_(0.1f),
+      far_(2000.f) {}
 
 const glm::mat4x4& Camera::GetProjectionMatrix() {
   if (projection_dirty_) {
@@ -22,6 +27,13 @@ const glm::mat4x4& Camera::GetProjectionMatrix() {
 
   return projection_;
 }
+
+URGE_ATTRIBUTE_DEFINE(
+    Camera,
+    CullingMask,
+    uint64_t,
+    { return culling_mask_; },
+    { culling_mask_ = value; });
 
 URGE_ATTRIBUTE_DEFINE(
     Camera,
@@ -75,7 +87,7 @@ URGE_ATTRIBUTE_DEFINE(
     });
 
 glm::mat4x4 PerspectiveCamera::GetProjection() {
-  return glm::perspective<float>(fovy_, aspect_, near_, far_);
+  return glm::perspective<float>(fovy_, aspect_, near_plane(), far_plane());
 }
 
 ///
@@ -103,7 +115,8 @@ URGE_ATTRIBUTE_DEFINE(
 glm::mat4x4 OrthographicCamera::GetProjection() {
   const auto* bounds = region_->bounds();
   return glm::ortho<float>(bounds[Rect::AXIS_LEFT], bounds[Rect::AXIS_RIGHT],
-                           bounds[Rect::AXIS_TOP], bounds[Rect::AXIS_BOTTOM]);
+                           bounds[Rect::AXIS_TOP], bounds[Rect::AXIS_BOTTOM],
+                           near_plane(), far_plane());
 }
 
 }  // namespace content

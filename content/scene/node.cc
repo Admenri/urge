@@ -66,6 +66,13 @@ URGE_ATTRIBUTE_DEFINE(
 
 URGE_ATTRIBUTE_DEFINE(
     Node,
+    Layer,
+    uint32_t,
+    { return layer_; },
+    { layer_ = value; });
+
+URGE_ATTRIBUTE_DEFINE(
+    Node,
     Name,
     std::string,
     { return name_; },

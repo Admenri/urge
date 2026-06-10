@@ -3018,6 +3018,9 @@
       "parent": "Node",
       "members": {},
       "attributes": {
+        "CullingMask": {
+          "value": "uint64_t"
+        },
         "Near": {
           "value": "float"
         },
@@ -3095,6 +3098,20 @@
       "enums": {},
       "callbacks": {}
     },
+    "CullingResults": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {
+        "GetVisibleObjectCount": {
+          "static": false,
+          "params": [],
+          "return": "uint32_t"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "RenderContext": {
       "filepath": "render/viewport.h",
       "parent": "Object",
@@ -3119,12 +3136,34 @@
           "params": [],
           "return": "scoped_refptr<GPUTextureView>"
         },
+        "Cull": {
+          "static": false,
+          "params": [
+            {
+              "name": "settings",
+              "type": "estruct<CullingSettings>"
+            }
+          ],
+          "return": "scoped_refptr<CullingResults>"
+        },
         "DrawRenderers": {
           "static": false,
           "params": [
             {
               "name": "pass",
               "type": "scoped_refptr<GPURenderPassEncoder>"
+            },
+            {
+              "name": "culling_results",
+              "type": "scoped_refptr<CullingResults>"
+            },
+            {
+              "name": "drawing_settings",
+              "type": "estruct<DrawingSettings>"
+            },
+            {
+              "name": "filtering_settings",
+              "type": "estruct<FilteringSettings>"
             }
           ],
           "return": "void"
@@ -3267,8 +3306,8 @@
           "static": true,
           "params": [
             {
-              "name": "vertex_counts",
-              "type": "earray<uint32_t>"
+              "name": "vertex_bytes",
+              "type": "uint32_t"
             },
             {
               "name": "index_count",
@@ -3381,6 +3420,9 @@
         },
         "Order": {
           "value": "int64_t"
+        },
+        "Layer": {
+          "value": "uint32_t"
         },
         "Name": {
           "value": "std::string"
@@ -4445,6 +4487,54 @@
         {
           "name": "usage",
           "type": "GPU::TextureUsage"
+        }
+      ]
+    },
+    "SortingSettings": {
+      "filepath": "render/viewport.h",
+      "params": [
+        {
+          "name": "cameraPosition",
+          "type": "scoped_refptr<Vector3d>"
+        },
+        {
+          "name": "criteria",
+          "type": "SortingCriteria"
+        }
+      ]
+    },
+    "DrawingSettings": {
+      "filepath": "render/viewport.h",
+      "params": [
+        {
+          "name": "sortingSettings",
+          "type": "estruct<SortingSettings>"
+        }
+      ]
+    },
+    "FilteringSettings": {
+      "filepath": "render/viewport.h",
+      "params": [
+        {
+          "name": "cullingMask",
+          "type": "uint64_t"
+        },
+        {
+          "name": "minRenderQueue",
+          "type": "uint32_t"
+        },
+        {
+          "name": "maxRenderQueue",
+          "type": "uint32_t"
+        }
+      ]
+    },
+    "CullingSettings": {
+      "filepath": "render/viewport.h",
+      "params": [
+        {
+          "name": "cullingMask",
+          "type": "uint64_t"
         }
       ]
     },

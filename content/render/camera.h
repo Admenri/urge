@@ -20,11 +20,23 @@ class Camera : public Node {
  public:
   const glm::mat4x4& GetProjectionMatrix();
 
+  uint64_t culling_mask() const { return culling_mask_; }
+  float near_plane() const { return near_; }
+  float far_plane() const { return far_; }
+
  public:
-  URGE_BINDING() URGE_ATTRIBUTE_DECLARE(Near, float);
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(CullingMask, uint64_t);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Near, float);
 
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Far, float);
+
+ protected:
+  virtual glm::mat4x4 GetProjection() = 0;
+  void NotifyProjectionChange() { projection_dirty_ = true; }
 
  private:
   std::string_view ObjectName() override { return "URGE.Camera"; }
@@ -32,10 +44,7 @@ class Camera : public Node {
   glm::mat4x4 projection_;
   bool projection_dirty_;
 
- protected:
-  virtual glm::mat4x4 GetProjection() = 0;
-  void NotifyProjectionChange() { projection_dirty_ = true; }
-
+  uint64_t culling_mask_;
   float near_;
   float far_;
 };

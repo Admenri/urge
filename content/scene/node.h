@@ -26,6 +26,8 @@ class Node : public Disposable {
 
   const glm::dmat4x4& GetModelMatrix();
 
+  uint32_t culling_layer() const { return layer_; }
+
  public:
   URGE_BINDING()
   static scoped_refptr<Node> New(URGE_EXCEPTION);
@@ -38,6 +40,9 @@ class Node : public Disposable {
 
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Order, int64_t);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Layer, uint32_t);
 
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Name, std::string);
@@ -69,6 +74,7 @@ class Node : public Disposable {
   scoped_refptr<Node> parent_;
   scoped_refptr<Transform> transform_;
 
+  uint32_t layer_;
   std::string name_;
   glm::dmat4x4 model_;
 

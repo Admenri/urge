@@ -4,12 +4,55 @@
 
 #pragma once
 
+#include "content/content_config.h"
 #include "content/gpu/gpu_device.h"
 #include "content/gpu/gpu_resource.h"
 #include "content/render/camera.h"
 #include "content/scene/node.h"
 
 namespace content {
+
+URGE_BINDING()
+struct SortingSettings : public Object {
+  scoped_refptr<Vector3d> cameraPosition;
+  SortingCriteria criteria;
+
+  static estruct<SortingSettings> New(scoped_refptr<Camera>, URGE_EXCEPTION);
+};
+
+URGE_BINDING()
+struct DrawingSettings : public Object {
+  estruct<SortingSettings> sortingSettings;
+};
+
+URGE_BINDING()
+struct FilteringSettings : public Object {
+  uint64_t cullingMask = std::numeric_limits<uint64_t>::max();
+  uint32_t minRenderQueue = std::numeric_limits<uint32_t>::min();
+  uint32_t maxRenderQueue = std::numeric_limits<uint32_t>::max();
+};
+
+URGE_BINDING()
+struct CullingSettings : public Object {
+  uint64_t cullingMask = std::numeric_limits<uint64_t>::max();
+
+  static estruct<CullingSettings> New(scoped_refptr<Camera>, URGE_EXCEPTION);
+};
+
+URGE_BINDING()
+class CullingResults : public Object {
+ public:
+  CullingResults();
+
+  CullingResults(const CullingResults&) = delete;
+  CullingResults& operator=(const CullingResults&) = delete;
+
+ public:
+  URGE_BINDING()
+  uint32_t GetVisibleObjectCount(URGE_EXCEPTION);
+
+ private:
+};
 
 URGE_BINDING()
 class RenderContext : public Object {
@@ -33,7 +76,15 @@ class RenderContext : public Object {
   scoped_refptr<GPUTextureView> GetDepthStencilView(URGE_EXCEPTION);
 
   URGE_BINDING()
-  void DrawRenderers(scoped_refptr<GPURenderPassEncoder> pass, URGE_EXCEPTION);
+  scoped_refptr<CullingResults> Cull(estruct<CullingSettings> settings,
+                                     URGE_EXCEPTION);
+
+  URGE_BINDING()
+  void DrawRenderers(scoped_refptr<GPURenderPassEncoder> pass,
+                     scoped_refptr<CullingResults> culling_results,
+                     estruct<DrawingSettings> drawing_settings,
+                     estruct<FilteringSettings> filtering_settings,
+                     URGE_EXCEPTION);
 
  private:
 };
