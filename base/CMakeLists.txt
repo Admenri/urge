@@ -50,6 +50,7 @@ target_link_libraries(engine_base
   glm::glm
   spdlog::spdlog
   magic_enum
+  mimalloc-static
 )
 
 if(MSVC)

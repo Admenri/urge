@@ -64,6 +64,9 @@
 
 #pragma once
 
+// PATCH: Allocator Override
+#include "mimalloc-override.h"
+
 // The following is substantially similar to the Chromium implementation.
 // If the Chromium implementation diverges the below implementation should be
 // updated to match.

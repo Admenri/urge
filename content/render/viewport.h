@@ -51,13 +51,6 @@ class FilteringSettings : public Object {
 };
 
 URGE_BINDING()
-class CullingSettings : public Object {
- public:
-  URGE_BINDING()
-  uint64_t cullingMask = 0xFFFFFFFFFFFFFFFFu;
-};
-
-URGE_BINDING()
 class CullingResults : public Object {
  public:
   CullingResults();
@@ -94,7 +87,7 @@ class RenderContext : public Object {
   scoped_refptr<GPUTextureView> GetDepthStencilView(URGE_EXCEPTION);
 
   URGE_BINDING()
-  scoped_refptr<CullingResults> Cull(scoped_refptr<CullingSettings> settings,
+  scoped_refptr<CullingResults> Cull(scoped_refptr<Camera> camera,
                                      URGE_EXCEPTION);
 
   URGE_BINDING()

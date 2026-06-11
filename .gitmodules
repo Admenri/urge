@@ -13,6 +13,9 @@
 [submodule "third_party/yaml-cpp"]
 	path = third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "third_party/mimalloc"]
+	path = third_party/mimalloc
+	url = https://github.com/microsoft/mimalloc.git
 [submodule "third_party/wgpu-cmake/wgpu-native"]
 	path = third_party/wgpu-cmake/wgpu-native
 	url = https://github.com/gfx-rs/wgpu-native.git

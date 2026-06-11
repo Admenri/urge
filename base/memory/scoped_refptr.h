@@ -40,6 +40,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "base/buildflags/build.h"
 #include "base/buildflags/compiler_specific.h"
 #include "base/debug/logging.h"
 

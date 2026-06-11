@@ -4018,14 +4018,6 @@
       "enums": {},
       "callbacks": {}
     },
-    "CullingSettings": {
-      "filepath": "render/viewport.h",
-      "parent": "Object",
-      "members": {},
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
-    },
     "CullingResults": {
       "filepath": "render/viewport.h",
       "parent": "Object",
@@ -4068,8 +4060,8 @@
           "static": false,
           "params": [
             {
-              "name": "settings",
-              "type": "scoped_refptr<CullingSettings>"
+              "name": "camera",
+              "type": "scoped_refptr<Camera>"
             }
           ],
           "return": "scoped_refptr<CullingResults>"
