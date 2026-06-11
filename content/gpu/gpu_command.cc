@@ -14,7 +14,7 @@ GPUComputePassEncoder::GPUComputePassEncoder(wgpu::ComputePassEncoder object)
     : object_(object) {}
 
 void GPUComputePassEncoder::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 void GPUComputePassEncoder::SetBindGroup(uint32_t group_index,
@@ -49,12 +49,12 @@ void GPUComputePassEncoder::DispatchWorkgroupsIndirect(
 
 void GPUComputePassEncoder::PushDebugGroup(estring group_label,
                                            URGE_EXCEPTION) {
-  object_.PushDebugGroup(group_label);
+  object_.PushDebugGroup(std::string_view(group_label));
 }
 
 void GPUComputePassEncoder::InsertDebugMarker(estring marker_label,
                                               URGE_EXCEPTION) {
-  object_.InsertDebugMarker(marker_label);
+  object_.InsertDebugMarker(std::string_view(marker_label));
 }
 
 void GPUComputePassEncoder::PopDebugGroup(URGE_EXCEPTION) {
@@ -73,7 +73,7 @@ GPURenderPassEncoder::GPURenderPassEncoder(wgpu::RenderPassEncoder object)
     : object_(object) {}
 
 void GPURenderPassEncoder::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 void GPURenderPassEncoder::BeginOcclusionQuery(uint32_t query_index,
@@ -118,12 +118,12 @@ void GPURenderPassEncoder::DrawIndirect(
 }
 
 void GPURenderPassEncoder::PushDebugGroup(estring group_label, URGE_EXCEPTION) {
-  object_.PushDebugGroup(group_label);
+  object_.PushDebugGroup(std::string_view(group_label));
 }
 
 void GPURenderPassEncoder::InsertDebugMarker(estring marker_label,
                                              URGE_EXCEPTION) {
-  object_.InsertDebugMarker(marker_label);
+  object_.InsertDebugMarker(std::string_view(marker_label));
 }
 
 void GPURenderPassEncoder::PopDebugGroup(URGE_EXCEPTION) {
@@ -138,7 +138,7 @@ void GPURenderPassEncoder::SetBindGroup(uint32_t group_index,
                        dynamic_offsets.data());
 }
 
-void GPURenderPassEncoder::SetBlendConstant(estruct<GPUColor> color,
+void GPURenderPassEncoder::SetBlendConstant(scoped_refptr<GPUColor> color,
                                             URGE_EXCEPTION) {
   wgpu::Color raw_color;
   if (color)
@@ -204,16 +204,16 @@ GPUCommandEncoder::GPUCommandEncoder(wgpu::CommandEncoder object)
     : object_(object) {}
 
 void GPUCommandEncoder::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 scoped_refptr<GPUComputePassEncoder> GPUCommandEncoder::BeginComputePass(
-    estruct<GPUComputePassDescriptor> descriptor,
+    scoped_refptr<GPUComputePassDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::PassTimestampWrites timestamp_desc;
   wgpu::ComputePassDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
 
     if (descriptor->timestampWrites) {
       create_desc.timestampWrites = &timestamp_desc;
@@ -232,14 +232,14 @@ scoped_refptr<GPUComputePassEncoder> GPUCommandEncoder::BeginComputePass(
 }
 
 scoped_refptr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
-    estruct<GPURenderPassDescriptor> descriptor,
+    scoped_refptr<GPURenderPassDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::PassTimestampWrites timestamp_desc;
   std::vector<wgpu::RenderPassColorAttachment> color_attachments;
   wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
   wgpu::RenderPassDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
 
     for (auto& it : descriptor->colorAttachments) {
       wgpu::RenderPassColorAttachment attachment;
@@ -311,9 +311,9 @@ void GPUCommandEncoder::CopyBufferToBuffer(scoped_refptr<GPUBuffer> source,
 }
 
 void GPUCommandEncoder::CopyBufferToTexture(
-    estruct<GPUTexelCopyBufferInfo> source,
-    estruct<GPUTexelCopyTextureInfo> destination,
-    estruct<GPUExtent3D> copy_size,
+    scoped_refptr<GPUTexelCopyBufferInfo> source,
+    scoped_refptr<GPUTexelCopyTextureInfo> destination,
+    scoped_refptr<GPUExtent3D> copy_size,
     URGE_EXCEPTION) {
   wgpu::TexelCopyBufferInfo raw_source;
   if (auto data = source; data) {
@@ -346,9 +346,9 @@ void GPUCommandEncoder::CopyBufferToTexture(
 }
 
 void GPUCommandEncoder::CopyTextureToBuffer(
-    estruct<GPUTexelCopyTextureInfo> source,
-    estruct<GPUTexelCopyBufferInfo> destination,
-    estruct<GPUExtent3D> copy_size,
+    scoped_refptr<GPUTexelCopyTextureInfo> source,
+    scoped_refptr<GPUTexelCopyBufferInfo> destination,
+    scoped_refptr<GPUExtent3D> copy_size,
     URGE_EXCEPTION) {
   wgpu::TexelCopyTextureInfo raw_source;
   if (auto data = source; data) {
@@ -380,9 +380,9 @@ void GPUCommandEncoder::CopyTextureToBuffer(
 }
 
 void GPUCommandEncoder::CopyTextureToTexture(
-    estruct<GPUTexelCopyTextureInfo> source,
-    estruct<GPUTexelCopyTextureInfo> destination,
-    estruct<GPUExtent3D> copy_size,
+    scoped_refptr<GPUTexelCopyTextureInfo> source,
+    scoped_refptr<GPUTexelCopyTextureInfo> destination,
+    scoped_refptr<GPUExtent3D> copy_size,
     URGE_EXCEPTION) {
   wgpu::TexelCopyTextureInfo raw_source;
   if (auto data = source; data) {
@@ -413,12 +413,12 @@ void GPUCommandEncoder::CopyTextureToTexture(
 }
 
 void GPUCommandEncoder::PushDebugGroup(estring group_label, URGE_EXCEPTION) {
-  object_.PushDebugGroup(group_label);
+  object_.PushDebugGroup(std::string_view(group_label));
 }
 
 void GPUCommandEncoder::InsertDebugMarker(estring marker_label,
                                           URGE_EXCEPTION) {
-  object_.InsertDebugMarker(marker_label);
+  object_.InsertDebugMarker(std::string_view(marker_label));
 }
 
 void GPUCommandEncoder::PopDebugGroup(URGE_EXCEPTION) {
@@ -442,11 +442,11 @@ void GPUCommandEncoder::WriteTimestamp(scoped_refptr<GPUQuerySet> query_set,
 }
 
 scoped_refptr<GPUCommandBuffer> GPUCommandEncoder::Finish(
-    estruct<GPUCommandBufferDescriptor> descriptor,
+    scoped_refptr<GPUCommandBufferDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::CommandBufferDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
   }
 
   auto result = object_.Finish(descriptor ? &create_desc : nullptr);

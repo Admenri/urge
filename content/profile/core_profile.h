@@ -14,7 +14,8 @@
 
 namespace content {
 
-struct CoreProfile : public Singleton<CoreProfile> {
+class CoreProfile : public Singleton<CoreProfile> {
+ public:
   CoreProfile(SDL_IOStream* config_file);
 
   CoreProfile(const CoreProfile&) = delete;

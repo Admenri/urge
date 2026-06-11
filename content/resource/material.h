@@ -12,10 +12,18 @@
 namespace content {
 
 URGE_BINDING()
-struct ShaderPass : public Object {
-  estring name;
-  emap<estring, estring> tags;
-  scoped_refptr<GPURenderPipeline> pipeline;
+class ShaderPass : public Object {
+ public:
+  URGE_BINDING()
+  estring name = {};
+
+  URGE_BINDING()
+  emap<estring, estring> tags = {};
+
+  URGE_BINDING()
+  scoped_refptr<GPURenderPipeline> pipeline = nullptr;
+
+  URGE_BINDING()
   uint32_t stencilRef = 0;
 };
 
@@ -35,7 +43,7 @@ class Material : public Object {
   URGE_ATTRIBUTE_DECLARE(RenderQueue, uint32_t);
 
   URGE_BINDING()
-  void AddPass(estruct<ShaderPass> pass, URGE_EXCEPTION);
+  void AddPass(scoped_refptr<ShaderPass> pass, URGE_EXCEPTION);
 
   URGE_BINDING()
   void RemovePass(estring name, URGE_EXCEPTION);

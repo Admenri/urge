@@ -5,10 +5,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 // Using for parser binding signature
 #define URGE_BINDING(...)
@@ -29,10 +29,8 @@
 
 // Binding type
 template <typename Ty>
-using earray = std::span<Ty>;
-template <typename Ty>
-using estruct = scoped_refptr<Ty>;
+using earray = std::vector<Ty>;
 template <typename K, typename V>
 using emap = std::unordered_map<K, V>;
-using estring = std::string_view;
+using estring = std::string;
 using epointer = void*;

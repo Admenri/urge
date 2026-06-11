@@ -131,7 +131,7 @@ class GPURenderPassEncoder : public Object {
                     URGE_EXCEPTION);
 
   URGE_BINDING()
-  void SetBlendConstant(estruct<GPUColor> color, URGE_EXCEPTION);
+  void SetBlendConstant(scoped_refptr<GPUColor> color, URGE_EXCEPTION);
 
   URGE_BINDING()
   void SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
@@ -181,73 +181,144 @@ class GPURenderPassEncoder : public Object {
 ///
 
 URGE_BINDING()
-struct GPUTexelCopyBufferLayout : public Object {
+class GPUTexelCopyBufferLayout : public Object {
+ public:
+  URGE_BINDING()
   uint64_t offset = 0;
+
+  URGE_BINDING()
   uint32_t bytesPerRow = WGPU_COPY_STRIDE_UNDEFINED;
+
+  URGE_BINDING()
   uint32_t rowsPerImage = WGPU_COPY_STRIDE_UNDEFINED;
 };
 
 URGE_BINDING()
-struct GPUTexelCopyBufferInfo : public Object {
-  estruct<GPUTexelCopyBufferLayout> layout = nullptr;
+class GPUTexelCopyBufferInfo : public Object {
+ public:
+  URGE_BINDING()
+  scoped_refptr<GPUTexelCopyBufferLayout> layout = nullptr;
+
+  URGE_BINDING()
   scoped_refptr<GPUBuffer> buffer = nullptr;
 };
 
 URGE_BINDING()
-struct GPUTexelCopyTextureInfo : public Object {
+class GPUTexelCopyTextureInfo : public Object {
+ public:
+  URGE_BINDING()
   scoped_refptr<GPUTexture> texture = nullptr;
+
+  URGE_BINDING()
   uint32_t mipLevel = 0;
-  estruct<GPUOrigin3D> origin = nullptr;
+
+  URGE_BINDING()
+  scoped_refptr<GPUOrigin3D> origin = nullptr;
+
+  URGE_BINDING()
   GPU::TextureAspect aspect = GPU::TextureAspect::Undefined;
 };
 
 URGE_BINDING()
-struct GPUPassTimestampWrites : public Object {
+class GPUPassTimestampWrites : public Object {
+ public:
+  URGE_BINDING()
   scoped_refptr<GPUQuerySet> querySet = nullptr;
+
+  URGE_BINDING()
   uint32_t beginningOfPassWriteIndex = WGPU_QUERY_SET_INDEX_UNDEFINED;
+
+  URGE_BINDING()
   uint32_t endOfPassWriteIndex = WGPU_QUERY_SET_INDEX_UNDEFINED;
 };
 
 URGE_BINDING()
-struct GPUComputePassDescriptor : public Object {
+class GPUComputePassDescriptor : public Object {
+ public:
+  URGE_BINDING()
   estring label = {};
-  estruct<GPUPassTimestampWrites> timestampWrites = nullptr;
+
+  URGE_BINDING()
+  scoped_refptr<GPUPassTimestampWrites> timestampWrites = nullptr;
 };
 
 URGE_BINDING()
-struct GPURenderPassColorAttachment : public Object {
+class GPURenderPassColorAttachment : public Object {
+ public:
+  URGE_BINDING()
   scoped_refptr<GPUTextureView> view = nullptr;
+
+  URGE_BINDING()
   uint32_t depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+  URGE_BINDING()
   scoped_refptr<GPUTextureView> resolveTarget = nullptr;
+
+  URGE_BINDING()
   GPU::LoadOp loadOp = GPU::LoadOp::Undefined;
+
+  URGE_BINDING()
   GPU::StoreOp storeOp = GPU::StoreOp::Undefined;
-  estruct<GPUColor> clearValue = nullptr;
+
+  URGE_BINDING()
+  scoped_refptr<GPUColor> clearValue = nullptr;
 };
 
 URGE_BINDING()
-struct GPURenderPassDepthStencilAttachment : public Object {
+class GPURenderPassDepthStencilAttachment : public Object {
+ public:
+  URGE_BINDING()
   scoped_refptr<GPUTextureView> view = nullptr;
+
+  URGE_BINDING()
   GPU::LoadOp depthLoadOp = GPU::LoadOp::Undefined;
+
+  URGE_BINDING()
   GPU::StoreOp depthStoreOp = GPU::StoreOp::Undefined;
+
+  URGE_BINDING()
   float depthClearValue = WGPU_DEPTH_CLEAR_VALUE_UNDEFINED;
+
+  URGE_BINDING()
   bool depthReadOnly = false;
+
+  URGE_BINDING()
   GPU::LoadOp stencilLoadOp = GPU::LoadOp::Undefined;
+
+  URGE_BINDING()
   GPU::StoreOp stencilStoreOp = GPU::StoreOp::Undefined;
+
+  URGE_BINDING()
   uint32_t stencilClearValue = 0;
+
+  URGE_BINDING()
   bool stencilReadOnly = false;
 };
 
 URGE_BINDING()
-struct GPURenderPassDescriptor : public Object {
+class GPURenderPassDescriptor : public Object {
+ public:
+  URGE_BINDING()
   estring label = {};
-  earray<estruct<GPURenderPassColorAttachment>> colorAttachments = {};
-  estruct<GPURenderPassDepthStencilAttachment> depthStencilAttachment = nullptr;
+
+  URGE_BINDING()
+  earray<scoped_refptr<GPURenderPassColorAttachment>> colorAttachments = {};
+
+  URGE_BINDING()
+  scoped_refptr<GPURenderPassDepthStencilAttachment> depthStencilAttachment =
+      nullptr;
+
+  URGE_BINDING()
   scoped_refptr<GPUQuerySet> occlusionQuerySet = nullptr;
-  estruct<GPUPassTimestampWrites> timestampWrites = nullptr;
+
+  URGE_BINDING()
+  scoped_refptr<GPUPassTimestampWrites> timestampWrites = nullptr;
 };
 
 URGE_BINDING()
-struct GPUCommandBufferDescriptor : public Object {
+class GPUCommandBufferDescriptor : public Object {
+ public:
+  URGE_BINDING()
   estring label = {};
 };
 
@@ -267,12 +338,12 @@ class GPUCommandEncoder : public Object {
 
   URGE_BINDING()
   scoped_refptr<GPUComputePassEncoder> BeginComputePass(
-      estruct<GPUComputePassDescriptor> descriptor,
+      scoped_refptr<GPUComputePassDescriptor> descriptor,
       URGE_EXCEPTION);
 
   URGE_BINDING()
   scoped_refptr<GPURenderPassEncoder> BeginRenderPass(
-      estruct<GPURenderPassDescriptor> descriptor,
+      scoped_refptr<GPURenderPassDescriptor> descriptor,
       URGE_EXCEPTION);
 
   URGE_BINDING()
@@ -290,21 +361,21 @@ class GPUCommandEncoder : public Object {
                           URGE_EXCEPTION);
 
   URGE_BINDING()
-  void CopyBufferToTexture(estruct<GPUTexelCopyBufferInfo> source,
-                           estruct<GPUTexelCopyTextureInfo> destination,
-                           estruct<GPUExtent3D> copy_size,
+  void CopyBufferToTexture(scoped_refptr<GPUTexelCopyBufferInfo> source,
+                           scoped_refptr<GPUTexelCopyTextureInfo> destination,
+                           scoped_refptr<GPUExtent3D> copy_size,
                            URGE_EXCEPTION);
 
   URGE_BINDING()
-  void CopyTextureToBuffer(estruct<GPUTexelCopyTextureInfo> source,
-                           estruct<GPUTexelCopyBufferInfo> destination,
-                           estruct<GPUExtent3D> copy_size,
+  void CopyTextureToBuffer(scoped_refptr<GPUTexelCopyTextureInfo> source,
+                           scoped_refptr<GPUTexelCopyBufferInfo> destination,
+                           scoped_refptr<GPUExtent3D> copy_size,
                            URGE_EXCEPTION);
 
   URGE_BINDING()
-  void CopyTextureToTexture(estruct<GPUTexelCopyTextureInfo> source,
-                            estruct<GPUTexelCopyTextureInfo> destination,
-                            estruct<GPUExtent3D> copy_size,
+  void CopyTextureToTexture(scoped_refptr<GPUTexelCopyTextureInfo> source,
+                            scoped_refptr<GPUTexelCopyTextureInfo> destination,
+                            scoped_refptr<GPUExtent3D> copy_size,
                             URGE_EXCEPTION);
 
   URGE_BINDING()
@@ -331,7 +402,7 @@ class GPUCommandEncoder : public Object {
 
   URGE_BINDING()
   scoped_refptr<GPUCommandBuffer> Finish(
-      estruct<GPUCommandBufferDescriptor> descriptor,
+      scoped_refptr<GPUCommandBufferDescriptor> descriptor,
       URGE_EXCEPTION);
 
  private:

@@ -94,15 +94,33 @@ class GPUTextureView : public Object {
 ///
 
 URGE_BINDING()
-struct GPUTextureViewDescriptor : public Object {
+class GPUTextureViewDescriptor : public Object {
+ public:
+  URGE_BINDING()
   estring label = {};
+
+  URGE_BINDING()
   GPU::TextureFormat format = GPU::TextureFormat::Undefined;
+
+  URGE_BINDING()
   GPU::TextureViewDimension dimension = GPU::TextureViewDimension::Undefined;
+
+  URGE_BINDING()
   uint32_t baseMipLevel = 0;
+
+  URGE_BINDING()
   uint32_t mipLevelCount = WGPU_MIP_LEVEL_COUNT_UNDEFINED;
+
+  URGE_BINDING()
   uint32_t baseArrayLayer = 0;
+
+  URGE_BINDING()
   uint32_t arrayLayerCount = WGPU_ARRAY_LAYER_COUNT_UNDEFINED;
+
+  URGE_BINDING()
   GPU::TextureAspect aspect = GPU::TextureAspect::Undefined;
+
+  URGE_BINDING()
   GPU::TextureUsage usage = GPU::TextureUsage::None;
 };
 
@@ -119,7 +137,7 @@ class GPUTexture : public Object {
  public:
   URGE_BINDING()
   scoped_refptr<GPUTextureView> CreateView(
-      estruct<GPUTextureViewDescriptor> descriptor,
+      scoped_refptr<GPUTextureViewDescriptor> descriptor,
       URGE_EXCEPTION);
 
   URGE_BINDING()

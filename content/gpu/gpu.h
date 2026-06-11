@@ -15,24 +15,43 @@ namespace content {
 #define WGPU_PTR(x) (x ? x->handle() : nullptr)
 
 URGE_BINDING()
-struct GPUExtent3D : public Object {
-  uint32_t width = 0;
+class GPUExtent3D : public Object {
+ public:
+  URGE_BINDING() uint32_t width = 0;
+
+  URGE_BINDING()
   uint32_t height = 1;
+
+  URGE_BINDING()
   uint32_t depthOrArrayLayers = 1;
 };
 
 URGE_BINDING()
-struct GPUOrigin3D : public Object {
+class GPUOrigin3D : public Object {
+ public:
+  URGE_BINDING()
   uint32_t x = 0;
+
+  URGE_BINDING()
   uint32_t y = 0;
+
+  URGE_BINDING()
   uint32_t z = 0;
 };
 
 URGE_BINDING()
-struct GPUColor : public Object {
+class GPUColor : public Object {
+ public:
+  URGE_BINDING()
   double r = 0;
+
+  URGE_BINDING()
   double g = 0;
+
+  URGE_BINDING()
   double b = 0;
+
+  URGE_BINDING()
   double a = 0;
 };
 

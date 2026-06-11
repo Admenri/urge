@@ -13,13 +13,27 @@
 namespace content {
 
 URGE_BINDING()
-struct SubMesh : public Object {
+class SubMesh : public Object {
+ public:
+  URGE_BINDING()
   uint32_t vertexSlot = 0;
+
+  URGE_BINDING()
   uint32_t materialSlot = 0;
+
+  URGE_BINDING()
   uint32_t indexStart = 0;
+
+  URGE_BINDING()
   uint32_t indexCount = 0;
+
+  URGE_BINDING()
   uint32_t vertexStart = 0;
+
+  URGE_BINDING()
   uint32_t vertexCount = 0;
+
+  URGE_BINDING()
   estring name;
 };
 
@@ -50,10 +64,10 @@ class Mesh : public Object {
   uint32_t GetIndexCount(URGE_EXCEPTION);
 
   URGE_BINDING()
-  void SetupSubMeshData(earray<estruct<SubMesh>> data, URGE_EXCEPTION);
+  void SetupSubMeshData(earray<scoped_refptr<SubMesh>> data, URGE_EXCEPTION);
 
   URGE_BINDING()
-  estruct<SubMesh> GetSubMeshAt(uint32_t index, URGE_EXCEPTION);
+  scoped_refptr<SubMesh> GetSubMeshAt(uint32_t index, URGE_EXCEPTION);
 
   URGE_BINDING()
   uint32_t GetSubMeshCount(URGE_EXCEPTION);

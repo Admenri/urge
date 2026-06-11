@@ -13,7 +13,7 @@ namespace content {
 GPUBuffer::GPUBuffer(wgpu::Buffer object) : object_(object) {}
 
 void GPUBuffer::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 void GPUBuffer::Destroy(URGE_EXCEPTION) {
@@ -39,7 +39,7 @@ uint64_t GPUBuffer::MapAsync(GPU::MapMode mode,
                               void* userdata1, void* userdata2) {
     auto* callback = static_cast<MapAsyncCallback*>(userdata1);
     callback->Run(static_cast<GPU::MapAsyncStatus>(status),
-                  std::string_view(message.data, message.length));
+                  std::string(message.data, message.length));
     delete callback;
   };
 
@@ -72,7 +72,7 @@ epointer GPUBuffer::GetMappedRange(size_t offset,
 GPUTextureView::GPUTextureView(wgpu::TextureView object) : object_(object) {}
 
 void GPUTextureView::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 ///
@@ -82,7 +82,7 @@ void GPUTextureView::SetLabel(estring label, URGE_EXCEPTION) {
 GPUTexture::GPUTexture(wgpu::Texture object) : object_(object) {}
 
 scoped_refptr<GPUTextureView> GPUTexture::CreateView(
-    estruct<GPUTextureViewDescriptor> descriptor,
+    scoped_refptr<GPUTextureViewDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::TextureViewDescriptor create_desc;
   if (descriptor) {
@@ -109,7 +109,7 @@ void GPUTexture::Destroy(URGE_EXCEPTION) {
 }
 
 void GPUTexture::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 uint32_t GPUTexture::GetDepthOrArrayLayers(URGE_EXCEPTION) {
@@ -157,7 +157,7 @@ uint32_t GPUTexture::GetHeight(URGE_EXCEPTION) {
 GPUSampler::GPUSampler(wgpu::Sampler object) : object_(object) {}
 
 void GPUSampler::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 ///
@@ -167,7 +167,7 @@ void GPUSampler::SetLabel(estring label, URGE_EXCEPTION) {
 GPUShaderModule::GPUShaderModule(wgpu::ShaderModule object) : object_(object) {}
 
 void GPUShaderModule::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 uint64_t GPUShaderModule::GetCompilationInfo(CompilationInfoCallback callback,
@@ -175,13 +175,13 @@ uint64_t GPUShaderModule::GetCompilationInfo(CompilationInfoCallback callback,
   WGPUCompilationInfoCallbackInfo callback_info = {};
   callback_info.userdata1 = new CompilationInfoCallback(std::move(callback));
   callback_info.callback = [](WGPUCompilationInfoRequestStatus status,
-                              struct WGPUCompilationInfo const* compilationInfo,
+                              WGPUCompilationInfo const* compilationInfo,
                               void* userdata1, void* userdata2) {
     std::vector<estring> messages;
     for (size_t i = 0; i < compilationInfo->messageCount; ++i) {
       auto raw_message = compilationInfo->messages[i].message;
-      std::string_view out_message(raw_message.data, raw_message.length);
-      messages.push_back(out_message);
+      std::string out_message(raw_message.data, raw_message.length);
+      messages.push_back(std::move(out_message));
     }
 
     auto* callback = static_cast<CompilationInfoCallback*>(userdata1);
@@ -202,7 +202,7 @@ GPUBindGroupLayout::GPUBindGroupLayout(wgpu::BindGroupLayout object)
     : object_(object) {}
 
 void GPUBindGroupLayout::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 ///
@@ -213,7 +213,7 @@ GPUPipelineLayout::GPUPipelineLayout(wgpu::PipelineLayout object)
     : object_(object) {}
 
 void GPUPipelineLayout::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 ///
@@ -224,7 +224,7 @@ GPURenderPipeline::GPURenderPipeline(wgpu::RenderPipeline object)
     : object_(object) {}
 
 void GPURenderPipeline::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 scoped_refptr<GPUBindGroupLayout> GPURenderPipeline::GetBindGroupLayout(
@@ -244,7 +244,7 @@ GPUComputePipeline::GPUComputePipeline(wgpu::ComputePipeline object)
     : object_(object) {}
 
 void GPUComputePipeline::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 scoped_refptr<GPUBindGroupLayout> GPUComputePipeline::GetBindGroupLayout(
@@ -263,7 +263,7 @@ scoped_refptr<GPUBindGroupLayout> GPUComputePipeline::GetBindGroupLayout(
 GPUQuerySet::GPUQuerySet(wgpu::QuerySet object) : object_(object) {}
 
 void GPUQuerySet::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 void GPUQuerySet::Destroy(URGE_EXCEPTION) {
@@ -285,7 +285,7 @@ GPU::QueryType GPUQuerySet::GetType(URGE_EXCEPTION) {
 GPUBindGroup::GPUBindGroup(wgpu::BindGroup object) : object_(object) {}
 
 void GPUBindGroup::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 ///
@@ -296,7 +296,7 @@ GPUCommandBuffer::GPUCommandBuffer(wgpu::CommandBuffer object)
     : object_(object) {}
 
 void GPUCommandBuffer::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 }  // namespace content

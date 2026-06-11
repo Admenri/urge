@@ -13,30 +13,48 @@
 namespace content {
 
 URGE_BINDING()
-struct SortingSettings : public Object {
+class SortingSettings : public Object {
+ public:
+  URGE_BINDING()
+  enum class SortingCriteria : uint64_t {
+    OrderSorting = 1 << 0,
+    RenderQueue = 1 << 1,
+    BackToFront = 1 << 2,
+    FrontToBack = 1 << 3,
+  };
+
+  URGE_BINDING()
   scoped_refptr<Vector3d> cameraPosition;
+
+  URGE_BINDING()
   SortingCriteria criteria;
-
-  static estruct<SortingSettings> New(scoped_refptr<Camera>, URGE_EXCEPTION);
 };
 
 URGE_BINDING()
-struct DrawingSettings : public Object {
-  estruct<SortingSettings> sortingSettings;
+class DrawingSettings : public Object {
+ public:
+  URGE_BINDING()
+  scoped_refptr<SortingSettings> sortingSettings;
 };
 
 URGE_BINDING()
-struct FilteringSettings : public Object {
-  uint64_t cullingMask = std::numeric_limits<uint64_t>::max();
-  uint32_t minRenderQueue = std::numeric_limits<uint32_t>::min();
-  uint32_t maxRenderQueue = std::numeric_limits<uint32_t>::max();
+class FilteringSettings : public Object {
+ public:
+  URGE_BINDING()
+  uint64_t cullingMask = 0xFFFFFFFFFFFFFFFFu;
+
+  URGE_BINDING()
+  uint32_t minRenderQueue = 0x00000000u;
+
+  URGE_BINDING()
+  uint32_t maxRenderQueue = 0xFFFFFFFFu;
 };
 
 URGE_BINDING()
-struct CullingSettings : public Object {
-  uint64_t cullingMask = std::numeric_limits<uint64_t>::max();
-
-  static estruct<CullingSettings> New(scoped_refptr<Camera>, URGE_EXCEPTION);
+class CullingSettings : public Object {
+ public:
+  URGE_BINDING()
+  uint64_t cullingMask = 0xFFFFFFFFFFFFFFFFu;
 };
 
 URGE_BINDING()
@@ -76,14 +94,14 @@ class RenderContext : public Object {
   scoped_refptr<GPUTextureView> GetDepthStencilView(URGE_EXCEPTION);
 
   URGE_BINDING()
-  scoped_refptr<CullingResults> Cull(estruct<CullingSettings> settings,
+  scoped_refptr<CullingResults> Cull(scoped_refptr<CullingSettings> settings,
                                      URGE_EXCEPTION);
 
   URGE_BINDING()
   void DrawRenderers(scoped_refptr<GPURenderPassEncoder> pass,
                      scoped_refptr<CullingResults> culling_results,
-                     estruct<DrawingSettings> drawing_settings,
-                     estruct<FilteringSettings> filtering_settings,
+                     scoped_refptr<DrawingSettings> drawing_settings,
+                     scoped_refptr<FilteringSettings> filtering_settings,
                      URGE_EXCEPTION);
 
  private:

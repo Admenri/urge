@@ -1126,6 +1126,55 @@
       "enums": {},
       "callbacks": {}
     },
+    "GPUExtent3D": {
+      "filepath": "gpu/gpu.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "uint32_twidth=0;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUOrigin3D": {
+      "filepath": "gpu/gpu.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "uint32_tx=0;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUColor": {
+      "filepath": "gpu/gpu.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "doubler=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "doubleb=0;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "GPU": {
       "filepath": "gpu/gpu.h",
       "parent": "Singleton<GPU>",
@@ -1899,7 +1948,7 @@
           "params": [
             {
               "name": "color",
-              "type": "estruct<GPUColor>"
+              "type": "scoped_refptr<GPUColor>"
             }
           ],
           "return": "void"
@@ -2030,6 +2079,169 @@
       "enums": {},
       "callbacks": {}
     },
+    "GPUTexelCopyBufferLayout": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "uint64_toffset=0;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUTexelCopyBufferInfo": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUTexelCopyBufferLayout>layout=nullptr;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUTexelCopyTextureInfo": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUTexture>texture=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUOrigin3D>origin=nullptr;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUPassTimestampWrites": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUQuerySet>querySet=nullptr;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUComputePassDescriptor": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPURenderPassColorAttachment": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUTextureView>view=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUTextureView>resolveTarget=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::StoreOpstoreOp=GPU::StoreOp::Undefined;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPURenderPassDepthStencilAttachment": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUTextureView>view=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::StoreOpdepthStoreOp=GPU::StoreOp::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "booldepthReadOnly=false;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::StoreOpstencilStoreOp=GPU::StoreOp::Undefined;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPURenderPassDescriptor": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringlabel={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPURenderPassDepthStencilAttachment>depthStencilAttachment=nullptr;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUCommandBufferDescriptor": {
+      "filepath": "gpu/gpu_command.h",
+      "parent": "Object",
+      "members": {},
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "GPUCommandEncoder": {
       "filepath": "gpu/gpu_command.h",
       "parent": "Object",
@@ -2049,7 +2261,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUComputePassDescriptor>"
+              "type": "scoped_refptr<GPUComputePassDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUComputePassEncoder>"
@@ -2059,7 +2271,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPURenderPassDescriptor>"
+              "type": "scoped_refptr<GPURenderPassDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPURenderPassEncoder>"
@@ -2113,15 +2325,15 @@
           "params": [
             {
               "name": "source",
-              "type": "estruct<GPUTexelCopyBufferInfo>"
+              "type": "scoped_refptr<GPUTexelCopyBufferInfo>"
             },
             {
               "name": "destination",
-              "type": "estruct<GPUTexelCopyTextureInfo>"
+              "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
             },
             {
               "name": "copy_size",
-              "type": "estruct<GPUExtent3D>"
+              "type": "scoped_refptr<GPUExtent3D>"
             }
           ],
           "return": "void"
@@ -2131,15 +2343,15 @@
           "params": [
             {
               "name": "source",
-              "type": "estruct<GPUTexelCopyTextureInfo>"
+              "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
             },
             {
               "name": "destination",
-              "type": "estruct<GPUTexelCopyBufferInfo>"
+              "type": "scoped_refptr<GPUTexelCopyBufferInfo>"
             },
             {
               "name": "copy_size",
-              "type": "estruct<GPUExtent3D>"
+              "type": "scoped_refptr<GPUExtent3D>"
             }
           ],
           "return": "void"
@@ -2149,15 +2361,15 @@
           "params": [
             {
               "name": "source",
-              "type": "estruct<GPUTexelCopyTextureInfo>"
+              "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
             },
             {
               "name": "destination",
-              "type": "estruct<GPUTexelCopyTextureInfo>"
+              "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
             },
             {
               "name": "copy_size",
-              "type": "estruct<GPUExtent3D>"
+              "type": "scoped_refptr<GPUExtent3D>"
             }
           ],
           "return": "void"
@@ -2232,7 +2444,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUCommandBufferDescriptor>"
+              "type": "scoped_refptr<GPUCommandBufferDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUCommandBuffer>"
@@ -2303,7 +2515,7 @@
           "params": [
             {
               "name": "destination",
-              "type": "estruct<GPUTexelCopyTextureInfo>"
+              "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
             },
             {
               "name": "data",
@@ -2315,11 +2527,11 @@
             },
             {
               "name": "data_layout",
-              "type": "estruct<GPUTexelCopyBufferLayout>"
+              "type": "scoped_refptr<GPUTexelCopyBufferLayout>"
             },
             {
               "name": "write_size",
-              "type": "estruct<GPUExtent3D>"
+              "type": "scoped_refptr<GPUExtent3D>"
             }
           ],
           "return": "void"
@@ -2343,6 +2555,637 @@
         }
       }
     },
+    "GPUBindGroupEntry": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tbinding=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint64_toffset=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUSampler>sampler=nullptr;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBindGroupDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBufferBindingLayout": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::BufferBindingTypetype=GPU::BufferBindingType::Undefined;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUSamplerBindingLayout": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {},
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUTextureBindingLayout": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::TextureSampleTypesampleType=GPU::TextureSampleType::Undefined;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUStorageTextureBindingLayout": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::StorageTextureAccessaccess=GPU::StorageTextureAccess::Undefined;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBindGroupLayoutEntry": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tbinding=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tbindingArraySize=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUSamplerBindingLayout>sampler=nullptr;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBindGroupLayoutDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBufferDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringlabel={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint64_tsize=0;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUCommandEncoderDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {},
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUConstantEntry": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringkey={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUComputeState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<GPUShaderModule>module=nullptr;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUComputePipelineDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUPipelineLayoutDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUQuerySetDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUVertexAttribute": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::VertexFormatformat={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUVertexBufferLayout": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::VertexStepModestepMode=GPU::VertexStepMode::Undefined;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBlendComponent": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::BlendOperationoperation=GPU::BlendOperation::Undefined;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUBlendState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPUBlendComponentcolor={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUColorTargetState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "GPU::TextureFormatformat=GPU::TextureFormat::Undefined;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUVertexState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUShaderModule>module=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "earray<scoped_refptr<GPUConstantEntry>>constants={};"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUFragmentState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUShaderModule>module=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "earray<scoped_refptr<GPUConstantEntry>>constants={};"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUPrimitiveState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::PrimitiveTopologytopology=GPU::PrimitiveTopology::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::FrontFacefrontFace=GPU::FrontFace::Undefined;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUStencilFaceState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::CompareFunctioncompare=GPU::CompareFunction::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::StencilOperationdepthFailOp=GPU::StencilOperation::Undefined;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUDepthStencilState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::TextureFormatformat=GPU::TextureFormat::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::CompareFunctiondepthCompare=GPU::CompareFunction::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUStencilFaceState>stencilBack={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tstencilWriteMask=0xFFFFFFFF;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "floatdepthBiasSlopeScale=0.f;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUMultisampleState": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "uint32_tcount=1;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPURenderPipelineDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringlabel={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUVertexState>vertex=nullptr;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPUDepthStencilState>depthStencil=nullptr;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUSamplerDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringlabel={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::AddressModeaddressModeV=GPU::AddressMode::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::FilterModemagFilter=GPU::FilterMode::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::MipmapFilterModemipmapFilter=GPU::MipmapFilterMode::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "floatlodMaxClamp=32.f;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUShaderModuleDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringlabel={};"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPUTextureDescriptor": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringlabel={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::TextureDimensiondimension=GPU::TextureDimension::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::TextureFormatformat=GPU::TextureFormat::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tsampleCount=1;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "GPULimits": {
+      "filepath": "gpu/gpu_device.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "epointerreservedParam;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxTextureDimension2D;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxTextureArrayLayers;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxBindGroupsPlusVertexBuffers;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxDynamicUniformBuffersPerPipelineLayout;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxSampledTexturesPerShaderStage;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxStorageBuffersPerShaderStage;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxUniformBuffersPerShaderStage;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint64_tmaxStorageBufferBindingSize;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tminStorageBufferOffsetAlignment;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint64_tmaxBufferSize;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxVertexBufferArrayStride;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxColorAttachments;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxComputeWorkgroupStorageSize;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxComputeWorkgroupSizeX;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmaxComputeWorkgroupSizeZ;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "GPUDevice": {
       "filepath": "gpu/gpu_device.h",
       "parent": "Object",
@@ -2362,7 +3205,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUBindGroupDescriptor>"
+              "type": "scoped_refptr<GPUBindGroupDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUBindGroup>"
@@ -2372,7 +3215,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUBindGroupLayoutDescriptor>"
+              "type": "scoped_refptr<GPUBindGroupLayoutDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUBindGroupLayout>"
@@ -2382,7 +3225,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUBufferDescriptor>"
+              "type": "scoped_refptr<GPUBufferDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUBuffer>"
@@ -2392,7 +3235,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUCommandEncoderDescriptor>"
+              "type": "scoped_refptr<GPUCommandEncoderDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUCommandEncoder>"
@@ -2402,7 +3245,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUComputePipelineDescriptor>"
+              "type": "scoped_refptr<GPUComputePipelineDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUComputePipeline>"
@@ -2412,7 +3255,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUComputePipelineDescriptor>"
+              "type": "scoped_refptr<GPUComputePipelineDescriptor>"
             },
             {
               "name": "callback",
@@ -2426,7 +3269,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUPipelineLayoutDescriptor>"
+              "type": "scoped_refptr<GPUPipelineLayoutDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUPipelineLayout>"
@@ -2436,7 +3279,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUQuerySetDescriptor>"
+              "type": "scoped_refptr<GPUQuerySetDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUQuerySet>"
@@ -2446,7 +3289,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPURenderPipelineDescriptor>"
+              "type": "scoped_refptr<GPURenderPipelineDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPURenderPipeline>"
@@ -2456,7 +3299,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPURenderPipelineDescriptor>"
+              "type": "scoped_refptr<GPURenderPipelineDescriptor>"
             },
             {
               "name": "callback",
@@ -2470,7 +3313,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUSamplerDescriptor>"
+              "type": "scoped_refptr<GPUSamplerDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUSampler>"
@@ -2480,7 +3323,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUShaderModuleDescriptor>"
+              "type": "scoped_refptr<GPUShaderModuleDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUShaderModule>"
@@ -2490,7 +3333,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUTextureDescriptor>"
+              "type": "scoped_refptr<GPUTextureDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUTexture>"
@@ -2528,7 +3371,7 @@
         "GetLimits": {
           "static": false,
           "params": [],
-          "return": "estruct<GPULimits>"
+          "return": "scoped_refptr<GPULimits>"
         }
       },
       "attributes": {},
@@ -2704,6 +3547,37 @@
       "enums": {},
       "callbacks": {}
     },
+    "GPUTextureViewDescriptor": {
+      "filepath": "gpu/gpu_resource.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringlabel={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "GPU::TextureViewDimensiondimension=GPU::TextureViewDimension::Undefined;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tmipLevelCount=WGPU_MIP_LEVEL_COUNT_UNDEFINED;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tarrayLayerCount=WGPU_ARRAY_LAYER_COUNT_UNDEFINED;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "GPUTexture": {
       "filepath": "gpu/gpu_resource.h",
       "parent": "Object",
@@ -2713,7 +3587,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "estruct<GPUTextureViewDescriptor>"
+              "type": "scoped_refptr<GPUTextureViewDescriptor>"
             }
           ],
           "return": "scoped_refptr<GPUTextureView>"
@@ -3098,6 +3972,60 @@
       "enums": {},
       "callbacks": {}
     },
+    "SortingSettings": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "scoped_refptr<Vector3d>cameraPosition;"
+        }
+      },
+      "attributes": {},
+      "enums": {
+        "SortingCriteria": {
+          "range": "uint64_t",
+          "members": [
+            "OrderSorting",
+            "RenderQueue",
+            "BackToFront",
+            "FrontToBack"
+          ]
+        }
+      },
+      "callbacks": {}
+    },
+    "DrawingSettings": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {},
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "FilteringSettings": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "uint64_tcullingMask=0xFFFFFFFFFFFFFFFFu;"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "CullingSettings": {
+      "filepath": "render/viewport.h",
+      "parent": "Object",
+      "members": {},
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "CullingResults": {
       "filepath": "render/viewport.h",
       "parent": "Object",
@@ -3141,7 +4069,7 @@
           "params": [
             {
               "name": "settings",
-              "type": "estruct<CullingSettings>"
+              "type": "scoped_refptr<CullingSettings>"
             }
           ],
           "return": "scoped_refptr<CullingResults>"
@@ -3159,11 +4087,11 @@
             },
             {
               "name": "drawing_settings",
-              "type": "estruct<DrawingSettings>"
+              "type": "scoped_refptr<DrawingSettings>"
             },
             {
               "name": "filtering_settings",
-              "type": "estruct<FilteringSettings>"
+              "type": "scoped_refptr<FilteringSettings>"
             }
           ],
           "return": "void"
@@ -3237,6 +4165,27 @@
       "enums": {},
       "callbacks": {}
     },
+    "ShaderPass": {
+      "filepath": "resource/material.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "estringname={};"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "scoped_refptr<GPURenderPipeline>pipeline=nullptr;"
+          }
+        ]
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
     "Material": {
       "filepath": "resource/material.h",
       "parent": "Object",
@@ -3251,7 +4200,7 @@
           "params": [
             {
               "name": "pass",
-              "type": "estruct<ShaderPass>"
+              "type": "scoped_refptr<ShaderPass>"
             }
           ],
           "return": "void"
@@ -3295,6 +4244,32 @@
           "value": "uint32_t"
         }
       },
+      "enums": {},
+      "callbacks": {}
+    },
+    "SubMesh": {
+      "filepath": "resource/mesh.h",
+      "parent": "Object",
+      "members": {
+        "URGE_BINDING": [
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tvertexSlot=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tindexStart=0;"
+          },
+          {
+            "static": false,
+            "params": [],
+            "return": "uint32_tvertexStart=0;"
+          }
+        ]
+      },
+      "attributes": {},
       "enums": {},
       "callbacks": {}
     },
@@ -3351,7 +4326,7 @@
           "params": [
             {
               "name": "data",
-              "type": "earray<estruct<SubMesh>>"
+              "type": "earray<scoped_refptr<SubMesh>>"
             }
           ],
           "return": "void"
@@ -3364,7 +4339,7 @@
               "type": "uint32_t"
             }
           ],
-          "return": "estruct<SubMesh>"
+          "return": "scoped_refptr<SubMesh>"
         },
         "GetSubMeshCount": {
           "static": false,
@@ -3485,1112 +4460,5 @@
       "callbacks": {}
     }
   },
-  "struct": {
-    "GPUExtent3D": {
-      "filepath": "gpu/gpu.h",
-      "params": [
-        {
-          "name": "width",
-          "type": "uint32_t"
-        },
-        {
-          "name": "height",
-          "type": "uint32_t"
-        },
-        {
-          "name": "depthOrArrayLayers",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUOrigin3D": {
-      "filepath": "gpu/gpu.h",
-      "params": [
-        {
-          "name": "x",
-          "type": "uint32_t"
-        },
-        {
-          "name": "y",
-          "type": "uint32_t"
-        },
-        {
-          "name": "z",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUColor": {
-      "filepath": "gpu/gpu.h",
-      "params": [
-        {
-          "name": "r",
-          "type": "double"
-        },
-        {
-          "name": "g",
-          "type": "double"
-        },
-        {
-          "name": "b",
-          "type": "double"
-        },
-        {
-          "name": "a",
-          "type": "double"
-        }
-      ]
-    },
-    "GPUTexelCopyBufferLayout": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "offset",
-          "type": "uint64_t"
-        },
-        {
-          "name": "bytesPerRow",
-          "type": "uint32_t"
-        },
-        {
-          "name": "rowsPerImage",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUTexelCopyBufferInfo": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "layout",
-          "type": "estruct<GPUTexelCopyBufferLayout>"
-        },
-        {
-          "name": "buffer",
-          "type": "scoped_refptr<GPUBuffer>"
-        }
-      ]
-    },
-    "GPUTexelCopyTextureInfo": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "texture",
-          "type": "scoped_refptr<GPUTexture>"
-        },
-        {
-          "name": "mipLevel",
-          "type": "uint32_t"
-        },
-        {
-          "name": "origin",
-          "type": "estruct<GPUOrigin3D>"
-        },
-        {
-          "name": "aspect",
-          "type": "GPU::TextureAspect"
-        }
-      ]
-    },
-    "GPUPassTimestampWrites": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "querySet",
-          "type": "scoped_refptr<GPUQuerySet>"
-        },
-        {
-          "name": "beginningOfPassWriteIndex",
-          "type": "uint32_t"
-        },
-        {
-          "name": "endOfPassWriteIndex",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUComputePassDescriptor": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "timestampWrites",
-          "type": "estruct<GPUPassTimestampWrites>"
-        }
-      ]
-    },
-    "GPURenderPassColorAttachment": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "view",
-          "type": "scoped_refptr<GPUTextureView>"
-        },
-        {
-          "name": "depthSlice",
-          "type": "uint32_t"
-        },
-        {
-          "name": "resolveTarget",
-          "type": "scoped_refptr<GPUTextureView>"
-        },
-        {
-          "name": "loadOp",
-          "type": "GPU::LoadOp"
-        },
-        {
-          "name": "storeOp",
-          "type": "GPU::StoreOp"
-        },
-        {
-          "name": "clearValue",
-          "type": "estruct<GPUColor>"
-        }
-      ]
-    },
-    "GPURenderPassDepthStencilAttachment": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "view",
-          "type": "scoped_refptr<GPUTextureView>"
-        },
-        {
-          "name": "depthLoadOp",
-          "type": "GPU::LoadOp"
-        },
-        {
-          "name": "depthStoreOp",
-          "type": "GPU::StoreOp"
-        },
-        {
-          "name": "depthClearValue",
-          "type": "float"
-        },
-        {
-          "name": "depthReadOnly",
-          "type": "bool"
-        },
-        {
-          "name": "stencilLoadOp",
-          "type": "GPU::LoadOp"
-        },
-        {
-          "name": "stencilStoreOp",
-          "type": "GPU::StoreOp"
-        },
-        {
-          "name": "stencilClearValue",
-          "type": "uint32_t"
-        },
-        {
-          "name": "stencilReadOnly",
-          "type": "bool"
-        }
-      ]
-    },
-    "GPURenderPassDescriptor": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "depthStencilAttachment",
-          "type": "estruct<GPURenderPassDepthStencilAttachment>"
-        },
-        {
-          "name": "occlusionQuerySet",
-          "type": "scoped_refptr<GPUQuerySet>"
-        },
-        {
-          "name": "timestampWrites",
-          "type": "estruct<GPUPassTimestampWrites>"
-        }
-      ]
-    },
-    "GPUCommandBufferDescriptor": {
-      "filepath": "gpu/gpu_command.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUBindGroupEntry": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "binding",
-          "type": "uint32_t"
-        },
-        {
-          "name": "buffer",
-          "type": "scoped_refptr<GPUBuffer>"
-        },
-        {
-          "name": "offset",
-          "type": "uint64_t"
-        },
-        {
-          "name": "size",
-          "type": "uint64_t"
-        },
-        {
-          "name": "sampler",
-          "type": "scoped_refptr<GPUSampler>"
-        },
-        {
-          "name": "textureView",
-          "type": "scoped_refptr<GPUTextureView>"
-        }
-      ]
-    },
-    "GPUBindGroupDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "layout",
-          "type": "scoped_refptr<GPUBindGroupLayout>"
-        }
-      ]
-    },
-    "GPUBufferBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "type",
-          "type": "GPU::BufferBindingType"
-        },
-        {
-          "name": "hasDynamicOffset",
-          "type": "bool"
-        },
-        {
-          "name": "minBindingSize",
-          "type": "uint64_t"
-        }
-      ]
-    },
-    "GPUSamplerBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "type",
-          "type": "GPU::SamplerBindingType"
-        }
-      ]
-    },
-    "GPUTextureBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "sampleType",
-          "type": "GPU::TextureSampleType"
-        },
-        {
-          "name": "viewDimension",
-          "type": "GPU::TextureViewDimension"
-        },
-        {
-          "name": "multisampled",
-          "type": "bool"
-        }
-      ]
-    },
-    "GPUStorageTextureBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "access",
-          "type": "GPU::StorageTextureAccess"
-        },
-        {
-          "name": "format",
-          "type": "GPU::TextureFormat"
-        },
-        {
-          "name": "viewDimension",
-          "type": "GPU::TextureViewDimension"
-        }
-      ]
-    },
-    "GPUBindGroupLayoutEntry": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "binding",
-          "type": "uint32_t"
-        },
-        {
-          "name": "visibility",
-          "type": "GPU::ShaderStage"
-        },
-        {
-          "name": "bindingArraySize",
-          "type": "uint32_t"
-        },
-        {
-          "name": "buffer",
-          "type": "estruct<GPUBufferBindingLayout>"
-        },
-        {
-          "name": "sampler",
-          "type": "estruct<GPUSamplerBindingLayout>"
-        },
-        {
-          "name": "texture",
-          "type": "estruct<GPUTextureBindingLayout>"
-        },
-        {
-          "name": "storageTexture",
-          "type": "estruct<GPUStorageTextureBindingLayout>"
-        }
-      ]
-    },
-    "GPUBindGroupLayoutDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUBufferDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "usage",
-          "type": "GPU::BufferUsage"
-        },
-        {
-          "name": "size",
-          "type": "uint64_t"
-        },
-        {
-          "name": "mappedAtCreation",
-          "type": "bool"
-        }
-      ]
-    },
-    "GPUCommandEncoderDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUConstantEntry": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "key",
-          "type": "estring"
-        },
-        {
-          "name": "value",
-          "type": "double"
-        }
-      ]
-    },
-    "GPUComputeState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "module",
-          "type": "scoped_refptr<GPUShaderModule>"
-        },
-        {
-          "name": "entryPoint",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUComputePipelineDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "layout",
-          "type": "scoped_refptr<GPUPipelineLayout>"
-        },
-        {
-          "name": "compute",
-          "type": "estruct<GPUComputeState>"
-        }
-      ]
-    },
-    "GPUPipelineLayoutDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "immediateSize",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUQuerySetDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "type",
-          "type": "GPU::QueryType"
-        },
-        {
-          "name": "count",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUVertexAttribute": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "format",
-          "type": "GPU::VertexFormat"
-        },
-        {
-          "name": "offset",
-          "type": "uint64_t"
-        },
-        {
-          "name": "shaderLocation",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUVertexBufferLayout": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "stepMode",
-          "type": "GPU::VertexStepMode"
-        },
-        {
-          "name": "arrayStride",
-          "type": "uint64_t"
-        }
-      ]
-    },
-    "GPUBlendComponent": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "operation",
-          "type": "GPU::BlendOperation"
-        },
-        {
-          "name": "srcFactor",
-          "type": "GPU::BlendFactor"
-        },
-        {
-          "name": "dstFactor",
-          "type": "GPU::BlendFactor"
-        }
-      ]
-    },
-    "GPUBlendState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "color",
-          "type": "GPUBlendComponent"
-        },
-        {
-          "name": "alpha",
-          "type": "GPUBlendComponent"
-        }
-      ]
-    },
-    "GPUColorTargetState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "format",
-          "type": "GPU::TextureFormat"
-        },
-        {
-          "name": "blend",
-          "type": "estruct<GPUBlendState>"
-        },
-        {
-          "name": "writeMask",
-          "type": "GPU::ColorWriteMask"
-        }
-      ]
-    },
-    "GPUVertexState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "module",
-          "type": "scoped_refptr<GPUShaderModule>"
-        },
-        {
-          "name": "entryPoint",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUFragmentState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "module",
-          "type": "scoped_refptr<GPUShaderModule>"
-        },
-        {
-          "name": "entryPoint",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUPrimitiveState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "topology",
-          "type": "GPU::PrimitiveTopology"
-        },
-        {
-          "name": "stripIndexFormat",
-          "type": "GPU::IndexFormat"
-        },
-        {
-          "name": "frontFace",
-          "type": "GPU::FrontFace"
-        },
-        {
-          "name": "cullMode",
-          "type": "GPU::CullMode"
-        },
-        {
-          "name": "unclippedDepth",
-          "type": "bool"
-        }
-      ]
-    },
-    "GPUStencilFaceState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "compare",
-          "type": "GPU::CompareFunction"
-        },
-        {
-          "name": "failOp",
-          "type": "GPU::StencilOperation"
-        },
-        {
-          "name": "depthFailOp",
-          "type": "GPU::StencilOperation"
-        },
-        {
-          "name": "passOp",
-          "type": "GPU::StencilOperation"
-        }
-      ]
-    },
-    "GPUDepthStencilState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "format",
-          "type": "GPU::TextureFormat"
-        },
-        {
-          "name": "depthWriteEnabled",
-          "type": "bool"
-        },
-        {
-          "name": "depthCompare",
-          "type": "GPU::CompareFunction"
-        },
-        {
-          "name": "stencilFront",
-          "type": "estruct<GPUStencilFaceState>"
-        },
-        {
-          "name": "stencilBack",
-          "type": "estruct<GPUStencilFaceState>"
-        },
-        {
-          "name": "stencilReadMask",
-          "type": "uint32_t"
-        },
-        {
-          "name": "stencilWriteMask",
-          "type": "uint32_t"
-        },
-        {
-          "name": "depthBias",
-          "type": "int32_t"
-        },
-        {
-          "name": "depthBiasSlopeScale",
-          "type": "float"
-        },
-        {
-          "name": "depthBiasClamp",
-          "type": "float"
-        }
-      ]
-    },
-    "GPUMultisampleState": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "count",
-          "type": "uint32_t"
-        },
-        {
-          "name": "mask",
-          "type": "uint32_t"
-        },
-        {
-          "name": "alphaToCoverageEnabled",
-          "type": "bool"
-        }
-      ]
-    },
-    "GPURenderPipelineDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "layout",
-          "type": "scoped_refptr<GPUPipelineLayout>"
-        },
-        {
-          "name": "vertex",
-          "type": "estruct<GPUVertexState>"
-        },
-        {
-          "name": "primitive",
-          "type": "estruct<GPUPrimitiveState>"
-        },
-        {
-          "name": "depthStencil",
-          "type": "estruct<GPUDepthStencilState>"
-        },
-        {
-          "name": "multisample",
-          "type": "estruct<GPUMultisampleState>"
-        },
-        {
-          "name": "fragment",
-          "type": "estruct<GPUFragmentState>"
-        }
-      ]
-    },
-    "GPUSamplerDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "addressModeU",
-          "type": "GPU::AddressMode"
-        },
-        {
-          "name": "addressModeV",
-          "type": "GPU::AddressMode"
-        },
-        {
-          "name": "addressModeW",
-          "type": "GPU::AddressMode"
-        },
-        {
-          "name": "magFilter",
-          "type": "GPU::FilterMode"
-        },
-        {
-          "name": "minFilter",
-          "type": "GPU::FilterMode"
-        },
-        {
-          "name": "mipmapFilter",
-          "type": "GPU::MipmapFilterMode"
-        },
-        {
-          "name": "lodMinClamp",
-          "type": "float"
-        },
-        {
-          "name": "lodMaxClamp",
-          "type": "float"
-        },
-        {
-          "name": "compare",
-          "type": "GPU::CompareFunction"
-        },
-        {
-          "name": "maxAnisotropy",
-          "type": "uint16_t"
-        }
-      ]
-    },
-    "GPUShaderModuleDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "wgslCode",
-          "type": "estring"
-        }
-      ]
-    },
-    "GPUTextureDescriptor": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "usage",
-          "type": "GPU::TextureUsage"
-        },
-        {
-          "name": "dimension",
-          "type": "GPU::TextureDimension"
-        },
-        {
-          "name": "size",
-          "type": "estruct<GPUExtent3D>"
-        },
-        {
-          "name": "format",
-          "type": "GPU::TextureFormat"
-        },
-        {
-          "name": "mipLevelCount",
-          "type": "uint32_t"
-        },
-        {
-          "name": "sampleCount",
-          "type": "uint32_t"
-        },
-        {
-          "name": "viewFormats",
-          "type": "earray<GPU::TextureFormat>"
-        }
-      ]
-    },
-    "GPULimits": {
-      "filepath": "gpu/gpu_device.h",
-      "params": [
-        {
-          "name": "reservedParam",
-          "type": "epointer"
-        },
-        {
-          "name": "maxTextureDimension1D",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxTextureDimension2D",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxTextureDimension3D",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxTextureArrayLayers",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxBindGroups",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxBindGroupsPlusVertexBuffers",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxBindingsPerBindGroup",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxDynamicUniformBuffersPerPipelineLayout",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxDynamicStorageBuffersPerPipelineLayout",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxSampledTexturesPerShaderStage",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxSamplersPerShaderStage",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxStorageBuffersPerShaderStage",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxStorageTexturesPerShaderStage",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxUniformBuffersPerShaderStage",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxUniformBufferBindingSize",
-          "type": "uint64_t"
-        },
-        {
-          "name": "maxStorageBufferBindingSize",
-          "type": "uint64_t"
-        },
-        {
-          "name": "minUniformBufferOffsetAlignment",
-          "type": "uint32_t"
-        },
-        {
-          "name": "minStorageBufferOffsetAlignment",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxVertexBuffers",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxBufferSize",
-          "type": "uint64_t"
-        },
-        {
-          "name": "maxVertexAttributes",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxVertexBufferArrayStride",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxInterStageShaderVariables",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxColorAttachments",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxColorAttachmentBytesPerSample",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxComputeWorkgroupStorageSize",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxComputeInvocationsPerWorkgroup",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxComputeWorkgroupSizeX",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxComputeWorkgroupSizeY",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxComputeWorkgroupSizeZ",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxComputeWorkgroupsPerDimension",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxImmediateSize",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "GPUTextureViewDescriptor": {
-      "filepath": "gpu/gpu_resource.h",
-      "params": [
-        {
-          "name": "label",
-          "type": "estring"
-        },
-        {
-          "name": "format",
-          "type": "GPU::TextureFormat"
-        },
-        {
-          "name": "dimension",
-          "type": "GPU::TextureViewDimension"
-        },
-        {
-          "name": "baseMipLevel",
-          "type": "uint32_t"
-        },
-        {
-          "name": "mipLevelCount",
-          "type": "uint32_t"
-        },
-        {
-          "name": "baseArrayLayer",
-          "type": "uint32_t"
-        },
-        {
-          "name": "arrayLayerCount",
-          "type": "uint32_t"
-        },
-        {
-          "name": "aspect",
-          "type": "GPU::TextureAspect"
-        },
-        {
-          "name": "usage",
-          "type": "GPU::TextureUsage"
-        }
-      ]
-    },
-    "SortingSettings": {
-      "filepath": "render/viewport.h",
-      "params": [
-        {
-          "name": "cameraPosition",
-          "type": "scoped_refptr<Vector3d>"
-        },
-        {
-          "name": "criteria",
-          "type": "SortingCriteria"
-        }
-      ]
-    },
-    "DrawingSettings": {
-      "filepath": "render/viewport.h",
-      "params": [
-        {
-          "name": "sortingSettings",
-          "type": "estruct<SortingSettings>"
-        }
-      ]
-    },
-    "FilteringSettings": {
-      "filepath": "render/viewport.h",
-      "params": [
-        {
-          "name": "cullingMask",
-          "type": "uint64_t"
-        },
-        {
-          "name": "minRenderQueue",
-          "type": "uint32_t"
-        },
-        {
-          "name": "maxRenderQueue",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "CullingSettings": {
-      "filepath": "render/viewport.h",
-      "params": [
-        {
-          "name": "cullingMask",
-          "type": "uint64_t"
-        }
-      ]
-    },
-    "ShaderPass": {
-      "filepath": "resource/material.h",
-      "params": [
-        {
-          "name": "name",
-          "type": "estring"
-        },
-        {
-          "name": "tags",
-          "type": "emap<estring, estring>"
-        },
-        {
-          "name": "pipeline",
-          "type": "scoped_refptr<GPURenderPipeline>"
-        },
-        {
-          "name": "stencilRef",
-          "type": "uint32_t"
-        }
-      ]
-    },
-    "SubMesh": {
-      "filepath": "resource/mesh.h",
-      "params": [
-        {
-          "name": "vertexSlot",
-          "type": "uint32_t"
-        },
-        {
-          "name": "materialSlot",
-          "type": "uint32_t"
-        },
-        {
-          "name": "indexStart",
-          "type": "uint32_t"
-        },
-        {
-          "name": "indexCount",
-          "type": "uint32_t"
-        },
-        {
-          "name": "vertexStart",
-          "type": "uint32_t"
-        },
-        {
-          "name": "vertexCount",
-          "type": "uint32_t"
-        },
-        {
-          "name": "name",
-          "type": "estring"
-        }
-      ]
-    }
-  }
+  "struct": {}
 }

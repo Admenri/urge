@@ -41,7 +41,8 @@ namespace content {
 template <typename Ty>
 class NodeLinkController;
 
-struct TypeID {
+class TypeID {
+ public:
   template <typename Ty>
   static std::size_t Of() {
     static std::byte buffer;
@@ -50,7 +51,8 @@ struct TypeID {
 };
 
 // Multi weight sorted key data structure.
-struct SortKey {
+class SortKey {
+ public:
   int64_t weight[3];
 
   SortKey();

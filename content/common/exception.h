@@ -15,11 +15,9 @@ namespace content {
 
 enum ExceptionCode {
   NO_EXCEPTION = 0,
-
   CONTENT_ERROR,
   GPU_ERROR,
   IO_ERROR,
-
   CODE_NUMS,
 };
 

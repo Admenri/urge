@@ -15,7 +15,7 @@ namespace content {
 GPUQueue::GPUQueue(wgpu::Queue object) : object_(object) {}
 
 void GPUQueue::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 uint64_t GPUQueue::OnSubmittedWorkDone(QueueWorkDoneCallback callback,
@@ -27,7 +27,7 @@ uint64_t GPUQueue::OnSubmittedWorkDone(QueueWorkDoneCallback callback,
                               void* userdata2) {
     auto* callback = static_cast<QueueWorkDoneCallback*>(userdata1);
     callback->Run(static_cast<GPU::QueueWorkDoneStatus>(status),
-                  std::string_view(message.data, message.length));
+                  std::string(message.data, message.length));
     delete callback;
   };
 
@@ -52,11 +52,11 @@ void GPUQueue::WriteBuffer(scoped_refptr<GPUBuffer> buffer,
 }
 
 URGE_BINDING()
-void GPUQueue::WriteTexture(estruct<GPUTexelCopyTextureInfo> destination,
+void GPUQueue::WriteTexture(scoped_refptr<GPUTexelCopyTextureInfo> destination,
                             epointer data,
                             size_t data_size,
-                            estruct<GPUTexelCopyBufferLayout> data_layout,
-                            estruct<GPUExtent3D> write_size,
+                            scoped_refptr<GPUTexelCopyBufferLayout> data_layout,
+                            scoped_refptr<GPUExtent3D> write_size,
                             URGE_EXCEPTION) {
   wgpu::TexelCopyTextureInfo raw_destination;
   if (auto data = destination; data) {
@@ -88,20 +88,19 @@ void GPUQueue::WriteTexture(estruct<GPUTexelCopyTextureInfo> destination,
 /// GPU Device
 ///
 
-GPUDevice::GPUDevice(wgpu::Device object)
-    : object_(object), limits_(Object::Create<GPULimits>()) {}
+GPUDevice::GPUDevice(wgpu::Device object) : object_(object) {}
 
 void GPUDevice::SetLabel(estring label, URGE_EXCEPTION) {
-  object_.SetLabel(label);
+  object_.SetLabel(std::string_view(label));
 }
 
 scoped_refptr<GPUBindGroup> GPUDevice::CreateBindGroup(
-    estruct<GPUBindGroupDescriptor> descriptor,
+    scoped_refptr<GPUBindGroupDescriptor> descriptor,
     URGE_EXCEPTION) {
   std::vector<wgpu::BindGroupEntry> entries;
   wgpu::BindGroupDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.layout = WGPU_PTR(descriptor->layout);
 
     for (auto& it : descriptor->entries) {
@@ -125,12 +124,12 @@ scoped_refptr<GPUBindGroup> GPUDevice::CreateBindGroup(
 }
 
 scoped_refptr<GPUBindGroupLayout> GPUDevice::CreateBindGroupLayout(
-    estruct<GPUBindGroupLayoutDescriptor> descriptor,
+    scoped_refptr<GPUBindGroupLayoutDescriptor> descriptor,
     URGE_EXCEPTION) {
   std::vector<wgpu::BindGroupLayoutEntry> entries;
   wgpu::BindGroupLayoutDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
 
     for (auto& it : descriptor->entries) {
       wgpu::BindGroupLayoutEntry entry;
@@ -181,11 +180,11 @@ scoped_refptr<GPUBindGroupLayout> GPUDevice::CreateBindGroupLayout(
 }
 
 scoped_refptr<GPUBuffer> GPUDevice::CreateBuffer(
-    estruct<GPUBufferDescriptor> descriptor,
+    scoped_refptr<GPUBufferDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::BufferDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.usage = static_cast<wgpu::BufferUsage>(descriptor->usage);
     create_desc.size = descriptor->size;
     create_desc.mappedAtCreation = descriptor->mappedAtCreation;
@@ -198,11 +197,11 @@ scoped_refptr<GPUBuffer> GPUDevice::CreateBuffer(
 }
 
 scoped_refptr<GPUCommandEncoder> GPUDevice::CreateCommandEncoder(
-    estruct<GPUCommandEncoderDescriptor> descriptor,
+    scoped_refptr<GPUCommandEncoderDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::CommandEncoderDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
   }
 
   auto result =
@@ -213,21 +212,22 @@ scoped_refptr<GPUCommandEncoder> GPUDevice::CreateCommandEncoder(
 }
 
 scoped_refptr<GPUComputePipeline> GPUDevice::CreateComputePipeline(
-    estruct<GPUComputePipelineDescriptor> descriptor,
+    scoped_refptr<GPUComputePipelineDescriptor> descriptor,
     URGE_EXCEPTION) {
   std::vector<wgpu::ConstantEntry> constants;
   wgpu::ComputePipelineDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.layout = WGPU_PTR(descriptor->layout);
 
     if (descriptor->compute) {
       create_desc.compute.module = WGPU_PTR(descriptor->compute->module);
-      create_desc.compute.entryPoint = descriptor->compute->entryPoint;
+      create_desc.compute.entryPoint =
+          std::string_view(descriptor->compute->entryPoint);
 
       for (auto& it : descriptor->compute->constants) {
         wgpu::ConstantEntry constant;
-        constant.key = it->key;
+        constant.key = std::string_view(it->key);
         constant.value = it->value;
         constants.push_back(std::move(constant));
       }
@@ -243,22 +243,23 @@ scoped_refptr<GPUComputePipeline> GPUDevice::CreateComputePipeline(
 }
 
 uint64_t GPUDevice::CreateComputePipelineAsync(
-    estruct<GPUComputePipelineDescriptor> descriptor,
+    scoped_refptr<GPUComputePipelineDescriptor> descriptor,
     CreateComputePipelineAsyncCallback callback,
     URGE_EXCEPTION) {
   std::vector<wgpu::ConstantEntry> constants;
   wgpu::ComputePipelineDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.layout = WGPU_PTR(descriptor->layout);
 
     if (descriptor->compute) {
       create_desc.compute.module = WGPU_PTR(descriptor->compute->module);
-      create_desc.compute.entryPoint = descriptor->compute->entryPoint;
+      create_desc.compute.entryPoint =
+          std::string_view(descriptor->compute->entryPoint);
 
       for (auto& it : descriptor->compute->constants) {
         wgpu::ConstantEntry constant;
-        constant.key = it->key;
+        constant.key = std::string_view(it->key);
         constant.value = it->value;
         constants.push_back(std::move(constant));
       }
@@ -270,30 +271,30 @@ uint64_t GPUDevice::CreateComputePipelineAsync(
   WGPUCreateComputePipelineAsyncCallbackInfo callback_info = {};
   callback_info.userdata1 =
       new CreateComputePipelineAsyncCallback(std::move(callback));
-  callback_info.callback =
-      [](WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline,
-         WGPUStringView message, void* userdata1, void* userdata2) {
-        auto* callback =
-            static_cast<CreateComputePipelineAsyncCallback*>(userdata1);
-        auto wrapped_pipeline =
-            pipeline ? Object::Create<GPUComputePipeline>(pipeline) : nullptr;
-        callback->Run(static_cast<GPU::CreatePipelineAsyncStatus>(status),
-                      wrapped_pipeline,
-                      std::string_view(message.data, message.length));
-        delete callback;
-      };
+  callback_info.callback = [](WGPUCreatePipelineAsyncStatus status,
+                              WGPUComputePipeline pipeline,
+                              WGPUStringView message, void* userdata1,
+                              void* userdata2) {
+    auto* callback =
+        static_cast<CreateComputePipelineAsyncCallback*>(userdata1);
+    auto wrapped_pipeline =
+        pipeline ? Object::Create<GPUComputePipeline>(pipeline) : nullptr;
+    callback->Run(static_cast<GPU::CreatePipelineAsyncStatus>(status),
+                  wrapped_pipeline, std::string(message.data, message.length));
+    delete callback;
+  };
 
   auto future = object_.CreateComputePipelineAsync(&create_desc, callback_info);
   return future.id;
 }
 
 scoped_refptr<GPUPipelineLayout> GPUDevice::CreatePipelineLayout(
-    estruct<GPUPipelineLayoutDescriptor> descriptor,
+    scoped_refptr<GPUPipelineLayoutDescriptor> descriptor,
     URGE_EXCEPTION) {
   std::vector<wgpu::BindGroupLayout> layouts;
   wgpu::PipelineLayoutDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
 
     for (auto& it : descriptor->bindGroupLayouts)
       layouts.push_back(WGPU_PTR(it));
@@ -309,11 +310,11 @@ scoped_refptr<GPUPipelineLayout> GPUDevice::CreatePipelineLayout(
 }
 
 scoped_refptr<GPUQuerySet> GPUDevice::CreateQuerySet(
-    estruct<GPUQuerySetDescriptor> descriptor,
+    scoped_refptr<GPUQuerySetDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::QuerySetDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.type = static_cast<wgpu::QueryType>(descriptor->type);
     create_desc.count = descriptor->count;
   }
@@ -325,7 +326,7 @@ scoped_refptr<GPUQuerySet> GPUDevice::CreateQuerySet(
 }
 
 scoped_refptr<GPURenderPipeline> GPUDevice::CreateRenderPipeline(
-    estruct<GPURenderPipelineDescriptor> descriptor,
+    scoped_refptr<GPURenderPipelineDescriptor> descriptor,
     URGE_EXCEPTION) {
   std::vector<wgpu::ConstantEntry> vertex_constants;
   std::vector<wgpu::VertexAttribute> vertex_attributes;
@@ -338,16 +339,17 @@ scoped_refptr<GPURenderPipeline> GPUDevice::CreateRenderPipeline(
 
   wgpu::RenderPipelineDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.layout = WGPU_PTR(descriptor->layout);
 
     if (descriptor->vertex) {
       create_desc.vertex.module = WGPU_PTR(descriptor->vertex->module);
-      create_desc.vertex.entryPoint = descriptor->vertex->entryPoint;
+      create_desc.vertex.entryPoint =
+          std::string_view(descriptor->vertex->entryPoint);
 
       for (auto& it : descriptor->vertex->constants) {
         wgpu::ConstantEntry constant;
-        constant.key = it->key;
+        constant.key = std::string_view(it->key);
         constant.value = it->value;
         vertex_constants.push_back(std::move(constant));
       }
@@ -436,11 +438,12 @@ scoped_refptr<GPURenderPipeline> GPUDevice::CreateRenderPipeline(
 
     if (descriptor->fragment) {
       fragment_state.module = WGPU_PTR(descriptor->fragment->module);
-      fragment_state.entryPoint = descriptor->fragment->entryPoint;
+      fragment_state.entryPoint =
+          std::string_view(descriptor->fragment->entryPoint);
 
       for (auto& it : descriptor->fragment->constants) {
         wgpu::ConstantEntry constant;
-        constant.key = it->key;
+        constant.key = std::string_view(it->key);
         constant.value = it->value;
         fragment_constants.push_back(std::move(constant));
       }
@@ -485,7 +488,7 @@ scoped_refptr<GPURenderPipeline> GPUDevice::CreateRenderPipeline(
 }
 
 uint64_t GPUDevice::CreateRenderPipelineAsync(
-    estruct<GPURenderPipelineDescriptor> descriptor,
+    scoped_refptr<GPURenderPipelineDescriptor> descriptor,
     CreateRenderPipelineAsyncCallback callback,
     URGE_EXCEPTION) {
   std::vector<wgpu::ConstantEntry> vertex_constants;
@@ -499,16 +502,17 @@ uint64_t GPUDevice::CreateRenderPipelineAsync(
 
   wgpu::RenderPipelineDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.layout = WGPU_PTR(descriptor->layout);
 
     if (descriptor->vertex) {
       create_desc.vertex.module = WGPU_PTR(descriptor->vertex->module);
-      create_desc.vertex.entryPoint = descriptor->vertex->entryPoint;
+      create_desc.vertex.entryPoint =
+          std::string_view(descriptor->vertex->entryPoint);
 
       for (auto& it : descriptor->vertex->constants) {
         wgpu::ConstantEntry constant;
-        constant.key = it->key;
+        constant.key = std::string_view(it->key);
         constant.value = it->value;
         vertex_constants.push_back(std::move(constant));
       }
@@ -597,11 +601,12 @@ uint64_t GPUDevice::CreateRenderPipelineAsync(
 
     if (descriptor->fragment) {
       fragment_state.module = WGPU_PTR(descriptor->fragment->module);
-      fragment_state.entryPoint = descriptor->fragment->entryPoint;
+      fragment_state.entryPoint =
+          std::string_view(descriptor->fragment->entryPoint);
 
       for (auto& it : descriptor->fragment->constants) {
         wgpu::ConstantEntry constant;
-        constant.key = it->key;
+        constant.key = std::string_view(it->key);
         constant.value = it->value;
         fragment_constants.push_back(std::move(constant));
       }
@@ -650,8 +655,7 @@ uint64_t GPUDevice::CreateRenderPipelineAsync(
     auto wrapped_pipeline =
         pipeline ? Object::Create<GPURenderPipeline>(pipeline) : nullptr;
     callback->Run(static_cast<GPU::CreatePipelineAsyncStatus>(status),
-                  wrapped_pipeline,
-                  std::string_view(message.data, message.length));
+                  wrapped_pipeline, std::string(message.data, message.length));
     delete callback;
   };
 
@@ -660,11 +664,11 @@ uint64_t GPUDevice::CreateRenderPipelineAsync(
 }
 
 scoped_refptr<GPUSampler> GPUDevice::CreateSampler(
-    estruct<GPUSamplerDescriptor> descriptor,
+    scoped_refptr<GPUSamplerDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::SamplerDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.addressModeU =
         static_cast<wgpu::AddressMode>(descriptor->addressModeU);
     create_desc.addressModeV =
@@ -691,13 +695,13 @@ scoped_refptr<GPUSampler> GPUDevice::CreateSampler(
 }
 
 scoped_refptr<GPUShaderModule> GPUDevice::CreateShaderModule(
-    estruct<GPUShaderModuleDescriptor> descriptor,
+    scoped_refptr<GPUShaderModuleDescriptor> descriptor,
     URGE_EXCEPTION) {
   wgpu::ShaderSourceWGSL wgsl_desc;
   wgpu::ShaderModuleDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
-    wgsl_desc.code = descriptor->wgslCode;
+    create_desc.label = std::string_view(descriptor->label);
+    wgsl_desc.code = std::string_view(descriptor->wgslCode);
     create_desc.nextInChain = &wgsl_desc;
   }
 
@@ -708,12 +712,12 @@ scoped_refptr<GPUShaderModule> GPUDevice::CreateShaderModule(
 }
 
 scoped_refptr<GPUTexture> GPUDevice::CreateTexture(
-    estruct<GPUTextureDescriptor> descriptor,
+    scoped_refptr<GPUTextureDescriptor> descriptor,
     URGE_EXCEPTION) {
   std::vector<wgpu::TextureFormat> view_formats;
   wgpu::TextureDescriptor create_desc;
   if (descriptor) {
-    create_desc.label = descriptor->label;
+    create_desc.label = std::string_view(descriptor->label);
     create_desc.usage = static_cast<wgpu::TextureUsage>(descriptor->usage);
     create_desc.dimension =
         static_cast<wgpu::TextureDimension>(descriptor->dimension);
@@ -757,7 +761,7 @@ uint64_t GPUDevice::PopErrorScope(PopErrorScopeCallback callback,
     auto* callback = static_cast<PopErrorScopeCallback*>(userdata1);
     callback->Run(static_cast<GPU::PopErrorScopeStatus>(status),
                   static_cast<GPU::ErrorType>(type),
-                  std::string_view(message.data, message.length));
+                  std::string(message.data, message.length));
     delete callback;
   };
 
@@ -769,23 +773,24 @@ earray<estring> GPUDevice::GetFeatures(URGE_EXCEPTION) {
   wgpu::SupportedFeatures support_features;
   object_.GetFeatures(&support_features);
 
-  features_.clear();
-  std::vector<std::string_view> out;
+  earray<estring> out;
   for (size_t i = 0; i < support_features.featureCount; ++i) {
     std::string feature_string(
         magic_enum::enum_name(support_features.features[i]));
-    auto it = features_.emplace_back(std::move(feature_string));
-    out.push_back(it);
+    out.push_back(std::move(feature_string));
   }
 
   return out;
 }
 
-estruct<GPULimits> GPUDevice::GetLimits(URGE_EXCEPTION) {
+scoped_refptr<GPULimits> GPUDevice::GetLimits(URGE_EXCEPTION) {
   static_assert(sizeof(GPULimits) == sizeof(WGPULimits) + sizeof(Object),
                 "limit structure updated required.");
-  object_.GetLimits(reinterpret_cast<wgpu::Limits*>(&limits_));
-  return limits_;
+
+  auto out = Object::Create<GPULimits>();
+  object_.GetLimits(reinterpret_cast<wgpu::Limits*>(&out->reservedParam));
+
+  return out;
 }
 
 }  // namespace content
