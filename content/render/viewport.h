@@ -34,7 +34,13 @@ URGE_BINDING()
 class DrawingSettings : public Object {
  public:
   URGE_BINDING()
-  scoped_refptr<SortingSettings> sortingSettings;
+  estring passTag = {};
+
+  URGE_BINDING()
+  estring passName = {};
+
+  URGE_BINDING()
+  scoped_refptr<SortingSettings> sortingSettings = nullptr;
 };
 
 URGE_BINDING()
