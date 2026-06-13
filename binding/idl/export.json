@@ -3958,6 +3958,86 @@
       "enums": {},
       "callbacks": {}
     },
+    "Light": {
+      "filepath": "render/light.h",
+      "parent": "Node",
+      "members": {},
+      "attributes": {
+        "Color": {
+          "value": "scoped_refptr<Vector3>"
+        },
+        "Intensity": {
+          "value": "float"
+        },
+        "CastShadow": {
+          "value": "bool"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
+    "DirectionalLight": {
+      "filepath": "render/light.h",
+      "parent": "Light",
+      "members": {
+        "New": {
+          "static": true,
+          "params": [],
+          "return": "scoped_refptr<DirectionalLight>"
+        }
+      },
+      "attributes": {},
+      "enums": {},
+      "callbacks": {}
+    },
+    "PointLight": {
+      "filepath": "render/light.h",
+      "parent": "Light",
+      "members": {
+        "New": {
+          "static": true,
+          "params": [],
+          "return": "scoped_refptr<PointLight>"
+        }
+      },
+      "attributes": {
+        "Range": {
+          "value": "float"
+        },
+        "Attenuation": {
+          "value": "float"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
+    "SpotLight": {
+      "filepath": "render/light.h",
+      "parent": "Light",
+      "members": {
+        "New": {
+          "static": true,
+          "params": [],
+          "return": "scoped_refptr<SpotLight>"
+        }
+      },
+      "attributes": {
+        "Range": {
+          "value": "float"
+        },
+        "Attenuation": {
+          "value": "float"
+        },
+        "Angle": {
+          "value": "float"
+        },
+        "AngleAttenuation": {
+          "value": "float"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
     "MeshRenderer": {
       "filepath": "render/renderer.h",
       "parent": "Node",
@@ -3999,7 +4079,13 @@
     "DrawingSettings": {
       "filepath": "render/viewport.h",
       "parent": "Object",
-      "members": {},
+      "members": {
+        "URGE_BINDING": {
+          "static": false,
+          "params": [],
+          "return": "estringpassTag={};"
+        }
+      },
       "attributes": {},
       "enums": {},
       "callbacks": {}
@@ -4023,6 +4109,11 @@
       "parent": "Object",
       "members": {
         "GetVisibleObjectCount": {
+          "static": false,
+          "params": [],
+          "return": "uint32_t"
+        },
+        "GetVisibleLightCount": {
           "static": false,
           "params": [],
           "return": "uint32_t"
@@ -4093,7 +4184,7 @@
       "enums": {},
       "callbacks": {}
     },
-    "RenderProcess": {
+    "RendererProcess": {
       "filepath": "render/viewport.h",
       "parent": "Object",
       "members": {
@@ -4105,7 +4196,7 @@
               "type": "RenderCallback"
             }
           ],
-          "return": "scoped_refptr<RenderProcess>"
+          "return": "scoped_refptr<RendererProcess>"
         }
       },
       "attributes": {},
@@ -4147,11 +4238,11 @@
         }
       },
       "attributes": {
-        "WorldRoot": {
-          "value": "scoped_refptr<Node>"
+        "World": {
+          "value": "scoped_refptr<World>"
         },
-        "Process": {
-          "value": "scoped_refptr<RenderProcess>"
+        "Renderer": {
+          "value": "scoped_refptr<RendererProcess>"
         }
       },
       "enums": {},
@@ -4446,6 +4537,21 @@
         },
         "Scale": {
           "value": "scoped_refptr<Vector3d>"
+        }
+      },
+      "enums": {},
+      "callbacks": {}
+    },
+    "World": {
+      "filepath": "scene/world.h",
+      "parent": "Object",
+      "members": {},
+      "attributes": {
+        "Root": {
+          "value": "scoped_refptr<Node>"
+        },
+        "Camera": {
+          "value": "scoped_refptr<Camera>"
         }
       },
       "enums": {},

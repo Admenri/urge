@@ -26,6 +26,8 @@ target_sources(engine_content
   render/camera.h
   render/graphics.cc
   render/graphics.h
+  render/light.cc
+  render/light.h
   render/renderer.cc
   render/renderer.h
   render/viewport.cc
@@ -40,6 +42,8 @@ target_sources(engine_content
   scene/node.h
   scene/transform.cc
   scene/transform.h
+  scene/world.cc
+  scene/world.h
   content_config.h
 )
 

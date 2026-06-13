@@ -9,6 +9,7 @@
 #include "content/gpu/gpu_resource.h"
 #include "content/render/camera.h"
 #include "content/scene/node.h"
+#include "content/scene/world.h"
 
 namespace content {
 
@@ -68,8 +69,15 @@ class CullingResults : public Object {
   URGE_BINDING()
   uint32_t GetVisibleObjectCount(URGE_EXCEPTION);
 
+  URGE_BINDING()
+  uint32_t GetVisibleLightCount(URGE_EXCEPTION);
+
  private:
 };
+
+///
+/// RenderContext
+///
 
 URGE_BINDING()
 class RenderContext : public Object {
@@ -106,13 +114,17 @@ class RenderContext : public Object {
  private:
 };
 
-URGE_BINDING()
-class RenderProcess : public Object {
- public:
-  RenderProcess();
+///
+/// RendererProcess
+///
 
-  RenderProcess(const RenderProcess&) = delete;
-  RenderProcess& operator=(const RenderProcess&) = delete;
+URGE_BINDING()
+class RendererProcess : public Object {
+ public:
+  RendererProcess();
+
+  RendererProcess(const RendererProcess&) = delete;
+  RendererProcess& operator=(const RendererProcess&) = delete;
 
  public:
   URGE_BINDING()
@@ -121,12 +133,16 @@ class RenderProcess : public Object {
                                    earray<scoped_refptr<Camera>> cameras)>;
 
   URGE_BINDING()
-  static scoped_refptr<RenderProcess> New(RenderCallback callback,
-                                          URGE_EXCEPTION);
+  static scoped_refptr<RendererProcess> New(RenderCallback callback,
+                                            URGE_EXCEPTION);
 
  private:
   RenderCallback on_render_;
 };
+
+///
+/// Viewport
+///
 
 URGE_BINDING()
 class Viewport : public Object {
@@ -142,18 +158,18 @@ class Viewport : public Object {
                                      URGE_EXCEPTION);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(WorldRoot, scoped_refptr<Node>);
+  URGE_ATTRIBUTE_DECLARE(World, scoped_refptr<World>);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Process, scoped_refptr<RenderProcess>);
+  URGE_ATTRIBUTE_DECLARE(Renderer, scoped_refptr<RendererProcess>);
 
   URGE_BINDING()
   scoped_refptr<Vector2i> GetSize(URGE_EXCEPTION);
 
  private:
   glm::ivec2 size_;
-  scoped_refptr<Node> root_;
-  scoped_refptr<RenderProcess> process_;
+  scoped_refptr<World> world_;
+  scoped_refptr<RendererProcess> process_;
 };
 
 }  // namespace content

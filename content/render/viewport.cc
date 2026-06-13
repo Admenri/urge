@@ -20,15 +20,15 @@ Viewport::Viewport(const glm::ivec2& size) : size_(size) {}
 
 URGE_ATTRIBUTE_DEFINE(
     Viewport,
-    WorldRoot,
-    scoped_refptr<Node>,
-    { return root_; },
-    { root_ = value; });
+    World,
+    scoped_refptr<World>,
+    { return world_; },
+    { world_ = value; });
 
 URGE_ATTRIBUTE_DEFINE(
     Viewport,
-    Process,
-    scoped_refptr<RenderProcess>,
+    Renderer,
+    scoped_refptr<RendererProcess>,
     { return process_; },
     { process_ = value; });
 
