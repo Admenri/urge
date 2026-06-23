@@ -58,11 +58,8 @@ class Constant : public Object {
 template <typename Ty>
 class Singleton {
  public:
-  // Reset singleton instance
-  static void ResetInstance(Ty* instance) { instance_.reset(instance); }
-
-  // Static global instance
-  static Ty* GetInstance() { return instance_.get(); }
+  static void Instance(Ty* instance) { instance_.reset(instance); }
+  static Ty* Instance() { return instance_.get(); }
 
  private:
   inline static std::unique_ptr<Ty> instance_;

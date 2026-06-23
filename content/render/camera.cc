@@ -100,23 +100,51 @@ scoped_refptr<OrthographicCamera> OrthographicCamera::New(URGE_EXCEPTION) {
 }
 
 OrthographicCamera::OrthographicCamera()
-    : Camera(), region_(Object::Create<Rect>(-1.f, 1.f, 1.f, -1.f)) {}
+    : Camera(), left_(0.f), right_(0.f), bottom_(0.f), top_(0.f) {}
 
 URGE_ATTRIBUTE_DEFINE(
     OrthographicCamera,
-    Region,
-    scoped_refptr<Rect>,
-    { return region_; },
+    Left,
+    float,
+    { return left_; },
     {
-      region_->Set(value, exception_state);
+      left_ = value;
+      NotifyProjectionChange();
+    });
+
+URGE_ATTRIBUTE_DEFINE(
+    OrthographicCamera,
+    Right,
+    float,
+    { return right_; },
+    {
+      right_ = value;
+      NotifyProjectionChange();
+    });
+
+URGE_ATTRIBUTE_DEFINE(
+    OrthographicCamera,
+    Bottom,
+    float,
+    { return bottom_; },
+    {
+      bottom_ = value;
+      NotifyProjectionChange();
+    });
+
+URGE_ATTRIBUTE_DEFINE(
+    OrthographicCamera,
+    Top,
+    float,
+    { return top_; },
+    {
+      top_ = value;
       NotifyProjectionChange();
     });
 
 glm::mat4x4 OrthographicCamera::GetProjection() {
-  const auto* bounds = region_->bounds();
-  return glm::ortho<float>(bounds[Rect::AXIS_LEFT], bounds[Rect::AXIS_RIGHT],
-                           bounds[Rect::AXIS_TOP], bounds[Rect::AXIS_BOTTOM],
-                           near_plane(), far_plane());
+  return glm::ortho<float>(left_, right_, bottom_, top_, near_plane(),
+                           far_plane());
 }
 
 }  // namespace content

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "content/resource/material.h"
+#include "content/resource/mesh.h"
 #include "content/scene/node.h"
 
 namespace content {
@@ -20,6 +22,17 @@ class MeshRenderer : public Node {
  public:
   URGE_BINDING()
   static scoped_refptr<MeshRenderer> New(URGE_EXCEPTION);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Mesh, scoped_refptr<Mesh>);
+
+  URGE_BINDING()
+  scoped_refptr<Material> GetMaterialAtSlot(uint32_t slot, URGE_EXCEPTION);
+
+  URGE_BINDING()
+  void SetMaterialAtSlot(uint32_t slot,
+                         scoped_refptr<Material> material,
+                         URGE_EXCEPTION);
 
  private:
 };

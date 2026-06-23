@@ -69,6 +69,9 @@ class Transform : public Constant {
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Scale, scoped_refptr<Vector3d>);
 
+  URGE_BINDING()
+  Transform& Set(scoped_refptr<Transform> value, URGE_EXCEPTION);
+
  private:
   scoped_refptr<Vector3d> position_;
   scoped_refptr<Quaternion> quaternion_;

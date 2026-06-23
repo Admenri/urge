@@ -17,13 +17,13 @@ class ExternalBinding {
   };
 
   // Call on binding initialization
-  virtual Result BindingInit() { return Result::CONTINUE; }
+  virtual Result BindingInit();
 
   // Call per frame
-  virtual Result RunningIterate() { return Result::CONTINUE; }
+  virtual Result RunningIterate();
 
   // Call after running main looping
-  virtual void BindingQuit() {}
+  virtual void BindingQuit();
 };
 
 }  // namespace content

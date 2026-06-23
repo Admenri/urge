@@ -26,9 +26,6 @@ class World : public Object {
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Root, scoped_refptr<Node>);
 
-  URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Camera, scoped_refptr<Camera>);
-
  private:
 };
 

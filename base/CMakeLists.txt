@@ -24,6 +24,7 @@ target_sources(engine_base
   buildflags/compiler_specific.h
   debug/logging.cc
   debug/logging.h
+  memory/allocator.cc
   memory/atomic_flag.cc
   memory/atomic_flag.h
   memory/atomic_ref_count.h

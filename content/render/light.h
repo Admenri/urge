@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "content/common/utility.h"
 #include "content/scene/node.h"
 
 namespace content {

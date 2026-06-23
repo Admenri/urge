@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <format>
 #include <string>
 
 #include "base/buildflags/compiler_specific.h"
@@ -31,14 +30,11 @@ class ExceptionState {
   ExceptionState& operator=(const ExceptionState&) = delete;
 
   // Throws a ContentException due to the given exception code.
-  void Throw(ExceptionCode exception_code, const char* format, ...) {
+  void Throw(ExceptionCode exception_code,
+             const std::string_view format,
+             auto&&... args) {
     code_ = exception_code;
-
-    va_list ap;
-    va_start(ap, format);
-    message_.resize(1024);
-    vsnprintf(message_.data(), message_.size(), format, ap);
-    va_end(ap);
+    message_ = std::vformat(format, std::make_format_args(args...));
   }
 
   // Returns true if there is a pending exception.

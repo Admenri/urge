@@ -122,4 +122,11 @@ URGE_ATTRIBUTE_DEFINE(
     { return scale_; },
     { scale_->Set(value, exception_state); });
 
+Transform& Transform::Set(scoped_refptr<Transform> value, URGE_EXCEPTION) {
+  position_->Set(value->position_, exception_state);
+  quaternion_->Set(value->quaternion_, exception_state);
+  scale_->Set(value->scale_, exception_state);
+  return *this;
+}
+
 }  // namespace content

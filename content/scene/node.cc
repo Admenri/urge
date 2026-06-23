@@ -20,7 +20,11 @@ scoped_refptr<Node> Node::New(URGE_EXCEPTION) {
 Node::Node()
     : node_(this, nullptr, SortKey()),
       transform_(Object::Create<Transform>()),
-      transform_dirty_(true) {}
+      transform_dirty_(true) {
+  auto transform_handler =
+      base::BindRepeating(&Node::OnTransformChange, base::Unretained(this));
+  transform_->set_change_handler(transform_handler);
+}
 
 Node::~Node() {
   Dispose();
@@ -46,8 +50,10 @@ URGE_ATTRIBUTE_DEFINE(
     {
       transform_dirty_ = true;
       parent_ = value;
-      if (parent_)
+      if (parent_) {
         node_.RebindController(&parent_->children_);
+        OnTransformChange();
+      }
     });
 
 URGE_ATTRIBUTE_DEFINE(
@@ -55,7 +61,10 @@ URGE_ATTRIBUTE_DEFINE(
     Active,
     bool,
     { return node_.GetActive(); },
-    { node_.SetActive(value); });
+    {
+      node_.SetActive(value);
+      OnTransformChange();
+    });
 
 URGE_ATTRIBUTE_DEFINE(
     Node,
@@ -108,6 +117,9 @@ void Node::OnObjectRelease() {
 }
 
 void Node::OnTransformChange() {
+  if (!node_.GetActive())
+    return;
+
   // Set self transform dirty
   transform_dirty_ = true;
 

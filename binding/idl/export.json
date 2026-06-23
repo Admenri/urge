@@ -19,87 +19,6 @@
       "enums": {},
       "callbacks": {}
     },
-    "Rect": {
-      "filepath": "common/utility.h",
-      "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Rect>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "left",
-                "type": "float"
-              },
-              {
-                "name": "right",
-                "type": "float"
-              },
-              {
-                "name": "top",
-                "type": "float"
-              },
-              {
-                "name": "bottom",
-                "type": "float"
-              }
-            ],
-            "return": "scoped_refptr<Rect>"
-          }
-        ],
-        "Copy": {
-          "static": true,
-          "params": [
-            {
-              "name": "other",
-              "type": "scoped_refptr<Rect>"
-            }
-          ],
-          "return": "scoped_refptr<Rect>"
-        },
-        "Equal": {
-          "static": false,
-          "params": [
-            {
-              "name": "other",
-              "type": "scoped_refptr<Rect>"
-            }
-          ],
-          "return": "bool"
-        },
-        "Set": {
-          "static": false,
-          "params": [
-            {
-              "name": "other",
-              "type": "scoped_refptr<Rect>"
-            }
-          ],
-          "return": "Rect&"
-        }
-      },
-      "attributes": {
-        "Left": {
-          "value": "float"
-        },
-        "Right": {
-          "value": "float"
-        },
-        "Top": {
-          "value": "float"
-        },
-        "Bottom": {
-          "value": "float"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
-    },
     "Vector2": {
       "filepath": "common/vector.h",
       "parent": "Constant",
@@ -4527,7 +4446,18 @@
     "Transform": {
       "filepath": "scene/transform.h",
       "parent": "Constant",
-      "members": {},
+      "members": {
+        "Set": {
+          "static": false,
+          "params": [
+            {
+              "name": "value",
+              "type": "scoped_refptr<Transform>"
+            }
+          ],
+          "return": "Transform&"
+        }
+      },
       "attributes": {
         "Position": {
           "value": "scoped_refptr<Vector3d>"
@@ -4549,9 +4479,6 @@
       "attributes": {
         "Root": {
           "value": "scoped_refptr<Node>"
-        },
-        "Camera": {
-          "value": "scoped_refptr<Camera>"
         }
       },
       "enums": {},

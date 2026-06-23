@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "content/common/utility.h"
 #include "content/scene/node.h"
 
 namespace content {
@@ -88,13 +87,25 @@ class OrthographicCamera : public Camera {
   static scoped_refptr<OrthographicCamera> New(URGE_EXCEPTION);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Region, scoped_refptr<Rect>);
+  URGE_ATTRIBUTE_DECLARE(Left, float);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Right, float);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Bottom, float);
+
+  URGE_BINDING()
+  URGE_ATTRIBUTE_DECLARE(Top, float);
 
  private:
   std::string_view ObjectName() override { return "URGE.OrthographicCamera"; }
   glm::mat4x4 GetProjection() override;
 
-  scoped_refptr<Rect> region_;
+  float left_;
+  float right_;
+  float bottom_;
+  float top_;
 };
 
 }  // namespace content

@@ -6,11 +6,11 @@ target_sources(engine_content
  PUBLIC
   app/runner.cc
   app/runner.h
+  binding/external_binding.cc
   binding/external_binding.h
   common/disposable.h
   common/exception.h
   common/object.h
-  common/utility.h
   common/vector.h
   gpu/gpu_command.cc
   gpu/gpu_command.h
