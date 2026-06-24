@@ -25,6 +25,13 @@ void GPUComputePassEncoder::SetBindGroup(uint32_t group_index,
                        dynamic_offsets.data());
 }
 
+void GPUComputePassEncoder::SetImmediates(uint32_t offset,
+                                          epointer data,
+                                          size_t size,
+                                          URGE_EXCEPTION) {
+  object_.SetImmediates(offset, data, size);
+}
+
 void GPUComputePassEncoder::SetPipeline(
     scoped_refptr<GPUComputePipeline> pipeline,
     URGE_EXCEPTION) {
@@ -153,6 +160,13 @@ void GPURenderPassEncoder::SetIndexBuffer(scoped_refptr<GPUBuffer> buffer,
                                           URGE_EXCEPTION) {
   object_.SetIndexBuffer(WGPU_PTR(buffer),
                          static_cast<wgpu::IndexFormat>(format), offset, size);
+}
+
+void GPURenderPassEncoder::SetImmediates(uint32_t offset,
+                                         epointer data,
+                                         size_t size,
+                                         URGE_EXCEPTION) {
+  object_.SetImmediates(offset, data, size);
 }
 
 void GPURenderPassEncoder::SetPipeline(

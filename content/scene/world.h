@@ -24,6 +24,9 @@ class World : public Object {
 
  public:
   URGE_BINDING()
+  static scoped_refptr<World> New(URGE_EXCEPTION);
+
+  URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Root, scoped_refptr<Node>);
 
  private:

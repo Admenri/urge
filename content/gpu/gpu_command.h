@@ -37,6 +37,12 @@ class GPUComputePassEncoder : public Object {
                     URGE_EXCEPTION);
 
   URGE_BINDING()
+  void SetImmediates(uint32_t offset,
+                     epointer data,
+                     size_t size,
+                     URGE_EXCEPTION);
+
+  URGE_BINDING()
   void SetPipeline(scoped_refptr<GPUComputePipeline> pipeline, URGE_EXCEPTION);
 
   URGE_BINDING()
@@ -139,6 +145,12 @@ class GPURenderPassEncoder : public Object {
                       uint64_t offset,
                       uint64_t size,
                       URGE_EXCEPTION);
+
+  URGE_BINDING()
+  void SetImmediates(uint32_t offset,
+                     epointer data,
+                     size_t size,
+                     URGE_EXCEPTION);
 
   URGE_BINDING()
   void SetPipeline(scoped_refptr<GPURenderPipeline> pipeline, URGE_EXCEPTION);

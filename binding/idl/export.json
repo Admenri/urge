@@ -3856,8 +3856,17 @@
         }
       },
       "attributes": {
-        "Region": {
-          "value": "scoped_refptr<Rect>"
+        "Left": {
+          "value": "float"
+        },
+        "Right": {
+          "value": "float"
+        },
+        "Bottom": {
+          "value": "float"
+        },
+        "Top": {
+          "value": "float"
         }
       },
       "enums": {},
@@ -3965,9 +3974,37 @@
           "static": true,
           "params": [],
           "return": "scoped_refptr<MeshRenderer>"
+        },
+        "GetMaterialAtSlot": {
+          "static": false,
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "scoped_refptr<Material>"
+        },
+        "SetMaterialAtSlot": {
+          "static": false,
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            },
+            {
+              "name": "material",
+              "type": "scoped_refptr<Material>"
+            }
+          ],
+          "return": "void"
         }
       },
-      "attributes": {},
+      "attributes": {
+        "Mesh": {
+          "value": "scoped_refptr<Mesh>"
+        }
+      },
       "enums": {},
       "callbacks": {}
     },
@@ -4475,7 +4512,13 @@
     "World": {
       "filepath": "scene/world.h",
       "parent": "Object",
-      "members": {},
+      "members": {
+        "New": {
+          "static": true,
+          "params": [],
+          "return": "scoped_refptr<World>"
+        }
+      },
       "attributes": {
         "Root": {
           "value": "scoped_refptr<Node>"
