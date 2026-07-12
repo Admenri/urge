@@ -8,7 +8,6 @@ target_sources(engine_content
   app/runner.h
   binding/external_binding.cc
   binding/external_binding.h
-  common/disposable.h
   common/exception.h
   common/object.h
   common/vector.h
@@ -26,8 +25,6 @@ target_sources(engine_content
   render/camera.h
   render/graphics.cc
   render/graphics.h
-  render/light.cc
-  render/light.h
   render/renderer.cc
   render/renderer.h
   render/viewport.cc

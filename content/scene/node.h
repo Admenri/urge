@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "base/memory/ref_counted.h"
-#include "content/common/disposable.h"
 #include "content/content_config.h"
 #include "content/scene/node_link.h"
 #include "content/scene/transform.h"
@@ -18,7 +17,7 @@ namespace content {
 class World;
 
 URGE_BINDING()
-class Node : public Disposable {
+class Node : public Object {
  public:
   Node();
   ~Node() override;
@@ -26,11 +25,11 @@ class Node : public Disposable {
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
 
-  virtual void SetupAsWorldRoot(World* world);
+  virtual void SetupAsWorldRoot(World* new_world, World* old_world);
   const glm::dmat4x4& GetModelMatrix();
-  World* GetWorld();
 
-  uint32_t culling_layer() const { return layer_; }
+  World* world() { return world_; }
+  uint32_t layer() const { return layer_; }
 
  public:
   URGE_BINDING()
@@ -67,15 +66,13 @@ class Node : public Disposable {
   scoped_refptr<Node> NextSibling(URGE_EXCEPTION);
 
  protected:
-  virtual void OnEnterWorld(World* new_world);
+  virtual void OnEnterWorld(World* new_world) {}
 
-  virtual void OnLeaveWorld(World* old_world);
+  virtual void OnLeaveWorld(World* old_world) {}
 
  private:
-  std::string_view ObjectName() override { return "URGE.Node"; }
-  void OnObjectRelease() override;
-
-  void OnTransformChange();
+  void ForEachNode(std::function<bool(Node*)> iter);
+  void TransformChange();
 
   NodeLink<Node> node_;
   NodeLinkController<Node> children_;

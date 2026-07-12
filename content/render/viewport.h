@@ -68,9 +68,6 @@ class CullingResults : public Object {
   URGE_BINDING()
   uint32_t GetVisibleObjectCount(URGE_EXCEPTION);
 
-  URGE_BINDING()
-  uint32_t GetVisibleLightCount(URGE_EXCEPTION);
-
  private:
 };
 

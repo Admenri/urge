@@ -25,11 +25,15 @@ URGE_ATTRIBUTE_DEFINE(
 
       // Unbind world from previous node if available
       if (root_)
-        root_->SetupAsWorldRoot(nullptr);
+        root_->SetupAsWorldRoot(nullptr, root_->world());
+
+      // Reset target parent
+      if (value)
+        value->Put_Parent(nullptr, exception_state);
 
       // Bind world to target node tree if available
       if (value)
-        value->SetupAsWorldRoot(this);
+        value->SetupAsWorldRoot(this, value->world());
 
       // Node reference
       root_ = value;

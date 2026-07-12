@@ -38,8 +38,6 @@ class Camera : public Node {
   void NotifyProjectionChange() { projection_dirty_ = true; }
 
  private:
-  std::string_view ObjectName() override { return "URGE.Camera"; }
-
   glm::mat4x4 projection_;
   bool projection_dirty_;
 
@@ -67,7 +65,6 @@ class PerspectiveCamera : public Camera {
   URGE_ATTRIBUTE_DECLARE(Aspect, float);
 
  private:
-  std::string_view ObjectName() override { return "URGE.PerspectiveCamera"; }
   glm::mat4x4 GetProjection() override;
 
   float fovy_;
@@ -99,7 +96,6 @@ class OrthographicCamera : public Camera {
   URGE_ATTRIBUTE_DECLARE(Top, float);
 
  private:
-  std::string_view ObjectName() override { return "URGE.OrthographicCamera"; }
   glm::mat4x4 GetProjection() override;
 
   float left_;
