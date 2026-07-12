@@ -35,6 +35,8 @@ class MeshRenderer : public Node {
                          URGE_EXCEPTION);
 
  private:
+  scoped_refptr<Mesh> mesh_;
+  std::vector<scoped_refptr<Material>> materials_;
 };
 
 }  // namespace content

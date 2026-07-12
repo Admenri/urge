@@ -7,6 +7,7 @@
 #include "base/bind/callback.h"
 #include "content/common/exception.h"
 #include "content/common/object.h"
+#include "content/common/vector.h"
 #include "content/content_config.h"
 #include "content/gpu/gpu_resource.h"
 
@@ -16,7 +17,7 @@ URGE_BINDING()
 class SubMesh : public Object {
  public:
   URGE_BINDING()
-  uint32_t vertexSlot = 0;
+  uint32_t bindingSlot = 0;
 
   URGE_BINDING()
   uint32_t materialSlot = 0;
@@ -34,13 +35,19 @@ class SubMesh : public Object {
   uint32_t vertexCount = 0;
 
   URGE_BINDING()
+  scoped_refptr<Vector3> boundsMin = nullptr;
+
+  URGE_BINDING()
+  scoped_refptr<Vector3> boundsMax = nullptr;
+
+  URGE_BINDING()
   estring name;
 };
 
 URGE_BINDING()
 class Mesh : public Object {
  public:
-  Mesh();
+  Mesh(uint32_t vertex_bytes, uint32_t index_count);
 
   Mesh(const Mesh&) = delete;
   Mesh& operator=(const Mesh&) = delete;
@@ -52,10 +59,10 @@ class Mesh : public Object {
                                  URGE_EXCEPTION);
 
   URGE_BINDING()
-  epointer GetVertices(uint32_t slot, URGE_EXCEPTION);
+  epointer GetVertices(URGE_EXCEPTION);
 
   URGE_BINDING()
-  uint32_t GetVertexCount(uint32_t slot, URGE_EXCEPTION);
+  uint32_t GetVertexBytesSize(URGE_EXCEPTION);
 
   URGE_BINDING()
   epointer GetIndices(URGE_EXCEPTION);
@@ -67,12 +74,13 @@ class Mesh : public Object {
   void SetupSubMeshData(earray<scoped_refptr<SubMesh>> data, URGE_EXCEPTION);
 
   URGE_BINDING()
-  scoped_refptr<SubMesh> GetSubMeshAt(uint32_t index, URGE_EXCEPTION);
-
-  URGE_BINDING()
-  uint32_t GetSubMeshCount(URGE_EXCEPTION);
+  earray<scoped_refptr<SubMesh>> GetSubMeshes(URGE_EXCEPTION);
 
  private:
+  std::vector<scoped_refptr<SubMesh>> mesh_groups_;
+
+  std::vector<uint8_t> vertices_;
+  std::vector<uint32_t> indices_;
 };
 
 }  // namespace content

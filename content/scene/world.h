@@ -30,6 +30,7 @@ class World : public Object {
   URGE_ATTRIBUTE_DECLARE(Root, scoped_refptr<Node>);
 
  private:
+  scoped_refptr<Node> root_;
 };
 
 }  // namespace content

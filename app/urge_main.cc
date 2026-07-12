@@ -84,7 +84,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv) {
   auto config_stream = filesystem->OpenReadRaw(app_path, &config_io_state);
 
   auto* profile = new content::CoreProfile(config_stream);
-  content::CoreProfile::ResetInstance(profile);
+  content::CoreProfile::Instance(profile);
 
   // Binding
   auto binding = std::make_unique<content::ExternalBinding>();

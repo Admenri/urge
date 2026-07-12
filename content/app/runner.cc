@@ -29,11 +29,11 @@ Runner::~Runner() {
   binding_entry_->BindingQuit();
 
   // Destroy component
-  Graphics::ResetInstance(nullptr);
+  Graphics::Instance(nullptr);
 }
 
 ExternalBinding::Result Runner::AppInit() {
-  auto* core_profile = CoreProfile::GetInstance();
+  auto* core_profile = CoreProfile::Instance();
 
   // Main window
   ui::Widget::InitParams window_params;
@@ -60,7 +60,7 @@ ExternalBinding::Result Runner::AppInit() {
       renderer::RenderDevice::Create(window->AsWeakPtr(), renderer_backend);
 
   // Graphics component
-  Graphics::ResetInstance(
+  Graphics::Instance(
       new Graphics(std::move(window), std::move(graphics_device)));
 
   return binding_entry_->BindingInit();
@@ -71,7 +71,7 @@ ExternalBinding::Result Runner::RunIterate() {
   auto result = binding_entry_->RunningIterate();
 
   // Graphics update
-  Graphics::GetInstance()->Present();
+  Graphics::Instance()->Present();
 
   return result;
 }

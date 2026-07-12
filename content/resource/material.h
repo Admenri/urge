@@ -15,9 +15,6 @@ URGE_BINDING()
 class ShaderPass : public Object {
  public:
   URGE_BINDING()
-  estring name = {};
-
-  URGE_BINDING()
   emap<estring, estring> tags = {};
 
   URGE_BINDING()
@@ -43,21 +40,26 @@ class Material : public Object {
   URGE_ATTRIBUTE_DECLARE(RenderQueue, uint32_t);
 
   URGE_BINDING()
-  void AddPass(scoped_refptr<ShaderPass> pass, URGE_EXCEPTION);
+  void SetupPasses(earray<scoped_refptr<ShaderPass>> passes, URGE_EXCEPTION);
 
   URGE_BINDING()
-  void RemovePass(estring name, URGE_EXCEPTION);
+  earray<scoped_refptr<ShaderPass>> GetPasses(URGE_EXCEPTION);
 
   URGE_BINDING()
-  earray<estring> GetAllPassNames(URGE_EXCEPTION);
-
-  URGE_BINDING()
-  void SetupBindData(uint32_t slot,
-                     scoped_refptr<GPUBindGroup> group,
-                     earray<uint32_t> offsets,
-                     URGE_EXCEPTION);
+  void SetupBindingData(uint32_t slot,
+                        scoped_refptr<GPUBindGroup> group,
+                        earray<uint32_t> offsets,
+                        URGE_EXCEPTION);
 
  private:
+  struct BindData {
+    scoped_refptr<GPUBindGroup> bind_group;
+    std::vector<uint32_t> offsets;
+  };
+
+  uint32_t render_queue_;
+  std::vector<scoped_refptr<ShaderPass>> passes_;
+  std::vector<BindData> bindings_;
 };
 
 }  // namespace content

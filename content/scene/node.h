@@ -15,6 +15,8 @@
 
 namespace content {
 
+class World;
+
 URGE_BINDING()
 class Node : public Disposable {
  public:
@@ -24,7 +26,9 @@ class Node : public Disposable {
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
 
+  virtual void SetupAsWorldRoot(World* world);
   const glm::dmat4x4& GetModelMatrix();
+  World* GetWorld();
 
   uint32_t culling_layer() const { return layer_; }
 
@@ -62,6 +66,11 @@ class Node : public Disposable {
   URGE_BINDING()
   scoped_refptr<Node> NextSibling(URGE_EXCEPTION);
 
+ protected:
+  virtual void OnEnterWorld(World* new_world);
+
+  virtual void OnLeaveWorld(World* old_world);
+
  private:
   std::string_view ObjectName() override { return "URGE.Node"; }
   void OnObjectRelease() override;
@@ -79,6 +88,7 @@ class Node : public Disposable {
   glm::dmat4x4 model_;
 
   bool transform_dirty_;
+  World* world_;
 };
 
 }  // namespace content
