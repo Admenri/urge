@@ -6,7 +6,6 @@
 
 #include "content/gpu/gpu_device.h"
 #include "content/gpu/gpu_resource.h"
-#include "content/render/camera.h"
 #include "content/scene/node.h"
 
 namespace content {

@@ -7,7 +7,7 @@
 #include "content/content_config.h"
 #include "content/gpu/gpu_device.h"
 #include "content/gpu/gpu_resource.h"
-#include "content/render/camera.h"
+#include "content/scene/camera.h"
 #include "content/scene/world.h"
 
 namespace content {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "content/render/camera.h"
+#include "content/scene/camera.h"
 
 #include "glm/gtc/matrix_inverse.hpp"
 

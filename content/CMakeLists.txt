@@ -21,22 +21,22 @@ target_sources(engine_content
   gpu/gpu.h
   profile/core_profile.cc
   profile/core_profile.h
-  render/camera.cc
-  render/camera.h
   render/graphics.cc
   render/graphics.h
-  render/renderer.cc
-  render/renderer.h
   render/viewport.cc
   render/viewport.h
   resource/material.cc
   resource/material.h
   resource/mesh.cc
   resource/mesh.h
+  scene/camera.cc
+  scene/camera.h
   scene/node_link.cc
   scene/node_link.h
   scene/node.cc
   scene/node.h
+  scene/renderer.cc
+  scene/renderer.h
   scene/transform.cc
   scene/transform.h
   scene/world.cc

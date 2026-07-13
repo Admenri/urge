@@ -9,7 +9,6 @@
 
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
-#include "content/render/camera.h"
 #include "content/scene/node.h"
 
 namespace content {
