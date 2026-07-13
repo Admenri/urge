@@ -17,7 +17,8 @@ namespace content {
 URGE_BINDING()
 class GPUExtent3D : public Object {
  public:
-  URGE_BINDING() uint32_t width = 0;
+  URGE_BINDING()
+  uint32_t width = 0;
 
   URGE_BINDING()
   uint32_t height = 1;

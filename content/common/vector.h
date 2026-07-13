@@ -45,7 +45,8 @@ class Vector2 : public Constant {
     return Object::Create<Vector2>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector2> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector2> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -69,7 +70,8 @@ class Vector2 : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector2& Set(scoped_refptr<Vector2> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector2& Set(scoped_refptr<Vector2> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -138,7 +140,8 @@ class Vector2d : public Constant {
     return Object::Create<Vector2d>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector2d> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector2d> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -162,7 +165,8 @@ class Vector2d : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector2d& Set(scoped_refptr<Vector2d> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector2d& Set(scoped_refptr<Vector2d> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -231,7 +235,8 @@ class Vector2i : public Constant {
     return Object::Create<Vector2i>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector2i> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector2i> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -255,7 +260,8 @@ class Vector2i : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector2i& Set(scoped_refptr<Vector2i> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector2i& Set(scoped_refptr<Vector2i> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -324,7 +330,8 @@ class Vector3 : public Constant {
     return Object::Create<Vector3>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector3> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector3> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -358,7 +365,8 @@ class Vector3 : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector3& Set(scoped_refptr<Vector3> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector3& Set(scoped_refptr<Vector3> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -430,7 +438,8 @@ class Vector3d : public Constant {
     return Object::Create<Vector3d>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector3d> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector3d> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -464,7 +473,8 @@ class Vector3d : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector3d& Set(scoped_refptr<Vector3d> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector3d& Set(scoped_refptr<Vector3d> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -533,7 +543,8 @@ class Vector3i : public Constant {
     return Object::Create<Vector3i>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector3i> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector3i> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -567,7 +578,8 @@ class Vector3i : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector3i& Set(scoped_refptr<Vector3i> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector3i& Set(scoped_refptr<Vector3i> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -640,7 +652,8 @@ class Vector4 : public Constant {
     return Object::Create<Vector4>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector4> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector4> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -684,7 +697,8 @@ class Vector4 : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector4& Set(scoped_refptr<Vector4> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector4& Set(scoped_refptr<Vector4> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -757,7 +771,8 @@ class Vector4d : public Constant {
     return Object::Create<Vector4d>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector4d> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector4d> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -801,7 +816,8 @@ class Vector4d : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector4d& Set(scoped_refptr<Vector4d> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector4d& Set(scoped_refptr<Vector4d> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
@@ -874,7 +890,8 @@ class Vector4i : public Constant {
     return Object::Create<Vector4i>(other->data_);
   }
 
-  URGE_BINDING() bool Equal(scoped_refptr<Vector4i> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  bool Equal(scoped_refptr<Vector4i> other, URGE_EXCEPTION) {
     return data_ == other->data_;
   }
 
@@ -918,7 +935,8 @@ class Vector4i : public Constant {
         on_change();
       });
 
-  URGE_BINDING() Vector4i& Set(scoped_refptr<Vector4i> other, URGE_EXCEPTION) {
+  URGE_BINDING()
+  Vector4i& Set(scoped_refptr<Vector4i> other, URGE_EXCEPTION) {
     data_ = other->data_;
     on_change();
     return *this;
