@@ -9,8 +9,7 @@
 namespace binding {
 
 content::ExternalBinding::Result CRubyBindingEntry::BindingInit() {
-  auto* profile = content::CoreProfile::GetInstance();
-  profile->core.scripts;
+  auto* profile = content::CoreProfile::Instance();
 }
 
 content::ExternalBinding::Result CRubyBindingEntry::RunningIterate() {}

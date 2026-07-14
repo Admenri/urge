@@ -1,52 +1,29 @@
 {
   "class": {
-    "Disposable": {
-      "filepath": "common/disposable.h",
-      "parent": "Object",
-      "members": {
-        "IsDisposed": {
-          "static": false,
-          "params": [],
-          "return": "bool"
-        },
-        "Dispose": {
-          "static": false,
-          "params": [],
-          "return": "void"
-        }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
-    },
     "Vector2": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector2>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "float"
-              },
-              {
-                "name": "y",
-                "type": "float"
-              }
-            ],
-            "return": "scoped_refptr<Vector2>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "float"
+            },
+            {
+              "name": "y",
+              "type": "float"
+            }
+          ],
+          "return": "scoped_refptr<Vector2>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -55,8 +32,9 @@
           "return": "scoped_refptr<Vector2>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -65,8 +43,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -75,8 +54,11 @@
           "return": "Vector2&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -85,8 +67,11 @@
           "return": "Vector2&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -95,8 +80,11 @@
           "return": "Vector2&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -105,8 +93,11 @@
           "return": "Vector2&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2>"
@@ -115,45 +106,41 @@
           "return": "Vector2&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "float"
         },
         "Y": {
+          "desc": {},
           "value": "float"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector2d": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector2d>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "double"
-              },
-              {
-                "name": "y",
-                "type": "double"
-              }
-            ],
-            "return": "scoped_refptr<Vector2d>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            }
+          ],
+          "return": "scoped_refptr<Vector2d>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -162,8 +149,9 @@
           "return": "scoped_refptr<Vector2d>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -172,8 +160,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -182,8 +171,11 @@
           "return": "Vector2d&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -192,8 +184,11 @@
           "return": "Vector2d&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -202,8 +197,11 @@
           "return": "Vector2d&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -212,8 +210,11 @@
           "return": "Vector2d&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2d>"
@@ -222,45 +223,41 @@
           "return": "Vector2d&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "double"
         },
         "Y": {
+          "desc": {},
           "value": "double"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector2i": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector2i>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "int"
-              },
-              {
-                "name": "y",
-                "type": "int"
-              }
-            ],
-            "return": "scoped_refptr<Vector2i>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "int"
+            },
+            {
+              "name": "y",
+              "type": "int"
+            }
+          ],
+          "return": "scoped_refptr<Vector2i>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -269,8 +266,9 @@
           "return": "scoped_refptr<Vector2i>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -279,8 +277,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -289,8 +288,11 @@
           "return": "Vector2i&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -299,8 +301,11 @@
           "return": "Vector2i&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -309,8 +314,11 @@
           "return": "Vector2i&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -319,8 +327,11 @@
           "return": "Vector2i&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector2i>"
@@ -329,49 +340,45 @@
           "return": "Vector2i&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "int"
         },
         "Y": {
+          "desc": {},
           "value": "int"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector3": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector3>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "float"
-              },
-              {
-                "name": "y",
-                "type": "float"
-              },
-              {
-                "name": "z",
-                "type": "float"
-              }
-            ],
-            "return": "scoped_refptr<Vector3>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "float"
+            },
+            {
+              "name": "y",
+              "type": "float"
+            },
+            {
+              "name": "z",
+              "type": "float"
+            }
+          ],
+          "return": "scoped_refptr<Vector3>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -380,8 +387,9 @@
           "return": "scoped_refptr<Vector3>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -390,8 +398,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -400,8 +409,11 @@
           "return": "Vector3&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -410,8 +422,11 @@
           "return": "Vector3&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -420,8 +435,11 @@
           "return": "Vector3&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -430,8 +448,11 @@
           "return": "Vector3&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3>"
@@ -440,52 +461,49 @@
           "return": "Vector3&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "float"
         },
         "Y": {
+          "desc": {},
           "value": "float"
         },
         "Z": {
+          "desc": {},
           "value": "float"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector3d": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector3d>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "double"
-              },
-              {
-                "name": "y",
-                "type": "double"
-              },
-              {
-                "name": "z",
-                "type": "double"
-              }
-            ],
-            "return": "scoped_refptr<Vector3d>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            },
+            {
+              "name": "z",
+              "type": "double"
+            }
+          ],
+          "return": "scoped_refptr<Vector3d>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -494,8 +512,9 @@
           "return": "scoped_refptr<Vector3d>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -504,8 +523,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -514,8 +534,11 @@
           "return": "Vector3d&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -524,8 +547,11 @@
           "return": "Vector3d&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -534,8 +560,11 @@
           "return": "Vector3d&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -544,8 +573,11 @@
           "return": "Vector3d&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3d>"
@@ -554,52 +586,49 @@
           "return": "Vector3d&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "double"
         },
         "Y": {
+          "desc": {},
           "value": "double"
         },
         "Z": {
+          "desc": {},
           "value": "double"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector3i": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector3i>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "int"
-              },
-              {
-                "name": "y",
-                "type": "int"
-              },
-              {
-                "name": "z",
-                "type": "int"
-              }
-            ],
-            "return": "scoped_refptr<Vector3i>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "int"
+            },
+            {
+              "name": "y",
+              "type": "int"
+            },
+            {
+              "name": "z",
+              "type": "int"
+            }
+          ],
+          "return": "scoped_refptr<Vector3i>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -608,8 +637,9 @@
           "return": "scoped_refptr<Vector3i>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -618,8 +648,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -628,8 +659,11 @@
           "return": "Vector3i&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -638,8 +672,11 @@
           "return": "Vector3i&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -648,8 +685,11 @@
           "return": "Vector3i&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -658,8 +698,11 @@
           "return": "Vector3i&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector3i>"
@@ -668,56 +711,53 @@
           "return": "Vector3i&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "int"
         },
         "Y": {
+          "desc": {},
           "value": "int"
         },
         "Z": {
+          "desc": {},
           "value": "int"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector4": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector4>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "float"
-              },
-              {
-                "name": "y",
-                "type": "float"
-              },
-              {
-                "name": "z",
-                "type": "float"
-              },
-              {
-                "name": "w",
-                "type": "float"
-              }
-            ],
-            "return": "scoped_refptr<Vector4>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "float"
+            },
+            {
+              "name": "y",
+              "type": "float"
+            },
+            {
+              "name": "z",
+              "type": "float"
+            },
+            {
+              "name": "w",
+              "type": "float"
+            }
+          ],
+          "return": "scoped_refptr<Vector4>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -726,8 +766,9 @@
           "return": "scoped_refptr<Vector4>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -736,8 +777,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -746,8 +788,11 @@
           "return": "Vector4&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -756,8 +801,11 @@
           "return": "Vector4&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -766,8 +814,11 @@
           "return": "Vector4&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -776,8 +827,11 @@
           "return": "Vector4&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4>"
@@ -786,59 +840,57 @@
           "return": "Vector4&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "float"
         },
         "Y": {
+          "desc": {},
           "value": "float"
         },
         "Z": {
+          "desc": {},
           "value": "float"
         },
         "W": {
+          "desc": {},
           "value": "float"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector4d": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector4d>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "double"
-              },
-              {
-                "name": "y",
-                "type": "double"
-              },
-              {
-                "name": "z",
-                "type": "double"
-              },
-              {
-                "name": "w",
-                "type": "double"
-              }
-            ],
-            "return": "scoped_refptr<Vector4d>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            },
+            {
+              "name": "z",
+              "type": "double"
+            },
+            {
+              "name": "w",
+              "type": "double"
+            }
+          ],
+          "return": "scoped_refptr<Vector4d>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -847,8 +899,9 @@
           "return": "scoped_refptr<Vector4d>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -857,8 +910,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -867,8 +921,11 @@
           "return": "Vector4d&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -877,8 +934,11 @@
           "return": "Vector4d&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -887,8 +947,11 @@
           "return": "Vector4d&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -897,8 +960,11 @@
           "return": "Vector4d&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4d>"
@@ -907,59 +973,57 @@
           "return": "Vector4d&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "double"
         },
         "Y": {
+          "desc": {},
           "value": "double"
         },
         "Z": {
+          "desc": {},
           "value": "double"
         },
         "W": {
+          "desc": {},
           "value": "double"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Vector4i": {
-      "filepath": "common/vector.h",
+      "desc": {},
+      "filename": "common/vector.h",
       "parent": "Constant",
-      "members": {
-        "New": [
-          {
-            "static": true,
-            "params": [],
-            "return": "scoped_refptr<Vector4i>"
-          },
-          {
-            "static": true,
-            "params": [
-              {
-                "name": "x",
-                "type": "int"
-              },
-              {
-                "name": "y",
-                "type": "int"
-              },
-              {
-                "name": "z",
-                "type": "int"
-              },
-              {
-                "name": "w",
-                "type": "int"
-              }
-            ],
-            "return": "scoped_refptr<Vector4i>"
-          }
-        ],
-        "Copy": {
+      "method": {
+        "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
+            {
+              "name": "x",
+              "type": "int"
+            },
+            {
+              "name": "y",
+              "type": "int"
+            },
+            {
+              "name": "z",
+              "type": "int"
+            },
+            {
+              "name": "w",
+              "type": "int"
+            }
+          ],
+          "return": "scoped_refptr<Vector4i>"
+        },
+        "Copy": {
+          "desc": {},
+          "static": true,
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -968,8 +1032,9 @@
           "return": "scoped_refptr<Vector4i>"
         },
         "Equal": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -978,8 +1043,9 @@
           "return": "bool"
         },
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -988,8 +1054,11 @@
           "return": "Vector4i&"
         },
         "Add": {
+          "desc": {
+            "Name": "+"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -998,8 +1067,11 @@
           "return": "Vector4i&"
         },
         "Sub": {
+          "desc": {
+            "Name": "-"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -1008,8 +1080,11 @@
           "return": "Vector4i&"
         },
         "Mul": {
+          "desc": {
+            "Name": "*"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -1018,8 +1093,11 @@
           "return": "Vector4i&"
         },
         "Div": {
+          "desc": {
+            "Name": "/"
+          },
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "other",
               "type": "scoped_refptr<Vector4i>"
@@ -1028,81 +1106,105 @@
           "return": "Vector4i&"
         }
       },
-      "attributes": {
+      "attribute": {
         "X": {
+          "desc": {},
           "value": "int"
         },
         "Y": {
+          "desc": {},
           "value": "int"
         },
         "Z": {
+          "desc": {},
           "value": "int"
         },
         "W": {
+          "desc": {},
           "value": "int"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUExtent3D": {
-      "filepath": "gpu/gpu.h",
+      "desc": {},
+      "filename": "gpu/gpu.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "uint32_twidth=0;"
+      "member": [
+        {
+          "desc": {},
+          "name": "width",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "height",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "depthOrArrayLayers",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUOrigin3D": {
-      "filepath": "gpu/gpu.h",
+      "desc": {},
+      "filename": "gpu/gpu.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "uint32_tx=0;"
+      "member": [
+        {
+          "desc": {},
+          "name": "x",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "y",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "z",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUColor": {
-      "filepath": "gpu/gpu.h",
+      "desc": {},
+      "filename": "gpu/gpu.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "doubler=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "doubleb=0;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "r",
+          "type": "double"
+        },
+        {
+          "desc": {},
+          "name": "g",
+          "type": "double"
+        },
+        {
+          "desc": {},
+          "name": "b",
+          "type": "double"
+        },
+        {
+          "desc": {},
+          "name": "a",
+          "type": "double"
+        }
+      ]
     },
     "GPU": {
-      "filepath": "gpu/gpu.h",
+      "desc": {},
+      "filename": "gpu/gpu.h",
       "parent": "Singleton<GPU>",
-      "members": {},
-      "attributes": {},
-      "enums": {
+      "enum": {
         "MapAsyncStatus": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Success",
             "CallbackCancelled",
             "Error",
@@ -1110,8 +1212,9 @@
           ]
         },
         "BufferUsage": {
+          "desc": {},
           "range": "uint64_t",
-          "members": [
+          "member": [
             "None",
             "MapRead",
             "MapWrite",
@@ -1126,24 +1229,27 @@
           ]
         },
         "MapMode": {
+          "desc": {},
           "range": "uint64_t",
-          "members": [
+          "member": [
             "None",
             "Read",
             "Write"
           ]
         },
         "BufferMapState": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Unmapped",
             "Pending",
             "Mapped"
           ]
         },
         "TextureDimension": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "e1D",
             "e2D",
@@ -1151,8 +1257,9 @@
           ]
         },
         "TextureFormat": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "R8Unorm",
             "R8Snorm",
@@ -1258,8 +1365,9 @@
           ]
         },
         "TextureViewDimension": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "e1D",
             "e2D",
@@ -1270,8 +1378,9 @@
           ]
         },
         "TextureUsage": {
+          "desc": {},
           "range": "uint64_t",
-          "members": [
+          "member": [
             "None",
             "CopySrc",
             "CopyDst",
@@ -1282,8 +1391,9 @@
           ]
         },
         "TextureAspect": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "All",
             "StencilOnly",
@@ -1291,46 +1401,52 @@
           ]
         },
         "CompilationInfoRequestStatus": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Success",
             "CallbackCancelled"
           ]
         },
         "QueryType": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Occlusion",
             "Timestamp"
           ]
         },
         "LoadOp": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Load",
             "Clear"
           ]
         },
         "StoreOp": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Store",
             "Discard"
           ]
         },
         "IndexFormat": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Uint16",
             "Uint32"
           ]
         },
         "ShaderStage": {
+          "desc": {},
           "range": "uint64_t",
-          "members": [
+          "member": [
             "None",
             "Vertex",
             "Fragment",
@@ -1338,8 +1454,9 @@
           ]
         },
         "BufferBindingType": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "BindingNotUsed",
             "Undefined",
             "Uniform",
@@ -1348,8 +1465,9 @@
           ]
         },
         "SamplerBindingType": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "BindingNotUsed",
             "Undefined",
             "Filtering",
@@ -1358,8 +1476,9 @@
           ]
         },
         "TextureSampleType": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "BindingNotUsed",
             "Undefined",
             "Float",
@@ -1370,8 +1489,9 @@
           ]
         },
         "StorageTextureAccess": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "BindingNotUsed",
             "Undefined",
             "WriteOnly",
@@ -1380,16 +1500,18 @@
           ]
         },
         "VertexStepMode": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Vertex",
             "Instance"
           ]
         },
         "VertexFormat": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Uint8",
             "Uint8x2",
             "Uint8x4",
@@ -1434,8 +1556,9 @@
           ]
         },
         "ColorWriteMask": {
+          "desc": {},
           "range": "uint64_t",
-          "members": [
+          "member": [
             "None",
             "Red",
             "Green",
@@ -1445,8 +1568,9 @@
           ]
         },
         "BlendOperation": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Add",
             "Subtract",
@@ -1456,8 +1580,9 @@
           ]
         },
         "BlendFactor": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Zero",
             "One",
@@ -1479,8 +1604,9 @@
           ]
         },
         "PrimitiveTopology": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "PointList",
             "LineList",
@@ -1490,16 +1616,18 @@
           ]
         },
         "FrontFace": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "CCW",
             "CW"
           ]
         },
         "CullMode": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "None",
             "Front",
@@ -1507,8 +1635,9 @@
           ]
         },
         "CompareFunction": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Never",
             "Less",
@@ -1521,8 +1650,9 @@
           ]
         },
         "StencilOperation": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Keep",
             "Zero",
@@ -1535,8 +1665,9 @@
           ]
         },
         "AddressMode": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "ClampToEdge",
             "Repeat",
@@ -1544,40 +1675,45 @@
           ]
         },
         "FilterMode": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Nearest",
             "Linear"
           ]
         },
         "MipmapFilterMode": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Undefined",
             "Nearest",
             "Linear"
           ]
         },
         "ErrorFilter": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Validation",
             "OutOfMemory",
             "Internal"
           ]
         },
         "QueueWorkDoneStatus": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Success",
             "CallbackCancelled",
             "Error"
           ]
         },
         "CreatePipelineAsyncStatus": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Success",
             "CallbackCancelled",
             "ValidationError",
@@ -1585,8 +1721,9 @@
           ]
         },
         "ErrorType": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "NoError",
             "Validation",
             "OutOfMemory",
@@ -1595,23 +1732,25 @@
           ]
         },
         "PopErrorScopeStatus": {
+          "desc": {},
           "range": "uint32_t",
-          "members": [
+          "member": [
             "Success",
             "CallbackCancelled",
             "Error"
           ]
         }
-      },
-      "callbacks": {}
+      }
     },
     "GPUComputePassEncoder": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -1620,8 +1759,9 @@
           "return": "void"
         },
         "SetBindGroup": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_index",
               "type": "uint32_t"
@@ -1637,9 +1777,29 @@
           ],
           "return": "void"
         },
-        "SetPipeline": {
+        "SetImmediates": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
+            {
+              "name": "offset",
+              "type": "uint32_t"
+            },
+            {
+              "name": "data",
+              "type": "epointer"
+            },
+            {
+              "name": "size",
+              "type": "size_t"
+            }
+          ],
+          "return": "void"
+        },
+        "SetPipeline": {
+          "desc": {},
+          "static": false,
+          "param": [
             {
               "name": "pipeline",
               "type": "scoped_refptr<GPUComputePipeline>"
@@ -1648,8 +1808,9 @@
           "return": "void"
         },
         "DispatchWorkgroups": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "workgroup_count_x",
               "type": "uint32_t"
@@ -1666,8 +1827,9 @@
           "return": "void"
         },
         "DispatchWorkgroupsIndirect": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "indirect_buffer",
               "type": "scoped_refptr<GPUBuffer>"
@@ -1680,8 +1842,9 @@
           "return": "void"
         },
         "PushDebugGroup": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_label",
               "type": "estring"
@@ -1690,8 +1853,9 @@
           "return": "void"
         },
         "InsertDebugMarker": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "marker_label",
               "type": "estring"
@@ -1700,27 +1864,28 @@
           "return": "void"
         },
         "PopDebugGroup": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "End": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPURenderPassEncoder": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -1729,8 +1894,9 @@
           "return": "void"
         },
         "BeginOcclusionQuery": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "query_index",
               "type": "uint32_t"
@@ -1739,13 +1905,15 @@
           "return": "void"
         },
         "EndOcclusionQuery": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "Draw": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "vertex_count",
               "type": "uint32_t"
@@ -1766,8 +1934,9 @@
           "return": "void"
         },
         "DrawIndexed": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "index_count",
               "type": "uint32_t"
@@ -1792,8 +1961,9 @@
           "return": "void"
         },
         "DrawIndexedIndirect": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "indirect_buffer",
               "type": "scoped_refptr<GPUBuffer>"
@@ -1806,8 +1976,9 @@
           "return": "void"
         },
         "DrawIndirect": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "indirect_buffer",
               "type": "scoped_refptr<GPUBuffer>"
@@ -1820,8 +1991,9 @@
           "return": "void"
         },
         "PushDebugGroup": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_label",
               "type": "estring"
@@ -1830,8 +2002,9 @@
           "return": "void"
         },
         "InsertDebugMarker": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "marker_label",
               "type": "estring"
@@ -1840,13 +2013,15 @@
           "return": "void"
         },
         "PopDebugGroup": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "SetBindGroup": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_index",
               "type": "uint32_t"
@@ -1863,8 +2038,9 @@
           "return": "void"
         },
         "SetBlendConstant": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "color",
               "type": "scoped_refptr<GPUColor>"
@@ -1873,8 +2049,9 @@
           "return": "void"
         },
         "SetIndexBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "buffer",
               "type": "scoped_refptr<GPUBuffer>"
@@ -1894,9 +2071,29 @@
           ],
           "return": "void"
         },
-        "SetPipeline": {
+        "SetImmediates": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
+            {
+              "name": "offset",
+              "type": "uint32_t"
+            },
+            {
+              "name": "data",
+              "type": "epointer"
+            },
+            {
+              "name": "size",
+              "type": "size_t"
+            }
+          ],
+          "return": "void"
+        },
+        "SetPipeline": {
+          "desc": {},
+          "static": false,
+          "param": [
             {
               "name": "pipeline",
               "type": "scoped_refptr<GPURenderPipeline>"
@@ -1905,8 +2102,9 @@
           "return": "void"
         },
         "SetScissorRect": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "x",
               "type": "uint32_t"
@@ -1927,8 +2125,9 @@
           "return": "void"
         },
         "SetStencilReference": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "reference",
               "type": "uint32_t"
@@ -1937,8 +2136,9 @@
           "return": "void"
         },
         "SetVertexBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "slot",
               "type": "uint32_t"
@@ -1959,8 +2159,9 @@
           "return": "void"
         },
         "SetViewport": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "x",
               "type": "float"
@@ -1989,185 +2190,260 @@
           "return": "void"
         },
         "End": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUTexelCopyBufferLayout": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "uint64_toffset=0;"
+      "member": [
+        {
+          "desc": {},
+          "name": "offset",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "bytesPerRow",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "rowsPerImage",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUTexelCopyBufferInfo": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "scoped_refptr<GPUTexelCopyBufferLayout>layout=nullptr;"
+      "member": [
+        {
+          "desc": {},
+          "name": "layout",
+          "type": "scoped_refptr<GPUTexelCopyBufferLayout>"
+        },
+        {
+          "desc": {},
+          "name": "buffer",
+          "type": "scoped_refptr<GPUBuffer>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUTexelCopyTextureInfo": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUTexture>texture=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUOrigin3D>origin=nullptr;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "texture",
+          "type": "scoped_refptr<GPUTexture>"
+        },
+        {
+          "desc": {},
+          "name": "mipLevel",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "origin",
+          "type": "scoped_refptr<GPUOrigin3D>"
+        },
+        {
+          "desc": {},
+          "name": "aspect",
+          "type": "GPU::TextureAspect"
+        }
+      ]
     },
     "GPUPassTimestampWrites": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "scoped_refptr<GPUQuerySet>querySet=nullptr;"
+      "member": [
+        {
+          "desc": {},
+          "name": "querySet",
+          "type": "scoped_refptr<GPUQuerySet>"
+        },
+        {
+          "desc": {},
+          "name": "beginningOfPassWriteIndex",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "endOfPassWriteIndex",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUComputePassDescriptor": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "timestampWrites",
+          "type": "scoped_refptr<GPUPassTimestampWrites>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPURenderPassColorAttachment": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUTextureView>view=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUTextureView>resolveTarget=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::StoreOpstoreOp=GPU::StoreOp::Undefined;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "view",
+          "type": "scoped_refptr<GPUTextureView>"
+        },
+        {
+          "desc": {},
+          "name": "depthSlice",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "resolveTarget",
+          "type": "scoped_refptr<GPUTextureView>"
+        },
+        {
+          "desc": {},
+          "name": "loadOp",
+          "type": "GPU::LoadOp"
+        },
+        {
+          "desc": {},
+          "name": "storeOp",
+          "type": "GPU::StoreOp"
+        },
+        {
+          "desc": {},
+          "name": "clearValue",
+          "type": "scoped_refptr<GPUColor>"
+        }
+      ]
     },
     "GPURenderPassDepthStencilAttachment": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUTextureView>view=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::StoreOpdepthStoreOp=GPU::StoreOp::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "booldepthReadOnly=false;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::StoreOpstencilStoreOp=GPU::StoreOp::Undefined;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "view",
+          "type": "scoped_refptr<GPUTextureView>"
+        },
+        {
+          "desc": {},
+          "name": "depthLoadOp",
+          "type": "GPU::LoadOp"
+        },
+        {
+          "desc": {},
+          "name": "depthStoreOp",
+          "type": "GPU::StoreOp"
+        },
+        {
+          "desc": {},
+          "name": "depthClearValue",
+          "type": "float"
+        },
+        {
+          "desc": {},
+          "name": "depthReadOnly",
+          "type": "bool"
+        },
+        {
+          "desc": {},
+          "name": "stencilLoadOp",
+          "type": "GPU::LoadOp"
+        },
+        {
+          "desc": {},
+          "name": "stencilStoreOp",
+          "type": "GPU::StoreOp"
+        },
+        {
+          "desc": {},
+          "name": "stencilClearValue",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "stencilReadOnly",
+          "type": "bool"
+        }
+      ]
     },
     "GPURenderPassDescriptor": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringlabel={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPURenderPassDepthStencilAttachment>depthStencilAttachment=nullptr;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "colorAttachments",
+          "type": "earray<scoped_refptr<GPURenderPassColorAttachment>>"
+        },
+        {
+          "desc": {},
+          "name": "depthStencilAttachment",
+          "type": "scoped_refptr<GPURenderPassDepthStencilAttachment>"
+        },
+        {
+          "desc": {},
+          "name": "occlusionQuerySet",
+          "type": "scoped_refptr<GPUQuerySet>"
+        },
+        {
+          "desc": {},
+          "name": "timestampWrites",
+          "type": "scoped_refptr<GPUPassTimestampWrites>"
+        }
+      ]
     },
     "GPUCommandBufferDescriptor": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {},
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        }
+      ]
     },
     "GPUCommandEncoder": {
-      "filepath": "gpu/gpu_command.h",
+      "desc": {},
+      "filename": "gpu/gpu_command.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -2176,8 +2452,9 @@
           "return": "void"
         },
         "BeginComputePass": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUComputePassDescriptor>"
@@ -2186,8 +2463,9 @@
           "return": "scoped_refptr<GPUComputePassEncoder>"
         },
         "BeginRenderPass": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPURenderPassDescriptor>"
@@ -2196,8 +2474,9 @@
           "return": "scoped_refptr<GPURenderPassEncoder>"
         },
         "ClearBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "buffer",
               "type": "scoped_refptr<GPUBuffer>"
@@ -2214,8 +2493,9 @@
           "return": "void"
         },
         "CopyBufferToBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "source",
               "type": "scoped_refptr<GPUBuffer>"
@@ -2240,8 +2520,9 @@
           "return": "void"
         },
         "CopyBufferToTexture": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "source",
               "type": "scoped_refptr<GPUTexelCopyBufferInfo>"
@@ -2258,8 +2539,9 @@
           "return": "void"
         },
         "CopyTextureToBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "source",
               "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
@@ -2276,8 +2558,9 @@
           "return": "void"
         },
         "CopyTextureToTexture": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "source",
               "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
@@ -2294,8 +2577,9 @@
           "return": "void"
         },
         "PushDebugGroup": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_label",
               "type": "estring"
@@ -2304,8 +2588,9 @@
           "return": "void"
         },
         "InsertDebugMarker": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "marker_label",
               "type": "estring"
@@ -2314,13 +2599,15 @@
           "return": "void"
         },
         "PopDebugGroup": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "ResolveQuerySet": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "query_set",
               "type": "scoped_refptr<GPUQuerySet>"
@@ -2345,8 +2632,9 @@
           "return": "void"
         },
         "WriteTimestamp": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "query_set",
               "type": "scoped_refptr<GPUQuerySet>"
@@ -2359,8 +2647,9 @@
           "return": "void"
         },
         "Finish": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUCommandBufferDescriptor>"
@@ -2368,18 +2657,17 @@
           ],
           "return": "scoped_refptr<GPUCommandBuffer>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUQueue": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -2388,8 +2676,9 @@
           "return": "void"
         },
         "OnSubmittedWorkDone": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "callback",
               "type": "QueueWorkDoneCallback"
@@ -2398,8 +2687,9 @@
           "return": "uint64_t"
         },
         "Submit": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "commands",
               "type": "earray<scoped_refptr<GPUCommandBuffer>>"
@@ -2408,8 +2698,9 @@
           "return": "void"
         },
         "WriteBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "buffer",
               "type": "scoped_refptr<GPUBuffer>"
@@ -2430,8 +2721,9 @@
           "return": "void"
         },
         "WriteTexture": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "destination",
               "type": "scoped_refptr<GPUTexelCopyTextureInfo>"
@@ -2456,12 +2748,11 @@
           "return": "void"
         }
       },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {
+      "callback": {
         "QueueWorkDoneCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "status",
               "type": "GPU::QueueWorkDoneStatus"
@@ -2475,643 +2766,991 @@
       }
     },
     "GPUBindGroupEntry": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tbinding=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint64_toffset=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUSampler>sampler=nullptr;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "binding",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "buffer",
+          "type": "scoped_refptr<GPUBuffer>"
+        },
+        {
+          "desc": {},
+          "name": "offset",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "size",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "sampler",
+          "type": "scoped_refptr<GPUSampler>"
+        },
+        {
+          "desc": {},
+          "name": "textureView",
+          "type": "scoped_refptr<GPUTextureView>"
+        }
+      ]
     },
     "GPUBindGroupDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "layout",
+          "type": "scoped_refptr<GPUBindGroupLayout>"
+        },
+        {
+          "desc": {},
+          "name": "entries",
+          "type": "earray<scoped_refptr<GPUBindGroupEntry>>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUBufferBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::BufferBindingTypetype=GPU::BufferBindingType::Undefined;"
+      "member": [
+        {
+          "desc": {},
+          "name": "type",
+          "type": "GPU::BufferBindingType"
+        },
+        {
+          "desc": {},
+          "name": "hasDynamicOffset",
+          "type": "bool"
+        },
+        {
+          "desc": {},
+          "name": "minBindingSize",
+          "type": "uint64_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUSamplerBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {},
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "type",
+          "type": "GPU::SamplerBindingType"
+        }
+      ]
     },
     "GPUTextureBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::TextureSampleTypesampleType=GPU::TextureSampleType::Undefined;"
+      "member": [
+        {
+          "desc": {},
+          "name": "sampleType",
+          "type": "GPU::TextureSampleType"
+        },
+        {
+          "desc": {},
+          "name": "viewDimension",
+          "type": "GPU::TextureViewDimension"
+        },
+        {
+          "desc": {},
+          "name": "multisampled",
+          "type": "bool"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUStorageTextureBindingLayout": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::StorageTextureAccessaccess=GPU::StorageTextureAccess::Undefined;"
+      "member": [
+        {
+          "desc": {},
+          "name": "access",
+          "type": "GPU::StorageTextureAccess"
+        },
+        {
+          "desc": {},
+          "name": "format",
+          "type": "GPU::TextureFormat"
+        },
+        {
+          "desc": {},
+          "name": "viewDimension",
+          "type": "GPU::TextureViewDimension"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUBindGroupLayoutEntry": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tbinding=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tbindingArraySize=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUSamplerBindingLayout>sampler=nullptr;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "binding",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "visibility",
+          "type": "GPU::ShaderStage"
+        },
+        {
+          "desc": {},
+          "name": "bindingArraySize",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "buffer",
+          "type": "scoped_refptr<GPUBufferBindingLayout>"
+        },
+        {
+          "desc": {},
+          "name": "sampler",
+          "type": "scoped_refptr<GPUSamplerBindingLayout>"
+        },
+        {
+          "desc": {},
+          "name": "texture",
+          "type": "scoped_refptr<GPUTextureBindingLayout>"
+        },
+        {
+          "desc": {},
+          "name": "storageTexture",
+          "type": "scoped_refptr<GPUStorageTextureBindingLayout>"
+        }
+      ]
     },
     "GPUBindGroupLayoutDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "entries",
+          "type": "earray<scoped_refptr<GPUBindGroupLayoutEntry>>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUBufferDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringlabel={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint64_tsize=0;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "usage",
+          "type": "GPU::BufferUsage"
+        },
+        {
+          "desc": {},
+          "name": "size",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "mappedAtCreation",
+          "type": "bool"
+        }
+      ]
     },
     "GPUCommandEncoderDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {},
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        }
+      ]
     },
     "GPUConstantEntry": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringkey={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "key",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "value",
+          "type": "double"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUComputeState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "scoped_refptr<GPUShaderModule>module=nullptr;"
+      "member": [
+        {
+          "desc": {},
+          "name": "module",
+          "type": "scoped_refptr<GPUShaderModule>"
+        },
+        {
+          "desc": {},
+          "name": "entryPoint",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "constants",
+          "type": "earray<scoped_refptr<GPUConstantEntry>>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUComputePipelineDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "layout",
+          "type": "scoped_refptr<GPUPipelineLayout>"
+        },
+        {
+          "desc": {},
+          "name": "compute",
+          "type": "scoped_refptr<GPUComputeState>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUPipelineLayoutDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "bindGroupLayouts",
+          "type": "earray<scoped_refptr<GPUBindGroupLayout>>"
+        },
+        {
+          "desc": {},
+          "name": "immediateSize",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUQuerySetDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "type",
+          "type": "GPU::QueryType"
+        },
+        {
+          "desc": {},
+          "name": "count",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUVertexAttribute": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::VertexFormatformat={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "format",
+          "type": "GPU::VertexFormat"
+        },
+        {
+          "desc": {},
+          "name": "offset",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "shaderLocation",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUVertexBufferLayout": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::VertexStepModestepMode=GPU::VertexStepMode::Undefined;"
+      "member": [
+        {
+          "desc": {},
+          "name": "stepMode",
+          "type": "GPU::VertexStepMode"
+        },
+        {
+          "desc": {},
+          "name": "arrayStride",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "attributes",
+          "type": "earray<scoped_refptr<GPUVertexAttribute>>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUBlendComponent": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::BlendOperationoperation=GPU::BlendOperation::Undefined;"
+      "member": [
+        {
+          "desc": {},
+          "name": "operation",
+          "type": "GPU::BlendOperation"
+        },
+        {
+          "desc": {},
+          "name": "srcFactor",
+          "type": "GPU::BlendFactor"
+        },
+        {
+          "desc": {},
+          "name": "dstFactor",
+          "type": "GPU::BlendFactor"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUBlendState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPUBlendComponentcolor={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "color",
+          "type": "GPUBlendComponent"
+        },
+        {
+          "desc": {},
+          "name": "alpha",
+          "type": "GPUBlendComponent"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUColorTargetState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "GPU::TextureFormatformat=GPU::TextureFormat::Undefined;"
+      "member": [
+        {
+          "desc": {},
+          "name": "format",
+          "type": "GPU::TextureFormat"
+        },
+        {
+          "desc": {},
+          "name": "blend",
+          "type": "scoped_refptr<GPUBlendState>"
+        },
+        {
+          "desc": {},
+          "name": "writeMask",
+          "type": "GPU::ColorWriteMask"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUVertexState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUShaderModule>module=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "earray<scoped_refptr<GPUConstantEntry>>constants={};"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "module",
+          "type": "scoped_refptr<GPUShaderModule>"
+        },
+        {
+          "desc": {},
+          "name": "entryPoint",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "constants",
+          "type": "earray<scoped_refptr<GPUConstantEntry>>"
+        },
+        {
+          "desc": {},
+          "name": "buffers",
+          "type": "earray<scoped_refptr<GPUVertexBufferLayout>>"
+        }
+      ]
     },
     "GPUFragmentState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUShaderModule>module=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "earray<scoped_refptr<GPUConstantEntry>>constants={};"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "module",
+          "type": "scoped_refptr<GPUShaderModule>"
+        },
+        {
+          "desc": {},
+          "name": "entryPoint",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "constants",
+          "type": "earray<scoped_refptr<GPUConstantEntry>>"
+        },
+        {
+          "desc": {},
+          "name": "targets",
+          "type": "earray<scoped_refptr<GPUColorTargetState>>"
+        }
+      ]
     },
     "GPUPrimitiveState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::PrimitiveTopologytopology=GPU::PrimitiveTopology::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::FrontFacefrontFace=GPU::FrontFace::Undefined;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "topology",
+          "type": "GPU::PrimitiveTopology"
+        },
+        {
+          "desc": {},
+          "name": "stripIndexFormat",
+          "type": "GPU::IndexFormat"
+        },
+        {
+          "desc": {},
+          "name": "frontFace",
+          "type": "GPU::FrontFace"
+        },
+        {
+          "desc": {},
+          "name": "cullMode",
+          "type": "GPU::CullMode"
+        },
+        {
+          "desc": {},
+          "name": "unclippedDepth",
+          "type": "bool"
+        }
+      ]
     },
     "GPUStencilFaceState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::CompareFunctioncompare=GPU::CompareFunction::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::StencilOperationdepthFailOp=GPU::StencilOperation::Undefined;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "compare",
+          "type": "GPU::CompareFunction"
+        },
+        {
+          "desc": {},
+          "name": "failOp",
+          "type": "GPU::StencilOperation"
+        },
+        {
+          "desc": {},
+          "name": "depthFailOp",
+          "type": "GPU::StencilOperation"
+        },
+        {
+          "desc": {},
+          "name": "passOp",
+          "type": "GPU::StencilOperation"
+        }
+      ]
     },
     "GPUDepthStencilState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::TextureFormatformat=GPU::TextureFormat::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::CompareFunctiondepthCompare=GPU::CompareFunction::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUStencilFaceState>stencilBack={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tstencilWriteMask=0xFFFFFFFF;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "floatdepthBiasSlopeScale=0.f;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "format",
+          "type": "GPU::TextureFormat"
+        },
+        {
+          "desc": {},
+          "name": "depthWriteEnabled",
+          "type": "bool"
+        },
+        {
+          "desc": {},
+          "name": "depthCompare",
+          "type": "GPU::CompareFunction"
+        },
+        {
+          "desc": {},
+          "name": "stencilFront",
+          "type": "scoped_refptr<GPUStencilFaceState>"
+        },
+        {
+          "desc": {},
+          "name": "stencilBack",
+          "type": "scoped_refptr<GPUStencilFaceState>"
+        },
+        {
+          "desc": {},
+          "name": "stencilReadMask",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "stencilWriteMask",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "depthBias",
+          "type": "int32_t"
+        },
+        {
+          "desc": {},
+          "name": "depthBiasSlopeScale",
+          "type": "float"
+        },
+        {
+          "desc": {},
+          "name": "depthBiasClamp",
+          "type": "float"
+        }
+      ]
     },
     "GPUMultisampleState": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "uint32_tcount=1;"
+      "member": [
+        {
+          "desc": {},
+          "name": "count",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "mask",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "alphaToCoverageEnabled",
+          "type": "bool"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPURenderPipelineDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringlabel={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUVertexState>vertex=nullptr;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPUDepthStencilState>depthStencil=nullptr;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "layout",
+          "type": "scoped_refptr<GPUPipelineLayout>"
+        },
+        {
+          "desc": {},
+          "name": "vertex",
+          "type": "scoped_refptr<GPUVertexState>"
+        },
+        {
+          "desc": {},
+          "name": "primitive",
+          "type": "scoped_refptr<GPUPrimitiveState>"
+        },
+        {
+          "desc": {},
+          "name": "depthStencil",
+          "type": "scoped_refptr<GPUDepthStencilState>"
+        },
+        {
+          "desc": {},
+          "name": "multisample",
+          "type": "scoped_refptr<GPUMultisampleState>"
+        },
+        {
+          "desc": {},
+          "name": "fragment",
+          "type": "scoped_refptr<GPUFragmentState>"
+        }
+      ]
     },
     "GPUSamplerDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringlabel={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::AddressModeaddressModeV=GPU::AddressMode::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::FilterModemagFilter=GPU::FilterMode::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::MipmapFilterModemipmapFilter=GPU::MipmapFilterMode::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "floatlodMaxClamp=32.f;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "addressModeU",
+          "type": "GPU::AddressMode"
+        },
+        {
+          "desc": {},
+          "name": "addressModeV",
+          "type": "GPU::AddressMode"
+        },
+        {
+          "desc": {},
+          "name": "addressModeW",
+          "type": "GPU::AddressMode"
+        },
+        {
+          "desc": {},
+          "name": "magFilter",
+          "type": "GPU::FilterMode"
+        },
+        {
+          "desc": {},
+          "name": "minFilter",
+          "type": "GPU::FilterMode"
+        },
+        {
+          "desc": {},
+          "name": "mipmapFilter",
+          "type": "GPU::MipmapFilterMode"
+        },
+        {
+          "desc": {},
+          "name": "lodMinClamp",
+          "type": "float"
+        },
+        {
+          "desc": {},
+          "name": "lodMaxClamp",
+          "type": "float"
+        },
+        {
+          "desc": {},
+          "name": "compare",
+          "type": "GPU::CompareFunction"
+        },
+        {
+          "desc": {},
+          "name": "maxAnisotropy",
+          "type": "uint16_t"
+        }
+      ]
     },
     "GPUShaderModuleDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringlabel={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "wgslCode",
+          "type": "estring"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "GPUTextureDescriptor": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringlabel={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::TextureDimensiondimension=GPU::TextureDimension::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::TextureFormatformat=GPU::TextureFormat::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tsampleCount=1;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "usage",
+          "type": "GPU::TextureUsage"
+        },
+        {
+          "desc": {},
+          "name": "dimension",
+          "type": "GPU::TextureDimension"
+        },
+        {
+          "desc": {},
+          "name": "size",
+          "type": "scoped_refptr<GPUExtent3D>"
+        },
+        {
+          "desc": {},
+          "name": "format",
+          "type": "GPU::TextureFormat"
+        },
+        {
+          "desc": {},
+          "name": "mipLevelCount",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "sampleCount",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "viewFormats",
+          "type": "earray<GPU::TextureFormat>"
+        }
+      ]
     },
     "GPULimits": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "epointerreservedParam;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxTextureDimension2D;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxTextureArrayLayers;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxBindGroupsPlusVertexBuffers;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxDynamicUniformBuffersPerPipelineLayout;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxSampledTexturesPerShaderStage;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxStorageBuffersPerShaderStage;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxUniformBuffersPerShaderStage;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint64_tmaxStorageBufferBindingSize;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tminStorageBufferOffsetAlignment;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint64_tmaxBufferSize;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxVertexBufferArrayStride;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxColorAttachments;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxComputeWorkgroupStorageSize;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxComputeWorkgroupSizeX;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmaxComputeWorkgroupSizeZ;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "reservedParam",
+          "type": "epointer"
+        },
+        {
+          "desc": {},
+          "name": "maxTextureDimension1D",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxTextureDimension2D",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxTextureDimension3D",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxTextureArrayLayers",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxBindGroups",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxBindGroupsPlusVertexBuffers",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxBindingsPerBindGroup",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxDynamicUniformBuffersPerPipelineLayout",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxDynamicStorageBuffersPerPipelineLayout",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxSampledTexturesPerShaderStage",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxSamplersPerShaderStage",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxStorageBuffersPerShaderStage",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxStorageTexturesPerShaderStage",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxUniformBuffersPerShaderStage",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxUniformBufferBindingSize",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "maxStorageBufferBindingSize",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "minUniformBufferOffsetAlignment",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "minStorageBufferOffsetAlignment",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxVertexBuffers",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxBufferSize",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "maxVertexAttributes",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxVertexBufferArrayStride",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxInterStageShaderVariables",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxColorAttachments",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxColorAttachmentBytesPerSample",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxComputeWorkgroupStorageSize",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxComputeInvocationsPerWorkgroup",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxComputeWorkgroupSizeX",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxComputeWorkgroupSizeY",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxComputeWorkgroupSizeZ",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxComputeWorkgroupsPerDimension",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxImmediateSize",
+          "type": "uint32_t"
+        }
+      ]
     },
     "GPUDevice": {
-      "filepath": "gpu/gpu_device.h",
+      "desc": {},
+      "filename": "gpu/gpu_device.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3120,8 +3759,9 @@
           "return": "void"
         },
         "CreateBindGroup": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUBindGroupDescriptor>"
@@ -3130,8 +3770,9 @@
           "return": "scoped_refptr<GPUBindGroup>"
         },
         "CreateBindGroupLayout": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUBindGroupLayoutDescriptor>"
@@ -3140,8 +3781,9 @@
           "return": "scoped_refptr<GPUBindGroupLayout>"
         },
         "CreateBuffer": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUBufferDescriptor>"
@@ -3150,8 +3792,9 @@
           "return": "scoped_refptr<GPUBuffer>"
         },
         "CreateCommandEncoder": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUCommandEncoderDescriptor>"
@@ -3160,8 +3803,9 @@
           "return": "scoped_refptr<GPUCommandEncoder>"
         },
         "CreateComputePipeline": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUComputePipelineDescriptor>"
@@ -3170,8 +3814,9 @@
           "return": "scoped_refptr<GPUComputePipeline>"
         },
         "CreateComputePipelineAsync": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUComputePipelineDescriptor>"
@@ -3184,8 +3829,9 @@
           "return": "uint64_t"
         },
         "CreatePipelineLayout": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUPipelineLayoutDescriptor>"
@@ -3194,8 +3840,9 @@
           "return": "scoped_refptr<GPUPipelineLayout>"
         },
         "CreateQuerySet": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUQuerySetDescriptor>"
@@ -3204,8 +3851,9 @@
           "return": "scoped_refptr<GPUQuerySet>"
         },
         "CreateRenderPipeline": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPURenderPipelineDescriptor>"
@@ -3214,8 +3862,9 @@
           "return": "scoped_refptr<GPURenderPipeline>"
         },
         "CreateRenderPipelineAsync": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPURenderPipelineDescriptor>"
@@ -3228,8 +3877,9 @@
           "return": "uint64_t"
         },
         "CreateSampler": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUSamplerDescriptor>"
@@ -3238,8 +3888,9 @@
           "return": "scoped_refptr<GPUSampler>"
         },
         "CreateShaderModule": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUShaderModuleDescriptor>"
@@ -3248,8 +3899,9 @@
           "return": "scoped_refptr<GPUShaderModule>"
         },
         "CreateTexture": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUTextureDescriptor>"
@@ -3258,13 +3910,15 @@
           "return": "scoped_refptr<GPUTexture>"
         },
         "GetQueue": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<GPUQueue>"
         },
         "PushErrorScope": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "filter",
               "type": "GPU::ErrorFilter"
@@ -3273,8 +3927,9 @@
           "return": "void"
         },
         "PopErrorScope": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "callback",
               "type": "PopErrorScopeCallback"
@@ -3283,22 +3938,23 @@
           "return": "uint64_t"
         },
         "GetFeatures": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "earray<estring>"
         },
         "GetLimits": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<GPULimits>"
         }
       },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {
+      "callback": {
         "CreateComputePipelineAsyncCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "status",
               "type": "GPU::CreatePipelineAsyncStatus"
@@ -3314,8 +3970,9 @@
           ]
         },
         "CreateRenderPipelineAsyncCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "status",
               "type": "GPU::CreatePipelineAsyncStatus"
@@ -3331,8 +3988,9 @@
           ]
         },
         "PopErrorScopeCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "status",
               "type": "GPU::PopErrorScopeStatus"
@@ -3350,12 +4008,14 @@
       }
     },
     "GPUBuffer": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3364,23 +4024,27 @@
           "return": "void"
         },
         "Destroy": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "GetSize": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint64_t"
         },
         "GetUsage": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::BufferUsage"
         },
         "MapAsync": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "mode",
               "type": "GPU::MapMode"
@@ -3401,18 +4065,21 @@
           "return": "uint64_t"
         },
         "Unmap": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "GetMapState": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::BufferMapState"
         },
         "GetMappedRange": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "offset",
               "type": "size_t"
@@ -3429,12 +4096,11 @@
           "return": "epointer"
         }
       },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {
+      "callback": {
         "MapAsyncCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "status",
               "type": "GPU::MapAsyncStatus"
@@ -3448,12 +4114,14 @@
       }
     },
     "GPUTextureView": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3461,49 +4129,69 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUTextureViewDescriptor": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringlabel={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "GPU::TextureViewDimensiondimension=GPU::TextureViewDimension::Undefined;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tmipLevelCount=WGPU_MIP_LEVEL_COUNT_UNDEFINED;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tarrayLayerCount=WGPU_ARRAY_LAYER_COUNT_UNDEFINED;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "label",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "format",
+          "type": "GPU::TextureFormat"
+        },
+        {
+          "desc": {},
+          "name": "dimension",
+          "type": "GPU::TextureViewDimension"
+        },
+        {
+          "desc": {},
+          "name": "baseMipLevel",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "mipLevelCount",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "baseArrayLayer",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "arrayLayerCount",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "aspect",
+          "type": "GPU::TextureAspect"
+        },
+        {
+          "desc": {},
+          "name": "usage",
+          "type": "GPU::TextureUsage"
+        }
+      ]
     },
     "GPUTexture": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "CreateView": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "descriptor",
               "type": "scoped_refptr<GPUTextureViewDescriptor>"
@@ -3512,13 +4200,15 @@
           "return": "scoped_refptr<GPUTextureView>"
         },
         "Destroy": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3527,62 +4217,70 @@
           "return": "void"
         },
         "GetDepthOrArrayLayers": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         },
         "GetDimension": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::TextureDimension"
         },
         "GetFormat": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::TextureFormat"
         },
         "GetMipLevelCount": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         },
         "GetSampleCount": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         },
         "GetTextureBindingViewDimension": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::TextureViewDimension"
         },
         "GetUsage": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::TextureUsage"
         },
         "GetWidth": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         },
         "GetHeight": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUSampler": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3590,18 +4288,17 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUShaderModule": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3610,8 +4307,9 @@
           "return": "void"
         },
         "GetCompilationInfo": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "callback",
               "type": "CompilationInfoCallback"
@@ -3620,12 +4318,11 @@
           "return": "uint64_t"
         }
       },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {
+      "callback": {
         "CompilationInfoCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "status",
               "type": "GPU::CompilationInfoRequestStatus"
@@ -3639,12 +4336,14 @@
       }
     },
     "GPUBindGroupLayout": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3652,18 +4351,17 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUPipelineLayout": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3671,18 +4369,17 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPURenderPipeline": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3691,8 +4388,9 @@
           "return": "void"
         },
         "GetBindGroupLayout": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_index",
               "type": "uint32_t"
@@ -3700,18 +4398,17 @@
           ],
           "return": "scoped_refptr<GPUBindGroupLayout>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUComputePipeline": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3720,8 +4417,9 @@
           "return": "void"
         },
         "GetBindGroupLayout": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "group_index",
               "type": "uint32_t"
@@ -3729,18 +4427,17 @@
           ],
           "return": "scoped_refptr<GPUBindGroupLayout>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUQuerySet": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3749,32 +4446,34 @@
           "return": "void"
         },
         "Destroy": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "void"
         },
         "GetCount": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         },
         "GetType": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "GPU::QueryType"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUBindGroup": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3782,18 +4481,17 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "GPUCommandBuffer": {
-      "filepath": "gpu/gpu_resource.h",
+      "desc": {},
+      "filename": "gpu/gpu_resource.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "SetLabel": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "label",
               "type": "estring"
@@ -3801,311 +4499,140 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
-    },
-    "Camera": {
-      "filepath": "render/camera.h",
-      "parent": "Node",
-      "members": {},
-      "attributes": {
-        "CullingMask": {
-          "value": "uint64_t"
-        },
-        "Near": {
-          "value": "float"
-        },
-        "Far": {
-          "value": "float"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
-    },
-    "PerspectiveCamera": {
-      "filepath": "render/camera.h",
-      "parent": "Camera",
-      "members": {
-        "New": {
-          "static": true,
-          "params": [],
-          "return": "scoped_refptr<PerspectiveCamera>"
-        }
-      },
-      "attributes": {
-        "FOVY": {
-          "value": "float"
-        },
-        "Aspect": {
-          "value": "float"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
-    },
-    "OrthographicCamera": {
-      "filepath": "render/camera.h",
-      "parent": "Camera",
-      "members": {
-        "New": {
-          "static": true,
-          "params": [],
-          "return": "scoped_refptr<OrthographicCamera>"
-        }
-      },
-      "attributes": {
-        "Left": {
-          "value": "float"
-        },
-        "Right": {
-          "value": "float"
-        },
-        "Bottom": {
-          "value": "float"
-        },
-        "Top": {
-          "value": "float"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Graphics": {
-      "filepath": "render/graphics.h",
+      "desc": {},
+      "filename": "render/graphics.h",
       "parent": "Singleton<Graphics>",
-      "members": {
+      "method": {
         "GetViewport": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Viewport>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
-    },
-    "Light": {
-      "filepath": "render/light.h",
-      "parent": "Node",
-      "members": {},
-      "attributes": {
-        "Color": {
-          "value": "scoped_refptr<Vector3>"
-        },
-        "Intensity": {
-          "value": "float"
-        },
-        "CastShadow": {
-          "value": "bool"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
-    },
-    "DirectionalLight": {
-      "filepath": "render/light.h",
-      "parent": "Light",
-      "members": {
-        "New": {
-          "static": true,
-          "params": [],
-          "return": "scoped_refptr<DirectionalLight>"
-        }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
-    },
-    "PointLight": {
-      "filepath": "render/light.h",
-      "parent": "Light",
-      "members": {
-        "New": {
-          "static": true,
-          "params": [],
-          "return": "scoped_refptr<PointLight>"
-        }
-      },
-      "attributes": {
-        "Range": {
-          "value": "float"
-        },
-        "Attenuation": {
-          "value": "float"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
-    },
-    "SpotLight": {
-      "filepath": "render/light.h",
-      "parent": "Light",
-      "members": {
-        "New": {
-          "static": true,
-          "params": [],
-          "return": "scoped_refptr<SpotLight>"
-        }
-      },
-      "attributes": {
-        "Range": {
-          "value": "float"
-        },
-        "Attenuation": {
-          "value": "float"
-        },
-        "Angle": {
-          "value": "float"
-        },
-        "AngleAttenuation": {
-          "value": "float"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
-    },
-    "MeshRenderer": {
-      "filepath": "render/renderer.h",
-      "parent": "Node",
-      "members": {
-        "New": {
-          "static": true,
-          "params": [],
-          "return": "scoped_refptr<MeshRenderer>"
-        },
-        "GetMaterialAtSlot": {
-          "static": false,
-          "params": [
-            {
-              "name": "slot",
-              "type": "uint32_t"
-            }
-          ],
-          "return": "scoped_refptr<Material>"
-        },
-        "SetMaterialAtSlot": {
-          "static": false,
-          "params": [
-            {
-              "name": "slot",
-              "type": "uint32_t"
-            },
-            {
-              "name": "material",
-              "type": "scoped_refptr<Material>"
-            }
-          ],
-          "return": "void"
-        }
-      },
-      "attributes": {
-        "Mesh": {
-          "value": "scoped_refptr<Mesh>"
-        }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "SortingSettings": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "scoped_refptr<Vector3d>cameraPosition;"
+      "member": [
+        {
+          "desc": {},
+          "name": "cameraPosition",
+          "type": "scoped_refptr<Vector3d>"
+        },
+        {
+          "desc": {},
+          "name": "criteria",
+          "type": "SortingCriteria"
         }
-      },
-      "attributes": {},
-      "enums": {
+      ],
+      "enum": {
         "SortingCriteria": {
+          "desc": {},
           "range": "uint64_t",
-          "members": [
+          "member": [
             "OrderSorting",
             "RenderQueue",
             "BackToFront",
             "FrontToBack"
           ]
         }
-      },
-      "callbacks": {}
+      }
     },
     "DrawingSettings": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "estringpassTag={};"
+      "member": [
+        {
+          "desc": {},
+          "name": "passTag",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "passName",
+          "type": "estring"
+        },
+        {
+          "desc": {},
+          "name": "sortingSettings",
+          "type": "scoped_refptr<SortingSettings>"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "FilteringSettings": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": {
-          "static": false,
-          "params": [],
-          "return": "uint64_tcullingMask=0xFFFFFFFFFFFFFFFFu;"
+      "member": [
+        {
+          "desc": {},
+          "name": "cullingMask",
+          "type": "uint64_t"
+        },
+        {
+          "desc": {},
+          "name": "minRenderQueue",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "maxRenderQueue",
+          "type": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      ]
     },
     "CullingResults": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "GetVisibleObjectCount": {
+          "desc": {},
           "static": false,
-          "params": [],
-          "return": "uint32_t"
-        },
-        "GetVisibleLightCount": {
-          "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "RenderContext": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "GetDevice": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<GPUDevice>"
         },
         "GetQueue": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<GPUQueue>"
         },
         "GetRenderTargetView": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<GPUTextureView>"
         },
         "GetDepthStencilView": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<GPUTextureView>"
         },
         "Cull": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "camera",
               "type": "scoped_refptr<Camera>"
@@ -4114,8 +4641,9 @@
           "return": "scoped_refptr<CullingResults>"
         },
         "DrawRenderers": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "pass",
               "type": "scoped_refptr<GPURenderPassEncoder>"
@@ -4135,18 +4663,17 @@
           ],
           "return": "void"
         }
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "RendererProcess": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
             {
               "name": "callback",
               "type": "RenderCallback"
@@ -4155,12 +4682,11 @@
           "return": "scoped_refptr<RendererProcess>"
         }
       },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {
+      "callback": {
         "RenderCallback": {
+          "desc": {},
           "return": "void",
-          "params": [
+          "param": [
             {
               "name": "context",
               "type": "scoped_refptr<RenderContext>"
@@ -4174,12 +4700,14 @@
       }
     },
     "Viewport": {
-      "filepath": "render/viewport.h",
+      "desc": {},
+      "filename": "render/viewport.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
             {
               "name": "size",
               "type": "scoped_refptr<Vector2i>"
@@ -4188,80 +4716,77 @@
           "return": "scoped_refptr<Viewport>"
         },
         "GetSize": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Vector2i>"
         }
       },
-      "attributes": {
+      "attribute": {
         "World": {
+          "desc": {},
           "value": "scoped_refptr<World>"
         },
         "Renderer": {
+          "desc": {},
           "value": "scoped_refptr<RendererProcess>"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "ShaderPass": {
-      "filepath": "resource/material.h",
+      "desc": {},
+      "filename": "resource/material.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "estringname={};"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "scoped_refptr<GPURenderPipeline>pipeline=nullptr;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "tags",
+          "type": "emap<estring, estring>"
+        },
+        {
+          "desc": {},
+          "name": "pipeline",
+          "type": "scoped_refptr<GPURenderPipeline>"
+        },
+        {
+          "desc": {},
+          "name": "stencilRef",
+          "type": "uint32_t"
+        }
+      ]
     },
     "Material": {
-      "filepath": "resource/material.h",
+      "desc": {},
+      "filename": "resource/material.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "New": {
+          "desc": {},
           "static": true,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Material>"
         },
-        "AddPass": {
+        "SetupPasses": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
-              "name": "pass",
-              "type": "scoped_refptr<ShaderPass>"
+              "name": "passes",
+              "type": "earray<scoped_refptr<ShaderPass>>"
             }
           ],
           "return": "void"
         },
-        "RemovePass": {
+        "GetPasses": {
+          "desc": {},
           "static": false,
-          "params": [
-            {
-              "name": "name",
-              "type": "estring"
-            }
-          ],
-          "return": "void"
+          "param": [],
+          "return": "earray<scoped_refptr<ShaderPass>>"
         },
-        "GetAllPassNames": {
+        "SetupBindingData": {
+          "desc": {},
           "static": false,
-          "params": [],
-          "return": "earray<estring>"
-        },
-        "SetupBindData": {
-          "static": false,
-          "params": [
+          "param": [
             {
               "name": "slot",
               "type": "uint32_t"
@@ -4278,47 +4803,74 @@
           "return": "void"
         }
       },
-      "attributes": {
+      "attribute": {
         "RenderQueue": {
+          "desc": {},
           "value": "uint32_t"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "SubMesh": {
-      "filepath": "resource/mesh.h",
+      "desc": {},
+      "filename": "resource/mesh.h",
       "parent": "Object",
-      "members": {
-        "URGE_BINDING": [
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tvertexSlot=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tindexStart=0;"
-          },
-          {
-            "static": false,
-            "params": [],
-            "return": "uint32_tvertexStart=0;"
-          }
-        ]
-      },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "member": [
+        {
+          "desc": {},
+          "name": "bindingSlot",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "materialSlot",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "indexStart",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "indexCount",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "vertexStart",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "vertexCount",
+          "type": "uint32_t"
+        },
+        {
+          "desc": {},
+          "name": "boundsMin",
+          "type": "scoped_refptr<Vector3>"
+        },
+        {
+          "desc": {},
+          "name": "boundsMax",
+          "type": "scoped_refptr<Vector3>"
+        },
+        {
+          "desc": {},
+          "name": "name",
+          "type": "estring"
+        }
+      ]
     },
     "Mesh": {
-      "filepath": "resource/mesh.h",
+      "desc": {},
+      "filename": "resource/mesh.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "New": {
+          "desc": {},
           "static": true,
-          "params": [
+          "param": [
             {
               "name": "vertex_bytes",
               "type": "uint32_t"
@@ -4331,38 +4883,33 @@
           "return": "scoped_refptr<Mesh>"
         },
         "GetVertices": {
+          "desc": {},
           "static": false,
-          "params": [
-            {
-              "name": "slot",
-              "type": "uint32_t"
-            }
-          ],
+          "param": [],
           "return": "epointer"
         },
-        "GetVertexCount": {
+        "GetVertexBytesSize": {
+          "desc": {},
           "static": false,
-          "params": [
-            {
-              "name": "slot",
-              "type": "uint32_t"
-            }
-          ],
+          "param": [],
           "return": "uint32_t"
         },
         "GetIndices": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "epointer"
         },
         "GetIndexCount": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "uint32_t"
         },
         "SetupSubMeshData": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "data",
               "type": "earray<scoped_refptr<SubMesh>>"
@@ -4370,88 +4917,206 @@
           ],
           "return": "void"
         },
-        "GetSubMeshAt": {
+        "GetSubMeshes": {
+          "desc": {},
           "static": false,
-          "params": [
-            {
-              "name": "index",
-              "type": "uint32_t"
-            }
-          ],
-          "return": "scoped_refptr<SubMesh>"
+          "param": [],
+          "return": "earray<scoped_refptr<SubMesh>>"
+        }
+      }
+    },
+    "Camera": {
+      "desc": {},
+      "filename": "scene/camera.h",
+      "parent": "Node",
+      "attribute": {
+        "CullingMask": {
+          "desc": {},
+          "value": "uint64_t"
         },
-        "GetSubMeshCount": {
-          "static": false,
-          "params": [],
-          "return": "uint32_t"
+        "Near": {
+          "desc": {},
+          "value": "float"
+        },
+        "Far": {
+          "desc": {},
+          "value": "float"
+        }
+      }
+    },
+    "PerspectiveCamera": {
+      "desc": {},
+      "filename": "scene/camera.h",
+      "parent": "Camera",
+      "method": {
+        "New": {
+          "desc": {},
+          "static": true,
+          "param": [],
+          "return": "scoped_refptr<PerspectiveCamera>"
         }
       },
-      "attributes": {},
-      "enums": {},
-      "callbacks": {}
+      "attribute": {
+        "FOVY": {
+          "desc": {},
+          "value": "float"
+        },
+        "Aspect": {
+          "desc": {},
+          "value": "float"
+        }
+      }
+    },
+    "OrthographicCamera": {
+      "desc": {},
+      "filename": "scene/camera.h",
+      "parent": "Camera",
+      "method": {
+        "New": {
+          "desc": {},
+          "static": true,
+          "param": [],
+          "return": "scoped_refptr<OrthographicCamera>"
+        }
+      },
+      "attribute": {
+        "Left": {
+          "desc": {},
+          "value": "float"
+        },
+        "Right": {
+          "desc": {},
+          "value": "float"
+        },
+        "Bottom": {
+          "desc": {},
+          "value": "float"
+        },
+        "Top": {
+          "desc": {},
+          "value": "float"
+        }
+      }
     },
     "Node": {
-      "filepath": "scene/node.h",
-      "parent": "Disposable",
-      "members": {
+      "desc": {},
+      "filename": "scene/node.h",
+      "parent": "Object",
+      "method": {
         "New": {
+          "desc": {},
           "static": true,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Node>"
         },
         "GetTransform": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Transform>"
         },
         "FirstChild": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Node>"
         },
         "LastChild": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Node>"
         },
         "PreviousSibling": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Node>"
         },
         "NextSibling": {
+          "desc": {},
           "static": false,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<Node>"
         }
       },
-      "attributes": {
+      "attribute": {
         "Parent": {
+          "desc": {},
           "value": "scoped_refptr<Node>"
         },
         "Active": {
+          "desc": {},
           "value": "bool"
         },
         "Order": {
+          "desc": {},
           "value": "int64_t"
         },
         "Layer": {
+          "desc": {},
           "value": "uint32_t"
         },
         "Name": {
+          "desc": {},
           "value": "std::string"
         }
+      }
+    },
+    "MeshRenderer": {
+      "desc": {},
+      "filename": "scene/renderer.h",
+      "parent": "Node",
+      "method": {
+        "New": {
+          "desc": {},
+          "static": true,
+          "param": [],
+          "return": "scoped_refptr<MeshRenderer>"
+        },
+        "GetMaterialAtSlot": {
+          "desc": {},
+          "static": false,
+          "param": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "scoped_refptr<Material>"
+        },
+        "SetMaterialAtSlot": {
+          "desc": {},
+          "static": false,
+          "param": [
+            {
+              "name": "slot",
+              "type": "uint32_t"
+            },
+            {
+              "name": "material",
+              "type": "scoped_refptr<Material>"
+            }
+          ],
+          "return": "void"
+        }
       },
-      "enums": {},
-      "callbacks": {}
+      "attribute": {
+        "Mesh": {
+          "desc": {},
+          "value": "scoped_refptr<Mesh>"
+        }
+      }
     },
     "Quaternion": {
-      "filepath": "scene/transform.h",
+      "desc": {},
+      "filename": "scene/transform.h",
       "parent": "Constant",
-      "members": {
+      "method": {
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "value",
               "type": "scoped_refptr<Quaternion>"
@@ -4460,33 +5125,38 @@
           "return": "Quaternion&"
         }
       },
-      "attributes": {
+      "attribute": {
         "W": {
+          "desc": {},
           "value": "double"
         },
         "X": {
+          "desc": {},
           "value": "double"
         },
         "Y": {
+          "desc": {},
           "value": "double"
         },
         "Z": {
+          "desc": {},
           "value": "double"
         },
         "Euler": {
+          "desc": {},
           "value": "scoped_refptr<Vector3d>"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "Transform": {
-      "filepath": "scene/transform.h",
+      "desc": {},
+      "filename": "scene/transform.h",
       "parent": "Constant",
-      "members": {
+      "method": {
         "Set": {
+          "desc": {},
           "static": false,
-          "params": [
+          "param": [
             {
               "name": "value",
               "type": "scoped_refptr<Transform>"
@@ -4495,38 +5165,39 @@
           "return": "Transform&"
         }
       },
-      "attributes": {
+      "attribute": {
         "Position": {
+          "desc": {},
           "value": "scoped_refptr<Vector3d>"
         },
         "Quaternion": {
+          "desc": {},
           "value": "scoped_refptr<Quaternion>"
         },
         "Scale": {
+          "desc": {},
           "value": "scoped_refptr<Vector3d>"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     },
     "World": {
-      "filepath": "scene/world.h",
+      "desc": {},
+      "filename": "scene/world.h",
       "parent": "Object",
-      "members": {
+      "method": {
         "New": {
+          "desc": {},
           "static": true,
-          "params": [],
+          "param": [],
           "return": "scoped_refptr<World>"
         }
       },
-      "attributes": {
+      "attribute": {
         "Root": {
+          "desc": {},
           "value": "scoped_refptr<Node>"
         }
-      },
-      "enums": {},
-      "callbacks": {}
+      }
     }
-  },
-  "struct": {}
+  }
 }
