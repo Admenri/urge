@@ -12,11 +12,14 @@
 
 namespace ui {
 
-IMGUIContext::IMGUIContext(renderer::RenderDevice* render_device) {
+IMGUIContext::IMGUIContext(renderer::RenderDevice* render_device,
+                           wgpu::TextureFormat target_format) {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
 
   ImGuiIO& io = ImGui::GetIO();
+  // Docking
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   // Enable Gamepad Controls
@@ -46,10 +49,7 @@ IMGUIContext::IMGUIContext(renderer::RenderDevice* render_device) {
 
   ImGui_ImplWGPU_InitInfo init_info;
   init_info.Device = render_device->device().Get();
-  init_info.NumFramesInFlight = 3;
-  init_info.RenderTargetFormat =
-      static_cast<WGPUTextureFormat>(surface_capabilities.formats[0]);
-  init_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+  init_info.RenderTargetFormat = static_cast<WGPUTextureFormat>(target_format);
   ImGui_ImplWGPU_Init(&init_info);
 }
 
@@ -58,6 +58,23 @@ IMGUIContext::~IMGUIContext() {
   ImGui_ImplWGPU_Shutdown();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
+}
+
+// static
+void IMGUIContext::SetupFrame() {
+  ImGui_ImplWGPU_NewFrame();
+  ImGui_ImplSDL3_NewFrame();
+}
+
+// static
+void IMGUIContext::ProcessEvent(const SDL_Event* event) {
+  ImGui_ImplSDL3_ProcessEvent(event);
+}
+
+// static
+void IMGUIContext::Render(ImDrawData* draw_data,
+                          const wgpu::RenderPassEncoder& pass) {
+  ImGui_ImplWGPU_RenderDrawData(draw_data, pass.Get());
 }
 
 }  // namespace ui

@@ -33,11 +33,6 @@ class CoreProfile : public Singleton<CoreProfile> {
   } window;
 
   struct {
-    std::string backend = "default";
-    bool validation = false;
-  } render;
-
-  struct {
     std::string default_path = "Fonts/Default.ttf";
   } font;
 };

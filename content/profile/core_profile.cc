@@ -40,12 +40,6 @@ CoreProfile::CoreProfile(SDL_IOStream* config_file) {
     window.resizable = window_node["resizable"].as<bool>(window.resizable);
   }
 
-  auto render_node = root_node["render"];
-  {
-    render.backend = render_node["backend"].as<std::string>(render.backend);
-    render.validation = render_node["validation"].as<bool>(render.validation);
-  }
-
   auto font_node = root_node["font"];
   {
     font.default_path = font_node["default"].as<std::string>(font.default_path);

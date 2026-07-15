@@ -29,4 +29,5 @@ endif ()
 add_library(webgpu-cpp-header INTERFACE)
 target_include_directories(webgpu-cpp-header INTERFACE
   $<BUILD_INTERFACE:${WEBGPUCPP_INCLUDE_DIR}>
+  $<BUILD_INTERFACE:${WEBGPUCPP_AUTOGEN_DIR}>
 )

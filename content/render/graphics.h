@@ -26,6 +26,9 @@ class Graphics : public Singleton<Graphics> {
   // GFX Device access
   renderer::RenderDevice* gfx() { return gfx_.get(); }
 
+  // UI Context
+  ui::IMGUIContext* ui_context() { return ui_context_.get(); }
+
   // Frame iteration present
   void Present();
 
@@ -38,11 +41,12 @@ class Graphics : public Singleton<Graphics> {
 
   std::unique_ptr<ui::Widget> window_;
   std::unique_ptr<renderer::RenderDevice> gfx_;
-
-  glm::ivec2 window_size_;
   std::unique_ptr<ui::IMGUIContext> ui_context_;
 
   scoped_refptr<Viewport> viewport_;
+
+  wgpu::TextureFormat surface_format_;
+  glm::ivec2 window_size_;
 };
 
 }  // namespace content

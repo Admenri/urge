@@ -44,20 +44,9 @@ ExternalBinding::Result Runner::AppInit() {
   auto window = std::make_unique<ui::Widget>();
   window->Init(std::move(window_params));
 
-  // Render device
-  auto backend_enum = kRendererBackends.find(core_profile->render.backend);
-  wgpu::BackendType renderer_backend =
-#if defined(OS_WIN)
-      wgpu::BackendType::D3D12;
-#elif defined(OS_LINUX)
-      wgpu::BackendType::Vulkan;
-#else   // Other
-      wgpu::BackendType::Undefined;
-#endif  // OS Backend
-  if (backend_enum != kRendererBackends.end())
-    renderer_backend = backend_enum->second;
-  auto graphics_device =
-      renderer::RenderDevice::Create(window->AsWeakPtr(), renderer_backend);
+  // Primary rendering device
+  auto graphics_device = renderer::RenderDevice::Create(
+      window->AsWeakPtr(), wgpu::BackendType::Undefined);
 
   // Graphics component
   Graphics::Instance(
@@ -79,6 +68,9 @@ ExternalBinding::Result Runner::RunIterate() {
 ExternalBinding::Result Runner::ProcessEvent(SDL_Event* event) {
   if (event->type == SDL_EVENT_QUIT)
     return ExternalBinding::Result::SUCCESS;
+
+  // GUI Event
+  ui::IMGUIContext::ProcessEvent(event);
 
   return ExternalBinding::Result::CONTINUE;
 }

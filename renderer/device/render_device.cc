@@ -6,6 +6,9 @@
 
 #include "base/buildflags/build.h"
 
+// WGPU-Native specific
+#include "wgpu-cmake/wgpu-native/ffi/wgpu.h"
+
 #if defined(OS_WIN)
 #include <windows.h>
 #endif  // OS_WIN
@@ -31,8 +34,16 @@ RenderDevice::~RenderDevice() = default;
 std::unique_ptr<RenderDevice> RenderDevice::Create(
     base::WeakPtr<ui::Widget> window,
     wgpu::BackendType backend) {
+  // Utility
+  wgpuSetLogCallback(
+      [](WGPULogLevel level, WGPUStringView message, void* userdata) {
+        LOG(INFO) << "[WGPU] " << std::string(message.data, message.length);
+      },
+      nullptr);
+
   // Instance
-  auto instance = wgpu::CreateInstance(nullptr);
+  wgpu::InstanceDescriptor instance_desc;
+  auto instance = wgpu::CreateInstance(&instance_desc);
 
   // Adapter
   wgpu::Adapter adapter;
