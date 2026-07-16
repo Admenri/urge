@@ -4605,12 +4605,6 @@
       "filename": "render/viewport.h",
       "parent": "Object",
       "method": {
-        "GetDevice": {
-          "desc": {},
-          "static": false,
-          "param": [],
-          "return": "scoped_refptr<GPUDevice>"
-        },
         "GetQueue": {
           "desc": {},
           "static": false,
@@ -4665,7 +4659,7 @@
         }
       }
     },
-    "RendererProcess": {
+    "Viewport": {
       "desc": {},
       "filename": "render/viewport.h",
       "parent": "Object",
@@ -4673,13 +4667,40 @@
         "New": {
           "desc": {},
           "static": true,
+          "param": [],
+          "return": "scoped_refptr<Viewport>"
+        },
+        "SetupRenderProcess": {
+          "desc": {},
+          "static": false,
           "param": [
             {
               "name": "callback",
               "type": "RenderCallback"
             }
           ],
-          "return": "scoped_refptr<RendererProcess>"
+          "return": "void"
+        },
+        "Render": {
+          "desc": {},
+          "static": false,
+          "param": [
+            {
+              "name": "render_target",
+              "type": "scoped_refptr<GPUTextureView>"
+            },
+            {
+              "name": "depth_stencil",
+              "type": "scoped_refptr<GPUTextureView>"
+            }
+          ],
+          "return": "void"
+        }
+      },
+      "attribute": {
+        "World": {
+          "desc": {},
+          "value": "scoped_refptr<World>"
         }
       },
       "callback": {
@@ -4696,40 +4717,6 @@
               "type": "earray<scoped_refptr<Camera>>"
             }
           ]
-        }
-      }
-    },
-    "Viewport": {
-      "desc": {},
-      "filename": "render/viewport.h",
-      "parent": "Object",
-      "method": {
-        "New": {
-          "desc": {},
-          "static": true,
-          "param": [
-            {
-              "name": "size",
-              "type": "scoped_refptr<Vector2i>"
-            }
-          ],
-          "return": "scoped_refptr<Viewport>"
-        },
-        "GetSize": {
-          "desc": {},
-          "static": false,
-          "param": [],
-          "return": "scoped_refptr<Vector2i>"
-        }
-      },
-      "attribute": {
-        "World": {
-          "desc": {},
-          "value": "scoped_refptr<World>"
-        },
-        "Renderer": {
-          "desc": {},
-          "value": "scoped_refptr<RendererProcess>"
         }
       }
     },

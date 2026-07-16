@@ -47,6 +47,11 @@ class Graphics : public Singleton<Graphics> {
 
   wgpu::TextureFormat surface_format_;
   glm::ivec2 window_size_;
+
+  wgpu::Texture screen_back_buffer_;
+  wgpu::Texture screen_depth_stencil_;
+  scoped_refptr<GPUTextureView> screen_back_buffer_view_;
+  scoped_refptr<GPUTextureView> screen_depth_stencil_view_;
 };
 
 }  // namespace content

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "content/common/exception.h"
 #include "content/content_config.h"
 #include "content/gpu/gpu_device.h"
 #include "content/gpu/gpu_resource.h"
@@ -78,15 +79,14 @@ class CullingResults : public Object {
 URGE_BINDING()
 class RenderContext : public Object {
  public:
-  RenderContext();
+  RenderContext(World* world,
+                scoped_refptr<GPUTextureView> rtv,
+                scoped_refptr<GPUTextureView> dsv);
 
   RenderContext(const RenderContext&) = delete;
   RenderContext& operator=(const RenderContext&) = delete;
 
  public:
-  URGE_BINDING()
-  scoped_refptr<GPUDevice> GetDevice(URGE_EXCEPTION);
-
   URGE_BINDING()
   scoped_refptr<GPUQueue> GetQueue(URGE_EXCEPTION);
 
@@ -108,32 +108,10 @@ class RenderContext : public Object {
                      URGE_EXCEPTION);
 
  private:
-};
+  World* world_;
 
-///
-/// RendererProcess
-///
-
-URGE_BINDING()
-class RendererProcess : public Object {
- public:
-  RendererProcess();
-
-  RendererProcess(const RendererProcess&) = delete;
-  RendererProcess& operator=(const RendererProcess&) = delete;
-
- public:
-  URGE_BINDING()
-  using RenderCallback =
-      base::RepeatingCallback<void(scoped_refptr<RenderContext> context,
-                                   earray<scoped_refptr<Camera>> cameras)>;
-
-  URGE_BINDING()
-  static scoped_refptr<RendererProcess> New(RenderCallback callback,
-                                            URGE_EXCEPTION);
-
- private:
-  RenderCallback on_render_;
+  scoped_refptr<GPUTextureView> render_target_view_;
+  scoped_refptr<GPUTextureView> depth_stencil_view_;
 };
 
 ///
@@ -143,29 +121,34 @@ class RendererProcess : public Object {
 URGE_BINDING()
 class Viewport : public Object {
  public:
-  Viewport(const glm::ivec2& size);
+  Viewport();
 
   Viewport(const Viewport&) = delete;
   Viewport& operator=(const Viewport&) = delete;
 
  public:
   URGE_BINDING()
-  static scoped_refptr<Viewport> New(scoped_refptr<Vector2i> size,
-                                     URGE_EXCEPTION);
+  using RenderCallback =
+      base::RepeatingCallback<void(scoped_refptr<RenderContext> context,
+                                   earray<scoped_refptr<Camera>> cameras)>;
+
+  URGE_BINDING()
+  static scoped_refptr<Viewport> New(URGE_EXCEPTION);
 
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(World, scoped_refptr<World>);
 
   URGE_BINDING()
-  URGE_ATTRIBUTE_DECLARE(Renderer, scoped_refptr<RendererProcess>);
+  void SetupRenderProcess(RenderCallback callback, URGE_EXCEPTION);
 
   URGE_BINDING()
-  scoped_refptr<Vector2i> GetSize(URGE_EXCEPTION);
+  void Render(scoped_refptr<GPUTextureView> render_target,
+              scoped_refptr<GPUTextureView> depth_stencil,
+              URGE_EXCEPTION);
 
  private:
-  glm::ivec2 size_;
   scoped_refptr<World> world_;
-  scoped_refptr<RendererProcess> process_;
+  RenderCallback render_process_;
 };
 
 }  // namespace content

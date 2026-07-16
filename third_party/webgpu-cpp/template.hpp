@@ -42,6 +42,137 @@
 
 #include "webgpu.h"
 
+#include <type_traits>
+
+// The operators in wgpu:: namespace need be introduced into other namespaces with
+// using-declarations for C++ Argument Dependent Lookup to work.
+#define WGPU_IMPORT_BITMASK_OPERATORS \
+    using wgpu::operator|;            \
+    using wgpu::operator&;            \
+    using wgpu::operator^;            \
+    using wgpu::operator~;            \
+    using wgpu::operator&=;           \
+    using wgpu::operator|=;           \
+    using wgpu::operator^=;           \
+    using wgpu::HasZeroOrOneBits;
+
+namespace wgpu {
+
+template <typename T>
+struct IsWGPUBitmask {
+    static constexpr bool enable = false;
+};
+
+template <typename T, typename Enable = void>
+struct LowerBitmask {
+    static constexpr bool enable = false;
+};
+
+template <typename T>
+struct LowerBitmask<T, typename std::enable_if<IsWGPUBitmask<T>::enable>::type> {
+    static constexpr bool enable = true;
+    using type = T;
+    constexpr static T Lower(T t) { return t; }
+};
+
+template <typename T>
+struct BoolConvertible {
+    using Integral = typename std::underlying_type<T>::type;
+
+    explicit constexpr BoolConvertible(Integral value) : value(value) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    constexpr operator bool() const { return value != 0; }
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    constexpr operator T() const { return static_cast<T>(value); }
+
+    Integral value;
+};
+
+template <typename T>
+struct LowerBitmask<BoolConvertible<T>> {
+    static constexpr bool enable = true;
+    using type = T;
+    static constexpr type Lower(BoolConvertible<T> t) { return t; }
+};
+
+template <
+    typename T1,
+    typename T2,
+    typename = typename std::enable_if<LowerBitmask<T1>::enable && LowerBitmask<T2>::enable>::type>
+constexpr BoolConvertible<typename LowerBitmask<T1>::type> operator|(T1 left, T2 right) {
+    using T = typename LowerBitmask<T1>::type;
+    using Integral = typename std::underlying_type<T>::type;
+    return BoolConvertible<T>(static_cast<Integral>(LowerBitmask<T1>::Lower(left)) |
+                              static_cast<Integral>(LowerBitmask<T2>::Lower(right)));
+}
+
+template <
+    typename T1,
+    typename T2,
+    typename = typename std::enable_if<LowerBitmask<T1>::enable && LowerBitmask<T2>::enable>::type>
+constexpr BoolConvertible<typename LowerBitmask<T1>::type> operator&(T1 left, T2 right) {
+    using T = typename LowerBitmask<T1>::type;
+    using Integral = typename std::underlying_type<T>::type;
+    return BoolConvertible<T>(static_cast<Integral>(LowerBitmask<T1>::Lower(left)) &
+                              static_cast<Integral>(LowerBitmask<T2>::Lower(right)));
+}
+
+template <
+    typename T1,
+    typename T2,
+    typename = typename std::enable_if<LowerBitmask<T1>::enable && LowerBitmask<T2>::enable>::type>
+constexpr BoolConvertible<typename LowerBitmask<T1>::type> operator^(T1 left, T2 right) {
+    using T = typename LowerBitmask<T1>::type;
+    using Integral = typename std::underlying_type<T>::type;
+    return BoolConvertible<T>(static_cast<Integral>(LowerBitmask<T1>::Lower(left)) ^
+                              static_cast<Integral>(LowerBitmask<T2>::Lower(right)));
+}
+
+template <typename T1>
+constexpr BoolConvertible<typename LowerBitmask<T1>::type> operator~(T1 t) {
+    using T = typename LowerBitmask<T1>::type;
+    using Integral = typename std::underlying_type<T>::type;
+    return BoolConvertible<T>(~static_cast<Integral>(LowerBitmask<T1>::Lower(t)));
+}
+
+template <
+    typename T,
+    typename T2,
+    typename = typename std::enable_if<IsWGPUBitmask<T>::enable && LowerBitmask<T2>::enable>::type>
+constexpr T& operator&=(T& l, T2 right) {
+    T r = LowerBitmask<T2>::Lower(right);
+    l = l & r;
+    return l;
+}
+
+template <
+    typename T,
+    typename T2,
+    typename = typename std::enable_if<IsWGPUBitmask<T>::enable && LowerBitmask<T2>::enable>::type>
+constexpr T& operator|=(T& l, T2 right) {
+    T r = LowerBitmask<T2>::Lower(right);
+    l = l | r;
+    return l;
+}
+
+template <
+    typename T,
+    typename T2,
+    typename = typename std::enable_if<IsWGPUBitmask<T>::enable && LowerBitmask<T2>::enable>::type>
+constexpr T& operator^=(T& l, T2 right) {
+    T r = LowerBitmask<T2>::Lower(right);
+    l = l ^ r;
+    return l;
+}
+
+template <typename T>
+constexpr bool HasZeroOrOneBits(T value) {
+    using Integral = typename std::underlying_type<T>::type;
+    return (static_cast<Integral>(value) & (static_cast<Integral>(value) - 1)) == 0;
+}
+
+}  // namespace wgpu
+
 namespace wgpu {
 
 ///
@@ -70,6 +201,11 @@ namespace wgpu {
   };
   static_assert(sizeof({{bitmask_name}}) == sizeof(WGPU{{bitmask_name}}), "sizeof mismatch for {{bitmask_name}}");
   static_assert(alignof({{bitmask_name}}) == alignof(WGPU{{bitmask_name}}), "alignof mismatch for {{bitmask_name}}");
+
+  template<>
+  struct IsWGPUBitmask<wgpu::{{bitmask_name}}> {
+    static constexpr bool enable = true;
+  };
 
 {% endfor %}
 

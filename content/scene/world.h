@@ -13,6 +13,10 @@
 
 namespace content {
 
+class Camera;
+class MeshRenderer;
+class Viewport;
+
 URGE_BINDING()
 class World : public Object {
  public:
@@ -29,7 +33,12 @@ class World : public Object {
   URGE_ATTRIBUTE_DECLARE(Root, scoped_refptr<Node>);
 
  private:
+  friend class Viewport;
   scoped_refptr<Node> root_;
+
+  // Scene components storage
+  std::vector<MeshRenderer*> renderers_;
+  std::vector<Camera*> cameras_;
 };
 
 }  // namespace content

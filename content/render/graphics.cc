@@ -25,6 +25,9 @@ Graphics::Graphics(std::unique_ptr<ui::Widget> window,
 
   // Swapchain configure
   ConfigureSwapChainInternal();
+
+  // Primary viewport
+  viewport_ = Object::Create<Viewport>();
 }
 
 Graphics::~Graphics() {
@@ -34,6 +37,13 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Present() {
+  // Resizing
+  if (auto current_size = window_->GetSize(); window_size_ != current_size) {
+    gfx_->swapchain().Unconfigure();
+    ConfigureSwapChainInternal();
+    window_size_ = current_size;
+  }
+
   // Test clear
   wgpu::SurfaceTexture surface_tex;
   gfx_->swapchain().GetCurrentTexture(&surface_tex);
@@ -66,29 +76,50 @@ void Graphics::Present() {
   // Submit
   gfx_->queue().Submit(1, &buffer);
 
-  // Resizing
-  if (auto current_size = window_->GetSize(); window_size_ != current_size) {
-    gfx_->swapchain().Unconfigure();
-    ConfigureSwapChainInternal();
-    window_size_ = current_size;
-  }
+  // Main viewport
+  ExceptionState render_state;
+  viewport_->Render(screen_back_buffer_view_, screen_depth_stencil_view_,
+                    render_state);
 
   // Final present
   gfx_->swapchain().Present();
 }
 
 scoped_refptr<Viewport> Graphics::GetViewport(URGE_EXCEPTION) {
-  return nullptr;
+  return viewport_;
 }
 
 void Graphics::ConfigureSwapChainInternal() {
+  // Resize swapchain
   wgpu::SurfaceConfiguration swapchain_desc;
   swapchain_desc.device = gfx_->device();
   swapchain_desc.format = surface_format_;
   swapchain_desc.width = window_size_.x;
   swapchain_desc.height = window_size_.y;
-
   gfx_->swapchain().Configure(&swapchain_desc);
+
+  // Resize viewport back buffer
+  wgpu::TextureDescriptor texture_desc;
+  texture_desc.size.width = window_size_.x;
+  texture_desc.size.height = window_size_.y;
+  texture_desc.usage =
+      wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding;
+  texture_desc.dimension = wgpu::TextureDimension::e2D;
+
+  texture_desc.format = surface_format_;
+  screen_back_buffer_ = gfx_->device().CreateTexture(&texture_desc);
+
+  texture_desc.format = wgpu::TextureFormat::Depth24PlusStencil8;
+  screen_depth_stencil_ = gfx_->device().CreateTexture(&texture_desc);
+
+  // Texture view rebuild
+  screen_back_buffer_view_ =
+      Object::Create<GPUTextureView>(screen_back_buffer_.CreateView(nullptr));
+  screen_depth_stencil_view_ =
+      Object::Create<GPUTextureView>(screen_depth_stencil_.CreateView(nullptr));
+
+  // LOG
+  LOG(INFO) << "SwapChain Resize: " << window_size_.x << "x" << window_size_.y;
 }
 
 }  // namespace content
