@@ -90,11 +90,6 @@ void Widget::Init(InitParams params) {
                          SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN,
                          params.always_on_top);
 
-  // No internal graphics context manager
-  SDL_SetBooleanProperty(
-      property_id, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN,
-      true);
-
   window_ = SDL_CreateWindowWithProperties(property_id);
   if (!window_)
     LOG(INFO) << "[UI] " << SDL_GetError();

@@ -13,10 +13,8 @@ corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml)
 
 if(WIN32)
   set(OS_LIBRARIES d3dcompiler ws2_32 userenv bcrypt ntdll opengl32 Propsys RuntimeObject)
-elseif(UNIX AND NOT APPLE)
-  set(OS_LIBRARIES "-lm -ldl")
-elseif(APPLE)
-  set(OS_LIBRARIES "-framework Foundation -framework CoreFoundation -framework QuartzCore -framework Metal")
+else()
+  message(FATAL_ERROR unsupported platform)
 endif()
 
 add_library(webgpu_wgpu INTERFACE)

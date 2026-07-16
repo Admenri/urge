@@ -53,7 +53,7 @@ void Graphics::Present() {
   ui::IMGUIContext::SetupFrame();
 
   ImGui::NewFrame();
-  // ImGui::ShowDemoWindow();
+  ImGui::ShowDemoWindow();
   ImGui::EndFrame();
   ImGui::Render();
 

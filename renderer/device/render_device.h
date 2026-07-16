@@ -20,8 +20,7 @@ class RenderDevice {
 
   // Create render device with current window context and resolution,
   // manage all gpu object internal automatically.
-  static std::unique_ptr<RenderDevice> Create(base::WeakPtr<ui::Widget> window,
-                                              wgpu::BackendType backend);
+  static std::unique_ptr<RenderDevice> Create(base::WeakPtr<ui::Widget> window);
 
   base::WeakPtr<ui::Widget> window() { return window_; }
 

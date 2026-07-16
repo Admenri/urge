@@ -45,8 +45,7 @@ ExternalBinding::Result Runner::AppInit() {
   window->Init(std::move(window_params));
 
   // Primary rendering device
-  auto graphics_device = renderer::RenderDevice::Create(
-      window->AsWeakPtr(), wgpu::BackendType::Undefined);
+  auto graphics_device = renderer::RenderDevice::Create(window->AsWeakPtr());
 
   // Graphics component
   Graphics::Instance(

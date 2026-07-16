@@ -32,8 +32,7 @@ RenderDevice::~RenderDevice() = default;
 
 // static
 std::unique_ptr<RenderDevice> RenderDevice::Create(
-    base::WeakPtr<ui::Widget> window,
-    wgpu::BackendType backend) {
+    base::WeakPtr<ui::Widget> window) {
   // Utility
   wgpuSetLogCallback(
       [](WGPULogLevel level, WGPUStringView message, void* userdata) {
@@ -42,14 +41,35 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
       nullptr);
 
   // Instance
-  wgpu::InstanceDescriptor instance_desc;
-  auto instance = wgpu::CreateInstance(&instance_desc);
+  auto instance = wgpu::CreateInstance(nullptr);
+
+  // Swapchain
+  wgpu::SurfaceDescriptor surface_desc;
+  {
+    auto sdl_window_properties = SDL_GetWindowProperties(window->AsSDLWindow());
+#if defined(OS_WIN)
+    HWND window_handle = reinterpret_cast<HWND>(SDL_GetPointerProperty(
+        sdl_window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+
+    wgpu::SurfaceSourceWindowsHWND win_surface_desc;
+    win_surface_desc.hinstance = ::GetModuleHandle(nullptr);
+    win_surface_desc.hwnd = window_handle;
+
+    // WGPU-native requires this, i dont know why.
+    ::UpdateWindow(window_handle);
+
+    surface_desc.nextInChain = &win_surface_desc;
+#else
+#error unsupport platform
+#endif  // OS_XXX
+  }
+  auto surface = instance.CreateSurface(&surface_desc);
 
   // Adapter
   wgpu::Adapter adapter;
   {
     wgpu::RequestAdapterOptions adapter_desc;
-    adapter_desc.backendType = backend;
+    adapter_desc.compatibleSurface = surface;
 
     WGPURequestAdapterCallbackInfo adapter_callback;
     adapter_callback.userdata1 = &adapter;
@@ -63,28 +83,9 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
     instance.RequestAdapter(&adapter_desc, adapter_callback);
   }
 
-  // Swapchain
-  wgpu::SurfaceDescriptor surface_desc;
-  {
-    auto sdl_window_properties = SDL_GetWindowProperties(window->AsSDLWindow());
-#if defined(OS_WIN)
-    wgpu::SurfaceSourceWindowsHWND win_surface_desc;
-    win_surface_desc.hinstance = SDL_GetPointerProperty(
-        sdl_window_properties, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
-    win_surface_desc.hwnd = SDL_GetPointerProperty(
-        sdl_window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-    surface_desc.nextInChain = &win_surface_desc;
-#else
-#error unsupport platform
-#endif  // OS_XXX
-  }
-  auto surface = instance.CreateSurface(&surface_desc);
-
   // Device
   wgpu::Device device;
   {
-    wgpu::DeviceDescriptor device_desc;
-
     WGPURequestDeviceCallbackInfo device_callback;
     device_callback.userdata1 = &device;
     device_callback.callback = [](WGPURequestDeviceStatus status,
@@ -94,7 +95,7 @@ std::unique_ptr<RenderDevice> RenderDevice::Create(
       *device_out = wgpu::Device::Acquire(device);
     };
 
-    adapter.RequestDevice(&device_desc, device_callback);
+    adapter.RequestDevice(nullptr, device_callback);
   }
 
   // Queue
