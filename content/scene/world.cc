@@ -29,21 +29,23 @@ URGE_ATTRIBUTE_DEFINE(
         return;
 
       // Unbind world from previous node if available
-      if (root_)
+      if (root_) {
+        root_->root() = false;
         root_->SetupWorld(nullptr, root_->world());
+      }
 
       // Reset target parent
       if (value)
         value->ResetParent(nullptr);
 
       // Bind world to target node tree if available
-      if (value)
+      if (value) {
+        value->root() = true;
         value->SetupWorld(this, value->world());
+      }
 
       // Node reference & root set
-      root_->root() = false;
       root_ = value;
-      value->root() = true;
     });
 
 void World::RegisterCamera(Camera* camera) {

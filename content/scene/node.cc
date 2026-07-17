@@ -20,6 +20,7 @@ scoped_refptr<Node> Node::New(URGE_EXCEPTION) {
 Node::Node()
     : node_(this, nullptr, SortKey()),
       transform_(Object::Create<Transform>()),
+      layer_(0),
       transform_dirty_(true),
       root_node_(false),
       world_(nullptr) {
@@ -29,12 +30,6 @@ Node::Node()
 }
 
 Node::~Node() {
-  // World reference release
-  ForEachNode([&](Node* node) {
-    node->OnLeaveWorld(node->world_);
-    return false;
-  });
-
   // Scene graph dispose
   node_.DisposeNode();
 
