@@ -67,6 +67,8 @@ class Node : public Object {
 
  private:
   void ForEachNode(std::function<bool(Node*)> iter);
+  void EnterWorld(World* world);
+  void LeaveWorld(World* world);
   void ResortChildren(Node* target = nullptr);
   void TransformChange();
 
@@ -83,6 +85,7 @@ class Node : public Object {
 
   World* world_;
   bool root_node_;
+  bool in_world_;
   bool transform_dirty_;
 };
 

@@ -26,6 +26,7 @@ Node::Node()
       layer_(0),
       world_(nullptr),
       root_node_(false),
+      in_world_(false),
       transform_dirty_(true) {
   auto transform_handler =
       base::BindRepeating(&Node::TransformChange, base::Unretained(this));
@@ -44,9 +45,9 @@ void Node::SetupWorld(World* new_world, World* old_world) {
 
   ForEachNode([&](Node* node) {
     if (old_world)
-      node->OnLeaveWorld(old_world);
+      node->LeaveWorld(old_world);
     if (new_world)
-      node->OnEnterWorld(new_world);
+      node->EnterWorld(new_world);
     node->world_ = new_world;
     return false;
   });
@@ -123,6 +124,21 @@ URGE_ATTRIBUTE_DEFINE(
       if (active_ == value)
         return;
 
+      // World change
+      if (value) {
+        // Active
+        ForEachNode([&](Node* node) {
+          node->EnterWorld(node->world_);
+          return false;
+        });
+      } else {
+        // Inactive
+        ForEachNode([&](Node* node) {
+          node->LeaveWorld(node->world_);
+          return false;
+        });
+      }
+
       active_ = value;
       TransformChange();
     });
@@ -179,6 +195,20 @@ void Node::ForEachNode(std::function<bool(Node*)> iter) {
 
     if (iter(node))
       break;
+  }
+}
+
+void Node::EnterWorld(World* world) {
+  if (!in_world_) {
+    OnEnterWorld(world);
+    in_world_ = true;
+  }
+}
+
+void Node::LeaveWorld(World* world) {
+  if (in_world_) {
+    OnLeaveWorld(world);
+    in_world_ = false;
   }
 }
 
