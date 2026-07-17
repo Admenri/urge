@@ -5,6 +5,7 @@
 #include "content/scene/node.h"
 
 #include <algorithm>
+#include <stack>
 
 namespace content {
 
@@ -18,23 +19,23 @@ scoped_refptr<Node> Node::New(URGE_EXCEPTION) {
 }
 
 Node::Node()
-    : node_(this, nullptr, SortKey()),
-      transform_(Object::Create<Transform>()),
+    : transform_(Object::Create<Transform>()),
+      parent_(nullptr),
+      active_(true),
+      order_(0),
       layer_(0),
-      transform_dirty_(true),
+      world_(nullptr),
       root_node_(false),
-      world_(nullptr) {
+      transform_dirty_(true) {
   auto transform_handler =
       base::BindRepeating(&Node::TransformChange, base::Unretained(this));
   transform_->set_change_handler(transform_handler);
 }
 
 Node::~Node() {
-  // Scene graph dispose
-  node_.DisposeNode();
-
-  // Release parent referene
-  parent_.reset();
+  // Assure current node detached from parent:
+  //  1. Parent hold the reference of children.
+  //  2. When node detached from parent, we dont need to detach again.
 }
 
 void Node::SetupWorld(World* new_world, World* old_world) {
@@ -51,10 +52,30 @@ void Node::SetupWorld(World* new_world, World* old_world) {
   });
 }
 
-void Node::ResetParent(scoped_refptr<Node> parent) {
+void Node::ResetParent(Node* parent) {
+  if (parent_ == parent)
+    return;
+
+  // Remove from old parent's children
+  if (parent_) {
+    auto& old_children = parent_->children_;
+    auto it =
+        std::find_if(old_children.begin(), old_children.end(),
+                     [this](const auto& ref) { return ref.get() == this; });
+    if (it != old_children.end())
+      old_children.erase(it);
+  }
+
+  // Set raw reference
   parent_ = parent;
-  if (parent)
-    node_.RebindController(&parent->children_);
+
+  // Add to new parent's children and resort
+  if (parent) {
+    parent->children_.push_back(scoped_refptr<Node>(this));
+    parent->ResortChildren(this);
+  }
+
+  // Transform notification
   TransformChange();
 }
 
@@ -76,7 +97,7 @@ URGE_ATTRIBUTE_DEFINE(
     scoped_refptr<Node>,
     { return parent_; },
     {
-      if (parent_ == value)
+      if (parent_ == value.get())
         return;
 
       // Disallow root set parent
@@ -90,19 +111,19 @@ URGE_ATTRIBUTE_DEFINE(
       SetupWorld(value ? value->world_ : nullptr, world_);
 
       // Transform changing and setup parent
-      ResetParent(value);
+      ResetParent(value.get());
     });
 
 URGE_ATTRIBUTE_DEFINE(
     Node,
     Active,
     bool,
-    { return node_.GetActive(); },
+    { return active_; },
     {
-      if (node_.GetActive() == value)
+      if (active_ == value)
         return;
 
-      node_.SetActive(value);
+      active_ = value;
       TransformChange();
     });
 
@@ -110,8 +131,12 @@ URGE_ATTRIBUTE_DEFINE(
     Node,
     Order,
     int64_t,
-    { return node_.GetSortKey()->weight[0]; },
-    { node_.SetNodeSortWeight(value); });
+    { return order_; },
+    {
+      order_ = value;
+      if (parent_)
+        parent_->ResortChildren(this);
+    });
 
 URGE_ATTRIBUTE_DEFINE(
     Node,
@@ -131,24 +156,14 @@ scoped_refptr<Transform> Node::GetTransform(URGE_EXCEPTION) {
   return transform_;
 }
 
-scoped_refptr<Node> Node::FirstChild(URGE_EXCEPTION) {
-  auto* node = children_.head();
-  return node ? static_cast<NodeLink<Node>*>(node)->self() : nullptr;
+uint32_t Node::GetChildrenCount(URGE_EXCEPTION) {
+  return children_.size();
 }
 
-scoped_refptr<Node> Node::LastChild(URGE_EXCEPTION) {
-  auto* node = children_.tail();
-  return node ? static_cast<NodeLink<Node>*>(node)->self() : nullptr;
-}
-
-scoped_refptr<Node> Node::PreviousSibling(URGE_EXCEPTION) {
-  auto* sibling = node_.GetPreviousSibling();
-  return sibling ? sibling->self() : nullptr;
-}
-
-scoped_refptr<Node> Node::NextSibling(URGE_EXCEPTION) {
-  auto* sibling = node_.GetNextSibling();
-  return sibling ? sibling->self() : nullptr;
+scoped_refptr<Node> Node::GetChildAt(uint32_t index, URGE_EXCEPTION) {
+  if (index >= 0 && index < children_.size())
+    return children_[index];
+  return nullptr;
 }
 
 void Node::ForEachNode(std::function<bool(Node*)> iter) {
@@ -159,19 +174,52 @@ void Node::ForEachNode(std::function<bool(Node*)> iter) {
     Node* node = stack.top();
     stack.pop();
 
-    for (auto* it = node->children_.head(); it != node->children_.end();
-         it = it->next()) {
-      stack.push(static_cast<NodeLink<Node>*>(it)->self());
-    }
+    for (auto& it : children_)
+      stack.push(it.get());
 
     if (iter(node))
       break;
   }
 }
 
+void Node::ResortChildren(Node* target) {
+  if (children_.size() <= 1)
+    return;
+
+  if (!target) {
+    // Full sort: sort all children by order_ ascending
+    std::sort(
+        children_.begin(), children_.end(),
+        [](const auto& a, const auto& b) { return a->order_ < b->order_; });
+    return;
+  }
+
+  // Bubble target to its correct position by swapping with neighbors
+  auto it =
+      std::find_if(children_.begin(), children_.end(),
+                   [target](const auto& ref) { return ref.get() == target; });
+  if (it == children_.end())
+    return;
+
+  size_t idx = std::distance(children_.begin(), it);
+
+  // Bubble left while target->order_ < left neighbor's order_
+  while (idx > 0 && target->order_ < children_[idx - 1]->order_) {
+    std::swap(children_[idx - 1], children_[idx]);
+    --idx;
+  }
+
+  // Bubble right while target->order_ > right neighbor's order_
+  while (idx + 1 < children_.size() &&
+         target->order_ > children_[idx + 1]->order_) {
+    std::swap(children_[idx], children_[idx + 1]);
+    ++idx;
+  }
+}
+
 void Node::TransformChange() {
   ForEachNode([](Node* node) {
-    if (node->node_.GetActive()) {
+    if (node->active_) {
       node->transform_dirty_ = true;
       return false;
     }

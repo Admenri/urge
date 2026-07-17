@@ -9,7 +9,6 @@
 
 #include "base/memory/ref_counted.h"
 #include "content/content_config.h"
-#include "content/scene/node_link.h"
 #include "content/scene/transform.h"
 
 namespace content {
@@ -26,7 +25,7 @@ class Node : public Object {
   Node& operator=(const Node&) = delete;
 
   void SetupWorld(World* new_world, World* old_world);
-  void ResetParent(scoped_refptr<Node> parent);
+  void ResetParent(Node* parent);
   const glm::dmat4x4& GetModelMatrix();
 
   World* world() { return world_; }
@@ -56,16 +55,10 @@ class Node : public Object {
   scoped_refptr<Transform> GetTransform(URGE_EXCEPTION);
 
   URGE_BINDING()
-  scoped_refptr<Node> FirstChild(URGE_EXCEPTION);
+  uint32_t GetChildrenCount(URGE_EXCEPTION);
 
   URGE_BINDING()
-  scoped_refptr<Node> LastChild(URGE_EXCEPTION);
-
-  URGE_BINDING()
-  scoped_refptr<Node> PreviousSibling(URGE_EXCEPTION);
-
-  URGE_BINDING()
-  scoped_refptr<Node> NextSibling(URGE_EXCEPTION);
+  scoped_refptr<Node> GetChildAt(uint32_t index, URGE_EXCEPTION);
 
  protected:
   virtual void OnEnterWorld(World* new_world) {}
@@ -74,21 +67,23 @@ class Node : public Object {
 
  private:
   void ForEachNode(std::function<bool(Node*)> iter);
+  void ResortChildren(Node* target = nullptr);
   void TransformChange();
 
-  NodeLink<Node> node_;
-  NodeLinkController<Node> children_;
-
-  scoped_refptr<Node> parent_;
   scoped_refptr<Transform> transform_;
 
+  Node* parent_;
+  std::vector<scoped_refptr<Node>> children_;
+
+  bool active_;
+  int64_t order_;
   uint32_t layer_;
   std::string name_;
   glm::dmat4x4 model_;
 
-  bool transform_dirty_;
-  bool root_node_;
   World* world_;
+  bool root_node_;
+  bool transform_dirty_;
 };
 
 }  // namespace content

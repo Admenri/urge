@@ -31,8 +31,6 @@ target_sources(engine_content
   resource/mesh.h
   scene/camera.cc
   scene/camera.h
-  scene/node_link.cc
-  scene/node_link.h
   scene/node.cc
   scene/node.h
   scene/renderer.cc
