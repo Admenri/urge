@@ -4,6 +4,8 @@
 
 #include "content/scene/renderer.h"
 
+#include "content/scene/world.h"
+
 namespace content {
 
 // static
@@ -37,6 +39,14 @@ void MeshRenderer::SetMaterialAtSlot(uint32_t slot,
 
   if (slot >= 0)
     materials_[slot] = material;
+}
+
+void MeshRenderer::OnEnterWorld(World* new_world) {
+  new_world->RegisterRenderer(this);
+}
+
+void MeshRenderer::OnLeaveWorld(World* old_world) {
+  old_world->UnregisterRenderer(this);
 }
 
 }  // namespace content

@@ -4,6 +4,7 @@
 
 #include "content/scene/camera.h"
 
+#include "content/scene/world.h"
 #include "glm/gtc/matrix_inverse.hpp"
 
 namespace content {
@@ -54,6 +55,14 @@ URGE_ATTRIBUTE_DEFINE(
       far_ = value;
       NotifyProjectionChange();
     });
+
+void Camera::OnEnterWorld(World* new_world) {
+  new_world->RegisterCamera(this);
+}
+
+void Camera::OnLeaveWorld(World* old_world) {
+  old_world->UnregisterCamera(this);
+}
 
 ///
 /// PerspectiveCamera

@@ -25,6 +25,12 @@ class World : public Object {
   World(const World&) = delete;
   World& operator=(const World&) = delete;
 
+  void RegisterCamera(Camera* camera);
+  void UnregisterCamera(Camera* camera);
+
+  void RegisterRenderer(MeshRenderer* renderer);
+  void UnregisterRenderer(MeshRenderer* renderer);
+
  public:
   URGE_BINDING()
   static scoped_refptr<World> New(URGE_EXCEPTION);
@@ -34,6 +40,7 @@ class World : public Object {
 
  private:
   friend class Viewport;
+
   scoped_refptr<Node> root_;
 
   // Scene components storage

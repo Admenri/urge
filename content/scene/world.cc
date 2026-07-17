@@ -4,6 +4,11 @@
 
 #include "content/scene/world.h"
 
+#include <algorithm>
+
+#include "content/scene/camera.h"
+#include "content/scene/renderer.h"
+
 namespace content {
 
 // static
@@ -25,18 +30,40 @@ URGE_ATTRIBUTE_DEFINE(
 
       // Unbind world from previous node if available
       if (root_)
-        root_->SetupAsWorldRoot(nullptr, root_->world());
+        root_->SetupWorld(nullptr, root_->world());
 
       // Reset target parent
       if (value)
-        value->Put_Parent(nullptr, exception_state);
+        value->ResetParent(nullptr);
 
       // Bind world to target node tree if available
       if (value)
-        value->SetupAsWorldRoot(this, value->world());
+        value->SetupWorld(this, value->world());
 
-      // Node reference
+      // Node reference & root set
+      root_->root() = false;
       root_ = value;
+      value->root() = true;
     });
+
+void World::RegisterCamera(Camera* camera) {
+  cameras_.push_back(camera);
+}
+
+void World::UnregisterCamera(Camera* camera) {
+  auto it = std::find(cameras_.begin(), cameras_.end(), camera);
+  if (it != cameras_.end())
+    cameras_.erase(it);
+}
+
+void World::RegisterRenderer(MeshRenderer* renderer) {
+  renderers_.push_back(renderer);
+}
+
+void World::UnregisterRenderer(MeshRenderer* renderer) {
+  auto it = std::find(renderers_.begin(), renderers_.end(), renderer);
+  if (it != renderers_.end())
+    renderers_.erase(it);
+}
 
 }  // namespace content

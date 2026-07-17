@@ -25,11 +25,13 @@ class Node : public Object {
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
 
-  virtual void SetupAsWorldRoot(World* new_world, World* old_world);
+  void SetupWorld(World* new_world, World* old_world);
+  void ResetParent(scoped_refptr<Node> parent);
   const glm::dmat4x4& GetModelMatrix();
 
   World* world() { return world_; }
   uint32_t layer() const { return layer_; }
+  bool& root() { return root_node_; }
 
  public:
   URGE_BINDING()
@@ -85,6 +87,7 @@ class Node : public Object {
   glm::dmat4x4 model_;
 
   bool transform_dirty_;
+  bool root_node_;
   World* world_;
 };
 

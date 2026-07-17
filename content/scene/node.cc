@@ -21,6 +21,7 @@ Node::Node()
     : node_(this, nullptr, SortKey()),
       transform_(Object::Create<Transform>()),
       transform_dirty_(true),
+      root_node_(false),
       world_(nullptr) {
   auto transform_handler =
       base::BindRepeating(&Node::TransformChange, base::Unretained(this));
@@ -41,7 +42,10 @@ Node::~Node() {
   parent_.reset();
 }
 
-void Node::SetupAsWorldRoot(World* new_world, World* old_world) {
+void Node::SetupWorld(World* new_world, World* old_world) {
+  if (new_world == old_world)
+    return;
+
   ForEachNode([&](Node* node) {
     if (old_world)
       node->OnLeaveWorld(old_world);
@@ -50,6 +54,13 @@ void Node::SetupAsWorldRoot(World* new_world, World* old_world) {
     node->world_ = new_world;
     return false;
   });
+}
+
+void Node::ResetParent(scoped_refptr<Node> parent) {
+  parent_ = parent;
+  if (parent)
+    node_.RebindController(&parent->children_);
+  TransformChange();
 }
 
 const glm::dmat4x4& Node::GetModelMatrix() {
@@ -73,16 +84,18 @@ URGE_ATTRIBUTE_DEFINE(
       if (parent_ == value)
         return;
 
+      // Disallow root set parent
+      if (root_node_) {
+        exception_state.Throw(ExceptionCode::CONTENT_ERROR,
+                              "unable to reset the parent of root node.");
+        return;
+      }
+
       // World change
-      SetupAsWorldRoot(value ? value->world_ : nullptr, world_);
+      SetupWorld(value ? value->world_ : nullptr, world_);
 
       // Transform changing and setup parent
-      parent_ = value;
-      transform_dirty_ = true;
-      if (parent_) {
-        node_.RebindController(&parent_->children_);
-        TransformChange();
-      }
+      ResetParent(value);
     });
 
 URGE_ATTRIBUTE_DEFINE(
@@ -91,6 +104,9 @@ URGE_ATTRIBUTE_DEFINE(
     bool,
     { return node_.GetActive(); },
     {
+      if (node_.GetActive() == value)
+        return;
+
       node_.SetActive(value);
       TransformChange();
     });

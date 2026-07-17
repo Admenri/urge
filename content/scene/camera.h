@@ -37,6 +37,9 @@ class Camera : public Node {
   virtual glm::mat4x4 GetProjection() = 0;
   void NotifyProjectionChange() { projection_dirty_ = true; }
 
+  void OnEnterWorld(World* new_world) override;
+  void OnLeaveWorld(World* old_world) override;
+
  private:
   glm::mat4x4 projection_;
   bool projection_dirty_;

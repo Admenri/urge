@@ -34,6 +34,10 @@ class MeshRenderer : public Node {
                          scoped_refptr<Material> material,
                          URGE_EXCEPTION);
 
+ protected:
+  void OnEnterWorld(World* new_world) override;
+  void OnLeaveWorld(World* old_world) override;
+
  private:
   scoped_refptr<Mesh> mesh_;
   std::vector<scoped_refptr<Material>> materials_;
