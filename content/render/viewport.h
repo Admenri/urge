@@ -9,6 +9,7 @@
 #include "content/gpu/gpu_device.h"
 #include "content/gpu/gpu_resource.h"
 #include "content/scene/camera.h"
+#include "content/scene/renderer.h"
 #include "content/scene/world.h"
 
 namespace content {
@@ -69,7 +70,13 @@ class CullingResults : public Object {
   URGE_BINDING()
   uint32_t GetVisibleObjectCount(URGE_EXCEPTION);
 
+  URGE_BINDING()
+  scoped_refptr<MeshRenderer> GetVisibleObjectAt(uint32_t index,
+                                                 URGE_EXCEPTION);
+
  private:
+  friend class RenderContext;
+  std::vector<MeshRenderer*> visible_renderers_;
 };
 
 ///
@@ -147,6 +154,8 @@ class Viewport : public Object {
               URGE_EXCEPTION);
 
  private:
+  void PrepareFrame();
+
   scoped_refptr<World> world_;
   RenderCallback render_process_;
 };

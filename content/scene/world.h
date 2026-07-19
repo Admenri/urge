@@ -40,6 +40,7 @@ class World : public Object {
 
  private:
   friend class Viewport;
+  friend class RenderContext;
 
   scoped_refptr<Node> root_;
 

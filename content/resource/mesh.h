@@ -52,6 +52,15 @@ class Mesh : public Object {
   Mesh(const Mesh&) = delete;
   Mesh& operator=(const Mesh&) = delete;
 
+  void UpdateGPUBuffer();
+
+  wgpu::Buffer& vertex_buffer() { return vertex_buffer_; }
+  wgpu::Buffer& index_buffer() { return index_buffer_; }
+
+  const std::vector<scoped_refptr<SubMesh>>& mesh_group() const {
+    return mesh_groups_;
+  }
+
  public:
   URGE_BINDING()
   static scoped_refptr<Mesh> New(uint32_t vertex_bytes,
@@ -81,6 +90,9 @@ class Mesh : public Object {
 
   std::vector<uint8_t> vertices_;
   std::vector<uint32_t> indices_;
+
+  wgpu::Buffer vertex_buffer_;
+  wgpu::Buffer index_buffer_;
 };
 
 }  // namespace content

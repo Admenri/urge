@@ -4,6 +4,7 @@
 
 #include "content/scene/renderer.h"
 
+#include "content/common/exception.h"
 #include "content/scene/world.h"
 
 namespace content {
@@ -39,6 +40,44 @@ void MeshRenderer::SetMaterialAtSlot(uint32_t slot,
 
   if (slot >= 0)
     materials_[slot] = material;
+}
+
+void MeshRenderer::ComputeAABB(URGE_EXCEPTION) {
+  if (mesh_) {
+    ExceptionState exception_state;
+    auto submeshes = mesh_->GetSubMeshes(exception_state);
+
+    glm::vec3 min(std::numeric_limits<float>::max());
+    glm::vec3 max(std::numeric_limits<float>::lowest());
+    bool valid = false;
+
+    for (auto& submesh : submeshes) {
+      if (submesh->boundsMin && submesh->boundsMax) {
+        const glm::vec3& smin = submesh->boundsMin->data();
+        const glm::vec3& smax = submesh->boundsMax->data();
+        min = glm::min(min, smin);
+        max = glm::max(max, smax);
+        valid = true;
+      }
+    }
+
+    if (valid) {
+      bounds_min_ = min;
+      bounds_max_ = max;
+      return;
+    }
+  }
+
+  bounds_min_ = glm::vec3(0.f);
+  bounds_max_ = glm::vec3(0.f);
+}
+
+scoped_refptr<Vector3> MeshRenderer::GetBoundsMin(URGE_EXCEPTION) {
+  return Object::Create<Vector3>(bounds_min_);
+}
+
+scoped_refptr<Vector3> MeshRenderer::GetBoundsMax(URGE_EXCEPTION) {
+  return Object::Create<Vector3>(bounds_max_);
 }
 
 void MeshRenderer::OnEnterWorld(World* new_world) {

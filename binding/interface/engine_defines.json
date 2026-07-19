@@ -4597,6 +4597,17 @@
           "static": false,
           "param": [],
           "return": "uint32_t"
+        },
+        "GetVisibleObjectAt": {
+          "desc": {},
+          "static": false,
+          "param": [
+            {
+              "name": "index",
+              "type": "uint32_t"
+            }
+          ],
+          "return": "scoped_refptr<MeshRenderer>"
         }
       }
     },
@@ -5002,28 +5013,21 @@
           "param": [],
           "return": "scoped_refptr<Transform>"
         },
-        "FirstChild": {
+        "GetChildrenCount": {
           "desc": {},
           "static": false,
           "param": [],
-          "return": "scoped_refptr<Node>"
+          "return": "uint32_t"
         },
-        "LastChild": {
+        "GetChildAt": {
           "desc": {},
           "static": false,
-          "param": [],
-          "return": "scoped_refptr<Node>"
-        },
-        "PreviousSibling": {
-          "desc": {},
-          "static": false,
-          "param": [],
-          "return": "scoped_refptr<Node>"
-        },
-        "NextSibling": {
-          "desc": {},
-          "static": false,
-          "param": [],
+          "param": [
+            {
+              "name": "index",
+              "type": "uint32_t"
+            }
+          ],
           "return": "scoped_refptr<Node>"
         }
       },
@@ -5060,6 +5064,24 @@
           "static": true,
           "param": [],
           "return": "scoped_refptr<MeshRenderer>"
+        },
+        "ComputeAABB": {
+          "desc": {},
+          "static": false,
+          "param": [],
+          "return": "void"
+        },
+        "GetBoundsMin": {
+          "desc": {},
+          "static": false,
+          "param": [],
+          "return": "scoped_refptr<Vector3>"
+        },
+        "GetBoundsMax": {
+          "desc": {},
+          "static": false,
+          "param": [],
+          "return": "scoped_refptr<Vector3>"
         },
         "GetMaterialAtSlot": {
           "desc": {},

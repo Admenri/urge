@@ -5,6 +5,7 @@
 #include "content/scene/camera.h"
 
 #include "content/scene/world.h"
+#include "glm/gtc/matrix_access.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
 
 namespace content {
@@ -27,6 +28,12 @@ const glm::mat4x4& Camera::GetProjectionMatrix() {
   }
 
   return projection_;
+}
+
+glm::mat4x4 Camera::GetViewProjectionMatrix() {
+  // View matrix = inverse of camera's world-space model
+  glm::mat4x4 view = glm::affineInverse(glm::mat4x4(GetModelMatrix()));
+  return GetProjectionMatrix() * view;
 }
 
 URGE_ATTRIBUTE_DEFINE(

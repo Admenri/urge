@@ -18,6 +18,7 @@ class Camera : public Node {
 
  public:
   const glm::mat4x4& GetProjectionMatrix();
+  glm::mat4x4 GetViewProjectionMatrix();
 
   uint64_t culling_mask() const { return culling_mask_; }
   float near_plane() const { return near_; }

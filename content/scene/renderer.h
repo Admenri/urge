@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "content/common/vector.h"
 #include "content/resource/material.h"
 #include "content/resource/mesh.h"
 #include "content/scene/node.h"
@@ -19,12 +20,29 @@ class MeshRenderer : public Node {
   MeshRenderer(const MeshRenderer&) = delete;
   MeshRenderer& operator=(const MeshRenderer&) = delete;
 
+  Mesh* mesh() { return mesh_.get(); }
+  const std::vector<scoped_refptr<Material>>& materials() const {
+    return materials_;
+  }
+
+  const glm::vec3& bounds_min_data() const { return bounds_min_; }
+  const glm::vec3& bounds_max_data() const { return bounds_max_; }
+
  public:
   URGE_BINDING()
   static scoped_refptr<MeshRenderer> New(URGE_EXCEPTION);
 
   URGE_BINDING()
   URGE_ATTRIBUTE_DECLARE(Mesh, scoped_refptr<Mesh>);
+
+  URGE_BINDING()
+  void ComputeAABB(URGE_EXCEPTION);
+
+  URGE_BINDING()
+  scoped_refptr<Vector3> GetBoundsMin(URGE_EXCEPTION);
+
+  URGE_BINDING()
+  scoped_refptr<Vector3> GetBoundsMax(URGE_EXCEPTION);
 
   URGE_BINDING()
   scoped_refptr<Material> GetMaterialAtSlot(uint32_t slot, URGE_EXCEPTION);
@@ -41,6 +59,9 @@ class MeshRenderer : public Node {
  private:
   scoped_refptr<Mesh> mesh_;
   std::vector<scoped_refptr<Material>> materials_;
+
+  glm::vec3 bounds_min_;
+  glm::vec3 bounds_max_;
 };
 
 }  // namespace content
