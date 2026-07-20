@@ -7,95 +7,28 @@
 #include <limits>
 
 #include "glm/gtc/matrix_access.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
+
+#include "content/render/frustum.h"
+#include "content/render/graphics.h"
 
 namespace content {
-
-namespace {
-
-// Extract 6 frustum planes (world space) from view-projection matrix.
-// Uses Gribb-Hartmann method.
-void ExtractFrustumPlanes(const glm::mat4& vp, glm::vec4 planes[6]) {
-  glm::vec4 row0 = glm::row(vp, 0);
-  glm::vec4 row1 = glm::row(vp, 1);
-  glm::vec4 row2 = glm::row(vp, 2);
-  glm::vec4 row3 = glm::row(vp, 3);
-
-  // Left:   row3 + row0
-  // Right:  row3 - row0
-  // Bottom: row3 + row1
-  // Top:    row3 - row1
-  // Near:   row3 + row2
-  // Far:    row3 - row2
-  planes[0] = row3 + row0;
-  planes[1] = row3 - row0;
-  planes[2] = row3 + row1;
-  planes[3] = row3 - row1;
-  planes[4] = row3 + row2;
-  planes[5] = row3 - row2;
-
-  for (int i = 0; i < 6; i++) {
-    float len = glm::length(glm::vec3(planes[i]));
-    planes[i] /= len;
-  }
-}
-
-// Test AABB (in world space) against frustum planes.
-// Returns true if AABB is inside or intersects the frustum.
-bool AABBInFrustum(const glm::vec3& world_min,
-                   const glm::vec3& world_max,
-                   const glm::vec4 planes[6]) {
-  for (int p = 0; p < 6; p++) {
-    const glm::vec3 n(planes[p]);
-
-    // n-vertex: the AABB corner furthest in the negative normal direction
-    glm::vec3 nvert;
-    nvert.x = (n.x > 0.f) ? world_min.x : world_max.x;
-    nvert.y = (n.y > 0.f) ? world_min.y : world_max.y;
-    nvert.z = (n.z > 0.f) ? world_min.z : world_max.z;
-
-    float d = glm::dot(n, nvert) + planes[p].w;
-    if (d < 0.f)
-      return false;  // entirely outside this plane
-  }
-  return true;
-}
-
-// Transform object-space AABB to world space via model matrix.
-void TransformAABB(const glm::vec3& obj_min,
-                   const glm::vec3& obj_max,
-                   const glm::mat4& model,
-                   glm::vec3& world_min,
-                   glm::vec3& world_max) {
-  const glm::vec3 corners[8] = {
-      {obj_min.x, obj_min.y, obj_min.z}, {obj_max.x, obj_min.y, obj_min.z},
-      {obj_min.x, obj_max.y, obj_min.z}, {obj_max.x, obj_max.y, obj_min.z},
-      {obj_min.x, obj_min.y, obj_max.z}, {obj_max.x, obj_min.y, obj_max.z},
-      {obj_min.x, obj_max.y, obj_max.z}, {obj_max.x, obj_max.y, obj_max.z},
-  };
-
-  world_min = glm::vec3(std::numeric_limits<float>::max());
-  world_max = glm::vec3(std::numeric_limits<float>::lowest());
-
-  for (const auto& corner : corners) {
-    glm::vec3 pt(model * glm::vec4(corner, 1.f));
-    world_min = glm::min(world_min, pt);
-    world_max = glm::max(world_max, pt);
-  }
-}
-
-}  // namespace
 
 ///
 /// RenderContext
 ///
 
 RenderContext::RenderContext(World* world,
+                             scoped_refptr<GPUQueue> queue,
                              scoped_refptr<GPUTextureView> rtv,
                              scoped_refptr<GPUTextureView> dsv)
-    : world_(world), render_target_view_(rtv), depth_stencil_view_(dsv) {}
+    : world_(world),
+      queue_(queue),
+      render_target_view_(rtv),
+      depth_stencil_view_(dsv) {}
 
 scoped_refptr<GPUQueue> RenderContext::GetQueue(URGE_EXCEPTION) {
-  return nullptr;
+  return queue_;
 }
 
 scoped_refptr<GPUTextureView> RenderContext::GetRenderTargetView(
@@ -114,23 +47,40 @@ scoped_refptr<CullingResults> RenderContext::Cull(scoped_refptr<Camera> camera,
   if (!camera)
     return results;
 
-  // 1. Extract frustum planes (world space) from view-projection matrix
-  glm::mat4 vp = camera->GetViewProjectionMatrix();
-  glm::vec4 planes[6];
-  ExtractFrustumPlanes(vp, planes);
+  // Camera world position (double) + rotation-only view for origin-centered
+  // frustum
+  auto* camera_transform = camera->transform();
+  const auto camera_position = camera_transform->position();
+  const glm::mat4 camera_view =
+      glm::affineInverse(camera_transform->GetForwardMatrix());
+  const glm::mat4 camera_view_projection =
+      camera->GetProjectionMatrix() * camera_view;
 
-  // 2. Test each renderer's world-space AABB against the frustum
+  // Frustum planes centered at origin (camera-relative world space)
+  Frustum frustum;
+  frustum.ExtractFromMatrix(camera_view_projection);
+
   for (auto* renderer : world_->renderers_) {
-    const glm::vec3& obj_min = renderer->bounds_min_data();
-    const glm::vec3& obj_max = renderer->bounds_max_data();
+    // 1. Fast reject: culling mask
+    if (!(renderer->layer() & camera->culling_mask()))
+      continue;
 
-    // Transform AABB from object to world space
-    const glm::mat4 model = glm::mat4(renderer->GetModelMatrix());
-    glm::vec3 world_min, world_max;
-    TransformAABB(obj_min, obj_max, model, world_min, world_max);
+    // 2. Compute camera-relative model: translation offset only
+    const glm::mat4 rel_model = renderer->GetModelMatrix(camera_position);
 
-    if (AABBInFrustum(world_min, world_max, planes))
-      results->visible_renderers_.push_back(renderer);
+    // 3. Transform AABB to camera-relative space (double precision)
+    AABB renderer_local_aabb(renderer->bounds_min_data(),
+                             renderer->bounds_max_data());
+    renderer_local_aabb.Transform(rel_model);
+
+    // 4. Frustum cull against origin-centered planes (single precision)
+    if (frustum.IntersectsAABB(renderer_local_aabb)) {
+      Renderable renderable;
+      renderable.host_node = renderer;
+      renderable.cast_camera = camera.get();
+      renderable.relative_transform = glm::mat4(rel_model);
+      results->visible_renderers_.push_back(std::move(renderable));
+    }
   }
 
   return results;
@@ -141,7 +91,39 @@ void RenderContext::DrawRenderers(
     scoped_refptr<CullingResults> culling_results,
     scoped_refptr<DrawingSettings> drawing_settings,
     scoped_refptr<FilteringSettings> filtering_settings,
-    URGE_EXCEPTION) {}
+    URGE_EXCEPTION) {
+  // Filter material
+  uint64_t culling_mask =
+      filtering_settings ? filtering_settings->cullingMask : 0;
+  uint32_t min_render_queue =
+      filtering_settings ? filtering_settings->minRenderQueue : 0;
+  uint32_t max_render_queue = filtering_settings
+                                  ? filtering_settings->maxRenderQueue
+                                  : std::numeric_limits<uint32_t>::max();
+
+  for (auto& renderable : culling_results->visible_renderers_) {
+    auto* renderer = renderable.host_node;
+    // Culling mask
+    if (renderer->layer() & culling_mask) {
+      for (auto& material : renderer->materials()) {
+        // Render queue
+        if (material->render_queue() >= min_render_queue &&
+            material->render_queue() <= max_render_queue) {
+          for (auto& pass : material->passes()) {
+            // Pass name
+            if (pass->passName == drawing_settings->passName) {
+              // Collect renderable
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Sorting by criteria
+  if (drawing_settings->sortingSettings) {
+  }
+}
 
 ///
 /// CullingResults
@@ -156,7 +138,7 @@ uint32_t CullingResults::GetVisibleObjectCount(URGE_EXCEPTION) {
 scoped_refptr<MeshRenderer> CullingResults::GetVisibleObjectAt(uint32_t index,
                                                                URGE_EXCEPTION) {
   if (index < visible_renderers_.size())
-    return visible_renderers_[index];
+    return visible_renderers_[index].host_node;
   return nullptr;
 }
 
@@ -186,13 +168,16 @@ void Viewport::SetupRenderProcess(RenderCallback callback, URGE_EXCEPTION) {
 void Viewport::Render(scoped_refptr<GPUTextureView> render_target,
                       scoped_refptr<GPUTextureView> depth_stencil,
                       URGE_EXCEPTION) {
+  auto* graphics = Graphics::Instance();
+  auto* gfx = graphics->gfx();
+
   if (!render_process_.is_null()) {
     // Prepare for frame
-    PrepareFrame();
+    PrepareFrame(gfx);
 
     // Render context
     auto render_context = Object::Create<RenderContext>(
-        world_.get(), render_target, depth_stencil);
+        world_.get(), gfx->queue(), render_target, depth_stencil);
 
     // Collected cameras (viewports)
     std::vector<scoped_refptr<Camera>> cameras(world_->cameras_.begin(),
@@ -206,11 +191,11 @@ void Viewport::Render(scoped_refptr<GPUTextureView> render_target,
   }
 }
 
-void Viewport::PrepareFrame() {
+void Viewport::PrepareFrame(renderer::RenderDevice* gfx) {
   // Vertex buffer / Index buffer
   for (auto& renderer : world_->renderers_)
     if (auto* mesh = renderer->mesh(); mesh)
-      mesh->UpdateGPUBuffer();
+      mesh->UpdateGPUBuffer(gfx);
 }
 
 }  // namespace content

@@ -14,7 +14,7 @@ URGE_BINDING()
 class ShaderPass : public Object {
  public:
   URGE_BINDING()
-  emap<estring, estring> tags = {};
+  estring passName;
 
   URGE_BINDING()
   scoped_refptr<GPURenderPipeline> pipeline = nullptr;
@@ -30,6 +30,12 @@ class Material : public Object {
 
   Material(const Material&) = delete;
   Material& operator=(const Material&) = delete;
+
+  uint32_t render_queue() { return render_queue_; }
+
+  const std::vector<scoped_refptr<ShaderPass>>& passes() const {
+    return passes_;
+  }
 
  public:
   URGE_BINDING()

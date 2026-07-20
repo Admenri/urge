@@ -24,9 +24,11 @@ class Node : public Object {
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
 
+  const glm::dmat4x4& GetModelMatrix(const glm::dvec3& base_position);
   void SetupWorld(World* new_world, World* old_world);
   void ResetParent(Node* parent);
-  const glm::dmat4x4& GetModelMatrix();
+
+  Transform* transform() { return transform_.get(); }
 
   World* world() { return world_; }
   uint32_t layer() const { return layer_; }
@@ -87,6 +89,7 @@ class Node : public Object {
   bool root_node_;
   bool in_world_;
   bool transform_dirty_;
+  glm::dvec3 position_offset_;
 };
 
 }  // namespace content

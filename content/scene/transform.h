@@ -57,7 +57,12 @@ class Transform : public Constant {
   Transform(const Transform&) = delete;
   Transform& operator=(const Transform&) = delete;
 
-  glm::dmat4x4 GetModelMatrix();
+  glm::dvec3 position() { return position_->data(); }
+  glm::dquat quaternion() { return quaternion_->data(); }
+  glm::dvec3 scale() { return scale_->data(); }
+
+  glm::dmat4x4 GetModelMatrix(const glm::dvec3& position_offset);
+  glm::dmat4x4 GetForwardMatrix();
 
  public:
   URGE_BINDING()

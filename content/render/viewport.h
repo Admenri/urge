@@ -14,6 +14,12 @@
 
 namespace content {
 
+struct Renderable {
+  MeshRenderer* host_node;
+  Camera* cast_camera;
+  glm::mat4 relative_transform;
+};
+
 URGE_BINDING()
 class SortingSettings : public Object {
  public:
@@ -35,9 +41,6 @@ class SortingSettings : public Object {
 URGE_BINDING()
 class DrawingSettings : public Object {
  public:
-  URGE_BINDING()
-  estring passTag = {};
-
   URGE_BINDING()
   estring passName = {};
 
@@ -76,7 +79,7 @@ class CullingResults : public Object {
 
  private:
   friend class RenderContext;
-  std::vector<MeshRenderer*> visible_renderers_;
+  std::vector<Renderable> visible_renderers_;
 };
 
 ///
@@ -87,6 +90,7 @@ URGE_BINDING()
 class RenderContext : public Object {
  public:
   RenderContext(World* world,
+                scoped_refptr<GPUQueue> queue,
                 scoped_refptr<GPUTextureView> rtv,
                 scoped_refptr<GPUTextureView> dsv);
 
@@ -117,6 +121,7 @@ class RenderContext : public Object {
  private:
   World* world_;
 
+  scoped_refptr<GPUQueue> queue_;
   scoped_refptr<GPUTextureView> render_target_view_;
   scoped_refptr<GPUTextureView> depth_stencil_view_;
 };
@@ -154,7 +159,7 @@ class Viewport : public Object {
               URGE_EXCEPTION);
 
  private:
-  void PrepareFrame();
+  void PrepareFrame(renderer::RenderDevice* gfx);
 
   scoped_refptr<World> world_;
   RenderCallback render_process_;

@@ -39,6 +39,19 @@ Node::~Node() {
   //  2. When node detached from parent, we dont need to detach again.
 }
 
+const glm::dmat4x4& Node::GetModelMatrix(const glm::dvec3& base_position) {
+  if (transform_dirty_ || position_offset_ != base_position) {
+    position_offset_ = base_position;
+    transform_dirty_ = false;
+
+    model_ = transform_->GetModelMatrix(base_position);
+    if (parent_)
+      model_ = parent_->GetModelMatrix(base_position) * model_;
+  }
+
+  return model_;
+}
+
 void Node::SetupWorld(World* new_world, World* old_world) {
   if (new_world == old_world)
     return;
@@ -78,18 +91,6 @@ void Node::ResetParent(Node* parent) {
 
   // Transform notification
   TransformChange();
-}
-
-const glm::dmat4x4& Node::GetModelMatrix() {
-  if (transform_dirty_) {
-    transform_dirty_ = false;
-
-    model_ = transform_->GetModelMatrix();
-    if (parent_)
-      model_ = parent_->GetModelMatrix() * model_;
-  }
-
-  return model_;
 }
 
 URGE_ATTRIBUTE_DEFINE(

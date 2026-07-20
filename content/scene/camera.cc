@@ -30,9 +30,8 @@ const glm::mat4x4& Camera::GetProjectionMatrix() {
   return projection_;
 }
 
-glm::mat4x4 Camera::GetViewProjectionMatrix() {
-  // View matrix = inverse of camera's world-space model
-  glm::mat4x4 view = glm::affineInverse(glm::mat4x4(GetModelMatrix()));
+glm::mat4x4 Camera::GetViewProjection() {
+  auto view = glm::affineInverse(glm::mat4(GetModelMatrix()));
   return GetProjectionMatrix() * view;
 }
 

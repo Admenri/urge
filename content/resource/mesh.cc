@@ -15,13 +15,9 @@ Mesh::Mesh(uint32_t vertex_bytes, uint32_t index_count) {
   indices_.assign(index_count, 0);
 }
 
-void Mesh::UpdateGPUBuffer() {
-  auto* graphics = Graphics::Instance();
-  if (!graphics || !graphics->gfx())
-    return;
-
-  const auto& device = graphics->gfx()->device();
-  const auto& queue = graphics->gfx()->queue();
+void Mesh::UpdateGPUBuffer(renderer::RenderDevice* gfx) {
+  const auto& device = gfx->device();
+  const auto& queue = gfx->queue();
 
   // --- Vertex buffer ---
   if (!vertices_.empty()) {

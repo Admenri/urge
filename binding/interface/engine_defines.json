@@ -4550,11 +4550,6 @@
       "member": [
         {
           "desc": {},
-          "name": "passTag",
-          "type": "estring"
-        },
-        {
-          "desc": {},
           "name": "passName",
           "type": "estring"
         },
@@ -4738,8 +4733,8 @@
       "member": [
         {
           "desc": {},
-          "name": "tags",
-          "type": "emap<estring, estring>"
+          "name": "passName",
+          "type": "estring"
         },
         {
           "desc": {},

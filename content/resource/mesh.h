@@ -52,7 +52,7 @@ class Mesh : public Object {
   Mesh(const Mesh&) = delete;
   Mesh& operator=(const Mesh&) = delete;
 
-  void UpdateGPUBuffer();
+  void UpdateGPUBuffer(renderer::RenderDevice* gfx);
 
   wgpu::Buffer& vertex_buffer() { return vertex_buffer_; }
   wgpu::Buffer& index_buffer() { return index_buffer_; }

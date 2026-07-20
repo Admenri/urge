@@ -88,13 +88,24 @@ Transform::Transform()
   scale_->set_change_handler(value_change_handler);
 }
 
-glm::dmat4x4 Transform::GetModelMatrix() {
+glm::dmat4x4 Transform::GetModelMatrix(const glm::dvec3& position_offset) {
   const auto& position = position_->data();
   const auto& quaternion = quaternion_->data();
   const auto& scale = scale_->data();
 
   glm::dmat4 model(1.0);
   model = glm::translate(model, position);
+  model = model * glm::mat4_cast(quaternion);
+  model = glm::scale(model, scale);
+
+  return model;
+}
+
+glm::dmat4x4 Transform::GetForwardMatrix() {
+  const auto& quaternion = quaternion_->data();
+  const auto& scale = scale_->data();
+
+  glm::dmat4 model(1.0);
   model = model * glm::mat4_cast(quaternion);
   model = glm::scale(model, scale);
 
