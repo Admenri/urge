@@ -75,10 +75,8 @@ PrimitiveEmitter& PrimitiveEmitter::BeginQuad() {
 }
 
 std::span<const VertexData> PrimitiveEmitter::End() {
-  if (!active_) {
-    LOG_WARN("primitive emitter has no active batch, End() is ignored.");
+  if (!active_)
     return {};
-  }
 
   active_ = false;
   return vertices_;

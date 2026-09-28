@@ -9,4 +9,4 @@ target_link_libraries(urge-core PUBLIC webgpu-cpp-header webgpu_wgpu)
 
 # The engine shaders are GLSL: glslang compiles them, spirv-reflect reads the
 # layout of them and the Tint subset writes the WGSL the device is asked for
-target_link_libraries(urge-core PUBLIC glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-reflect tint-extract)
+target_link_libraries(urge-core PUBLIC glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-reflect)

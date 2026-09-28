@@ -34,10 +34,6 @@
 
 #include "spirv_reflect.h"
 
-#include "src/tint/lang/spirv/reader/reader.h"
-#include "src/tint/lang/wgsl/writer/writer.h"
-#include "src/tint/utils/diagnostic/formatter.h"
-
 #include "core/exception.h"
 #include "core/gpu.h"
 
@@ -190,14 +186,15 @@ ShaderReflection ReflectSpirv(const std::vector<uint32_t>& spirv) {
 //! Creates the module of a stage from the WGSL the shader was translated to.
 wgpu::ShaderModule CreateModule(const Shader& shader) {
   wgpu::ShaderModuleDescriptor module_desc;
-  wgpu::ShaderSourceWGSL wgsl;
-  wgsl.code = std::string_view(shader.wgsl());
-  module_desc.nextInChain = &wgsl;
+  wgpu::ShaderSourceSPIRV spirv;
+  spirv.code = shader.spirv().data();
+  spirv.codeSize = shader.spirv().size();
+  module_desc.nextInChain = &spirv;
 
   wgpu::ShaderModule module =
       GPUDevice::Get().device().CreateShaderModule(&module_desc);
   if (module == nullptr)
-    Fail("module", "the device rejected the WGSL of the shader");
+    Fail("module", "the device rejected the SPIRV of the shader");
   return module;
 }
 
@@ -301,18 +298,7 @@ Shader Shader::Compile(wgpu::ShaderStage stage, std::string_view glsl) {
 
   Shader shader;
   shader.reflection_ = ReflectSpirv(spirv);
-
-  tint::Program program = tint::spirv::reader::Read(spirv, {});
-  if (!program.IsValid()) {
-    tint::diag::Formatter formatter;
-    Fail("translate", formatter.Format(program.Diagnostics()).Plain());
-  }
-
-  auto wgsl = tint::wgsl::writer::Generate(program, {});
-  if (wgsl != tint::Success)
-    Fail("write", "the WGSL writer rejected the SPIR-V");
-
-  shader.wgsl_ = wgsl.Get().wgsl;
+  shader.spirv_ = spirv;
   // The reader names the entry point after the SPIR-V entry point
   shader.entry_point_ = "main";
   return shader;

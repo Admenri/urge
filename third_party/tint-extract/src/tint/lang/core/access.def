@@ -1,6 +1,0 @@
-// https://gpuweb.github.io/gpuweb/wgsl/#memory-access-mode
-enum access {
-  read
-  write
-  read_write
-}

@@ -23,8 +23,8 @@
 #pragma once
 
 #include <array>
-#include <map>
 #include <variant>
+#include <vector>
 
 #include "SDL3/SDL_video.h"
 #include "webgpu/webgpu_cpp.hpp"
@@ -47,6 +47,14 @@ class GPUDevice : public Singleton<GPUDevice> {
 
   void WaitAny(wgpu::Future future);
 
+  /*! Blocks until the device has run out of work when \p wait is set, or
+     returns as soon as it can when it is not.
+      \remarks wgpu-native does not implement the future API of WebGPU yet,
+      wgpuBufferMapAsync() returns an empty future and GPUDevice::WaitAny has
+      therefore nothing to wait for. Polling the device is what drives the
+      callback of an asynchronous operation to its completion. */
+  void Poll(bool wait);
+
  private:
   //! Requests the adapter and the device, with the surface when there is one.
   void CreateDevice();
@@ -62,19 +70,23 @@ struct WBufferSet {
   wgpu::Buffer buffer;
   uint64_t offset = 0;
   uint64_t size = WGPU_WHOLE_SIZE;
+  WBufferSet(wgpu::Buffer b) : buffer(b) {}
 };
 
 struct WSamplerSet {
   wgpu::Sampler sampler;
+  WSamplerSet(wgpu::Sampler s) : sampler(s) {}
 };
 
 struct WTextureViewSet {
   wgpu::TextureView view;
+  WTextureViewSet(wgpu::TextureView v) : view(v) {}
 };
 
 using WBinding = std::variant<WBufferSet, WSamplerSet, WTextureViewSet>;
-inline wgpu::BindGroup CreateWGroup(wgpu::BindGroupLayout layout,
-                                    const std::map<uint32_t, WBinding>& sets) {
+inline wgpu::BindGroup CreateWGroup(
+    wgpu::BindGroupLayout layout,
+    const std::vector<std::pair<uint32_t, WBinding>>& sets) {
   std::vector<wgpu::BindGroupEntry> entries;
   for (auto& set : sets) {
     wgpu::BindGroupEntry entry;
@@ -100,7 +112,7 @@ inline wgpu::BindGroup CreateWGroup(wgpu::BindGroupLayout layout,
   group_desc.layout = layout;
   group_desc.entryCount = entries.size();
   group_desc.entries = entries.data();
-  GPUDevice::Get().device().CreateBindGroup(&group_desc);
+  return GPUDevice::Get().device().CreateBindGroup(&group_desc);
 }
 
 }  // namespace urge

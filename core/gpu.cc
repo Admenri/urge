@@ -22,13 +22,86 @@
 
 #include "core/gpu.h"
 
+#include <string_view>
+
 #include "SDL3/SDL_platform_defines.h"
+
+// The logging entry points of wgpu-native are native extensions, they live next
+// to the standard WebGPU header rather than inside it.
+#include "wgpu.h"
+
+#include "core/logger.h"
 
 namespace urge {
 
+namespace {
+
+//! Translates a message level of wgpu-native into the level of the engine.
+LogLevel FromWGPULogLevel(WGPULogLevel level) {
+  switch (level) {
+    case WGPULogLevel_Error:
+      return LogLevel::kError;
+    case WGPULogLevel_Warn:
+      return LogLevel::kWarn;
+    case WGPULogLevel_Info:
+      return LogLevel::kInfo;
+    case WGPULogLevel_Debug:
+      return LogLevel::kDebug;
+    case WGPULogLevel_Trace:
+      return LogLevel::kTrace;
+    default:
+      return LogLevel::kOff;
+  }
+}
+
+//! Receives the messages of wgpu-native. Without a callback installed the
+//! backend drops a validation error, which is what happens to a draw call that
+//! is rejected for a reason the engine never gets to know.
+//! \remarks The callback may run on the thread that raised the message, and the
+//! messages are multi-line blocks of text.
+void OnWGPULog(WGPULogLevel level, WGPUStringView message, void* /*userdata*/) {
+  const LogLevel engine_level = FromWGPULogLevel(level);
+  if (engine_level == LogLevel::kOff)
+    return;
+
+  // wgpu::StringView resolves the WGPU_STRLEN sentinel, the message of a
+  // callback is not necessarily null terminated.
+  const std::string_view text = wgpu::StringView(message);
+
+  // The location of the message is inside wgpu-native, a file and a line of the
+  // engine would be misleading, so the source is marked instead.
+  LogMessage(engine_level, "[wgpu] ", "{}", text);
+}
+
+//! Installs the callback and asks for the messages an engine is interested in.
+//! The level of wgpu-native is a ceiling of its own, a level that is not
+//! requested here can never be raised by SetLogLevel() afterwards.
+//! \remarks Debug is deliberately not requested, it is the level the Vulkan
+//! loader reports every internal step of the instance creation with, which
+//! buries the validation errors this callback exists for.
+void InstallWGPULogger() {
+  wgpuSetLogCallback(&OnWGPULog, nullptr);
+
+#if defined(NDEBUG)
+  wgpuSetLogLevel(WGPULogLevel_Warn);
+#else
+  wgpuSetLogLevel(WGPULogLevel_Info);
+#endif
+}
+
+}  // namespace
+
 GPUDevice::GPUDevice(SDL_Window* window) {
+  // The callback is installed before the instance is created so that a message
+  // of the instance, the adapter and the device is not lost.
+  InstallWGPULogger();
+
   // Instance
   wgpu::InstanceDescriptor instance_desc;
+  instance_desc.requiredFeatureCount = 1;
+  wgpu::InstanceFeatureName spirv =
+      wgpu::InstanceFeatureName::ShaderSourceSPIRV;
+  instance_desc.requiredFeatures = &spirv;
   instance_ = wgpu::CreateInstance(&instance_desc);
 
   // Platform Surface, a device without a window cannot present
@@ -95,6 +168,10 @@ void GPUDevice::WaitAny(wgpu::Future future) {
   wgpu::FutureWaitInfo wait_info;
   wait_info.future = future;
   instance_.WaitAny(1, &wait_info, UINT64_MAX);
+}
+
+void GPUDevice::Poll(bool wait) {
+  wgpuDevicePoll(device_.Get(), wait ? 1u : 0u, nullptr);
 }
 
 }  // namespace urge

@@ -25,12 +25,15 @@
 #include <algorithm>
 #include <cstring>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "SDL3_image/SDL_image.h"
-#include "glm/gtc/matrix_transform.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
 
 #include "core/filesystem.h"
+#include "core/pipeline.h"
 
 namespace urge {
 
@@ -112,6 +115,35 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   }
 }
 
+//! Outcome of an asynchronous buffer mapping, filled in by the callback the
+//! device invokes once the copy has been submitted.
+struct MapResult {
+  //! The callback runs but once, so the state below is the final one.
+  bool invoked = false;
+  WGPUMapAsyncStatus status = WGPUMapAsyncStatus_Error;
+  std::string error;
+};
+
+//! A readable form of the status of a mapping, the callback of a valid mapping
+//! is not always given a reason.
+std::string_view DescribeMapStatus(const MapResult& mapping) {
+  if (!mapping.invoked)
+    return "the mapping callback was never invoked";
+
+  switch (mapping.status) {
+    case WGPUMapAsyncStatus_Success:
+      return "the mapping succeeded but the buffer is not usable";
+    case WGPUMapAsyncStatus_CallbackCancelled:
+      return "the mapping was cancelled";
+    case WGPUMapAsyncStatus_Error:
+      return "the mapping failed with an error";
+    case WGPUMapAsyncStatus_Aborted:
+      return "the mapping was aborted, the device is probably lost";
+    default:
+      return "the mapping ended with an unknown status";
+  }
+}
+
 //! Reads back the width x height texels of texture which start at (x, y) into
 //! host memory. A texture itself can not be mapped, so the region is copied
 //! into a mappable staging buffer first, which is then mapped and waited for.
@@ -166,22 +198,49 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   gpu.queue().Submit(1, &command);
 
   // The copy is asynchronous, so the mapping is waited for before reading
-  bool mapped = false;
+  MapResult mapping;
   WGPUBufferMapCallbackInfo map_callback = {};
   map_callback.mode = WGPUCallbackMode_WaitAnyOnly;
-  map_callback.callback = [](WGPUMapAsyncStatus status, WGPUStringView,
+  map_callback.callback = [](WGPUMapAsyncStatus status, WGPUStringView message,
                              void* userdata1, void*) {
-    *static_cast<bool*>(userdata1) = status == WGPUMapAsyncStatus_Success;
+    auto* result = static_cast<MapResult*>(userdata1);
+    result->invoked = true;
+    result->status = status;
+    if (status != WGPUMapAsyncStatus_Success)
+      result->error = std::string(wgpu::StringView(message));
   };
-  map_callback.userdata1 = &mapped;
+  map_callback.userdata1 = &mapping;
 
-  gpu.WaitAny(
-      staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback));
+  staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
+
+  /* GPUDevice::WaitAny cannot be used here: wgpu-native does not implement the
+     future API yet, its wgpuBufferMapAsync() ends with a "TODO: Properly handle
+     futures" and returns an empty future, so there is nothing to wait for and
+     the callback above would never run. Polling the device blocks on the queue
+     and is what completes the mapping. */
+  gpu.Poll(true);
+
+  /* GetMappedRange() is what raises the "buffer is not mapped" validation
+     error, and wgpu-native panics on it instead of reporting it, so the status
+     of the mapping has to be checked before the pointer is asked for. */
+  if (mapping.status != WGPUMapAsyncStatus_Success) {
+    throw Exception(Exception::kRGSSError,
+                    "failed to map the staging buffer of a texture read back, "
+                    "{}: {}.",
+                    DescribeMapStatus(mapping),
+                    mapping.error.empty()
+                        ? std::string_view("the backend gave no reason")
+                        : std::string_view(mapping.error));
+  }
 
   const auto* mapped_range = static_cast<const std::uint8_t*>(
       staging.GetConstMappedRange(0, byte_size));
-  if (!mapped || !mapped_range)
-    throw Exception(Exception::kRGSSError, "failed to read back the texture.");
+  if (!mapped_range) {
+    throw Exception(Exception::kRGSSError,
+                    "the staging buffer of a texture read back is mapped but "
+                    "does not expose a range of {} bytes.",
+                    byte_size);
+  }
 
   // The aligned row pitch of the staging buffer is dropped here
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(pixel_pitch) *
@@ -279,7 +338,35 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  // TODO
+  auto vertices_data =
+      primitive_
+          .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
+                    Vec4(opacity / 255.0f))
+          .End();
+
+  auto buffer = AcquireBuffer(vertices_data.size_bytes());
+  GPUDevice::Get().queue().WriteBuffer(buffer, 0, vertices_data.data(),
+                                       vertices_data.size_bytes());
+
+  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+  wgpu::RenderPassColorAttachment color_attachment;
+  color_attachment.view = view_;
+  color_attachment.loadOp = wgpu::LoadOp::Load;
+  color_attachment.storeOp = wgpu::StoreOp::Store;
+  wgpu::RenderPassDescriptor pass_desc;
+  pass_desc.colorAttachmentCount = 1;
+  pass_desc.colorAttachments = &color_attachment;
+  auto pass = encoder.BeginRenderPass(&pass_desc);
+  auto pipeline = ShaderSet::Get().state.texture_pma;
+  pass.SetPipeline(pipeline);
+  pass.SetBindGroup(0, scene_group_, 0, nullptr);
+  pass.SetBindGroup(1, object_group_, 0, nullptr);
+  pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
+  pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
+  pass.Draw(6, 1, 0, 0);
+  pass.End();
+  auto command = encoder.Finish(nullptr);
+  GPUDevice::Get().queue().Submit(1, &command);
 }
 
 void Bitmap::FillRect(int32_t x,
@@ -317,7 +404,39 @@ void Bitmap::GradientFillRect(int32_t x,
   if (!color1 || !color2)
     throw Exception(Exception::kRGSSError, "invalid color value.");
 
-  // TODO
+  auto color1_norm = color1->Normalize();
+  auto color2_norm = color2->Normalize();
+
+  if (vertical)
+    primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
+                        color1_norm, color2_norm, color2_norm);
+  else
+    primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
+                        color2_norm, color1_norm, color2_norm);
+  auto vertices_data = primitive_.End();
+
+  auto buffer = AcquireBuffer(vertices_data.size_bytes());
+  GPUDevice::Get().queue().WriteBuffer(buffer, 0, vertices_data.data(),
+                                       vertices_data.size_bytes());
+
+  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+  wgpu::RenderPassColorAttachment color_attachment;
+  color_attachment.view = view_;
+  color_attachment.loadOp = wgpu::LoadOp::Load;
+  color_attachment.storeOp = wgpu::StoreOp::Store;
+  wgpu::RenderPassDescriptor pass_desc;
+  pass_desc.colorAttachmentCount = 1;
+  pass_desc.colorAttachments = &color_attachment;
+  auto pass = encoder.BeginRenderPass(&pass_desc);
+  auto pipeline = ShaderSet::Get().state.color_none;
+  pass.SetPipeline(pipeline);
+  pass.SetBindGroup(0, scene_group_, 0, nullptr);
+  pass.SetBindGroup(1, object_group_, 0, nullptr);
+  pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
+  pass.Draw(6, 1, 0, 0);
+  pass.End();
+  auto command = encoder.Finish(nullptr);
+  GPUDevice::Get().queue().Submit(1, &command);
 }
 
 void Bitmap::GradientFillRect(RefPtr<Rect> rect,
@@ -509,6 +628,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   texture_desc.size.height = data->h;
   texture_desc.format = wgpu::TextureFormat::RGBA8Unorm;
   texture_ = GPUDevice::Get().device().CreateTexture(&texture_desc);
+  view_ = texture_.CreateView(nullptr);
 
   // Depth stencil
   wgpu::TextureDescriptor depth_stencil_desc;
@@ -535,8 +655,69 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
                                         data->pitch * data->h, &buffer_layout,
                                         &target_size);
 
+  // Uniform data
+  SceneData scene_uniform = {};
+  /* The arguments are spelled as floats on purpose: glm::ortho is a template,
+     an integer argument list would deduce T = int and the divisions inside
+     the function would be carried out in integer arithmetic, which turns the
+     scales of the matrix into zero and collapses every vertex. */
+  scene_uniform.view_proj_mat =
+      glm::ortho(0.0f, static_cast<float>(size_.x),
+                 static_cast<float>(size_.y), 0.0f);
+  ObjectData object_uniform = {};
+  object_uniform.model_mat = glm::mat4x4(1.0f);
+
+  wgpu::BufferDescriptor uniform_desc;
+  uniform_desc.mappedAtCreation = true;
+  uniform_desc.usage = wgpu::BufferUsage::Uniform;
+  uniform_desc.size = sizeof(scene_uniform);
+  scene_uniform_ = GPUDevice::Get().device().CreateBuffer(&uniform_desc);
+  uniform_desc.size = sizeof(object_uniform);
+  object_uniform_ = GPUDevice::Get().device().CreateBuffer(&uniform_desc);
+
+  std::memcpy(scene_uniform_.GetMappedRange(0, WGPU_WHOLE_MAP_SIZE),
+              &scene_uniform, sizeof(scene_uniform));
+  scene_uniform_.Unmap();
+  std::memcpy(object_uniform_.GetMappedRange(0, WGPU_WHOLE_MAP_SIZE),
+              &object_uniform, sizeof(object_uniform));
+  object_uniform_.Unmap();
+
+  // Sampler
+  wgpu::SamplerDescriptor sampler_desc;
+  sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.magFilter = wgpu::FilterMode::Nearest;
+  sampler_desc.minFilter = wgpu::FilterMode::Nearest;
+  sampler_ = GPUDevice::Get().device().CreateSampler(&sampler_desc);
+
   // Release cpu data
   SDL_DestroySurface(data);
+
+  CreateGroup();
+}
+
+void Bitmap::CreateGroup() {
+  auto pipeline = ShaderSet::Get().state.texture_pma;
+
+  scene_group_ = CreateWGroup(pipeline.GetBindGroupLayout(0),
+                              {{0, WBufferSet(scene_uniform_)}});
+  object_group_ = CreateWGroup(pipeline.GetBindGroupLayout(1),
+                               {{0, WBufferSet(object_uniform_)}});
+  texture_group_ =
+      CreateWGroup(pipeline.GetBindGroupLayout(2),
+                   {{0, WTextureViewSet(view_)}, {1, WSamplerSet(sampler_)}});
+}
+
+wgpu::Buffer Bitmap::AcquireBuffer(size_t size) {
+  if (!vertex_buffer_ || vertex_buffer_.GetSize() < size) {
+    wgpu::BufferDescriptor buffer_desc;
+    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+    buffer_desc.size = size;
+    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
+  }
+
+  return vertex_buffer_;
 }
 
 }  // namespace urge

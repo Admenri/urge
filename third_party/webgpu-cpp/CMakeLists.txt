@@ -32,4 +32,11 @@ endif ()
 add_library(webgpu-cpp-header INTERFACE)
 target_include_directories(webgpu-cpp-header INTERFACE
   $<BUILD_INTERFACE:${WEBGPUCPP_INCLUDE_DIR}>
+  # The native extensions of wgpu-native, wgpuSetLogCallback() among them, are
+  # declared in ffi/wgpu.h and are not part of the standard header the wrapper
+  # is generated from. ffi/ is exposed so that "wgpu.h" can be included, and
+  # ffi/webgpu-headers/ so that the "webgpu.h" it includes resolves to the very
+  # same header that was copied into the directory above.
+  $<BUILD_INTERFACE:${_WEBGPU_HEADER_DIR}/wgpu-cmake/wgpu-native/ffi>
+  $<BUILD_INTERFACE:${_WEBGPU_HEADER_DIR}/wgpu-cmake/wgpu-native/ffi/webgpu-headers>
 )

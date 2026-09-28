@@ -255,8 +255,11 @@ TransitionVague::TransitionVague()
 
 ShaderSet::ShaderSet() : shader() {
   wgpu::PrimitiveState primitive;
+  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
   wgpu::TextureFormat target = wgpu::TextureFormat::RGBA8Unorm;
 
+  state.texture_none = shader.texture_base.MakeState(
+      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
   state.texture_pma = shader.texture_base.MakeState(
       primitive, std::nullopt,
       {wgpu::ColorTargetState{.format = target,

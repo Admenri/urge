@@ -26,6 +26,7 @@
 #include "core/font.h"
 #include "core/gpu.h"
 #include "core/palette.h"
+#include "core/primitive.h"
 #include "core/utility.h"
 
 namespace urge {
@@ -92,19 +93,32 @@ class Bitmap : public Disposable {
 
   wgpu::Texture texture() { return texture_; }
   wgpu::Texture depth_stencil() { return depth_stencil_; }
+  wgpu::Sampler sampler() { return sampler_; }
+
+  wgpu::BindGroup scene_group() { return scene_group_; }
+  wgpu::BindGroup object_group() { return object_group_; }
+  wgpu::BindGroup texture_group() { return texture_group_; }
 
  private:
   void DisposeObject() override;
   void CreateInternal(SDL_Surface* data);
+  void CreateGroup();
+  wgpu::Buffer AcquireBuffer(size_t size);
 
   RefPtr<Font> font_;
 
   Vec2i size_;
   wgpu::Texture texture_;
+  wgpu::TextureView view_;
   wgpu::Texture depth_stencil_;
 
-  wgpu::BindGroup scene_group_, object_group_;
   wgpu::Buffer scene_uniform_, object_uniform_;
+  wgpu::Sampler sampler_;
+
+  PrimitiveEmitter primitive_;
+  wgpu::Buffer vertex_buffer_;
+
+  wgpu::BindGroup scene_group_, object_group_, texture_group_;
 };
 
 }  // namespace urge

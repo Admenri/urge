@@ -88,6 +88,9 @@ class Graphics : public Singleton<Graphics> {
   bool frozen_ = false;
   int32_t brightness_ = 255;
   bool configured_ = false;
+
+  PrimitiveEmitter primitive_;
+  wgpu::Buffer vertex_buffer_;
 };
 
 }  // namespace urge

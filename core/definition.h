@@ -25,14 +25,7 @@
 #include <optional>
 #include <string>
 
-#include "spdlog/spdlog.h"
-
 #include "core/refptr.h"
-
-// Debug logging
-#define LOG_INFO spdlog::info
-#define LOG_WARN spdlog::warn
-#define LOG_ERROR spdlog::error
 
 // Binding autogen
 #define URGE_BINDING(...)

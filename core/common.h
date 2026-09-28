@@ -141,6 +141,15 @@ class RectF {
   float x, y, width, height;
 };
 
+inline RectF MakeNorm(RectF rect, Vec2 size) {
+  RectF result = rect;
+  result.x /= size.x;
+  result.y /= size.y;
+  result.width /= size.x;
+  result.height /= size.y;
+  return result;
+}
+
 inline RectI MakeIntersect(const RectI& A, const RectI& B) {
   int32_t Amin, Amax, Bmin, Bmax;
   RectI result;
