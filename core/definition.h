@@ -1,0 +1,50 @@
+// Licensed under the MIT License <http://opensource.org/licenses/MIT>.
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Admenri Adev <admenri0504@gmail.com>.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#pragma once
+
+#include <optional>
+#include <string>
+
+#include "spdlog/spdlog.h"
+
+#include "core/refptr.h"
+
+// Debug logging
+#define LOG_INFO spdlog::info
+#define LOG_WARN spdlog::warn
+#define LOG_ERROR spdlog::error
+
+// Binding autogen
+#define URGE_BINDING(...)
+
+// Klass attribute
+#define ATTR(ty, name) \
+  std::optional<ty> Attr_##name(std::optional<ty> value = std::nullopt)
+#define ATTR_DEF(klass, ty, name) \
+  std::optional<ty> klass::Attr_##name(std::optional<ty> value)
+
+// Klass serialization
+#define MARSHAL_DUMP(ty) static std::string MarshalDump(RefPtr<ty> obj);
+#define MARSHAL_DUMP_DEF(ty) std::string ty::MarshalDump(RefPtr<ty> obj)
+#define MARSHAL_LOAD(ty) static RefPtr<ty> MarshalLoad(std::string data);
+#define MARSHAL_LOAD_DEF(ty) RefPtr<ty> ty::MarshalLoad(std::string data)
