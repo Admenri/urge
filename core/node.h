@@ -83,12 +83,17 @@ class Node : public Disposable {
   RefPtr<Node> parent_;
   bool world_root_ = false;
 
-  struct {
+  struct Transform3D {
     RefPtr<Vector3> position;
     RefPtr<Vector4> quaternion;
     RefPtr<Vector3> scale;
     Mat4x4 local = Mat4x4(1.0f);
     Mat4x4 world = Mat4x4(1.0f);
+
+    Transform3D()
+        : position(MakeRefCounted<Vector3>(0.0f)),
+          quaternion(MakeRefCounted<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
+          scale(MakeRefCounted<Vector3>(1.0f)) {}
   } transform_;
 };
 

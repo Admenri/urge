@@ -58,10 +58,10 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.target = nullptr;
   context.scene = nullptr;
 
-  /* The prepare stage is what reserves the slots of the bulk uniform data, so it
-     opens and closes a frame of the pools: the slots are staged by the prepare
-     callbacks and written into the pool buffers before the command buffer of
-     this frame is submitted below. */
+  /* The prepare stage is what reserves the slots of the bulk uniform data, so
+     it opens and closes a frame of the pools: the slots are staged by the
+     prepare callbacks and written into the pool buffers before the command
+     buffer of this frame is submitted below. */
   UniformManager& uniforms = UniformManager::Get();
   uniforms.BeginFrame();
 
@@ -83,19 +83,18 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   wgpu::RenderPassDescriptor render_pass_desc;
   render_pass_desc.colorAttachmentCount = 1;
   render_pass_desc.colorAttachments = &color_attachment;
-  auto pass = encoder.BeginRenderPass(&render_pass_desc);
-
-  std::stack<Mat4x4> empty_model;
-  context.model.swap(empty_model);
-  context.command = nullptr;
-  context.pass = pass;
+  context.pass = encoder.BeginRenderPass(&render_pass_desc);
   context.target = target;
   context.scene = target->scene_group();
+  context.scissors.push(RectI(0, 0, target->GetWidth(), target->GetHeight()));
+  context.pass.SetScissorRect(0, 0, target->GetWidth(), target->GetHeight());
 
   ExecuteRendering(&context);
 
-  pass.End();
-
+  /* A viewport leaves the pass of the frame and enters another one to draw its
+     effect, so the pass which has to be ended is the one the context holds and
+     not the one this function opened. */
+  context.pass.End();
   auto command_buffer = encoder.Finish(nullptr);
   GPUDevice::Get().queue().Submit(1, &command_buffer);
 }

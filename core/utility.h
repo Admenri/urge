@@ -35,7 +35,7 @@ class Rect : public Object {
   /*-export.begin-*/
   Rect(int32_t xv, int32_t yv, int32_t wv, int32_t hv) : data(xv, yv, wv, hv) {}
   Rect(RefPtr<Rect> o) : data(o->data) {}
-  Rect() {}
+  Rect() : data() {}
 
   MARSHAL_DUMP(Rect);
   MARSHAL_LOAD(Rect);
@@ -84,10 +84,18 @@ class Rect : public Object {
 
 class Color : public Object {
  public:
+  static inline RefPtr<Color> White() {
+    return MakeRefCounted<Color>(255.0f, 255.0f, 255.0f, 255.0f);
+  }
+
+  static inline RefPtr<Color> Black() {
+    return MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 255.0f);
+  }
+
   /*-export.begin-*/
   Color(float r, float g, float b, float a = 255.f) : data(r, g, b, a) {}
   Color(RefPtr<Color> o) : data(o->data) {}
-  Color() {}
+  Color() : data(0.0f) {}
 
   MARSHAL_DUMP(Color);
   MARSHAL_LOAD(Color);
@@ -146,7 +154,7 @@ class Tone : public Object {
   /*-export.begin-*/
   Tone(float r, float g, float b, float a = 0.f) : data(r, g, b, a) {}
   Tone(RefPtr<Tone> o) : data(o->data) {}
-  Tone() {}
+  Tone() : data(0.0f) {}
 
   MARSHAL_DUMP(Tone);
   MARSHAL_LOAD(Tone);
@@ -202,10 +210,13 @@ class Tone : public Object {
 
 class Vector2 : public Object {
  public:
+  Vector2(Vec2 d) : data(d) {}
+
   /*-export.begin-*/
   Vector2(float xv, float yv) : data(xv, yv) {}
   Vector2(RefPtr<Vector2> o) : data(o->data) {}
-  Vector2() {}
+  Vector2(float v) : data(v) {}
+  Vector2() : data(0.0f) {}
 
   void Set(float xv, float yv) { data = Vec2(xv, yv); }
 
@@ -223,10 +234,13 @@ class Vector2 : public Object {
 
 class Vector3 : public Object {
  public:
+  Vector3(Vec3 d) : data(d) {}
+
   /*-export.begin-*/
   Vector3(float xv, float yv, float zv) : data(xv, yv, zv) {}
   Vector3(RefPtr<Vector3> o) : data(o->data) {}
-  Vector3() {}
+  Vector3(float v) : data(v) {}
+  Vector3() : data(0.0f) {}
 
   void Set(float xv, float yv, float zv) { data = Vec3(xv, yv, zv); }
 
@@ -244,10 +258,13 @@ class Vector3 : public Object {
 
 class Vector4 : public Object {
  public:
+  Vector4(Vec4 d) : data(d) {}
+
   /*-export.begin-*/
   Vector4(float xv, float yv, float zv, float wv) : data(xv, yv, zv, wv) {}
   Vector4(RefPtr<Vector4> o) : data(o->data) {}
-  Vector4() {}
+  Vector4(float v) : data(v) {}
+  Vector4() : data(0.0f) {}
 
   void Set(float xv, float yv, float zv, float wv) {
     data = Vec4(xv, yv, zv, wv);

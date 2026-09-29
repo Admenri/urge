@@ -30,11 +30,13 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_messagebox.h"
+#include "SDL3_image/SDL_image.h"
 
 #include "app/platform/win32.h"
 
 #include "core/config.h"
 #include "core/filesystem.h"
+#include "core/gpu.h"
 #include "core/graphics.h"
 #include "core/logger.h"
 #include "core/sprite.h"
@@ -45,12 +47,15 @@ namespace {
 using urge::Bitmap;
 using urge::Color;
 using urge::Graphics;
+using urge::GPUDevice;
 using urge::MakeRefCounted;
 using urge::RefPtr;
 using urge::Sprite;
+using urge::Tone;
 using urge::UniformBlockPool;
 using urge::UniformManager;
 using urge::Vec4;
+using urge::Viewport;
 
 /* --------------------------------------------------------------------------
    Test scene
@@ -96,6 +101,14 @@ RefPtr<Sprite> test_rotated;
 //! The grid of small sprites, at (kGridOriginX, kGridOriginY) and beyond.
 RefPtr<Sprite> test_grid[kGridSprites];
 
+//! TEMPORARY PROBE: the viewport which blends a color over the region it
+//! covers.
+RefPtr<Viewport> test_vp;
+RefPtr<Sprite> test_vp_child;
+RefPtr<Bitmap> test_vp_tex;
+//! TEMPORARY PROBE: the viewport whose color leaves its region almost alone.
+RefPtr<Viewport> test_vp_flat;
+
 //! The frames the application ran, the probes wait for kProbeFrame of them.
 int32_t frame_counter = 0;
 //! True once the probes ran, they are only interested in one frame.
@@ -107,7 +120,8 @@ struct ProbePoint {
   const char* label;
   int32_t x;
   int32_t y;
-  //! True when a sprite has to reach the point, false when it has to stay black.
+  //! True when a sprite has to reach the point, false when it has to stay
+  //! black.
   bool covered;
 };
 
@@ -167,6 +181,12 @@ void CreateTestScene() {
   test_plain->Attr_Bitmap(test_bitmap);
   test_plain->Attr_X(10);
   test_plain->Attr_Y(10);
+  /* The opacity halves the sprite and the tone of gray 255 turns it into the
+     luminance of its texels, so the region of the viewport which lies on it
+     tints the pixels of a flat image and the effect of the tone is readable
+     from a single channel. */
+  test_plain->Attr_Opacity(128);
+  test_plain->Attr_Tone(MakeRefCounted<Tone>(0, 0, 0, 255));
 
   /* A wave keeps its amplitude in pixels and its length in the pixels of a
      whole wave: the sprite is drawn as strips of 8 pixels which are moved
@@ -213,11 +233,44 @@ void CreateTestScene() {
     sprite->Attr_ZoomY(kGridZoom);
     sprite->Attr_Opacity(96);
   }
+
+  /* TEMPORARY PROBE: a viewport which blends a color over the region it covers
+     and scrolls its content. The rect of it is (520, 250) and the origin is
+     (60, 60), so the region stays at the rect while the child of the viewport,
+     which is placed at (60, 60) inside of it, lands on the rect corner (520,
+     250) -- the rect minus the origin plus the local position. The child reads
+     test.png so the region holds content the blend has to reach, the pixel of a
+     snapshot and the source texel of it are compared in ProbeViewport(). */
+  test_vp_tex = MakeRefCounted<Bitmap>(test_bitmap);
+
+  test_vp = MakeRefCounted<Viewport>(520, 250, 120, 130);
+  test_vp->Attr_OX(60);
+  test_vp->Attr_OY(60);
+  test_vp->Attr_Color(MakeRefCounted<Color>(0, 0, 0, 128));
+
+  test_vp_child = MakeRefCounted<Sprite>(test_vp);
+  test_vp_child->Attr_Bitmap(test_vp_tex);
+  test_vp_child->Attr_X(60);
+  test_vp_child->Attr_Y(60);
+
+  /* TEMPORARY PROBE: a viewport which puts a tone on the region it covers, over
+     the first pixels of the plain sprite. The region stays at the rect, which
+     (10, 10) shows against (5, 5) which stays black, and the tone is not the
+     toneless one of the viewport above: color and tone of a viewport are what
+     the tint mixes, and the one that is not set has to stay without an effect
+     of its own. */
+  test_vp_flat = MakeRefCounted<Viewport>(10, 10, 100, 80);
+  test_vp_flat->Attr_Tone(MakeRefCounted<Tone>(-68, 68, -68, 100));
 }
 
 //! Releases the test scene. It runs while the device is alive, so the buffers
 //! of the sprites are destroyed before the pools and the device are.
 void DestroyTestScene() {
+  test_vp_child.reset();
+  test_vp.reset();
+  test_vp_flat.reset();
+  test_vp_tex.reset();
+
   for (int32_t index = 0; index < kGridSprites; ++index)
     test_grid[index].reset();
 
@@ -241,7 +294,8 @@ void ReportPool(const UniformBlockPool& pool) {
   }
 
   LOGGER_INFO(
-      "uniform pool '{}': {} bytes per element, {} bytes per slot, {} slots per "
+      "uniform pool '{}': {} bytes per element, {} bytes per slot, {} slots "
+      "per "
       "chunk of {} bytes, {} chunks, slots used [{}]",
       pool.name(), pool.element_size(), pool.slot_stride(),
       pool.slots_per_chunk(), pool.chunk_size(), pool.chunk_count(), occupancy);
@@ -252,6 +306,154 @@ void ReportPools() {
   UniformManager& uniforms = UniformManager::Get();
   ReportPool(uniforms.object_uniforms());
   ReportPool(uniforms.sprite_uniforms());
+}
+
+/*! Writes a bitmap of the engine out as a PNG, so a frame is looked at through
+    the render target itself and not through a capture of the window: a pixel of
+    the file is the pixel Bitmap::GetPixel() reports, with none of the scaling,
+    the occlusion or the colour conversion a capture is subject to.
+
+    The image is read back in one copy of the whole texture rather than one texel
+    at a time, which is what GetPixel() does and what 300 thousand of them would
+    make unusable: the rows of a staging buffer are aligned to the 256 bytes the
+    device requires, the copy is submitted once and the mapping waited for once.
+    The function reports a failure instead of raising, it is a measure and not a
+    part of the scene. */
+bool DumpBitmap(RefPtr<Bitmap> bitmap, const std::string& path) {
+  const uint32_t width = static_cast<uint32_t>(bitmap->GetWidth());
+  const uint32_t height = static_cast<uint32_t>(bitmap->GetHeight());
+  const uint32_t pixel_pitch = width * 4;
+  const uint32_t row_pitch = (pixel_pitch + 255u) / 256u * 256u;
+  const uint64_t byte_size = static_cast<uint64_t>(row_pitch) * height;
+
+  wgpu::BufferDescriptor buffer_desc;
+  buffer_desc.size = byte_size;
+  buffer_desc.usage = wgpu::BufferUsage::MapRead | wgpu::BufferUsage::CopyDst;
+  wgpu::Buffer staging = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
+
+  wgpu::TexelCopyTextureInfo source;
+  source.texture = bitmap->texture();
+  wgpu::TexelCopyBufferInfo destination;
+  destination.buffer = staging;
+  destination.layout.bytesPerRow = row_pitch;
+  destination.layout.rowsPerImage = height;
+  wgpu::Extent3D copy_size;
+  copy_size.width = width;
+  copy_size.height = height;
+
+  wgpu::CommandEncoder encoder =
+      GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+  encoder.CopyTextureToBuffer(&source, &destination, &copy_size);
+  wgpu::CommandBuffer command = encoder.Finish(nullptr);
+  GPUDevice::Get().queue().Submit(1, &command);
+
+  bool mapped = false;
+  WGPUBufferMapCallbackInfo map_callback = {};
+  map_callback.mode = WGPUCallbackMode_WaitAnyOnly;
+  map_callback.callback = [](WGPUMapAsyncStatus status, WGPUStringView,
+                             void* userdata1, void*) {
+    *static_cast<bool*>(userdata1) = status == WGPUMapAsyncStatus_Success;
+  };
+  map_callback.userdata1 = &mapped;
+  staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
+
+  /* The future API of wgpu-native is not implemented, so the handle of a
+     mapping cannot be waited on and polling the device is what completes it,
+     see the read back of Bitmap::ToPalette(). */
+  GPUDevice::Get().Poll(true);
+
+  /* The status has to be checked before the pointer is asked for: it is
+     GetConstMappedRange() which raises the "buffer is not mapped" error, and
+     wgpu-native panics on it instead of reporting it. */
+  if (!mapped) {
+    LOGGER_ERROR("the read back of '{}' was not mapped", path);
+    return false;
+  }
+
+  const auto* pixels = static_cast<const std::uint8_t*>(
+      staging.GetConstMappedRange(0, byte_size));
+  if (!pixels) {
+    LOGGER_ERROR("the staging buffer of '{}' exposes no range of {} bytes", path,
+                 byte_size);
+    return false;
+  }
+
+  /* A texture of the engine is RGBA8Unorm and holds premultiplied alpha, so the
+     bytes of a pixel are red, green, blue and alpha in that order, which is the
+     order SDL_PIXELFORMAT_RGBA32 describes on either endianness. */
+  SDL_Surface* surface = SDL_CreateSurfaceFrom(
+      static_cast<int>(width), static_cast<int>(height),
+      SDL_PIXELFORMAT_RGBA32, const_cast<std::uint8_t*>(pixels),
+      static_cast<int>(row_pitch));
+  const bool saved = surface && IMG_SavePNG(surface, path.c_str());
+  if (surface)
+    SDL_DestroySurface(surface);
+
+  staging.Unmap();
+
+  if (!saved) {
+    LOGGER_ERROR("failed to write '{}': {}", path, SDL_GetError());
+    return false;
+  }
+
+  LOGGER_INFO("wrote '{}', {}x{}", path, width, height);
+  return true;
+}
+
+/*! TEMPORARY PROBE: the pixels the two viewports of the scene produce.
+
+    The first viewport is at (520, 250) with the size (120, 130) and its origin
+    is (60, 60), so its region, which the effect tints, is (520,250)-(640,380)
+    and a child at the local (60, 60) is drawn at (520, 250) -- the rect minus
+    the origin plus the local position, see Viewport::ResetTransform(). Its
+    color is (0, 0, 0, 128), i.e. blend = (0, 0, 0, 128/255) and no tone, so the
+    tint of a texel t is mix(t.rgb, 0, 128/255) = t.rgb * 127/255, and the child
+    under it reads test.png:
+
+    - (525, 255) is over the texel (5, 5) of the bitmap, rgba(5, 68, 243, 255),
+      which the tint of the region turns into rgba(2, 34, 121, 255).
+    - (555, 285) is over the texel (35, 35), rgba(97, 188, 255, 255), which
+      becomes rgba(48, 94, 127, 255) -- a second texel, so the region cannot be
+      one flat color.
+    - (585, 340) is further inside the same child, which reaches the whole
+      region: the effect tints the background of the rect as well and not only
+      the shape the child draws.
+    - (500, 300) is inside the region the *origin* would move it to,
+      (460,190)-(580,320), so it stays black only because the region is drawn
+      back at the rect and not at the rect minus its origin.
+    - (560, 420) is below the rect and stays black as well, which pins the
+      bottom edge of the region down.
+
+    The second viewport lies on the first pixels of the plain sprite, whose tone
+    is (0, 0, 0, 255) over the opacity 128, so the sprite draws the luminance of
+    test.png; its region is (10, 10, 100, 80) and its tone is
+    (-68, 68, -68, 100), with no color of its own.
+
+    - (10, 10) is the first pixel of it. The sprite draws rgba(37, 37, 37, 255)
+      there, whose luminance is 37/255, so the tone of the region produces
+      mix(37/255, 37/255, 100/255) = 37/255 and then adds the rgb of the tone,
+      -68/255 to the red and the blue and +68/255 to the green: the result is
+      (-0.12, 0.41, -0.12) and shows as rgba(0, 105, 0, 255).
+    - (5, 5) is outside of that region and stays black. */
+void ProbeViewport(RefPtr<Bitmap> snap) {
+  LOGGER_INFO("probe viewport, child at (525, 255): drawn {}, source texel {}",
+              Describe(snap->GetPixel(525, 255)->data),
+              Describe(test_bitmap->GetPixel(5, 5)->data));
+  LOGGER_INFO("probe viewport, child at (555, 285): drawn {}, source texel {}",
+              Describe(snap->GetPixel(555, 285)->data),
+              Describe(test_bitmap->GetPixel(35, 35)->data));
+  LOGGER_INFO("probe viewport, background of the region: (585, 340) is {}",
+              Describe(snap->GetPixel(585, 340)->data));
+  LOGGER_INFO(
+      "probe viewport, where the origin would move it: (500, 300) is {}",
+      Describe(snap->GetPixel(500, 300)->data));
+  LOGGER_INFO("probe viewport, below the rect: (560, 420) is {}",
+              Describe(snap->GetPixel(560, 420)->data));
+  LOGGER_INFO(
+      "probe viewport, plain sprite through the flat one: (10, 10) is {}",
+      Describe(snap->GetPixel(10, 10)->data));
+  LOGGER_INFO("probe viewport, above the flat region: (5, 5) is {}",
+              Describe(snap->GetPixel(5, 5)->data));
 }
 
 /*! Compares the pixel the mirrored sprite draws at (15, 255) against the source
@@ -285,6 +487,9 @@ void ProbeMirror(RefPtr<Bitmap> snap) {
 void ProbeFrame() {
   RefPtr<Bitmap> snap = Graphics::Get().SnapToBitmap();
 
+  if (!DumpBitmap(snap, "snapshot.png"))
+    LOGGER_WARN("the snapshot of this frame was not written out");
+
   for (const ProbePoint& point : kProbePoints) {
     const RefPtr<Color> color = snap->GetPixel(point.x, point.y);
     const bool covered = IsCovered(color->data);
@@ -296,6 +501,7 @@ void ProbeFrame() {
   }
 
   ProbeMirror(snap);
+  ProbeViewport(snap);
   ReportPools();
 }
 

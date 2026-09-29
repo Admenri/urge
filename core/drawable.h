@@ -42,11 +42,14 @@ struct DrawContext {
   // Render pass (drawing stage)
   wgpu::RenderPassEncoder pass;
 
-  // Render target (only valid in drawing stage)
+  // Render target (drawing stage)
   RefPtr<Bitmap> target;
 
-  // Scene bindgroup (bitmap duplicated)
+  // Scene bindgroup (drawing stage)
   wgpu::BindGroup scene;
+
+  // Scissor stack (drawing stage)
+  std::stack<RectI> scissors;
 };
 using DrawParam = DrawContext*;
 

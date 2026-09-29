@@ -61,8 +61,8 @@ Sprite::Sprite(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
       src_rect_(MakeRefCounted<Rect>()),
       // The default attribute values of RGSS: no color and no tone blend
-      color_(MakeRefCounted<Color>(0.f, 0.f, 0.f, 0.f)),
-      tone_(MakeRefCounted<Tone>(0.f, 0.f, 0.f, 0.f)),
+      color_(MakeRefCounted<Color>()),
+      tone_(MakeRefCounted<Tone>()),
       rgssvx_style_(Config::Get().vx() || Config::Get().vxa()) {
   Node::SetupTrait(this);
 }

@@ -203,7 +203,7 @@ ATTR_DEF(Font, bool, DefaultShadow) {
 
 ATTR_DEF(Font, RefPtr<Color>, DefaultColor) {
   static RefPtr<Color> default_color =
-      MakeRefCounted<Color>(255, 255, 255, 255);
+      MakeRefCounted<Color>(255.0f, 255.0f, 255.0f, 255.0f);
   if (value.has_value()) {
     default_color = *value;
     return std::nullopt;
@@ -213,7 +213,8 @@ ATTR_DEF(Font, RefPtr<Color>, DefaultColor) {
 }
 
 ATTR_DEF(Font, RefPtr<Color>, DefaultOutColor) {
-  static RefPtr<Color> default_out_color = MakeRefCounted<Color>(0, 0, 0, 128);
+  static RefPtr<Color> default_out_color =
+      MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 128.0f);
   if (value.has_value()) {
     default_out_color = *value;
     return std::nullopt;

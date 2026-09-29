@@ -68,14 +68,8 @@ class Sprite : public Node {
   void Prepare(DrawParam param) override;
   void DoDraw(DrawParam param) override;
 
-  //! Builds the set 3 uniform of this frame from the attributes of the sprite.
   SpriteBase::SpriteParam MakeParamInternal();
-  /*! Emits the quad of this frame, or the blocks of its wave, into the vertex
-      buffer of this sprite.
-      \return The number of vertices written, zero when there is nothing to
-      draw. */
   uint32_t EmitGeometryInternal();
-  //! Grows the vertex buffer to at least \p size bytes and returns it.
   wgpu::Buffer AcquireVertexBuffer(size_t size);
 
   RefPtr<Bitmap> bitmap_;
@@ -93,7 +87,7 @@ class Sprite : public Node {
   RefPtr<Tone> tone_;
 
   struct {
-    Vec4 color = {};
+    Vec4 color = Vec4(0.0f);
     float step = 0.0f;
   } flash_;
 

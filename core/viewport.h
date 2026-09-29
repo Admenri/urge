@@ -51,15 +51,28 @@ class Viewport : public Node {
   void DoDraw(DrawParam param) override;
   void PostDraw(DrawParam param) override;
 
+  void ResetTransform();
+
+  void CreateEffectBindings();
+  void AcquirePingPong(const RectI& region);
+  wgpu::Buffer AcquireVertexBuffer(size_t size);
+
   RefPtr<Rect> rect_;
-  Vec2i origin_;
+  Vec2i origin_ = Vec2i(0);
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
 
   struct {
-    Vec4 color = {};
+    Vec4 color = Vec4(0.0f);
     float step = 0.0f;
   } flash_;
+
+  RefPtr<Bitmap> pingpong_;
+  wgpu::Buffer object_uniform_, tint_uniform_;
+  wgpu::BindGroup object_group_, tint_group_;
+
+  PrimitiveEmitter primitive_;
+  wgpu::Buffer vertex_buffer_;
 };
 
 }  // namespace urge

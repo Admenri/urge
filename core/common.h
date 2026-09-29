@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <cmath>
+
 #include "SDL3/SDL_rect.h"
 
 #include "glm/glm.hpp"
@@ -183,6 +185,11 @@ inline RectI MakeIntersect(const RectI& A, const RectI& B) {
   result.height = std::max(0, Amax - Amin);
 
   return result;
+}
+
+inline Vec2i ExtractPosition(const Mat4x4& matrix) {
+  return Vec2i(static_cast<int32_t>(std::lround(matrix[3].x)),
+               static_cast<int32_t>(std::lround(matrix[3].y)));
 }
 
 }  // namespace urge

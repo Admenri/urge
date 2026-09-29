@@ -462,7 +462,7 @@ void Bitmap::ClearRect(int32_t x, int32_t y, int32_t width, int32_t height) {
   Disposable::Guard();
 
   // Transparent black, the same color an untouched bitmap has
-  FillRect(x, y, width, height, MakeRefCounted<Color>(0.f, 0.f, 0.f, 0.f));
+  FillRect(x, y, width, height, MakeRefCounted<Color>());
 }
 
 void Bitmap::ClearRect(RefPtr<Rect> rect) {
@@ -480,7 +480,7 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
   // Coordinates outside of the bitmap read as transparent black, the color an
   // untouched bitmap has
   if (x < 0 || y < 0 || x >= size_.x || y >= size_.y)
-    return MakeRefCounted<Color>(0.f, 0.f, 0.f, 0.f);
+    return MakeRefCounted<Color>();
 
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, x, y, 1, 1);
@@ -661,9 +661,8 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
      an integer argument list would deduce T = int and the divisions inside
      the function would be carried out in integer arithmetic, which turns the
      scales of the matrix into zero and collapses every vertex. */
-  scene_uniform.view_proj_mat =
-      glm::ortho(0.0f, static_cast<float>(size_.x),
-                 static_cast<float>(size_.y), 0.0f);
+  scene_uniform.view_proj_mat = glm::ortho(0.0f, static_cast<float>(size_.x),
+                                           static_cast<float>(size_.y), 0.0f);
   ObjectData object_uniform = {};
   object_uniform.model_mat = glm::mat4x4(1.0f);
 

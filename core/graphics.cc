@@ -90,7 +90,7 @@ Graphics::~Graphics() {
 
 void Graphics::Update() {
   if (!frozen_)
-    root_->Render(screen_texture_, MakeRefCounted<Color>(0, 0, 0, 255));
+    root_->Render(screen_texture_, Color::Black());
 
   PresentInternal();
 }
@@ -126,7 +126,7 @@ void Graphics::FadeOut(int32_t duration) {
 
 void Graphics::Freeze() {
   if (!frozen_) {
-    root_->Render(screen_texture_, MakeRefCounted<Color>(0, 0, 0, 255));
+    root_->Render(screen_texture_, Color::Black());
     frozen_ = true;
   }
 }
@@ -147,7 +147,7 @@ void Graphics::TransitionBitmap(int32_t duration,
 
 RefPtr<Bitmap> Graphics::SnapToBitmap() {
   auto result = MakeRefCounted<Bitmap>(GetWidth(), GetHeight());
-  root_->Render(result, MakeRefCounted<Color>(0, 0, 0, 255));
+  root_->Render(result, Color::Black());
   return result;
 }
 
