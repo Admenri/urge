@@ -234,12 +234,19 @@ ColorBase::ColorBase()
 
 /* ----- TintBase ----- */
 
-TintBase::TintBase() : Pipeline(kVS_TransformBase, kFS_TintBase, {{0, 1, 2}}) {}
+/* The object transform of a tinted draw is uploaded in bulk, so the set which
+   holds ObjectData is bound with a dynamic offset. */
+TintBase::TintBase()
+    : Pipeline(kVS_TransformBase, kFS_TintBase, {{0, 1, 2}}, {1}) {}
 
 /* ----- SpriteBase ----- */
 
+/* The object transform and the sprite parameter of every sprite of a frame are
+   staged in one buffer each, so both sets are bound with a dynamic offset: the
+   parameter is what a batch of sprites reads per sprite out of the same buffer,
+   see UniformManager. */
 SpriteBase::SpriteBase()
-    : Pipeline(kVS_TransformBase, kFS_SpriteBase, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_SpriteBase, {{0, 1, 2}}, {1, 3}) {}
 
 /* ----- TransitionAlpha ----- */
 
@@ -267,7 +274,7 @@ ShaderSet::ShaderSet() : shader() {
   state.color_none = shader.color_base.MakeState(
       primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
   for (auto it : {BLEND_NONE, BLEND_NORMAL, BLEND_ADDITION, BLEND_SUBTRACT}) {
-    state.tint_blends[it] = shader.color_base.MakeState(
+    state.tint_blends[it] = shader.tint_base.MakeState(
         primitive, std::nullopt,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
     state.sprite_blends[it] = shader.sprite_base.MakeState(

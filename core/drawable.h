@@ -39,8 +39,14 @@ struct DrawContext {
   // Command buffer
   wgpu::CommandEncoder command;
 
+  // Render pass (drawing stage)
+  wgpu::RenderPassEncoder pass;
+
   // Render target (only valid in drawing stage)
   RefPtr<Bitmap> target;
+
+  // Scene bindgroup (bitmap duplicated)
+  wgpu::BindGroup scene;
 };
 using DrawParam = DrawContext*;
 

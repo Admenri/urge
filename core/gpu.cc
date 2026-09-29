@@ -54,11 +54,57 @@ LogLevel FromWGPULogLevel(WGPULogLevel level) {
   }
 }
 
+//! Whether a block of the validation layer is the present-after-write hazard it
+//! raises about every present of the engine, and which nothing the engine does
+//! can prevent.
+//! \details The swapchain image of a frame is written by a render pass, and the
+//! driver transitions it to the layout a present requires at the end of that
+//! pass. The layer calls the present a hazard because its model of a present
+//! orders the transition an explicit barrier performs and not the one
+//! vkCmdEndRenderPass performs, which is the origin the block names. No
+//! synchronization is missing: wgpu waits on the semaphore a surface image is
+//! acquired with, signals one in the submission that writes the image, and the
+//! present waits on that one, so the presentation engine reads the image after
+//! the transition. The behaviour is reported to the layer as
+//! https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13117 and its
+//! model is stated to omit the ordering in
+//! https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6177; wgpu-hal
+//! drops the reports it knows to be wrong in the callback that hands the layer
+//! over to the host, so this is the same measure one level up.
+//! \remarks Both fragments have to be found. A rewording of either one lets the
+//! reports through again, which is what keeps a hazard of another origin from
+//! being swallowed.
+bool IsRenderPassPresentAfterWrite(std::string_view text) {
+  return text.find("SYNC-HAZARD-PRESENT-AFTER-WRITE") !=
+             std::string_view::npos &&
+         text.find("initiated by vkCmdEndRenderPass") != std::string_view::npos;
+}
+
+//! Whether a message is one of the records wgpu-hal appends to a message of the
+//! validation layer. The objects of a message are a log record of their own, and
+//! they arrive after the block that carries the message.
+bool IsValidationContinuation(std::string_view text) {
+  static constexpr std::string_view kPrefixes[] = {"\tobjects: ", "\tqueues: ",
+                                                   "\tcommand buffers: "};
+  for (const std::string_view prefix : kPrefixes) {
+    if (text.starts_with(prefix))
+      return true;
+  }
+  return false;
+}
+
+//! Whether the records that follow a dropped block are still being dropped.
+//! A callback runs on the thread that raised the message, and the block of a
+//! message and its objects are raised by one call into the layer, so the state
+//! belongs to a thread and not to the process.
+thread_local bool g_dropping_validation_continuation = false;
+
 //! Receives the messages of wgpu-native. Without a callback installed the
 //! backend drops a validation error, which is what happens to a draw call that
 //! is rejected for a reason the engine never gets to know.
 //! \remarks The callback may run on the thread that raised the message, and the
-//! messages are multi-line blocks of text.
+//! messages are multi-line blocks of text. The block of a present the engine
+//! cannot synchronize is dropped, see IsRenderPassPresentAfterWrite().
 void OnWGPULog(WGPULogLevel level, WGPUStringView message, void* /*userdata*/) {
   const LogLevel engine_level = FromWGPULogLevel(level);
   if (engine_level == LogLevel::kOff)
@@ -67,6 +113,21 @@ void OnWGPULog(WGPULogLevel level, WGPUStringView message, void* /*userdata*/) {
   // wgpu::StringView resolves the WGPU_STRLEN sentinel, the message of a
   // callback is not necessarily null terminated.
   const std::string_view text = wgpu::StringView(message);
+
+  // The block is dropped before it is formatted, so the measure does not depend
+  // on the level the logger of the engine filters at.
+  if (IsRenderPassPresentAfterWrite(text)) {
+    g_dropping_validation_continuation = true;
+    return;
+  }
+
+  if (g_dropping_validation_continuation) {
+    if (IsValidationContinuation(text))
+      return;
+    // A message that is not an appendage of a block ends the drop, which bounds
+    // it to the records of the block that was dropped.
+    g_dropping_validation_continuation = false;
+  }
 
   // The location of the message is inside wgpu-native, a file and a line of the
   // engine would be misleading, so the source is marked instead.

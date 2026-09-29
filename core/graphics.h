@@ -40,7 +40,6 @@ class ScreenRootNode : public Node {
  private:
   void DisposeObject() override;
   void Prepare(DrawParam param) override;
-  void DoDraw(DrawParam param) override;
   void PostDraw(DrawParam param) override;
 
   PrimitiveEmitter emitter_;

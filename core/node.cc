@@ -26,6 +26,7 @@
 #include "glm/gtc/quaternion.hpp"
 
 #include "core/graphics.h"
+#include "core/uniform.h"
 
 namespace urge {
 
@@ -47,7 +48,57 @@ Node::~Node() {
   Disposable::Dispose();
 }
 
-void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {}
+void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
+  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+
+  DrawContext context = {};
+  context.model.push(Mat4x4(1.0f));
+  context.command = encoder;
+  context.pass = nullptr;
+  context.target = nullptr;
+  context.scene = nullptr;
+
+  /* The prepare stage is what reserves the slots of the bulk uniform data, so it
+     opens and closes a frame of the pools: the slots are staged by the prepare
+     callbacks and written into the pool buffers before the command buffer of
+     this frame is submitted below. */
+  UniformManager& uniforms = UniformManager::Get();
+  uniforms.BeginFrame();
+
+  ExecutePrepare(&context);
+
+  uniforms.Flush();
+
+  wgpu::RenderPassColorAttachment color_attachment;
+  color_attachment.view = target->texture_view();
+  color_attachment.loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
+  color_attachment.storeOp = wgpu::StoreOp::Store;
+  if (clear) {
+    auto clear_value = clear->Normalize();
+    color_attachment.clearValue.r = clear_value.r;
+    color_attachment.clearValue.g = clear_value.g;
+    color_attachment.clearValue.b = clear_value.b;
+    color_attachment.clearValue.a = clear_value.a;
+  }
+  wgpu::RenderPassDescriptor render_pass_desc;
+  render_pass_desc.colorAttachmentCount = 1;
+  render_pass_desc.colorAttachments = &color_attachment;
+  auto pass = encoder.BeginRenderPass(&render_pass_desc);
+
+  std::stack<Mat4x4> empty_model;
+  context.model.swap(empty_model);
+  context.command = nullptr;
+  context.pass = pass;
+  context.target = target;
+  context.scene = target->scene_group();
+
+  ExecuteRendering(&context);
+
+  pass.End();
+
+  auto command_buffer = encoder.Finish(nullptr);
+  GPUDevice::Get().queue().Submit(1, &command_buffer);
+}
 
 ATTR_DEF(Node, int32_t, Z) {
   if (value.has_value()) {
@@ -118,11 +169,6 @@ ATTR_DEF(Node, RefPtr<Vector3>, Scale) {
   } else {
     return transform_.scale;
   }
-}
-
-void Node::Render(DrawParam param, std::optional<Vec4> clear) {
-  ExecutePrepare(param);
-  ExecuteRendering(param);
 }
 
 void Node::DisposeObject() {

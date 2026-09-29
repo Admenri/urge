@@ -23,6 +23,7 @@
 #pragma once
 
 #include <cstdint>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -73,7 +74,8 @@ class Pipeline {
  public:
   Pipeline(std::string_view vs_glsl,
            std::string_view fs_glsl,
-           std::vector<std::vector<uint32_t>> vb_layouts);
+           std::vector<std::vector<uint32_t>> vb_layouts,
+           const std::set<uint32_t>& dynamic_sets = {});
 
   wgpu::RenderPipeline MakeState(wgpu::PrimitiveState primitive,
                                  std::optional<wgpu::DepthStencilState> depth,
@@ -92,6 +94,8 @@ class Pipeline {
   wgpu::ShaderModule fragment_module_;
   wgpu::PipelineLayout layout_;
   std::vector<VertexBuffer> buffers_;
+  //! The sets whose buffer bindings carry a dynamic offset, see the ctor.
+  std::set<uint32_t> dynamic_sets_;
 };
 
 }  // namespace urge

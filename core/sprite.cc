@@ -26,8 +26,15 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <span>
+
+#include "glm/gtc/matrix_transform.hpp"
 
 #include "core/config.h"
+#include "core/gpu.h"
+#include "core/logger.h"
+#include "core/pipeline.h"
+#include "core/uniform.h"
 
 namespace urge {
 
@@ -35,6 +42,18 @@ namespace {
 
 // Legacy PI macro value from the raylib headers.
 constexpr float kPi = 3.14159265358979323846f;
+
+//! Height of one strip a waved sprite is bent in, in pixels.
+constexpr int32_t kWaveBlockAlign = 8;
+
+//! The shortest wavelength a wave is evaluated with, a length of zero would
+//! divide the phase of a block by it.
+constexpr int32_t kMinimumWaveLength = 1;
+
+//! Converts degrees into radians, the unit the sine of a wave is taken in.
+float DegreesToRadians(float degrees) {
+  return degrees * (kPi / 180.0f);
+}
 
 }  // namespace
 
@@ -249,7 +268,10 @@ ATTR_DEF(Sprite, int32_t, Opacity) {
 
 ATTR_DEF(Sprite, int32_t, BlendType) {
   if (value.has_value()) {
-    blend_type_ = *value;
+    /* The blend type indexes the pipeline states of the sprite shader, so it is
+       kept inside the range of the blend types the engine knows. */
+    blend_type_ = std::clamp(*value, static_cast<int32_t>(BLEND_NONE),
+                             static_cast<int32_t>(BLEND_SUBTRACT));
     return std::nullopt;
   } else {
     return blend_type_;
@@ -276,10 +298,188 @@ ATTR_DEF(Sprite, RefPtr<Tone>, Tone) {
 
 void Sprite::DisposeObject() {
   bitmap_.reset();
+
+  vertex_buffer_ = nullptr;
 }
 
-void Sprite::Prepare(DrawParam param) {}
+void Sprite::Prepare(DrawParam param) {
+  drawable_ = false;
+  vertex_count_ = 0;
 
-void Sprite::DoDraw(DrawParam param) {}
+  // A sprite without a bitmap, or with one which was disposed, draws nothing
+  if (!Disposable::Check(bitmap_))
+    return;
+
+  vertex_count_ = EmitGeometryInternal();
+  // A source rectangle which is empty after being limited to the texture
+  if (!vertex_count_)
+    return;
+
+  /* The transform of a sprite is the one of the node hierarchy with its own on
+     top: the sprite is positioned at (x, y), the origin is the point it is
+     scaled and rotated around, so the origin is subtracted before the scale and
+     the rotation and the position is added after them. The rotation is
+     negated, the y axis of the engine points downwards. */
+  const Mat4x4 transform =
+      world_transform() *
+      glm::translate(Mat4x4(1.0f), Vec3(static_cast<float>(x_),
+                                        static_cast<float>(y_), 0.0f)) *
+      glm::rotate(Mat4x4(1.0f), DegreesToRadians(-angle_),
+                  Vec3(0.0f, 0.0f, 1.0f)) *
+      glm::scale(Mat4x4(1.0f), Vec3(zoom_x_, zoom_y_, 1.0f)) *
+      glm::translate(Mat4x4(1.0f), Vec3(static_cast<float>(-ox_),
+                                        static_cast<float>(-oy_), 0.0f));
+
+  /* Both uniforms of a sprite travel in a buffer it shares with every other
+     sprite of the frame instead of in a buffer of its own, so the draw only has
+     to bind the slots handed out here. */
+  UniformManager& uniforms = UniformManager::Get();
+
+  ObjectData object_data;
+  object_data.model_mat = transform;
+  object_slot_ = uniforms.object_uniforms().Acquire(object_data);
+  param_slot_ = uniforms.sprite_uniforms().Acquire(MakeParamInternal());
+
+  drawable_ = object_slot_.chunk != UniformBlockPool::kInvalidChunk &&
+              param_slot_.chunk != UniformBlockPool::kInvalidChunk;
+
+  LOGGER_TRACE("sprite prepare: {} vertices, chunk {} slot at {}",
+               vertex_count_, object_slot_.chunk, object_slot_.offset);
+}
+
+void Sprite::DoDraw(DrawParam param) {
+  if (!drawable_)
+    return;
+
+  UniformManager& uniforms = UniformManager::Get();
+  const UniformBlockPool::Chunk& object_chunk =
+      uniforms.object_uniforms().chunk(object_slot_.chunk);
+  const UniformBlockPool::Chunk& param_chunk =
+      uniforms.sprite_uniforms().chunk(param_slot_.chunk);
+
+  param->pass.SetPipeline(ShaderSet::Get().state.sprite_blends.at(
+      static_cast<BlendType>(blend_type_)));
+  // The scene of the render target, its object set is not the one of a sprite
+  param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+  // The object transform of this sprite, bound with the offset of its slot
+  param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
+  param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
+  // The parameter of this sprite, bound with the offset of its slot
+  param->pass.SetBindGroup(3, param_chunk.group, 1, &param_slot_.offset);
+  param->pass.SetVertexBuffer(0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
+  param->pass.Draw(vertex_count_, 1, 0, 0);
+}
+
+SpriteBase::SpriteParam Sprite::MakeParamInternal() {
+  /* The blend color of a sprite is its color, or the color of the flash while
+     it is the stronger one of the two; a sprite which is not flashing keeps
+     the color of its Color attribute. */
+  Vec4 blend_color = color_->Normalize();
+  if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
+    blend_color = flash_.color;
+
+  /* The bush cuts the sprite off below a line of its source rectangle, which
+     the shader compares against the texture coordinate of a pixel, so the depth
+     is normalized the way a texture coordinate is. */
+  const float texture_height =
+      static_cast<float>(std::max(1, bitmap_->GetHeight()));
+  const RectI src = src_rect_->data;
+
+  SpriteBase::SpriteParam param = {};
+  param.blend_color = blend_color;
+  param.blend_tone = tone_->Normalize();
+  param.bush_depth =
+      static_cast<float>(src.y + src.height - bush_depth_) / texture_height;
+  param.bush_opacity = static_cast<float>(bush_opacity_) / 255.0f;
+  return param;
+}
+
+uint32_t Sprite::EmitGeometryInternal() {
+  const int32_t texture_width = bitmap_->GetWidth();
+  const int32_t texture_height = bitmap_->GetHeight();
+
+  // The source rectangle of a sprite is limited to the bitmap it reads from
+  RectI src = src_rect_->data;
+  src.width = std::clamp(src.width, 0, std::max(0, texture_width - src.x));
+  src.height = std::clamp(src.height, 0, std::max(0, texture_height - src.y));
+  if (src.width == 0 || src.height == 0)
+    return 0;
+
+  const Vec2 texture_size(static_cast<float>(texture_width),
+                          static_cast<float>(texture_height));
+  /* The blend state of the engine and the contents of a bitmap store
+     premultiplied alpha, so the opacity of a sprite scales all four channels of
+     the vertex color instead of the alpha channel alone. */
+  const Vec4 color(static_cast<float>(opacity_) / 255.0f);
+
+  if (wave_amp_ == 0) {
+    /* The vertices of a plain quad are the source rectangle at the origin, the
+       position and the origin of the sprite are part of its model matrix. */
+    RectI texcoord = src;
+    if (mirror_)
+      texcoord = RectI(src.x + src.width, src.y, -src.width, src.height);
+
+    primitive_.EmitQuad(RectF(0.0f, 0.0f, static_cast<float>(src.width),
+                              static_cast<float>(src.height)),
+                        MakeNorm(RectF(texcoord), texture_size), color);
+  } else {
+    /* A wave bends the sprite in strips: every strip of kWaveBlockAlign pixels
+       is moved sideways by the sine of the phase it is at, which is the wave of
+       a flag. The phase of a strip follows from the phase of the sprite and the
+       part of a wave length the strip is at, see Update(). */
+    const float phase = DegreesToRadians(wave_phase_);
+    const float length =
+        static_cast<float>(std::max<int32_t>(kMinimumWaveLength, wave_length_));
+
+    const auto emit_block = [&](int32_t block_y, int32_t block_height) {
+      const float offset =
+          std::sin(phase + (static_cast<float>(block_y) / length) * kPi) *
+          static_cast<float>(wave_amp_);
+
+      RectI texcoord(src.x, src.y + block_y, src.width, block_height);
+      if (mirror_)
+        texcoord = RectI(texcoord.x + texcoord.width, texcoord.y,
+                         -texcoord.width, texcoord.height);
+
+      primitive_.Rect(RectF(offset, static_cast<float>(block_y),
+                            static_cast<float>(src.width),
+                            static_cast<float>(block_height)),
+                      MakeNorm(RectF(texcoord), texture_size));
+    };
+
+    primitive_.BeginQuad().Color4f(color);
+
+    const int32_t whole_blocks = src.height / kWaveBlockAlign;
+    for (int32_t index = 0; index < whole_blocks; ++index)
+      emit_block(index * kWaveBlockAlign, kWaveBlockAlign);
+
+    const int32_t last_block = src.height % kWaveBlockAlign;
+    if (last_block)
+      emit_block(whole_blocks * kWaveBlockAlign, last_block);
+  }
+
+  const std::span<const VertexData> vertices = primitive_.End();
+  if (vertices.empty())
+    return 0;
+
+  // The draw of this frame reads the vertices, so they are uploaded here, the
+  // command buffer holding it is submitted after the prepare stage is over
+  const wgpu::Buffer buffer = AcquireVertexBuffer(vertices.size_bytes());
+  GPUDevice::Get().queue().WriteBuffer(buffer, 0, vertices.data(),
+                                       vertices.size_bytes());
+
+  return static_cast<uint32_t>(vertices.size());
+}
+
+wgpu::Buffer Sprite::AcquireVertexBuffer(size_t size) {
+  if (!vertex_buffer_ || vertex_buffer_.GetSize() < size) {
+    wgpu::BufferDescriptor buffer_desc;
+    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+    buffer_desc.size = size;
+    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
+  }
+
+  return vertex_buffer_;
+}
 
 }  // namespace urge

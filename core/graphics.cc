@@ -35,6 +35,7 @@
 #include "core/gpu.h"
 #include "core/pipeline.h"
 #include "core/primitive.h"
+#include "core/uniform.h"
 
 namespace urge {
 
@@ -48,8 +49,6 @@ void ScreenRootNode::DisposeObject() {}
 
 void ScreenRootNode::Prepare(DrawParam param) {}
 
-void ScreenRootNode::DoDraw(DrawParam param) {}
-
 void ScreenRootNode::PostDraw(DrawParam param) {}
 
 // -------------------------------------------------------------------------------
@@ -61,6 +60,11 @@ Graphics::Graphics() {
 
   GPUDevice::Reset(new GPUDevice(window_));
   ShaderSet::Reset(new ShaderSet());
+
+  /* The uniform pools of a frame live exactly as long as the device and the
+     shaders they were built for, so the manager shares the lifetime of
+     Graphics. */
+  UniformManager::Reset(new UniformManager());
 
   root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(Config::Get().width, Config::Get().height);
@@ -77,6 +81,7 @@ Graphics::~Graphics() {
   screen_texture_.reset();
   root_.reset();
 
+  UniformManager::Reset(nullptr);
   ShaderSet::Reset(nullptr);
   GPUDevice::Reset(nullptr);
 
@@ -85,7 +90,7 @@ Graphics::~Graphics() {
 
 void Graphics::Update() {
   if (!frozen_)
-    root_->Render(screen_texture_);
+    root_->Render(screen_texture_, MakeRefCounted<Color>(0, 0, 0, 255));
 
   PresentInternal();
 }
@@ -121,7 +126,7 @@ void Graphics::FadeOut(int32_t duration) {
 
 void Graphics::Freeze() {
   if (!frozen_) {
-    root_->Render(screen_texture_);
+    root_->Render(screen_texture_, MakeRefCounted<Color>(0, 0, 0, 255));
     frozen_ = true;
   }
 }
@@ -142,7 +147,7 @@ void Graphics::TransitionBitmap(int32_t duration,
 
 RefPtr<Bitmap> Graphics::SnapToBitmap() {
   auto result = MakeRefCounted<Bitmap>(GetWidth(), GetHeight());
-  root_->Render(result);
+  root_->Render(result, MakeRefCounted<Color>(0, 0, 0, 255));
   return result;
 }
 

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "core/node.h"
+#include "core/uniform.h"
 #include "core/viewport.h"
 
 namespace urge {
@@ -67,6 +68,16 @@ class Sprite : public Node {
   void Prepare(DrawParam param) override;
   void DoDraw(DrawParam param) override;
 
+  //! Builds the set 3 uniform of this frame from the attributes of the sprite.
+  SpriteBase::SpriteParam MakeParamInternal();
+  /*! Emits the quad of this frame, or the blocks of its wave, into the vertex
+      buffer of this sprite.
+      \return The number of vertices written, zero when there is nothing to
+      draw. */
+  uint32_t EmitGeometryInternal();
+  //! Grows the vertex buffer to at least \p size bytes and returns it.
+  wgpu::Buffer AcquireVertexBuffer(size_t size);
+
   RefPtr<Bitmap> bitmap_;
   RefPtr<Rect> src_rect_;
   int32_t x_ = 0, y_ = 0;
@@ -87,6 +98,20 @@ class Sprite : public Node {
   } flash_;
 
   bool rgssvx_style_ = true;
+
+  //! The slot of the object pool this frame put the transform of this sprite
+  //! in, which the sprite pipeline binds at set 1.
+  UniformBlockPool::Slot object_slot_ = {};
+  //! The slot of the sprite pool this frame put the parameter of this sprite
+  //! in, which the sprite pipeline binds at set 3.
+  UniformBlockPool::Slot param_slot_ = {};
+  //! The vertices EmitGeometryInternal() wrote, i.e. what DoDraw() draws.
+  uint32_t vertex_count_ = 0;
+  //! True when this frame emitted a geometry, so DoDraw() has work to do.
+  bool drawable_ = false;
+
+  PrimitiveEmitter primitive_;
+  wgpu::Buffer vertex_buffer_;
 };
 
 }  // namespace urge

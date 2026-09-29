@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -198,9 +199,12 @@ wgpu::ShaderModule CreateModule(const Shader& shader) {
   return module;
 }
 
-//! Fills one bind group layout entry from a binding of the reflection.
+//! Fills one bind group layout entry from a binding of the reflection, with
+//! \p dynamic_offset telling whether the set of the binding is bound with a
+//! dynamic offset.
 wgpu::BindGroupLayoutEntry MakeEntry(const ShaderBinding& binding,
-                                     wgpu::ShaderStage visibility) {
+                                     wgpu::ShaderStage visibility,
+                                     bool dynamic_offset) {
   wgpu::BindGroupLayoutEntry entry;
   entry.binding = binding.binding;
   entry.visibility = visibility;
@@ -213,6 +217,7 @@ wgpu::BindGroupLayoutEntry MakeEntry(const ShaderBinding& binding,
   } else {
     entry.buffer.type = static_cast<wgpu::BufferBindingType>(binding.buffer);
     entry.buffer.minBindingSize = binding.min_binding_size;
+    entry.buffer.hasDynamicOffset = dynamic_offset;
   }
   return entry;
 }
@@ -224,9 +229,14 @@ The reflection describes the groups of a stage from the set a binding is in, so
 the two stages are merged by the set number: a set both stages bind becomes one
 layout which the two of them share, and a stage which skips a set leaves an
 empty layout behind so the sets of the other stage keep their index.
+
+\param[in] dynamic_sets The sets whose buffer bindings are bound with a dynamic
+offset, they are the ones a bulk manager uploads one slot per object into.
 */
-std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(const Shader& vertex,
-                                                      const Shader& fragment) {
+std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
+    const Shader& vertex,
+    const Shader& fragment,
+    const std::set<uint32_t>& dynamic_sets) {
   const std::vector<ShaderGroup>& vertex_groups = vertex.reflection().groups;
   const std::vector<ShaderGroup>& fragment_groups =
       fragment.reflection().groups;
@@ -238,12 +248,16 @@ std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(const Shader& vertex,
   for (size_t group = 0; group < group_count; ++group) {
     // The entries of this set, keyed by the binding an entry is for
     std::map<uint32_t, wgpu::BindGroupLayoutEntry> entries;
-    const auto add = [&entries](const std::vector<ShaderBinding>& bindings,
-                                wgpu::ShaderStage visibility) {
+    const bool dynamic_offset =
+        dynamic_sets.contains(static_cast<uint32_t>(group));
+    const auto add = [&entries, dynamic_offset](
+                         const std::vector<ShaderBinding>& bindings,
+                         wgpu::ShaderStage visibility) {
       for (const ShaderBinding& binding : bindings) {
         const auto found = entries.find(binding.binding);
         if (found == entries.end())
-          entries.emplace(binding.binding, MakeEntry(binding, visibility));
+          entries.emplace(binding.binding,
+                          MakeEntry(binding, visibility, dynamic_offset));
         else
           found->second.visibility |= visibility;
       }
@@ -308,9 +322,11 @@ Shader Shader::Compile(wgpu::ShaderStage stage, std::string_view glsl) {
 
 Pipeline::Pipeline(std::string_view vs_glsl,
                    std::string_view fs_glsl,
-                   std::vector<std::vector<uint32_t>> vb_layouts)
+                   std::vector<std::vector<uint32_t>> vb_layouts,
+                   const std::set<uint32_t>& dynamic_sets)
     : vertex_(Shader::Compile(wgpu::ShaderStage::Vertex, vs_glsl)),
-      fragment_(Shader::Compile(wgpu::ShaderStage::Fragment, fs_glsl)) {
+      fragment_(Shader::Compile(wgpu::ShaderStage::Fragment, fs_glsl)),
+      dynamic_sets_(dynamic_sets) {
   const wgpu::Device device = GPUDevice::Get().device();
 
   vertex_module_ = CreateModule(vertex_);
@@ -320,7 +336,7 @@ Pipeline::Pipeline(std::string_view vs_glsl,
      to the automatic mode of the device, so a bind group the engine makes from
      it always fits the pipeline. */
   const std::vector<wgpu::BindGroupLayout> group_layouts =
-      CreateGroupLayouts(vertex_, fragment_);
+      CreateGroupLayouts(vertex_, fragment_, dynamic_sets_);
 
   wgpu::PipelineLayoutDescriptor layout_desc;
   layout_desc.bindGroupLayoutCount = group_layouts.size();

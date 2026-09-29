@@ -92,6 +92,7 @@ class Bitmap : public Disposable {
   /*-export.end-*/
 
   wgpu::Texture texture() { return texture_; }
+  wgpu::TextureView texture_view() { return view_; }
   wgpu::Texture depth_stencil() { return depth_stencil_; }
   wgpu::Sampler sampler() { return sampler_; }
 

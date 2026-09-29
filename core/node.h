@@ -54,8 +54,6 @@ class Node : public Disposable {
   virtual void PostDraw(DrawParam param) {}
 
  public:
-  void Render(DrawParam param, std::optional<Vec4> clear);
-
   ZValue GetOrder() { return self_.order(); }
   void SortWith(ZValue v) { return self_.SortWith(v); }
 
