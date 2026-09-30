@@ -29,6 +29,7 @@
 #include "core/common.h"
 #include "core/gpu.h"
 #include "core/object.h"
+#include "core/primitive.h"
 
 namespace urge {
 
@@ -41,6 +42,9 @@ struct DrawContext {
 
   // Render target
   RefPtr<Bitmap> target;
+
+  // Vertex batch of the frame (prepare stage)
+  PrimitiveEmitter* vertices = nullptr;
 
   // Render pass (drawing stage)
   wgpu::RenderPassEncoder pass;

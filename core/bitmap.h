@@ -106,7 +106,6 @@ class Bitmap : public Disposable {
   void DisposeObject() override;
   void CreateInternal(SDL_Surface* data);
   void CreateGroup();
-  wgpu::Buffer AcquireBuffer(size_t size);
 
   RefPtr<Font> font_;
 
@@ -118,8 +117,11 @@ class Bitmap : public Disposable {
   wgpu::Buffer scene_uniform_, object_uniform_;
   wgpu::Sampler sampler_;
 
+  /*! The emitter the drawing operations of this bitmap emit into. They are
+      batches of their own -- one quad, uploaded and drawn with an encoder of
+      their own --, so the emitter owns the vertex buffer of them and the
+      operations do not build a buffer by hand, see PrimitiveEmitter::Upload(). */
   PrimitiveEmitter primitive_;
-  wgpu::Buffer vertex_buffer_;
 
   wgpu::BindGroup scene_group_, object_group_, texture_group_;
 };

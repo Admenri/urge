@@ -22,25 +22,28 @@
 
 #pragma once
 
+#include "core/bitmap.h"
 #include "core/node.h"
-#include "core/utility.h"
+#include "core/primitive.h"
+#include "core/uniform.h"
+#include "core/viewport.h"
 
 namespace urge {
 
-class Viewport : public Node {
+class Plane : public Node {
  public:
   /*-export.begin-*/
-  Viewport(int32_t x, int32_t y, int32_t width, int32_t height);
-  Viewport(RefPtr<Rect> rect);
-  Viewport();
-  ~Viewport();
+  Plane(RefPtr<Viewport> viewport = nullptr);
+  ~Plane() override;
 
-  void Flash(RefPtr<Color> color, int32_t duration);
-  void Update();
-
-  ATTR(RefPtr<Rect>, Rect);
+  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(RefPtr<Bitmap>, Bitmap);
   ATTR(int32_t, OX);
   ATTR(int32_t, OY);
+  ATTR(float, ZoomX);
+  ATTR(float, ZoomY);
+  ATTR(int32_t, Opacity);
+  ATTR(int32_t, BlendType);
   ATTR(RefPtr<Color>, Color);
   ATTR(RefPtr<Tone>, Tone);
   /*-export.end-*/
@@ -49,31 +52,34 @@ class Viewport : public Node {
   void DisposeObject() override;
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
-  void PostDraw(DrawParam param) override;
 
-  void ResetTransform();
-
+  //! Creates the buffer and the bind group the tint of this plane is read from,
+  //! which the plane pipeline binds at set 3.
   void CreateEffectBindings();
-  void AcquirePingPong(const RectI& region);
+  //! Emits the quad which covers the render target with the tiles of the
+  //! bitmap, see Prepare().
+  PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter,
+                                              DrawParam param);
 
-  RefPtr<Rect> rect_;
-  glm::ivec2 origin_ = glm::ivec2(0);
+  RefPtr<Bitmap> bitmap_;
+  int32_t ox_ = 0, oy_ = 0;
+  float zoom_x_ = 1.0f, zoom_y_ = 1.0f;
+  int32_t opacity_ = 255, blend_type_ = 0;
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
 
-  struct {
-    glm::vec4 color = glm::vec4(0.0f);
-    float step = 0.0f;
-  } flash_;
+  //! The object pool slot of this plane, bound at set 1. The quad of a plane is
+  //! emitted in the pixels of the render target, so the transform it carries is
+  //! the identity and the tiles are placed by their texture coordinates instead.
+  UniformBlockPool::Slot object_slot_ = {};
+  //! The range EmitGeometryInternal() appended to the vertex batch of the frame,
+  //! i.e. the vertices DoDraw() draws.
+  PrimitiveEmitter::Slot primitive_slot_ = {};
 
-  RefPtr<Bitmap> pingpong_;
-  wgpu::Buffer object_uniform_, tint_uniform_;
-  wgpu::BindGroup object_group_, tint_group_;
-
-  //! The emitter of the quad which draws the region of this viewport back after
-  //! its effect ran. That quad is emitted in the drawing stage, after the vertex
-  //! batch of the frame was uploaded, so this node cannot use that batch.
-  PrimitiveEmitter primitive_;
+  //! The tint of this plane, `PlaneBase::PlaneParam`, and the bind group of set
+  //! 3 which covers it.
+  wgpu::Buffer tint_uniform_;
+  wgpu::BindGroup tint_group_;
 };
 
 }  // namespace urge

@@ -138,6 +138,43 @@ void main() {
 }
 )";
 
+/* A plane shows its bitmap tiled over the whole render target instead of the
+   single copy of it a sprite reads, so the texture coordinate of a pixel runs
+   over every tile: the vertex stage carries the coordinate of the plane's
+   surface, which grows past one over a tile, and the fraction of it is what the
+   sampler is asked for. The tint of a Color and a Tone attribute applies the
+   way it does to a sprite. */
+static const char kFS_PlaneBase[] = R"(#version 450
+layout(location = 0) in vec2 v_texcoord;
+layout(location = 1) in vec4 v_color;
+
+layout(set = 2, binding = 0) uniform texture2D u_texture;
+layout(set = 2, binding = 1) uniform sampler u_sampler;
+
+layout(set = 3, binding = 0) uniform PlaneParam {
+  vec4 blend_color;
+  vec4 blend_tone;
+} u_plane;
+
+layout(location = 0) out vec4 o_color;
+
+vec4 apply_tint(vec4 color, vec4 blend_color, vec4 blend_tone) {
+  float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+  vec4 result = vec4(mix(color.rgb, vec3(luminance), blend_tone.a), color.a);
+  result = vec4(result.rgb + blend_tone.rgb * result.a, result.a);
+  return vec4(mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
+}
+
+void main() {
+  /* The fractional part is what wraps the coordinate over the tile, and it is
+     taken here rather than by the sampler because the address mode of a bitmap
+     clamps: a coordinate outside of the texture reads its edge texel. */
+  vec2 texcoord = fract(v_texcoord);
+  vec4 color = texture(sampler2D(u_texture, u_sampler), texcoord);
+  o_color = apply_tint(color, u_plane.blend_color, u_plane.blend_tone) * v_color;
+}
+)";
+
 static const char kFS_TransitionAlpha[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -248,6 +285,15 @@ TintBase::TintBase()
 SpriteBase::SpriteBase()
     : Pipeline(kVS_TransformBase, kFS_SpriteBase, {{0, 1, 2}}, {1, 3}) {}
 
+/* ----- PlaneBase ----- */
+
+/* A plane keeps its object transform in the pool of the frame and the two
+   values of its tint in a buffer of its own: a scene holds a handful of planes
+   and a plane is drawn with one quad, so there is nothing to batch and the
+   object set is the only one which travels with a dynamic offset. */
+PlaneBase::PlaneBase()
+    : Pipeline(kVS_TransformBase, kFS_PlaneBase, {{0, 1, 2}}, {1}) {}
+
 /* ----- TransitionAlpha ----- */
 
 TransitionAlpha::TransitionAlpha()
@@ -282,6 +328,9 @@ ShaderSet::ShaderSet() : shader() {
         primitive, std::nullopt,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
     state.sprite_blends[it] = shader.sprite_base.MakeState(
+        primitive, std::nullopt,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
+    state.plane_blends[it] = shader.plane_base.MakeState(
         primitive, std::nullopt,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
   }

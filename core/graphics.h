@@ -39,11 +39,15 @@ class ScreenRootNode : public Node {
 
  private:
   void DisposeObject() override;
-  void Prepare(DrawParam param) override;
+  bool Prepare(DrawParam param) override;
+  //! The brightness quad is emitted and drawn by PostDraw(), so the node has to
+  //! ask for that stage: DoDraw() is what gates PostDraw().
+  bool DoDraw(DrawParam param) override;
   void PostDraw(DrawParam param) override;
 
-  PrimitiveEmitter emitter_;
-  wgpu::Buffer vertex_buffer_;
+  //! The range the brightness quad of this frame occupies in the vertex batch
+  //! of the frame, see QuadVertexManager.
+  PrimitiveEmitter::Slot slot_ = {};
 };
 
 class Graphics : public Singleton<Graphics> {
@@ -92,7 +96,6 @@ class Graphics : public Singleton<Graphics> {
     bool configured = false;
     wgpu::RenderPipeline pipeline;
     PrimitiveEmitter primitive;
-    wgpu::Buffer vertex_buffer;
   } present_;
 };
 

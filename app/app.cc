@@ -40,6 +40,8 @@
 #include "core/graphics.h"
 #include "core/input.h"
 #include "core/logger.h"
+#include "core/plane.h"
+#include "core/primitive.h"
 #include "core/sprite.h"
 #include "core/uniform.h"
 
@@ -50,11 +52,14 @@ using urge::Color;
 using urge::GPUDevice;
 using urge::Graphics;
 using urge::MakeRefCounted;
+using urge::Plane;
+using urge::QuadVertexManager;
 using urge::RefPtr;
 using urge::Sprite;
 using urge::Tone;
 using urge::UniformBlockPool;
 using urge::UniformManager;
+using urge::Vector3;
 using urge::Viewport;
 
 /* --------------------------------------------------------------------------
@@ -85,6 +90,28 @@ constexpr float kGridZoom = 0.02f;
 //! The frame the numeric probes run at, which the wave has moved by then.
 constexpr int32_t kProbeFrame = 12;
 
+/*! TEMPORARY PROBE: the plane which tiles test.png inside a viewport. The rect
+    of that viewport is free space of the scene, so the plane can be sampled
+    without another shape reaching into it.
+
+    The zoom of the plane is picked so that one tile of test.png (301x234) is
+    exactly kPlaneTileW x kPlaneTileH pixels of the target: the tiles then repeat
+    with a period which is a whole number of pixels, which is what lets the probe
+    compare two pixels of the same tile and a pixel three tiles further. */
+constexpr int32_t kPlaneRegionX = 500;
+constexpr int32_t kPlaneRegionY = 388;
+constexpr int32_t kPlaneRegionW = 140;
+constexpr int32_t kPlaneRegionH = 80;
+constexpr float kPlaneZoomX = 40.0f / 301.0f;
+constexpr float kPlaneZoomY = 30.0f / 234.0f;
+constexpr int32_t kPlaneTileW = 40;
+constexpr int32_t kPlaneTileH = 30;
+/*! The root point the tiles of the plane are anchored at: the rect of the
+    viewport plus the local position of the plane, minus its origin --
+    (500, 388) + (10, 0) - (30, 10). */
+constexpr int32_t kPlaneRootX = kPlaneRegionX + 10 - 30;
+constexpr int32_t kPlaneRootY = kPlaneRegionY + 0 - 10;
+
 /*! The source of every sprite: "test.png", next to the executable. The mirror
     probe compares a pixel of a snapshot against the texels of this bitmap, so
     it is kept beside the sprites instead of only inside them. */
@@ -108,6 +135,11 @@ RefPtr<Sprite> test_vp_child;
 RefPtr<Bitmap> test_vp_tex;
 //! TEMPORARY PROBE: the viewport whose color leaves its region almost alone.
 RefPtr<Viewport> test_vp_flat;
+
+/*! TEMPORARY PROBE: the plane which tiles test.png over the rect of its
+    viewport and scrolls it with its origin. */
+RefPtr<Viewport> test_plane_vp;
+RefPtr<Plane> test_plane;
 
 //! The frames the application ran, the probes wait for kProbeFrame of them.
 int32_t frame_counter = 0;
@@ -261,11 +293,32 @@ void CreateTestScene() {
      of its own. */
   test_vp_flat = MakeRefCounted<Viewport>(10, 10, 100, 80);
   test_vp_flat->Attr_Tone(MakeRefCounted<Tone>(-68, 68, -68, 100));
+
+  /* TEMPORARY PROBE: a plane which shows test.png tiled. The viewport of it is
+     placed in the free lower right corner of the scene and holds nothing else,
+     so every pixel of its rect is the plane. The plane sits at the local
+     (10, 0) and its origin is (30, 10), which puts the root point of its tiles
+     at (480, 378) -- the transform of the node hierarchy is what positions it
+     and the origin is what scrolls it, see Plane::EmitGeometryInternal(). Its
+     zoom scales one tile to 40 x 30 pixels, see kPlaneTileW. */
+  test_plane_vp = MakeRefCounted<Viewport>(kPlaneRegionX, kPlaneRegionY,
+                                          kPlaneRegionW, kPlaneRegionH);
+
+  test_plane = MakeRefCounted<Plane>(test_plane_vp);
+  test_plane->Attr_Bitmap(test_bitmap);
+  test_plane->Attr_Position(
+      MakeRefCounted<Vector3>(10.0f, 0.0f, 0.0f));
+  test_plane->Attr_OX(30);
+  test_plane->Attr_OY(10);
+  test_plane->Attr_ZoomX(kPlaneZoomX);
+  test_plane->Attr_ZoomY(kPlaneZoomY);
 }
 
 //! Releases the test scene. It runs while the device is alive, so the buffers
 //! of the sprites are destroyed before the pools and the device are.
 void DestroyTestScene() {
+  test_plane.reset();
+  test_plane_vp.reset();
   test_vp_child.reset();
   test_vp.reset();
   test_vp_flat.reset();
@@ -306,6 +359,16 @@ void ReportPools() {
   UniformManager& uniforms = UniformManager::Get();
   ReportPool(uniforms.object_uniforms());
   ReportPool(uniforms.sprite_uniforms());
+}
+
+/*! Reports the vertex batch of the frame, which is what the drawables emitting
+    a quad per frame append to: the whole frame is one upload into one buffer,
+    so its size is the high-water mark of the frame and not one figure per
+    drawable, see QuadVertexManager. */
+void ReportVertexBatch() {
+  QuadVertexManager& quads = QuadVertexManager::Get();
+  LOGGER_INFO("frame vertex batch: {} vertices of the frame in one buffer of {} bytes",
+              quads.vertex_count(), quads.buffer_size());
 }
 
 /*! Writes a bitmap of the engine out as a PNG, so a frame is looked at through
@@ -476,13 +539,78 @@ void ProbeMirror(RefPtr<Bitmap> snap) {
       Describe(direct), ColorDistance(drawn, direct));
 }
 
+/*! TEMPORARY PROBE: the pixels the plane of the scene shows.
+
+    The plane is a child of the viewport at (500, 388) with the rect (140, 80),
+    it places itself at the local (10, 0) and its origin is (30, 10), so the root
+    point its tiles are anchored at is (500 + 10 - 30, 388 + 0 - 10) = (480, 378)
+    -- the position the node hierarchy put it at, minus its origin, see
+    Plane::EmitGeometryInternal(). Its zoom scales one tile of test.png to
+    exactly 40 x 30 pixels, i.e. one pixel covers 301/40 = 7.525 texels
+    horizontally and 234/30 = 7.8 vertically, and the tile a pixel reads is
+
+        round((x + 0.5 - 480) * 7.525 - 0.5) mod 301
+        round((y + 0.5 - 378) * 7.8   - 0.5) mod 234
+
+    for the pixel (x, y), the half pixel being the center of it.
+
+    - (505, 394) is 25.5 x 16.5 pixels from the root, so it reads the texel
+      (191, 128) of test.png. (545, 394) is one tile to the right, so it reads
+      that same texel -- and a plane which stretched its bitmap over the region
+      instead of repeating it would read the texel (300, 128) there, which is
+      what the probe compares as well.
+    - (505, 424) is one tile below the first point, and (625, 394) is three tiles
+      to the right of it, where the coordinate has run over 1094 texels of the
+      301 wide bitmap, i.e. it wraps three times.
+    - (500, 388), the first pixel of the rect, and (635, 466) in its lower right
+      corner: the quad of the plane covers the whole render target, so the rect
+      of the viewport is what clips it and every pixel of the rect is the plane.
+    - (499, 394) is one pixel left of the rect and (635, 470) is below it, so
+      both hold the black the snapshot was cleared with. */
+void ProbePlane(RefPtr<Bitmap> snap) {
+  LOGGER_INFO(
+      "probe plane: root ({}, {}), one tile of the {}x{} bitmap is {}x{} pixels "
+      "of the target",
+      kPlaneRootX, kPlaneRootY, test_bitmap->GetWidth(), test_bitmap->GetHeight(),
+      kPlaneTileW, kPlaneTileH);
+
+  const auto check = [&](const char* what, const glm::ivec2& pixel,
+                         const glm::ivec2& tiled,
+                         const glm::ivec2& stretched) {
+    const glm::vec4 drawn = snap->GetPixel(pixel.x, pixel.y)->data;
+    const glm::vec4 tile = test_bitmap->GetPixel(tiled.x, tiled.y)->data;
+    const glm::vec4 edge = test_bitmap->GetPixel(stretched.x, stretched.y)->data;
+
+    LOGGER_INFO(
+        "probe plane, {} at ({}, {}): drawn {} against the tile ({}, {}) {} "
+        "(distance {:.1f}) and against the stretched read ({}, {}) {} "
+        "(distance {:.1f})",
+        what, pixel.x, pixel.y, Describe(drawn), tiled.x, tiled.y, Describe(tile),
+        ColorDistance(drawn, tile), stretched.x, stretched.y, Describe(edge),
+        ColorDistance(drawn, edge));
+  };
+
+  check("first tile", {505, 394}, {191, 128}, {191, 128});
+  check("one tile right", {545, 394}, {191, 128}, {300, 128});
+  check("one tile down", {505, 424}, {191, 128}, {191, 233});
+  check("three tiles right", {625, 394}, {191, 128}, {300, 128});
+  check("first pixel of the rect", {500, 388}, {154, 81}, {154, 81});
+  check("lower right of the rect", {635, 466}, {267, 222}, {267, 222});
+
+  LOGGER_INFO("probe plane, left of the rect: (499, 394) is {}",
+              Describe(snap->GetPixel(499, 394)->data));
+  LOGGER_INFO("probe plane, below the rect: (635, 470) is {}",
+              Describe(snap->GetPixel(635, 470)->data));
+}
+
 /*! Runs the probes of a frame: the pixels of the scene and the occupancy of the
     uniform pools.
 
     The snapshot renders the tree off screen once more, so the pixels can be
     read back from the host and compared with what the layout of the scene says
-    they have to show, and the pools are reported afterwards because that render
-    is what filled them for the frame being inspected. */
+    they have to show, and the pools and the vertex batch are reported
+    afterwards because that render is what filled them for the frame being
+    inspected. */
 void ProbeFrame() {
   RefPtr<Bitmap> snap = Graphics::Get().SnapToBitmap();
 
@@ -501,7 +629,9 @@ void ProbeFrame() {
 
   ProbeMirror(snap);
   ProbeViewport(snap);
+  ProbePlane(snap);
   ReportPools();
+  ReportVertexBatch();
 }
 
 }  // namespace

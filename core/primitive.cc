@@ -22,12 +22,15 @@
 
 #include "core/primitive.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 
 #include "core/definition.h"
 #include "core/exception.h"
+#include "core/gpu.h"
+#include "core/logger.h"
 
 namespace urge {
 
@@ -60,7 +63,8 @@ PrimitiveEmitter& PrimitiveEmitter::Begin(PrimitiveType type) {
   type_ = type;
   active_ = true;
   pending_size_ = 0;
-  vertices_.clear();
+  // The batch starts where the storage ends, so earlier batches are kept
+  batch_first_ = vertices_.size();
   color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
   texcoord_ = glm::vec2(0.f, 0.f);
   return *this;
@@ -74,12 +78,13 @@ PrimitiveEmitter& PrimitiveEmitter::BeginQuad() {
   return Begin(PrimitiveType::kQuad);
 }
 
-std::span<const VertexData> PrimitiveEmitter::End() {
-  if (!active_)
-    return {};
-
+PrimitiveEmitter::Slot PrimitiveEmitter::End() {
   active_ = false;
-  return vertices_;
+
+  Slot slot;
+  slot.first = static_cast<std::uint32_t>(batch_first_);
+  slot.count = static_cast<std::uint32_t>(vertices_.size() - batch_first_);
+  return slot;
 }
 
 PrimitiveEmitter& PrimitiveEmitter::Color4f(float r,
@@ -330,6 +335,7 @@ void PrimitiveEmitter::Reserve(std::size_t capacity) {
 void PrimitiveEmitter::Clear() {
   vertices_.clear();
   pending_size_ = 0;
+  batch_first_ = 0;
 }
 
 void PrimitiveEmitter::Reset() {
@@ -338,6 +344,55 @@ void PrimitiveEmitter::Reset() {
   type_ = PrimitiveType::kTriangle;
   color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
   texcoord_ = glm::vec2(0.f, 0.f);
+  vertex_buffer_ = nullptr;
+}
+
+std::uint32_t PrimitiveEmitter::Upload() {
+  // A batch left open is finished by the upload
+  End();
+
+  const std::size_t count = vertices_.size();
+  if (!count)
+    return 0;
+
+  const std::size_t bytes = count * sizeof(VertexData);
+  EnsureVertexBuffer(bytes);
+  GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices_.data(),
+                                       bytes);
+
+  // The vertices live in the buffer from here on, the storage is reused
+  vertices_.clear();
+  batch_first_ = 0;
+  return static_cast<std::uint32_t>(count);
+}
+
+void PrimitiveEmitter::EnsureVertexBuffer(std::size_t bytes) {
+  const std::uint64_t current = buffer_size();
+  if (current >= bytes)
+    return;
+
+  // The device validates against the limits it was created with
+  wgpu::Limits limits = {};
+  GPUDevice::Get().device().GetLimits(&limits);
+
+  // A batch which does not fit is not cut short, its draw would read garbage
+  if (bytes > limits.maxBufferSize)
+    throw Exception(Exception::kGPUError,
+                    "a primitive emitter batch of {} bytes does not fit into the "
+                    "{} byte buffers of this device.",
+                    bytes, limits.maxBufferSize);
+
+  const std::uint64_t size = std::min(
+      std::max<std::uint64_t>(current * 2, bytes), limits.maxBufferSize);
+
+  wgpu::BufferDescriptor buffer_desc;
+  buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+  buffer_desc.size = size;
+  vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
+
+  if (!vertex_buffer_)
+    throw Exception(Exception::kGPUError,
+                    "the device rejected a vertex buffer of {} bytes.", size);
 }
 
 void PrimitiveEmitter::PushVertex(const glm::vec4& position) {
@@ -346,6 +401,32 @@ void PrimitiveEmitter::PushVertex(const glm::vec4& position) {
   vertex.texcoord = texcoord_;
   vertex.color = color_;
   vertices_.push_back(vertex);
+}
+
+/* ----- QuadVertexManager ----- */
+
+QuadVertexManager::QuadVertexManager() {
+  emitter_.Reserve(4096);
+
+  LOGGER_DEBUG("frame vertex batch: reserved {} vertices of {} bytes",
+               emitter_.capacity(), sizeof(VertexData));
+}
+
+QuadVertexManager::~QuadVertexManager() {
+  emitter_.Reset();
+}
+
+void QuadVertexManager::BeginFrame() {
+  emitter_.Clear();
+  vertex_count_ = 0;
+}
+
+std::uint32_t QuadVertexManager::Upload() {
+  vertex_count_ = emitter_.Upload();
+
+  LOGGER_TRACE("frame vertex batch: {} vertices of {} bytes in one upload",
+               vertex_count_, emitter_.buffer_size());
+  return vertex_count_;
 }
 
 }  // namespace urge

@@ -85,6 +85,16 @@ class SpriteBase : public Pipeline {
   SpriteBase();
 };
 
+class PlaneBase : public Pipeline {
+ public:
+  struct alignas(16) PlaneParam {
+    glm::vec4 blend_color;
+    glm::vec4 blend_tone;
+  };
+
+  PlaneBase();
+};
+
 class TransitionAlpha : public Pipeline {
  public:
   TransitionAlpha();
@@ -101,6 +111,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
     ColorBase color_base;
     TintBase tint_base;
     SpriteBase sprite_base;
+    PlaneBase plane_base;
     TransitionAlpha transition_alpha;
     TransitionVague transition_vague;
   } shader;
@@ -112,6 +123,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
     wgpu::RenderPipeline color_pma;
     std::map<BlendType, wgpu::RenderPipeline> tint_blends;
     std::map<BlendType, wgpu::RenderPipeline> sprite_blends;
+    std::map<BlendType, wgpu::RenderPipeline> plane_blends;
     wgpu::RenderPipeline transition_alpha;
     wgpu::RenderPipeline transition_vague;
   } state;

@@ -177,9 +177,8 @@ inline RectI MakeIntersect(const RectI& A, const RectI& B) {
   return result;
 }
 
-inline glm::ivec2 ExtractPosition(const glm::mat4& matrix) {
-  return glm::ivec2(static_cast<int32_t>(std::lround(matrix[3].x)),
-                    static_cast<int32_t>(std::lround(matrix[3].y)));
+inline glm::vec2 ExtractPosition(const glm::mat4& matrix) {
+  return glm::vec2(std::lround(matrix[3].x), std::lround(matrix[3].y));
 }
 
 }  // namespace urge

@@ -298,22 +298,20 @@ ATTR_DEF(Sprite, RefPtr<Tone>, Tone) {
 
 void Sprite::DisposeObject() {
   bitmap_.reset();
-
-  vertex_buffer_ = nullptr;
 }
 
-void Sprite::Prepare(DrawParam param) {
-  drawable_ = false;
-  vertex_count_ = 0;
+bool Sprite::Prepare(DrawParam param) {
+  primitive_slot_ = {};
 
   // A sprite without a bitmap, or with one which was disposed, draws nothing
   if (!Disposable::Check(bitmap_))
-    return;
+    return false;
 
-  vertex_count_ = EmitGeometryInternal();
+  // The geometry goes into the vertex batch of the frame, see QuadVertexManager
+  primitive_slot_ = EmitGeometryInternal(*param->vertices);
   // A source rectangle which is empty after being limited to the texture
-  if (!vertex_count_)
-    return;
+  if (!primitive_slot_.count)
+    return false;
 
   /* The transform of a sprite is the one of the node hierarchy with its own on
      top: the sprite is positioned at (x, y), the origin is the point it is
@@ -341,17 +339,11 @@ void Sprite::Prepare(DrawParam param) {
   object_slot_ = uniforms.object_uniforms().Acquire(object_data);
   param_slot_ = uniforms.sprite_uniforms().Acquire(MakeParamInternal());
 
-  drawable_ = object_slot_.chunk != UniformBlockPool::kInvalidChunk &&
-              param_slot_.chunk != UniformBlockPool::kInvalidChunk;
-
-  LOGGER_TRACE("sprite prepare: {} vertices, chunk {} slot at {}",
-               vertex_count_, object_slot_.chunk, object_slot_.offset);
+  return object_slot_.chunk != UniformBlockPool::kInvalidChunk &&
+         param_slot_.chunk != UniformBlockPool::kInvalidChunk;
 }
 
-void Sprite::DoDraw(DrawParam param) {
-  if (!drawable_)
-    return;
-
+bool Sprite::DoDraw(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
@@ -367,8 +359,11 @@ void Sprite::DoDraw(DrawParam param) {
   param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
   // The parameter of this sprite, bound with the offset of its slot
   param->pass.SetBindGroup(3, param_chunk.group, 1, &param_slot_.offset);
-  param->pass.SetVertexBuffer(0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
-  param->pass.Draw(vertex_count_, 1, 0, 0);
+  // The batch of the frame holds the vertices, this draw takes its own range
+  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
+  param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
+
+  return false;
 }
 
 SpriteBase::SpriteParam Sprite::MakeParamInternal() {
@@ -395,7 +390,8 @@ SpriteBase::SpriteParam Sprite::MakeParamInternal() {
   return param;
 }
 
-uint32_t Sprite::EmitGeometryInternal() {
+PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
+    PrimitiveEmitter& primitive) {
   const int32_t texture_width = bitmap_->size().x;
   const int32_t texture_height = bitmap_->size().y;
 
@@ -404,7 +400,7 @@ uint32_t Sprite::EmitGeometryInternal() {
   src.width = std::clamp(src.width, 0, std::max(0, texture_width - src.x));
   src.height = std::clamp(src.height, 0, std::max(0, texture_height - src.y));
   if (src.width == 0 || src.height == 0)
-    return 0;
+    return {};
 
   const glm::vec2 texture_size(static_cast<float>(texture_width),
                                static_cast<float>(texture_height));
@@ -420,9 +416,9 @@ uint32_t Sprite::EmitGeometryInternal() {
     if (mirror_)
       texcoord = RectI(src.x + src.width, src.y, -src.width, src.height);
 
-    primitive_.EmitQuad(RectF(0.0f, 0.0f, static_cast<float>(src.width),
-                              static_cast<float>(src.height)),
-                        MakeNorm(RectF(texcoord), texture_size), color);
+    primitive.EmitQuad(RectF(0.0f, 0.0f, static_cast<float>(src.width),
+                             static_cast<float>(src.height)),
+                       MakeNorm(RectF(texcoord), texture_size), color);
   } else {
     /* A wave bends the sprite in strips: every strip of kWaveBlockAlign pixels
        is moved sideways by the sine of the phase it is at, which is the wave of
@@ -442,13 +438,13 @@ uint32_t Sprite::EmitGeometryInternal() {
         texcoord = RectI(texcoord.x + texcoord.width, texcoord.y,
                          -texcoord.width, texcoord.height);
 
-      primitive_.Rect(RectF(offset, static_cast<float>(block_y),
-                            static_cast<float>(src.width),
-                            static_cast<float>(block_height)),
-                      MakeNorm(RectF(texcoord), texture_size));
+      primitive.Rect(RectF(offset, static_cast<float>(block_y),
+                           static_cast<float>(src.width),
+                           static_cast<float>(block_height)),
+                     MakeNorm(RectF(texcoord), texture_size));
     };
 
-    primitive_.BeginQuad().Color4f(color);
+    primitive.BeginQuad().Color4f(color);
 
     const int32_t whole_blocks = src.height / kWaveBlockAlign;
     for (int32_t index = 0; index < whole_blocks; ++index)
@@ -459,28 +455,7 @@ uint32_t Sprite::EmitGeometryInternal() {
       emit_block(whole_blocks * kWaveBlockAlign, last_block);
   }
 
-  const std::span<const VertexData> vertices = primitive_.End();
-  if (vertices.empty())
-    return 0;
-
-  // The draw of this frame reads the vertices, so they are uploaded here, the
-  // command buffer holding it is submitted after the prepare stage is over
-  const wgpu::Buffer buffer = AcquireVertexBuffer(vertices.size_bytes());
-  GPUDevice::Get().queue().WriteBuffer(buffer, 0, vertices.data(),
-                                       vertices.size_bytes());
-
-  return static_cast<uint32_t>(vertices.size());
-}
-
-wgpu::Buffer Sprite::AcquireVertexBuffer(size_t size) {
-  if (!vertex_buffer_ || vertex_buffer_.GetSize() < size) {
-    wgpu::BufferDescriptor buffer_desc;
-    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    buffer_desc.size = size;
-    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
-  }
-
-  return vertex_buffer_;
+  return primitive.End();
 }
 
 }  // namespace urge

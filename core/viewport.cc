@@ -123,10 +123,10 @@ void Viewport::DisposeObject() {
   object_group_ = nullptr;
   tint_uniform_ = nullptr;
   tint_group_ = nullptr;
-  vertex_buffer_ = nullptr;
+  primitive_.Reset();
 }
 
-void Viewport::Prepare(DrawParam param) {
+bool Viewport::Prepare(DrawParam param) {
   glm::vec4 blend_color = color_->Normalize();
   const glm::vec4 blend_tone = tone_->Normalize();
   if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
@@ -136,9 +136,11 @@ void Viewport::Prepare(DrawParam param) {
   tint.blend_color = blend_color;
   tint.blend_tone = blend_tone;
   GPUDevice::Get().queue().WriteBuffer(tint_uniform_, 0, &tint, sizeof(tint));
+
+  return true;
 }
 
-void Viewport::DoDraw(DrawParam param) {
+bool Viewport::DoDraw(DrawParam param) {
   const RectI current_scissor = param->scissors.top();
 
   /* The rect of a viewport is in the coordinates of the render target, it is
@@ -164,6 +166,8 @@ void Viewport::DoDraw(DrawParam param) {
   param->scissors.push(result_scissor);
   param->pass.SetScissorRect(result_scissor.x, result_scissor.y,
                              result_scissor.width, result_scissor.height);
+
+  return true;
 }
 
 void Viewport::PostDraw(DrawParam param) {
@@ -191,15 +195,12 @@ void Viewport::PostDraw(DrawParam param) {
     copy_size.height = viewport_region.height;
     param->command.CopyTextureToTexture(&source, &destination, &copy_size);
 
-    // Make quad vertices
+    // The batch of the frame is already written, this quad needs its own emitter
     primitive_.EmitQuad(
         viewport_region,
         MakeNorm(RectI(viewport_region.Size()), pingpong_->size()),
         glm::vec4(1.0f));
-    const std::span<const VertexData> vertices = primitive_.End();
-    vertex_buffer_ = AcquireVertexBuffer(vertices.size_bytes());
-    GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices.data(),
-                                         vertices.size_bytes());
+    const std::uint32_t vertex_count = primitive_.Upload();
 
     // Begin original render target
     wgpu::RenderPassColorAttachment color_attachment;
@@ -219,8 +220,8 @@ void Viewport::PostDraw(DrawParam param) {
     param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
     param->pass.SetBindGroup(2, pingpong_->texture_group(), 0, nullptr);
     param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
-    param->pass.SetVertexBuffer(0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
-    param->pass.Draw(6, 1, 0, 0);
+    param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+    param->pass.Draw(vertex_count, 1, 0, 0);
   }
 
   // Restore scissor stack
@@ -286,17 +287,6 @@ void Viewport::AcquirePingPong(const RectI& region) {
   const int32_t height =
       std::max(region.height, pingpong_ ? pingpong_->size().y : 0);
   pingpong_ = MakeRefCounted<Bitmap>(width, height);
-}
-
-wgpu::Buffer Viewport::AcquireVertexBuffer(size_t size) {
-  if (!vertex_buffer_ || vertex_buffer_.GetSize() < size) {
-    wgpu::BufferDescriptor buffer_desc;
-    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    buffer_desc.size = size;
-    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
-  }
-
-  return vertex_buffer_;
 }
 
 }  // namespace urge

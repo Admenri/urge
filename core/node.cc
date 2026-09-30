@@ -26,6 +26,7 @@
 #include "glm/gtc/quaternion.hpp"
 
 #include "core/graphics.h"
+#include "core/primitive.h"
 #include "core/uniform.h"
 
 namespace urge {
@@ -56,16 +57,21 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.command = encoder;
   context.target = target;
 
-  /* The prepare stage is what reserves the slots of the bulk uniform data, so
-     it opens and closes a frame of the pools: the slots are staged by the
-     prepare callbacks and written into the pool buffers before the command
-     buffer of this frame is submitted below. */
+  /* The prepare stage reserves the slots of the bulk uniform data and appends
+     the vertices of the frame, so it opens and closes a frame of both: the
+     slots and the vertices are written into their buffers before the command
+     buffer of this frame is submitted below, see UniformManager and
+     QuadVertexManager. */
   UniformManager& uniforms = UniformManager::Get();
+  QuadVertexManager& quads = QuadVertexManager::Get();
   uniforms.BeginFrame();
+  quads.BeginFrame();
+  context.vertices = &quads.emitter();
 
   ExecutePrepare(&context);
 
   uniforms.Flush();
+  quads.Upload();
 
   wgpu::RenderPassColorAttachment color_attachment;
   color_attachment.view = target->texture_view();
@@ -177,16 +183,16 @@ void Node::ExecutePrepare(DrawParam param) {
   param->model.push(current_model * transform_.local);
   {
     transform_.world = param->model.top();
-    Prepare(param);
+    allow_do_draw_ = Prepare(param);
     children_.DispatchPrepare(param);
   }
   param->model.pop();
 }
 
 void Node::ExecuteRendering(DrawParam param) {
-  DoDraw(param);
+  allow_post_draw_ = allow_do_draw_ ? DoDraw(param) : false;
   children_.DispatchDraw(param);
-  PostDraw(param);
+  allow_post_draw_ ? PostDraw(param) : void();
 }
 
 void Node::RebuildModelTransform() {

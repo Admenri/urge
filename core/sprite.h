@@ -65,12 +65,11 @@ class Sprite : public Node {
 
  private:
   void DisposeObject() override;
-  void Prepare(DrawParam param) override;
-  void DoDraw(DrawParam param) override;
+  bool Prepare(DrawParam param) override;
+  bool DoDraw(DrawParam param) override;
 
   SpriteBase::SpriteParam MakeParamInternal();
-  uint32_t EmitGeometryInternal();
-  wgpu::Buffer AcquireVertexBuffer(size_t size);
+  PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter);
 
   RefPtr<Bitmap> bitmap_;
   RefPtr<Rect> src_rect_;
@@ -99,13 +98,9 @@ class Sprite : public Node {
   //! The slot of the sprite pool this frame put the parameter of this sprite
   //! in, which the sprite pipeline binds at set 3.
   UniformBlockPool::Slot param_slot_ = {};
-  //! The vertices EmitGeometryInternal() wrote, i.e. what DoDraw() draws.
-  uint32_t vertex_count_ = 0;
-  //! True when this frame emitted a geometry, so DoDraw() has work to do.
-  bool drawable_ = false;
-
-  PrimitiveEmitter primitive_;
-  wgpu::Buffer vertex_buffer_;
+  //! The range EmitGeometryInternal() appended to the vertex batch of the frame,
+  //! i.e. the vertices DoDraw() draws.
+  PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 
 }  // namespace urge

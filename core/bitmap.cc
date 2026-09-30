@@ -338,15 +338,14 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  auto vertices_data =
+  /* The quad is one batch of the emitter, which writes it into its own vertex
+     buffer and drops it afterwards, so this operation does not build a buffer
+     by hand, see PrimitiveEmitter::Upload(). */
+  const std::uint32_t vertex_count =
       primitive_
           .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
                     glm::vec4(opacity / 255.0f))
-          .End();
-
-  auto buffer = AcquireBuffer(vertices_data.size_bytes());
-  GPUDevice::Get().queue().WriteBuffer(buffer, 0, vertices_data.data(),
-                                       vertices_data.size_bytes());
+          .Upload();
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
   wgpu::RenderPassColorAttachment color_attachment;
@@ -363,8 +362,8 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
     pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
-    pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
-    pass.Draw(6, 1, 0, 0);
+    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(vertex_count, 1, 0, 0);
   }
   pass.End();
   auto command = encoder.Finish(nullptr);
@@ -415,11 +414,9 @@ void Bitmap::GradientFillRect(int32_t x,
   else
     primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
                         color2_norm, color1_norm, color2_norm);
-  auto vertices_data = primitive_.End();
-
-  auto buffer = AcquireBuffer(vertices_data.size_bytes());
-  GPUDevice::Get().queue().WriteBuffer(buffer, 0, vertices_data.data(),
-                                       vertices_data.size_bytes());
+  /* The quad is one batch of the emitter, which writes it into its own vertex
+     buffer and drops it afterwards, see PrimitiveEmitter::Upload(). */
+  const std::uint32_t vertex_count = primitive_.Upload();
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
   wgpu::RenderPassColorAttachment color_attachment;
@@ -435,8 +432,8 @@ void Bitmap::GradientFillRect(int32_t x,
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
-    pass.Draw(6, 1, 0, 0);
+    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(vertex_count, 1, 0, 0);
   }
   pass.End();
   auto command = encoder.Finish(nullptr);
@@ -710,17 +707,6 @@ void Bitmap::CreateGroup() {
   texture_group_ =
       CreateWGroup(pipeline.GetBindGroupLayout(2),
                    {{0, WTextureViewSet(view_)}, {1, WSamplerSet(sampler_)}});
-}
-
-wgpu::Buffer Bitmap::AcquireBuffer(size_t size) {
-  if (!vertex_buffer_ || vertex_buffer_.GetSize() < size) {
-    wgpu::BufferDescriptor buffer_desc;
-    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    buffer_desc.size = size;
-    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
-  }
-
-  return vertex_buffer_;
 }
 
 }  // namespace urge

@@ -47,21 +47,20 @@ ScreenRootNode::~ScreenRootNode() {
 
 void ScreenRootNode::DisposeObject() {}
 
-void ScreenRootNode::Prepare(DrawParam param) {
-  if (!vertex_buffer_) {
-    wgpu::BufferDescriptor buffer_desc;
-    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    buffer_desc.size = 6 * sizeof(VertexData);
-    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
-  }
-
-  glm::vec4 brightness_tint(
+bool ScreenRootNode::Prepare(DrawParam param) {
+  const glm::vec4 brightness_tint(
       0.0f, 0.0f, 0.0f,
       static_cast<float>(255 - Graphics::Get().brightness_) / 255.0f);
-  emitter_.EmitQuad(RectI(param->target->size()), RectF(), brightness_tint);
-  const auto vertices = emitter_.End();
-  GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices.data(),
-                                       vertices.size_bytes());
+  param->vertices->EmitQuad(RectI(param->target->size()), RectF(),
+                            brightness_tint);
+  slot_ = param->vertices->End();
+
+  return true;
+}
+
+bool ScreenRootNode::DoDraw(DrawParam param) {
+  // The quad of this node is drawn by PostDraw() once the children are drawn
+  return true;
 }
 
 void ScreenRootNode::PostDraw(DrawParam param) {
@@ -69,8 +68,8 @@ void ScreenRootNode::PostDraw(DrawParam param) {
   param->pass.SetPipeline(pipeline);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, param->target->object_group(), 0, nullptr);
-  param->pass.SetVertexBuffer(0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
-  param->pass.Draw(6, 1, 0, 0);
+  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
+  param->pass.Draw(slot_.count, 1, slot_.first, 0);
 }
 
 // -------------------------------------------------------------------------------
@@ -83,10 +82,10 @@ Graphics::Graphics() {
   GPUDevice::Reset(new GPUDevice(window_));
   ShaderSet::Reset(new ShaderSet());
 
-  /* The uniform pools of a frame live exactly as long as the device and the
-     shaders they were built for, so the manager shares the lifetime of
-     Graphics. */
+  /* The uniform pools and the vertex buffer of a frame outlive the frames, so
+     both managers share the lifetime of Graphics. */
   UniformManager::Reset(new UniformManager());
+  QuadVertexManager::Reset(new QuadVertexManager());
 
   root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(Config::Get().width, Config::Get().height);
@@ -97,6 +96,7 @@ Graphics::~Graphics() {
   screen_texture_.reset();
   root_.reset();
 
+  QuadVertexManager::Reset(nullptr);
   UniformManager::Reset(nullptr);
   ShaderSet::Reset(nullptr);
   GPUDevice::Reset(nullptr);
@@ -239,24 +239,15 @@ void Graphics::PresentInternal() {
     present_.configured = true;
   }
 
-  if (!present_.vertex_buffer) {
-    wgpu::BufferDescriptor buffer_desc;
-    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    buffer_desc.size = 6 * sizeof(VertexData);
-    present_.vertex_buffer =
-        GPUDevice::Get().device().CreateBuffer(&buffer_desc);
-  }
-
   wgpu::SurfaceTexture surface_texture;
   surface.GetCurrentTexture(&surface_texture);
   auto surface_view = surface_texture.texture.CreateView(nullptr);
 
+  // The emitter owns and uploads the buffer the quad of the present goes into
   present_.primitive.EmitQuad(RectI(0, 0, surface_texture.texture.GetWidth(),
                                     surface_texture.texture.GetHeight()),
                               RectI(0, 0, 1, 1), glm::vec4(1.0f));
-  auto vertices = present_.primitive.End();
-  GPUDevice::Get().queue().WriteBuffer(present_.vertex_buffer, 0,
-                                       vertices.data(), vertices.size_bytes());
+  const std::uint32_t vertex_count = present_.primitive.Upload();
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
   {
@@ -274,8 +265,8 @@ void Graphics::PresentInternal() {
       pass.SetBindGroup(0, screen_texture_->scene_group(), 0, nullptr);
       pass.SetBindGroup(1, screen_texture_->object_group(), 0, nullptr);
       pass.SetBindGroup(2, screen_texture_->texture_group(), 0, nullptr);
-      pass.SetVertexBuffer(0, present_.vertex_buffer, 0, WGPU_WHOLE_SIZE);
-      pass.Draw(6, 1, 0, 0);
+      pass.SetVertexBuffer(0, present_.primitive.buffer(), 0, WGPU_WHOLE_SIZE);
+      pass.Draw(vertex_count, 1, 0, 0);
     }
     pass.End();
   }

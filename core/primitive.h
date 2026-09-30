@@ -28,20 +28,17 @@
 #include <vector>
 
 #include "core/common.h"
+#include "core/gpu.h"
+#include "core/object.h"
 
 namespace urge {
 
 /**
 \brief Vertex layout shared by every primitive emitted by PrimitiveEmitter.
 
-The members are arranged for LLGL::VertexAttribute (40 bytes stride):
-- \c position: \c Format::RGBA32Float, offset 0, location 0
-- \c texcoord: \c Format::RG32Float, offset 16, location 1
-- \c color: \c Format::RGBA32Float, offset 24, location 2
-
-\remarks The vector and rectangle aliases of core/common.h are spelled with
-their namespace qualifier: MSVC 19.51 (Visual Studio 2026) fails to resolve an
-unqualified alias of an enclosing namespace inside a class member declaration.
+One 40 byte stride: \c position as RGBA32Float at location 0 (offset 0),
+\c texcoord as RG32Float at location 1 (offset 16) and \c color as RGBA32Float
+at location 2 (offset 24).
 */
 struct VertexData {
   //! Vertex position in pixels, the z/w components default to 0/1.
@@ -62,32 +59,36 @@ static_assert(offsetof(VertexData, color) == 24, "unexpected color offset");
 
 The emitter keeps the color and the texture coordinate as a state which is
 applied to every vertex emitted afterwards, so a whole batch can be described
-with a handful of calls:
+with a handful of calls. A quad takes its four corners from four Vertex*() calls
+and expands them into six vertices (two triangles), see EmitVertex();
+PrimitiveType::kTriangle picks up its three vertices from the next three
+Vertex*() calls, every further triplet starts another triangle. Emitting more
+vertices than the reserved capacity keeps working, the storage just grows like
+any other std::vector.
 
 \code
-render::PrimitiveEmitter emitter(64);
-emitter.Begin(render::PrimitiveEmitter::PrimitiveType::kQuad)
+PrimitiveEmitter emitter(64);
+emitter.BeginQuad()
     .Color4f(1.f, 0.f, 0.f)
     .Texcoord2f(0.f, 1.f)
-    .Vertex2f(10.f, 20.f)
-    .Texcoord2f(1.f, 1.f)
-    .Vertex2f(74.f, 20.f)
-    .Texcoord2f(0.f, 0.f)
-    .Vertex2f(10.f, 84.f)
-    .Texcoord2f(1.f, 0.f)
-    .Vertex2f(74.f, 84.f);
-std::span<const render::VertexData> vertices = emitter.End();
+    .Vertex2f(10.f, 20.f);   // ... and the other three corners
+PrimitiveEmitter::Slot slot = emitter.End();
+emitter.Upload();
+// The six vertices of the quad are read from emitter.buffer() from here on
+pass.SetVertexBuffer(0, emitter.buffer(), 0, WGPU_WHOLE_SIZE);
+pass.Draw(slot.count, 1, slot.first, 0);
 \endcode
 
-Begin() starts a batch and End() commits it and returns the emitted vertices,
-which stay valid until the next Begin()/Clear()/Reset() call. A quad takes its
-four corners from four Vertex*() calls and expands them into six vertices (two
-triangles), see EmitVertex(). Emitting more vertices than the reserved capacity
-keeps working, the storage just grows like any other std::vector.
-
-PrimitiveType::kTriangle picks up its three vertices from the next three
-Vertex*() calls, every further triplet starts another triangle: a batch emits
-as many primitives as it has complete vertex groups.
+The vertices are one append-only storage: Begin() starts a batch at the end of
+it and End() answers the range that batch emitted, but neither drops what an
+earlier batch wrote. That is what lets several batches share one upload -- the
+frame batch of QuadVertexManager appends one batch per drawable and writes all of
+them with a single Upload() -- and an emitter which uploads after every batch
+(Bitmap, PresentInternal) never grows. Upload() creates or grows the vertex
+buffer of the emitter and copies the storage into it with one queue write, so
+from then on a draw reads the vertices from buffer() and addresses its own with
+the Slot its End() answered. Only that upload and Clear()/Reset() drop the
+storage, the latter two release the buffer as well.
 */
 class PrimitiveEmitter {
  public:
@@ -109,6 +110,16 @@ class PrimitiveEmitter {
     kBottomRight = 3,
   };
 
+  //! A range of the vertices of the emitter, in the order they were emitted.
+  //! The same indices hold in the vertex buffer of the emitter after Upload(),
+  //! so the range is what addresses a draw: Draw(count, 1, first, 0).
+  struct Slot {
+    //! The index of the first vertex of the batch.
+    std::uint32_t first = 0;
+    //! The number of vertices of the batch.
+    std::uint32_t count = 0;
+  };
+
   //! Default capacity of the vertex storage, in vertices (about 40 KiB).
   static constexpr std::size_t kDefaultCapacity = 1024;
 
@@ -121,8 +132,10 @@ class PrimitiveEmitter {
 
   /**
   \brief Starts a batch of the specified primitive type.
-  \remarks Clears the vertices of the previous batch and resets the color and
-  texture coordinate state. Throws Exception if a batch is active.
+  \remarks The batch starts at the end of the storage, the vertices of an
+  earlier batch are kept: only Clear()/Reset() and Upload() drop them. Resets
+  the color and the texture coordinate state. Throws Exception if a batch is
+  active.
   */
   PrimitiveEmitter& Begin(PrimitiveType type = PrimitiveType::kTriangle);
   //! Starts a triangle batch, see Begin().
@@ -131,11 +144,12 @@ class PrimitiveEmitter {
   PrimitiveEmitter& BeginQuad();
 
   /**
-  \brief Ends the active batch and returns the vertices emitted since Begin().
-  \remarks Logs a warning and returns an empty span if no batch is active. The
-  returned span is invalidated by the next state changing emitter call.
+  \brief Ends the active batch and answers the range of vertices it emitted.
+  \remarks Returns an empty slot when the batch emitted nothing, which is what a
+  caller whose geometry collapsed has to test. The range stays valid until the
+  vertices are uploaded or cleared.
   */
-  std::span<const VertexData> End();
+  Slot End();
 
   /* ----- State applied to the following vertices ----- */
 
@@ -257,11 +271,12 @@ class PrimitiveEmitter {
 
   /* ----- Storage ----- */
 
-  //! Returns the vertices emitted by the active/finished batch.
+  //! Returns the vertices which are waiting for an Upload(), i.e. everything
+  //! emitted since the last Upload()/Clear()/Reset().
   std::span<const VertexData> vertices() const { return vertices_; }
-  //! Returns the number of emitted vertices.
+  //! Returns the number of vertices which are waiting for an Upload().
   std::size_t size() const { return vertices_.size(); }
-  //! Returns true if the batch emitted no vertex.
+  //! Returns true if no vertex is waiting for an Upload().
   bool empty() const { return vertices_.empty(); }
   //! Returns true while a batch is active, i.e. between Begin() and End().
   bool active() const { return active_; }
@@ -272,10 +287,33 @@ class PrimitiveEmitter {
   void Reserve(std::size_t capacity);
   //! Returns the vertex storage capacity, in vertices.
   std::size_t capacity() const { return vertices_.capacity(); }
-  //! Drops the emitted vertices, the color/texcoord state is kept.
+  //! Drops the vertices waiting for an Upload(), the color/texcoord state and
+  //! the vertex buffer are kept.
   void Clear();
-  //! Drops the emitted vertices and restores every state to its default.
+  //! Drops the vertices waiting for an Upload(), restores every state to its
+  //! default and releases the vertex buffer.
   void Reset();
+
+  /* ----- Vertex buffer ----- */
+
+  /**
+  \brief Ends an active batch, writes the pending vertices into the vertex
+  buffer of the emitter and drops them.
+  \return The number of vertices written, zero when the storage is empty.
+
+  \remarks The buffer is created for the vertices, or grown when it is smaller
+  than them, and it is kept afterwards, so a frame which stays at the size of the
+  previous one writes into the same buffer. Throws Exception if the vertices do
+  not fit into one buffer of the device.
+  */
+  std::uint32_t Upload();
+  //! Returns the buffer Upload() writes, which is empty before the first one.
+  const wgpu::Buffer& buffer() const { return vertex_buffer_; }
+  //! Returns the size of the vertex buffer, in bytes, zero before the first
+  //! Upload().
+  std::uint64_t buffer_size() const {
+    return vertex_buffer_ ? vertex_buffer_.GetSize() : 0;
+  }
 
  private:
   //! Number of corners a quad is built from.
@@ -285,9 +323,16 @@ class PrimitiveEmitter {
   void PushVertex(const glm::vec4& position);
   //! Expands the pending quad corners into the six vertices of two triangles.
   void ExpandQuad();
+  //! Creates the vertex buffer for \c bytes, or grows it when it is smaller.
+  void EnsureVertexBuffer(std::size_t bytes);
 
-  //! Vertices emitted since the last Begin().
+  //! Vertices emitted since the last Upload(), Clear() or Reset(), the storage
+  //! of every batch which was not uploaded yet.
   std::vector<VertexData> vertices_;
+  //! Index of the first vertex of the batch started by the last Begin().
+  std::size_t batch_first_ = 0;
+  //! The vertex buffer the last Upload() wrote, created and grown on demand.
+  wgpu::Buffer vertex_buffer_;
   //! Primitive type of the active/last batch.
   PrimitiveType type_ = PrimitiveType::kTriangle;
   //! State applied to the next emitted vertex.
@@ -304,6 +349,57 @@ class PrimitiveEmitter {
   std::size_t pending_size_ = 0;
   //! True while a batch is active, i.e. between Begin() and End().
   bool active_ = false;
+};
+
+/**
+\brief The vertex batch of one frame: every drawable which emits a quad per frame
+appends into one emitter, so the frame is one upload into one vertex buffer
+instead of one buffer and one upload per drawable.
+
+A drawable emits into emitter() during the prepare stage and keeps the Slot its
+End() answered; its draw stage turns that slot into a draw against buffer():
+
+\code
+slot_ = param->vertices->End();                          // prepare stage
+...
+param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
+param->pass.Draw(slot_.count, 1, slot_.first, 0);        // draw stage
+\endcode
+
+Driven by Node::Render, which opens and closes one frame of it around the prepare
+stage -- like the uniform pools of UniformManager, and for the same reason: a
+queue write is ordered before the submissions that follow it, so the vertices
+have to be uploaded after the last drawable staged them and before the command
+buffer that draws them is submitted.
+*/
+class QuadVertexManager : public Singleton<QuadVertexManager> {
+ public:
+  QuadVertexManager();
+  ~QuadVertexManager();
+
+  //! Opens a frame: the vertices of the previous one are dropped, the vertex
+  //! buffer and its capacity are kept.
+  void BeginFrame();
+
+  //! The emitter the drawables of the frame append to, see DrawContext.
+  PrimitiveEmitter& emitter() { return emitter_; }
+  /*! Writes the vertices every drawable of the frame appended, in one upload.
+      \return The number of vertices the frame emitted. */
+  std::uint32_t Upload();
+
+  //! The vertex buffer of the frame, which every draw of it binds at vertex
+  //! slot 0.
+  const wgpu::Buffer& buffer() { return emitter_.buffer(); }
+  //! The number of vertices the last frame emitted, zero before the first one.
+  std::uint32_t vertex_count() const { return vertex_count_; }
+  //! The size of the vertex buffer of the frame, in bytes.
+  std::uint64_t buffer_size() { return emitter_.buffer_size(); }
+
+ private:
+  //! The vertices of the frame, in one storage and one buffer.
+  PrimitiveEmitter emitter_;
+  //! The number of vertices the last frame emitted.
+  std::uint32_t vertex_count_ = 0;
 };
 
 }  // namespace urge

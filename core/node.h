@@ -49,8 +49,8 @@ class Node : public Disposable {
   /*-export.end-*/
 
  protected:
-  virtual void Prepare(DrawParam param) {}
-  virtual void DoDraw(DrawParam param) {}
+  virtual bool Prepare(DrawParam param) { return false; }
+  virtual bool DoDraw(DrawParam param) { return false; }
   virtual void PostDraw(DrawParam param) {}
 
  public:
@@ -82,6 +82,9 @@ class Node : public Disposable {
   Drawable self_;
   RefPtr<Node> parent_;
   bool world_root_ = false;
+
+  bool allow_do_draw_ = false;
+  bool allow_post_draw_ = false;
 
   struct Transform3D {
     RefPtr<Vector3> position;
