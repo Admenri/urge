@@ -68,16 +68,10 @@ Graphics::Graphics() {
 
   root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(Config::Get().width, Config::Get().height);
-
-  wgpu::BufferDescriptor buffer_desc;
-  buffer_desc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex;
-  buffer_desc.size = 6 * sizeof(VertexData);
-  vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
 }
 
 Graphics::~Graphics() {
-  vertex_buffer_ = nullptr;
-
+  present_ = {};
   screen_texture_.reset();
   root_.reset();
 
@@ -164,8 +158,8 @@ int32_t Graphics::GetHeight() {
 }
 
 void Graphics::ResizeScreen(int32_t width, int32_t height) {
+  present_.configured = false;
   screen_texture_ = MakeRefCounted<Bitmap>(width, height);
-  configured_ = false;
 
   SDL_SetWindowSize(window_, width, height);
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
@@ -200,52 +194,69 @@ void Graphics::PresentInternal() {
 
   // The surface is configured once and again after the screen was resized, the
   // size it covers is the one the screen texture is rendered at
-  if (!configured_) {
+  if (!present_.configured) {
     wgpu::SurfaceCapabilities capabilities;
     surface.GetCapabilities(GPUDevice::Get().adapter(), &capabilities);
 
     surface.Unconfigure();
-
     wgpu::SurfaceConfiguration configure;
     configure.device = GPUDevice::Get().device();
-    configure.format = wgpu::TextureFormat::RGBA8Unorm;
+    configure.format = capabilities.formats[0];
     configure.usage = wgpu::TextureUsage::RenderAttachment;
     configure.width = static_cast<uint32_t>(GetWidth());
     configure.height = static_cast<uint32_t>(GetHeight());
     configure.presentMode = wgpu::PresentMode::Fifo;
     surface.Configure(&configure);
 
-    configured_ = true;
+    wgpu::PrimitiveState primitive;
+    primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+    present_.pipeline = ShaderSet::Get().shader.texture_base.MakeState(
+        primitive, std::nullopt,
+        {wgpu::ColorTargetState{.format = configure.format}});
+
+    present_.configured = true;
+  }
+
+  if (!present_.vertex_buffer) {
+    wgpu::BufferDescriptor buffer_desc;
+    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+    buffer_desc.size = 6 * sizeof(VertexData);
+    present_.vertex_buffer =
+        GPUDevice::Get().device().CreateBuffer(&buffer_desc);
   }
 
   wgpu::SurfaceTexture surface_texture;
   surface.GetCurrentTexture(&surface_texture);
   auto surface_view = surface_texture.texture.CreateView(nullptr);
 
-  primitive_.EmitQuad(RectI(0, 0, surface_texture.texture.GetWidth(),
-                            surface_texture.texture.GetHeight()),
-                      RectI(0, 0, 1, 1), glm::vec4(1.0f));
-  auto vertices = primitive_.End();
-  GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices.data(),
-                                       vertices.size_bytes());
+  present_.primitive.EmitQuad(RectI(0, 0, surface_texture.texture.GetWidth(),
+                                    surface_texture.texture.GetHeight()),
+                              RectI(0, 0, 1, 1), glm::vec4(1.0f));
+  auto vertices = present_.primitive.End();
+  GPUDevice::Get().queue().WriteBuffer(present_.vertex_buffer, 0,
+                                       vertices.data(), vertices.size_bytes());
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
-  wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = surface_view;
-  color_attachment.loadOp = wgpu::LoadOp::Clear;
-  color_attachment.storeOp = wgpu::StoreOp::Store;
-  color_attachment.clearValue = {0.67f, 0.54f, 0.87f, 1.0f};
-  wgpu::RenderPassDescriptor pass_desc;
-  pass_desc.colorAttachmentCount = 1;
-  pass_desc.colorAttachments = &color_attachment;
-  auto pass = encoder.BeginRenderPass(&pass_desc);
-  pass.SetPipeline(ShaderSet::Get().state.texture_noblend);
-  pass.SetBindGroup(0, screen_texture_->scene_group(), 0, nullptr);
-  pass.SetBindGroup(1, screen_texture_->object_group(), 0, nullptr);
-  pass.SetBindGroup(2, screen_texture_->texture_group(), 0, nullptr);
-  pass.SetVertexBuffer(0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
-  pass.Draw(6, 1, 0, 0);
-  pass.End();
+  {
+    wgpu::RenderPassColorAttachment color_attachment;
+    color_attachment.view = surface_view;
+    color_attachment.loadOp = wgpu::LoadOp::Clear;
+    color_attachment.storeOp = wgpu::StoreOp::Store;
+    color_attachment.clearValue = {0.67f, 0.54f, 0.87f, 1.0f};
+    wgpu::RenderPassDescriptor pass_desc;
+    pass_desc.colorAttachmentCount = 1;
+    pass_desc.colorAttachments = &color_attachment;
+    auto pass = encoder.BeginRenderPass(&pass_desc);
+    {
+      pass.SetPipeline(present_.pipeline);
+      pass.SetBindGroup(0, screen_texture_->scene_group(), 0, nullptr);
+      pass.SetBindGroup(1, screen_texture_->object_group(), 0, nullptr);
+      pass.SetBindGroup(2, screen_texture_->texture_group(), 0, nullptr);
+      pass.SetVertexBuffer(0, present_.vertex_buffer, 0, WGPU_WHOLE_SIZE);
+      pass.Draw(6, 1, 0, 0);
+    }
+    pass.End();
+  }
   auto command = encoder.Finish(nullptr);
   GPUDevice::Get().queue().Submit(1, &command);
 
