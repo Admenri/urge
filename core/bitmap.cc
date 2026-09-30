@@ -404,8 +404,8 @@ void Bitmap::GradientFillRect(int32_t x,
   if (!color1 || !color2)
     throw Exception(Exception::kRGSSError, "invalid color value.");
 
-  auto color1_norm = color1->Normalize();
-  auto color2_norm = color2->Normalize();
+  auto color1_norm = PremultiplyColor(color1->Normalize());
+  auto color2_norm = PremultiplyColor(color2->Normalize());
 
   if (vertical)
     primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
