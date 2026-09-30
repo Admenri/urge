@@ -91,6 +91,8 @@ class Bitmap : public Disposable {
   ATTR(RefPtr<Font>, Font);
   /*-export.end-*/
 
+  glm::ivec2 size() const { return size_; }
+
   wgpu::Texture texture() { return texture_; }
   wgpu::TextureView texture_view() { return view_; }
   wgpu::Texture depth_stencil() { return depth_stencil_; }

@@ -109,6 +109,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
     wgpu::RenderPipeline texture_noblend;
     wgpu::RenderPipeline texture_pma;
     wgpu::RenderPipeline color_noblend;
+    wgpu::RenderPipeline color_pma;
     std::map<BlendType, wgpu::RenderPipeline> tint_blends;
     std::map<BlendType, wgpu::RenderPipeline> sprite_blends;
     wgpu::RenderPipeline transition_alpha;

@@ -281,7 +281,7 @@ Bitmap::Bitmap(int32_t width, int32_t height) {
 }
 
 Bitmap::Bitmap(RefPtr<Bitmap> other)
-    : Bitmap(other->GetWidth(), other->GetHeight()) {
+    : Bitmap(other->size().x, other->size().y) {
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
 
   wgpu::TexelCopyTextureInfo source, destination;
@@ -289,8 +289,8 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
   destination.texture = texture();
 
   wgpu::Extent3D copy_size;
-  copy_size.width = other->GetWidth();
-  copy_size.height = other->GetHeight();
+  copy_size.width = other->size().x;
+  copy_size.height = other->size().y;
 
   encoder.CopyTextureToTexture(&source, &destination, &copy_size);
 
@@ -357,13 +357,15 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   pass_desc.colorAttachmentCount = 1;
   pass_desc.colorAttachments = &color_attachment;
   auto pass = encoder.BeginRenderPass(&pass_desc);
-  auto pipeline = ShaderSet::Get().state.texture_pma;
-  pass.SetPipeline(pipeline);
-  pass.SetBindGroup(0, scene_group_, 0, nullptr);
-  pass.SetBindGroup(1, object_group_, 0, nullptr);
-  pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
-  pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
-  pass.Draw(6, 1, 0, 0);
+  {
+    auto pipeline = ShaderSet::Get().state.texture_pma;
+    pass.SetPipeline(pipeline);
+    pass.SetBindGroup(0, scene_group_, 0, nullptr);
+    pass.SetBindGroup(1, object_group_, 0, nullptr);
+    pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
+    pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
+    pass.Draw(6, 1, 0, 0);
+  }
   pass.End();
   auto command = encoder.Finish(nullptr);
   GPUDevice::Get().queue().Submit(1, &command);
@@ -428,12 +430,14 @@ void Bitmap::GradientFillRect(int32_t x,
   pass_desc.colorAttachmentCount = 1;
   pass_desc.colorAttachments = &color_attachment;
   auto pass = encoder.BeginRenderPass(&pass_desc);
-  auto pipeline = ShaderSet::Get().state.color_noblend;
-  pass.SetPipeline(pipeline);
-  pass.SetBindGroup(0, scene_group_, 0, nullptr);
-  pass.SetBindGroup(1, object_group_, 0, nullptr);
-  pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
-  pass.Draw(6, 1, 0, 0);
+  {
+    auto pipeline = ShaderSet::Get().state.color_noblend;
+    pass.SetPipeline(pipeline);
+    pass.SetBindGroup(0, scene_group_, 0, nullptr);
+    pass.SetBindGroup(1, object_group_, 0, nullptr);
+    pass.SetVertexBuffer(0, buffer, 0, WGPU_WHOLE_SIZE);
+    pass.Draw(6, 1, 0, 0);
+  }
   pass.End();
   auto command = encoder.Finish(nullptr);
   GPUDevice::Get().queue().Submit(1, &command);

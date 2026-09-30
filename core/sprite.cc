@@ -383,7 +383,7 @@ SpriteBase::SpriteParam Sprite::MakeParamInternal() {
      the shader compares against the texture coordinate of a pixel, so the depth
      is normalized the way a texture coordinate is. */
   const float texture_height =
-      static_cast<float>(std::max(1, bitmap_->GetHeight()));
+      static_cast<float>(std::max(1, bitmap_->size().y));
   const RectI src = src_rect_->data;
 
   SpriteBase::SpriteParam param = {};
@@ -396,8 +396,8 @@ SpriteBase::SpriteParam Sprite::MakeParamInternal() {
 }
 
 uint32_t Sprite::EmitGeometryInternal() {
-  const int32_t texture_width = bitmap_->GetWidth();
-  const int32_t texture_height = bitmap_->GetHeight();
+  const int32_t texture_width = bitmap_->size().x;
+  const int32_t texture_height = bitmap_->size().y;
 
   // The source rectangle of a sprite is limited to the bitmap it reads from
   RectI src = src_rect_->data;

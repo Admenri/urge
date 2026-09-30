@@ -39,11 +39,11 @@ struct DrawContext {
   // Command buffer
   wgpu::CommandEncoder command;
 
+  // Render target
+  RefPtr<Bitmap> target;
+
   // Render pass (drawing stage)
   wgpu::RenderPassEncoder pass;
-
-  // Render target (drawing stage)
-  RefPtr<Bitmap> target;
 
   // Scene bindgroup (drawing stage)
   wgpu::BindGroup scene;

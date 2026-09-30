@@ -43,6 +43,7 @@ class ScreenRootNode : public Node {
   void PostDraw(DrawParam param) override;
 
   PrimitiveEmitter emitter_;
+  wgpu::Buffer vertex_buffer_;
 };
 
 class Graphics : public Singleton<Graphics> {

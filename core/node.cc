@@ -54,9 +54,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   DrawContext context = {};
   context.model.push(glm::mat4(1.0f));
   context.command = encoder;
-  context.pass = nullptr;
-  context.target = nullptr;
-  context.scene = nullptr;
+  context.target = target;
 
   /* The prepare stage is what reserves the slots of the bulk uniform data, so
      it opens and closes a frame of the pools: the slots are staged by the
@@ -84,10 +82,9 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   render_pass_desc.colorAttachmentCount = 1;
   render_pass_desc.colorAttachments = &color_attachment;
   context.pass = encoder.BeginRenderPass(&render_pass_desc);
-  context.target = target;
   context.scene = target->scene_group();
-  context.scissors.push(RectI(0, 0, target->GetWidth(), target->GetHeight()));
-  context.pass.SetScissorRect(0, 0, target->GetWidth(), target->GetHeight());
+  context.scissors.push(RectI(target->size()));
+  context.pass.SetScissorRect(0, 0, target->size().x, target->size().y);
 
   ExecuteRendering(&context);
 

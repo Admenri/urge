@@ -273,6 +273,10 @@ ShaderSet::ShaderSet() : shader() {
                               .blend = GetBlendState(BLEND_NORMAL)}});
   state.color_noblend = shader.color_base.MakeState(
       primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+  state.color_pma = shader.color_base.MakeState(
+      primitive, std::nullopt,
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
   for (auto it : {BLEND_NONE, BLEND_NORMAL, BLEND_ADDITION, BLEND_SUBTRACT}) {
     state.tint_blends[it] = shader.tint_base.MakeState(
         primitive, std::nullopt,

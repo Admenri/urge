@@ -47,9 +47,31 @@ ScreenRootNode::~ScreenRootNode() {
 
 void ScreenRootNode::DisposeObject() {}
 
-void ScreenRootNode::Prepare(DrawParam param) {}
+void ScreenRootNode::Prepare(DrawParam param) {
+  if (!vertex_buffer_) {
+    wgpu::BufferDescriptor buffer_desc;
+    buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+    buffer_desc.size = 6 * sizeof(VertexData);
+    vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
+  }
 
-void ScreenRootNode::PostDraw(DrawParam param) {}
+  glm::vec4 brightness_tint(
+      0.0f, 0.0f, 0.0f,
+      static_cast<float>(255 - Graphics::Get().brightness_) / 255.0f);
+  emitter_.EmitQuad(RectI(param->target->size()), RectF(), brightness_tint);
+  const auto vertices = emitter_.End();
+  GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices.data(),
+                                       vertices.size_bytes());
+}
+
+void ScreenRootNode::PostDraw(DrawParam param) {
+  auto pipeline = ShaderSet::Get().state.color_pma;
+  param->pass.SetPipeline(pipeline);
+  param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+  param->pass.SetBindGroup(1, param->target->object_group(), 0, nullptr);
+  param->pass.SetVertexBuffer(0, vertex_buffer_, 0, WGPU_WHOLE_SIZE);
+  param->pass.Draw(6, 1, 0, 0);
+}
 
 // -------------------------------------------------------------------------------
 
@@ -150,11 +172,11 @@ void Graphics::FrameReset() {
 }
 
 int32_t Graphics::GetWidth() {
-  return screen_texture_->GetWidth();
+  return screen_texture_->size().x;
 }
 
 int32_t Graphics::GetHeight() {
-  return screen_texture_->GetHeight();
+  return screen_texture_->size().y;
 }
 
 void Graphics::ResizeScreen(int32_t width, int32_t height) {

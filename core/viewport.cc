@@ -194,9 +194,7 @@ void Viewport::PostDraw(DrawParam param) {
     // Make quad vertices
     primitive_.EmitQuad(
         viewport_region,
-        MakeNorm(RectI(viewport_region.Size()),
-                 glm::vec2(static_cast<float>(pingpong_->GetWidth()),
-                           static_cast<float>(pingpong_->GetHeight()))),
+        MakeNorm(RectI(viewport_region.Size()), pingpong_->size()),
         glm::vec4(1.0f));
     const std::span<const VertexData> vertices = primitive_.End();
     vertex_buffer_ = AcquireVertexBuffer(vertices.size_bytes());
@@ -279,14 +277,14 @@ void Viewport::CreateEffectBindings() {
 }
 
 void Viewport::AcquirePingPong(const RectI& region) {
-  if (pingpong_ && pingpong_->GetWidth() >= region.width &&
-      pingpong_->GetHeight() >= region.height)
+  if (pingpong_ && pingpong_->size().x >= region.width &&
+      pingpong_->size().y >= region.height)
     return;
 
   const int32_t width =
-      std::max(region.width, pingpong_ ? pingpong_->GetWidth() : 0);
+      std::max(region.width, pingpong_ ? pingpong_->size().x : 0);
   const int32_t height =
-      std::max(region.height, pingpong_ ? pingpong_->GetHeight() : 0);
+      std::max(region.height, pingpong_ ? pingpong_->size().y : 0);
   pingpong_ = MakeRefCounted<Bitmap>(width, height);
 }
 
