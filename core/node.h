@@ -69,8 +69,8 @@ class Node : public Disposable {
     return self_.TryCast<Ty>();
   }
 
-  Mat4x4 local_transform() { return transform_.local; }
-  Mat4x4 world_transform() { return transform_.world; }
+  glm::mat4 local_transform() { return transform_.local; }
+  glm::mat4 world_transform() { return transform_.world; }
 
  private:
   void DisposeObject() override;
@@ -87,8 +87,8 @@ class Node : public Disposable {
     RefPtr<Vector3> position;
     RefPtr<Vector4> quaternion;
     RefPtr<Vector3> scale;
-    Mat4x4 local = Mat4x4(1.0f);
-    Mat4x4 world = Mat4x4(1.0f);
+    glm::mat4 local = glm::mat4(1.0f);
+    glm::mat4 world = glm::mat4(1.0f);
 
     Transform3D()
         : position(MakeRefCounted<Vector3>(0.0f)),

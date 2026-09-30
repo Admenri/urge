@@ -82,9 +82,8 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
       limits.maxUniformBufferBindingSize == WGPU_LIMIT_U64_UNDEFINED
           ? kDefaultChunkSize
           : limits.maxUniformBufferBindingSize;
-  const uint64_t chunk_limit =
-      std::min<uint64_t>(std::max<uint64_t>(binding_limit, slot_stride_),
-                         kMaxChunkSize);
+  const uint64_t chunk_limit = std::min<uint64_t>(
+      std::max<uint64_t>(binding_limit, slot_stride_), kMaxChunkSize);
 
   slots_per_chunk_ =
       static_cast<uint32_t>(std::max<uint64_t>(1, chunk_limit / slot_stride_));
@@ -182,17 +181,20 @@ void UniformBlockPool::CreateChunk() {
 /* ----- UniformManager ----- */
 
 UniformManager::UniformManager()
-    /* The sprite and the tint pipelines are the ones built with a dynamic object
-       set, either of them describes the layout the object pool binds; the sprite
-       pipeline is the only one which takes a dynamic sprite parameter. */
-    : object_uniforms_(
-          ShaderSet::Get().state.sprite_blends.at(BLEND_NORMAL)
-              .GetBindGroupLayout(1),
-          sizeof(ObjectData), "object"),
-      sprite_uniforms_(
-          ShaderSet::Get().state.sprite_blends.at(BLEND_NORMAL)
-              .GetBindGroupLayout(3),
-          sizeof(SpriteBase::SpriteParam), "sprite") {}
+    /* The sprite and the tint pipelines are the ones built with a dynamic
+       object set, either of them describes the layout the object pool binds;
+       the sprite pipeline is the only one which takes a dynamic sprite
+       parameter. */
+    : object_uniforms_(ShaderSet::Get()
+                           .state.sprite_blends.at(BLEND_NORMAL)
+                           .GetBindGroupLayout(1),
+                       sizeof(ObjectData),
+                       "object"),
+      sprite_uniforms_(ShaderSet::Get()
+                           .state.sprite_blends.at(BLEND_NORMAL)
+                           .GetBindGroupLayout(3),
+                       sizeof(SpriteBase::SpriteParam),
+                       "sprite") {}
 
 UniformManager::~UniformManager() = default;
 

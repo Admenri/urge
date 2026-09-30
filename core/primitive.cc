@@ -53,16 +53,16 @@ PrimitiveEmitter::PrimitiveEmitter(std::size_t capacity) {
 
 PrimitiveEmitter& PrimitiveEmitter::Begin(PrimitiveType type) {
   if (active_)
-    throw urge::Exception(
-        urge::Exception::kRGSSError,
+    throw Exception(
+        Exception::kRGSSError,
         "primitive emitter already has an active batch, call End() first.");
 
   type_ = type;
   active_ = true;
   pending_size_ = 0;
   vertices_.clear();
-  color_ = urge::Vec4(1.f, 1.f, 1.f, 1.f);
-  texcoord_ = urge::Vec2(0.f, 0.f);
+  color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
+  texcoord_ = glm::vec2(0.f, 0.f);
   return *this;
 }
 
@@ -86,10 +86,10 @@ PrimitiveEmitter& PrimitiveEmitter::Color4f(float r,
                                             float g,
                                             float b,
                                             float a) {
-  return Color4f(urge::Vec4(r, g, b, a));
+  return Color4f(glm::vec4(r, g, b, a));
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Color4f(const urge::Vec4& color) {
+PrimitiveEmitter& PrimitiveEmitter::Color4f(const glm::vec4& color) {
   color_ = color;
   return *this;
 }
@@ -108,21 +108,21 @@ PrimitiveEmitter& PrimitiveEmitter::Color4u(std::uint32_t argb) {
 }
 
 PrimitiveEmitter& PrimitiveEmitter::ClearColor() {
-  color_ = urge::Vec4(1.f, 1.f, 1.f, 1.f);
+  color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
   return *this;
 }
 
 PrimitiveEmitter& PrimitiveEmitter::Texcoord2f(float u, float v) {
-  return Texcoord2f(urge::Vec2(u, v));
+  return Texcoord2f(glm::vec2(u, v));
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Texcoord2f(const urge::Vec2& texcoord) {
+PrimitiveEmitter& PrimitiveEmitter::Texcoord2f(const glm::vec2& texcoord) {
   texcoord_ = texcoord;
   return *this;
 }
 
 PrimitiveEmitter& PrimitiveEmitter::ClearTexcoord() {
-  texcoord_ = urge::Vec2(0.f, 0.f);
+  texcoord_ = glm::vec2(0.f, 0.f);
   return *this;
 }
 
@@ -130,7 +130,7 @@ PrimitiveEmitter& PrimitiveEmitter::Vertex2f(float x, float y) {
   return EmitVertex(x, y, 0.f, 1.f);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Vertex2f(const urge::Vec2& position) {
+PrimitiveEmitter& PrimitiveEmitter::Vertex2f(const glm::vec2& position) {
   return Vertex2f(position.x, position.y);
 }
 
@@ -138,7 +138,7 @@ PrimitiveEmitter& PrimitiveEmitter::Vertex3f(float x, float y, float z) {
   return EmitVertex(x, y, z, 1.f);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Vertex3f(const urge::Vec3& position) {
+PrimitiveEmitter& PrimitiveEmitter::Vertex3f(const glm::vec3& position) {
   return Vertex3f(position.x, position.y, position.z);
 }
 
@@ -149,7 +149,7 @@ PrimitiveEmitter& PrimitiveEmitter::Vertex4f(float x,
   return EmitVertex(x, y, z, w);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Vertex4f(const urge::Vec4& position) {
+PrimitiveEmitter& PrimitiveEmitter::Vertex4f(const glm::vec4& position) {
   return Vertex4f(position.x, position.y, position.z, position.w);
 }
 
@@ -158,11 +158,11 @@ PrimitiveEmitter& PrimitiveEmitter::EmitVertex(float x,
                                                float z,
                                                float w) {
   if (!active_)
-    throw urge::Exception(
-        urge::Exception::kRGSSError,
+    throw Exception(
+        Exception::kRGSSError,
         "primitive emitter has no active batch, call Begin() first.");
 
-  const urge::Vec4 position(x, y, z, w);
+  const glm::vec4 position(x, y, z, w);
 
   switch (type_) {
     case PrimitiveType::kTriangle:
@@ -218,10 +218,10 @@ PrimitiveEmitter& PrimitiveEmitter::Rect(float x,
                                          float y,
                                          float width,
                                          float height) {
-  return Rect(x, y, width, height, urge::RectF(0.f, 0.f, 1.f, 1.f));
+  return Rect(x, y, width, height, RectF(0.f, 0.f, 1.f, 1.f));
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Rect(const urge::RectF& rect) {
+PrimitiveEmitter& PrimitiveEmitter::Rect(const RectF& rect) {
   return Rect(rect.x, rect.y, rect.width, rect.height);
 }
 
@@ -229,12 +229,12 @@ PrimitiveEmitter& PrimitiveEmitter::Rect(float x,
                                          float y,
                                          float width,
                                          float height,
-                                         const urge::RectF& texcoord) {
-  return Rect(urge::RectF(x, y, width, height), texcoord);
+                                         const RectF& texcoord) {
+  return Rect(RectF(x, y, width, height), texcoord);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Rect(const urge::RectF& rect,
-                                         const urge::RectF& texcoord) {
+PrimitiveEmitter& PrimitiveEmitter::Rect(const RectF& rect,
+                                         const RectF& texcoord) {
   if (!active_)
     BeginQuad();
 
@@ -245,23 +245,23 @@ PrimitiveEmitter& PrimitiveEmitter::Rect(const urge::RectF& rect,
 
   // The quad expansion of EmitVertex() repeats the shared corners and derives
   // the bottom right texture coordinate, so the four corners are enough.
-  texcoord_ = urge::Vec2(texcoord.x, texcoord.y);
+  texcoord_ = glm::vec2(texcoord.x, texcoord.y);
   Vertex2f(rect.x, rect.y);
-  texcoord_ = urge::Vec2(right_u, texcoord.y);
+  texcoord_ = glm::vec2(right_u, texcoord.y);
   Vertex2f(right, rect.y);
-  texcoord_ = urge::Vec2(texcoord.x, bottom_v);
+  texcoord_ = glm::vec2(texcoord.x, bottom_v);
   Vertex2f(rect.x, bottom);
-  texcoord_ = urge::Vec2(right_u, bottom_v);
+  texcoord_ = glm::vec2(right_u, bottom_v);
   Vertex2f(right, bottom);
   return *this;
 }
 
-PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const urge::RectF& rect,
-                                             const urge::RectF& texcoord,
-                                             const urge::Vec4& top_left,
-                                             const urge::Vec4& top_right,
-                                             const urge::Vec4& bottom_left,
-                                             const urge::Vec4& bottom_right) {
+PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const RectF& rect,
+                                             const RectF& texcoord,
+                                             const glm::vec4& top_left,
+                                             const glm::vec4& top_right,
+                                             const glm::vec4& bottom_left,
+                                             const glm::vec4& bottom_right) {
   const float left = rect.x;
   const float top = rect.y;
   const float right = rect.x + rect.width;
@@ -284,26 +284,26 @@ PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const urge::RectF& rect,
       .Vertex2f(right, bottom);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const urge::RectF& rect,
-                                             const urge::RectF& texcoord,
-                                             const urge::Vec4& color) {
+PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const RectF& rect,
+                                             const RectF& texcoord,
+                                             const glm::vec4& color) {
   return EmitQuad(rect, texcoord, color, color, color, color);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const urge::RectF& rect,
-                                             const urge::Vec4& color) {
-  return EmitQuad(rect, urge::RectF(), color);
+PrimitiveEmitter& PrimitiveEmitter::EmitQuad(const RectF& rect,
+                                             const glm::vec4& color) {
+  return EmitQuad(rect, RectF(), color);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::EmitTriangle(const urge::Vec2& position0,
-                                                 const urge::Vec2& position1,
-                                                 const urge::Vec2& position2,
-                                                 const urge::Vec2& texcoord0,
-                                                 const urge::Vec2& texcoord1,
-                                                 const urge::Vec2& texcoord2,
-                                                 const urge::Vec4& color0,
-                                                 const urge::Vec4& color1,
-                                                 const urge::Vec4& color2) {
+PrimitiveEmitter& PrimitiveEmitter::EmitTriangle(const glm::vec2& position0,
+                                                 const glm::vec2& position1,
+                                                 const glm::vec2& position2,
+                                                 const glm::vec2& texcoord0,
+                                                 const glm::vec2& texcoord1,
+                                                 const glm::vec2& texcoord2,
+                                                 const glm::vec4& color0,
+                                                 const glm::vec4& color1,
+                                                 const glm::vec4& color2) {
   return BeginTriangle()
       .Texcoord2f(texcoord0)
       .Color4f(color0)
@@ -316,9 +316,9 @@ PrimitiveEmitter& PrimitiveEmitter::EmitTriangle(const urge::Vec2& position0,
       .Vertex2f(position2);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::EmitTriangle(const urge::Vec2& position0,
-                                                 const urge::Vec2& position1,
-                                                 const urge::Vec2& position2) {
+PrimitiveEmitter& PrimitiveEmitter::EmitTriangle(const glm::vec2& position0,
+                                                 const glm::vec2& position1,
+                                                 const glm::vec2& position2) {
   return BeginTriangle().Vertex2f(position0).Vertex2f(position1).Vertex2f(
       position2);
 }
@@ -336,11 +336,11 @@ void PrimitiveEmitter::Reset() {
   Clear();
   active_ = false;
   type_ = PrimitiveType::kTriangle;
-  color_ = urge::Vec4(1.f, 1.f, 1.f, 1.f);
-  texcoord_ = urge::Vec2(0.f, 0.f);
+  color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
+  texcoord_ = glm::vec2(0.f, 0.f);
 }
 
-void PrimitiveEmitter::PushVertex(const urge::Vec4& position) {
+void PrimitiveEmitter::PushVertex(const glm::vec4& position) {
   VertexData vertex;
   vertex.position = position;
   vertex.texcoord = texcoord_;

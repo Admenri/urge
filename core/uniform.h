@@ -43,23 +43,23 @@ frame, addressed with a dynamic offset.
 A pipeline whose set is built with a dynamic offset -- which the object set and
 the sprite parameter set of the sprite pipeline are, see Pipeline::Pipeline() --
 binds a whole byte range of a buffer instead of the data of a single drawable:
-the bind group of the set is made once for the buffer and every draw chooses what
-it reads with a dynamic offset. This pool is what turns that into one buffer for
-a whole scene instead of one buffer per drawable.
+the bind group of the set is made once for the buffer and every draw chooses
+what it reads with a dynamic offset. This pool is what turns that into one
+buffer for a whole scene instead of one buffer per drawable.
 
 The byte range of a chunk is cut into slots whose distance is
-minUniformBufferOffsetAlignment and whose size is at least one element, so a slot
-is a legal dynamic offset and two slots can never overlap.
+minUniformBufferOffsetAlignment and whose size is at least one element, so a
+slot is a legal dynamic offset and two slots can never overlap.
 
-A frame goes through BeginFrame(), then one Acquire() per drawable, then Flush(),
-all of them before the command buffer holding the draws is submitted.
-UniformManager drives that for every pool of the engine at once, and Node::Render
-calls it around the prepare stage of the tree.
+A frame goes through BeginFrame(), then one Acquire() per drawable, then
+Flush(), all of them before the command buffer holding the draws is submitted.
+UniformManager drives that for every pool of the engine at once, and
+Node::Render calls it around the prepare stage of the tree.
 
 A slot of the current frame stays valid until the next BeginFrame(), which is
 what lets the draw stage read the slot its prepare stage was handed. A chunk
-fills up sequentially and a chunk a frame exhausts is followed by another one, so
-the pool grows with a scene which needs more slots than fit into one uniform
+fills up sequentially and a chunk a frame exhausts is followed by another one,
+so the pool grows with a scene which needs more slots than fit into one uniform
 buffer binding.
 */
 class UniformBlockPool {

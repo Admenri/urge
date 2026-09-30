@@ -52,7 +52,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
 
   DrawContext context = {};
-  context.model.push(Mat4x4(1.0f));
+  context.model.push(glm::mat4(1.0f));
   context.command = encoder;
   context.pass = nullptr;
   context.target = nullptr;
@@ -196,7 +196,7 @@ void Node::RebuildModelTransform() {
   auto pos = transform_.position->data;
   auto quat = transform_.quaternion->data;
   auto scale = transform_.scale->data;
-  auto model = Mat4x4(1.0f);
+  auto model = glm::mat4(1.0f);
 
   model = glm::translate(model, pos);
   model *= glm::mat4_cast(glm::quat(quat.w, quat.x, quat.y, quat.z));

@@ -30,23 +30,13 @@
 
 namespace urge {
 
-using Vec2 = glm::vec2;
-using Vec3 = glm::vec3;
-using Vec4 = glm::vec4;
-
-using Vec2i = glm::ivec2;
-using Vec3i = glm::ivec3;
-using Vec4i = glm::ivec4;
-
-using Mat4x4 = glm::mat4x4;
-
 class RectI {
  public:
   RectI() : x(0), y(0), width(0), height(0) {}
-  RectI(const Vec2i& size) : x(0), y(0), width(size.x), height(size.y) {}
+  RectI(const glm::ivec2& size) : x(0), y(0), width(size.x), height(size.y) {}
   RectI(int32_t ix, int32_t iy, int32_t iw, int32_t ih)
       : x(ix), y(iy), width(iw), height(ih) {}
-  RectI(const Vec2i& pos, const Vec2i& size)
+  RectI(const glm::ivec2& pos, const glm::ivec2& size)
       : x(pos.x), y(pos.y), width(size.x), height(size.y) {}
 
   RectI(const RectI& other) {
@@ -83,8 +73,8 @@ class RectI {
 
   SDL_Rect ToSDLRect() const { return SDL_Rect{x, y, width, height}; }
 
-  Vec2i Position() const { return Vec2i(x, y); }
-  Vec2i Size() const { return Vec2i(width, height); }
+  glm::ivec2 Position() const { return glm::ivec2(x, y); }
+  glm::ivec2 Size() const { return glm::ivec2(width, height); }
 
  public:
   int32_t x, y, width, height;
@@ -93,10 +83,10 @@ class RectI {
 class RectF {
  public:
   RectF() : x(0.f), y(0.f), width(0.f), height(0.f) {}
-  RectF(const Vec2& size) : x(0), y(0), width(size.x), height(size.y) {}
+  RectF(const glm::vec2& size) : x(0), y(0), width(size.x), height(size.y) {}
   RectF(float ix, float iy, float iw, float ih)
       : x(ix), y(iy), width(iw), height(ih) {}
-  RectF(const Vec2& pos, const Vec2& size)
+  RectF(const glm::vec2& pos, const glm::vec2& size)
       : x(pos.x), y(pos.y), width(size.x), height(size.y) {}
   RectF(const RectI& ir)
       : x(static_cast<float>(ir.x)),
@@ -136,14 +126,14 @@ class RectF {
                  height * value.height);
   }
 
-  Vec2 Position() const { return Vec2(x, y); }
-  Vec2 Size() const { return Vec2(width, height); }
+  glm::vec2 Position() const { return glm::vec2(x, y); }
+  glm::vec2 Size() const { return glm::vec2(width, height); }
 
  public:
   float x, y, width, height;
 };
 
-inline RectF MakeNorm(RectF rect, Vec2 size) {
+inline RectF MakeNorm(RectF rect, glm::vec2 size) {
   RectF result = rect;
   result.x /= size.x;
   result.y /= size.y;
@@ -187,9 +177,9 @@ inline RectI MakeIntersect(const RectI& A, const RectI& B) {
   return result;
 }
 
-inline Vec2i ExtractPosition(const Mat4x4& matrix) {
-  return Vec2i(static_cast<int32_t>(std::lround(matrix[3].x)),
-               static_cast<int32_t>(std::lround(matrix[3].y)));
+inline glm::ivec2 ExtractPosition(const glm::mat4& matrix) {
+  return glm::ivec2(static_cast<int32_t>(std::lround(matrix[3].x)),
+                    static_cast<int32_t>(std::lround(matrix[3].y)));
 }
 
 }  // namespace urge

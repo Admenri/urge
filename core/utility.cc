@@ -26,7 +26,7 @@ namespace urge {
 
 MARSHAL_DUMP_DEF(Rect) {
   std::string serial_data(sizeof(int32_t) * 4, 0);
-  std::memcpy(serial_data.data(), &obj->data, sizeof(Vec4));
+  std::memcpy(serial_data.data(), &obj->data, sizeof(glm::vec4));
   return serial_data;
 }
 

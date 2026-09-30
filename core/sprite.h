@@ -87,7 +87,7 @@ class Sprite : public Node {
   RefPtr<Tone> tone_;
 
   struct {
-    Vec4 color = Vec4(0.0f);
+    glm::vec4 color = glm::vec4(0.0f);
     float step = 0.0f;
   } flash_;
 

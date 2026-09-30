@@ -34,7 +34,7 @@ namespace urge {
 
 struct DrawContext {
   // Current context model transform stack
-  std::stack<Mat4x4> model;
+  std::stack<glm::mat4> model;
 
   // Command buffer
   wgpu::CommandEncoder command;

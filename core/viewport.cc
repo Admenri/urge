@@ -55,7 +55,7 @@ Viewport::~Viewport() {
 }
 
 void Viewport::Flash(RefPtr<Color> color, int32_t duration) {
-  flash_.color = color ? color->Normalize() : Vec4();
+  flash_.color = color ? color->Normalize() : glm::vec4();
   flash_.step =
       duration > 0 ? (flash_.color.w / static_cast<float>(duration)) : 0.0f;
 }
@@ -127,8 +127,8 @@ void Viewport::DisposeObject() {
 }
 
 void Viewport::Prepare(DrawParam param) {
-  Vec4 blend_color = color_->Normalize();
-  const Vec4 blend_tone = tone_->Normalize();
+  glm::vec4 blend_color = color_->Normalize();
+  const glm::vec4 blend_tone = tone_->Normalize();
   if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
     blend_color = flash_.color;
 
@@ -147,7 +147,7 @@ void Viewport::DoDraw(DrawParam param) {
      to be placed the way the parent hierarchy placed the node, and the origin
      is added back because the transform of the node has it subtracted. */
   RectI self_scissor = rect_->data;
-  const Vec2i world_position = ExtractPosition(world_transform());
+  const glm::ivec2 world_position = ExtractPosition(world_transform());
   self_scissor.x = world_position.x + origin_.x;
   self_scissor.y = world_position.y + origin_.y;
 
@@ -167,11 +167,12 @@ void Viewport::DoDraw(DrawParam param) {
 }
 
 void Viewport::PostDraw(DrawParam param) {
-  Vec4 blend_color = color_->Normalize();
-  const Vec4 blend_tone = tone_->Normalize();
+  glm::vec4 blend_color = color_->Normalize();
+  const glm::vec4 blend_tone = tone_->Normalize();
   if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
     blend_color = flash_.color;
-  const bool post_process = (blend_color.a != 0 || blend_tone != Vec4(0.0f));
+  const bool post_process =
+      (blend_color.a != 0 || blend_tone != glm::vec4(0.0f));
 
   if (post_process) {
     const RectI viewport_region = param->scissors.top();
@@ -194,9 +195,9 @@ void Viewport::PostDraw(DrawParam param) {
     primitive_.EmitQuad(
         viewport_region,
         MakeNorm(RectI(viewport_region.Size()),
-                 Vec2(static_cast<float>(pingpong_->GetWidth()),
-                      static_cast<float>(pingpong_->GetHeight()))),
-        Vec4(1.0f));
+                 glm::vec2(static_cast<float>(pingpong_->GetWidth()),
+                           static_cast<float>(pingpong_->GetHeight()))),
+        glm::vec4(1.0f));
     const std::span<const VertexData> vertices = primitive_.End();
     vertex_buffer_ = AcquireVertexBuffer(vertices.size_bytes());
     GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices.data(),
@@ -236,8 +237,8 @@ void Viewport::ResetTransform() {
      constructor keeps whatever the memory held, and a non-zero z of the
      position travels down the transform chain of the children as the z of every
      vertex they emit, which the projection of the engine then clips away. */
-  const Vec3 offset(static_cast<float>(rect_->data.x - origin_.x),
-                    static_cast<float>(rect_->data.y - origin_.y), 0.0f);
+  const glm::vec3 offset(static_cast<float>(rect_->data.x - origin_.x),
+                         static_cast<float>(rect_->data.y - origin_.y), 0.0f);
   Attr_Position(MakeRefCounted<Vector3>(offset));
 }
 
@@ -257,7 +258,7 @@ void Viewport::CreateEffectBindings() {
      offset, so the group of it covers this one matrix and the draw binds it at
      offset zero; a group which carries the buffer without the dynamic offset is
      not compatible with the layout and the device rejects the draw. */
-  const ObjectData object_data = {Mat4x4(1.0f)};
+  const ObjectData object_data = {glm::mat4(1.0f)};
   GPUDevice::Get().queue().WriteBuffer(object_uniform_, 0, &object_data,
                                        sizeof(object_data));
 

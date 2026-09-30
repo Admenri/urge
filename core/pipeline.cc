@@ -265,13 +265,13 @@ ShaderSet::ShaderSet() : shader() {
   primitive.topology = wgpu::PrimitiveTopology::TriangleList;
   wgpu::TextureFormat target = wgpu::TextureFormat::RGBA8Unorm;
 
-  state.texture_none = shader.texture_base.MakeState(
+  state.texture_noblend = shader.texture_base.MakeState(
       primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
   state.texture_pma = shader.texture_base.MakeState(
       primitive, std::nullopt,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
-  state.color_none = shader.color_base.MakeState(
+  state.color_noblend = shader.color_base.MakeState(
       primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
   for (auto it : {BLEND_NONE, BLEND_NORMAL, BLEND_ADDITION, BLEND_SUBTRACT}) {
     state.tint_blends[it] = shader.tint_base.MakeState(

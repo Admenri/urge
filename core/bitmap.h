@@ -108,7 +108,7 @@ class Bitmap : public Disposable {
 
   RefPtr<Font> font_;
 
-  Vec2i size_;
+  glm::ivec2 size_;
   wgpu::Texture texture_;
   wgpu::TextureView view_;
   wgpu::Texture depth_stencil_;

@@ -224,7 +224,7 @@ void Graphics::PresentInternal() {
 
   primitive_.EmitQuad(RectI(0, 0, surface_texture.texture.GetWidth(),
                             surface_texture.texture.GetHeight()),
-                      RectI(0, 0, 1, 1), Vec4(1.0f));
+                      RectI(0, 0, 1, 1), glm::vec4(1.0f));
   auto vertices = primitive_.End();
   GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0, vertices.data(),
                                        vertices.size_bytes());
@@ -239,7 +239,7 @@ void Graphics::PresentInternal() {
   pass_desc.colorAttachmentCount = 1;
   pass_desc.colorAttachments = &color_attachment;
   auto pass = encoder.BeginRenderPass(&pass_desc);
-  pass.SetPipeline(ShaderSet::Get().state.texture_none);
+  pass.SetPipeline(ShaderSet::Get().state.texture_noblend);
   pass.SetBindGroup(0, screen_texture_->scene_group(), 0, nullptr);
   pass.SetBindGroup(1, screen_texture_->object_group(), 0, nullptr);
   pass.SetBindGroup(2, screen_texture_->texture_group(), 0, nullptr);

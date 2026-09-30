@@ -101,7 +101,7 @@ class Color : public Object {
   MARSHAL_LOAD(Color);
 
   void Set(float r, float g, float b, float a = 255.f) {
-    data = Vec4(r, g, b, a);
+    data = glm::vec4(r, g, b, a);
   }
 
   void Set(RefPtr<Color> color) {
@@ -137,8 +137,8 @@ class Color : public Object {
   }
   /*-export.end-*/
 
-  Vec4 Normalize() {
-    Vec4 result = data;
+  glm::vec4 Normalize() {
+    glm::vec4 result = data;
     result.r /= 255.0f;
     result.g /= 255.0f;
     result.b /= 255.0f;
@@ -146,7 +146,7 @@ class Color : public Object {
     return result;
   }
 
-  Vec4 data;
+  glm::vec4 data;
 };
 
 class Tone : public Object {
@@ -160,7 +160,7 @@ class Tone : public Object {
   MARSHAL_LOAD(Tone);
 
   void Set(float r, float g, float b, float a = 0.f) {
-    data = Vec4(r, g, b, a);
+    data = glm::vec4(r, g, b, a);
   }
 
   void Set(RefPtr<Tone> tone) {
@@ -196,8 +196,8 @@ class Tone : public Object {
   }
   /*-export.end-*/
 
-  Vec4 Normalize() {
-    Vec4 result = data;
+  glm::vec4 Normalize() {
+    glm::vec4 result = data;
     result.r /= 255.0f;
     result.g /= 255.0f;
     result.b /= 255.0f;
@@ -205,12 +205,12 @@ class Tone : public Object {
     return result;
   }
 
-  Vec4 data;
+  glm::vec4 data;
 };
 
 class Vector2 : public Object {
  public:
-  Vector2(Vec2 d) : data(d) {}
+  Vector2(glm::vec2 d) : data(d) {}
 
   /*-export.begin-*/
   Vector2(float xv, float yv) : data(xv, yv) {}
@@ -218,7 +218,7 @@ class Vector2 : public Object {
   Vector2(float v) : data(v) {}
   Vector2() : data(0.0f) {}
 
-  void Set(float xv, float yv) { data = Vec2(xv, yv); }
+  void Set(float xv, float yv) { data = glm::vec2(xv, yv); }
 
   void Set(RefPtr<Vector2> v) {
     if (v) {
@@ -229,12 +229,12 @@ class Vector2 : public Object {
   }
   /*-export.end-*/
 
-  Vec2 data;
+  glm::vec2 data;
 };
 
 class Vector3 : public Object {
  public:
-  Vector3(Vec3 d) : data(d) {}
+  Vector3(glm::vec3 d) : data(d) {}
 
   /*-export.begin-*/
   Vector3(float xv, float yv, float zv) : data(xv, yv, zv) {}
@@ -242,7 +242,7 @@ class Vector3 : public Object {
   Vector3(float v) : data(v) {}
   Vector3() : data(0.0f) {}
 
-  void Set(float xv, float yv, float zv) { data = Vec3(xv, yv, zv); }
+  void Set(float xv, float yv, float zv) { data = glm::vec3(xv, yv, zv); }
 
   void Set(RefPtr<Vector3> v) {
     if (v) {
@@ -253,12 +253,12 @@ class Vector3 : public Object {
   }
   /*-export.end-*/
 
-  Vec3 data;
+  glm::vec3 data;
 };
 
 class Vector4 : public Object {
  public:
-  Vector4(Vec4 d) : data(d) {}
+  Vector4(glm::vec4 d) : data(d) {}
 
   /*-export.begin-*/
   Vector4(float xv, float yv, float zv, float wv) : data(xv, yv, zv, wv) {}
@@ -267,7 +267,7 @@ class Vector4 : public Object {
   Vector4() : data(0.0f) {}
 
   void Set(float xv, float yv, float zv, float wv) {
-    data = Vec4(xv, yv, zv, wv);
+    data = glm::vec4(xv, yv, zv, wv);
   }
 
   void Set(RefPtr<Vector4> v) {
@@ -279,7 +279,7 @@ class Vector4 : public Object {
   }
   /*-export.end-*/
 
-  Vec4 data;
+  glm::vec4 data;
 };
 
 }  // namespace urge

@@ -72,7 +72,7 @@ Sprite::~Sprite() {
 }
 
 void Sprite::Flash(RefPtr<Color> color, int32_t duration) {
-  flash_.color = color ? color->Normalize() : Vec4{};
+  flash_.color = color ? color->Normalize() : glm::vec4{};
   flash_.step = duration > 0 ? (flash_.color.w / duration) : 0.0f;
 }
 
@@ -320,15 +320,16 @@ void Sprite::Prepare(DrawParam param) {
      scaled and rotated around, so the origin is subtracted before the scale and
      the rotation and the position is added after them. The rotation is
      negated, the y axis of the engine points downwards. */
-  const Mat4x4 transform =
+  const glm::mat4 transform =
       world_transform() *
-      glm::translate(Mat4x4(1.0f), Vec3(static_cast<float>(x_),
-                                        static_cast<float>(y_), 0.0f)) *
-      glm::rotate(Mat4x4(1.0f), DegreesToRadians(-angle_),
-                  Vec3(0.0f, 0.0f, 1.0f)) *
-      glm::scale(Mat4x4(1.0f), Vec3(zoom_x_, zoom_y_, 1.0f)) *
-      glm::translate(Mat4x4(1.0f), Vec3(static_cast<float>(-ox_),
-                                        static_cast<float>(-oy_), 0.0f));
+      glm::translate(glm::mat4(1.0f), glm::vec3(static_cast<float>(x_),
+                                                static_cast<float>(y_), 0.0f)) *
+      glm::rotate(glm::mat4(1.0f), DegreesToRadians(-angle_),
+                  glm::vec3(0.0f, 0.0f, 1.0f)) *
+      glm::scale(glm::mat4(1.0f), glm::vec3(zoom_x_, zoom_y_, 1.0f)) *
+      glm::translate(
+          glm::mat4(1.0f),
+          glm::vec3(static_cast<float>(-ox_), static_cast<float>(-oy_), 0.0f));
 
   /* Both uniforms of a sprite travel in a buffer it shares with every other
      sprite of the frame instead of in a buffer of its own, so the draw only has
@@ -374,7 +375,7 @@ SpriteBase::SpriteParam Sprite::MakeParamInternal() {
   /* The blend color of a sprite is its color, or the color of the flash while
      it is the stronger one of the two; a sprite which is not flashing keeps
      the color of its Color attribute. */
-  Vec4 blend_color = color_->Normalize();
+  glm::vec4 blend_color = color_->Normalize();
   if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
     blend_color = flash_.color;
 
@@ -405,12 +406,12 @@ uint32_t Sprite::EmitGeometryInternal() {
   if (src.width == 0 || src.height == 0)
     return 0;
 
-  const Vec2 texture_size(static_cast<float>(texture_width),
-                          static_cast<float>(texture_height));
+  const glm::vec2 texture_size(static_cast<float>(texture_width),
+                               static_cast<float>(texture_height));
   /* The blend state of the engine and the contents of a bitmap store
      premultiplied alpha, so the opacity of a sprite scales all four channels of
      the vertex color instead of the alpha channel alone. */
-  const Vec4 color(static_cast<float>(opacity_) / 255.0f);
+  const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
 
   if (wave_amp_ == 0) {
     /* The vertices of a plain quad are the source rectangle at the origin, the

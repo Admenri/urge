@@ -46,8 +46,8 @@ namespace {
 //! engine is BlendType::kNormal (One / InvSrcAlpha) and bitmap contents are
 //! stored with premultiplied alpha, so the RGB components have to be multiplied
 //! with the alpha channel.
-Vec4 PremultiplyColor(const Vec4& color) {
-  Vec4 result = color / 255.0f;
+glm::vec4 PremultiplyColor(const glm::vec4& color) {
+  glm::vec4 result = color / 255.0f;
   result.r *= result.a;
   result.g *= result.a;
   result.b *= result.a;
@@ -56,27 +56,27 @@ Vec4 PremultiplyColor(const Vec4& color) {
 
 //! Converts a stored (premultiplied) pixel into an RGSS color, i.e. divides the
 //! RGB components by the alpha channel again.
-Vec4 UnpremultiplyColor(const std::uint8_t pixel[4]) {
+glm::vec4 UnpremultiplyColor(const std::uint8_t pixel[4]) {
   const float alpha = static_cast<float>(pixel[3]);
   if (alpha <= 0.0f)
-    return Vec4(0.0f);
+    return glm::vec4(0.0f);
 
-  return Vec4(std::min(255.0f, static_cast<float>(pixel[0]) * 255.0f / alpha),
-              std::min(255.0f, static_cast<float>(pixel[1]) * 255.0f / alpha),
-              std::min(255.0f, static_cast<float>(pixel[2]) * 255.0f / alpha),
-              alpha);
+  return glm::vec4(
+      std::min(255.0f, static_cast<float>(pixel[0]) * 255.0f / alpha),
+      std::min(255.0f, static_cast<float>(pixel[1]) * 255.0f / alpha),
+      std::min(255.0f, static_cast<float>(pixel[2]) * 255.0f / alpha), alpha);
 }
 
 //! Converts an RGSS opacity (in [0, 255]) into a premultiplied white vertex
 //! color, which scales the sampled color of a blit.
-Vec4 PremultiplyOpacity(int32_t opacity) {
+glm::vec4 PremultiplyOpacity(int32_t opacity) {
   const float value =
       std::clamp(static_cast<float>(opacity) / 255.0f, 0.0f, 1.0f);
-  return Vec4(value, value, value, value);
+  return glm::vec4(value, value, value, value);
 }
 
 //! Normalized texture coordinates of a source rectangle inside a bitmap.
-RectF NormalizeTexcoord(const RectI& src_rect, const Vec2i& src_size) {
+RectF NormalizeTexcoord(const RectI& src_rect, const glm::ivec2& src_size) {
   const float width = static_cast<float>(src_size.x);
   const float height = static_cast<float>(src_size.y);
 
@@ -341,7 +341,7 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   auto vertices_data =
       primitive_
           .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
-                    Vec4(opacity / 255.0f))
+                    glm::vec4(opacity / 255.0f))
           .End();
 
   auto buffer = AcquireBuffer(vertices_data.size_bytes());
@@ -428,7 +428,7 @@ void Bitmap::GradientFillRect(int32_t x,
   pass_desc.colorAttachmentCount = 1;
   pass_desc.colorAttachments = &color_attachment;
   auto pass = encoder.BeginRenderPass(&pass_desc);
-  auto pipeline = ShaderSet::Get().state.color_none;
+  auto pipeline = ShaderSet::Get().state.color_noblend;
   pass.SetPipeline(pipeline);
   pass.SetBindGroup(0, scene_group_, 0, nullptr);
   pass.SetBindGroup(1, object_group_, 0, nullptr);
@@ -486,7 +486,7 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
       ReadTextureRegion(texture_, x, y, 1, 1);
 
   // The texture stores premultiplied alpha while RGSS colors are straight ones
-  const Vec4 color = UnpremultiplyColor(pixels.data());
+  const glm::vec4 color = UnpremultiplyColor(pixels.data());
   return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
 }
 
@@ -611,7 +611,7 @@ ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
 void Bitmap::DisposeObject() {}
 
 void Bitmap::CreateInternal(SDL_Surface* data) {
-  size_ = Vec2i{data->w, data->h};
+  size_ = glm::ivec2{data->w, data->h};
 
   // The blend state of the engine and the drawing operations of this class
   // store premultiplied alpha, so the pixel data is converted here as well

@@ -46,15 +46,14 @@ namespace {
 
 using urge::Bitmap;
 using urge::Color;
-using urge::Graphics;
 using urge::GPUDevice;
+using urge::Graphics;
 using urge::MakeRefCounted;
 using urge::RefPtr;
 using urge::Sprite;
 using urge::Tone;
 using urge::UniformBlockPool;
 using urge::UniformManager;
-using urge::Vec4;
 using urge::Viewport;
 
 /* --------------------------------------------------------------------------
@@ -149,14 +148,14 @@ const ProbePoint kProbePoints[] = {
 
 //! Reports a color the way a probe reads it, in the 0 to 255 scale of the
 //! Color class rather than in the 0 to 1 scale of a shader.
-std::string Describe(const Vec4& color) {
+std::string Describe(const glm::vec4& color) {
   return std::format("rgba({:.0f}, {:.0f}, {:.0f}, {:.0f})", color.r, color.g,
                      color.b, color.a);
 }
 
 //! The largest difference of two colors over their four channels, which is zero
 //! for two colors of the same pixel.
-float ColorDistance(const Vec4& lhs, const Vec4& rhs) {
+float ColorDistance(const glm::vec4& lhs, const glm::vec4& rhs) {
   return std::max({std::abs(lhs.r - rhs.r), std::abs(lhs.g - rhs.g),
                    std::abs(lhs.b - rhs.b), std::abs(lhs.a - rhs.a)});
 }
@@ -168,7 +167,7 @@ float ColorDistance(const Vec4& lhs, const Vec4& rhs) {
     a pixel is covered when it is not black. A sprite of the scene which is
     covered by a transparent texel of the bitmap leaves black behind as well,
     which is what the layout of the scene avoids, see kProbePoints. */
-bool IsCovered(const Vec4& color) {
+bool IsCovered(const glm::vec4& color) {
   return color.r > 0.0f || color.g > 0.0f || color.b > 0.0f;
 }
 
@@ -313,12 +312,12 @@ void ReportPools() {
     the file is the pixel Bitmap::GetPixel() reports, with none of the scaling,
     the occlusion or the colour conversion a capture is subject to.
 
-    The image is read back in one copy of the whole texture rather than one texel
-    at a time, which is what GetPixel() does and what 300 thousand of them would
-    make unusable: the rows of a staging buffer are aligned to the 256 bytes the
-    device requires, the copy is submitted once and the mapping waited for once.
-    The function reports a failure instead of raising, it is a measure and not a
-    part of the scene. */
+    The image is read back in one copy of the whole texture rather than one
+   texel at a time, which is what GetPixel() does and what 300 thousand of them
+   would make unusable: the rows of a staging buffer are aligned to the 256
+   bytes the device requires, the copy is submitted once and the mapping waited
+   for once. The function reports a failure instead of raising, it is a measure
+   and not a part of the scene. */
 bool DumpBitmap(RefPtr<Bitmap> bitmap, const std::string& path) {
   const uint32_t width = static_cast<uint32_t>(bitmap->GetWidth());
   const uint32_t height = static_cast<uint32_t>(bitmap->GetHeight());
@@ -373,8 +372,8 @@ bool DumpBitmap(RefPtr<Bitmap> bitmap, const std::string& path) {
   const auto* pixels = static_cast<const std::uint8_t*>(
       staging.GetConstMappedRange(0, byte_size));
   if (!pixels) {
-    LOGGER_ERROR("the staging buffer of '{}' exposes no range of {} bytes", path,
-                 byte_size);
+    LOGGER_ERROR("the staging buffer of '{}' exposes no range of {} bytes",
+                 path, byte_size);
     return false;
   }
 
@@ -382,9 +381,8 @@ bool DumpBitmap(RefPtr<Bitmap> bitmap, const std::string& path) {
      bytes of a pixel are red, green, blue and alpha in that order, which is the
      order SDL_PIXELFORMAT_RGBA32 describes on either endianness. */
   SDL_Surface* surface = SDL_CreateSurfaceFrom(
-      static_cast<int>(width), static_cast<int>(height),
-      SDL_PIXELFORMAT_RGBA32, const_cast<std::uint8_t*>(pixels),
-      static_cast<int>(row_pitch));
+      static_cast<int>(width), static_cast<int>(height), SDL_PIXELFORMAT_RGBA32,
+      const_cast<std::uint8_t*>(pixels), static_cast<int>(row_pitch));
   const bool saved = surface && IMG_SavePNG(surface, path.c_str());
   if (surface)
     SDL_DestroySurface(surface);
@@ -466,9 +464,9 @@ void ProbeViewport(RefPtr<Bitmap> snap) {
     the probe detects. Both colors are reported, so a source texel which happens
     to be black cannot make the comparison hold for any geometry. */
 void ProbeMirror(RefPtr<Bitmap> snap) {
-  const Vec4 drawn = snap->GetPixel(15, 255)->data;
-  const Vec4 mirrored = test_bitmap->GetPixel(295, 5)->data;
-  const Vec4 direct = test_bitmap->GetPixel(5, 5)->data;
+  const glm::vec4 drawn = snap->GetPixel(15, 255)->data;
+  const glm::vec4 mirrored = test_bitmap->GetPixel(295, 5)->data;
+  const glm::vec4 direct = test_bitmap->GetPixel(5, 5)->data;
 
   LOGGER_INFO(
       "probe mirror: drawn {} against mirrored {} (distance {:.1f}) and "

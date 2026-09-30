@@ -58,12 +58,12 @@ class Viewport : public Node {
   wgpu::Buffer AcquireVertexBuffer(size_t size);
 
   RefPtr<Rect> rect_;
-  Vec2i origin_ = Vec2i(0);
+  glm::ivec2 origin_ = glm::ivec2(0);
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
 
   struct {
-    Vec4 color = Vec4(0.0f);
+    glm::vec4 color = glm::vec4(0.0f);
     float step = 0.0f;
   } flash_;
 

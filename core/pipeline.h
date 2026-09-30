@@ -36,11 +36,11 @@
 namespace urge {
 
 struct SceneData {
-  Mat4x4 view_proj_mat;
+  glm::mat4 view_proj_mat;
 };
 
 struct ObjectData {
-  Mat4x4 model_mat;
+  glm::mat4 model_mat;
 };
 
 enum BlendType : int32_t {
@@ -65,8 +65,8 @@ class ColorBase : public Pipeline {
 class TintBase : public Pipeline {
  public:
   struct TintParam {
-    Vec4 blend_color;
-    Vec4 blend_tone;
+    glm::vec4 blend_color;
+    glm::vec4 blend_tone;
   };
 
   TintBase();
@@ -75,8 +75,8 @@ class TintBase : public Pipeline {
 class SpriteBase : public Pipeline {
  public:
   struct alignas(16) SpriteParam {
-    Vec4 blend_color;
-    Vec4 blend_tone;
+    glm::vec4 blend_color;
+    glm::vec4 blend_tone;
     float bush_depth;
     float bush_opacity;
     float padding[2];
@@ -106,9 +106,9 @@ struct ShaderSet : public Singleton<ShaderSet> {
   } shader;
 
   struct {
-    wgpu::RenderPipeline texture_none;
+    wgpu::RenderPipeline texture_noblend;
     wgpu::RenderPipeline texture_pma;
-    wgpu::RenderPipeline color_none;
+    wgpu::RenderPipeline color_noblend;
     std::map<BlendType, wgpu::RenderPipeline> tint_blends;
     std::map<BlendType, wgpu::RenderPipeline> sprite_blends;
     wgpu::RenderPipeline transition_alpha;
