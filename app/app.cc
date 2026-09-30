@@ -38,6 +38,7 @@
 #include "core/filesystem.h"
 #include "core/gpu.h"
 #include "core/graphics.h"
+#include "core/input.h"
 #include "core/logger.h"
 #include "core/sprite.h"
 #include "core/uniform.h"
@@ -535,6 +536,9 @@ SDL_AppResult SDLCALL SDL_AppInit(void** appstate, int argc, char* argv[]) {
     auto config = new urge::Config(ini);
     urge::Config::Reset(config);
 
+    auto input = new urge::Input(config->rgss_version);
+    urge::Input::Reset(input);
+
     auto graphics = new urge::Graphics();
     urge::Graphics::Reset(graphics);
 
@@ -568,6 +572,7 @@ SDL_AppResult SDLCALL SDL_AppIterate(void* appstate) {
 }
 
 SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event* event) {
+  urge::Input::Get().ProcessEvents(event);
   if (event->type == SDL_EVENT_QUIT)
     return SDL_APP_SUCCESS;
   return SDL_APP_CONTINUE;
@@ -575,7 +580,9 @@ SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event* event) {
 
 void SDLCALL SDL_AppQuit(void* appstate, SDL_AppResult result) {
   DestroyTestScene();
+
   urge::Graphics::Reset(nullptr);
+  urge::Input::Reset(nullptr);
   urge::Config::Reset(nullptr);
   urge::IOService::Reset(nullptr);
 }
