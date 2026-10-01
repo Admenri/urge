@@ -302,11 +302,11 @@ Bitmap::~Bitmap() {
   Disposable::Dispose();
 }
 
-int32_t Bitmap::GetWidth() {
+int32_t Bitmap::Width() {
   return size_.x;
 }
 
-int32_t Bitmap::GetHeight() {
+int32_t Bitmap::Height() {
   return size_.y;
 }
 

@@ -48,7 +48,7 @@ Viewport::Viewport(RefPtr<Rect> rect)
                rect->data.height) {}
 
 Viewport::Viewport()
-    : Viewport(0, 0, Graphics::Get().GetWidth(), Graphics::Get().GetHeight()) {}
+    : Viewport(0, 0, Graphics::Get().Width(), Graphics::Get().Height()) {}
 
 Viewport::~Viewport() {
   Disposable::Dispose();

@@ -7,4 +7,4 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   target_sources(Game PUBLIC platform/win32.cc)
 endif()
 
-target_link_libraries(Game PUBLIC urge-core)
+target_link_libraries(Game PUBLIC urge-core urge-binding)

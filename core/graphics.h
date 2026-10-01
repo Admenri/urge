@@ -58,8 +58,8 @@ class Graphics : public Singleton<Graphics> {
   /*-export.begin-*/
   void Update();
   void Wait(int32_t duration);
-  void FadeIn(int32_t duration);
-  void FadeOut(int32_t duration);
+  void Fadein(int32_t duration);
+  void Fadeout(int32_t duration);
   void Freeze();
   void Transition(int32_t duration = 10,
                   std::string filename = {},
@@ -69,8 +69,8 @@ class Graphics : public Singleton<Graphics> {
                         int32_t vague = 40);
   RefPtr<Bitmap> SnapToBitmap();
   void FrameReset();
-  int32_t GetWidth();
-  int32_t GetHeight();
+  int32_t Width();
+  int32_t Height();
   void ResizeScreen(int32_t width, int32_t height);
   void PlayMovie(std::string filename);
 
@@ -87,7 +87,7 @@ class Graphics : public Singleton<Graphics> {
 
   SDL_Window* window_ = nullptr;
   RefPtr<ScreenRootNode> root_;
-  RefPtr<Bitmap> screen_texture_;
+  RefPtr<Bitmap> screen_;
 
   bool frozen_ = false;
   int32_t brightness_ = 255;

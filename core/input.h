@@ -28,6 +28,7 @@
 
 #include "SDL3/SDL_events.h"
 
+#include "core/definition.h"
 #include "core/object.h"
 
 namespace urge {
@@ -53,15 +54,22 @@ class Input : public Singleton<Input> {
 
   /*-export.begin-*/
   void Update();
+  URGE_BINDING(Name : "press?")
   bool Pressed(std::string sym);
+  URGE_BINDING(Name : "trigger?")
   bool Triggered(std::string sym);
+  URGE_BINDING(Name : "repeat?")
   bool Repeated(std::string sym);
   int32_t Dir4();
   int32_t Dir8();
 
+  URGE_BINDING(Name : "key_press?")
   bool KeyPressed(int32_t keycode);
+  URGE_BINDING(Name : "key_trigger?")
   bool KeyTriggered(int32_t keycode);
+  URGE_BINDING(Name : "key_repeat?")
   bool KeyRepeated(int32_t keycode);
+  std::string GetKeyName(int32_t keycode);
   /*-export.end-*/
 
  public:

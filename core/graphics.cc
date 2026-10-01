@@ -93,7 +93,7 @@ Graphics::Graphics() {
 
 Graphics::~Graphics() {
   present_ = {};
-  screen_texture_.reset();
+  screen_.reset();
   root_.reset();
 
   QuadVertexManager::Reset(nullptr);
@@ -106,7 +106,7 @@ Graphics::~Graphics() {
 
 void Graphics::Update() {
   if (!frozen_)
-    root_->Render(screen_texture_, Color::Black());
+    root_->Render(screen_, Color::Black());
 
   PresentInternal();
 }
@@ -116,7 +116,7 @@ void Graphics::Wait(int32_t duration) {
     Update();
 }
 
-void Graphics::FadeIn(int32_t duration) {
+void Graphics::Fadein(int32_t duration) {
   duration = std::max(duration, 1);
   int32_t step = (255 - brightness_) / duration;
   for (int32_t i = 0; i < duration; ++i) {
@@ -128,7 +128,7 @@ void Graphics::FadeIn(int32_t duration) {
   brightness_ = 255;
 }
 
-void Graphics::FadeOut(int32_t duration) {
+void Graphics::Fadeout(int32_t duration) {
   duration = std::max(duration, 1);
   int32_t step = brightness_ / duration;
   for (int32_t i = 0; i < duration; ++i) {
@@ -142,7 +142,7 @@ void Graphics::FadeOut(int32_t duration) {
 
 void Graphics::Freeze() {
   if (!frozen_) {
-    root_->Render(screen_texture_, Color::Black());
+    root_->Render(screen_, Color::Black());
     frozen_ = true;
   }
 }
@@ -162,7 +162,7 @@ void Graphics::TransitionBitmap(int32_t duration,
                                 int32_t vague) {}
 
 RefPtr<Bitmap> Graphics::SnapToBitmap() {
-  auto result = MakeRefCounted<Bitmap>(GetWidth(), GetHeight());
+  auto result = MakeRefCounted<Bitmap>(Width(), Height());
   root_->Render(result, Color::Black());
   return result;
 }
@@ -171,17 +171,17 @@ void Graphics::FrameReset() {
   // TODO
 }
 
-int32_t Graphics::GetWidth() {
-  return screen_texture_->size().x;
+int32_t Graphics::Width() {
+  return screen_->size().x;
 }
 
-int32_t Graphics::GetHeight() {
-  return screen_texture_->size().y;
+int32_t Graphics::Height() {
+  return screen_->size().y;
 }
 
 void Graphics::ResizeScreen(int32_t width, int32_t height) {
   present_.configured = false;
-  screen_texture_ = MakeRefCounted<Bitmap>(width, height);
+  screen_ = MakeRefCounted<Bitmap>(width, height);
 
   SDL_SetWindowSize(window_, width, height);
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
@@ -225,8 +225,8 @@ void Graphics::PresentInternal() {
     configure.device = GPUDevice::Get().device();
     configure.format = capabilities.formats[0];
     configure.usage = wgpu::TextureUsage::RenderAttachment;
-    configure.width = static_cast<uint32_t>(GetWidth());
-    configure.height = static_cast<uint32_t>(GetHeight());
+    configure.width = static_cast<uint32_t>(Width());
+    configure.height = static_cast<uint32_t>(Height());
     configure.presentMode = wgpu::PresentMode::Fifo;
     surface.Configure(&configure);
 
@@ -262,9 +262,9 @@ void Graphics::PresentInternal() {
     auto pass = encoder.BeginRenderPass(&pass_desc);
     {
       pass.SetPipeline(present_.pipeline);
-      pass.SetBindGroup(0, screen_texture_->scene_group(), 0, nullptr);
-      pass.SetBindGroup(1, screen_texture_->object_group(), 0, nullptr);
-      pass.SetBindGroup(2, screen_texture_->texture_group(), 0, nullptr);
+      pass.SetBindGroup(0, screen_->scene_group(), 0, nullptr);
+      pass.SetBindGroup(1, screen_->object_group(), 0, nullptr);
+      pass.SetBindGroup(2, screen_->texture_group(), 0, nullptr);
       pass.SetVertexBuffer(0, present_.primitive.buffer(), 0, WGPU_WHOLE_SIZE);
       pass.Draw(vertex_count, 1, 0, 0);
     }

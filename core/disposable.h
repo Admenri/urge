@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "core/definition.h"
 #include "core/exception.h"
 #include "core/object.h"
 
@@ -30,6 +31,7 @@ namespace urge {
 class Disposable : public Object {
  public:
   /*-export.begin-*/
+  URGE_BINDING(Name : "disposed?")
   bool IsDisposed() { return disposed_; }
   void Dispose() { ReleaseSelf(); }
   /*-export.end-*/

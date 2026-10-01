@@ -20,38 +20,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include <vector>
-
-#include "core/definition.h"
-#include "core/object.h"
+#include "core/audio.h"
 
 namespace urge {
 
-class Table : public Object {
- public:
-  /*-export.begin-*/
-  Table(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
-  Table(RefPtr<Table> other);
+Audio::Audio() = default;
 
-  MARSHAL_DUMP(Table);
-  MARSHAL_LOAD(Table);
+Audio::~Audio() = default;
 
-  void Resize(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
-  int32_t Xsize();
-  int32_t Ysize();
-  int32_t Zsize();
+void Audio::SetupMIDI() {}
 
-  URGE_BINDING(Name : "[]")
-  int16_t Get(int32_t x, int32_t y = 0, int32_t z = 0);
-  URGE_BINDING(Name : "[]=")
-  void Set(int16_t value, int32_t x, int32_t y = 0, int32_t z = 0);
-  /*-export.end-*/
+void Audio::BGMPlay(std::string filename,
+                    int32_t volume,
+                    int32_t pitch,
+                    float pos) {}
 
- private:
-  int32_t xsize_ = 0, ysize_ = 0, zsize_ = 0;
-  std::vector<int16_t> data_;
-};
+void Audio::BGMStop() {}
+
+void Audio::BGMFade(int32_t time) {}
+
+float Audio::BGMPos() {
+  return 0.0f;
+}
+
+void Audio::BGSPlay(std::string filename,
+                    int32_t volume,
+                    int32_t pitch,
+                    float pos) {}
+
+void Audio::BGSStop() {}
+
+void Audio::BGSFade(int32_t time) {}
+
+float Audio::BGSPos() {
+  return 0.0f;
+}
+
+void Audio::MEPlay(std::string filename, int32_t volume, int32_t pitch) {}
+
+void Audio::MEStop() {}
+
+void Audio::MEFade(int32_t time) {}
+
+void Audio::SEPlay(std::string filename, int32_t volume, int32_t pitch) {}
+
+void Audio::SEStop() {}
+
+void Audio::Update() {}
 
 }  // namespace urge

@@ -38,10 +38,14 @@ namespace urge {
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
       size_(size),
-      bold_(Attr_DefaultBold()),
-      italic_(Attr_DefaultItalic()),
-      outline_(Attr_DefaultOutline()),
-      shadow_(Attr_DefaultShadow()),
+      // NOTE: Attr_Default* answer std::optional, so the bool ones have to be
+      // dereferenced: `std::optional<bool>` converts to `bool` through
+      // `operator bool()` -- "has a value", always true here -- and the default
+      // would be ignored.
+      bold_(*Attr_DefaultBold()),
+      italic_(*Attr_DefaultItalic()),
+      outline_(*Attr_DefaultOutline()),
+      shadow_(*Attr_DefaultShadow()),
       color_(*Attr_DefaultColor()),
       out_color_(*Attr_DefaultOutColor()) {
   // When no name is given, use Font.default_name (RGSS behaviour).
@@ -63,7 +67,7 @@ Font::Font(RefPtr<Font> other)
       out_color_(other->out_color_) {}
 
 // static
-bool Font::Exist(std::string name) {
+bool Font::Existed(std::string name) {
   return false;
 }
 

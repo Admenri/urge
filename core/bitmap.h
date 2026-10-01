@@ -39,8 +39,9 @@ class Bitmap : public Disposable {
   Bitmap(RefPtr<Bitmap> other);
   ~Bitmap() override;
 
-  int32_t GetWidth();
-  int32_t GetHeight();
+  int32_t Width();
+  int32_t Height();
+  URGE_BINDING(Name : "rect")
   RefPtr<Rect> GetRect();
   void Blt(int32_t x,
            int32_t y,
@@ -120,7 +121,8 @@ class Bitmap : public Disposable {
   /*! The emitter the drawing operations of this bitmap emit into. They are
       batches of their own -- one quad, uploaded and drawn with an encoder of
       their own --, so the emitter owns the vertex buffer of them and the
-      operations do not build a buffer by hand, see PrimitiveEmitter::Upload(). */
+      operations do not build a buffer by hand, see PrimitiveEmitter::Upload().
+   */
   PrimitiveEmitter primitive_;
 
   wgpu::BindGroup scene_group_, object_group_, texture_group_;

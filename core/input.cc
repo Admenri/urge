@@ -179,6 +179,10 @@ bool Input::KeyRepeated(int32_t keycode) {
   return false;
 }
 
+std::string Input::GetKeyName(int32_t keycode) {
+  return SDL_GetScancodeName(static_cast<SDL_Scancode>(keycode));
+}
+
 void Input::ProcessEvents(SDL_Event* event) {
   switch (event->type) {
     case SDL_EVENT_KEY_DOWN:

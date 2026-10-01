@@ -37,8 +37,8 @@ class Sprite : public Node {
   void Flash(RefPtr<Color> color, int32_t duration);
   void Update();
 
-  int32_t GetWidth();
-  int32_t GetHeight();
+  int32_t Width();
+  int32_t Height();
 
   ATTR(RefPtr<Viewport>, Viewport);
   ATTR(RefPtr<Bitmap>, Bitmap);
@@ -98,8 +98,8 @@ class Sprite : public Node {
   //! The slot of the sprite pool this frame put the parameter of this sprite
   //! in, which the sprite pipeline binds at set 3.
   UniformBlockPool::Slot param_slot_ = {};
-  //! The range EmitGeometryInternal() appended to the vertex batch of the frame,
-  //! i.e. the vertices DoDraw() draws.
+  //! The range EmitGeometryInternal() appended to the vertex batch of the
+  //! frame, i.e. the vertices DoDraw() draws.
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 

@@ -22,36 +22,17 @@
 
 #pragma once
 
-#include <vector>
-
-#include "core/definition.h"
 #include "core/object.h"
 
-namespace urge {
+namespace binding {
 
-class Table : public Object {
+class BindingMain {
  public:
-  /*-export.begin-*/
-  Table(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
-  Table(RefPtr<Table> other);
-
-  MARSHAL_DUMP(Table);
-  MARSHAL_LOAD(Table);
-
-  void Resize(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
-  int32_t Xsize();
-  int32_t Ysize();
-  int32_t Zsize();
-
-  URGE_BINDING(Name : "[]")
-  int16_t Get(int32_t x, int32_t y = 0, int32_t z = 0);
-  URGE_BINDING(Name : "[]=")
-  void Set(int16_t value, int32_t x, int32_t y = 0, int32_t z = 0);
-  /*-export.end-*/
+  BindingMain();
+  ~BindingMain();
 
  private:
-  int32_t xsize_ = 0, ysize_ = 0, zsize_ = 0;
-  std::vector<int16_t> data_;
+  int error_state_ = 0;
 };
 
-}  // namespace urge
+}  // namespace binding

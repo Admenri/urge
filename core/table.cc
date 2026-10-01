@@ -87,15 +87,15 @@ void Table::Resize(int32_t xsize, int32_t ysize, int32_t zsize) {
   data_.shrink_to_fit();
 }
 
-int32_t Table::XSize() {
+int32_t Table::Xsize() {
   return xsize_;
 }
 
-int32_t Table::YSize() {
+int32_t Table::Ysize() {
   return ysize_;
 }
 
-int32_t Table::ZSize() {
+int32_t Table::Zsize() {
   return zsize_;
 }
 

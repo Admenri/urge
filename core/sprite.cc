@@ -87,11 +87,11 @@ void Sprite::Update() {
   }
 }
 
-int32_t Sprite::GetWidth() {
+int32_t Sprite::Width() {
   return src_rect_->data.width;
 }
 
-int32_t Sprite::GetHeight() {
+int32_t Sprite::Height() {
   return src_rect_->data.height;
 }
 

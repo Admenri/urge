@@ -2,3 +2,6 @@
 /out
 /.vs
 /.workbuddy
+# Derived from bind/api_reference.json by "python bind/viewer/viewer.py embed";
+# only needed to open bind/viewer/index.html straight from file://.
+/bind/viewer/api_embed.js

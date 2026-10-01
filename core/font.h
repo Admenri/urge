@@ -34,7 +34,8 @@ class Font : public Object {
   Font(std::vector<std::string> names = {}, int32_t size = 24);
   Font(RefPtr<Font> other);
 
-  static bool Exist(std::string name);
+  URGE_BINDING(Name : "exist?")
+  static bool Existed(std::string name);
 
   ATTR(std::vector<std::string>, Name);
   ATTR(int32_t, Size);

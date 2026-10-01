@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>URGE Binding IR</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f8fa;
+    --panel-2: #eef1f5;
+    --border: #e1e5ea;
+    --border-strong: #cfd5dd;
+    --text: #1f2328;
+    --muted: #6a7280;
+    --accent: #2f6feb;
+    --accent-soft: #e8f0fe;
+    --code-bg: #f2f4f7;
+    --warn: #9a5b00;
+    --warn-bg: #fff5e0;
+    --warn-border: #f0d9a8;
+    --ok: #1a7f4b;
+    --ok-bg: #e8f6ee;
+    --radius: 8px;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  /* App shell: the header is fixed by flex sizing rather than a hard-coded
+   * offset, and the two panes scroll independently. */
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 14px; line-height: 1.5;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono { font-family: var(--mono); font-size: 12.5px; }
+
+  header {
+    flex: 0 0 auto; z-index: 20;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: baseline; gap: 8px; }
+  .brand h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+  .brand .sub { color: var(--muted); font-size: 12px; }
+  .grow { flex: 1 1 auto; }
+  .searchbox { position: relative; width: min(380px, 100%); }
+  .searchbox input {
+    width: 100%; padding: 6px 10px 6px 30px; font: inherit; font-size: 13px;
+    border: 1px solid var(--border-strong); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .searchbox input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .searchbox::before {
+    content: "\2315"; position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 14px; pointer-events: none;
+  }
+  #suggest {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30;
+    background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(15,23,42,.12); max-height: 320px; overflow: auto; display: none;
+  }
+  #suggest.open { display: block; }
+  #suggest .item {
+    padding: 5px 10px; cursor: pointer; display: flex; gap: 10px; align-items: baseline;
+  }
+  #suggest .item:hover, #suggest .item.active { background: var(--accent-soft); }
+  #suggest .item .sig { font-family: var(--mono); font-size: 12.5px; flex: 1 1 auto; }
+  #suggest .item .kind { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  #suggest .empty { padding: 8px 10px; color: var(--muted); font-size: 12.5px; }
+
+  #layout { flex: 1 1 auto; min-height: 0; display: flex; align-items: stretch; }
+  nav {
+    flex: 0 0 260px; border-right: 1px solid var(--border); background: var(--panel);
+    padding: 10px 0 32px; overflow: auto;
+  }
+  nav .filter { padding: 0 10px 8px; }
+  nav .filter input {
+    width: 100%; padding: 5px 8px; font: inherit; font-size: 12.5px; border-radius: 6px;
+    border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); outline: none;
+  }
+  nav h2 {
+    margin: 12px 12px 4px; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--muted); font-weight: 650;
+  }
+  nav .entry {
+    display: flex; gap: 8px; align-items: baseline;
+    padding: 3px 12px 3px 14px; cursor: pointer; border-left: 2px solid transparent;
+  }
+  nav .entry:hover { background: var(--panel-2); }
+  nav .entry.sel { background: var(--accent-soft); border-left-color: var(--accent); }
+  nav .entry .nm { font-family: var(--mono); font-size: 12.5px; }
+  nav .entry .cnt { color: var(--muted); font-size: 11px; margin-left: auto; }
+
+  main { flex: 1 1 auto; padding: 18px 22px 64px; min-width: 0; max-width: 1080px; overflow: auto; }
+  .hint { color: var(--muted); font-size: 13px; }
+  h2.title { margin: 0 0 2px; font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+  h2.title .kw { font-family: var(--mono); }
+  h2.title .sup { font-weight: 400; color: var(--muted); font-size: 15px; }
+  .banner {
+    margin: 0 0 16px; padding: 8px 12px; border-radius: var(--radius); font-size: 12.5px;
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn);
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+  .badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+  .badge.k { background: var(--accent-soft); color: var(--accent); border-color: #c9dcfb; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok); border-color: #bfe3cd; }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-border); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 18px; margin: 0 0 18px; }
+  .grid .cell { border-left: 2px solid var(--border); padding-left: 10px; }
+  .grid .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .grid .v { font-family: var(--mono); font-size: 12.5px; word-break: break-word; }
+
+  section { margin: 0 0 22px; }
+  section > h3 {
+    margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted); font-weight: 650; display: flex; align-items: center; gap: 8px;
+  }
+  section > h3 .n { color: var(--muted); font-weight: 400; letter-spacing: 0; text-transform: none; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 5px 10px 5px 0; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 650; }
+  td.sig { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  td.sig .nm { font-weight: 600; }
+  td.sig .pa { color: var(--muted); }
+  td.ret { font-family: var(--mono); font-size: 12px; color: var(--text); white-space: nowrap; }
+  td.cpp { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  tr.flag td { background: #fbfcfe; }
+  tr:hover td { background: var(--accent-soft); }
+  .tag { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: var(--panel-2); color: var(--muted); font-family: var(--mono); }
+  .tag.ov { background: #fdeef0; color: #a3283c; }
+  .tag.an { background: #eef7ee; color: #2f6b3a; }
+  .copy { cursor: pointer; }
+  .copy:hover .nm { color: var(--accent); }
+  details { margin-top: 10px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+  details pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; overflow: auto; max-height: 460px; font-family: var(--mono); font-size: 12px;
+  }
+  .warnlist { border: 1px solid var(--warn-border); background: var(--warn-bg); border-radius: var(--radius); padding: 10px 14px; }
+  .warnlist .row { padding: 3px 0; }
+  .warnlist .row .sig { font-family: var(--mono); font-size: 12.5px; }
+  .warnlist .row .why { color: var(--warn); font-size: 12px; }
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: #1f2328; color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 12.5px;
+    opacity: 0; transition: opacity .18s; pointer-events: none; z-index: 50;
+  }
+  .toast.on { opacity: .92; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>URGE Binding IR</h1>
+    <span class="sub" id="meta">loading&hellip;</span>
+  </div>
+  <div class="grow"></div>
+  <div class="searchbox">
+    <input id="q" type="search" placeholder="Search the API &mdash; e.g. bitmap, press?" autocomplete="off" spellcheck="false">
+    <div id="suggest"></div>
+  </div>
+</header>
+
+<div id="layout">
+  <nav id="nav"><div class="filter"><input id="navfilter" placeholder="Filter classes" autocomplete="off" spellcheck="false"></div></nav>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Data loading.  Over HTTP we read api_reference.json live; from
+ * file:// the fetch is blocked by CORS, so we fall back to the
+ * api_embed.js snapshot that `viewer.py embed` writes.
+ *
+ * The IR sits one level up (bind/api_reference.json, next to this
+ * folder), which is why the fetch path is `../`.
+ * ------------------------------------------------------------------ */
+
+function loadEmbedded() {
+  return new Promise(function (resolve) {
+    var s = document.createElement("script");
+    s.src = "api_embed.js";
+    s.onload = resolve;
+    s.onerror = resolve;          // absent is the normal case, not an error
+    document.head.appendChild(s);
+  });
+}
+
+async function loadIR() {
+  try {
+    var r = await fetch("../api_reference.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    return { ir: await r.json(), source: "live" };
+  } catch (e) {
+    await loadEmbedded();
+    if (window.__URGE_API__) return { ir: window.__URGE_API__, source: "embedded" };
+    return { ir: null, source: "none" };
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * IR -> flat member list (mirrors viewer.py)
+ * ------------------------------------------------------------------ */
+
+var KIND_LABELS = {
+  "new": "constructor",
+  "index": "index operator",
+  "instance": "instance method",
+  "attribute": "attribute",
+  "data_attribute": "data attribute",
+  "class": "class method",
+  "class_attribute": "class attribute",
+  "module_function": "module function",
+  "module_attribute": "module attribute",
+  "marshal": "marshal protocol",
+  "initialize_copy": "copy protocol",
+  "unsupported": "unsupported"
+};
+
+/* Kinds reachable with a `.` receiver rather than `#`. */
+var CLASS_SIDE_KINDS = ["new", "class", "class_attribute", "module_function", "module_attribute", "marshal"];
+
+/* Kinds whose Ruby spelling carries no argument list. */
+var BARE_KINDS = ["attribute", "data_attribute", "class_attribute", "module_attribute"];
+
+var SECTION_ORDER = ["new", "index", "instance", "attribute", "data_attribute",
+                     "class", "class_attribute", "module_function", "module_attribute",
+                     "marshal", "initialize_copy", "unsupported"];
+
+/* The IR records C++ defaults (nullptr, {}, 255.f); translate the shapes the
+ * headers actually use into what a script author would write.  Anything
+ * unmapped is passed through, so nothing is silently guessed. */
+function rubyDefault(p) {
+  var d = p["default"], ty = p["type"] || "";
+  if (d === null || d === undefined || d === "") return null;
+  if (d === "nullptr" || d === "NULL") return "nil";
+  if (d === "{}" || d === "{ }") {
+    if (ty.indexOf("vector") >= 0) return "[]";
+    if (ty.indexOf("string") >= 0) return '""';
+    if (ty.indexOf("RefPtr") === 0) return "nil";
+    return "{}";
+  }
+  if (d === "std::string()" || d === "std::string{}") return '""';
+  if (d === "true" || d === "false") return d;
+  var m = /^(-?(?:\d+\.\d*|\d*\.\d+|\d+))f$/.exec(d);
+  if (m) return m[1] + (m[1].slice(-1) === "." ? "0" : "");
+  return d;
+}
+function paramText(p) {
+  var d = rubyDefault(p);
+  return d === null ? p["name"] : p["name"] + " = " + d;
+}
+function paramsText(ps) { return (ps || []).map(paramText).join(", "); }
+
+function mkMember(owner, kind, rubyName, o) {
+  o = o || {};
+  var classSide = CLASS_SIDE_KINDS.indexOf(kind) >= 0;
+  var sep = classSide ? "." : "#";
+  var setter = o.setter || null;
+  var setterName = setter && setter.slice(-1) === "=" ? setter.slice(0, -1) : setter;
+  return {
+    owner: owner.name,
+    ownerKind: owner.kind,
+    kind: kind,
+    kindLabel: KIND_LABELS[kind] || kind,
+    rubyName: rubyName,
+    cppName: o.cppName || "",
+    params: o.params || [],
+    ret: o.ret || null,
+    setter: setter,
+    writer: setter ? owner.name + sep + setterName + " = value" : null,
+    cppType: o.cppType || "",
+    flags: o.flags || [],
+    export: o.export || owner.export || "",
+    note: o.note || "",
+    classSide: classSide,
+    call: owner.name + sep + rubyName
+  };
+}
+
+function membersOf(entry) {
+  var out = [];
+
+  if (entry.kind === "module") {
+    /* Modules store ATTR() as a pair of flat functions rather than the nested
+     * attributes list classes use: the reader carries `attr`, the writer also
+     * carries `setter`.  Fold them back so a module attribute reads like a
+     * class one. */
+    var fn = entry.functions || [];
+    var writers = {};
+    fn.forEach(function (f) { if (f.setter) writers[f.ruby_name] = f; });
+    fn.forEach(function (f) {
+      if (f.setter) return;
+      if (f.attr) {
+        out.push(mkMember(entry, "module_attribute", f.ruby_name, {
+          cppName: f.cpp_name, params: [], ret: f["return"],
+          setter: writers[f.ruby_name + "="] ? f.ruby_name + "=" : null,
+          cppType: f.attr_value_type || "", export: f.export
+        }));
+      } else {
+        var flags = [];
+        if (f.header_annotation) flags.push("annotation");
+        out.push(mkMember(entry, "module_function", f.ruby_name, {
+          cppName: f.cpp_name, params: f.params, ret: f["return"], flags: flags, export: f.export
+        }));
+      }
+    });
+    out.sort(bySection);
+    return out;
+  }
+
+  (entry.constructors || []).forEach(function (c) {
+    out.push(mkMember(entry, "new", "new", {
+      /* The Ruby return is the class itself; the C++ side is the constructor
+       * symbol, shown in the C++ column rather than repeated in the return. */
+      params: c.params, ret: { ruby_type: entry.name },
+      cppName: entry.cpp_name + "::" + entry.cpp_name,
+      export: c.export, note: "allocates, then calls #initialize"
+    }));
+  });
+
+  if (entry.index) {
+    if (entry.index.get) {
+      var g = entry.index.get;
+      out.push(mkMember(entry, "index", g.ruby_name, {
+        cppName: g.cpp_name, params: g.params, export: g.export, note: "reader"
+      }));
+    }
+    if (entry.index.set) {
+      var s = entry.index.set;
+      out.push(mkMember(entry, "index", s.ruby_name, {
+        cppName: s.cpp_name, params: s.params, export: s.export, note: "writer"
+      }));
+    }
+  }
+
+  function fromMethod(list, kind) {
+    (list || []).forEach(function (m) {
+      var flags = [];
+      if (m.header_annotation) flags.push("annotation");
+      if (m.override) flags.push("override");
+      out.push(mkMember(entry, kind, m.ruby_name, {
+        cppName: m.cpp_name, params: m.params, ret: m["return"], flags: flags, export: m.export
+      }));
+    });
+  }
+  /* An ATTR() is a reader taking no arguments plus a `name = value` writer. */
+  function fromAttr(list, kind) {
+    (list || []).forEach(function (a) {
+      var flags = [];
+      if (a.override) flags.push("override");
+      if (a.header_annotation) flags.push("annotation");
+      if (a.static) flags.push("static");
+      out.push(mkMember(entry, kind, a.name, {
+        cppName: a.cpp_name, params: [],
+        ret: { ruby_type: a.ruby_type, cpp_type: a.cpp_type },
+        setter: a.setter, cppType: a.cpp_type,
+        flags: flags, export: a.export
+      }));
+    });
+  }
+
+  fromMethod(entry.instance_methods, "instance");
+  fromAttr(entry.attributes, "attribute");
+  fromAttr(entry.data_attributes, "data_attribute");
+  fromMethod(entry.class_methods, "class");
+  fromAttr(entry.class_attributes, "class_attribute");
+
+  var mar = entry.marshal || {};
+  if (mar.dump && mar.load) {
+    out.push(mkMember(entry, "marshal", "_load", {
+      params: [{ name: "data", type: "String" }],
+      ret: { ruby_type: entry.name }, export: entry.export,
+      note: "class method, restores the object from #_dump"
+    }));
+  }
+  if (entry.initialize_copy) {
+    out.push(mkMember(entry, "initialize_copy", "initialize_copy", {
+      params: entry.initialize_copy.params, export: entry.initialize_copy.export,
+      note: "private, driven by #dup and #clone"
+    }));
+  }
+  if (mar.dump && mar.load) {
+    out.push(mkMember(entry, "marshal", "_dump", {
+      params: [{ name: "limit", type: "Integer" }],
+      ret: { ruby_type: "String" }, export: entry.export,
+      note: "private, driven by Marshal.dump"
+    }));
+  }
+
+  (entry.unsupported || []).forEach(function (u) {
+    var skipped = mkMember(entry, "unsupported", u.signature || "?", {
+      export: entry.export, note: u.reason || ""
+    });
+    /* The IR stores the C++ spelling; show it as written rather than prefixing
+     * a Ruby receiver it never got. */
+    skipped.call = entry.name + " " + skipped.rubyName;
+    out.push(skipped);
+  });
+
+  out.sort(bySection);
+  return out;
+}
+
+function bySection(a, b) {
+  return SECTION_ORDER.indexOf(a.kind) - SECTION_ORDER.indexOf(b.kind);
+}
+
+function signatureOf(m) {
+  if (m.kind === "unsupported") return m.rubyName;
+  if (BARE_KINDS.indexOf(m.kind) >= 0) return m.call;
+  return m.call + "(" + paramsText(m.params) + ")";
+}
+function returnsOf(m) {
+  if (!m.ret) return "\u2014";
+  var ruby = m.ret.ruby_type || "\u2014";
+  var cpp = m.ret.cpp_type;
+  return (cpp && cpp !== "void") ? ruby + "   " + cpp : ruby;
+}
+
+/* ------------------------------------------------------------------ *
+ * State
+ * ------------------------------------------------------------------ */
+
+var STATE = { ir: null, source: "none", owners: [], memberIndex: [], selected: null };
+
+function esc(s) {
+  return String(s === null || s === undefined ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildState(ir, source) {
+  STATE.ir = ir;
+  STATE.source = source;
+  STATE.owners = (ir.classes || []).concat(ir.modules || []);
+  STATE.memberIndex = [];
+  STATE.owners.forEach(function (entry) {
+    membersOf(entry).forEach(function (m) {
+      if (m.kind === "unsupported") return;
+      STATE.memberIndex.push(m);
+    });
+  });
+}
+
+function ownerOf(name) {
+  for (var i = 0; i < STATE.owners.length; i++) {
+    if (STATE.owners[i].name === name) return STATE.owners[i];
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rendering
+ * ------------------------------------------------------------------ */
+
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { t.classList.remove("on"); }, 1400);
+}
+
+function copyText(text) {
+  var done = function () { toast("copied  " + text); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+  } else { fallback(); }
+  function fallback() {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+    document.body.removeChild(ta);
+  }
+}
+
+function renderNav() {
+  var nav = document.getElementById("nav");
+  var filterEl = document.getElementById("navfilter");
+  var keep = filterEl.value;
+  nav.innerHTML = '<div class="filter"><input id="navfilter" placeholder="Filter classes" autocomplete="off" spellcheck="false" value="' + esc(keep) + '"></div>';
+
+  var needle = keep.trim().toLowerCase();
+  function group(label, list) {
+    var shown = list.filter(function (e) {
+      return !needle || e.name.toLowerCase().indexOf(needle) >= 0;
+    });
+    if (!shown.length) return;
+    var h = document.createElement("h2");
+    h.textContent = label + " (" + shown.length + ")";
+    nav.appendChild(h);
+    shown.forEach(function (e) {
+      var d = document.createElement("div");
+      d.className = "entry" + (STATE.selected && STATE.selected.owner === e.name ? " sel" : "");
+      d.dataset.owner = e.name;
+      d.innerHTML = '<span class="nm">' + esc(e.name) + "</span>" +
+                    '<span class="cnt">' + membersOf(e).filter(function (m) { return m.kind !== "unsupported"; }).length + "</span>";
+      d.addEventListener("click", function () { select(e.name); });
+      nav.appendChild(d);
+    });
+  }
+  group("Classes", STATE.ir.classes || []);
+  group("Modules", STATE.ir.modules || []);
+
+  filterEl = document.getElementById("navfilter");
+  filterEl.addEventListener("input", renderNav);
+}
+
+function renderOverview() {
+  var meta = STATE.ir.meta || {};
+  var skipped = meta.skipped || [];
+  var counts = {};
+  STATE.owners.forEach(function (e) {
+    membersOf(e).forEach(function (m) { counts[m.kind] = (counts[m.kind] || 0) + 1; });
+  });
+
+  var html = "";
+  html += '<h2 class="title">Binding reference</h2>';
+  html += '<div class="hint">Generated from the <code>/*-export.begin-*/</code> blocks of <code>core/*.h</code>. ' +
+          "Pick a class on the left, or search for a method name above.</div>";
+
+  html += '<div class="badges">';
+  html += '<span class="badge k">' + STATE.source + " data</span>";
+  html += '<span class="badge">' + (STATE.ir.classes || []).length + " classes</span>";
+  html += '<span class="badge">' + (STATE.ir.modules || []).length + " modules</span>";
+  Object.keys(counts).forEach(function (k) {
+    if (k === "unsupported") return;
+    html += '<span class="badge">' + counts[k] + " " + esc(KIND_LABELS[k] || k) + "</span>";
+  });
+  html += "</div>";
+
+  html += '<section><h3>Generator</h3><div class="grid">' +
+    "<div class='cell'><div class='k'>IR</div><div class='v'>bind/api_reference.json</div></div>" +
+    "<div class='cell'><div class='k'>Generated at</div><div class='v'>" + esc(meta.generated_at || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>Header scanner</div><div class='v'>" + esc(meta.generator || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>Rules</div><div class='v'>" + esc(meta.rules || "\u2014") + "</div></div>" +
+    "</div></section>";
+
+  var headers = meta.source_headers || [];
+  html += '<section><h3>Scanned headers <span class="n">' + headers.length + "</span></h3>";
+  html += '<div class="hint mono" style="font-size:12px">' + headers.map(esc).join(" &middot; ") + "</div></section>";
+
+  if (skipped.length) {
+    html += '<section><h3>Not exported <span class="n">' + skipped.length + "</span></h3>";
+    html += '<div class="warnlist">';
+    skipped.forEach(function (s) {
+      html += '<div class="row"><span class="sig">' + esc(s["class"]) + " " + esc(s.signature) + "</span>" +
+              '<div class="why">' + esc(s.reason) + "</div></div>";
+    });
+    html += "</div></section>";
+  }
+
+  document.getElementById("main").innerHTML = html;
+}
+
+function sectionTitle(kind, n) {
+  return '<section><h3>' + esc(KIND_LABELS[kind] || kind) + ' <span class="n">' + n + "</span></h3>";
+}
+
+function renderDetail(name, highlight) {
+  var entry = ownerOf(name);
+  if (!entry) return;
+  STATE.selected = { owner: name, member: highlight || null };
+
+  var members = membersOf(entry);
+  var live = members.filter(function (m) { return m.kind !== "unsupported"; });
+  var dead = members.filter(function (m) { return m.kind === "unsupported"; });
+
+  var html = "";
+  var superclass = entry.ruby_superclass || entry.cpp_parent || "";
+  html += '<h2 class="title"><span class="kw">' + esc(entry.name) + "</span>" +
+          (superclass ? ' <span class="sup">&lt; ' + esc(superclass) + "</span>" : "") + "</h2>";
+
+  html += '<div class="badges">';
+  html += '<span class="badge k">' + esc(entry.kind) + "</span>";
+  if (entry.singleton) html += '<span class="badge">singleton</span>';
+  if (entry.glue) html += '<span class="badge">hand-written glue</span>';
+  if ((entry.marshal || {}).dump) html += '<span class="badge ok">marshalable</span>';
+  if (entry.index) html += '<span class="badge ok">indexed</span>';
+  if (live.some(function (m) { return m.flags.indexOf("override") >= 0; })) {
+    html += '<span class="badge">RGSS overrides</span>';
+  }
+  if (dead.length) html += '<span class="badge warn">' + dead.length + " not exported</span>";
+  html += '<span class="badge">' + live.length + " members</span>";
+  html += "</div>";
+
+  html += '<div class="grid">' +
+    "<div class='cell'><div class='k'>Header</div><div class='v'>" + esc(entry.header || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>Export range</div><div class='v'>" + esc(entry.export || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>C++ type</div><div class='v'>" + esc(entry.cpp_name || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>C++ base</div><div class='v'>" + esc(entry.cpp_parent || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>Ruby superclass</div><div class='v'>" + esc(entry.ruby_superclass || "\u2014") + "</div></div>" +
+    "</div>";
+
+  var order = SECTION_ORDER.filter(function (k) { return k !== "unsupported"; });
+  if (entry.kind === "module") order = ["module_function", "module_attribute"];
+
+  order.forEach(function (kind) {
+    var group = live.filter(function (m) { return m.kind === kind; });
+    if (!group.length) return;
+    html += sectionTitle(kind, group.length);
+    /* Every member of a class shares that class's export range, which the grid
+     * above already states, so it is not repeated per row. */
+    html += "<table><thead><tr><th>Signature</th><th>Returns</th><th>C++</th></tr></thead><tbody>";
+    group.forEach(function (m) {
+      var isHit = highlight && m.rubyName === highlight && m.kind !== "new";
+      var sig;
+      if (m.kind === "unsupported") {
+        sig = esc(m.rubyName);
+      } else if (BARE_KINDS.indexOf(m.kind) >= 0) {
+        sig = '<span class="nm">' + esc(m.call) + "</span>";
+      } else {
+        /* Always show the parentheses, so a zero-arity row reads the same as
+         * the text this cell copies (signatureOf). */
+        sig = '<span class="nm">' + esc(m.call) + "</span>" +
+              '<span class="pa">(' + esc(paramsText(m.params)) + ")</span>";
+      }
+      html += '<tr' + (isHit ? ' class="flag"' : "") + ">";
+      html += '<td class="sig copy" title="click to copy" data-sig="' + esc(signatureOf(m)) + '">' + sig +
+              (m.flags.length ? " " + m.flags.map(function (f) {
+                return '<span class="tag ' + (f === "override" ? "ov" : (f === "annotation" ? "an" : "")) + '">' + esc(f) + "</span>";
+              }).join(" ") : "") +
+              (m.writer ? '<div class="hint mono" style="font-size:11.5px">' + esc(m.writer) + "</div>" : "") +
+              (m.note ? '<div class="hint" style="font-size:11.5px">' + esc(m.note) + "</div>" : "") +
+              "</td>";
+      html += '<td class="ret">' + esc(returnsOf(m)) + "</td>";
+      html += '<td class="cpp">' + esc(m.cppName || "\u2014") + "</td>";
+      html += "</tr>";
+    });
+    html += "</tbody></table></section>";
+  });
+
+  if (dead.length) {
+    html += sectionTitle("unsupported", dead.length);
+    html += '<div class="warnlist">';
+    dead.forEach(function (m) {
+      html += '<div class="row"><span class="sig">' + esc(m.rubyName) + "</span>" +
+              '<div class="why">' + esc(m.note) + "</div></div>";
+    });
+    html += "</div></section>";
+  }
+
+  var ctors = entry.constructors || [];
+  if (ctors.length) {
+    html += '<details><summary>How <code>' + esc(entry.name) + ".new</code> is wired</summary><pre>" +
+            esc("rb_define_alloc_func(klass, ClassAllocate<&k" + entry.cpp_name + "DataType>);") + "\n" +
+            esc('rb_define_method(klass, "initialize", \u2026, -1);       // private, all arities') + "\n" +
+            esc('rb_define_method(klass, "initialize_copy", \u2026, -1);  // private') + "\n\n" +
+            esc(ctors.map(function (c) {
+              return entry.name + ".new(" + paramsText(c.params) + ")";
+            }).join("\n")) + "</pre></details>";
+  }
+
+  html += '<details><summary>Raw IR for this ' + esc(entry.kind) + "</summary><pre>" +
+          esc(JSON.stringify(entry, null, 2)) + "</pre></details>";
+
+  document.getElementById("main").innerHTML = html;
+  document.querySelectorAll("td.copy").forEach(function (td) {
+    td.addEventListener("click", function () { copyText(td.dataset.sig); });
+  });
+  renderNav();
+  if (highlight) scrollToHit();
+}
+
+function scrollToHit() {
+  var hit = document.querySelector("tr.flag");
+  if (hit) hit.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function select(name, member) {
+  closeSuggest();
+  renderDetail(name, member || null);
+  document.getElementById("main").scrollTop = 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Search
+ * ------------------------------------------------------------------ */
+
+var suggestEl, inputEl, cursor = -1;
+
+function rank(m, needle) {
+  var name = m.rubyName.toLowerCase();
+  var call = m.call.toLowerCase();
+  if (name === needle) return 0;
+  if (name.indexOf(needle) === 0) return 1;
+  if (call.indexOf(needle) >= 0) return 2;
+  var hay = (m.cppName + " " + ((m.ret && m.ret.ruby_type) || "") + " " +
+             m.params.map(function (p) { return p.name + " " + p.type; }).join(" ")).toLowerCase();
+  if ((m.owner + " " + hay).toLowerCase().indexOf(needle) >= 0) return 3;
+  return -1;
+}
+
+function computeHits(query) {
+  var needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  var hits = [];
+  STATE.memberIndex.forEach(function (m) {
+    var r = rank(m, needle);
+    if (r >= 0) hits.push({ r: r, m: m });
+  });
+  hits.sort(function (a, b) { return a.r - b.r || a.m.call.localeCompare(b.m.call); });
+  return hits.slice(0, 40).map(function (h) { return h.m; });
+}
+
+function renderSuggest(hits, query) {
+  cursor = -1;
+  if (!query.trim()) { suggestEl.classList.remove("open"); return; }
+  if (!hits.length) {
+    suggestEl.innerHTML = '<div class="empty">no match for &ldquo;' + esc(query) + "&rdquo;</div>";
+    suggestEl.classList.add("open");
+    return;
+  }
+  suggestEl.innerHTML = hits.map(function (m) {
+    return '<div class="item" data-owner="' + esc(m.owner) + '" data-name="' + esc(m.rubyName) + '">' +
+           '<span class="sig">' + esc(signatureOf(m)) + "</span>" +
+           '<span class="kind">' + esc(m.kindLabel) + "</span></div>";
+  }).join("");
+  suggestEl.classList.add("open");
+  suggestEl.querySelectorAll(".item").forEach(function (el) {
+    el.addEventListener("mousedown", function (ev) {
+      ev.preventDefault();
+      select(el.dataset.owner, el.dataset.name);
+      inputEl.value = "";
+    });
+  });
+}
+
+function closeSuggest() { suggestEl.classList.remove("open"); cursor = -1; }
+
+function moveCursor(delta) {
+  var items = suggestEl.querySelectorAll(".item");
+  if (!items.length) return;
+  cursor = (cursor + delta + items.length) % items.length;
+  items.forEach(function (el, i) { el.classList.toggle("active", i === cursor); });
+  items[cursor].scrollIntoView({ block: "nearest" });
+}
+
+/* ------------------------------------------------------------------ *
+ * Boot
+ * ------------------------------------------------------------------ */
+
+async function boot() {
+  suggestEl = document.getElementById("suggest");
+  inputEl = document.getElementById("q");
+
+  var loaded = await loadIR();
+  if (!loaded.ir) {
+    document.getElementById("meta").textContent = "no IR found";
+    document.getElementById("main").innerHTML =
+      '<h2 class="title">Cannot reach the IR</h2>' +
+      '<div class="banner">Neither <code>api_reference.json</code> (blocked when the page is opened ' +
+      'from <code>file://</code>) nor <code>api_embed.js</code> could be loaded.</div>' +
+      '<p class="hint">Either serve the folder:</p>' +
+      '<pre class="mono" style="background:var(--code-bg);padding:12px;border-radius:8px;border:1px solid var(--border)">' +
+      "python bind/viewer/viewer.py serve</pre>" +
+      '<p class="hint">or inline a snapshot so double-clicking works:</p>' +
+      '<pre class="mono" style="background:var(--code-bg);padding:12px;border-radius:8px;border:1px solid var(--border)">' +
+      "python bind/viewer/viewer.py embed</pre>";
+    return;
+  }
+
+  buildState(loaded.ir, loaded.source);
+  var meta = loaded.ir.meta || {};
+  document.getElementById("meta").textContent =
+    meta.generated_at ? "generated " + meta.generated_at + "  \u00b7  " + loaded.source :
+                        loaded.source + " data";
+
+  renderOverview();
+  renderNav();
+
+  inputEl.addEventListener("input", function () {
+    renderSuggest(computeHits(inputEl.value), inputEl.value);
+  });
+  inputEl.addEventListener("focus", function () {
+    if (inputEl.value.trim()) renderSuggest(computeHits(inputEl.value), inputEl.value);
+  });
+  inputEl.addEventListener("keydown", function (ev) {
+    if (ev.key === "ArrowDown") { ev.preventDefault(); moveCursor(1); }
+    else if (ev.key === "ArrowUp") { ev.preventDefault(); moveCursor(-1); }
+    else if (ev.key === "Enter") {
+      var items = suggestEl.querySelectorAll(".item");
+      var pick = cursor >= 0 ? items[cursor] : items[0];
+      if (pick) { select(pick.dataset.owner, pick.dataset.name); inputEl.value = ""; }
+      else if (inputEl.value.trim()) {
+        var hits = computeHits(inputEl.value);
+        if (hits.length) { select(hits[0].owner, hits[0].rubyName); inputEl.value = ""; }
+      }
+    } else if (ev.key === "Escape") { closeSuggest(); inputEl.blur(); }
+  });
+  document.addEventListener("click", function (ev) {
+    if (!ev.target.closest(".searchbox")) closeSuggest();
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "/" && document.activeElement !== inputEl && document.activeElement !== document.getElementById("navfilter")) {
+      ev.preventDefault(); inputEl.focus();
+    }
+  });
+
+  // Deep link: #Sprite#bitmap
+  var hash = decodeURIComponent(location.hash.replace(/^#/, ""));
+  if (hash) {
+    var m = hash.match(/^([A-Za-z_][\w]*)(?:[#.](.+))?$/);
+    if (m && ownerOf(m[1])) select(m[1], m[2] || null);
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

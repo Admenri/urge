@@ -1,0 +1,3299 @@
+{
+  "meta": {
+    "title": "URGE Binding IR",
+    "generator": "bind/gen_api_json.py",
+    "rules": "bind/Bindgen.md",
+    "generated_at": "2026-09-30T16:31:04Z",
+    "source_headers": [
+      "core/bitmap.h",
+      "core/common.h",
+      "core/config.h",
+      "core/definition.h",
+      "core/disposable.h",
+      "core/drawable.h",
+      "core/exception.h",
+      "core/filesystem.h",
+      "core/font.h",
+      "core/gpu.h",
+      "core/graphics.h",
+      "core/inirw.h",
+      "core/input.h",
+      "core/logger.h",
+      "core/node.h",
+      "core/object.h",
+      "core/palette.h",
+      "core/pipeline.h",
+      "core/plane.h",
+      "core/primitive.h",
+      "core/refptr.h",
+      "core/shader.h",
+      "core/sprite.h",
+      "core/table.h",
+      "core/uniform.h",
+      "core/utility.h",
+      "core/viewport.h"
+    ],
+    "skipped": [
+      {
+        "class": "Node",
+        "kind": "constructor",
+        "signature": "Node(RefPtr<Node>, const ZValue&)",
+        "reason": "internal parameter type: const ZValue&"
+      },
+      {
+        "class": "Palette",
+        "kind": "constructor",
+        "signature": "Palette(SDL_Surface*)",
+        "reason": "internal parameter type: SDL_Surface*"
+      },
+      {
+        "class": "Vector2",
+        "kind": "constructor",
+        "signature": "Vector2(glm::vec2)",
+        "reason": "internal parameter type: glm::vec2"
+      },
+      {
+        "class": "Vector3",
+        "kind": "constructor",
+        "signature": "Vector3(glm::vec3)",
+        "reason": "internal parameter type: glm::vec3"
+      },
+      {
+        "class": "Vector4",
+        "kind": "constructor",
+        "signature": "Vector4(glm::vec4)",
+        "reason": "internal parameter type: glm::vec4"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "unsupported": [],
+      "export": "core/graphics.h:58-80",
+      "cpp_name": "Graphics",
+      "cpp_parent": "Singleton",
+      "header": "core/graphics.h",
+      "kind": "module",
+      "name": "Graphics",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "wait",
+          "cpp_name": "Wait",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "fadein",
+          "cpp_name": "Fadein",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "fadeout",
+          "cpp_name": "Fadeout",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "freeze",
+          "cpp_name": "Freeze",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "transition",
+          "cpp_name": "Transition",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": "10"
+            },
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": "{}"
+            },
+            {
+              "name": "vague",
+              "type": "int32_t",
+              "default": "40"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "transition_bitmap",
+          "cpp_name": "TransitionBitmap",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": "10"
+            },
+            {
+              "name": "bitmap",
+              "type": "RefPtr<Bitmap>",
+              "default": "{}"
+            },
+            {
+              "name": "vague",
+              "type": "int32_t",
+              "default": "40"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "snap_to_bitmap",
+          "cpp_name": "SnapToBitmap",
+          "return": {
+            "cpp_type": "RefPtr<Bitmap>",
+            "ruby_type": "Bitmap"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "frame_reset",
+          "cpp_name": "FrameReset",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "width",
+          "cpp_name": "Width",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "resize_screen",
+          "cpp_name": "ResizeScreen",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "play_movie",
+          "cpp_name": "PlayMovie",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "frame_rate",
+          "cpp_name": "FrameRate",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "int32_t",
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "frame_rate=",
+          "cpp_name": "FrameRate",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "int32_t",
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "frame_count",
+          "cpp_name": "FrameCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "int32_t",
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "frame_count=",
+          "cpp_name": "FrameCount",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "int32_t",
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "brightness",
+          "cpp_name": "Brightness",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "int32_t",
+          "export": "core/graphics.h:58-80"
+        },
+        {
+          "ruby_name": "brightness=",
+          "cpp_name": "Brightness",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "int32_t",
+          "export": "core/graphics.h:58-80"
+        }
+      ]
+    },
+    {
+      "unsupported": [],
+      "export": "core/input.h:55-73",
+      "cpp_name": "Input",
+      "cpp_parent": "Singleton",
+      "header": "core/input.h",
+      "kind": "module",
+      "name": "Input",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "press?",
+          "cpp_name": "Pressed",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "sym",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "trigger?",
+          "cpp_name": "Triggered",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "sym",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "repeat?",
+          "cpp_name": "Repeated",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "sym",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "dir4",
+          "cpp_name": "Dir4",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "dir8",
+          "cpp_name": "Dir8",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "key_press?",
+          "cpp_name": "KeyPressed",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "keycode",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "key_trigger?",
+          "cpp_name": "KeyTriggered",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "keycode",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "key_repeat?",
+          "cpp_name": "KeyRepeated",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "keycode",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input.h:55-73"
+        },
+        {
+          "ruby_name": "get_key_name",
+          "cpp_name": "GetKeyName",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [
+            {
+              "name": "keycode",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/input.h:55-73"
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "disposed?",
+          "cpp_name": "IsDisposed",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/disposable.h:33-37"
+        },
+        {
+          "ruby_name": "dispose",
+          "cpp_name": "Dispose",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/disposable.h:33-37"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/disposable.h:33-37",
+      "cpp_name": "Disposable",
+      "cpp_parent": "Object",
+      "header": "core/disposable.h",
+      "kind": "class",
+      "name": "Disposable",
+      "ruby_superclass": "Object",
+      "glue": true
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/node.h:39-49"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "render",
+          "cpp_name": "Render",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "target",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            },
+            {
+              "name": "clear",
+              "type": "RefPtr<Color>",
+              "default": "nullptr"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "z",
+          "setter": "z=",
+          "cpp_name": "Z",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        },
+        {
+          "name": "visible",
+          "setter": "visible=",
+          "cpp_name": "Visible",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        },
+        {
+          "name": "parent",
+          "setter": "parent=",
+          "cpp_name": "Parent",
+          "cpp_type": "RefPtr<Node>",
+          "ruby_type": "Node",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        },
+        {
+          "name": "position",
+          "setter": "position=",
+          "cpp_name": "Position",
+          "cpp_type": "RefPtr<Vector3>",
+          "ruby_type": "Vector3",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        },
+        {
+          "name": "quaternion",
+          "setter": "quaternion=",
+          "cpp_name": "Quaternion",
+          "cpp_type": "RefPtr<Vector4>",
+          "ruby_type": "Vector4",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        },
+        {
+          "name": "scale",
+          "setter": "scale=",
+          "cpp_name": "Scale",
+          "cpp_type": "RefPtr<Vector3>",
+          "ruby_type": "Vector3",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/node.h:39-49"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "constructor",
+          "signature": "Node(RefPtr<Node>, const ZValue&)",
+          "reason": "internal parameter type: const ZValue&"
+        }
+      ],
+      "export": "core/node.h:39-49",
+      "cpp_name": "Node",
+      "cpp_parent": "Disposable",
+      "header": "core/node.h",
+      "kind": "class",
+      "name": "Node",
+      "ruby_superclass": "Disposable",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "params": [
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/bitmap.h:36-93"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "other",
+            "type": "RefPtr<Bitmap>",
+            "default": null
+          }
+        ],
+        "export": "core/bitmap.h:36-93"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "width",
+          "cpp_name": "Width",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "rect",
+          "cpp_name": "GetRect",
+          "return": {
+            "cpp_type": "RefPtr<Rect>",
+            "ruby_type": "Rect"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "blt",
+          "cpp_name": "Blt",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "src_bitmap",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            },
+            {
+              "name": "src_rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "opacity",
+              "type": "int32_t",
+              "default": "255"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "stretch_blt",
+          "cpp_name": "StretchBlt",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "dst_rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "src_bitmap",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            },
+            {
+              "name": "src_rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "opacity",
+              "type": "int32_t",
+              "default": "255"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "fill_rect",
+          "cpp_name": "FillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "fill_rect",
+          "cpp_name": "FillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "gradient_fill_rect",
+          "cpp_name": "GradientFillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color1",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "color2",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "vertical",
+              "type": "bool",
+              "default": "false"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "gradient_fill_rect",
+          "cpp_name": "GradientFillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "color1",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "color2",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "vertical",
+              "type": "bool",
+              "default": "false"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "clear",
+          "cpp_name": "Clear",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "clear_rect",
+          "cpp_name": "ClearRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "clear_rect",
+          "cpp_name": "ClearRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "get_pixel",
+          "cpp_name": "GetPixel",
+          "return": {
+            "cpp_type": "RefPtr<Color>",
+            "ruby_type": "Color"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "set_pixel",
+          "cpp_name": "SetPixel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "hue_change",
+          "cpp_name": "HueChange",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "hue",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "blur",
+          "cpp_name": "Blur",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "radial_blur",
+          "cpp_name": "RadialBlur",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "angle",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "division",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "draw_text",
+          "cpp_name": "DrawText",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "str",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "align",
+              "type": "int32_t",
+              "default": "0"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "draw_text",
+          "cpp_name": "DrawText",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "str",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "align",
+              "type": "int32_t",
+              "default": "0"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "text_size",
+          "cpp_name": "TextSize",
+          "return": {
+            "cpp_type": "RefPtr<Rect>",
+            "ruby_type": "Rect"
+          },
+          "params": [
+            {
+              "name": "str",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "to_palette",
+          "cpp_name": "ToPalette",
+          "return": {
+            "cpp_type": "RefPtr<Palette>",
+            "ruby_type": "Palette"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        },
+        {
+          "ruby_name": "update_with_palette",
+          "cpp_name": "UpdateWithPalette",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "palette",
+              "type": "RefPtr<Palette>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "font",
+          "setter": "font=",
+          "cpp_name": "Font",
+          "cpp_type": "RefPtr<Font>",
+          "ruby_type": "Font",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/bitmap.h:36-93"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/bitmap.h:36-93",
+      "cpp_name": "Bitmap",
+      "cpp_parent": "Disposable",
+      "header": "core/bitmap.h",
+      "kind": "class",
+      "name": "Bitmap",
+      "ruby_superclass": "Disposable",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "r",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "default": "255.f"
+            }
+          ],
+          "export": "core/utility.h:95-138"
+        },
+        {
+          "params": [],
+          "export": "core/utility.h:95-138"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "o",
+            "type": "RefPtr<Color>",
+            "default": null
+          }
+        ],
+        "export": "core/utility.h:95-138"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "r",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "default": "255.f"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:95-138"
+        },
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:95-138"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "red",
+          "setter": "red=",
+          "cpp_name": "Red",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:95-138"
+        },
+        {
+          "name": "green",
+          "setter": "green=",
+          "cpp_name": "Green",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:95-138"
+        },
+        {
+          "name": "blue",
+          "setter": "blue=",
+          "cpp_name": "Blue",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:95-138"
+        },
+        {
+          "name": "alpha",
+          "setter": "alpha=",
+          "cpp_name": "Alpha",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:95-138"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": true,
+        "load": true
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/utility.h:95-138",
+      "cpp_name": "Color",
+      "cpp_parent": "Object",
+      "header": "core/utility.h",
+      "kind": "class",
+      "name": "Color",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "names",
+              "type": "std::vector<std::string>",
+              "default": "{}"
+            },
+            {
+              "name": "size",
+              "type": "int32_t",
+              "default": "24"
+            }
+          ],
+          "export": "core/font.h:33-57"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "other",
+            "type": "RefPtr<Font>",
+            "default": null
+          }
+        ],
+        "export": "core/font.h:33-57"
+      },
+      "instance_methods": [],
+      "attributes": [
+        {
+          "name": "name",
+          "setter": "name=",
+          "cpp_name": "Name",
+          "cpp_type": "std::vector<std::string>",
+          "ruby_type": "Array<String>",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "size",
+          "setter": "size=",
+          "cpp_name": "Size",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "bold",
+          "setter": "bold=",
+          "cpp_name": "Bold",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "italic",
+          "setter": "italic=",
+          "cpp_name": "Italic",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "outline",
+          "setter": "outline=",
+          "cpp_name": "Outline",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "shadow",
+          "setter": "shadow=",
+          "cpp_name": "Shadow",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "color",
+          "setter": "color=",
+          "cpp_name": "Color",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "out_color",
+          "setter": "out_color=",
+          "cpp_name": "OutColor",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [
+        {
+          "ruby_name": "exist?",
+          "cpp_name": "Existed",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/font.h:33-57"
+        }
+      ],
+      "class_attributes": [
+        {
+          "name": "default_name",
+          "setter": "default_name=",
+          "cpp_name": "DefaultName",
+          "cpp_type": "std::vector<std::string>",
+          "ruby_type": "Array<String>",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_size",
+          "setter": "default_size=",
+          "cpp_name": "DefaultSize",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_bold",
+          "setter": "default_bold=",
+          "cpp_name": "DefaultBold",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_italic",
+          "setter": "default_italic=",
+          "cpp_name": "DefaultItalic",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_outline",
+          "setter": "default_outline=",
+          "cpp_name": "DefaultOutline",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_shadow",
+          "setter": "default_shadow=",
+          "cpp_name": "DefaultShadow",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_color",
+          "setter": "default_color=",
+          "cpp_name": "DefaultColor",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        },
+        {
+          "name": "default_out_color",
+          "setter": "default_out_color=",
+          "cpp_name": "DefaultOutColor",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:33-57"
+        }
+      ],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/font.h:33-57",
+      "cpp_name": "Font",
+      "cpp_parent": "Object",
+      "header": "core/font.h",
+      "kind": "class",
+      "name": "Font",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/palette.h:37-45"
+        },
+        {
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/palette.h:37-45"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "get_pixel",
+          "cpp_name": "GetPixel",
+          "return": {
+            "cpp_type": "RefPtr<Color>",
+            "ruby_type": "Color"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/palette.h:37-45"
+        },
+        {
+          "ruby_name": "set_pixel",
+          "cpp_name": "SetPixel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/palette.h:37-45"
+        },
+        {
+          "ruby_name": "save_file",
+          "cpp_name": "SaveFile",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/palette.h:37-45"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "constructor",
+          "signature": "Palette(SDL_Surface*)",
+          "reason": "internal parameter type: SDL_Surface*"
+        }
+      ],
+      "export": "core/palette.h:37-45",
+      "cpp_name": "Palette",
+      "cpp_parent": "Disposable",
+      "header": "core/palette.h",
+      "kind": "class",
+      "name": "Palette",
+      "ruby_superclass": "Disposable",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/plane.h:35-49"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "bitmap",
+          "setter": "bitmap=",
+          "cpp_name": "Bitmap",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "zoom_x",
+          "setter": "zoom_x=",
+          "cpp_name": "ZoomX",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "zoom_y",
+          "setter": "zoom_y=",
+          "cpp_name": "ZoomY",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "opacity",
+          "setter": "opacity=",
+          "cpp_name": "Opacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "blend_type",
+          "setter": "blend_type=",
+          "cpp_name": "BlendType",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "color",
+          "setter": "color=",
+          "cpp_name": "Color",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        },
+        {
+          "name": "tone",
+          "setter": "tone=",
+          "cpp_name": "Tone",
+          "cpp_type": "RefPtr<Tone>",
+          "ruby_type": "Tone",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/plane.h:35-49"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/plane.h:35-49",
+      "cpp_name": "Plane",
+      "cpp_parent": "Node",
+      "header": "core/plane.h",
+      "kind": "class",
+      "name": "Plane",
+      "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "xv",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "wv",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "hv",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:35-80"
+        },
+        {
+          "params": [],
+          "export": "core/utility.h:35-80"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "o",
+            "type": "RefPtr<Rect>",
+            "default": null
+          }
+        ],
+        "export": "core/utility.h:35-80"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "xv",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "wv",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "hv",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        },
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        },
+        {
+          "ruby_name": "empty",
+          "cpp_name": "Empty",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        },
+        {
+          "name": "width",
+          "setter": "width=",
+          "cpp_name": "Width",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        },
+        {
+          "name": "height",
+          "setter": "height=",
+          "cpp_name": "Height",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:35-80"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": true,
+        "load": true
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/utility.h:35-80",
+      "cpp_name": "Rect",
+      "cpp_parent": "Object",
+      "header": "core/utility.h",
+      "kind": "class",
+      "name": "Rect",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/sprite.h:33-64"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "flash",
+          "cpp_name": "Flash",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "ruby_name": "width",
+          "cpp_name": "Width",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "bitmap",
+          "setter": "bitmap=",
+          "cpp_name": "Bitmap",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "src_rect",
+          "setter": "src_rect=",
+          "cpp_name": "SrcRect",
+          "cpp_type": "RefPtr<Rect>",
+          "ruby_type": "Rect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "zoom_x",
+          "setter": "zoom_x=",
+          "cpp_name": "ZoomX",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "zoom_y",
+          "setter": "zoom_y=",
+          "cpp_name": "ZoomY",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "angle",
+          "setter": "angle=",
+          "cpp_name": "Angle",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "wave_amp",
+          "setter": "wave_amp=",
+          "cpp_name": "WaveAmp",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "wave_length",
+          "setter": "wave_length=",
+          "cpp_name": "WaveLength",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "wave_speed",
+          "setter": "wave_speed=",
+          "cpp_name": "WaveSpeed",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "wave_phase",
+          "setter": "wave_phase=",
+          "cpp_name": "WavePhase",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "mirror",
+          "setter": "mirror=",
+          "cpp_name": "Mirror",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "bush_depth",
+          "setter": "bush_depth=",
+          "cpp_name": "BushDepth",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "bush_opacity",
+          "setter": "bush_opacity=",
+          "cpp_name": "BushOpacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "opacity",
+          "setter": "opacity=",
+          "cpp_name": "Opacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "blend_type",
+          "setter": "blend_type=",
+          "cpp_name": "BlendType",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "color",
+          "setter": "color=",
+          "cpp_name": "Color",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        },
+        {
+          "name": "tone",
+          "setter": "tone=",
+          "cpp_name": "Tone",
+          "cpp_type": "RefPtr<Tone>",
+          "ruby_type": "Tone",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:33-64"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/sprite.h:33-64",
+      "cpp_name": "Sprite",
+      "cpp_parent": "Node",
+      "header": "core/sprite.h",
+      "kind": "class",
+      "name": "Sprite",
+      "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "xsize",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "ysize",
+              "type": "int32_t",
+              "default": "1"
+            },
+            {
+              "name": "zsize",
+              "type": "int32_t",
+              "default": "1"
+            }
+          ],
+          "export": "core/table.h:34-50"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "other",
+            "type": "RefPtr<Table>",
+            "default": null
+          }
+        ],
+        "export": "core/table.h:34-50"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "resize",
+          "cpp_name": "Resize",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "xsize",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "ysize",
+              "type": "int32_t",
+              "default": "1"
+            },
+            {
+              "name": "zsize",
+              "type": "int32_t",
+              "default": "1"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/table.h:34-50"
+        },
+        {
+          "ruby_name": "xsize",
+          "cpp_name": "Xsize",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/table.h:34-50"
+        },
+        {
+          "ruby_name": "ysize",
+          "cpp_name": "Ysize",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/table.h:34-50"
+        },
+        {
+          "ruby_name": "zsize",
+          "cpp_name": "Zsize",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/table.h:34-50"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": true,
+        "load": true
+      },
+      "index": {
+        "get": {
+          "ruby_name": "[]",
+          "cpp_name": "Get",
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": "0"
+            },
+            {
+              "name": "z",
+              "type": "int32_t",
+              "default": "0"
+            }
+          ],
+          "export": "core/table.h:34-50"
+        },
+        "set": {
+          "ruby_name": "[]=",
+          "cpp_name": "Set",
+          "params": [
+            {
+              "name": "value",
+              "type": "int16_t",
+              "default": null
+            },
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": "0"
+            },
+            {
+              "name": "z",
+              "type": "int32_t",
+              "default": "0"
+            }
+          ],
+          "export": "core/table.h:34-50"
+        }
+      },
+      "unsupported": [],
+      "export": "core/table.h:34-50",
+      "cpp_name": "Table",
+      "cpp_parent": "Object",
+      "header": "core/table.h",
+      "kind": "class",
+      "name": "Table",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "r",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "default": "0.f"
+            }
+          ],
+          "export": "core/utility.h:154-197"
+        },
+        {
+          "params": [],
+          "export": "core/utility.h:154-197"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "o",
+            "type": "RefPtr<Tone>",
+            "default": null
+          }
+        ],
+        "export": "core/utility.h:154-197"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "r",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "default": "0.f"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:154-197"
+        },
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "tone",
+              "type": "RefPtr<Tone>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:154-197"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "red",
+          "setter": "red=",
+          "cpp_name": "Red",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:154-197"
+        },
+        {
+          "name": "green",
+          "setter": "green=",
+          "cpp_name": "Green",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:154-197"
+        },
+        {
+          "name": "blue",
+          "setter": "blue=",
+          "cpp_name": "Blue",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:154-197"
+        },
+        {
+          "name": "gray",
+          "setter": "gray=",
+          "cpp_name": "Gray",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/utility.h:154-197"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": true,
+        "load": true
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/utility.h:154-197",
+      "cpp_name": "Tone",
+      "cpp_parent": "Object",
+      "header": "core/utility.h",
+      "kind": "class",
+      "name": "Tone",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "xv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:215-230"
+        },
+        {
+          "params": [
+            {
+              "name": "v",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:215-230"
+        },
+        {
+          "params": [],
+          "export": "core/utility.h:215-230"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "o",
+            "type": "RefPtr<Vector2>",
+            "default": null
+          }
+        ],
+        "export": "core/utility.h:215-230"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "xv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:215-230"
+        },
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "v",
+              "type": "RefPtr<Vector2>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:215-230"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "constructor",
+          "signature": "Vector2(glm::vec2)",
+          "reason": "internal parameter type: glm::vec2"
+        }
+      ],
+      "export": "core/utility.h:215-230",
+      "cpp_name": "Vector2",
+      "cpp_parent": "Object",
+      "header": "core/utility.h",
+      "kind": "class",
+      "name": "Vector2",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "xv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "zv",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:239-254"
+        },
+        {
+          "params": [
+            {
+              "name": "v",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:239-254"
+        },
+        {
+          "params": [],
+          "export": "core/utility.h:239-254"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "o",
+            "type": "RefPtr<Vector3>",
+            "default": null
+          }
+        ],
+        "export": "core/utility.h:239-254"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "xv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "zv",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:239-254"
+        },
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "v",
+              "type": "RefPtr<Vector3>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:239-254"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "constructor",
+          "signature": "Vector3(glm::vec3)",
+          "reason": "internal parameter type: glm::vec3"
+        }
+      ],
+      "export": "core/utility.h:239-254",
+      "cpp_name": "Vector3",
+      "cpp_parent": "Object",
+      "header": "core/utility.h",
+      "kind": "class",
+      "name": "Vector3",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "xv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "zv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "wv",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:263-280"
+        },
+        {
+          "params": [
+            {
+              "name": "v",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "export": "core/utility.h:263-280"
+        },
+        {
+          "params": [],
+          "export": "core/utility.h:263-280"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "o",
+            "type": "RefPtr<Vector4>",
+            "default": null
+          }
+        ],
+        "export": "core/utility.h:263-280"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "xv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "yv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "zv",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "wv",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:263-280"
+        },
+        {
+          "ruby_name": "set",
+          "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "v",
+              "type": "RefPtr<Vector4>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/utility.h:263-280"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "constructor",
+          "signature": "Vector4(glm::vec4)",
+          "reason": "internal parameter type: glm::vec4"
+        }
+      ],
+      "export": "core/utility.h:263-280",
+      "cpp_name": "Vector4",
+      "cpp_parent": "Object",
+      "header": "core/utility.h",
+      "kind": "class",
+      "name": "Vector4",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            }
+          ],
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "params": [],
+          "export": "core/viewport.h:32-46"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "flash",
+          "cpp_name": "Flash",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "rect",
+          "setter": "rect=",
+          "cpp_name": "Rect",
+          "cpp_type": "RefPtr<Rect>",
+          "ruby_type": "Rect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "name": "color",
+          "setter": "color=",
+          "cpp_name": "Color",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        },
+        {
+          "name": "tone",
+          "setter": "tone=",
+          "cpp_name": "Tone",
+          "cpp_type": "RefPtr<Tone>",
+          "ruby_type": "Tone",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/viewport.h:32-46"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/viewport.h:32-46",
+      "cpp_name": "Viewport",
+      "cpp_parent": "Node",
+      "header": "core/viewport.h",
+      "kind": "class",
+      "name": "Viewport",
+      "ruby_superclass": "Node",
+      "glue": false
+    }
+  ],
+  "aliases": []
+}
