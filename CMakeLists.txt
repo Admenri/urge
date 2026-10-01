@@ -14,5 +14,14 @@ endif()
 add_subdirectory(third_party)
 
 add_subdirectory(core)
+
+# The binding glue is generated from core/*.h, so it has to be brought up to
+# date *before* bind/CMakeLists.txt globs it.  `include` runs here, in the
+# configure step, and re-runs the two generators only when the headers (or a
+# generator) actually changed -- see bind/gen_binding.cmake.  It has to be
+# `include`, not `add_subdirectory`: a subdirectory gets its own variable and
+# policy scope, and the `file(GLOB)` below has to see the sources this writes.
+include(bind/gen_binding.cmake)
+
 add_subdirectory(bind)
 add_subdirectory(app)

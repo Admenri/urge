@@ -349,12 +349,21 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
   wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = view_;
+  color_attachment.view = texture_view_;
   color_attachment.loadOp = wgpu::LoadOp::Load;
   color_attachment.storeOp = wgpu::StoreOp::Store;
+  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
+  depth_stencil_attachment.view = depth_stencil_view_;
+  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.depthClearValue = 1.0f;
+  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.stencilClearValue = 0;
   wgpu::RenderPassDescriptor pass_desc;
   pass_desc.colorAttachmentCount = 1;
   pass_desc.colorAttachments = &color_attachment;
+  pass_desc.depthStencilAttachment = &depth_stencil_attachment;
   auto pass = encoder.BeginRenderPass(&pass_desc);
   {
     auto pipeline = ShaderSet::Get().state.texture_pma;
@@ -405,8 +414,12 @@ void Bitmap::GradientFillRect(int32_t x,
   if (!color1 || !color2)
     throw Exception(Exception::kRGSSError, "invalid color value.");
 
-  auto color1_norm = PremultiplyColor(color1->Normalize());
-  auto color2_norm = PremultiplyColor(color2->Normalize());
+  /* PremultiplyColor() takes an RGSS color, i.e. components in [0, 255], and
+     normalizes them itself, so the raw data of the color is what it expects --
+     Normalize() first would divide by 255 twice and every fill would come out
+     almost black. */
+  auto color1_norm = PremultiplyColor(color1->data);
+  auto color2_norm = PremultiplyColor(color2->data);
 
   if (vertical)
     primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
@@ -420,12 +433,21 @@ void Bitmap::GradientFillRect(int32_t x,
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
   wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = view_;
+  color_attachment.view = texture_view_;
   color_attachment.loadOp = wgpu::LoadOp::Load;
   color_attachment.storeOp = wgpu::StoreOp::Store;
+  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
+  depth_stencil_attachment.view = depth_stencil_view_;
+  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.depthClearValue = 1.0f;
+  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.stencilClearValue = 0;
   wgpu::RenderPassDescriptor pass_desc;
   pass_desc.colorAttachmentCount = 1;
   pass_desc.colorAttachments = &color_attachment;
+  pass_desc.depthStencilAttachment = &depth_stencil_attachment;
   auto pass = encoder.BeginRenderPass(&pass_desc);
   {
     auto pipeline = ShaderSet::Get().state.color_noblend;
@@ -629,7 +651,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   texture_desc.size.height = data->h;
   texture_desc.format = wgpu::TextureFormat::RGBA8Unorm;
   texture_ = GPUDevice::Get().device().CreateTexture(&texture_desc);
-  view_ = texture_.CreateView(nullptr);
+  texture_view_ = texture_.CreateView(nullptr);
 
   // Depth stencil
   wgpu::TextureDescriptor depth_stencil_desc;
@@ -639,6 +661,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   depth_stencil_desc.size.height = data->h;
   depth_stencil_desc.format = wgpu::TextureFormat::Depth24PlusStencil8;
   depth_stencil_ = GPUDevice::Get().device().CreateTexture(&depth_stencil_desc);
+  depth_stencil_view_ = depth_stencil_.CreateView(nullptr);
 
   // Update texture data
   wgpu::TexelCopyTextureInfo destination;
@@ -704,9 +727,9 @@ void Bitmap::CreateGroup() {
                               {{0, WBufferSet(scene_uniform_)}});
   object_group_ = CreateWGroup(pipeline.GetBindGroupLayout(1),
                                {{0, WBufferSet(object_uniform_)}});
-  texture_group_ =
-      CreateWGroup(pipeline.GetBindGroupLayout(2),
-                   {{0, WTextureViewSet(view_)}, {1, WSamplerSet(sampler_)}});
+  texture_group_ = CreateWGroup(
+      pipeline.GetBindGroupLayout(2),
+      {{0, WTextureViewSet(texture_view_)}, {1, WSamplerSet(sampler_)}});
 }
 
 }  // namespace urge

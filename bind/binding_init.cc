@@ -23,6 +23,9 @@
 #include "binding_vector3.h"
 #include "binding_vector4.h"
 #include "binding_viewport.h"
+#include "binding_window_vx.h"
+#include "binding_window_xp.h"
+#include "binding_audio.h"
 #include "binding_graphics.h"
 #include "binding_input.h"
 // --- GENERATED INCLUDES END ---
@@ -68,6 +71,9 @@ void InitBindings() {
   InitVector3Binding();
   InitVector4Binding();
   InitViewportBinding();
+  InitWindowVXBinding();
+  InitWindowXPBinding();
+  InitAudioBinding();
   InitGraphicsBinding();
   InitInputBinding();
 }

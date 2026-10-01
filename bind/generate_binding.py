@@ -931,8 +931,22 @@ def read_text(path: str) -> str:
 
 
 def write_text(path: str, text: str) -> None:
-    # The repository is CRLF throughout; write it that way so regenerating
-    # never shows up as an end-of-line diff.
+    """Write `text` to `path`, but only if that would actually change it.
+
+    The repository is CRLF throughout; write it that way so regenerating never
+    shows up as an end-of-line diff.
+
+    The "only if it would change" part is load-bearing, not an optimisation.
+    MSBuild decides what to rebuild by comparing timestamps, so rewriting a
+    file with identical bytes still counts as a change and recompiles every
+    translation unit that includes it.  Nothing here depends on the write
+    having happened: the generators are deterministic, so the only caller that
+    could care is one that reads the file back, and none does.  Skipping the
+    write is what makes a re-run of the generators free.
+    """
+    text = text.replace("\r\n", "\n")
+    if os.path.exists(path) and read_text(path) == text:
+        return
     with open(path, "w", encoding="utf-8", newline="\r\n") as f:
         f.write(text)
 

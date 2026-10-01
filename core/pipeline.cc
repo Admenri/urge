@@ -259,10 +259,87 @@ wgpu::BlendState* GetBlendState(BlendType type) {
   }
 }
 
+/*! The stencil state of a pass which marks the pixels it covers: the stencil
+    test never rejects a fragment, the fragment replaces whatever the stencil
+    held with the value a node marks its region with, and the stencil is
+    written wherever the fragment lands. The depth of the attachment is unused
+    by the engine, so the depth test always passes and writes nothing. */
+wgpu::DepthStencilState* GetStencilWriteState() {
+  static wgpu::DepthStencilState state{
+      .format = wgpu::TextureFormat::Depth24PlusStencil8,
+      .depthWriteEnabled = false,
+      .depthCompare = wgpu::CompareFunction::Always,
+      .stencilFront = {.compare = wgpu::CompareFunction::Always,
+                       .failOp = wgpu::StencilOperation::Keep,
+                       .depthFailOp = wgpu::StencilOperation::Keep,
+                       .passOp = wgpu::StencilOperation::Replace},
+      .stencilBack = {.compare = wgpu::CompareFunction::Always,
+                      .failOp = wgpu::StencilOperation::Keep,
+                      .depthFailOp = wgpu::StencilOperation::Keep,
+                      .passOp = wgpu::StencilOperation::Replace},
+      .stencilReadMask = 0xFF,
+      .stencilWriteMask = 0xFF};
+  return &state;
+}
+
+/*! The stencil state of a pass which is clipped to the region another pass
+    marked: a fragment passes only where the stencil carries the reference
+    value the marking pass wrote, and the stencil is left alone. */
+wgpu::DepthStencilState* GetStencilTestState() {
+  static wgpu::DepthStencilState state{
+      .format = wgpu::TextureFormat::Depth24PlusStencil8,
+      .depthWriteEnabled = false,
+      .depthCompare = wgpu::CompareFunction::Always,
+      .stencilFront = {.compare = wgpu::CompareFunction::Equal,
+                       .failOp = wgpu::StencilOperation::Keep,
+                       .depthFailOp = wgpu::StencilOperation::Keep,
+                       .passOp = wgpu::StencilOperation::Keep},
+      .stencilBack = {.compare = wgpu::CompareFunction::Equal,
+                      .failOp = wgpu::StencilOperation::Keep,
+                      .depthFailOp = wgpu::StencilOperation::Keep,
+                      .passOp = wgpu::StencilOperation::Keep},
+      .stencilReadMask = 0xFF,
+      .stencilWriteMask = 0x00};
+  return &state;
+}
+
+/*! The stencil state of a pipeline which draws into a pass that carries a
+    depth-stencil attachment but does not care about it: the depth test always
+    passes without writing and the stencil is read and written with a mask of
+    zero, so the attachment is left exactly as it was.
+
+    Every frame of this engine binds the depth-stencil texture of its render
+    target, see Node::Render, and WebGPU requires a pipeline which is used in
+    a pass to declare a state for every attachment of that pass. This is the
+    state of every pipeline which is not one of the two stencil users above. */
+wgpu::DepthStencilState* GetDepthStencilState() {
+  static wgpu::DepthStencilState state{
+      .format = wgpu::TextureFormat::Depth24PlusStencil8,
+      .depthWriteEnabled = false,
+      .depthCompare = wgpu::CompareFunction::Always,
+      .stencilFront = {.compare = wgpu::CompareFunction::Always,
+                       .failOp = wgpu::StencilOperation::Keep,
+                       .depthFailOp = wgpu::StencilOperation::Keep,
+                       .passOp = wgpu::StencilOperation::Keep},
+      .stencilBack = {.compare = wgpu::CompareFunction::Always,
+                      .failOp = wgpu::StencilOperation::Keep,
+                      .depthFailOp = wgpu::StencilOperation::Keep,
+                      .passOp = wgpu::StencilOperation::Keep},
+      .stencilReadMask = 0x00,
+      .stencilWriteMask = 0x00};
+  return &state;
+}
+
 /* ----- TextureBase ----- */
 
 TextureBase::TextureBase()
     : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}) {}
+
+/*! The same shaders as TextureBase, but the object data of set 1 is staged in
+    the pool of the frame and bound with a dynamic offset, which is what the
+    nodes of a window read, see TextureBaseDynamic. */
+TextureBaseDynamic::TextureBaseDynamic()
+    : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}, {1}) {}
 
 /* ----- ColorBase ----- */
 
@@ -311,33 +388,57 @@ ShaderSet::ShaderSet() : shader() {
   primitive.topology = wgpu::PrimitiveTopology::TriangleList;
   wgpu::TextureFormat target = wgpu::TextureFormat::RGBA8Unorm;
 
+  /* Every pass of this engine carries the depth-stencil texture of its
+     render target, see Node::Render, so every pipeline has to declare a state
+     for it: GetDepthStencilState() returns the state of a pipeline which
+     ignores the attachment. */
+  wgpu::DepthStencilState* depth_stencil = GetDepthStencilState();
+
   state.texture_noblend = shader.texture_base.MakeState(
-      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
   state.texture_pma = shader.texture_base.MakeState(
-      primitive, std::nullopt,
+      primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
   state.color_noblend = shader.color_base.MakeState(
-      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
   state.color_pma = shader.color_base.MakeState(
-      primitive, std::nullopt,
+      primitive, *depth_stencil,
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
+
+  /* The pipelines of a window: the plain texture shader, with the object data
+     of set 1 read out of the frame pool through a dynamic offset. */
+  state.texture_dynamic_noblend = shader.texture_base_dynamic.MakeState(
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
+  state.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(
+      primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
   for (auto it : {BLEND_NONE, BLEND_NORMAL, BLEND_ADDITION, BLEND_SUBTRACT}) {
     state.tint_blends[it] = shader.tint_base.MakeState(
-        primitive, std::nullopt,
+        primitive, *depth_stencil,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
     state.sprite_blends[it] = shader.sprite_base.MakeState(
-        primitive, std::nullopt,
+        primitive, *depth_stencil,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
     state.plane_blends[it] = shader.plane_base.MakeState(
-        primitive, std::nullopt,
+        primitive, *depth_stencil,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
   }
   state.transition_alpha = shader.transition_alpha.MakeState(
-      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
   state.transition_vague = shader.transition_vague.MakeState(
-      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
+
+  state.texture_stencil_write = shader.texture_base_dynamic.MakeState(
+      primitive, *GetStencilWriteState(),
+      {wgpu::ColorTargetState{.format = target,
+                              .writeMask = wgpu::ColorWriteMask::None}});
+  state.texture_stencil_test = shader.texture_base_dynamic.MakeState(
+      primitive, *GetStencilTestState(),
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
 }
 
 }  // namespace urge

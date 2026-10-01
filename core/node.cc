@@ -84,9 +84,18 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
     color_attachment.clearValue.b = clear_value.b;
     color_attachment.clearValue.a = clear_value.a;
   }
+  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
+  depth_stencil_attachment.view = target->depth_stencil_view();
+  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.depthClearValue = 1.0f;
+  depth_stencil_attachment.stencilClearValue = 0;
   wgpu::RenderPassDescriptor render_pass_desc;
   render_pass_desc.colorAttachmentCount = 1;
   render_pass_desc.colorAttachments = &color_attachment;
+  render_pass_desc.depthStencilAttachment = &depth_stencil_attachment;
   context.pass = encoder.BeginRenderPass(&render_pass_desc);
   context.scene = target->scene_group();
   context.scissors.push(RectI(target->size()));

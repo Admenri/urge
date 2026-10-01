@@ -175,6 +175,24 @@ BindingMain::BindingMain() {
   if (error_state_)
     throw Exception(Exception::kRGSSError, "failed to load RPG database.");
 
+  {
+    int temp_error_state = 0;
+    size_t temp_data_size = 0;
+    auto temp_data_ptr = SDL_LoadFile("Scripts.rb", &temp_data_size);
+    if (!temp_data_ptr)
+      throw Exception(Exception::kIOError, "failed to load extra scripts.");
+    std::string temp_data(reinterpret_cast<const char*>(temp_data_ptr),
+                          temp_data_size);
+    rb_eval_string_protect(temp_data.c_str(), &temp_error_state);
+    if (temp_error_state) {
+      VALUE exc = rb_errinfo();
+      if (rb_obj_class(exc) != rb_eSystemExit)
+        throw Exception(Exception::kRGSSError, RubyExceptionMessage(exc));
+    }
+
+    return;
+  }
+
   // Marshal decode
   VALUE scripts = RGSSLoadData(config.scripts.c_str());
   if (!RB_TYPE_P(scripts, T_ARRAY))

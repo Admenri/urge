@@ -57,6 +57,20 @@ class TextureBase : public Pipeline {
   TextureBase();
 };
 
+/*! The plain texture pipeline of the nodes whose object transform is staged in
+    the pool of the frame and bound with a dynamic offset: WindowVX and WindowXP
+    draw every part of a window -- the frame, the cursor, the contents -- out of
+    one slot of that pool, so their object data travels with a dynamic offset
+    while the object data of the screen root and of a bitmap does not, see
+    TextureBase.
+
+    The shaders of this pipeline are the ones of TextureBase; only the layout of
+    set 1 differs, see Pipeline. */
+class TextureBaseDynamic : public Pipeline {
+ public:
+  TextureBaseDynamic();
+};
+
 class ColorBase : public Pipeline {
  public:
   ColorBase();
@@ -108,6 +122,7 @@ class TransitionVague : public Pipeline {
 struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     TextureBase texture_base;
+    TextureBaseDynamic texture_base_dynamic;
     ColorBase color_base;
     TintBase tint_base;
     SpriteBase sprite_base;
@@ -126,6 +141,13 @@ struct ShaderSet : public Singleton<ShaderSet> {
     std::map<BlendType, wgpu::RenderPipeline> plane_blends;
     wgpu::RenderPipeline transition_alpha;
     wgpu::RenderPipeline transition_vague;
+    /* The window pipelines: the plain texture shader with the object data of
+       the frame pool bound at set 1 with a dynamic offset, see
+       TextureBaseDynamic. */
+    wgpu::RenderPipeline texture_dynamic_noblend;
+    wgpu::RenderPipeline texture_dynamic_pma;
+    wgpu::RenderPipeline texture_stencil_write;
+    wgpu::RenderPipeline texture_stencil_test;
   } state;
 
   ShaderSet();

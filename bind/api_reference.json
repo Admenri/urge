@@ -3,8 +3,9 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-09-30T16:31:04Z",
+    "generated_at": "2026-10-01T07:14:27Z",
     "source_headers": [
+      "core/audio.h",
       "core/bitmap.h",
       "core/common.h",
       "core/config.h",
@@ -31,7 +32,9 @@
       "core/table.h",
       "core/uniform.h",
       "core/utility.h",
-      "core/viewport.h"
+      "core/viewport.h",
+      "core/window_vx.h",
+      "core/window_xp.h"
     ],
     "skipped": [
       {
@@ -67,6 +70,264 @@
     ]
   },
   "modules": [
+    {
+      "unsupported": [],
+      "export": "core/audio.h:39-64",
+      "cpp_name": "Audio",
+      "cpp_parent": "Singleton",
+      "header": "core/audio.h",
+      "kind": "module",
+      "name": "Audio",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "setup_midi",
+          "cpp_name": "SetupMIDI",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgm_play",
+          "cpp_name": "BGMPlay",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "volume",
+              "type": "int32_t",
+              "default": "100"
+            },
+            {
+              "name": "pitch",
+              "type": "int32_t",
+              "default": "100"
+            },
+            {
+              "name": "pos",
+              "type": "float",
+              "default": "0.0f"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgm_stop",
+          "cpp_name": "BGMStop",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgm_fade",
+          "cpp_name": "BGMFade",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "time",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgm_pos",
+          "cpp_name": "BGMPos",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgs_play",
+          "cpp_name": "BGSPlay",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "volume",
+              "type": "int32_t",
+              "default": "100"
+            },
+            {
+              "name": "pitch",
+              "type": "int32_t",
+              "default": "100"
+            },
+            {
+              "name": "pos",
+              "type": "float",
+              "default": "0.0f"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgs_stop",
+          "cpp_name": "BGSStop",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgs_fade",
+          "cpp_name": "BGSFade",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "time",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "bgs_pos",
+          "cpp_name": "BGSPos",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "me_play",
+          "cpp_name": "MEPlay",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "volume",
+              "type": "int32_t",
+              "default": "100"
+            },
+            {
+              "name": "pitch",
+              "type": "int32_t",
+              "default": "100"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "me_stop",
+          "cpp_name": "MEStop",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "me_fade",
+          "cpp_name": "MEFade",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "time",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "se_play",
+          "cpp_name": "SEPlay",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "volume",
+              "type": "int32_t",
+              "default": "100"
+            },
+            {
+              "name": "pitch",
+              "type": "int32_t",
+              "default": "100"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        },
+        {
+          "ruby_name": "se_stop",
+          "cpp_name": "SEStop",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio.h:39-64"
+        }
+      ]
+    },
     {
       "unsupported": [],
       "export": "core/graphics.h:58-80",
@@ -3291,6 +3552,597 @@
       "header": "core/viewport.h",
       "kind": "class",
       "name": "Viewport",
+      "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "params": [
+            {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/window_vx.h:80-110"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "ruby_name": "move",
+          "cpp_name": "Move",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "ruby_name": "opened",
+          "cpp_name": "Opened",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "ruby_name": "closed",
+          "cpp_name": "Closed",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "windowskin",
+          "setter": "windowskin=",
+          "cpp_name": "Windowskin",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "contents",
+          "setter": "contents=",
+          "cpp_name": "Contents",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "cursor_rect",
+          "setter": "cursor_rect=",
+          "cpp_name": "CursorRect",
+          "cpp_type": "RefPtr<Rect>",
+          "ruby_type": "Rect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "active",
+          "setter": "active=",
+          "cpp_name": "Active",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "arrows_visible",
+          "setter": "arrows_visible=",
+          "cpp_name": "ArrowsVisible",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "pause",
+          "setter": "pause=",
+          "cpp_name": "Pause",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "width",
+          "setter": "width=",
+          "cpp_name": "Width",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "height",
+          "setter": "height=",
+          "cpp_name": "Height",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "padding",
+          "setter": "padding=",
+          "cpp_name": "Padding",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "padding_bottom",
+          "setter": "padding_bottom=",
+          "cpp_name": "PaddingBottom",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "opacity",
+          "setter": "opacity=",
+          "cpp_name": "Opacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "back_opacity",
+          "setter": "back_opacity=",
+          "cpp_name": "BackOpacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "contents_opacity",
+          "setter": "contents_opacity=",
+          "cpp_name": "ContentsOpacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "openness",
+          "setter": "openness=",
+          "cpp_name": "Openness",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        },
+        {
+          "name": "scale",
+          "setter": "scale=",
+          "cpp_name": "Scale",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_vx.h:80-110"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/window_vx.h:80-110",
+      "cpp_name": "WindowVX",
+      "cpp_parent": "Node",
+      "header": "core/window_vx.h",
+      "kind": "class",
+      "name": "WindowVX",
+      "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/window_xp.h:108-132"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "windowskin",
+          "setter": "windowskin=",
+          "cpp_name": "Windowskin",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "contents",
+          "setter": "contents=",
+          "cpp_name": "Contents",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "stretch",
+          "setter": "stretch=",
+          "cpp_name": "Stretch",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "cursor_rect",
+          "setter": "cursor_rect=",
+          "cpp_name": "CursorRect",
+          "cpp_type": "RefPtr<Rect>",
+          "ruby_type": "Rect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "active",
+          "setter": "active=",
+          "cpp_name": "Active",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "pause",
+          "setter": "pause=",
+          "cpp_name": "Pause",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "width",
+          "setter": "width=",
+          "cpp_name": "Width",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "height",
+          "setter": "height=",
+          "cpp_name": "Height",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "opacity",
+          "setter": "opacity=",
+          "cpp_name": "Opacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "back_opacity",
+          "setter": "back_opacity=",
+          "cpp_name": "BackOpacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "contents_opacity",
+          "setter": "contents_opacity=",
+          "cpp_name": "ContentsOpacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "scale",
+          "setter": "scale=",
+          "cpp_name": "Scale",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        },
+        {
+          "name": "z",
+          "setter": "z=",
+          "cpp_name": "Z",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-132"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/window_xp.h:108-132",
+      "cpp_name": "WindowXP",
+      "cpp_parent": "Node",
+      "header": "core/window_xp.h",
+      "kind": "class",
+      "name": "WindowXP",
       "ruby_superclass": "Node",
       "glue": false
     }

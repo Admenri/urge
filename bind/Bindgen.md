@@ -15,6 +15,9 @@ CRuby 解释器来自 `third_party/cruby`（1.9.3），CMake 目标为 `ruby-sta
 
 ## 运行方式
 
+**正常情况什么都不用做**：`cmake -S . -B build` 会在配置阶段自动把胶水推到最新
+（见下节）。手动跑只在调试生成器时需要：
+
 ```bash
 python bind/gen_api_json.py          # core/*.h  → bind/api_reference.json
 python bind/generate_binding.py      # IR       → bind/binding_*.{h,cc}
@@ -23,6 +26,68 @@ python bind/generate_binding.py      # IR       → bind/binding_*.{h,cc}
 两个脚本都可用第一个位置参数覆盖默认路径（`gen_api_json.py <output.json>`、
 `generate_binding.py <ir.json> <output_dir>`）。除 `meta.generated_at` 外，重复运行
 结果逐字节一致；`.cc` 的重跑是幂等的（见「特殊绑定」）。
+
+两者重跑时都**先比后写**，所以「重复运行」在磁盘上是一次真正的空操作：内容不变就
+不碰文件（连 mtime 都不动）。`gen_api_json.py` 打印 `Generated …` / `Unchanged …`
+以区分两种情形。这也意味着手动重跑生成器不会白白触发一轮重编译。
+
+另有只读的 `--digest [json]`：不带参数打印「当前头文件会产出的 IR」的 sha256，
+带路径则打印该文件同样算法（已剔除 `generated_at`）的摘要，两种结果可直接比较。
+它不写任何文件，是下节判断「需不需要重新生成」的依据。
+
+## 自动生成（配置期触发，`bind/gen_binding.cmake`）
+
+顶层 `CMakeLists.txt` 在 `add_subdirectory(bind)` **之前** `include` 这个脚本，
+于是每次 configure 都会评估一次，但**只在产出真的会变时才写出文件**：
+
+```
+core/*.h ──gen_api_json.py──▶ api_reference.json ──generate_binding.py──▶ binding_*.{h,cc}
+```
+
+两级缓存，各自一个 stamp 文件：
+
+| 文件 | 内容 | 回答的问题 |
+| --- | --- | --- |
+| `bind/.gen_stamp` | 头文件产出的 IR 摘要 + 两个生成器脚本的 md5 | 输入变了没有 |
+| `bind/.glue_stamp` | 每个 `binding_*` 的 md5 + 它来自哪个 IR 摘要 | 磁盘上的胶水还对得上 IR 吗 |
+
+判断顺序：
+
+1. `.gen_stamp` 与当前输入不同（含**生成器脚本自身被改**）→ 重生成 IR；
+2. 即便输入没动，也把磁盘上的 IR **按内容重新摘要**（`generated_at` 除外）与头文件
+   的摘要比一次 —— 手改过的、或来自别的树的 IR 会被抓出来，重生成；
+3. `.glue_stamp` 对不上（生成物被手改、或 IR 刚被重写）→ 重跑胶水生成器。
+
+**为什么这套机制能省下重编译**：MSBuild 关心的是时间戳，不是内容。只要不写出
+文件，`binding_*.cc` 的 mtime 就不动，`urge-binding` 一个 TU 都不会重编。所以
+关键不是"少跑几次生成器"，而是**绝不写内容不变的文件**——两个生成器都实现了这个
+性质，而且是流水线能成立的前提：
+
+- `generate_binding.py` 的 `write_text()` 先比后写，字节相同就一个字符都不写；
+- `gen_api_json.py` 的 `write_document()` 按**剔除 `generated_at` 后的内容**比较。
+  这一步不能省：`generated_at` 每次都变，若按原始字节比，未变的 IR 也会被重写，
+  而所有 `binding_*` 都依赖 IR，等于每次都全量重编。
+
+实测（`bind/` 下 43 个生成物）：
+
+| 场景 | 结果 |
+| --- | --- |
+| 连跑两次配置 | 第二次起只打印 `glue up to date`，43 个文件内容与 mtime 全部不动 |
+| 之后构建 | `urge-binding` 零 TU 重编（按 `.obj` mtime 逐文件核对） |
+| **删掉两个 stamp**（模拟全新克隆）→ 配置 | 两个生成器都跑了，但 43 个文件 mtime **一个都没动**，构建仍零重编 |
+| 给 `Color` 加一个导出方法 → 配置 | 只重写 5 个文件：`binding_color.cc` + 引用它的 `Tone`/`Vector2`/`Vector3`/`Vector4`，其余 38 个不动 |
+| 还原该方法 → 配置 | 同样只动那 5 个，IR 摘要回到 `1700e884…` |
+
+也就是说，「冷启动」和「改动」都不会放大成重编译；代价与改动面成正比。
+
+> 用 `grep -c binding_` 数构建日志里的重编数是错的——链接命令行也会列出所有 `.obj`
+> 名字。要判断某个 TU 是否真的重编，得比对 `build/bind/urge-binding.dir/` 下 `.obj`
+> 的 mtime。
+
+新增一个导出类的完整流程因此只有一步 `cmake -S . -B build`：脚本在
+`add_subdirectory(bind)` 之前就写好了 `binding_<name>.cc`，`bind/CMakeLists.txt`
+的 `file(GLOB ... CONFIGURE_DEPENDS)` 随即把它收进 `urge-binding`。
+
 
 ## IR 查看（`bind/viewer/`）
 
@@ -65,10 +130,16 @@ cmake --build build --config Debug --target urge-binding
 
 ### 运行时验证（`bind/test/`）
 
+`bind/test/` **不在版本控制里**（`bind/CMakeLists.txt` 也没有 `add_subdirectory(test)`）。
+若工作区里存在这套冒烟测试，在它自己的构建目录里构建：
+
 ```bash
-cmake --build build --config Debug --target urge-binding-smoke
-cd build/bind/test/Debug && ./urge-binding-smoke.exe
+cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
+./Debug/urge-binding-smoke.exe
 ```
+
+（在仓库根的 `build/` 里用 `--target urge-binding-smoke` 会因为目标在子目录而报
+`MSB1009: 项目文件不存在`。）
 
 `bind/test/smoke_main.cc` 启动内嵌 VM、调用 `InitBindings()`，然后用一段 Ruby 脚本逐条
 断言 API 契约（`failures=0`、退出码 0 表示全部通过）。它不是交付物的一部分，但**改动
@@ -290,8 +361,20 @@ void InitBitmapBinding() {
 
 ```
 Disposable → Node → Bitmap → Color → Font → Palette → Plane → Rect → Sprite
-→ Table → Tone → Vector2 → Vector3 → Vector4 → Viewport → Graphics → Input
+→ Table → Tone → Vector2 → Vector3 → Vector4 → Viewport → WindowVX → WindowXP
 ```
+
+CRuby 要求父类先于子类被定义，所以这个顺序是有约束的。**`gen_api_json.py` 在排序后会
+自查一遍**（`check_base_order`）：若某个导出类的基类也是导出类、却排在它之后，直接
+`SystemExit` 报错并指出该把谁加在哪：
+
+```
+gen_api_json: 'Plane' derives from 'Node' but is registered first (position 5 vs 16).
+  Add 'Plane' to CLASS_ORDER after 'Node' in bind\gen_api_json.py.
+```
+
+没有这道检查时，漏登记的类不会报错也不会丢——它只是被按名字追加到末尾，于是可能排在基类
+之前，然后在 `RB_DEF_TYPE` 时崩掉，离原因很远。
 
 要求 `ruby_init()` 已运行；重复调用会重定义类，因此只调用一次。
 
@@ -557,7 +640,9 @@ class / module 条目字段：
   `bind/` 里唯一的例外是 `viewer/api_embed.js`，`viewer.py` 以 `newline="\n"` 写它；
   手写文件（`Bindgen.md`、`cruby_utils.*`、`*.py`、`test/*`）本来就是 LF，别去"统一"。
 - 绑定目标 `urge-binding` 能编译（零错误、零告警）。
-- `urge-binding-smoke` 跑过且 `failures=0`，见「运行时验证」。
+- `gen_api_json.py` 的 `check_base_order` 没报错（配置期会自己跑一遍）。
+- 若工作区里存在 `bind/test/` 冒烟测试（未纳入版本控制），跑过且 `failures=0`，
+  见「运行时验证」。
 - 用 `python bind/viewer/viewer.py stats` 复核一遍计数：`unsupported` 数量应与
   `meta.skipped` 一致，`module attribute` 数量应为模块属性读写对的一半。
 
@@ -568,26 +653,44 @@ class / module 条目字段：
 改动任一导出声明时须同步：
 
 1. 更新 `core/*.h` 的导出块（必要时加 `URGE_BINDING(Name:)`）；
-2. **若改了 C++ 方法名，先改完 `core/` 和 `app/` 里的全部调用点**——绑定依赖
+2. **新增导出类时**：把类名加进 `gen_api_json.py` 的 `CLASS_ORDER`（排在它基类之后）。
+   不登记也能导出，但会被排到列表末尾，可能落在基类**之前**，而注册顺序要求派生类在后。
+   漏登记现在会被 `check_base_order` 直接拦下（见「运行时验证」上方的 `CLASS_ORDER`
+   说明），不必等到运行时才发现。若这个类是 `Singleton<T>` 子类，还要加进同文件的
+   `MODULE_CLASSES` —— 见下面第 3 条；
+3. **若改了 C++ 方法名，先改完 `core/` 和 `app/` 里的全部调用点**——绑定依赖
    `urge-core`，`core/` 编不过就看不到绑定自己的错误。快速自检：
    `grep -rn 'OldName' core/ app/` 必须为空；
-3. 重新运行 `python bind/gen_api_json.py`；
-4. 重新运行 `python bind/generate_binding.py`；
+4. `cmake -S . -B build`。配置期会自动把 IR 和胶水推到最新（见「自动生成」），
+   不需要手动跑两个生成器；新类生成的 `binding_<name>.cc` 同一次配置就进构建；
 5. **手写区不会跟着重命名走**。`binding_table.cc` / `binding_input.cc` 的
    HANDWRITTEN 块逐字保留，所以只要手写块调用过被改名的方法，就必须同时改
    `generate_binding.py` 的 `HANDWRITTEN_SEED` **和**已存在生成物里的那一块；
    更稳的做法是删掉该 `.cc` 再跑一次生成器（文件缺失时它用种子重建）。
    自检：`grep -c 'OldName' bind/binding_*.cc` 必须为 0；
 6. 若 Ruby 可见名变了（新增、改名、加 `?`），同步 `bind/test/smoke_main.cc`
-   里对应的断言——它按名字断言，改名前它不会失败，改名后才会；
-7. 编译 `urge-binding` 与 `urge-binding-smoke`，跑一次冒烟测试，并做一次上文
-   「生成后检查」；
+   里对应的断言（若该目录存在）——它按名字断言，改名前它不会失败，改名后才会；
+7. 编译 `urge-binding`；若工作区里有 `bind/test/`，一并构建并跑一次冒烟测试。
+   然后做一次上文「生成后检查」；
 8. 重跑 `python bind/viewer/viewer.py embed`，否则 `file://` 打开的查看器
    还在用旧快照。
 
 签名描述不了的新行为（参数重排、额外常量、非常规注册）加进 `generate_binding.py`
 的覆盖项，**不要**直接改生成物——GENERATED 块会被下一次运行覆盖。名字不在此列：
 改 C++ 名或加一条 `URGE_BINDING` 注解即可，没有需要同步的命名表。
+
+### `Singleton<T>` 必须是模块，不能是类
+
+绑定有两种形态，选错会编译失败而不是静默出错：
+
+- **模块**（`MODULE_CLASSES`）：靠 `Ty::Get()` 取单例，不产生 Ruby 对象。
+- **类**：走 `RB_DEF_TYPE` / `SetupSelfData`，模板里要求 `Release()` 与 `AddRef()`。
+
+`Singleton<T>`（`core/object.h`）两者都没有，所以它必须列进 `MODULE_CLASSES`。
+漏掉的症状是 `urge-binding` 报 `C2039: "Release": 不是 "urge::X" 的成员`，指在
+`cruby_utils.h` 的 `ReleaseDataType` / `SetupSelfData` 上，与出错的那个类看起来
+没有关系。现有模块：`Graphics`、`Input`、`Audio`。
+
 
 ## 与 lime 的差异
 

@@ -195,7 +195,8 @@ void Viewport::PostDraw(DrawParam param) {
     copy_size.height = viewport_region.height;
     param->command.CopyTextureToTexture(&source, &destination, &copy_size);
 
-    // The batch of the frame is already written, this quad needs its own emitter
+    // The batch of the frame is already written, this quad needs its own
+    // emitter
     primitive_.EmitQuad(
         viewport_region,
         MakeNorm(RectI(viewport_region.Size()), pingpong_->size()),
@@ -207,9 +208,16 @@ void Viewport::PostDraw(DrawParam param) {
     color_attachment.view = param->target->texture_view();
     color_attachment.loadOp = wgpu::LoadOp::Load;
     color_attachment.storeOp = wgpu::StoreOp::Store;
+    wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
+    depth_stencil_attachment.view = param->target->depth_stencil_view();
+    depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Load;
+    depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Store;
+    depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Load;
+    depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Store;
     wgpu::RenderPassDescriptor render_pass_desc;
     render_pass_desc.colorAttachmentCount = 1;
     render_pass_desc.colorAttachments = &color_attachment;
+    render_pass_desc.depthStencilAttachment = &depth_stencil_attachment;
     param->pass = param->command.BeginRenderPass(&render_pass_desc);
 
     // Draw post process

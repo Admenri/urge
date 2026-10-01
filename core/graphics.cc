@@ -29,6 +29,8 @@
 #include <span>
 #include <string>
 
+#include "SDL3/SDL_events.h"
+
 #include "core/common.h"
 #include "core/config.h"
 #include "core/exception.h"
@@ -213,6 +215,11 @@ ATTR_DEF(Graphics, int32_t, Brightness) {
 
 void Graphics::PresentInternal() {
   auto surface = GPUDevice::Get().swapchain();
+
+  SDL_Event event;
+  SDL_PollEvent(&event);
+  if (event.type == SDL_EVENT_QUIT)
+    throw Exception(Exception::kExitError, {});
 
   // The surface is configured once and again after the screen was resized, the
   // size it covers is the one the screen texture is rendered at

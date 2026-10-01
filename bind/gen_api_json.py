@@ -22,6 +22,7 @@ This script only reads the headers; it never modifies anything.
 from __future__ import annotations
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -42,10 +43,18 @@ EXPORT_BEGIN = "/*-export.begin-*/"
 EXPORT_END = "/*-export.end-*/"
 
 # `Singleton<T>` classes which are exported as Ruby modules, not as classes.
-MODULE_CLASSES = {"Graphics", "Input"}
+#
+# This list is not cosmetic: a module is reached through `Ty::Get()` and owns no
+# Ruby object, while a class goes through `RB_DEF_TYPE`/`SetupSelfData`, which
+# require `Release()`/`AddRef()`.  `Singleton` has neither, so a `Singleton<T>`
+# left out of this set fails to compile the moment its glue is generated.
+MODULE_CLASSES = {"Graphics", "Input", "Audio"}
 
 # Fixed presentation order (also the registration order of binding_init.cc:
-# every class must follow the class it derives from).
+# every class must follow the class it derives from).  A class that is not
+# listed still gets exported -- it is appended in name order -- but only after
+# the listed ones, which can put it *before* its base class, so a new derived
+# class has to be appended here too.
 CLASS_ORDER = [
     "Disposable",
     "Node",
@@ -64,6 +73,8 @@ CLASS_ORDER = [
     "Vector3",
     "Vector4",
     "Viewport",
+    "WindowVX",
+    "WindowXP",
 ]
 
 # Naming policy: a declaration's Ruby name is its C++ name converted by
@@ -683,6 +694,31 @@ def export_block(inner: str, text: str, class_start: int) -> Optional[dict]:
 # ---------------------------------------------------------------------------
 
 
+def check_base_order(ordered: list[str], classes: dict[str, dict[str, Any]]) -> None:
+    """Assert that every exported class follows its exported base class.
+
+    `ordered` is the registration order of binding_init.cc, and CRuby requires a
+    superclass to exist before its subclass is defined.  A class that is neither
+    derived from an exported class nor listed in CLASS_ORDER is fine; the trap is
+    a *new derived* class (a `Node` subclass, say) that nobody appended to
+    CLASS_ORDER: it is quietly appended in name order, which can land it before
+    its base.  That produces a runtime failure at `RB_DEF_TYPE` time, far from
+    its cause, so fail the build here instead.
+    """
+    position = {name: i for i, name in enumerate(ordered)}
+    for name in ordered:
+        parent = classes[name].get("cpp_parent")
+        if not parent or parent not in position:
+            continue  # external base (e.g. `Singleton<T>`, a std type) -- not ours
+        if position[parent] > position[name]:
+            raise SystemExit(
+                f"gen_api_json: '{name}' derives from '{parent}' but is registered "
+                f"first (position {position[name]} vs {position[parent]}).\n"
+                f"  Add '{name}' to CLASS_ORDER after '{parent}' in "
+                f"{os.path.relpath(os.path.abspath(__file__), REPO_ROOT)}."
+            )
+
+
 def build_document() -> dict[str, Any]:
     headers = sorted(glob.glob(os.path.join(SOURCE_DIR, "*.h")))
     header_names = [os.path.relpath(h, REPO_ROOT).replace("\\", "/") for h in headers]
@@ -770,6 +806,7 @@ def build_document() -> dict[str, Any]:
 
     ordered = [n for n in CLASS_ORDER if n in classes]
     ordered += sorted(n for n in classes if n not in CLASS_ORDER)
+    check_base_order(ordered, classes)
     class_list = [classes[n] for n in ordered]
     module_list = [modules[n] for n in sorted(modules)]
 
@@ -803,13 +840,81 @@ def build_document() -> dict[str, Any]:
     }
 
 
+def strip_volatile(document: dict) -> dict:
+    """The document without the fields that change on every run.
+
+    `meta.generated_at` is a wall-clock stamp, so it cannot take part in any
+    content comparison.  Everything else -- including `meta.source_headers`,
+    whose order follows the glob -- is part of the contract.
+    """
+    stable = dict(document)
+    meta = dict(stable.get("meta") or {})
+    meta.pop("generated_at", None)
+    stable["meta"] = meta
+    return stable
+
+
+def document_digest(document: dict) -> str:
+    """Digest of a document, `generated_at` excluded.
+
+    Canonical (sorted keys, no whitespace) so that it depends on content only,
+    not on how the JSON happens to be laid out, and so that the digest of a
+    header-derived document equals the digest of the same document read back
+    from disk.
+    """
+    payload = json.dumps(
+        strip_volatile(document), sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def ir_digest() -> tuple[str, dict]:
+    """Digest and document of the IR the current headers would produce.
+
+    Pure: reads the headers, touches nothing on disk.  This is the source of
+    truth for "have the core headers changed?", and it is the *only* thing the
+    configure-time hook has to be able to trust -- keeping it here means the
+    digest can never drift from the document `main()` writes.  See
+    `bind/gen_binding.cmake`.
+    """
+    document = build_document()
+    return document_digest(document), document
+
+
+def read_document(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_document(path: str, document: dict) -> bool:
+    """Write the IR to `path` unless the file already holds the same content.
+
+    Returns True if the file was written.  The comparison ignores
+    `meta.generated_at` (see `strip_volatile`): that stamp changes on every run,
+    so comparing raw bytes would rewrite an unchanged IR every time -- and
+    every `binding_*.cc` includes the IR's *digest*, not the file, so the only
+    effect of that rewrite is to touch an mtime and make MSBuild reconsider the
+    whole binding target.  Re-running the generator on unchanged headers has to
+    be a no-op on disk; see `bind/gen_binding.cmake`.
+    """
+    if os.path.exists(path):
+        try:
+            if document_digest(read_document(path)) == document_digest(document):
+                return False
+        except (ValueError, OSError):
+            pass  # unreadable or malformed: fall through and overwrite
+    with open(path, "w", encoding="utf-8", newline="\r\n") as f:
+        json.dump(document, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    return True
+
+
 def main() -> int:
     out = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_OUTPUT
     document = build_document()
-    with open(out, "w", encoding="utf-8", newline="\r\n") as f:
-        json.dump(document, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-    print("Generated %s" % os.path.relpath(out, REPO_ROOT).replace("\\", "/"))
+    wrote = write_document(out, document)
+    rel = os.path.relpath(out, REPO_ROOT).replace("\\", "/")
+    print("%s %s" % ("Generated" if wrote else "Unchanged", rel))
     print("  classes: %d, modules: %d, skipped: %d"
           % (
               len(document["classes"]),
@@ -820,4 +925,17 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # `--digest [json]` prints a digest and writes nothing; it is what the
+    # configure-time hook compares the headers against.  With no argument it
+    # digests the document the headers would produce; with a path it digests
+    # that file, `generated_at` excluded either way, so the two are directly
+    # comparable.  Everything else keeps the historical contract
+    # (`gen_api_json.py [output.json]`).
+    argv = sys.argv[1:]
+    if argv and argv[0] == "--digest":
+        if len(argv) > 1:
+            sys.stdout.write(document_digest(read_document(argv[1])) + "\n")
+        else:
+            sys.stdout.write(ir_digest()[0] + "\n")
+        sys.exit(0)
     sys.exit(main())

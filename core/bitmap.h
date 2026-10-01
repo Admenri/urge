@@ -95,8 +95,9 @@ class Bitmap : public Disposable {
   glm::ivec2 size() const { return size_; }
 
   wgpu::Texture texture() { return texture_; }
-  wgpu::TextureView texture_view() { return view_; }
+  wgpu::TextureView texture_view() { return texture_view_; }
   wgpu::Texture depth_stencil() { return depth_stencil_; }
+  wgpu::TextureView depth_stencil_view() { return depth_stencil_view_; }
   wgpu::Sampler sampler() { return sampler_; }
 
   wgpu::BindGroup scene_group() { return scene_group_; }
@@ -112,8 +113,9 @@ class Bitmap : public Disposable {
 
   glm::ivec2 size_;
   wgpu::Texture texture_;
-  wgpu::TextureView view_;
+  wgpu::TextureView texture_view_;
   wgpu::Texture depth_stencil_;
+  wgpu::TextureView depth_stencil_view_;
 
   wgpu::Buffer scene_uniform_, object_uniform_;
   wgpu::Sampler sampler_;
