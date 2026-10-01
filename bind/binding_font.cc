@@ -136,6 +136,8 @@ BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Color,
                           kColorDataType);
 
+void InitFontBindingAppend(VALUE klass);
+
 void InitFontBinding() {
   auto klass = rb_define_class("Font", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kFontDataType>);
@@ -175,7 +177,19 @@ void InitFontBinding() {
   DefineClassMethod(klass, "default_color=", Font_DefaultColorEqual);
   DefineClassMethod(klass, "default_out_color", Font_DefaultOutColor);
   DefineClassMethod(klass, "default_out_color=", Font_DefaultOutColorEqual);
+  InitFontBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitFontBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitFontBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

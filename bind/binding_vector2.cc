@@ -87,6 +87,8 @@ RB_FUNC(Vector2_Set) {
   return Qnil;
 }
 
+void InitVector2BindingAppend(VALUE klass);
+
 void InitVector2Binding() {
   auto klass = rb_define_class("Vector2", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kVector2DataType>);
@@ -94,7 +96,19 @@ void InitVector2Binding() {
   DefineMethod(klass, "initialize", Vector2_initialize);
   DefineMethod(klass, "initialize_copy", Vector2_initialize_copy);
   DefineMethod(klass, "set", Vector2_Set);
+  InitVector2BindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitVector2Binding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitVector2BindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

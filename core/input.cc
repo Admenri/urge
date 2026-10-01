@@ -67,6 +67,13 @@ const std::string kButtonItems[] = {
 };
 
 Input::Input(int32_t version) {
+  SDL_AddEventWatch(
+      [](void* userdata, SDL_Event* event) -> bool {
+        Input::Get().ProcessEvents(event);
+        return true;
+      },
+      nullptr);
+
   for (size_t i = 0; i < std::size(kDefaultKeyboardBindings); ++i)
     bindings_.push_back(kDefaultKeyboardBindings[i]);
 

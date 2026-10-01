@@ -204,20 +204,23 @@ void Viewport::PostDraw(DrawParam param) {
     const std::uint32_t vertex_count = primitive_.Upload();
 
     // Begin original render target
-    wgpu::RenderPassColorAttachment color_attachment;
-    color_attachment.view = param->target->texture_view();
-    color_attachment.loadOp = wgpu::LoadOp::Load;
-    color_attachment.storeOp = wgpu::StoreOp::Store;
-    wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
-    depth_stencil_attachment.view = param->target->depth_stencil_view();
-    depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Load;
-    depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Store;
-    depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Load;
-    depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Store;
-    wgpu::RenderPassDescriptor render_pass_desc;
-    render_pass_desc.colorAttachmentCount = 1;
-    render_pass_desc.colorAttachments = &color_attachment;
-    render_pass_desc.depthStencilAttachment = &depth_stencil_attachment;
+    wgpu::RenderPassColorAttachment color_attachment = {
+        .view = param->target->texture_view(),
+        .loadOp = wgpu::LoadOp::Load,
+        .storeOp = wgpu::StoreOp::Store,
+    };
+    wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
+        .view = param->target->depth_stencil_view(),
+        .depthLoadOp = wgpu::LoadOp::Load,
+        .depthStoreOp = wgpu::StoreOp::Store,
+        .stencilLoadOp = wgpu::LoadOp::Load,
+        .stencilStoreOp = wgpu::StoreOp::Store,
+    };
+    wgpu::RenderPassDescriptor render_pass_desc = {
+        .colorAttachmentCount = 1,
+        .colorAttachments = &color_attachment,
+        .depthStencilAttachment = &depth_stencil_attachment,
+    };
     param->pass = param->command.BeginRenderPass(&render_pass_desc);
 
     // Draw post process
@@ -237,7 +240,7 @@ void Viewport::PostDraw(DrawParam param) {
   const RectI current_scissor = param->scissors.top();
   param->pass.SetScissorRect(current_scissor.x, current_scissor.y,
                              current_scissor.width, current_scissor.height);
-}
+}  // namespace urge
 
 void Viewport::ResetTransform() {
   /* The z of the offset has to be spelled out: a glm vector left to its default

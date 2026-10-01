@@ -153,6 +153,9 @@ BindingMain::BindingMain() {
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
   rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
 
+  g_reset_exception = rb_define_class("RGSSReset", rb_eStandardError);
+  g_rgss_exception = rb_define_class("RGSSError", rb_eStandardError);
+
   VALUE marshal_klass = rb_const_get(rb_cObject, rb_intern("Marshal"));
   rb_define_alias(rb_singleton_class(marshal_klass), "_load_utf8_", "load");
   DefineModuleFunction(marshal_klass, "load", marshal_load_utf8);
@@ -164,6 +167,13 @@ BindingMain::BindingMain() {
 
   InitBindings();
 
+  auto tilemap_klass = rb_const_get(
+      rb_cObject, rb_intern(config.xp() ? "TilemapXP" : "TilemapVX"));
+  auto window_klass = rb_const_get(
+      rb_cObject, rb_intern(config.xp() ? "WindowXP" : "WindowVX"));
+  rb_const_set(rb_mKernel, rb_intern("Tilemap"), tilemap_klass);
+  rb_const_set(rb_mKernel, rb_intern("Window"), window_klass);
+
   rb_const_set(rb_mKernel, rb_intern("RGSS_VERSION"),
                LONG2NUM(config.rgss_version));
 
@@ -174,24 +184,6 @@ BindingMain::BindingMain() {
   rb_eval_string_protect(rpg_source, &error_state_);
   if (error_state_)
     throw Exception(Exception::kRGSSError, "failed to load RPG database.");
-
-  {
-    int temp_error_state = 0;
-    size_t temp_data_size = 0;
-    auto temp_data_ptr = SDL_LoadFile("Scripts.rb", &temp_data_size);
-    if (!temp_data_ptr)
-      throw Exception(Exception::kIOError, "failed to load extra scripts.");
-    std::string temp_data(reinterpret_cast<const char*>(temp_data_ptr),
-                          temp_data_size);
-    rb_eval_string_protect(temp_data.c_str(), &temp_error_state);
-    if (temp_error_state) {
-      VALUE exc = rb_errinfo();
-      if (rb_obj_class(exc) != rb_eSystemExit)
-        throw Exception(Exception::kRGSSError, RubyExceptionMessage(exc));
-    }
-
-    return;
-  }
 
   // Marshal decode
   VALUE scripts = RGSSLoadData(config.scripts.c_str());

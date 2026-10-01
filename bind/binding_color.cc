@@ -132,6 +132,8 @@ BINDING_ATTR_FLOAT(Color, urge::Color, Blue);
 // Attribute: alpha (float)
 BINDING_ATTR_FLOAT(Color, urge::Color, Alpha);
 
+void InitColorBindingAppend(VALUE klass);
+
 void InitColorBinding() {
   auto klass = rb_define_class("Color", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kColorDataType>);
@@ -149,7 +151,19 @@ void InitColorBinding() {
   DefineMethod(klass, "blue=", Color_BlueEqual);
   DefineMethod(klass, "alpha", Color_Alpha);
   DefineMethod(klass, "alpha=", Color_AlphaEqual);
+  InitColorBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitColorBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitColorBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

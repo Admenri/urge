@@ -96,6 +96,8 @@ BINDING_ATTR_OBJECT_REF(Node,
                         urge::Vector3,
                         kVector3DataType);
 
+void InitNodeBindingAppend(VALUE klass);
+
 void InitNodeBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Disposable"));
   auto klass = rb_define_class("Node", parent);
@@ -115,7 +117,19 @@ void InitNodeBinding() {
   DefineMethod(klass, "quaternion=", Node_QuaternionEqual);
   DefineMethod(klass, "scale", Node_Scale);
   DefineMethod(klass, "scale=", Node_ScaleEqual);
+  InitNodeBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitNodeBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitNodeBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

@@ -22,6 +22,8 @@
 #include "binding_vector2.h"
 #include "binding_vector3.h"
 #include "binding_vector4.h"
+#include "binding_tilemap_vx.h"
+#include "binding_tilemap_xp.h"
 #include "binding_viewport.h"
 #include "binding_window_vx.h"
 #include "binding_window_xp.h"
@@ -70,6 +72,8 @@ void InitBindings() {
   InitVector2Binding();
   InitVector3Binding();
   InitVector4Binding();
+  InitTilemapVXBinding();
+  InitTilemapXPBinding();
   InitViewportBinding();
   InitWindowVXBinding();
   InitWindowXPBinding();

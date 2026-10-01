@@ -90,6 +90,7 @@ class Graphics : public Singleton<Graphics> {
   RefPtr<Bitmap> screen_;
 
   bool frozen_ = false;
+  int32_t frame_count_ = 0;
   int32_t brightness_ = 255;
 
   struct {

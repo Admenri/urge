@@ -90,7 +90,9 @@ class WindowVX : public Node {
 
   void Update();
   void Move(int32_t x, int32_t y, int32_t width, int32_t height);
+  URGE_BINDING(Name : "open?")
   bool Opened();
+  URGE_BINDING(Name : "close?")
   bool Closed();
 
   ATTR(RefPtr<Viewport>, Viewport);

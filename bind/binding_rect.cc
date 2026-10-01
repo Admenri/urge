@@ -129,6 +129,8 @@ BINDING_ATTR_INT(Rect, urge::Rect, Width);
 // Attribute: height (int32_t)
 BINDING_ATTR_INT(Rect, urge::Rect, Height);
 
+void InitRectBindingAppend(VALUE klass);
+
 void InitRectBinding() {
   auto klass = rb_define_class("Rect", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRectDataType>);
@@ -147,7 +149,19 @@ void InitRectBinding() {
   DefineMethod(klass, "width=", Rect_WidthEqual);
   DefineMethod(klass, "height", Rect_Height);
   DefineMethod(klass, "height=", Rect_HeightEqual);
+  InitRectBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitRectBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitRectBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

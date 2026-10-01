@@ -27,11 +27,69 @@ void DefineInputKeyConstants(VALUE mod) {
     rb_const_set(mod, key, LONG2NUM(binding.key_id));
   }
 }
+
+std::string GetKeyBinding(VALUE value) {
+  if (SYMBOL_P(value) || RB_TYPE_P(value, T_STRING)) {
+    ID sym = rb_to_id(value);
+    return rb_id2name(sym);
+  } else if (FIXNUM_P(value)) {
+    auto key_id = NUM2LONG(value);
+    for (size_t i = 0; i < std::size(urge::kKeyboardBindings); ++i) {
+      if (urge::kKeyboardBindings[i].key_id == key_id)
+        return urge::kKeyboardBindings[i].name;
+    }
+  }
+
+  return {};
+}
+
+/* The three query methods take a Symbol, a String or the numeric id of a key,
+   which ParseArgs cannot express -- its "s" format only accepts a String.  The
+   generated versions are therefore overridden in the HANDWRITTEN INIT block
+   below, which registers the Manual variants under the Ruby names. */
+RB_FUNC(Input_PressedManual) {
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE sym;
+    ParseArgs(argc, argv, "o", &sym);
+    std::string key = GetKeyBinding(sym);
+
+    return urge::Input::Get().Pressed(key) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Input_TriggeredManual) {
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE sym;
+    ParseArgs(argc, argv, "o", &sym);
+    std::string key = GetKeyBinding(sym);
+
+    return urge::Input::Get().Triggered(key) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Input_RepeatedManual) {
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE sym;
+    ParseArgs(argc, argv, "o", &sym);
+    std::string key = GetKeyBinding(sym);
+
+    return urge::Input::Get().Repeated(key) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Input  (core/input.h:55-73)
+// Input  (core/input.h:55-70)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Input_Update) {
@@ -140,21 +198,22 @@ RB_FUNC(Input_GetKeyName) {
     ParseArgs(argc, argv, "i", &keycode);
 
     std::string result = urge::Input::Get().GetKeyName(keycode);
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
+    return rb_enc_str_new(result.data(), static_cast<long>(result.size()),
+                          rb_utf8_encoding());
   }
   EXC_END;
   return Qnil;
 }
 
+void InitInputBindingAppend(VALUE mod);
+
 void InitInputBinding() {
   auto mod = rb_define_module("Input");
 
   DefineModuleFunction(mod, "update", Input_Update);
-  DefineModuleFunction(mod, "press?", Input_Pressed);
-  DefineModuleFunction(mod, "trigger?", Input_Triggered);
-  DefineModuleFunction(mod, "repeat?", Input_Repeated);
+  DefineModuleFunction(mod, "pressed", Input_Pressed);
+  DefineModuleFunction(mod, "triggered", Input_Triggered);
+  DefineModuleFunction(mod, "repeated", Input_Repeated);
   DefineModuleFunction(mod, "dir4", Input_Dir4);
   DefineModuleFunction(mod, "dir8", Input_Dir8);
   DefineModuleFunction(mod, "key_press?", Input_KeyPressed);
@@ -162,7 +221,24 @@ void InitInputBinding() {
   DefineModuleFunction(mod, "key_repeat?", Input_KeyRepeated);
   DefineModuleFunction(mod, "get_key_name", Input_GetKeyName);
   DefineInputKeyConstants(mod);
+  InitInputBindingAppend(mod);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// The generated `pressed` / `triggered` / `repeated` only accept a String,
+// while RGSS hands them a Symbol (`Input.trigger?(:C)`) and the numeric key id
+// is accepted too.  Re-registering the names here swaps the generated bodies
+// for the Manual variants defined in the HANDWRITTEN block, which go through
+// GetKeyBinding().
+//
+// The generated registrations happen first -- this block runs at the end of
+// InitInputBinding() --, so the later definition wins.
+void InitInputBindingAppend(VALUE mod) {
+  DefineModuleFunction(mod, "press?", Input_PressedManual);
+  DefineModuleFunction(mod, "trigger?", Input_TriggeredManual);
+  DefineModuleFunction(mod, "repeat?", Input_RepeatedManual);
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

@@ -102,6 +102,8 @@ BINDING_ATTR_OBJECT(Viewport,
 // Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Viewport, urge::Viewport, Tone, urge::Tone, kToneDataType);
 
+void InitViewportBindingAppend(VALUE klass);
+
 void InitViewportBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Viewport", parent);
@@ -120,7 +122,19 @@ void InitViewportBinding() {
   DefineMethod(klass, "color=", Viewport_ColorEqual);
   DefineMethod(klass, "tone", Viewport_Tone);
   DefineMethod(klass, "tone=", Viewport_ToneEqual);
+  InitViewportBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitViewportBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitViewportBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

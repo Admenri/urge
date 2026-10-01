@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowVX  (core/window_vx.h:80-110)
+// WindowVX  (core/window_vx.h:86-118)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WindowVX);
@@ -181,6 +181,8 @@ BINDING_ATTR_INT(WindowVX, urge::WindowVX, Openness);
 // Attribute: scale (int32_t)
 BINDING_ATTR_INT(WindowVX, urge::WindowVX, Scale);
 
+void InitWindowVXBindingAppend(VALUE klass);
+
 void InitWindowVXBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("WindowVX", parent);
@@ -189,8 +191,8 @@ void InitWindowVXBinding() {
   DefineMethod(klass, "initialize", WindowVX_initialize);
   DefineMethod(klass, "update", WindowVX_Update);
   DefineMethod(klass, "move", WindowVX_Move);
-  DefineMethod(klass, "opened", WindowVX_Opened);
-  DefineMethod(klass, "closed", WindowVX_Closed);
+  DefineMethod(klass, "open?", WindowVX_Opened);
+  DefineMethod(klass, "close?", WindowVX_Closed);
   DefineMethod(klass, "viewport", WindowVX_Viewport);
   DefineMethod(klass, "viewport=", WindowVX_ViewportEqual);
   DefineMethod(klass, "windowskin", WindowVX_Windowskin);
@@ -231,7 +233,19 @@ void InitWindowVXBinding() {
   DefineMethod(klass, "openness=", WindowVX_OpennessEqual);
   DefineMethod(klass, "scale", WindowVX_Scale);
   DefineMethod(klass, "scale=", WindowVX_ScaleEqual);
+  InitWindowVXBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitWindowVXBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitWindowVXBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

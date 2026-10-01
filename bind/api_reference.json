@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-01T07:14:27Z",
+    "generated_at": "2026-10-01T14:26:19Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -30,6 +30,8 @@
       "core/shader.h",
       "core/sprite.h",
       "core/table.h",
+      "core/tilemap_vx.h",
+      "core/tilemap_xp.h",
       "core/uniform.h",
       "core/utility.h",
       "core/viewport.h",
@@ -651,7 +653,7 @@
     },
     {
       "unsupported": [],
-      "export": "core/input.h:55-73",
+      "export": "core/input.h:55-70",
       "cpp_name": "Input",
       "cpp_parent": "Singleton",
       "header": "core/input.h",
@@ -668,10 +670,10 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         },
         {
-          "ruby_name": "press?",
+          "ruby_name": "pressed",
           "cpp_name": "Pressed",
           "return": {
             "cpp_type": "bool",
@@ -684,11 +686,11 @@
               "default": null
             }
           ],
-          "header_annotation": true,
-          "export": "core/input.h:55-73"
+          "header_annotation": false,
+          "export": "core/input.h:55-70"
         },
         {
-          "ruby_name": "trigger?",
+          "ruby_name": "triggered",
           "cpp_name": "Triggered",
           "return": {
             "cpp_type": "bool",
@@ -701,11 +703,11 @@
               "default": null
             }
           ],
-          "header_annotation": true,
-          "export": "core/input.h:55-73"
+          "header_annotation": false,
+          "export": "core/input.h:55-70"
         },
         {
-          "ruby_name": "repeat?",
+          "ruby_name": "repeated",
           "cpp_name": "Repeated",
           "return": {
             "cpp_type": "bool",
@@ -718,8 +720,8 @@
               "default": null
             }
           ],
-          "header_annotation": true,
-          "export": "core/input.h:55-73"
+          "header_annotation": false,
+          "export": "core/input.h:55-70"
         },
         {
           "ruby_name": "dir4",
@@ -730,7 +732,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         },
         {
           "ruby_name": "dir8",
@@ -741,7 +743,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         },
         {
           "ruby_name": "key_press?",
@@ -758,7 +760,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         },
         {
           "ruby_name": "key_trigger?",
@@ -775,7 +777,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         },
         {
           "ruby_name": "key_repeat?",
@@ -792,7 +794,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         },
         {
           "ruby_name": "get_key_name",
@@ -809,7 +811,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input.h:55-73"
+          "export": "core/input.h:55-70"
         }
       ]
     }
@@ -3407,6 +3409,393 @@
         {
           "params": [
             {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/tilemap_vx.h:82-100"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "ruby_name": "set_bitmap",
+          "cpp_name": "SetBitmap",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "bitmap",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "ruby_name": "get_bitmap",
+          "cpp_name": "GetBitmap",
+          "return": {
+            "cpp_type": "RefPtr<Bitmap>",
+            "ruby_type": "Bitmap"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "visible",
+          "setter": "visible=",
+          "cpp_name": "Visible",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "z",
+          "setter": "z=",
+          "cpp_name": "Z",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "map_data",
+          "setter": "map_data=",
+          "cpp_name": "MapData",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "flash_data",
+          "setter": "flash_data=",
+          "cpp_name": "FlashData",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "flags",
+          "setter": "flags=",
+          "cpp_name": "Flags",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "passages",
+          "setter": "passages=",
+          "cpp_name": "Passages",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_vx.h:82-100"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/tilemap_vx.h:82-100",
+      "cpp_name": "TilemapVX",
+      "cpp_parent": "Node",
+      "header": "core/tilemap_vx.h",
+      "kind": "class",
+      "name": "TilemapVX",
+      "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/tilemap_xp.h:86-108"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "ruby_name": "tileset=",
+          "cpp_name": "SetTileset",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "bitmap",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "ruby_name": "tileset",
+          "cpp_name": "GetTileset",
+          "return": {
+            "cpp_type": "RefPtr<Bitmap>",
+            "ruby_type": "Bitmap"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "ruby_name": "set_autotile",
+          "cpp_name": "SetAutotile",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "bitmap",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "ruby_name": "get_autotile",
+          "cpp_name": "GetAutotile",
+          "return": {
+            "cpp_type": "RefPtr<Bitmap>",
+            "ruby_type": "Bitmap"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "visible",
+          "setter": "visible=",
+          "cpp_name": "Visible",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "z",
+          "setter": "z=",
+          "cpp_name": "Z",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "map_data",
+          "setter": "map_data=",
+          "cpp_name": "MapData",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "flash_data",
+          "setter": "flash_data=",
+          "cpp_name": "FlashData",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "priorities",
+          "setter": "priorities=",
+          "cpp_name": "Priorities",
+          "cpp_type": "RefPtr<Table>",
+          "ruby_type": "Table",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "ox",
+          "setter": "ox=",
+          "cpp_name": "OX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        },
+        {
+          "name": "oy",
+          "setter": "oy=",
+          "cpp_name": "OY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/tilemap_xp.h:86-108"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/tilemap_xp.h:86-108",
+      "cpp_name": "TilemapXP",
+      "cpp_parent": "Node",
+      "header": "core/tilemap_xp.h",
+      "kind": "class",
+      "name": "TilemapXP",
+      "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
               "name": "x",
               "type": "int32_t",
               "default": null
@@ -3580,7 +3969,7 @@
               "default": null
             }
           ],
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "params": [
@@ -3590,7 +3979,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         }
       ],
       "initialize_copy": null,
@@ -3604,7 +3993,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "ruby_name": "move",
@@ -3636,29 +4025,29 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
-          "ruby_name": "opened",
+          "ruby_name": "open?",
           "cpp_name": "Opened",
           "return": {
             "cpp_type": "bool",
             "ruby_type": "Boolean"
           },
           "params": [],
-          "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "header_annotation": true,
+          "export": "core/window_vx.h:86-118"
         },
         {
-          "ruby_name": "closed",
+          "ruby_name": "close?",
           "cpp_name": "Closed",
           "return": {
             "cpp_type": "bool",
             "ruby_type": "Boolean"
           },
           "params": [],
-          "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "header_annotation": true,
+          "export": "core/window_vx.h:86-118"
         }
       ],
       "attributes": [
@@ -3671,7 +4060,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "windowskin",
@@ -3682,7 +4071,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "contents",
@@ -3693,7 +4082,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "cursor_rect",
@@ -3704,7 +4093,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "active",
@@ -3715,7 +4104,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "arrows_visible",
@@ -3726,7 +4115,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "pause",
@@ -3737,7 +4126,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "x",
@@ -3748,7 +4137,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "y",
@@ -3759,7 +4148,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "width",
@@ -3770,7 +4159,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "height",
@@ -3781,7 +4170,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "ox",
@@ -3792,7 +4181,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "oy",
@@ -3803,7 +4192,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "padding",
@@ -3814,7 +4203,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "padding_bottom",
@@ -3825,7 +4214,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "opacity",
@@ -3836,7 +4225,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "back_opacity",
@@ -3847,7 +4236,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "contents_opacity",
@@ -3858,7 +4247,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "openness",
@@ -3869,7 +4258,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         },
         {
           "name": "scale",
@@ -3880,7 +4269,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:80-110"
+          "export": "core/window_vx.h:86-118"
         }
       ],
       "data_attributes": [],
@@ -3892,7 +4281,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/window_vx.h:80-110",
+      "export": "core/window_vx.h:86-118",
       "cpp_name": "WindowVX",
       "cpp_parent": "Node",
       "header": "core/window_vx.h",
@@ -3911,7 +4300,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         }
       ],
       "initialize_copy": null,
@@ -3925,10 +4314,21 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         }
       ],
       "attributes": [
+        {
+          "name": "visible",
+          "setter": "visible=",
+          "cpp_name": "Visible",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": true,
+          "header_annotation": false,
+          "export": "core/window_xp.h:108-136"
+        },
         {
           "name": "viewport",
           "setter": "viewport=",
@@ -3938,7 +4338,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "windowskin",
@@ -3949,7 +4349,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "contents",
@@ -3960,7 +4360,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "stretch",
@@ -3971,7 +4371,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "cursor_rect",
@@ -3982,7 +4382,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "active",
@@ -3993,7 +4393,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "pause",
@@ -4004,7 +4404,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "x",
@@ -4015,7 +4415,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "y",
@@ -4026,7 +4426,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "width",
@@ -4037,7 +4437,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "height",
@@ -4048,7 +4448,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "ox",
@@ -4059,7 +4459,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "oy",
@@ -4070,7 +4470,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "opacity",
@@ -4081,7 +4481,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "back_opacity",
@@ -4092,7 +4492,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "contents_opacity",
@@ -4103,7 +4503,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "scale",
@@ -4114,7 +4514,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         },
         {
           "name": "z",
@@ -4125,7 +4525,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:108-132"
+          "export": "core/window_xp.h:108-136"
         }
       ],
       "data_attributes": [],
@@ -4137,7 +4537,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/window_xp.h:108-132",
+      "export": "core/window_xp.h:108-136",
       "cpp_name": "WindowXP",
       "cpp_parent": "Node",
       "header": "core/window_xp.h",

@@ -72,6 +72,8 @@ CLASS_ORDER = [
     "Vector2",
     "Vector3",
     "Vector4",
+    "TilemapVX",
+    "TilemapXP",
     "Viewport",
     "WindowVX",
     "WindowXP",

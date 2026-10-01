@@ -56,6 +56,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.model.push(glm::mat4(1.0f));
   context.command = encoder;
   context.target = target;
+  context.scene = target->scene_group();
 
   /* The prepare stage reserves the slots of the bulk uniform data and appends
      the vertices of the frame, so it opens and closes a frame of both: the
@@ -64,19 +65,23 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
      QuadVertexManager. */
   UniformManager& uniforms = UniformManager::Get();
   QuadVertexManager& quads = QuadVertexManager::Get();
+  context.vertices = &quads.emitter();
+
   uniforms.BeginFrame();
   quads.BeginFrame();
-  context.vertices = &quads.emitter();
 
   ExecutePrepare(&context);
 
   uniforms.Flush();
   quads.Upload();
 
-  wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = target->texture_view();
-  color_attachment.loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
-  color_attachment.storeOp = wgpu::StoreOp::Store;
+  // Color attachment
+  wgpu::RenderPassColorAttachment color_attachment = {
+      .view = target->texture_view(),
+      .loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load,
+      .storeOp = wgpu::StoreOp::Store,
+  };
+
   if (clear) {
     auto clear_value = clear->Normalize();
     color_attachment.clearValue.r = clear_value.r;
@@ -84,28 +89,31 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
     color_attachment.clearValue.b = clear_value.b;
     color_attachment.clearValue.a = clear_value.a;
   }
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
-  depth_stencil_attachment.view = target->depth_stencil_view();
-  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.depthClearValue = 1.0f;
-  depth_stencil_attachment.stencilClearValue = 0;
-  wgpu::RenderPassDescriptor render_pass_desc;
-  render_pass_desc.colorAttachmentCount = 1;
-  render_pass_desc.colorAttachments = &color_attachment;
-  render_pass_desc.depthStencilAttachment = &depth_stencil_attachment;
+
+  // Depth-stencil attachment
+  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
+      .view = target->depth_stencil_view(),
+      .depthLoadOp = wgpu::LoadOp::Clear,
+      .depthStoreOp = wgpu::StoreOp::Discard,
+      .depthClearValue = 1.0f,
+      .stencilLoadOp = wgpu::LoadOp::Clear,
+      .stencilStoreOp = wgpu::StoreOp::Discard,
+      .stencilClearValue = 0,
+  };
+
+  // Render pass descriptor
+  wgpu::RenderPassDescriptor render_pass_desc = {
+      .colorAttachmentCount = 1,
+      .colorAttachments = &color_attachment,
+      .depthStencilAttachment = &depth_stencil_attachment,
+  };
+
   context.pass = encoder.BeginRenderPass(&render_pass_desc);
-  context.scene = target->scene_group();
-  context.scissors.push(RectI(target->size()));
-  context.pass.SetScissorRect(0, 0, target->size().x, target->size().y);
-
-  ExecuteRendering(&context);
-
-  /* A viewport leaves the pass of the frame and enters another one to draw its
-     effect, so the pass which has to be ended is the one the context holds and
-     not the one this function opened. */
+  {
+    context.scissors.push(RectI(target->size()));
+    context.pass.SetScissorRect(0, 0, target->size().x, target->size().y);
+    ExecuteRendering(&context);
+  }
   context.pass.End();
   auto command_buffer = encoder.Finish(nullptr);
   GPUDevice::Get().queue().Submit(1, &command_buffer);

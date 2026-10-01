@@ -527,10 +527,52 @@ namespace binding {
 // --- HANDWRITTEN END ---
 // --- GENERATED BEGIN ---            ← 每次重写
 // --- GENERATED END ---
+// --- HANDWRITTEN INIT BEGIN ---     ← 逐字保留
+// --- HANDWRITTEN INIT END ---
 }  // namespace binding
 ```
 
 `binding_*.h` 每次整体重写（无手写区）；`binding_init.{h,cc}` 同规则。
+
+### 尾部手写区：`HANDWRITTEN INIT`
+
+`HANDWRITTEN` 块位于生成区**之前**（否则生成区引用不到它的符号），因此它**够不到
+`Init*Binding()` 的函数体**——而「注册一个 IR 描述不了的类」「注册方法名与 C++ 签名不一致的
+方法」恰恰要在初始化器内部做。
+
+解决办法是第三块手写区 `HANDWRITTEN INIT`，它在生成区**之后**，装的是
+`Init<Class>BindingAppend(VALUE klass)` 的**定义**；生成器则在 `Init*Binding()` 末尾
+自动补一行调用：
+
+```cpp
+// GENERATED 区内
+void InitTilemapVXBindingAppend(VALUE klass);   // 前置声明
+
+void InitTilemapVXBinding() {
+  auto klass = rb_define_class("TilemapVX", parent);
+  ...
+  InitTilemapVXBindingAppend(klass);            // 恒有，末尾
+}
+
+// GENERATED 区后
+// --- HANDWRITTEN INIT BEGIN ---
+void InitTilemapVXBindingAppend(VALUE klass) {
+  auto proxy = rb_define_class("TilemapBitmapArray", rb_cObject);
+  DefineMethod(proxy, "[]",  TilemapBitmaps_Get);
+  DefineMethod(klass, "bitmaps", Tilemap_GetBitmaps);
+}
+// --- HANDWRITTEN INIT END ---
+```
+
+要点：
+
+- 生成器**总是**发出 `Init*BindingAppend` 的前置声明与调用，与是否填写无关。
+- 块为空时生成器写回一份默认空函数体（`(void)klass;`），所以任何文件都能单独编译通过；
+  想恢复默认就把块清空重跑，**不要**手删。
+- `klass` 是初始化器刚建好的类（模块路径下是 `mod`），注册方法、定义代理类都用它。
+- 该块在文件里位于 `Init*Binding()` **之后**，所以它引用的函数必须是已声明或已定义的——
+  手写函数放 `HANDWRITTEN` 块（在前）即可，符号顺序天然正确。
+- 旧生成物没有这对标记时，生成器会在 `}  // namespace binding` 前补上，无需手工迁移。
 因此「手写实现 + 生成注册」是安全的：手写区在文件里位于生成区之前，生成区引用它
 （如 `InitTableBinding()` 里的 `Table_Get`）时符号已被声明。**不要**把需要跨文件使用
 的东西放手动区——手写内容只出现在它自己的翻译单元里，跨文件请加进 `*_INCLUDES` 区

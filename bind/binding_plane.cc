@@ -92,6 +92,8 @@ BINDING_ATTR_OBJECT(Plane, urge::Plane, Color, urge::Color, kColorDataType);
 // Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Plane, urge::Plane, Tone, urge::Tone, kToneDataType);
 
+void InitPlaneBindingAppend(VALUE klass);
+
 void InitPlaneBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Plane", parent);
@@ -118,7 +120,19 @@ void InitPlaneBinding() {
   DefineMethod(klass, "color=", Plane_ColorEqual);
   DefineMethod(klass, "tone", Plane_Tone);
   DefineMethod(klass, "tone=", Plane_ToneEqual);
+  InitPlaneBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitPlaneBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitPlaneBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

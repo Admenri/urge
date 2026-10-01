@@ -54,11 +54,8 @@ class Input : public Singleton<Input> {
 
   /*-export.begin-*/
   void Update();
-  URGE_BINDING(Name : "press?")
   bool Pressed(std::string sym);
-  URGE_BINDING(Name : "trigger?")
   bool Triggered(std::string sym);
-  URGE_BINDING(Name : "repeat?")
   bool Repeated(std::string sym);
   int32_t Dir4();
   int32_t Dir8();

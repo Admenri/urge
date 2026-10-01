@@ -94,6 +94,8 @@ RB_FUNC(Palette_SaveFile) {
   return Qnil;
 }
 
+void InitPaletteBindingAppend(VALUE klass);
+
 void InitPaletteBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Disposable"));
   auto klass = rb_define_class("Palette", parent);
@@ -103,7 +105,19 @@ void InitPaletteBinding() {
   DefineMethod(klass, "get_pixel", Palette_GetPixel);
   DefineMethod(klass, "set_pixel", Palette_SetPixel);
   DefineMethod(klass, "save_file", Palette_SaveFile);
+  InitPaletteBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitPaletteBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitPaletteBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

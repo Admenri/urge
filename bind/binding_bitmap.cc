@@ -418,6 +418,8 @@ RB_FUNC(Bitmap_UpdateWithPalette) {
 // Attribute: font (RefPtr<Font>)
 BINDING_ATTR_OBJECT_REF(Bitmap, urge::Bitmap, Font, urge::Font, kFontDataType);
 
+void InitBitmapBindingAppend(VALUE klass);
+
 void InitBitmapBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Disposable"));
   auto klass = rb_define_class("Bitmap", parent);
@@ -445,7 +447,19 @@ void InitBitmapBinding() {
   DefineMethod(klass, "update_with_palette", Bitmap_UpdateWithPalette);
   DefineMethod(klass, "font", Bitmap_Font);
   DefineMethod(klass, "font=", Bitmap_FontEqual);
+  InitBitmapBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitBitmapBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitBitmapBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

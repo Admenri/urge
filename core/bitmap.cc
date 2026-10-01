@@ -256,7 +256,7 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 
 }  // namespace
 
-Bitmap::Bitmap(std::string filename) {
+Bitmap::Bitmap(std::string filename) : font_(MakeRefCounted<Font>()) {
   SDL_Surface* image = nullptr;
 
   IOService::Get().OpenRead(
@@ -274,7 +274,7 @@ Bitmap::Bitmap(std::string filename) {
   CreateInternal(image);
 }
 
-Bitmap::Bitmap(int32_t width, int32_t height) {
+Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
   SDL_Surface* image = SDL_CreateSurface(width, height, kInternalPixelFormat);
 
   CreateInternal(image);

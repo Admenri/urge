@@ -48,13 +48,27 @@ RB_FUNC(Disposable_Dispose) {
   return Qnil;
 }
 
+void InitDisposableBindingAppend(VALUE klass);
+
 void InitDisposableBinding() {
   auto klass = rb_define_class("Disposable", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kDisposableDataType>);
 
   DefineMethod(klass, "disposed?", Disposable_IsDisposed);
   DefineMethod(klass, "dispose", Disposable_Dispose);
+  InitDisposableBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitDisposableBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitDisposableBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

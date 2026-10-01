@@ -261,6 +261,8 @@ RB_FUNC(Graphics_BrightnessEqual) {
   return Qnil;
 }
 
+void InitGraphicsBindingAppend(VALUE mod);
+
 void InitGraphicsBinding() {
   auto mod = rb_define_module("Graphics");
 
@@ -283,7 +285,19 @@ void InitGraphicsBinding() {
   DefineModuleFunction(mod, "frame_count=", Graphics_FrameCountEqual);
   DefineModuleFunction(mod, "brightness", Graphics_Brightness);
   DefineModuleFunction(mod, "brightness=", Graphics_BrightnessEqual);
+  InitGraphicsBindingAppend(mod);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitGraphicsBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitGraphicsBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

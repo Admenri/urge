@@ -132,6 +132,8 @@ BINDING_ATTR_FLOAT(Tone, urge::Tone, Blue);
 // Attribute: gray (float)
 BINDING_ATTR_FLOAT(Tone, urge::Tone, Gray);
 
+void InitToneBindingAppend(VALUE klass);
+
 void InitToneBinding() {
   auto klass = rb_define_class("Tone", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kToneDataType>);
@@ -149,7 +151,19 @@ void InitToneBinding() {
   DefineMethod(klass, "blue=", Tone_BlueEqual);
   DefineMethod(klass, "gray", Tone_Gray);
   DefineMethod(klass, "gray=", Tone_GrayEqual);
+  InitToneBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitToneBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitToneBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

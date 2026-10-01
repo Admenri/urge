@@ -247,6 +247,8 @@ RB_FUNC(Audio_SEStop) {
   return Qnil;
 }
 
+void InitAudioBindingAppend(VALUE mod);
+
 void InitAudioBinding() {
   auto mod = rb_define_module("Audio");
 
@@ -264,7 +266,19 @@ void InitAudioBinding() {
   DefineModuleFunction(mod, "me_fade", Audio_MEFade);
   DefineModuleFunction(mod, "se_play", Audio_SEPlay);
   DefineModuleFunction(mod, "se_stop", Audio_SEStop);
+  InitAudioBindingAppend(mod);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitAudioBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitAudioBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

@@ -175,6 +175,8 @@ BINDING_ATTR_OBJECT(Sprite, urge::Sprite, Color, urge::Color, kColorDataType);
 // Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Sprite, urge::Sprite, Tone, urge::Tone, kToneDataType);
 
+void InitSpriteBindingAppend(VALUE klass);
+
 void InitSpriteBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Sprite", parent);
@@ -227,7 +229,19 @@ void InitSpriteBinding() {
   DefineMethod(klass, "color=", Sprite_ColorEqual);
   DefineMethod(klass, "tone", Sprite_Tone);
   DefineMethod(klass, "tone=", Sprite_ToneEqual);
+  InitSpriteBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitSpriteBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitSpriteBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

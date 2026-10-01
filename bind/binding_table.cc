@@ -217,6 +217,8 @@ RB_FUNC(Table_Zsize) {
   return Qnil;
 }
 
+void InitTableBindingAppend(VALUE klass);
+
 void InitTableBinding() {
   auto klass = rb_define_class("Table", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kTableDataType>);
@@ -231,7 +233,19 @@ void InitTableBinding() {
   DefineMethod(klass, "[]=", Table_Set);
   DefineMethod(klass, "_dump", Table__dump);
   DefineClassMethod(klass, "_load", Table__load);
+  InitTableBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitTableBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitTableBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

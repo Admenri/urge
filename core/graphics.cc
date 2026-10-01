@@ -161,7 +161,10 @@ void Graphics::Transition(int32_t duration,
 
 void Graphics::TransitionBitmap(int32_t duration,
                                 RefPtr<Bitmap> bitmap,
-                                int32_t vague) {}
+                                int32_t vague) {
+  brightness_ = 255;
+  frozen_ = false;
+}
 
 RefPtr<Bitmap> Graphics::SnapToBitmap() {
   auto result = MakeRefCounted<Bitmap>(Width(), Height());
@@ -200,8 +203,12 @@ ATTR_DEF(Graphics, int32_t, FrameRate) {
 }
 
 ATTR_DEF(Graphics, int32_t, FrameCount) {
-  // TODO
-  return value;
+  if (value.has_value()) {
+    frame_count_ = *value;
+    return std::nullopt;
+  } else {
+    return frame_count_;
+  }
 }
 
 ATTR_DEF(Graphics, int32_t, Brightness) {

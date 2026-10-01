@@ -88,6 +88,8 @@ RB_FUNC(Vector3_Set) {
   return Qnil;
 }
 
+void InitVector3BindingAppend(VALUE klass);
+
 void InitVector3Binding() {
   auto klass = rb_define_class("Vector3", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kVector3DataType>);
@@ -95,7 +97,19 @@ void InitVector3Binding() {
   DefineMethod(klass, "initialize", Vector3_initialize);
   DefineMethod(klass, "initialize_copy", Vector3_initialize_copy);
   DefineMethod(klass, "set", Vector3_Set);
+  InitVector3BindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitVector3Binding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitVector3BindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

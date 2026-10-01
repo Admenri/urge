@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowXP  (core/window_xp.h:108-132)
+// WindowXP  (core/window_xp.h:108-136)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WindowXP);
@@ -63,6 +63,9 @@ RB_FUNC(WindowXP_Update) {
   EXC_END;
   return Qnil;
 }
+
+// Attribute: visible (bool)
+BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Visible);
 
 // Attribute: viewport (RefPtr<Viewport>)
 BINDING_ATTR_OBJECT_REF(WindowXP,
@@ -134,6 +137,8 @@ BINDING_ATTR_INT(WindowXP, urge::WindowXP, Scale);
 // Attribute: z (int32_t)
 BINDING_ATTR_INT(WindowXP, urge::WindowXP, Z);
 
+void InitWindowXPBindingAppend(VALUE klass);
+
 void InitWindowXPBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("WindowXP", parent);
@@ -141,6 +146,8 @@ void InitWindowXPBinding() {
 
   DefineMethod(klass, "initialize", WindowXP_initialize);
   DefineMethod(klass, "update", WindowXP_Update);
+  DefineMethod(klass, "visible", WindowXP_Visible);
+  DefineMethod(klass, "visible=", WindowXP_VisibleEqual);
   DefineMethod(klass, "viewport", WindowXP_Viewport);
   DefineMethod(klass, "viewport=", WindowXP_ViewportEqual);
   DefineMethod(klass, "windowskin", WindowXP_Windowskin);
@@ -177,7 +184,19 @@ void InitWindowXPBinding() {
   DefineMethod(klass, "scale=", WindowXP_ScaleEqual);
   DefineMethod(klass, "z", WindowXP_Z);
   DefineMethod(klass, "z=", WindowXP_ZEqual);
+  InitWindowXPBindingAppend(klass);
 }
 // --- GENERATED END ---
+
+// --- HANDWRITTEN INIT BEGIN ---
+// Runs at the end of InitWindowXPBinding(), with `klass` the class the
+// initialiser built. Patches the IR cannot express -- a proxy
+// class, a method whose Ruby signature differs from its C++ one --
+// belong here. The block is preserved verbatim; empty it and the
+// generator writes this body back.
+void InitWindowXPBindingAppend(VALUE klass) {
+  (void)klass;
+}
+// --- HANDWRITTEN INIT END ---
 
 }  // namespace binding

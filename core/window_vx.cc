@@ -29,6 +29,7 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "core/config.h"
 #include "core/gpu.h"
 #include "core/pipeline.h"
 #include "core/uniform.h"
@@ -63,11 +64,14 @@ constexpr int32_t kCellSize = 32;
 
 WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
     : Node(nullptr, ZValue(100, std::numeric_limits<int32_t>::max())),
+      contents_(MakeRefCounted<Bitmap>(1, 1)),
       cursor_rect_(MakeRefCounted<Rect>()),
       x_(x),
       y_(y),
       width_(width),
-      height_(height) {
+      height_(height),
+      padding_(Config::Get().vxa() ? 12 : 16),
+      padding_bottom_(padding_) {
   Node::SetupTrait(this);
   CreateTintBinding();
 }
