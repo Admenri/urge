@@ -477,6 +477,8 @@ ATTR_DEF(TilemapVX, int32_t, OY) {
 }
 
 void TilemapVX::DisposeObject() {
+  Node::DisposeObject();
+
   above_.reset();
   shadow_texture_.reset();
   map_layer_.primitive.Reset();

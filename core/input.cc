@@ -67,12 +67,7 @@ const std::string kButtonItems[] = {
 };
 
 Input::Input(int32_t version) {
-  SDL_AddEventWatch(
-      [](void* userdata, SDL_Event* event) -> bool {
-        Input::Get().ProcessEvents(event);
-        return true;
-      },
-      nullptr);
+  std::memset(pressed_, 0, sizeof(pressed_));
 
   for (size_t i = 0; i < std::size(kDefaultKeyboardBindings); ++i)
     bindings_.push_back(kDefaultKeyboardBindings[i]);
@@ -193,8 +188,10 @@ std::string Input::GetKeyName(int32_t keycode) {
 void Input::ProcessEvents(SDL_Event* event) {
   switch (event->type) {
     case SDL_EVENT_KEY_DOWN:
+      pressed_[event->key.scancode] = true;
+      break;
     case SDL_EVENT_KEY_UP:
-      pressed_[event->key.scancode] = event->key.down;
+      pressed_[event->key.scancode] = false;
       break;
     default:
       break;

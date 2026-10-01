@@ -96,7 +96,7 @@ class Input : public Singleton<Input> {
     int32_t active = 0;
   } dir8_state_;
 
-  std::array<bool, SDL_SCANCODE_COUNT> pressed_;
+  bool pressed_[SDL_SCANCODE_COUNT] = {};
   std::vector<KeySym> bindings_;
 };
 

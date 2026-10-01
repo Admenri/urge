@@ -157,8 +157,9 @@ ATTR_DEF(Plane, RefPtr<Tone>, Tone) {
 }
 
 void Plane::DisposeObject() {
-  bitmap_.reset();
+  Node::DisposeObject();
 
+  bitmap_.reset();
   tint_uniform_ = nullptr;
   tint_group_ = nullptr;
 }

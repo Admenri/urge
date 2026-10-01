@@ -24,7 +24,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Graphics  (core/graphics.h:58-80)
+// Graphics  (core/graphics.h:91-114)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {
@@ -261,6 +261,25 @@ RB_FUNC(Graphics_BrightnessEqual) {
   return Qnil;
 }
 
+RB_FUNC(Graphics_FrameSkip) {
+  EXC_BEGIN {
+    return (*urge::Graphics::Get().Attr_FrameSkip()) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Graphics_FrameSkipEqual) {
+  bool value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "b", &value);
+    urge::Graphics::Get().Attr_FrameSkip(value != 0);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitGraphicsBindingAppend(VALUE mod);
 
 void InitGraphicsBinding() {
@@ -285,6 +304,8 @@ void InitGraphicsBinding() {
   DefineModuleFunction(mod, "frame_count=", Graphics_FrameCountEqual);
   DefineModuleFunction(mod, "brightness", Graphics_Brightness);
   DefineModuleFunction(mod, "brightness=", Graphics_BrightnessEqual);
+  DefineModuleFunction(mod, "frame_skip", Graphics_FrameSkip);
+  DefineModuleFunction(mod, "frame_skip=", Graphics_FrameSkipEqual);
   InitGraphicsBindingAppend(mod);
 }
 // --- GENERATED END ---

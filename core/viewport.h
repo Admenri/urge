@@ -33,7 +33,7 @@ class Viewport : public Node {
   Viewport(int32_t x, int32_t y, int32_t width, int32_t height);
   Viewport(RefPtr<Rect> rect);
   Viewport();
-  ~Viewport();
+  ~Viewport() override;
 
   void Flash(RefPtr<Color> color, int32_t duration);
   void Update();
@@ -45,14 +45,14 @@ class Viewport : public Node {
   ATTR(RefPtr<Tone>, Tone);
   /*-export.end-*/
 
- private:
+ protected:
   void DisposeObject() override;
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
   void PostDraw(DrawParam param) override;
 
+ private:
   void ResetTransform();
-
   void CreateEffectBindings();
   void AcquirePingPong(const RectI& region);
 
@@ -71,8 +71,9 @@ class Viewport : public Node {
   wgpu::BindGroup object_group_, tint_group_;
 
   //! The emitter of the quad which draws the region of this viewport back after
-  //! its effect ran. That quad is emitted in the drawing stage, after the vertex
-  //! batch of the frame was uploaded, so this node cannot use that batch.
+  //! its effect ran. That quad is emitted in the drawing stage, after the
+  //! vertex batch of the frame was uploaded, so this node cannot use that
+  //! batch.
   PrimitiveEmitter primitive_;
 };
 

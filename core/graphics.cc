@@ -30,24 +30,111 @@
 #include <string>
 
 #include "SDL3/SDL_events.h"
+#include "SDL3/SDL_timer.h"
 
 #include "core/common.h"
 #include "core/config.h"
 #include "core/exception.h"
 #include "core/gpu.h"
+#include "core/input.h"
+#include "core/logger.h"
 #include "core/pipeline.h"
 #include "core/primitive.h"
 #include "core/uniform.h"
 
 namespace urge {
 
-ScreenRootNode::ScreenRootNode() : Node() {}
+namespace {
 
-ScreenRootNode::~ScreenRootNode() {
-  Disposable::Dispose();
+//! The lowest and the highest frame rate SetFrameRate() accepts. The two ends
+//! are the usual 30 and 240 of a game loop: below the first a window would look
+//! sluggish, above the second the pacing costs more than it gains.
+constexpr int32_t kMinFrameRate = 30;
+constexpr int32_t kMaxFrameRate = 240;
+
+//! The timestamp of the monotonic clock of SDL, in nanoseconds. The return
+//! value of SDL_GetTicksNS() wraps only after ~584 years, so the difference of
+//! two of its readings is safe to take and never needs an unsigned guard.
+uint64_t NowNS() {
+  return SDL_GetTicksNS();
 }
 
-void ScreenRootNode::DisposeObject() {}
+}  // namespace
+
+// -------------------------------------------------------------------------------
+
+FrameController::FrameController() {
+  SetFrameRate(frame_rate_);
+}
+
+void FrameController::SetFrameRate(int32_t frame_rate) {
+  // A rate of zero means the caller asked for no cap at all, every other rate
+  // is clamped so a stray value cannot make the loop spin or stall.
+  frame_rate = std::max(frame_rate, 0);
+  if (frame_rate != 0)
+    frame_rate = std::clamp(frame_rate, kMinFrameRate, kMaxFrameRate);
+
+  frame_rate_ = frame_rate;
+  uncapped_ = frame_rate_ == 0;
+  frame_period_ns_ = uncapped_ ? 0 : 1'000'000'000ull / frame_rate_;
+}
+
+void FrameController::SetSkipEnabled(bool enabled) {
+  skip_enabled_ = enabled;
+}
+
+bool FrameController::BeginFrame() {
+  frame_start_ns_ = NowNS();
+
+  // A frame that started less than a period after the previous one means the
+  // loop is running ahead of its target, which is Delay()'s case to handle and
+  // never a reason to skip. A frame that started later than a period is one the
+  // loop fell behind on, and skipping it is how the loop catches up.
+  bool late = !uncapped_ && last_frame_start_ns_ != 0 &&
+              frame_start_ns_ - last_frame_start_ns_ > frame_period_ns_;
+
+  bool skip = skip_enabled_ && late;
+
+  // The clock is not advanced when the frame is skipped: the next frame should
+  // still be measured against the last one that was actually rendered.
+  if (!skip)
+    last_frame_start_ns_ = frame_start_ns_;
+
+  return skip;
+}
+
+void FrameController::Delay() {
+  if (uncapped_)
+    return;
+
+  // A start of zero means Reset() was called between BeginFrame() and here, so
+  // there is no frame to pace and the elapsed time would be meaningless.
+  if (frame_start_ns_ == 0)
+    return;
+
+  // The budget of the frame is measured from the moment BeginFrame() marked its
+  // start, so the rendering time of the frame is already part of the elapsed
+  // time and only the remainder has to be slept away.
+  uint64_t elapsed = NowNS() - frame_start_ns_;
+  if (elapsed >= frame_period_ns_)
+    return;
+
+  SDL_Delay(static_cast<Uint32>((frame_period_ns_ - elapsed) / 1'000'000));
+}
+
+void FrameController::Reset() {
+  // A zero last_frame_start_ns_ is what BeginFrame() reads as "no previous
+  // frame yet", so the next frame it sees can never be late and is used to seed
+  // the measurement again. Dropping the start of the frame underway matters for
+  // the same reason from the other side: Delay() computes the remainder against
+  // it, and a stale one would report the whole period as already elapsed.
+  frame_start_ns_ = 0;
+  last_frame_start_ns_ = 0;
+}
+
+// -------------------------------------------------------------------------------
+
+ScreenRootNode::ScreenRootNode() : Node() {}
 
 bool ScreenRootNode::Prepare(DrawParam param) {
   const glm::vec4 brightness_tint(
@@ -107,10 +194,18 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Update() {
-  if (!frozen_)
-    root_->Render(screen_, Color::Black());
+  const bool skip_frame = frame_controller_.BeginFrame();
+
+  if (!skip_frame) {
+    if (!frozen_)
+      root_->Render(screen_, Color::Black());
+
+    ++frame_count_;
+  }
 
   PresentInternal();
+
+  frame_controller_.Delay();
 }
 
 void Graphics::Wait(int32_t duration) {
@@ -173,7 +268,7 @@ RefPtr<Bitmap> Graphics::SnapToBitmap() {
 }
 
 void Graphics::FrameReset() {
-  // TODO
+  frame_controller_.Reset();
 }
 
 int32_t Graphics::Width() {
@@ -198,8 +293,21 @@ void Graphics::PlayMovie(std::string filename) {
 }
 
 ATTR_DEF(Graphics, int32_t, FrameRate) {
-  // TODO
-  return value;
+  if (value.has_value()) {
+    frame_controller_.SetFrameRate(*value);
+    return std::nullopt;
+  } else {
+    return frame_controller_.FrameRate();
+  }
+}
+
+ATTR_DEF(Graphics, bool, FrameSkip) {
+  if (value.has_value()) {
+    frame_controller_.SetSkipEnabled(*value);
+    return std::nullopt;
+  } else {
+    return frame_controller_.SkipEnabled();
+  }
 }
 
 ATTR_DEF(Graphics, int32_t, FrameCount) {
@@ -224,9 +332,12 @@ void Graphics::PresentInternal() {
   auto surface = GPUDevice::Get().swapchain();
 
   SDL_Event event;
-  SDL_PollEvent(&event);
-  if (event.type == SDL_EVENT_QUIT)
-    throw Exception(Exception::kExitError, {});
+  while (SDL_PollEvent(&event)) {
+    Input::Get().ProcessEvents(&event);
+
+    if (event.type == SDL_EVENT_QUIT)
+      throw Exception(Exception::kExitError, {});
+  }
 
   // The surface is configured once and again after the screen was resized, the
   // size it covers is the one the screen texture is rendered at

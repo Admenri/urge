@@ -70,10 +70,11 @@ class Plane : public Node {
 
   //! The object pool slot of this plane, bound at set 1. The quad of a plane is
   //! emitted in the pixels of the render target, so the transform it carries is
-  //! the identity and the tiles are placed by their texture coordinates instead.
+  //! the identity and the tiles are placed by their texture coordinates
+  //! instead.
   UniformBlockPool::Slot object_slot_ = {};
-  //! The range EmitGeometryInternal() appended to the vertex batch of the frame,
-  //! i.e. the vertices DoDraw() draws.
+  //! The range EmitGeometryInternal() appended to the vertex batch of the
+  //! frame, i.e. the vertices DoDraw() draws.
   PrimitiveEmitter::Slot primitive_slot_ = {};
 
   //! The tint of this plane, `PlaneBase::PlaneParam`, and the bind group of set

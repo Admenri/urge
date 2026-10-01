@@ -297,6 +297,8 @@ ATTR_DEF(Sprite, RefPtr<Tone>, Tone) {
 }
 
 void Sprite::DisposeObject() {
+  Node::DisposeObject();
+
   bitmap_.reset();
 }
 

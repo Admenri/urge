@@ -56,14 +56,10 @@ kept at the `Z` of the window plus two, see WindowXP::Attr_Z.
 class WindowXPAbove : public Node {
  public:
   WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport);
-  ~WindowXPAbove() override;
 
  protected:
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
-
- private:
-  void DisposeObject() override;
 
   WindowXP* parent_ = nullptr;
 };

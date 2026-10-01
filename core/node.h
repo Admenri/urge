@@ -53,6 +53,8 @@ class Node : public Disposable {
   virtual bool DoDraw(DrawParam param) { return false; }
   virtual void PostDraw(DrawParam param) {}
 
+  void DisposeObject() override;
+
  public:
   ZValue GetOrder() { return self_.order(); }
   void SortWith(ZValue v) { return self_.SortWith(v); }
@@ -73,7 +75,6 @@ class Node : public Disposable {
   glm::mat4 world_transform() { return transform_.world; }
 
  private:
-  void DisposeObject() override;
   void ExecutePrepare(DrawParam param);
   void ExecuteRendering(DrawParam param);
   void RebuildModelTransform();

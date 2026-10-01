@@ -316,6 +316,8 @@ ATTR_DEF(WindowVX, int32_t, Scale) {
 }
 
 void WindowVX::DisposeObject() {
+  Node::DisposeObject();
+
   window_skin_.reset();
   contents_.reset();
 }

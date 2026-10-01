@@ -32,21 +32,54 @@
 
 namespace urge {
 
+//! Paces the frame loop of Graphics.
+//!
+//! The controller is told the target frame rate, and splits its job in two
+//! halves that are called on both sides of a frame:
+//!
+//!   * BeginFrame() is called before the frame is rendered. It tracks how much
+//!     time has passed since the previous frame and decides whether the frame
+//!     has to be skipped, which only happens when the previous frame could not
+//!     be presented in time and skipping is enabled.
+//!   * Delay() is called after the frame was presented. It sleeps for the rest
+//!     of the per-frame budget, so the frame rate does not run ahead of the
+//!     target when rendering is faster than the target.
+//!
+//! The two halves are the reason two clocks are involved: the decision of
+//! BeginFrame() is based on the wall clock, while the sleeping of Delay() is
+//! based on the same clock plus the budget of the frame rate.
+class FrameController {
+ public:
+  FrameController();
+
+  void SetFrameRate(int32_t frame_rate);
+  int32_t FrameRate() const { return frame_rate_; }
+
+  void SetSkipEnabled(bool enabled);
+  bool SkipEnabled() const { return skip_enabled_; }
+
+  bool BeginFrame();
+  void Delay();
+  void Reset();
+
+ private:
+  int32_t frame_rate_ = 60;
+  uint64_t frame_period_ns_ = 0;
+  bool uncapped_ = false;
+  bool skip_enabled_ = false;
+  uint64_t frame_start_ns_ = 0;
+  uint64_t last_frame_start_ns_ = 0;
+};
+
 class ScreenRootNode : public Node {
  public:
   ScreenRootNode();
-  ~ScreenRootNode() override;
 
  private:
-  void DisposeObject() override;
   bool Prepare(DrawParam param) override;
-  //! The brightness quad is emitted and drawn by PostDraw(), so the node has to
-  //! ask for that stage: DoDraw() is what gates PostDraw().
   bool DoDraw(DrawParam param) override;
   void PostDraw(DrawParam param) override;
 
-  //! The range the brightness quad of this frame occupies in the vertex batch
-  //! of the frame, see QuadVertexManager.
   PrimitiveEmitter::Slot slot_ = {};
 };
 
@@ -77,6 +110,7 @@ class Graphics : public Singleton<Graphics> {
   ATTR(int32_t, FrameRate);
   ATTR(int32_t, FrameCount);
   ATTR(int32_t, Brightness);
+  ATTR(bool, FrameSkip);
   /*-export.end-*/
 
   RefPtr<ScreenRootNode> root() { return root_; }
@@ -92,6 +126,8 @@ class Graphics : public Singleton<Graphics> {
   bool frozen_ = false;
   int32_t frame_count_ = 0;
   int32_t brightness_ = 255;
+
+  FrameController frame_controller_;
 
   struct {
     bool configured = false;

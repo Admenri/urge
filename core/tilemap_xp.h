@@ -58,7 +58,6 @@ class TilemapXPAbove : public Node {
                  int32_t id);
 
  private:
-  void DisposeObject() override;
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 

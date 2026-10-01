@@ -198,8 +198,9 @@ RB_FUNC(Input_GetKeyName) {
     ParseArgs(argc, argv, "i", &keycode);
 
     std::string result = urge::Input::Get().GetKeyName(keycode);
-    return rb_enc_str_new(result.data(), static_cast<long>(result.size()),
-                          rb_utf8_encoding());
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
   }
   EXC_END;
   return Qnil;

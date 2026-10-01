@@ -61,14 +61,6 @@ WindowXPAbove::WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport)
   Node::SetupTrait(this);
 }
 
-WindowXPAbove::~WindowXPAbove() {
-  Disposable::Dispose();
-}
-
-void WindowXPAbove::DisposeObject() {
-  parent_ = nullptr;
-}
-
 bool WindowXPAbove::Prepare(DrawParam param) {
   /* The node is the second half of its window and is skipped with it: a
      window which holds nothing inside its frame has no node above. */
@@ -449,6 +441,8 @@ ATTR_DEF(WindowXP, int32_t, Scale) {
 }
 
 void WindowXP::DisposeObject() {
+  Node::DisposeObject();
+
   above_.reset();
   windowskin_.reset();
   contents_.reset();

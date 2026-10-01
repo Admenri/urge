@@ -97,11 +97,6 @@ TilemapXPAbove::TilemapXPAbove(TilemapXP* parent,
                                int32_t id)
     : Node(viewport, z), parent_(parent), id_(id) {}
 
-void TilemapXPAbove::DisposeObject() {
-  /* The layer owns nothing of its own: its geometry belongs to the TilemapXP
-     which built it, so the release of it happens there. */
-}
-
 bool TilemapXPAbove::Prepare(DrawParam param) {
   return parent_ && parent_->HasAboveLayer(id_);
 }
@@ -113,8 +108,7 @@ bool TilemapXPAbove::DoDraw(DrawParam param) {
 
 // ----------------------------------------------------------------------
 
-TilemapXP::TilemapXP(RefPtr<Viewport> viewport)
-    : Node(viewport, ZValue()) {
+TilemapXP::TilemapXP(RefPtr<Viewport> viewport) : Node(viewport, ZValue()) {
   Node::SetupTrait(this);
 }
 
@@ -235,6 +229,8 @@ ATTR_DEF(TilemapXP, int32_t, OY) {
 }
 
 void TilemapXP::DisposeObject() {
+  Node::DisposeObject();
+
   aboves_.clear();
   tileset_.reset();
   for (auto& it : autotiles_)
@@ -444,8 +440,8 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
       const glm::vec2* autotile_src_pos = kAutotileSrcRegular[pattern_id];
       for (int32_t i = 0; i < 4; ++i) {
         RectF tex_src;
-        tex_src.x = frame * tilesize_ * 3 + autotile_src_pos[i].x * tilesize_ +
-                    0.5f;
+        tex_src.x =
+            frame * tilesize_ * 3 + autotile_src_pos[i].x * tilesize_ + 0.5f;
         tex_src.y = autotile_src_pos[i].y * tilesize_ + 0.5f;
         tex_src.width = 0.5f * tilesize_ - 1.0f;
         tex_src.height = 0.5f * tilesize_ - 1.0f;
@@ -571,7 +567,8 @@ void TilemapXP::BuildLayers() {
         dest.x += render_offset_.x;
         dest.y += render_offset_.y;
 
-        layer->primitive.Rect(dest, MakeNorm(quads[index].source, texture_size));
+        layer->primitive.Rect(dest,
+                              MakeNorm(quads[index].source, texture_size));
         ++index;
       }
 

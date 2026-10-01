@@ -117,8 +117,9 @@ ATTR_DEF(Viewport, RefPtr<Tone>, Tone) {
 }
 
 void Viewport::DisposeObject() {
-  pingpong_.reset();
+  Node::DisposeObject();
 
+  pingpong_.reset();
   object_uniform_ = nullptr;
   object_group_ = nullptr;
   tint_uniform_ = nullptr;
