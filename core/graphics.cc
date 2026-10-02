@@ -174,10 +174,16 @@ Graphics::Graphics()
      in logical points; the physical pixel size comes from
      SDL_GetWindowSizeInPixels() and is what the swapchain is configured with,
      see PresentInternal. */
-  auto window_flag = SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS |
-                     SDL_WINDOW_HIGH_PIXEL_DENSITY;
+  auto window_flag =
+      SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
   window_ = SDL_CreateWindow(Config::Get().title.c_str(), Config::Get().width,
                              Config::Get().height, window_flag);
+  auto dpi = SDL_GetWindowDisplayScale(window_);
+  SDL_SetWindowSize(window_, static_cast<int>(Config::Get().width * dpi),
+                    static_cast<int>(Config::Get().height * dpi));
+  SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
+                        SDL_WINDOWPOS_CENTERED);
+  SDL_ShowWindow(window_);
 
   GPUDevice::Reset(new GPUDevice(window_));
   ShaderSet::Reset(new ShaderSet());
@@ -377,14 +383,8 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
   present_.configured = false;
   screen_ = MakeRefCounted<Bitmap>(width, height);
 
-  /* The window is sized in logical points, so the aspect ratio it is asked to
-     keep is the one of the screen itself: the surface is then backed by whole
-     multiples of the screen and the present quad covers it without distortion,
-     even when the user resizes the window by hand. */
-  SDL_SetWindowAspectRatio(
-      window_, static_cast<float>(width) / static_cast<float>(height),
-      static_cast<float>(width) / static_cast<float>(height));
-  SDL_SetWindowSize(window_, width, height);
+  auto dpi = SDL_GetWindowDisplayScale(window_);
+  SDL_SetWindowSize(window_, width * dpi, height * dpi);
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                         SDL_WINDOWPOS_CENTERED);
 }
@@ -511,7 +511,20 @@ void Graphics::PresentInternal() {
 
   wgpu::SurfaceTexture surface_texture;
   surface.GetCurrentTexture(&surface_texture);
-  auto surface_view = surface_texture.texture.CreateView(nullptr);
+  switch (surface_texture.status) {
+    case wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal:
+    case wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal:
+      break;
+    case wgpu::SurfaceGetCurrentTextureStatus::Timeout:
+    case wgpu::SurfaceGetCurrentTextureStatus::Outdated:
+    case wgpu::SurfaceGetCurrentTextureStatus::Lost:
+      present_.configured = false;
+      return;
+    case wgpu::SurfaceGetCurrentTextureStatus::Error:
+      throw Exception(Exception::kRGSSError,
+                      "failed to acquire surface texture.");
+      break;
+  }
 
   /* The scene uniform of the screen maps its own logical size over the whole
      render target, see Bitmap::CreateGroup, so the quad is emitted in screen
@@ -526,7 +539,7 @@ void Graphics::PresentInternal() {
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
   {
     wgpu::RenderPassColorAttachment color_attachment;
-    color_attachment.view = surface_view;
+    color_attachment.view = surface_texture.texture.CreateView(nullptr);
     color_attachment.loadOp = wgpu::LoadOp::Clear;
     color_attachment.storeOp = wgpu::StoreOp::Store;
     color_attachment.clearValue = {0.67f, 0.54f, 0.87f, 1.0f};
