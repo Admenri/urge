@@ -27,6 +27,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "SDL3_image/SDL_image.h"
@@ -73,6 +74,78 @@ glm::vec4 PremultiplyOpacity(int32_t opacity) {
   const float value =
       std::clamp(static_cast<float>(opacity) / 255.0f, 0.0f, 1.0f);
   return glm::vec4(value, value, value, value);
+}
+
+/*! Turns a rendered text surface into a texture of this class.
+ *
+ *  The surface comes back from Font::RenderText with straight alpha while the
+ *  blend state of the engine (BlendType::kNormal) expects premultiplied
+ * content, so the alpha is folded into the color channels here -- the same
+ * conversion CreateInternal() applies to a loaded image.
+ *
+ *  \returns the texture and its view, both empty when the surface is
+ * degenerate.
+ */
+std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
+    SDL_Surface* surface) {
+  if (surface->w <= 0 || surface->h <= 0)
+    return {nullptr, nullptr};
+
+  SDL_PremultiplySurfaceAlpha(surface, false);
+
+  wgpu::TextureDescriptor desc;
+  desc.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
+  desc.dimension = wgpu::TextureDimension::e2D;
+  desc.size.width = surface->w;
+  desc.size.height = surface->h;
+  desc.format = wgpu::TextureFormat::RGBA8Unorm;
+
+  wgpu::Texture texture = GPUDevice::Get().device().CreateTexture(&desc);
+  if (!texture)
+    return {nullptr, nullptr};
+
+  wgpu::TexelCopyTextureInfo destination;
+  destination.texture = texture;
+
+  wgpu::TexelCopyBufferLayout layout;
+  layout.bytesPerRow = surface->pitch;
+  layout.rowsPerImage = surface->h;
+
+  wgpu::Extent3D size;
+  size.width = surface->w;
+  size.height = surface->h;
+
+  GPUDevice::Get().queue().WriteTexture(&destination, surface->pixels,
+                                        surface->pitch * surface->h, &layout,
+                                        &size);
+
+  return {texture, texture.CreateView(nullptr)};
+}
+
+/*! Computes where a text surface lands inside a layout rectangle.
+ *
+ *  The horizontal placement follows the RGSS alignment (0 left, 1 center, 2
+ *  right) and the vertical placement is always centered, which is the behaviour
+ *  the reference runtime has and what games were written against.
+ */
+RectI AlignTextRect(const RectI& region,
+                    int32_t text_width,
+                    int32_t text_height,
+                    int32_t align) {
+  int32_t x = region.x;
+  switch (align) {
+    case 1:
+      x += (region.width - text_width) / 2;
+      break;
+    case 2:
+      x += region.width - text_width;
+      break;
+    default:
+      break;
+  }
+
+  const int32_t y = region.y + (region.height - text_height) / 2;
+  return RectI(x, y, text_width, text_height);
 }
 
 //! Normalized texture coordinates of a source rectangle inside a bitmap.
@@ -543,7 +616,95 @@ void Bitmap::DrawText(int32_t x,
                       int32_t align) {
   Disposable::Guard();
 
-  // TODO
+  if (!font_ || str.empty())
+    return;
+
+  // The layout rectangle has no meaning when it is empty
+  if (width <= 0 || height <= 0)
+    return;
+
+  uint8_t font_opacity = 255;
+  SDL_Surface* text_surface = font_->RenderText(str, &font_opacity);
+  if (!text_surface)
+    return;
+
+  auto [text_texture, text_view] = CreateTextTexture(text_surface);
+  const glm::ivec2 text_size{text_surface->w, text_surface->h};
+  SDL_DestroySurface(text_surface);
+
+  if (!text_texture || text_size.x <= 0 || text_size.y <= 0)
+    return;
+
+  /* The glyphs are laid out inside the region, then the resulting rectangle is
+     clipped against the bitmap: a text that overhangs an edge is cut off there
+     rather than being refused whole, which is what RGSS does. */
+  const RectI composed = AlignTextRect(RectI(x, y, width, height), text_size.x,
+                                       text_size.y, align);
+  const RectI blit_region =
+      MakeIntersect(composed, RectI(0, 0, size_.x, size_.y));
+  if (!blit_region.width || !blit_region.height)
+    return;
+
+  // The fraction of the composed rectangle that survived the clip
+  const RectF source_rect(static_cast<float>(blit_region.x - composed.x),
+                          static_cast<float>(blit_region.y - composed.y),
+                          static_cast<float>(blit_region.width),
+                          static_cast<float>(blit_region.height));
+
+  // The alpha of the text color is a separate opacity on the vertices, so the
+  // color channels of the uploaded texture stay untouched
+  const glm::vec4 opacity = PremultiplyOpacity(font_opacity);
+
+  const std::uint32_t vertex_count =
+      primitive_
+          .EmitQuad(RectF(blit_region),
+                    MakeNorm(source_rect, glm::vec2(text_size)), opacity)
+          .Upload();
+
+  // One offscreen texture and one sampler are enough for a single draw
+  wgpu::SamplerDescriptor sampler_desc;
+  sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.magFilter = wgpu::FilterMode::Linear;
+  sampler_desc.minFilter = wgpu::FilterMode::Linear;
+  wgpu::Sampler sampler =
+      GPUDevice::Get().device().CreateSampler(&sampler_desc);
+
+  auto pipeline = ShaderSet::Get().state.texture_pma;
+  wgpu::BindGroup text_group = CreateWGroup(
+      pipeline.GetBindGroupLayout(2),
+      {{0, WTextureViewSet(text_view)}, {1, WSamplerSet(sampler)}});
+
+  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+  wgpu::RenderPassColorAttachment color_attachment;
+  color_attachment.view = texture_view_;
+  color_attachment.loadOp = wgpu::LoadOp::Load;
+  color_attachment.storeOp = wgpu::StoreOp::Store;
+  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
+  depth_stencil_attachment.view = depth_stencil_view_;
+  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.depthClearValue = 1.0f;
+  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
+  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
+  depth_stencil_attachment.stencilClearValue = 0;
+  wgpu::RenderPassDescriptor pass_desc;
+  pass_desc.colorAttachmentCount = 1;
+  pass_desc.colorAttachments = &color_attachment;
+  pass_desc.depthStencilAttachment = &depth_stencil_attachment;
+  auto pass = encoder.BeginRenderPass(&pass_desc);
+  {
+    pass.SetPipeline(pipeline);
+    pass.SetBindGroup(0, scene_group_, 0, nullptr);
+    pass.SetBindGroup(1, object_group_, 0, nullptr);
+    pass.SetBindGroup(2, text_group, 0, nullptr);
+    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(vertex_count, 1, 0, 0);
+  }
+  pass.End();
+  auto command = encoder.Finish(nullptr);
+  GPUDevice::Get().queue().Submit(1, &command);
 }
 
 void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
@@ -559,8 +720,14 @@ void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
 RefPtr<Rect> Bitmap::TextSize(std::string str) {
   Disposable::Guard();
 
-  // TODO
-  return MakeRefCounted<Rect>();
+  if (!font_)
+    return MakeRefCounted<Rect>();
+
+  int32_t width = 0, height = 0;
+  if (!font_->MeasureText(str, &width, &height))
+    return MakeRefCounted<Rect>();
+
+  return MakeRefCounted<Rect>(0, 0, width, height);
 }
 
 RefPtr<Palette> Bitmap::ToPalette() {
@@ -624,7 +791,7 @@ void Bitmap::UpdateWithPalette(RefPtr<Palette> palette) {
 
 ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
   if (value) {
-    font_ = *value;
+    font_ = MakeRefCounted<Font>(*value);
     return std::nullopt;
   } else {
     return font_;

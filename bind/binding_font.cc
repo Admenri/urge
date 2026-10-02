@@ -24,7 +24,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Font  (core/font.h:33-57)
+// Font  (core/font.h:40-69)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Font);
@@ -98,11 +98,21 @@ BINDING_ATTR_BOOL(Font, urge::Font, Outline);
 // Attribute: shadow (bool)
 BINDING_ATTR_BOOL(Font, urge::Font, Shadow);
 
+// Attribute: solid (bool)
+BINDING_ATTR_BOOL(Font, urge::Font, Solid);
+
 // Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Font, urge::Font, Color, urge::Color, kColorDataType);
 
 // Attribute: out_color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Font, urge::Font, OutColor, urge::Color, kColorDataType);
+
+// Attribute: gradient_color (RefPtr<Color>)
+BINDING_ATTR_OBJECT(Font,
+                    urge::Font,
+                    GradientColor,
+                    urge::Color,
+                    kColorDataType);
 
 // Class attribute: default_name (std::vector<std::string>)
 BINDING_CLASS_ATTR_STRINGVECTOR(Font, urge::Font, DefaultName);
@@ -122,6 +132,9 @@ BINDING_CLASS_ATTR_BOOL(Font, urge::Font, DefaultOutline);
 // Class attribute: default_shadow (bool)
 BINDING_CLASS_ATTR_BOOL(Font, urge::Font, DefaultShadow);
 
+// Class attribute: default_solid (bool)
+BINDING_CLASS_ATTR_BOOL(Font, urge::Font, DefaultSolid);
+
 // Class attribute: default_color (RefPtr<Color>)
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
@@ -133,6 +146,13 @@ BINDING_CLASS_ATTR_OBJECT(Font,
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultOutColor,
+                          urge::Color,
+                          kColorDataType);
+
+// Class attribute: default_gradient_color (RefPtr<Color>)
+BINDING_CLASS_ATTR_OBJECT(Font,
+                          urge::Font,
+                          DefaultGradientColor,
                           urge::Color,
                           kColorDataType);
 
@@ -157,10 +177,14 @@ void InitFontBinding() {
   DefineMethod(klass, "outline=", Font_OutlineEqual);
   DefineMethod(klass, "shadow", Font_Shadow);
   DefineMethod(klass, "shadow=", Font_ShadowEqual);
+  DefineMethod(klass, "solid", Font_Solid);
+  DefineMethod(klass, "solid=", Font_SolidEqual);
   DefineMethod(klass, "color", Font_Color);
   DefineMethod(klass, "color=", Font_ColorEqual);
   DefineMethod(klass, "out_color", Font_OutColor);
   DefineMethod(klass, "out_color=", Font_OutColorEqual);
+  DefineMethod(klass, "gradient_color", Font_GradientColor);
+  DefineMethod(klass, "gradient_color=", Font_GradientColorEqual);
   DefineClassMethod(klass, "default_name", Font_DefaultName);
   DefineClassMethod(klass, "default_name=", Font_DefaultNameEqual);
   DefineClassMethod(klass, "default_size", Font_DefaultSize);
@@ -173,10 +197,14 @@ void InitFontBinding() {
   DefineClassMethod(klass, "default_outline=", Font_DefaultOutlineEqual);
   DefineClassMethod(klass, "default_shadow", Font_DefaultShadow);
   DefineClassMethod(klass, "default_shadow=", Font_DefaultShadowEqual);
+  DefineClassMethod(klass, "default_solid", Font_DefaultSolid);
+  DefineClassMethod(klass, "default_solid=", Font_DefaultSolidEqual);
   DefineClassMethod(klass, "default_color", Font_DefaultColor);
   DefineClassMethod(klass, "default_color=", Font_DefaultColorEqual);
   DefineClassMethod(klass, "default_out_color", Font_DefaultOutColor);
   DefineClassMethod(klass, "default_out_color=", Font_DefaultOutColorEqual);
+  DefineClassMethod(klass, "default_gradient_color", Font_DefaultGradientColor);
+  DefineClassMethod(klass, "default_gradient_color=", Font_DefaultGradientColorEqual);
   InitFontBindingAppend(klass);
 }
 // --- GENERATED END ---

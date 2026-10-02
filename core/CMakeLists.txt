@@ -5,6 +5,7 @@ file(GLOB_RECURSE CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 target_sources(urge-core PRIVATE ${CORE_SOURCES})
 
 target_link_libraries(urge-core PUBLIC glm SDL3::SDL3-static SDL3_image::SDL3_image-static physfs-static)
+target_link_libraries(urge-core PUBLIC SDL3_ttf::SDL3_ttf)
 target_link_libraries(urge-core PUBLIC webgpu-cpp-header webgpu_wgpu)
 
 # The engine shaders are GLSL: glslang compiles them, spirv-reflect reads the

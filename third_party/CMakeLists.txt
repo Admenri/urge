@@ -5,6 +5,15 @@ set(SDL_STATIC ON)
 set(SDLIMAGE_VENDORED OFF)
 set(YAML_CPP_BUILD_TOOLS OFF)
 
+# SDL_ttf is built into the engine as a static library that carries its own
+# FreeType, HarfBuzz and PlutoSVG copies (the "vendored" layout, which is also
+# what the upstream project defaults to on MSVC). Samples and install rules are
+# not wanted, and a warning is not an error in a bundled copy.
+set(SDLTTF_VENDORED ON)
+set(SDLTTF_SAMPLES OFF)
+set(SDLTTF_INSTALL OFF)
+set(SDLTTF_WERROR OFF)
+
 set(ENABLE_GLSLANG_BINARIES OFF)
 set(ENABLE_GLSLANG_JS OFF)
 set(GLSLANG_TESTS OFF)
@@ -24,6 +33,7 @@ set(SKIP_SPIRV_TOOLS_INSTALL ON)
 add_subdirectory(glm)
 add_subdirectory(SDL)
 add_subdirectory(SDL_image)
+add_subdirectory(SDL_ttf)
 add_subdirectory(physfs)
 add_subdirectory(webgpu-cpp)
 add_subdirectory(wgpu-cmake)

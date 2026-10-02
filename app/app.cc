@@ -35,6 +35,7 @@
 
 #include "core/config.h"
 #include "core/filesystem.h"
+#include "core/font_context.h"
 #include "core/gpu.h"
 #include "core/graphics.h"
 #include "core/input.h"
@@ -79,6 +80,11 @@ int main(int argc, char* argv[]) {
     auto input = new urge::Input(config->rgss_version);
     urge::Input::Reset(input);
 
+    /* The font service is set up after the load paths are mounted -- it reads
+       the font directory off them -- and before anything that can draw text. */
+    auto font_context = new urge::FontContext();
+    urge::FontContext::Reset(font_context);
+
     auto graphics = new urge::Graphics();
     urge::Graphics::Reset(graphics);
 
@@ -93,6 +99,7 @@ int main(int argc, char* argv[]) {
   }
 
   urge::Graphics::Reset(nullptr);
+  urge::FontContext::Reset(nullptr);
   urge::Input::Reset(nullptr);
   urge::Config::Reset(nullptr);
   urge::IOService::Reset(nullptr);

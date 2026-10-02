@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-02T03:51:05Z",
+    "generated_at": "2026-10-02T04:56:26Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -15,6 +15,7 @@
       "core/exception.h",
       "core/filesystem.h",
       "core/font.h",
+      "core/font_context.h",
       "core/gpu.h",
       "core/graphics.h",
       "core/inirw.h",
@@ -1776,7 +1777,7 @@
               "default": "24"
             }
           ],
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         }
       ],
       "initialize_copy": {
@@ -1787,7 +1788,7 @@
             "default": null
           }
         ],
-        "export": "core/font.h:33-57"
+        "export": "core/font.h:40-69"
       },
       "instance_methods": [],
       "attributes": [
@@ -1800,7 +1801,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "size",
@@ -1811,7 +1812,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "bold",
@@ -1822,7 +1823,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "italic",
@@ -1833,7 +1834,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "outline",
@@ -1844,7 +1845,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "shadow",
@@ -1855,7 +1856,18 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
+        },
+        {
+          "name": "solid",
+          "setter": "solid=",
+          "cpp_name": "Solid",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:40-69"
         },
         {
           "name": "color",
@@ -1866,7 +1878,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "out_color",
@@ -1877,7 +1889,18 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
+        },
+        {
+          "name": "gradient_color",
+          "setter": "gradient_color=",
+          "cpp_name": "GradientColor",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:40-69"
         }
       ],
       "data_attributes": [],
@@ -1897,7 +1920,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         }
       ],
       "class_attributes": [
@@ -1910,7 +1933,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_size",
@@ -1921,7 +1944,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_bold",
@@ -1932,7 +1955,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_italic",
@@ -1943,7 +1966,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_outline",
@@ -1954,7 +1977,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_shadow",
@@ -1965,7 +1988,18 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
+        },
+        {
+          "name": "default_solid",
+          "setter": "default_solid=",
+          "cpp_name": "DefaultSolid",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_color",
@@ -1976,7 +2010,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
         },
         {
           "name": "default_out_color",
@@ -1987,7 +2021,18 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:33-57"
+          "export": "core/font.h:40-69"
+        },
+        {
+          "name": "default_gradient_color",
+          "setter": "default_gradient_color=",
+          "cpp_name": "DefaultGradientColor",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": true,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/font.h:40-69"
         }
       ],
       "marshal": {
@@ -1996,7 +2041,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/font.h:33-57",
+      "export": "core/font.h:40-69",
       "cpp_name": "Font",
       "cpp_parent": "Object",
       "header": "core/font.h",

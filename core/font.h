@@ -22,6 +22,13 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "SDL3/SDL_surface.h"
+#include "SDL3_ttf/SDL_ttf.h"
+
 #include "core/common.h"
 #include "core/refptr.h"
 #include "core/utility.h"
@@ -33,6 +40,7 @@ class Font : public Object {
   /*-export.begin-*/
   Font(std::vector<std::string> names = {}, int32_t size = 24);
   Font(RefPtr<Font> other);
+  ~Font() override = default;
 
   URGE_BINDING(Name : "exist?")
   static bool Existed(std::string name);
@@ -43,8 +51,10 @@ class Font : public Object {
   ATTR(bool, Italic);
   ATTR(bool, Outline);
   ATTR(bool, Shadow);
+  ATTR(bool, Solid);
   ATTR(RefPtr<Color>, Color);
   ATTR(RefPtr<Color>, OutColor);
+  ATTR(RefPtr<Color>, GradientColor);
 
   static ATTR(std::vector<std::string>, DefaultName);
   static ATTR(int32_t, DefaultSize);
@@ -52,15 +62,35 @@ class Font : public Object {
   static ATTR(bool, DefaultItalic);
   static ATTR(bool, DefaultOutline);
   static ATTR(bool, DefaultShadow);
+  static ATTR(bool, DefaultSolid);
   static ATTR(RefPtr<Color>, DefaultColor);
   static ATTR(RefPtr<Color>, DefaultOutColor);
+  static ATTR(RefPtr<Color>, DefaultGradientColor);
   /*-export.end-*/
 
- private:
+  //! Underlying TTF handle of the current name and size, never null in a
+  //! bitmap, which keeps the caller from having to special case a failure.
+  TTF_Font* ttf_font();
+
+  /*! Renders \p text into a freshly allocated surface.
+   *
+   *  \param font_opacity receives the alpha of the text color, which a caller
+   *         applies as a separate opacity when it composites the result, so
+   *         that the color stays intact.
+   *  \returns an owned ABGR8888 surface of straight (not premultiplied) alpha,
+   *           or nullptr when the render failed.
+   */
+  SDL_Surface* RenderText(const std::string& text, uint8_t* font_opacity);
+
+  //! Pixel extent of \p text without rendering it.
+  bool MeasureText(const std::string& text, int32_t* width, int32_t* height);
+
+  //! The face this Font resolved to, mainly for diagnostics.
   std::vector<std::string> name_;
   int32_t size_ = 24;
-  bool bold_ = false, italic_ = false, outline_ = true, shadow_ = false;
-  RefPtr<Color> color_, out_color_;
+  bool bold_ = false, italic_ = false, outline_ = true, shadow_ = false,
+       solid_ = false;
+  RefPtr<Color> color_, out_color_, gradient_color_;
 };
 
 }  // namespace urge
