@@ -506,6 +506,14 @@ rb_enc_init(void)
     ENC_REGISTER(US_ASCII);
 #undef ENC_REGISTER
     enc_table.count = ENCINDEX_BUILTIN_MAX;
+
+    /* The vendored build treats UTF-8 as the process locale. Register the
+     * "locale" and "filesystem" aliases here, at the earliest point the name
+     * table exists, so Encoding.find("locale"/"filesystem") resolves to UTF-8
+     * even though rb_default_external_encoding() no longer falls back to
+     * rb_locale_encoding() (its index is >= 0 from the start). */
+    enc_alias_internal("locale", ENCINDEX_UTF_8);
+    enc_alias_internal("filesystem", ENCINDEX_UTF_8);
 }
 
 rb_encoding *
@@ -1180,10 +1188,9 @@ enc_set_filesystem_encoding(void)
 #if defined NO_LOCALE_CHARMAP
     idx = rb_enc_to_index(rb_default_external_encoding());
 #elif defined _WIN32 || defined __CYGWIN__
-    char cp[sizeof(int) * 8 / 3 + 4];
-    snprintf(cp, sizeof cp, "CP%d", AreFileApisANSI() ? GetACP() : GetOEMCP());
-    idx = rb_enc_find_index(cp);
-    if (idx < 0) idx = rb_ascii8bit_encindex();
+    /* force filesystem encoding to UTF-8 instead of the ANSI/OEM codepage
+     * (CP936 etc.), so Encoding.find("filesystem") matches default_external. */
+    idx = rb_utf8_encindex();
 #else
     idx = rb_enc_to_index(rb_default_external_encoding());
 #endif
@@ -1212,7 +1219,10 @@ struct default_encoding {
     rb_encoding *enc;
 };
 
-static struct default_encoding default_external = {0};
+/* force default external encoding to UTF-8 by default (originally {0} => ASCII-8BIT).
+ * index >= 0 marks it as "already set", so rb_default_external_encoding()
+ * never falls back to rb_locale_encoding(); start it at UTF-8 explicitly. */
+static struct default_encoding default_external = {ENCINDEX_UTF_8};
 
 static int
 enc_set_default_encoding(struct default_encoding *def, VALUE encoding, const char *name)
@@ -1324,7 +1334,11 @@ set_default_external(VALUE klass, VALUE encoding)
     return encoding;
 }
 
-static struct default_encoding default_internal = {-2};
+/* force default internal encoding to UTF-8 as well (originally {-2} => nil,
+ * i.e. "not set"). Since default_external is UTF-8 too, io.c's
+ * rb_io_ext_int_to_encs() takes the "intern == ext => no transcoding" path,
+ * so this does not add transcode overhead. */
+static struct default_encoding default_internal = {ENCINDEX_UTF_8};
 
 rb_encoding *
 rb_default_internal_encoding(void)
@@ -1436,7 +1450,7 @@ VALUE
 rb_locale_charmap(VALUE klass)
 {
 #if defined NO_LOCALE_CHARMAP
-    return rb_usascii_str_new2("ASCII-8BIT");
+    return rb_usascii_str_new2("UTF-8");
 #elif defined _WIN32 || defined __CYGWIN__
     const char *nl_langinfo_codeset(void);
     const char *codeset = nl_langinfo_codeset();
@@ -1444,8 +1458,15 @@ rb_locale_charmap(VALUE klass)
     if (!codeset) {
 	UINT codepage = GetConsoleCP();
 	if(!codepage) codepage = GetACP();
-	snprintf(cp, sizeof(cp), "CP%d", codepage);
-	codeset = cp;
+	/* prefer UTF-8 when the console/ANSI codepage is UTF-8 (65001);
+	 * otherwise report the codepage as-is for compatibility. */
+	if (codepage == 65001) {
+	    codeset = "UTF-8";
+	}
+	else {
+	    snprintf(cp, sizeof(cp), "CP%d", codepage);
+	    codeset = cp;
+	}
     }
     return rb_usascii_str_new2(codeset);
 #elif defined HAVE_LANGINFO_H

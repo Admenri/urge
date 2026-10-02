@@ -217,6 +217,10 @@ BindingMain::BindingMain() {
 
     VALUE script_str =
         rb_str_new(reinterpret_cast<const char*>(buffer.data()), output_size);
+    // Script sources are text: tag them UTF-8 when the decompressed bytes form
+    // valid UTF-8, so Chinese/Japanese literals eval correctly instead of
+    // triggering "invalid byte sequence" against UTF-8 inputs.
+    script_str = TagUTF8IfValid(script_str);
     rb_ary_store(script, 2, script_str);
   }
 

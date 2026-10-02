@@ -10,8 +10,6 @@ namespace binding {
 VALUE g_reset_exception = Qnil;
 VALUE g_rgss_exception = Qnil;
 
-namespace {
-
 // Returns true if every byte of `str` forms a valid UTF-8 sequence. Used to
 // decide whether an untagged (ASCII-8BIT) string is really text that should be
 // re-tagged as UTF-8, as opposed to binary data that must be left alone.
@@ -55,6 +53,8 @@ bool IsValidUTF8(VALUE str) {
   }
   return true;
 }
+
+namespace {
 
 void ForceEncodingUTF8Impl(VALUE obj, std::set<VALUE>& visited) {
   switch (TYPE(obj)) {
@@ -100,6 +100,13 @@ void ForceEncodingUTF8Impl(VALUE obj, std::set<VALUE>& visited) {
 }
 
 }  // namespace
+
+VALUE TagUTF8IfValid(VALUE str) {
+  if (RB_TYPE_P(str, T_STRING) && !OBJ_FROZEN(str) &&
+      rb_enc_get_index(str) != rb_utf8_encindex() && IsValidUTF8(str))
+    rb_enc_associate_index(str, rb_utf8_encindex());
+  return str;
+}
 
 void ForceEncodingUTF8(VALUE obj) {
   std::set<VALUE> visited;

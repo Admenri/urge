@@ -121,7 +121,14 @@ nl_langinfo_codeset(void)
      * *only* interested in locale naming conventions on platforms
      * that do not already provide an nl_langinfo(CODESET) implementation. */
   }
+#if defined _WIN32 || defined __CYGWIN__
+  /* No locale env vars set: default to UTF-8 rather than NULL, so that
+   * rb_locale_encindex() resolves to UTF-8 instead of falling back to
+   * US-ASCII/ASCII-8BIT. */
+  return "UTF-8";
+#else
   return NULL;
+#endif
 }
 
 #ifdef HAVE_LANGINFO_H

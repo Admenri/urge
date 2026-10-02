@@ -238,10 +238,21 @@ inline VALUE WrapStringVector(const std::vector<std::string>& values) {
   return array;
 }
 
+// Returns true if every byte of `str` forms a valid UTF-8 sequence. Used to
+// decide whether an untagged (ASCII-8BIT) string is really text that should be
+// re-tagged as UTF-8, as opposed to binary data that must be left alone.
+bool IsValidUTF8(VALUE str);
+
 // Recursively force every String in an object graph to UTF-8. Strings whose
 // bytes are not valid UTF-8 (binary data) and frozen strings are left as-is.
 // Used on Marshal-loaded game data so script-side text is always UTF-8.
 void ForceEncodingUTF8(VALUE obj);
+
+// Tag `str` as UTF-8 if its bytes form valid UTF-8, otherwise leave its
+// current encoding untouched. Returns the (possibly re-tagged) string. Use on
+// byte buffers that are expected to hold text (e.g. decompressed script
+// sources) without blindly corrupting genuinely binary data.
+VALUE TagUTF8IfValid(VALUE str);
 
 // ---------------------------------------------------------------------------
 // Attribute helpers
