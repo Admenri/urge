@@ -144,9 +144,6 @@ struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     wgpu::RenderPipeline texture_noblend;
     wgpu::RenderPipeline texture_pma;
-    /* The present pipeline, built lazily against the swapchain format of the
-       window, which is only known at present time -- see
-       Graphics::PresentInternal. */
     wgpu::RenderPipeline present;
     wgpu::RenderPipeline color_noblend;
     wgpu::RenderPipeline color_pma;
@@ -155,9 +152,6 @@ struct ShaderSet : public Singleton<ShaderSet> {
     std::map<BlendType, wgpu::RenderPipeline> plane_blends;
     wgpu::RenderPipeline transition_alpha;
     wgpu::RenderPipeline transition_vague;
-    /* The window pipelines: the plain texture shader with the object data of
-       the frame pool bound at set 1 with a dynamic offset, see
-       TextureBaseDynamic. */
     wgpu::RenderPipeline texture_dynamic_noblend;
     wgpu::RenderPipeline texture_dynamic_pma;
     wgpu::RenderPipeline texture_stencil_write;

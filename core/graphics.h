@@ -130,6 +130,11 @@ class Graphics : public Singleton<Graphics> {
 
   FrameController frame_controller_;
 
+  /*! The single quad a transition frame is drawn with, see TransitionBitmap.
+      It is an emitter of its own -- uploaded and drawn every step -- so it
+      neither shares the buffer of the present nor the frame batch. */
+  PrimitiveEmitter quad_emitter_;
+
   struct {
     bool configured = false;
     //! The format the swapchain is configured with, see PresentInternal.

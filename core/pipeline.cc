@@ -447,9 +447,6 @@ ShaderSet::ShaderSet() : shader() {
       primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
-
-  /* The pipelines of a window: the plain texture shader, with the object data
-     of set 1 read out of the frame pool through a dynamic offset. */
   state.texture_dynamic_noblend = shader.texture_base_dynamic.MakeState(
       primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
   state.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(

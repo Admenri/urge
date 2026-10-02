@@ -267,7 +267,87 @@ void Graphics::Transition(int32_t duration,
 void Graphics::TransitionBitmap(int32_t duration,
                                 RefPtr<Bitmap> bitmap,
                                 int32_t vague) {
+  if (!frozen_)
+    return;
+
   brightness_ = 255;
+
+  const RefPtr<Bitmap> frozen_scene = MakeRefCounted<Bitmap>(screen_);
+  const RefPtr<Bitmap> current_scene = SnapToBitmap();
+
+  /* The mapping of a vague transition is the bitmap given by filename, an
+     alpha transition has none and fades one scene into the other, see
+     kFS_TransitionAlpha / kFS_TransitionMap. */
+  const bool mapped = bitmap != nullptr;
+  const wgpu::RenderPipeline pipeline =
+      mapped ? ShaderSet::Get().state.transition_vague
+             : ShaderSet::Get().state.transition_alpha;
+
+  /* Set 2 of a transition shader carries both scenes and, for a vague one, the
+     mapping: it is not the single texture of a render target, so its bind group
+     is built from the layout of the pipeline rather than by a Bitmap. The
+     current scene is re-rendered into the same texture every frame, so the
+     group is built once and keeps pointing at it. */
+  std::vector<std::pair<uint32_t, WBinding>> bindings = {
+      {0, WTextureViewSet(frozen_scene->texture_view())},
+      {1, WSamplerSet(frozen_scene->sampler())},
+      {2, WTextureViewSet(current_scene->texture_view())},
+      {3, WSamplerSet(current_scene->sampler())}};
+  if (mapped) {
+    bindings.push_back({4, WTextureViewSet(bitmap->texture_view())});
+    bindings.push_back({5, WSamplerSet(bitmap->sampler())});
+  }
+  const wgpu::BindGroup scene_textures =
+      CreateWGroup(pipeline.GetBindGroupLayout(2), bindings);
+
+  const int32_t steps = std::max(duration, 1);
+  const float vague_norm = std::clamp(vague, 1, 256) / 256.0f;
+
+  for (int32_t frame = 0; frame < steps; ++frame) {
+    const float progress = frame * (1.0f / duration);
+    const glm::vec4 vertex_color = glm::vec4(vague_norm, 0.0f, 0.0f, progress);
+
+    quad_emitter_.Reset();
+    quad_emitter_.EmitQuad(RectF(0.0f, 0.0f, static_cast<float>(Width()),
+                                 static_cast<float>(Height())),
+                           RectF(0.0f, 0.0f, 1.0f, 1.0f), vertex_color);
+    const std::uint32_t vertex_count = quad_emitter_.Upload();
+
+    auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+    {
+      wgpu::RenderPassColorAttachment color_attachment = {
+          .view = screen_->texture_view(),
+          .loadOp = wgpu::LoadOp::Load,
+          .storeOp = wgpu::StoreOp::Store,
+      };
+      wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
+          .view = screen_->depth_stencil_view(),
+          .depthLoadOp = wgpu::LoadOp::Load,
+          .depthStoreOp = wgpu::StoreOp::Discard,
+          .stencilLoadOp = wgpu::LoadOp::Load,
+          .stencilStoreOp = wgpu::StoreOp::Discard,
+      };
+      wgpu::RenderPassDescriptor pass_desc;
+      pass_desc.colorAttachmentCount = 1;
+      pass_desc.colorAttachments = &color_attachment;
+      pass_desc.depthStencilAttachment = &depth_stencil_attachment;
+      auto pass = encoder.BeginRenderPass(&pass_desc);
+      {
+        pass.SetPipeline(pipeline);
+        pass.SetBindGroup(0, screen_->scene_group(), 0, nullptr);
+        pass.SetBindGroup(1, screen_->object_group(), 0, nullptr);
+        pass.SetBindGroup(2, scene_textures, 0, nullptr);
+        pass.SetVertexBuffer(0, quad_emitter_.buffer(), 0, WGPU_WHOLE_SIZE);
+        pass.Draw(vertex_count, 1, 0, 0);
+      }
+      pass.End();
+    }
+    auto command = encoder.Finish(nullptr);
+    GPUDevice::Get().queue().Submit(1, &command);
+
+    Update();
+  }
+
   frozen_ = false;
 }
 
