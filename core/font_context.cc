@@ -49,8 +49,9 @@ constexpr int32_t kMinFontSize = 6;
 constexpr int32_t kMaxFontSize = 96;
 
 std::string ToLower(std::string value) {
-  std::transform(value.begin(), value.end(), value.begin(),
-                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  std::transform(
+      value.begin(), value.end(), value.begin(),
+      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
   return value;
 }
 
@@ -91,7 +92,8 @@ FontContext::FontContext() {
   // TTF has to be up before anything is opened from it, and the reference
   // runtime does the same.
   if (!TTF_Init()) {
-    throw Exception(Exception::kRGSSError, "TTF_Init failed: {}", SDL_GetError());
+    throw Exception(Exception::kRGSSError, "TTF_Init failed: {}",
+                    SDL_GetError());
   }
 
   // The requested names start out as the RGSS default family
@@ -129,9 +131,12 @@ void FontContext::LoadFontDirectory(const std::string& directory) {
 
   for (const std::string& file : files) {
     const std::string path = directory + file;
-    SDL_IOStream* stream = IOService::Get().OpenReadRaw(path);
-    if (!stream)
+    SDL_IOStream* stream = nullptr;
+    try {
+      stream = IOService::Get().OpenReadRaw(path);
+    } catch (...) {
       continue;
+    }
 
     FontData data = ReadStreamToMemory(stream);
     SDL_CloseIO(stream);
@@ -166,7 +171,8 @@ bool FontContext::FontExists(const std::string& name) const {
   return data_cache_.find(ToLower(name)) != data_cache_.end();
 }
 
-std::vector<std::string> FontContext::ResolveName(const std::string& name) const {
+std::vector<std::string> FontContext::ResolveName(
+    const std::string& name) const {
   if (name.empty())
     return default_name_;
 
@@ -212,13 +218,12 @@ TTF_Font* FontContext::OpenFont(const std::string& name, int32_t size) {
   /* SDL_IOFromConstMem does not own the memory, but TTF_OpenFontIO is told to
      (closeio = true), which is safe because the FontData outlives the handle:
      both live in this cache and are torn down together. */
-  SDL_IOStream* stream = SDL_IOFromConstMem(data_it->second.data,
-                                            static_cast<size_t>(data_it->second.size));
+  SDL_IOStream* stream = SDL_IOFromConstMem(
+      data_it->second.data, static_cast<size_t>(data_it->second.size));
   if (!stream)
     return nullptr;
 
-  TTF_Font* font =
-      TTF_OpenFontIO(stream, true, size * kFontRealScale);
+  TTF_Font* font = TTF_OpenFontIO(stream, true, size * kFontRealScale);
   if (!font)
     LOGGER_ERROR("[Font] Failed to open {}: {}", name, SDL_GetError());
 

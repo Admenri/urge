@@ -44,38 +44,39 @@ Config::Config(std::string inifile) {
     SDL_free(data_ptr);
   }
 
-  rgss_version = parser_.GetInt("Game", "RGSS", rgss_version);
-
-  scripts = parser_.Get("Game", "Scripts", scripts);
-  ReplaceStringWidth(scripts, '\\', '/');
-  title = parser_.Get("Game", "Title", title);
-  rtp = parser_.Get("Game", "RTP", rtp);
-  rtp1 = parser_.Get("Game", "RTP1", rtp);
-  rtp2 = parser_.Get("Game", "RTP2", rtp);
-  rtp3 = parser_.Get("Game", "RTP3", rtp);
+  game.rgss = parser_.GetInt("Game", "RGSS", game.rgss);
+  game.scripts = parser_.Get("Game", "Scripts", game.scripts);
+  ReplaceStringWidth(game.scripts, '\\', '/');
+  game.title = parser_.Get("Game", "Title", game.title);
+  game.rtp = parser_.Get("Game", "RTP", game.rtp);
+  game.rtp1 = parser_.Get("Game", "RTP1", game.rtp);
+  game.rtp2 = parser_.Get("Game", "RTP2", game.rtp);
+  game.rtp3 = parser_.Get("Game", "RTP3", game.rtp);
 
   // Auto-detect the RGSS version from the scripts file extension when
   // it is not explicitly configured (rgss_version == 0).
-  if (rgss_version == 0) {
+  if (game.rgss == 0) {
     std::string ext;
-    auto dot = scripts.find_last_of('.');
+    auto dot = game.scripts.find_last_of('.');
     if (dot != std::string::npos)
-      ext = scripts.substr(dot);
+      ext = game.scripts.substr(dot);
     else
-      ext = scripts;
+      ext = game.scripts;
 
     if (ext == ".rxdata")
-      rgss_version = 1;
+      game.rgss = 1;
     else if (ext == ".rvdata")
-      rgss_version = 2;
+      game.rgss = 2;
     else if (ext == ".rvdata2")
-      rgss_version = 3;
+      game.rgss = 3;
   }
 
-  soundfont = parser_.Get("Audio", "Soundfont", soundfont);
+  audio.soundfont = parser_.Get("Audio", "Soundfont", audio.soundfont);
 
-  width = parser_.GetInt("Window", "Width", xp() ? 640 : 544);
-  height = parser_.GetInt("Window", "Height", xp() ? 480 : 416);
+  window.width = parser_.GetInt("Window", "Width", xp() ? 640 : 544);
+  window.height = parser_.GetInt("Window", "Height", xp() ? 480 : 416);
+
+  gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
 }
 
 }  // namespace urge

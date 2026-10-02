@@ -167,6 +167,7 @@ void ScreenRootNode::PostDraw(DrawParam param) {
 
 Graphics::Graphics()
     : frame_rate_(Config::Get().xp() ? 40 : 60), limiter_(frame_rate_) {
+  auto& config = Config::Get();
   /* SDL_WINDOW_HIGH_PIXEL_DENSITY asks the platform for a back buffer at the
      pixel density of the display: on a 200% scaled screen the window spans the
      same logical size it would at 100% but is backed by twice the pixels, so it
@@ -176,16 +177,16 @@ Graphics::Graphics()
      see PresentInternal. */
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
-  window_ = SDL_CreateWindow(Config::Get().title.c_str(), Config::Get().width,
-                             Config::Get().height, window_flag);
+  window_ = SDL_CreateWindow(config.game.title.c_str(), config.window.width,
+                             config.window.height, window_flag);
   auto dpi = SDL_GetWindowDisplayScale(window_);
-  SDL_SetWindowSize(window_, static_cast<int>(Config::Get().width * dpi),
-                    static_cast<int>(Config::Get().height * dpi));
+  SDL_SetWindowSize(window_, static_cast<int>(config.window.width * dpi),
+                    static_cast<int>(config.window.height * dpi));
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                         SDL_WINDOWPOS_CENTERED);
   SDL_ShowWindow(window_);
 
-  GPUDevice::Reset(new GPUDevice(window_));
+  GPUDevice::Reset(new GPUDevice(window_, config.gfx.backend));
   ShaderSet::Reset(new ShaderSet());
 
   /* The uniform pools and the vertex buffer of a frame outlive the frames, so
@@ -194,7 +195,7 @@ Graphics::Graphics()
   QuadVertexManager::Reset(new QuadVertexManager());
 
   root_ = MakeRefCounted<ScreenRootNode>();
-  ResizeScreen(Config::Get().width, Config::Get().height);
+  ResizeScreen(config.window.width, config.window.height);
 }
 
 Graphics::~Graphics() {

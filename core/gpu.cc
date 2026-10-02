@@ -73,9 +73,25 @@ void InstallWGPULogger() {
 #endif
 }
 
+wgpu::BackendType FromGFXBackend(std::string backend) {
+  if (backend == "d3d11")
+    return wgpu::BackendType::D3D11;
+  if (backend == "d3d12")
+    return wgpu::BackendType::D3D12;
+  if (backend == "metal")
+    return wgpu::BackendType::Metal;
+  if (backend == "vulkan")
+    return wgpu::BackendType::Vulkan;
+  if (backend == "opengl")
+    return wgpu::BackendType::OpenGL;
+  if (backend == "opengles")
+    return wgpu::BackendType::OpenGLES;
+  return wgpu::BackendType::Undefined;
+}
+
 }  // namespace
 
-GPUDevice::GPUDevice(SDL_Window* window) {
+GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
   InstallWGPULogger();
 
   // Instance
@@ -113,12 +129,12 @@ GPUDevice::GPUDevice(SDL_Window* window) {
     surface_ = instance_.CreateSurface(&surface_desc);
   }
 
-  CreateDevice();
+  CreateDevice(backend);
 }
 
-GPUDevice::GPUDevice() : GPUDevice(nullptr) {}
+GPUDevice::GPUDevice() : GPUDevice(nullptr, {}) {}
 
-void GPUDevice::CreateDevice() {
+void GPUDevice::CreateDevice(std::string backend) {
   // Adapter, the callback of a request runs before the call returns
   WGPURequestAdapterCallbackInfo adapter_callback = {};
   adapter_callback.mode = WGPUCallbackMode_AllowProcessEvents;
@@ -131,6 +147,7 @@ void GPUDevice::CreateDevice() {
   adapter_callback.userdata1 = this;
 
   wgpu::RequestAdapterOptions adapter_request;
+  adapter_request.backendType = FromGFXBackend(backend);
   if (surface_ != nullptr)
     adapter_request.compatibleSurface = surface_;
   instance_.RequestAdapter(&adapter_request, adapter_callback);

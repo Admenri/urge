@@ -36,7 +36,7 @@ namespace urge {
 class GPUDevice : public Singleton<GPUDevice> {
  public:
   //! Creates a device for a window, the surface is created from it.
-  GPUDevice(SDL_Window* window);
+  GPUDevice(SDL_Window* window, std::string backend);
   //! Creates a device without a surface, which cannot present.
   GPUDevice();
 
@@ -57,7 +57,7 @@ class GPUDevice : public Singleton<GPUDevice> {
 
  private:
   //! Requests the adapter and the device, with the surface when there is one.
-  void CreateDevice();
+  void CreateDevice(std::string backend);
 
   wgpu::Instance instance_;
   wgpu::Surface surface_;

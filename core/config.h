@@ -33,24 +33,33 @@ class Config : public Singleton<Config> {
  public:
   Config(std::string inifile);
 
-  int32_t rgss_version = 0;
+  struct {
+    int32_t rgss = 0;
+    std::string scripts = "Data/Scripts.rxdata";
+    std::string title = "(*^▽^*)";
+    std::string rtp;
+    std::string rtp1;
+    std::string rtp2;
+    std::string rtp3;
+  } game;
 
-  std::string scripts = "Data/Scripts.rxdata";
-  std::string title = "(*^▽^*)";
-  std::string rtp;
-  std::string rtp1;
-  std::string rtp2;
-  std::string rtp3;
+  struct {
+    std::string soundfont = "Fonts/Default.sf2";
+  } audio;
 
-  std::string soundfont = "Fonts/Default.sf2";
+  struct {
+    int32_t width = 640;
+    int32_t height = 480;
+  } window;
 
-  int32_t width = 640;
-  int32_t height = 480;
+  struct {
+    std::string backend = {};
+  } gfx;
 
  public:
-  bool xp() { return rgss_version == 1; }
-  bool vx() { return rgss_version == 2; }
-  bool vxa() { return rgss_version == 3; }
+  bool xp() { return game.rgss == 1; }
+  bool vx() { return game.rgss == 2; }
+  bool vxa() { return game.rgss == 3; }
 
  private:
   ini::IniFile parser_;

@@ -175,7 +175,7 @@ BindingMain::BindingMain() {
   rb_const_set(rb_mKernel, rb_intern("Window"), window_klass);
 
   rb_const_set(rb_mKernel, rb_intern("RGSS_VERSION"),
-               LONG2NUM(config.rgss_version));
+               LONG2NUM(config.game.rgss));
 
   // RPG database
   const char* rpg_source = config.xp()   ? rpg_rgss1
@@ -186,7 +186,7 @@ BindingMain::BindingMain() {
     throw Exception(Exception::kRGSSError, "failed to load RPG database.");
 
   // Marshal decode
-  VALUE scripts = RGSSLoadData(config.scripts.c_str());
+  VALUE scripts = RGSSLoadData(config.game.scripts.c_str());
   if (!RB_TYPE_P(scripts, T_ARRAY))
     throw Exception(Exception::kRGSSError, "invalid scripts file.");
 

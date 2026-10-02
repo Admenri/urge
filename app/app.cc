@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     auto config = new urge::Config(ini);
     urge::Config::Reset(config);
 
-    auto input = new urge::Input(config->rgss_version);
+    auto input = new urge::Input(config->game.rgss);
     urge::Input::Reset(input);
 
     /* The font service is set up after the load paths are mounted -- it reads
