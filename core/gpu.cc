@@ -156,6 +156,47 @@ void GPUDevice::CreateDevice() {
 #endif
   adapter_.RequestDevice(&device_desc, device_callback);
 
+  // Dev info
+  wgpu::AdapterInfo adapter_info;
+  adapter_.GetInfo(&adapter_info);
+  LOGGER_INFO("[GPU] Device: {} ({:#X})", std::string_view(adapter_info.device),
+              adapter_info.deviceID);
+  LOGGER_INFO("[GPU] Vendor: {} ({:#X})", std::string_view(adapter_info.vendor),
+              adapter_info.vendorID);
+  LOGGER_INFO("[GPU] Description: {}",
+              std::string_view(adapter_info.description));
+
+  // Backend
+  switch (adapter_info.backendType) {
+    case wgpu::BackendType::Null:
+      LOGGER_INFO("[GPU] Backend: Null");
+      break;
+    case wgpu::BackendType::WebGPU:
+      LOGGER_INFO("[GPU] Backend: WebGPU");
+      break;
+    case wgpu::BackendType::D3D11:
+      LOGGER_INFO("[GPU] Backend: D3D11");
+      break;
+    case wgpu::BackendType::D3D12:
+      LOGGER_INFO("[GPU] Backend: D3D12");
+      break;
+    case wgpu::BackendType::Metal:
+      LOGGER_INFO("[GPU] Backend: Metal");
+      break;
+    case wgpu::BackendType::Vulkan:
+      LOGGER_INFO("[GPU] Backend: Vulkan");
+      break;
+    case wgpu::BackendType::OpenGL:
+      LOGGER_INFO("[GPU] Backend: OpenGL");
+      break;
+    case wgpu::BackendType::OpenGLES:
+      LOGGER_INFO("[GPU] Backend: OpenGLES");
+      break;
+    default:
+      LOGGER_WARN("[GPU] Backend: Unknown ({:#X})",
+                  static_cast<uint32_t>(adapter_info.backendType));
+  }
+
   // Queue
   queue_ = device_.GetQueue();
 }

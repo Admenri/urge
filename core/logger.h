@@ -126,8 +126,8 @@ inline void LogWrite(LogLevel level,
                      std::string_view prefix,
                      std::string_view message) {
   static constexpr std::string_view kTags[] = {
-      "[URGE] [TRACE] ", "[URGE] [DEBUG] ", "[URGE] [INFO ] ",
-      "[URGE] [WARN ] ", "[URGE] [ERROR] ",
+      "[URGE] [TRACE] ", "[URGE] [DEBUG] ", "[URGE] [INFO] ",
+      "[URGE] [WARN] ",  "[URGE] [ERROR] ",
   };
   static constexpr std::size_t kTagCount = std::size(kTags);
 
