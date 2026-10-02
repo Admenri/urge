@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowXP  (core/window_xp.h:104-132)
+// WindowXP  (core/window_xp.h:104-128)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WindowXP);
@@ -131,9 +131,6 @@ BINDING_ATTR_INT(WindowXP, urge::WindowXP, BackOpacity);
 // Attribute: contents_opacity (int32_t)
 BINDING_ATTR_INT(WindowXP, urge::WindowXP, ContentsOpacity);
 
-// Attribute: scale (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, Scale);
-
 // Attribute: z (int32_t)
 BINDING_ATTR_INT(WindowXP, urge::WindowXP, Z);
 
@@ -180,8 +177,6 @@ void InitWindowXPBinding() {
   DefineMethod(klass, "back_opacity=", WindowXP_BackOpacityEqual);
   DefineMethod(klass, "contents_opacity", WindowXP_ContentsOpacity);
   DefineMethod(klass, "contents_opacity=", WindowXP_ContentsOpacityEqual);
-  DefineMethod(klass, "scale", WindowXP_Scale);
-  DefineMethod(klass, "scale=", WindowXP_ScaleEqual);
   DefineMethod(klass, "z", WindowXP_Z);
   DefineMethod(klass, "z=", WindowXP_ZEqual);
   InitWindowXPBindingAppend(klass);

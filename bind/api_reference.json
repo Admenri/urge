@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-02T02:16:12Z",
+    "generated_at": "2026-10-02T03:51:05Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -3522,7 +3522,7 @@
           "cpp_type": "bool",
           "ruby_type": "Boolean",
           "static": false,
-          "override": false,
+          "override": true,
           "header_annotation": false,
           "export": "core/tilemap_vx.h:82-100"
         },
@@ -3533,7 +3533,7 @@
           "cpp_type": "int32_t",
           "ruby_type": "Integer",
           "static": false,
-          "override": false,
+          "override": true,
           "header_annotation": false,
           "export": "core/tilemap_vx.h:82-100"
         },
@@ -3735,7 +3735,7 @@
           "cpp_type": "bool",
           "ruby_type": "Boolean",
           "static": false,
-          "override": false,
+          "override": true,
           "header_annotation": false,
           "export": "core/tilemap_xp.h:85-107"
         },
@@ -3746,7 +3746,7 @@
           "cpp_type": "int32_t",
           "ruby_type": "Integer",
           "static": false,
-          "override": false,
+          "override": true,
           "header_annotation": false,
           "export": "core/tilemap_xp.h:85-107"
         },
@@ -4294,11 +4294,11 @@
           "export": "core/window_vx.h:86-118"
         },
         {
-          "name": "scale",
-          "setter": "scale=",
-          "cpp_name": "Scale",
-          "cpp_type": "int32_t",
-          "ruby_type": "Integer",
+          "name": "tone",
+          "setter": "tone=",
+          "cpp_name": "Tone",
+          "cpp_type": "RefPtr<Tone>",
+          "ruby_type": "Tone",
           "static": false,
           "override": false,
           "header_annotation": false,
@@ -4333,7 +4333,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         }
       ],
       "initialize_copy": null,
@@ -4347,7 +4347,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         }
       ],
       "attributes": [
@@ -4360,7 +4360,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "viewport",
@@ -4371,7 +4371,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "windowskin",
@@ -4382,7 +4382,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "contents",
@@ -4393,7 +4393,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "stretch",
@@ -4404,7 +4404,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "cursor_rect",
@@ -4415,7 +4415,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "active",
@@ -4426,7 +4426,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "pause",
@@ -4437,7 +4437,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "x",
@@ -4448,7 +4448,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "y",
@@ -4459,7 +4459,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "width",
@@ -4470,7 +4470,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "height",
@@ -4481,7 +4481,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "ox",
@@ -4492,7 +4492,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "oy",
@@ -4503,7 +4503,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "opacity",
@@ -4514,7 +4514,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "back_opacity",
@@ -4525,7 +4525,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "contents_opacity",
@@ -4536,18 +4536,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
-        },
-        {
-          "name": "scale",
-          "setter": "scale=",
-          "cpp_name": "Scale",
-          "cpp_type": "int32_t",
-          "ruby_type": "Integer",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         },
         {
           "name": "z",
@@ -4556,9 +4545,9 @@
           "cpp_type": "int32_t",
           "ruby_type": "Integer",
           "static": false,
-          "override": false,
+          "override": true,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-132"
+          "export": "core/window_xp.h:104-128"
         }
       ],
       "data_attributes": [],
@@ -4570,7 +4559,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/window_xp.h:104-132",
+      "export": "core/window_xp.h:104-128",
       "cpp_name": "WindowXP",
       "cpp_parent": "Node",
       "header": "core/window_xp.h",

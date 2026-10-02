@@ -114,7 +114,7 @@ class WindowVX : public Node {
   ATTR(int32_t, BackOpacity);
   ATTR(int32_t, ContentsOpacity);
   ATTR(int32_t, Openness);
-  ATTR(int32_t, Scale);
+  ATTR(RefPtr<Tone>, Tone);
   /*-export.end-*/
 
   /*! The reference value the window marks its inner region with, see the
@@ -200,6 +200,7 @@ class WindowVX : public Node {
   int32_t padding_ = 12, padding_bottom_ = 12;
   int32_t opacity_ = 255, back_opacity_ = 192, contents_opacity_ = 255;
   int32_t openness_ = 255;
+  RefPtr<Tone> tone_;
   int32_t scale_ = 2;
 
   int32_t pause_index_ = 0;

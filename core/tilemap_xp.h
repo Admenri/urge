@@ -97,8 +97,8 @@ class TilemapXP : public Node {
   RefPtr<Bitmap> GetAutotile(int32_t index);
 
   ATTR(RefPtr<Viewport>, Viewport);
-  ATTR(bool, Visible);
-  ATTR(int32_t, Z);
+  ATTR(bool, Visible) override;
+  ATTR(int32_t, Z) override;
   ATTR(RefPtr<Table>, MapData);
   ATTR(RefPtr<Table>, FlashData);
   ATTR(RefPtr<Table>, Priorities);

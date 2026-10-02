@@ -107,10 +107,7 @@ class WindowXP : public Node {
 
   void Update();
 
-  /*! Hides the node above the window together with the window itself, see
-      WindowXP::Attr_Visible -- the two are one window, and a hidden window
-      must not leave its contents on the screen. */
-  virtual ATTR(bool, Visible);
+  ATTR(bool, Visible) override;
   ATTR(RefPtr<Viewport>, Viewport);
   ATTR(RefPtr<Bitmap>, Windowskin);
   ATTR(RefPtr<Bitmap>, Contents);
@@ -127,8 +124,7 @@ class WindowXP : public Node {
   ATTR(int32_t, Opacity);
   ATTR(int32_t, BackOpacity);
   ATTR(int32_t, ContentsOpacity);
-  ATTR(int32_t, Scale);
-  ATTR(int32_t, Z);
+  ATTR(int32_t, Z) override;
   /*-export.end-*/
 
  private:

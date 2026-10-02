@@ -10,6 +10,7 @@
 
 #include "binding_bitmap.h"
 #include "binding_rect.h"
+#include "binding_tone.h"
 #include "binding_viewport.h"
 
 #include "core/bitmap.h"
@@ -178,8 +179,8 @@ BINDING_ATTR_INT(WindowVX, urge::WindowVX, ContentsOpacity);
 // Attribute: openness (int32_t)
 BINDING_ATTR_INT(WindowVX, urge::WindowVX, Openness);
 
-// Attribute: scale (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Scale);
+// Attribute: tone (RefPtr<Tone>)
+BINDING_ATTR_OBJECT(WindowVX, urge::WindowVX, Tone, urge::Tone, kToneDataType);
 
 void InitWindowVXBindingAppend(VALUE klass);
 
@@ -231,8 +232,8 @@ void InitWindowVXBinding() {
   DefineMethod(klass, "contents_opacity=", WindowVX_ContentsOpacityEqual);
   DefineMethod(klass, "openness", WindowVX_Openness);
   DefineMethod(klass, "openness=", WindowVX_OpennessEqual);
-  DefineMethod(klass, "scale", WindowVX_Scale);
-  DefineMethod(klass, "scale=", WindowVX_ScaleEqual);
+  DefineMethod(klass, "tone", WindowVX_Tone);
+  DefineMethod(klass, "tone=", WindowVX_ToneEqual);
   InitWindowVXBindingAppend(klass);
 }
 // --- GENERATED END ---

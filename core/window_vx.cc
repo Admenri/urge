@@ -71,7 +71,8 @@ WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
       width_(width),
       height_(height),
       padding_(Config::Get().vxa() ? 12 : 16),
-      padding_bottom_(padding_) {
+      padding_bottom_(padding_),
+      tone_(MakeRefCounted<Tone>()) {
   Node::SetupTrait(this);
   CreateTintBinding();
 }
@@ -306,12 +307,12 @@ ATTR_DEF(WindowVX, int32_t, Openness) {
   }
 }
 
-ATTR_DEF(WindowVX, int32_t, Scale) {
+ATTR_DEF(WindowVX, RefPtr<Tone>, Tone) {
   if (value.has_value()) {
-    scale_ = *value;
+    tone_->Set(*value);
     return std::nullopt;
   } else {
-    return scale_;
+    return tone_;
   }
 }
 
@@ -585,7 +586,8 @@ bool WindowVX::DoDraw(DrawParam param) {
      param of the shader is the tint of the window, i.e. no colour and no
      tone, exactly what the reference renderer sets for it. */
   if (background_slot_.count) {
-    const TintBase::TintParam tint = {};
+    TintBase::TintParam tint = {};
+    tint.blend_tone = tone_->Normalize();
     GPUDevice::Get().queue().WriteBuffer(tint_uniform_, 0, &tint, sizeof(tint));
 
     param->pass.SetPipeline(

@@ -431,15 +431,6 @@ ATTR_DEF(WindowXP, int32_t, ContentsOpacity) {
   }
 }
 
-ATTR_DEF(WindowXP, int32_t, Scale) {
-  if (value.has_value()) {
-    scale_ = *value;
-    return std::nullopt;
-  } else {
-    return scale_;
-  }
-}
-
 void WindowXP::DisposeObject() {
   Node::DisposeObject();
 
