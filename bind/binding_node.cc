@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/node.h:39-49)
+// Node  (core/node.h:38-51)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Node);
@@ -40,6 +40,20 @@ RB_FUNC(Node_initialize) {
     obj = urge::MakeRefCounted<urge::Node>();
   }
   EXC_END;
+  return SetupSelfData(self, obj.get());
+}
+
+RB_FUNC(Node_initialize_copy) {
+  VALUE other;
+  ParseArgs(argc, argv, "o", &other);
+
+  urge::RefPtr<urge::Node> obj = nullptr;
+  EXC_BEGIN {
+    auto other_obj = GetObject<urge::Node>(other, kNodeDataType);
+    obj = urge::MakeRefCounted<urge::Node>(other_obj);
+  }
+  EXC_END;
+
   return SetupSelfData(self, obj.get());
 }
 
@@ -104,6 +118,7 @@ void InitNodeBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kNodeDataType>);
 
   DefineMethod(klass, "initialize", Node_initialize);
+  DefineMethod(klass, "initialize_copy", Node_initialize_copy);
   DefineMethod(klass, "render", Node_Render);
   DefineMethod(klass, "z", Node_Z);
   DefineMethod(klass, "z=", Node_ZEqual);

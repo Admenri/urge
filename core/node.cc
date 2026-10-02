@@ -45,6 +45,8 @@ Node::Node(RefPtr<Node> parent, const ZValue& z)
   Attr_Parent(parent);
 }
 
+Node::Node(RefPtr<Node> parent) : Node(parent, ZValue()) {}
+
 Node::~Node() {
   Disposable::Dispose();
 }

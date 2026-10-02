@@ -34,9 +34,11 @@ class Node : public Disposable {
  public:
   explicit Node();
   Node(RefPtr<Node> parent, const ZValue& z);
-  ~Node() override;
 
   /*-export.begin-*/
+  Node(RefPtr<Node> parent);
+  ~Node() override;
+
   void Render(RefPtr<Bitmap> target, RefPtr<Color> clear = nullptr);
 
   virtual ATTR(int32_t, Z);

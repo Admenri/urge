@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-02T12:36:00Z",
+    "generated_at": "2026-10-02T13:49:15Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -901,10 +901,19 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         }
       ],
-      "initialize_copy": null,
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "parent",
+            "type": "RefPtr<Node>",
+            "default": null
+          }
+        ],
+        "export": "core/node.h:38-51"
+      },
       "instance_methods": [
         {
           "ruby_name": "render",
@@ -926,7 +935,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         }
       ],
       "attributes": [
@@ -939,7 +948,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         },
         {
           "name": "visible",
@@ -950,7 +959,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         },
         {
           "name": "parent",
@@ -961,7 +970,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         },
         {
           "name": "position",
@@ -972,7 +981,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         },
         {
           "name": "quaternion",
@@ -983,7 +992,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         },
         {
           "name": "scale",
@@ -994,7 +1003,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:39-49"
+          "export": "core/node.h:38-51"
         }
       ],
       "data_attributes": [],
@@ -1012,7 +1021,7 @@
           "reason": "internal parameter type: const ZValue&"
         }
       ],
-      "export": "core/node.h:39-49",
+      "export": "core/node.h:38-51",
       "cpp_name": "Node",
       "cpp_parent": "Disposable",
       "header": "core/node.h",
