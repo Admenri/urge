@@ -63,73 +63,75 @@ uint64_t NowNS() {
 
 // -------------------------------------------------------------------------------
 
-FrameController::FrameController() {
-  SetFrameRate(frame_rate_);
+FPSLimiter::FPSLimiter(int frame_rate)
+    : disabled_(
+#if defined(OS_EMSCRIPTEN)
+          true
+#else
+          false
+#endif
+          ),
+      last_tick_count_(SDL_GetPerformanceCounter()),
+      tick_freq_(SDL_GetPerformanceFrequency()),
+      tick_freq_ns_((double)tick_freq_ / 1e9),
+      skip_last_(last_tick_count_),
+      skip_ideal_diff_(0),
+      skip_reset_flag_(false) {
+  SetFrameRate(frame_rate);
 }
 
-void FrameController::SetFrameRate(int32_t frame_rate) {
-  // A rate of zero means the caller asked for no cap at all, every other rate
-  // is clamped so a stray value cannot make the loop spin or stall.
-  frame_rate = std::max(frame_rate, 0);
-  if (frame_rate != 0)
-    frame_rate = std::clamp(frame_rate, kMinFrameRate, kMaxFrameRate);
-
-  frame_rate_ = frame_rate;
-  uncapped_ = frame_rate_ == 0;
-  frame_period_ns_ = uncapped_ ? 0 : 1'000'000'000ull / frame_rate_;
+void FPSLimiter::SetDisabled(bool disable) {
+  disabled_ = disable;
+  if (!disabled_) {
+    last_tick_count_ = SDL_GetPerformanceCounter();
+    skip_last_ = last_tick_count_;
+    skip_ideal_diff_ = 0;
+    skip_reset_flag_ = false;
+  }
 }
 
-void FrameController::SetSkipEnabled(bool enabled) {
-  skip_enabled_ = enabled;
+void FPSLimiter::SetFrameRate(int frame_rate) {
+  ticks_per_frame_ = tick_freq_ / frame_rate;
 }
 
-bool FrameController::BeginFrame() {
-  frame_start_ns_ = NowNS();
-
-  // A frame that started less than a period after the previous one means the
-  // loop is running ahead of its target, which is Delay()'s case to handle and
-  // never a reason to skip. A frame that started later than a period is one the
-  // loop fell behind on, and skipping it is how the loop catches up.
-  bool late = !uncapped_ && last_frame_start_ns_ != 0 &&
-              frame_start_ns_ - last_frame_start_ns_ > frame_period_ns_;
-
-  bool skip = skip_enabled_ && late;
-
-  // The clock is not advanced when the frame is skipped: the next frame should
-  // still be measured against the last one that was actually rendered.
-  if (!skip)
-    last_frame_start_ns_ = frame_start_ns_;
-
-  return skip;
-}
-
-void FrameController::Delay() {
-  if (uncapped_)
+void FPSLimiter::Delay() {
+  if (disabled_)
     return;
 
-  // A start of zero means Reset() was called between BeginFrame() and here, so
-  // there is no frame to pace and the elapsed time would be meaningless.
-  if (frame_start_ns_ == 0)
-    return;
+  {
+    int64_t frame_delta = SDL_GetPerformanceCounter() - last_tick_count_;
+    int64_t delay_tick = ticks_per_frame_ - frame_delta;
 
-  // The budget of the frame is measured from the moment BeginFrame() marked its
-  // start, so the rendering time of the frame is already part of the elapsed
-  // time and only the remainder has to be slept away.
-  uint64_t elapsed = NowNS() - frame_start_ns_;
-  if (elapsed >= frame_period_ns_)
-    return;
+    delay_tick -= skip_ideal_diff_;
+    delay_tick = std::max<int64_t>(0, delay_tick);
 
-  SDL_Delay(static_cast<Uint32>((frame_period_ns_ - elapsed) / 1'000'000));
+    SDL_DelayNS(delay_tick / tick_freq_ns_);
+
+    last_tick_count_ = SDL_GetPerformanceCounter();
+  }
+
+  {
+    uint64_t skip_now = last_tick_count_;
+    int64_t frame_diff = skip_now - skip_last_;
+    skip_last_ = skip_now;
+
+    skip_ideal_diff_ += frame_diff - ticks_per_frame_;
+
+    if (skip_reset_flag_)
+      skip_ideal_diff_ = 0;
+    skip_reset_flag_ = false;
+  }
 }
 
-void FrameController::Reset() {
-  // A zero last_frame_start_ns_ is what BeginFrame() reads as "no previous
-  // frame yet", so the next frame it sees can never be late and is used to seed
-  // the measurement again. Dropping the start of the frame underway matters for
-  // the same reason from the other side: Delay() computes the remainder against
-  // it, and a stale one would report the whole period as already elapsed.
-  frame_start_ns_ = 0;
-  last_frame_start_ns_ = 0;
+bool FPSLimiter::RequireFrameSkip() {
+  if (disabled_)
+    return false;
+  return skip_ideal_diff_ > ticks_per_frame_;
+}
+
+void FPSLimiter::Reset() {
+  if (!disabled_)
+    skip_reset_flag_ = true;
 }
 
 // -------------------------------------------------------------------------------
@@ -163,7 +165,8 @@ void ScreenRootNode::PostDraw(DrawParam param) {
 
 // -------------------------------------------------------------------------------
 
-Graphics::Graphics() {
+Graphics::Graphics()
+    : frame_rate_(Config::Get().xp() ? 40 : 60), limiter_(frame_rate_) {
   /* SDL_WINDOW_HIGH_PIXEL_DENSITY asks the platform for a back buffer at the
      pixel density of the display: on a 200% scaled screen the window spans the
      same logical size it would at 100% but is backed by twice the pixels, so it
@@ -175,8 +178,6 @@ Graphics::Graphics() {
                      SDL_WINDOW_HIGH_PIXEL_DENSITY;
   window_ = SDL_CreateWindow(Config::Get().title.c_str(), Config::Get().width,
                              Config::Get().height, window_flag);
-
-  frame_controller_.SetFrameRate(Config::Get().xp() ? 40 : 60);
 
   GPUDevice::Reset(new GPUDevice(window_));
   ShaderSet::Reset(new ShaderSet());
@@ -204,7 +205,7 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Update() {
-  const bool skip_frame = frame_controller_.BeginFrame();
+  const bool skip_frame = limiter_.RequireFrameSkip();
 
   if (!skip_frame) {
     if (!frozen_)
@@ -213,9 +214,12 @@ void Graphics::Update() {
     ++frame_count_;
   }
 
+  if (skip_frame)
+    limiter_.Reset();
+
   PresentInternal();
 
-  frame_controller_.Delay();
+  limiter_.Delay();
 }
 
 void Graphics::Wait(int32_t duration) {
@@ -358,7 +362,7 @@ RefPtr<Bitmap> Graphics::SnapToBitmap() {
 }
 
 void Graphics::FrameReset() {
-  frame_controller_.Reset();
+  limiter_.Reset();
 }
 
 int32_t Graphics::Width() {
@@ -391,19 +395,20 @@ void Graphics::PlayMovie(std::string filename) {
 
 ATTR_DEF(Graphics, int32_t, FrameRate) {
   if (value.has_value()) {
-    frame_controller_.SetFrameRate(*value);
+    frame_rate_ = std::max(*value, 0);
+    limiter_.SetFrameRate(frame_rate_);
     return std::nullopt;
   } else {
-    return frame_controller_.FrameRate();
+    return frame_rate_;
   }
 }
 
 ATTR_DEF(Graphics, bool, FrameSkip) {
   if (value.has_value()) {
-    frame_controller_.SetSkipEnabled(*value);
+    frame_skip_ = *value;
     return std::nullopt;
   } else {
-    return frame_controller_.SkipEnabled();
+    return frame_skip_;
   }
 }
 

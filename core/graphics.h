@@ -33,43 +33,30 @@
 
 namespace urge {
 
-//! Paces the frame loop of Graphics.
-//!
-//! The controller is told the target frame rate, and splits its job in two
-//! halves that are called on both sides of a frame:
-//!
-//!   * BeginFrame() is called before the frame is rendered. It tracks how much
-//!     time has passed since the previous frame and decides whether the frame
-//!     has to be skipped, which only happens when the previous frame could not
-//!     be presented in time and skipping is enabled.
-//!   * Delay() is called after the frame was presented. It sleeps for the rest
-//!     of the per-frame budget, so the frame rate does not run ahead of the
-//!     target when rendering is faster than the target.
-//!
-//! The two halves are the reason two clocks are involved: the decision of
-//! BeginFrame() is based on the wall clock, while the sleeping of Delay() is
-//! based on the same clock plus the budget of the frame rate.
-class FrameController {
+class FPSLimiter {
  public:
-  FrameController();
+  FPSLimiter(int frame_rate);
 
-  void SetFrameRate(int32_t frame_rate);
-  int32_t FrameRate() const { return frame_rate_; }
+  FPSLimiter(const FPSLimiter&) = delete;
+  FPSLimiter& operator=(const FPSLimiter&) = delete;
 
-  void SetSkipEnabled(bool enabled);
-  bool SkipEnabled() const { return skip_enabled_; }
+  void SetDisabled(bool disable);
+  bool IsDisabled() const { return disabled_; }
 
-  bool BeginFrame();
+  void SetFrameRate(int frame_rate);
   void Delay();
+  bool RequireFrameSkip();
   void Reset();
 
  private:
-  int32_t frame_rate_ = 60;
-  uint64_t frame_period_ns_ = 0;
-  bool uncapped_ = false;
-  bool skip_enabled_ = false;
-  uint64_t frame_start_ns_ = 0;
-  uint64_t last_frame_start_ns_ = 0;
+  bool disabled_;
+  uint64_t last_tick_count_;
+  int64_t ticks_per_frame_;
+  const uint64_t tick_freq_;
+  const double tick_freq_ns_;
+  uint64_t skip_last_;
+  int64_t skip_ideal_diff_;
+  bool skip_reset_flag_;
 };
 
 class ScreenRootNode : public Node {
@@ -125,10 +112,12 @@ class Graphics : public Singleton<Graphics> {
   RefPtr<Bitmap> screen_;
 
   bool frozen_ = false;
+  int32_t frame_rate_ = 60;
   int32_t frame_count_ = 0;
   int32_t brightness_ = 255;
+  bool frame_skip_ = false;
 
-  FrameController frame_controller_;
+  FPSLimiter limiter_;
 
   /*! The single quad a transition frame is drawn with, see TransitionBitmap.
       It is an emitter of its own -- uploaded and drawn every step -- so it
