@@ -365,10 +365,6 @@ void TilemapXP::UpdateViewport() {
   render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
                              static_cast<float>(-display_offset_y));
   render_offset_.y -= static_cast<float>(tilesize_);
-
-  // Apply viewport origin
-  render_offset_.x += static_cast<float>(viewport_ox);
-  render_offset_.y += static_cast<float>(viewport_oy);
 }
 
 void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
