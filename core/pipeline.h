@@ -57,6 +57,15 @@ class TextureBase : public Pipeline {
   TextureBase();
 };
 
+/*! The pipeline of the present pass, see Graphics::PresentInternal. It shares
+    the transform vertex stage of TextureBase but decodes the sampled texel from
+    sRGB back to linear, so the encode of an *Srgb swapchain does not apply a
+    second time and the picture reaches the screen unwashed. */
+class PresentBase : public Pipeline {
+ public:
+  PresentBase();
+};
+
 /*! The plain texture pipeline of the nodes whose object transform is staged in
     the pool of the frame and bound with a dynamic offset: WindowVX and WindowXP
     draw every part of a window -- the frame, the cursor, the contents -- out of
@@ -122,6 +131,7 @@ class TransitionVague : public Pipeline {
 struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     TextureBase texture_base;
+    PresentBase present_base;
     TextureBaseDynamic texture_base_dynamic;
     ColorBase color_base;
     TintBase tint_base;
@@ -134,6 +144,10 @@ struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     wgpu::RenderPipeline texture_noblend;
     wgpu::RenderPipeline texture_pma;
+    /* The present pipeline, built lazily against the swapchain format of the
+       window, which is only known at present time -- see
+       Graphics::PresentInternal. */
+    wgpu::RenderPipeline present;
     wgpu::RenderPipeline color_noblend;
     wgpu::RenderPipeline color_pma;
     std::map<BlendType, wgpu::RenderPipeline> tint_blends;

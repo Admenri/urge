@@ -164,9 +164,19 @@ void ScreenRootNode::PostDraw(DrawParam param) {
 // -------------------------------------------------------------------------------
 
 Graphics::Graphics() {
-  auto window_flag = SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
+  /* SDL_WINDOW_HIGH_PIXEL_DENSITY asks the platform for a back buffer at the
+     pixel density of the display: on a 200% scaled screen the window spans the
+     same logical size it would at 100% but is backed by twice the pixels, so it
+     no longer looks tiny next to the rest of the desktop. The window is sized
+     in logical points; the physical pixel size comes from
+     SDL_GetWindowSizeInPixels() and is what the swapchain is configured with,
+     see PresentInternal. */
+  auto window_flag = SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS |
+                     SDL_WINDOW_HIGH_PIXEL_DENSITY;
   window_ = SDL_CreateWindow(Config::Get().title.c_str(), Config::Get().width,
                              Config::Get().height, window_flag);
+
+  frame_controller_.SetFrameRate(Config::Get().xp() ? 40 : 60);
 
   GPUDevice::Reset(new GPUDevice(window_));
   ShaderSet::Reset(new ShaderSet());
@@ -283,6 +293,13 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
   present_.configured = false;
   screen_ = MakeRefCounted<Bitmap>(width, height);
 
+  /* The window is sized in logical points, so the aspect ratio it is asked to
+     keep is the one of the screen itself: the surface is then backed by whole
+     multiples of the screen and the present quad covers it without distortion,
+     even when the user resizes the window by hand. */
+  SDL_SetWindowAspectRatio(
+      window_, static_cast<float>(width) / static_cast<float>(height),
+      static_cast<float>(width) / static_cast<float>(height));
   SDL_SetWindowSize(window_, width, height);
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                         SDL_WINDOWPOS_CENTERED);
@@ -337,29 +354,72 @@ void Graphics::PresentInternal() {
 
     if (event.type == SDL_EVENT_QUIT)
       throw Exception(Exception::kExitError, {});
+
+    /* A resize of the window changes the size the swapchain is backed by, and
+       WebGPU requires the surface to be reconfigured against it before the
+       next GetCurrentTexture, otherwise the frame is presented at the old
+       size. Only the pixel size matters here: it follows the density of the
+       display, see the window flags in the constructor. */
+    if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
+      present_.configured = false;
   }
 
-  // The surface is configured once and again after the screen was resized, the
-  // size it covers is the one the screen texture is rendered at
+  /* The surface is configured once, and again after the screen or the window
+     was resized. Its size is the physical pixel size of the window, which is
+     larger than the logical size of the screen on a high density display; the
+     screen texture is stretched over it by the present quad. */
   if (!present_.configured) {
+    int pixel_width = Width();
+    int pixel_height = Height();
+    SDL_GetWindowSizeInPixels(window_, &pixel_width, &pixel_height);
+
     wgpu::SurfaceCapabilities capabilities;
     surface.GetCapabilities(GPUDevice::Get().adapter(), &capabilities);
+
+    /* Every render target of the engine stores RGBA8Unorm and holds sRGB
+       encoded bytes, see kFS_PresentBase. Presenting those bytes into an
+       *Srgb swapchain would let the hardware encode them a second time and
+       wash the picture out towards white (the "everything looks too bright"
+       symptom). Preferring an *Srgb target and decoding once in the present
+       fragment stage keeps the two transfers exact inverses, so the pixel is
+       reproduced as authored while staying in the hardware's preferred sRGB
+       pipeline. */
+    present_.format = capabilities.formats[0];
+    for (uint32_t i = 0; i < capabilities.formatCount; ++i) {
+      const auto candidate = capabilities.formats[i];
+      if (candidate == wgpu::TextureFormat::BGRA8UnormSrgb ||
+          candidate == wgpu::TextureFormat::RGBA8UnormSrgb) {
+        present_.format = candidate;
+        break;
+      }
+    }
+    present_.srgb_target =
+        present_.format == wgpu::TextureFormat::BGRA8UnormSrgb ||
+        present_.format == wgpu::TextureFormat::RGBA8UnormSrgb;
 
     surface.Unconfigure();
     wgpu::SurfaceConfiguration configure;
     configure.device = GPUDevice::Get().device();
-    configure.format = capabilities.formats[0];
+    configure.format = present_.format;
     configure.usage = wgpu::TextureUsage::RenderAttachment;
-    configure.width = static_cast<uint32_t>(Width());
-    configure.height = static_cast<uint32_t>(Height());
+    configure.width = static_cast<uint32_t>(pixel_width);
+    configure.height = static_cast<uint32_t>(pixel_height);
     configure.presentMode = wgpu::PresentMode::Fifo;
     surface.Configure(&configure);
 
     wgpu::PrimitiveState primitive;
     primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-    present_.pipeline = ShaderSet::Get().shader.texture_base.MakeState(
-        primitive, std::nullopt,
-        {wgpu::ColorTargetState{.format = configure.format}});
+    /* On an sRGB target the present decodes the encoded texel back to linear so
+       the hardware encode cancels it, see kFS_PresentBase. A non sRGB target
+       has nothing to cancel, so the plain texture stage is used there. */
+    present_.pipeline =
+        present_.srgb_target
+            ? ShaderSet::Get().shader.present_base.MakeState(
+                  primitive, std::nullopt,
+                  {wgpu::ColorTargetState{.format = present_.format}})
+            : ShaderSet::Get().shader.texture_base.MakeState(
+                  primitive, std::nullopt,
+                  {wgpu::ColorTargetState{.format = present_.format}});
 
     present_.configured = true;
   }
@@ -368,10 +428,14 @@ void Graphics::PresentInternal() {
   surface.GetCurrentTexture(&surface_texture);
   auto surface_view = surface_texture.texture.CreateView(nullptr);
 
-  // The emitter owns and uploads the buffer the quad of the present goes into
-  present_.primitive.EmitQuad(RectI(0, 0, surface_texture.texture.GetWidth(),
-                                    surface_texture.texture.GetHeight()),
-                              RectI(0, 0, 1, 1), glm::vec4(1.0f));
+  /* The scene uniform of the screen maps its own logical size over the whole
+     render target, see Bitmap::CreateGroup, so the quad is emitted in screen
+     coordinates: a quad covering the screen covers the surface as well, at any
+     pixel density. Using the surface size here would overshoot whenever the
+     window is backed by more pixels than the screen is wide, which is exactly
+     what the high density flag asks for. */
+  present_.primitive.EmitQuad(RectI(0, 0, Width(), Height()), RectI(0, 0, 1, 1),
+                              glm::vec4(1.0f));
   const std::uint32_t vertex_count = present_.primitive.Upload();
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);

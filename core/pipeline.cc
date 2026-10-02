@@ -66,6 +66,42 @@ void main() {
 }
 )";
 
+/* The fragment stage of the present pass, see Graphics::PresentInternal.
+
+   Every render target of this engine stores RGBA8Unorm, and the authored color
+   values are already sRGB encoded (the source bitmaps come from SDL surfaces
+   whose bytes are sRGB). The swapchain of the window, on the other hand, is
+   usually an *Srgb format on the desktop, so the hardware applies the linear ->
+   sRGB transfer function to whatever the fragment stage writes. Feeding it the
+   already encoded bytes therefore encodes them a second time, which washes the
+   picture out towards white.
+
+   This stage undoes the encoding once -- it decodes the sampled (already
+   encoded) texel back to linear -- so the encode the sRGB target performs
+   cancels out and the pixel reaches the screen exactly as it was authored.
+   The decode is the exact piecewise sRGB EOTF rather than the gamma 2.2
+   approximation, so mid tones stay where the artists put them. */
+static const char kFS_PresentBase[] = R"(#version 450
+layout(location = 0) in vec2 v_texcoord;
+layout(location = 1) in vec4 v_color;
+
+layout(set = 2, binding = 0) uniform texture2D u_texture;
+layout(set = 2, binding = 1) uniform sampler u_sampler;
+
+layout(location = 0) out vec4 o_color;
+
+vec3 srgb_to_linear(vec3 c) {
+  vec3 lo = c / 12.92;
+  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
+  return mix(lo, hi, step(vec3(0.04045), c));
+}
+
+void main() {
+  vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord) * v_color;
+  o_color = vec4(srgb_to_linear(color.rgb), color.a);
+}
+)";
+
 static const char kFS_ColorBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -166,9 +202,6 @@ vec4 apply_tint(vec4 color, vec4 blend_color, vec4 blend_tone) {
 }
 
 void main() {
-  /* The fractional part is what wraps the coordinate over the tile, and it is
-     taken here rather than by the sampler because the address mode of a bitmap
-     clamps: a coordinate outside of the texture reads its edge texel. */
   vec2 texcoord = fract(v_texcoord);
   vec4 color = texture(sampler2D(u_texture, u_sampler), texcoord);
   o_color = apply_tint(color, u_plane.blend_color, u_plane.blend_tone) * v_color;
@@ -334,6 +367,14 @@ wgpu::DepthStencilState* GetDepthStencilState() {
 
 TextureBase::TextureBase()
     : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}) {}
+
+/* ----- PresentBase ----- */
+
+/* The pipeline of the present pass, see Graphics::PresentInternal: the plain
+   transform vertex stage and a fragment stage which cancels the extra sRGB
+   encode of an *Srgb swapchain, see kFS_PresentBase. */
+PresentBase::PresentBase()
+    : Pipeline(kVS_TransformBase, kFS_PresentBase, {{0, 1, 2}}) {}
 
 /*! The same shaders as TextureBase, but the object data of set 1 is staged in
     the pool of the frame and bound with a dynamic offset, which is what the

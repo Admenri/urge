@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-01T15:20:19Z",
+    "generated_at": "2026-10-02T02:16:12Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -332,7 +332,7 @@
     },
     {
       "unsupported": [],
-      "export": "core/graphics.h:91-114",
+      "export": "core/graphics.h:92-115",
       "cpp_name": "Graphics",
       "cpp_parent": "Singleton",
       "header": "core/graphics.h",
@@ -349,7 +349,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "wait",
@@ -366,7 +366,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "fadein",
@@ -383,7 +383,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "fadeout",
@@ -400,7 +400,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "freeze",
@@ -411,7 +411,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "transition",
@@ -438,7 +438,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "transition_bitmap",
@@ -465,7 +465,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "snap_to_bitmap",
@@ -476,7 +476,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_reset",
@@ -487,7 +487,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "width",
@@ -498,7 +498,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "height",
@@ -509,7 +509,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "resize_screen",
@@ -531,7 +531,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "play_movie",
@@ -548,7 +548,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_rate",
@@ -561,7 +561,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_rate=",
@@ -581,7 +581,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_count",
@@ -594,7 +594,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_count=",
@@ -614,7 +614,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "brightness",
@@ -627,7 +627,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "brightness=",
@@ -647,7 +647,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_skip",
@@ -660,7 +660,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         },
         {
           "ruby_name": "frame_skip=",
@@ -680,7 +680,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics.h:91-114"
+          "export": "core/graphics.h:92-115"
         }
       ]
     },

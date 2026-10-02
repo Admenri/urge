@@ -29,6 +29,7 @@
 #include "core/node.h"
 #include "core/object.h"
 #include "core/primitive.h"
+#include "core/shader.h"
 
 namespace urge {
 
@@ -131,6 +132,10 @@ class Graphics : public Singleton<Graphics> {
 
   struct {
     bool configured = false;
+    //! The format the swapchain is configured with, see PresentInternal.
+    wgpu::TextureFormat format = wgpu::TextureFormat::Undefined;
+    //! Whether \c format is an *Srgb format, which the present shader cancels.
+    bool srgb_target = false;
     wgpu::RenderPipeline pipeline;
     PrimitiveEmitter primitive;
   } present_;
