@@ -22,3 +22,6 @@
 [submodule "third_party/SPIRV-Tools"]
 	path = third_party/SPIRV-Tools
 	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "third_party/SDL_ttf"]
+	path = third_party/SDL_ttf
+	url = https://github.com/libsdl-org/SDL_ttf
