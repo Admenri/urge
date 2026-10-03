@@ -78,6 +78,21 @@ int main(int argc, char* argv[]) {
     auto config = new urge::Config(ini);
     urge::Config::Reset(config);
 
+// RTP reading
+#if defined(_WIN32)
+    auto add_rtp = [&](std::string key) {
+      auto rtp_path = platform::win32::GetRTPPath(config->game.rgss, key);
+      if (rtp_path.has_value()) {
+        io->AddLoadPath(rtp_path.value(), "/");
+        LOGGER_INFO("[RTP] Path: {}", rtp_path.value());
+      }
+    };
+    add_rtp(config->game.rtp);
+    add_rtp(config->game.rtp1);
+    add_rtp(config->game.rtp2);
+    add_rtp(config->game.rtp3);
+#endif  // _WIN32
+
     auto input = new urge::Input(config->game.rgss);
     urge::Input::Reset(input);
 
