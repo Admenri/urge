@@ -102,6 +102,7 @@ class Graphics : public Singleton<Graphics> {
   /*-export.end-*/
 
   RefPtr<ScreenRootNode> root() { return root_; }
+  SDL_Window* window() const { return window_; }
 
  private:
   friend class ScreenRootNode;

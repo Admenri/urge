@@ -32,6 +32,7 @@
 #include "binding_audio.h"
 #include "binding_graphics.h"
 #include "binding_input.h"
+#include "binding_mouse.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -84,6 +85,7 @@ void InitBindings() {
   InitAudioBinding();
   InitGraphicsBinding();
   InitInputBinding();
+  InitMouseBinding();
 }
 // --- GENERATED END ---
 

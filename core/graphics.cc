@@ -38,6 +38,7 @@
 #include "core/gpu.h"
 #include "core/input.h"
 #include "core/logger.h"
+#include "core/mouse.h"
 #include "core/pipeline.h"
 #include "core/primitive.h"
 #include "core/uniform.h"
@@ -437,6 +438,7 @@ void Graphics::PresentInternal() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     Input::Get().ProcessEvents(&event);
+    Mouse::Get().ProcessEvents(&event);
 
     if (event.type == SDL_EVENT_QUIT)
       throw Exception(Exception::kExitError, {});

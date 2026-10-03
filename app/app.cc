@@ -40,6 +40,7 @@
 #include "core/graphics.h"
 #include "core/input.h"
 #include "core/logger.h"
+#include "core/mouse.h"
 #include "core/plane.h"
 #include "core/primitive.h"
 #include "core/sprite.h"
@@ -80,6 +81,12 @@ int main(int argc, char* argv[]) {
     auto input = new urge::Input(config->game.rgss);
     urge::Input::Reset(input);
 
+    /* The mouse is created before the window exists: it reads the window of
+       Graphics lazily, when a query or a warp runs, so it needs nothing of the
+       window to be constructed, see Mouse. */
+    auto mouse = new urge::Mouse();
+    urge::Mouse::Reset(mouse);
+
     /* The font service is set up after the load paths are mounted -- it reads
        the font directory off them -- and before anything that can draw text. */
     auto font_context = new urge::FontContext();
@@ -100,6 +107,7 @@ int main(int argc, char* argv[]) {
 
   urge::Graphics::Reset(nullptr);
   urge::FontContext::Reset(nullptr);
+  urge::Mouse::Reset(nullptr);
   urge::Input::Reset(nullptr);
   urge::Config::Reset(nullptr);
   urge::IOService::Reset(nullptr);

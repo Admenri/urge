@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-03T05:27:31Z",
+    "generated_at": "2026-10-03T06:48:24Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -23,6 +23,7 @@
       "core/inirw.h",
       "core/input.h",
       "core/logger.h",
+      "core/mouse.h",
       "core/node.h",
       "core/object.h",
       "core/palette.h",
@@ -848,6 +849,273 @@
           ],
           "header_annotation": false,
           "export": "core/input.h:55-70"
+        }
+      ]
+    },
+    {
+      "unsupported": [],
+      "export": "core/mouse.h:85-110",
+      "cpp_name": "Mouse",
+      "cpp_parent": "Singleton",
+      "header": "core/mouse.h",
+      "kind": "module",
+      "name": "Mouse",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "x",
+          "cpp_name": "X",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "y",
+          "cpp_name": "Y",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "set_position",
+          "cpp_name": "SetPosition",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "down?",
+          "cpp_name": "IsDown",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "up?",
+          "cpp_name": "IsUp",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "double?",
+          "cpp_name": "IsDouble",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "press?",
+          "cpp_name": "IsPress",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "move?",
+          "cpp_name": "IsMove",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "scroll_x",
+          "cpp_name": "ScrollX",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "scroll_y",
+          "cpp_name": "ScrollY",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "set_cursor",
+          "cpp_name": "SetCursor",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "image",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            },
+            {
+              "name": "hot_x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "hot_y",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "capture",
+          "cpp_name": "Capture",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "capture=",
+          "cpp_name": "Capture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "visible",
+          "cpp_name": "Visible",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:85-110"
+        },
+        {
+          "ruby_name": "visible=",
+          "cpp_name": "Visible",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:85-110"
         }
       ]
     }
