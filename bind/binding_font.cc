@@ -39,13 +39,15 @@ RB_FUNC(Font_initialize) {
       // initialize(names)
       VALUE names_val;
       ParseArgs(argc, argv, "o", &names_val);
-      obj = urge::MakeRefCounted<urge::Font>(GetStringVector(names_val));
+      obj = urge::MakeRefCounted<urge::Font>(
+          GetVectorOf<std::string>(names_val));
     } else if (argc == 2) {
       // initialize(names, size)
       VALUE names_val;
       int size;
       ParseArgs(argc, argv, "oi", &names_val, &size);
-      obj = urge::MakeRefCounted<urge::Font>(GetStringVector(names_val), size);
+      obj = urge::MakeRefCounted<urge::Font>(
+          GetVectorOf<std::string>(names_val), size);
     } else {
       rb_raise(rb_eArgError, "%s", "wrong number of arguments");
     }
@@ -81,7 +83,7 @@ RB_FUNC(Font_Existed) {
 }
 
 // Attribute: name (std::vector<std::string>)
-BINDING_ATTR_STRINGVECTOR(Font, urge::Font, Name);
+BINDING_ATTR_VECTOR(Font, urge::Font, Name, std::string);
 
 // Attribute: size (int32_t)
 BINDING_ATTR_INT(Font, urge::Font, Size);
@@ -115,7 +117,7 @@ BINDING_ATTR_OBJECT(Font,
                     kColorDataType);
 
 // Class attribute: default_name (std::vector<std::string>)
-BINDING_CLASS_ATTR_STRINGVECTOR(Font, urge::Font, DefaultName);
+BINDING_CLASS_ATTR_VECTOR(Font, urge::Font, DefaultName, std::string);
 
 // Class attribute: default_size (int32_t)
 BINDING_CLASS_ATTR_INT(Font, urge::Font, DefaultSize);

@@ -138,10 +138,54 @@ SCALAR_TYPE_FORMAT = {
     "std::string": "s",
     "const char*": "z",
     "char*": "z",
-    "std::vector<std::string>": "o",
 }
 
 REFPTR_RE = re.compile(r"^RefPtr<\s*(?P<inner>[\w:]+)\s*>$")
+VECTOR_RE = re.compile(r"^std::vector<\s*(?P<inner>.+?)\s*>$")
+
+# `std::vector<T>` crosses the boundary as a Ruby Array, so whether one is
+# bindable turns on its element: `T` has to be a type the glue holds an element
+# codec for (`VectorCodec`, cruby_utils.h).  The table maps the element spelling
+# to the canonical C++ type that codec is instantiated with -- `int` and
+# `unsigned int` are the same type as the fixed width ones on every platform
+# this engine builds for, and the C++ family keeps exactly one specialization
+# per element, so the two spellings share one.
+#
+# `bool` is absent on purpose: `std::vector<bool>` is a packed bitset whose
+# element is a proxy rather than a `bool`, so it is not an interchangeable
+# container.  A `std::vector` of anything else -- `RefPtr<T>`, `glm::vec2`, a
+# nested vector -- is left unbound, the same as any other internal type.
+#
+# `generate_binding.py` mirrors this list in `VECTOR_CODECS`; a new element has
+# to be added in both places, plus a `VectorCodec` specialization on the glue.
+VECTOR_ELEMENTS = {
+    "int8_t": "int8_t",
+    "int16_t": "int16_t",
+    "int32_t": "int32_t",
+    "int": "int32_t",
+    "uint8_t": "uint8_t",
+    "uint16_t": "uint16_t",
+    "uint32_t": "uint32_t",
+    "unsigned int": "uint32_t",
+    "int64_t": "int64_t",
+    "uint64_t": "uint64_t",
+    "float": "float",
+    "double": "double",
+    "std::string": "std::string",
+}
+
+# The Ruby documentation type of one vector element.
+VECTOR_RUBY_ELEMENTS = {
+    "float": "Float",
+    "double": "Float",
+    "std::string": "String",
+}
+
+
+def vector_element(cpp_type: str) -> Optional[str]:
+    """The element of a `std::vector<T>`, or None when the type is not one."""
+    m = VECTOR_RE.match(cpp_type.strip())
+    return m.group("inner") if m else None
 
 # Documentation level Ruby types (the IR is also the API reference source).
 RUBY_TYPE_MAP = {
@@ -162,7 +206,6 @@ RUBY_TYPE_MAP = {
     "const char*": "String",
     "char*": "String",
     "void*": "Integer",
-    "std::vector<std::string>": "Array<String>",
 }
 
 
@@ -273,7 +316,10 @@ ANNOTATION_NAME_RE = re.compile(r"\bName\s*:\s*\"(?P<name>[^\"]*)\"")
 
 def is_bindable_type(cpp_type: str) -> bool:
     t = cpp_type.strip()
-    return t in SCALAR_TYPE_FORMAT or bool(REFPTR_RE.match(t))
+    if t in SCALAR_TYPE_FORMAT or REFPTR_RE.match(t):
+        return True
+    element = vector_element(t)
+    return element is not None and element in VECTOR_ELEMENTS
 
 
 def refptr_inner(cpp_type: str) -> Optional[str]:
@@ -286,6 +332,9 @@ def map_ruby_type(cpp_type: str) -> str:
     t = cpp_type.strip()
     if t in RUBY_TYPE_MAP:
         return RUBY_TYPE_MAP[t]
+    element = vector_element(t)
+    if element is not None and element in VECTOR_ELEMENTS:
+        return "Array<" + VECTOR_RUBY_ELEMENTS.get(element, "Integer") + ">"
     inner = refptr_inner(t)
     if inner:
         return inner.split("::")[-1]

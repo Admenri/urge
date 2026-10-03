@@ -69,6 +69,36 @@ RB_FUNC(Effect_initialize_copy) {
   return SetupSelfData(self, obj.get());
 }
 
+RB_FUNC(Effect_SetFloat) {
+  auto* self_obj = GetSelfData<urge::Effect>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    uint32_t slot;
+    VALUE data_val;
+    ParseArgs(argc, argv, "uo", &slot, &data_val);
+
+    self_obj->SetFloat(slot, GetVectorOf<float>(data_val));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Effect_SetInt) {
+  auto* self_obj = GetSelfData<urge::Effect>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    uint32_t slot;
+    VALUE data_val;
+    ParseArgs(argc, argv, "uo", &slot, &data_val);
+
+    self_obj->SetInt(slot, GetVectorOf<int32_t>(data_val));
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(Effect_SetTexture) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
@@ -124,6 +154,8 @@ void InitEffectBinding() {
 
   DefineMethod(klass, "initialize", Effect_initialize);
   DefineMethod(klass, "initialize_copy", Effect_initialize_copy);
+  DefineMethod(klass, "set_float", Effect_SetFloat);
+  DefineMethod(klass, "set_int", Effect_SetInt);
   DefineMethod(klass, "set_texture", Effect_SetTexture);
   DefineMethod(klass, "set_sampler", Effect_SetSampler);
   DefineMethod(klass, "set_block", Effect_SetBlock);

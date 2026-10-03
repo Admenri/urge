@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cctype>
+#include <cstddef>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -234,13 +235,89 @@ inline void ProcessException(const urge::Exception& exception) {
     ProcessException(exception);             \
   }
 
-// Utils
-inline std::vector<std::string> GetStringVector(VALUE value) {
+// ---------------------------------------------------------------------------
+// std::vector<T>
+//
+// A `std::vector<T>` crosses the boundary as a Ruby Array of its elements.  The
+// element codec is the only part that varies, so it is one trait with a
+// `From`/`To` pair per element type, and `GetVectorOf` / `WrapVectorOf` are the
+// two directions built on it: the generated glue names the type and nothing
+// else (`GetVectorOf<int32_t>(value)` in, `WrapVectorOf<int32_t>(v)` out).
+//
+// `std::string` is the one element that is not a number, and it keeps two
+// behaviours the numeric elements do not have -- a bare String stands in for a
+// one element Array, and a wrong element is told apart from a wrong container
+// -- so it specializes the reader as well as the trait.
+//
+// `bool` is deliberately absent: `std::vector<bool>` is a packed bitset whose
+// element is a proxy rather than a `bool`, so it is not an interchangeable
+// container.  Any element without a `VectorCodec` is not bindable at all, which
+// is what keeps a `std::vector` of something unmarshalable out by accident.
+// ---------------------------------------------------------------------------
+
+/*! Converts one element of a `std::vector<Ty>` in both directions.  Only the
+    specializations below exist; `gen_api_json.py` mirrors the list in
+    `VECTOR_ELEMENTS`, so a new element has to be added in both places. */
+template <typename Ty>
+struct VectorCodec;
+
+//! Reads `value` as `std::vector<Ty>`; `nil` reads as an empty vector.
+template <typename Ty>
+inline std::vector<Ty> GetVectorOf(VALUE value) {
+  std::vector<Ty> result;
+  if (NIL_P(value))
+    return result;
+  if (!RB_TYPE_P(value, T_ARRAY))
+    rb_raise(rb_eTypeError, "%s", "expected Array");
+  result.reserve(static_cast<std::size_t>(RARRAY_LEN(value)));
+  for (long i = 0; i < RARRAY_LEN(value); ++i)
+    result.push_back(VectorCodec<Ty>::From(rb_ary_entry(value, i)));
+  return result;
+}
+
+//! Writes `values` as a Ruby Array of `Ty`.
+template <typename Ty>
+inline VALUE WrapVectorOf(const std::vector<Ty>& values) {
+  VALUE array = rb_ary_new2(static_cast<long>(values.size()));
+  for (const Ty& value : values)
+    rb_ary_push(array, VectorCodec<Ty>::To(value));
+  return array;
+}
+
+/*! Defines the element codec of one `std::vector<Ty>`.  `FromRuby` and `ToRuby`
+    are spelled out with the element named `value`, so a codec whose conversion
+    is not a plain `NUM2*`/`*2NUM` pair reads the same way. */
+#define DEFINE_VECTOR_CODEC(Ty, FromRuby, ToRuby)                      \
+  template <>                                                          \
+  struct VectorCodec<Ty> {                                             \
+    static Ty From(VALUE value) { return static_cast<Ty>(FromRuby); }  \
+    static VALUE To(Ty value) { return (ToRuby); }                     \
+  }
+
+DEFINE_VECTOR_CODEC(int8_t, NUM2INT(value), INT2NUM(value));
+DEFINE_VECTOR_CODEC(int16_t, NUM2INT(value), INT2NUM(value));
+DEFINE_VECTOR_CODEC(int32_t, NUM2INT(value), INT2NUM(value));
+DEFINE_VECTOR_CODEC(uint8_t, NUM2UINT(value), UINT2NUM(value));
+DEFINE_VECTOR_CODEC(uint16_t, NUM2UINT(value), UINT2NUM(value));
+DEFINE_VECTOR_CODEC(uint32_t, NUM2UINT(value), UINT2NUM(value));
+DEFINE_VECTOR_CODEC(int64_t, NUM2LL(value), LL2NUM(value));
+DEFINE_VECTOR_CODEC(uint64_t, NUM2ULL(value), ULL2NUM(value));
+DEFINE_VECTOR_CODEC(float, NUM2DBL(value), rb_float_new(value));
+DEFINE_VECTOR_CODEC(double, NUM2DBL(value), rb_float_new(value));
+DEFINE_VECTOR_CODEC(std::string,
+                    std::string(StringValueCStr(value)),
+                    rb_enc_str_new(value.c_str(),
+                                   static_cast<long>(value.size()),
+                                   rb_utf8_encoding()));
+
+//! The string vector, which also takes a bare String for a one element vector.
+template <>
+inline std::vector<std::string> GetVectorOf<std::string>(VALUE value) {
   std::vector<std::string> result;
   if (NIL_P(value))
     return result;
   if (RB_TYPE_P(value, T_STRING)) {
-    result.emplace_back(StringValueCStr(value));
+    result.push_back(VectorCodec<std::string>::From(value));
     return result;
   }
   if (!RB_TYPE_P(value, T_ARRAY))
@@ -249,18 +326,9 @@ inline std::vector<std::string> GetStringVector(VALUE value) {
     VALUE item = rb_ary_entry(value, i);
     if (!RB_TYPE_P(item, T_STRING))
       rb_raise(rb_eTypeError, "%s", "expected String elements");
-    result.emplace_back(StringValueCStr(item));
+    result.push_back(VectorCodec<std::string>::From(item));
   }
   return result;
-}
-
-inline VALUE WrapStringVector(const std::vector<std::string>& values) {
-  VALUE array = rb_ary_new2(static_cast<long>(values.size()));
-  for (const auto& value : values)
-    rb_ary_push(array,
-                rb_enc_str_new(value.c_str(), static_cast<long>(value.size()),
-                               rb_utf8_encoding()));
-  return array;
 }
 
 // Returns true if every byte of `str` forms a valid UTF-8 sequence. Used to
@@ -349,25 +417,28 @@ VALUE TagUTF8IfValid(VALUE str);
     return Qnil;                                       \
   }
 
-#define BINDING_ATTR_STRINGVECTOR(ty, selfty, cap)          \
-  RB_FUNC(ty##_##cap) {                                     \
-    auto* self_obj = GetSelfData<selfty>(self);             \
-    EXC_BEGIN {                                             \
-      return WrapStringVector(*self_obj->Attr_##cap());      \
-    }                                                       \
-    EXC_END;                                                \
-    return Qnil;                                            \
-  }                                                         \
-  RB_FUNC(ty##_##cap##Equal) {                              \
-    auto* self_obj = GetSelfData<selfty>(self);             \
-    VALUE value;                                            \
-    ParseArgs(argc, argv, "o", &value);                     \
-    std::vector<std::string> strings = GetStringVector(value); \
-    EXC_BEGIN {                                             \
-      self_obj->Attr_##cap(strings);                         \
-    }                                                       \
-    EXC_END;                                                \
-    return Qnil;                                            \
+// Vector attribute, the field being a `std::vector<elem>`.  The reader runs
+// before `EXC_BEGIN` on purpose: it raises through `rb_raise`, which longjmps
+// past C++ and would skip the destructors of anything alive in the try block.
+#define BINDING_ATTR_VECTOR(ty, selfty, cap, elem)        \
+  RB_FUNC(ty##_##cap) {                                   \
+    auto* self_obj = GetSelfData<selfty>(self);           \
+    EXC_BEGIN {                                           \
+      return WrapVectorOf<elem>(*self_obj->Attr_##cap()); \
+    }                                                     \
+    EXC_END;                                              \
+    return Qnil;                                          \
+  }                                                       \
+  RB_FUNC(ty##_##cap##Equal) {                            \
+    auto* self_obj = GetSelfData<selfty>(self);           \
+    VALUE value;                                          \
+    ParseArgs(argc, argv, "o", &value);                   \
+    std::vector<elem> items = GetVectorOf<elem>(value);   \
+    EXC_BEGIN {                                           \
+      self_obj->Attr_##cap(items);                        \
+    }                                                     \
+    EXC_END;                                              \
+    return Qnil;                                          \
   }
 
 // Object attribute holding a value the class itself owns: the wrapper is a
@@ -480,10 +551,10 @@ VALUE TagUTF8IfValid(VALUE str);
     return Qnil;                                        \
   }
 
-#define BINDING_CLASS_ATTR_STRINGVECTOR(ty, selfty, cap)      \
+#define BINDING_CLASS_ATTR_VECTOR(ty, selfty, cap, elem)      \
   RB_FUNC(ty##_##cap) {                                       \
     EXC_BEGIN {                                               \
-      return WrapStringVector(*selfty::Attr_##cap());          \
+      return WrapVectorOf<elem>(*selfty::Attr_##cap());       \
     }                                                         \
     EXC_END;                                                  \
     return Qnil;                                              \
@@ -491,9 +562,9 @@ VALUE TagUTF8IfValid(VALUE str);
   RB_FUNC(ty##_##cap##Equal) {                                \
     VALUE value;                                              \
     ParseArgs(argc, argv, "o", &value);                       \
-    std::vector<std::string> strings = GetStringVector(value); \
+    std::vector<elem> items = GetVectorOf<elem>(value);       \
     EXC_BEGIN {                                               \
-      selfty::Attr_##cap(strings);                             \
+      selfty::Attr_##cap(items);                              \
     }                                                         \
     EXC_END;                                                  \
     return Qnil;                                              \

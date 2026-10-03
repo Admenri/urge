@@ -99,6 +99,53 @@ void Init%sBinding();
 }  // namespace binding
 """
 
+VECTOR_RE = re.compile(r"^std::vector<\s*(?P<inner>.+?)\s*>$")
+
+# `std::vector<T>` -> the canonical C++ element the codec template
+# (`GetVectorOf` / `WrapVectorOf`, cruby_utils.h) is instantiated with.  `int`
+# and `unsigned int` map onto the fixed width types: on every platform this
+# engine builds for they are the same type, and the C++ family keeps exactly one
+# specialization per element.  `std::string` is a codec like any other here --
+# the glue side is where its two extra behaviours live (a bare String stands in
+# for a one element Array, and a wrong element is reported apart from a wrong
+# container), so nothing about it shows up in this table or below.
+#
+# `gen_api_json.py` mirrors the list in `VECTOR_ELEMENTS`; a new element has to
+# be added in both places, plus a `VectorCodec` specialization on the glue.
+VECTOR_ELEMENTS = {
+    "int8_t": "int8_t",
+    "int16_t": "int16_t",
+    "int32_t": "int32_t",
+    "int": "int32_t",
+    "uint8_t": "uint8_t",
+    "uint16_t": "uint16_t",
+    "uint32_t": "uint32_t",
+    "unsigned int": "uint32_t",
+    "int64_t": "int64_t",
+    "uint64_t": "uint64_t",
+    "float": "float",
+    "double": "double",
+    "std::string": "std::string",
+}
+
+
+def vector_element(cpp_type: str) -> Optional[str]:
+    """The element of a `std::vector<T>`, or None when the type is not one."""
+    m = VECTOR_RE.match(cpp_type.strip())
+    return m.group("inner") if m else None
+
+
+def vector_codec(cpp_type: str) -> Optional[str]:
+    """The canonical C++ element of a bindable `std::vector<T>`, else None.
+
+    `None` covers both "not a vector" and "a vector of something with no
+    element codec", which is the same answer for every caller here: the
+    declaration is not bindable and `gen_api_json.py` already dropped it.
+    """
+    element = vector_element(cpp_type)
+    return VECTOR_ELEMENTS.get(element) if element else None
+
+
 # Local storage for every C++ parameter type the glue understands:
 #   type -> (ParseArgs format character, local C++ type, call expression)
 # `{n}` is the local variable name.  A type missing from this table marks the
@@ -120,8 +167,16 @@ SCALAR_PARAMS = {
     "std::string": ("s", "std::string", "{n}"),
     "const char*": ("z", "const char*", "{n}"),
     "char*": ("z", "const char*", "{n}"),
-    "std::vector<std::string>": ("o", "VALUE", "GetStringVector({n})"),
 }
+
+# A vector is read as a whole from its VALUE, so `o` is the format for all of
+# them and only the element codec differs.
+for _element, _canonical in VECTOR_ELEMENTS.items():
+    SCALAR_PARAMS["std::vector<%s>" % _element] = (
+        "o",
+        "VALUE",
+        "GetVectorOf<%s>({n})" % _canonical,
+    )
 
 # C++ integral return type -> Ruby number constructor.
 INT_RETURNS = {
@@ -307,12 +362,22 @@ def emit_call(call: str, indent: str, width: int = 80) -> list[str]:
     current = indent + head
     for i, arg in enumerate(args):
         piece = arg.strip() + ("," if i + 1 < len(args) else ");")
-        separator = "" if current.endswith("(") else " "
-        if not current.endswith("(") and len(current) + len(separator) + len(piece) > width:
+        if current.endswith("("):
+            # The head line has not taken an argument yet.  It keeps the first
+            # one while that fits, and otherwise breaks right after the
+            # parenthesis -- the shape the single argument case above uses --
+            # rather than overflowing, which is what a head long enough to fill
+            # the line on its own (a nested call as the first operand) would do.
+            if len(current) + len(piece) <= width:
+                current = current + piece
+            else:
+                lines.append(current)
+                current = continuation + piece
+        elif len(current) + 1 + len(piece) > width:
             lines.append(current)
             current = continuation + piece
         else:
-            current = current + separator + piece
+            current = current + " " + piece
     lines.append(current)
     return lines
 
@@ -472,8 +537,9 @@ def emit_return(cpp_type: str, call: str, indent: str) -> list[str]:
             indent + "                     static_cast<long>(result.size()),",
             indent + "                     rb_utf8_encoding());",
         ]
-    if cpp_type == "std::vector<std::string>":
-        return [indent + "return WrapStringVector(%s);" % call]
+    element = vector_codec(cpp_type)
+    if element is not None:
+        return [indent + "return WrapVectorOf<%s>(%s);" % (element, call)]
     inner = refptr_inner(cpp_type)
     if inner is not None:
         return [
@@ -699,14 +765,19 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
             macro, owner, owner, name, inner, inner,
         )
     prefix = "BINDING_CLASS_ATTR" if static else "BINDING_ATTR"
+    # A vector attribute names its element as a fourth argument, so it does not
+    # go through the one suffix per type below.
+    element = vector_codec(cpp_type)
+    if element is not None:
+        return "%s_VECTOR(%s, urge::%s, %s, %s);" % (
+            prefix, owner, owner, name, element,
+        )
     if cpp_type in INT_RETURNS:
         suffix = "INT"
     elif cpp_type in ("float", "double"):
         suffix = "FLOAT"
     elif cpp_type == "bool":
         suffix = "BOOL"
-    elif cpp_type == "std::vector<std::string>":
-        suffix = "STRINGVECTOR"
     else:
         raise ValueError("no attribute macro for %r" % cpp_type)
     return "%s_%s(%s, urge::%s, %s);" % (prefix, suffix, owner, owner, name)
@@ -856,16 +927,17 @@ def emit_module_attribute(klass: str, fn: dict) -> list[str]:
     symbol = "%s_%s" % (klass, fn["cpp_name"])
     if fn.get("setter"):
         inner = refptr_inner(cpp_type)
+        element = vector_codec(cpp_type)
         if inner is not None:
             local, fmt, arg = "value", "o", "GetObject<urge::%s>(value, k%sDataType)" % (inner, inner)
+        elif element is not None:
+            local, fmt, arg = "value", "o", "GetVectorOf<%s>(value)" % element
         elif cpp_type in INT_RETURNS:
             local, fmt, arg = "value", "i", "value"
         elif cpp_type in ("float", "double"):
             local, fmt, arg = "value", "f", "static_cast<float>(value)"
         elif cpp_type == "bool":
             local, fmt, arg = "value", "b", "value != 0"
-        elif cpp_type == "std::vector<std::string>":
-            local, fmt, arg = "value", "o", "GetStringVector(value)"
         else:
             raise ValueError("unsupported module attribute type %r" % cpp_type)
         local_type = "VALUE" if fmt == "o" else SCALAR_PARAMS[cpp_type][1]

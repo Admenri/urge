@@ -444,6 +444,42 @@ gen_api_json: 'Plane' derives from 'Node' but is registered first (position 5 vs
 
 要求 `ruby_init()` 已运行；重复调用会重定义类，因此只调用一次。
 
+## `std::vector<T>` 的封送（数组参数、返回值与属性）
+
+`std::vector<T>` 在 Ruby 侧一律是**元素的 Array**（`Array<Integer>` / `Array<Float>` /
+`Array<String>`），方法参数、构造函数参数、返回值、`ATTR` 属性四种位置都支持。
+`is_bindable_type` 因此不查 `SCALAR_TYPE_FORMAT`，而要求元素在 `VECTOR_ELEMENTS` 里有条目：
+**没有元素编解码器的 `std::vector` 就是内部类型**，照样记进 `meta.skipped`
+（`std::vector<RefPtr<T>>`、嵌套的 vector 都走这条路）。
+
+支持的元素 = 胶水侧有 `VectorCodec` 特化的那些。加一个元素要**三处一起改**：
+`cruby_utils.h` 的 `VectorCodec`、`gen_api_json.py::VECTOR_ELEMENTS`、
+`generate_binding.py::VECTOR_ELEMENTS`（后两张是镜像表，刻意不互相 import：生成器只读 IR）。
+
+```cpp
+DEFINE_VECTOR_CODEC(int32_t, NUM2INT(value), INT2NUM(value));
+```
+
+| 位置 | 生成物 |
+| --- | --- |
+| 参数 | `ParseArgs(..., "o", &data_val)` 收下整个 Array，再 `GetVectorOf<int32_t>(data_val)` |
+| 返回 | `WrapVectorOf<int32_t>(...)` |
+| 属性 | `BINDING_ATTR_VECTOR(Class, urge::Class, Name, int32_t)`；`static ATTR` 用 `BINDING_CLASS_ATTR_VECTOR` |
+
+几个刻意的取舍：
+
+- **`int` / `unsigned int` 归到 `int32_t` / `uint32_t`**：本引擎的目标平台上它们是同一类型，
+  而 C++ 侧每种元素只留一个特化（`std::vector<int>` 就是 `std::vector<int32_t>`），
+  两张表各写一份会撞成重复定义。
+- **不收录 `bool`**：`std::vector<bool>` 是位打包容器，元素是代理引用而不是 `bool`，
+  不是可互换的容器。
+- **`std::string` 不是普通的数字元素**：它额外允许**裸 String** 顶替单元素数组，并且把
+  「容器错」和「元素错」分成两条消息（`expected Array or String` / `expected String elements`）。
+  这两条行为在 `GetVectorOf<std::string>` 的显式特化里，`Font#name` 依赖它们。
+- **属性宏的读取放在 `EXC_BEGIN` 之前**：`GetVectorOf` 用 `rb_raise` 报错，longjmp 会跳过 C++
+  析构。参数位置的读取由生成器直接内联进调用表达式（与既有的 `std::vector<std::string>`
+  写法一致），因此报错路径上可能漏掉一个 vector 的堆缓冲——错误路径上的既有行为，未改动。
+
 ## 属性与 Marshal
 
 属性宏按类型选择（前缀 `BINDING_ATTR` 为实例、`BINDING_CLASS_ATTR` 为 `static ATTR`）：
@@ -453,7 +489,7 @@ gen_api_json: 'Plane' derives from 'Node' but is registered first (position 5 vs
 | 整数（`int8/16/32`、`uint*`、`int64`、`uint64`） | `BINDING_ATTR_INT` |
 | `float` / `double` | `BINDING_ATTR_FLOAT` |
 | `bool` | `BINDING_ATTR_BOOL` |
-| `std::vector<std::string>` | `BINDING_ATTR_STRINGVECTOR` |
+| `std::vector<T>` | `BINDING_ATTR_VECTOR`（元素类型，见上一节） |
 | `RefPtr<Obj>` | 见下 |
 
 `RefPtr<Obj>` 按**目标类是否可 Marshal** 选择：
@@ -821,7 +857,7 @@ class / module 条目字段：
 | 异常类型 | 独立枚举 | `urge::Exception::Type`，多了 `kGPUError`（并入 `RGSSError`） |
 | 导出语法 | 无注解 | `URGE_BINDING(Name : "...")`，只作用于下一条声明 |
 | 命名 | 覆盖表（脚本内的旧名 → Ruby 名映射） | **无覆盖表**：`camel_to_snake` + 注解，C++ 名直接决定 Ruby 名 |
-| 属性宏族 | 无 STRINGVECTOR / CLASS_ATTR_* | 新增 `BINDING_ATTR_STRINGVECTOR`、`BINDING_CLASS_ATTR_{INT,FLOAT,BOOL,STRINGVECTOR,OBJECT}` |
+| 属性宏族 | 无 VECTOR / 多数 CLASS_ATTR_* | 新增 `BINDING_ATTR_{INT,FLOAT,BOOL,VECTOR,OBJECT}`、`BINDING_CLASS_ATTR_{INT,FLOAT,BOOL,VECTOR,OBJECT}` |
 | 参数检查 | 固定数量方法不检查 | 统一 `CheckArgc`（方法以 `-1` 注册） |
 | 异常包裹 | 视情况 | 每个函数体统一 `EXC_BEGIN`/`EXC_END` |
 | 类集合 | `ViewportChild`/`Effect`/`Tilemap`/`Window` 等 | `Node` 为通用 3D 节点基类，无 `ViewportChild`/`Effect`/`Tilemap` |
