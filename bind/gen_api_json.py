@@ -48,7 +48,7 @@ EXPORT_END = "/*-export.end-*/"
 # Ruby object, while a class goes through `RB_DEF_TYPE`/`SetupSelfData`, which
 # require `Release()`/`AddRef()`.  `Singleton` has neither, so a `Singleton<T>`
 # left out of this set fails to compile the moment its glue is generated.
-MODULE_CLASSES = {"Graphics", "Input", "Audio"}
+MODULE_CLASSES = {"Graphics", "Input", "Audio", "GPUDevice"}
 
 # Fixed presentation order (also the registration order of binding_init.cc:
 # every class must follow the class it derives from).  A class that is not
@@ -57,6 +57,36 @@ MODULE_CLASSES = {"Graphics", "Input", "Audio"}
 # class has to be appended here too.
 CLASS_ORDER = [
     "Disposable",
+    "GPUObject",
+    "GPUBufferDescriptor",
+    "GPUTextureDescriptor",
+    "GPUTextureViewDescriptor",
+    "GPUSamplerDescriptor",
+    "GPUShaderModuleDescriptor",
+    "GPUBindGroupLayoutDescriptor",
+    "GPUPipelineLayoutDescriptor",
+    "GPUBindGroupDescriptor",
+    "GPUComputePipelineDescriptor",
+    "GPURenderPipelineDescriptor",
+    "GPURenderPassDescriptor",
+    "GPUComputePassDescriptor",
+    "GPUQuerySetDescriptor",
+    "GPUBuffer",
+    "GPUTexture",
+    "GPUTextureView",
+    "GPUSampler",
+    "GPUShaderModule",
+    "GPUBindGroupLayout",
+    "GPUPipelineLayout",
+    "GPUBindGroup",
+    "GPURenderPipeline",
+    "GPUComputePipeline",
+    "GPUQuerySet",
+    "GPUCommandBuffer",
+    "GPUCommandEncoder",
+    "GPURenderPassEncoder",
+    "GPUComputePassEncoder",
+    "GPUQueue",
     "Node",
     "Geometry",
     "Graphics",
@@ -78,6 +108,7 @@ CLASS_ORDER = [
     "Viewport",
     "WindowVX",
     "WindowXP",
+    "Effect",
 ]
 
 # Naming policy: a declaration's Ruby name is its C++ name converted by

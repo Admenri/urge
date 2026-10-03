@@ -9,6 +9,7 @@
 #include "binding_tilemap_vx.h"
 
 #include "binding_bitmap.h"
+#include "binding_node.h"
 #include "binding_table.h"
 #include "binding_viewport.h"
 
@@ -73,7 +74,7 @@ RB_FUNC(Tilemap_GetBitmaps) {
 // TilemapVX  (core/tilemap_vx.h:82-100)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(TilemapVX);
+RB_DEF_TYPE_INHERIT(TilemapVX, Node);
 
 RB_FUNC(TilemapVX_initialize) {
   urge::RefPtr<urge::TilemapVX> obj = nullptr;

@@ -15,11 +15,14 @@
 
 #include "binding_bitmap.h"
 #include "binding_color.h"
+#include "binding_effect.h"
+#include "binding_node.h"
 #include "binding_vector2.h"
 #include "binding_vector3.h"
 #include "binding_viewport.h"
 
 #include "core/bitmap.h"
+#include "core/effect.h"
 #include "core/geometry.h"
 #include "core/utility.h"
 #include "core/viewport.h"
@@ -35,10 +38,10 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Geometry  (core/geometry.h:38-50)
+// Geometry  (core/geometry.h:39-52)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Geometry);
+RB_DEF_TYPE_INHERIT(Geometry, Node);
 
 RB_FUNC(Geometry_initialize) {
   urge::RefPtr<urge::Geometry> obj = nullptr;
@@ -128,6 +131,13 @@ BINDING_ATTR_OBJECT_REF(Geometry,
 // Attribute: blend_type (int32_t)
 BINDING_ATTR_INT(Geometry, urge::Geometry, BlendType);
 
+// Attribute: effect (RefPtr<Effect>)
+BINDING_ATTR_OBJECT_REF(Geometry,
+                        urge::Geometry,
+                        Effect,
+                        urge::Effect,
+                        kEffectDataType);
+
 void InitGeometryBindingAppend(VALUE klass);
 
 void InitGeometryBinding() {
@@ -147,6 +157,8 @@ void InitGeometryBinding() {
   DefineMethod(klass, "bitmap=", Geometry_BitmapEqual);
   DefineMethod(klass, "blend_type", Geometry_BlendType);
   DefineMethod(klass, "blend_type=", Geometry_BlendTypeEqual);
+  DefineMethod(klass, "effect", Geometry_Effect);
+  DefineMethod(klass, "effect=", Geometry_EffectEqual);
   InitGeometryBindingAppend(klass);
 }
 // --- GENERATED END ---

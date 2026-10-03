@@ -23,7 +23,11 @@
 #include "core/pipeline.h"
 
 #include <algorithm>
+#include <cctype>
+#include <map>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "core/exception.h"
 
@@ -363,6 +367,159 @@ wgpu::DepthStencilState* GetDepthStencilState() {
   return &state;
 }
 
+/* ----- The blend state of a user authored Effect ----- */
+
+namespace {
+
+//! Removes the leading and trailing whitespace of a field.
+std::string_view Trim(std::string_view text) {
+  constexpr std::string_view kWhitespace = " \t\r\n";
+  const size_t begin = text.find_first_not_of(kWhitespace);
+  if (begin == std::string_view::npos)
+    return {};
+  const size_t end = text.find_last_not_of(kWhitespace);
+  return text.substr(begin, end - begin + 1);
+}
+
+//! The ASCII lowercase copy of a name, so the keys and the values are matched
+//! without regard for case.
+std::string Lower(std::string_view text) {
+  std::string lower(text);
+  std::transform(
+      lower.begin(), lower.end(), lower.begin(),
+      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return lower;
+}
+
+//! One name of the blend grammar together with what it selects.
+template <typename Ty>
+struct BlendName {
+  const char* name;
+  Ty value;
+};
+
+//! The blend factors the "src"/"dst" style keys accept, in the spelling of the
+//! GLSL/WebGPU factor each names.
+constexpr BlendName<wgpu::BlendFactor> kBlendFactors[] = {
+    {"zero", wgpu::BlendFactor::Zero},
+    {"one", wgpu::BlendFactor::One},
+    {"src", wgpu::BlendFactor::Src},
+    {"one-minus-src", wgpu::BlendFactor::OneMinusSrc},
+    {"src-alpha", wgpu::BlendFactor::SrcAlpha},
+    {"one-minus-src-alpha", wgpu::BlendFactor::OneMinusSrcAlpha},
+    {"dst", wgpu::BlendFactor::Dst},
+    {"one-minus-dst", wgpu::BlendFactor::OneMinusDst},
+    {"dst-alpha", wgpu::BlendFactor::DstAlpha},
+    {"one-minus-dst-alpha", wgpu::BlendFactor::OneMinusDstAlpha},
+    {"src-alpha-saturated", wgpu::BlendFactor::SrcAlphaSaturated},
+    {"constant", wgpu::BlendFactor::Constant},
+    {"one-minus-constant", wgpu::BlendFactor::OneMinusConstant},
+    {"src1", wgpu::BlendFactor::Src1},
+    {"one-minus-src1", wgpu::BlendFactor::OneMinusSrc1},
+    {"src1-alpha", wgpu::BlendFactor::Src1Alpha},
+    {"one-minus-src1-alpha", wgpu::BlendFactor::OneMinusSrc1Alpha},
+};
+
+//! The blend operations an "op" key accepts.
+constexpr BlendName<wgpu::BlendOperation> kBlendOperations[] = {
+    {"add", wgpu::BlendOperation::Add},
+    {"subtract", wgpu::BlendOperation::Subtract},
+    {"reverse-subtract", wgpu::BlendOperation::ReverseSubtract},
+    {"min", wgpu::BlendOperation::Min},
+    {"max", wgpu::BlendOperation::Max},
+};
+
+//! Reads a blend factor of the grammar, or throws when \p name is not one.
+wgpu::BlendFactor ReadBlendFactor(const std::string& name) {
+  for (const BlendName<wgpu::BlendFactor>& entry : kBlendFactors)
+    if (name == entry.name)
+      return entry.value;
+  throw Exception(Exception::kRGSSError,
+                  "effect: '{}' is not a blend factor name", name);
+}
+
+//! Reads a blend operation of the grammar, or throws when \p name is not one.
+wgpu::BlendOperation ReadBlendOperation(const std::string& name) {
+  for (const BlendName<wgpu::BlendOperation>& entry : kBlendOperations)
+    if (name == entry.name)
+      return entry.value;
+  throw Exception(Exception::kRGSSError,
+                  "effect: '{}' is not a blend operation name", name);
+}
+
+}  // namespace
+
+wgpu::PrimitiveState GetDefaultPrimitiveState() {
+  wgpu::PrimitiveState primitive;
+  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+  return primitive;
+}
+
+std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
+  const std::string text = Lower(Trim(states));
+
+  // An empty description, or one of the aliases of the default blend
+  if (text.empty() || text == "normal" || text == "alpha" ||
+      text == "premultiplied")
+    return *GetBlendState(BLEND_NORMAL);
+  if (text == "none" || text == "off" || text == "disable" ||
+      text == "disabled")
+    return std::nullopt;
+  if (text == "addition" || text == "add" || text == "additive")
+    return *GetBlendState(BLEND_ADDITION);
+  if (text == "subtract" || text == "sub")
+    return *GetBlendState(BLEND_SUBTRACT);
+
+  /* A field list overrides the fields of the default blend, so an author only
+     writes what differs from the plain premultiplied composite. */
+  wgpu::BlendState state = *GetBlendState(BLEND_NORMAL);
+
+  const std::string_view view(text);
+  size_t position = 0;
+  while (position < view.size()) {
+    const size_t separator = view.find_first_of(";,", position);
+    const std::string_view field =
+        Trim(view.substr(position, separator == std::string_view::npos
+                                       ? std::string_view::npos
+                                       : separator - position));
+    position =
+        separator == std::string_view::npos ? view.size() : separator + 1;
+    if (field.empty())
+      continue;
+
+    const size_t equal = field.find('=');
+    if (equal == std::string_view::npos)
+      throw Exception(Exception::kRGSSError,
+                      "effect: '{}' is not a blend field of the form 'key=value'",
+                      std::string(field));
+
+    const std::string key = Lower(Trim(field.substr(0, equal)));
+    const std::string value = Lower(Trim(field.substr(equal + 1)));
+
+    if (key == "src_color" || key == "src_rgb" || key == "color_src" ||
+        key == "src")
+      state.color.srcFactor = ReadBlendFactor(value);
+    else if (key == "dst_color" || key == "dst_rgb" || key == "color_dst" ||
+             key == "dst")
+      state.color.dstFactor = ReadBlendFactor(value);
+    else if (key == "op_color" || key == "color_op" || key == "equal_rgb" ||
+             key == "equal_color")
+      state.color.operation = ReadBlendOperation(value);
+    else if (key == "src_alpha" || key == "alpha_src")
+      state.alpha.srcFactor = ReadBlendFactor(value);
+    else if (key == "dst_alpha" || key == "alpha_dst")
+      state.alpha.dstFactor = ReadBlendFactor(value);
+    else if (key == "op_alpha" || key == "alpha_op" ||
+             key == "equal_alpha")
+      state.alpha.operation = ReadBlendOperation(value);
+    else
+      throw Exception(Exception::kRGSSError,
+                      "effect: '{}' is not a blend field name", key);
+  }
+
+  return state;
+}
+
 /* ----- TextureBase ----- */
 
 TextureBase::TextureBase()
@@ -425,9 +582,9 @@ TransitionVague::TransitionVague()
 /* ----- ShaderSet ----- */
 
 ShaderSet::ShaderSet() : shader() {
-  wgpu::PrimitiveState primitive;
-  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-  wgpu::TextureFormat target = wgpu::TextureFormat::RGBA8Unorm;
+  // The built in pipelines and a user authored Effect share these two defaults
+  wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
+  wgpu::TextureFormat target = kColorTargetFormat;
 
   /* Every pass of this engine carries the depth-stencil texture of its
      render target, see Node::Render, so every pipeline has to declare a state

@@ -10,11 +10,14 @@
 
 #include "binding_bitmap.h"
 #include "binding_color.h"
+#include "binding_effect.h"
+#include "binding_node.h"
 #include "binding_rect.h"
 #include "binding_tone.h"
 #include "binding_viewport.h"
 
 #include "core/bitmap.h"
+#include "core/effect.h"
 #include "core/sprite.h"
 #include "core/utility.h"
 #include "core/viewport.h"
@@ -30,10 +33,10 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Sprite  (core/sprite.h:33-64)
+// Sprite  (core/sprite.h:34-66)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Sprite);
+RB_DEF_TYPE_INHERIT(Sprite, Node);
 
 RB_FUNC(Sprite_initialize) {
   urge::RefPtr<urge::Sprite> obj = nullptr;
@@ -175,6 +178,13 @@ BINDING_ATTR_OBJECT(Sprite, urge::Sprite, Color, urge::Color, kColorDataType);
 // Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Sprite, urge::Sprite, Tone, urge::Tone, kToneDataType);
 
+// Attribute: effect (RefPtr<Effect>)
+BINDING_ATTR_OBJECT_REF(Sprite,
+                        urge::Sprite,
+                        Effect,
+                        urge::Effect,
+                        kEffectDataType);
+
 void InitSpriteBindingAppend(VALUE klass);
 
 void InitSpriteBinding() {
@@ -229,6 +239,8 @@ void InitSpriteBinding() {
   DefineMethod(klass, "color=", Sprite_ColorEqual);
   DefineMethod(klass, "tone", Sprite_Tone);
   DefineMethod(klass, "tone=", Sprite_ToneEqual);
+  DefineMethod(klass, "effect", Sprite_Effect);
+  DefineMethod(klass, "effect=", Sprite_EffectEqual);
   InitSpriteBindingAppend(klass);
 }
 // --- GENERATED END ---

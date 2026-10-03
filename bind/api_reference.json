@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-03T01:56:49Z",
+    "generated_at": "2026-10-03T04:49:44Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -12,6 +12,7 @@
       "core/definition.h",
       "core/disposable.h",
       "core/drawable.h",
+      "core/effect.h",
       "core/exception.h",
       "core/filesystem.h",
       "core/font.h",
@@ -70,6 +71,18 @@
         "kind": "constructor",
         "signature": "Vector4(glm::vec4)",
         "reason": "internal parameter type: glm::vec4"
+      },
+      {
+        "class": "Effect",
+        "kind": "method",
+        "signature": "void SetFloat(uint32_t, std::vector<float>)",
+        "reason": "internal parameter type: std::vector<float>"
+      },
+      {
+        "class": "Effect",
+        "kind": "method",
+        "signature": "void SetInt(uint32_t, std::vector<int32_t>)",
+        "reason": "internal parameter type: std::vector<int32_t>"
       }
     ]
   },
@@ -1041,7 +1054,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         }
       ],
       "initialize_copy": null,
@@ -1071,7 +1084,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         },
         {
           "ruby_name": "set_texcoord",
@@ -1098,7 +1111,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         },
         {
           "ruby_name": "set_color",
@@ -1125,7 +1138,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         }
       ],
       "attributes": [
@@ -1138,7 +1151,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         },
         {
           "name": "capacity",
@@ -1149,7 +1162,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         },
         {
           "name": "bitmap",
@@ -1160,7 +1173,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
         },
         {
           "name": "blend_type",
@@ -1171,7 +1184,18 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:38-50"
+          "export": "core/geometry.h:39-52"
+        },
+        {
+          "name": "effect",
+          "setter": "effect=",
+          "cpp_name": "Effect",
+          "cpp_type": "RefPtr<Effect>",
+          "ruby_type": "Effect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/geometry.h:39-52"
         }
       ],
       "data_attributes": [],
@@ -1183,7 +1207,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/geometry.h:38-50",
+      "export": "core/geometry.h:39-52",
       "cpp_name": "Geometry",
       "cpp_parent": "Node",
       "header": "core/geometry.h",
@@ -2666,7 +2690,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         }
       ],
       "initialize_copy": null,
@@ -2691,7 +2715,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "ruby_name": "update",
@@ -2702,7 +2726,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "ruby_name": "width",
@@ -2713,7 +2737,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "ruby_name": "height",
@@ -2724,7 +2748,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         }
       ],
       "attributes": [
@@ -2737,7 +2761,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "bitmap",
@@ -2748,7 +2772,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "src_rect",
@@ -2759,7 +2783,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "x",
@@ -2770,7 +2794,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "y",
@@ -2781,7 +2805,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "ox",
@@ -2792,7 +2816,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "oy",
@@ -2803,7 +2827,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "zoom_x",
@@ -2814,7 +2838,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "zoom_y",
@@ -2825,7 +2849,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "angle",
@@ -2836,7 +2860,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "wave_amp",
@@ -2847,7 +2871,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "wave_length",
@@ -2858,7 +2882,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "wave_speed",
@@ -2869,7 +2893,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "wave_phase",
@@ -2880,7 +2904,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "mirror",
@@ -2891,7 +2915,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "bush_depth",
@@ -2902,7 +2926,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "bush_opacity",
@@ -2913,7 +2937,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "opacity",
@@ -2924,7 +2948,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "blend_type",
@@ -2935,7 +2959,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "color",
@@ -2946,7 +2970,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
         },
         {
           "name": "tone",
@@ -2957,7 +2981,18 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:33-64"
+          "export": "core/sprite.h:34-66"
+        },
+        {
+          "name": "effect",
+          "setter": "effect=",
+          "cpp_name": "Effect",
+          "cpp_type": "RefPtr<Effect>",
+          "ruby_type": "Effect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/sprite.h:34-66"
         }
       ],
       "data_attributes": [],
@@ -2969,7 +3004,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/sprite.h:33-64",
+      "export": "core/sprite.h:34-66",
       "cpp_name": "Sprite",
       "cpp_parent": "Node",
       "header": "core/sprite.h",
@@ -4065,7 +4100,7 @@
               "default": null
             }
           ],
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "params": [
@@ -4075,11 +4110,11 @@
               "default": null
             }
           ],
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "params": [],
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         }
       ],
       "initialize_copy": null,
@@ -4104,7 +4139,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "ruby_name": "update",
@@ -4115,7 +4150,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         }
       ],
       "attributes": [
@@ -4128,7 +4163,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "name": "ox",
@@ -4139,7 +4174,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "name": "oy",
@@ -4150,7 +4185,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "name": "color",
@@ -4161,7 +4196,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
         },
         {
           "name": "tone",
@@ -4172,7 +4207,18 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:32-46"
+          "export": "core/viewport.h:33-48"
+        },
+        {
+          "name": "effect",
+          "setter": "effect=",
+          "cpp_name": "Effect",
+          "cpp_type": "RefPtr<Effect>",
+          "ruby_type": "Effect",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/viewport.h:33-48"
         }
       ],
       "data_attributes": [],
@@ -4184,7 +4230,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/viewport.h:32-46",
+      "export": "core/viewport.h:33-48",
       "cpp_name": "Viewport",
       "cpp_parent": "Node",
       "header": "core/viewport.h",
@@ -4782,6 +4828,137 @@
       "kind": "class",
       "name": "WindowXP",
       "ruby_superclass": "Node",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "vs_glsl",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "fs_glsl",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "blend_states",
+              "type": "std::string",
+              "default": "{}"
+            }
+          ],
+          "export": "core/effect.h:64-76"
+        }
+      ],
+      "initialize_copy": {
+        "params": [
+          {
+            "name": "other",
+            "type": "RefPtr<Effect>",
+            "default": null
+          }
+        ],
+        "export": "core/effect.h:64-76"
+      },
+      "instance_methods": [
+        {
+          "ruby_name": "set_texture",
+          "cpp_name": "SetTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "texture",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/effect.h:64-76"
+        },
+        {
+          "ruby_name": "set_sampler",
+          "cpp_name": "SetSampler",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "texture",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/effect.h:64-76"
+        },
+        {
+          "ruby_name": "set_block",
+          "cpp_name": "SetBlock",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "uniform_block",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/effect.h:64-76"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "method",
+          "signature": "void SetFloat(uint32_t, std::vector<float>)",
+          "reason": "internal parameter type: std::vector<float>"
+        },
+        {
+          "kind": "method",
+          "signature": "void SetInt(uint32_t, std::vector<int32_t>)",
+          "reason": "internal parameter type: std::vector<int32_t>"
+        }
+      ],
+      "export": "core/effect.h:64-76",
+      "cpp_name": "Effect",
+      "cpp_parent": "Object",
+      "header": "core/effect.h",
+      "kind": "class",
+      "name": "Effect",
+      "ruby_superclass": "Object",
       "glue": false
     }
   ],

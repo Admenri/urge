@@ -72,17 +72,42 @@ struct BindingDataType {
 #define DEF_TYPE_FLAGS
 #endif
 
-#define RB_DATATYPE(Klass, Name, Free)               \
-  const rb_data_type_t k##Klass##DataType = {        \
-      Name,                                          \
-      {nullptr, Free, nullptr, DEF_TYPE_RESERVED{}}, \
-      nullptr,                                       \
-      nullptr,                                       \
+// A derived class is *not* accepted where its base is expected on the strength
+// of the C++ or the Ruby hierarchy alone.  `rb_check_typeddata` walks the
+// `parent` chain of the *data type* -- `rb_typeddata_inherited_p` in error.c --
+// and stops there, so `Node#parent=` (which asks for a `kNodeDataType`) rejects
+// a `Viewport` VALUE with "wrong argument type Viewport (expected Node)" until
+// the two types are linked.
+//
+// `RB_DEF_TYPE` leaves the link null for a class whose base is not exported (a
+// `Disposable`, or one derived from `Singleton<T>`): nothing named it, so its
+// values are only ever checked against their own type.  `RB_DEF_TYPE_INHERIT`
+// sets it, and the generated glue picks whichever fits the class.  The base
+// must be exported, and `k<Base>DataType` declared before the expansion --
+// which is what the generated `binding_<base>.h` does (see Bindgen.md).
+#define RB_DATATYPE_PARENT(Klass, Name, Free, Parent) \
+  const rb_data_type_t k##Klass##DataType = {         \
+      Name,                                           \
+      {nullptr, Free, nullptr, DEF_TYPE_RESERVED{}},  \
+      Parent,                                         \
+      nullptr,                                        \
       DEF_TYPE_FLAGS}
 
+#define RB_DATATYPE(Klass, Name, Free) \
+  RB_DATATYPE_PARENT(Klass, Name, Free, nullptr)
+
 #define RB_DECL_TYPE(Klass) extern const rb_data_type_t k##Klass##DataType;
+
+/*! Defines `k<Klass>DataType` for a class whose base is not exported, so a
+    value of it is only accepted where `Klass` itself is expected. */
 #define RB_DEF_TYPE(Klass) \
   RB_DATATYPE(Klass, #Klass, ReleaseDataType<urge::Klass>)
+
+/*! Defines `k<Klass>DataType` linked to `k<Parent>DataType`, so a value of
+    `Klass` is also accepted wherever `Parent` is expected. */
+#define RB_DEF_TYPE_INHERIT(Klass, Parent)                        \
+  RB_DATATYPE_PARENT(Klass, #Klass, ReleaseDataType<urge::Klass>, \
+                     &k##Parent##DataType)
 
 #define RB_FUNC(name) static VALUE name(int argc, VALUE* argv, VALUE self)
 

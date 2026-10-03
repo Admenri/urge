@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "core/effect.h"
 #include "core/node.h"
 #include "core/object.h"
 #include "core/primitive.h"
@@ -47,6 +48,7 @@ class Geometry : public Node {
   ATTR(int32_t, Capacity);
   ATTR(RefPtr<Bitmap>, Bitmap);
   ATTR(int32_t, BlendType);
+  ATTR(RefPtr<Effect>, Effect);
   /*-export.end-*/
 
  private:
@@ -59,6 +61,9 @@ class Geometry : public Node {
 
   RefPtr<Bitmap> bitmap_;
   int32_t blend_type_ = 0;
+  //! The user authored shader the draw runs, or none for the built in mesh
+  //! pipeline, see DoDraw.
+  RefPtr<Effect> effect_;
 
   //! One triangle of the mesh: its three points, in the vertex layout the mesh
   //! shader reads.

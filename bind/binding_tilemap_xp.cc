@@ -9,6 +9,7 @@
 #include "binding_tilemap_xp.h"
 
 #include "binding_bitmap.h"
+#include "binding_node.h"
 #include "binding_table.h"
 #include "binding_viewport.h"
 
@@ -73,7 +74,7 @@ RB_FUNC(TilemapXP_Autotiles) {
 // TilemapXP  (core/tilemap_xp.h:85-107)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(TilemapXP);
+RB_DEF_TYPE_INHERIT(TilemapXP, Node);
 
 RB_FUNC(TilemapXP_initialize) {
   urge::RefPtr<urge::TilemapXP> obj = nullptr;

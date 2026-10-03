@@ -25,6 +25,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -51,6 +52,44 @@ enum BlendType : int32_t {
 };
 
 wgpu::BlendState* GetBlendState(BlendType type);
+
+//! The format of the single color target every pass of the engine carries.
+constexpr wgpu::TextureFormat kColorTargetFormat =
+    wgpu::TextureFormat::RGBA8Unorm;
+
+/*! The primitive state of every draw the engine issues: a triangle list, with
+    the default winding and no culling. */
+wgpu::PrimitiveState GetDefaultPrimitiveState();
+
+/*! The depth-stencil state of a pipeline which is used in a pass that carries
+    a depth-stencil attachment but does not care about it: the depth test always
+    passes without writing and the stencil is masked off. It is the state of
+    every pipeline which is not one of the two stencil users of ShaderSet, see
+    Node::Render. */
+wgpu::DepthStencilState* GetDepthStencilState();
+
+/*! Reads the blend state of a color target from the textual description a user
+    authored Effect is built with, so the state does not have to be one of the
+    premultiplied blends of BlendType.
+
+    An empty \p states, or one of the preset names "normal", "alpha" and
+    "premultiplied", selects the premultiplied alpha blend of BLEND_NORMAL, the
+    blend a sprite composites with; "none" (also "off") selects no blending at
+    all, which the empty optional of the result reports; "addition" and
+    "subtract" select the state of the matching BlendType.
+
+    Otherwise \p states is a ";" (or ",") separated list of "key=value" fields
+    which start from the state of BLEND_NORMAL and override it. A key is one of
+    "src_color"/"src_rgb", "dst_color"/"dst_rgb", "op_color"/"equal_rgb" and
+    their "alpha" counterparts, and a value is a blend factor name ("zero",
+    "one", "src", "one-minus-src", "src-alpha", "one-minus-src-alpha", "dst",
+    "one-minus-dst", "dst-alpha", "one-minus-dst-alpha", "src-alpha-saturated",
+    "constant", "one-minus-constant") or, for the "op" keys, a blend operation
+    ("add", "subtract", "reverse-subtract", "min", "max").
+
+    The name comparison ignores case and a key the engine does not know, or a
+    value outside the domain of its key, raises an Exception. */
+std::optional<wgpu::BlendState> ParseBlendState(std::string_view states);
 
 class TextureBase : public Pipeline {
  public:
@@ -144,7 +183,6 @@ struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     wgpu::RenderPipeline texture_noblend;
     wgpu::RenderPipeline texture_pma;
-    wgpu::RenderPipeline present;
     wgpu::RenderPipeline color_noblend;
     wgpu::RenderPipeline color_pma;
     std::map<BlendType, wgpu::RenderPipeline> tint_blends;

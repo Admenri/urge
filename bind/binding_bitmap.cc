@@ -9,6 +9,7 @@
 #include "binding_bitmap.h"
 
 #include "binding_color.h"
+#include "binding_disposable.h"
 #include "binding_font.h"
 #include "binding_palette.h"
 #include "binding_rect.h"
@@ -32,7 +33,7 @@ namespace binding {
 // Bitmap  (core/bitmap.h:36-93)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Bitmap);
+RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
 
 RB_FUNC(Bitmap_initialize) {
   urge::RefPtr<urge::Bitmap> obj = nullptr;

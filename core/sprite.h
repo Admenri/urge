@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "core/effect.h"
 #include "core/node.h"
 #include "core/uniform.h"
 #include "core/viewport.h"
@@ -61,6 +62,7 @@ class Sprite : public Node {
   ATTR(int32_t, BlendType);
   ATTR(RefPtr<Color>, Color);
   ATTR(RefPtr<Tone>, Tone);
+  ATTR(RefPtr<Effect>, Effect);
   /*-export.end-*/
 
  private:
@@ -84,6 +86,9 @@ class Sprite : public Node {
   int32_t opacity_ = 255, blend_type_ = 0;
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
+  //! The user authored shader the draw runs, or none for the built in sprite
+  //! pipeline, see DoDraw.
+  RefPtr<Effect> effect_;
 
   struct {
     glm::vec4 color = glm::vec4(0.0f);

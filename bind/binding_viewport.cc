@@ -9,9 +9,12 @@
 #include "binding_viewport.h"
 
 #include "binding_color.h"
+#include "binding_effect.h"
+#include "binding_node.h"
 #include "binding_rect.h"
 #include "binding_tone.h"
 
+#include "core/effect.h"
 #include "core/utility.h"
 #include "core/viewport.h"
 // --- GENERATED INCLUDES END ---
@@ -26,10 +29,10 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Viewport  (core/viewport.h:32-46)
+// Viewport  (core/viewport.h:33-48)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Viewport);
+RB_DEF_TYPE_INHERIT(Viewport, Node);
 
 RB_FUNC(Viewport_initialize) {
   urge::RefPtr<urge::Viewport> obj = nullptr;
@@ -102,6 +105,13 @@ BINDING_ATTR_OBJECT(Viewport,
 // Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Viewport, urge::Viewport, Tone, urge::Tone, kToneDataType);
 
+// Attribute: effect (RefPtr<Effect>)
+BINDING_ATTR_OBJECT_REF(Viewport,
+                        urge::Viewport,
+                        Effect,
+                        urge::Effect,
+                        kEffectDataType);
+
 void InitViewportBindingAppend(VALUE klass);
 
 void InitViewportBinding() {
@@ -122,6 +132,8 @@ void InitViewportBinding() {
   DefineMethod(klass, "color=", Viewport_ColorEqual);
   DefineMethod(klass, "tone", Viewport_Tone);
   DefineMethod(klass, "tone=", Viewport_ToneEqual);
+  DefineMethod(klass, "effect", Viewport_Effect);
+  DefineMethod(klass, "effect=", Viewport_EffectEqual);
   InitViewportBindingAppend(klass);
 }
 // --- GENERATED END ---

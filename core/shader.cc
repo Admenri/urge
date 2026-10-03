@@ -37,6 +37,7 @@
 
 #include "core/exception.h"
 #include "core/gpu.h"
+#include "core/pipeline.h"
 
 namespace urge {
 
@@ -236,14 +237,16 @@ offset, they are the ones a bulk manager uploads one slot per object into.
 std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
     const Shader& vertex,
     const Shader& fragment,
-    const std::set<uint32_t>& dynamic_sets) {
+    const std::set<uint32_t>& dynamic_sets,
+    uint32_t min_sets) {
   const std::vector<ShaderGroup>& vertex_groups = vertex.reflection().groups;
   const std::vector<ShaderGroup>& fragment_groups =
       fragment.reflection().groups;
 
   std::vector<wgpu::BindGroupLayout> layouts;
   const size_t group_count =
-      std::max(vertex_groups.size(), fragment_groups.size());
+      std::max({vertex_groups.size(), fragment_groups.size(),
+                static_cast<size_t>(min_sets)});
 
   for (size_t group = 0; group < group_count; ++group) {
     // The entries of this set, keyed by the binding an entry is for
@@ -305,6 +308,30 @@ uint64_t FormatSize(WGPUVertexFormat format) {
   }
 }
 
+/*! The bindings of one set of a SPIR-V pair, merged by their binding: a
+    binding both stages declare counts once, which is the set the pipeline
+    layout is built from and the one a caller which fills the set reads. */
+std::vector<ShaderBinding> MergeGroupBindings(
+    const std::vector<ShaderGroup>& vertex_groups,
+    const std::vector<ShaderGroup>& fragment_groups,
+    uint32_t set) {
+  std::map<uint32_t, ShaderBinding> merged;
+  const auto add = [&merged, set](const std::vector<ShaderGroup>& groups) {
+    if (set >= groups.size())
+      return;
+    for (const ShaderBinding& binding : groups[set].bindings)
+      merged.emplace(binding.binding, binding);
+  };
+  add(vertex_groups);
+  add(fragment_groups);
+
+  std::vector<ShaderBinding> bindings;
+  bindings.reserve(merged.size());
+  for (const auto& entry : merged)
+    bindings.push_back(entry.second);
+  return bindings;
+}
+
 }  // namespace
 
 Shader Shader::Compile(wgpu::ShaderStage stage, std::string_view glsl) {
@@ -323,7 +350,8 @@ Shader Shader::Compile(wgpu::ShaderStage stage, std::string_view glsl) {
 Pipeline::Pipeline(std::string_view vs_glsl,
                    std::string_view fs_glsl,
                    std::vector<std::vector<uint32_t>> vb_layouts,
-                   const std::set<uint32_t>& dynamic_sets)
+                   const std::set<uint32_t>& dynamic_sets,
+                   uint32_t min_sets)
     : vertex_(Shader::Compile(wgpu::ShaderStage::Vertex, vs_glsl)),
       fragment_(Shader::Compile(wgpu::ShaderStage::Fragment, fs_glsl)),
       dynamic_sets_(dynamic_sets) {
@@ -336,7 +364,7 @@ Pipeline::Pipeline(std::string_view vs_glsl,
      to the automatic mode of the device, so a bind group the engine makes from
      it always fits the pipeline. */
   const std::vector<wgpu::BindGroupLayout> group_layouts =
-      CreateGroupLayouts(vertex_, fragment_, dynamic_sets_);
+      CreateGroupLayouts(vertex_, fragment_, dynamic_sets_, min_sets);
 
   wgpu::PipelineLayoutDescriptor layout_desc;
   layout_desc.bindGroupLayoutCount = group_layouts.size();
@@ -431,6 +459,20 @@ wgpu::RenderPipeline Pipeline::MakeState(
     Fail("state", "the device rejected the state of the render pipeline");
 
   return pipeline;
+}
+
+wgpu::RenderPipeline Pipeline::MakeDefaultState(const wgpu::BlendState* blend) {
+  wgpu::ColorTargetState target;
+  target.format = kColorTargetFormat;
+  target.blend = blend;
+
+  return MakeState(GetDefaultPrimitiveState(), *GetDepthStencilState(),
+                   {target});
+}
+
+std::vector<ShaderBinding> Pipeline::group_bindings(uint32_t set) const {
+  return MergeGroupBindings(vertex_.reflection().groups,
+                            fragment_.reflection().groups, set);
 }
 
 }  // namespace urge

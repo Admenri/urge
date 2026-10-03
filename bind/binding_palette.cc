@@ -9,6 +9,7 @@
 #include "binding_palette.h"
 
 #include "binding_color.h"
+#include "binding_disposable.h"
 
 #include "core/palette.h"
 #include "core/utility.h"
@@ -27,7 +28,7 @@ namespace binding {
 // Palette  (core/palette.h:37-45)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Palette);
+RB_DEF_TYPE_INHERIT(Palette, Disposable);
 
 RB_FUNC(Palette_initialize) {
   urge::RefPtr<urge::Palette> obj = nullptr;

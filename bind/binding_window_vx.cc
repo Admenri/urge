@@ -9,6 +9,7 @@
 #include "binding_window_vx.h"
 
 #include "binding_bitmap.h"
+#include "binding_node.h"
 #include "binding_rect.h"
 #include "binding_tone.h"
 #include "binding_viewport.h"
@@ -32,7 +33,7 @@ namespace binding {
 // WindowVX  (core/window_vx.h:86-118)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(WindowVX);
+RB_DEF_TYPE_INHERIT(WindowVX, Node);
 
 RB_FUNC(WindowVX_initialize) {
   urge::RefPtr<urge::WindowVX> obj = nullptr;

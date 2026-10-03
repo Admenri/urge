@@ -25,9 +25,9 @@
 #include <algorithm>
 #include <cstring>
 
-#include "core/embed.ttf.bin"
 #include "core/filesystem.h"
 #include "core/logger.h"
+#include "core/resources/embed.ttf.bin"
 
 namespace urge {
 

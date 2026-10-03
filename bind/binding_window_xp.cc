@@ -9,6 +9,7 @@
 #include "binding_window_xp.h"
 
 #include "binding_bitmap.h"
+#include "binding_node.h"
 #include "binding_rect.h"
 #include "binding_viewport.h"
 
@@ -31,7 +32,7 @@ namespace binding {
 // WindowXP  (core/window_xp.h:104-128)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(WindowXP);
+RB_DEF_TYPE_INHERIT(WindowXP, Node);
 
 RB_FUNC(WindowXP_initialize) {
   urge::RefPtr<urge::WindowXP> obj = nullptr;

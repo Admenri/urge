@@ -10,6 +10,7 @@
 
 #include "binding_bitmap.h"
 #include "binding_color.h"
+#include "binding_node.h"
 #include "binding_tone.h"
 #include "binding_viewport.h"
 
@@ -32,7 +33,7 @@ namespace binding {
 // Plane  (core/plane.h:35-49)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Plane);
+RB_DEF_TYPE_INHERIT(Plane, Node);
 
 RB_FUNC(Plane_initialize) {
   urge::RefPtr<urge::Plane> obj = nullptr;

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "core/effect.h"
 #include "core/node.h"
 #include "core/utility.h"
 
@@ -43,6 +44,7 @@ class Viewport : public Node {
   ATTR(int32_t, OY);
   ATTR(RefPtr<Color>, Color);
   ATTR(RefPtr<Tone>, Tone);
+  ATTR(RefPtr<Effect>, Effect);
   /*-export.end-*/
 
  protected:
@@ -54,21 +56,48 @@ class Viewport : public Node {
  private:
   void ResetTransform();
   void CreateEffectBindings();
-  void AcquirePingPong(const RectI& region);
+  void AcquireOffscreen(const RectI& region);
+
+  /*! Closes the pass of the parent and opens one on the texture this viewport
+      filters with its effect, so its children draw into that texture instead of
+      the render target, see PostDraw(). \p parent_scissor is the clip they
+      inherit and \p screen_scissor the rect of this viewport, both in the
+      coordinates of the render target. */
+  bool BeginFilter(DrawParam param,
+                   const RectI& parent_scissor,
+                   const RectI& screen_scissor);
+
+  /*! Draws the texture the children of this viewport filled back into the
+      render target with the shader of the effect, see BeginFilter(). */
+  void FinishFilter(DrawParam param);
 
   RefPtr<Rect> rect_;
   glm::ivec2 origin_ = glm::ivec2(0);
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
+  RefPtr<Effect> effect_;
 
   struct {
     glm::vec4 color = glm::vec4(0.0f);
     float step = 0.0f;
   } flash_;
 
-  RefPtr<Bitmap> pingpong_;
+  /*! The scratch render target of this viewport: the texture its children fill
+      while it carries an effect, and the copy of the render target the tint
+      pass reads otherwise. One texture serves both because the two paths never
+      run in the same frame. */
+  RefPtr<Bitmap> offscreen_;
   wgpu::Buffer object_uniform_, tint_uniform_;
   wgpu::BindGroup object_group_, tint_group_;
+
+  //! What BeginFilter() took the children away from, put back by FinishFilter().
+  RefPtr<Bitmap> filter_target_;
+  wgpu::BindGroup filter_scene_;
+  /*! Where the filtered region lies in the render target and the part of it the
+      parent left visible, both in the coordinates of the target, and whether
+      the children of this frame went into \p offscreen_ at all. */
+  RectI filter_region_, filter_scissor_;
+  bool filtering_ = false;
 
   //! The emitter of the quad which draws the region of this viewport back after
   //! its effect ran. That quad is emitted in the drawing stage, after the

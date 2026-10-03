@@ -219,10 +219,20 @@ ATTR_DEF(Geometry, int32_t, BlendType) {
   }
 }
 
+ATTR_DEF(Geometry, RefPtr<Effect>, Effect) {
+  if (value.has_value()) {
+    effect_ = *value;
+    return std::nullopt;
+  } else {
+    return effect_;
+  }
+}
+
 void Geometry::DisposeObject() {
   Node::DisposeObject();
 
   bitmap_.reset();
+  effect_.reset();
   data_.clear();
 }
 
@@ -252,6 +262,21 @@ bool Geometry::DoDraw(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
+
+  /* An effect replaces the shader and the blend of the draw while the mesh and
+     the transform stay the ones of this geometry: the scene of the target, the
+     object transform of the frame and the custom bind group the effect was
+     given with are what its pipeline reads, see Effect. */
+  if (effect_) {
+    param->pass.SetPipeline(effect_->AcquirePipeline());
+    param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+    param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
+    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
+    param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
+                                WGPU_WHOLE_SIZE);
+    param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
+    return false;
+  }
 
   param->pass.SetPipeline(ShaderSet::Get().state.geometry_blends.at(
       static_cast<BlendType>(blend_type_)));

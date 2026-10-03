@@ -10,6 +10,7 @@
 
 #include "binding_bitmap.h"
 #include "binding_color.h"
+#include "binding_disposable.h"
 #include "binding_vector3.h"
 #include "binding_vector4.h"
 
@@ -31,7 +32,7 @@ namespace binding {
 // Node  (core/node.h:38-51)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Node);
+RB_DEF_TYPE_INHERIT(Node, Disposable);
 
 RB_FUNC(Node_initialize) {
   urge::RefPtr<urge::Node> obj = nullptr;
