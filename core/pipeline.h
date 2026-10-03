@@ -150,6 +150,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
     std::map<BlendType, wgpu::RenderPipeline> tint_blends;
     std::map<BlendType, wgpu::RenderPipeline> sprite_blends;
     std::map<BlendType, wgpu::RenderPipeline> plane_blends;
+    std::map<BlendType, wgpu::RenderPipeline> geometry_blends;
     wgpu::RenderPipeline transition_alpha;
     wgpu::RenderPipeline transition_vague;
     wgpu::RenderPipeline texture_dynamic_noblend;

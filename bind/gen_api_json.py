@@ -58,6 +58,7 @@ MODULE_CLASSES = {"Graphics", "Input", "Audio"}
 CLASS_ORDER = [
     "Disposable",
     "Node",
+    "Geometry",
     "Graphics",
     "Input",
     "Bitmap",

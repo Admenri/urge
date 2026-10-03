@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-02T13:49:15Z",
+    "generated_at": "2026-10-03T01:56:49Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -16,6 +16,7 @@
       "core/filesystem.h",
       "core/font.h",
       "core/font_context.h",
+      "core/geometry.h",
       "core/gpu.h",
       "core/graphics.h",
       "core/inirw.h",
@@ -1028,6 +1029,167 @@
       "kind": "class",
       "name": "Node",
       "ruby_superclass": "Disposable",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "viewport",
+              "type": "RefPtr<Viewport>",
+              "default": "nullptr"
+            }
+          ],
+          "export": "core/geometry.h:38-50"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "set_position",
+          "cpp_name": "SetPosition",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "triangle",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "point",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "position",
+              "type": "RefPtr<Vector3>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        },
+        {
+          "ruby_name": "set_texcoord",
+          "cpp_name": "SetTexcoord",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "triangle",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "point",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "texcoord",
+              "type": "RefPtr<Vector2>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        },
+        {
+          "ruby_name": "set_color",
+          "cpp_name": "SetColor",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "triangle",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "point",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "viewport",
+          "setter": "viewport=",
+          "cpp_name": "Viewport",
+          "cpp_type": "RefPtr<Viewport>",
+          "ruby_type": "Viewport",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        },
+        {
+          "name": "capacity",
+          "setter": "capacity=",
+          "cpp_name": "Capacity",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        },
+        {
+          "name": "bitmap",
+          "setter": "bitmap=",
+          "cpp_name": "Bitmap",
+          "cpp_type": "RefPtr<Bitmap>",
+          "ruby_type": "Bitmap",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        },
+        {
+          "name": "blend_type",
+          "setter": "blend_type=",
+          "cpp_name": "BlendType",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/geometry.h:38-50"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/geometry.h:38-50",
+      "cpp_name": "Geometry",
+      "cpp_parent": "Node",
+      "header": "core/geometry.h",
+      "kind": "class",
+      "name": "Geometry",
+      "ruby_superclass": "Node",
       "glue": false
     },
     {

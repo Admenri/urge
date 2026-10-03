@@ -463,6 +463,9 @@ ShaderSet::ShaderSet() : shader() {
     state.plane_blends[it] = shader.plane_base.MakeState(
         primitive, *depth_stencil,
         {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
+    state.geometry_blends[it] = shader.texture_base_dynamic.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
   }
   state.transition_alpha = shader.transition_alpha.MakeState(
       primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});

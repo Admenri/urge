@@ -10,6 +10,7 @@
 
 #include "binding_disposable.h"
 #include "binding_node.h"
+#include "binding_geometry.h"
 #include "binding_bitmap.h"
 #include "binding_color.h"
 #include "binding_font.h"
@@ -60,6 +61,7 @@ void InitBindings() {
 
   InitDisposableBinding();
   InitNodeBinding();
+  InitGeometryBinding();
   InitBitmapBinding();
   InitColorBinding();
   InitFontBinding();
