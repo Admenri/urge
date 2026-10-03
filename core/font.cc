@@ -283,18 +283,22 @@ bool Font::MeasureText(const std::string& text, int32_t* width, int32_t* height)
   if (!font)
     return false;
 
-  // TTF_GetStringSize writes both, so they are always passed real storage and
-  // the results are handed to the caller afterwards
+  /* The width TTF_GetStringSize reports is the pen advance of the run -- it
+     takes max(ink extent, accumulated advance) -- which is exactly what RGSS
+     calls the text size. The outline is deliberately *not* added on top:
+
+     - SDL_ttf already folds `2 * font->outline` into its own measurement, so
+       adding it here would count it twice. At measure time the outline is
+       zeroed (RenderText restores it), so the raw value is the pure advance.
+     - Layout code positions the next glyph at this width -- RMVXA's
+       Window_Base#draw_text_ex does `pos[:x] += text_size(c).width` -- and
+       RGSS outlines bleed one pixel into the neighbouring cell instead of
+       widening it. Padding the advance here spreads every character apart and
+       makes a line run past the right edge of its window. */
   int32_t measured_width = 0, measured_height = 0;
   if (!TTF_GetStringSize(font, text.c_str(), text.size(), &measured_width,
                          &measured_height))
     return false;
-
-  // A defined outline grows the box, which is what a caller lays out against
-  if (outline_) {
-    measured_width += kOutlineSize * 2;
-    measured_height += kOutlineSize * 2;
-  }
 
   if (width)
     *width = measured_width;

@@ -55,15 +55,6 @@ std::string ToLower(std::string value) {
   return value;
 }
 
-//! Splits "Fonts/Arial.ttf" into "Fonts/" and "Arial.ttf".
-std::pair<std::string, std::string> SplitPath(const std::string& path) {
-  const size_t slash = path.find_last_of('/');
-  if (slash == std::string::npos)
-    return {std::string(), path};
-
-  return {path.substr(0, slash + 1), path.substr(slash + 1)};
-}
-
 //! Reads a whole stream into memory, which is what the font cache stores.
 FontContext::FontData ReadStreamToMemory(SDL_IOStream* stream) {
   const int64_t size = SDL_GetIOSize(stream);
