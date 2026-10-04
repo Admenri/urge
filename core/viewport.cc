@@ -36,6 +36,7 @@ Viewport::Viewport(int32_t x, int32_t y, int32_t width, int32_t height)
       rect_(MakeRefCounted<Rect>(x, y, width, height)),
       color_(MakeRefCounted<Color>()),
       tone_(MakeRefCounted<Tone>()) {
+  rect_->on_change = [&]() { ResetTransform(); };
   Node::SetupTrait(this);
   ResetTransform();
   CreateEffectBindings();
@@ -166,15 +167,15 @@ bool Viewport::DoDraw(DrawParam param) {
      transform: the offset is the rect less the origin for a plain viewport and
      the origin alone for one whose region an effect filters, see
      ResetTransform(). */
-  const glm::ivec2 offset =
-      effect_ ? glm::ivec2(-origin_.x, -origin_.y)
-              : glm::ivec2(rect_->data.x - origin_.x, rect_->data.y - origin_.y);
+  const glm::ivec2 offset = effect_ ? glm::ivec2(-origin_.x, -origin_.y)
+                                    : glm::ivec2(rect_->data.x - origin_.x,
+                                                 rect_->data.y - origin_.y);
   const glm::ivec2 parent_position =
       glm::ivec2(ExtractPosition(world_transform())) - offset;
 
-  const RectI self_scissor(
-      parent_position.x + rect_->data.x, parent_position.y + rect_->data.y,
-      rect_->data.width, rect_->data.height);
+  const RectI self_scissor(parent_position.x + rect_->data.x,
+                           parent_position.y + rect_->data.y, rect_->data.width,
+                           rect_->data.height);
 
   /* A viewport with an effect hands its region to that effect: the children
      draw into a texture of their own and the effect composites it back, instead

@@ -42,44 +42,69 @@ class Rect : public Object {
 
   void Set(int32_t xv, int32_t yv, int32_t wv, int32_t hv) {
     data = RectI(xv, yv, wv, hv);
+    if (on_change)
+      on_change();
   }
 
   void Set(RefPtr<Rect> rect) {
     if (rect) {
       data = rect->data;
+      if (on_change)
+        on_change();
     } else {
       throw Exception(Exception::kRGSSError, "cannot set null to rect.");
     }
   }
 
-  void Empty() { data = RectI(); }
+  void Empty() {
+    data = RectI();
+    if (on_change)
+      on_change();
+  }
 
   ATTR(int32_t, X) {
-    if (value)
+    if (value) {
       data.x = *value;
+      if (on_change)
+        on_change();
+      return std::nullopt;
+    }
     return data.x;
   }
 
   ATTR(int32_t, Y) {
-    if (value)
+    if (value) {
       data.y = *value;
+      if (on_change)
+        on_change();
+      return std::nullopt;
+    }
     return data.y;
   }
 
   ATTR(int32_t, Width) {
-    if (value)
+    if (value) {
       data.width = *value;
+      if (on_change)
+        on_change();
+      return std::nullopt;
+    }
     return data.width;
   }
 
   ATTR(int32_t, Height) {
-    if (value)
+    if (value) {
       data.height = *value;
+      if (on_change)
+        on_change();
+      return std::nullopt;
+    }
     return data.height;
   }
   /*-export.end-*/
 
   RectI data;
+  std::function<void()> on_change;
 };
 
 class Color : public Object {
