@@ -47,7 +47,17 @@
 #define RB_PAGE_SIZE (pagesize)
 #define RB_PAGE_MASK (~(RB_PAGE_SIZE - 1))
 static long pagesize;
-#define FIBER_MACHINE_STACK_ALLOCATION_SIZE  (0x10000)
+/* RGSS game scripts drive the event interpreter and message windows on Fibers
+ * (Game_Interpreter#create_fiber, Window_Message#update_fiber, ...), so native
+ * engine methods - including the WebGPU submit and validation chain - run on a
+ * fiber's machine stack. The historical 64 KiB limit is far too small for the
+ * frames of a Debug build and overflowed into the guard page. Reserve a much
+ * larger stack; it is grown on demand from a smaller initial commit on Windows
+ * and the POSIX mmap reservation is already lazy. */
+#define FIBER_MACHINE_STACK_ALLOCATION_SIZE  (4 * 1024 * 1024)
+#ifdef _WIN32
+#define FIBER_MACHINE_STACK_COMMIT_SIZE      (1024 * 1024)
+#endif
 #endif
 
 #define CAPTURE_JUST_VALID_VM_STACK 1
@@ -583,11 +593,15 @@ fiber_initialize_machine_stack_context(rb_fiber_t *fib, size_t size)
     rb_thread_t *sth = &fib->cont.saved_thread;
 
 #ifdef _WIN32
-    fib->fib_handle = CreateFiberEx(size - 1, size, 0, fiber_entry, NULL);
+    fib->fib_handle = CreateFiberEx(FIBER_MACHINE_STACK_COMMIT_SIZE,
+				    FIBER_MACHINE_STACK_ALLOCATION_SIZE,
+				    0, fiber_entry, NULL);
     if (!fib->fib_handle) {
 	/* try to release unnecessary fibers & retry to create */
 	rb_gc();
-	fib->fib_handle = CreateFiberEx(size - 1, size, 0, fiber_entry, NULL);
+	fib->fib_handle = CreateFiberEx(FIBER_MACHINE_STACK_COMMIT_SIZE,
+					FIBER_MACHINE_STACK_ALLOCATION_SIZE,
+					0, fiber_entry, NULL);
 	if (!fib->fib_handle) {
 	    rb_raise(rb_eFiberError, "can't create fiber");
 	}
