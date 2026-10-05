@@ -22,9 +22,9 @@
 
 #pragma once
 
+#include "core/device.h"
 #include "core/disposable.h"
 #include "core/font.h"
-#include "core/gpu.h"
 #include "core/palette.h"
 #include "core/primitive.h"
 #include "core/utility.h"
@@ -92,6 +92,11 @@ class Bitmap : public Disposable {
   ATTR(RefPtr<Font>, Font);
   /*-export.end-*/
 
+ public:
+  wgpu::RenderPassEncoder BeginRendering(
+      wgpu::CommandEncoder encoder,
+      std::optional<glm::vec4> clear = std::nullopt);
+
   glm::ivec2 size() const { return size_; }
 
   wgpu::Texture texture() { return texture_; }
@@ -112,19 +117,12 @@ class Bitmap : public Disposable {
   RefPtr<Font> font_;
 
   glm::ivec2 size_;
-  wgpu::Texture texture_;
-  wgpu::TextureView texture_view_;
-  wgpu::Texture depth_stencil_;
-  wgpu::TextureView depth_stencil_view_;
+  wgpu::Texture texture_, depth_stencil_;
+  wgpu::TextureView texture_view_, depth_stencil_view_;
 
   wgpu::Buffer scene_uniform_, object_uniform_;
   wgpu::Sampler sampler_;
 
-  /*! The emitter the drawing operations of this bitmap emit into. They are
-      batches of their own -- one quad, uploaded and drawn with an encoder of
-      their own --, so the emitter owns the vertex buffer of them and the
-      operations do not build a buffer by hand, see PrimitiveEmitter::Upload().
-   */
   PrimitiveEmitter primitive_;
 
   wgpu::BindGroup scene_group_, object_group_, texture_group_;

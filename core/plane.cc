@@ -27,7 +27,8 @@
 #include <cstdint>
 #include <span>
 
-#include "core/gpu.h"
+#include "core/device.h"
+#include "core/gpu_utils.h"
 #include "core/logger.h"
 #include "core/pipeline.h"
 #include "core/uniform.h"
@@ -292,8 +293,8 @@ void Plane::CreateEffectBindings() {
 
   /* The tint of a plane is written during the prepare stage of every frame the
      plane is drawn in, so the contents of the buffer are not staged here. */
-  tint_group_ = CreateWGroup(pipeline.GetBindGroupLayout(3),
-                             {{0, WBufferSet(tint_uniform_)}});
+  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
+                                   {{0, util::BufferSet(tint_uniform_)}});
 }
 
 }  // namespace urge

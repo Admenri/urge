@@ -25,7 +25,8 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "core/gpu.h"
+#include "core/device.h"
+#include "core/gpu_utils.h"
 #include "core/logger.h"
 #include "core/pipeline.h"
 #include "core/uniform.h"
@@ -97,9 +98,10 @@ class DefaultTexture {
        is the texture set the fallback texture is a member of. */
     const wgpu::RenderPipeline& pipeline =
         ShaderSet::Get().state.geometry_blends.at(BLEND_NORMAL);
-    group_ = CreateWGroup(pipeline.GetBindGroupLayout(2),
-                          {{0, WTextureViewSet(texture_.CreateView(nullptr))},
-                           {1, WSamplerSet(sampler_)}});
+    group_ = util::CreateBindGroup(
+        pipeline.GetBindGroupLayout(2),
+        {{0, util::TextureViewSet(texture_.CreateView(nullptr))},
+         {1, util::SamplerSet(sampler_)}});
 
     LOGGER_DEBUG("geometry fallback texture: {}x{} white texel",
                  kDefaultTextureSize, kDefaultTextureSize);

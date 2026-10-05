@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "core/common.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/object.h"
 #include "core/shader.h"
 

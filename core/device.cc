@@ -20,58 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/gpu.h"
+#include "core/device.h"
 
 #include <string_view>
 
 #include "SDL3/SDL_platform_defines.h"
 
-// The logging entry points of wgpu-native are native extensions, they live next
-// to the standard WebGPU header rather than inside it.
+#if defined(WEBGPU_BACKEND_WGPU)
 #include "wgpu.h"
+#endif  // WEBGPU_BACKEND_WGPU
 
 #include "core/logger.h"
 
 namespace urge {
 
 namespace {
-
-LogLevel FromWGPULogLevel(WGPULogLevel level) {
-  switch (level) {
-    case WGPULogLevel_Error:
-      return LogLevel::kError;
-    case WGPULogLevel_Warn:
-      return LogLevel::kWarn;
-    case WGPULogLevel_Info:
-      return LogLevel::kInfo;
-    case WGPULogLevel_Debug:
-      return LogLevel::kDebug;
-    case WGPULogLevel_Trace:
-      return LogLevel::kTrace;
-    default:
-      return LogLevel::kOff;
-  }
-}
-
-void OnWGPULog(WGPULogLevel level, WGPUStringView message, void* /*userdata*/) {
-  const LogLevel engine_level = FromWGPULogLevel(level);
-  if (engine_level == LogLevel::kOff)
-    return;
-
-  const std::string_view text = wgpu::StringView(message);
-
-  LogMessage(engine_level, "[wgpu] ", "{}", text);
-}
-
-void InstallWGPULogger() {
-  wgpuSetLogCallback(&OnWGPULog, nullptr);
-
-#if defined(NDEBUG)
-  wgpuSetLogLevel(WGPULogLevel_Warn);
-#else
-  wgpuSetLogLevel(WGPULogLevel_Info);
-#endif
-}
 
 wgpu::BackendType FromGFXBackend(std::string backend) {
   if (backend == "d3d11")
@@ -92,8 +55,6 @@ wgpu::BackendType FromGFXBackend(std::string backend) {
 }  // namespace
 
 GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
-  InstallWGPULogger();
-
   // Instance
   const std::vector<wgpu::InstanceFeatureName> instance_exts = {
       wgpu::InstanceFeatureName::ShaderSourceSPIRV,
@@ -102,7 +63,7 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
   wgpu::InstanceDescriptor instance_desc;
   instance_desc.requiredFeatureCount = instance_exts.size();
   instance_desc.requiredFeatures = instance_exts.data();
-#if 1
+#if defined(WEBGPU_BACKEND_WGPU)
   WGPUInstanceExtras instance_extras = {};
   instance_extras.chain.sType =
       static_cast<WGPUSType>(WGPUSType_InstanceExtras);
@@ -131,8 +92,6 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
 
   CreateDevice(backend);
 }
-
-GPUDevice::GPUDevice() : GPUDevice(nullptr, {}) {}
 
 void GPUDevice::CreateDevice(std::string backend) {
   // Adapter, the callback of a request runs before the call returns
@@ -164,13 +123,6 @@ void GPUDevice::CreateDevice(std::string backend) {
   device_callback.userdata1 = this;
 
   wgpu::DeviceDescriptor device_desc;
-#if 1
-  WGPUDeviceExtras device_extras = {};
-  device_extras.chain.sType = static_cast<WGPUSType>(WGPUSType_DeviceExtras);
-  device_extras.memoryHints = WGPUMemoryHints_Performance;
-  device_desc.nextInChain =
-      reinterpret_cast<wgpu::ChainedStruct*>(&device_extras.chain);
-#endif
   adapter_.RequestDevice(&device_desc, device_callback);
 
   // Dev info
@@ -180,8 +132,6 @@ void GPUDevice::CreateDevice(std::string backend) {
               adapter_info.deviceID);
   LOGGER_INFO("[GPU] Vendor: {} ({:#X})", std::string_view(adapter_info.vendor),
               adapter_info.vendorID);
-  LOGGER_INFO("[GPU] Description: {}",
-              std::string_view(adapter_info.description));
 
   // Backend
   switch (adapter_info.backendType) {
@@ -219,16 +169,15 @@ void GPUDevice::CreateDevice(std::string backend) {
 }
 
 void GPUDevice::WaitAny(wgpu::Future future) {
-  if (!future.id)
-    return;
-
-  wgpu::FutureWaitInfo wait_info;
-  wait_info.future = future;
-  instance_.WaitAny(1, &wait_info, UINT64_MAX);
-}
-
-void GPUDevice::Poll(bool wait) {
-  wgpuDevicePoll(device_.Get(), wait ? 1u : 0u, nullptr);
+#if defined(WEBGPU_BACKEND_WGPU)
+  wgpuDevicePoll(device_.Get(), true, nullptr);
+#else
+  if (future.id) {
+    wgpu::FutureWaitInfo wait_info = {};
+    wait_info.future = future;
+    instance_.WaitAny(1, &wait_info, UINT64_MAX);
+  }
+#endif
 }
 
 }  // namespace urge

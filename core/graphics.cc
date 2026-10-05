@@ -34,8 +34,9 @@
 
 #include "core/common.h"
 #include "core/config.h"
+#include "core/device.h"
 #include "core/exception.h"
-#include "core/gpu.h"
+#include "core/gpu_utils.h"
 #include "core/input.h"
 #include "core/logger.h"
 #include "core/mouse.h"
@@ -300,17 +301,17 @@ void Graphics::TransitionBitmap(int32_t duration,
      is built from the layout of the pipeline rather than by a Bitmap. The
      current scene is re-rendered into the same texture every frame, so the
      group is built once and keeps pointing at it. */
-  std::vector<std::pair<uint32_t, WBinding>> bindings = {
-      {0, WTextureViewSet(frozen_scene->texture_view())},
-      {1, WSamplerSet(frozen_scene->sampler())},
-      {2, WTextureViewSet(current_scene->texture_view())},
-      {3, WSamplerSet(current_scene->sampler())}};
+  std::vector<std::pair<uint32_t, util::BindingSetType>> bindings = {
+      {0, util::TextureViewSet(frozen_scene->texture_view())},
+      {1, util::SamplerSet(frozen_scene->sampler())},
+      {2, util::TextureViewSet(current_scene->texture_view())},
+      {3, util::SamplerSet(current_scene->sampler())}};
   if (mapped) {
-    bindings.push_back({4, WTextureViewSet(bitmap->texture_view())});
-    bindings.push_back({5, WSamplerSet(bitmap->sampler())});
+    bindings.push_back({4, util::TextureViewSet(bitmap->texture_view())});
+    bindings.push_back({5, util::SamplerSet(bitmap->sampler())});
   }
   const wgpu::BindGroup scene_textures =
-      CreateWGroup(pipeline.GetBindGroupLayout(2), bindings);
+      util::CreateBindGroup(pipeline.GetBindGroupLayout(2), bindings);
 
   const int32_t steps = std::max(duration, 1);
   const float vague_norm = std::clamp(vague, 1, 256) / 256.0f;
@@ -327,23 +328,7 @@ void Graphics::TransitionBitmap(int32_t duration,
 
     auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
     {
-      wgpu::RenderPassColorAttachment color_attachment = {
-          .view = screen_->texture_view(),
-          .loadOp = wgpu::LoadOp::Load,
-          .storeOp = wgpu::StoreOp::Store,
-      };
-      wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
-          .view = screen_->depth_stencil_view(),
-          .depthLoadOp = wgpu::LoadOp::Load,
-          .depthStoreOp = wgpu::StoreOp::Discard,
-          .stencilLoadOp = wgpu::LoadOp::Load,
-          .stencilStoreOp = wgpu::StoreOp::Discard,
-      };
-      wgpu::RenderPassDescriptor pass_desc;
-      pass_desc.colorAttachmentCount = 1;
-      pass_desc.colorAttachments = &color_attachment;
-      pass_desc.depthStencilAttachment = &depth_stencil_attachment;
-      auto pass = encoder.BeginRenderPass(&pass_desc);
+      auto pass = screen_->BeginRendering(encoder);
       {
         pass.SetPipeline(pipeline);
         pass.SetBindGroup(0, screen_->scene_group(), 0, nullptr);

@@ -27,7 +27,7 @@
 
 #include "core/bitmap.h"
 #include "core/common.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/object.h"
 #include "core/primitive.h"
 

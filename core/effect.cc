@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "core/exception.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/logger.h"
 #include "core/pipeline.h"
 

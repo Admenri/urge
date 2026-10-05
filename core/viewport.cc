@@ -25,7 +25,8 @@
 #include <algorithm>
 #include <span>
 
-#include "core/gpu.h"
+#include "core/device.h"
+#include "core/gpu_utils.h"
 #include "core/graphics.h"
 #include "core/pipeline.h"
 
@@ -36,7 +37,7 @@ Viewport::Viewport(int32_t x, int32_t y, int32_t width, int32_t height)
       rect_(MakeRefCounted<Rect>(x, y, width, height)),
       color_(MakeRefCounted<Color>()),
       tone_(MakeRefCounted<Tone>()) {
-  rect_->on_change = [&]() { ResetTransform(); };
+  rect_->slot.change = [&]() { ResetTransform(); };
   Node::SetupTrait(this);
   ResetTransform();
   CreateEffectBindings();
@@ -222,28 +223,7 @@ bool Viewport::BeginFilter(DrawParam param,
   AcquireOffscreen(screen_scissor);
 
   param->pass.End();
-
-  wgpu::RenderPassColorAttachment color_attachment = {
-      .view = offscreen_->texture_view(),
-      .loadOp = wgpu::LoadOp::Clear,
-      .storeOp = wgpu::StoreOp::Store,
-      .clearValue = {0.0, 0.0, 0.0, 0.0},
-  };
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
-      .view = offscreen_->depth_stencil_view(),
-      .depthLoadOp = wgpu::LoadOp::Clear,
-      .depthStoreOp = wgpu::StoreOp::Discard,
-      .depthClearValue = 1.0f,
-      .stencilLoadOp = wgpu::LoadOp::Clear,
-      .stencilStoreOp = wgpu::StoreOp::Discard,
-      .stencilClearValue = 0,
-  };
-  wgpu::RenderPassDescriptor render_pass_desc = {
-      .colorAttachmentCount = 1,
-      .colorAttachments = &color_attachment,
-      .depthStencilAttachment = &depth_stencil_attachment,
-  };
-  param->pass = param->command.BeginRenderPass(&render_pass_desc);
+  param->pass = offscreen_->BeginRendering(param->command, glm::vec4(0.0f));
 
   /* The children are placed in the coordinates of the texture rather than of
      the render target -- the region starts at its corner --, so both the scene
@@ -311,24 +291,7 @@ void Viewport::PostDraw(DrawParam param) {
       const std::uint32_t vertex_count = primitive_.Upload();
 
       // Begin original render target
-      wgpu::RenderPassColorAttachment color_attachment = {
-          .view = param->target->texture_view(),
-          .loadOp = wgpu::LoadOp::Load,
-          .storeOp = wgpu::StoreOp::Store,
-      };
-      wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
-          .view = param->target->depth_stencil_view(),
-          .depthLoadOp = wgpu::LoadOp::Load,
-          .depthStoreOp = wgpu::StoreOp::Store,
-          .stencilLoadOp = wgpu::LoadOp::Load,
-          .stencilStoreOp = wgpu::StoreOp::Store,
-      };
-      wgpu::RenderPassDescriptor render_pass_desc = {
-          .colorAttachmentCount = 1,
-          .colorAttachments = &color_attachment,
-          .depthStencilAttachment = &depth_stencil_attachment,
-      };
-      param->pass = param->command.BeginRenderPass(&render_pass_desc);
+      param->pass = param->target->BeginRendering(param->command);
 
       // Draw post process
       param->pass.SetPipeline(
@@ -366,24 +329,7 @@ void Viewport::FinishFilter(DrawParam param) {
       glm::vec4(1.0f));
   const std::uint32_t vertex_count = primitive_.Upload();
 
-  wgpu::RenderPassColorAttachment color_attachment = {
-      .view = param->target->texture_view(),
-      .loadOp = wgpu::LoadOp::Load,
-      .storeOp = wgpu::StoreOp::Store,
-  };
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
-      .view = param->target->depth_stencil_view(),
-      .depthLoadOp = wgpu::LoadOp::Load,
-      .depthStoreOp = wgpu::StoreOp::Store,
-      .stencilLoadOp = wgpu::LoadOp::Load,
-      .stencilStoreOp = wgpu::StoreOp::Store,
-  };
-  wgpu::RenderPassDescriptor render_pass_desc = {
-      .colorAttachmentCount = 1,
-      .colorAttachments = &color_attachment,
-      .depthStencilAttachment = &depth_stencil_attachment,
-  };
-  param->pass = param->command.BeginRenderPass(&render_pass_desc);
+  param->pass = param->target->BeginRendering(param->command);
 
   /* The shader of the effect reads the region the children filled from the
      custom set of the effect -- the texture at binding 0 and its sampler at
@@ -451,10 +397,10 @@ void Viewport::CreateEffectBindings() {
   GPUDevice::Get().queue().WriteBuffer(object_uniform_, 0, &object_data,
                                        sizeof(object_data));
 
-  WBufferSet object_binding(object_uniform_);
+  util::BufferSet object_binding(object_uniform_);
   object_binding.size = sizeof(ObjectData);
-  object_group_ =
-      CreateWGroup(pipeline.GetBindGroupLayout(1), {{0, object_binding}});
+  object_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(1),
+                                        {{0, object_binding}});
 
   wgpu::BufferDescriptor tint_desc;
   tint_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
@@ -463,8 +409,8 @@ void Viewport::CreateEffectBindings() {
 
   // Written during the post processing stage of every frame which runs an
   // effect, so the contents of the buffer are not staged here
-  tint_group_ = CreateWGroup(pipeline.GetBindGroupLayout(3),
-                             {{0, WBufferSet(tint_uniform_)}});
+  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
+                                      {{0, util::BufferSet(tint_uniform_)}});
 }
 
 void Viewport::AcquireOffscreen(const RectI& region) {

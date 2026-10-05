@@ -34,6 +34,7 @@
 #include "glm/ext/matrix_clip_space.hpp"
 
 #include "core/filesystem.h"
+#include "core/gpu_utils.h"
 #include "core/pipeline.h"
 
 namespace urge {
@@ -100,7 +101,7 @@ std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
   desc.size.height = surface->h;
   desc.format = wgpu::TextureFormat::RGBA8Unorm;
 
-  wgpu::Texture texture = GPUDevice::Get().device().CreateTexture(&desc);
+  wgpu::Texture texture = g_device.CreateTexture(&desc);
   if (!texture)
     return {nullptr, nullptr};
 
@@ -115,9 +116,8 @@ std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
   size.width = surface->w;
   size.height = surface->h;
 
-  GPUDevice::Get().queue().WriteTexture(&destination, surface->pixels,
-                                        surface->pitch * surface->h, &layout,
-                                        &size);
+  g_queue.WriteTexture(&destination, surface->pixels,
+                       surface->pitch * surface->h, &layout, &size);
 
   return {texture, texture.CreateView(nullptr)};
 }
@@ -146,20 +146,6 @@ RectI AlignTextRect(const RectI& region,
 
   const int32_t y = region.y + (region.height - text_height) / 2;
   return RectI(x, y, text_width, text_height);
-}
-
-//! Normalized texture coordinates of a source rectangle inside a bitmap.
-RectF NormalizeTexcoord(const RectI& src_rect, const glm::ivec2& src_size) {
-  const float width = static_cast<float>(src_size.x);
-  const float height = static_cast<float>(src_size.y);
-
-  if (width <= 0.0f || height <= 0.0f)
-    return RectF();
-
-  return RectF(static_cast<float>(src_rect.x) / width,
-               static_cast<float>(src_rect.y) / height,
-               static_cast<float>(src_rect.width) / width,
-               static_cast<float>(src_rect.height) / height);
 }
 
 //! Converts one row of premultiplied pixels into straight ones, in place, i.e.
@@ -284,14 +270,15 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   };
   map_callback.userdata1 = &mapping;
 
-  staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
+  auto future =
+      staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
 
   /* GPUDevice::WaitAny cannot be used here: wgpu-native does not implement the
      future API yet, its wgpuBufferMapAsync() ends with a "TODO: Properly handle
      futures" and returns an empty future, so there is nothing to wait for and
      the callback above would never run. Polling the device blocks on the queue
      and is what completes the mapping. */
-  gpu.Poll(true);
+  gpu.WaitAny(future);
 
   /* GetMappedRange() is what raises the "buffer is not mapped" validation
      error, and wgpu-native panics on it instead of reporting it, so the status
@@ -355,7 +342,7 @@ Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
 
 Bitmap::Bitmap(RefPtr<Bitmap> other)
     : Bitmap(other->size().x, other->size().y) {
-  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+  auto encoder = g_device.CreateCommandEncoder(nullptr);
 
   wgpu::TexelCopyTextureInfo source, destination;
   source.texture = other->texture();
@@ -368,7 +355,7 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
   encoder.CopyTextureToTexture(&source, &destination, &copy_size);
 
   auto command = encoder.Finish(nullptr);
-  GPUDevice::Get().queue().Submit(1, &command);
+  g_queue.Submit(1, &command);
 }
 
 Bitmap::~Bitmap() {
@@ -420,24 +407,8 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
                     glm::vec4(opacity / 255.0f))
           .Upload();
 
-  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
-  wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = texture_view_;
-  color_attachment.loadOp = wgpu::LoadOp::Load;
-  color_attachment.storeOp = wgpu::StoreOp::Store;
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
-  depth_stencil_attachment.view = depth_stencil_view_;
-  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.depthClearValue = 1.0f;
-  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.stencilClearValue = 0;
-  wgpu::RenderPassDescriptor pass_desc;
-  pass_desc.colorAttachmentCount = 1;
-  pass_desc.colorAttachments = &color_attachment;
-  pass_desc.depthStencilAttachment = &depth_stencil_attachment;
-  auto pass = encoder.BeginRenderPass(&pass_desc);
+  auto encoder = g_device.CreateCommandEncoder(nullptr);
+  auto pass = BeginRendering(encoder);
   {
     auto pipeline = ShaderSet::Get().state.texture_pma;
     pass.SetPipeline(pipeline);
@@ -449,7 +420,7 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   }
   pass.End();
   auto command = encoder.Finish(nullptr);
-  GPUDevice::Get().queue().Submit(1, &command);
+  g_queue.Submit(1, &command);
 }
 
 void Bitmap::FillRect(int32_t x,
@@ -504,24 +475,8 @@ void Bitmap::GradientFillRect(int32_t x,
      buffer and drops it afterwards, see PrimitiveEmitter::Upload(). */
   const std::uint32_t vertex_count = primitive_.Upload();
 
-  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
-  wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = texture_view_;
-  color_attachment.loadOp = wgpu::LoadOp::Load;
-  color_attachment.storeOp = wgpu::StoreOp::Store;
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
-  depth_stencil_attachment.view = depth_stencil_view_;
-  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.depthClearValue = 1.0f;
-  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.stencilClearValue = 0;
-  wgpu::RenderPassDescriptor pass_desc;
-  pass_desc.colorAttachmentCount = 1;
-  pass_desc.colorAttachments = &color_attachment;
-  pass_desc.depthStencilAttachment = &depth_stencil_attachment;
-  auto pass = encoder.BeginRenderPass(&pass_desc);
+  auto encoder = g_device.CreateCommandEncoder(nullptr);
+  auto pass = BeginRendering(encoder);
   {
     auto pipeline = ShaderSet::Get().state.color_noblend;
     pass.SetPipeline(pipeline);
@@ -532,7 +487,7 @@ void Bitmap::GradientFillRect(int32_t x,
   }
   pass.End();
   auto command = encoder.Finish(nullptr);
-  GPUDevice::Get().queue().Submit(1, &command);
+  g_queue.Submit(1, &command);
 }
 
 void Bitmap::GradientFillRect(RefPtr<Rect> rect,
@@ -668,32 +623,15 @@ void Bitmap::DrawText(int32_t x,
   sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
   sampler_desc.magFilter = wgpu::FilterMode::Linear;
   sampler_desc.minFilter = wgpu::FilterMode::Linear;
-  wgpu::Sampler sampler =
-      GPUDevice::Get().device().CreateSampler(&sampler_desc);
+  wgpu::Sampler sampler = g_device.CreateSampler(&sampler_desc);
 
   auto pipeline = ShaderSet::Get().state.texture_pma;
-  wgpu::BindGroup text_group = CreateWGroup(
+  wgpu::BindGroup text_group = util::CreateBindGroup(
       pipeline.GetBindGroupLayout(2),
-      {{0, WTextureViewSet(text_view)}, {1, WSamplerSet(sampler)}});
+      {{0, util::TextureViewSet(text_view)}, {1, util::SamplerSet(sampler)}});
 
-  auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
-  wgpu::RenderPassColorAttachment color_attachment;
-  color_attachment.view = texture_view_;
-  color_attachment.loadOp = wgpu::LoadOp::Load;
-  color_attachment.storeOp = wgpu::StoreOp::Store;
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment;
-  depth_stencil_attachment.view = depth_stencil_view_;
-  depth_stencil_attachment.depthLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.depthStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.depthClearValue = 1.0f;
-  depth_stencil_attachment.stencilLoadOp = wgpu::LoadOp::Clear;
-  depth_stencil_attachment.stencilStoreOp = wgpu::StoreOp::Discard;
-  depth_stencil_attachment.stencilClearValue = 0;
-  wgpu::RenderPassDescriptor pass_desc;
-  pass_desc.colorAttachmentCount = 1;
-  pass_desc.colorAttachments = &color_attachment;
-  pass_desc.depthStencilAttachment = &depth_stencil_attachment;
-  auto pass = encoder.BeginRenderPass(&pass_desc);
+  auto encoder = g_device.CreateCommandEncoder(nullptr);
+  auto pass = BeginRendering(encoder);
   {
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
@@ -704,7 +642,7 @@ void Bitmap::DrawText(int32_t x,
   }
   pass.End();
   auto command = encoder.Finish(nullptr);
-  GPUDevice::Get().queue().Submit(1, &command);
+  g_queue.Submit(1, &command);
 }
 
 void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
@@ -784,9 +722,8 @@ void Bitmap::UpdateWithPalette(RefPtr<Palette> palette) {
   target_size.width = data->w;
   target_size.height = data->h;
 
-  GPUDevice::Get().queue().WriteTexture(&destination, pixels.data(),
-                                        data->pitch * data->h, &buffer_layout,
-                                        &target_size);
+  g_queue.WriteTexture(&destination, pixels.data(), data->pitch * data->h,
+                       &buffer_layout, &target_size);
 }
 
 ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
@@ -797,6 +734,41 @@ ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
     return font_;
   }
 }
+
+wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
+                                               std::optional<glm::vec4> clear) {
+  wgpu::RenderPassColorAttachment color_attachment = {
+      .view = texture_view_,
+      .loadOp = wgpu::LoadOp::Load,
+      .storeOp = wgpu::StoreOp::Store,
+  };
+
+  if (clear) {
+    color_attachment.loadOp = wgpu::LoadOp::Clear;
+    color_attachment.clearValue = wgpu::Color{
+        .r = clear->r,
+        .g = clear->g,
+        .b = clear->b,
+        .a = clear->a,
+    };
+  }
+
+  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
+      .view = depth_stencil_view_,
+      .depthLoadOp = wgpu::LoadOp::Clear,
+      .depthStoreOp = wgpu::StoreOp::Discard,
+      .depthClearValue = 1.0f,
+      .stencilLoadOp = wgpu::LoadOp::Clear,
+      .stencilStoreOp = wgpu::StoreOp::Discard,
+      .stencilClearValue = 0,
+  };
+  wgpu::RenderPassDescriptor pass_desc = {
+      .colorAttachmentCount = 1,
+      .colorAttachments = &color_attachment,
+      .depthStencilAttachment = &depth_stencil_attachment,
+  };
+  return encoder.BeginRenderPass(&pass_desc);
+}  // namespace urge
 
 void Bitmap::DisposeObject() {}
 
@@ -817,7 +789,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   texture_desc.size.width = data->w;
   texture_desc.size.height = data->h;
   texture_desc.format = wgpu::TextureFormat::RGBA8Unorm;
-  texture_ = GPUDevice::Get().device().CreateTexture(&texture_desc);
+  texture_ = g_device.CreateTexture(&texture_desc);
   texture_view_ = texture_.CreateView(nullptr);
 
   // Depth stencil
@@ -827,7 +799,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   depth_stencil_desc.size.width = data->w;
   depth_stencil_desc.size.height = data->h;
   depth_stencil_desc.format = wgpu::TextureFormat::Depth24PlusStencil8;
-  depth_stencil_ = GPUDevice::Get().device().CreateTexture(&depth_stencil_desc);
+  depth_stencil_ = g_device.CreateTexture(&depth_stencil_desc);
   depth_stencil_view_ = depth_stencil_.CreateView(nullptr);
 
   // Update texture data
@@ -842,9 +814,8 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   target_size.width = data->w;
   target_size.height = data->h;
 
-  GPUDevice::Get().queue().WriteTexture(&destination, data->pixels,
-                                        data->pitch * data->h, &buffer_layout,
-                                        &target_size);
+  g_queue.WriteTexture(&destination, data->pixels, data->pitch * data->h,
+                       &buffer_layout, &target_size);
 
   // Uniform data
   SceneData scene_uniform = {};
@@ -861,9 +832,9 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   uniform_desc.mappedAtCreation = true;
   uniform_desc.usage = wgpu::BufferUsage::Uniform;
   uniform_desc.size = sizeof(scene_uniform);
-  scene_uniform_ = GPUDevice::Get().device().CreateBuffer(&uniform_desc);
+  scene_uniform_ = g_device.CreateBuffer(&uniform_desc);
   uniform_desc.size = sizeof(object_uniform);
-  object_uniform_ = GPUDevice::Get().device().CreateBuffer(&uniform_desc);
+  object_uniform_ = g_device.CreateBuffer(&uniform_desc);
 
   std::memcpy(scene_uniform_.GetMappedRange(0, WGPU_WHOLE_MAP_SIZE),
               &scene_uniform, sizeof(scene_uniform));
@@ -879,7 +850,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
   sampler_desc.magFilter = wgpu::FilterMode::Nearest;
   sampler_desc.minFilter = wgpu::FilterMode::Nearest;
-  sampler_ = GPUDevice::Get().device().CreateSampler(&sampler_desc);
+  sampler_ = g_device.CreateSampler(&sampler_desc);
 
   // Release cpu data
   SDL_DestroySurface(data);
@@ -890,13 +861,13 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
 void Bitmap::CreateGroup() {
   auto pipeline = ShaderSet::Get().state.texture_pma;
 
-  scene_group_ = CreateWGroup(pipeline.GetBindGroupLayout(0),
-                              {{0, WBufferSet(scene_uniform_)}});
-  object_group_ = CreateWGroup(pipeline.GetBindGroupLayout(1),
-                               {{0, WBufferSet(object_uniform_)}});
-  texture_group_ = CreateWGroup(
-      pipeline.GetBindGroupLayout(2),
-      {{0, WTextureViewSet(texture_view_)}, {1, WSamplerSet(sampler_)}});
+  scene_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(0),
+                                       {{0, util::BufferSet(scene_uniform_)}});
+  object_group_ = util::CreateBindGroup(
+      pipeline.GetBindGroupLayout(1), {{0, util::BufferSet(object_uniform_)}});
+  texture_group_ = util::CreateBindGroup(
+      pipeline.GetBindGroupLayout(2), {{0, util::TextureViewSet(texture_view_)},
+                                       {1, util::SamplerSet(sampler_)}});
 }
 
 }  // namespace urge

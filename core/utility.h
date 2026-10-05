@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "core/common.h"
 
 #include "core/definition.h"
@@ -29,6 +31,15 @@
 #include "core/object.h"
 
 namespace urge {
+
+struct ValueSlot {
+  void ValueNotify() {
+    if (change)
+      change();
+  }
+
+  std::function<void()> change;
+};
 
 class Rect : public Object {
  public:
@@ -42,15 +53,13 @@ class Rect : public Object {
 
   void Set(int32_t xv, int32_t yv, int32_t wv, int32_t hv) {
     data = RectI(xv, yv, wv, hv);
-    if (on_change)
-      on_change();
+    slot.ValueNotify();
   }
 
   void Set(RefPtr<Rect> rect) {
     if (rect) {
       data = rect->data;
-      if (on_change)
-        on_change();
+      slot.ValueNotify();
     } else {
       throw Exception(Exception::kRGSSError, "cannot set null to rect.");
     }
@@ -58,15 +67,13 @@ class Rect : public Object {
 
   void Empty() {
     data = RectI();
-    if (on_change)
-      on_change();
+    slot.ValueNotify();
   }
 
   ATTR(int32_t, X) {
     if (value) {
       data.x = *value;
-      if (on_change)
-        on_change();
+      slot.ValueNotify();
       return std::nullopt;
     }
     return data.x;
@@ -75,8 +82,7 @@ class Rect : public Object {
   ATTR(int32_t, Y) {
     if (value) {
       data.y = *value;
-      if (on_change)
-        on_change();
+      slot.ValueNotify();
       return std::nullopt;
     }
     return data.y;
@@ -85,8 +91,7 @@ class Rect : public Object {
   ATTR(int32_t, Width) {
     if (value) {
       data.width = *value;
-      if (on_change)
-        on_change();
+      slot.ValueNotify();
       return std::nullopt;
     }
     return data.width;
@@ -95,8 +100,7 @@ class Rect : public Object {
   ATTR(int32_t, Height) {
     if (value) {
       data.height = *value;
-      if (on_change)
-        on_change();
+      slot.ValueNotify();
       return std::nullopt;
     }
     return data.height;
@@ -104,7 +108,7 @@ class Rect : public Object {
   /*-export.end-*/
 
   RectI data;
-  std::function<void()> on_change;
+  ValueSlot slot;
 };
 
 class Color : public Object {

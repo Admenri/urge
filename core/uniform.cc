@@ -26,8 +26,9 @@
 #include <cstring>
 #include <utility>
 
+#include "core/device.h"
 #include "core/exception.h"
-#include "core/gpu.h"
+#include "core/gpu_utils.h"
 #include "core/logger.h"
 
 namespace urge {
@@ -161,9 +162,9 @@ void UniformBlockPool::CreateChunk() {
      draw reads is chosen with the dynamic offset of the draw. Binding the whole
      buffer instead would make every dynamic offset beyond the first slot
      invalid, because the offset of a binding is added to the size of it. */
-  WBufferSet binding(chunk.buffer);
+  util::BufferSet binding(chunk.buffer);
   binding.size = element_size_;
-  chunk.group = CreateWGroup(layout_, {{0, binding}});
+  chunk.group = util::CreateBindGroup(layout_, {{0, binding}});
 
   if (chunk.buffer == nullptr || chunk.group == nullptr) {
     LOGGER_ERROR("uniform pool '{}': the device rejected a chunk of {} bytes",

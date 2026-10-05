@@ -28,7 +28,8 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "core/gpu.h"
+#include "core/device.h"
+#include "core/gpu_utils.h"
 #include "core/pipeline.h"
 #include "core/uniform.h"
 
@@ -245,8 +246,8 @@ void WindowXP::CreateTintBinding() {
   tint_desc.size = sizeof(TintBase::TintParam);
   tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
 
-  tint_group_ = CreateWGroup(pipeline.GetBindGroupLayout(3),
-                             {{0, WBufferSet(tint_uniform_)}});
+  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
+                                   {{0, util::BufferSet(tint_uniform_)}});
 }
 
 void WindowXP::Update() {

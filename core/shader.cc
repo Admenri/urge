@@ -36,7 +36,7 @@
 #include "spirv_reflect.h"
 
 #include "core/exception.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/pipeline.h"
 
 namespace urge {

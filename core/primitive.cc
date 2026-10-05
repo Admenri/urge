@@ -29,7 +29,6 @@
 
 #include "core/definition.h"
 #include "core/exception.h"
-#include "core/gpu.h"
 #include "core/logger.h"
 
 namespace urge {
@@ -373,14 +372,15 @@ void PrimitiveEmitter::EnsureVertexBuffer(std::size_t bytes) {
 
   // The device validates against the limits it was created with
   wgpu::Limits limits = {};
-  GPUDevice::Get().device().GetLimits(&limits);
+  g_device.GetLimits(&limits);
 
   // A batch which does not fit is not cut short, its draw would read garbage
   if (bytes > limits.maxBufferSize)
-    throw Exception(Exception::kGPUError,
-                    "a primitive emitter batch of {} bytes does not fit into the "
-                    "{} byte buffers of this device.",
-                    bytes, limits.maxBufferSize);
+    throw Exception(
+        Exception::kGPUError,
+        "a primitive emitter batch of {} bytes does not fit into the "
+        "{} byte buffers of this device.",
+        bytes, limits.maxBufferSize);
 
   const std::uint64_t size = std::min(
       std::max<std::uint64_t>(current * 2, bytes), limits.maxBufferSize);
@@ -388,7 +388,7 @@ void PrimitiveEmitter::EnsureVertexBuffer(std::size_t bytes) {
   wgpu::BufferDescriptor buffer_desc;
   buffer_desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
   buffer_desc.size = size;
-  vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
+  vertex_buffer_ = g_device.CreateBuffer(&buffer_desc);
 
   if (!vertex_buffer_)
     throw Exception(Exception::kGPUError,

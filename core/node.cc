@@ -77,40 +77,10 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   uniforms.Flush();
   quads.Upload();
 
-  // Color attachment
-  wgpu::RenderPassColorAttachment color_attachment = {
-      .view = target->texture_view(),
-      .loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load,
-      .storeOp = wgpu::StoreOp::Store,
-  };
-
-  if (clear) {
-    auto clear_value = clear->Normalize();
-    color_attachment.clearValue.r = clear_value.r;
-    color_attachment.clearValue.g = clear_value.g;
-    color_attachment.clearValue.b = clear_value.b;
-    color_attachment.clearValue.a = clear_value.a;
-  }
-
-  // Depth-stencil attachment
-  wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
-      .view = target->depth_stencil_view(),
-      .depthLoadOp = wgpu::LoadOp::Clear,
-      .depthStoreOp = wgpu::StoreOp::Discard,
-      .depthClearValue = 1.0f,
-      .stencilLoadOp = wgpu::LoadOp::Clear,
-      .stencilStoreOp = wgpu::StoreOp::Discard,
-      .stencilClearValue = 0,
-  };
-
-  // Render pass descriptor
-  wgpu::RenderPassDescriptor render_pass_desc = {
-      .colorAttachmentCount = 1,
-      .colorAttachments = &color_attachment,
-      .depthStencilAttachment = &depth_stencil_attachment,
-  };
-
-  context.pass = encoder.BeginRenderPass(&render_pass_desc);
+  std::optional<glm::vec4> clear_color = std::nullopt;
+  if (clear)
+    clear_color = clear->Normalize();
+  context.pass = target->BeginRendering(encoder, clear_color);
   {
     context.scissors.push(RectI(target->size()));
     context.pass.SetScissorRect(0, 0, target->size().x, target->size().y);

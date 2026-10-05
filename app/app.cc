@@ -36,7 +36,7 @@
 #include "core/config.h"
 #include "core/filesystem.h"
 #include "core/font_context.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/graphics.h"
 #include "core/input.h"
 #include "core/logger.h"

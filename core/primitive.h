@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "core/common.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/object.h"
 
 namespace urge {
@@ -82,8 +82,8 @@ pass.Draw(slot.count, 1, slot.first, 0);
 The vertices are one append-only storage: Begin() starts a batch at the end of
 it and End() answers the range that batch emitted, but neither drops what an
 earlier batch wrote. That is what lets several batches share one upload -- the
-frame batch of QuadVertexManager appends one batch per drawable and writes all of
-them with a single Upload() -- and an emitter which uploads after every batch
+frame batch of QuadVertexManager appends one batch per drawable and writes all
+of them with a single Upload() -- and an emitter which uploads after every batch
 (Bitmap, PresentInternal) never grows. Upload() creates or grows the vertex
 buffer of the emitter and copies the storage into it with one queue write, so
 from then on a draw reads the vertices from buffer() and addresses its own with
@@ -302,9 +302,9 @@ class PrimitiveEmitter {
   \return The number of vertices written, zero when the storage is empty.
 
   \remarks The buffer is created for the vertices, or grown when it is smaller
-  than them, and it is kept afterwards, so a frame which stays at the size of the
-  previous one writes into the same buffer. Throws Exception if the vertices do
-  not fit into one buffer of the device.
+  than them, and it is kept afterwards, so a frame which stays at the size of
+  the previous one writes into the same buffer. Throws Exception if the vertices
+  do not fit into one buffer of the device.
   */
   std::uint32_t Upload();
   //! Returns the buffer Upload() writes, which is empty before the first one.
@@ -352,9 +352,9 @@ class PrimitiveEmitter {
 };
 
 /**
-\brief The vertex batch of one frame: every drawable which emits a quad per frame
-appends into one emitter, so the frame is one upload into one vertex buffer
-instead of one buffer and one upload per drawable.
+\brief The vertex batch of one frame: every drawable which emits a quad per
+frame appends into one emitter, so the frame is one upload into one vertex
+buffer instead of one buffer and one upload per drawable.
 
 A drawable emits into emitter() during the prepare stage and keeps the Slot its
 End() answered; its draw stage turns that slot into a draw against buffer():
@@ -366,11 +366,11 @@ param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 param->pass.Draw(slot_.count, 1, slot_.first, 0);        // draw stage
 \endcode
 
-Driven by Node::Render, which opens and closes one frame of it around the prepare
-stage -- like the uniform pools of UniformManager, and for the same reason: a
-queue write is ordered before the submissions that follow it, so the vertices
-have to be uploaded after the last drawable staged them and before the command
-buffer that draws them is submitted.
+Driven by Node::Render, which opens and closes one frame of it around the
+prepare stage -- like the uniform pools of UniformManager, and for the same
+reason: a queue write is ordered before the submissions that follow it, so the
+vertices have to be uploaded after the last drawable staged them and before the
+command buffer that draws them is submitted.
 */
 class QuadVertexManager : public Singleton<QuadVertexManager> {
  public:

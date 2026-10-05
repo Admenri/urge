@@ -3,13 +3,14 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-03T06:48:24Z",
+    "generated_at": "2026-10-05T01:41:46Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
       "core/common.h",
       "core/config.h",
       "core/definition.h",
+      "core/device.h",
       "core/disposable.h",
       "core/drawable.h",
       "core/effect.h",
@@ -18,7 +19,7 @@
       "core/font.h",
       "core/font_context.h",
       "core/geometry.h",
-      "core/gpu.h",
+      "core/gpu_utils.h",
       "core/graphics.h",
       "core/inirw.h",
       "core/input.h",
@@ -2081,11 +2082,11 @@
               "default": "255.f"
             }
           ],
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         },
         {
           "params": [],
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         }
       ],
       "initialize_copy": {
@@ -2096,7 +2097,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:95-138"
+        "export": "core/utility.h:124-167"
       },
       "instance_methods": [
         {
@@ -2129,7 +2130,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         },
         {
           "ruby_name": "set",
@@ -2146,7 +2147,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         }
       ],
       "attributes": [
@@ -2159,7 +2160,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         },
         {
           "name": "green",
@@ -2170,7 +2171,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         },
         {
           "name": "blue",
@@ -2181,7 +2182,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         },
         {
           "name": "alpha",
@@ -2192,7 +2193,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:95-138"
+          "export": "core/utility.h:124-167"
         }
       ],
       "data_attributes": [],
@@ -2204,7 +2205,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/utility.h:95-138",
+      "export": "core/utility.h:124-167",
       "cpp_name": "Color",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -2793,11 +2794,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         },
         {
           "params": [],
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         }
       ],
       "initialize_copy": {
@@ -2808,7 +2809,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:35-80"
+        "export": "core/utility.h:46-108"
       },
       "instance_methods": [
         {
@@ -2841,7 +2842,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         },
         {
           "ruby_name": "set",
@@ -2858,7 +2859,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         },
         {
           "ruby_name": "empty",
@@ -2869,7 +2870,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         }
       ],
       "attributes": [
@@ -2882,7 +2883,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         },
         {
           "name": "y",
@@ -2893,7 +2894,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         },
         {
           "name": "width",
@@ -2904,7 +2905,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         },
         {
           "name": "height",
@@ -2915,7 +2916,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:35-80"
+          "export": "core/utility.h:46-108"
         }
       ],
       "data_attributes": [],
@@ -2927,7 +2928,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/utility.h:35-80",
+      "export": "core/utility.h:46-108",
       "cpp_name": "Rect",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3458,11 +3459,11 @@
               "default": "0.f"
             }
           ],
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         },
         {
           "params": [],
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         }
       ],
       "initialize_copy": {
@@ -3473,7 +3474,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:154-197"
+        "export": "core/utility.h:183-226"
       },
       "instance_methods": [
         {
@@ -3506,7 +3507,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         },
         {
           "ruby_name": "set",
@@ -3523,7 +3524,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         }
       ],
       "attributes": [
@@ -3536,7 +3537,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         },
         {
           "name": "green",
@@ -3547,7 +3548,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         },
         {
           "name": "blue",
@@ -3558,7 +3559,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         },
         {
           "name": "gray",
@@ -3569,7 +3570,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:154-197"
+          "export": "core/utility.h:183-226"
         }
       ],
       "data_attributes": [],
@@ -3581,7 +3582,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/utility.h:154-197",
+      "export": "core/utility.h:183-226",
       "cpp_name": "Tone",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3605,7 +3606,7 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:215-230"
+          "export": "core/utility.h:244-259"
         },
         {
           "params": [
@@ -3615,11 +3616,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:215-230"
+          "export": "core/utility.h:244-259"
         },
         {
           "params": [],
-          "export": "core/utility.h:215-230"
+          "export": "core/utility.h:244-259"
         }
       ],
       "initialize_copy": {
@@ -3630,7 +3631,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:215-230"
+        "export": "core/utility.h:244-259"
       },
       "instance_methods": [
         {
@@ -3653,7 +3654,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:215-230"
+          "export": "core/utility.h:244-259"
         },
         {
           "ruby_name": "set",
@@ -3670,7 +3671,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:215-230"
+          "export": "core/utility.h:244-259"
         }
       ],
       "attributes": [],
@@ -3689,7 +3690,7 @@
           "reason": "internal parameter type: glm::vec2"
         }
       ],
-      "export": "core/utility.h:215-230",
+      "export": "core/utility.h:244-259",
       "cpp_name": "Vector2",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3718,7 +3719,7 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:239-254"
+          "export": "core/utility.h:268-283"
         },
         {
           "params": [
@@ -3728,11 +3729,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:239-254"
+          "export": "core/utility.h:268-283"
         },
         {
           "params": [],
-          "export": "core/utility.h:239-254"
+          "export": "core/utility.h:268-283"
         }
       ],
       "initialize_copy": {
@@ -3743,7 +3744,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:239-254"
+        "export": "core/utility.h:268-283"
       },
       "instance_methods": [
         {
@@ -3771,7 +3772,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:239-254"
+          "export": "core/utility.h:268-283"
         },
         {
           "ruby_name": "set",
@@ -3788,7 +3789,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:239-254"
+          "export": "core/utility.h:268-283"
         }
       ],
       "attributes": [],
@@ -3807,7 +3808,7 @@
           "reason": "internal parameter type: glm::vec3"
         }
       ],
-      "export": "core/utility.h:239-254",
+      "export": "core/utility.h:268-283",
       "cpp_name": "Vector3",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3841,7 +3842,7 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:263-280"
+          "export": "core/utility.h:292-309"
         },
         {
           "params": [
@@ -3851,11 +3852,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:263-280"
+          "export": "core/utility.h:292-309"
         },
         {
           "params": [],
-          "export": "core/utility.h:263-280"
+          "export": "core/utility.h:292-309"
         }
       ],
       "initialize_copy": {
@@ -3866,7 +3867,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:263-280"
+        "export": "core/utility.h:292-309"
       },
       "instance_methods": [
         {
@@ -3899,7 +3900,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:263-280"
+          "export": "core/utility.h:292-309"
         },
         {
           "ruby_name": "set",
@@ -3916,7 +3917,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:263-280"
+          "export": "core/utility.h:292-309"
         }
       ],
       "attributes": [],
@@ -3935,7 +3936,7 @@
           "reason": "internal parameter type: glm::vec4"
         }
       ],
-      "export": "core/utility.h:263-280",
+      "export": "core/utility.h:292-309",
       "cpp_name": "Vector4",
       "cpp_parent": "Object",
       "header": "core/utility.h",

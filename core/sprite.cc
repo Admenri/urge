@@ -31,7 +31,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 #include "core/config.h"
-#include "core/gpu.h"
+#include "core/device.h"
 #include "core/logger.h"
 #include "core/pipeline.h"
 #include "core/uniform.h"
