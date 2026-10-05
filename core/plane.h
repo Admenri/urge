@@ -23,6 +23,7 @@
 #pragma once
 
 #include "core/bitmap.h"
+#include "core/definition.h"
 #include "core/node.h"
 #include "core/primitive.h"
 #include "core/uniform.h"
@@ -30,23 +31,34 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Plane : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Plane(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~Plane() override;
 
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Bitmap);
+  URGE_BINDING()
   ATTR(int32_t, OX);
+  URGE_BINDING()
   ATTR(int32_t, OY);
+  URGE_BINDING()
   ATTR(float, ZoomX);
+  URGE_BINDING()
   ATTR(float, ZoomY);
+  URGE_BINDING()
   ATTR(int32_t, Opacity);
+  URGE_BINDING()
   ATTR(int32_t, BlendType);
+  URGE_BINDING()
   ATTR(RefPtr<Color>, Color);
+  URGE_BINDING()
   ATTR(RefPtr<Tone>, Tone);
-  /*-export.end-*/
 
  private:
   void DisposeObject() override;
@@ -68,10 +80,8 @@ class Plane : public Node {
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
 
-  //! The object pool slot of this plane, bound at set 1. The quad of a plane is
-  //! emitted in the pixels of the render target, so the transform it carries is
-  //! the identity and the tiles are placed by their texture coordinates
-  //! instead.
+  //! Object pool slot of this plane, bound at set 1; its tiles place themselves
+  //! by texture coordinate instead of by the transform.
   UniformBlockPool::Slot object_slot_ = {};
   //! The range EmitGeometryInternal() appended to the vertex batch of the
   //! frame, i.e. the vertices DoDraw() draws.

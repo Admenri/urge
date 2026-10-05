@@ -24,6 +24,7 @@
 
 #include <string>
 
+#include "core/definition.h"
 #include "core/object.h"
 
 namespace urge {
@@ -31,37 +32,50 @@ namespace urge {
 // Empty-shell audio subsystem: the public interface is preserved for the
 // Ruby bindings and the frame loop, while every operation is a no-op until
 // audio is reimplemented on top of SDL3.
+URGE_BINDING()
 class Audio : public Singleton<Audio> {
  public:
   Audio();
   ~Audio();
 
-  /*-export.begin-*/
+  URGE_BINDING()
   void SetupMIDI();
 
+  URGE_BINDING()
   void BGMPlay(std::string filename,
                int32_t volume = 100,
                int32_t pitch = 100,
                float pos = 0.0f);
+  URGE_BINDING()
   void BGMStop();
+  URGE_BINDING()
   void BGMFade(int32_t time);
+  URGE_BINDING()
   float BGMPos();
 
+  URGE_BINDING()
   void BGSPlay(std::string filename,
                int32_t volume = 100,
                int32_t pitch = 100,
                float pos = 0.0f);
+  URGE_BINDING()
   void BGSStop();
+  URGE_BINDING()
   void BGSFade(int32_t time);
+  URGE_BINDING()
   float BGSPos();
 
+  URGE_BINDING()
   void MEPlay(std::string filename, int32_t volume = 100, int32_t pitch = 100);
+  URGE_BINDING()
   void MEStop();
+  URGE_BINDING()
   void MEFade(int32_t time);
 
+  URGE_BINDING()
   void SEPlay(std::string filename, int32_t volume = 100, int32_t pitch = 100);
+  URGE_BINDING()
   void SEStop();
-  /*-export.end-*/
 
  public:
   // Called once per frame by the application.

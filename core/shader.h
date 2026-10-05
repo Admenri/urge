@@ -72,10 +72,8 @@ class Shader {
 
 class Pipeline {
  public:
-  /*! \param[in] min_sets The number of bind group layouts the pipeline always
-      carries, even when neither stage declares a binding in one of them: an
-      Effect binds its custom set (set 2) on every draw, so its pipeline has to
-      own a layout for it whether or not the stages read it. */
+  //! \param min_sets Bind group layouts always carried, even when neither
+  //! stage declares a binding in one (an Effect binds its set 2 every draw).
   Pipeline(std::string_view vs_glsl,
            std::string_view fs_glsl,
            std::vector<std::vector<uint32_t>> vb_layouts,
@@ -87,19 +85,13 @@ class Pipeline {
                                  std::vector<wgpu::ColorTargetState> blends,
                                  wgpu::MultisampleState samples = {});
 
-  /*! Builds the state of the plain draw of this shader with the defaults of
-      the engine: a triangle list into the single RGBA8Unorm color target every
-      pass carries, with the depth-stencil state of a pass which ignores the
-      attachment, blended with \p blend or not blended at all when it is null,
-      see GetDefaultPrimitiveState and GetBlendState. The nodes which draw with
-      a user authored shader -- an Effect -- take the same state as the built in
-      pipelines, which is what makes a sprite swap only its shader. */
+  //! Builds the default draw state the built-in pipelines use: triangle list
+  //! into the single RGBA8Unorm target, depth-stencil ignored, blended with
+  //! \p blend or unblended when it is null. An Effect takes the same state.
   wgpu::RenderPipeline MakeDefaultState(const wgpu::BlendState* blend);
 
-  /*! The bindings of one bind group of this shader, merged from both stages
-      and keyed by their binding. A stage which does not touch the group leaves
-      it out, so a caller which builds a bind group of its own -- an Effect,
-      whose custom set belongs to the user -- knows which entries to fill. */
+  //! The bindings of one bind group, merged from both stages and keyed by
+  //! binding; a stage which does not touch the group leaves it out.
   std::vector<ShaderBinding> group_bindings(uint32_t set) const;
 
  private:

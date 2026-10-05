@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "core/definition.h"
 #include "core/device.h"
 #include "core/disposable.h"
 #include "core/font.h"
@@ -31,33 +32,44 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Bitmap : public Disposable {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Bitmap(std::string filename);
+  URGE_BINDING()
   Bitmap(int32_t width, int32_t height);
+  URGE_BINDING()
   Bitmap(RefPtr<Bitmap> other);
+  URGE_BINDING()
   ~Bitmap() override;
 
+  URGE_BINDING()
   int32_t Width();
+  URGE_BINDING()
   int32_t Height();
   URGE_BINDING(Name : "rect")
   RefPtr<Rect> GetRect();
+  URGE_BINDING()
   void Blt(int32_t x,
            int32_t y,
            RefPtr<Bitmap> src_bitmap,
            RefPtr<Rect> src_rect,
            int32_t opacity = 255);
+  URGE_BINDING()
   void StretchBlt(RefPtr<Rect> dst_rect,
                   RefPtr<Bitmap> src_bitmap,
                   RefPtr<Rect> src_rect,
                   int32_t opacity = 255);
+  URGE_BINDING()
   void FillRect(int32_t x,
                 int32_t y,
                 int32_t width,
                 int32_t height,
                 RefPtr<Color> color);
+  URGE_BINDING()
   void FillRect(RefPtr<Rect> rect, RefPtr<Color> color);
+  URGE_BINDING()
   void GradientFillRect(int32_t x,
                         int32_t y,
                         int32_t width,
@@ -65,32 +77,46 @@ class Bitmap : public Disposable {
                         RefPtr<Color> color1,
                         RefPtr<Color> color2,
                         bool vertical = false);
+  URGE_BINDING()
   void GradientFillRect(RefPtr<Rect> rect,
                         RefPtr<Color> color1,
                         RefPtr<Color> color2,
                         bool vertical = false);
+  URGE_BINDING()
   void Clear();
+  URGE_BINDING()
   void ClearRect(int32_t x, int32_t y, int32_t width, int32_t height);
+  URGE_BINDING()
   void ClearRect(RefPtr<Rect> rect);
+  URGE_BINDING()
   RefPtr<Color> GetPixel(int32_t x, int32_t y);
+  URGE_BINDING()
   void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
+  URGE_BINDING()
   void HueChange(int32_t hue);
+  URGE_BINDING()
   void Blur();
+  URGE_BINDING()
   void RadialBlur(int32_t angle, int32_t division);
+  URGE_BINDING()
   void DrawText(int32_t x,
                 int32_t y,
                 int32_t width,
                 int32_t height,
                 std::string str,
                 int32_t align = 0);
+  URGE_BINDING()
   void DrawText(RefPtr<Rect> rect, std::string str, int32_t align = 0);
+  URGE_BINDING()
   RefPtr<Rect> TextSize(std::string str);
 
+  URGE_BINDING()
   RefPtr<Palette> ToPalette();
+  URGE_BINDING()
   void UpdateWithPalette(RefPtr<Palette> palette);
 
+  URGE_BINDING()
   ATTR(RefPtr<Font>, Font);
-  /*-export.end-*/
 
  public:
   wgpu::RenderPassEncoder BeginRendering(

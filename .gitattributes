@@ -1,0 +1,15 @@
+# 换行符：本工程统一使用 CRLF（Windows / MSVC 工具链）。
+#
+# `text=auto` 让 git 自行判定哪些文件是文本，`eol=crlf` 保证它们检出到工作区
+# 时一律是 CRLF，且入库时归一化为 LF。历史遗留的 LF 文件由
+# `git add --renormalize .` 一次性收拢。
+*                  text=auto eol=crlf
+
+# 第三方 vendored 代码（含 submodule 与 cruby）保持上游原样，
+# 不做任何换行符转换，避免与上游产生整文件级别的无意义差异。
+third_party/**     -text
+
+# 二进制资源，永不转换。
+*.png              binary
+*.ico              binary
+*.webm             binary

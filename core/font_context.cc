@@ -39,9 +39,7 @@ constexpr char kEmbeddedFontName[] = "Default.ttf";
 //! Directory the fonts of the game are searched in, relative to the load path.
 constexpr char kFontDirectory[] = "Fonts/";
 
-/*! RGSS sizes are the pixel height of the line box, while TTF_Font is opened at
-    a point size; the glyphs come out about a tenth too large without this
-    correction, which is the same factor the reference runtime applies. */
+//! RGSS sizes are a pixel height, TTF_Font is opened at a point size.
 constexpr float kFontRealScale = 0.9f;
 
 //! RGSS refuses to build a font outside of this size range.
@@ -80,14 +78,12 @@ FontContext::FontData ReadStreamToMemory(SDL_IOStream* stream) {
 }  // namespace
 
 FontContext::FontContext() {
-  // TTF has to be up before anything is opened from it, and the reference
-  // runtime does the same.
+  // TTF must be up before any face is opened from it.
   if (!TTF_Init()) {
     throw Exception(Exception::kRGSSError, "TTF_Init failed: {}",
                     SDL_GetError());
   }
 
-  // The requested names start out as the RGSS default family
   default_name_.push_back(kEmbeddedFontName);
   default_font_ = kEmbeddedFontName;
 
@@ -96,10 +92,8 @@ FontContext::FontContext() {
 
   LoadFontDirectory(kFontDirectory);
 
-  /* A game that ships no font of its own falls back to the face carried in the
-     executable, which is what keeps text working out of the box. The default
-     name is honoured too: when the game named a font that was found, that one
-     becomes the fallback instead. */
+  // A game that ships no such font falls back to the embedded face, which is
+  // what keeps text working out of the box.
   auto default_it = data_cache_.find(ToLower(default_font_));
   if (default_it == data_cache_.end()) {
     LOGGER_INFO("[Font] Default font missing, using embedded font instead.");
@@ -117,69 +111,17 @@ FontContext::~FontContext() {
     SDL_free(entry.second.data);
 }
 
-void FontContext::LoadFontDirectory(const std::string& directory) {
-  std::vector<std::string> files = IOService::Get().EnumDir(directory);
-
-  for (const std::string& file : files) {
-    const std::string path = directory + file;
-    SDL_IOStream* stream = nullptr;
-    try {
-      stream = IOService::Get().OpenReadRaw(path);
-    } catch (...) {
-      continue;
-    }
-
-    FontData data = ReadStreamToMemory(stream);
-    SDL_CloseIO(stream);
-
-    if (!data.data)
-      continue;
-
-    // The cache is keyed by file name, in the lower case the rest of the
-    // lookups use
-    data_cache_[ToLower(file)] = data;
-    LOGGER_INFO("[Font] Loaded Font: {}", file);
-  }
-}
-
-void FontContext::LoadInternalFont() {
-  void* memory = SDL_malloc(embed_ttf_len);
-  if (!memory)
-    throw Exception(Exception::kRGSSError, "out of memory loading the font.");
-
-  std::memcpy(memory, embed_ttf, embed_ttf_len);
-
-  FontData data;
-  data.size = embed_ttf_len;
-  data.data = memory;
-
-  /* The embedded face is registered under the name the engine asks for, so the
-     fallback path below finds it without a special case. */
-  data_cache_[ToLower(default_font_)] = data;
-}
-
 bool FontContext::FontExists(const std::string& name) const {
   return data_cache_.find(ToLower(name)) != data_cache_.end();
 }
 
-std::vector<std::string> FontContext::ResolveName(
-    const std::string& name) const {
-  if (name.empty())
-    return default_name_;
-
-  return {name};
-}
-
 TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
                                    int32_t size) {
-  // Sizes outside the RGSS range are dropped rather than clamped, so a bogus
-  // size falls through to the default face instead of silently rendering at a
-  // size the game never asked for.
+  // A size outside the RGSS range is dropped rather than clamped.
   if (size < kMinFontSize || size > kMaxFontSize)
     return nullptr;
 
-  // Requested faces first, the engine default last, so a missing font still
-  // renders something.
+  // Requested faces first, the engine default last.
   std::vector<std::string> candidates = names;
   candidates.push_back(default_font_);
 
@@ -201,14 +143,61 @@ TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
   return nullptr;
 }
 
+std::vector<std::string> FontContext::ResolveName(
+    const std::string& name) const {
+  if (name.empty())
+    return default_name_;
+
+  return {name};
+}
+
+void FontContext::LoadFontDirectory(const std::string& directory) {
+  std::vector<std::string> files = IOService::Get().EnumDir(directory);
+
+  for (const std::string& file : files) {
+    const std::string path = directory + file;
+    SDL_IOStream* stream = nullptr;
+    try {
+      stream = IOService::Get().OpenReadRaw(path);
+    } catch (...) {
+      continue;
+    }
+
+    FontData data = ReadStreamToMemory(stream);
+    SDL_CloseIO(stream);
+
+    if (!data.data)
+      continue;
+
+    // Keyed by lower case file name, as every lookup does.
+    data_cache_[ToLower(file)] = data;
+    LOGGER_INFO("[Font] Loaded Font: {}", file);
+  }
+}
+
+void FontContext::LoadInternalFont() {
+  void* memory = SDL_malloc(embed_ttf_len);
+  if (!memory)
+    throw Exception(Exception::kRGSSError, "out of memory loading the font.");
+
+  std::memcpy(memory, embed_ttf, embed_ttf_len);
+
+  FontData data;
+  data.size = embed_ttf_len;
+  data.data = memory;
+
+  // Registered under the name the engine asks for, so the fallback path finds
+  // it without a special case.
+  data_cache_[ToLower(default_font_)] = data;
+}
+
 TTF_Font* FontContext::OpenFont(const std::string& name, int32_t size) {
   auto data_it = data_cache_.find(name);
   if (data_it == data_cache_.end())
     return nullptr;
 
-  /* SDL_IOFromConstMem does not own the memory, but TTF_OpenFontIO is told to
-     (closeio = true), which is safe because the FontData outlives the handle:
-     both live in this cache and are torn down together. */
+  // TTF_OpenFontIO takes ownership of the stream, which is safe because the
+  // FontData it reads stays alive in data_cache_ for the whole process.
   SDL_IOStream* stream = SDL_IOFromConstMem(
       data_it->second.data, static_cast<size_t>(data_it->second.size));
   if (!stream)

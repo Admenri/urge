@@ -36,11 +36,10 @@ namespace urge {
 
 namespace {
 
-//! Thickness of the outline, in pixels, matching the reference runtime.
+//! Outline thickness in pixels.
 constexpr int32_t kOutlineSize = 1;
 
-//! The format every surface of the engine is stored in, and the one text has to
-//! be converted into before it is blitted or uploaded.
+//! Pixel format every engine surface is stored in.
 constexpr SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 //! RGSS color (components in [0, 255]) as the SDL_Color SDL_ttf expects.
@@ -56,15 +55,50 @@ SDL_Color ToSDLColor(const RefPtr<Color>& color) {
   };
 }
 
+//! Converts a surface into the internal pixel format, freeing the original.
+void ConvertSurfaceFormat(SDL_Surface*& surface) {
+  if (surface->format == kInternalPixelFormat)
+    return;
+
+  SDL_Surface* converted = SDL_ConvertSurface(surface, kInternalPixelFormat);
+  SDL_DestroySurface(surface);
+  surface = converted;
+}
+
+//! Replaces the surface by its own black drop shadow, offset one pixel.
+void RenderShadowSurface(SDL_Surface*& surface) {
+  if (surface->w < 4 || surface->h < 4)
+    return;
+
+  SDL_Surface* shadow =
+      SDL_CreateSurface(surface->w, surface->h, surface->format);
+  if (!shadow)
+    return;
+
+  SDL_Rect dest_rect{1, 1, 0, 0};
+  SDL_SetSurfaceBlendMode(shadow, SDL_BLENDMODE_NONE);
+  SDL_BlitSurface(surface, nullptr, shadow, &dest_rect);
+
+  auto* pixels = static_cast<uint32_t*>(shadow->pixels);
+  const int32_t pitch = shadow->pitch / 4;
+  for (int32_t y = 0; y < shadow->h; ++y)
+    for (int32_t x = 0; x < shadow->w; ++x)
+      pixels[x + y * pitch] &= 0xFF000000;
+
+  SDL_SetSurfaceBlendMode(shadow, SDL_BLENDMODE_BLEND);
+  SDL_BlitSurface(surface, nullptr, shadow, nullptr);
+
+  SDL_DestroySurface(surface);
+  surface = shadow;
+}
+
 }  // namespace
 
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
       size_(size),
-      // NOTE: Attr_Default* answer std::optional, so the bool ones have to be
-      // dereferenced: `std::optional<bool>` converts to `bool` through
-      // `operator bool()` -- "has a value", always true here -- and the default
-      // would be ignored.
+      // NOTE: Attr_Default* return std::optional, so the bool ones need a
+      // dereference: an implicit `bool` conversion would test has_value.
       bold_(*Attr_DefaultBold()),
       italic_(*Attr_DefaultItalic()),
       outline_(*Attr_DefaultOutline()),
@@ -73,7 +107,7 @@ Font::Font(std::vector<std::string> names, int32_t size)
       color_(*Attr_DefaultColor()),
       out_color_(*Attr_DefaultOutColor()),
       gradient_color_(*Attr_DefaultGradientColor()) {
-  // When no name is given, use Font.default_name (RGSS behaviour).
+  // Fall back to Font.default_name when no name was given.
   if (name_.empty()) {
     auto default_name = Attr_DefaultName();
     if (default_name.has_value() && !default_name->empty())
@@ -96,216 +130,6 @@ Font::Font(RefPtr<Font> other)
 // static
 bool Font::Existed(std::string name) {
   return FontContext::Get().FontExists(name);
-}
-
-TTF_Font* Font::ttf_font() {
-  TTF_Font* font = FontContext::Get().AcquireFont(name_, size_);
-  if (!font)
-    return nullptr;
-
-  // The style is a property of the handle, so it is applied on every fetch,
-  // which is also what keeps a shared handle in step with the Font that owns it
-  int32_t style = TTF_STYLE_NORMAL;
-  if (bold_)
-    style |= TTF_STYLE_BOLD;
-  if (italic_)
-    style |= TTF_STYLE_ITALIC;
-  TTF_SetFontStyle(font, style);
-
-  return font;
-}
-
-namespace {
-
-/*! Converts a surface into the internal pixel format.
- *
- *  SDL_ttf hands back a surface in a format of its own choosing, and both the
- *  gradient pass and the game expect the ABGR8888 the rest of the engine uses.
- *  \remarks The surface is replaced, the original is freed.
- */
-void ConvertSurfaceFormat(SDL_Surface*& surface) {
-  if (surface->format == kInternalPixelFormat)
-    return;
-
-  SDL_Surface* converted = SDL_ConvertSurface(surface, kInternalPixelFormat);
-  SDL_DestroySurface(surface);
-  surface = converted;
-}
-
-/*! Replaces \p surface by its own drop shadow.
- *
- *  The shadow is the silhouette of the text, moved down and right by one pixel
- *  and blacked out, which is what a game sees as the dark edge under a
- *  character. The original is composited over it, so the result keeps the glyph
- *  colors and gains the shadow underneath.
- */
-void RenderShadowSurface(SDL_Surface*& surface) {
-  if (surface->w < 4 || surface->h < 4)
-    return;
-
-  // The canvas is one pixel larger so the offset has somewhere to land
-  SDL_Surface* shadow =
-      SDL_CreateSurface(surface->w, surface->h, surface->format);
-  if (!shadow)
-    return;
-
-  // Copy the silhouette in, shifted by the shadow offset
-  SDL_Rect dest_rect{1, 1, 0, 0};
-  SDL_SetSurfaceBlendMode(shadow, SDL_BLENDMODE_NONE);
-  SDL_BlitSurface(surface, nullptr, shadow, &dest_rect);
-
-  // Blacken it, keeping the alpha: the low three bytes are the color
-  auto* pixels = static_cast<uint32_t*>(shadow->pixels);
-  const int32_t pitch = shadow->pitch / 4;
-  for (int32_t y = 0; y < shadow->h; ++y)
-    for (int32_t x = 0; x < shadow->w; ++x)
-      pixels[x + y * pitch] &= 0xFF000000;
-
-  // Draw the text over its own shadow
-  SDL_SetSurfaceBlendMode(shadow, SDL_BLENDMODE_BLEND);
-  SDL_BlitSurface(surface, nullptr, shadow, nullptr);
-
-  SDL_DestroySurface(surface);
-  surface = shadow;
-}
-
-}  // namespace
-
-SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
-  TTF_Font* font = ttf_font();
-  if (!font)
-    return nullptr;
-
-  const SDL_Color text_color = ToSDLColor(color_);
-  const SDL_Color outline_color = ToSDLColor(out_color_);
-
-  /* The text is rendered at full alpha and the alpha of the color is handed
-     back instead, so a caller that only wants a different opacity does not have
-     to re-render; the color itself is preserved. */
-  if (font_opacity)
-    *font_opacity = text_color.a;
-
-  SDL_Color render_color = text_color;
-  render_color.a = 255;
-  SDL_Color render_outline_color = outline_color;
-  render_outline_color.a = 255;
-
-  /* Solid skips the anti-aliasing and gives hard, 1-bit edges; blended is the
-     default and the one games expect. */
-  SDL_Surface* surface =
-      solid_ ? TTF_RenderText_Solid(font, text.c_str(), text.size(), render_color)
-             : TTF_RenderText_Blended(font, text.c_str(), text.size(),
-                                      render_color);
-  if (!surface)
-    return nullptr;
-
-  ConvertSurfaceFormat(surface);
-
-  /* Gradient: when gradient_color has an alpha the glyph colors are interpolated
-     from the top (Color) to the bottom (GradientColor). A gradient of zero
-     alpha, i.e. the default, is skipped entirely. */
-  const SDL_Color gradient_top = ToSDLColor(color_);
-  const SDL_Color gradient_bottom = ToSDLColor(gradient_color_);
-  if (gradient_bottom.a &&
-      (gradient_top.r != gradient_bottom.r ||
-       gradient_top.g != gradient_bottom.g ||
-       gradient_top.b != gradient_bottom.b)) {
-    auto* pixels = static_cast<uint32_t*>(surface->pixels);
-    const int32_t pitch = surface->pitch / 4;
-    const auto* details = SDL_GetPixelFormatDetails(surface->format);
-    const float gradient_alpha = gradient_bottom.a / 255.0f;
-
-    for (int32_t y = 0; y < surface->h; ++y) {
-      for (int32_t x = 0; x < surface->w; ++x) {
-        uint8_t r, g, b, a;
-        SDL_GetRGBA(pixels[x + y * pitch], details, nullptr, &r, &g, &b, &a);
-        if (!a)
-          continue;
-
-        // The blend of the two colors advances with the row of the glyph
-        const float progress =
-            (static_cast<float>(y) / surface->h) * gradient_alpha;
-        r = static_cast<uint8_t>(gradient_bottom.r * progress +
-                                 gradient_top.r * (1.0f - progress));
-        g = static_cast<uint8_t>(gradient_bottom.g * progress +
-                                 gradient_top.g * (1.0f - progress));
-        b = static_cast<uint8_t>(gradient_bottom.b * progress +
-                                 gradient_top.b * (1.0f - progress));
-
-        pixels[x + y * pitch] = SDL_MapRGBA(details, nullptr, r, g, b, a);
-      }
-    }
-  }
-
-  /* Outline: the glyphs are rendered a second time with the outline thickness
-     of the face, in the outline color, and the text is blitted on top of it.
-     The extra size of the outlined render is exactly what the blit offset
-     compensates for. */
-  if (outline_) {
-    TTF_SetFontOutline(font, kOutlineSize);
-    SDL_Surface* outline_surface = solid_
-                                       ? TTF_RenderText_Solid(font, text.c_str(),
-                                                              text.size(),
-                                                              render_outline_color)
-                                       : TTF_RenderText_Blended(
-                                             font, text.c_str(), text.size(),
-                                             render_outline_color);
-    TTF_SetFontOutline(font, 0);
-
-    if (!outline_surface) {
-      SDL_DestroySurface(surface);
-      return nullptr;
-    }
-
-    const SDL_Rect text_rect{
-        kOutlineSize,
-        kOutlineSize,
-        surface->w,
-        surface->h,
-    };
-    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
-    SDL_BlitSurface(surface, nullptr, outline_surface, &text_rect);
-
-    SDL_DestroySurface(surface);
-    surface = outline_surface;
-  }
-
-  ConvertSurfaceFormat(surface);
-
-  if (shadow_)
-    RenderShadowSurface(surface);
-
-  return surface;
-}
-
-bool Font::MeasureText(const std::string& text, int32_t* width, int32_t* height) {
-  TTF_Font* font = ttf_font();
-  if (!font)
-    return false;
-
-  /* The width TTF_GetStringSize reports is the pen advance of the run -- it
-     takes max(ink extent, accumulated advance) -- which is exactly what RGSS
-     calls the text size. The outline is deliberately *not* added on top:
-
-     - SDL_ttf already folds `2 * font->outline` into its own measurement, so
-       adding it here would count it twice. At measure time the outline is
-       zeroed (RenderText restores it), so the raw value is the pure advance.
-     - Layout code positions the next glyph at this width -- RMVXA's
-       Window_Base#draw_text_ex does `pos[:x] += text_size(c).width` -- and
-       RGSS outlines bleed one pixel into the neighbouring cell instead of
-       widening it. Padding the advance here spreads every character apart and
-       makes a line run past the right edge of its window. */
-  int32_t measured_width = 0, measured_height = 0;
-  if (!TTF_GetStringSize(font, text.c_str(), text.size(), &measured_width,
-                         &measured_height))
-    return false;
-
-  if (width)
-    *width = measured_width;
-  if (height)
-    *height = measured_height;
-
-  return true;
 }
 
 ATTR_DEF(Font, std::vector<std::string>, Name) {
@@ -397,8 +221,6 @@ ATTR_DEF(Font, RefPtr<Color>, GradientColor) {
     return gradient_color_;
   }
 }
-
-// -----------------------------------------------------------
 
 ATTR_DEF(Font, std::vector<std::string>, DefaultName) {
   static std::vector<std::string> default_names = {"Default.ttf"};
@@ -501,6 +323,143 @@ ATTR_DEF(Font, RefPtr<Color>, DefaultGradientColor) {
   } else {
     return default_gradient_color;
   }
+}
+
+TTF_Font* Font::ttf_font() {
+  TTF_Font* font = FontContext::Get().AcquireFont(name_, size_);
+  if (!font)
+    return nullptr;
+
+  // The style is a property of the shared handle, re-applied on every fetch.
+  int32_t style = TTF_STYLE_NORMAL;
+  if (bold_)
+    style |= TTF_STYLE_BOLD;
+  if (italic_)
+    style |= TTF_STYLE_ITALIC;
+  TTF_SetFontStyle(font, style);
+
+  return font;
+}
+
+SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
+  TTF_Font* font = ttf_font();
+  if (!font)
+    return nullptr;
+
+  const SDL_Color text_color = ToSDLColor(color_);
+  const SDL_Color outline_color = ToSDLColor(out_color_);
+
+  // Hand the color alpha back instead of baking it in, so a caller that only
+  // wants a different opacity does not have to re-render.
+  if (font_opacity)
+    *font_opacity = text_color.a;
+
+  SDL_Color render_color = text_color;
+  render_color.a = 255;
+  SDL_Color render_outline_color = outline_color;
+  render_outline_color.a = 255;
+
+  // Solid gives hard 1-bit edges, blended is the antialiased default.
+  SDL_Surface* surface =
+      solid_ ? TTF_RenderText_Solid(font, text.c_str(), text.size(), render_color)
+             : TTF_RenderText_Blended(font, text.c_str(), text.size(),
+                                      render_color);
+  if (!surface)
+    return nullptr;
+
+  ConvertSurfaceFormat(surface);
+
+  // Gradient: interpolate the glyph colors from Color (top) to GradientColor
+  // (bottom). A default transparent gradient bottom is skipped.
+  const SDL_Color gradient_top = ToSDLColor(color_);
+  const SDL_Color gradient_bottom = ToSDLColor(gradient_color_);
+  if (gradient_bottom.a &&
+      (gradient_top.r != gradient_bottom.r ||
+       gradient_top.g != gradient_bottom.g ||
+       gradient_top.b != gradient_bottom.b)) {
+    auto* pixels = static_cast<uint32_t*>(surface->pixels);
+    const int32_t pitch = surface->pitch / 4;
+    const auto* details = SDL_GetPixelFormatDetails(surface->format);
+    const float gradient_alpha = gradient_bottom.a / 255.0f;
+
+    for (int32_t y = 0; y < surface->h; ++y) {
+      for (int32_t x = 0; x < surface->w; ++x) {
+        uint8_t r, g, b, a;
+        SDL_GetRGBA(pixels[x + y * pitch], details, nullptr, &r, &g, &b, &a);
+        if (!a)
+          continue;
+
+        const float progress =
+            (static_cast<float>(y) / surface->h) * gradient_alpha;
+        r = static_cast<uint8_t>(gradient_bottom.r * progress +
+                                 gradient_top.r * (1.0f - progress));
+        g = static_cast<uint8_t>(gradient_bottom.g * progress +
+                                 gradient_top.g * (1.0f - progress));
+        b = static_cast<uint8_t>(gradient_bottom.b * progress +
+                                 gradient_top.b * (1.0f - progress));
+
+        pixels[x + y * pitch] = SDL_MapRGBA(details, nullptr, r, g, b, a);
+      }
+    }
+  }
+
+  // Outline: render the glyphs once more in the outline color, then blit the
+  // text on top, offset by the outline thickness.
+  if (outline_) {
+    TTF_SetFontOutline(font, kOutlineSize);
+    SDL_Surface* outline_surface = solid_
+                                       ? TTF_RenderText_Solid(font, text.c_str(),
+                                                              text.size(),
+                                                              render_outline_color)
+                                       : TTF_RenderText_Blended(
+                                             font, text.c_str(), text.size(),
+                                             render_outline_color);
+    TTF_SetFontOutline(font, 0);
+
+    if (!outline_surface) {
+      SDL_DestroySurface(surface);
+      return nullptr;
+    }
+
+    const SDL_Rect text_rect{
+        kOutlineSize,
+        kOutlineSize,
+        surface->w,
+        surface->h,
+    };
+    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
+    SDL_BlitSurface(surface, nullptr, outline_surface, &text_rect);
+
+    SDL_DestroySurface(surface);
+    surface = outline_surface;
+  }
+
+  ConvertSurfaceFormat(surface);
+
+  if (shadow_)
+    RenderShadowSurface(surface);
+
+  return surface;
+}
+
+bool Font::MeasureText(const std::string& text, int32_t* width, int32_t* height) {
+  TTF_Font* font = ttf_font();
+  if (!font)
+    return false;
+
+  // TTF_GetStringSize reports the pen advance, which is what RGSS calls the
+  // text size; the outline is deliberately not added on top of it.
+  int32_t measured_width = 0, measured_height = 0;
+  if (!TTF_GetStringSize(font, text.c_str(), text.size(), &measured_width,
+                         &measured_height))
+    return false;
+
+  if (width)
+    *width = measured_width;
+  if (height)
+    *height = measured_height;
+
+  return true;
 }
 
 }  // namespace urge

@@ -71,35 +71,51 @@ class ScreenRootNode : public Node {
   PrimitiveEmitter::Slot slot_ = {};
 };
 
+URGE_BINDING()
 class Graphics : public Singleton<Graphics> {
  public:
   Graphics();
   ~Graphics();
 
-  /*-export.begin-*/
+  URGE_BINDING()
   void Update();
+  URGE_BINDING()
   void Wait(int32_t duration);
+  URGE_BINDING()
   void Fadein(int32_t duration);
+  URGE_BINDING()
   void Fadeout(int32_t duration);
+  URGE_BINDING()
   void Freeze();
+  URGE_BINDING()
   void Transition(int32_t duration = 10,
                   std::string filename = {},
                   int32_t vague = 40);
+  URGE_BINDING()
   void TransitionBitmap(int32_t duration = 10,
                         RefPtr<Bitmap> bitmap = {},
                         int32_t vague = 40);
+  URGE_BINDING()
   RefPtr<Bitmap> SnapToBitmap();
+  URGE_BINDING()
   void FrameReset();
+  URGE_BINDING()
   int32_t Width();
+  URGE_BINDING()
   int32_t Height();
+  URGE_BINDING()
   void ResizeScreen(int32_t width, int32_t height);
+  URGE_BINDING()
   void PlayMovie(std::string filename);
 
+  URGE_BINDING()
   ATTR(int32_t, FrameRate);
+  URGE_BINDING()
   ATTR(int32_t, FrameCount);
+  URGE_BINDING()
   ATTR(int32_t, Brightness);
+  URGE_BINDING()
   ATTR(bool, FrameSkip);
-  /*-export.end-*/
 
   RefPtr<ScreenRootNode> root() { return root_; }
   SDL_Window* window() const { return window_; }
@@ -120,9 +136,7 @@ class Graphics : public Singleton<Graphics> {
 
   FPSLimiter limiter_;
 
-  /*! The single quad a transition frame is drawn with, see TransitionBitmap.
-      It is an emitter of its own -- uploaded and drawn every step -- so it
-      neither shares the buffer of the present nor the frame batch. */
+  //! The single quad a transition frame is drawn with, see TransitionBitmap.
   PrimitiveEmitter quad_emitter_;
 
   struct {

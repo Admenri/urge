@@ -41,9 +41,7 @@ constexpr uint32_t kDefaultSlotStride = 256;
 //! The chunk size used when the device reports no binding limit.
 constexpr uint32_t kDefaultChunkSize = 64 * 1024;
 
-/* A chunk larger than this only wastes host and device memory: it would hold
-   more slots than a frame draws, and a frame which needs more slots than fit
-   into one chunk simply continues in the next one. */
+// A larger chunk would only waste memory; a frame overflows into the next chunk.
 constexpr uint32_t kMaxChunkSize = 1024 * 1024;
 
 }  // namespace
@@ -61,11 +59,7 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
                     "the uniform pool '{}' was given an empty element.", name_);
 
   wgpu::Limits limits = {};
-  /* The limits of the device are the ones it validates against, and they are
-     the ones the requested limits resolved to, which are the defaults of the
-     backend while GPUDevice::CreateDevice requests no higher ones. They may
-     therefore be stricter than what the adapter reports, so the device is what
-     is asked here. */
+  // Use the device limits (what it validates against), not the adapter's.
   GPUDevice::Get().device().GetLimits(&limits);
 
   const uint32_t alignment =
@@ -73,10 +67,7 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
           ? kDefaultSlotStride
           : limits.minUniformBufferOffsetAlignment;
 
-  /* Two slots of one chunk may never overlap, so the distance between them is
-     the greater one of the alignment and the size of the data they hold. Both
-     are powers of two, so the distance stays a whole multiple of the
-     alignment. */
+  // Slot distance = max(alignment, element size); both are powers of two.
   slot_stride_ = std::max(alignment, element_size_);
 
   const uint64_t binding_limit =
@@ -158,10 +149,7 @@ void UniformBlockPool::CreateChunk() {
   chunk.buffer = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
   chunk.capacity = slots_per_chunk_;
 
-  /* The bind group covers one element at the start of the buffer and the slot a
-     draw reads is chosen with the dynamic offset of the draw. Binding the whole
-     buffer instead would make every dynamic offset beyond the first slot
-     invalid, because the offset of a binding is added to the size of it. */
+  // Bind one element, not the whole buffer, so offsets beyond the first slot stay valid.
   util::BufferSet binding(chunk.buffer);
   binding.size = element_size_;
   chunk.group = util::CreateBindGroup(layout_, {{0, binding}});
@@ -182,17 +170,14 @@ void UniformBlockPool::CreateChunk() {
 /* ----- UniformManager ----- */
 
 UniformManager::UniformManager()
-    /* The sprite and the tint pipelines are the ones built with a dynamic
-       object set, either of them describes the layout the object pool binds;
-       the sprite pipeline is the only one which takes a dynamic sprite
-       parameter. */
+    // Sprite and tint pipelines share the dynamic object-set layout.
     : object_uniforms_(ShaderSet::Get()
-                           .state.sprite_blends.at(BLEND_NORMAL)
+                           .state.sprite.sprite_blends.at(BLEND_NORMAL)
                            .GetBindGroupLayout(1),
                        sizeof(ObjectData),
                        "object"),
       sprite_uniforms_(ShaderSet::Get()
-                           .state.sprite_blends.at(BLEND_NORMAL)
+                           .state.sprite.sprite_blends.at(BLEND_NORMAL)
                            .GetBindGroupLayout(3),
                        sizeof(SpriteBase::SpriteParam),
                        "sprite") {}

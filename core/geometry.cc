@@ -38,15 +38,7 @@ namespace {
 //! Side of the fallback texture, in texels.
 constexpr int32_t kDefaultTextureSize = 1;
 
-/*! The texture a geometry reads when it carries no bitmap: a single, opaque
-    white texel. Sampling it returns white on every channel, so the fragment of
-    a geometry collapses to the interpolation of its vertex colors and a plain
-    colored mesh needs no bitmap at all. It is a texture rather than a second
-    shader because the mesh shader always samples its texture, and a geometry
-    which has one should not pay for a state of its own.
-
-    The engine stores premultiplied alpha, so the texel is white with an alpha
-   of one, i.e. exactly the identity of that representation. */
+//! One-white-texel texture for a bitmapless geometry; the identity of premultiplied alpha.
 class DefaultTexture {
  public:
   //! Returns the shared fallback texture, created on the first use.
@@ -97,7 +89,7 @@ class DefaultTexture {
     /* The texture of a geometry is bound at set 2 of the mesh pipeline, which
        is the texture set the fallback texture is a member of. */
     const wgpu::RenderPipeline& pipeline =
-        ShaderSet::Get().state.geometry_blends.at(BLEND_NORMAL);
+        ShaderSet::Get().state.geometry.geometry_blends.at(BLEND_NORMAL);
     group_ = util::CreateBindGroup(
         pipeline.GetBindGroupLayout(2),
         {{0, util::TextureViewSet(texture_.CreateView(nullptr))},
@@ -164,9 +156,7 @@ void Geometry::SetColor(int32_t triangle, int32_t point, RefPtr<Color> color) {
   if (!color)
     throw Exception(Exception::kRGSSError, "invalid data.");
 
-  /* The blend state of the engine and the contents of a bitmap store
-     premultiplied alpha, so the color of a vertex scales its rgb channels by
-     its alpha instead of leaving them straight, see PrimitiveEmitter. */
+  // Premultiplied content: scale the vertex rgb by its alpha, see PrimitiveEmitter.
   const glm::vec4 normalized = color->Normalize();
   const float alpha = normalized.a;
   auto& v = data_[triangle];
@@ -190,9 +180,7 @@ ATTR_DEF(Geometry, int32_t, Capacity) {
     if (*value < 0)
       throw Exception(Exception::kRGSSError, "invalid capacity value.");
 
-    /* Growing appends triangles whose points read as the white vertex the
-       default VertexData is, so a geometry which is only partly filled draws
-       nothing for the triangles it never set. */
+    // Growing appends default vertices, so unfilled triangles draw nothing.
     data_.resize(*value);
     return std::nullopt;
   } else {
@@ -265,10 +253,7 @@ bool Geometry::DoDraw(DrawParam param) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  /* An effect replaces the shader and the blend of the draw while the mesh and
-     the transform stay the ones of this geometry: the scene of the target, the
-     object transform of the frame and the custom bind group the effect was
-     given with are what its pipeline reads, see Effect. */
+  // An effect replaces shader and blend; mesh, transform and sets 0/1 stay, see Effect.
   if (effect_) {
     param->pass.SetPipeline(effect_->AcquirePipeline());
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
@@ -280,7 +265,7 @@ bool Geometry::DoDraw(DrawParam param) {
     return false;
   }
 
-  param->pass.SetPipeline(ShaderSet::Get().state.geometry_blends.at(
+  param->pass.SetPipeline(ShaderSet::Get().state.geometry.geometry_blends.at(
       static_cast<BlendType>(blend_type_)));
   // The scene of the render target, its object set is not the one of a geometry
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);

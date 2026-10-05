@@ -185,7 +185,7 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 
 `bind/test/smoke_main.cc` 启动内嵌 VM、调用 `InitBindings()`，然后用一段 Ruby 脚本逐条
 断言 API 契约（`failures=0`、退出码 0 表示全部通过）。它不是交付物的一部分，但**改动
-导出块、`URGE_BINDING` 注解、生成器覆盖项或 `cruby_utils.h` 之后必须跑一次**：编译器检查不了
+`URGE_BINDING()` 标记、生成器覆盖项或 `cruby_utils.h` 之后必须跑一次**：编译器检查不了
 `rb_data_type_t` 的布局、`SetupSelfData`/`GetSelfData` 的往返、`ParseArgs` 写入的类型、
 类树与 Ruby 名，只有真机跑一遍才能确认。
 
@@ -206,11 +206,12 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 ## 输入与导出范围
 
 - 只扫描 `core/*.h`；`meta.source_headers` 记录全部被扫描文件。
-- 只有类体内含 `/*-export.begin-*/` 与 `/*-export.end-*/` 的类进入 IR；两者之间的
-  成员函数与属性才导出，其它声明忽略（`Drawable`、`IniFile`、`Config` 等不导出）。
-- **构造函数是唯一例外**：从整个类体收集，因为引擎把构造声明写在导出块之外
-  （`Node`、`Vector2/3/4`、`Palette`）。参数含内部 C++ 类型（`ZValue`、`glm::vec*`、
-  `SDL_Surface*`、`DrawParam`）的构造不导出，只记入 `unsupported`。
+- 类声明前带 `URGE_BINDING()` 标记的类进入 IR；类体内同样带标记的成员（构造函数、
+  方法、`ATTR(...)`、`MARSHAL_*`）才导出，其它声明忽略（`Drawable`、`IniFile`、
+  `Config` 等不导出）。
+- 构造函数与其它成员同一规则：**只有带 `URGE_BINDING()` 标记的才导出**。参数含内部
+  C++ 类型（`ZValue`、`glm::vec*`、`SDL_Surface*`、`DrawParam`）的标记声明不导出，
+  只记入 `unsupported`。
 - `Singleton<T>` 派生的类（`Graphics`、`Input`，脚本常量 `MODULE_CLASSES`）进入
   `modules`，其余进入 `classes`。
 - 每个 C++ 基类都必须有独立的 Ruby 类与 `Init*Binding()`。派生类只注册自己声明的
@@ -220,15 +221,8 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
   （读写共用一个实现，读路径返回 `std::optional`），胶水统一按 `Attr_<name>(...)`
   调用，不关心它是声明还是内联定义。
 
-当前规模：15 个类 + 2 个模块；跳过 5 个构造：
-
-| 类 | 签名 | 原因 |
-| --- | --- | --- |
-| `Node` | `Node(RefPtr<Node>, const ZValue&)` | 内部参数类型 `const ZValue&` |
-| `Palette` | `Palette(SDL_Surface*)` | 内部参数类型 `SDL_Surface*` |
-| `Vector2` | `Vector2(glm::vec2)` | 内部参数类型 `glm::vec2` |
-| `Vector3` | `Vector3(glm::vec3)` | 内部参数类型 `glm::vec3` |
-| `Vector4` | `Vector4(glm::vec4)` | 内部参数类型 `glm::vec4` |
+当前规模：21 个类 + 4 个模块；无跳过项（未被 `URGE_BINDING()` 标记的内部构造不再进入
+IR，例如 `Node()`、`Palette(SDL_Surface*)`、`Vector2/3/4(glm::vec*)`）。
 
 ## 数据类型与分配器（重要）
 
@@ -494,7 +488,7 @@ DEFINE_VECTOR_CODEC(int32_t, NUM2INT(value), INT2NUM(value));
 
 `RefPtr<Obj>` 按**目标类是否可 Marshal** 选择：
 
-- 目标类在导出块同时声明了 `MARSHAL_DUMP`/`MARSHAL_LOAD` → `BINDING_ATTR_OBJECT`
+- 目标类同时带标记声明了 `MARSHAL_DUMP`/`MARSHAL_LOAD` → `BINDING_ATTR_OBJECT`
   （每次读取新建包装对象，因为引擎可能换一个指针出来）
 - 否则 → `BINDING_ATTR_OBJECT_REF`（包装对象缓存在 `@_<name>` 实例变量里，重复读取
   返回同一个 Ruby 对象，`equal?` 成立）
@@ -587,19 +581,33 @@ RB_FUNC(Input_Update) {
 }
 ```
 
-## `URGE_BINDING` 注解
+## `URGE_BINDING` 导出标记
 
 ```cpp
-URGE_BINDING(Name : "[]")
-int16_t Get(int32_t x, int32_t y = 0, int32_t z = 0);
+URGE_BINDING()
+class Sprite : public Node {
+ public:
+  URGE_BINDING()
+  Sprite(RefPtr<Viewport> viewport = nullptr);
+  Sprite();                      // 无标记 → 不导出到 Ruby
+
+  URGE_BINDING()
+  void Flash(RefPtr<Color> color, int32_t duration);
+
+  URGE_BINDING(Name : "rect")    // 导出 + 改名为 rect
+  RefPtr<Rect> GetRect();
+};
 ```
 
 - 宏本身在 `core/definition.h` 里展开为空，只在扫描期有意义。
-- 语义：**只作用于紧跟其后的那一条声明**。
-- 目前只识别 `Name : "..."` 一个键，用来把 C++ 名映射成驼峰→下划线规则得不到的
-  Ruby 名（`Table#[]` / `#[]=`）。
-- 注解出现在导出块里才生效；带注解的声明仍走常规的签名分析（重载、默认参数照常）。
-- `Name` 缺省时注解无效果，声明按默认命名规则处理。
+- `URGE_BINDING()` 是**导出标记**：它把紧跟其后的那一条声明（或类）导出到 Ruby。
+  没有标记的声明留在引擎内部。类与成员各标各的，类没有标记则整类不进入 IR。
+- 空注解体与带 `Name : "..."` 的注解体都是导出标记；后者额外把 C++ 名映射成
+  驼峰→下划线规则得不到的 Ruby 名（`Table#[]` / `#[]=`）。
+- 析构函数可以标记，但只为文档而导出：Ruby 侧不注册它，释放走 typed data 的
+  `Release`。
+- 带标记的声明仍走常规的签名分析（重载、默认参数照常）；含内部 C++ 类型的声明
+  记入 `unsupported`。
 
 ## 特殊绑定：生成器覆盖项 + 手写区
 
@@ -686,14 +694,14 @@ void InitTilemapVXBindingAppend(VALUE klass) {
 `Set(value, x, y, z)`，参数需要重排；越界读返回 `nil`、越界写忽略。`Table::Get` 返回
 `int16_t`，用 `INT2NUM`。
 
-`Input` 的键常量表在 `core/input.h` 的 `urge::kKeyboardBindings` 里，不从导出块声明，
+`Input` 的键常量表在 `core/input.h` 的 `urge::kKeyboardBindings` 里，不从类体标记声明，
 因此用 `DefineInputKeyConstants(mod)` 遍历注册。
 
 ## 命名映射规则
 
 只有两条，优先级从高到低：
 
-1. **头文件注解** `URGE_BINDING(Name : "...")`，见上一节。机械规则给不出的名字
+1. **头文件标记** `URGE_BINDING(Name : "...")`，见上一节。机械规则给不出的名字
    一律在这里写明。
 2. **`camel_to_snake`**，其余全部按它解析。缩写按常规处理：
    `StretchBlt`→`stretch_blt`、`DrawText`→`draw_text`、`OX`→`ox`、`BGMPlay`→`bgm_play`。
@@ -756,12 +764,12 @@ class / module 条目字段：
 | `cpp_name` | C++ 类名，同时是 Ruby 类名 |
 | `cpp_parent` | C++ 基类（模板参数已剥离，如 `Singleton`） |
 | `ruby_superclass` | `rb_define_class` 第二参数（`Disposable`/`Node`/`Object`）；模块为 `null` |
-| `header` / `export` | 来源头文件与导出块行区间 `core/x.h:beg-end` |
+| `header` / `export` | 来源头文件与标记行区间 `core/x.h:beg-end` |
 | `constructors` | `initialize` 每个重载的参数（`name`/`type`/`default`） |
 | `initialize_copy` | 拷贝构造 `Class(RefPtr<Class>)` → `initialize_copy` |
 | `instance_methods` / `class_methods` | 实例/类方法（`static`），含 `return` 与 `params` |
 | `attributes` / `class_attributes` | `ATTR(...)` / `static ATTR(...)` → 读写对 |
-| `data_attributes` | 公开数据成员按同一规则生成读写对（urge 的导出块里没有这类声明） |
+| `data_attributes` | 公开数据成员按同一规则生成读写对（urge 的头文件里没有这类声明） |
 | `marshal` | `{dump, load}`，两者都为 `true` 才生成 `_dump`/`_load` |
 | `index` | `URGE_BINDING(Name:)` 标出的 `{get, set}`（`Table#[]`/`#[]=`） |
 | `functions` | 模块函数；属性读写对是两条 `attr: true` 条目，带 `setter` 与 `attr_value_type` |
@@ -799,7 +807,7 @@ class / module 条目字段：
 
 改动任一导出声明时须同步：
 
-1. 更新 `core/*.h` 的导出块（必要时加 `URGE_BINDING(Name:)`）；
+1. 在 `core/*.h` 的类与声明前加 `URGE_BINDING()` 标记（改名再加 `Name : "..."`）；
 2. **新增导出类时**：把类名加进 `gen_api_json.py` 的 `CLASS_ORDER`（排在它基类之后）。
    不登记也能导出，但会被排到列表末尾，可能落在基类**之前**，而注册顺序要求派生类在后。
    漏登记现在会被 `check_base_order` 直接拦下（见「运行时验证」上方的 `CLASS_ORDER`
@@ -810,7 +818,7 @@ class / module 条目字段：
    `grep -rn 'OldName' core/ app/` 必须为空；
 4. `cmake -S . -B build`。配置期会自动把 IR 和胶水推到最新（见「自动生成」），
    不需要手动跑两个生成器；新类生成的 `binding_<name>.cc` 同一次配置就进构建；
-5. **删除某个类、或不再导出它时**：把它从 `core/`（连同导出块）移除，再跑同样那一步
+5. **删除某个类、或不再导出它时**：去掉它的 `URGE_BINDING()` 标记（连同类体），再跑同样那一步
    `cmake -S . -B build` —— 它的 `binding_<name>.{h,cc}` 会在这次配置里被自动删除，
    见「残留文件清理」。别手动 `rm`：手删只能解决文件本身，而且漏删时构建会失败在一个
    你没编辑过的文件上；另外**未被 git 跟踪的生成物删掉不可恢复**，先确认那对文件里没有
@@ -829,7 +837,7 @@ class / module 条目字段：
 
 签名描述不了的新行为（参数重排、额外常量、非常规注册）加进 `generate_binding.py`
 的覆盖项，**不要**直接改生成物——GENERATED 块会被下一次运行覆盖。名字不在此列：
-改 C++ 名或加一条 `URGE_BINDING` 注解即可，没有需要同步的命名表。
+改 C++ 名或加一条 `URGE_BINDING()` 标记即可，没有需要同步的命名表。
 
 ### `Singleton<T>` 必须是模块，不能是类
 
@@ -855,7 +863,7 @@ class / module 条目字段：
 | 属性声明 | 裸 `ATTR(ty, name);` | `ATTR(ty, name) { ... }` 带内联函数体，常带 `virtual` |
 | `RB_DEF_TYPE` 释放 | `ReleaseDataType<lime::Klass>` | 同（`urge::RefCounted::Release`） |
 | 异常类型 | 独立枚举 | `urge::Exception::Type`，多了 `kGPUError`（并入 `RGSSError`） |
-| 导出语法 | 无注解 | `URGE_BINDING(Name : "...")`，只作用于下一条声明 |
+| 导出语法 | 无注解 | 类与成员前加 `URGE_BINDING()`（可带 `Name : "..."` 改名），只作用于紧邻的那条 |
 | 命名 | 覆盖表（脚本内的旧名 → Ruby 名映射） | **无覆盖表**：`camel_to_snake` + 注解，C++ 名直接决定 Ruby 名 |
 | 属性宏族 | 无 VECTOR / 多数 CLASS_ATTR_* | 新增 `BINDING_ATTR_{INT,FLOAT,BOOL,VECTOR,OBJECT}`、`BINDING_CLASS_ATTR_{INT,FLOAT,BOOL,VECTOR,OBJECT}` |
 | 参数检查 | 固定数量方法不检查 | 统一 `CheckArgc`（方法以 `-1` 注册） |

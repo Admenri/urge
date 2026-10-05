@@ -39,10 +39,7 @@ class Exception final {
     kResetError,
   };
 
-  // NOTE: std::make_format_args only binds lvalue references, so the arguments
-  // must not be perfectly forwarded here. The named parameters are lvalues, and
-  // any temporary bound to them stays alive until this constructor call
-  // completes, which covers the vformat() call below.
+  // NOTE: make_format_args binds lvalue references only, so do not forward here.
   template <typename... Args>
   explicit Exception(Type type, std::string_view format, Args&&... args) {
     type_ = type;

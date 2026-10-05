@@ -40,16 +40,8 @@ namespace urge {
 
 class TilemapXP;
 
-/*! One above layer of a TilemapXP: a node whose Z is set from the priority of
-    the tiles it holds and from the row of the screen they are at, which is what
-    puts the tiles of a higher priority in front of those of a lower one and in
-    front of the objects standing in the same row, see
-    TilemapXP::UpdateOrder().
-
-    The node draws nothing of its own: the tilemap collects and emits the tiles
-    of every layer once per frame, this node only triggers the draw of the layer
-    it stands for when its turn in the render order arrives, see
-    TilemapXP::Prepare() and TilemapXP::DrawAboveLayer(). */
+//! One above layer of a TilemapXP; its Z follows from the priority and the row
+//! of its tiles, see TilemapXP::UpdateOrder().
 class TilemapXPAbove : public Node {
  public:
   TilemapXPAbove(TilemapXP* parent,
@@ -65,27 +57,18 @@ class TilemapXPAbove : public Node {
   int32_t id_ = 0;
 };
 
-/*! The tilemap of RGSS1: the drawing of a Table of tile ids out of seven
-    animated autotiles and one tileset, split into the ground layer and up to
-    five above layers by the priority of the tiles.
-
-    The class is a Node and no Viewport of its own: RGSS places a tilemap inside
-    the viewport it was given and paints the region of that viewport, so the
-    class reads the rect and the origin of the viewport to know what to draw and
-    leaves the clipping of it to the viewport, see UpdateViewport(). A tilemap
-    without a viewport covers the whole screen.
-
-    A tilemap does not take part in the transform of the node hierarchy: the
-    tiles of a map sit on the render target at whole pixels, so a position or a
-    scale of the tilemap would only move them off the grid. The object transform
-    every tile is drawn with is therefore the identity and the tiles place
-    themselves by their vertex position, see BuildLayers(). */
+//! The tilemap of RGSS1: draws a Table of tile ids out of seven animated autotiles
+//! and one tileset, split by priority into the ground layer and up to five above
+//! layers, inside the viewport it is given.
+URGE_BINDING()
 class TilemapXP : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   TilemapXP(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~TilemapXP() override;
 
+  URGE_BINDING()
   void Update();
 
   URGE_BINDING(Name : "tileset=")
@@ -93,18 +76,27 @@ class TilemapXP : public Node {
   URGE_BINDING(Name : "tileset")
   RefPtr<Bitmap> GetTileset();
 
+  URGE_BINDING()
   void SetAutotile(int32_t index, RefPtr<Bitmap> bitmap);
+  URGE_BINDING()
   RefPtr<Bitmap> GetAutotile(int32_t index);
 
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(bool, Visible) override;
+  URGE_BINDING()
   ATTR(int32_t, Z) override;
+  URGE_BINDING()
   ATTR(RefPtr<Table>, MapData);
+  URGE_BINDING()
   ATTR(RefPtr<Table>, FlashData);
+  URGE_BINDING()
   ATTR(RefPtr<Table>, Priorities);
+  URGE_BINDING()
   ATTR(int32_t, OX);
+  URGE_BINDING()
   ATTR(int32_t, OY);
-  /*-export.end-*/
 
  private:
   friend class TilemapXPAbove;

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "core/bitmap.h"
+#include "core/definition.h"
 #include "core/node.h"
 #include "core/primitive.h"
 #include "core/uniform.h"
@@ -33,26 +34,9 @@ namespace urge {
 
 class WindowXP;
 
-/**
-\brief The second half of a WindowXP: a hidden node which draws the cursor,
-the arrows, the pause icon and the contents of its window after every other
-node of the same parent.
-A window of RGSS1 keeps its frame and its background in the window itself and
-everything inside its frame in a node which is drawn above the rest of the
-scene: the reference renderer gives that node the sorting value of the window
-plus two, so it lands after the nodes which share the window's parent. The
-node is not part of the public API -- it is created, driven and drawn by the
-WindowXP which owns it, and it draws nothing on its own.
-
-The node marks the inner region of its window into the stencil before it
-draws the parts which are clipped to it, and it draws them through the
-stencil test, which is what the reference renderer does with its content
-area, see WindowXP.
-
-\remarks The node is a child of the same parent as its WindowXP, so it is
-clipped by the same viewport and follows the same transform chain. Its `Z` is
-kept at the `Z` of the window plus two, see WindowXP::Attr_Z.
-*/
+//! Second half of a WindowXP: a hidden sibling node which draws the cursor,
+//! arrows, pause icon and contents through the stencil, so they land above the
+//! rest of the parent. Not public API -- owned and driven by its WindowXP.
 class WindowXPAbove : public Node {
  public:
   WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport);
@@ -64,68 +48,55 @@ class WindowXPAbove : public Node {
   WindowXP* parent_ = nullptr;
 };
 
-/**
-\brief Window of RGSS1 (XP): a nine-slice frame over a background, with a
-cursor frame, scroll arrows, a pause animation and the contents bitmap.
-
-The window is two nodes of the tree. The WindowXP itself draws the frame and
-the background -- the nine slices of the cell at (64, 0) of the skin over the
-cell at (0, 0), which is stretched over the inner area or tiled over it, see
-Stretch -- and its WindowXPAbove draws everything inside the frame, so the
-contents of a window land above the other nodes of its parent instead of
-interleaving with them by their own sort value.
-
-- The frame is the nine slices of the skin at scale 1: the corners at (64, 0),
-  (88, 0), (64, 24) and (88, 24), the edges between them and the cell itself,
-  which the reference renderer tiles rather than stretching.
-- The background is the first cell of the skin, stretched over the inner area
-  while Stretch is set and tiled over it while it is not, under the colour of
-  the opacity of the background of the window. The stretched layer alone is
-  drawn through the tint pipeline, which is what the reference renderer does
-  with it, see WindowVX.
-- The cursor is the nine slices of the cell at (64, 32), stretched to the size
-  of CursorRect and animated by the breathing opacity of the window, which
-  fades between 128 and 255 rather than stepping through a table.
-- The contents are drawn at the offset (8, 8) of the window, scrolled by the
-  origin, and are limited to the parts of them which the origin can reach.
-- The arrows and the pause icon are single slices of the skin; the pause icon
-  cycles through the four frames of the 2x2 block at (80, 32) of the skin.
-
-The reference renderer clips the cursor and the contents against the inner
-region of the frame through a stencil buffer, and this engine does the same:
-every frame binds the depth-stencil texture of its render target, so the node
-above marks the inner region into the stencil with a pass which writes no
-colour and then draws the cursor and the contents through a pipeline which
-only passes where the stencil carries the mark. The scissor of the engine is
-reserved for the viewport, see Viewport, and is not used here.
-*/
+//! Window of RGSS1 (XP): frame and background from the skin, with everything
+//! inside drawn by a WindowXPAbove sibling and clipped through the stencil.
+URGE_BINDING()
 class WindowXP : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   WindowXP(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~WindowXP() override;
 
+  URGE_BINDING()
   void Update();
 
+  URGE_BINDING()
   ATTR(bool, Visible) override;
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Windowskin);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Contents);
+  URGE_BINDING()
   ATTR(bool, Stretch);
+  URGE_BINDING()
   ATTR(RefPtr<Rect>, CursorRect);
+  URGE_BINDING()
   ATTR(bool, Active);
+  URGE_BINDING()
   ATTR(bool, Pause);
+  URGE_BINDING()
   ATTR(int32_t, X);
+  URGE_BINDING()
   ATTR(int32_t, Y);
+  URGE_BINDING()
   ATTR(int32_t, Width);
+  URGE_BINDING()
   ATTR(int32_t, Height);
+  URGE_BINDING()
   ATTR(int32_t, OX);
+  URGE_BINDING()
   ATTR(int32_t, OY);
+  URGE_BINDING()
   ATTR(int32_t, Opacity);
+  URGE_BINDING()
   ATTR(int32_t, BackOpacity);
+  URGE_BINDING()
   ATTR(int32_t, ContentsOpacity);
+  URGE_BINDING()
   ATTR(int32_t, Z) override;
-  /*-export.end-*/
 
  private:
   friend class WindowXPAbove;
@@ -134,39 +105,33 @@ class WindowXP : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  /*! Emits the tiled background layer and the nine-slice frame of the window,
-      i.e. the parts of it which are drawn through the texture pipeline. */
+  //! Emits the tiled background and the nine-slice frame (texture pipeline).
   void EmitGroundInternal(PrimitiveEmitter& emitter);
-  //! Emits the stretched background layer, which the tint pipeline draws.
+  //! Emits the stretched background layer (tint pipeline).
   void EmitBackgroundInternal(PrimitiveEmitter& emitter);
-  /*! Emits the quad which erases the stencil over the whole area of the
-      window, see kStencilReference -- it is drawn through the marking
-      pipeline at kStencilClear before the inner region is marked. */
+  //! Emits the quad erasing the stencil over the whole window at kStencilClear.
   void EmitStencilClearInternal(PrimitiveEmitter& emitter);
-  /*! Emits the quad which marks the inner region of the window into the
-      stencil, see the class documentation. */
+  //! Emits the quad marking the inner region into the stencil.
   void EmitStencilInternal(PrimitiveEmitter& emitter);
-  //! Emits the cursor of the window, which is clipped to the inner region.
+  //! Emits the cursor, clipped to the inner region.
   void EmitCursorInternal(PrimitiveEmitter& emitter);
-  //! Emits the arrows and the pause icon, which are clipped to the frame.
+  //! Emits the arrows and the pause icon, clipped to the frame.
   void EmitArrowsInternal(PrimitiveEmitter& emitter);
-  //! Emits the contents of the window, which are clipped to the inner region.
+  //! Emits the contents, clipped to the inner region.
   void EmitContentsInternal(PrimitiveEmitter& emitter);
 
-  //! Emits the quad of one slice of the skin, stretched over \p dest.
+  //! Emits one slice of the skin, stretched over \p dest.
   void EmitSliceInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-  //! Emits one slice of the skin tiled over \p dest.
+  //! Emits one slice of the skin, tiled over \p dest.
   void EmitTiledInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-  /*! Emits the nine slices of the cell of \p src stretched over \p dest, see
-      WindowVX::EmitNineSliceInternal. The centre is only part of a nine slice
-      which is meant to be a filled frame of its own, i.e. the cursor, so the
-      frame of a window passes \c false for it. */
+  //! Emits the nine slices of \p src over \p dest; \p draw_center fills the
+  //! middle (the frame leaves it out, the cursor keeps it).
   void EmitNineSliceInternal(PrimitiveEmitter& emitter,
                              const RectI& src,
                              const RectI& dest,
@@ -174,34 +139,25 @@ class WindowXP : public Node {
                              const glm::vec4& color,
                              bool draw_center = true);
 
-  /*! Creates the buffer and the bind group of set 3 of the tint pipeline,
-      which the stretched background layer is drawn through, see
-      WindowVX::CreateTintBinding(). */
+  //! Creates set 3 of the tint pipeline used by EmitBackgroundInternal().
   void CreateTintBinding();
 
-  //! The origin of the contents, i.e. limited to the parts they can reach.
+  //! Contents origin, limited to the scrollable overflow.
   glm::ivec2 LimitedOriginInternal() const;
 
-  //! The inner region of the frame, in window coordinates.
+  //! Inner region of the frame, where the contents and the cursor are clipped.
   RectI ContentRectInternal() const;
 
-  /*! The reference value the window marks its inner region with, and the
-      value it erases that region to first, see WindowVX::kStencilReference.
-      Every window shares the pair: the erase is what keeps two windows from
-      reading each other's mark, so the reference needs no longer be unique
-      per window. */
+  //! Stencil value the node above marks the inner region with; shared with
+  //! WindowVX, because the erase at kStencilClear keeps marks from colliding.
   static constexpr uint32_t kStencilReference = 1;
   static constexpr uint32_t kStencilClear = 0;
 
-  //! The node which draws the cursor and the contents above the parent of
-  //! this window, see the class documentation.
+  //! Node drawing the cursor and the contents above this window's parent.
   RefPtr<WindowXPAbove> above_;
 
-  /*! True while the node above has something to draw: a cursor rectangle or
-      a contents bitmap. The node above is a sibling and cannot read the
-      state of its window in the stage it draws in, so the window answers
-      that question in its own prepare stage and the node reads the answer,
-      see WindowXPAbove::Prepare(). */
+  //! True while the node above has something to draw; answered here because the
+  //! sibling cannot read this window's state in the stage it draws in.
   bool above_prepare_ = false;
 
   int32_t scale_ = 2;
@@ -219,35 +175,30 @@ class WindowXP : public Node {
   int32_t ox_ = 0, oy_ = 0;
   int32_t opacity_ = 255, back_opacity_ = 255, contents_opacity_ = 255;
 
-  //! The object pool slot of the ground of this window, bound at set 1.
+  //! Object pool slot of the ground of this window, bound at set 1.
   UniformBlockPool::Slot object_slot_ = {};
 
-  /*! The param of the tint shader of the stretched background layer, see
-      WindowVX::CreateTintBinding(). */
+  //! Tint param of the stretched background layer.
   wgpu::Buffer tint_uniform_;
-  //! The bind group of set 3 of the tint pipeline.
+  //! Bind group of set 3 of the tint pipeline.
   wgpu::BindGroup tint_group_;
 
-  //! The range the stretched background layer appended to the batch.
+  //! Range the stretched background layer appended to the batch.
   PrimitiveEmitter::Slot background_slot_ = {};
-  //! The range the tiled background layer and the frame appended.
+  //! Range the tiled background layer and the frame appended.
   PrimitiveEmitter::Slot ground_slot_ = {};
 
-  //! The object pool slot of the node above, bound at set 1.
+  //! Object pool slot of the node above, bound at set 1.
   UniformBlockPool::Slot above_object_slot_ = {};
-  /*! The range the node above appended which erases the stencil over the area
-      of the window, drawn at kStencilClear before the region is marked. */
+  //! Range the node above appended to erase the stencil over the window.
   PrimitiveEmitter::Slot stencil_clear_slot_ = {};
-  //! The range the node above appended which marks the inner region into the
-  //! stencil.
+  //! Range the node above appended to mark the inner region into the stencil.
   PrimitiveEmitter::Slot stencil_slot_ = {};
-  //! The range the node above appended which is the cursor, from the skin.
+  //! Range the node above appended which is the cursor, from the skin.
   PrimitiveEmitter::Slot cursor_slot_ = {};
-  //! The range the node above appended which are the arrows and the pause
-  //! icon, from the skin.
+  //! Range the node above appended which is the arrows and pause icon.
   PrimitiveEmitter::Slot arrows_slot_ = {};
-  //! The range the node above appended which are the contents, from their
-  //! own bitmap.
+  //! Range the node above appended which is the contents, from their bitmap.
   PrimitiveEmitter::Slot contents_slot_ = {};
 };
 

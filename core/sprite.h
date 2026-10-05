@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "core/definition.h"
 #include "core/effect.h"
 #include "core/node.h"
 #include "core/uniform.h"
@@ -29,41 +30,68 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Sprite : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Sprite(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~Sprite() override;
 
+  URGE_BINDING()
   void Flash(RefPtr<Color> color, int32_t duration);
+  URGE_BINDING()
   void Update();
 
+  URGE_BINDING()
   int32_t Width();
+  URGE_BINDING()
   int32_t Height();
 
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Bitmap);
+  URGE_BINDING()
   ATTR(RefPtr<Rect>, SrcRect);
+  URGE_BINDING()
   ATTR(int32_t, X);
+  URGE_BINDING()
   ATTR(int32_t, Y);
+  URGE_BINDING()
   ATTR(int32_t, OX);
+  URGE_BINDING()
   ATTR(int32_t, OY);
+  URGE_BINDING()
   ATTR(float, ZoomX);
+  URGE_BINDING()
   ATTR(float, ZoomY);
+  URGE_BINDING()
   ATTR(float, Angle);
+  URGE_BINDING()
   ATTR(int32_t, WaveAmp);
+  URGE_BINDING()
   ATTR(int32_t, WaveLength);
+  URGE_BINDING()
   ATTR(int32_t, WaveSpeed);
+  URGE_BINDING()
   ATTR(float, WavePhase);
+  URGE_BINDING()
   ATTR(bool, Mirror);
+  URGE_BINDING()
   ATTR(int32_t, BushDepth);
+  URGE_BINDING()
   ATTR(int32_t, BushOpacity);
+  URGE_BINDING()
   ATTR(int32_t, Opacity);
+  URGE_BINDING()
   ATTR(int32_t, BlendType);
+  URGE_BINDING()
   ATTR(RefPtr<Color>, Color);
+  URGE_BINDING()
   ATTR(RefPtr<Tone>, Tone);
+  URGE_BINDING()
   ATTR(RefPtr<Effect>, Effect);
-  /*-export.end-*/
 
  private:
   void DisposeObject() override;

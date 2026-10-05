@@ -63,6 +63,7 @@ constexpr int32_t kCellSize = 32;
 
 }  // namespace
 
+
 WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
     : Node(nullptr, ZValue(100, std::numeric_limits<int32_t>::max())),
       contents_(MakeRefCounted<Bitmap>(1, 1)),
@@ -78,29 +79,13 @@ WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
   CreateTintBinding();
 }
 
+
 WindowVX::WindowVX(RefPtr<Viewport> viewport) : WindowVX(0, 0, 0, 0) {
   Attr_Viewport(viewport);
 }
 
 WindowVX::~WindowVX() {
   Disposable::Dispose();
-}
-
-void WindowVX::CreateTintBinding() {
-  /* The tint of the stretched background layer is written during the prepare
-     stage of every frame the window is drawn in, so the contents of the
-     buffer are not staged here -- see Plane::CreateEffectBindings(), which
-     does the same for the tint of a plane. */
-  const wgpu::RenderPipeline& pipeline =
-      ShaderSet::Get().state.tint_blends.at(BLEND_NORMAL);
-
-  wgpu::BufferDescriptor tint_desc;
-  tint_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
-  tint_desc.size = sizeof(TintBase::TintParam);
-  tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
-
-  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
-                                   {{0, util::BufferSet(tint_uniform_)}});
 }
 
 void WindowVX::Update() {
@@ -117,6 +102,7 @@ void WindowVX::Update() {
   }
 }
 
+
 void WindowVX::Move(int32_t x, int32_t y, int32_t width, int32_t height) {
   x_ = x;
   y_ = y;
@@ -124,13 +110,16 @@ void WindowVX::Move(int32_t x, int32_t y, int32_t width, int32_t height) {
   height_ = height;
 }
 
+
 bool WindowVX::Opened() {
   return openness_ == 255;
 }
 
+
 bool WindowVX::Closed() {
   return openness_ == 0;
 }
+
 
 ATTR_DEF(WindowVX, RefPtr<Viewport>, Viewport) {
   /* A window is a node of the tree like any other, so the viewport it belongs
@@ -145,6 +134,7 @@ ATTR_DEF(WindowVX, RefPtr<Viewport>, Viewport) {
   }
 }
 
+
 ATTR_DEF(WindowVX, RefPtr<Bitmap>, Windowskin) {
   if (value.has_value()) {
     window_skin_ = *value;
@@ -153,6 +143,7 @@ ATTR_DEF(WindowVX, RefPtr<Bitmap>, Windowskin) {
     return window_skin_;
   }
 }
+
 
 ATTR_DEF(WindowVX, RefPtr<Bitmap>, Contents) {
   if (value.has_value()) {
@@ -163,6 +154,7 @@ ATTR_DEF(WindowVX, RefPtr<Bitmap>, Contents) {
   }
 }
 
+
 ATTR_DEF(WindowVX, RefPtr<Rect>, CursorRect) {
   if (value.has_value()) {
     cursor_rect_->Set(*value);
@@ -171,6 +163,7 @@ ATTR_DEF(WindowVX, RefPtr<Rect>, CursorRect) {
     return cursor_rect_;
   }
 }
+
 
 ATTR_DEF(WindowVX, bool, Active) {
   if (value.has_value()) {
@@ -181,6 +174,7 @@ ATTR_DEF(WindowVX, bool, Active) {
   }
 }
 
+
 ATTR_DEF(WindowVX, bool, ArrowsVisible) {
   if (value.has_value()) {
     arrows_visible_ = *value;
@@ -189,6 +183,7 @@ ATTR_DEF(WindowVX, bool, ArrowsVisible) {
     return arrows_visible_;
   }
 }
+
 
 ATTR_DEF(WindowVX, bool, Pause) {
   if (value.has_value()) {
@@ -199,6 +194,7 @@ ATTR_DEF(WindowVX, bool, Pause) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, X) {
   if (value.has_value()) {
     x_ = *value;
@@ -207,6 +203,7 @@ ATTR_DEF(WindowVX, int32_t, X) {
     return x_;
   }
 }
+
 
 ATTR_DEF(WindowVX, int32_t, Y) {
   if (value.has_value()) {
@@ -217,6 +214,7 @@ ATTR_DEF(WindowVX, int32_t, Y) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, Width) {
   if (value.has_value()) {
     width_ = *value;
@@ -225,6 +223,7 @@ ATTR_DEF(WindowVX, int32_t, Width) {
     return width_;
   }
 }
+
 
 ATTR_DEF(WindowVX, int32_t, Height) {
   if (value.has_value()) {
@@ -235,6 +234,7 @@ ATTR_DEF(WindowVX, int32_t, Height) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, OX) {
   if (value.has_value()) {
     ox_ = *value;
@@ -244,6 +244,7 @@ ATTR_DEF(WindowVX, int32_t, OX) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, OY) {
   if (value.has_value()) {
     oy_ = *value;
@@ -252,6 +253,7 @@ ATTR_DEF(WindowVX, int32_t, OY) {
     return oy_;
   }
 }
+
 
 ATTR_DEF(WindowVX, int32_t, Padding) {
   if (value.has_value()) {
@@ -263,6 +265,7 @@ ATTR_DEF(WindowVX, int32_t, Padding) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, PaddingBottom) {
   if (value.has_value()) {
     padding_bottom_ = *value;
@@ -271,6 +274,7 @@ ATTR_DEF(WindowVX, int32_t, PaddingBottom) {
     return padding_bottom_;
   }
 }
+
 
 ATTR_DEF(WindowVX, int32_t, Opacity) {
   if (value.has_value()) {
@@ -281,6 +285,7 @@ ATTR_DEF(WindowVX, int32_t, Opacity) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, BackOpacity) {
   if (value.has_value()) {
     back_opacity_ = std::clamp<int32_t>(*value, 0, 255);
@@ -289,6 +294,7 @@ ATTR_DEF(WindowVX, int32_t, BackOpacity) {
     return back_opacity_;
   }
 }
+
 
 ATTR_DEF(WindowVX, int32_t, ContentsOpacity) {
   if (value.has_value()) {
@@ -299,6 +305,7 @@ ATTR_DEF(WindowVX, int32_t, ContentsOpacity) {
   }
 }
 
+
 ATTR_DEF(WindowVX, int32_t, Openness) {
   if (value.has_value()) {
     openness_ = std::clamp<int32_t>(*value, 0, 255);
@@ -307,6 +314,7 @@ ATTR_DEF(WindowVX, int32_t, Openness) {
     return openness_;
   }
 }
+
 
 ATTR_DEF(WindowVX, RefPtr<Tone>, Tone) {
   if (value.has_value()) {
@@ -317,6 +325,7 @@ ATTR_DEF(WindowVX, RefPtr<Tone>, Tone) {
   }
 }
 
+
 void WindowVX::DisposeObject() {
   Node::DisposeObject();
 
@@ -324,167 +333,6 @@ void WindowVX::DisposeObject() {
   contents_.reset();
 }
 
-RectI WindowVX::ContentRectInternal() const {
-  return RectI(padding_, padding_, std::max(0, width_ - padding_ * 2),
-               std::max(0, height_ - (padding_ + padding_bottom_)));
-}
-
-glm::ivec2 WindowVX::LimitedOriginInternal() const {
-  /* An origin only has to move what can be moved: scrolling past the end of
-     the contents would keep them fixed against the inner region and leave a
-     gap, so it is limited to the amount the contents overflow the region. */
-  const RectI region = ContentRectInternal();
-  const glm::ivec2 contents_size =
-      contents_ ? contents_->size() : glm::ivec2(0);
-  const int32_t max_x = std::max(0, contents_size.x - region.width);
-  const int32_t max_y = std::max(0, contents_size.y - region.height);
-  return glm::ivec2(std::clamp(ox_, 0, max_x), std::clamp(oy_, 0, max_y));
-}
-
-void WindowVX::EmitSliceInternal(PrimitiveEmitter& emitter,
-                                 const RectI& src,
-                                 const RectI& dest,
-                                 const glm::vec4& color) {
-  if (!src() || !dest())
-    return;
-
-  /* The texture coordinate of a quad follows a top-left origin, which is what
-     the skins of both engines store, so a cell maps onto its destination
-     without a flip. */
-  /* EmitQuad opens a batch of its own and leaves it open: the batch of one
-     quad is closed here, so the callers may emit as many slices as they need
-     without tripping the one-batch-at-a-time rule of the emitter. */
-  const glm::ivec2 skin_size = window_skin_->size();
-  emitter.EmitQuad(RectF(dest), MakeNorm(RectF(src), skin_size), color);
-  emitter.End();
-}
-
-void WindowVX::EmitTiledInternal(PrimitiveEmitter& emitter,
-                                 const RectI& src,
-                                 const RectI& dest,
-                                 const glm::vec4& color) {
-  if (!src() || !dest())
-    return;
-
-  const glm::ivec2 skin_size = window_skin_->size();
-
-  /* The emitter has no tiled mode and the sampler of a bitmap clamps, so the
-     tiles are emitted one by one: every tile of the destination reads the
-     same cell of the skin, and the tile which runs over the end of a row or a
-     column is cut to the remainder. */
-  const int32_t columns = (dest.width + src.width - 1) / src.width;
-  const int32_t rows = (dest.height + src.height - 1) / src.height;
-
-  emitter.BeginQuad().Color4f(color);
-  for (int32_t row = 0; row < rows; ++row) {
-    const int32_t y = dest.y + row * src.height;
-    const int32_t height = std::min(src.height, dest.y + dest.height - y);
-    if (height <= 0)
-      break;
-
-    for (int32_t column = 0; column < columns; ++column) {
-      const int32_t x = dest.x + column * src.width;
-      const int32_t width = std::min(src.width, dest.x + dest.width - x);
-      if (width <= 0)
-        break;
-
-      /* A cut tile reads the matching part of the cell: the texture
-         coordinate is the fraction of the cell the tile covers. */
-      const RectI src_part(src.x, src.y, width, height);
-      emitter.Rect(RectF(static_cast<float>(x), static_cast<float>(y),
-                         static_cast<float>(width), static_cast<float>(height)),
-                   MakeNorm(RectF(src_part), skin_size));
-    }
-  }
-  emitter.End();
-}
-
-void WindowVX::EmitNineSliceInternal(PrimitiveEmitter& emitter,
-                                     const RectI& src,
-                                     const RectI& dest,
-                                     int32_t unit,
-                                     const glm::vec4& color,
-                                     bool draw_center) {
-  if (!src() || !dest() || unit <= 0)
-    return;
-
-  const int32_t left = dest.x;
-  const int32_t top = dest.y;
-  const int32_t right = dest.x + dest.width;
-  const int32_t bottom = dest.y + dest.height;
-
-  /* A source which is smaller than two units has no room for an inner cell
-     either, the unit of the slices is then half of what it holds. */
-  const int32_t source_unit =
-      std::min(unit, std::min(src.width, src.height) / 2);
-  if (source_unit <= 0)
-    return;
-
-  // Corners: every corner of the destination reads the corner of the cell.
-  EmitSliceInternal(emitter, RectI(src.x, src.y, source_unit, source_unit),
-                    RectI(left, top, unit, unit), color);
-  EmitSliceInternal(
-      emitter,
-      RectI(src.x + src.width - source_unit, src.y, source_unit, source_unit),
-      RectI(right - unit, top, unit, unit), color);
-  EmitSliceInternal(
-      emitter,
-      RectI(src.x + src.width - source_unit, src.y + src.height - source_unit,
-            source_unit, source_unit),
-      RectI(right - unit, bottom - unit, unit, unit), color);
-  EmitSliceInternal(
-      emitter,
-      RectI(src.x, src.y + src.height - source_unit, source_unit, source_unit),
-      RectI(left, bottom - unit, unit, unit), color);
-
-  /* The edges and the centre of the nine slices: a destination which is
-     smaller than two units leaves no room for them, its corners then cover
-     the whole of it. */
-  const int32_t inner_width = dest.width - unit * 2;
-  const int32_t inner_height = dest.height - unit * 2;
-
-  if (inner_width > 0) {
-    const RectI edge_top(src.x + source_unit, src.y,
-                         src.width - source_unit * 2, source_unit);
-    const RectI edge_bottom(src.x + source_unit,
-                            src.y + src.height - source_unit,
-                            src.width - source_unit * 2, source_unit);
-
-    EmitTiledInternal(emitter, edge_top,
-                      RectI(left + unit, top, inner_width, unit), color);
-    EmitTiledInternal(emitter, edge_bottom,
-                      RectI(left + unit, bottom - unit, inner_width, unit),
-                      color);
-  }
-
-  if (inner_height > 0) {
-    const RectI edge_left(src.x, src.y + source_unit, source_unit,
-                          src.height - source_unit * 2);
-    const RectI edge_right(src.x + src.width - source_unit, src.y + source_unit,
-                           source_unit, src.height - source_unit * 2);
-
-    EmitTiledInternal(emitter, edge_left,
-                      RectI(left, top + unit, unit, inner_height), color);
-    EmitTiledInternal(emitter, edge_right,
-                      RectI(right - unit, top + unit, unit, inner_height),
-                      color);
-  }
-
-  /* The centre is only part of a nine slice which is meant to be a filled
-     frame of its own, i.e. the cursor: the frame of a window draws its four
-     corners and the four edges between them and leaves the inner region to
-     the background, so its centre is left out, see
-     WindowVX::EmitGroundInternal(). The reference renderer draws the cursor
-     through a helper which emits all nine, and the frame by hand without it. */
-  if (draw_center && inner_width > 0 && inner_height > 0) {
-    const RectI centre(src.x + source_unit, src.y + source_unit,
-                       src.width - source_unit * 2,
-                       src.height - source_unit * 2);
-    EmitTiledInternal(emitter, centre,
-                      RectI(left + unit, top + unit, inner_width, inner_height),
-                      color);
-  }
-}
 
 bool WindowVX::Prepare(DrawParam param) {
   background_slot_ = {};
@@ -493,9 +341,7 @@ bool WindowVX::Prepare(DrawParam param) {
   stencil_slot_ = {};
   clipped_slot_ = {};
 
-  /* The frame and the background of a window are drawn from its skin alone,
-     the cursor and the contents from the skin and the contents bitmap, and
-     the whole of it is skipped for a skin which was disposed. */
+  // Frame and background read only the skin, cursor and contents also the bitmap; all skipped when disposed.
   if (!Disposable::Check(window_skin_))
     return false;
 
@@ -511,16 +357,7 @@ bool WindowVX::Prepare(DrawParam param) {
   if (object_slot_.chunk == UniformBlockPool::kInvalidChunk)
     return false;
 
-  /* Every quad of the window is emitted here: the vertex batch of the frame
-     is uploaded between the prepare and the draw stage, so a draw stage which
-     emitted geometry would append it to a batch nobody reads, see
-     Node::Render().
-
-     The helpers of the emitter open a batch of their own for every quad they
-     append, so a group which is drawn with one pipeline is captured as the
-     range of vertices the emitter grew by while it was emitted -- the index
-     of a vertex holds in the vertex buffer after the upload, which is what a
-     draw addresses, see PrimitiveEmitter::Slot. */
+  // All quads are emitted here, because the batch is uploaded between prepare and draw.
   PrimitiveEmitter& emitter = *param->vertices;
 
   const auto capture = [&](const std::size_t first) {
@@ -529,9 +366,7 @@ bool WindowVX::Prepare(DrawParam param) {
         static_cast<std::uint32_t>(emitter.size() - first)};
   };
 
-  /* The stretch layer of the background is the only part of the window the
-     reference renderer tints, so it takes a range of its own and is drawn
-     through the tint pipeline, see the class documentation. */
+  // The stretched background is the only tinted part, so it takes its own range.
   const std::size_t background_first = emitter.size();
   EmitBackgroundInternal(emitter);
   background_slot_ = capture(background_first);
@@ -542,12 +377,7 @@ bool WindowVX::Prepare(DrawParam param) {
   EmitGroundInternal(emitter);
   ground_slot_ = capture(ground_first);
 
-  /* The cursor and the contents are clipped to the inner region of the
-     frame, so the region is marked into the stencil first and both of them
-     are drawn through the stencil test afterwards. Before the mark is laid
-     down, the whole area of the window is erased to kStencilClear so the
-     window does not depend on the mark of any other window, see
-     kStencilReference. */
+  // Erase the window area with kStencilClear, mark the inner region, then draw the clipped parts.
   const std::size_t stencil_clear_first = emitter.size();
   EmitStencilClearInternal(emitter);
   stencil_clear_slot_ = capture(stencil_clear_first);
@@ -573,6 +403,7 @@ bool WindowVX::Prepare(DrawParam param) {
   return true;
 }
 
+
 bool WindowVX::DoDraw(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
@@ -582,17 +413,14 @@ bool WindowVX::DoDraw(DrawParam param) {
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 
-  /* The stretched background layer, through the tint pipeline: it is the only
-     part of the window the reference renderer draws under a tint shader. The
-     param of the shader is the tint of the window, i.e. no colour and no
-     tone, exactly what the reference renderer sets for it. */
+  // Stretched background through the tint pipeline, with the window tint param.
   if (background_slot_.count) {
     TintBase::TintParam tint = {};
     tint.blend_tone = tone_->Normalize();
     GPUDevice::Get().queue().WriteBuffer(tint_uniform_, 0, &tint, sizeof(tint));
 
     param->pass.SetPipeline(
-        ShaderSet::Get().state.tint_blends.at(BLEND_NORMAL));
+        ShaderSet::Get().state.window.tint_blends.at(BLEND_NORMAL));
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetBindGroup(2, window_skin_->texture_group(), 0, nullptr);
     param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
@@ -602,21 +430,15 @@ bool WindowVX::DoDraw(DrawParam param) {
   /* The tiled background layer and the nine-slice frame, through the texture
      pipeline, which only needs the colour of their vertices. */
   if (ground_slot_.count) {
-    param->pass.SetPipeline(ShaderSet::Get().state.texture_dynamic_pma);
+    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_dynamic_pma);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetBindGroup(2, window_skin_->texture_group(), 0, nullptr);
     param->pass.Draw(ground_slot_.count, 1, ground_slot_.first, 0);
   }
 
-  /* The area of the window is erased from the stencil first, through the same
-     marking pipeline the inner region is marked with, at kStencilClear. This
-     is what lets every window share one reference value: the erase wipes the
-     mark an earlier window left in the area this window is about to use, so
-     the two can never see each other's region. The erase covers the whole
-     area of the window rather than only the inner region, so it also drops
-     the mark of a window which overlaps this one from any direction. */
+  // Erase the whole window area at kStencilClear so every window can share one reference.
   if (stencil_clear_slot_.count) {
-    param->pass.SetPipeline(ShaderSet::Get().state.texture_stencil_write);
+    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_write);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetBindGroup(2, window_skin_->texture_group(), 0, nullptr);
     param->pass.SetStencilReference(kStencilClear);
@@ -624,23 +446,18 @@ bool WindowVX::DoDraw(DrawParam param) {
                      0);
   }
 
-  /* The inner region is marked into the stencil by a pass which writes no
-     colour: the mask is drawn from the skin like the rest of the window, so
-     the texture its pipeline expects is bound, and the colour it would write
-     is discarded by the write mask of the pipeline. */
+  // Mark the inner region with a no-colour pass; the write mask drops the colour.
   if (stencil_slot_.count) {
-    param->pass.SetPipeline(ShaderSet::Get().state.texture_stencil_write);
+    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_write);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetBindGroup(2, window_skin_->texture_group(), 0, nullptr);
     param->pass.SetStencilReference(kStencilReference);
     param->pass.Draw(stencil_slot_.count, 1, stencil_slot_.first, 0);
   }
 
-  /* The cursor and the contents, clipped to the region the stencil carries.
-     The cursor is drawn from the skin and the contents from their own bitmap,
-     so the two are separate draws with a texture each. */
+  // Cursor (skin) and contents (own bitmap) are separate draws, clipped by the stencil.
   if (clipped_slot_.count) {
-    param->pass.SetPipeline(ShaderSet::Get().state.texture_stencil_test);
+    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_test);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetStencilReference(kStencilReference);
 
@@ -658,43 +475,6 @@ bool WindowVX::DoDraw(DrawParam param) {
   return false;
 }
 
-void WindowVX::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
-  if (width_ < scale_ * 2 || height_ < scale_ * 2)
-    return;
-
-  const int32_t cell = kCellSize * scale_;
-
-  /* The two cells at the top of the skin hold the background of the window:
-     the first one is stretched over the inner area, the second one is tiled
-     over it. A skin which carries no background leaves both of them empty,
-     which reads white and is what the default skin of RGSS3 is. */
-  const RectI background_source(0, 0, cell, cell);
-
-  const RectI background_dest(scale_, scale_, width_ - 2 * scale_,
-                              height_ - 2 * scale_);
-
-  /* The background is scaled around the horizontal centre line of the window
-     while it opens or closes, see the class documentation. Its colour carries
-     the opacity of the background of the window on every channel, because the
-     state of the engine is premultiplied alpha. */
-  const float openness = static_cast<float>(openness_) / 255.0f;
-  const float center_y = static_cast<float>(height_) / 2.0f;
-
-  const float top = static_cast<float>(background_dest.y);
-  const float bottom = top + static_cast<float>(background_dest.height);
-  const float scaled_top = center_y + (top - center_y) * openness;
-  const float scaled_bottom = center_y + (bottom - center_y) * openness;
-
-  const RectI dest(background_dest.x, static_cast<int32_t>(scaled_top),
-                   background_dest.width,
-                   static_cast<int32_t>(scaled_bottom - scaled_top));
-
-  const glm::vec4 background_color =
-      glm::vec4(static_cast<float>(opacity_) / 255.0f *
-                static_cast<float>(back_opacity_) / 255.0f);
-
-  EmitSliceInternal(emitter, background_source, dest, background_color);
-}
 
 void WindowVX::EmitGroundInternal(PrimitiveEmitter& emitter) {
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
@@ -707,10 +487,7 @@ void WindowVX::EmitGroundInternal(PrimitiveEmitter& emitter) {
      as a plain texture, see the class documentation. */
   const RectI background_tile_source(0, cell, cell, cell);
 
-  /* The frame is the nine slices of the block which holds the border of the
-     skin: the four corners at (32, 0), (56, 0), (32, 24) and (56, 24), the
-     four edges between them and the 16x16 middle, all at scale 1 inside a
-     32x32 block which starts at x = 32, see EmitNineSliceInternal(). */
+  // The frame is the nine slices of the 32x32 skin block at x = 32, at scale 1.
   const RectI frame_source(32 * scale_, 0, unit * 4, unit * 4);
 
   const RectI background_dest(scale_, scale_, width_ - 2 * scale_,
@@ -790,12 +567,42 @@ void WindowVX::EmitGroundInternal(PrimitiveEmitter& emitter) {
   }
 }
 
+
+void WindowVX::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
+  if (width_ < scale_ * 2 || height_ < scale_ * 2)
+    return;
+
+  const int32_t cell = kCellSize * scale_;
+
+  // The skin's two top cells are the background: first stretched, second tiled.
+  const RectI background_source(0, 0, cell, cell);
+
+  const RectI background_dest(scale_, scale_, width_ - 2 * scale_,
+                              height_ - 2 * scale_);
+
+  // The background scales around the window's centre line as it opens; premultiplied.
+  const float openness = static_cast<float>(openness_) / 255.0f;
+  const float center_y = static_cast<float>(height_) / 2.0f;
+
+  const float top = static_cast<float>(background_dest.y);
+  const float bottom = top + static_cast<float>(background_dest.height);
+  const float scaled_top = center_y + (top - center_y) * openness;
+  const float scaled_bottom = center_y + (bottom - center_y) * openness;
+
+  const RectI dest(background_dest.x, static_cast<int32_t>(scaled_top),
+                   background_dest.width,
+                   static_cast<int32_t>(scaled_bottom - scaled_top));
+
+  const glm::vec4 background_color =
+      glm::vec4(static_cast<float>(opacity_) / 255.0f *
+                static_cast<float>(back_opacity_) / 255.0f);
+
+  EmitSliceInternal(emitter, background_source, dest, background_color);
+}
+
+
 void WindowVX::EmitStencilClearInternal(PrimitiveEmitter& emitter) {
-  /* The erase covers the whole area of the window, not only the inner region:
-     a window which overlaps this one keeps its own mark elsewhere in the
-     window, and erasing only the inner region would leave that mark in place
-     for a later neighbour to trip over. Erasing the frame as well is
-     harmless, because the frame is never tested against the stencil. */
+  // Erase the frame too, not just the inner region, so no stale mark is left behind.
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
     return;
 
@@ -810,6 +617,7 @@ void WindowVX::EmitStencilClearInternal(PrimitiveEmitter& emitter) {
                    glm::vec4(1.0f));
   emitter.End();
 }
+
 
 void WindowVX::EmitStencilInternal(PrimitiveEmitter& emitter) {
   /* The cursor and the contents of a closing window are not drawn, so there
@@ -826,16 +634,13 @@ void WindowVX::EmitStencilInternal(PrimitiveEmitter& emitter) {
   if (!has_cursor && !Disposable::Check(contents_))
     return;
 
-  /* The mark is a plain quad over the inner region. Its colour and its
-     texture are irrelevant: the pipeline of the marking pass writes no
-     colour. The quad is emitted with an opaque colour so the vertices are
-     well defined, and it is emitted into the same object space as the
-     cursor and the contents. */
+  // The mark is a plain opaque quad over the inner region; colour and texture are unused.
   emitter.EmitQuad(RectF(region),
                    MakeNorm(RectF(RectI(0, 0, 1, 1)), window_skin_->size()),
                    glm::vec4(1.0f));
   emitter.End();
 }
+
 
 void WindowVX::EmitCursorInternal(PrimitiveEmitter& emitter) {
   /* The cursor of a window which is not fully open is not drawn, and there is
@@ -853,9 +658,7 @@ void WindowVX::EmitCursorInternal(PrimitiveEmitter& emitter) {
   const glm::vec4 color(static_cast<float>(contents_opacity_) / 255.0f *
                         static_cast<float>(alpha) / 255.0f);
 
-  /* The cursor is the nine slices of the cell at (32, 32) of the skin,
-     stretched to the size of CursorRect and placed inside the frame. The
-     cursor keeps its centre: the cell is a frame whose middle is filled. */
+  // Cursor: the nine slices of the (32, 32) cell, stretched to CursorRect, centre kept.
   EmitNineSliceInternal(emitter,
                         RectI(kCellSize * scale_, kCellSize * scale_,
                               kSliceSize * 2 * scale_, kSliceSize * 2 * scale_),
@@ -863,6 +666,7 @@ void WindowVX::EmitCursorInternal(PrimitiveEmitter& emitter) {
                               cursor.width, cursor.height),
                         unit, color, /*draw_center=*/true);
 }
+
 
 void WindowVX::EmitContentsInternal(PrimitiveEmitter& emitter) {
   if (openness_ != 255 || !Disposable::Check(contents_))
@@ -877,10 +681,7 @@ void WindowVX::EmitContentsInternal(PrimitiveEmitter& emitter) {
                   std::min(region.width, contents_size.x - origin.x),
                   std::min(region.height, contents_size.y - origin.y));
 
-  /* The contents are placed at the inner region of the window, moved by the
-     origin: only the part of them the region holds is read from the bitmap,
-     and the part which lies outside is left alone instead of being drawn
-     over the frame. */
+  // Contents sit at the inner region, moved by the origin, clipped to what it holds.
   if (src()) {
     emitter.EmitQuad(
         RectF(static_cast<float>(region.x), static_cast<float>(region.y),
@@ -888,6 +689,172 @@ void WindowVX::EmitContentsInternal(PrimitiveEmitter& emitter) {
         MakeNorm(RectF(src), glm::vec2(contents_size)), color);
     emitter.End();
   }
+}
+
+
+void WindowVX::EmitSliceInternal(PrimitiveEmitter& emitter,
+                                 const RectI& src,
+                                 const RectI& dest,
+                                 const glm::vec4& color) {
+  if (!src() || !dest())
+    return;
+
+  // A quad's texture coordinate is top-left, so a cell maps without a flip.
+  // Close the batch EmitQuad left open, so callers may emit slices freely.
+  const glm::ivec2 skin_size = window_skin_->size();
+  emitter.EmitQuad(RectF(dest), MakeNorm(RectF(src), skin_size), color);
+  emitter.End();
+}
+
+
+void WindowVX::EmitTiledInternal(PrimitiveEmitter& emitter,
+                                 const RectI& src,
+                                 const RectI& dest,
+                                 const glm::vec4& color) {
+  if (!src() || !dest())
+    return;
+
+  const glm::ivec2 skin_size = window_skin_->size();
+
+  // Emit the tiles one by one, cutting the tile which overruns a row or column.
+  const int32_t columns = (dest.width + src.width - 1) / src.width;
+  const int32_t rows = (dest.height + src.height - 1) / src.height;
+
+  emitter.BeginQuad().Color4f(color);
+  for (int32_t row = 0; row < rows; ++row) {
+    const int32_t y = dest.y + row * src.height;
+    const int32_t height = std::min(src.height, dest.y + dest.height - y);
+    if (height <= 0)
+      break;
+
+    for (int32_t column = 0; column < columns; ++column) {
+      const int32_t x = dest.x + column * src.width;
+      const int32_t width = std::min(src.width, dest.x + dest.width - x);
+      if (width <= 0)
+        break;
+
+      /* A cut tile reads the matching part of the cell: the texture
+         coordinate is the fraction of the cell the tile covers. */
+      const RectI src_part(src.x, src.y, width, height);
+      emitter.Rect(RectF(static_cast<float>(x), static_cast<float>(y),
+                         static_cast<float>(width), static_cast<float>(height)),
+                   MakeNorm(RectF(src_part), skin_size));
+    }
+  }
+  emitter.End();
+}
+
+
+void WindowVX::EmitNineSliceInternal(PrimitiveEmitter& emitter,
+                                     const RectI& src,
+                                     const RectI& dest,
+                                     int32_t unit,
+                                     const glm::vec4& color,
+                                     bool draw_center) {
+  if (!src() || !dest() || unit <= 0)
+    return;
+
+  const int32_t left = dest.x;
+  const int32_t top = dest.y;
+  const int32_t right = dest.x + dest.width;
+  const int32_t bottom = dest.y + dest.height;
+
+  /* A source which is smaller than two units has no room for an inner cell
+     either, the unit of the slices is then half of what it holds. */
+  const int32_t source_unit =
+      std::min(unit, std::min(src.width, src.height) / 2);
+  if (source_unit <= 0)
+    return;
+
+  // Corners: every corner of the destination reads the corner of the cell.
+  EmitSliceInternal(emitter, RectI(src.x, src.y, source_unit, source_unit),
+                    RectI(left, top, unit, unit), color);
+  EmitSliceInternal(
+      emitter,
+      RectI(src.x + src.width - source_unit, src.y, source_unit, source_unit),
+      RectI(right - unit, top, unit, unit), color);
+  EmitSliceInternal(
+      emitter,
+      RectI(src.x + src.width - source_unit, src.y + src.height - source_unit,
+            source_unit, source_unit),
+      RectI(right - unit, bottom - unit, unit, unit), color);
+  EmitSliceInternal(
+      emitter,
+      RectI(src.x, src.y + src.height - source_unit, source_unit, source_unit),
+      RectI(left, bottom - unit, unit, unit), color);
+
+  // Edges and centre: a destination below two units leaves room only for the corners.
+  const int32_t inner_width = dest.width - unit * 2;
+  const int32_t inner_height = dest.height - unit * 2;
+
+  if (inner_width > 0) {
+    const RectI edge_top(src.x + source_unit, src.y,
+                         src.width - source_unit * 2, source_unit);
+    const RectI edge_bottom(src.x + source_unit,
+                            src.y + src.height - source_unit,
+                            src.width - source_unit * 2, source_unit);
+
+    EmitTiledInternal(emitter, edge_top,
+                      RectI(left + unit, top, inner_width, unit), color);
+    EmitTiledInternal(emitter, edge_bottom,
+                      RectI(left + unit, bottom - unit, inner_width, unit),
+                      color);
+  }
+
+  if (inner_height > 0) {
+    const RectI edge_left(src.x, src.y + source_unit, source_unit,
+                          src.height - source_unit * 2);
+    const RectI edge_right(src.x + src.width - source_unit, src.y + source_unit,
+                           source_unit, src.height - source_unit * 2);
+
+    EmitTiledInternal(emitter, edge_left,
+                      RectI(left, top + unit, unit, inner_height), color);
+    EmitTiledInternal(emitter, edge_right,
+                      RectI(right - unit, top + unit, unit, inner_height),
+                      color);
+  }
+
+  // draw_center: the frame leaves the middle to the background, the cursor keeps it.
+  if (draw_center && inner_width > 0 && inner_height > 0) {
+    const RectI centre(src.x + source_unit, src.y + source_unit,
+                       src.width - source_unit * 2,
+                       src.height - source_unit * 2);
+    EmitTiledInternal(emitter, centre,
+                      RectI(left + unit, top + unit, inner_width, inner_height),
+                      color);
+  }
+}
+
+
+RectI WindowVX::ContentRectInternal() const {
+  return RectI(padding_, padding_, std::max(0, width_ - padding_ * 2),
+               std::max(0, height_ - (padding_ + padding_bottom_)));
+}
+
+
+glm::ivec2 WindowVX::LimitedOriginInternal() const {
+  // Limit the origin to the overflow of the contents over the inner region.
+  const RectI region = ContentRectInternal();
+  const glm::ivec2 contents_size =
+      contents_ ? contents_->size() : glm::ivec2(0);
+  const int32_t max_x = std::max(0, contents_size.x - region.width);
+  const int32_t max_y = std::max(0, contents_size.y - region.height);
+  return glm::ivec2(std::clamp(ox_, 0, max_x), std::clamp(oy_, 0, max_y));
+}
+
+
+void WindowVX::CreateTintBinding() {
+  // The tint buffer is written every drawn frame in the prepare stage.
+  const wgpu::RenderPipeline& pipeline =
+      ShaderSet::Get().state.window.tint_blends.at(BLEND_NORMAL);
+
+  wgpu::BufferDescriptor tint_desc;
+  tint_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+  tint_desc.size = sizeof(TintBase::TintParam);
+  tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
+
+  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
+                                   {{0, util::BufferSet(tint_uniform_)}});
 }
 
 }  // namespace urge

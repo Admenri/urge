@@ -48,10 +48,7 @@ uint64_t AlignUniformSize(uint64_t size) {
   return ((size + kAlignment - 1) / kAlignment) * kAlignment;
 }
 
-/*! The neutral resources the custom set of an effect falls back to for a
-    binding the caller never filled: a white texel, a nearest sampler and a
-    zeroed buffer. A single instance is shared by every effect and is created on
-    the first use, which is after the device exists. */
+//! Neutral resources for unfilled custom bindings: white texel, nearest sampler, zeroed buffer.
 class EffectDefaults {
  public:
   static EffectDefaults& Get() {
@@ -148,9 +145,7 @@ Effect::Effect(RefPtr<Effect> other) {
   if (!other)
     throw Exception(Exception::kRGSSError, "effect: cannot copy a null effect.");
 
-  /* The compiled stages and the state of a draw are immutable, so a copy only
-     shares them; what it owns is the custom set, which it rebuilds from the
-     resources it was copied with. */
+  // Stages are immutable and shared; a copy owns only its custom bind group.
   holder_ = other->holder_;
   resources_ = other->resources_;
   binding_dirty_ = true;
@@ -247,17 +242,10 @@ void Effect::CreateInternal(std::string vs_glsl,
   // The blend of the draw, or none at all when the author asked for "none"
   const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states);
 
-  /* The stages read the vertex stream of the engine (position, texture
-     coordinate, color) and the two uniforms the engine binds: the camera of the
-     frame at set 0 and the object transform of the draw at set 1, which travels
-     with a dynamic offset like it does for a sprite, see Pipeline. Set 2 is
-     always carried by the pipeline -- it is the custom set of the effect -- so
-     min_sets is three. */
+  // Vertex stream + engine sets 0/1; set 2 is the custom set, hence min_sets = 3.
   Pipeline shader(vs_glsl, fs_glsl, {{0, 1, 2}}, {1}, 3);
 
-  /* The scene and the object set are not the property of the effect: the engine
-     binds its own groups there, so the stages have to declare the same two
-     uniform blocks the built in shaders do, or the draw would be invalid. */
+  // Sets 0/1 are bound by the engine, so the stages must declare the same blocks.
   const std::vector<ShaderBinding> scene = shader.group_bindings(0);
   const std::vector<ShaderBinding> object = shader.group_bindings(1);
   if (scene.size() != 1 || !IsUniformBuffer(scene[0]) ||

@@ -73,7 +73,7 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
 #endif
   instance_ = wgpu::CreateInstance(&instance_desc);
 
-  // Platform Surface, a device without a window cannot present
+  // Surface: a device without a window cannot present
   if (window != nullptr) {
     wgpu::SurfaceDescriptor surface_desc;
     SDL_PropertiesID window_prop = SDL_GetWindowProperties(window);
@@ -93,8 +93,20 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
   CreateDevice(backend);
 }
 
+void GPUDevice::WaitAny(wgpu::Future future) {
+#if defined(WEBGPU_BACKEND_WGPU)
+  wgpuDevicePoll(device_.Get(), true, nullptr);
+#else
+  if (future.id) {
+    wgpu::FutureWaitInfo wait_info = {};
+    wait_info.future = future;
+    instance_.WaitAny(1, &wait_info, UINT64_MAX);
+  }
+#endif
+}
+
 void GPUDevice::CreateDevice(std::string backend) {
-  // Adapter, the callback of a request runs before the call returns
+  // Adapter: the request callback runs before the call returns
   WGPURequestAdapterCallbackInfo adapter_callback = {};
   adapter_callback.mode = WGPUCallbackMode_AllowProcessEvents;
   adapter_callback.callback = [](WGPURequestAdapterStatus status,
@@ -125,7 +137,7 @@ void GPUDevice::CreateDevice(std::string backend) {
   wgpu::DeviceDescriptor device_desc;
   adapter_.RequestDevice(&device_desc, device_callback);
 
-  // Dev info
+  // Info
   wgpu::AdapterInfo adapter_info;
   adapter_.GetInfo(&adapter_info);
   LOGGER_INFO("[GPU] Device: {} ({:#X})", std::string_view(adapter_info.device),
@@ -133,7 +145,6 @@ void GPUDevice::CreateDevice(std::string backend) {
   LOGGER_INFO("[GPU] Vendor: {} ({:#X})", std::string_view(adapter_info.vendor),
               adapter_info.vendorID);
 
-  // Backend
   switch (adapter_info.backendType) {
     case wgpu::BackendType::Null:
       LOGGER_INFO("[GPU] Backend: Null");
@@ -164,20 +175,7 @@ void GPUDevice::CreateDevice(std::string backend) {
                   static_cast<uint32_t>(adapter_info.backendType));
   }
 
-  // Queue
   queue_ = device_.GetQueue();
-}
-
-void GPUDevice::WaitAny(wgpu::Future future) {
-#if defined(WEBGPU_BACKEND_WGPU)
-  wgpuDevicePoll(device_.Get(), true, nullptr);
-#else
-  if (future.id) {
-    wgpu::FutureWaitInfo wait_info = {};
-    wait_info.future = future;
-    instance_.WaitAny(1, &wait_info, UINT64_MAX);
-  }
-#endif
 }
 
 }  // namespace urge

@@ -28,77 +28,54 @@
 #include <vector>
 
 #include "core/bitmap.h"
+#include "core/definition.h"
 #include "core/object.h"
 #include "core/pipeline.h"
 #include "core/shader.h"
 
 namespace urge {
 
-/*! A user authored shader a sprite or a geometry draws with.
-
-    An effect compiles a vertex and a fragment stage of GLSL and builds the
-    state of a draw out of them with the same flow the built in pipelines use:
-    a triangle list into the single RGBA8Unorm target every pass carries, with
-    the depth-stencil state of a pass which ignores the attachment and a blend
-    state read from \p blend_states, see Pipeline::MakeDefaultState and
-    ParseBlendState. The two stages therefore read the vertex stream of the
-    engine (location 0 is the position, 1 the texture coordinate and 2 the
-    color of a vertex), the camera at set 0 and the object transform of the draw
-    at set 1 -- which the engine binds with a dynamic offset -- so a node which
-    carries an effect keeps its geometry, its transform and its place in the
-    tree and only the shader and the blend of its draw change.
-
-    The remaining bind group, set 2, is the custom set of the effect and belongs
-    to the caller: every binding the two stages declare there is filled with
-    SetFloat/SetInt/SetBlock (a buffer binding, staged as raw bytes),
-    SetTexture (a sampled texture) or SetSampler (a sampler, taken from a
-    bitmap). A binding the caller never fills reads a neutral default -- a
-    zeroed buffer, a white texel, a nearest sampler -- so a stage which does not
-    read every binding it declares still draws.
-
-    A copy of an effect (its Ruby dup/clone) reuses the compiled stages and the
-    state of the original and only owns its custom bind group, which it rebuilds
-    from the resources it was copied with. */
+//! A user-authored shader an object draws with: a vertex and a fragment stage,
+//! the engine vertex stream and sets 0/1, and a caller-filled custom set 2.
+URGE_BINDING()
 class Effect : public Object {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Effect(std::string vs_glsl,
          std::string fs_glsl,
          std::string blend_states = {});
+  URGE_BINDING()
   Effect(RefPtr<Effect> other);
+  URGE_BINDING()
   ~Effect();
 
+  URGE_BINDING()
   void SetFloat(uint32_t slot, std::vector<float> data);
+  URGE_BINDING()
   void SetInt(uint32_t slot, std::vector<int32_t> data);
+  URGE_BINDING()
   void SetTexture(uint32_t slot, RefPtr<Bitmap> texture);
+  URGE_BINDING()
   void SetSampler(uint32_t slot, RefPtr<Bitmap> texture);
+  URGE_BINDING()
   void SetBlock(uint32_t slot, std::string uniform_block);
-  /*-export.end-*/
 
   //! The state of the draw of this effect, made once in the constructor.
   wgpu::RenderPipeline AcquirePipeline();
 
-  //! The custom bind group (set 2) of this effect, rebuilt from the resources
-  //! the setters staged when they changed since the last call.
-  // 0 -> SceneGroup
-  // 1 -> ObjectGroup (dynamic)
-  // 2 -> CustomGroup (self)
+  //! The custom bind group (set 2) of this effect, rebuilt when the staged
+  //! resources changed since the last call.
+  //! set 0 -> SceneGroup, 1 -> ObjectGroup (dynamic), 2 -> CustomGroup (self)
   wgpu::BindGroup AcquireBindGroup();
 
-  /*! Hands the shader of this effect the region it filters, sampled at the
-      custom set -- the texture at binding 0 and its sampler at binding 1, the
-      locations the built in shaders read a texture at. It is what a Viewport
-      sets before it draws with the effect, so the shader reads the render the
-      engine made for it, see Viewport::FinishFilter. A stage which declares
-      neither entry reads no input and is left untouched, and every other
-      binding of the custom set stays with the caller. */
+  //! Hands the shader the region it filters, as the texture at custom binding 0
+  //! and its sampler at binding 1; a Viewport sets this before drawing with the
+  //! effect, see Viewport::FinishFilter.
   void SetFilterSource(RefPtr<Bitmap> texture);
 
  private:
-  /*! The compiled stages and the state of a draw, shared by the copies of an
-      effect: a shader is immutable, so a copy reuses the pipeline of the
-      original instead of compiling it again. The render pipeline keeps the
-      layout and the modules it was built from alive on its own. */
+  //! The compiled stages and the draw state, shared by the copies of an effect:
+  //! a shader is immutable, so a copy reuses the pipeline of the original.
   struct PipelineHolder : public RefCounted<PipelineHolder> {
     //! The bindings the stages declare in set 2, keyed by their binding.
     std::map<uint32_t, ShaderBinding> custom_bindings;
@@ -108,10 +85,9 @@ class Effect : public Object {
 
   //! What the caller staged for one binding of the custom set.
   struct SlotResource {
-    //! The buffer of a buffer binding, uploaded when it was set; empty for a
-    //! texture or a sampler binding.
+    //! The buffer of a buffer binding; empty for a texture or sampler binding.
     wgpu::Buffer buffer;
-    //! The bitmap a texture or a sampler binding reads; empty for a buffer.
+    //! The bitmap a texture or sampler binding reads; empty for a buffer.
     RefPtr<Bitmap> bitmap;
   };
 

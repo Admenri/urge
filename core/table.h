@@ -29,25 +29,32 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Table : public Object {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Table(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
+  URGE_BINDING()
   Table(RefPtr<Table> other);
 
+  URGE_BINDING()
   MARSHAL_DUMP(Table);
+  URGE_BINDING()
   MARSHAL_LOAD(Table);
 
+  URGE_BINDING()
   void Resize(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
+  URGE_BINDING()
   int32_t Xsize();
+  URGE_BINDING()
   int32_t Ysize();
+  URGE_BINDING()
   int32_t Zsize();
 
   URGE_BINDING(Name : "[]")
   int16_t Get(int32_t x, int32_t y = 0, int32_t z = 0);
   URGE_BINDING(Name : "[]=")
   void Set(int16_t value, int32_t x, int32_t y = 0, int32_t z = 0);
-  /*-export.end-*/
 
  private:
   int32_t xsize_ = 0, ysize_ = 0, zsize_ = 0;

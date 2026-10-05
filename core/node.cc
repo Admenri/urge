@@ -60,11 +60,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.target = target;
   context.scene = target->scene_group();
 
-  /* The prepare stage reserves the slots of the bulk uniform data and appends
-     the vertices of the frame, so it opens and closes a frame of both: the
-     slots and the vertices are written into their buffers before the command
-     buffer of this frame is submitted below, see UniformManager and
-     QuadVertexManager. */
+  // Prepare opens and closes a frame of both the uniform pool and the vertex batch.
   UniformManager& uniforms = UniformManager::Get();
   QuadVertexManager& quads = QuadVertexManager::Get();
   context.vertices = &quads.emitter();

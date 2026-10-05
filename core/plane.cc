@@ -37,15 +37,13 @@ namespace urge {
 
 namespace {
 
-/*! The smallest determinant the linear part of the transform of a plane may
-    have. The tiles of a plane are placed with the inverse of that part, which a
-    transform that collapses the plane onto a line or a point does not have --
-    and such a plane has no surface to show a tile on either. */
+//! Smallest determinant the linear part of a plane transform may have: the
+//! tiles are placed with its inverse, which a transform collapsing the plane
+//! onto a line or a point does not have.
 constexpr float kMinLinearDeterminant = 1e-6f;
 
-/*! The smallest zoom a plane is drawn with. A zoom of zero divides the texture
-    coordinate of every pixel of the plane by it, and a tile scaled below this
-    is smaller than a millionth of a pixel. */
+//! Smallest zoom a plane is drawn with, so no texture coordinate is divided by
+//! zero.
 constexpr float kMinZoom = 1e-6f;
 
 }  // namespace
@@ -129,8 +127,7 @@ ATTR_DEF(Plane, int32_t, Opacity) {
 
 ATTR_DEF(Plane, int32_t, BlendType) {
   if (value.has_value()) {
-    /* The blend type indexes the pipeline states of the plane shader, so it is
-       kept inside the range of the blend types the engine knows. */
+    // Indexes the plane pipeline states, so it stays within the known types.
     blend_type_ = std::clamp(*value, static_cast<int32_t>(BLEND_NONE),
                              static_cast<int32_t>(BLEND_SUBTRACT));
     return std::nullopt;
@@ -172,7 +169,6 @@ bool Plane::Prepare(DrawParam param) {
   if (!Disposable::Check(bitmap_))
     return false;
 
-  // The geometry goes into the vertex batch of the frame, see QuadVertexManager
   primitive_slot_ = EmitGeometryInternal(*param->vertices, param);
   // A plane whose bitmap, zoom or transform leaves nothing to tile
   if (!primitive_slot_.count)
@@ -180,15 +176,14 @@ bool Plane::Prepare(DrawParam param) {
 
   UniformManager& uniforms = UniformManager::Get();
 
-  /* The quad of a plane is emitted in the pixels of the render target and the
-     tiles follow from the texture coordinates of its corners, so the object
-     transform it is drawn with is the identity and the transform of the node
-     hierarchy is not part of it, see EmitGeometryInternal(). */
+  // The quad is emitted in the pixels of the render target and the tiles
+  // follow from its texture coordinates, so the object transform is the
+  // identity and the node hierarchy transform is not part of it.
   const ObjectData object_data = {glm::mat4(1.0f)};
   object_slot_ = uniforms.object_uniforms().Acquire(object_data);
 
-  /* The color and the tone of the plane travel in a buffer of its own, which is
-     written before the command buffer of this frame is submitted. */
+  // The color and the tone travel in a buffer of their own, written before the
+  // command buffer of this frame is submitted.
   PlaneBase::PlaneParam plane_param = {};
   plane_param.blend_color = color_->Normalize();
   plane_param.blend_tone = tone_->Normalize();
@@ -203,17 +198,32 @@ bool Plane::DoDraw(DrawParam param) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  param->pass.SetPipeline(ShaderSet::Get().state.plane_blends.at(
+  param->pass.SetPipeline(ShaderSet::Get().state.plane.plane_blends.at(
       static_cast<BlendType>(blend_type_)));
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
   param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
   // The batch of the frame holds the vertices, this draw takes its own range
-  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
+  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
+                              WGPU_WHOLE_SIZE);
   param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
 
   return false;
+}
+
+void Plane::CreateEffectBindings() {
+  const wgpu::RenderPipeline& pipeline =
+      ShaderSet::Get().state.plane.plane_blends.at(BLEND_NORMAL);
+
+  wgpu::BufferDescriptor tint_desc;
+  tint_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+  tint_desc.size = sizeof(PlaneBase::PlaneParam);
+  tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
+
+  // The contents are written during the prepare stage of every frame.
+  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
+                                      {{0, util::BufferSet(tint_uniform_)}});
 }
 
 PrimitiveEmitter::Slot Plane::EmitGeometryInternal(PrimitiveEmitter& primitive,
@@ -227,43 +237,35 @@ PrimitiveEmitter::Slot Plane::EmitGeometryInternal(PrimitiveEmitter& primitive,
   if (std::abs(zoom_x_) < kMinZoom || std::abs(zoom_y_) < kMinZoom)
     return {};
 
-  /* A plane covers whatever it is drawn into: the quad is emitted over the
-     whole render target and a viewport the plane belongs to clips it to its
-     rect, which is what makes a plane fill the region of that viewport. */
+  // A plane covers the whole render target; a viewport it belongs to clips the
+  // quad to its own rect, which is what makes the plane fill that viewport.
   const RectI region(param->target->size());
   if (!region())
     return {};
 
-  /* The root point of the plane on the render target: the position the node
-     hierarchy placed the plane at, scrolled by the origin of the plane. The
-     tiles of the bitmap are anchored there and repeat over the whole target
-     from it, which is what a plane of RGSS is: a scrolling tiled surface. */
+  // The root point the tiles are anchored at and repeat from: the position the
+  // node hierarchy placed the plane at, scrolled by the plane origin.
   const glm::mat4 transform = world_transform();
   const glm::vec2 root =
       ExtractPosition(transform) -
       glm::vec2(static_cast<float>(ox_), static_cast<float>(oy_));
 
-  /* A pixel of the target reads the tile at the local point which the transform
-     of the node hierarchy maps the offset of that pixel from the root to, so
-     the scale and the rotation of the node act on the surface of the plane as
-     well as its position does. */
+  // A pixel reads the tile at the point the node transform maps its offset
+  // from the root to, so scale and rotation act on the surface as well.
   const glm::mat2 linear(transform);
   if (std::abs(glm::determinant(linear)) < kMinLinearDeterminant)
     return {};
   const glm::mat2 inverse_linear = glm::inverse(linear);
 
-  /* The size one tile of the bitmap has on the render target: the zoom scales
-     the bitmap, and the texture coordinate of a tile runs from zero to one over
-     it, which is what the plane shader repeats. */
+  // The size one tile has on the render target: the zoom scales the bitmap and
+  // the texture coordinate of a tile runs from zero to one over it.
   const glm::vec2 tile_size(static_cast<float>(texture_size.x) * zoom_x_,
                             static_cast<float>(texture_size.y) * zoom_y_);
 
-  /* The blend state of the engine and the contents of a bitmap store
-     premultiplied alpha, so the opacity of a plane scales all four channels of
-     the vertex color instead of the alpha channel alone. */
+  // Bitmap contents are stored premultiplied, so the opacity scales all four
+  // channels of the vertex color instead of the alpha channel alone.
   const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
 
-  // The corners of the quad in the order the emitter collects a quad in
   const auto emit_corner = [&](float x, float y) {
     const glm::vec2 corner(x, y);
     primitive.Texcoord2f(inverse_linear * (corner - root) / tile_size);
@@ -280,21 +282,6 @@ PrimitiveEmitter::Slot Plane::EmitGeometryInternal(PrimitiveEmitter& primitive,
               static_cast<float>(region.y + region.height));
 
   return primitive.End();
-}
-
-void Plane::CreateEffectBindings() {
-  const wgpu::RenderPipeline& pipeline =
-      ShaderSet::Get().state.plane_blends.at(BLEND_NORMAL);
-
-  wgpu::BufferDescriptor tint_desc;
-  tint_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
-  tint_desc.size = sizeof(PlaneBase::PlaneParam);
-  tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
-
-  /* The tint of a plane is written during the prepare stage of every frame the
-     plane is drawn in, so the contents of the buffer are not staged here. */
-  tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
-                                   {{0, util::BufferSet(tint_uniform_)}});
 }
 
 }  // namespace urge

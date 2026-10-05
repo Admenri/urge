@@ -41,21 +41,28 @@ struct ValueSlot {
   std::function<void()> change;
 };
 
+URGE_BINDING()
 class Rect : public Object {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Rect(int32_t xv, int32_t yv, int32_t wv, int32_t hv) : data(xv, yv, wv, hv) {}
+  URGE_BINDING()
   Rect(RefPtr<Rect> o) : data(o->data) {}
+  URGE_BINDING()
   Rect() : data() {}
 
+  URGE_BINDING()
   MARSHAL_DUMP(Rect);
+  URGE_BINDING()
   MARSHAL_LOAD(Rect);
 
+  URGE_BINDING()
   void Set(int32_t xv, int32_t yv, int32_t wv, int32_t hv) {
     data = RectI(xv, yv, wv, hv);
     slot.ValueNotify();
   }
 
+  URGE_BINDING()
   void Set(RefPtr<Rect> rect) {
     if (rect) {
       data = rect->data;
@@ -65,11 +72,13 @@ class Rect : public Object {
     }
   }
 
+  URGE_BINDING()
   void Empty() {
     data = RectI();
     slot.ValueNotify();
   }
 
+  URGE_BINDING()
   ATTR(int32_t, X) {
     if (value) {
       data.x = *value;
@@ -79,6 +88,7 @@ class Rect : public Object {
     return data.x;
   }
 
+  URGE_BINDING()
   ATTR(int32_t, Y) {
     if (value) {
       data.y = *value;
@@ -88,6 +98,7 @@ class Rect : public Object {
     return data.y;
   }
 
+  URGE_BINDING()
   ATTR(int32_t, Width) {
     if (value) {
       data.width = *value;
@@ -97,6 +108,7 @@ class Rect : public Object {
     return data.width;
   }
 
+  URGE_BINDING()
   ATTR(int32_t, Height) {
     if (value) {
       data.height = *value;
@@ -105,12 +117,12 @@ class Rect : public Object {
     }
     return data.height;
   }
-  /*-export.end-*/
 
   RectI data;
   ValueSlot slot;
 };
 
+URGE_BINDING()
 class Color : public Object {
  public:
   static inline RefPtr<Color> White() {
@@ -121,18 +133,24 @@ class Color : public Object {
     return MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 255.0f);
   }
 
-  /*-export.begin-*/
+  URGE_BINDING()
   Color(float r, float g, float b, float a = 255.f) : data(r, g, b, a) {}
+  URGE_BINDING()
   Color(RefPtr<Color> o) : data(o->data) {}
+  URGE_BINDING()
   Color() : data(0.0f) {}
 
+  URGE_BINDING()
   MARSHAL_DUMP(Color);
+  URGE_BINDING()
   MARSHAL_LOAD(Color);
 
+  URGE_BINDING()
   void Set(float r, float g, float b, float a = 255.f) {
     data = glm::vec4(r, g, b, a);
   }
 
+  URGE_BINDING()
   void Set(RefPtr<Color> color) {
     if (color) {
       data = color->data;
@@ -141,30 +159,33 @@ class Color : public Object {
     }
   }
 
+  URGE_BINDING()
   ATTR(float, Red) {
     if (value)
       data.r = *value;
     return data.r;
   }
 
+  URGE_BINDING()
   ATTR(float, Green) {
     if (value)
       data.g = *value;
     return data.g;
   }
 
+  URGE_BINDING()
   ATTR(float, Blue) {
     if (value)
       data.b = *value;
     return data.b;
   }
 
+  URGE_BINDING()
   ATTR(float, Alpha) {
     if (value)
       data.a = *value;
     return data.a;
   }
-  /*-export.end-*/
 
   glm::vec4 Normalize() {
     glm::vec4 result = data;
@@ -178,20 +199,27 @@ class Color : public Object {
   glm::vec4 data;
 };
 
+URGE_BINDING()
 class Tone : public Object {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Tone(float r, float g, float b, float a = 0.f) : data(r, g, b, a) {}
+  URGE_BINDING()
   Tone(RefPtr<Tone> o) : data(o->data) {}
+  URGE_BINDING()
   Tone() : data(0.0f) {}
 
+  URGE_BINDING()
   MARSHAL_DUMP(Tone);
+  URGE_BINDING()
   MARSHAL_LOAD(Tone);
 
+  URGE_BINDING()
   void Set(float r, float g, float b, float a = 0.f) {
     data = glm::vec4(r, g, b, a);
   }
 
+  URGE_BINDING()
   void Set(RefPtr<Tone> tone) {
     if (tone) {
       data = tone->data;
@@ -200,30 +228,33 @@ class Tone : public Object {
     }
   }
 
+  URGE_BINDING()
   ATTR(float, Red) {
     if (value)
       data.r = *value;
     return data.r;
   }
 
+  URGE_BINDING()
   ATTR(float, Green) {
     if (value)
       data.g = *value;
     return data.g;
   }
 
+  URGE_BINDING()
   ATTR(float, Blue) {
     if (value)
       data.b = *value;
     return data.b;
   }
 
+  URGE_BINDING()
   ATTR(float, Gray) {
     if (value)
       data.a = *value;
     return data.a;
   }
-  /*-export.end-*/
 
   glm::vec4 Normalize() {
     glm::vec4 result = data;
@@ -237,18 +268,24 @@ class Tone : public Object {
   glm::vec4 data;
 };
 
+URGE_BINDING()
 class Vector2 : public Object {
  public:
   Vector2(glm::vec2 d) : data(d) {}
 
-  /*-export.begin-*/
+  URGE_BINDING()
   Vector2(float xv, float yv) : data(xv, yv) {}
+  URGE_BINDING()
   Vector2(RefPtr<Vector2> o) : data(o->data) {}
+  URGE_BINDING()
   Vector2(float v) : data(v) {}
+  URGE_BINDING()
   Vector2() : data(0.0f) {}
 
+  URGE_BINDING()
   void Set(float xv, float yv) { data = glm::vec2(xv, yv); }
 
+  URGE_BINDING()
   void Set(RefPtr<Vector2> v) {
     if (v) {
       data = v->data;
@@ -256,23 +293,28 @@ class Vector2 : public Object {
       throw Exception(Exception::kRGSSError, "cannot set null to vector.");
     }
   }
-  /*-export.end-*/
 
   glm::vec2 data;
 };
 
+URGE_BINDING()
 class Vector3 : public Object {
  public:
   Vector3(glm::vec3 d) : data(d) {}
 
-  /*-export.begin-*/
+  URGE_BINDING()
   Vector3(float xv, float yv, float zv) : data(xv, yv, zv) {}
+  URGE_BINDING()
   Vector3(RefPtr<Vector3> o) : data(o->data) {}
+  URGE_BINDING()
   Vector3(float v) : data(v) {}
+  URGE_BINDING()
   Vector3() : data(0.0f) {}
 
+  URGE_BINDING()
   void Set(float xv, float yv, float zv) { data = glm::vec3(xv, yv, zv); }
 
+  URGE_BINDING()
   void Set(RefPtr<Vector3> v) {
     if (v) {
       data = v->data;
@@ -280,25 +322,30 @@ class Vector3 : public Object {
       throw Exception(Exception::kRGSSError, "cannot set null to vector.");
     }
   }
-  /*-export.end-*/
 
   glm::vec3 data;
 };
 
+URGE_BINDING()
 class Vector4 : public Object {
  public:
   Vector4(glm::vec4 d) : data(d) {}
 
-  /*-export.begin-*/
+  URGE_BINDING()
   Vector4(float xv, float yv, float zv, float wv) : data(xv, yv, zv, wv) {}
+  URGE_BINDING()
   Vector4(RefPtr<Vector4> o) : data(o->data) {}
+  URGE_BINDING()
   Vector4(float v) : data(v) {}
+  URGE_BINDING()
   Vector4() : data(0.0f) {}
 
+  URGE_BINDING()
   void Set(float xv, float yv, float zv, float wv) {
     data = glm::vec4(xv, yv, zv, wv);
   }
 
+  URGE_BINDING()
   void Set(RefPtr<Vector4> v) {
     if (v) {
       data = v->data;
@@ -306,7 +353,6 @@ class Vector4 : public Object {
       throw Exception(Exception::kRGSSError, "cannot set null to vector.");
     }
   }
-  /*-export.end-*/
 
   glm::vec4 data;
 };

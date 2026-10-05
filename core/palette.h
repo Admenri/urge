@@ -24,25 +24,31 @@
 
 #include "SDL3/SDL_surface.h"
 
+#include "core/definition.h"
 #include "core/disposable.h"
 #include "core/refptr.h"
 #include "core/utility.h"
 
 namespace urge {
 
+URGE_BINDING()
 class Palette : public Disposable {
  public:
   Palette(SDL_Surface* image);
 
-  /*-export.begin-*/
+  URGE_BINDING()
   Palette(int32_t width, int32_t height);
+  URGE_BINDING()
   Palette(std::string filename);
+  URGE_BINDING()
   ~Palette() override;
 
+  URGE_BINDING()
   RefPtr<Color> GetPixel(int32_t x, int32_t y);
+  URGE_BINDING()
   void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
+  URGE_BINDING()
   void SaveFile(std::string filename);
-  /*-export.end-*/
 
  public:
   SDL_Surface* image() { return image_; }

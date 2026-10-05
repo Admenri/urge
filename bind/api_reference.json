@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-05T01:41:46Z",
+    "generated_at": "2026-10-05T08:53:30Z",
     "source_headers": [
       "core/audio.h",
       "core/bitmap.h",
@@ -43,43 +43,12 @@
       "core/window_vx.h",
       "core/window_xp.h"
     ],
-    "skipped": [
-      {
-        "class": "Node",
-        "kind": "constructor",
-        "signature": "Node(RefPtr<Node>, const ZValue&)",
-        "reason": "internal parameter type: const ZValue&"
-      },
-      {
-        "class": "Palette",
-        "kind": "constructor",
-        "signature": "Palette(SDL_Surface*)",
-        "reason": "internal parameter type: SDL_Surface*"
-      },
-      {
-        "class": "Vector2",
-        "kind": "constructor",
-        "signature": "Vector2(glm::vec2)",
-        "reason": "internal parameter type: glm::vec2"
-      },
-      {
-        "class": "Vector3",
-        "kind": "constructor",
-        "signature": "Vector3(glm::vec3)",
-        "reason": "internal parameter type: glm::vec3"
-      },
-      {
-        "class": "Vector4",
-        "kind": "constructor",
-        "signature": "Vector4(glm::vec4)",
-        "reason": "internal parameter type: glm::vec4"
-      }
-    ]
+    "skipped": []
   },
   "modules": [
     {
       "unsupported": [],
-      "export": "core/audio.h:39-64",
+      "export": "core/audio.h:36-77",
       "cpp_name": "Audio",
       "cpp_parent": "Singleton",
       "header": "core/audio.h",
@@ -96,7 +65,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgm_play",
@@ -128,7 +97,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgm_stop",
@@ -139,7 +108,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgm_fade",
@@ -156,7 +125,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgm_pos",
@@ -167,7 +136,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgs_play",
@@ -199,7 +168,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgs_stop",
@@ -210,7 +179,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgs_fade",
@@ -227,7 +196,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "bgs_pos",
@@ -238,7 +207,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "me_play",
@@ -265,7 +234,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "me_stop",
@@ -276,7 +245,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "me_fade",
@@ -293,7 +262,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "se_play",
@@ -320,7 +289,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         },
         {
           "ruby_name": "se_stop",
@@ -331,13 +300,13 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio.h:39-64"
+          "export": "core/audio.h:36-77"
         }
       ]
     },
     {
       "unsupported": [],
-      "export": "core/graphics.h:79-102",
+      "export": "core/graphics.h:75-117",
       "cpp_name": "Graphics",
       "cpp_parent": "Singleton",
       "header": "core/graphics.h",
@@ -354,7 +323,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "wait",
@@ -371,7 +340,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "fadein",
@@ -388,7 +357,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "fadeout",
@@ -405,7 +374,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "freeze",
@@ -416,7 +385,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "transition",
@@ -443,7 +412,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "transition_bitmap",
@@ -470,7 +439,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "snap_to_bitmap",
@@ -481,7 +450,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_reset",
@@ -492,7 +461,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "width",
@@ -503,7 +472,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "height",
@@ -514,7 +483,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "resize_screen",
@@ -536,7 +505,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "play_movie",
@@ -553,7 +522,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_rate",
@@ -566,7 +535,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_rate=",
@@ -586,7 +555,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_count",
@@ -599,7 +568,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_count=",
@@ -619,7 +588,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "brightness",
@@ -632,7 +601,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "brightness=",
@@ -652,7 +621,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_skip",
@@ -665,7 +634,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         },
         {
           "ruby_name": "frame_skip=",
@@ -685,13 +654,13 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics.h:79-102"
+          "export": "core/graphics.h:75-117"
         }
       ]
     },
     {
       "unsupported": [],
-      "export": "core/input.h:55-70",
+      "export": "core/input.h:51-75",
       "cpp_name": "Input",
       "cpp_parent": "Singleton",
       "header": "core/input.h",
@@ -708,7 +677,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "pressed",
@@ -725,7 +694,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "triggered",
@@ -742,7 +711,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "repeated",
@@ -759,7 +728,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "dir4",
@@ -770,7 +739,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "dir8",
@@ -781,7 +750,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "key_press?",
@@ -798,7 +767,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "key_trigger?",
@@ -815,7 +784,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "key_repeat?",
@@ -832,7 +801,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         },
         {
           "ruby_name": "get_key_name",
@@ -849,13 +818,13 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input.h:55-70"
+          "export": "core/input.h:51-75"
         }
       ]
     },
     {
       "unsupported": [],
-      "export": "core/mouse.h:85-110",
+      "export": "core/mouse.h:41-86",
       "cpp_name": "Mouse",
       "cpp_parent": "Singleton",
       "header": "core/mouse.h",
@@ -872,7 +841,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "x",
@@ -883,7 +852,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "y",
@@ -894,7 +863,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "set_position",
@@ -916,7 +885,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "down?",
@@ -933,7 +902,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "up?",
@@ -950,7 +919,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "double?",
@@ -967,7 +936,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "press?",
@@ -984,7 +953,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "move?",
@@ -1001,7 +970,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "scroll_x",
@@ -1012,7 +981,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "scroll_y",
@@ -1023,7 +992,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "set_cursor",
@@ -1050,7 +1019,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "capture",
@@ -1063,7 +1032,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "capture=",
@@ -1083,7 +1052,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "visible",
@@ -1096,7 +1065,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         },
         {
           "ruby_name": "visible=",
@@ -1116,7 +1085,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:85-110"
+          "export": "core/mouse.h:41-86"
         }
       ]
     }
@@ -1135,7 +1104,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/disposable.h:33-37"
+          "export": "core/disposable.h:32-36"
         },
         {
           "ruby_name": "dispose",
@@ -1146,7 +1115,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/disposable.h:33-37"
+          "export": "core/disposable.h:32-36"
         }
       ],
       "attributes": [],
@@ -1159,7 +1128,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/disposable.h:33-37",
+      "export": "core/disposable.h:32-36",
       "cpp_name": "Disposable",
       "cpp_parent": "Object",
       "header": "core/disposable.h",
@@ -1172,7 +1141,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         }
       ],
       "initialize_copy": {
@@ -1183,7 +1152,7 @@
             "default": null
           }
         ],
-        "export": "core/node.h:38-51"
+        "export": "core/node.h:34-59"
       },
       "instance_methods": [
         {
@@ -1206,7 +1175,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         }
       ],
       "attributes": [
@@ -1219,7 +1188,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         },
         {
           "name": "visible",
@@ -1230,7 +1199,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         },
         {
           "name": "parent",
@@ -1241,7 +1210,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         },
         {
           "name": "position",
@@ -1252,7 +1221,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         },
         {
           "name": "quaternion",
@@ -1263,7 +1232,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         },
         {
           "name": "scale",
@@ -1274,7 +1243,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:38-51"
+          "export": "core/node.h:34-59"
         }
       ],
       "data_attributes": [],
@@ -1285,14 +1254,8 @@
         "load": false
       },
       "index": null,
-      "unsupported": [
-        {
-          "kind": "constructor",
-          "signature": "Node(RefPtr<Node>, const ZValue&)",
-          "reason": "internal parameter type: const ZValue&"
-        }
-      ],
-      "export": "core/node.h:38-51",
+      "unsupported": [],
+      "export": "core/node.h:34-59",
       "cpp_name": "Node",
       "cpp_parent": "Disposable",
       "header": "core/node.h",
@@ -1311,7 +1274,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         }
       ],
       "initialize_copy": null,
@@ -1341,7 +1304,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         },
         {
           "ruby_name": "set_texcoord",
@@ -1368,7 +1331,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         },
         {
           "ruby_name": "set_color",
@@ -1395,7 +1358,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         }
       ],
       "attributes": [
@@ -1408,7 +1371,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         },
         {
           "name": "capacity",
@@ -1419,7 +1382,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         },
         {
           "name": "bitmap",
@@ -1430,7 +1393,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         },
         {
           "name": "blend_type",
@@ -1441,7 +1404,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         },
         {
           "name": "effect",
@@ -1452,7 +1415,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/geometry.h:39-52"
+          "export": "core/geometry.h:39-61"
         }
       ],
       "data_attributes": [],
@@ -1464,7 +1427,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/geometry.h:39-52",
+      "export": "core/geometry.h:39-61",
       "cpp_name": "Geometry",
       "cpp_parent": "Node",
       "header": "core/geometry.h",
@@ -1483,7 +1446,7 @@
               "default": null
             }
           ],
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "params": [
@@ -1498,7 +1461,7 @@
               "default": null
             }
           ],
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         }
       ],
       "initialize_copy": {
@@ -1509,7 +1472,7 @@
             "default": null
           }
         ],
-        "export": "core/bitmap.h:36-93"
+        "export": "core/bitmap.h:36-118"
       },
       "instance_methods": [
         {
@@ -1521,7 +1484,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "height",
@@ -1532,7 +1495,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "rect",
@@ -1543,7 +1506,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "blt",
@@ -1580,7 +1543,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "stretch_blt",
@@ -1612,7 +1575,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "fill_rect",
@@ -1649,7 +1612,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "fill_rect",
@@ -1671,7 +1634,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -1718,7 +1681,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -1750,7 +1713,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "clear",
@@ -1761,7 +1724,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "clear_rect",
@@ -1793,7 +1756,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "clear_rect",
@@ -1810,7 +1773,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "get_pixel",
@@ -1832,7 +1795,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "set_pixel",
@@ -1859,7 +1822,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "hue_change",
@@ -1876,7 +1839,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "blur",
@@ -1887,7 +1850,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "radial_blur",
@@ -1909,7 +1872,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "draw_text",
@@ -1951,7 +1914,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "draw_text",
@@ -1978,7 +1941,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "text_size",
@@ -1995,7 +1958,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "to_palette",
@@ -2006,7 +1969,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         },
         {
           "ruby_name": "update_with_palette",
@@ -2023,7 +1986,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         }
       ],
       "attributes": [
@@ -2036,7 +1999,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/bitmap.h:36-93"
+          "export": "core/bitmap.h:36-118"
         }
       ],
       "data_attributes": [],
@@ -2048,7 +2011,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/bitmap.h:36-93",
+      "export": "core/bitmap.h:36-118",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/bitmap.h",
@@ -2082,11 +2045,11 @@
               "default": "255.f"
             }
           ],
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         },
         {
           "params": [],
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         }
       ],
       "initialize_copy": {
@@ -2097,7 +2060,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:124-167"
+        "export": "core/utility.h:126-183"
       },
       "instance_methods": [
         {
@@ -2130,7 +2093,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         },
         {
           "ruby_name": "set",
@@ -2147,7 +2110,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         }
       ],
       "attributes": [
@@ -2160,7 +2123,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         },
         {
           "name": "green",
@@ -2171,7 +2134,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         },
         {
           "name": "blue",
@@ -2182,7 +2145,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         },
         {
           "name": "alpha",
@@ -2193,7 +2156,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:124-167"
+          "export": "core/utility.h:126-183"
         }
       ],
       "data_attributes": [],
@@ -2205,7 +2168,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/utility.h:124-167",
+      "export": "core/utility.h:126-183",
       "cpp_name": "Color",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -2229,7 +2192,7 @@
               "default": "24"
             }
           ],
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         }
       ],
       "initialize_copy": {
@@ -2240,7 +2203,7 @@
             "default": null
           }
         ],
-        "export": "core/font.h:40-69"
+        "export": "core/font.h:40-91"
       },
       "instance_methods": [],
       "attributes": [
@@ -2253,7 +2216,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "size",
@@ -2264,7 +2227,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "bold",
@@ -2275,7 +2238,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "italic",
@@ -2286,7 +2249,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "outline",
@@ -2297,7 +2260,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "shadow",
@@ -2308,7 +2271,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "solid",
@@ -2319,7 +2282,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "color",
@@ -2330,7 +2293,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "out_color",
@@ -2341,7 +2304,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "gradient_color",
@@ -2352,7 +2315,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         }
       ],
       "data_attributes": [],
@@ -2372,7 +2335,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         }
       ],
       "class_attributes": [
@@ -2385,7 +2348,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_size",
@@ -2396,7 +2359,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_bold",
@@ -2407,7 +2370,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_italic",
@@ -2418,7 +2381,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_outline",
@@ -2429,7 +2392,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_shadow",
@@ -2440,7 +2403,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_solid",
@@ -2451,7 +2414,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_color",
@@ -2462,7 +2425,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_out_color",
@@ -2473,7 +2436,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         },
         {
           "name": "default_gradient_color",
@@ -2484,7 +2447,7 @@
           "static": true,
           "override": false,
           "header_annotation": false,
-          "export": "core/font.h:40-69"
+          "export": "core/font.h:40-91"
         }
       ],
       "marshal": {
@@ -2493,7 +2456,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/font.h:40-69",
+      "export": "core/font.h:40-91",
       "cpp_name": "Font",
       "cpp_parent": "Object",
       "header": "core/font.h",
@@ -2517,7 +2480,7 @@
               "default": null
             }
           ],
-          "export": "core/palette.h:37-45"
+          "export": "core/palette.h:35-50"
         },
         {
           "params": [
@@ -2527,7 +2490,7 @@
               "default": null
             }
           ],
-          "export": "core/palette.h:37-45"
+          "export": "core/palette.h:35-50"
         }
       ],
       "initialize_copy": null,
@@ -2552,7 +2515,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:37-45"
+          "export": "core/palette.h:35-50"
         },
         {
           "ruby_name": "set_pixel",
@@ -2579,7 +2542,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:37-45"
+          "export": "core/palette.h:35-50"
         },
         {
           "ruby_name": "save_file",
@@ -2596,7 +2559,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:37-45"
+          "export": "core/palette.h:35-50"
         }
       ],
       "attributes": [],
@@ -2608,14 +2571,8 @@
         "load": false
       },
       "index": null,
-      "unsupported": [
-        {
-          "kind": "constructor",
-          "signature": "Palette(SDL_Surface*)",
-          "reason": "internal parameter type: SDL_Surface*"
-        }
-      ],
-      "export": "core/palette.h:37-45",
+      "unsupported": [],
+      "export": "core/palette.h:35-50",
       "cpp_name": "Palette",
       "cpp_parent": "Disposable",
       "header": "core/palette.h",
@@ -2634,7 +2591,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         }
       ],
       "initialize_copy": null,
@@ -2649,7 +2606,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "bitmap",
@@ -2660,7 +2617,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "ox",
@@ -2671,7 +2628,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "oy",
@@ -2682,7 +2639,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "zoom_x",
@@ -2693,7 +2650,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "zoom_y",
@@ -2704,7 +2661,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "opacity",
@@ -2715,7 +2672,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "blend_type",
@@ -2726,7 +2683,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "color",
@@ -2737,7 +2694,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         },
         {
           "name": "tone",
@@ -2748,7 +2705,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/plane.h:35-49"
+          "export": "core/plane.h:35-60"
         }
       ],
       "data_attributes": [],
@@ -2760,7 +2717,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/plane.h:35-49",
+      "export": "core/plane.h:35-60",
       "cpp_name": "Plane",
       "cpp_parent": "Node",
       "header": "core/plane.h",
@@ -2794,11 +2751,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         },
         {
           "params": [],
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         }
       ],
       "initialize_copy": {
@@ -2809,7 +2766,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:46-108"
+        "export": "core/utility.h:45-111"
       },
       "instance_methods": [
         {
@@ -2842,7 +2799,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         },
         {
           "ruby_name": "set",
@@ -2859,7 +2816,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         },
         {
           "ruby_name": "empty",
@@ -2870,7 +2827,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         }
       ],
       "attributes": [
@@ -2883,7 +2840,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         },
         {
           "name": "y",
@@ -2894,7 +2851,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         },
         {
           "name": "width",
@@ -2905,7 +2862,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         },
         {
           "name": "height",
@@ -2916,7 +2873,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:46-108"
+          "export": "core/utility.h:45-111"
         }
       ],
       "data_attributes": [],
@@ -2928,7 +2885,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/utility.h:46-108",
+      "export": "core/utility.h:45-111",
       "cpp_name": "Rect",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -2947,7 +2904,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         }
       ],
       "initialize_copy": null,
@@ -2972,7 +2929,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "ruby_name": "update",
@@ -2983,7 +2940,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "ruby_name": "width",
@@ -2994,7 +2951,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "ruby_name": "height",
@@ -3005,7 +2962,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         }
       ],
       "attributes": [
@@ -3018,7 +2975,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "bitmap",
@@ -3029,7 +2986,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "src_rect",
@@ -3040,7 +2997,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "x",
@@ -3051,7 +3008,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "y",
@@ -3062,7 +3019,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "ox",
@@ -3073,7 +3030,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "oy",
@@ -3084,7 +3041,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "zoom_x",
@@ -3095,7 +3052,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "zoom_y",
@@ -3106,7 +3063,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "angle",
@@ -3117,7 +3074,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "wave_amp",
@@ -3128,7 +3085,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "wave_length",
@@ -3139,7 +3096,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "wave_speed",
@@ -3150,7 +3107,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "wave_phase",
@@ -3161,7 +3118,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "mirror",
@@ -3172,7 +3129,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "bush_depth",
@@ -3183,7 +3140,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "bush_opacity",
@@ -3194,7 +3151,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "opacity",
@@ -3205,7 +3162,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "blend_type",
@@ -3216,7 +3173,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "color",
@@ -3227,7 +3184,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "tone",
@@ -3238,7 +3195,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         },
         {
           "name": "effect",
@@ -3249,7 +3206,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-66"
+          "export": "core/sprite.h:34-93"
         }
       ],
       "data_attributes": [],
@@ -3261,7 +3218,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/sprite.h:34-66",
+      "export": "core/sprite.h:34-93",
       "cpp_name": "Sprite",
       "cpp_parent": "Node",
       "header": "core/sprite.h",
@@ -3290,7 +3247,7 @@
               "default": "1"
             }
           ],
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         }
       ],
       "initialize_copy": {
@@ -3301,7 +3258,7 @@
             "default": null
           }
         ],
-        "export": "core/table.h:34-50"
+        "export": "core/table.h:33-56"
       },
       "instance_methods": [
         {
@@ -3329,7 +3286,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         },
         {
           "ruby_name": "xsize",
@@ -3340,7 +3297,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         },
         {
           "ruby_name": "ysize",
@@ -3351,7 +3308,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         },
         {
           "ruby_name": "zsize",
@@ -3362,7 +3319,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         }
       ],
       "attributes": [],
@@ -3394,7 +3351,7 @@
               "default": "0"
             }
           ],
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         },
         "set": {
           "ruby_name": "[]=",
@@ -3421,11 +3378,11 @@
               "default": "0"
             }
           ],
-          "export": "core/table.h:34-50"
+          "export": "core/table.h:33-56"
         }
       },
       "unsupported": [],
-      "export": "core/table.h:34-50",
+      "export": "core/table.h:33-56",
       "cpp_name": "Table",
       "cpp_parent": "Object",
       "header": "core/table.h",
@@ -3459,11 +3416,11 @@
               "default": "0.f"
             }
           ],
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         },
         {
           "params": [],
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         }
       ],
       "initialize_copy": {
@@ -3474,7 +3431,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:183-226"
+        "export": "core/utility.h:203-252"
       },
       "instance_methods": [
         {
@@ -3507,7 +3464,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         },
         {
           "ruby_name": "set",
@@ -3524,7 +3481,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         }
       ],
       "attributes": [
@@ -3537,7 +3494,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         },
         {
           "name": "green",
@@ -3548,7 +3505,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         },
         {
           "name": "blue",
@@ -3559,7 +3516,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         },
         {
           "name": "gray",
@@ -3570,7 +3527,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/utility.h:183-226"
+          "export": "core/utility.h:203-252"
         }
       ],
       "data_attributes": [],
@@ -3582,7 +3539,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/utility.h:183-226",
+      "export": "core/utility.h:203-252",
       "cpp_name": "Tone",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3606,7 +3563,7 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:244-259"
+          "export": "core/utility.h:272-288"
         },
         {
           "params": [
@@ -3616,11 +3573,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:244-259"
+          "export": "core/utility.h:272-288"
         },
         {
           "params": [],
-          "export": "core/utility.h:244-259"
+          "export": "core/utility.h:272-288"
         }
       ],
       "initialize_copy": {
@@ -3631,7 +3588,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:244-259"
+        "export": "core/utility.h:272-288"
       },
       "instance_methods": [
         {
@@ -3654,7 +3611,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:244-259"
+          "export": "core/utility.h:272-288"
         },
         {
           "ruby_name": "set",
@@ -3671,7 +3628,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:244-259"
+          "export": "core/utility.h:272-288"
         }
       ],
       "attributes": [],
@@ -3683,14 +3640,8 @@
         "load": false
       },
       "index": null,
-      "unsupported": [
-        {
-          "kind": "constructor",
-          "signature": "Vector2(glm::vec2)",
-          "reason": "internal parameter type: glm::vec2"
-        }
-      ],
-      "export": "core/utility.h:244-259",
+      "unsupported": [],
+      "export": "core/utility.h:272-288",
       "cpp_name": "Vector2",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3719,7 +3670,7 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:268-283"
+          "export": "core/utility.h:301-317"
         },
         {
           "params": [
@@ -3729,11 +3680,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:268-283"
+          "export": "core/utility.h:301-317"
         },
         {
           "params": [],
-          "export": "core/utility.h:268-283"
+          "export": "core/utility.h:301-317"
         }
       ],
       "initialize_copy": {
@@ -3744,7 +3695,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:268-283"
+        "export": "core/utility.h:301-317"
       },
       "instance_methods": [
         {
@@ -3772,7 +3723,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:268-283"
+          "export": "core/utility.h:301-317"
         },
         {
           "ruby_name": "set",
@@ -3789,7 +3740,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:268-283"
+          "export": "core/utility.h:301-317"
         }
       ],
       "attributes": [],
@@ -3801,14 +3752,8 @@
         "load": false
       },
       "index": null,
-      "unsupported": [
-        {
-          "kind": "constructor",
-          "signature": "Vector3(glm::vec3)",
-          "reason": "internal parameter type: glm::vec3"
-        }
-      ],
-      "export": "core/utility.h:268-283",
+      "unsupported": [],
+      "export": "core/utility.h:301-317",
       "cpp_name": "Vector3",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3842,7 +3787,7 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:292-309"
+          "export": "core/utility.h:330-348"
         },
         {
           "params": [
@@ -3852,11 +3797,11 @@
               "default": null
             }
           ],
-          "export": "core/utility.h:292-309"
+          "export": "core/utility.h:330-348"
         },
         {
           "params": [],
-          "export": "core/utility.h:292-309"
+          "export": "core/utility.h:330-348"
         }
       ],
       "initialize_copy": {
@@ -3867,7 +3812,7 @@
             "default": null
           }
         ],
-        "export": "core/utility.h:292-309"
+        "export": "core/utility.h:330-348"
       },
       "instance_methods": [
         {
@@ -3900,7 +3845,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:292-309"
+          "export": "core/utility.h:330-348"
         },
         {
           "ruby_name": "set",
@@ -3917,7 +3862,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/utility.h:292-309"
+          "export": "core/utility.h:330-348"
         }
       ],
       "attributes": [],
@@ -3929,14 +3874,8 @@
         "load": false
       },
       "index": null,
-      "unsupported": [
-        {
-          "kind": "constructor",
-          "signature": "Vector4(glm::vec4)",
-          "reason": "internal parameter type: glm::vec4"
-        }
-      ],
-      "export": "core/utility.h:292-309",
+      "unsupported": [],
+      "export": "core/utility.h:330-348",
       "cpp_name": "Vector4",
       "cpp_parent": "Object",
       "header": "core/utility.h",
@@ -3955,7 +3894,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         }
       ],
       "initialize_copy": null,
@@ -3969,7 +3908,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "ruby_name": "set_bitmap",
@@ -3991,7 +3930,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "ruby_name": "get_bitmap",
@@ -4008,7 +3947,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         }
       ],
       "attributes": [
@@ -4021,7 +3960,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "visible",
@@ -4032,7 +3971,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "z",
@@ -4043,7 +3982,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "map_data",
@@ -4054,7 +3993,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "flash_data",
@@ -4065,7 +4004,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "flags",
@@ -4076,7 +4015,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "passages",
@@ -4087,7 +4026,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "ox",
@@ -4098,7 +4037,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         },
         {
           "name": "oy",
@@ -4109,7 +4048,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_vx.h:82-100"
+          "export": "core/tilemap_vx.h:61-92"
         }
       ],
       "data_attributes": [],
@@ -4121,7 +4060,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/tilemap_vx.h:82-100",
+      "export": "core/tilemap_vx.h:61-92",
       "cpp_name": "TilemapVX",
       "cpp_parent": "Node",
       "header": "core/tilemap_vx.h",
@@ -4140,7 +4079,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         }
       ],
       "initialize_copy": null,
@@ -4154,7 +4093,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "ruby_name": "tileset=",
@@ -4171,7 +4110,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "ruby_name": "tileset",
@@ -4182,7 +4121,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "ruby_name": "set_autotile",
@@ -4204,7 +4143,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "ruby_name": "get_autotile",
@@ -4221,7 +4160,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         }
       ],
       "attributes": [
@@ -4234,7 +4173,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "visible",
@@ -4245,7 +4184,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "z",
@@ -4256,7 +4195,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "map_data",
@@ -4267,7 +4206,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "flash_data",
@@ -4278,7 +4217,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "priorities",
@@ -4289,7 +4228,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "ox",
@@ -4300,7 +4239,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         },
         {
           "name": "oy",
@@ -4311,7 +4250,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/tilemap_xp.h:85-107"
+          "export": "core/tilemap_xp.h:64-98"
         }
       ],
       "data_attributes": [],
@@ -4323,7 +4262,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/tilemap_xp.h:85-107",
+      "export": "core/tilemap_xp.h:64-98",
       "cpp_name": "TilemapXP",
       "cpp_parent": "Node",
       "header": "core/tilemap_xp.h",
@@ -4357,7 +4296,7 @@
               "default": null
             }
           ],
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "params": [
@@ -4367,11 +4306,11 @@
               "default": null
             }
           ],
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "params": [],
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         }
       ],
       "initialize_copy": null,
@@ -4396,7 +4335,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "ruby_name": "update",
@@ -4407,7 +4346,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         }
       ],
       "attributes": [
@@ -4420,7 +4359,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "name": "ox",
@@ -4431,7 +4370,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "name": "oy",
@@ -4442,7 +4381,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "name": "color",
@@ -4453,7 +4392,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "name": "tone",
@@ -4464,7 +4403,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         },
         {
           "name": "effect",
@@ -4475,7 +4414,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/viewport.h:33-48"
+          "export": "core/viewport.h:33-59"
         }
       ],
       "data_attributes": [],
@@ -4487,7 +4426,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/viewport.h:33-48",
+      "export": "core/viewport.h:33-59",
       "cpp_name": "Viewport",
       "cpp_parent": "Node",
       "header": "core/viewport.h",
@@ -4521,7 +4460,7 @@
               "default": null
             }
           ],
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "params": [
@@ -4531,7 +4470,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         }
       ],
       "initialize_copy": null,
@@ -4545,7 +4484,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "ruby_name": "move",
@@ -4577,7 +4516,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "ruby_name": "open?",
@@ -4588,7 +4527,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "ruby_name": "close?",
@@ -4599,7 +4538,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         }
       ],
       "attributes": [
@@ -4612,7 +4551,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "windowskin",
@@ -4623,7 +4562,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "contents",
@@ -4634,7 +4573,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "cursor_rect",
@@ -4645,7 +4584,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "active",
@@ -4656,7 +4595,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "arrows_visible",
@@ -4667,7 +4606,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "pause",
@@ -4678,7 +4617,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "x",
@@ -4689,7 +4628,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "y",
@@ -4700,7 +4639,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "width",
@@ -4711,7 +4650,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "height",
@@ -4722,7 +4661,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "ox",
@@ -4733,7 +4672,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "oy",
@@ -4744,7 +4683,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "padding",
@@ -4755,7 +4694,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "padding_bottom",
@@ -4766,7 +4705,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "opacity",
@@ -4777,7 +4716,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "back_opacity",
@@ -4788,7 +4727,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "contents_opacity",
@@ -4799,7 +4738,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "openness",
@@ -4810,7 +4749,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         },
         {
           "name": "tone",
@@ -4821,7 +4760,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_vx.h:86-118"
+          "export": "core/window_vx.h:38-94"
         }
       ],
       "data_attributes": [],
@@ -4833,7 +4772,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/window_vx.h:86-118",
+      "export": "core/window_vx.h:38-94",
       "cpp_name": "WindowVX",
       "cpp_parent": "Node",
       "header": "core/window_vx.h",
@@ -4852,7 +4791,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         }
       ],
       "initialize_copy": null,
@@ -4866,7 +4805,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         }
       ],
       "attributes": [
@@ -4879,7 +4818,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "viewport",
@@ -4890,7 +4829,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "windowskin",
@@ -4901,7 +4840,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "contents",
@@ -4912,7 +4851,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "stretch",
@@ -4923,7 +4862,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "cursor_rect",
@@ -4934,7 +4873,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "active",
@@ -4945,7 +4884,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "pause",
@@ -4956,7 +4895,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "x",
@@ -4967,7 +4906,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "y",
@@ -4978,7 +4917,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "width",
@@ -4989,7 +4928,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "height",
@@ -5000,7 +4939,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "ox",
@@ -5011,7 +4950,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "oy",
@@ -5022,7 +4961,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "opacity",
@@ -5033,7 +4972,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "back_opacity",
@@ -5044,7 +4983,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "contents_opacity",
@@ -5055,7 +4994,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         },
         {
           "name": "z",
@@ -5066,7 +5005,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/window_xp.h:104-128"
+          "export": "core/window_xp.h:54-98"
         }
       ],
       "data_attributes": [],
@@ -5078,7 +5017,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/window_xp.h:104-128",
+      "export": "core/window_xp.h:54-98",
       "cpp_name": "WindowXP",
       "cpp_parent": "Node",
       "header": "core/window_xp.h",
@@ -5107,7 +5046,7 @@
               "default": "{}"
             }
           ],
-          "export": "core/effect.h:64-76"
+          "export": "core/effect.h:41-60"
         }
       ],
       "initialize_copy": {
@@ -5118,7 +5057,7 @@
             "default": null
           }
         ],
-        "export": "core/effect.h:64-76"
+        "export": "core/effect.h:41-60"
       },
       "instance_methods": [
         {
@@ -5141,7 +5080,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:64-76"
+          "export": "core/effect.h:41-60"
         },
         {
           "ruby_name": "set_int",
@@ -5163,7 +5102,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:64-76"
+          "export": "core/effect.h:41-60"
         },
         {
           "ruby_name": "set_texture",
@@ -5185,7 +5124,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:64-76"
+          "export": "core/effect.h:41-60"
         },
         {
           "ruby_name": "set_sampler",
@@ -5207,7 +5146,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:64-76"
+          "export": "core/effect.h:41-60"
         },
         {
           "ruby_name": "set_block",
@@ -5229,7 +5168,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:64-76"
+          "export": "core/effect.h:41-60"
         }
       ],
       "attributes": [],
@@ -5242,7 +5181,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/effect.h:64-76",
+      "export": "core/effect.h:41-60",
       "cpp_name": "Effect",
       "cpp_parent": "Object",
       "header": "core/effect.h",

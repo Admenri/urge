@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """URGE binding IR generator.
 
-Scans the core headers (`core/*.h`) for the declarations between
-`/*-export.begin-*/` and `/*-export.end-*/` and emits a single JSON document,
+Scans the core headers (`core/*.h`) for the declarations a `URGE_BINDING()`
+annotation marks as exported and emits a single JSON document,
 `bind/api_reference.json`, which `bind/generate_binding.py` turns into the
 CRuby glue code.  The rules this script implements are documented in
 `bind/Bindgen.md`.
@@ -39,8 +39,11 @@ SOURCE_DIR = os.path.join(REPO_ROOT, "core")
 RULES_FILE = "bind/Bindgen.md"
 DEFAULT_OUTPUT = os.path.join(REPO_ROOT, "bind", "api_reference.json")
 
-EXPORT_BEGIN = "/*-export.begin-*/"
-EXPORT_END = "/*-export.end-*/"
+# A class or a declaration is exported to Ruby when the `URGE_BINDING(...)`
+# annotation precedes it.  An empty body is a plain export marker; a
+# `Name : "..."` body additionally renames the Ruby side (the one thing the
+# mechanical `camel_to_snake` rule cannot produce).  The macro itself expands
+# to nothing, see `core/definition.h`.
 
 # `Singleton<T>` classes which are exported as Ruby modules, not as classes.
 #
@@ -495,11 +498,24 @@ MARSHAL_DUMP_RE = re.compile(r"^MARSHAL_DUMP\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 MARSHAL_LOAD_RE = re.compile(r"^MARSHAL_LOAD\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 
 
+def _normalize_scopes(body: str) -> str:
+    """Turn an access specifier into a statement boundary.
+
+    `split_statements` only breaks at `;` and balanced braces, so a body that
+    opens with `public:` would glue that label onto the first declaration and
+    hide its `URGE_BINDING()` annotation.  An access specifier is replaced by a
+    `;`, which is an empty statement at class scope.
+    """
+    return re.sub(r"\b(?:public|protected|private)\s*:", ";\n", body)
+
+
 def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
     """Split a leading `URGE_BINDING(...)` annotation off a statement.
 
-    The annotation applies to the very next declaration only, which is why it
-    is consumed here instead of being carried around: `URGE_BINDING` expands to
+    A `URGE_BINDING()` with an empty body marks the declaration that follows as
+    exported to Ruby; an optional `Name : "..."` additionally renames it.  The
+    annotation applies to the very next declaration only, which is why it is
+    consumed here instead of being carried around: `URGE_BINDING` expands to
     nothing in C++, so a header reader sees it as part of the declaration it
     documents, see `core/table.h`.
     """
@@ -510,20 +526,34 @@ def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
             break
         body = m.group("body")
         name = ANNOTATION_NAME_RE.search(body)
-        if name is None:
-            raise ValueError("unsupported URGE_BINDING annotation: %r" % body)
-        annotation = {"name": name.group("name")}
+        annotation = {"name": name.group("name") if name else None}
         stmt = stmt[m.end() :]
     return annotation, stmt.strip()
 
 
-def parse_class(name: str, inner: str, block: dict) -> dict:
-    """Parse the inner class body plus its export block.
+def parse_class(
+    name: str,
+    inner: str,
+    inner_start: int,
+    class_start: int,
+    source: str,
+    text: str,
+) -> dict:
+    """Parse the class body: only `URGE_BINDING()` marked declarations export.
 
-    Constructors come from the whole class body, because a class may declare
-    them outside the export block (see Bindgen.md "输入与导出范围").
-    Everything else comes from the export block only.
+    A declaration -- a constructor, a destructor, a method, an `ATTR(...)` or a
+    `MARSHAL_*` -- is exported to Ruby exactly when the statement before it
+    carries a `URGE_BINDING(...)` annotation.  Everything else in the body is
+    internal to the engine and is ignored here.
     """
+    markers = [m.start() for m in re.finditer(r"URGE_BINDING\s*\(", inner)]
+    last_marker = markers[-1] if markers else 0
+    export = "core/%s:%d-%d" % (
+        source,
+        text.count("\n", 0, class_start) + 1,
+        text.count("\n", 0, inner_start + last_marker) + 1,
+    )
+
     result: dict[str, Any] = {
         "constructors": [],
         "initialize_copy": None,
@@ -535,43 +565,12 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
         "marshal": {"dump": False, "load": False},
         "index": None,
         "unsupported": [],
-        "export": "core/%s:%d-%d"
-        % (block["source"], block["begin_line"], block["end_line"]),
+        "export": export,
     }
 
-    clean_inner = strip_comments(inner)
-    clean_block = strip_comments(block["text"])
-
-    # --- constructors from the whole class body -----------------------------
-    for stmt in split_statements(clean_inner):
-        stmt = stmt.strip()
-        if re.match(r"^(struct|class|enum|union|template)\b", stmt):
-            continue
-        call = analyze_call(stmt)
-        if call is None or call["func_name"] != name:
-            continue
-        params = call["params"]
-        bad = [p["type"] for p in params if not is_bindable_type(p["type"])]
-        if bad:
-            result["unsupported"].append(
-                {
-                    "kind": "constructor",
-                    "signature": "%s(%s)" % (name, ", ".join(p["type"] for p in params)),
-                    "reason": "internal parameter type: " + ", ".join(bad),
-                }
-            )
-            continue
-        if len(params) == 1 and params[0]["type"] == "RefPtr<" + name + ">":
-            result["initialize_copy"] = {"params": params, "export": result["export"]}
-        else:
-            result["constructors"].append(
-                {"params": params, "export": result["export"]}
-            )
-
-    # --- methods / attributes / data members / marshal ----------------------
-    for raw_stmt in split_statements(clean_block):
+    for raw_stmt in split_statements(_normalize_scopes(strip_comments(inner))):
         annotation, stmt = take_annotation(raw_stmt)
-        if not stmt:
+        if annotation is None or not stmt:
             continue
         if re.match(r"^(struct|class|enum|union)\b", stmt):
             continue
@@ -592,7 +591,7 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
             override = bool(re.search(r"virtual\s+", mods)) or bool(m.group("tail"))
             cpp_name = m.group("name")
             cpp_type = m.group("type").strip()
-            base = annotation["name"] if annotation else ruby_attr_base(cpp_name)
+            base = annotation["name"] or ruby_attr_base(cpp_name)
             attr = {
                 "name": base,
                 "setter": base + "=",
@@ -601,8 +600,8 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
                 "ruby_type": map_ruby_type(cpp_type),
                 "static": static,
                 "override": override,
-                "header_annotation": bool(annotation),
-                "export": result["export"],
+                "header_annotation": bool(annotation["name"]),
+                "export": export,
             }
             if static:
                 result["class_attributes"].append(attr)
@@ -628,8 +627,27 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
         return_type = call["return_type"]
         params = call["params"]
 
-        # destructor / constructor handled by the whole body pass
-        if func_name.startswith("~") or func_name == name:
+        if func_name.startswith("~"):
+            # A marked destructor is exported for documentation only: Ruby
+            # never calls it, the typed data release does.
+            continue
+
+        if func_name == name:
+            bad = [p["type"] for p in params if not is_bindable_type(p["type"])]
+            if bad:
+                result["unsupported"].append(
+                    {
+                        "kind": "constructor",
+                        "signature": "%s(%s)"
+                        % (name, ", ".join(p["type"] for p in params)),
+                        "reason": "internal parameter type: " + ", ".join(bad),
+                    }
+                )
+                continue
+            if len(params) == 1 and params[0]["type"] == "RefPtr<" + name + ">":
+                result["initialize_copy"] = {"params": params, "export": export}
+            else:
+                result["constructors"].append({"params": params, "export": export})
             continue
 
         bad = [p["type"] for p in params if not is_bindable_type(p["type"])]
@@ -645,7 +663,7 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
             )
             continue
 
-        ruby_name = annotation["name"] if annotation else ruby_method_name(func_name)
+        ruby_name = annotation["name"] or ruby_method_name(func_name)
 
         if ruby_name.startswith("["):
             # Index operator accessor: exposed as `#[]` / `#[]=`, which cannot
@@ -658,7 +676,7 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
                 "ruby_name": ruby_name,
                 "cpp_name": func_name,
                 "params": params,
-                "export": result["export"],
+                "export": export,
             }
             continue
 
@@ -667,8 +685,8 @@ def parse_class(name: str, inner: str, block: dict) -> dict:
             "cpp_name": func_name,
             "return": {"cpp_type": return_type, "ruby_type": map_ruby_type(return_type)},
             "params": params,
-            "header_annotation": bool(annotation),
-            "export": result["export"],
+            "header_annotation": bool(annotation["name"]),
+            "export": export,
         }
         if call["is_static"]:
             result["class_methods"].append(entry)
@@ -751,25 +769,31 @@ def extract_classes(text: str) -> list[dict[str, Any]]:
     return classes
 
 
-def export_block(inner: str, text: str, class_start: int) -> Optional[dict]:
-    """Return the export block of a class body, if any.
+def class_is_exported(text: str, class_start: int) -> bool:
+    """Whether a `URGE_BINDING()` annotation precedes the class declaration.
 
-    Returns {text, begin_line, end_line} with 1-based line numbers relative to
-    the header file.
+    The annotation sits on the line just above the class (only comments may
+    separate the two), so the check strips the comments between and looks for
+    the marker.
     """
-    b = inner.find(EXPORT_BEGIN)
-    if b == -1:
-        return None
-    e = inner.find(EXPORT_END, b + len(EXPORT_BEGIN))
-    if e == -1:
-        return None
-    abs_begin = class_start + b
-    abs_end = class_start + e
-    return {
-        "text": inner[b + len(EXPORT_BEGIN) : e],
-        "begin_line": text.count("\n", 0, abs_begin) + 1,
-        "end_line": text.count("\n", 0, abs_end) + 1,
-    }
+    prefix = text[:class_start]
+    while True:
+        prefix = prefix.rstrip()
+        if prefix.endswith("*/"):
+            begin = prefix.rfind("/*")
+            if begin == -1:
+                break
+            prefix = prefix[:begin]
+            continue
+        newline = prefix.rfind("\n")
+        if "//" in prefix[newline + 1 :]:
+            prefix = prefix[: newline + 1]
+            continue
+        break
+    return (
+        re.search(r"URGE_BINDING\s*\((?:[^()]|\([^()]*\))*\)\s*$", prefix)
+        is not None
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -817,11 +841,11 @@ def build_document() -> dict[str, Any]:
             name = cls["name"]
             if name in classes or name in modules:
                 continue
-            block = export_block(cls["inner"], text, cls["inner_start"])
-            if block is None:
+            if not class_is_exported(text, cls["start"]):
                 continue
-            block["source"] = source
-            desc = parse_class(name, cls["inner"], block)
+            desc = parse_class(
+                name, cls["inner"], cls["inner_start"], cls["start"], source, text
+            )
             desc["cpp_name"] = name
             desc["cpp_parent"] = cls["parent"]
             desc["header"] = "core/" + source

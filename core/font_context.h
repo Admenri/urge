@@ -36,19 +36,9 @@
 
 namespace urge {
 
-/*! Process wide font service.
- *
- *  The class owns everything that is shared between the Font objects of a game:
- *  the raw TTF data of every font of the load path, held in memory, and the
- *  TTF_Font handles that were opened from it, keyed by font name and point
- *  size.  Two Font objects of the same name and size therefore share one
- *  TTF_Font, which is what makes the handles safe to cache.
- *
- *  A font face is looked up by *file name* rather than by path, because that is
- *  how RGSS names them (`Font.new("Arial")` refers to a file of the game) and
- *  because it keeps the cache key independent of the mount point a file was
- *  found through.
- */
+// Font service: owns the TTF data of every font on the load path and the
+// handles opened from it, keyed by file name and point size. Faces are looked
+// up by file name, the way RGSS names them.
 class FontContext : public Singleton<FontContext> {
  public:
   //! Takes over every font of the current load paths and picks a default.
@@ -61,13 +51,9 @@ class FontContext : public Singleton<FontContext> {
   //! Whether a font of that file name was found in the load path.
   bool FontExists(const std::string& name) const;
 
-  /*! Returns the TTF handle of a face, opening and caching it on first use.
-   *
-   *  \param names the requested faces, tried in order; a face that cannot be
-   *         opened falls through to the default font, which is what keeps a
-   *         missing font from taking the whole draw down.
-   *  \returns the handle, or nullptr when no face could be opened at all.
-   */
+  //! Returns the handle of a face, opening and caching it on first use; the
+  //! requested faces are tried in order and the default is the last resort.
+  //! nullptr when no face could be opened at all.
   TTF_Font* AcquireFont(const std::vector<std::string>& names, int32_t size);
 
   //! Font face a name resolves to, or an empty vector when it is unknown.
@@ -76,16 +62,15 @@ class FontContext : public Singleton<FontContext> {
   const std::vector<std::string>& default_name() const { return default_name_; }
   const std::string& default_font() const { return default_font_; }
 
-  //! Raw TTF data of one font, as an owned block of memory.
-  //! \remarks This is public because a file local helper builds one; it is an
-  //! implementation detail all the same and not part of the service interface.
+  //! Raw TTF data of one font, as an owned block of memory. Public because a
+  //! file local helper builds one, not because it is part of the interface.
   struct FontData {
     int64_t size = 0;
     void* data = nullptr;
   };
 
  private:
-  //! Registeres every font of \p directory, keyed by its lower case file name.
+  //! Registers every font of \p directory, keyed by its lower case file name.
   void LoadFontDirectory(const std::string& directory);
   //! Falls back to the face embedded in the executable when the default is missing.
   void LoadInternalFont();

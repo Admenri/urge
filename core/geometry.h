@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "core/definition.h"
 #include "core/effect.h"
 #include "core/node.h"
 #include "core/object.h"
@@ -34,22 +35,31 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Geometry : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Geometry(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~Geometry() override;
 
+  URGE_BINDING()
   void SetPosition(int32_t triangle, int32_t point, RefPtr<Vector3> position);
+  URGE_BINDING()
   void SetTexcoord(int32_t triangle, int32_t point, RefPtr<Vector2> texcoord);
+  URGE_BINDING()
   void SetColor(int32_t triangle, int32_t point, RefPtr<Color> color);
 
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(int32_t, Capacity);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Bitmap);
+  URGE_BINDING()
   ATTR(int32_t, BlendType);
+  URGE_BINDING()
   ATTR(RefPtr<Effect>, Effect);
-  /*-export.end-*/
 
  private:
   void DisposeObject() override;

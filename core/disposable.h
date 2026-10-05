@@ -28,13 +28,13 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Disposable : public Object {
  public:
-  /*-export.begin-*/
   URGE_BINDING(Name : "disposed?")
   bool IsDisposed() { return disposed_; }
+  URGE_BINDING()
   void Dispose() { ReleaseSelf(); }
-  /*-export.end-*/
 
  public:
   void Guard() {

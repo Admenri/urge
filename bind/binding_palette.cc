@@ -25,7 +25,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Palette  (core/palette.h:37-45)
+// Palette  (core/palette.h:35-50)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Palette, Disposable);

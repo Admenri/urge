@@ -47,17 +47,23 @@ inline const struct {
     {"F5", 25},    {"F6", 26},   {"F7", 27},   {"F8", 28}, {"F9", 29},
 };
 
+URGE_BINDING()
 class Input : public Singleton<Input> {
  public:
   Input(int32_t version);
   ~Input();
 
-  /*-export.begin-*/
+  URGE_BINDING()
   void Update();
+  URGE_BINDING()
   bool Pressed(std::string sym);
+  URGE_BINDING()
   bool Triggered(std::string sym);
+  URGE_BINDING()
   bool Repeated(std::string sym);
+  URGE_BINDING()
   int32_t Dir4();
+  URGE_BINDING()
   int32_t Dir8();
 
   URGE_BINDING(Name : "key_press?")
@@ -66,8 +72,8 @@ class Input : public Singleton<Input> {
   bool KeyTriggered(int32_t keycode);
   URGE_BINDING(Name : "key_repeat?")
   bool KeyRepeated(int32_t keycode);
+  URGE_BINDING()
   std::string GetKeyName(int32_t keycode);
-  /*-export.end-*/
 
  public:
   void ProcessEvents(SDL_Event* event);

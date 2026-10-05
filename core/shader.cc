@@ -223,17 +223,7 @@ wgpu::BindGroupLayoutEntry MakeEntry(const ShaderBinding& binding,
   return entry;
 }
 
-/**
-\brief Creates the bind group layouts of both stages, indexed by their set.
-
-The reflection describes the groups of a stage from the set a binding is in, so
-the two stages are merged by the set number: a set both stages bind becomes one
-layout which the two of them share, and a stage which skips a set leaves an
-empty layout behind so the sets of the other stage keep their index.
-
-\param[in] dynamic_sets The sets whose buffer bindings are bound with a dynamic
-offset, they are the ones a bulk manager uploads one slot per object into.
-*/
+//! Bind group layouts of both stages, merged by set; a skipped set keeps its index.
 std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
     const Shader& vertex,
     const Shader& fragment,
@@ -308,9 +298,7 @@ uint64_t FormatSize(WGPUVertexFormat format) {
   }
 }
 
-/*! The bindings of one set of a SPIR-V pair, merged by their binding: a
-    binding both stages declare counts once, which is the set the pipeline
-    layout is built from and the one a caller which fills the set reads. */
+//! Bindings of one set of a SPIR-V pair, merged by binding across both stages.
 std::vector<ShaderBinding> MergeGroupBindings(
     const std::vector<ShaderGroup>& vertex_groups,
     const std::vector<ShaderGroup>& fragment_groups,
@@ -360,9 +348,7 @@ Pipeline::Pipeline(std::string_view vs_glsl,
   vertex_module_ = CreateModule(vertex_);
   fragment_module_ = CreateModule(fragment_);
 
-  /* The pipeline layout is written from the reflection instead of leaving it
-     to the automatic mode of the device, so a bind group the engine makes from
-     it always fits the pipeline. */
+  // Pipeline layout written from the reflection, so engine bind groups always fit.
   const std::vector<wgpu::BindGroupLayout> group_layouts =
       CreateGroupLayouts(vertex_, fragment_, dynamic_sets_, min_sets);
 
@@ -374,10 +360,7 @@ Pipeline::Pipeline(std::string_view vs_glsl,
   if (layout_ == nullptr)
     Fail("layout", "the device rejected the pipeline layout of the shader");
 
-  /* The vertex input is the one the vertex stage reads, which the reflection
-     describes; vb_layouts says which of its locations share one buffer. The
-     attributes of a buffer are packed in the order of their location, which is
-     the order the vertex stage reads them in. */
+  // Vertex input comes from the reflection; vb_layouts groups locations into buffers.
   std::map<uint32_t, size_t> slot_of_location;
   for (size_t slot = 0; slot < vb_layouts.size(); ++slot) {
     for (const uint32_t location : vb_layouts[slot])

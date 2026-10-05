@@ -31,15 +31,7 @@ namespace urge {
 
 namespace {
 
-/*! Reads the size of the window the pointer is reported against, i.e. the
-    space SDL gives the coordinates of an event in. It answers false when the
-    window is gone or degenerate -- a minimized window is zero wide -- in which
-    case there is no ratio to map with and the callers keep the raw value.
-
-    \remarks The size read here is the logical one, not the pixel size: the
-    window may be backed by more pixels than its logical size on a display of a
-    scale above 100% (see Graphics), while SDL reports the pointer in logical
-    coordinates either way. */
+//! Logical window size SDL reports the pointer in; false when it is degenerate.
 bool WindowSizeInternal(SDL_Window* window, float* width, float* height) {
   int size_x = 0, size_y = 0;
   if (!window || !SDL_GetWindowSize(window, &size_x, &size_y))
@@ -61,10 +53,7 @@ Mouse::~Mouse() {
   if (!cursor_)
     return;
 
-  /* The cursor this class owns may be the one the window is drawing, and SDL
-     keeps using it until another is set, so the arrow is restored before the
-     cursor is freed -- destroying the cursor in use would leave the window
-     with a dangling one. */
+  // Restore the arrow before freeing: SDL keeps using the cursor until another is set.
   if (SDL_GetCursor() == cursor_)
     SDL_SetCursor(SDL_GetDefaultCursor());
   SDL_DestroyCursor(cursor_);
@@ -134,10 +123,7 @@ bool Mouse::IsDouble(int32_t button) {
   if (button < 0 || button >= kButtonCount)
     return false;
 
-  /* The click count of SDL sticks between the events of a button, so it is
-     read together with the press edge: the double click is reported during the
-     frame the second press happened in, and not for as long as no other button
-     event arrives, which is what a bare count would do. */
+  // Read the click count together with the press edge, so the double click lasts one frame.
   return buttons_[button].down && buttons_[button].clicks == 2;
 }
 
@@ -163,9 +149,7 @@ int32_t Mouse::ScrollY() {
 
 void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
   if (!image) {
-    /* A nil bitmap restores the arrow of the window, and the color cursor of
-       this class is no longer needed. The arrow is set first, see the
-       destructor for why the cursor in use must not be freed. */
+    // A nil bitmap restores the arrow; set it before the cursor is freed.
     SDL_SetCursor(SDL_GetDefaultCursor());
     if (cursor_) {
       SDL_DestroyCursor(cursor_);
@@ -174,9 +158,7 @@ void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
     return;
   }
 
-  /* SDL builds a cursor out of a surface and copies the pixels of it, so the
-     bitmap is read back into one and the surface can be dropped right after
-     the cursor exists. */
+  // SDL copies the surface, so it can be dropped once the cursor exists.
   RefPtr<Palette> surface = image->ToPalette();
   if (!surface)
     return;
@@ -226,9 +208,7 @@ void Mouse::ProcessEvents(SDL_Event* event) {
       break;
     }
 
-    /* A press, a release and a wheel carry the position of the pointer as
-       well, and any of them can be the first event after it entered the
-       window, so the position is taken from them too. */
+    // Press, release and wheel also carry the position, so they update it too.
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP: {
       const SDL_MouseButtonEvent& button = event->button;

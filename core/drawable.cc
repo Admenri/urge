@@ -45,28 +45,17 @@ void Drawable::SortWith(ZValue value) {
   }
 }
 
-void Drawable::Resort(ZValue old) {
-  if (parent_ != nullptr) {
-    if (z_ < old) {
-      BubbleLeft();
-    } else {
-      BubbleRight();
-    }
-  }
-}
-
 void Drawable::SetParent(DrawableSet* parent) {
   if (parent_ != parent) {
     RemoveFromList();
     parent_ = parent;
     if (parent_) {
-      // Insert into new list at correct z-order position:
-      // find the first node whose z > this->z_, then insert before it.
+      // Walk to the first node with a greater z and insert before it.
       Drawable* sentinel = &parent_->root_;
       Drawable* pos = sentinel->next_;
       while (pos != sentinel && pos->z_ <= z_)
         pos = pos->next_;
-      InsertAfter(pos->prev_);  // insert before 'pos'
+      InsertAfter(pos->prev_);
     }
   }
 }
@@ -85,12 +74,21 @@ void Drawable::InsertAfter(Drawable* node) {
   node->next_ = this;
 }
 
+void Drawable::Resort(ZValue old) {
+  if (parent_ != nullptr) {
+    if (z_ < old) {
+      BubbleLeft();
+    } else {
+      BubbleRight();
+    }
+  }
+}
+
 void Drawable::BubbleLeft() {
-  // z decreased: move left past any node with higher z
+  // Move left past every node with a higher z.
   while (prev_ != &parent_->root_ && prev_->z_ > z_) {
     Drawable* target = prev_;
     RemoveFromList();
-    // re-insert before target
     prev_ = target->prev_;
     next_ = target;
     target->prev_->next_ = this;
@@ -99,11 +97,10 @@ void Drawable::BubbleLeft() {
 }
 
 void Drawable::BubbleRight() {
-  // z increased: move right past any node with lower z
+  // Move right past every node with a lower z.
   while (next_ != &parent_->root_ && next_->z_ < z_) {
     Drawable* target = next_;
     RemoveFromList();
-    // re-insert after target
     next_ = target->next_;
     prev_ = target;
     target->next_->prev_ = this;
@@ -111,16 +108,13 @@ void Drawable::BubbleRight() {
   }
 }
 
-// -----------------------------------------------------------------
-
 DrawableSet::DrawableSet() {
   root_.prev_ = &root_;
   root_.next_ = &root_;
 }
 
 DrawableSet::~DrawableSet() {
-  // Detach all remaining drawables so they don't hold dangling parent
-  // pointers.
+  // Detach every remaining node so none keeps a dangling parent pointer.
   while (root_.next_ != &root_) {
     root_.next_->parent_ = nullptr;
     root_.next_->RemoveFromList();

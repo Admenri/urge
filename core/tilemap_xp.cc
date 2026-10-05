@@ -33,11 +33,8 @@ namespace urge {
 
 namespace {
 
-/*! The corners of the four quadrants of an autotile pattern, as fractions of
-    the tile size: forty-eight patterns of four corners each, the corners in the
-    order top left, top right, bottom left, bottom right. A corner which falls
-    on a whole multiple of three tiles is the corner of a plain autotile, the
-    others are the seams of the neighbouring tiles the pattern is built from. */
+//! The four quadrants of an autotile pattern as fractions of the tile size,
+//! ordered top left, top right, bottom left, bottom right.
 const glm::vec2 kAutotileSrcRegular[48][4] = {
     {{1.0f, 2.0f}, {1.5f, 2.0f}, {1.0f, 2.5f}, {1.5f, 2.5f}},
     {{2.0f, 0.0f}, {1.5f, 2.0f}, {1.0f, 2.5f}, {1.5f, 2.5f}},
@@ -106,8 +103,6 @@ bool TilemapXPAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-// ----------------------------------------------------------------------
-
 TilemapXP::TilemapXP(RefPtr<Viewport> viewport) : Node(viewport, ZValue()) {
   Node::SetupTrait(this);
 }
@@ -147,9 +142,8 @@ RefPtr<Bitmap> TilemapXP::GetAutotile(int32_t index) {
 }
 
 ATTR_DEF(TilemapXP, RefPtr<Viewport>, Viewport) {
-  /* A tilemap draws inside the viewport it is a child of and every above layer
-     is a node of its own, so all of them have to be moved to the viewport which
-     is set here. */
+  // Every above layer is a node of its own, so all of them follow the viewport
+  // which is set here.
   if (value.has_value())
     for (auto& it : aboves_)
       it->Attr_Parent(*value);
@@ -165,9 +159,7 @@ ATTR_DEF(TilemapXP, RefPtr<Viewport>, Viewport) {
 }
 
 ATTR_DEF(TilemapXP, bool, Visible) {
-  /* Every above layer is a node of its own, so the visibility of the tilemap
-     has to be mirrored onto them for a hidden tilemap to disappear
-     completely. */
+  // Mirrored onto the above layers, so a hidden tilemap disappears completely.
   if (value.has_value())
     for (auto& it : aboves_)
       it->Attr_Visible(*value);
@@ -175,9 +167,8 @@ ATTR_DEF(TilemapXP, bool, Visible) {
 }
 
 ATTR_DEF(TilemapXP, int32_t, Z) {
-  /* The Z of a tilemap of RGSS1 is not settable: the layers of it derive their
-     Z from the rows of the screen they stand for, and a Z of the tilemap itself
-     would have no layer to move, see UpdateOrder(). */
+  // Not settable in RGSS1: the layers derive their Z from the rows of the
+  // screen they stand for, see UpdateOrder().
   if (value.has_value())
     return std::nullopt;
   return Node::Attr_Z(value);
@@ -244,16 +235,15 @@ void TilemapXP::DisposeObject() {
 }
 
 bool TilemapXP::Prepare(DrawParam param) {
-  /* The region of the map a tilemap draws follows from the viewport it is in,
-     so it is read before the layers are built, which the children above do
-     during their own prepare stage, see TilemapXPAbove::Prepare(). */
+  // The region a tilemap draws follows from its viewport, so it is read before
+  // the layers are built, which the children above do in their own prepare
+  // stage, see TilemapXPAbove::Prepare().
   UpdateViewport();
   UpdateAboves();
   UpdateOrder();
   BuildLayers();
 
-  /* The transform of the tiles is the identity, so the object set of every
-     layer is the same slot, see BuildLayers(). */
+  // The transform of the tiles is the identity, so every layer shares the slot.
   const bool any_layer = ground_layer_.valid;
   bool any_above = false;
   for (const auto& layer : above_layers_)
@@ -274,15 +264,40 @@ bool TilemapXP::DoDraw(DrawParam param) {
   return false;
 }
 
-void TilemapXP::DrawAboveLayer(DrawParam param, int32_t id) {
-  if (id < 0 || static_cast<size_t>(id) >= above_layers_.size())
-    return;
-  DrawLayer(param, above_layers_[id]);
-}
+void TilemapXP::UpdateViewport() {
+  auto viewport = Attr_Viewport();
+  int32_t viewport_ox = 0, viewport_oy = 0;
+  int32_t viewport_width = 0, viewport_height = 0;
+  if (viewport.has_value() && viewport.value()) {
+    auto rect = viewport.value()->Attr_Rect();
+    viewport_ox = viewport.value()->Attr_OX().value();
+    viewport_oy = viewport.value()->Attr_OY().value();
+    viewport_width = rect.value()->data.width;
+    viewport_height = rect.value()->data.height;
+  } else {
+    // A tilemap without a viewport covers the whole screen, which has no origin
+    // of its own, so both origins stay at zero.
+    viewport_width = Graphics::Get().Width();
+    viewport_height = Graphics::Get().Height();
+  }
 
-bool TilemapXP::HasAboveLayer(int32_t id) const {
-  return id >= 0 && static_cast<size_t>(id) < above_layers_.size() &&
-         above_layers_[id].valid;
+  const int32_t tilemap_real_ox = ox_ + viewport_ox;
+  const int32_t tilemap_real_oy = oy_ + viewport_oy;
+
+  // Quad parsing viewport
+  render_viewport_.x = tilemap_real_ox / tilesize_;
+  render_viewport_.y = tilemap_real_oy / tilesize_ - 1;
+  render_viewport_.width =
+      (viewport_width / tilesize_) + !!(viewport_width % tilesize_) + 1;
+  render_viewport_.height =
+      (viewport_height / tilesize_) + !!(viewport_height % tilesize_) + 2;
+
+  // Rendering offset
+  const int32_t display_offset_x = tilemap_real_ox % tilesize_;
+  const int32_t display_offset_y = tilemap_real_oy % tilesize_;
+  render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
+                             static_cast<float>(-display_offset_y));
+  render_offset_.y -= static_cast<float>(tilesize_);
 }
 
 void TilemapXP::UpdateAboves() {
@@ -294,15 +309,7 @@ void TilemapXP::UpdateAboves() {
     viewport_height = Graphics::Get().Height();
   }
 
-  /* 1. Tiles with a priority of 0 always have a Z-coordinate of 0.
-     2. Priority 1 tiles placed at the top edge of the screen have a
-        Z-coordinate of 64.
-     3. Every time the priority increases by 1, or the next tile down is
-        selected, the Z-coordinate increases by 32.
-     4. The Z-coordinate changes accordingly as the tilemap scrolls vertically.
-     The number of layers a region of a given height needs follows from that:
-     one row of tiles per layer, plus the two rows the region is padded with,
-     plus the five priority bands. */
+  // RGSS1 Z rule: priority 0 at Z 0, priority 1 top edge at Z 64, +32 per step.
   const int32_t above_layers_count = (viewport_height / tilesize_) +
                                      !!(viewport_height % tilesize_) + 2 +
                                      kMaxPriorities;
@@ -327,44 +334,6 @@ void TilemapXP::UpdateOrder() {
     const int32_t layer_order = 32 * (render_viewport_.y + i + 2) - oy_;
     aboves_[i]->Attr_Z(layer_order);
   }
-}
-
-void TilemapXP::UpdateViewport() {
-  auto viewport = Attr_Viewport();
-  int32_t viewport_ox = 0, viewport_oy = 0;
-  int32_t viewport_width = 0, viewport_height = 0;
-  if (viewport.has_value() && viewport.value()) {
-    auto rect = viewport.value()->Attr_Rect();
-    viewport_ox = viewport.value()->Attr_OX().value();
-    viewport_oy = viewport.value()->Attr_OY().value();
-    viewport_width = rect.value()->data.width;
-    viewport_height = rect.value()->data.height;
-  } else {
-    /* A tilemap without a viewport covers the whole screen. The screen has no
-       origin of its own -- the engine keeps no global one, the origin of a
-       display belongs to the viewport of it --, so both of the origins are the
-       zero of the fallback. */
-    viewport_width = Graphics::Get().Width();
-    viewport_height = Graphics::Get().Height();
-  }
-
-  const int32_t tilemap_real_ox = ox_ + viewport_ox;
-  const int32_t tilemap_real_oy = oy_ + viewport_oy;
-
-  // Quad parsing viewport
-  render_viewport_.x = tilemap_real_ox / tilesize_;
-  render_viewport_.y = tilemap_real_oy / tilesize_ - 1;
-  render_viewport_.width =
-      (viewport_width / tilesize_) + !!(viewport_width % tilesize_) + 1;
-  render_viewport_.height =
-      (viewport_height / tilesize_) + !!(viewport_height % tilesize_) + 2;
-
-  // Rendering offset
-  const int32_t display_offset_x = tilemap_real_ox % tilesize_;
-  const int32_t display_offset_y = tilemap_real_oy % tilesize_;
-  render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
-                             static_cast<float>(-display_offset_y));
-  render_offset_.y -= static_cast<float>(tilesize_);
 }
 
 void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
@@ -532,8 +501,8 @@ void TilemapXP::BuildLayers() {
   std::vector<std::vector<TileQuad>> aboves;
   ParseTiles(&ground, &aboves);
 
-  /* The blend state of the engine and a bitmap store premultiplied alpha, so
-     the color of a tile scales all four channels of its vertices. */
+  // Bitmap contents are stored premultiplied, so the tile color scales all four
+  // channels of its vertices.
   const glm::vec4 color(1.0f);
 
   auto build = [&](const std::vector<TileQuad>& quads, TileLayer* layer) {
@@ -554,9 +523,8 @@ void TilemapXP::BuildLayers() {
       const glm::vec2 texture_size(static_cast<float>(texture->size().x),
                                    static_cast<float>(texture->size().y));
 
-      /* The tiles which read the same bitmap travel in one batch: the emitter
-         is opened once and the whole run is appended to it, so a layer costs
-         one draw per bitmap it uses. */
+      // The tiles reading the same bitmap travel in one batch, so a layer costs
+      // one draw per bitmap it uses.
       layer->primitive.BeginQuad().Color4f(color);
       while (index < quads.size() && quads[index].texture == texture) {
         RectF dest = quads[index].destination;
@@ -586,8 +554,8 @@ void TilemapXP::BuildLayers() {
       layer->draws.clear();
   };
 
-  /* The ground layer and the above layers are built in the same order they are
-     drawn in, so the vertices of the frame sit in the buffers in that order. */
+  // Built in the order they are drawn in, so the vertices of the frame sit in
+  // the buffers in that order.
   build(ground, &ground_layer_);
 
   above_layers_.resize(aboves.size());
@@ -604,11 +572,9 @@ void TilemapXP::DrawLayer(DrawParam param, const TileLayer& layer) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  /* The tiles of a tilemap are placed by the vertex position they were emitted
-     with, in the pixels of the render target, so the transform of the node
-     hierarchy is not part of their drawing and the object set carries the
-     identity instead, see BuildLayers(). */
-  param->pass.SetPipeline(ShaderSet::Get().state.texture_dynamic_pma);
+  // The tiles are placed by the vertex position they were emitted with, so the
+  // object set carries the identity, see BuildLayers().
+  param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_dynamic_pma);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetVertexBuffer(0, layer.primitive.buffer(), 0, WGPU_WHOLE_SIZE);
@@ -617,6 +583,17 @@ void TilemapXP::DrawLayer(DrawParam param, const TileLayer& layer) {
     param->pass.SetBindGroup(2, draw.texture->texture_group(), 0, nullptr);
     param->pass.Draw(draw.slot.count, 1, draw.slot.first, 0);
   }
+}
+
+void TilemapXP::DrawAboveLayer(DrawParam param, int32_t id) {
+  if (id < 0 || static_cast<size_t>(id) >= above_layers_.size())
+    return;
+  DrawLayer(param, above_layers_[id]);
+}
+
+bool TilemapXP::HasAboveLayer(int32_t id) const {
+  return id >= 0 && static_cast<size_t>(id) < above_layers_.size() &&
+         above_layers_[id].valid;
 }
 
 }  // namespace urge

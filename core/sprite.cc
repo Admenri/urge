@@ -325,11 +325,7 @@ bool Sprite::Prepare(DrawParam param) {
   if (!primitive_slot_.count)
     return false;
 
-  /* The transform of a sprite is the one of the node hierarchy with its own on
-     top: the sprite is positioned at (x, y), the origin is the point it is
-     scaled and rotated around, so the origin is subtracted before the scale and
-     the rotation and the position is added after them. The rotation is
-     negated, the y axis of the engine points downwards. */
+  // Sprite transform: origin before scale/rotation, position after; rotation negated (y down).
   const glm::mat4 transform =
       world_transform() *
       glm::translate(glm::mat4(1.0f), glm::vec3(static_cast<float>(x_),
@@ -341,9 +337,7 @@ bool Sprite::Prepare(DrawParam param) {
           glm::mat4(1.0f),
           glm::vec3(static_cast<float>(-ox_), static_cast<float>(-oy_), 0.0f));
 
-  /* Both uniforms of a sprite travel in a buffer it shares with every other
-     sprite of the frame instead of in a buffer of its own, so the draw only has
-     to bind the slots handed out here. */
+  // Both sprite uniforms live in a shared per-frame buffer; the draw binds the slots.
   UniformManager& uniforms = UniformManager::Get();
 
   ObjectData object_data;
@@ -362,10 +356,7 @@ bool Sprite::DoDraw(DrawParam param) {
   const UniformBlockPool::Chunk& param_chunk =
       uniforms.sprite_uniforms().chunk(param_slot_.chunk);
 
-  /* An effect replaces the shader and the blend of the draw while the geometry
-     and the transform stay the ones of this sprite: the scene of the target,
-     the object transform of the frame and the custom bind group the effect was
-     given with are what its pipeline reads, see Effect. */
+  // An effect replaces shader and blend; geometry, transform and sets stay, see Effect.
   if (effect_) {
     param->pass.SetPipeline(effect_->AcquirePipeline());
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
@@ -377,7 +368,7 @@ bool Sprite::DoDraw(DrawParam param) {
     return false;
   }
 
-  param->pass.SetPipeline(ShaderSet::Get().state.sprite_blends.at(
+  param->pass.SetPipeline(ShaderSet::Get().state.sprite.sprite_blends.at(
       static_cast<BlendType>(blend_type_)));
   // The scene of the render target, its object set is not the one of a sprite
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
@@ -394,16 +385,12 @@ bool Sprite::DoDraw(DrawParam param) {
 }
 
 SpriteBase::SpriteParam Sprite::MakeParamInternal() {
-  /* The blend color of a sprite is its color, or the color of the flash while
-     it is the stronger one of the two; a sprite which is not flashing keeps
-     the color of its Color attribute. */
+  // Blend color is the color, or the flash color while the flash is stronger.
   glm::vec4 blend_color = color_->Normalize();
   if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
     blend_color = flash_.color;
 
-  /* The bush cuts the sprite off below a line of its source rectangle, which
-     the shader compares against the texture coordinate of a pixel, so the depth
-     is normalized the way a texture coordinate is. */
+  // Bush cuts the sprite below a source line; the depth is a normalized texture coordinate.
   const float texture_height =
       static_cast<float>(std::max(1, bitmap_->size().y));
   const RectI src = src_rect_->data;
@@ -431,9 +418,7 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
 
   const glm::vec2 texture_size(static_cast<float>(texture_width),
                                static_cast<float>(texture_height));
-  /* The blend state of the engine and the contents of a bitmap store
-     premultiplied alpha, so the opacity of a sprite scales all four channels of
-     the vertex color instead of the alpha channel alone. */
+  // Premultiplied content: sprite opacity scales all four vertex color channels.
   const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
 
   if (wave_amp_ == 0) {
@@ -447,10 +432,7 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
                              static_cast<float>(src.height)),
                        MakeNorm(RectF(texcoord), texture_size), color);
   } else {
-    /* A wave bends the sprite in strips: every strip of kWaveBlockAlign pixels
-       is moved sideways by the sine of the phase it is at, which is the wave of
-       a flag. The phase of a strip follows from the phase of the sprite and the
-       part of a wave length the strip is at, see Update(). */
+    // A wave bends the sprite in kWaveBlockAlign-pixel strips by the sine of their phase.
     const float phase = DegreesToRadians(wave_phase_);
     const float length =
         static_cast<float>(std::max<int32_t>(kMinimumWaveLength, wave_length_));

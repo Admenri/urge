@@ -35,11 +35,7 @@ namespace urge {
 
 namespace {
 
-/*! The autotile source rectangles of the regular autotiles, which the A2 to A4
-    tiles read: forty-eight patterns of four quadrants each, the quadrants in
-    the order top left, top right, bottom left, bottom right. Every rectangle is
-    given as a fraction of the tile size, so one table serves every tile size.
- */
+//! Regular autotile source rects: 48 patterns of 4 quadrants, as a fraction of the tile size.
 const RectF kAutotileSrcRegular[] = {
     {1.0f, 2.0f, 0.5f, 0.5f}, {0.5f, 2.0f, 0.5f, 0.5f},
     {1.0f, 1.5f, 0.5f, 0.5f}, {0.5f, 1.5f, 0.5f, 0.5f},
@@ -139,10 +135,7 @@ const RectF kAutotileSrcRegular[] = {
     {0.0f, 0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f, 0.5f},
 };
 
-/*! The autotile source rectangles of the table autotiles: forty-six patterns
-    of six pieces each, the four quadrants of the tile followed by the two
-    halves of the leg a table stands on. The two leg pieces are empty in the
-    patterns which have no leg. */
+//! Table autotile source rects: 46 patterns of 6 pieces (4 quadrants + 2 leg halves).
 const RectF kAutotileSrcTable[] = {
     {1.0f, 2.0f, 0.5f, 0.5f}, {0.5f, 2.0f, 0.5f, 0.5f},
     {1.0f, 1.5f, 0.5f, 0.5f}, {0.5f, 1.5f, 0.5f, 0.5f},
@@ -394,9 +387,7 @@ RefPtr<Bitmap> TilemapVX::GetBitmap(int32_t index) {
 }
 
 ATTR_DEF(TilemapVX, RefPtr<Viewport>, Viewport) {
-  /* A tilemap draws inside the viewport it is a child of and the layer above
-     the player is a node of its own, so both of them have to be moved to the
-     viewport which is set here. */
+  // The tilemap and its above-layer node both follow the viewport set here.
   if (value.has_value() && above_)
     above_->Attr_Parent(*value);
 
@@ -411,9 +402,7 @@ ATTR_DEF(TilemapVX, RefPtr<Viewport>, Viewport) {
 }
 
 ATTR_DEF(TilemapVX, bool, Visible) {
-  /* The layer over the player is a node of its own, so the visibility of the
-     tilemap has to be mirrored onto it for a hidden tilemap to disappear
-     completely. */
+  // Mirror the tilemap visibility onto the above-layer node.
   if (value.has_value() && above_)
     above_->Attr_Visible(*value);
   return Node::Attr_Visible(value);
@@ -488,9 +477,7 @@ void TilemapVX::DisposeObject() {
 }
 
 bool TilemapVX::Prepare(DrawParam param) {
-  /* The region of the map a tilemap draws follows from the viewport it is in,
-     so it is read before the layers are built, which the child above does
-     during its own prepare stage, see TilemapVXAbove::Prepare(). */
+  // The drawn region follows from the viewport, read before the layers are built.
   UpdateViewport();
 
   object_slot_ = {};
@@ -511,10 +498,6 @@ bool TilemapVX::Prepare(DrawParam param) {
 bool TilemapVX::DoDraw(DrawParam param) {
   DrawLayer(param, &map_layer_);
   return false;
-}
-
-void TilemapVX::DrawAboveLayer(DrawParam param) {
-  DrawLayer(param, &above_layer_);
 }
 
 void TilemapVX::CreateShadowSet() {
@@ -549,10 +532,7 @@ void TilemapVX::UpdateViewport() {
     viewport_width = rect.value()->data.width;
     viewport_height = rect.value()->data.height;
   } else {
-    /* A tilemap without a viewport covers the whole screen. The screen has no
-       origin of its own -- the engine keeps no global one, the origin of a
-       display belongs to the viewport of it --, so both of the origins are the
-       zero of the fallback. */
+    // Without a viewport the tilemap covers the whole screen; both origins are zero.
     viewport_width = Graphics::Get().Width();
     viewport_height = Graphics::Get().Height();
   }
@@ -984,10 +964,7 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
   layer->draws.clear();
   layer->valid = false;
 
-  /* The vertices of a tilemap are emitted during the prepare stage into an
-     emitter of the tilemap instead of into the batch of the frame: the tiles of
-     a layer are collected from the viewport computed above and uploaded in one
-     buffer of their own, which the drawing stage of the layer then reads. */
+  // Vertices go into an emitter of the tilemap, uploaded in one buffer per layer.
   layer->primitive.Clear();
 
   // The blend state of the engine and a bitmap store premultiplied alpha, so
@@ -1007,9 +984,7 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
     const glm::vec2 texture_size(static_cast<float>(texture->size().x),
                                  static_cast<float>(texture->size().y));
 
-    /* The tiles which read the same bitmap travel in one batch: the emitter is
-       opened once and the whole run is appended to it, so a layer costs one
-       draw per bitmap it uses. */
+    // Tiles reading the same bitmap share one batch: one draw per bitmap per layer.
     layer->primitive.BeginQuad().Color4f(color);
     while (index < quads.size() && quads[index].texture == texture) {
       RectF dest = quads[index].destination;
@@ -1047,11 +1022,9 @@ void TilemapVX::DrawLayer(DrawParam param, TileLayer* layer) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  /* The tiles of a tilemap are placed by the vertex position they were emitted
-     with, in the pixels of the render target, so the transform of the node
-     hierarchy is not part of their drawing and the object set carries the
-     identity instead, see BuildLayer(). */
-  param->pass.SetPipeline(ShaderSet::Get().state.texture_dynamic_pma);
+  // The tiles are placed by the vertex position they were emitted with, so the
+  // object set carries the identity, see BuildLayer().
+  param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_dynamic_pma);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetVertexBuffer(0, layer->primitive.buffer(), 0, WGPU_WHOLE_SIZE);
@@ -1060,6 +1033,10 @@ void TilemapVX::DrawLayer(DrawParam param, TileLayer* layer) {
     param->pass.SetBindGroup(2, draw.texture->texture_group(), 0, nullptr);
     param->pass.Draw(draw.slot.count, 1, draw.slot.first, 0);
   }
+}
+
+void TilemapVX::DrawAboveLayer(DrawParam param) {
+  DrawLayer(param, &above_layer_);
 }
 
 }  // namespace urge

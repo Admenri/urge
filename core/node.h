@@ -30,25 +30,34 @@
 
 namespace urge {
 
+URGE_BINDING()
 class Node : public Disposable {
  public:
-  explicit Node();
   Node(RefPtr<Node> parent, const ZValue& z);
 
-  /*-export.begin-*/
+  URGE_BINDING()
+  explicit Node();
+  URGE_BINDING()
   Node(RefPtr<Node> parent);
+  URGE_BINDING()
   ~Node() override;
 
+  URGE_BINDING()
   void Render(RefPtr<Bitmap> target, RefPtr<Color> clear = nullptr);
 
+  URGE_BINDING()
   virtual ATTR(int32_t, Z);
+  URGE_BINDING()
   virtual ATTR(bool, Visible);
+  URGE_BINDING()
   virtual ATTR(RefPtr<Node>, Parent);
 
+  URGE_BINDING()
   virtual ATTR(RefPtr<Vector3>, Position);
+  URGE_BINDING()
   virtual ATTR(RefPtr<Vector4>, Quaternion);
+  URGE_BINDING()
   virtual ATTR(RefPtr<Vector3>, Scale);
-  /*-export.end-*/
 
  protected:
   virtual bool Prepare(DrawParam param) { return false; }

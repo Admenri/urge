@@ -30,56 +30,72 @@
 #include "SDL3_ttf/SDL_ttf.h"
 
 #include "core/common.h"
+#include "core/definition.h"
 #include "core/refptr.h"
 #include "core/utility.h"
 
 namespace urge {
 
+URGE_BINDING()
 class Font : public Object {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   Font(std::vector<std::string> names = {}, int32_t size = 24);
+  URGE_BINDING()
   Font(RefPtr<Font> other);
+  URGE_BINDING()
   ~Font() override = default;
 
   URGE_BINDING(Name : "exist?")
   static bool Existed(std::string name);
 
+  URGE_BINDING()
   ATTR(std::vector<std::string>, Name);
+  URGE_BINDING()
   ATTR(int32_t, Size);
+  URGE_BINDING()
   ATTR(bool, Bold);
+  URGE_BINDING()
   ATTR(bool, Italic);
+  URGE_BINDING()
   ATTR(bool, Outline);
+  URGE_BINDING()
   ATTR(bool, Shadow);
+  URGE_BINDING()
   ATTR(bool, Solid);
+  URGE_BINDING()
   ATTR(RefPtr<Color>, Color);
+  URGE_BINDING()
   ATTR(RefPtr<Color>, OutColor);
+  URGE_BINDING()
   ATTR(RefPtr<Color>, GradientColor);
 
+  URGE_BINDING()
   static ATTR(std::vector<std::string>, DefaultName);
+  URGE_BINDING()
   static ATTR(int32_t, DefaultSize);
+  URGE_BINDING()
   static ATTR(bool, DefaultBold);
+  URGE_BINDING()
   static ATTR(bool, DefaultItalic);
+  URGE_BINDING()
   static ATTR(bool, DefaultOutline);
+  URGE_BINDING()
   static ATTR(bool, DefaultShadow);
+  URGE_BINDING()
   static ATTR(bool, DefaultSolid);
+  URGE_BINDING()
   static ATTR(RefPtr<Color>, DefaultColor);
+  URGE_BINDING()
   static ATTR(RefPtr<Color>, DefaultOutColor);
+  URGE_BINDING()
   static ATTR(RefPtr<Color>, DefaultGradientColor);
-  /*-export.end-*/
 
-  //! Underlying TTF handle of the current name and size, never null in a
-  //! bitmap, which keeps the caller from having to special case a failure.
+  //! Underlying TTF handle of the current name and size.
   TTF_Font* ttf_font();
 
-  /*! Renders \p text into a freshly allocated surface.
-   *
-   *  \param font_opacity receives the alpha of the text color, which a caller
-   *         applies as a separate opacity when it composites the result, so
-   *         that the color stays intact.
-   *  \returns an owned ABGR8888 surface of straight (not premultiplied) alpha,
-   *           or nullptr when the render failed.
-   */
+  //! Renders \p text into a freshly allocated ABGR8888 surface, or nullptr on
+  //! failure; \p font_opacity receives the alpha of the text color.
   SDL_Surface* RenderText(const std::string& text, uint8_t* font_opacity);
 
   //! Pixel extent of \p text without rendering it.

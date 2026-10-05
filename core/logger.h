@@ -30,24 +30,9 @@
 #include <string>
 #include <string_view>
 
-// The macros of this header are the whole API:
-//
-//   LOGGER_INFO("loaded {} entries", count);
-//   LOGGER_ERROR("failed to open {}", path);
-//
-// The format string follows std::format, and a debug build behaves differently
-// from a release build in two ways:
-//
-//   * LOGGER_TRACE and LOGGER_DEBUG disappear in a release build, so their
-//     arguments are neither formatted nor evaluated, and nothing is emitted.
-//   * The remaining messages carry a "file:line: " prefix in a debug build
-//     only.
-//
-// A release build therefore reports the messages an issue report is written
-// from, and a debug build adds the location of every one of them.
-//
-// Every message ends up on stderr, which the game has because it is built as a
-// console application, and nothing else in the process is redirected.
+// The macros are the API, e.g. LOGGER_INFO("loaded {}", count). Format strings
+// follow std::format; in a release build LOGGER_TRACE/DEBUG vanish and no
+// message carries the "file:line: " prefix. Everything is written to stderr.
 
 namespace urge {
 
@@ -69,18 +54,12 @@ inline LogLevel GetLogLevel();
 //! to be called from the main thread.
 inline void SetLogLevel(LogLevel level);
 
-//! Writes a message to the sink, the level tag and the newline are added here.
-//! \param prefix a marker of the origin of the message, it is repeated on every
-//! line, which matters because a message of a graphics backend is often a whole
-//! block of text.
+//! Writes a message to the sink, adding the level tag and the newline.
 inline void LogWrite(LogLevel level,
                      std::string_view prefix,
                      std::string_view message);
 
 //! Formats the arguments and forwards the result to LogWrite.
-//! \param prefix an empty view for a message of the engine itself, or a marker
-//! such as "[wgpu] " for a message that came from a library. A debug build
-//! passes the "file:line: " location of the call here.
 template <typename... Args>
 void LogMessage(LogLevel level,
                 std::string_view prefix,
@@ -103,10 +82,7 @@ inline constexpr LogLevel kDefaultLevel = LogLevel::kInfo;
 inline constexpr LogLevel kDefaultLevel = LogLevel::kDebug;
 #endif
 
-//! The state of the logger. The static local of an inline function is unique
-//! across the translation units of a program, and its initialization is thread
-//! safe, which is required because the callback of a graphics backend reports
-//! its messages from whichever thread raised them.
+//! The state of the logger; a thread-safe static local of an inline function.
 inline LogLevel& CurrentLevel() {
   static LogLevel level = kDefaultLevel;
   return level;

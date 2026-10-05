@@ -157,7 +157,7 @@ bool ScreenRootNode::DoDraw(DrawParam param) {
 }
 
 void ScreenRootNode::PostDraw(DrawParam param) {
-  auto pipeline = ShaderSet::Get().state.color_pma;
+  auto pipeline = ShaderSet::Get().state.graphics.color_pma;
   param->pass.SetPipeline(pipeline);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, param->target->object_group(), 0, nullptr);
@@ -170,13 +170,7 @@ void ScreenRootNode::PostDraw(DrawParam param) {
 Graphics::Graphics()
     : frame_rate_(Config::Get().xp() ? 40 : 60), limiter_(frame_rate_) {
   auto& config = Config::Get();
-  /* SDL_WINDOW_HIGH_PIXEL_DENSITY asks the platform for a back buffer at the
-     pixel density of the display: on a 200% scaled screen the window spans the
-     same logical size it would at 100% but is backed by twice the pixels, so it
-     no longer looks tiny next to the rest of the desktop. The window is sized
-     in logical points; the physical pixel size comes from
-     SDL_GetWindowSizeInPixels() and is what the swapchain is configured with,
-     see PresentInternal. */
+  // HIGH_PIXEL_DENSITY: window sized in logical points, swapchain in physical pixels.
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
   window_ = SDL_CreateWindow(config.game.title.c_str(), config.window.width,
@@ -288,19 +282,13 @@ void Graphics::TransitionBitmap(int32_t duration,
   const RefPtr<Bitmap> frozen_scene = MakeRefCounted<Bitmap>(screen_);
   const RefPtr<Bitmap> current_scene = SnapToBitmap();
 
-  /* The mapping of a vague transition is the bitmap given by filename, an
-     alpha transition has none and fades one scene into the other, see
-     kFS_TransitionAlpha / kFS_TransitionMap. */
+  // A vague transition uses a mapping bitmap; an alpha transition has none.
   const bool mapped = bitmap != nullptr;
   const wgpu::RenderPipeline pipeline =
-      mapped ? ShaderSet::Get().state.transition_vague
-             : ShaderSet::Get().state.transition_alpha;
+      mapped ? ShaderSet::Get().state.graphics.transition_vague
+             : ShaderSet::Get().state.graphics.transition_alpha;
 
-  /* Set 2 of a transition shader carries both scenes and, for a vague one, the
-     mapping: it is not the single texture of a render target, so its bind group
-     is built from the layout of the pipeline rather than by a Bitmap. The
-     current scene is re-rendered into the same texture every frame, so the
-     group is built once and keeps pointing at it. */
+  // Set 2 carries both scenes (+ the mapping), built from the layout, not by a Bitmap.
   std::vector<std::pair<uint32_t, util::BindingSetType>> bindings = {
       {0, util::TextureViewSet(frozen_scene->texture_view())},
       {1, util::SamplerSet(frozen_scene->sampler())},
@@ -390,15 +378,6 @@ ATTR_DEF(Graphics, int32_t, FrameRate) {
   }
 }
 
-ATTR_DEF(Graphics, bool, FrameSkip) {
-  if (value.has_value()) {
-    frame_skip_ = *value;
-    return std::nullopt;
-  } else {
-    return frame_skip_;
-  }
-}
-
 ATTR_DEF(Graphics, int32_t, FrameCount) {
   if (value.has_value()) {
     frame_count_ = *value;
@@ -417,6 +396,15 @@ ATTR_DEF(Graphics, int32_t, Brightness) {
   }
 }
 
+ATTR_DEF(Graphics, bool, FrameSkip) {
+  if (value.has_value()) {
+    frame_skip_ = *value;
+    return std::nullopt;
+  } else {
+    return frame_skip_;
+  }
+}
+
 void Graphics::PresentInternal() {
   auto surface = GPUDevice::Get().swapchain();
 
@@ -428,19 +416,12 @@ void Graphics::PresentInternal() {
     if (event.type == SDL_EVENT_QUIT)
       throw Exception(Exception::kExitError, {});
 
-    /* A resize of the window changes the size the swapchain is backed by, and
-       WebGPU requires the surface to be reconfigured against it before the
-       next GetCurrentTexture, otherwise the frame is presented at the old
-       size. Only the pixel size matters here: it follows the density of the
-       display, see the window flags in the constructor. */
+    // Reconfigure the surface on resize, before the next GetCurrentTexture.
     if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
       present_.configured = false;
   }
 
-  /* The surface is configured once, and again after the screen or the window
-     was resized. Its size is the physical pixel size of the window, which is
-     larger than the logical size of the screen on a high density display; the
-     screen texture is stretched over it by the present quad. */
+  // Configure the surface at the window's physical pixel size.
   if (!present_.configured) {
     int pixel_width = Width();
     int pixel_height = Height();
@@ -449,14 +430,7 @@ void Graphics::PresentInternal() {
     wgpu::SurfaceCapabilities capabilities;
     surface.GetCapabilities(GPUDevice::Get().adapter(), &capabilities);
 
-    /* Every render target of the engine stores RGBA8Unorm and holds sRGB
-       encoded bytes, see kFS_PresentBase. Presenting those bytes into an
-       *Srgb swapchain would let the hardware encode them a second time and
-       wash the picture out towards white (the "everything looks too bright"
-       symptom). Preferring an *Srgb target and decoding once in the present
-       fragment stage keeps the two transfers exact inverses, so the pixel is
-       reproduced as authored while staying in the hardware's preferred sRGB
-       pipeline. */
+    // Prefer a *Srgb target: decode once in the present stage, so the hardware does not double-encode.
     present_.format = capabilities.formats[0];
     for (uint32_t i = 0; i < capabilities.formatCount; ++i) {
       const auto candidate = capabilities.formats[i];
@@ -482,9 +456,7 @@ void Graphics::PresentInternal() {
 
     wgpu::PrimitiveState primitive;
     primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-    /* On an sRGB target the present decodes the encoded texel back to linear so
-       the hardware encode cancels it, see kFS_PresentBase. A non sRGB target
-       has nothing to cancel, so the plain texture stage is used there. */
+    // sRGB target decodes back to linear; a non-sRGB one uses the plain stage.
     present_.pipeline =
         present_.srgb_target
             ? ShaderSet::Get().shader.present_base.MakeState(
@@ -514,12 +486,7 @@ void Graphics::PresentInternal() {
       break;
   }
 
-  /* The scene uniform of the screen maps its own logical size over the whole
-     render target, see Bitmap::CreateGroup, so the quad is emitted in screen
-     coordinates: a quad covering the screen covers the surface as well, at any
-     pixel density. Using the surface size here would overshoot whenever the
-     window is backed by more pixels than the screen is wide, which is exactly
-     what the high density flag asks for. */
+  // The present quad is emitted in screen coordinates, at any pixel density.
   present_.primitive.EmitQuad(RectI(0, 0, Width(), Height()), RectI(0, 0, 1, 1),
                               glm::vec4(1.0f));
   const std::uint32_t vertex_count = present_.primitive.Upload();

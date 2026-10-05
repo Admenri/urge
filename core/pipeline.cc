@@ -24,16 +24,16 @@
 
 #include <algorithm>
 #include <cctype>
-#include <map>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "core/exception.h"
 
 namespace urge {
 
-static const char kVS_TransformBase[] = R"(#version 450
+namespace {
+
+// Shared vertex stage of every built in pipeline.
+const char kVS_TransformBase[] = R"(#version 450
 layout(location = 0) in vec4 in_position;
 layout(location = 1) in vec2 in_texcoord;
 layout(location = 2) in vec4 in_color;
@@ -56,7 +56,8 @@ void main() {
 }
 )";
 
-static const char kFS_TextureBase[] = R"(#version 450
+// Samples the texture and multiplies by the vertex color.
+const char kFS_TextureBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -70,22 +71,9 @@ void main() {
 }
 )";
 
-/* The fragment stage of the present pass, see Graphics::PresentInternal.
-
-   Every render target of this engine stores RGBA8Unorm, and the authored color
-   values are already sRGB encoded (the source bitmaps come from SDL surfaces
-   whose bytes are sRGB). The swapchain of the window, on the other hand, is
-   usually an *Srgb format on the desktop, so the hardware applies the linear ->
-   sRGB transfer function to whatever the fragment stage writes. Feeding it the
-   already encoded bytes therefore encodes them a second time, which washes the
-   picture out towards white.
-
-   This stage undoes the encoding once -- it decodes the sampled (already
-   encoded) texel back to linear -- so the encode the sRGB target performs
-   cancels out and the pixel reaches the screen exactly as it was authored.
-   The decode is the exact piecewise sRGB EOTF rather than the gamma 2.2
-   approximation, so mid tones stay where the artists put them. */
-static const char kFS_PresentBase[] = R"(#version 450
+// Present stage: decodes sRGB back to linear so an *Srgb swapchain does not
+// encode the already encoded texel a second time.
+const char kFS_PresentBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -106,7 +94,8 @@ void main() {
 }
 )";
 
-static const char kFS_ColorBase[] = R"(#version 450
+// Outputs the vertex color, no texture.
+const char kFS_ColorBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -117,7 +106,8 @@ void main() {
 }
 )";
 
-static const char kFS_TintBase[] = R"(#version 450
+// Texture with the Color/Tone tint of a sprite-less draw.
+const char kFS_TintBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -144,7 +134,8 @@ void main() {
 }
 )";
 
-static const char kFS_SpriteBase[] = R"(#version 450
+// Texture with the tint and the bush depth/opacity of a Sprite.
+const char kFS_SpriteBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -178,13 +169,9 @@ void main() {
 }
 )";
 
-/* A plane shows its bitmap tiled over the whole render target instead of the
-   single copy of it a sprite reads, so the texture coordinate of a pixel runs
-   over every tile: the vertex stage carries the coordinate of the plane's
-   surface, which grows past one over a tile, and the fraction of it is what the
-   sampler is asked for. The tint of a Color and a Tone attribute applies the
-   way it does to a sprite. */
-static const char kFS_PlaneBase[] = R"(#version 450
+// Tiles the texture over the whole target: the fractional part of the surface
+// coordinate is what the sampler reads.
+const char kFS_PlaneBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -212,7 +199,9 @@ void main() {
 }
 )";
 
-static const char kFS_TransitionAlpha[] = R"(#version 450
+// Cross-fades the frozen scene into the current one by the progress in
+// v_color.a.
+const char kFS_TransitionAlpha[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -231,7 +220,8 @@ void main() {
 }
 )";
 
-static const char kFS_TransitionMap[] = R"(#version 450
+// Cross-fades the two scenes through a mapping texture, spread by v_color.r.
+const char kFS_TransitionMap[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
 
@@ -257,8 +247,114 @@ void main() {
 }
 )";
 
+// Marks the pixels a fragment covers into the stencil.
+wgpu::DepthStencilState* GetStencilWriteState() {
+  static wgpu::DepthStencilState state{
+      .format = wgpu::TextureFormat::Depth24PlusStencil8,
+      .depthWriteEnabled = false,
+      .depthCompare = wgpu::CompareFunction::Always,
+      .stencilFront = {.compare = wgpu::CompareFunction::Always,
+                       .failOp = wgpu::StencilOperation::Keep,
+                       .depthFailOp = wgpu::StencilOperation::Keep,
+                       .passOp = wgpu::StencilOperation::Replace},
+      .stencilBack = {.compare = wgpu::CompareFunction::Always,
+                      .failOp = wgpu::StencilOperation::Keep,
+                      .depthFailOp = wgpu::StencilOperation::Keep,
+                      .passOp = wgpu::StencilOperation::Replace},
+      .stencilReadMask = 0xFF,
+      .stencilWriteMask = 0xFF};
+  return &state;
+}
+
+// Clips a fragment to the region another pass marked, without writing.
+wgpu::DepthStencilState* GetStencilTestState() {
+  static wgpu::DepthStencilState state{
+      .format = wgpu::TextureFormat::Depth24PlusStencil8,
+      .depthWriteEnabled = false,
+      .depthCompare = wgpu::CompareFunction::Always,
+      .stencilFront = {.compare = wgpu::CompareFunction::Equal,
+                       .failOp = wgpu::StencilOperation::Keep,
+                       .depthFailOp = wgpu::StencilOperation::Keep,
+                       .passOp = wgpu::StencilOperation::Keep},
+      .stencilBack = {.compare = wgpu::CompareFunction::Equal,
+                      .failOp = wgpu::StencilOperation::Keep,
+                      .depthFailOp = wgpu::StencilOperation::Keep,
+                      .passOp = wgpu::StencilOperation::Keep},
+      .stencilReadMask = 0xFF,
+      .stencilWriteMask = 0x00};
+  return &state;
+}
+
+std::string_view Trim(std::string_view text) {
+  constexpr std::string_view kWhitespace = " \t\r\n";
+  const size_t begin = text.find_first_not_of(kWhitespace);
+  if (begin == std::string_view::npos)
+    return {};
+  const size_t end = text.find_last_not_of(kWhitespace);
+  return text.substr(begin, end - begin + 1);
+}
+
+std::string Lower(std::string_view text) {
+  std::string lower(text);
+  std::transform(
+      lower.begin(), lower.end(), lower.begin(),
+      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return lower;
+}
+
+template <typename Ty>
+struct BlendName {
+  const char* name;
+  Ty value;
+};
+
+constexpr BlendName<wgpu::BlendFactor> kBlendFactors[] = {
+    {"zero", wgpu::BlendFactor::Zero},
+    {"one", wgpu::BlendFactor::One},
+    {"src", wgpu::BlendFactor::Src},
+    {"one-minus-src", wgpu::BlendFactor::OneMinusSrc},
+    {"src-alpha", wgpu::BlendFactor::SrcAlpha},
+    {"one-minus-src-alpha", wgpu::BlendFactor::OneMinusSrcAlpha},
+    {"dst", wgpu::BlendFactor::Dst},
+    {"one-minus-dst", wgpu::BlendFactor::OneMinusDst},
+    {"dst-alpha", wgpu::BlendFactor::DstAlpha},
+    {"one-minus-dst-alpha", wgpu::BlendFactor::OneMinusDstAlpha},
+    {"src-alpha-saturated", wgpu::BlendFactor::SrcAlphaSaturated},
+    {"constant", wgpu::BlendFactor::Constant},
+    {"one-minus-constant", wgpu::BlendFactor::OneMinusConstant},
+    {"src1", wgpu::BlendFactor::Src1},
+    {"one-minus-src1", wgpu::BlendFactor::OneMinusSrc1},
+    {"src1-alpha", wgpu::BlendFactor::Src1Alpha},
+    {"one-minus-src1-alpha", wgpu::BlendFactor::OneMinusSrc1Alpha},
+};
+
+constexpr BlendName<wgpu::BlendOperation> kBlendOperations[] = {
+    {"add", wgpu::BlendOperation::Add},
+    {"subtract", wgpu::BlendOperation::Subtract},
+    {"reverse-subtract", wgpu::BlendOperation::ReverseSubtract},
+    {"min", wgpu::BlendOperation::Min},
+    {"max", wgpu::BlendOperation::Max},
+};
+
+wgpu::BlendFactor ReadBlendFactor(const std::string& name) {
+  for (const BlendName<wgpu::BlendFactor>& entry : kBlendFactors)
+    if (name == entry.name)
+      return entry.value;
+  throw Exception(Exception::kRGSSError,
+                  "effect: '{}' is not a blend factor name", name);
+}
+
+wgpu::BlendOperation ReadBlendOperation(const std::string& name) {
+  for (const BlendName<wgpu::BlendOperation>& entry : kBlendOperations)
+    if (name == entry.name)
+      return entry.value;
+  throw Exception(Exception::kRGSSError,
+                  "effect: '{}' is not a blend operation name", name);
+}
+
+}  // namespace
+
 wgpu::BlendState* GetBlendState(BlendType type) {
-  // BLEND_NORMAL: premultiplied alpha, src + dst * (1 - srcAlpha)
   static wgpu::BlendState normal{
       .color = {.operation = wgpu::BlendOperation::Add,
                 .srcFactor = wgpu::BlendFactor::One,
@@ -266,7 +362,6 @@ wgpu::BlendState* GetBlendState(BlendType type) {
       .alpha = {.operation = wgpu::BlendOperation::Add,
                 .srcFactor = wgpu::BlendFactor::One,
                 .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha}};
-  // BLEND_ADDITION: src + dst
   static wgpu::BlendState addition{
       .color = {.operation = wgpu::BlendOperation::Add,
                 .srcFactor = wgpu::BlendFactor::One,
@@ -274,7 +369,6 @@ wgpu::BlendState* GetBlendState(BlendType type) {
       .alpha = {.operation = wgpu::BlendOperation::Add,
                 .srcFactor = wgpu::BlendFactor::One,
                 .dstFactor = wgpu::BlendFactor::One}};
-  // BLEND_SUBTRACT: dst - src
   static wgpu::BlendState subtract{
       .color = {.operation = wgpu::BlendOperation::ReverseSubtract,
                 .srcFactor = wgpu::BlendFactor::One,
@@ -296,59 +390,15 @@ wgpu::BlendState* GetBlendState(BlendType type) {
   }
 }
 
-/*! The stencil state of a pass which marks the pixels it covers: the stencil
-    test never rejects a fragment, the fragment replaces whatever the stencil
-    held with the value a node marks its region with, and the stencil is
-    written wherever the fragment lands. The depth of the attachment is unused
-    by the engine, so the depth test always passes and writes nothing. */
-wgpu::DepthStencilState* GetStencilWriteState() {
-  static wgpu::DepthStencilState state{
-      .format = wgpu::TextureFormat::Depth24PlusStencil8,
-      .depthWriteEnabled = false,
-      .depthCompare = wgpu::CompareFunction::Always,
-      .stencilFront = {.compare = wgpu::CompareFunction::Always,
-                       .failOp = wgpu::StencilOperation::Keep,
-                       .depthFailOp = wgpu::StencilOperation::Keep,
-                       .passOp = wgpu::StencilOperation::Replace},
-      .stencilBack = {.compare = wgpu::CompareFunction::Always,
-                      .failOp = wgpu::StencilOperation::Keep,
-                      .depthFailOp = wgpu::StencilOperation::Keep,
-                      .passOp = wgpu::StencilOperation::Replace},
-      .stencilReadMask = 0xFF,
-      .stencilWriteMask = 0xFF};
-  return &state;
+wgpu::PrimitiveState GetDefaultPrimitiveState() {
+  wgpu::PrimitiveState primitive;
+  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+  return primitive;
 }
 
-/*! The stencil state of a pass which is clipped to the region another pass
-    marked: a fragment passes only where the stencil carries the reference
-    value the marking pass wrote, and the stencil is left alone. */
-wgpu::DepthStencilState* GetStencilTestState() {
-  static wgpu::DepthStencilState state{
-      .format = wgpu::TextureFormat::Depth24PlusStencil8,
-      .depthWriteEnabled = false,
-      .depthCompare = wgpu::CompareFunction::Always,
-      .stencilFront = {.compare = wgpu::CompareFunction::Equal,
-                       .failOp = wgpu::StencilOperation::Keep,
-                       .depthFailOp = wgpu::StencilOperation::Keep,
-                       .passOp = wgpu::StencilOperation::Keep},
-      .stencilBack = {.compare = wgpu::CompareFunction::Equal,
-                      .failOp = wgpu::StencilOperation::Keep,
-                      .depthFailOp = wgpu::StencilOperation::Keep,
-                      .passOp = wgpu::StencilOperation::Keep},
-      .stencilReadMask = 0xFF,
-      .stencilWriteMask = 0x00};
-  return &state;
-}
-
-/*! The stencil state of a pipeline which draws into a pass that carries a
-    depth-stencil attachment but does not care about it: the depth test always
-    passes without writing and the stencil is read and written with a mask of
-    zero, so the attachment is left exactly as it was.
-
-    Every frame of this engine binds the depth-stencil texture of its render
-    target, see Node::Render, and WebGPU requires a pipeline which is used in
-    a pass to declare a state for every attachment of that pass. This is the
-    state of every pipeline which is not one of the two stencil users above. */
+// The state of a pipeline used in a pass that carries a depth-stencil
+// attachment it does not care about: the test always passes and the masks are
+// zero, so the attachment is left as it was.
 wgpu::DepthStencilState* GetDepthStencilState() {
   static wgpu::DepthStencilState state{
       .format = wgpu::TextureFormat::Depth24PlusStencil8,
@@ -367,98 +417,11 @@ wgpu::DepthStencilState* GetDepthStencilState() {
   return &state;
 }
 
-/* ----- The blend state of a user authored Effect ----- */
-
-namespace {
-
-//! Removes the leading and trailing whitespace of a field.
-std::string_view Trim(std::string_view text) {
-  constexpr std::string_view kWhitespace = " \t\r\n";
-  const size_t begin = text.find_first_not_of(kWhitespace);
-  if (begin == std::string_view::npos)
-    return {};
-  const size_t end = text.find_last_not_of(kWhitespace);
-  return text.substr(begin, end - begin + 1);
-}
-
-//! The ASCII lowercase copy of a name, so the keys and the values are matched
-//! without regard for case.
-std::string Lower(std::string_view text) {
-  std::string lower(text);
-  std::transform(
-      lower.begin(), lower.end(), lower.begin(),
-      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  return lower;
-}
-
-//! One name of the blend grammar together with what it selects.
-template <typename Ty>
-struct BlendName {
-  const char* name;
-  Ty value;
-};
-
-//! The blend factors the "src"/"dst" style keys accept, in the spelling of the
-//! GLSL/WebGPU factor each names.
-constexpr BlendName<wgpu::BlendFactor> kBlendFactors[] = {
-    {"zero", wgpu::BlendFactor::Zero},
-    {"one", wgpu::BlendFactor::One},
-    {"src", wgpu::BlendFactor::Src},
-    {"one-minus-src", wgpu::BlendFactor::OneMinusSrc},
-    {"src-alpha", wgpu::BlendFactor::SrcAlpha},
-    {"one-minus-src-alpha", wgpu::BlendFactor::OneMinusSrcAlpha},
-    {"dst", wgpu::BlendFactor::Dst},
-    {"one-minus-dst", wgpu::BlendFactor::OneMinusDst},
-    {"dst-alpha", wgpu::BlendFactor::DstAlpha},
-    {"one-minus-dst-alpha", wgpu::BlendFactor::OneMinusDstAlpha},
-    {"src-alpha-saturated", wgpu::BlendFactor::SrcAlphaSaturated},
-    {"constant", wgpu::BlendFactor::Constant},
-    {"one-minus-constant", wgpu::BlendFactor::OneMinusConstant},
-    {"src1", wgpu::BlendFactor::Src1},
-    {"one-minus-src1", wgpu::BlendFactor::OneMinusSrc1},
-    {"src1-alpha", wgpu::BlendFactor::Src1Alpha},
-    {"one-minus-src1-alpha", wgpu::BlendFactor::OneMinusSrc1Alpha},
-};
-
-//! The blend operations an "op" key accepts.
-constexpr BlendName<wgpu::BlendOperation> kBlendOperations[] = {
-    {"add", wgpu::BlendOperation::Add},
-    {"subtract", wgpu::BlendOperation::Subtract},
-    {"reverse-subtract", wgpu::BlendOperation::ReverseSubtract},
-    {"min", wgpu::BlendOperation::Min},
-    {"max", wgpu::BlendOperation::Max},
-};
-
-//! Reads a blend factor of the grammar, or throws when \p name is not one.
-wgpu::BlendFactor ReadBlendFactor(const std::string& name) {
-  for (const BlendName<wgpu::BlendFactor>& entry : kBlendFactors)
-    if (name == entry.name)
-      return entry.value;
-  throw Exception(Exception::kRGSSError,
-                  "effect: '{}' is not a blend factor name", name);
-}
-
-//! Reads a blend operation of the grammar, or throws when \p name is not one.
-wgpu::BlendOperation ReadBlendOperation(const std::string& name) {
-  for (const BlendName<wgpu::BlendOperation>& entry : kBlendOperations)
-    if (name == entry.name)
-      return entry.value;
-  throw Exception(Exception::kRGSSError,
-                  "effect: '{}' is not a blend operation name", name);
-}
-
-}  // namespace
-
-wgpu::PrimitiveState GetDefaultPrimitiveState() {
-  wgpu::PrimitiveState primitive;
-  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-  return primitive;
-}
-
+// A preset name, or a ";" separated "key=value" list that overrides the
+// premultiplied blend of BLEND_NORMAL.
 std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   const std::string text = Lower(Trim(states));
 
-  // An empty description, or one of the aliases of the default blend
   if (text.empty() || text == "normal" || text == "alpha" ||
       text == "premultiplied")
     return *GetBlendState(BLEND_NORMAL);
@@ -470,8 +433,6 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   if (text == "subtract" || text == "sub")
     return *GetBlendState(BLEND_SUBTRACT);
 
-  /* A field list overrides the fields of the default blend, so an author only
-     writes what differs from the plain premultiplied composite. */
   wgpu::BlendState state = *GetBlendState(BLEND_NORMAL);
 
   const std::string_view view(text);
@@ -520,121 +481,102 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   return state;
 }
 
-/* ----- TextureBase ----- */
-
 TextureBase::TextureBase()
     : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}) {}
 
-/* ----- PresentBase ----- */
-
-/* The pipeline of the present pass, see Graphics::PresentInternal: the plain
-   transform vertex stage and a fragment stage which cancels the extra sRGB
-   encode of an *Srgb swapchain, see kFS_PresentBase. */
 PresentBase::PresentBase()
     : Pipeline(kVS_TransformBase, kFS_PresentBase, {{0, 1, 2}}) {}
 
-/*! The same shaders as TextureBase, but the object data of set 1 is staged in
-    the pool of the frame and bound with a dynamic offset, which is what the
-    nodes of a window read, see TextureBaseDynamic. */
 TextureBaseDynamic::TextureBaseDynamic()
     : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}, {1}) {}
-
-/* ----- ColorBase ----- */
 
 ColorBase::ColorBase()
     : Pipeline(kVS_TransformBase, kFS_ColorBase, {{0, 1, 2}}) {}
 
-/* ----- TintBase ----- */
-
-/* The object transform of a tinted draw is uploaded in bulk, so the set which
-   holds ObjectData is bound with a dynamic offset. */
+// The object transform is uploaded in bulk, so set 1 is bound with a dynamic
+// offset.
 TintBase::TintBase()
     : Pipeline(kVS_TransformBase, kFS_TintBase, {{0, 1, 2}}, {1}) {}
 
-/* ----- SpriteBase ----- */
-
-/* The object transform and the sprite parameter of every sprite of a frame are
-   staged in one buffer each, so both sets are bound with a dynamic offset: the
-   parameter is what a batch of sprites reads per sprite out of the same buffer,
-   see UniformManager. */
+// Object data and the sprite parameter are both staged in a pooled buffer, so
+// sets 1 and 3 carry a dynamic offset.
 SpriteBase::SpriteBase()
     : Pipeline(kVS_TransformBase, kFS_SpriteBase, {{0, 1, 2}}, {1, 3}) {}
 
-/* ----- PlaneBase ----- */
-
-/* A plane keeps its object transform in the pool of the frame and the two
-   values of its tint in a buffer of its own: a scene holds a handful of planes
-   and a plane is drawn with one quad, so there is nothing to batch and the
-   object set is the only one which travels with a dynamic offset. */
+// A plane keeps its object transform in the frame pool, so only set 1 is
+// dynamic.
 PlaneBase::PlaneBase()
     : Pipeline(kVS_TransformBase, kFS_PlaneBase, {{0, 1, 2}}, {1}) {}
-
-/* ----- TransitionAlpha ----- */
 
 TransitionAlpha::TransitionAlpha()
     : Pipeline(kVS_TransformBase, kFS_TransitionAlpha, {{0, 1, 2}}) {}
 
-/* ----- TransitionVague ----- */
-
 TransitionVague::TransitionVague()
     : Pipeline(kVS_TransformBase, kFS_TransitionMap, {{0, 1, 2}}) {}
 
-/* ----- ShaderSet ----- */
-
 ShaderSet::ShaderSet() : shader() {
-  // The built in pipelines and a user authored Effect share these two defaults
   wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
   wgpu::TextureFormat target = kColorTargetFormat;
-
-  /* Every pass of this engine carries the depth-stencil texture of its
-     render target, see Node::Render, so every pipeline has to declare a state
-     for it: GetDepthStencilState() returns the state of a pipeline which
-     ignores the attachment. */
   wgpu::DepthStencilState* depth_stencil = GetDepthStencilState();
 
-  state.texture_noblend = shader.texture_base.MakeState(
-      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
-  state.texture_pma = shader.texture_base.MakeState(
+  const std::vector<BlendType> blend_types = {BLEND_NONE, BLEND_NORMAL,
+                                              BLEND_ADDITION, BLEND_SUBTRACT};
+
+  state.bitmap.texture_pma = shader.texture_base.MakeState(
       primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
-  state.color_noblend = shader.color_base.MakeState(
-      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
-  state.color_pma = shader.color_base.MakeState(
-      primitive, *depth_stencil,
-      {wgpu::ColorTargetState{.format = target,
-                              .blend = GetBlendState(BLEND_NORMAL)}});
-  state.texture_dynamic_noblend = shader.texture_base_dynamic.MakeState(
-      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
-  state.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(
-      primitive, *depth_stencil,
-      {wgpu::ColorTargetState{.format = target,
-                              .blend = GetBlendState(BLEND_NORMAL)}});
-  for (auto it : {BLEND_NONE, BLEND_NORMAL, BLEND_ADDITION, BLEND_SUBTRACT}) {
-    state.tint_blends[it] = shader.tint_base.MakeState(
-        primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
-    state.sprite_blends[it] = shader.sprite_base.MakeState(
-        primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
-    state.plane_blends[it] = shader.plane_base.MakeState(
-        primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
-    state.geometry_blends[it] = shader.texture_base_dynamic.MakeState(
-        primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(it)}});
-  }
-  state.transition_alpha = shader.transition_alpha.MakeState(
-      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
-  state.transition_vague = shader.transition_vague.MakeState(
+  state.bitmap.color_noblend = shader.color_base.MakeState(
       primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
 
-  state.texture_stencil_write = shader.texture_base_dynamic.MakeState(
+  state.graphics.color_pma = shader.color_base.MakeState(
+      primitive, *depth_stencil,
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
+  state.graphics.transition_alpha = shader.transition_alpha.MakeState(
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
+  state.graphics.transition_vague = shader.transition_vague.MakeState(
+      primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
+
+  for (BlendType type : blend_types)
+    state.geometry.geometry_blends[type] = shader.texture_base_dynamic.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+
+  for (BlendType type : blend_types)
+    state.viewport.tint_blends[type] = shader.tint_base.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+
+  for (BlendType type : blend_types)
+    state.window.tint_blends[type] = shader.tint_base.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+  state.window.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(
+      primitive, *depth_stencil,
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
+  state.window.texture_stencil_write = shader.texture_base_dynamic.MakeState(
       primitive, *GetStencilWriteState(),
       {wgpu::ColorTargetState{.format = target,
                               .writeMask = wgpu::ColorWriteMask::None}});
-  state.texture_stencil_test = shader.texture_base_dynamic.MakeState(
+  state.window.texture_stencil_test = shader.texture_base_dynamic.MakeState(
       primitive, *GetStencilTestState(),
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
+
+  for (BlendType type : blend_types)
+    state.sprite.sprite_blends[type] = shader.sprite_base.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+
+  for (BlendType type : blend_types)
+    state.plane.plane_blends[type] = shader.plane_base.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+
+  state.tilemap.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(
+      primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
 }

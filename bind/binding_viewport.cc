@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Viewport  (core/viewport.h:33-48)
+// Viewport  (core/viewport.h:33-59)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Viewport, Node);

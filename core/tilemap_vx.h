@@ -40,16 +40,8 @@ namespace urge {
 
 class TilemapVX;
 
-/*! The layer of a TilemapVX which holds the tiles drawn over the player. RGSS3
-    splits the O(2) region between the map and this layer, so the tiles of the
-    map whose flag carries the 0x10 bit are drawn by a child node whose Z is 200
-    above the tilemap, which is what puts an object standing on such a tile
-    between the two layers.
-
-    The node draws nothing of its own: the tilemap collects and emits the tiles
-    of both of its layers once per frame, this node only triggers the draw of
-    the upper one when its turn in the render order arrives, see
-    TilemapVX::Prepare() and TilemapVX::DrawAboveLayer(). */
+//! Layer of a TilemapVX holding the tiles above the player (flag 0x10), drawn by
+//! a child node whose Z is 200 above the tilemap.
 class TilemapVXAbove : public Node {
  public:
   TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport);
@@ -62,42 +54,43 @@ class TilemapVXAbove : public Node {
   TilemapVX* parent_ = nullptr;
 };
 
-/*! The tilemap of RGSS2/RGSS3: the drawing of a Table of tile ids out of five
-    autotile bitmaps and one tileset.
-
-    The class is a Node and no Viewport of its own: RGSS places a tilemap inside
-    the viewport it was given and paints the region of that viewport, so the
-    class reads the rect and the origin of the viewport to know what to draw and
-    leaves the clipping of it to the viewport, see UpdateViewport(). A tilemap
-    without a viewport covers the whole screen.
-
-    A tilemap does not take part in the transform of the node hierarchy: the
-    tiles of a map sit on the render target at whole pixels, so a position or a
-    scale of the tilemap would only move them off the grid. The object transform
-    every tile is drawn with is therefore the identity and the tiles place
-    themselves by their vertex position, the same way a Plane places its tiles,
-    see BuildLayer(). */
+//! The tilemap of RGSS2/RGSS3: draws a Table of tile ids out of five autotile
+//! bitmaps and one tileset, inside the viewport it is given (without one it covers
+//! the whole screen). Its tiles place themselves by vertex position, not transform.
+URGE_BINDING()
 class TilemapVX : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   TilemapVX(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~TilemapVX() override;
 
+  URGE_BINDING()
   void Update();
 
+  URGE_BINDING()
   void SetBitmap(int32_t index, RefPtr<Bitmap> bitmap);
+  URGE_BINDING()
   RefPtr<Bitmap> GetBitmap(int32_t index);
 
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(bool, Visible) override;
+  URGE_BINDING()
   ATTR(int32_t, Z) override;
+  URGE_BINDING()
   ATTR(RefPtr<Table>, MapData);
+  URGE_BINDING()
   ATTR(RefPtr<Table>, FlashData);
+  URGE_BINDING()
   ATTR(RefPtr<Table>, Flags);
+  URGE_BINDING()
   ATTR(RefPtr<Table>, Passages);
+  URGE_BINDING()
   ATTR(int32_t, OX);
+  URGE_BINDING()
   ATTR(int32_t, OY);
-  /*-export.end-*/
 
  private:
   friend class TilemapVXAbove;

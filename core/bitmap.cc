@@ -43,11 +43,8 @@ static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 namespace {
 
-//! Converts an RGSS color (components in [0, 255]) into the normalized and
-//! premultiplied vertex color the engine shaders expect: the blend state of the
-//! engine is BlendType::kNormal (One / InvSrcAlpha) and bitmap contents are
-//! stored with premultiplied alpha, so the RGB components have to be multiplied
-//! with the alpha channel.
+//! RGSS color (components in [0, 255]) as the engine's normalized premultiplied
+//! vertex color, see PrimitiveEmitter.
 glm::vec4 PremultiplyColor(const glm::vec4& color) {
   glm::vec4 result = color / 255.0f;
   result.r *= result.a;
@@ -77,16 +74,7 @@ glm::vec4 PremultiplyOpacity(int32_t opacity) {
   return glm::vec4(value, value, value, value);
 }
 
-/*! Turns a rendered text surface into a texture of this class.
- *
- *  The surface comes back from Font::RenderText with straight alpha while the
- *  blend state of the engine (BlendType::kNormal) expects premultiplied
- * content, so the alpha is folded into the color channels here -- the same
- * conversion CreateInternal() applies to a loaded image.
- *
- *  \returns the texture and its view, both empty when the surface is
- * degenerate.
- */
+//! Texture of a rendered text surface, folding its straight alpha into premultiplied.
 std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
     SDL_Surface* surface) {
   if (surface->w <= 0 || surface->h <= 0)
@@ -122,12 +110,7 @@ std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
   return {texture, texture.CreateView(nullptr)};
 }
 
-/*! Computes where a text surface lands inside a layout rectangle.
- *
- *  The horizontal placement follows the RGSS alignment (0 left, 1 center, 2
- *  right) and the vertical placement is always centered, which is the behaviour
- *  the reference runtime has and what games were written against.
- */
+//! Where a text surface lands in a layout rectangle: RGSS alignment, vertically centered.
 RectI AlignTextRect(const RectI& region,
                     int32_t text_width,
                     int32_t text_height,
@@ -148,11 +131,8 @@ RectI AlignTextRect(const RectI& region,
   return RectI(x, y, text_width, text_height);
 }
 
-//! Converts one row of premultiplied pixels into straight ones, in place, i.e.
-//! the inverse of the SDL_PremultiplyAlpha() conversion used the other way
-//! around: the color channels are divided by the alpha channel again.
-//! \remarks The internal pixel format is SDL_PIXELFORMAT_ABGR8888, so the bytes
-//! of one pixel are red, green, blue and alpha.
+//! Converts one row of premultiplied pixels to straight, in place; the inverse
+//! of the SDL_PremultiplyAlpha() conversion.
 void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   for (int32_t x = 0; x < width; ++x, pixels += 4) {
     const std::uint32_t alpha = pixels[3];
@@ -203,12 +183,8 @@ std::string_view DescribeMapStatus(const MapResult& mapping) {
   }
 }
 
-//! Reads back the width x height texels of texture which start at (x, y) into
-//! host memory. A texture itself can not be mapped, so the region is copied
-//! into a mappable staging buffer first, which is then mapped and waited for.
-//! The returned pixels are packed one after another, four bytes per pixel.
-//! \remarks The textures of this class use RGBA8Unorm, so the bytes of a pixel
-//! are red, green, blue and alpha, and they store premultiplied alpha.
+//! Reads a width x height region of a texture back into host memory, through a
+//! staging buffer (a texture itself can not be mapped).
 std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
                                             int32_t x,
                                             int32_t y,
@@ -273,16 +249,10 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   auto future =
       staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
 
-  /* GPUDevice::WaitAny cannot be used here: wgpu-native does not implement the
-     future API yet, its wgpuBufferMapAsync() ends with a "TODO: Properly handle
-     futures" and returns an empty future, so there is nothing to wait for and
-     the callback above would never run. Polling the device blocks on the queue
-     and is what completes the mapping. */
+  // wgpu-native has no future API; polling the device completes the mapping.
   gpu.WaitAny(future);
 
-  /* GetMappedRange() is what raises the "buffer is not mapped" validation
-     error, and wgpu-native panics on it instead of reporting it, so the status
-     of the mapping has to be checked before the pointer is asked for. */
+  // Check the mapping status first: wgpu-native panics instead of reporting on GetMappedRange.
   if (mapping.status != WGPUMapAsyncStatus_Success) {
     throw Exception(Exception::kRGSSError,
                     "failed to map the staging buffer of a texture read back, "
@@ -398,9 +368,7 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  /* The quad is one batch of the emitter, which writes it into its own vertex
-     buffer and drops it afterwards, so this operation does not build a buffer
-     by hand, see PrimitiveEmitter::Upload(). */
+  // One emitter batch, uploaded and dropped on its own, see PrimitiveEmitter::Upload().
   const std::uint32_t vertex_count =
       primitive_
           .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
@@ -410,7 +378,7 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   auto encoder = g_device.CreateCommandEncoder(nullptr);
   auto pass = BeginRendering(encoder);
   {
-    auto pipeline = ShaderSet::Get().state.texture_pma;
+    auto pipeline = ShaderSet::Get().state.bitmap.texture_pma;
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
@@ -458,10 +426,7 @@ void Bitmap::GradientFillRect(int32_t x,
   if (!color1 || !color2)
     throw Exception(Exception::kRGSSError, "invalid color value.");
 
-  /* PremultiplyColor() takes an RGSS color, i.e. components in [0, 255], and
-     normalizes them itself, so the raw data of the color is what it expects --
-     Normalize() first would divide by 255 twice and every fill would come out
-     almost black. */
+  // PremultiplyColor() normalizes itself, so pass the raw [0, 255] data.
   auto color1_norm = PremultiplyColor(color1->data);
   auto color2_norm = PremultiplyColor(color2->data);
 
@@ -471,14 +436,13 @@ void Bitmap::GradientFillRect(int32_t x,
   else
     primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
                         color2_norm, color1_norm, color2_norm);
-  /* The quad is one batch of the emitter, which writes it into its own vertex
-     buffer and drops it afterwards, see PrimitiveEmitter::Upload(). */
+  // One emitter batch, uploaded and dropped on its own, see PrimitiveEmitter::Upload().
   const std::uint32_t vertex_count = primitive_.Upload();
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);
   auto pass = BeginRendering(encoder);
   {
-    auto pipeline = ShaderSet::Get().state.color_noblend;
+    auto pipeline = ShaderSet::Get().state.bitmap.color_noblend;
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
@@ -590,9 +554,7 @@ void Bitmap::DrawText(int32_t x,
   if (!text_texture || text_size.x <= 0 || text_size.y <= 0)
     return;
 
-  /* The glyphs are laid out inside the region, then the resulting rectangle is
-     clipped against the bitmap: a text that overhangs an edge is cut off there
-     rather than being refused whole, which is what RGSS does. */
+  // Lay the glyphs out, then clip the rectangle to the bitmap (RGSS behaviour).
   const RectI composed = AlignTextRect(RectI(x, y, width, height), text_size.x,
                                        text_size.y, align);
   const RectI blit_region =
@@ -625,7 +587,7 @@ void Bitmap::DrawText(int32_t x,
   sampler_desc.minFilter = wgpu::FilterMode::Linear;
   wgpu::Sampler sampler = g_device.CreateSampler(&sampler_desc);
 
-  auto pipeline = ShaderSet::Get().state.texture_pma;
+  auto pipeline = ShaderSet::Get().state.bitmap.texture_pma;
   wgpu::BindGroup text_group = util::CreateBindGroup(
       pipeline.GetBindGroupLayout(2),
       {{0, util::TextureViewSet(text_view)}, {1, util::SamplerSet(sampler)}});
@@ -701,9 +663,7 @@ void Bitmap::UpdateWithPalette(RefPtr<Palette> palette) {
     throw Exception(Exception::kRGSSError,
                     "palette data size mismatch bitmap size.");
 
-  /* A palette holds straight colors while the textures of the engine store
-     premultiplied ones. The pixels are converted into a scratch buffer, so the
-     palette of the caller is left untouched */
+  // Convert straight palette colors to premultiplied in a scratch buffer.
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
                                    data->h);
   SDL_PremultiplyAlpha(data->w, data->h, data->format, data->pixels,
@@ -819,10 +779,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
 
   // Uniform data
   SceneData scene_uniform = {};
-  /* The arguments are spelled as floats on purpose: glm::ortho is a template,
-     an integer argument list would deduce T = int and the divisions inside
-     the function would be carried out in integer arithmetic, which turns the
-     scales of the matrix into zero and collapses every vertex. */
+  // Floats on purpose: an int argument list would make glm::ortho divide as int.
   scene_uniform.view_proj_mat = glm::ortho(0.0f, static_cast<float>(size_.x),
                                            static_cast<float>(size_.y), 0.0f);
   ObjectData object_uniform = {};
@@ -859,7 +816,7 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
 }
 
 void Bitmap::CreateGroup() {
-  auto pipeline = ShaderSet::Get().state.texture_pma;
+  auto pipeline = ShaderSet::Get().state.bitmap.texture_pma;
 
   scene_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(0),
                                        {{0, util::BufferSet(scene_uniform_)}});

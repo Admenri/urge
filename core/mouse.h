@@ -34,46 +34,16 @@
 
 namespace urge {
 
-/**
-\brief The mouse device of the engine.
-
-The position the class reports is the one of the pointer inside the game
-screen, i.e. the logical size the scene is rendered at -- Graphics::Width() by
-Graphics::Height() -- and not the size of the window. A pointer at the centre
-of a window whose screen is 544x416 reads (272, 208), whatever the window is
-scaled to on the desktop: the window is normally a multiple of the screen by
-the density of the display, see Graphics, so SDL reports the pointer in window
-coordinates and the class maps them onto the screen. SetPosition() takes the
-same screen coordinates and maps them back.
-
-The state of the buttons is the one of the frame the last Update() closed: the
-events of a frame are folded into it once, at the end of the event pump of
-Graphics::PresentInternal(). Each query then reads:
-
-- IsDown() and IsUp() are the two edges of a button, true during one frame.
-- IsPress() is the held state, true for as long as the button is down.
-- IsDouble() is true during the frame a press happened which SDL counted as
-  the second of a double click.
-- IsMove() is a drag: the pointer moved during the frame while the given
-  button was held.
-
-ScrollX() and ScrollY() are the wheel offset of the frame in notches, which is
-1 or -1 for an ordinary wheel and may be a larger or a fractional value for a
-finer one.
-
-A Mouse is a singleton, see Singleton: it owns the one cursor and the one
-capture state of the window, so it is reached with Mouse::Get() and driven by
-the engine rather than constructed by a script.
-*/
+//! The mouse device. Its position is in game-screen coordinates (Graphics
+//! size), not window coordinates; its button state is the one the frame of the
+//! last Update() closed. A singleton, driven by the engine.
+URGE_BINDING()
 class Mouse : public Singleton<Mouse> {
  public:
   Mouse();
   ~Mouse();
 
-  /*! The buttons of SDL, the values the button arguments of the queries take.
-      They are not part of the export block -- the binding passes the number of
-      a button through -- and index 0 of a button table is unused because SDL
-      numbers its buttons from one. */
+  //! SDL button values; index 0 is unused because SDL numbers from one.
   enum Button {
     Left = SDL_BUTTON_LEFT,
     Middle = SDL_BUTTON_MIDDLE,
@@ -82,11 +52,14 @@ class Mouse : public Singleton<Mouse> {
     X2 = SDL_BUTTON_X2,
   };
 
-  /*-export.begin-*/
+  URGE_BINDING()
   void Update();
 
+  URGE_BINDING()
   float X();
+  URGE_BINDING()
   float Y();
+  URGE_BINDING()
   void SetPosition(float x, float y);
 
   URGE_BINDING(Name : "down?")
@@ -100,20 +73,23 @@ class Mouse : public Singleton<Mouse> {
   URGE_BINDING(Name : "move?")
   bool IsMove(int32_t button);
 
+  URGE_BINDING()
   int32_t ScrollX();
+  URGE_BINDING()
   int32_t ScrollY();
 
+  URGE_BINDING()
   void SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y);
 
+  URGE_BINDING()
   ATTR(bool, Capture);
+  URGE_BINDING()
   ATTR(bool, Visible);
-  /*-export.end-*/
 
   void ProcessEvents(SDL_Event* event);
 
  private:
-  //! A pointer position. The one of this class is in window coordinates, i.e.
-  //! the space SDL reports events in; the queries map it onto the screen.
+  //! A pointer position, in window coordinates (the space SDL reports in).
   struct Point {
     float x = 0.0f;
     float y = 0.0f;
@@ -121,22 +97,20 @@ class Mouse : public Singleton<Mouse> {
 
   //! The state of one button during one frame, see Update().
   struct ButtonState {
-    //! Held down right now, the state IsPress() reads.
+    //! Held down right now, read by IsPress().
     bool pressed = false;
-    //! Pressed down during the frame, the state IsDown() reads.
+    //! Pressed during the frame, read by IsDown().
     bool down = false;
-    //! Released during the frame, the state IsUp() reads.
+    //! Released during the frame, read by IsUp().
     bool up = false;
-    //! The click count of the press, 2 on the second one of a double click.
+    //! Click count of the press, 2 on the second one of a double click.
     int32_t clicks = 0;
   };
 
-  /*! The number of button slots. SDL numbers its buttons from one while the
-      tables below are indexed by that number, so the tables are one longer
-      than the number of buttons and index 0 is unused. */
+  //! Button slots; one longer than the buttons because index 0 is unused.
   static constexpr int32_t kButtonCount = SDL_BUTTON_X2 + 1;
 
-  //! Maps a window coordinate onto the game screen, see the class docs.
+  //! Maps a window coordinate onto the game screen.
   static Point WindowToScreenInternal(const Point& position);
   //! Maps a game screen coordinate back into a window coordinate.
   static Point ScreenToWindowInternal(const Point& position);
@@ -149,18 +123,18 @@ class Mouse : public Singleton<Mouse> {
   //! The state the queries read, see Update().
   std::array<ButtonState, kButtonCount> buttons_ = {};
 
-  //! The pointer position in window coordinates, i.e. the raw SDL space.
+  //! Pointer position in window coordinates, i.e. the raw SDL space.
   Point position_;
-  //! The position of the frame before, to tell whether the pointer moved.
+  //! Position of the frame before, to tell whether the pointer moved.
   Point last_position_;
   //! Whether the pointer moved during the frame, see Update().
   bool moved_ = false;
 
-  //! The wheel offset the events of the frame accumulated, in notches.
+  //! Wheel offset the events of the frame accumulated, in notches.
   Point scroll_;
-  //! The wheel offset accumulated up to the frame before.
+  //! Wheel offset accumulated up to the frame before.
   Point last_scroll_;
-  //! The wheel offset of the frame, i.e. scroll_ minus last_scroll_.
+  //! Wheel offset of the frame, i.e. scroll_ minus last_scroll_.
   Point scroll_delta_;
 
   //! The capture state the Capture attribute last asked SDL for.

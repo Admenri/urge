@@ -23,6 +23,7 @@
 #pragma once
 
 #include "core/bitmap.h"
+#include "core/definition.h"
 #include "core/node.h"
 #include "core/primitive.h"
 #include "core/uniform.h"
@@ -31,105 +32,73 @@
 
 namespace urge {
 
-/**
-\brief Window of RGSS3 (VX / VXA): a nine-slice frame, an inner background,
-a cursor frame, scroll arrows, a pause animation and the contents bitmap.
-
-The window is one node of the tree. Its whole geometry is a handful of quads
-of one windowskin bitmap, so every part of it is emitted into the vertex batch
-of the frame. The reference renderer draws the background of the window
-through a tint shader and every other part of it as a plain texture, so the
-window owns two pipelines:
-
-- The stretched background layer is drawn through the tint pipeline, under the
-  colour of the opacity of the background of the window. It is the only part
-  of a window which the reference renderer tints, so it is the only part drawn
-  through tint_blends[BLEND_NORMAL] here as well.
-- The tiled background layer, the frame, the arrows, the pause animation, the
-  cursor and the contents are drawn through the texture pipeline: they only
-  need the colour of their vertex, which the premultiplied-alpha state of the
-  engine already carries.
-
-The parts of the window are laid out as:
-
-- The frame is the nine slices of a 32x32 cell of the skin: four corners, four
-  tiled edges and the inner area.
-- The background is the first cell of the skin stretched over the inner area
-  and its second cell tiled over it.
-- The cursor is the nine slices of the cell at (32, 32), stretched to the size
-  of CursorRect and animated by kCursorAlphaTable.
-- The contents bitmap is drawn at the padding of the window, scrolled by the
-  origin of the window, which is limited to the overflow of the contents.
-- The arrows and the pause animation are single slices of the skin.
-
-The window opens and closes with Openness: the region of the frame and the
-background is scaled around its horizontal centre line, and the cursor, the
-arrows, the pause and the contents are only drawn once the window is fully
-open, which is the behaviour of the RGSS3 Window class.
-
-The reference renderer clips the cursor and the contents against the inner
-region of the frame through a stencil buffer, and this engine does the same:
-it binds the depth-stencil texture of the render target to every frame, so the
-window erases the whole area it covers from the stencil first, marks its inner
-region into it -- with a pass which writes no colour -- and then draws the
-cursor and the contents through a pipeline which only passes where the stencil
-carries the mark. The scissor of the engine is reserved for the viewport, see
-Viewport, and is not used here.
-
-Marking in two steps is what lets every window share one reference value,
-see kStencilReference: the erase wipes the mark of whichever window was drawn
-over this area before, so the number of windows one frame draws is not limited
-by the number of values the stencil can hold.
-*/
+//! Window of RGSS3 (VX/VXA): nine-slice frame, stretched+tiled background,
+//! cursor, arrows, pause and contents, clipped to the inner region by a stencil.
+URGE_BINDING()
 class WindowVX : public Node {
  public:
-  /*-export.begin-*/
+  URGE_BINDING()
   WindowVX(int32_t x, int32_t y, int32_t width, int32_t height);
+  URGE_BINDING()
   WindowVX(RefPtr<Viewport> viewport = nullptr);
+  URGE_BINDING()
   ~WindowVX() override;
 
+  URGE_BINDING()
   void Update();
+  URGE_BINDING()
   void Move(int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING(Name : "open?")
   bool Opened();
   URGE_BINDING(Name : "close?")
   bool Closed();
 
+  URGE_BINDING()
   ATTR(RefPtr<Viewport>, Viewport);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Windowskin);
+  URGE_BINDING()
   ATTR(RefPtr<Bitmap>, Contents);
+  URGE_BINDING()
   ATTR(RefPtr<Rect>, CursorRect);
+  URGE_BINDING()
   ATTR(bool, Active);
+  URGE_BINDING()
   ATTR(bool, ArrowsVisible);
+  URGE_BINDING()
   ATTR(bool, Pause);
+  URGE_BINDING()
   ATTR(int32_t, X);
+  URGE_BINDING()
   ATTR(int32_t, Y);
+  URGE_BINDING()
   ATTR(int32_t, Width);
+  URGE_BINDING()
   ATTR(int32_t, Height);
+  URGE_BINDING()
   ATTR(int32_t, OX);
+  URGE_BINDING()
   ATTR(int32_t, OY);
+  URGE_BINDING()
   ATTR(int32_t, Padding);
+  URGE_BINDING()
   ATTR(int32_t, PaddingBottom);
+  URGE_BINDING()
   ATTR(int32_t, Opacity);
+  URGE_BINDING()
   ATTR(int32_t, BackOpacity);
+  URGE_BINDING()
   ATTR(int32_t, ContentsOpacity);
+  URGE_BINDING()
   ATTR(int32_t, Openness);
+  URGE_BINDING()
   ATTR(RefPtr<Tone>, Tone);
-  /*-export.end-*/
 
-  /*! The reference value the window marks its inner region with, see the
-      class documentation. Every window uses the SAME value: the mark of one
-      window stays in the stencil until the frame ends, so an earlier design
-      handed out one value per window -- which broke as soon as a scene held
-      more windows than the stencil holds values, because two of them then
-      shared a mark and the clip of one passed inside the region of the other.
-      In this design a window instead CLEARS the region it is about to use by
-      writing zero into it, which is why a single constant is enough. */
+  //! Stencil value every window marks its inner region with. Shared, because a
+  //! window erases the region first (see kStencilClear) instead of owning a id.
   static constexpr uint32_t kStencilReference = 1;
 
-  /*! The value a window writes to erase a stencil region, i.e. the value the
-      attachment is cleared to at the start of the frame, see
-      Node::Render(). */
+  //! Value a window writes to erase a stencil region; matches the frame clear.
   static constexpr uint32_t kStencilClear = 0;
 
  private:
@@ -137,39 +106,31 @@ class WindowVX : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  /*! Emits the tiled background layer and the nine-slice frame of the window,
-      i.e. the parts of it which are drawn through the texture pipeline and
-      are not clipped to the inner region. */
+  //! Emits the tiled background and the nine-slice frame (texture pipeline).
   void EmitGroundInternal(PrimitiveEmitter& emitter);
-  //! Emits the stretched background layer, which the tint pipeline draws.
+  //! Emits the stretched background layer (tint pipeline).
   void EmitBackgroundInternal(PrimitiveEmitter& emitter);
-  /*! Emits the quad which erases the stencil over the whole area of the
-      window, see kStencilReference -- it is drawn through the marking
-      pipeline at kStencilClear before the inner region is marked. */
+  //! Emits the quad erasing the stencil over the whole window at kStencilClear.
   void EmitStencilClearInternal(PrimitiveEmitter& emitter);
-  /*! Emits the quad which marks the inner region of the window into the
-      stencil, see the class documentation. */
+  //! Emits the quad marking the inner region into the stencil.
   void EmitStencilInternal(PrimitiveEmitter& emitter);
-  //! Emits the cursor of the window, which is clipped to the inner region.
+  //! Emits the cursor, clipped to the inner region.
   void EmitCursorInternal(PrimitiveEmitter& emitter);
-  //! Emits the contents of the window, which are clipped to the inner region.
+  //! Emits the contents, clipped to the inner region.
   void EmitContentsInternal(PrimitiveEmitter& emitter);
 
-  //! Emits the quad of one slice of the skin, stretched over \p dest.
+  //! Emits one slice of the skin, stretched over \p dest.
   void EmitSliceInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-  //! Emits one slice of the skin tiled over \p dest.
+  //! Emits one slice of the skin, tiled over \p dest.
   void EmitTiledInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-  /*! Emits the nine slices of \p src stretched over \p dest: the four corners
-      at the size of one unit, the four edges between them and, when \p
-      draw_center is set, the centre filling what is left. The frame of a
-      window draws without its centre -- the inner region belongs to the
-      background -- while the cursor is a filled frame and keeps it. */
+  //! Emits the nine slices of \p src over \p dest; \p draw_center fills the
+  //! middle (the frame leaves it out, the cursor keeps it).
   void EmitNineSliceInternal(PrimitiveEmitter& emitter,
                              const RectI& src,
                              const RectI& dest,
@@ -177,17 +138,12 @@ class WindowVX : public Node {
                              const glm::vec4& color,
                              bool draw_center = true);
 
-  //! The inner region of the frame, in window coordinates, i.e. the area the
-  //! contents and the cursor are placed in and clipped to.
+  //! Inner region of the frame, where the contents and the cursor are clipped.
   RectI ContentRectInternal() const;
-  //! The origin of the contents, i.e. the window origin limited to the parts
-  //! of the contents which can actually scroll.
+  //! Contents origin, limited to the scrollable overflow.
   glm::ivec2 LimitedOriginInternal() const;
 
-  /*! Creates the buffer and the bind group of set 3 of the tint pipeline,
-      which the stretched background layer is drawn through, see
-      WindowVX::EmitBackgroundInternal(). It matches
-      Plane::CreateEffectBindings(). */
+  //! Creates set 3 of the tint pipeline used by EmitBackgroundInternal().
   void CreateTintBinding();
 
   RefPtr<Viewport> viewport_;
@@ -206,31 +162,27 @@ class WindowVX : public Node {
   int32_t pause_index_ = 0;
   int32_t cursor_index_ = 0;
 
-  //! The object pool slot of this window, bound at set 1.
+  //! Object pool slot of this window, bound at set 1.
   UniformBlockPool::Slot object_slot_ = {};
 
-  /*! The param of the tint shader of the stretched background layer. It is a
-      buffer of its own, written in the prepare stage of every frame the
-      window is drawn in, see TintBase::TintParam. */
+  //! Tint param of the stretched background layer, written every drawn frame.
   wgpu::Buffer tint_uniform_;
-  //! The bind group of set 3 of the tint pipeline, see CreateTintBinding().
+  //! Bind group of set 3 of the tint pipeline, see CreateTintBinding().
   wgpu::BindGroup tint_group_;
 
-  //! The range the stretched background layer appended to the batch.
+  //! Range the stretched background layer appended to the batch.
   PrimitiveEmitter::Slot background_slot_ = {};
-  //! The range the tiled background layer and the frame appended.
+  //! Range the tiled background layer and the frame appended.
   PrimitiveEmitter::Slot ground_slot_ = {};
-  /*! The range which erases the stencil over the area of the window, drawn at
-      kStencilClear before stencil_slot_ marks it again. */
+  //! Range erasing the stencil over the window, drawn at kStencilClear.
   PrimitiveEmitter::Slot stencil_clear_slot_ = {};
-  //! The range which marks the inner region into the stencil.
+  //! Range marking the inner region into the stencil.
   PrimitiveEmitter::Slot stencil_slot_ = {};
-  //! The whole range the cursor and the contents appended, which is drawn
-  //! through the stencil test.
+  //! Whole range the cursor and the contents appended, drawn through the test.
   PrimitiveEmitter::Slot clipped_slot_ = {};
-  //! The part of clipped_slot_ which is the cursor, read from the skin.
+  //! Part of clipped_slot_ which is the cursor, read from the skin.
   PrimitiveEmitter::Slot cursor_slot_ = {};
-  //! The part of clipped_slot_ which is the contents, read from their bitmap.
+  //! Part of clipped_slot_ which is the contents, read from their bitmap.
   PrimitiveEmitter::Slot contents_slot_ = {};
 };
 }  // namespace urge
