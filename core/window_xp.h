@@ -101,29 +101,20 @@ class WindowXP : public Node {
   bool DoDraw(DrawParam param) override;
 
   void EmitGroundInternal(PrimitiveEmitter& emitter);
-
   void EmitBackgroundInternal(PrimitiveEmitter& emitter);
-
-  void EmitStencilClearInternal(PrimitiveEmitter& emitter);
-
+  void EmitStencilClearInternal(PrimitiveEmitter& emitter, glm::ivec2 size);
   void EmitStencilInternal(PrimitiveEmitter& emitter);
-
   void EmitCursorInternal(PrimitiveEmitter& emitter);
-
   void EmitArrowsInternal(PrimitiveEmitter& emitter);
-
   void EmitContentsInternal(PrimitiveEmitter& emitter);
-
   void EmitSliceInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-
   void EmitTiledInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-
   void EmitNineSliceInternal(PrimitiveEmitter& emitter,
                              const RectI& src,
                              const RectI& dest,
@@ -132,16 +123,12 @@ class WindowXP : public Node {
                              bool draw_center = true);
 
   void CreateTintBinding();
-
-  glm::ivec2 LimitedOriginInternal() const;
-
   RectI ContentRectInternal() const;
 
   static constexpr uint32_t kStencilReference = 1;
   static constexpr uint32_t kStencilClear = 0;
 
   RefPtr<WindowXPAbove> above_;
-
   bool above_prepare_ = false;
 
   int32_t scale_ = 2;
@@ -162,23 +149,15 @@ class WindowXP : public Node {
   UniformBlockPool::Slot object_slot_ = {};
 
   wgpu::Buffer tint_uniform_;
-
   wgpu::BindGroup tint_group_;
 
   PrimitiveEmitter::Slot background_slot_ = {};
-
   PrimitiveEmitter::Slot ground_slot_ = {};
-
   UniformBlockPool::Slot above_object_slot_ = {};
-
   PrimitiveEmitter::Slot stencil_clear_slot_ = {};
-
   PrimitiveEmitter::Slot stencil_slot_ = {};
-
   PrimitiveEmitter::Slot cursor_slot_ = {};
-
   PrimitiveEmitter::Slot arrows_slot_ = {};
-
   PrimitiveEmitter::Slot contents_slot_ = {};
 };
 

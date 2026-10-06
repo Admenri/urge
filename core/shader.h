@@ -72,7 +72,6 @@ class Shader {
 
 class Pipeline {
  public:
-
   Pipeline(std::string_view vs_glsl,
            std::string_view fs_glsl,
            std::vector<std::vector<uint32_t>> vb_layouts,

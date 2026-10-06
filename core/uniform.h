@@ -38,22 +38,17 @@ namespace urge {
 
 class UniformBlockPool {
  public:
-
   static constexpr uint32_t kInvalidChunk = 0xFFFFFFFFu;
 
   struct Chunk {
     wgpu::Buffer buffer;
-
     wgpu::BindGroup group;
-
     uint32_t capacity = 0;
-
     uint32_t used = 0;
   };
 
   struct Slot {
     uint32_t chunk = kInvalidChunk;
-
     uint32_t offset = 0;
   };
 
@@ -63,9 +58,7 @@ class UniformBlockPool {
   ~UniformBlockPool();
 
   void BeginFrame();
-
   Slot Acquire(const void* data, uint32_t size);
-
   template <typename Ty>
   Slot Acquire(const Ty& data) {
     static_assert(std::is_trivially_copyable_v<Ty>,
@@ -76,39 +69,24 @@ class UniformBlockPool {
   void Flush();
 
   const std::string& name() const { return name_; }
-
   uint32_t element_size() const { return element_size_; }
-
   uint32_t slot_stride() const { return slot_stride_; }
-
   uint32_t chunk_size() const { return chunk_size_; }
-
   uint32_t slots_per_chunk() const { return slots_per_chunk_; }
-
   std::size_t chunk_count() const { return chunks_.size(); }
-
   const Chunk& chunk(uint32_t index) const { return chunks_[index]; }
 
  private:
-
   void CreateChunk();
 
   wgpu::BindGroupLayout layout_;
-
   std::string name_;
-
   uint32_t element_size_ = 0;
-
   uint32_t slot_stride_ = 0;
-
   uint32_t chunk_size_ = 0;
-
   uint32_t slots_per_chunk_ = 0;
-
   std::vector<Chunk> chunks_;
-
   std::vector<std::vector<uint8_t>> staging_;
-
   uint32_t active_chunk_ = 0;
 };
 
@@ -118,17 +96,13 @@ class UniformManager : public Singleton<UniformManager> {
   ~UniformManager();
 
   void BeginFrame();
-
   void Flush();
 
   UniformBlockPool& object_uniforms() { return object_uniforms_; }
-
   UniformBlockPool& sprite_uniforms() { return sprite_uniforms_; }
 
  private:
-
   UniformBlockPool object_uniforms_;
-
   UniformBlockPool sprite_uniforms_;
 };
 

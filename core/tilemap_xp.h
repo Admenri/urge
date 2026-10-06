@@ -125,28 +125,18 @@ class TilemapXP : public Node {
   bool DoDraw(DrawParam param) override;
 
   void UpdateViewport();
-
   void UpdateAboves();
-
   void UpdateOrder();
-
   void ParseTiles(std::vector<TileQuad>* ground,
                   std::vector<std::vector<TileQuad>>* aboves);
-
   void BuildLayers();
-
   void DrawLayer(DrawParam param, const TileLayer& layer);
-
   void DrawAboveLayer(DrawParam param, int32_t id);
-
   bool HasAboveLayer(int32_t id) const;
 
   std::vector<RefPtr<TilemapXPAbove>> aboves_;
-
   RectI render_viewport_ = {};
-
   glm::vec2 render_offset_ = glm::vec2(0.0f);
-
   UniformBlockPool::Slot object_slot_ = {};
   int32_t anim_index_ = 0;
 

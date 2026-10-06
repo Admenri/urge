@@ -40,7 +40,7 @@ URGE_BINDING()
 class Font : public Object {
  public:
   URGE_BINDING()
-  Font(std::vector<std::string> names = {}, int32_t size = 24);
+  Font(std::vector<std::string> names = {}, int32_t size = 0);
   URGE_BINDING()
   Font(RefPtr<Font> other);
   URGE_BINDING()

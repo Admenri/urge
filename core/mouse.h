@@ -85,7 +85,6 @@ class Mouse : public Singleton<Mouse> {
   void ProcessEvents(SDL_Event* event);
 
  private:
-
   struct Point {
     float x = 0.0f;
     float y = 0.0f;
@@ -93,40 +92,26 @@ class Mouse : public Singleton<Mouse> {
 
   struct ButtonState {
     bool pressed = false;
-
     bool down = false;
-
     bool up = false;
-
     int32_t clicks = 0;
   };
 
   static constexpr int32_t kButtonCount = SDL_BUTTON_X2 + 1;
 
   static Point WindowToScreenInternal(const Point& position);
-
   static Point ScreenToWindowInternal(const Point& position);
 
   std::array<bool, kButtonCount> raw_pressed_ = {};
-
   std::array<int32_t, kButtonCount> raw_clicks_ = {};
-
   std::array<ButtonState, kButtonCount> buttons_ = {};
-
   Point position_;
-
   Point last_position_;
-
   bool moved_ = false;
-
   Point scroll_;
-
   Point last_scroll_;
-
   Point scroll_delta_;
-
   bool capture_ = false;
-
   SDL_Cursor* cursor_ = nullptr;
 };
 

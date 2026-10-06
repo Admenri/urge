@@ -59,31 +59,24 @@ class Effect : public Object {
   void SetBlock(uint32_t slot, std::string uniform_block);
 
   wgpu::RenderPipeline AcquirePipeline();
-
   wgpu::BindGroup AcquireBindGroup();
-
   void SetFilterSource(RefPtr<Bitmap> texture);
 
  private:
-
   struct PipelineHolder : public RefCounted<PipelineHolder> {
     std::map<uint32_t, ShaderBinding> custom_bindings;
-
     wgpu::RenderPipeline pipeline;
   };
 
   struct SlotResource {
     wgpu::Buffer buffer;
-
     RefPtr<Bitmap> bitmap;
   };
 
   void CreateInternal(std::string vs_glsl,
                       std::string fs_glsl,
                       std::string blend_states);
-
   void SetBufferBytes(uint32_t slot, const void* data, uint32_t size);
-
   void RebuildBindGroup();
 
   RefPtr<PipelineHolder> holder_;

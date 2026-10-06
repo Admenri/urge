@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-06T09:25:55Z",
+    "generated_at": "2026-10-06T10:53:10Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
@@ -2423,7 +2423,7 @@
             {
               "name": "size",
               "type": "int32_t",
-              "default": "24"
+              "default": "0"
             }
           ],
           "export": "core/font.h:40-91"

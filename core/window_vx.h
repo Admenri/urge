@@ -102,27 +102,19 @@ class WindowVX : public Node {
   bool DoDraw(DrawParam param) override;
 
   void EmitGroundInternal(PrimitiveEmitter& emitter);
-
   void EmitBackgroundInternal(PrimitiveEmitter& emitter);
-
-  void EmitStencilClearInternal(PrimitiveEmitter& emitter);
-
+  void EmitStencilClearInternal(PrimitiveEmitter& emitter, glm::ivec2 size);
   void EmitStencilInternal(PrimitiveEmitter& emitter);
-
   void EmitCursorInternal(PrimitiveEmitter& emitter);
-
   void EmitContentsInternal(PrimitiveEmitter& emitter);
-
   void EmitSliceInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-
   void EmitTiledInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-
   void EmitNineSliceInternal(PrimitiveEmitter& emitter,
                              const RectI& src,
                              const RectI& dest,
@@ -131,9 +123,6 @@ class WindowVX : public Node {
                              bool draw_center = true);
 
   RectI ContentRectInternal() const;
-
-  glm::ivec2 LimitedOriginInternal() const;
-
   void CreateTintBinding();
 
   RefPtr<Viewport> viewport_;
@@ -155,21 +144,14 @@ class WindowVX : public Node {
   UniformBlockPool::Slot object_slot_ = {};
 
   wgpu::Buffer tint_uniform_;
-
   wgpu::BindGroup tint_group_;
 
   PrimitiveEmitter::Slot background_slot_ = {};
-
   PrimitiveEmitter::Slot ground_slot_ = {};
-
   PrimitiveEmitter::Slot stencil_clear_slot_ = {};
-
   PrimitiveEmitter::Slot stencil_slot_ = {};
-
   PrimitiveEmitter::Slot clipped_slot_ = {};
-
   PrimitiveEmitter::Slot cursor_slot_ = {};
-
   PrimitiveEmitter::Slot contents_slot_ = {};
 };
 }  // namespace urge

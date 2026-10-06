@@ -78,7 +78,6 @@ class Plane : public Node {
   RefPtr<Tone> tone_;
 
   UniformBlockPool::Slot object_slot_ = {};
-
   PrimitiveEmitter::Slot primitive_slot_ = {};
 
   wgpu::Buffer tint_uniform_;

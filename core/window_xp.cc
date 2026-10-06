@@ -53,7 +53,6 @@ WindowXPAbove::WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport)
   Node::SetupTrait(this);
 }
 
-
 bool WindowXPAbove::Prepare(DrawParam param) {
   if (parent_ == nullptr)
     return false;
@@ -88,7 +87,7 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   };
 
   const std::size_t stencil_clear_first = emitter.size();
-  parent_->EmitStencilClearInternal(emitter);
+  parent_->EmitStencilClearInternal(emitter, param->target->size());
   parent_->stencil_clear_slot_ = capture(stencil_clear_first);
 
   const std::size_t stencil_first = emitter.size();
@@ -110,7 +109,6 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   return true;
 }
 
-
 bool WindowXPAbove::DoDraw(DrawParam param) {
   if (parent_ == nullptr || !parent_->above_prepare_)
     return false;
@@ -130,7 +128,8 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 
   if (window->stencil_clear_slot_.count) {
-    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_write);
+    param->pass.SetPipeline(
+        ShaderSet::Get().state.window.texture_stencil_write);
     param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
                              nullptr);
     param->pass.SetStencilReference(WindowXP::kStencilClear);
@@ -139,7 +138,8 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
   }
 
   if (window->stencil_slot_.count) {
-    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_write);
+    param->pass.SetPipeline(
+        ShaderSet::Get().state.window.texture_stencil_write);
     param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
                              nullptr);
     param->pass.SetStencilReference(WindowXP::kStencilReference);
@@ -177,7 +177,6 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-
 WindowXP::WindowXP(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
       above_(MakeRefCounted<WindowXPAbove>(this, viewport)),
@@ -210,14 +209,12 @@ void WindowXP::Update() {
   }
 }
 
-
 ATTR_DEF(WindowXP, bool, Visible) {
   if (above_)
     above_->Attr_Visible(value);
 
   return Node::Attr_Visible(value);
 }
-
 
 ATTR_DEF(WindowXP, RefPtr<Viewport>, Viewport) {
   if (above_)
@@ -233,7 +230,6 @@ ATTR_DEF(WindowXP, RefPtr<Viewport>, Viewport) {
   }
 }
 
-
 ATTR_DEF(WindowXP, RefPtr<Bitmap>, Windowskin) {
   if (value.has_value()) {
     windowskin_ = *value;
@@ -242,7 +238,6 @@ ATTR_DEF(WindowXP, RefPtr<Bitmap>, Windowskin) {
     return windowskin_;
   }
 }
-
 
 ATTR_DEF(WindowXP, RefPtr<Bitmap>, Contents) {
   if (value.has_value()) {
@@ -253,7 +248,6 @@ ATTR_DEF(WindowXP, RefPtr<Bitmap>, Contents) {
   }
 }
 
-
 ATTR_DEF(WindowXP, bool, Stretch) {
   if (value.has_value()) {
     stretch_ = *value;
@@ -262,7 +256,6 @@ ATTR_DEF(WindowXP, bool, Stretch) {
     return stretch_;
   }
 }
-
 
 ATTR_DEF(WindowXP, RefPtr<Rect>, CursorRect) {
   if (value.has_value()) {
@@ -273,7 +266,6 @@ ATTR_DEF(WindowXP, RefPtr<Rect>, CursorRect) {
   }
 }
 
-
 ATTR_DEF(WindowXP, bool, Active) {
   if (value.has_value()) {
     active_ = *value;
@@ -282,7 +274,6 @@ ATTR_DEF(WindowXP, bool, Active) {
     return active_;
   }
 }
-
 
 ATTR_DEF(WindowXP, bool, Pause) {
   if (value.has_value()) {
@@ -293,7 +284,6 @@ ATTR_DEF(WindowXP, bool, Pause) {
   }
 }
 
-
 ATTR_DEF(WindowXP, int32_t, X) {
   if (value.has_value()) {
     x_ = *value;
@@ -302,7 +292,6 @@ ATTR_DEF(WindowXP, int32_t, X) {
     return x_;
   }
 }
-
 
 ATTR_DEF(WindowXP, int32_t, Y) {
   if (value.has_value()) {
@@ -313,7 +302,6 @@ ATTR_DEF(WindowXP, int32_t, Y) {
   }
 }
 
-
 ATTR_DEF(WindowXP, int32_t, Width) {
   if (value.has_value()) {
     width_ = *value;
@@ -322,7 +310,6 @@ ATTR_DEF(WindowXP, int32_t, Width) {
     return width_;
   }
 }
-
 
 ATTR_DEF(WindowXP, int32_t, Height) {
   if (value.has_value()) {
@@ -333,7 +320,6 @@ ATTR_DEF(WindowXP, int32_t, Height) {
   }
 }
 
-
 ATTR_DEF(WindowXP, int32_t, OX) {
   if (value.has_value()) {
     ox_ = *value;
@@ -342,7 +328,6 @@ ATTR_DEF(WindowXP, int32_t, OX) {
     return ox_;
   }
 }
-
 
 ATTR_DEF(WindowXP, int32_t, OY) {
   if (value.has_value()) {
@@ -353,7 +338,6 @@ ATTR_DEF(WindowXP, int32_t, OY) {
   }
 }
 
-
 ATTR_DEF(WindowXP, int32_t, Opacity) {
   if (value.has_value()) {
     opacity_ = std::clamp<int32_t>(*value, 0, 255);
@@ -362,7 +346,6 @@ ATTR_DEF(WindowXP, int32_t, Opacity) {
     return opacity_;
   }
 }
-
 
 ATTR_DEF(WindowXP, int32_t, BackOpacity) {
   if (value.has_value()) {
@@ -373,7 +356,6 @@ ATTR_DEF(WindowXP, int32_t, BackOpacity) {
   }
 }
 
-
 ATTR_DEF(WindowXP, int32_t, ContentsOpacity) {
   if (value.has_value()) {
     contents_opacity_ = std::clamp<int32_t>(*value, 0, 255);
@@ -382,7 +364,6 @@ ATTR_DEF(WindowXP, int32_t, ContentsOpacity) {
     return contents_opacity_;
   }
 }
-
 
 ATTR_DEF(WindowXP, int32_t, Z) {
   if (value.has_value()) {
@@ -394,7 +375,6 @@ ATTR_DEF(WindowXP, int32_t, Z) {
   }
 }
 
-
 void WindowXP::DisposeObject() {
   Node::DisposeObject();
 
@@ -402,7 +382,6 @@ void WindowXP::DisposeObject() {
   windowskin_.reset();
   contents_.reset();
 }
-
 
 bool WindowXP::Prepare(DrawParam param) {
   background_slot_ = {};
@@ -444,7 +423,6 @@ bool WindowXP::Prepare(DrawParam param) {
   return true;
 }
 
-
 bool WindowXP::DoDraw(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
@@ -475,7 +453,6 @@ bool WindowXP::DoDraw(DrawParam param) {
   return false;
 }
 
-
 void WindowXP::EmitGroundInternal(PrimitiveEmitter& emitter) {
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
     return;
@@ -502,7 +479,6 @@ void WindowXP::EmitGroundInternal(PrimitiveEmitter& emitter) {
                         false);
 }
 
-
 void WindowXP::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
     return;
@@ -521,21 +497,13 @@ void WindowXP::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
                     background_color);
 }
 
-
-void WindowXP::EmitStencilClearInternal(PrimitiveEmitter& emitter) {
-  if (width_ < scale_ * 2 || height_ < scale_ * 2)
-    return;
-
-  const RectI area(0, 0, width_, height_);
-  if (!area())
-    return;
-
-  emitter.EmitQuad(RectF(area),
-                   MakeNorm(RectF(RectI(0, 0, 1, 1)), windowskin_->size()),
+void WindowXP::EmitStencilClearInternal(PrimitiveEmitter& emitter,
+                                        glm::ivec2 size) {
+  emitter.EmitQuad(RectI(-x_, -y_, size.x, size.y),
+                   MakeNorm(RectF(0.0f, 0.0f, 1.0f, 1.0f), windowskin_->size()),
                    glm::vec4(1.0f));
   emitter.End();
 }
-
 
 void WindowXP::EmitStencilInternal(PrimitiveEmitter& emitter) {
   const RectI region = ContentRectInternal();
@@ -548,11 +516,10 @@ void WindowXP::EmitStencilInternal(PrimitiveEmitter& emitter) {
     return;
 
   emitter.EmitQuad(RectF(region),
-                   MakeNorm(RectF(RectI(0, 0, 1, 1)), windowskin_->size()),
+                   MakeNorm(RectF(0.0f, 0.0f, 1.0f, 1.0f), windowskin_->size()),
                    glm::vec4(1.0f));
   emitter.End();
 }
-
 
 void WindowXP::EmitCursorInternal(PrimitiveEmitter& emitter) {
   const RectI cursor = cursor_rect_->data;
@@ -571,10 +538,8 @@ void WindowXP::EmitCursorInternal(PrimitiveEmitter& emitter) {
       scale_, color, true);
 }
 
-
 void WindowXP::EmitArrowsInternal(PrimitiveEmitter& emitter) {
   const RectI region = ContentRectInternal();
-  const glm::ivec2 origin = LimitedOriginInternal();
   const int32_t slice = kSliceSize * scale_;
 
   const int32_t center_x = (width_ - slice) / 2;
@@ -588,19 +553,19 @@ void WindowXP::EmitArrowsInternal(PrimitiveEmitter& emitter) {
     const RectI left_src(72 * scale_, 12 * scale_, slice / 2, slice);
     const RectI right_src(84 * scale_, 12 * scale_, slice / 2, slice);
 
-    if (origin.x > 0)
+    if (ox_ > 0)
       EmitSliceInternal(emitter, left_src,
                         RectI(2 * scale_, center_y, slice / 2, slice),
                         glm::vec4(1.0f));
-    if (origin.y > 0)
+    if (oy_ > 0)
       EmitSliceInternal(emitter, up_src,
                         RectI(center_x, 2 * scale_, slice, slice / 2),
                         glm::vec4(1.0f));
-    if (region.width < contents_size.x - origin.x)
+    if (region.width < contents_size.x - ox_)
       EmitSliceInternal(emitter, right_src,
                         RectI(width_ - 6 * scale_, center_y, slice / 2, slice),
                         glm::vec4(1.0f));
-    if (region.height < contents_size.y - origin.y)
+    if (region.height < contents_size.y - oy_)
       EmitSliceInternal(emitter, down_src,
                         RectI(center_x, height_ - 6 * scale_, slice, slice / 2),
                         glm::vec4(1.0f));
@@ -616,30 +581,20 @@ void WindowXP::EmitArrowsInternal(PrimitiveEmitter& emitter) {
   }
 }
 
-
 void WindowXP::EmitContentsInternal(PrimitiveEmitter& emitter) {
   if (!Disposable::Check(contents_))
     return;
 
   const RectI region = ContentRectInternal();
-  const glm::ivec2 origin = LimitedOriginInternal();
+  const glm::ivec2 origin = glm::ivec2(ox_, oy_);
   const glm::ivec2 contents_size = contents_->size();
   const glm::vec4 color(static_cast<float>(contents_opacity_) / 255.0f);
 
-  const RectI src(origin.x, origin.y,
-                  std::min(region.width, contents_size.x - origin.x),
-                  std::min(region.height, contents_size.y - origin.y));
-
-  if (src()) {
-    emitter.EmitQuad(
-        RectF(static_cast<float>(kContentOffset * scale_),
-              static_cast<float>(kContentOffset * scale_),
-              static_cast<float>(src.width), static_cast<float>(src.height)),
-        MakeNorm(RectF(src), glm::vec2(contents_size)), color);
-    emitter.End();
-  }
+  emitter.EmitQuad(
+      RectF(glm::ivec2(kContentOffset * scale_) - origin, contents_size),
+      RectF(0.0f, 0.0f, 1.0f, 1.0f), color);
+  emitter.End();
 }
-
 
 void WindowXP::EmitSliceInternal(PrimitiveEmitter& emitter,
                                  const RectI& src,
@@ -652,7 +607,6 @@ void WindowXP::EmitSliceInternal(PrimitiveEmitter& emitter,
   emitter.EmitQuad(RectF(dest), MakeNorm(RectF(src), skin_size), color);
   emitter.End();
 }
-
 
 void WindowXP::EmitTiledInternal(PrimitiveEmitter& emitter,
                                  const RectI& src,
@@ -687,7 +641,6 @@ void WindowXP::EmitTiledInternal(PrimitiveEmitter& emitter,
   }
   emitter.End();
 }
-
 
 void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
                                      const RectI& src,
@@ -760,7 +713,6 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
   }
 }
 
-
 void WindowXP::CreateTintBinding() {
   const wgpu::RenderPipeline& pipeline =
       ShaderSet::Get().state.window.tint_blends.at(BLEND_NORMAL);
@@ -771,19 +723,8 @@ void WindowXP::CreateTintBinding() {
   tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
 
   tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
-                                   {{0, util::BufferSet(tint_uniform_)}});
+                                      {{0, util::BufferSet(tint_uniform_)}});
 }
-
-
-glm::ivec2 WindowXP::LimitedOriginInternal() const {
-  const RectI region = ContentRectInternal();
-  const glm::ivec2 contents_size =
-      contents_ ? contents_->size() : glm::ivec2(0);
-  const int32_t max_x = std::max(0, contents_size.x - region.width);
-  const int32_t max_y = std::max(0, contents_size.y - region.height);
-  return glm::ivec2(std::clamp(ox_, 0, max_x), std::clamp(oy_, 0, max_y));
-}
-
 
 RectI WindowXP::ContentRectInternal() const {
   return RectI(kContentOffset * scale_, kContentOffset * scale_,

@@ -44,20 +44,15 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   ImGuiManager& operator=(const ImGuiManager&) = delete;
 
   void ProcessEvent(const SDL_Event& event);
-
   bool WantsGameInputBlocked() const { return settings_visible_; }
-
   void SetRenderTargetFormat(wgpu::TextureFormat format);
-
   void Update();
-
   void RenderDrawData(wgpu::RenderPassEncoder pass);
 
   bool settings_visible() const { return settings_visible_; }
   bool fps_visible() const { return fps_visible_; }
 
  private:
-
   float U(float value) const { return value * ui_scale_; }
 
   void BuildSettingsWindow();
@@ -68,39 +63,23 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildFPSWindow();
 
   void StoreDisplaySettings();
-
   void SaveSettings();
-
   void ApplyUIScale();
 
   SDL_Window* window_ = nullptr;
-
   bool platform_ready_ = false;
-
   bool renderer_ready_ = false;
-
   wgpu::TextureFormat render_format_ = wgpu::TextureFormat::Undefined;
-
   bool settings_visible_ = false;
-
   bool fps_visible_ = false;
-
   int32_t capture_slot_ = -1;
-
   std::vector<Input::KeySym> default_bindings_;
-
   bool defaults_captured_ = false;
-
   std::vector<std::string> output_devices_;
-
   bool output_devices_stale_ = true;
-
   std::vector<float> frame_times_;
-
   float ui_scale_ = 1.0f;
-
   bool fps_size_stale_ = true;
-
   bool fps_replace_position_ = false;
 };
 

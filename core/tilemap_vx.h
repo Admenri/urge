@@ -125,17 +125,11 @@ class TilemapVX : public Node {
   bool DoDraw(DrawParam param) override;
 
   void CreateShadowSet();
-
   void UpdateViewport();
-
   void CollectMapData(bool above, std::vector<TileQuad>* quads);
-
   void BuildLayer(bool above, TileLayer* layer);
-
   void DrawLayer(DrawParam param, TileLayer* layer);
-
   void DrawAboveLayer(DrawParam param);
-
   bool HasAboveLayer() const { return above_layer_.valid; }
 
   bool rgss3_style_ = true;
@@ -144,9 +138,7 @@ class TilemapVX : public Node {
   RefPtr<Bitmap> shadow_texture_;
 
   RectI render_viewport_ = {};
-
   glm::vec2 render_offset_ = glm::vec2(0.0f);
-
   UniformBlockPool::Slot object_slot_ = {};
 
   int32_t flash_timer_ = 0;

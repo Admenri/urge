@@ -91,7 +91,7 @@ void RenderShadowSurface(SDL_Surface*& surface) {
 
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
-      size_(size),
+      size_(size > 0 ? size : *Attr_DefaultSize()),
 
       bold_(*Attr_DefaultBold()),
       italic_(*Attr_DefaultItalic()),

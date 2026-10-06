@@ -328,8 +328,7 @@ const RectF kAutotileSrcWaterfall[] = {
 TilemapVXAbove::TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport)
     : Node(viewport, ZValue(200)), parent_(parent) {}
 
-void TilemapVXAbove::DisposeObject() {
-}
+void TilemapVXAbove::DisposeObject() {}
 
 bool TilemapVXAbove::Prepare(DrawParam param) {
   return parent_ && parent_->HasAboveLayer();
@@ -466,8 +465,8 @@ bool TilemapVX::Prepare(DrawParam param) {
   UpdateViewport();
 
   object_slot_ = {};
-  BuildLayer(false , &map_layer_);
-  BuildLayer(true , &above_layer_);
+  BuildLayer(false, &map_layer_);
+  BuildLayer(true, &above_layer_);
 
   if (map_layer_.valid || above_layer_.valid) {
     UniformManager& uniforms = UniformManager::Get();
@@ -688,19 +687,12 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     const int32_t pattern_id = tile_id % 0x30;
 
     const glm::vec2 waterfall(-1, -1);
-    const glm::vec2 src_offset[] = {
-        {0,  0},  {0,  3},
-        {6,  0},  {6,  3},
-        {8,  0},  waterfall,
-        {8,  3},  waterfall,
-        {0,  6},  waterfall,
-        {0,  9},  waterfall,
-        {8,  6},  waterfall,
-        {8,  9},  waterfall};
+    const glm::vec2 src_offset[] = {{0, 0}, {0, 3},    {6, 0}, {6, 3},
+                                    {8, 0}, waterfall, {8, 3}, waterfall,
+                                    {0, 6}, waterfall, {0, 9}, waterfall,
+                                    {8, 6}, waterfall, {8, 9}, waterfall};
     const glm::vec2 waterfall_offset[] = {
-        {14, 0}, {14, 3},
-        {6,  6}, {6,  9},
-        {14, 6}, {14, 9},
+        {14, 0}, {14, 3}, {6, 6}, {6, 9}, {14, 6}, {14, 9},
     };
 
     glm::vec2 src_pos = src_offset[autotile_id];
