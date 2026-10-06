@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
-#include <utility>
+#include <tuple>
 #include <vector>
 
 #include "SDL3/SDL_surface.h"
@@ -47,7 +47,10 @@ class FontContext : public Singleton<FontContext> {
 
   bool FontExists(const std::string& name) const;
 
-  TTF_Font* AcquireFont(const std::vector<std::string>& names, int32_t size);
+  TTF_Font* AcquireFont(const std::vector<std::string>& names,
+                        int32_t size,
+                        TTF_FontStyleFlags style = TTF_STYLE_NORMAL,
+                        int32_t outline = 0);
 
   std::vector<std::string> ResolveName(const std::string& name) const;
 
@@ -65,7 +68,10 @@ class FontContext : public Singleton<FontContext> {
 
   void LoadInternalFont();
 
-  TTF_Font* OpenFont(const std::string& name, int32_t size);
+  TTF_Font* OpenFont(const std::string& name,
+                     int32_t size,
+                     TTF_FontStyleFlags style,
+                     int32_t outline);
 
   std::vector<std::string> default_name_;
 
@@ -73,7 +79,8 @@ class FontContext : public Singleton<FontContext> {
 
   std::map<std::string, FontData> data_cache_;
 
-  std::map<std::pair<std::string, int32_t>, TTF_Font*> font_cache_;
+  std::map<std::tuple<std::string, int32_t, int32_t, int32_t>, TTF_Font*>
+      font_cache_;
 };
 
 }  // namespace urge

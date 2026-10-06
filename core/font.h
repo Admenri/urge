@@ -91,7 +91,7 @@ class Font : public Object {
   URGE_BINDING()
   static ATTR(RefPtr<Color>, DefaultGradientColor);
 
-  TTF_Font* ttf_font();
+  TTF_Font* ttf_font(int32_t outline = 0);
 
   SDL_Surface* RenderText(const std::string& text, uint8_t* font_opacity);
 

@@ -47,6 +47,7 @@ class FPSLimiter {
   void Delay();
   bool RequireFrameSkip();
   void Reset();
+  void Synchronize();
 
  private:
   bool disabled_;
@@ -140,6 +141,7 @@ class Graphics : public Singleton<Graphics> {
   int32_t brightness_ = 255;
   bool frame_skip_ = true;
   bool vsync_ = true;
+  bool frame_started_ = false;
 
   FPSLimiter limiter_;
 

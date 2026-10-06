@@ -52,6 +52,7 @@ namespace {
 
 constexpr int32_t kMinFrameRate = 30;
 constexpr int32_t kMaxFrameRate = 240;
+constexpr int64_t kMaxFrameLag = 3;
 
 uint64_t NowNS() {
   return SDL_GetTicksNS();
@@ -97,12 +98,8 @@ FPSLimiter::FPSLimiter(int frame_rate)
 
 void FPSLimiter::SetDisabled(bool disable) {
   disabled_ = disable;
-  if (!disabled_) {
-    last_tick_count_ = SDL_GetPerformanceCounter();
-    skip_last_ = last_tick_count_;
-    skip_ideal_diff_ = 0;
-    skip_reset_flag_ = false;
-  }
+  if (!disabled_)
+    Synchronize();
 }
 
 void FPSLimiter::SetFrameRate(int frame_rate) {
@@ -131,6 +128,8 @@ void FPSLimiter::Delay() {
     skip_last_ = skip_now;
 
     skip_ideal_diff_ += frame_diff - ticks_per_frame_;
+    skip_ideal_diff_ =
+        std::min(skip_ideal_diff_, ticks_per_frame_ * kMaxFrameLag);
 
     if (skip_reset_flag_)
       skip_ideal_diff_ = 0;
@@ -147,6 +146,13 @@ bool FPSLimiter::RequireFrameSkip() {
 void FPSLimiter::Reset() {
   if (!disabled_)
     skip_reset_flag_ = true;
+}
+
+void FPSLimiter::Synchronize() {
+  last_tick_count_ = SDL_GetPerformanceCounter();
+  skip_last_ = last_tick_count_;
+  skip_ideal_diff_ = 0;
+  skip_reset_flag_ = false;
 }
 
 ScreenRootNode::ScreenRootNode() : Node() {}
@@ -224,6 +230,11 @@ Graphics::~Graphics() {
 
 void Graphics::Update() {
   Audio::Get().Update();
+
+  if (!frame_started_) {
+    frame_started_ = true;
+    limiter_.Synchronize();
+  }
 
   const bool skip_frame = frame_skip_ && limiter_.RequireFrameSkip();
 

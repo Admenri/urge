@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <tuple>
 
 #include "core/filesystem.h"
 #include "core/logger.h"
@@ -108,7 +109,9 @@ bool FontContext::FontExists(const std::string& name) const {
 }
 
 TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
-                                   int32_t size) {
+                                   int32_t size,
+                                   TTF_FontStyleFlags style,
+                                   int32_t outline) {
   if (size < kMinFontSize || size > kMaxFontSize)
     return nullptr;
 
@@ -117,13 +120,14 @@ TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
 
   for (const std::string& candidate : candidates) {
     const std::string key = ToLower(candidate);
-    const auto cache_key = std::make_pair(key, size);
+    const auto cache_key = std::make_tuple(key, size, static_cast<int32_t>(style),
+                                           outline);
 
     auto cached = font_cache_.find(cache_key);
     if (cached != font_cache_.end())
       return cached->second;
 
-    TTF_Font* font = OpenFont(key, size);
+    TTF_Font* font = OpenFont(key, size, style, outline);
     if (font) {
       font_cache_.emplace(cache_key, font);
       return font;
@@ -178,7 +182,10 @@ void FontContext::LoadInternalFont() {
   data_cache_[ToLower(default_font_)] = data;
 }
 
-TTF_Font* FontContext::OpenFont(const std::string& name, int32_t size) {
+TTF_Font* FontContext::OpenFont(const std::string& name,
+                                int32_t size,
+                                TTF_FontStyleFlags style,
+                                int32_t outline) {
   auto data_it = data_cache_.find(name);
   if (data_it == data_cache_.end())
     return nullptr;
@@ -189,8 +196,16 @@ TTF_Font* FontContext::OpenFont(const std::string& name, int32_t size) {
     return nullptr;
 
   TTF_Font* font = TTF_OpenFontIO(stream, true, size * kFontRealScale);
-  if (!font)
+  if (!font) {
     LOGGER_ERROR("[Font] Failed to open {}: {}", name, SDL_GetError());
+    return nullptr;
+  }
+
+  if (style != TTF_STYLE_NORMAL)
+    TTF_SetFontStyle(font, style);
+
+  if (outline > 0)
+    TTF_SetFontOutline(font, outline);
 
   return font;
 }

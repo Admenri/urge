@@ -317,19 +317,14 @@ ATTR_DEF(Font, RefPtr<Color>, DefaultGradientColor) {
   }
 }
 
-TTF_Font* Font::ttf_font() {
-  TTF_Font* font = FontContext::Get().AcquireFont(name_, size_);
-  if (!font)
-    return nullptr;
-
-  int32_t style = TTF_STYLE_NORMAL;
+TTF_Font* Font::ttf_font(int32_t outline) {
+  TTF_FontStyleFlags style = TTF_STYLE_NORMAL;
   if (bold_)
     style |= TTF_STYLE_BOLD;
   if (italic_)
     style |= TTF_STYLE_ITALIC;
-  TTF_SetFontStyle(font, style);
 
-  return font;
+  return FontContext::Get().AcquireFont(name_, size_, style, outline);
 }
 
 SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
@@ -390,15 +385,17 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
   }
 
   if (outline_) {
-    TTF_SetFontOutline(font, kOutlineSize);
-    SDL_Surface* outline_surface = solid_
-                                       ? TTF_RenderText_Solid(font, text.c_str(),
-                                                              text.size(),
-                                                              render_outline_color)
-                                       : TTF_RenderText_Blended(
-                                             font, text.c_str(), text.size(),
-                                             render_outline_color);
-    TTF_SetFontOutline(font, 0);
+    TTF_Font* outline_font = ttf_font(kOutlineSize);
+    if (!outline_font) {
+      SDL_DestroySurface(surface);
+      return nullptr;
+    }
+
+    SDL_Surface* outline_surface =
+        solid_ ? TTF_RenderText_Solid(outline_font, text.c_str(), text.size(),
+                                      render_outline_color)
+               : TTF_RenderText_Blended(outline_font, text.c_str(), text.size(),
+                                        render_outline_color);
 
     if (!outline_surface) {
       SDL_DestroySurface(surface);

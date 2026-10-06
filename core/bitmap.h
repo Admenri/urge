@@ -22,10 +22,14 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+
 #include "core/definition.h"
 #include "core/device.h"
 #include "core/disposable.h"
 #include "core/font.h"
+#include "core/font_renderer.h"
 #include "core/palette.h"
 #include "core/primitive.h"
 #include "core/utility.h"
@@ -141,6 +145,7 @@ class Bitmap : public Disposable {
   void CreateGroup();
 
   RefPtr<Font> font_;
+  FontRenderer text_renderer_;
 
   glm::ivec2 size_;
   wgpu::Texture texture_, depth_stencil_;

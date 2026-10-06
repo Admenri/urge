@@ -27,7 +27,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include "SDL3_image/SDL_image.h"
@@ -66,41 +65,6 @@ glm::vec4 PremultiplyOpacity(int32_t opacity) {
   const float value =
       std::clamp(static_cast<float>(opacity) / 255.0f, 0.0f, 1.0f);
   return glm::vec4(value, value, value, value);
-}
-
-std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
-    SDL_Surface* surface) {
-  if (surface->w <= 0 || surface->h <= 0)
-    return {nullptr, nullptr};
-
-  SDL_PremultiplySurfaceAlpha(surface, false);
-
-  wgpu::TextureDescriptor desc;
-  desc.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
-  desc.dimension = wgpu::TextureDimension::e2D;
-  desc.size.width = surface->w;
-  desc.size.height = surface->h;
-  desc.format = wgpu::TextureFormat::RGBA8Unorm;
-
-  wgpu::Texture texture = g_device.CreateTexture(&desc);
-  if (!texture)
-    return {nullptr, nullptr};
-
-  wgpu::TexelCopyTextureInfo destination;
-  destination.texture = texture;
-
-  wgpu::TexelCopyBufferLayout layout;
-  layout.bytesPerRow = surface->pitch;
-  layout.rowsPerImage = surface->h;
-
-  wgpu::Extent3D size;
-  size.width = surface->w;
-  size.height = surface->h;
-
-  g_queue.WriteTexture(&destination, surface->pixels,
-                       surface->pitch * surface->h, &layout, &size);
-
-  return {texture, texture.CreateView(nullptr)};
 }
 
 RectI AlignTextRect(const RectI& region,
@@ -504,20 +468,12 @@ void Bitmap::DrawText(int32_t x,
   if (width <= 0 || height <= 0)
     return;
 
-  uint8_t font_opacity = 255;
-  SDL_Surface* text_surface = font_->RenderText(str, &font_opacity);
-  if (!text_surface)
+  FontRenderer::TextRun* run = text_renderer_.Acquire(*font_, str);
+  if (!run)
     return;
 
-  auto [text_texture, text_view] = CreateTextTexture(text_surface);
-  const glm::ivec2 text_size{text_surface->w, text_surface->h};
-  SDL_DestroySurface(text_surface);
-
-  if (!text_texture || text_size.x <= 0 || text_size.y <= 0)
-    return;
-
-  const RectI composed = AlignTextRect(RectI(x, y, width, height), text_size.x,
-                                       text_size.y, align);
+  const RectI composed =
+      AlignTextRect(RectI(x, y, width, height), run->size.x, run->size.y, align);
   const RectI blit_region =
       MakeIntersect(composed, RectI(0, 0, size_.x, size_.y));
   if (!blit_region.width || !blit_region.height)
@@ -528,34 +484,21 @@ void Bitmap::DrawText(int32_t x,
                           static_cast<float>(blit_region.width),
                           static_cast<float>(blit_region.height));
 
-  const glm::vec4 opacity = PremultiplyOpacity(font_opacity);
+  const glm::vec4 opacity = PremultiplyOpacity(run->opacity);
 
   const std::uint32_t vertex_count =
       primitive_
           .EmitQuad(RectF(blit_region),
-                    MakeNorm(source_rect, glm::vec2(text_size)), opacity)
+                    MakeNorm(source_rect, glm::vec2(run->size)), opacity)
           .Upload();
-
-  wgpu::SamplerDescriptor sampler_desc;
-  sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
-  sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
-  sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
-  sampler_desc.magFilter = wgpu::FilterMode::Linear;
-  sampler_desc.minFilter = wgpu::FilterMode::Linear;
-  wgpu::Sampler sampler = g_device.CreateSampler(&sampler_desc);
-
-  auto pipeline = ShaderSet::Get().state.bitmap.texture_pma;
-  wgpu::BindGroup text_group = util::CreateBindGroup(
-      pipeline.GetBindGroupLayout(2),
-      {{0, util::TextureViewSet(text_view)}, {1, util::SamplerSet(sampler)}});
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);
   auto pass = BeginRendering(encoder);
   {
-    pass.SetPipeline(pipeline);
+    pass.SetPipeline(ShaderSet::Get().state.bitmap.texture_pma);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetBindGroup(2, text_group, 0, nullptr);
+    pass.SetBindGroup(2, run->group, 0, nullptr);
     pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
     pass.Draw(vertex_count, 1, 0, 0);
   }
