@@ -40,8 +40,6 @@ namespace urge {
 
 class TilemapXP;
 
-//! One above layer of a TilemapXP; its Z follows from the priority and the row
-//! of its tiles, see TilemapXP::UpdateOrder().
 class TilemapXPAbove : public Node {
  public:
   TilemapXPAbove(TilemapXP* parent,
@@ -57,9 +55,6 @@ class TilemapXPAbove : public Node {
   int32_t id_ = 0;
 };
 
-//! The tilemap of RGSS1: draws a Table of tile ids out of seven animated autotiles
-//! and one tileset, split by priority into the ground layer and up to five above
-//! layers, inside the viewport it is given.
 URGE_BINDING()
 class TilemapXP : public Node {
  public:
@@ -101,34 +96,25 @@ class TilemapXP : public Node {
  private:
   friend class TilemapXPAbove;
 
-  //! The number of above layers the priority of a tile can put it in.
   static constexpr int32_t kMaxPriorities = 5;
 
-  //! One tile of the map: the rectangle it reads from its bitmap and the
-  //! rectangle it is drawn to, both in pixels of the render target.
   struct TileQuad {
     RefPtr<Bitmap> texture;
     RectF source;
     RectF destination;
   };
 
-  //! One draw of a layer: the bitmap its tiles read from and the range the
-  //! tiles occupy in the vertex batch which was uploaded for the layer.
   struct TileDraw {
     RefPtr<Bitmap> texture;
     PrimitiveEmitter::Slot slot;
   };
 
-  //! The geometry of one layer: the emitter which uploaded it and the draws it
-  //! is read with.
   struct TileLayer {
     PrimitiveEmitter primitive;
     std::vector<TileDraw> draws;
     bool valid = false;
   };
 
-  //! An autotile of the tilemap: its bitmap and the number of frames the
-  //! animation of it holds.
   struct Autotile {
     RefPtr<Bitmap> texture;
     int32_t frames = 0;
@@ -138,37 +124,29 @@ class TilemapXP : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  //! Reads the rect and the origin of the viewport of this tilemap, or the size
-  //! of the screen when it has none, into render_viewport_ and render_offset_.
   void UpdateViewport();
-  //! Makes the above layers match the height of the region this frame draws,
-  //! see the comment of UpdateAboves().
+
   void UpdateAboves();
-  //! Sets the Z of every above layer from the row of the screen it stands for,
-  //! see the comment of UpdateOrder().
+
   void UpdateOrder();
-  //! Collects the tiles of the region of this frame into \p ground and \p
-  //! aboves, the latter one entry per above layer.
+
   void ParseTiles(std::vector<TileQuad>* ground,
                   std::vector<std::vector<TileQuad>>* aboves);
-  //! Collects, emits and uploads the ground layer and every above layer.
+
   void BuildLayers();
-  //! Binds the pipeline and the object set of a layer and issues the draws of
-  //! it against the vertex buffer the layer uploaded.
+
   void DrawLayer(DrawParam param, const TileLayer& layer);
-  //! The drawing stage of the child above of id, see TilemapXPAbove.
+
   void DrawAboveLayer(DrawParam param, int32_t id);
-  //! True when the above layer of id holds a tile this frame, i.e. when its
-  //! child has something to draw.
+
   bool HasAboveLayer(int32_t id) const;
 
   std::vector<RefPtr<TilemapXPAbove>> aboves_;
-  //! The region of the map this frame draws, in tiles.
+
   RectI render_viewport_ = {};
-  //! The offset the tiles of this frame are placed at, in pixels.
+
   glm::vec2 render_offset_ = glm::vec2(0.0f);
-  //! The slot of the object pool this frame put the identity transform of this
-  //! tilemap in, see BuildLayers().
+
   UniformBlockPool::Slot object_slot_ = {};
   int32_t anim_index_ = 0;
 
@@ -181,7 +159,6 @@ class TilemapXP : public Node {
   bool xrepeat_ = true, yrepeat_ = true;
   int32_t tilesize_ = 32;
 
-  //! The ground layer of this frame and its above layers, built by Prepare().
   TileLayer ground_layer_;
   std::vector<TileLayer> above_layers_;
 };

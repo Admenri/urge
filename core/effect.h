@@ -35,8 +35,6 @@
 
 namespace urge {
 
-//! A user-authored shader an object draws with: a vertex and a fragment stage,
-//! the engine vertex stream and sets 0/1, and a caller-filled custom set 2.
 URGE_BINDING()
 class Effect : public Object {
  public:
@@ -60,50 +58,38 @@ class Effect : public Object {
   URGE_BINDING()
   void SetBlock(uint32_t slot, std::string uniform_block);
 
-  //! The state of the draw of this effect, made once in the constructor.
   wgpu::RenderPipeline AcquirePipeline();
 
-  //! The custom bind group (set 2) of this effect, rebuilt when the staged
-  //! resources changed since the last call.
-  //! set 0 -> SceneGroup, 1 -> ObjectGroup (dynamic), 2 -> CustomGroup (self)
   wgpu::BindGroup AcquireBindGroup();
 
-  //! Hands the shader the region it filters, as the texture at custom binding 0
-  //! and its sampler at binding 1; a Viewport sets this before drawing with the
-  //! effect, see Viewport::FinishFilter.
   void SetFilterSource(RefPtr<Bitmap> texture);
 
  private:
-  //! The compiled stages and the draw state, shared by the copies of an effect:
-  //! a shader is immutable, so a copy reuses the pipeline of the original.
+
   struct PipelineHolder : public RefCounted<PipelineHolder> {
-    //! The bindings the stages declare in set 2, keyed by their binding.
     std::map<uint32_t, ShaderBinding> custom_bindings;
-    //! The state of the draw, built from the two stages.
+
     wgpu::RenderPipeline pipeline;
   };
 
-  //! What the caller staged for one binding of the custom set.
   struct SlotResource {
-    //! The buffer of a buffer binding; empty for a texture or sampler binding.
     wgpu::Buffer buffer;
-    //! The bitmap a texture or sampler binding reads; empty for a buffer.
+
     RefPtr<Bitmap> bitmap;
   };
 
-  //! Compiles the two stages, reads the blend state and builds the pipeline.
   void CreateInternal(std::string vs_glsl,
                       std::string fs_glsl,
                       std::string blend_states);
-  //! Stages \p size bytes at \p data into the buffer binding \p slot.
+
   void SetBufferBytes(uint32_t slot, const void* data, uint32_t size);
-  //! Makes the bind group of set 2 out of the staged resources.
+
   void RebuildBindGroup();
 
   RefPtr<PipelineHolder> holder_;
   std::map<uint32_t, SlotResource> resources_;
   wgpu::BindGroup binding_;
-  //! Whether \p binding_ has to be rebuilt before it is handed out.
+
   bool binding_dirty_ = false;
 };
 

@@ -22,16 +22,20 @@
 
 #pragma once
 
+#include <cstdint>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "core/definition.h"
 #include "core/object.h"
 
 namespace urge {
 
-// Empty-shell audio subsystem: the public interface is preserved for the
-// Ruby bindings and the frame loop, while every operation is a no-op until
-// audio is reimplemented on top of SDL3.
+class AudioEmit;
+class AudioService;
+class AudioStream;
+
 URGE_BINDING()
 class Audio : public Singleton<Audio> {
  public:
@@ -77,9 +81,36 @@ class Audio : public Singleton<Audio> {
   URGE_BINDING()
   void SEStop();
 
- public:
-  // Called once per frame by the application.
+  URGE_BINDING()
+  ATTR(int32_t, MasterVolume);
+  URGE_BINDING()
+  ATTR(int32_t, BGMVolume);
+  URGE_BINDING()
+  ATTR(int32_t, BGSVolume);
+  URGE_BINDING()
+  ATTR(int32_t, MEVolume);
+  URGE_BINDING()
+  ATTR(int32_t, SEVolume);
+
+  std::vector<std::string> OutputDevices();
+
+  const std::string& output_device() const { return output_device_; }
+
+  bool SetOutputDevice(std::string name);
+
   void Update();
+
+ private:
+
+  void ApplyVolumes();
+
+  std::unique_ptr<AudioService> service_;
+  std::unique_ptr<AudioStream> bgm_;
+  std::unique_ptr<AudioStream> bgs_;
+  std::unique_ptr<AudioStream> me_;
+  std::unique_ptr<AudioEmit> se_;
+
+  std::string output_device_;
 };
 
 }  // namespace urge

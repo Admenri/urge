@@ -40,17 +40,12 @@ namespace urge {
 
 namespace {
 
-// Legacy PI macro value from the raylib headers.
 constexpr float kPi = 3.14159265358979323846f;
 
-//! Height of one strip a waved sprite is bent in, in pixels.
 constexpr int32_t kWaveBlockAlign = 8;
 
-//! The shortest wavelength a wave is evaluated with, a length of zero would
-//! divide the phase of a block by it.
 constexpr int32_t kMinimumWaveLength = 1;
 
-//! Converts degrees into radians, the unit the sine of a wave is taken in.
 float DegreesToRadians(float degrees) {
   return degrees * (kPi / 180.0f);
 }
@@ -60,7 +55,7 @@ float DegreesToRadians(float degrees) {
 Sprite::Sprite(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
       src_rect_(MakeRefCounted<Rect>()),
-      // The default attribute values of RGSS: no color and no tone blend
+
       color_(MakeRefCounted<Color>()),
       tone_(MakeRefCounted<Tone>()),
       rgssvx_style_(Config::Get().vx() || Config::Get().vxa()) {
@@ -268,8 +263,6 @@ ATTR_DEF(Sprite, int32_t, Opacity) {
 
 ATTR_DEF(Sprite, int32_t, BlendType) {
   if (value.has_value()) {
-    /* The blend type indexes the pipeline states of the sprite shader, so it is
-       kept inside the range of the blend types the engine knows. */
     blend_type_ = std::clamp(*value, static_cast<int32_t>(BLEND_NONE),
                              static_cast<int32_t>(BLEND_SUBTRACT));
     return std::nullopt;
@@ -315,17 +308,14 @@ void Sprite::DisposeObject() {
 bool Sprite::Prepare(DrawParam param) {
   primitive_slot_ = {};
 
-  // A sprite without a bitmap, or with one which was disposed, draws nothing
   if (!Disposable::Check(bitmap_))
     return false;
 
-  // The geometry goes into the vertex batch of the frame, see QuadVertexManager
   primitive_slot_ = EmitGeometryInternal(*param->vertices);
-  // A source rectangle which is empty after being limited to the texture
+
   if (!primitive_slot_.count)
     return false;
 
-  // Sprite transform: origin before scale/rotation, position after; rotation negated (y down).
   const glm::mat4 transform =
       world_transform() *
       glm::translate(glm::mat4(1.0f), glm::vec3(static_cast<float>(x_),
@@ -337,7 +327,6 @@ bool Sprite::Prepare(DrawParam param) {
           glm::mat4(1.0f),
           glm::vec3(static_cast<float>(-ox_), static_cast<float>(-oy_), 0.0f));
 
-  // Both sprite uniforms live in a shared per-frame buffer; the draw binds the slots.
   UniformManager& uniforms = UniformManager::Get();
 
   ObjectData object_data;
@@ -356,7 +345,6 @@ bool Sprite::DoDraw(DrawParam param) {
   const UniformBlockPool::Chunk& param_chunk =
       uniforms.sprite_uniforms().chunk(param_slot_.chunk);
 
-  // An effect replaces shader and blend; geometry, transform and sets stay, see Effect.
   if (effect_) {
     param->pass.SetPipeline(effect_->AcquirePipeline());
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
@@ -370,14 +358,14 @@ bool Sprite::DoDraw(DrawParam param) {
 
   param->pass.SetPipeline(ShaderSet::Get().state.sprite.sprite_blends.at(
       static_cast<BlendType>(blend_type_)));
-  // The scene of the render target, its object set is not the one of a sprite
+
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
-  // The object transform of this sprite, bound with the offset of its slot
+
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
-  // The parameter of this sprite, bound with the offset of its slot
+
   param->pass.SetBindGroup(3, param_chunk.group, 1, &param_slot_.offset);
-  // The batch of the frame holds the vertices, this draw takes its own range
+
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
   param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
 
@@ -385,12 +373,10 @@ bool Sprite::DoDraw(DrawParam param) {
 }
 
 SpriteBase::SpriteParam Sprite::MakeParamInternal() {
-  // Blend color is the color, or the flash color while the flash is stronger.
   glm::vec4 blend_color = color_->Normalize();
   if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
     blend_color = flash_.color;
 
-  // Bush cuts the sprite below a source line; the depth is a normalized texture coordinate.
   const float texture_height =
       static_cast<float>(std::max(1, bitmap_->size().y));
   const RectI src = src_rect_->data;
@@ -409,7 +395,6 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
   const int32_t texture_width = bitmap_->size().x;
   const int32_t texture_height = bitmap_->size().y;
 
-  // The source rectangle of a sprite is limited to the bitmap it reads from
   RectI src = src_rect_->data;
   src.width = std::clamp(src.width, 0, std::max(0, texture_width - src.x));
   src.height = std::clamp(src.height, 0, std::max(0, texture_height - src.y));
@@ -418,12 +403,10 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
 
   const glm::vec2 texture_size(static_cast<float>(texture_width),
                                static_cast<float>(texture_height));
-  // Premultiplied content: sprite opacity scales all four vertex color channels.
+
   const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
 
   if (wave_amp_ == 0) {
-    /* The vertices of a plain quad are the source rectangle at the origin, the
-       position and the origin of the sprite are part of its model matrix. */
     RectI texcoord = src;
     if (mirror_)
       texcoord = RectI(src.x + src.width, src.y, -src.width, src.height);
@@ -432,7 +415,6 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
                              static_cast<float>(src.height)),
                        MakeNorm(RectF(texcoord), texture_size), color);
   } else {
-    // A wave bends the sprite in kWaveBlockAlign-pixel strips by the sine of their phase.
     const float phase = DegreesToRadians(wave_phase_);
     const float length =
         static_cast<float>(std::max<int32_t>(kMinimumWaveLength, wave_length_));

@@ -9,3 +9,10 @@ target_link_libraries(urge-core PUBLIC webgpu-cpp-header glslang::glslang glslan
 
 target_link_libraries(urge-core PUBLIC webgpu_wgpu)
 target_compile_definitions(urge-core PUBLIC WEBGPU_BACKEND_WGPU=1)
+
+# The in-engine debug interface (core/imgui_manager.cc) lives in this library,
+# so both the headers and the backend selector come from the ImGui target.
+target_link_libraries(urge-core PUBLIC imgui-docking)
+
+# The audio subsystem decodes with miniaudio and plays through SDL.
+target_link_libraries(urge-core PUBLIC miniaudio)

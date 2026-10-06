@@ -65,11 +65,8 @@ class Plane : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  //! Creates the buffer and the bind group the tint of this plane is read from,
-  //! which the plane pipeline binds at set 3.
   void CreateEffectBindings();
-  //! Emits the quad which covers the render target with the tiles of the
-  //! bitmap, see Prepare().
+
   PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter,
                                               DrawParam param);
 
@@ -80,15 +77,10 @@ class Plane : public Node {
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
 
-  //! Object pool slot of this plane, bound at set 1; its tiles place themselves
-  //! by texture coordinate instead of by the transform.
   UniformBlockPool::Slot object_slot_ = {};
-  //! The range EmitGeometryInternal() appended to the vertex batch of the
-  //! frame, i.e. the vertices DoDraw() draws.
+
   PrimitiveEmitter::Slot primitive_slot_ = {};
 
-  //! The tint of this plane, `PlaneBase::PlaneParam`, and the bind group of set
-  //! 3 which covers it.
   wgpu::Buffer tint_uniform_;
   wgpu::BindGroup tint_group_;
 };

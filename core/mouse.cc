@@ -31,7 +31,6 @@ namespace urge {
 
 namespace {
 
-//! Logical window size SDL reports the pointer in; false when it is degenerate.
 bool WindowSizeInternal(SDL_Window* window, float* width, float* height) {
   int size_x = 0, size_y = 0;
   if (!window || !SDL_GetWindowSize(window, &size_x, &size_y))
@@ -53,7 +52,6 @@ Mouse::~Mouse() {
   if (!cursor_)
     return;
 
-  // Restore the arrow before freeing: SDL keeps using the cursor until another is set.
   if (SDL_GetCursor() == cursor_)
     SDL_SetCursor(SDL_GetDefaultCursor());
   SDL_DestroyCursor(cursor_);
@@ -63,23 +61,16 @@ void Mouse::Update() {
   for (int32_t button = 0; button < kButtonCount; ++button) {
     const bool pressed = raw_pressed_[button];
 
-    /* An edge lasts one frame: a press is a down while the state of the frame
-       before was up, and a release is the two states the other way around. */
     buttons_[button].down = !buttons_[button].pressed && pressed;
     buttons_[button].up = buttons_[button].pressed && !pressed;
     buttons_[button].pressed = pressed;
 
-    // The count of SDL is kept as it is, IsDouble() reads it with the edge
     buttons_[button].clicks = raw_clicks_[button];
   }
 
-  /* The position is compared in window coordinates, the space it is stored in,
-     see the class documentation. */
   moved_ = position_.x != last_position_.x || position_.y != last_position_.y;
   last_position_ = position_;
 
-  /* The wheel offset of the frame is what the events of it accumulated over
-     the total of the frame before. */
   scroll_delta_ = Point{scroll_.x - last_scroll_.x, scroll_.y - last_scroll_.y};
   last_scroll_ = scroll_;
 }
@@ -97,13 +88,9 @@ void Mouse::SetPosition(float x, float y) {
   if (!window)
     return;
 
-  /* SDL moves the pointer inside a window, so the screen coordinate is mapped
-     back into the space the window is in, see the class documentation. */
   const Point position = ScreenToWindowInternal(Point{x, y});
   SDL_WarpMouseInWindow(window, position.x, position.y);
 
-  /* SDL posts the move back as a motion event, but the position is written
-     here as well so a query right after the call already reads it. */
   position_ = position;
 }
 
@@ -123,7 +110,6 @@ bool Mouse::IsDouble(int32_t button) {
   if (button < 0 || button >= kButtonCount)
     return false;
 
-  // Read the click count together with the press edge, so the double click lasts one frame.
   return buttons_[button].down && buttons_[button].clicks == 2;
 }
 
@@ -149,7 +135,6 @@ int32_t Mouse::ScrollY() {
 
 void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
   if (!image) {
-    // A nil bitmap restores the arrow; set it before the cursor is freed.
     SDL_SetCursor(SDL_GetDefaultCursor());
     if (cursor_) {
       SDL_DestroyCursor(cursor_);
@@ -158,7 +143,6 @@ void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
     return;
   }
 
-  // SDL copies the surface, so it can be dropped once the cursor exists.
   RefPtr<Palette> surface = image->ToPalette();
   if (!surface)
     return;
@@ -167,8 +151,6 @@ void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
   if (!cursor)
     return;
 
-  /* The previous cursor of this class is dropped only once the new one is in
-     use, see the destructor. */
   SDL_Cursor* previous = cursor_;
   cursor_ = cursor;
   SDL_SetCursor(cursor_);
@@ -178,8 +160,6 @@ void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
 
 ATTR_DEF(Mouse, bool, Capture) {
   if (value.has_value()) {
-    /* SDL only counts a capture as active while a button is held, so the state
-       asked for here is kept rather than read back from SDL. */
     capture_ = *value;
     SDL_CaptureMouse(capture_);
     return std::nullopt;
@@ -208,7 +188,6 @@ void Mouse::ProcessEvents(SDL_Event* event) {
       break;
     }
 
-    // Press, release and wheel also carry the position, so they update it too.
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP: {
       const SDL_MouseButtonEvent& button = event->button;
@@ -225,8 +204,6 @@ void Mouse::ProcessEvents(SDL_Event* event) {
       const SDL_MouseWheelEvent& wheel = event->wheel;
       position_ = Point{wheel.mouse_x, wheel.mouse_y};
 
-      /* SDL reports a wheel of natural direction with the sign inverted and
-         flags it, so the offset is negated to read as the user turned it. */
       const float direction =
           wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1.0f : 1.0f;
       scroll_.x += wheel.x * direction;

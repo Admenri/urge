@@ -33,16 +33,12 @@ namespace urge {
 
 namespace {
 
-//! The face a lookup falls back to when the game ships no font of its own.
 constexpr char kEmbeddedFontName[] = "Default.ttf";
 
-//! Directory the fonts of the game are searched in, relative to the load path.
 constexpr char kFontDirectory[] = "Fonts/";
 
-//! RGSS sizes are a pixel height, TTF_Font is opened at a point size.
 constexpr float kFontRealScale = 0.9f;
 
-//! RGSS refuses to build a font outside of this size range.
 constexpr int32_t kMinFontSize = 6;
 constexpr int32_t kMaxFontSize = 96;
 
@@ -53,7 +49,6 @@ std::string ToLower(std::string value) {
   return value;
 }
 
-//! Reads a whole stream into memory, which is what the font cache stores.
 FontContext::FontData ReadStreamToMemory(SDL_IOStream* stream) {
   const int64_t size = SDL_GetIOSize(stream);
   if (size <= 0)
@@ -78,7 +73,6 @@ FontContext::FontData ReadStreamToMemory(SDL_IOStream* stream) {
 }  // namespace
 
 FontContext::FontContext() {
-  // TTF must be up before any face is opened from it.
   if (!TTF_Init()) {
     throw Exception(Exception::kRGSSError, "TTF_Init failed: {}",
                     SDL_GetError());
@@ -92,8 +86,6 @@ FontContext::FontContext() {
 
   LoadFontDirectory(kFontDirectory);
 
-  // A game that ships no such font falls back to the embedded face, which is
-  // what keeps text working out of the box.
   auto default_it = data_cache_.find(ToLower(default_font_));
   if (default_it == data_cache_.end()) {
     LOGGER_INFO("[Font] Default font missing, using embedded font instead.");
@@ -117,11 +109,9 @@ bool FontContext::FontExists(const std::string& name) const {
 
 TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
                                    int32_t size) {
-  // A size outside the RGSS range is dropped rather than clamped.
   if (size < kMinFontSize || size > kMaxFontSize)
     return nullptr;
 
-  // Requested faces first, the engine default last.
   std::vector<std::string> candidates = names;
   candidates.push_back(default_font_);
 
@@ -169,7 +159,6 @@ void FontContext::LoadFontDirectory(const std::string& directory) {
     if (!data.data)
       continue;
 
-    // Keyed by lower case file name, as every lookup does.
     data_cache_[ToLower(file)] = data;
     LOGGER_INFO("[Font] Loaded Font: {}", file);
   }
@@ -186,8 +175,6 @@ void FontContext::LoadInternalFont() {
   data.size = embed_ttf_len;
   data.data = memory;
 
-  // Registered under the name the engine asks for, so the fallback path finds
-  // it without a special case.
   data_cache_[ToLower(default_font_)] = data;
 }
 
@@ -196,8 +183,6 @@ TTF_Font* FontContext::OpenFont(const std::string& name, int32_t size) {
   if (data_it == data_cache_.end())
     return nullptr;
 
-  // TTF_OpenFontIO takes ownership of the stream, which is safe because the
-  // FontData it reads stays alive in data_cache_ for the whole process.
   SDL_IOStream* stream = SDL_IOFromConstMem(
       data_it->second.data, static_cast<size_t>(data_it->second.size));
   if (!stream)

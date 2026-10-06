@@ -39,7 +39,6 @@ class Exception final {
     kResetError,
   };
 
-  // NOTE: make_format_args binds lvalue references only, so do not forward here.
   template <typename... Args>
   explicit Exception(Type type, std::string_view format, Args&&... args) {
     type_ = type;

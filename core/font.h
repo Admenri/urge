@@ -91,17 +91,12 @@ class Font : public Object {
   URGE_BINDING()
   static ATTR(RefPtr<Color>, DefaultGradientColor);
 
-  //! Underlying TTF handle of the current name and size.
   TTF_Font* ttf_font();
 
-  //! Renders \p text into a freshly allocated ABGR8888 surface, or nullptr on
-  //! failure; \p font_opacity receives the alpha of the text color.
   SDL_Surface* RenderText(const std::string& text, uint8_t* font_opacity);
 
-  //! Pixel extent of \p text without rendering it.
   bool MeasureText(const std::string& text, int32_t* width, int32_t* height);
 
-  //! The face this Font resolved to, mainly for diagnostics.
   std::vector<std::string> name_;
   int32_t size_ = 24;
   bool bold_ = false, italic_ = false, outline_ = true, shadow_ = false,

@@ -23,6 +23,8 @@
 #pragma once
 
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "core/inirw.h"
 #include "core/object.h"
@@ -45,23 +47,39 @@ class Config : public Singleton<Config> {
 
   struct {
     std::string soundfont = "Fonts/Default.sf2";
+    int32_t master_volume = 100;
+    int32_t bgm_volume = 100;
+    int32_t bgs_volume = 100;
+    int32_t me_volume = 100;
+    int32_t se_volume = 100;
+    std::string output_device;
   } audio;
 
   struct {
     int32_t width = 640;
     int32_t height = 480;
-  } window;
+    bool vsync = false;
+    bool fullscreen = false;
+    bool frame_skip = false;
+  } display;
 
   struct {
     std::string backend = {};
   } gfx;
+
+  std::vector<std::pair<std::string, int32_t>> key_bindings;
 
  public:
   bool xp() { return game.rgss == 1; }
   bool vx() { return game.rgss == 2; }
   bool vxa() { return game.rgss == 3; }
 
+  void Save();
+
  private:
+  void Load();
+
+  std::string inifile_;
   ini::IniFile parser_;
 };
 

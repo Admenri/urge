@@ -29,14 +29,15 @@
 
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_messagebox.h"
-#include "SDL3_image/SDL_image.h"
+#include "SDL3_ttf/SDL_ttf.h"
 
 #include "app/platform/win32.h"
 
+#include "core/audio.h"
 #include "core/config.h"
+#include "core/device.h"
 #include "core/filesystem.h"
 #include "core/font_context.h"
-#include "core/device.h"
 #include "core/graphics.h"
 #include "core/input.h"
 #include "core/logger.h"
@@ -68,14 +69,18 @@ int main(int argc, char* argv[]) {
     app = app.substr(0, last_sep);
   std::string ini = app + ".ini";
 
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS);
+  TTF_Init();
+
   // Components initialize
+  urge::Config* config = nullptr;
   try {
     auto io = new urge::IOService(argv[0]);
     urge::IOService::Reset(io);
     io->SetWritePath(base_dir);
     io->AddLoadPath(".", "/");
 
-    auto config = new urge::Config(ini);
+    config = new urge::Config(ini);
     urge::Config::Reset(config);
 
 // RTP reading
@@ -102,6 +107,12 @@ int main(int argc, char* argv[]) {
     auto mouse = new urge::Mouse();
     urge::Mouse::Reset(mouse);
 
+    /* The mixer is built on the audio settings the file carried, once the load
+       paths are mounted -- it reads its tracks through them -- and before
+       Graphics, whose every frame drives it, see Graphics::Update(). */
+    auto audio = new urge::Audio();
+    urge::Audio::Reset(audio);
+
     /* The font service is set up after the load paths are mounted -- it reads
        the font directory off them -- and before anything that can draw text. */
     auto font_context = new urge::FontContext();
@@ -120,12 +131,22 @@ int main(int argc, char* argv[]) {
                              nullptr);
   }
 
+  /* The settings are put on disk before anything goes away, so the next run
+     starts where this one ended.  A run that never got as far as the
+     configuration has nothing to write. */
+  if (config)
+    config->Save();
+
   urge::Graphics::Reset(nullptr);
   urge::FontContext::Reset(nullptr);
   urge::Mouse::Reset(nullptr);
   urge::Input::Reset(nullptr);
+  urge::Audio::Reset(nullptr);
   urge::Config::Reset(nullptr);
   urge::IOService::Reset(nullptr);
+
+  TTF_Quit();
+  SDL_Quit();
 
   return 0;
 }

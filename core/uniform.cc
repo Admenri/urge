@@ -35,13 +35,10 @@ namespace urge {
 
 namespace {
 
-//! The slot distance used when the device reports no alignment.
 constexpr uint32_t kDefaultSlotStride = 256;
 
-//! The chunk size used when the device reports no binding limit.
 constexpr uint32_t kDefaultChunkSize = 64 * 1024;
 
-// A larger chunk would only waste memory; a frame overflows into the next chunk.
 constexpr uint32_t kMaxChunkSize = 1024 * 1024;
 
 }  // namespace
@@ -59,7 +56,7 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
                     "the uniform pool '{}' was given an empty element.", name_);
 
   wgpu::Limits limits = {};
-  // Use the device limits (what it validates against), not the adapter's.
+
   GPUDevice::Get().device().GetLimits(&limits);
 
   const uint32_t alignment =
@@ -67,7 +64,6 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
           ? kDefaultSlotStride
           : limits.minUniformBufferOffsetAlignment;
 
-  // Slot distance = max(alignment, element size); both are powers of two.
   slot_stride_ = std::max(alignment, element_size_);
 
   const uint64_t binding_limit =
@@ -79,8 +75,7 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
 
   slots_per_chunk_ =
       static_cast<uint32_t>(std::max<uint64_t>(1, chunk_limit / slot_stride_));
-  // The buffer is a whole multiple of the slot distance, a partial slot at the
-  // end of a chunk would never be used
+
   chunk_size_ = slots_per_chunk_ * slot_stride_;
 
   LOGGER_DEBUG(
@@ -110,7 +105,6 @@ UniformBlockPool::Slot UniformBlockPool::Acquire(const void* data,
                     "given {} bytes.",
                     name_, element_size_, size);
 
-  // The chunk which is being filled, a chunk of an earlier frame is empty again
   while (active_chunk_ < chunks_.size() &&
          chunks_[active_chunk_].used == chunks_[active_chunk_].capacity)
     ++active_chunk_;
@@ -149,7 +143,6 @@ void UniformBlockPool::CreateChunk() {
   chunk.buffer = GPUDevice::Get().device().CreateBuffer(&buffer_desc);
   chunk.capacity = slots_per_chunk_;
 
-  // Bind one element, not the whole buffer, so offsets beyond the first slot stay valid.
   util::BufferSet binding(chunk.buffer);
   binding.size = element_size_;
   chunk.group = util::CreateBindGroup(layout_, {{0, binding}});
@@ -167,10 +160,8 @@ void UniformBlockPool::CreateChunk() {
   active_chunk_ = static_cast<uint32_t>(chunks_.size() - 1);
 }
 
-/* ----- UniformManager ----- */
-
 UniformManager::UniformManager()
-    // Sprite and tint pipelines share the dynamic object-set layout.
+
     : object_uniforms_(ShaderSet::Get()
                            .state.sprite.sprite_blends.at(BLEND_NORMAL)
                            .GetBindGroupLayout(1),

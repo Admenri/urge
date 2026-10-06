@@ -32,7 +32,6 @@ namespace urge {
 
 namespace {
 
-// Shared vertex stage of every built in pipeline.
 const char kVS_TransformBase[] = R"(#version 450
 layout(location = 0) in vec4 in_position;
 layout(location = 1) in vec2 in_texcoord;
@@ -56,7 +55,6 @@ void main() {
 }
 )";
 
-// Samples the texture and multiplies by the vertex color.
 const char kFS_TextureBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -71,8 +69,6 @@ void main() {
 }
 )";
 
-// Present stage: decodes sRGB back to linear so an *Srgb swapchain does not
-// encode the already encoded texel a second time.
 const char kFS_PresentBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -94,7 +90,6 @@ void main() {
 }
 )";
 
-// Outputs the vertex color, no texture.
 const char kFS_ColorBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -106,7 +101,6 @@ void main() {
 }
 )";
 
-// Texture with the Color/Tone tint of a sprite-less draw.
 const char kFS_TintBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -134,7 +128,6 @@ void main() {
 }
 )";
 
-// Texture with the tint and the bush depth/opacity of a Sprite.
 const char kFS_SpriteBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -169,8 +162,6 @@ void main() {
 }
 )";
 
-// Tiles the texture over the whole target: the fractional part of the surface
-// coordinate is what the sampler reads.
 const char kFS_PlaneBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -199,8 +190,6 @@ void main() {
 }
 )";
 
-// Cross-fades the frozen scene into the current one by the progress in
-// v_color.a.
 const char kFS_TransitionAlpha[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -220,7 +209,6 @@ void main() {
 }
 )";
 
-// Cross-fades the two scenes through a mapping texture, spread by v_color.r.
 const char kFS_TransitionMap[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -247,7 +235,6 @@ void main() {
 }
 )";
 
-// Marks the pixels a fragment covers into the stencil.
 wgpu::DepthStencilState* GetStencilWriteState() {
   static wgpu::DepthStencilState state{
       .format = wgpu::TextureFormat::Depth24PlusStencil8,
@@ -266,7 +253,6 @@ wgpu::DepthStencilState* GetStencilWriteState() {
   return &state;
 }
 
-// Clips a fragment to the region another pass marked, without writing.
 wgpu::DepthStencilState* GetStencilTestState() {
   static wgpu::DepthStencilState state{
       .format = wgpu::TextureFormat::Depth24PlusStencil8,
@@ -396,9 +382,6 @@ wgpu::PrimitiveState GetDefaultPrimitiveState() {
   return primitive;
 }
 
-// The state of a pipeline used in a pass that carries a depth-stencil
-// attachment it does not care about: the test always passes and the masks are
-// zero, so the attachment is left as it was.
 wgpu::DepthStencilState* GetDepthStencilState() {
   static wgpu::DepthStencilState state{
       .format = wgpu::TextureFormat::Depth24PlusStencil8,
@@ -417,8 +400,6 @@ wgpu::DepthStencilState* GetDepthStencilState() {
   return &state;
 }
 
-// A preset name, or a ";" separated "key=value" list that overrides the
-// premultiplied blend of BLEND_NORMAL.
 std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   const std::string text = Lower(Trim(states));
 
@@ -493,18 +474,12 @@ TextureBaseDynamic::TextureBaseDynamic()
 ColorBase::ColorBase()
     : Pipeline(kVS_TransformBase, kFS_ColorBase, {{0, 1, 2}}) {}
 
-// The object transform is uploaded in bulk, so set 1 is bound with a dynamic
-// offset.
 TintBase::TintBase()
     : Pipeline(kVS_TransformBase, kFS_TintBase, {{0, 1, 2}}, {1}) {}
 
-// Object data and the sprite parameter are both staged in a pooled buffer, so
-// sets 1 and 3 carry a dynamic offset.
 SpriteBase::SpriteBase()
     : Pipeline(kVS_TransformBase, kFS_SpriteBase, {{0, 1, 2}}, {1, 3}) {}
 
-// A plane keeps its object transform in the frame pool, so only set 1 is
-// dynamic.
 PlaneBase::PlaneBase()
     : Pipeline(kVS_TransformBase, kFS_PlaneBase, {{0, 1, 2}}, {1}) {}
 

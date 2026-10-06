@@ -53,18 +53,13 @@ enum BlendType : int32_t {
 
 wgpu::BlendState* GetBlendState(BlendType type);
 
-// The single color target format every pass of the engine carries.
 constexpr wgpu::TextureFormat kColorTargetFormat =
     wgpu::TextureFormat::RGBA8Unorm;
 
-// The primitive state of every draw: a triangle list, default winding, no
-// culling.
 wgpu::PrimitiveState GetDefaultPrimitiveState();
 
-// The depth-stencil state of a pass that carries an attachment it ignores.
 wgpu::DepthStencilState* GetDepthStencilState();
 
-// Parses the blend state of a user authored Effect description.
 std::optional<wgpu::BlendState> ParseBlendState(std::string_view states);
 
 class TextureBase : public Pipeline {
@@ -77,8 +72,6 @@ class PresentBase : public Pipeline {
   PresentBase();
 };
 
-// TextureBase whose object data is staged in the frame pool and bound with a
-// dynamic offset, which the window and tilemap nodes draw with.
 class TextureBaseDynamic : public Pipeline {
  public:
   TextureBaseDynamic();
@@ -132,8 +125,6 @@ class TransitionVague : public Pipeline {
   TransitionVague();
 };
 
-// Every pipeline of the engine: the shader programs, and the render pipeline
-// states grouped by the class that draws with them.
 struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     TextureBase texture_base;

@@ -40,8 +40,6 @@ namespace urge {
 
 class TilemapVX;
 
-//! Layer of a TilemapVX holding the tiles above the player (flag 0x10), drawn by
-//! a child node whose Z is 200 above the tilemap.
 class TilemapVXAbove : public Node {
  public:
   TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport);
@@ -54,9 +52,6 @@ class TilemapVXAbove : public Node {
   TilemapVX* parent_ = nullptr;
 };
 
-//! The tilemap of RGSS2/RGSS3: draws a Table of tile ids out of five autotile
-//! bitmaps and one tileset, inside the viewport it is given (without one it covers
-//! the whole screen). Its tiles place themselves by vertex position, not transform.
 URGE_BINDING()
 class TilemapVX : public Node {
  public:
@@ -95,23 +90,17 @@ class TilemapVX : public Node {
  private:
   friend class TilemapVXAbove;
 
-  //! One tile of the map: the rectangle it reads from its bitmap and the
-  //! rectangle it is drawn to, both in pixels of the render target.
   struct TileQuad {
     RefPtr<Bitmap> texture;
     RectF source;
     RectF destination;
   };
 
-  //! One draw of a layer: the bitmap its tiles read from and the range the
-  //! tiles occupy in the vertex batch which was uploaded for the layer.
   struct TileDraw {
     RefPtr<Bitmap> texture;
     PrimitiveEmitter::Slot slot;
   };
 
-  //! The geometry of one layer: the emitter which uploaded it and the draws it
-  //! is read with.
   struct TileLayer {
     PrimitiveEmitter primitive;
     std::vector<TileDraw> draws;
@@ -135,37 +124,29 @@ class TilemapVX : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  //! Builds the shadow bitmap the shadow tiles of the map are read from, see
-  //! process_shadow_tile().
   void CreateShadowSet();
-  //! Reads the rect and the origin of the viewport of this tilemap, or the size
-  //! of the screen when it has none, into render_viewport_ and render_offset_.
+
   void UpdateViewport();
-  //! Collects the tiles of one half of the map into \p quads: the tiles of the
-  //! map layer when \p above is false, the ones of the layer over the player
-  //! when it is true.
+
   void CollectMapData(bool above, std::vector<TileQuad>* quads);
-  //! Collects, emits and uploads one layer of the map into \p layer.
+
   void BuildLayer(bool above, TileLayer* layer);
-  //! Binds the pipeline and the object set of a layer and issues the draws of
-  //! it against the vertex buffer the layer uploaded.
+
   void DrawLayer(DrawParam param, TileLayer* layer);
-  //! The drawing stage of the child above, see TilemapVXAbove.
+
   void DrawAboveLayer(DrawParam param);
-  //! True when the layer over the player holds a tile this frame, i.e. when the
-  //! child above has something to draw.
+
   bool HasAboveLayer() const { return above_layer_.valid; }
 
   bool rgss3_style_ = true;
 
   RefPtr<TilemapVXAbove> above_;
   RefPtr<Bitmap> shadow_texture_;
-  //! The region of the map this frame draws, in tiles.
+
   RectI render_viewport_ = {};
-  //! The offset the tiles of this frame are placed at, in pixels.
+
   glm::vec2 render_offset_ = glm::vec2(0.0f);
-  //! The slot of the object pool this frame put the identity transform of this
-  //! tilemap in, see BuildLayer().
+
   UniformBlockPool::Slot object_slot_ = {};
 
   int32_t flash_timer_ = 0;
@@ -183,8 +164,6 @@ class TilemapVX : public Node {
   bool xrepeat_ = true, yrepeat_ = true;
   int32_t tilesize_ = 32;
 
-  //! The two layers of the map, the map itself and the one drawn over the
-  //! player, both built by Prepare().
   TileLayer map_layer_;
   TileLayer above_layer_;
 };

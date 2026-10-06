@@ -66,28 +66,21 @@ class Geometry : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  //! Emits the triangles of this geometry into the vertex batch of the frame.
   PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter);
 
   RefPtr<Bitmap> bitmap_;
   int32_t blend_type_ = 0;
-  //! The user authored shader the draw runs, or none for the built in mesh
-  //! pipeline, see DoDraw.
+
   RefPtr<Effect> effect_;
 
-  //! One triangle of the mesh: its three points, in the vertex layout the mesh
-  //! shader reads.
   struct TriangleData {
     VertexData vertex[3];
   };
-  //! The triangles of the mesh, one entry per unit of Capacity.
+
   std::vector<TriangleData> data_;
 
-  //! The slot of the object pool this frame put the transform of this geometry
-  //! in, which the mesh pipeline binds at set 1.
   UniformBlockPool::Slot object_slot_ = {};
-  //! The range EmitGeometryInternal() appended to the vertex batch of the
-  //! frame, i.e. the vertices DoDraw() draws.
+
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 

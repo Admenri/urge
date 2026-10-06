@@ -37,26 +37,16 @@ namespace urge {
 
 namespace {
 
-//! Distance of one slice of the nine-slice layout at scale 1, in pixels.
 constexpr int32_t kSliceSize = 8;
 
-//! The opacity the cursor breathes between, see WindowXP::Update().
 constexpr int32_t kCursorOpacityMin = 128;
 constexpr int32_t kCursorOpacityMax = 255;
 
-/*! The opacity the cursor moves per tick of Update(): the reference renderer
-    steps it by eight, so a full half of the range takes sixteen frames. */
 constexpr int32_t kCursorOpacityStep = 8;
 
-//! The offset of the contents inside the frame, at scale 1, in pixels.
 constexpr int32_t kContentOffset = 8;
 
 }  // namespace
-
-
-// ------------------------------------------------------------------------
-// WindowXPAbove
-// ------------------------------------------------------------------------
 
 WindowXPAbove::WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()), parent_(parent) {
@@ -65,8 +55,6 @@ WindowXPAbove::WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport)
 
 
 bool WindowXPAbove::Prepare(DrawParam param) {
-  /* The node is the second half of its window and is skipped with it: a
-     window which holds nothing inside its frame has no node above. */
   if (parent_ == nullptr)
     return false;
 
@@ -79,7 +67,6 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   if (!parent_->above_prepare_)
     return false;
 
-  // The node shares the window's transform, so it draws in the same space.
   const glm::mat4 transform =
       world_transform() *
       glm::translate(glm::mat4(1.0f),
@@ -92,7 +79,6 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   if (parent_->above_object_slot_.chunk == UniformBlockPool::kInvalidChunk)
     return false;
 
-  // All quads are emitted here; the batch is uploaded between prepare and draw.
   PrimitiveEmitter& emitter = *param->vertices;
 
   const auto capture = [&](const std::size_t first) {
@@ -101,7 +87,6 @@ bool WindowXPAbove::Prepare(DrawParam param) {
         static_cast<std::uint32_t>(emitter.size() - first)};
   };
 
-  // Erase the window area, mark the inner region, then emit the clipped parts.
   const std::size_t stencil_clear_first = emitter.size();
   parent_->EmitStencilClearInternal(emitter);
   parent_->stencil_clear_slot_ = capture(stencil_clear_first);
@@ -110,7 +95,6 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   parent_->EmitStencilInternal(emitter);
   parent_->stencil_slot_ = capture(stencil_first);
 
-  // Cursor and arrows read the same skin but draw in different places, so separate ranges.
   const std::size_t cursor_first = emitter.size();
   parent_->EmitCursorInternal(emitter);
   parent_->cursor_slot_ = capture(cursor_first);
@@ -119,7 +103,6 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   parent_->EmitArrowsInternal(emitter);
   parent_->arrows_slot_ = capture(arrows_first);
 
-  // The contents read their own bitmap, so they are a draw of their own
   const std::size_t contents_first = emitter.size();
   parent_->EmitContentsInternal(emitter);
   parent_->contents_slot_ = capture(contents_first);
@@ -146,7 +129,6 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
                            &window->above_object_slot_.offset);
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 
-  // Erase the whole window area at kStencilClear so every window can share one reference.
   if (window->stencil_clear_slot_.count) {
     param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_write);
     param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
@@ -156,7 +138,6 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
                      window->stencil_clear_slot_.first, 0);
   }
 
-  // Mark with a no-colour pass; the write mask drops the colour it would write.
   if (window->stencil_slot_.count) {
     param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_write);
     param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
@@ -166,7 +147,6 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
                      window->stencil_slot_.first, 0);
   }
 
-  // Cursor and arrows share set 2 from the skin; contents rebind their own texture.
   if (window->cursor_slot_.count || window->arrows_slot_.count ||
       window->contents_slot_.count) {
     param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_test);
@@ -232,7 +212,6 @@ void WindowXP::Update() {
 
 
 ATTR_DEF(WindowXP, bool, Visible) {
-  // Hiding the window must hide the sibling node above, or its parts stay on screen.
   if (above_)
     above_->Attr_Visible(value);
 
@@ -241,8 +220,6 @@ ATTR_DEF(WindowXP, bool, Visible) {
 
 
 ATTR_DEF(WindowXP, RefPtr<Viewport>, Viewport) {
-  /* The node above follows the window into whatever viewport it belongs to,
-     the two are one window and are clipped by the same region. */
   if (above_)
     above_->Attr_Parent(value.has_value() ? *value : nullptr);
 
@@ -408,7 +385,6 @@ ATTR_DEF(WindowXP, int32_t, ContentsOpacity) {
 
 
 ATTR_DEF(WindowXP, int32_t, Z) {
-  // Keep the node above at the window's Z plus two, so it lands after its siblings.
   if (value.has_value()) {
     if (above_)
       above_->Attr_Z(*value + 2);
@@ -445,12 +421,10 @@ bool WindowXP::Prepare(DrawParam param) {
   if (object_slot_.chunk == UniformBlockPool::kInvalidChunk)
     return false;
 
-  // Tell the node above whether the window holds anything to draw.
   above_prepare_ =
       (cursor_rect_->data.width > 0 && cursor_rect_->data.height > 0) ||
       pause_ || Disposable::Check(contents_);
 
-  // Every quad of the ground, see WindowVX::Prepare()
   PrimitiveEmitter& emitter = *param->vertices;
   const auto capture = [&](const std::size_t first) {
     return PrimitiveEmitter::Slot{
@@ -458,7 +432,6 @@ bool WindowXP::Prepare(DrawParam param) {
         static_cast<std::uint32_t>(emitter.size() - first)};
   };
 
-  // Only the stretched background goes through the tint pipeline; a tiled one has none.
   const std::size_t background_first = emitter.size();
   if (stretch_)
     EmitBackgroundInternal(emitter);
@@ -480,8 +453,6 @@ bool WindowXP::DoDraw(DrawParam param) {
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 
-  /* The stretched background layer, through the tint pipeline, see
-     WindowVX::DoDraw(). */
   if (background_slot_.count) {
     const TintBase::TintParam tint = {};
     GPUDevice::Get().queue().WriteBuffer(tint_uniform_, 0, &tint, sizeof(tint));
@@ -494,8 +465,6 @@ bool WindowXP::DoDraw(DrawParam param) {
     param->pass.Draw(background_slot_.count, 1, background_slot_.first, 0);
   }
 
-  /* The frame and, for a window which tiles it, the tiled background layer,
-     through the texture pipeline. */
   if (ground_slot_.count) {
     param->pass.SetPipeline(ShaderSet::Get().state.window.texture_dynamic_pma);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
@@ -513,11 +482,9 @@ void WindowXP::EmitGroundInternal(PrimitiveEmitter& emitter) {
 
   const int32_t slice = kSliceSize * scale_;
 
-  // The frame is the nine slices of the 32x32 skin block at (64, 0), at scale 1.
   const RectI frame_source(64 * scale_, 0, slice * 4, slice * 4);
   const RectI frame_dest(0, 0, width_, height_);
 
-  // 1. The background of a window which tiles it, as a plain texture
   if (!stretch_) {
     const int32_t cell = 64 * scale_;
     const RectI background_source(0, 0, cell, cell);
@@ -530,10 +497,9 @@ void WindowXP::EmitGroundInternal(PrimitiveEmitter& emitter) {
                       background_color);
   }
 
-  // 2. The frame: the nine slices of the cell at (64, 0), at full opacity
   const glm::vec4 frame_color(static_cast<float>(opacity_) / 255.0f);
   EmitNineSliceInternal(emitter, frame_source, frame_dest, slice, frame_color,
-                        /*draw_center=*/false);
+                        false);
 }
 
 
@@ -541,8 +507,6 @@ void WindowXP::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
     return;
 
-  /* The background of an XP skin is the cell at (0, 0), which is 64x64 at
-     scale 1, stretched over the inner area. */
   const int32_t cell = 64 * scale_;
 
   const RectI background_source(0, 0, cell, cell);
@@ -559,7 +523,6 @@ void WindowXP::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
 
 
 void WindowXP::EmitStencilClearInternal(PrimitiveEmitter& emitter) {
-  // Erase the whole window area (frame included); emitted in the node above's space.
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
     return;
 
@@ -584,8 +547,6 @@ void WindowXP::EmitStencilInternal(PrimitiveEmitter& emitter) {
   if (!has_cursor && !pause_ && !Disposable::Check(contents_))
     return;
 
-  /* The mark is a plain quad over the inner region; its texture and colour
-     are irrelevant, because the marking pipeline writes no colour. */
   emitter.EmitQuad(RectF(region),
                    MakeNorm(RectF(RectI(0, 0, 1, 1)), windowskin_->size()),
                    glm::vec4(1.0f));
@@ -601,14 +562,13 @@ void WindowXP::EmitCursorInternal(PrimitiveEmitter& emitter) {
   const glm::vec4 color(static_cast<float>(contents_opacity_) / 255.0f *
                         static_cast<float>(cursor_opacity_) / 255.0f);
 
-  // Cursor: the nine slices of the (64, 32) cell, stretched to CursorRect, centre kept.
   EmitNineSliceInternal(
       emitter,
       RectI(64 * scale_, 32 * scale_, kSliceSize * 2 * scale_,
             kSliceSize * 2 * scale_),
       RectI(kContentOffset * scale_ + cursor.x,
             kContentOffset * scale_ + cursor.y, cursor.width, cursor.height),
-      scale_, color, /*draw_center=*/true);
+      scale_, color, true);
 }
 
 
@@ -617,7 +577,6 @@ void WindowXP::EmitArrowsInternal(PrimitiveEmitter& emitter) {
   const glm::ivec2 origin = LimitedOriginInternal();
   const int32_t slice = kSliceSize * scale_;
 
-  // The arrows and the pause icon are centred on the inner region
   const int32_t center_x = (width_ - slice) / 2;
   const int32_t center_y = (height_ - slice) / 2;
 
@@ -647,8 +606,6 @@ void WindowXP::EmitArrowsInternal(PrimitiveEmitter& emitter) {
                         glm::vec4(1.0f));
   }
 
-  /* The four frames of the pause icon are the 2x2 block at (80, 32) of the
-     skin; the animation walks it one frame per eighth of the cycle. */
   if (pause_) {
     const int32_t frame = pause_index_ / 8;
     const RectI pause_src((80 + (frame % 2) * 8) * scale_,
@@ -691,7 +648,6 @@ void WindowXP::EmitSliceInternal(PrimitiveEmitter& emitter,
   if (!src() || !dest())
     return;
 
-  // Close the batch EmitQuad left open, so callers may emit slices freely.
   const glm::ivec2 skin_size = windowskin_->size();
   emitter.EmitQuad(RectF(dest), MakeNorm(RectF(src), skin_size), color);
   emitter.End();
@@ -707,7 +663,6 @@ void WindowXP::EmitTiledInternal(PrimitiveEmitter& emitter,
 
   const glm::ivec2 skin_size = windowskin_->size();
 
-  // Emit the tiles one by one, cutting the tile which overruns a row or column.
   const int32_t columns = (dest.width + src.width - 1) / src.width;
   const int32_t rows = (dest.height + src.height - 1) / src.height;
 
@@ -753,7 +708,6 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
   if (source_unit <= 0)
     return;
 
-  // Corners
   EmitSliceInternal(emitter, RectI(src.x, src.y, source_unit, source_unit),
                     RectI(left, top, unit, unit), color);
   EmitSliceInternal(
@@ -773,7 +727,6 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
   const int32_t inner_width = dest.width - unit * 2;
   const int32_t inner_height = dest.height - unit * 2;
 
-  // RGSS1 tiles the four frame edges instead of stretching them.
   if (inner_width > 0) {
     EmitTiledInternal(emitter,
                       RectI(src.x + source_unit, src.y,
@@ -798,7 +751,6 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
         RectI(right - unit, top + unit, unit, inner_height), color);
   }
 
-  // draw_center: the frame leaves the middle to the background, the cursor keeps it.
   if (draw_center && inner_width > 0 && inner_height > 0) {
     EmitTiledInternal(
         emitter,
@@ -810,7 +762,6 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
 
 
 void WindowXP::CreateTintBinding() {
-  // The tint buffer is written every drawn frame in the prepare stage.
   const wgpu::RenderPipeline& pipeline =
       ShaderSet::Get().state.window.tint_blends.at(BLEND_NORMAL);
 
@@ -825,7 +776,6 @@ void WindowXP::CreateTintBinding() {
 
 
 glm::ivec2 WindowXP::LimitedOriginInternal() const {
-  // Contents sit at the slice offset inside the frame, clipped by the limited origin.
   const RectI region = ContentRectInternal();
   const glm::ivec2 contents_size =
       contents_ ? contents_->size() : glm::ivec2(0);
@@ -836,7 +786,6 @@ glm::ivec2 WindowXP::LimitedOriginInternal() const {
 
 
 RectI WindowXP::ContentRectInternal() const {
-  // The inner region of the frame: the window inset by one slice.
   return RectI(kContentOffset * scale_, kContentOffset * scale_,
                std::max(0, width_ - kContentOffset * 2 * scale_),
                std::max(0, height_ - kContentOffset * 2 * scale_));

@@ -35,7 +35,6 @@ namespace urge {
 
 namespace {
 
-//! Regular autotile source rects: 48 patterns of 4 quadrants, as a fraction of the tile size.
 const RectF kAutotileSrcRegular[] = {
     {1.0f, 2.0f, 0.5f, 0.5f}, {0.5f, 2.0f, 0.5f, 0.5f},
     {1.0f, 1.5f, 0.5f, 0.5f}, {0.5f, 1.5f, 0.5f, 0.5f},
@@ -135,7 +134,6 @@ const RectF kAutotileSrcRegular[] = {
     {0.0f, 0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f, 0.5f},
 };
 
-//! Table autotile source rects: 46 patterns of 6 pieces (4 quadrants + 2 leg halves).
 const RectF kAutotileSrcTable[] = {
     {1.0f, 2.0f, 0.5f, 0.5f}, {0.5f, 2.0f, 0.5f, 0.5f},
     {1.0f, 1.5f, 0.5f, 0.5f}, {0.5f, 1.5f, 0.5f, 0.5f},
@@ -283,8 +281,6 @@ const RectF kAutotileSrcTable[] = {
     {0.0f, 0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f, 0.5f},
 };
 
-/*! The autotile source rectangles of the wall autotiles (A3 and the walls of
-    A4): sixteen patterns of four quadrants each. */
 const RectF kAutotileSrcWall[] = {
     {1.0f, 1.0f, 0.5f, 0.5f}, {0.5f, 1.0f, 0.5f, 0.5f},
     {1.0f, 0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f, 0.5f},
@@ -320,8 +316,6 @@ const RectF kAutotileSrcWall[] = {
     {0.0f, 1.5f, 0.5f, 0.5f}, {1.5f, 1.5f, 0.5f, 0.5f},
 };
 
-/*! The autotile source rectangles of the waterfall autotiles: four patterns of
-    two pieces each, the two halves a waterfall tile is built from. */
 const RectF kAutotileSrcWaterfall[] = {
     {1.0f, 0.0f, 0.5f, 1.0f}, {0.5f, 0.0f, 0.5f, 1.0f},
     {0.0f, 0.0f, 0.5f, 1.0f}, {0.5f, 0.0f, 0.5f, 1.0f},
@@ -335,8 +329,6 @@ TilemapVXAbove::TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport)
     : Node(viewport, ZValue(200)), parent_(parent) {}
 
 void TilemapVXAbove::DisposeObject() {
-  /* The layer owns nothing of its own: its geometry belongs to the TilemapVX
-     which built it, so the release of it happens there. */
 }
 
 bool TilemapVXAbove::Prepare(DrawParam param) {
@@ -347,8 +339,6 @@ bool TilemapVXAbove::DoDraw(DrawParam param) {
   parent_->DrawAboveLayer(param);
   return false;
 }
-
-// ----------------------------------------------------------------------
 
 TilemapVX::TilemapVX(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
@@ -387,7 +377,6 @@ RefPtr<Bitmap> TilemapVX::GetBitmap(int32_t index) {
 }
 
 ATTR_DEF(TilemapVX, RefPtr<Viewport>, Viewport) {
-  // The tilemap and its above-layer node both follow the viewport set here.
   if (value.has_value() && above_)
     above_->Attr_Parent(*value);
 
@@ -402,15 +391,12 @@ ATTR_DEF(TilemapVX, RefPtr<Viewport>, Viewport) {
 }
 
 ATTR_DEF(TilemapVX, bool, Visible) {
-  // Mirror the tilemap visibility onto the above-layer node.
   if (value.has_value() && above_)
     above_->Attr_Visible(*value);
   return Node::Attr_Visible(value);
 }
 
 ATTR_DEF(TilemapVX, int32_t, Z) {
-  /* The layer over the player sits 200 above the tilemap, so it follows every
-     change of the Z of the tilemap and keeps the offset. */
   if (value.has_value() && above_)
     above_->Attr_Z(*value + 200);
   return Node::Attr_Z(value);
@@ -477,15 +463,12 @@ void TilemapVX::DisposeObject() {
 }
 
 bool TilemapVX::Prepare(DrawParam param) {
-  // The drawn region follows from the viewport, read before the layers are built.
   UpdateViewport();
 
   object_slot_ = {};
-  BuildLayer(false /*above*/, &map_layer_);
-  BuildLayer(true /*above*/, &above_layer_);
+  BuildLayer(false , &map_layer_);
+  BuildLayer(true , &above_layer_);
 
-  /* The transform of the tiles is the identity, so the object set of both
-     layers is the same slot, see BuildLayer(). */
   if (map_layer_.valid || above_layer_.valid) {
     UniformManager& uniforms = UniformManager::Get();
     const ObjectData object_data = {glm::mat4(1.0f)};
@@ -501,7 +484,6 @@ bool TilemapVX::DoDraw(DrawParam param) {
 }
 
 void TilemapVX::CreateShadowSet() {
-  // One column of the tile size per shadow id, sixteen columns in total
   shadow_texture_ = MakeRefCounted<Bitmap>(16 * tilesize_, tilesize_);
 
   const int32_t half = tilesize_ / 2;
@@ -510,13 +492,13 @@ void TilemapVX::CreateShadowSet() {
   for (int32_t i = 0; i < 16; ++i) {
     const int32_t offset = i * tilesize_;
 
-    if (i & 0x1)  // Left Top
+    if (i & 0x1)
       shadow_texture_->FillRect(offset, 0, half, half, tint);
-    if (i & 0x2)  // Right Top
+    if (i & 0x2)
       shadow_texture_->FillRect(offset + half, 0, half, half, tint);
-    if (i & 0x4)  // Left Bottom
+    if (i & 0x4)
       shadow_texture_->FillRect(offset, half, half, half, tint);
-    if (i & 0x8)  // Right Bottom
+    if (i & 0x8)
       shadow_texture_->FillRect(offset + half, half, half, half, tint);
   }
 }
@@ -532,7 +514,6 @@ void TilemapVX::UpdateViewport() {
     viewport_width = rect.value()->data.width;
     viewport_height = rect.value()->data.height;
   } else {
-    // Without a viewport the tilemap covers the whole screen; both origins are zero.
     viewport_width = Graphics::Get().Width();
     viewport_height = Graphics::Get().Height();
   }
@@ -540,7 +521,6 @@ void TilemapVX::UpdateViewport() {
   const int32_t tilemap_real_ox = ox_ + viewport_ox;
   const int32_t tilemap_real_oy = oy_ + viewport_oy;
 
-  // Quad parsing viewport
   render_viewport_.x = tilemap_real_ox / tilesize_;
   render_viewport_.y = tilemap_real_oy / tilesize_ - 1;
   render_viewport_.width =
@@ -548,7 +528,6 @@ void TilemapVX::UpdateViewport() {
   render_viewport_.height =
       (viewport_height / tilesize_) + !!(viewport_height % tilesize_) + 2;
 
-  // Rendering offset
   const int32_t display_offset_x = tilemap_real_ox % tilesize_;
   const int32_t display_offset_y = tilemap_real_oy % tilesize_;
   render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
@@ -568,8 +547,6 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     quads->push_back(quad);
   };
 
-  /* The rectangles of the constant tables are fractions of the tile size and
-     are turned into pixels before they are used. */
   auto tilesize_src = [&](const RectF& raw) {
     return RectF(raw.x * tilesize_, raw.y * tilesize_, raw.width * tilesize_,
                  raw.height * tilesize_);
@@ -608,22 +585,22 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
 
   auto autotile_set_pos = [&](RectF& pos, int32_t i) {
     switch (i) {
-      case 0:  // Left Top
+      case 0:
         break;
-      case 1:  // Right Top
+      case 1:
         pos.x += tilesize_ / 2.0f;
         break;
-      case 2:  // Left Bottom
+      case 2:
         pos.y += tilesize_ / 2.0f;
         break;
-      case 3:  // Right bottom
+      case 3:
         pos.x += tilesize_ / 2.0f;
         pos.y += tilesize_ / 2.0f;
         break;
-      case 4:  // Table's Left Bottom
+      case 4:
         pos.y += tilesize_ * 0.75f;
         break;
-      case 5:  // Table's Right Bottom
+      case 5:
         pos.x += tilesize_ / 2.0f;
         pos.y += tilesize_ * 0.75f;
         break;
@@ -673,7 +650,6 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
         pos_rect.height -= table_leg;
       }
 
-      // A piece of a table which collapsed to nothing holds no tile
       if (tex_rect.width <= 0.0f || tex_rect.height <= 0.0f)
         continue;
 
@@ -711,11 +687,10 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     const int32_t autotile_id = tile_id / 0x30;
     const int32_t pattern_id = tile_id % 0x30;
 
-    // clang-format off
     const glm::vec2 waterfall(-1, -1);
     const glm::vec2 src_offset[] = {
-        {0,  0},  {0,  3}, // Ocean
-        {6,  0},  {6,  3}, // Overlay
+        {0,  0},  {0,  3},
+        {6,  0},  {6,  3},
         {8,  0},  waterfall,
         {8,  3},  waterfall,
         {0,  6},  waterfall,
@@ -727,9 +702,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
         {6,  6}, {6,  9},
         {14, 6}, {14, 9},
     };
-    // clang-format on
 
-    // Transform pattern source to waterfall style
     glm::vec2 src_pos = src_offset[autotile_id];
     bool waterfall_component = (src_pos.x == -1);
     bool regular_component =
@@ -757,7 +730,6 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     const int32_t autotile_id = tile_id / 0x30;
     const int32_t pattern_id = tile_id % 0x30;
 
-    // Process table foot occlusion
     glm::vec2 offset((autotile_id % 8) * 2, (autotile_id / 8) * 3);
     if (is_table) {
       read_autotile_table(pattern_id, bitmap, offset, x, y, occlusion);
@@ -861,29 +833,27 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
                         ? (flag & 0x80)
                         : (tile_id - 0x0B00) % (8 * 0x30) >= (7 * 0x30);
 
-    // The two layers of a tilemap split the tiles of the map between them
     if (over_player != above)
       return;
 
-    if (tile_id >= 0x0800 && tile_id < 0x0B00)  // A1
+    if (tile_id >= 0x0800 && tile_id < 0x0B00)
       return process_tile_A1(tile_id, x, y);
-    if (tile_id >= 0x0B00 && tile_id < 0x1100)  // A2
+    if (tile_id >= 0x0B00 && tile_id < 0x1100)
       return process_tile_A2(tile_id, x, y, is_table,
                              under_tile_id >= 0x1100 && under_tile_id < 0x2000);
-    if (tile_id >= 0x1100 && tile_id < 0x1700)  // A3
+    if (tile_id >= 0x1100 && tile_id < 0x1700)
       return process_tile_A3(tile_id, x, y);
-    if (tile_id >= 0x1700 && tile_id < 0x2000)  // A4
+    if (tile_id >= 0x1700 && tile_id < 0x2000)
       return process_tile_A4(tile_id, x, y);
-    if (tile_id >= 0x0600 && tile_id < 0x0680)  // A5
+    if (tile_id >= 0x0600 && tile_id < 0x0680)
       return process_tile_A5(tile_id, x, y);
-    if (tile_id < 0x0400)  // B ~ E
+    if (tile_id < 0x0400)
       return process_tile_bcde(tile_id, x, y);
   };
 
   auto process_shadow_layer = [&](int32_t ox, int32_t oy, int32_t w,
                                   int32_t h) {
     if (rgss3_style_) {
-      // Get shadow data from map_data[z=3] on RGSS3
       for (int32_t y = 0; y < h; ++y) {
         for (int32_t x = 0; x < w; ++x) {
           int16_t shadow_id = get_wrap_data(map_data_, x + ox, y + oy, 3);
@@ -891,7 +861,6 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
         }
       }
     } else {
-      // Calculate shadow region on RGSS2
       if (!map_data_)
         return;
 
@@ -912,10 +881,8 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
               (current_tile >= 0x0B00 && current_tile < 0x1100) ||
               (current_tile >= 0x0600 && current_tile < 0x0680);
 
-          // Draw shadow if wall in A2, A5 region
           if ((wall_top >= 0x1100 && wall_top < 0x2000) &&
               (wall_bottom >= 0x1100 && wall_bottom < 0x2000) && shadow_floor) {
-            // Fixed left shadow on RGSS2
             process_shadow_tile(0x05, x, y);
           }
         }
@@ -927,16 +894,13 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
                                   int32_t z) {
     for (int32_t y = h - 1; y >= 0; --y) {
       for (int32_t x = 0; x < w; ++x) {
-        // Common tile id
         const int16_t tile_id = get_wrap_data(map_data_, x + ox, y + oy, z);
         if (!tile_id)
           continue;
 
-        // For table foot occlusion
         const int16_t under_tile_id =
             get_wrap_data(map_data_, x + ox, y + oy + 1, 0);
 
-        // Process tile (non-shadow tile)
         process_common_tile(tile_id, x, y, z, under_tile_id);
       }
     }
@@ -945,15 +909,12 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
   const int32_t ox = render_viewport_.x, oy = render_viewport_.y;
   const int32_t w = render_viewport_.width, h = render_viewport_.height;
 
-  // A aera (0 - 1)
   process_common_layer(ox, oy, w, h, 0);
   process_common_layer(ox, oy, w, h, 1);
 
-  // Shadow area (3)
   if (!above)
     process_shadow_layer(ox, oy, w, h);
 
-  // BCDE area (2)
   process_common_layer(ox, oy, w, h, 2);
 }
 
@@ -964,18 +925,14 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
   layer->draws.clear();
   layer->valid = false;
 
-  // Vertices go into an emitter of the tilemap, uploaded in one buffer per layer.
   layer->primitive.Clear();
 
-  // The blend state of the engine and a bitmap store premultiplied alpha, so
-  // the color of a tile scales all four channels of its vertices
   const glm::vec4 color(1.0f);
 
   size_t index = 0;
   while (index < quads.size()) {
     const RefPtr<Bitmap>& texture = quads[index].texture;
 
-    // A tile whose bitmap is gone is skipped, the run continues without it
     if (!Disposable::Check(texture)) {
       ++index;
       continue;
@@ -984,7 +941,6 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
     const glm::vec2 texture_size(static_cast<float>(texture->size().x),
                                  static_cast<float>(texture->size().y));
 
-    // Tiles reading the same bitmap share one batch: one draw per bitmap per layer.
     layer->primitive.BeginQuad().Color4f(color);
     while (index < quads.size() && quads[index].texture == texture) {
       RectF dest = quads[index].destination;
@@ -1022,8 +978,6 @@ void TilemapVX::DrawLayer(DrawParam param, TileLayer* layer) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  // The tiles are placed by the vertex position they were emitted with, so the
-  // object set carries the identity, see BuildLayer().
   param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_dynamic_pma);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);

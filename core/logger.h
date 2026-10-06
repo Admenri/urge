@@ -30,36 +30,26 @@
 #include <string>
 #include <string_view>
 
-// The macros are the API, e.g. LOGGER_INFO("loaded {}", count). Format strings
-// follow std::format; in a release build LOGGER_TRACE/DEBUG vanish and no
-// message carries the "file:line: " prefix. Everything is written to stderr.
-
 namespace urge {
 
-//! Severity of a message, ordered from the most to the least verbose.
 enum class LogLevel : std::uint8_t {
   kTrace = 0,
   kDebug,
   kInfo,
   kWarn,
   kError,
-  //! Discards every message, it is the highest level of the filter.
+
   kOff,
 };
 
-//! The level a message has to reach to be written, the default is kDebug in a
-//! debug build and kInfo in a release build.
 inline LogLevel GetLogLevel();
-//! Lowers or raises the filter of GetLogLevel, it is not atomic and is meant
-//! to be called from the main thread.
+
 inline void SetLogLevel(LogLevel level);
 
-//! Writes a message to the sink, adding the level tag and the newline.
 inline void LogWrite(LogLevel level,
                      std::string_view prefix,
                      std::string_view message);
 
-//! Formats the arguments and forwards the result to LogWrite.
 template <typename... Args>
 void LogMessage(LogLevel level,
                 std::string_view prefix,
@@ -68,9 +58,6 @@ void LogMessage(LogLevel level,
   if (level >= LogLevel::kOff || level < GetLogLevel())
     return;
 
-  // NOTE: std::make_format_args only binds lvalue references, hence the named
-  // parameters are used as lvalues. They stay alive until this call returns,
-  // which covers the vformat() call below.
   LogWrite(level, prefix, std::vformat(format, std::make_format_args(args...)));
 }
 
@@ -82,7 +69,6 @@ inline constexpr LogLevel kDefaultLevel = LogLevel::kInfo;
 inline constexpr LogLevel kDefaultLevel = LogLevel::kDebug;
 #endif
 
-//! The state of the logger; a thread-safe static local of an inline function.
 inline LogLevel& CurrentLevel() {
   static LogLevel level = kDefaultLevel;
   return level;
@@ -107,7 +93,6 @@ inline void LogWrite(LogLevel level,
   };
   static constexpr std::size_t kTagCount = std::size(kTags);
 
-  // A message of an unknown or disabled level is dropped.
   const auto index = static_cast<std::size_t>(level);
   if (index >= kTagCount)
     return;
@@ -125,9 +110,6 @@ inline void LogWrite(LogLevel level,
     line.append(message, begin, last ? std::string_view::npos : end - begin);
     line.push_back('\n');
 
-    // A whole line is handed to a single write, the C runtime locks the stream
-    // for the duration of the call, so the lines written by two threads cannot
-    // end up spliced into each other.
     std::fwrite(line.data(), 1, line.size(), stderr);
 
     if (last)
@@ -140,23 +122,21 @@ inline void LogWrite(LogLevel level,
 
 }  // namespace urge
 
-//! Composes the "file:line: " prefix of a message at compile time.
 #define URGE_LOGGER_STRINGIFY_IMPL(text) #text
 #define URGE_LOGGER_STRINGIFY(text) URGE_LOGGER_STRINGIFY_IMPL(text)
 #define URGE_LOGGER_LOCATION __FILE__ ":" URGE_LOGGER_STRINGIFY(__LINE__) ": "
 
 #if defined(NDEBUG)
-//! A release build drops the location, it is of no use to the player.
+
 #define URGE_LOGGER_EMIT(level, ...)              \
   do {                                            \
     ::urge::LogMessage((level), "", __VA_ARGS__); \
   } while (false)
-//! A release build has no trace and no debug message at all, so the arguments
-//! of the two spellings below are not even evaluated.
+
 #define LOGGER_TRACE(...) ((void)0)
 #define LOGGER_DEBUG(...) ((void)0)
 #else
-//! A debug build keeps the location of every message.
+
 #define URGE_LOGGER_EMIT(level, ...)                                \
   do {                                                              \
     ::urge::LogMessage((level), URGE_LOGGER_LOCATION, __VA_ARGS__); \

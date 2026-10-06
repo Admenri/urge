@@ -24,6 +24,8 @@
 
 #include "SDL3/SDL_scancode.h"
 
+#include "core/config.h"
+
 namespace urge {
 
 const Input::KeySym kDefaultKeyboardBindings[] = {
@@ -72,15 +74,17 @@ Input::Input(int32_t version) {
   for (size_t i = 0; i < std::size(kDefaultKeyboardBindings); ++i)
     bindings_.push_back(kDefaultKeyboardBindings[i]);
 
-  // == XP
   if (version == 1)
     for (size_t i = 0; i < std::size(kKeyboardBindings1); ++i)
       bindings_.push_back(kKeyboardBindings1[i]);
 
-  // >= VX
   if (version >= 2)
     for (size_t i = 0; i < std::size(kKeyboardBindings2); ++i)
       bindings_.push_back(kKeyboardBindings2[i]);
+
+  const auto& stored = Config::Get().key_bindings;
+  if (!stored.empty())
+    bindings_ = stored;
 }
 
 Input::~Input() = default;
@@ -89,19 +93,16 @@ void Input::Update() {
   for (int32_t i = 0; i < std::size(states_); ++i) {
     bool key_pressed = pressed_[i];
 
-    // Update key state with elder state
     states_[i].trigger = !states_[i].pressed && key_pressed;
 
-    // After trigger set, set press state
     states_[i].pressed = key_pressed;
 
-    // Based on press state update the repeat state
     states_[i].repeat = false;
     if (states_[i].pressed) {
       ++states_[i].repeat_count;
 
       bool repeated = false;
-      // TODO: RGSS 1/2/3 specific process
+
       repeated = states_[i].repeat_count == 1 ||
                  (states_[i].repeat_count >= 23 &&
                   (states_[i].repeat_count + 1) % 6 == 0);

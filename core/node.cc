@@ -60,7 +60,6 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.target = target;
   context.scene = target->scene_group();
 
-  // Prepare opens and closes a frame of both the uniform pool and the vertex batch.
   UniformManager& uniforms = UniformManager::Get();
   QuadVertexManager& quads = QuadVertexManager::Get();
   context.vertices = &quads.emitter();

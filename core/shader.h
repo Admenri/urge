@@ -72,8 +72,7 @@ class Shader {
 
 class Pipeline {
  public:
-  //! \param min_sets Bind group layouts always carried, even when neither
-  //! stage declares a binding in one (an Effect binds its set 2 every draw).
+
   Pipeline(std::string_view vs_glsl,
            std::string_view fs_glsl,
            std::vector<std::vector<uint32_t>> vb_layouts,
@@ -85,13 +84,8 @@ class Pipeline {
                                  std::vector<wgpu::ColorTargetState> blends,
                                  wgpu::MultisampleState samples = {});
 
-  //! Builds the default draw state the built-in pipelines use: triangle list
-  //! into the single RGBA8Unorm target, depth-stencil ignored, blended with
-  //! \p blend or unblended when it is null. An Effect takes the same state.
   wgpu::RenderPipeline MakeDefaultState(const wgpu::BlendState* blend);
 
-  //! The bindings of one bind group, merged from both stages and keyed by
-  //! binding; a stage which does not touch the group leaves it out.
   std::vector<ShaderBinding> group_bindings(uint32_t set) const;
 
  private:
@@ -106,7 +100,7 @@ class Pipeline {
   wgpu::ShaderModule fragment_module_;
   wgpu::PipelineLayout layout_;
   std::vector<VertexBuffer> buffers_;
-  //! The sets whose buffer bindings carry a dynamic offset, see the ctor.
+
   std::set<uint32_t> dynamic_sets_;
 };
 

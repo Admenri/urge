@@ -109,15 +109,11 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
   OpenReadEnumData* enum_data = static_cast<OpenReadEnumData*>(data);
   std::string filename(fname);
 
-  // Windows is case sensitive.
-  // The best approach is to emulate this behavior on other operating systems.
   ToLower(filename);
 
   if (filename != enum_data->file_name) {
-    // Match filename without extname
     std::string filename_noext = filename.substr(0, filename.rfind('.'));
     if (filename_noext != enum_data->file_name) {
-      // Without extname mismatch
       return PHYSFS_ENUM_OK;
     }
   }
@@ -135,10 +131,8 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
     return PHYSFS_ENUM_ERROR;
   }
 
-  // Free on user callback side
   SDL_IOStream* ops = WrapperRWops(file);
   if (enum_data->callback(ops, FindFileExtName(filename.c_str()))) {
-    // Matched and stop
     enum_data->match_count++;
     return PHYSFS_ENUM_STOP;
   }
@@ -168,7 +162,6 @@ IOService::~IOService() {
 }
 
 bool IOService::SetWritePath(const std::string& path) {
-  // Setup write output path
   return !!PHYSFS_setWriteDir(path.c_str());
 }
 
@@ -210,7 +203,6 @@ void IOService::OpenRead(const std::string& file_path, OpenCallback callback) {
     dir = file_path.substr(0, last_slash_pos);
     file = file_path.substr(last_slash_pos + 1);
   } else {
-    // Dir = ""
     file = file_path;
   }
 

@@ -116,12 +116,18 @@ class Graphics : public Singleton<Graphics> {
   ATTR(int32_t, Brightness);
   URGE_BINDING()
   ATTR(bool, FrameSkip);
+  URGE_BINDING()
+  ATTR(bool, Fullscreen);
+  URGE_BINDING()
+  ATTR(bool, VSync);
 
   RefPtr<ScreenRootNode> root() { return root_; }
   SDL_Window* window() const { return window_; }
 
  private:
   friend class ScreenRootNode;
+
+  void ProcessEvents();
   void PresentInternal();
 
   SDL_Window* window_ = nullptr;
@@ -132,18 +138,18 @@ class Graphics : public Singleton<Graphics> {
   int32_t frame_rate_ = 60;
   int32_t frame_count_ = 0;
   int32_t brightness_ = 255;
-  bool frame_skip_ = false;
+  bool frame_skip_ = true;
+  bool vsync_ = true;
 
   FPSLimiter limiter_;
 
-  //! The single quad a transition frame is drawn with, see TransitionBitmap.
   PrimitiveEmitter quad_emitter_;
 
   struct {
     bool configured = false;
-    //! The format the swapchain is configured with, see PresentInternal.
+
     wgpu::TextureFormat format = wgpu::TextureFormat::Undefined;
-    //! Whether \c format is an *Srgb format, which the present shader cancels.
+
     bool srgb_target = false;
     wgpu::RenderPipeline pipeline;
     PrimitiveEmitter primitive;

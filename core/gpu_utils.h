@@ -29,8 +29,6 @@
 
 namespace urge::util {
 
-// -----------------------------------------------------------------------------
-
 struct BufferSet {
   wgpu::Buffer buffer;
   uint64_t offset = 0;
@@ -81,8 +79,6 @@ inline wgpu::BindGroup CreateBindGroup(
   group_desc.entries = entries.data();
   return g_device.CreateBindGroup(&group_desc);
 }
-
-// -----------------------------------------------------------------------------
 
 struct BufferLayout {
   wgpu::BufferBindingType type = wgpu::BufferBindingType::BindingNotUsed;

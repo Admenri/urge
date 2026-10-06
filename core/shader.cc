@@ -43,7 +43,6 @@ namespace urge {
 
 namespace {
 
-//! Runs the initialize/finalize of glslang once for the whole process.
 class GlslangGuard {
  public:
   GlslangGuard() { glslang::InitializeProcess(); }
@@ -71,7 +70,6 @@ EShLanguage ToLanguage(wgpu::ShaderStage stage) {
   }
 }
 
-//! Compiles the GLSL of one stage to the SPIR-V of it.
 std::vector<uint32_t> CompileToSpirv(wgpu::ShaderStage stage,
                                      std::string_view glsl) {
   GetGlslang();
@@ -79,7 +77,6 @@ std::vector<uint32_t> CompileToSpirv(wgpu::ShaderStage stage,
   const EShLanguage language = ToLanguage(stage);
   glslang::TShader shader(language);
 
-  // glslang reads the source of a stage as a zero terminated string
   const std::string source(glsl);
   const char* source_ptr = source.c_str();
   shader.setStrings(&source_ptr, 1);
@@ -89,7 +86,6 @@ std::vector<uint32_t> CompileToSpirv(wgpu::ShaderStage stage,
   shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
   shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
 
-  // The module of the engine keeps its bindings where the GLSL puts them
   shader.setAutoMapBindings(false);
   shader.setAutoMapLocations(false);
 
@@ -110,7 +106,6 @@ std::vector<uint32_t> CompileToSpirv(wgpu::ShaderStage stage,
   return spirv;
 }
 
-//! Reads the bindings and the vertex inputs of a SPIR-V module.
 ShaderReflection ReflectSpirv(const std::vector<uint32_t>& spirv) {
   SpvReflectShaderModule module = {};
   const SpvReflectResult result = spvReflectCreateShaderModule(
@@ -156,7 +151,7 @@ ShaderReflection ReflectSpirv(const std::vector<uint32_t>& spirv) {
 
   for (uint32_t index = 0; index < module.input_variable_count; ++index) {
     const SpvReflectInterfaceVariable* variable = module.input_variables[index];
-    // The builtins of a stage have no location, they are not attributes
+
     if (variable->location == static_cast<uint32_t>(-1))
       continue;
 
@@ -185,7 +180,6 @@ ShaderReflection ReflectSpirv(const std::vector<uint32_t>& spirv) {
   return reflection;
 }
 
-//! Creates the module of a stage from the WGSL the shader was translated to.
 wgpu::ShaderModule CreateModule(const Shader& shader) {
   wgpu::ShaderModuleDescriptor module_desc;
   wgpu::ShaderSourceSPIRV spirv;
@@ -200,9 +194,6 @@ wgpu::ShaderModule CreateModule(const Shader& shader) {
   return module;
 }
 
-//! Fills one bind group layout entry from a binding of the reflection, with
-//! \p dynamic_offset telling whether the set of the binding is bound with a
-//! dynamic offset.
 wgpu::BindGroupLayoutEntry MakeEntry(const ShaderBinding& binding,
                                      wgpu::ShaderStage visibility,
                                      bool dynamic_offset) {
@@ -223,7 +214,6 @@ wgpu::BindGroupLayoutEntry MakeEntry(const ShaderBinding& binding,
   return entry;
 }
 
-//! Bind group layouts of both stages, merged by set; a skipped set keeps its index.
 std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
     const Shader& vertex,
     const Shader& fragment,
@@ -239,7 +229,6 @@ std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
                 static_cast<size_t>(min_sets)});
 
   for (size_t group = 0; group < group_count; ++group) {
-    // The entries of this set, keyed by the binding an entry is for
     std::map<uint32_t, wgpu::BindGroupLayoutEntry> entries;
     const bool dynamic_offset =
         dynamic_sets.contains(static_cast<uint32_t>(group));
@@ -279,7 +268,6 @@ std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
   return layouts;
 }
 
-//! The size in bytes of a vertex format the reflection can report.
 uint64_t FormatSize(WGPUVertexFormat format) {
   switch (format) {
     default:
@@ -298,7 +286,6 @@ uint64_t FormatSize(WGPUVertexFormat format) {
   }
 }
 
-//! Bindings of one set of a SPIR-V pair, merged by binding across both stages.
 std::vector<ShaderBinding> MergeGroupBindings(
     const std::vector<ShaderGroup>& vertex_groups,
     const std::vector<ShaderGroup>& fragment_groups,
@@ -328,12 +315,10 @@ Shader Shader::Compile(wgpu::ShaderStage stage, std::string_view glsl) {
   Shader shader;
   shader.reflection_ = ReflectSpirv(spirv);
   shader.spirv_ = spirv;
-  // The reader names the entry point after the SPIR-V entry point
+
   shader.entry_point_ = "main";
   return shader;
 }
-
-/* ----- Pipeline ----- */
 
 Pipeline::Pipeline(std::string_view vs_glsl,
                    std::string_view fs_glsl,
@@ -348,7 +333,6 @@ Pipeline::Pipeline(std::string_view vs_glsl,
   vertex_module_ = CreateModule(vertex_);
   fragment_module_ = CreateModule(fragment_);
 
-  // Pipeline layout written from the reflection, so engine bind groups always fit.
   const std::vector<wgpu::BindGroupLayout> group_layouts =
       CreateGroupLayouts(vertex_, fragment_, dynamic_sets_, min_sets);
 
@@ -360,7 +344,6 @@ Pipeline::Pipeline(std::string_view vs_glsl,
   if (layout_ == nullptr)
     Fail("layout", "the device rejected the pipeline layout of the shader");
 
-  // Vertex input comes from the reflection; vb_layouts groups locations into buffers.
   std::map<uint32_t, size_t> slot_of_location;
   for (size_t slot = 0; slot < vb_layouts.size(); ++slot) {
     for (const uint32_t location : vb_layouts[slot])
@@ -402,8 +385,6 @@ wgpu::RenderPipeline Pipeline::MakeState(
     std::optional<wgpu::DepthStencilState> depth,
     std::vector<wgpu::ColorTargetState> blends,
     wgpu::MultisampleState samples) {
-  /* The descriptor of a device call only has to live through the call, so the
-     vertex input is written from what the constructor read. */
   std::vector<wgpu::VertexBufferLayout> buffers;
   buffers.reserve(buffers_.size());
   for (const VertexBuffer& buffer : buffers_) {

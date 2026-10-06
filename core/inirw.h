@@ -34,12 +34,44 @@
 
 namespace ini {
 
+class Section {
+ public:
+  const std::string& Get(const std::string& key) const {
+    static const std::string empty;
+    auto it = values_.find(key);
+    return it != values_.end() ? it->second : empty;
+  }
+
+  void Set(const std::string& key, std::string value) {
+    if (values_.insert_or_assign(key, std::move(value)).second)
+      keys_.push_back(key);
+  }
+
+  void Remove(const std::string& key) {
+    if (!values_.erase(key))
+      return;
+
+    auto it = std::find(keys_.begin(), keys_.end(), key);
+    if (it != keys_.end())
+      keys_.erase(it);
+  }
+
+  bool empty() const { return keys_.empty(); }
+  bool Has(const std::string& key) const {
+    return values_.find(key) != values_.end();
+  }
+
+  const std::vector<std::string>& keys() const { return keys_; }
+
+ private:
+  std::unordered_map<std::string, std::string> values_;
+  std::vector<std::string> keys_;
+};
+
 class IniFile {
  public:
-  using Section = std::unordered_map<std::string, std::string>;
-
   explicit IniFile(const std::string& filename) { LoadFromFile(filename); }
-  explicit IniFile(std::string_view content, bool /*tag*/) { Parse(content); }
+  explicit IniFile(std::string_view content, bool ) { Parse(content); }
   IniFile() = default;
 
   void LoadFromFile(const std::string& filename) {
@@ -57,11 +89,10 @@ class IniFile {
   std::string Get(const std::string& section,
                   const std::string& key,
                   const std::string& defaultVal = {}) const {
-    auto sit = sections_.find(section);
-    if (sit == sections_.end())
+    const Section* found = GetSection(section);
+    if (!found || !found->Has(key))
       return defaultVal;
-    auto kit = sit->second.find(key);
-    return (kit != sit->second.end()) ? kit->second : defaultVal;
+    return found->Get(key);
   }
 
   int32_t GetInt(const std::string& section,
@@ -120,10 +151,13 @@ class IniFile {
   }
 
   bool HasKey(const std::string& section, const std::string& key) const {
-    auto sit = sections_.find(section);
-    if (sit == sections_.end())
-      return false;
-    return sit->second.find(key) != sit->second.end();
+    const Section* found = GetSection(section);
+    return found && found->Has(key);
+  }
+
+  std::vector<std::string> GetKeys(const std::string& section) const {
+    const Section* found = GetSection(section);
+    return found ? found->keys() : std::vector<std::string>();
   }
 
   const std::vector<std::string>& GetSectionNames() const {
@@ -134,10 +168,11 @@ class IniFile {
            const std::string& key,
            const std::string& value) {
     auto& sec = sections_[section];
-    if (sec.empty()) {
+
+    if (std::find(sectionOrder_.begin(), sectionOrder_.end(), section) ==
+        sectionOrder_.end())
       sectionOrder_.push_back(section);
-    }
-    sec[key] = value;
+    sec.Set(key, value);
   }
 
   void Set(const std::string& section, const std::string& key, int32_t value) {
@@ -156,7 +191,7 @@ class IniFile {
     auto sit = sections_.find(section);
     if (sit == sections_.end())
       return;
-    sit->second.erase(key);
+    sit->second.Remove(key);
   }
 
   void RemoveSection(const std::string& section) {
@@ -175,9 +210,8 @@ class IniFile {
         continue;
 
       oss << '[' << secname << "]\n";
-      for (const auto& [key, val] : it->second) {
-        oss << key << '=' << val << '\n';
-      }
+      for (const auto& key : it->second.keys())
+        oss << key << '=' << it->second.Get(key) << '\n';
       oss << '\n';
     }
     return oss.str();
@@ -237,7 +271,7 @@ class IniFile {
         auto key = Trim(sv.substr(0, eq));
         auto val = Trim(sv.substr(eq + 1));
         if (!key.empty()) {
-          sections_[currentSection][key] = val;
+          sections_[currentSection].Set(key, val);
         }
       }
     }

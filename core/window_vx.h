@@ -32,8 +32,6 @@
 
 namespace urge {
 
-//! Window of RGSS3 (VX/VXA): nine-slice frame, stretched+tiled background,
-//! cursor, arrows, pause and contents, clipped to the inner region by a stencil.
 URGE_BINDING()
 class WindowVX : public Node {
  public:
@@ -94,11 +92,8 @@ class WindowVX : public Node {
   URGE_BINDING()
   ATTR(RefPtr<Tone>, Tone);
 
-  //! Stencil value every window marks its inner region with. Shared, because a
-  //! window erases the region first (see kStencilClear) instead of owning a id.
   static constexpr uint32_t kStencilReference = 1;
 
-  //! Value a window writes to erase a stencil region; matches the frame clear.
   static constexpr uint32_t kStencilClear = 0;
 
  private:
@@ -106,31 +101,28 @@ class WindowVX : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  //! Emits the tiled background and the nine-slice frame (texture pipeline).
   void EmitGroundInternal(PrimitiveEmitter& emitter);
-  //! Emits the stretched background layer (tint pipeline).
+
   void EmitBackgroundInternal(PrimitiveEmitter& emitter);
-  //! Emits the quad erasing the stencil over the whole window at kStencilClear.
+
   void EmitStencilClearInternal(PrimitiveEmitter& emitter);
-  //! Emits the quad marking the inner region into the stencil.
+
   void EmitStencilInternal(PrimitiveEmitter& emitter);
-  //! Emits the cursor, clipped to the inner region.
+
   void EmitCursorInternal(PrimitiveEmitter& emitter);
-  //! Emits the contents, clipped to the inner region.
+
   void EmitContentsInternal(PrimitiveEmitter& emitter);
 
-  //! Emits one slice of the skin, stretched over \p dest.
   void EmitSliceInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-  //! Emits one slice of the skin, tiled over \p dest.
+
   void EmitTiledInternal(PrimitiveEmitter& emitter,
                          const RectI& src,
                          const RectI& dest,
                          const glm::vec4& color);
-  //! Emits the nine slices of \p src over \p dest; \p draw_center fills the
-  //! middle (the frame leaves it out, the cursor keeps it).
+
   void EmitNineSliceInternal(PrimitiveEmitter& emitter,
                              const RectI& src,
                              const RectI& dest,
@@ -138,12 +130,10 @@ class WindowVX : public Node {
                              const glm::vec4& color,
                              bool draw_center = true);
 
-  //! Inner region of the frame, where the contents and the cursor are clipped.
   RectI ContentRectInternal() const;
-  //! Contents origin, limited to the scrollable overflow.
+
   glm::ivec2 LimitedOriginInternal() const;
 
-  //! Creates set 3 of the tint pipeline used by EmitBackgroundInternal().
   void CreateTintBinding();
 
   RefPtr<Viewport> viewport_;
@@ -162,27 +152,24 @@ class WindowVX : public Node {
   int32_t pause_index_ = 0;
   int32_t cursor_index_ = 0;
 
-  //! Object pool slot of this window, bound at set 1.
   UniformBlockPool::Slot object_slot_ = {};
 
-  //! Tint param of the stretched background layer, written every drawn frame.
   wgpu::Buffer tint_uniform_;
-  //! Bind group of set 3 of the tint pipeline, see CreateTintBinding().
+
   wgpu::BindGroup tint_group_;
 
-  //! Range the stretched background layer appended to the batch.
   PrimitiveEmitter::Slot background_slot_ = {};
-  //! Range the tiled background layer and the frame appended.
+
   PrimitiveEmitter::Slot ground_slot_ = {};
-  //! Range erasing the stencil over the window, drawn at kStencilClear.
+
   PrimitiveEmitter::Slot stencil_clear_slot_ = {};
-  //! Range marking the inner region into the stencil.
+
   PrimitiveEmitter::Slot stencil_slot_ = {};
-  //! Whole range the cursor and the contents appended, drawn through the test.
+
   PrimitiveEmitter::Slot clipped_slot_ = {};
-  //! Part of clipped_slot_ which is the cursor, read from the skin.
+
   PrimitiveEmitter::Slot cursor_slot_ = {};
-  //! Part of clipped_slot_ which is the contents, read from their bitmap.
+
   PrimitiveEmitter::Slot contents_slot_ = {};
 };
 }  // namespace urge

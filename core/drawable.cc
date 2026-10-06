@@ -50,7 +50,6 @@ void Drawable::SetParent(DrawableSet* parent) {
     RemoveFromList();
     parent_ = parent;
     if (parent_) {
-      // Walk to the first node with a greater z and insert before it.
       Drawable* sentinel = &parent_->root_;
       Drawable* pos = sentinel->next_;
       while (pos != sentinel && pos->z_ <= z_)
@@ -85,7 +84,6 @@ void Drawable::Resort(ZValue old) {
 }
 
 void Drawable::BubbleLeft() {
-  // Move left past every node with a higher z.
   while (prev_ != &parent_->root_ && prev_->z_ > z_) {
     Drawable* target = prev_;
     RemoveFromList();
@@ -97,7 +95,6 @@ void Drawable::BubbleLeft() {
 }
 
 void Drawable::BubbleRight() {
-  // Move right past every node with a lower z.
   while (next_ != &parent_->root_ && next_->z_ < z_) {
     Drawable* target = next_;
     RemoveFromList();
@@ -114,7 +111,6 @@ DrawableSet::DrawableSet() {
 }
 
 DrawableSet::~DrawableSet() {
-  // Detach every remaining node so none keeps a dangling parent pointer.
   while (root_.next_ != &root_) {
     root_.next_->parent_ = nullptr;
     root_.next_->RemoveFromList();

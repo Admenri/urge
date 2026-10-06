@@ -121,8 +121,7 @@ ATTR_DEF(Viewport, RefPtr<Tone>, Tone) {
 ATTR_DEF(Viewport, RefPtr<Effect>, Effect) {
   if (value.has_value()) {
     effect_ = *value;
-    // Setting an effect changes where the children are placed, see
-    // ResetTransform().
+
     ResetTransform();
     return std::nullopt;
   } else {
@@ -159,8 +158,6 @@ bool Viewport::Prepare(DrawParam param) {
 bool Viewport::DoDraw(DrawParam param) {
   const RectI current_scissor = param->scissors.top();
 
-  // The rect is in render-target coordinates; the origin scrolls the content
-  // inside it, see ResetTransform().
   const glm::ivec2 offset = effect_ ? glm::ivec2(-origin_.x, -origin_.y)
                                     : glm::ivec2(rect_->data.x - origin_.x,
                                                  rect_->data.y - origin_.y);
@@ -171,16 +168,11 @@ bool Viewport::DoDraw(DrawParam param) {
                            parent_position.y + rect_->data.y, rect_->data.width,
                            rect_->data.height);
 
-  // An effect takes the region over: the children draw into a texture of their
-  // own and the effect composites it back, see BeginFilter().
   if (effect_)
     return BeginFilter(param, current_scissor, self_scissor);
 
   RectI result_scissor = MakeIntersect(current_scissor, self_scissor);
   if (!result_scissor()) {
-    // An empty scissor clips every draw away, which is what a region the parent
-    // covers nothing of shows. The origin is dropped because the region of a
-    // viewport may lie outside the target, which a scissor may not.
     result_scissor = RectI();
   }
 
@@ -193,8 +185,6 @@ bool Viewport::DoDraw(DrawParam param) {
 
 void Viewport::PostDraw(DrawParam param) {
   if (effect_) {
-    // An effect composites the region the children filled, so the color and the
-    // tone of the viewport do not take part while one is set.
     if (filtering_)
       FinishFilter(param);
   } else {
@@ -209,7 +199,6 @@ void Viewport::PostDraw(DrawParam param) {
       const RectI viewport_region = param->scissors.top();
       param->pass.End();
 
-      // Copy the region into the scratch texture
       AcquireOffscreen(viewport_region);
       wgpu::TexelCopyTextureInfo source;
       source.texture = param->target->texture();
@@ -222,8 +211,6 @@ void Viewport::PostDraw(DrawParam param) {
       copy_size.height = viewport_region.height;
       param->command.CopyTextureToTexture(&source, &destination, &copy_size);
 
-      // The batch of the frame is already written, this quad needs its own
-      // emitter
       primitive_.EmitQuad(
           viewport_region,
           MakeNorm(RectI(viewport_region.Size()), offscreen_->size()),
@@ -244,7 +231,6 @@ void Viewport::PostDraw(DrawParam param) {
     }
   }
 
-  // Restore the scissor stack
   param->scissors.pop();
   const RectI current_scissor = param->scissors.top();
   param->pass.SetScissorRect(current_scissor.x, current_scissor.y,
@@ -252,17 +238,12 @@ void Viewport::PostDraw(DrawParam param) {
 }
 
 void Viewport::ResetTransform() {
-  // The origin scrolls the content without moving the rect, so the children
-  // subtract it; a filtered region draws into a texture, see BeginFilter().
   const glm::vec3 offset =
       effect_ ? glm::vec3(static_cast<float>(-origin_.x),
                           static_cast<float>(-origin_.y), 0.0f)
               : glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
                           static_cast<float>(rect_->data.y - origin_.y), 0.0f);
 
-  // The z has to be spelled out: a glm vector left to its default constructor
-  // keeps whatever the memory held, and a non zero z travels down the transform
-  // chain of the children as the z of every vertex they emit.
   Attr_Position(MakeRefCounted<Vector3>(offset));
 }
 
@@ -276,9 +257,6 @@ void Viewport::CreateEffectBindings() {
   object_desc.size = sizeof(ObjectData);
   object_uniform_ = device.CreateBuffer(&object_desc);
 
-  // The quad is emitted in the pixels of the render target, so the model matrix
-  // is the identity. Set 1 is bound with a dynamic offset, so the group covers
-  // this one matrix and the draw binds it at offset zero.
   const ObjectData object_data = {glm::mat4(1.0f)};
   GPUDevice::Get().queue().WriteBuffer(object_uniform_, 0, &object_data,
                                        sizeof(object_data));
@@ -293,7 +271,6 @@ void Viewport::CreateEffectBindings() {
   tint_desc.size = sizeof(TintBase::TintParam);
   tint_uniform_ = device.CreateBuffer(&tint_desc);
 
-  // Written during the post processing stage of every frame, not staged here.
   tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
                                       {{0, util::BufferSet(tint_uniform_)}});
 }
@@ -315,29 +292,21 @@ bool Viewport::BeginFilter(DrawParam param,
                            const RectI& screen_scissor) {
   const RectI visible = MakeIntersect(parent_scissor, screen_scissor);
   if (!visible()) {
-    // Nothing of the region is shown, so no texture has to be rendered; an
-    // empty scissor clips every child away, see PostDraw().
     param->scissors.push(RectI());
     param->pass.SetScissorRect(0, 0, 0, 0);
     return true;
   }
 
-  // Move the children into a texture the size of the region, cleared so a texel
-  // they leave bare stays transparent for the effect.
   AcquireOffscreen(screen_scissor);
 
   param->pass.End();
   param->pass = offscreen_->BeginRendering(param->command, glm::vec4(0.0f));
 
-  // The children are now placed in the coordinates of the texture, so both the
-  // scene they project with and the target they draw into change, see
-  // ResetTransform().
   filter_target_ = param->target;
   filter_scene_ = param->scene;
   param->target = offscreen_;
   param->scene = offscreen_->scene_group();
 
-  // The visible part of the region, taken in the coordinates of the texture.
   const RectI texture_scissor(visible.x - screen_scissor.x,
                               visible.y - screen_scissor.y, visible.width,
                               visible.height);
@@ -352,11 +321,8 @@ bool Viewport::BeginFilter(DrawParam param,
 }
 
 void Viewport::FinishFilter(DrawParam param) {
-  // The children are done, close the pass of the texture they filled
   param->pass.End();
 
-  // Back to the render target the effect composites into, and the quad of the
-  // region is emitted where the effect draws it back.
   param->target = filter_target_;
   param->scene = filter_scene_;
 
@@ -368,9 +334,6 @@ void Viewport::FinishFilter(DrawParam param) {
 
   param->pass = param->target->BeginRendering(param->command);
 
-  // The effect reads the region the children filled from its own set -- the
-  // texture at binding 0 and its sampler at binding 1 -- see
-  // Effect::SetFilterSource.
   Effect* effect = effect_.get();
   effect->SetFilterSource(offscreen_);
 
@@ -380,8 +343,7 @@ void Viewport::FinishFilter(DrawParam param) {
   param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
   param->pass.SetBindGroup(2, effect->AcquireBindGroup(), 0, nullptr);
   param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-  // The effect paints the region back where it came from and touches nothing
-  // the parent does not show, so it is clipped the way the children were.
+
   param->pass.SetScissorRect(filter_scissor_.x, filter_scissor_.y,
                              filter_scissor_.width, filter_scissor_.height);
   param->pass.Draw(vertex_count, 1, 0, 0);

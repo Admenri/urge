@@ -37,7 +37,6 @@ PrimitiveEmitter::PrimitiveEmitter(std::size_t capacity) {
   Reserve(capacity);
 }
 
-// Misuse has no exception path: it is reported and, in release, ignored.
 PrimitiveEmitter& PrimitiveEmitter::Begin(PrimitiveType type) {
   if (active_) {
     LOGGER_ERROR("PrimitiveEmitter::Begin: a batch is already active");
@@ -126,8 +125,6 @@ PrimitiveEmitter& PrimitiveEmitter::EmitVertex(float x,
     return *this;
   }
 
-  // A quad only emits once its four corners are known: the top right and the
-  // bottom left corner are shared by both triangles, see ExpandQuad().
   pending_corners_[pending_size_] = position;
   pending_texcoords_[pending_size_] = texcoord_;
   pending_colors_[pending_size_] = color_;
@@ -215,7 +212,6 @@ void PrimitiveEmitter::Reset() {
 }
 
 std::uint32_t PrimitiveEmitter::Upload() {
-  // A batch left open is finished by the upload.
   End();
 
   const std::size_t count = vertices_.size();
@@ -231,7 +227,6 @@ std::uint32_t PrimitiveEmitter::Upload() {
 
   g_queue.WriteBuffer(vertex_buffer_, 0, vertices_.data(), bytes);
 
-  // The vertices live in the buffer from here on, the storage is reused.
   vertices_.clear();
   batch_first_ = 0;
   return static_cast<std::uint32_t>(count);
@@ -245,8 +240,6 @@ void PrimitiveEmitter::PushVertex(const glm::vec4& position) {
   vertices_.push_back(vertex);
 }
 
-// The six vertices of the two triangles of a quad: top left, top right,
-// bottom left, bottom left, bottom right, top right.
 void PrimitiveEmitter::ExpandQuad() {
   const VertexData top_left{pending_corners_[0], pending_texcoords_[0],
                             pending_colors_[0]};

@@ -78,9 +78,9 @@ class Input : public Singleton<Input> {
  public:
   void ProcessEvents(SDL_Event* event);
 
-  // sym -> keycode
   using KeySym = std::pair<std::string, int32_t>;
-  void SetKeyBinding(std::vector<KeySym> bindings) { bindings_ = bindings_; }
+  void SetKeyBindings(std::vector<KeySym> bindings) { bindings_ = bindings; }
+  std::vector<KeySym> GetKeyBindings() { return bindings_; }
 
  private:
   void UpdateDir4();

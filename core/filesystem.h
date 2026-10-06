@@ -35,4 +35,4 @@ class IOService : public Singleton<IOService> {
 
 }  // namespace urge
 
-#endif  //! COMPONENTS_FILESYSTEM_IO_SERVICE_H_
+#endif

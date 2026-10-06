@@ -43,8 +43,6 @@ static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 namespace {
 
-//! RGSS color (components in [0, 255]) as the engine's normalized premultiplied
-//! vertex color, see PrimitiveEmitter.
 glm::vec4 PremultiplyColor(const glm::vec4& color) {
   glm::vec4 result = color / 255.0f;
   result.r *= result.a;
@@ -53,8 +51,6 @@ glm::vec4 PremultiplyColor(const glm::vec4& color) {
   return result;
 }
 
-//! Converts a stored (premultiplied) pixel into an RGSS color, i.e. divides the
-//! RGB components by the alpha channel again.
 glm::vec4 UnpremultiplyColor(const std::uint8_t pixel[4]) {
   const float alpha = static_cast<float>(pixel[3]);
   if (alpha <= 0.0f)
@@ -66,15 +62,12 @@ glm::vec4 UnpremultiplyColor(const std::uint8_t pixel[4]) {
       std::min(255.0f, static_cast<float>(pixel[2]) * 255.0f / alpha), alpha);
 }
 
-//! Converts an RGSS opacity (in [0, 255]) into a premultiplied white vertex
-//! color, which scales the sampled color of a blit.
 glm::vec4 PremultiplyOpacity(int32_t opacity) {
   const float value =
       std::clamp(static_cast<float>(opacity) / 255.0f, 0.0f, 1.0f);
   return glm::vec4(value, value, value, value);
 }
 
-//! Texture of a rendered text surface, folding its straight alpha into premultiplied.
 std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
     SDL_Surface* surface) {
   if (surface->w <= 0 || surface->h <= 0)
@@ -110,7 +103,6 @@ std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
   return {texture, texture.CreateView(nullptr)};
 }
 
-//! Where a text surface lands in a layout rectangle: RGSS alignment, vertically centered.
 RectI AlignTextRect(const RectI& region,
                     int32_t text_width,
                     int32_t text_height,
@@ -131,20 +123,16 @@ RectI AlignTextRect(const RectI& region,
   return RectI(x, y, text_width, text_height);
 }
 
-//! Converts one row of premultiplied pixels to straight, in place; the inverse
-//! of the SDL_PremultiplyAlpha() conversion.
 void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   for (int32_t x = 0; x < width; ++x, pixels += 4) {
     const std::uint32_t alpha = pixels[3];
 
     if (alpha == 0) {
-      // A fully transparent pixel has no color information left
       pixels[0] = 0;
       pixels[1] = 0;
       pixels[2] = 0;
     } else if (alpha != 0xFF) {
       for (std::size_t channel = 0; channel < 3; ++channel) {
-        // Rounded division, an additive blend can raise the color above alpha
         const std::uint32_t value =
             (static_cast<std::uint32_t>(pixels[channel]) * 255 + alpha / 2) /
             alpha;
@@ -154,17 +142,12 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   }
 }
 
-//! Outcome of an asynchronous buffer mapping, filled in by the callback the
-//! device invokes once the copy has been submitted.
 struct MapResult {
-  //! The callback runs but once, so the state below is the final one.
   bool invoked = false;
   WGPUMapAsyncStatus status = WGPUMapAsyncStatus_Error;
   std::string error;
 };
 
-//! A readable form of the status of a mapping, the callback of a valid mapping
-//! is not always given a reason.
 std::string_view DescribeMapStatus(const MapResult& mapping) {
   if (!mapping.invoked)
     return "the mapping callback was never invoked";
@@ -183,8 +166,6 @@ std::string_view DescribeMapStatus(const MapResult& mapping) {
   }
 }
 
-//! Reads a width x height region of a texture back into host memory, through a
-//! staging buffer (a texture itself can not be mapped).
 std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
                                             int32_t x,
                                             int32_t y,
@@ -195,8 +176,6 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 
   auto& gpu = GPUDevice::Get();
 
-  /* The row pitch of a texture to buffer copy is aligned to the 256 bytes block
-     size of the device */
   constexpr std::uint32_t kPixelSize = 4;
   constexpr std::uint32_t kRowAlignment = 256;
 
@@ -232,7 +211,6 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   auto command = encoder.Finish(nullptr);
   gpu.queue().Submit(1, &command);
 
-  // The copy is asynchronous, so the mapping is waited for before reading
   MapResult mapping;
   WGPUBufferMapCallbackInfo map_callback = {};
   map_callback.mode = WGPUCallbackMode_WaitAnyOnly;
@@ -249,10 +227,8 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   auto future =
       staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
 
-  // wgpu-native has no future API; polling the device completes the mapping.
   gpu.WaitAny(future);
 
-  // Check the mapping status first: wgpu-native panics instead of reporting on GetMappedRange.
   if (mapping.status != WGPUMapAsyncStatus_Success) {
     throw Exception(Exception::kRGSSError,
                     "failed to map the staging buffer of a texture read back, "
@@ -272,7 +248,6 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
                     byte_size);
   }
 
-  // The aligned row pitch of the staging buffer is dropped here
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(pixel_pitch) *
                                    height);
   for (int32_t row = 0; row < height; ++row)
@@ -368,7 +343,6 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  // One emitter batch, uploaded and dropped on its own, see PrimitiveEmitter::Upload().
   const std::uint32_t vertex_count =
       primitive_
           .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
@@ -426,7 +400,6 @@ void Bitmap::GradientFillRect(int32_t x,
   if (!color1 || !color2)
     throw Exception(Exception::kRGSSError, "invalid color value.");
 
-  // PremultiplyColor() normalizes itself, so pass the raw [0, 255] data.
   auto color1_norm = PremultiplyColor(color1->data);
   auto color2_norm = PremultiplyColor(color2->data);
 
@@ -436,7 +409,7 @@ void Bitmap::GradientFillRect(int32_t x,
   else
     primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
                         color2_norm, color1_norm, color2_norm);
-  // One emitter batch, uploaded and dropped on its own, see PrimitiveEmitter::Upload().
+
   const std::uint32_t vertex_count = primitive_.Upload();
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);
@@ -476,7 +449,6 @@ void Bitmap::Clear() {
 void Bitmap::ClearRect(int32_t x, int32_t y, int32_t width, int32_t height) {
   Disposable::Guard();
 
-  // Transparent black, the same color an untouched bitmap has
   FillRect(x, y, width, height, MakeRefCounted<Color>());
 }
 
@@ -492,15 +464,12 @@ void Bitmap::ClearRect(RefPtr<Rect> rect) {
 RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
   Disposable::Guard();
 
-  // Coordinates outside of the bitmap read as transparent black, the color an
-  // untouched bitmap has
   if (x < 0 || y < 0 || x >= size_.x || y >= size_.y)
     return MakeRefCounted<Color>();
 
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, x, y, 1, 1);
 
-  // The texture stores premultiplied alpha while RGSS colors are straight ones
   const glm::vec4 color = UnpremultiplyColor(pixels.data());
   return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
 }
@@ -511,20 +480,14 @@ void Bitmap::SetPixel(int32_t x, int32_t y, RefPtr<Color> color) {
 
 void Bitmap::HueChange(int32_t hue) {
   Disposable::Guard();
-
-  // TODO
 }
 
 void Bitmap::Blur() {
   Disposable::Guard();
-
-  // TODO
 }
 
 void Bitmap::RadialBlur(int32_t angle, int32_t division) {
   Disposable::Guard();
-
-  // TODO
 }
 
 void Bitmap::DrawText(int32_t x,
@@ -538,7 +501,6 @@ void Bitmap::DrawText(int32_t x,
   if (!font_ || str.empty())
     return;
 
-  // The layout rectangle has no meaning when it is empty
   if (width <= 0 || height <= 0)
     return;
 
@@ -554,7 +516,6 @@ void Bitmap::DrawText(int32_t x,
   if (!text_texture || text_size.x <= 0 || text_size.y <= 0)
     return;
 
-  // Lay the glyphs out, then clip the rectangle to the bitmap (RGSS behaviour).
   const RectI composed = AlignTextRect(RectI(x, y, width, height), text_size.x,
                                        text_size.y, align);
   const RectI blit_region =
@@ -562,14 +523,11 @@ void Bitmap::DrawText(int32_t x,
   if (!blit_region.width || !blit_region.height)
     return;
 
-  // The fraction of the composed rectangle that survived the clip
   const RectF source_rect(static_cast<float>(blit_region.x - composed.x),
                           static_cast<float>(blit_region.y - composed.y),
                           static_cast<float>(blit_region.width),
                           static_cast<float>(blit_region.height));
 
-  // The alpha of the text color is a separate opacity on the vertices, so the
-  // color channels of the uploaded texture stay untouched
   const glm::vec4 opacity = PremultiplyOpacity(font_opacity);
 
   const std::uint32_t vertex_count =
@@ -578,7 +536,6 @@ void Bitmap::DrawText(int32_t x,
                     MakeNorm(source_rect, glm::vec2(text_size)), opacity)
           .Upload();
 
-  // One offscreen texture and one sampler are enough for a single draw
   wgpu::SamplerDescriptor sampler_desc;
   sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
   sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
@@ -637,12 +594,9 @@ RefPtr<Palette> Bitmap::ToPalette() {
   if (!data)
     throw Exception(Exception::kRGSSError, SDL_GetError());
 
-  // The whole texture is read back into host memory
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, 0, 0, size_.x, size_.y);
 
-  /* The texture stores premultiplied alpha while a palette holds straight
-     colors, so the read back pixels are converted row by row */
   auto* target = static_cast<std::uint8_t*>(data->pixels);
   const std::size_t pixel_pitch = static_cast<std::size_t>(size_.x) * 4;
   for (int32_t y = 0; y < size_.y; ++y) {
@@ -663,14 +617,12 @@ void Bitmap::UpdateWithPalette(RefPtr<Palette> palette) {
     throw Exception(Exception::kRGSSError,
                     "palette data size mismatch bitmap size.");
 
-  // Convert straight palette colors to premultiplied in a scratch buffer.
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
                                    data->h);
   SDL_PremultiplyAlpha(data->w, data->h, data->format, data->pixels,
                        data->pitch, data->format, pixels.data(), data->pitch,
                        false);
 
-  // Update texture data
   wgpu::TexelCopyTextureInfo destination;
   destination.texture = texture_;
 
@@ -735,11 +687,8 @@ void Bitmap::DisposeObject() {}
 void Bitmap::CreateInternal(SDL_Surface* data) {
   size_ = glm::ivec2{data->w, data->h};
 
-  // The blend state of the engine and the drawing operations of this class
-  // store premultiplied alpha, so the pixel data is converted here as well
   SDL_PremultiplySurfaceAlpha(data, false);
 
-  // Color data
   wgpu::TextureDescriptor texture_desc;
   texture_desc.usage = wgpu::TextureUsage::RenderAttachment |
                        wgpu::TextureUsage::TextureBinding |
@@ -752,7 +701,6 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   texture_ = g_device.CreateTexture(&texture_desc);
   texture_view_ = texture_.CreateView(nullptr);
 
-  // Depth stencil
   wgpu::TextureDescriptor depth_stencil_desc;
   depth_stencil_desc.usage = wgpu::TextureUsage::RenderAttachment;
   depth_stencil_desc.dimension = wgpu::TextureDimension::e2D;
@@ -762,7 +710,6 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   depth_stencil_ = g_device.CreateTexture(&depth_stencil_desc);
   depth_stencil_view_ = depth_stencil_.CreateView(nullptr);
 
-  // Update texture data
   wgpu::TexelCopyTextureInfo destination;
   destination.texture = texture_;
 
@@ -777,9 +724,8 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   g_queue.WriteTexture(&destination, data->pixels, data->pitch * data->h,
                        &buffer_layout, &target_size);
 
-  // Uniform data
   SceneData scene_uniform = {};
-  // Floats on purpose: an int argument list would make glm::ortho divide as int.
+
   scene_uniform.view_proj_mat = glm::ortho(0.0f, static_cast<float>(size_.x),
                                            static_cast<float>(size_.y), 0.0f);
   ObjectData object_uniform = {};
@@ -800,7 +746,6 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
               &object_uniform, sizeof(object_uniform));
   object_uniform_.Unmap();
 
-  // Sampler
   wgpu::SamplerDescriptor sampler_desc;
   sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
   sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
@@ -809,7 +754,6 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   sampler_desc.minFilter = wgpu::FilterMode::Nearest;
   sampler_ = g_device.CreateSampler(&sampler_desc);
 
-  // Release cpu data
   SDL_DestroySurface(data);
 
   CreateGroup();

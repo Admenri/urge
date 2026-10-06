@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Audio  (core/audio.h:36-77)
+// Audio  (core/audio.h:40-92)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Audio_SetupMIDI) {
@@ -247,6 +247,101 @@ RB_FUNC(Audio_SEStop) {
   return Qnil;
 }
 
+RB_FUNC(Audio_MasterVolume) {
+  EXC_BEGIN {
+    return LONG2NUM((*urge::Audio::Get().Attr_MasterVolume()));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_MasterVolumeEqual) {
+  int value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "i", &value);
+    urge::Audio::Get().Attr_MasterVolume(value);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_BGMVolume) {
+  EXC_BEGIN {
+    return LONG2NUM((*urge::Audio::Get().Attr_BGMVolume()));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_BGMVolumeEqual) {
+  int value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "i", &value);
+    urge::Audio::Get().Attr_BGMVolume(value);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_BGSVolume) {
+  EXC_BEGIN {
+    return LONG2NUM((*urge::Audio::Get().Attr_BGSVolume()));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_BGSVolumeEqual) {
+  int value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "i", &value);
+    urge::Audio::Get().Attr_BGSVolume(value);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_MEVolume) {
+  EXC_BEGIN {
+    return LONG2NUM((*urge::Audio::Get().Attr_MEVolume()));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_MEVolumeEqual) {
+  int value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "i", &value);
+    urge::Audio::Get().Attr_MEVolume(value);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_SEVolume) {
+  EXC_BEGIN {
+    return LONG2NUM((*urge::Audio::Get().Attr_SEVolume()));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Audio_SEVolumeEqual) {
+  int value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "i", &value);
+    urge::Audio::Get().Attr_SEVolume(value);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitAudioBindingAppend(VALUE mod);
 
 void InitAudioBinding() {
@@ -266,6 +361,16 @@ void InitAudioBinding() {
   DefineModuleFunction(mod, "me_fade", Audio_MEFade);
   DefineModuleFunction(mod, "se_play", Audio_SEPlay);
   DefineModuleFunction(mod, "se_stop", Audio_SEStop);
+  DefineModuleFunction(mod, "master_volume", Audio_MasterVolume);
+  DefineModuleFunction(mod, "master_volume=", Audio_MasterVolumeEqual);
+  DefineModuleFunction(mod, "bgm_volume", Audio_BGMVolume);
+  DefineModuleFunction(mod, "bgm_volume=", Audio_BGMVolumeEqual);
+  DefineModuleFunction(mod, "bgs_volume", Audio_BGSVolume);
+  DefineModuleFunction(mod, "bgs_volume=", Audio_BGSVolumeEqual);
+  DefineModuleFunction(mod, "me_volume", Audio_MEVolume);
+  DefineModuleFunction(mod, "me_volume=", Audio_MEVolumeEqual);
+  DefineModuleFunction(mod, "se_volume", Audio_SEVolume);
+  DefineModuleFunction(mod, "se_volume=", Audio_SEVolumeEqual);
   InitAudioBindingAppend(mod);
 }
 // --- GENERATED END ---

@@ -36,13 +36,10 @@ namespace urge {
 
 namespace {
 
-//! Outline thickness in pixels.
 constexpr int32_t kOutlineSize = 1;
 
-//! Pixel format every engine surface is stored in.
 constexpr SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
-//! RGSS color (components in [0, 255]) as the SDL_Color SDL_ttf expects.
 SDL_Color ToSDLColor(const RefPtr<Color>& color) {
   if (!color)
     return SDL_Color{255, 255, 255, 255};
@@ -55,7 +52,6 @@ SDL_Color ToSDLColor(const RefPtr<Color>& color) {
   };
 }
 
-//! Converts a surface into the internal pixel format, freeing the original.
 void ConvertSurfaceFormat(SDL_Surface*& surface) {
   if (surface->format == kInternalPixelFormat)
     return;
@@ -65,7 +61,6 @@ void ConvertSurfaceFormat(SDL_Surface*& surface) {
   surface = converted;
 }
 
-//! Replaces the surface by its own black drop shadow, offset one pixel.
 void RenderShadowSurface(SDL_Surface*& surface) {
   if (surface->w < 4 || surface->h < 4)
     return;
@@ -97,8 +92,7 @@ void RenderShadowSurface(SDL_Surface*& surface) {
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
       size_(size),
-      // NOTE: Attr_Default* return std::optional, so the bool ones need a
-      // dereference: an implicit `bool` conversion would test has_value.
+
       bold_(*Attr_DefaultBold()),
       italic_(*Attr_DefaultItalic()),
       outline_(*Attr_DefaultOutline()),
@@ -107,7 +101,6 @@ Font::Font(std::vector<std::string> names, int32_t size)
       color_(*Attr_DefaultColor()),
       out_color_(*Attr_DefaultOutColor()),
       gradient_color_(*Attr_DefaultGradientColor()) {
-  // Fall back to Font.default_name when no name was given.
   if (name_.empty()) {
     auto default_name = Attr_DefaultName();
     if (default_name.has_value() && !default_name->empty())
@@ -127,7 +120,6 @@ Font::Font(RefPtr<Font> other)
       out_color_(other->out_color_),
       gradient_color_(other->gradient_color_) {}
 
-// static
 bool Font::Existed(std::string name) {
   return FontContext::Get().FontExists(name);
 }
@@ -330,7 +322,6 @@ TTF_Font* Font::ttf_font() {
   if (!font)
     return nullptr;
 
-  // The style is a property of the shared handle, re-applied on every fetch.
   int32_t style = TTF_STYLE_NORMAL;
   if (bold_)
     style |= TTF_STYLE_BOLD;
@@ -349,8 +340,6 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
   const SDL_Color text_color = ToSDLColor(color_);
   const SDL_Color outline_color = ToSDLColor(out_color_);
 
-  // Hand the color alpha back instead of baking it in, so a caller that only
-  // wants a different opacity does not have to re-render.
   if (font_opacity)
     *font_opacity = text_color.a;
 
@@ -359,7 +348,6 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
   SDL_Color render_outline_color = outline_color;
   render_outline_color.a = 255;
 
-  // Solid gives hard 1-bit edges, blended is the antialiased default.
   SDL_Surface* surface =
       solid_ ? TTF_RenderText_Solid(font, text.c_str(), text.size(), render_color)
              : TTF_RenderText_Blended(font, text.c_str(), text.size(),
@@ -369,8 +357,6 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
 
   ConvertSurfaceFormat(surface);
 
-  // Gradient: interpolate the glyph colors from Color (top) to GradientColor
-  // (bottom). A default transparent gradient bottom is skipped.
   const SDL_Color gradient_top = ToSDLColor(color_);
   const SDL_Color gradient_bottom = ToSDLColor(gradient_color_);
   if (gradient_bottom.a &&
@@ -403,8 +389,6 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
     }
   }
 
-  // Outline: render the glyphs once more in the outline color, then blit the
-  // text on top, offset by the outline thickness.
   if (outline_) {
     TTF_SetFontOutline(font, kOutlineSize);
     SDL_Surface* outline_surface = solid_
@@ -447,8 +431,6 @@ bool Font::MeasureText(const std::string& text, int32_t* width, int32_t* height)
   if (!font)
     return false;
 
-  // TTF_GetStringSize reports the pen advance, which is what RGSS calls the
-  // text size; the outline is deliberately not added on top of it.
   int32_t measured_width = 0, measured_height = 0;
   if (!TTF_GetStringSize(font, text.c_str(), text.size(), &measured_width,
                          &measured_height))

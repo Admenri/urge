@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowXP  (core/window_xp.h:54-98)
+// WindowXP  (core/window_xp.h:49-93)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(WindowXP, Node);

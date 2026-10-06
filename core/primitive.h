@@ -32,8 +32,6 @@
 
 namespace urge {
 
-// Vertex layout shared by every primitive: position (location 0), texcoord
-// (location 1) and color (location 2), 40 bytes in total.
 struct VertexData {
   glm::vec4 position = glm::vec4(0.f, 0.f, 0.f, 1.f);
   glm::vec2 texcoord = glm::vec2(0.f, 0.f);
@@ -45,7 +43,6 @@ static_assert(offsetof(VertexData, texcoord) == 16,
               "unexpected texcoord offset");
 static_assert(offsetof(VertexData, color) == 24, "unexpected color offset");
 
-// Primitive Emitter: assemble vertex data into a drawcall.
 class PrimitiveEmitter {
  public:
   enum class PrimitiveType {
@@ -53,7 +50,6 @@ class PrimitiveEmitter {
     kQuad,
   };
 
-  // One quad takes its four corners from four EmitVertex() calls in this order.
   enum class QuadVertex {
     kTopLeft = 0,
     kTopRight = 1,
@@ -61,8 +57,6 @@ class PrimitiveEmitter {
     kBottomRight = 3,
   };
 
-  // A range of the emitted vertices, which addresses a draw after Upload():
-  // Draw(count, 1, first, 0).
   struct Slot {
     std::uint32_t first = 0;
     std::uint32_t count = 0;
@@ -73,26 +67,22 @@ class PrimitiveEmitter {
   PrimitiveEmitter();
   explicit PrimitiveEmitter(std::size_t capacity);
 
-  // Batch control
   PrimitiveEmitter& Begin(PrimitiveType type = PrimitiveType::kTriangle);
   PrimitiveEmitter& BeginTriangle();
   PrimitiveEmitter& BeginQuad();
   Slot End();
 
-  // State applied to the following vertices
   PrimitiveEmitter& Color4f(float r, float g, float b, float a = 1.f);
   PrimitiveEmitter& Color4f(const glm::vec4& color);
   PrimitiveEmitter& Texcoord2f(float u, float v);
   PrimitiveEmitter& Texcoord2f(const glm::vec2& texcoord);
 
-  // Vertex output
   PrimitiveEmitter& Vertex2f(float x, float y);
   PrimitiveEmitter& Vertex2f(const glm::vec2& position);
   PrimitiveEmitter& Vertex4f(float x, float y, float z, float w);
   PrimitiveEmitter& Vertex4f(const glm::vec4& position);
   PrimitiveEmitter& EmitVertex(float x, float y, float z, float w = 1.f);
 
-  // Shape helpers
   PrimitiveEmitter& Rect(const RectF& rect, const RectF& texcoord);
   PrimitiveEmitter& EmitQuad(const RectF& rect,
                              const RectF& texcoord,
@@ -105,14 +95,12 @@ class PrimitiveEmitter {
                              const glm::vec4& color);
   PrimitiveEmitter& EmitQuad(const RectF& rect, const glm::vec4& color);
 
-  // Storage
   std::size_t size() const { return vertices_.size(); }
   void Reserve(std::size_t capacity);
   std::size_t capacity() const { return vertices_.capacity(); }
   void Clear();
   void Reset();
 
-  // Vertex buffer
   std::uint32_t Upload();
   const wgpu::Buffer& buffer() const { return vertex_buffer_; }
   std::uint64_t buffer_size() const {
@@ -139,8 +127,6 @@ class PrimitiveEmitter {
   bool active_ = false;
 };
 
-// Quad Vertex Manager: the frame vertex batch every drawable appends to, so a
-// frame is one upload into one buffer instead of one per drawable.
 class QuadVertexManager : public Singleton<QuadVertexManager> {
  public:
   QuadVertexManager();

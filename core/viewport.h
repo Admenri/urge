@@ -70,15 +70,10 @@ class Viewport : public Node {
   void CreateEffectBindings();
   void AcquireOffscreen(const RectI& region);
 
-  //! Closes the pass of the parent and opens one on the texture the effect of
-  //! this viewport filters, so the children draw into that texture instead of
-  //! the render target, see PostDraw().
   bool BeginFilter(DrawParam param,
                    const RectI& parent_scissor,
                    const RectI& screen_scissor);
 
-  //! Composites that texture back into the render target with the shader of the
-  //! effect, see BeginFilter().
   void FinishFilter(DrawParam param);
 
   RefPtr<Rect> rect_;
@@ -92,24 +87,16 @@ class Viewport : public Node {
     float step = 0.0f;
   } flash_;
 
-  //! Scratch render target: the texture the children fill while an effect is
-  //! set, else the copy of the render target the tint pass reads. The two paths
-  //! never run in the same frame, so one texture serves both.
   RefPtr<Bitmap> offscreen_;
   wgpu::Buffer object_uniform_, tint_uniform_;
   wgpu::BindGroup object_group_, tint_group_;
 
-  //! What BeginFilter() took the children away from, put back by FinishFilter().
   RefPtr<Bitmap> filter_target_;
   wgpu::BindGroup filter_scene_;
-  //! Where the filtered region lies in the render target and the part of it the
-  //! parent left visible, both in target coordinates.
+
   RectI filter_region_, filter_scissor_;
   bool filtering_ = false;
 
-  //! Emitter of the quad which draws the region back after the effect ran. It
-  //! is emitted in the drawing stage, after the vertex batch of the frame was
-  //! uploaded, so this node cannot use that batch.
   PrimitiveEmitter primitive_;
 };
 

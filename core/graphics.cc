@@ -32,11 +32,13 @@
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_timer.h"
 
+#include "core/audio.h"
 #include "core/common.h"
 #include "core/config.h"
 #include "core/device.h"
 #include "core/exception.h"
 #include "core/gpu_utils.h"
+#include "core/imgui_manager.h"
 #include "core/input.h"
 #include "core/logger.h"
 #include "core/mouse.h"
@@ -48,22 +50,33 @@ namespace urge {
 
 namespace {
 
-//! The lowest and the highest frame rate SetFrameRate() accepts. The two ends
-//! are the usual 30 and 240 of a game loop: below the first a window would look
-//! sluggish, above the second the pacing costs more than it gains.
 constexpr int32_t kMinFrameRate = 30;
 constexpr int32_t kMaxFrameRate = 240;
 
-//! The timestamp of the monotonic clock of SDL, in nanoseconds. The return
-//! value of SDL_GetTicksNS() wraps only after ~584 years, so the difference of
-//! two of its readings is safe to take and never needs an unsigned guard.
 uint64_t NowNS() {
   return SDL_GetTicksNS();
 }
 
-}  // namespace
+wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
+                                  bool vsync) {
+  const auto supported = [&caps](wgpu::PresentMode mode) {
+    for (size_t i = 0; i < caps.presentModeCount; ++i)
+      if (caps.presentModes[i] == mode)
+        return true;
+    return false;
+  };
 
-// -------------------------------------------------------------------------------
+  if (!vsync) {
+    if (supported(wgpu::PresentMode::Immediate))
+      return wgpu::PresentMode::Immediate;
+    if (supported(wgpu::PresentMode::Mailbox))
+      return wgpu::PresentMode::Mailbox;
+  }
+
+  return wgpu::PresentMode::Fifo;
+}
+
+}  // namespace
 
 FPSLimiter::FPSLimiter(int frame_rate)
     : disabled_(
@@ -136,8 +149,6 @@ void FPSLimiter::Reset() {
     skip_reset_flag_ = true;
 }
 
-// -------------------------------------------------------------------------------
-
 ScreenRootNode::ScreenRootNode() : Node() {}
 
 bool ScreenRootNode::Prepare(DrawParam param) {
@@ -152,7 +163,6 @@ bool ScreenRootNode::Prepare(DrawParam param) {
 }
 
 bool ScreenRootNode::DoDraw(DrawParam param) {
-  // The quad of this node is drawn by PostDraw() once the children are drawn
   return true;
 }
 
@@ -165,36 +175,41 @@ void ScreenRootNode::PostDraw(DrawParam param) {
   param->pass.Draw(slot_.count, 1, slot_.first, 0);
 }
 
-// -------------------------------------------------------------------------------
-
 Graphics::Graphics()
     : frame_rate_(Config::Get().xp() ? 40 : 60), limiter_(frame_rate_) {
   auto& config = Config::Get();
-  // HIGH_PIXEL_DENSITY: window sized in logical points, swapchain in physical pixels.
+
+  vsync_ = config.display.vsync;
+  frame_skip_ = config.display.frame_skip;
+
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
-  window_ = SDL_CreateWindow(config.game.title.c_str(), config.window.width,
-                             config.window.height, window_flag);
+  window_ = SDL_CreateWindow(config.game.title.c_str(), config.display.width,
+                             config.display.height, window_flag);
   auto dpi = SDL_GetWindowDisplayScale(window_);
-  SDL_SetWindowSize(window_, static_cast<int>(config.window.width * dpi),
-                    static_cast<int>(config.window.height * dpi));
+  SDL_SetWindowSize(window_, static_cast<int>(config.display.width * dpi),
+                    static_cast<int>(config.display.height * dpi));
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                         SDL_WINDOWPOS_CENTERED);
   SDL_ShowWindow(window_);
 
+  SDL_SetWindowFullscreen(window_, config.display.fullscreen);
+
   GPUDevice::Reset(new GPUDevice(window_, config.gfx.backend));
   ShaderSet::Reset(new ShaderSet());
 
-  /* The uniform pools and the vertex buffer of a frame outlive the frames, so
-     both managers share the lifetime of Graphics. */
   UniformManager::Reset(new UniformManager());
   QuadVertexManager::Reset(new QuadVertexManager());
 
   root_ = MakeRefCounted<ScreenRootNode>();
-  ResizeScreen(config.window.width, config.window.height);
+  ResizeScreen(config.display.width, config.display.height);
+
+  ImGuiManager::Reset(new ImGuiManager(window_));
 }
 
 Graphics::~Graphics() {
+  ImGuiManager::Reset(nullptr);
+
   present_ = {};
   screen_.reset();
   root_.reset();
@@ -208,7 +223,9 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Update() {
-  const bool skip_frame = limiter_.RequireFrameSkip();
+  Audio::Get().Update();
+
+  const bool skip_frame = frame_skip_ && limiter_.RequireFrameSkip();
 
   if (!skip_frame) {
     if (!frozen_)
@@ -282,13 +299,11 @@ void Graphics::TransitionBitmap(int32_t duration,
   const RefPtr<Bitmap> frozen_scene = MakeRefCounted<Bitmap>(screen_);
   const RefPtr<Bitmap> current_scene = SnapToBitmap();
 
-  // A vague transition uses a mapping bitmap; an alpha transition has none.
   const bool mapped = bitmap != nullptr;
   const wgpu::RenderPipeline pipeline =
       mapped ? ShaderSet::Get().state.graphics.transition_vague
              : ShaderSet::Get().state.graphics.transition_alpha;
 
-  // Set 2 carries both scenes (+ the mapping), built from the layout, not by a Bitmap.
   std::vector<std::pair<uint32_t, util::BindingSetType>> bindings = {
       {0, util::TextureViewSet(frozen_scene->texture_view())},
       {1, util::SamplerSet(frozen_scene->sampler())},
@@ -399,29 +414,64 @@ ATTR_DEF(Graphics, int32_t, Brightness) {
 ATTR_DEF(Graphics, bool, FrameSkip) {
   if (value.has_value()) {
     frame_skip_ = *value;
+
+    limiter_.Reset();
     return std::nullopt;
   } else {
     return frame_skip_;
   }
 }
 
-void Graphics::PresentInternal() {
-  auto surface = GPUDevice::Get().swapchain();
+ATTR_DEF(Graphics, bool, Fullscreen) {
+  if (value.has_value()) {
+    SDL_SetWindowFullscreen(window_, *value);
 
-  SDL_Event event;
+    present_.configured = false;
+    return std::nullopt;
+  } else {
+    return (SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN) != 0;
+  }
+}
+
+ATTR_DEF(Graphics, bool, VSync) {
+  if (value.has_value()) {
+    if (vsync_ != *value) {
+      vsync_ = *value;
+
+      present_.configured = false;
+    }
+    return std::nullopt;
+  } else {
+    return vsync_;
+  }
+}
+
+void Graphics::ProcessEvents() {
+  auto& imgui = ImGuiManager::Get();
+
+  SDL_Event event = {};
   while (SDL_PollEvent(&event)) {
-    Input::Get().ProcessEvents(&event);
-    Mouse::Get().ProcessEvents(&event);
+    imgui.ProcessEvent(event);
+
+    if (!imgui.WantsGameInputBlocked()) {
+      Input::Get().ProcessEvents(&event);
+      Mouse::Get().ProcessEvents(&event);
+    }
 
     if (event.type == SDL_EVENT_QUIT)
       throw Exception(Exception::kExitError, {});
 
-    // Reconfigure the surface on resize, before the next GetCurrentTexture.
     if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
       present_.configured = false;
   }
+}
 
-  // Configure the surface at the window's physical pixel size.
+void Graphics::PresentInternal() {
+  auto surface = GPUDevice::Get().swapchain();
+  auto& imgui = ImGuiManager::Get();
+
+  ProcessEvents();
+
   if (!present_.configured) {
     int pixel_width = Width();
     int pixel_height = Height();
@@ -430,7 +480,6 @@ void Graphics::PresentInternal() {
     wgpu::SurfaceCapabilities capabilities;
     surface.GetCapabilities(GPUDevice::Get().adapter(), &capabilities);
 
-    // Prefer a *Srgb target: decode once in the present stage, so the hardware does not double-encode.
     present_.format = capabilities.formats[0];
     for (uint32_t i = 0; i < capabilities.formatCount; ++i) {
       const auto candidate = capabilities.formats[i];
@@ -451,12 +500,12 @@ void Graphics::PresentInternal() {
     configure.usage = wgpu::TextureUsage::RenderAttachment;
     configure.width = static_cast<uint32_t>(pixel_width);
     configure.height = static_cast<uint32_t>(pixel_height);
-    configure.presentMode = wgpu::PresentMode::Fifo;
+    configure.presentMode = PickPresentMode(capabilities, vsync_);
     surface.Configure(&configure);
 
     wgpu::PrimitiveState primitive;
     primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-    // sRGB target decodes back to linear; a non-sRGB one uses the plain stage.
+
     present_.pipeline =
         present_.srgb_target
             ? ShaderSet::Get().shader.present_base.MakeState(
@@ -466,8 +515,12 @@ void Graphics::PresentInternal() {
                   primitive, std::nullopt,
                   {wgpu::ColorTargetState{.format = present_.format}});
 
+    imgui.SetRenderTargetFormat(present_.format);
+
     present_.configured = true;
   }
+
+  imgui.Update();
 
   wgpu::SurfaceTexture surface_texture;
   surface.GetCurrentTexture(&surface_texture);
@@ -486,7 +539,6 @@ void Graphics::PresentInternal() {
       break;
   }
 
-  // The present quad is emitted in screen coordinates, at any pixel density.
   present_.primitive.EmitQuad(RectI(0, 0, Width(), Height()), RectI(0, 0, 1, 1),
                               glm::vec4(1.0f));
   const std::uint32_t vertex_count = present_.primitive.Upload();
@@ -509,6 +561,8 @@ void Graphics::PresentInternal() {
       pass.SetBindGroup(2, screen_->texture_group(), 0, nullptr);
       pass.SetVertexBuffer(0, present_.primitive.buffer(), 0, WGPU_WHOLE_SIZE);
       pass.Draw(vertex_count, 1, 0, 0);
+
+      imgui.RenderDrawData(pass);
     }
     pass.End();
   }

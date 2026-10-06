@@ -22,6 +22,11 @@ set(ENABLE_HLSL OFF)
 set(ENABLE_OPT OFF)
 set(ENABLE_SPIRV ON)
 
+# miniaudio renders into a buffer the engine hands to SDL, so it must not open
+# a sound card of its own: SDL owns the device and the format negotiation.
+set(MINIAUDIO_NO_DEVICEIO ON)
+set(MINIAUDIO_DEBUG_OUTPUT OFF)
+
 # The Tint SPIR-V reader builds its IR with SPIRV-Tools, which glslang carries
 # in its External directory. Only the static library is wanted here.
 set(SPIRV_SKIP_TESTS ON)
@@ -35,7 +40,9 @@ add_subdirectory(SDL)
 add_subdirectory(SDL_image)
 add_subdirectory(SDL_ttf)
 add_subdirectory(physfs)
+add_subdirectory(miniaudio)
 add_subdirectory(webgpu-cpp)
+add_subdirectory(imgui-docking)
 add_subdirectory(wgpu-cmake)
 add_subdirectory(glslang)
 add_subdirectory(spirv-reflect)

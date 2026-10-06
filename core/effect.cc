@@ -40,15 +40,11 @@ namespace urge {
 
 namespace {
 
-//! Rounds a uniform buffer size up to a whole number of 16 byte units, the
-//! alignment a std140 block is laid out with and what a queue write of it has
-//! to respect.
 uint64_t AlignUniformSize(uint64_t size) {
   constexpr uint64_t kAlignment = 16;
   return ((size + kAlignment - 1) / kAlignment) * kAlignment;
 }
 
-//! Neutral resources for unfilled custom bindings: white texel, nearest sampler, zeroed buffer.
 class EffectDefaults {
  public:
   static EffectDefaults& Get() {
@@ -56,13 +52,10 @@ class EffectDefaults {
     return instance;
   }
 
-  //! The white texel a texture binding reads when nothing was staged.
   wgpu::TextureView white_view() const { return white_view_; }
-  //! The sampler a sampler binding reads when nothing was staged.
+
   wgpu::Sampler sampler() const { return sampler_; }
 
-  //! A zero filled buffer of \p size bytes, one per size, which a buffer
-  //! binding reads when the caller staged nothing.
   wgpu::Buffer zero_buffer(uint64_t size) {
     const uint64_t aligned = AlignUniformSize(size);
     const auto found = buffers_.find(aligned);
@@ -92,7 +85,6 @@ class EffectDefaults {
     texture_desc.format = wgpu::TextureFormat::RGBA8Unorm;
     texture_ = GPUDevice::Get().device().CreateTexture(&texture_desc);
 
-    // The single opaque white texel of the fallback texture
     const std::uint8_t white[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
     wgpu::TexelCopyTextureInfo destination;
@@ -126,7 +118,6 @@ class EffectDefaults {
   std::map<uint64_t, wgpu::Buffer> buffers_;
 };
 
-//! Whether a reflected binding is the uniform buffer the engine binds.
 bool IsUniformBuffer(const ShaderBinding& binding) {
   return !binding.texture && !binding.sampler &&
          binding.buffer == WGPUBufferBindingType_Uniform;
@@ -145,7 +136,6 @@ Effect::Effect(RefPtr<Effect> other) {
   if (!other)
     throw Exception(Exception::kRGSSError, "effect: cannot copy a null effect.");
 
-  // Stages are immutable and shared; a copy owns only its custom bind group.
   holder_ = other->holder_;
   resources_ = other->resources_;
   binding_dirty_ = true;
@@ -205,9 +195,6 @@ wgpu::BindGroup Effect::AcquireBindGroup() {
 }
 
 void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
-  //! Stages one entry of the custom set if it is the kind a filter source
-  //! needs, and only when it points somewhere new, so a caller which hands the
-  //! same region over every frame does not rebuild the group of the effect.
   const auto stage = [&](uint32_t slot, bool wants_texture) {
     const auto found = holder_->custom_bindings.find(slot);
     if (found == holder_->custom_bindings.end())
@@ -225,8 +212,6 @@ void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
     binding_dirty_ = true;
   };
 
-  /* The input of a filter is read at the locations the built in shaders read a
-     texture at: the texture at binding 0 and its sampler at binding 1. */
   stage(0, true);
   stage(1, false);
 }
@@ -239,13 +224,10 @@ void Effect::CreateInternal(std::string vs_glsl,
                     "effect: the vertex and the fragment stage both need a "
                     "source.");
 
-  // The blend of the draw, or none at all when the author asked for "none"
   const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states);
 
-  // Vertex stream + engine sets 0/1; set 2 is the custom set, hence min_sets = 3.
   Pipeline shader(vs_glsl, fs_glsl, {{0, 1, 2}}, {1}, 3);
 
-  // Sets 0/1 are bound by the engine, so the stages must declare the same blocks.
   const std::vector<ShaderBinding> scene = shader.group_bindings(0);
   const std::vector<ShaderBinding> object = shader.group_bindings(1);
   if (scene.size() != 1 || !IsUniformBuffer(scene[0]) ||
@@ -258,7 +240,6 @@ void Effect::CreateInternal(std::string vs_glsl,
         "binding 0 and the object uniform at set 1 binding 0, like the built "
         "in shaders.");
 
-  // The state of the draw of this effect, built the way every pipeline is
   const wgpu::RenderPipeline pipeline =
       shader.MakeDefaultState(blend ? &*blend : nullptr);
 
@@ -285,8 +266,6 @@ void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
                     "effect: set 2 slot {} is not a uniform buffer binding.",
                     slot);
 
-  /* A binding has to cover at least the block the shader declares, so the
-     buffer is grown to it and the bytes the caller gave fill its start. */
   const uint64_t buffer_size =
       AlignUniformSize(std::max<uint64_t>(size, found->second.min_binding_size));
 
@@ -328,24 +307,20 @@ void Effect::RebuildBindGroup() {
     entry.binding = binding;
 
     if (info.texture) {
-      // A texture the caller staged, or the white texel
       const bool usable =
           resource && resource->bitmap && !resource->bitmap->IsDisposed();
       entry.textureView = usable ? resource->bitmap->texture_view()
                                  : EffectDefaults::Get().white_view();
     } else if (info.sampler) {
-      // The sampler of the bitmap the caller staged, or the nearest default
       const bool usable =
           resource && resource->bitmap && !resource->bitmap->IsDisposed();
       entry.sampler = usable ? resource->bitmap->sampler()
                              : EffectDefaults::Get().sampler();
     } else if (resource && resource->buffer) {
-      // The buffer the caller staged, bound whole
       entry.buffer = resource->buffer;
       entry.offset = 0;
       entry.size = WGPU_WHOLE_SIZE;
     } else {
-      // A zeroed buffer of the size the block declares
       entry.buffer = EffectDefaults::Get().zero_buffer(info.min_binding_size);
       entry.offset = 0;
       entry.size = WGPU_WHOLE_SIZE;

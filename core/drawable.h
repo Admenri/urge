@@ -34,25 +34,18 @@
 namespace urge {
 
 struct DrawContext {
-  // Current context model transform stack
   std::stack<glm::mat4> model;
 
-  // Command buffer
   wgpu::CommandEncoder command;
 
-  // Render target
   RefPtr<Bitmap> target;
 
-  // Vertex batch of the frame (prepare stage)
   PrimitiveEmitter* vertices = nullptr;
 
-  // Render pass (drawing stage)
   wgpu::RenderPassEncoder pass;
 
-  // Scene bindgroup (drawing stage)
   wgpu::BindGroup scene;
 
-  // Scissor stack (drawing stage)
   std::stack<RectI> scissors;
 };
 using DrawParam = DrawContext*;
@@ -152,7 +145,7 @@ class DrawableSet {
 
  private:
   friend class Drawable;
-  Drawable root_;  // sentinel node for doubly-linked list
+  Drawable root_;
 };
 
 }  // namespace urge

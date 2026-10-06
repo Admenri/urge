@@ -28,7 +28,7 @@
 
 #if defined(WEBGPU_BACKEND_WGPU)
 #include "wgpu.h"
-#endif  // WEBGPU_BACKEND_WGPU
+#endif
 
 #include "core/logger.h"
 
@@ -55,7 +55,6 @@ wgpu::BackendType FromGFXBackend(std::string backend) {
 }  // namespace
 
 GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
-  // Instance
   const std::vector<wgpu::InstanceFeatureName> instance_exts = {
       wgpu::InstanceFeatureName::ShaderSourceSPIRV,
   };
@@ -73,7 +72,6 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
 #endif
   instance_ = wgpu::CreateInstance(&instance_desc);
 
-  // Surface: a device without a window cannot present
   if (window != nullptr) {
     wgpu::SurfaceDescriptor surface_desc;
     SDL_PropertiesID window_prop = SDL_GetWindowProperties(window);
@@ -106,7 +104,6 @@ void GPUDevice::WaitAny(wgpu::Future future) {
 }
 
 void GPUDevice::CreateDevice(std::string backend) {
-  // Adapter: the request callback runs before the call returns
   WGPURequestAdapterCallbackInfo adapter_callback = {};
   adapter_callback.mode = WGPUCallbackMode_AllowProcessEvents;
   adapter_callback.callback = [](WGPURequestAdapterStatus status,
@@ -123,7 +120,6 @@ void GPUDevice::CreateDevice(std::string backend) {
     adapter_request.compatibleSurface = surface_;
   instance_.RequestAdapter(&adapter_request, adapter_callback);
 
-  // Device
   WGPURequestDeviceCallbackInfo device_callback = {};
   device_callback.mode = WGPUCallbackMode_AllowProcessEvents;
   device_callback.callback = [](WGPURequestDeviceStatus status,
@@ -137,7 +133,6 @@ void GPUDevice::CreateDevice(std::string backend) {
   wgpu::DeviceDescriptor device_desc;
   adapter_.RequestDevice(&device_desc, device_callback);
 
-  // Info
   wgpu::AdapterInfo adapter_info;
   adapter_.GetInfo(&adapter_info);
   LOGGER_INFO("[GPU] Device: {} ({:#X})", std::string_view(adapter_info.device),

@@ -50,18 +50,15 @@ class RefCounted {
 
   bool Release() const {
     if (ref_count_.fetch_sub(1, std::memory_order_release) == 1) {
-      // Acquire fence ensures that the destructor sees all changes
-      // made by other threads before they released.
       std::atomic_thread_fence(std::memory_order_acquire);
-      // Delete resource
+
       Traits::Destruct(static_cast<const T*>(this));
-      // Released
+
       return true;
     }
     return false;
   }
 
-  // Returns the current reference count (mostly for debugging).
   CountTy RefCount() const {
     return ref_count_.load(std::memory_order_relaxed);
   }
@@ -91,21 +88,15 @@ class RefPtr {
       Release(ptr_);
   }
 
-  // Copy constructor. This is required in addition to the copy conversion
-  // constructor below.
   RefPtr(const RefPtr& r) : RefPtr(r.ptr_) {}
 
-  // Copy conversion constructor.
   template <typename U,
             typename = typename std::enable_if<
                 std::is_convertible<U*, T*>::value>::type>
   RefPtr(const RefPtr<U>& r) : RefPtr(r.ptr_) {}
 
-  // Move constructor. This is required in addition to the move conversion
-  // constructor below.
   RefPtr(RefPtr&& r) noexcept : ptr_(r.ptr_) { r.ptr_ = nullptr; }
 
-  // Move conversion constructor.
   template <typename U,
             typename = typename std::enable_if<
                 std::is_convertible<U*, T*>::value>::type>
@@ -123,18 +114,13 @@ class RefPtr {
     return *this;
   }
 
-  // Unified assignment operator.
   RefPtr& operator=(RefPtr r) noexcept {
     swap(r);
     return *this;
   }
 
-  // Sets managed object to null and releases reference to the previous managed
-  // object, if it existed.
   void reset() { RefPtr().swap(*this); }
 
-  // Returns the owned pointer (if any), releasing ownership to the caller. The
-  // caller is responsible for managing the lifetime of the reference.
   [[nodiscard]] T* release();
 
   void swap(RefPtr& r) noexcept { std::swap(ptr_, r.ptr_); }
@@ -160,7 +146,7 @@ class RefPtr {
   T* ptr_ = nullptr;
 
  private:
-  // Friend required for move constructors that set r.ptr_ to null.
+
   template <typename U>
   friend class RefPtr;
 
@@ -175,13 +161,11 @@ T* RefPtr<T>::release() {
   return ptr;
 }
 
-// static
 template <typename T>
 void RefPtr<T>::AddRef(T* ptr) {
   ptr->AddRef();
 }
 
-// static
 template <typename T>
 void RefPtr<T>::Release(T* ptr) {
   ptr->Release();
@@ -237,8 +221,6 @@ void swap(RefPtr<T>& lhs, RefPtr<T>& rhs) noexcept {
   lhs.swap(rhs);
 }
 
-// Constructs an instance of T, which is a ref counted type, and wraps the
-// object into a scoped_refptr<T>.
 template <typename T, typename... Args>
 RefPtr<T> MakeRefCounted(Args&&... args) {
   T* obj = new T(std::forward<Args>(args)...);

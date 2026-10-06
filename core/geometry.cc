@@ -35,17 +35,12 @@ namespace urge {
 
 namespace {
 
-//! Side of the fallback texture, in texels.
 constexpr int32_t kDefaultTextureSize = 1;
 
-//! One-white-texel texture for a bitmapless geometry; the identity of premultiplied alpha.
 class DefaultTexture {
  public:
-  //! Returns the shared fallback texture, created on the first use.
+
   static const wgpu::BindGroup& Get() {
-    // A geometry is only drawn after Graphics built the device and the shader
-    // set, so the instance is created when the device those resources belong
-    // to is already alive.
     static DefaultTexture instance;
     return instance.group_;
   }
@@ -61,7 +56,6 @@ class DefaultTexture {
     texture_desc.format = wgpu::TextureFormat::RGBA8Unorm;
     texture_ = GPUDevice::Get().device().CreateTexture(&texture_desc);
 
-    // The one opaque white texel of the fallback texture
     const std::uint8_t white[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
     wgpu::TexelCopyTextureInfo destination;
@@ -86,8 +80,6 @@ class DefaultTexture {
     sampler_desc.minFilter = wgpu::FilterMode::Nearest;
     sampler_ = GPUDevice::Get().device().CreateSampler(&sampler_desc);
 
-    /* The texture of a geometry is bound at set 2 of the mesh pipeline, which
-       is the texture set the fallback texture is a member of. */
     const wgpu::RenderPipeline& pipeline =
         ShaderSet::Get().state.geometry.geometry_blends.at(BLEND_NORMAL);
     group_ = util::CreateBindGroup(
@@ -156,7 +148,6 @@ void Geometry::SetColor(int32_t triangle, int32_t point, RefPtr<Color> color) {
   if (!color)
     throw Exception(Exception::kRGSSError, "invalid data.");
 
-  // Premultiplied content: scale the vertex rgb by its alpha, see PrimitiveEmitter.
   const glm::vec4 normalized = color->Normalize();
   const float alpha = normalized.a;
   auto& v = data_[triangle];
@@ -180,7 +171,6 @@ ATTR_DEF(Geometry, int32_t, Capacity) {
     if (*value < 0)
       throw Exception(Exception::kRGSSError, "invalid capacity value.");
 
-    // Growing appends default vertices, so unfilled triangles draw nothing.
     data_.resize(*value);
     return std::nullopt;
   } else {
@@ -199,8 +189,6 @@ ATTR_DEF(Geometry, RefPtr<Bitmap>, Bitmap) {
 
 ATTR_DEF(Geometry, int32_t, BlendType) {
   if (value.has_value()) {
-    /* The blend type indexes the states of the mesh shader, so it is kept
-       inside the range of the blend types the engine knows. */
     blend_type_ = std::clamp(*value, static_cast<int32_t>(BLEND_NONE),
                              static_cast<int32_t>(BLEND_SUBTRACT));
     return std::nullopt;
@@ -229,20 +217,16 @@ void Geometry::DisposeObject() {
 bool Geometry::Prepare(DrawParam param) {
   primitive_slot_ = {};
 
-  // The geometry goes into the vertex batch of the frame, see QuadVertexManager
   primitive_slot_ = EmitGeometryInternal(*param->vertices);
-  // A geometry without a triangle has nothing to draw
+
   if (!primitive_slot_.count)
     return false;
 
-  // The transform of a geometry is the one of the node hierarchy: its points
-  // are absolute and the mesh is placed by the transform it carries.
   UniformManager& uniforms = UniformManager::Get();
   ObjectData object_data;
   object_data.model_mat = world_transform();
   object_slot_ = uniforms.object_uniforms().Acquire(object_data);
 
-  // Ensure default texture
   DefaultTexture::Get();
 
   return object_slot_.chunk != UniformBlockPool::kInvalidChunk;
@@ -253,7 +237,6 @@ bool Geometry::DoDraw(DrawParam param) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  // An effect replaces shader and blend; mesh, transform and sets 0/1 stay, see Effect.
   if (effect_) {
     param->pass.SetPipeline(effect_->AcquirePipeline());
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
@@ -267,16 +250,16 @@ bool Geometry::DoDraw(DrawParam param) {
 
   param->pass.SetPipeline(ShaderSet::Get().state.geometry.geometry_blends.at(
       static_cast<BlendType>(blend_type_)));
-  // The scene of the render target, its object set is not the one of a geometry
+
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
-  // The object transform of this geometry, bound with the offset of its slot
+
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
-  // The bitmap of this geometry, or the shared white texel when it has none
+
   const wgpu::BindGroup texture_group = Disposable::Check(bitmap_)
                                             ? bitmap_->texture_group()
                                             : DefaultTexture::Get();
   param->pass.SetBindGroup(2, texture_group, 0, nullptr);
-  // The batch of the frame holds the vertices, this draw takes its own range
+
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
   param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
 
@@ -288,8 +271,6 @@ PrimitiveEmitter::Slot Geometry::EmitGeometryInternal(
   if (data_.empty())
     return {};
 
-  /* Every triangle of the mesh is appended to one batch, so the whole geometry
-     is a single range of the vertex batch and a single draw, see Prepare(). */
   emitter.BeginTriangle();
   for (const TriangleData& triangle : data_) {
     for (const VertexData& vertex : triangle.vertex) {

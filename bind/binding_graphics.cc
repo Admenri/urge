@@ -24,7 +24,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Graphics  (core/graphics.h:75-117)
+// Graphics  (core/graphics.h:75-121)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {
@@ -280,6 +280,44 @@ RB_FUNC(Graphics_FrameSkipEqual) {
   return Qnil;
 }
 
+RB_FUNC(Graphics_Fullscreen) {
+  EXC_BEGIN {
+    return (*urge::Graphics::Get().Attr_Fullscreen()) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Graphics_FullscreenEqual) {
+  bool value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "b", &value);
+    urge::Graphics::Get().Attr_Fullscreen(value != 0);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Graphics_VSync) {
+  EXC_BEGIN {
+    return (*urge::Graphics::Get().Attr_VSync()) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Graphics_VSyncEqual) {
+  bool value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "b", &value);
+    urge::Graphics::Get().Attr_VSync(value != 0);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitGraphicsBindingAppend(VALUE mod);
 
 void InitGraphicsBinding() {
@@ -306,6 +344,10 @@ void InitGraphicsBinding() {
   DefineModuleFunction(mod, "brightness=", Graphics_BrightnessEqual);
   DefineModuleFunction(mod, "frame_skip", Graphics_FrameSkip);
   DefineModuleFunction(mod, "frame_skip=", Graphics_FrameSkipEqual);
+  DefineModuleFunction(mod, "fullscreen", Graphics_Fullscreen);
+  DefineModuleFunction(mod, "fullscreen=", Graphics_FullscreenEqual);
+  DefineModuleFunction(mod, "v_sync", Graphics_VSync);
+  DefineModuleFunction(mod, "v_sync=", Graphics_VSyncEqual);
   InitGraphicsBindingAppend(mod);
 }
 // --- GENERATED END ---

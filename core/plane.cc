@@ -37,13 +37,8 @@ namespace urge {
 
 namespace {
 
-//! Smallest determinant the linear part of a plane transform may have: the
-//! tiles are placed with its inverse, which a transform collapsing the plane
-//! onto a line or a point does not have.
 constexpr float kMinLinearDeterminant = 1e-6f;
 
-//! Smallest zoom a plane is drawn with, so no texture coordinate is divided by
-//! zero.
 constexpr float kMinZoom = 1e-6f;
 
 }  // namespace
@@ -127,7 +122,6 @@ ATTR_DEF(Plane, int32_t, Opacity) {
 
 ATTR_DEF(Plane, int32_t, BlendType) {
   if (value.has_value()) {
-    // Indexes the plane pipeline states, so it stays within the known types.
     blend_type_ = std::clamp(*value, static_cast<int32_t>(BLEND_NONE),
                              static_cast<int32_t>(BLEND_SUBTRACT));
     return std::nullopt;
@@ -165,25 +159,19 @@ void Plane::DisposeObject() {
 bool Plane::Prepare(DrawParam param) {
   primitive_slot_ = {};
 
-  // A plane without a bitmap, or with one which was disposed, draws nothing
   if (!Disposable::Check(bitmap_))
     return false;
 
   primitive_slot_ = EmitGeometryInternal(*param->vertices, param);
-  // A plane whose bitmap, zoom or transform leaves nothing to tile
+
   if (!primitive_slot_.count)
     return false;
 
   UniformManager& uniforms = UniformManager::Get();
 
-  // The quad is emitted in the pixels of the render target and the tiles
-  // follow from its texture coordinates, so the object transform is the
-  // identity and the node hierarchy transform is not part of it.
   const ObjectData object_data = {glm::mat4(1.0f)};
   object_slot_ = uniforms.object_uniforms().Acquire(object_data);
 
-  // The color and the tone travel in a buffer of their own, written before the
-  // command buffer of this frame is submitted.
   PlaneBase::PlaneParam plane_param = {};
   plane_param.blend_color = color_->Normalize();
   plane_param.blend_tone = tone_->Normalize();
@@ -204,7 +192,7 @@ bool Plane::DoDraw(DrawParam param) {
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
   param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
-  // The batch of the frame holds the vertices, this draw takes its own range
+
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
                               WGPU_WHOLE_SIZE);
   param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
@@ -221,7 +209,6 @@ void Plane::CreateEffectBindings() {
   tint_desc.size = sizeof(PlaneBase::PlaneParam);
   tint_uniform_ = GPUDevice::Get().device().CreateBuffer(&tint_desc);
 
-  // The contents are written during the prepare stage of every frame.
   tint_group_ = util::CreateBindGroup(pipeline.GetBindGroupLayout(3),
                                       {{0, util::BufferSet(tint_uniform_)}});
 }
@@ -229,41 +216,30 @@ void Plane::CreateEffectBindings() {
 PrimitiveEmitter::Slot Plane::EmitGeometryInternal(PrimitiveEmitter& primitive,
                                                    DrawParam param) {
   const glm::ivec2 texture_size = bitmap_->size();
-  // A bitmap without a pixel holds no tile a plane could repeat
+
   if (texture_size.x <= 0 || texture_size.y <= 0)
     return {};
 
-  // A zoom of zero collapses every tile of the bitmap onto a line
   if (std::abs(zoom_x_) < kMinZoom || std::abs(zoom_y_) < kMinZoom)
     return {};
 
-  // A plane covers the whole render target; a viewport it belongs to clips the
-  // quad to its own rect, which is what makes the plane fill that viewport.
   const RectI region(param->target->size());
   if (!region())
     return {};
 
-  // The root point the tiles are anchored at and repeat from: the position the
-  // node hierarchy placed the plane at, scrolled by the plane origin.
   const glm::mat4 transform = world_transform();
   const glm::vec2 root =
       ExtractPosition(transform) -
       glm::vec2(static_cast<float>(ox_), static_cast<float>(oy_));
 
-  // A pixel reads the tile at the point the node transform maps its offset
-  // from the root to, so scale and rotation act on the surface as well.
   const glm::mat2 linear(transform);
   if (std::abs(glm::determinant(linear)) < kMinLinearDeterminant)
     return {};
   const glm::mat2 inverse_linear = glm::inverse(linear);
 
-  // The size one tile has on the render target: the zoom scales the bitmap and
-  // the texture coordinate of a tile runs from zero to one over it.
   const glm::vec2 tile_size(static_cast<float>(texture_size.x) * zoom_x_,
                             static_cast<float>(texture_size.y) * zoom_y_);
 
-  // Bitmap contents are stored premultiplied, so the opacity scales all four
-  // channels of the vertex color instead of the alpha channel alone.
   const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
 
   const auto emit_corner = [&](float x, float y) {

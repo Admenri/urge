@@ -114,8 +114,7 @@ class Sprite : public Node {
   int32_t opacity_ = 255, blend_type_ = 0;
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
-  //! The user authored shader the draw runs, or none for the built in sprite
-  //! pipeline, see DoDraw.
+
   RefPtr<Effect> effect_;
 
   struct {
@@ -125,14 +124,10 @@ class Sprite : public Node {
 
   bool rgssvx_style_ = true;
 
-  //! The slot of the object pool this frame put the transform of this sprite
-  //! in, which the sprite pipeline binds at set 1.
   UniformBlockPool::Slot object_slot_ = {};
-  //! The slot of the sprite pool this frame put the parameter of this sprite
-  //! in, which the sprite pipeline binds at set 3.
+
   UniformBlockPool::Slot param_slot_ = {};
-  //! The range EmitGeometryInternal() appended to the vertex batch of the
-  //! frame, i.e. the vertices DoDraw() draws.
+
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 

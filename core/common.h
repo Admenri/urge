@@ -146,7 +146,6 @@ inline RectI MakeIntersect(const RectI& A, const RectI& B) {
   int32_t Amin, Amax, Bmin, Bmax;
   RectI result;
 
-  // Horizontal intersection
   Amin = A.x;
   Amax = Amin + A.width;
   Bmin = B.x;
@@ -160,7 +159,6 @@ inline RectI MakeIntersect(const RectI& A, const RectI& B) {
   }
   result.width = std::max(0, Amax - Amin);
 
-  // Vertical intersection
   Amin = A.y;
   Amax = Amin + A.height;
   Bmin = B.y;
