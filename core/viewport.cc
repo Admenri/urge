@@ -57,17 +57,18 @@ Viewport::~Viewport() {
 }
 
 void Viewport::Flash(RefPtr<Color> color, int32_t duration) {
-  flash_.color = color ? color->Normalize() : glm::vec4();
-  flash_.step =
-      duration > 0 ? (flash_.color.w / static_cast<float>(duration)) : 0.0f;
+  Disposable::Guard();
+
+  std::optional<glm::vec4> flash_color = std::nullopt;
+  if (color)
+    flash_color = color->Normalize();
+  flashing_.Setup(flash_color, duration);
 }
 
 void Viewport::Update() {
-  flash_.color.w -= flash_.step;
-  if (flash_.color.w <= 0) {
-    flash_.color = {};
-    flash_.step = 0.0f;
-  }
+  Disposable::Guard();
+
+  flashing_.Update();
 }
 
 ATTR_DEF(Viewport, RefPtr<Rect>, Rect) {
@@ -142,10 +143,11 @@ void Viewport::DisposeObject() {
 }
 
 bool Viewport::Prepare(DrawParam param) {
-  glm::vec4 blend_color = color_->Normalize();
-  const glm::vec4 blend_tone = tone_->Normalize();
-  if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
-    blend_color = flash_.color;
+  const auto blend_tone = tone_->Normalize();
+  auto blend_color = color_->Normalize();
+  auto flash_color = flashing_.GetColor();
+  if (flashing_.IsFlashing())
+    blend_color = (flash_color.w > blend_color.w ? flash_color : blend_color);
 
   TintBase::TintParam tint = {};
   tint.blend_color = blend_color;
@@ -188,10 +190,11 @@ void Viewport::PostDraw(DrawParam param) {
     if (filtering_)
       FinishFilter(param);
   } else {
-    glm::vec4 blend_color = color_->Normalize();
     const glm::vec4 blend_tone = tone_->Normalize();
-    if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
-      blend_color = flash_.color;
+    glm::vec4 blend_color = color_->Normalize();
+    glm::vec4 flash_color = flashing_.GetColor();
+    if (flashing_.IsFlashing())
+      blend_color = (flash_color.w > blend_color.w ? flash_color : blend_color);
     const bool post_process =
         (blend_color.a != 0 || blend_tone != glm::vec4(0.0f));
 

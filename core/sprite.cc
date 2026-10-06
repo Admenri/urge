@@ -67,19 +67,21 @@ Sprite::~Sprite() {
 }
 
 void Sprite::Flash(RefPtr<Color> color, int32_t duration) {
-  flash_.color = color ? color->Normalize() : glm::vec4{};
-  flash_.step = duration > 0 ? (flash_.color.w / duration) : 0.0f;
+  Disposable::Guard();
+
+  std::optional<glm::vec4> flash_color = std::nullopt;
+  if (color)
+    flash_color = color->Normalize();
+  flashing_.Setup(flash_color, duration);
 }
 
 void Sprite::Update() {
+  Disposable::Guard();
+
   wave_phase_ += wave_speed_ / 180.0f;
   wave_phase_ = std::fmod(wave_phase_, 360.0f);
 
-  flash_.color.w -= flash_.step;
-  if (flash_.color.w <= 0) {
-    flash_.color = {};
-    flash_.step = 0.0f;
-  }
+  flashing_.Update();
 }
 
 int32_t Sprite::Width() {
@@ -311,8 +313,10 @@ bool Sprite::Prepare(DrawParam param) {
   if (!Disposable::Check(bitmap_))
     return false;
 
-  primitive_slot_ = EmitGeometryInternal(*param->vertices);
+  if (flashing_.IsFlashing() && flashing_.IsInvalid())
+    return false;
 
+  primitive_slot_ = EmitGeometryInternal(*param->vertices);
   if (!primitive_slot_.count)
     return false;
 
@@ -374,8 +378,9 @@ bool Sprite::DoDraw(DrawParam param) {
 
 SpriteBase::SpriteParam Sprite::MakeParamInternal() {
   glm::vec4 blend_color = color_->Normalize();
-  if (flash_.color.w > 0.0f && flash_.color.w > blend_color.w)
-    blend_color = flash_.color;
+  glm::vec4 flash_color = flashing_.GetColor();
+  if (flashing_.IsFlashing())
+    blend_color = (flash_color.w > blend_color.w ? flash_color : blend_color);
 
   const float texture_height =
       static_cast<float>(std::max(1, bitmap_->size().y));

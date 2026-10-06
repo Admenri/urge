@@ -82,10 +82,7 @@ class Viewport : public Node {
   RefPtr<Tone> tone_;
   RefPtr<Effect> effect_;
 
-  struct {
-    glm::vec4 color = glm::vec4(0.0f);
-    float step = 0.0f;
-  } flash_;
+  FlashableNode flashing_;
 
   RefPtr<Bitmap> offscreen_;
   wgpu::Buffer object_uniform_, tint_uniform_;

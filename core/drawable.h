@@ -148,4 +148,43 @@ class DrawableSet {
   Drawable root_;
 };
 
+class FlashableNode {
+ public:
+  FlashableNode() = default;
+
+  void Setup(const std::optional<glm::vec4>& flash_color, int32_t duration) {
+    if (duration > 0) {
+      duration_ = duration;
+      count_ = 0;
+      color_ = flash_color.has_value() ? flash_color.value() : glm::vec4(0.0f);
+      alpha_ = color_.w;
+      invalid_ = !flash_color.has_value();
+    }
+  }
+
+  void Update() {
+    if (duration_) {
+      if (++count_ > duration_) {
+        duration_ = 0;
+        invalid_ = false;
+        return;
+      } else {
+        float progress = static_cast<float>(count_) / duration_;
+        color_.w = alpha_ * (1.0f - progress);
+      }
+    }
+  }
+
+  glm::vec4 GetColor() const { return color_; }
+  bool IsFlashing() const { return duration_; }
+  bool IsInvalid() const { return invalid_; }
+
+ private:
+  int32_t duration_ = 0;
+  int32_t count_ = 0;
+  glm::vec4 color_;
+  float alpha_ = 0.0f;
+  bool invalid_ = false;
+};
+
 }  // namespace urge

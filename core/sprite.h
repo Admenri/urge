@@ -114,20 +114,13 @@ class Sprite : public Node {
   int32_t opacity_ = 255, blend_type_ = 0;
   RefPtr<Color> color_;
   RefPtr<Tone> tone_;
-
   RefPtr<Effect> effect_;
 
-  struct {
-    glm::vec4 color = glm::vec4(0.0f);
-    float step = 0.0f;
-  } flash_;
-
+  FlashableNode flashing_;
   bool rgssvx_style_ = true;
 
   UniformBlockPool::Slot object_slot_ = {};
-
   UniformBlockPool::Slot param_slot_ = {};
-
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 
