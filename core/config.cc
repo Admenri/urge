@@ -22,12 +22,21 @@
 
 #include "core/config.h"
 
+#include <string>
 #include <utility>
 
 #include "SDL3/SDL_keyboard.h"
+#include "SDL3/SDL_platform_defines.h"
+#include "SDL3/SDL_stdinc.h"
 
 #include "core/exception.h"
 #include "core/filesystem.h"
+
+#if defined(SDL_PLATFORM_WIN32)
+#include <windows.h>
+#else
+#include <cstdlib>
+#endif
 
 namespace urge {
 
@@ -70,6 +79,49 @@ int32_t ParseKeyName(const std::string& name) {
 std::string KeyNameOf(int32_t keycode) {
   const char* name = SDL_GetScancodeName(static_cast<SDL_Scancode>(keycode));
   return (name && *name) ? std::string(name) : std::to_string(keycode);
+}
+
+bool IsUTF8Text(const std::string& text) {
+  const char* cursor = text.c_str();
+  size_t left = text.size();
+  while (left > 0 && *cursor != '\0')
+    if (SDL_StepUTF8(&cursor, &left) == SDL_INVALID_UNICODE_CODEPOINT)
+      return false;
+  return true;
+}
+
+std::string AnsiToUTF8(const std::string& text) {
+#if defined(SDL_PLATFORM_WIN32)
+  const int length = MultiByteToWideChar(
+      CP_ACP, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
+  if (length <= 0)
+    return text;
+
+  std::wstring wide(static_cast<size_t>(length), L'\0');
+  MultiByteToWideChar(CP_ACP, 0, text.data(), static_cast<int>(text.size()),
+                      wide.data(), length);
+#else
+  const size_t length = std::mbstowcs(nullptr, text.c_str(), 0);
+  if (length == static_cast<size_t>(-1))
+    return text;
+
+  std::wstring wide(length, L'\0');
+  std::mbstowcs(wide.data(), text.c_str(), length);
+#endif
+
+  char* utf8 = SDL_iconv_wchar_utf8(wide.c_str());
+  if (!utf8)
+    return text;
+
+  std::string result(utf8);
+  SDL_free(utf8);
+  return result;
+}
+
+std::string NormalizeUTF8(const std::string& text) {
+  if (IsUTF8Text(text))
+    return text;
+  return AnsiToUTF8(text);
 }
 
 }  // namespace
@@ -133,7 +185,7 @@ void Config::Load() {
   game.rgss = parser_.GetInt("Game", "RGSS", game.rgss);
   game.scripts = parser_.Get("Game", "Scripts", game.scripts);
   ReplaceStringWidth(game.scripts, '\\', '/');
-  game.title = parser_.Get("Game", "Title", game.title);
+  game.title = NormalizeUTF8(parser_.Get("Game", "Title", game.title));
   game.rtp = parser_.Get("Game", "RTP", game.rtp);
   game.rtp1 = parser_.Get("Game", "RTP1", game.rtp);
   game.rtp2 = parser_.Get("Game", "RTP2", game.rtp);
