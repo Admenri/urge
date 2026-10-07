@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-07T01:54:48Z",
+    "generated_at": "2026-10-07T09:46:22Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
@@ -29,6 +29,8 @@
       "core/input.h",
       "core/logger.h",
       "core/mouse.h",
+      "core/network.h",
+      "core/network_backend.h",
       "core/node.h",
       "core/object.h",
       "core/palette.h",
@@ -1325,6 +1327,149 @@
           "setter": true,
           "attr_value_type": "bool",
           "export": "core/mouse.h:38-82"
+        }
+      ]
+    },
+    {
+      "unsupported": [],
+      "export": "core/network.h:184-201",
+      "cpp_name": "Network",
+      "cpp_parent": "Singleton",
+      "header": "core/network.h",
+      "kind": "module",
+      "name": "Network",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/network.h:184-201"
+        },
+        {
+          "ruby_name": "websocket",
+          "cpp_name": "OpenWebSocket",
+          "return": {
+            "cpp_type": "RefPtr<WebSocket>",
+            "ruby_type": "WebSocket"
+          },
+          "params": [
+            {
+              "name": "url",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "protocols",
+              "type": "std::vector<std::string>",
+              "default": "{}"
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/network.h:184-201"
+        },
+        {
+          "ruby_name": "fetch",
+          "cpp_name": "OpenFetch",
+          "return": {
+            "cpp_type": "RefPtr<Fetch>",
+            "ruby_type": "Fetch"
+          },
+          "params": [
+            {
+              "name": "url",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "method",
+              "type": "std::string",
+              "default": "\"GET\""
+            },
+            {
+              "name": "body",
+              "type": "std::string",
+              "default": "\"\""
+            },
+            {
+              "name": "headers",
+              "type": "std::vector<std::string>",
+              "default": "{}"
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/network.h:184-201"
+        },
+        {
+          "ruby_name": "timeout",
+          "cpp_name": "Timeout",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "int32_t",
+          "export": "core/network.h:184-201"
+        },
+        {
+          "ruby_name": "timeout=",
+          "cpp_name": "Timeout",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "int32_t",
+          "export": "core/network.h:184-201"
+        },
+        {
+          "ruby_name": "max_events",
+          "cpp_name": "MaxEvents",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "int32_t",
+          "export": "core/network.h:184-201"
+        },
+        {
+          "ruby_name": "max_events=",
+          "cpp_name": "MaxEvents",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "int32_t",
+          "export": "core/network.h:184-201"
         }
       ]
     }
@@ -5820,6 +5965,446 @@
       "header": "core/video.h",
       "kind": "class",
       "name": "Video",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/network.h:41-64"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "type",
+          "cpp_name": "GetType",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:41-64"
+        },
+        {
+          "ruby_name": "text",
+          "cpp_name": "GetText",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:41-64"
+        },
+        {
+          "ruby_name": "code",
+          "cpp_name": "GetCode",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:41-64"
+        },
+        {
+          "ruby_name": "reason",
+          "cpp_name": "GetReason",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:41-64"
+        },
+        {
+          "ruby_name": "message",
+          "cpp_name": "GetErrorMessage",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:41-64"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/network.h:41-64",
+      "cpp_name": "NetworkEvent",
+      "cpp_parent": "Object",
+      "header": "core/network.h",
+      "kind": "class",
+      "name": "NetworkEvent",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "url",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "protocols",
+              "type": "std::vector<std::string>",
+              "default": "{}"
+            }
+          ],
+          "export": "core/network.h:78-112"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "url",
+          "cpp_name": "GetUrl",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "ready_state",
+          "cpp_name": "GetReadyState",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "error",
+          "cpp_name": "GetError",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "dropped",
+          "cpp_name": "GetDropped",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "send_text",
+          "cpp_name": "SendText",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "data",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "send_binary",
+          "cpp_name": "SendBinary",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "data",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "send_ping",
+          "cpp_name": "SendPing",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "data",
+              "type": "std::string",
+              "default": "\"\""
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "close",
+          "cpp_name": "Close",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "code",
+              "type": "int32_t",
+              "default": "1000"
+            },
+            {
+              "name": "reason",
+              "type": "std::string",
+              "default": "\"\""
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "next_event",
+          "cpp_name": "NextEvent",
+          "return": {
+            "cpp_type": "RefPtr<NetworkEvent>",
+            "ruby_type": "NetworkEvent"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/network.h:78-112"
+        },
+        {
+          "ruby_name": "pending",
+          "cpp_name": "GetPending",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:78-112"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/network.h:78-112",
+      "cpp_name": "WebSocket",
+      "cpp_parent": "Object",
+      "header": "core/network.h",
+      "kind": "class",
+      "name": "WebSocket",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "url",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "method",
+              "type": "std::string",
+              "default": "\"GET\""
+            },
+            {
+              "name": "body",
+              "type": "std::string",
+              "default": "\"\""
+            },
+            {
+              "name": "headers",
+              "type": "std::vector<std::string>",
+              "default": "{}"
+            }
+          ],
+          "export": "core/network.h:128-159"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "start",
+          "cpp_name": "Start",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "abort",
+          "cpp_name": "Abort",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "done?",
+          "cpp_name": "IsDone",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "success?",
+          "cpp_name": "IsSuccess",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "status",
+          "cpp_name": "GetStatus",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "status_text",
+          "cpp_name": "GetStatusText",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "text",
+          "cpp_name": "GetText",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "error",
+          "cpp_name": "GetError",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "progress",
+          "cpp_name": "GetProgress",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "header",
+          "cpp_name": "GetHeader",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        },
+        {
+          "ruby_name": "headers",
+          "cpp_name": "GetHeaders",
+          "return": {
+            "cpp_type": "std::vector<std::string>",
+            "ruby_type": "Array<String>"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/network.h:128-159"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/network.h:128-159",
+      "cpp_name": "Fetch",
+      "cpp_parent": "Object",
+      "header": "core/network.h",
+      "kind": "class",
+      "name": "Fetch",
       "ruby_superclass": "Object",
       "glue": false
     }

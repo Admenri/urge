@@ -11,12 +11,30 @@ if(NOT URGE_ENABLE_VIDEO)
   list(FILTER CORE_SOURCES EXCLUDE REGEX "/video_[a-z_]+\\.cc$")
 endif()
 
+# `network.cc` is the front end and always compiles, like `video.cc`.  The two
+# backends are mutually exclusive: `network_curl.cc` is the native one and
+# `network_web.cc` the Emscripten one, and each defines `CreateNetworkBackend`
+# for its platform alone -- so a build that kept both would fail to link.
+if(NOT URGE_ENABLE_NETWORK)
+  list(FILTER CORE_SOURCES EXCLUDE REGEX "/network_(curl|web)\\.cc$")
+elseif(EMSCRIPTEN)
+  list(FILTER CORE_SOURCES EXCLUDE REGEX "/network_curl\\.cc$")
+else()
+  list(FILTER CORE_SOURCES EXCLUDE REGEX "/network_web\\.cc$")
+endif()
+
 target_sources(urge-core PRIVATE ${CORE_SOURCES})
 
 if(URGE_ENABLE_VIDEO)
   target_compile_definitions(urge-core PUBLIC URGE_ENABLE_VIDEO=1)
 else()
   target_compile_definitions(urge-core PUBLIC URGE_ENABLE_VIDEO=0)
+endif()
+
+if(URGE_ENABLE_NETWORK)
+  target_compile_definitions(urge-core PUBLIC URGE_ENABLE_NETWORK=1)
+else()
+  target_compile_definitions(urge-core PUBLIC URGE_ENABLE_NETWORK=0)
 endif()
 
 target_link_libraries(urge-core PUBLIC glm SDL3::SDL3-static SDL3_ttf::SDL3_ttf SDL3_image::SDL3_image-static physfs-static)
@@ -36,4 +54,20 @@ target_link_libraries(urge-core PUBLIC miniaudio)
 # target exists when the subsystem is off.
 if(URGE_ENABLE_VIDEO)
   target_link_libraries(urge-core PUBLIC dav1d libwebm)
+endif()
+
+# The network subsystem's native backend is libcurl, which also carries the
+# WebSocket transport.  The target is absent when the subsystem is off, and on
+# the web the backend is Emscripten's own fetch/websocket instead -- those
+# libraries belong on the final link, so they are added in app/.
+if(URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)
+  target_link_libraries(urge-core PUBLIC libcurl)
+endif()
+
+# A headless harness that drives the fetch and WebSocket backends against the
+# Python server in test/network_server.py.  Kept behind a switch so a normal
+# build never carries it.
+if(URGE_BUILD_NETWORK_TESTS AND URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)
+  add_executable(urge-network-test "${CMAKE_CURRENT_SOURCE_DIR}/../test/network_test.cc")
+  target_link_libraries(urge-network-test PRIVATE urge-core)
 endif()

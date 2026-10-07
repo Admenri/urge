@@ -2,13 +2,8 @@
 /out
 /.vs
 /.workbuddy
-# Derived from bind/api_reference.json by "python bind/viewer/viewer.py embed";
-# only needed to open bind/viewer/index.html straight from file://.
+/.workbuddy-ai
 /bind/viewer/api_embed.js
-# Cache of "is the generated binding glue still current?", written by
-# bind/gen_binding.cmake at configure time.  Machine-local and regenerable: a
-# fresh clone has none, which just makes the first configure generate once.
 /bind/.gen_stamp
 /bind/.glue_stamp
-# Left behind by `python -m py_compile` / any import of the generators.
 __pycache__/

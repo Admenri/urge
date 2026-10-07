@@ -316,16 +316,78 @@ void DefineVideoPlayerInfo(VALUE klass) {
 }
 """
 
+NETWORK_EVENT_MANUAL = """\
+// `NetworkEvent#data` answers a Ruby String tagged ASCII-8BIT: the payload is
+// raw bytes and the generated `s` codec would tag it UTF-8.  The C++ accessor
+// therefore carries no `URGE_BINDING()` marker.
+RB_FUNC(NetworkEvent_Data) {
+  auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
+
+  const std::string& data = self_obj->data();
+  return rb_enc_str_new(data.data(), static_cast<long>(data.size()),
+                        rb_ascii8bit_encoding());
+}
+
+// The `Type` enum is registered by hand because the IR describes methods, not
+// constants.
+void DefineNetworkEventConstants(VALUE klass) {
+  rb_const_set(klass, rb_intern("OPEN"), LONG2NUM(urge::NetworkEvent::Open));
+  rb_const_set(klass, rb_intern("TEXT"), LONG2NUM(urge::NetworkEvent::Text));
+  rb_const_set(klass, rb_intern("BINARY"),
+               LONG2NUM(urge::NetworkEvent::Binary));
+  rb_const_set(klass, rb_intern("CLOSE"), LONG2NUM(urge::NetworkEvent::Close));
+  rb_const_set(klass, rb_intern("ERROR"), LONG2NUM(urge::NetworkEvent::Error));
+
+  DefineMethod(klass, "data", NetworkEvent_Data);
+}
+"""
+
+WEBSOCKET_MANUAL = """\
+// The `ReadyState` enum, registered by hand for the same reason as the event
+// types.
+void DefineWebSocketConstants(VALUE klass) {
+  rb_const_set(klass, rb_intern("CONNECTING"),
+               LONG2NUM(urge::WebSocket::Connecting));
+  rb_const_set(klass, rb_intern("OPEN"), LONG2NUM(urge::WebSocket::OpenState));
+  rb_const_set(klass, rb_intern("CLOSING"),
+               LONG2NUM(urge::WebSocket::Closing));
+  rb_const_set(klass, rb_intern("CLOSED"),
+               LONG2NUM(urge::WebSocket::ClosedState));
+}
+"""
+
+FETCH_MANUAL = """\
+// `Fetch#body` answers ASCII-8BIT bytes, for the same reason as
+// `NetworkEvent#data`.
+RB_FUNC(Fetch_Body) {
+  auto* self_obj = GetSelfData<urge::Fetch>(self);
+
+  const std::string& body = self_obj->body();
+  return rb_enc_str_new(body.data(), static_cast<long>(body.size()),
+                        rb_ascii8bit_encoding());
+}
+
+void DefineFetchBody(VALUE klass) {
+  DefineMethod(klass, "body", Fetch_Body);
+}
+"""
+
 HANDWRITTEN_SEED = {
     "binding_table.cc": TABLE_MANUAL,
     "binding_input.cc": INPUT_MANUAL,
     "binding_video.cc": VIDEO_MANUAL,
+    "binding_network_event.cc": NETWORK_EVENT_MANUAL,
+    "binding_web_socket.cc": WEBSOCKET_MANUAL,
+    "binding_fetch.cc": FETCH_MANUAL,
 }
 
 # Statements appended to the generated Init*Binding() body.
 EXTRA_INIT_CALLS = {
     "Input": ["DefineInputKeyConstants(mod);"],
     "Video": ["DefineVideoPlayerInfo(klass);"],
+    "NetworkEvent": ["DefineNetworkEventConstants(klass);"],
+    "WebSocket": ["DefineWebSocketConstants(klass);"],
+    "Fetch": ["DefineFetchBody(klass);"],
 }
 
 

@@ -26,6 +26,14 @@ endif()
 option(URGE_ENABLE_VIDEO
   "Build the AV1/Vorbis video playback engine" ${URGE_ENABLE_VIDEO_DEFAULT})
 
+# The network subsystem is on everywhere, including the web: libcurl carries
+# the native side and Emscripten ships its own fetch/websocket, so neither
+# platform needs a dependency the other lacks.  The switch exists so a build
+# can drop the network code -- and libcurl with it -- the way the video switch
+# drops dav1d.  `Network` stays exported either way and raises while it is off,
+# see core/network.h.
+option(URGE_ENABLE_NETWORK "Build the WebSocket and HTTP client" ON)
+
 add_subdirectory(third_party)
 
 add_subdirectory(core)

@@ -35,6 +35,49 @@ set(SPIRV_WERROR OFF)
 set(SPIRV_TOOLS_BUILD_STATIC ON)
 set(SKIP_SPIRV_TOOLS_INSTALL ON)
 
+# libcurl carries the HTTP and WebSocket client.  Only the static library is
+# wanted, so the tool, the examples and the test suite are all off, and the
+# protocols the engine never speaks (mail, news, telnet, and the rest) are
+# compiled out too.  HTTP_ONLY is deliberately *not* used: it also disables
+# WebSocket, which is the other half of what this dependency is for.
+set(BUILD_CURL_EXE OFF)
+set(BUILD_STATIC_LIBS ON)
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_EXAMPLES OFF)
+set(BUILD_TESTING OFF)
+set(CURL_DISABLE_INSTALL ON)
+set(CURL_BUILD_EVERYTHING OFF)
+set(CURL_WERROR OFF)
+set(CURL_DISABLE_DICT ON)
+set(CURL_DISABLE_FILE ON)
+set(CURL_DISABLE_FTP ON)
+set(CURL_DISABLE_GOPHER ON)
+set(CURL_DISABLE_IMAP ON)
+set(CURL_DISABLE_IPFS ON)
+set(CURL_DISABLE_LDAP ON)
+set(CURL_DISABLE_LDAPS ON)
+set(CURL_DISABLE_MQTT ON)
+set(CURL_DISABLE_POP3 ON)
+set(CURL_DISABLE_RTSP ON)
+set(CURL_DISABLE_SMB ON)
+set(CURL_DISABLE_SMTP ON)
+set(CURL_DISABLE_TELNET ON)
+set(CURL_DISABLE_TFTP ON)
+# libpsl only feeds the public-suffix list used for cookie domain matching,
+# which the engine has no use for; dropping it removes a dependency.
+set(CURL_USE_LIBPSL OFF)
+
+# System TLS, as in NETWORK_DESIGN.md 5.2.  Neither backend is picked by
+# default, and with none chosen libcurl is built without HTTPS or WSS at all,
+# so one has to be named per platform.  Schannel is the Windows native stack
+# and needs nothing installed; curl 8.x dropped its Secure Transport backend,
+# so macOS falls back to OpenSSL like Linux does.
+if(WIN32)
+  set(CURL_USE_SCHANNEL ON)
+else()
+  set(CURL_USE_OPENSSL ON)
+endif()
+
 add_subdirectory(glm)
 add_subdirectory(SDL)
 add_subdirectory(SDL_image)
@@ -53,4 +96,8 @@ add_subdirectory(zlib)
 if(URGE_ENABLE_VIDEO)
   add_subdirectory(dav1d)
   add_subdirectory(webm)
+endif()
+
+if(URGE_ENABLE_NETWORK)
+  add_subdirectory(curl)
 endif()

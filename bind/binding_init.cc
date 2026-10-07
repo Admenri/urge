@@ -31,10 +31,14 @@
 #include "binding_effect.h"
 #include "binding_audio_stream.h"
 #include "binding_video.h"
+#include "binding_network_event.h"
+#include "binding_web_socket.h"
+#include "binding_fetch.h"
 #include "binding_audio.h"
 #include "binding_graphics.h"
 #include "binding_input.h"
 #include "binding_mouse.h"
+#include "binding_network.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -86,10 +90,14 @@ void InitBindings() {
   InitEffectBinding();
   InitAudioStreamBinding();
   InitVideoBinding();
+  InitNetworkEventBinding();
+  InitWebSocketBinding();
+  InitFetchBinding();
   InitAudioBinding();
   InitGraphicsBinding();
   InitInputBinding();
   InitMouseBinding();
+  InitNetworkBinding();
 }
 // --- GENERATED END ---
 

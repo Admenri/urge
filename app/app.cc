@@ -42,6 +42,7 @@
 #include "core/input.h"
 #include "core/logger.h"
 #include "core/mouse.h"
+#include "core/network.h"
 #include "core/plane.h"
 #include "core/primitive.h"
 #include "core/sprite.h"
@@ -121,6 +122,13 @@ int main(int argc, char* argv[]) {
     auto graphics = new urge::Graphics();
     urge::Graphics::Reset(graphics);
 
+    /* The network service owns no window and no device: it is built after
+       everything else and driven by the script (`Network.update`), not by
+       Graphics, so nothing above has to know it exists.  It goes away before
+       IOService because its workers read through the load paths. */
+    auto network = new urge::Network();
+    urge::Network::Reset(network);
+
     // Binding entry
     binding::BindingMain binding_main;
   } catch (const urge::Exception& exc) {
@@ -137,6 +145,7 @@ int main(int argc, char* argv[]) {
   if (config)
     config->Save();
 
+  urge::Network::Reset(nullptr);
   urge::Graphics::Reset(nullptr);
   urge::FontContext::Reset(nullptr);
   urge::Mouse::Reset(nullptr);

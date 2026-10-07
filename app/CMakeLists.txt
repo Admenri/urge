@@ -8,3 +8,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 target_link_libraries(Game PUBLIC urge-core urge-binding)
+
+# On the web the engine's network backend is the browser's own.  The WebSocket
+# library is opt-in and has to reach the final link, which is here rather than
+# in the static core library.
+if(EMSCRIPTEN AND URGE_ENABLE_NETWORK)
+  target_link_options(Game PUBLIC "-sFETCH=1")
+  target_link_libraries(Game PUBLIC "-lwebsocket.js")
+endif()
