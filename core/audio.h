@@ -34,7 +34,7 @@ namespace urge {
 
 class AudioEmit;
 class AudioService;
-class AudioStream;
+class AudioChannel;
 
 URGE_BINDING()
 class Audio : public Singleton<Audio> {
@@ -100,14 +100,16 @@ class Audio : public Singleton<Audio> {
 
   void Update();
 
+  AudioService* service() { return service_.get(); }
+
  private:
 
   void ApplyVolumes();
 
   std::unique_ptr<AudioService> service_;
-  std::unique_ptr<AudioStream> bgm_;
-  std::unique_ptr<AudioStream> bgs_;
-  std::unique_ptr<AudioStream> me_;
+  std::unique_ptr<AudioChannel> bgm_;
+  std::unique_ptr<AudioChannel> bgs_;
+  std::unique_ptr<AudioChannel> me_;
   std::unique_ptr<AudioEmit> se_;
 
   std::string output_device_;

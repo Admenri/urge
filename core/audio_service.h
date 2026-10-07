@@ -61,12 +61,12 @@ class AudioClip {
   bool open_ = false;
 };
 
-class AudioStream {
+class AudioChannel {
  public:
-  ~AudioStream();
+  ~AudioChannel();
 
-  AudioStream(const AudioStream&) = delete;
-  AudioStream& operator=(const AudioStream&) = delete;
+  AudioChannel(const AudioChannel&) = delete;
+  AudioChannel& operator=(const AudioChannel&) = delete;
 
   bool Play(const std::string& filename,
             int32_t volume,
@@ -86,7 +86,7 @@ class AudioStream {
  private:
   friend class AudioService;
 
-  AudioStream(ma_engine* engine, ma_sound_group* bus);
+  AudioChannel(ma_engine* engine, ma_sound_group* bus);
 
   ma_engine* engine_ = nullptr;
   ma_sound_group* bus_ = nullptr;
@@ -139,8 +139,11 @@ class AudioService {
   const std::string& output_device() const { return output_device_; }
   static std::vector<std::string> OutputDevices();
 
-  AudioStream* CreateStream(AudioBus bus);
+  AudioChannel* CreateStream(AudioBus bus);
   AudioEmit* CreateEmitter();
+
+  ma_engine* engine();
+  ma_sound_group* bus(AudioBus bus);
 
   static constexpr int32_t kEngineSampleRate = 48000;
   static constexpr int32_t kEngineChannels = 2;

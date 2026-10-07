@@ -29,6 +29,7 @@
 #include "binding_window_vx.h"
 #include "binding_window_xp.h"
 #include "binding_effect.h"
+#include "binding_audio_stream.h"
 #include "binding_audio.h"
 #include "binding_graphics.h"
 #include "binding_input.h"
@@ -82,6 +83,7 @@ void InitBindings() {
   InitWindowVXBinding();
   InitWindowXPBinding();
   InitEffectBinding();
+  InitAudioStreamBinding();
   InitAudioBinding();
   InitGraphicsBinding();
   InitInputBinding();

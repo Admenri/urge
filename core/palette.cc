@@ -89,6 +89,48 @@ void Palette::SetPixel(int32_t x, int32_t y, RefPtr<Color> color) {
       static_cast<Uint8>(color->data.a));
 }
 
+RefPtr<Palette> Palette::FromDump(std::string data) {
+  auto* stream = SDL_IOFromConstMem(data.data(), data.size());
+  if (!stream)
+    throw Exception(Exception::kRGSSError, SDL_GetError());
+
+  auto* image = IMG_LoadTyped_IO(stream, true, "PNG");
+  if (!image)
+    throw Exception(Exception::kRGSSError, SDL_GetError());
+
+  if (image->format != kInternalPixelFormat) {
+    auto* converted_image = SDL_ConvertSurface(image, kInternalPixelFormat);
+    SDL_DestroySurface(image);
+
+    if (!converted_image)
+      throw Exception(Exception::kRGSSError, SDL_GetError());
+
+    image = converted_image;
+  }
+
+  return MakeRefCounted<Palette>(image);
+}
+
+std::string Palette::ToDump() {
+  Disposable::Guard();
+
+  auto* stream = SDL_IOFromDynamicMem();
+  if (!stream)
+    throw Exception(Exception::kRGSSError, SDL_GetError());
+
+  if (!IMG_SavePNG_IO(image_, stream, false)) {
+    SDL_CloseIO(stream);
+    throw Exception(Exception::kRGSSError, SDL_GetError());
+  }
+
+  std::string data(static_cast<size_t>(SDL_GetIOSize(stream)), '\0');
+  SDL_SeekIO(stream, 0, SDL_IO_SEEK_SET);
+  SDL_ReadIO(stream, data.data(), data.size());
+  SDL_CloseIO(stream);
+
+  return data;
+}
+
 void Palette::SaveFile(std::string filename) {
   Disposable::Guard();
 

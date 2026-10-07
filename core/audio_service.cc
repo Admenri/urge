@@ -206,12 +206,12 @@ void AudioClip::Close() {
   bytes_.clear();
 }
 
-AudioStream::~AudioStream() = default;
+AudioChannel::~AudioChannel() = default;
 
-AudioStream::AudioStream(ma_engine* engine, ma_sound_group* bus)
+AudioChannel::AudioChannel(ma_engine* engine, ma_sound_group* bus)
     : engine_(engine), bus_(bus) {}
 
-bool AudioStream::Play(const std::string& filename,
+bool AudioChannel::Play(const std::string& filename,
                        int32_t volume,
                        int32_t pitch,
                        float pos) {
@@ -242,7 +242,7 @@ bool AudioStream::Play(const std::string& filename,
   return ma_sound_start(clip_.sound()) == MA_SUCCESS;
 }
 
-void AudioStream::Stop() {
+void AudioChannel::Stop() {
   paused_ = false;
   cursor_ = 0;
 
@@ -250,7 +250,7 @@ void AudioStream::Stop() {
     ma_sound_stop(clip_.sound());
 }
 
-void AudioStream::Fade(int32_t time) {
+void AudioChannel::Fade(int32_t time) {
   if (time <= 0) {
     Stop();
     return;
@@ -264,7 +264,7 @@ void AudioStream::Fade(int32_t time) {
                                             static_cast<ma_uint64>(time));
 }
 
-float AudioStream::Pos() {
+float AudioChannel::Pos() {
   if (!clip_.IsOpen())
     return 0.0f;
 
@@ -275,11 +275,11 @@ float AudioStream::Pos() {
   return static_cast<float>(frames * MillisPerFrame(engine_));
 }
 
-bool AudioStream::IsPlaying() {
+bool AudioChannel::IsPlaying() {
   return clip_.IsOpen() && ma_sound_is_playing(clip_.sound()) != MA_FALSE;
 }
 
-void AudioStream::Pause() {
+void AudioChannel::Pause() {
   if (!clip_.IsOpen() || paused_)
     return;
 
@@ -290,7 +290,7 @@ void AudioStream::Pause() {
   paused_ = true;
 }
 
-void AudioStream::Resume() {
+void AudioChannel::Resume() {
   if (!paused_)
     return;
 
@@ -467,13 +467,21 @@ std::vector<std::string> AudioService::OutputDevices() {
   return names;
 }
 
-AudioStream* AudioService::CreateStream(AudioBus bus) {
-  return new AudioStream(&kernel_->engine, &kernel_->bus[BusIndex(bus)]);
+AudioChannel* AudioService::CreateStream(AudioBus bus) {
+  return new AudioChannel(&kernel_->engine, &kernel_->bus[BusIndex(bus)]);
 }
 
 AudioEmit* AudioService::CreateEmitter() {
   return new AudioEmit(&kernel_->engine,
                        &kernel_->bus[BusIndex(AudioBus::kSE)]);
+}
+
+ma_engine* AudioService::engine() {
+  return &kernel_->engine;
+}
+
+ma_sound_group* AudioService::bus(AudioBus bus) {
+  return &kernel_->bus[BusIndex(bus)];
 }
 
 bool AudioService::OpenOutput(const std::string& name) {

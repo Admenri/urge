@@ -3,10 +3,11 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-06T10:53:10Z",
+    "generated_at": "2026-10-06T16:05:56Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
+      "core/audio_stream.h",
       "core/bitmap.h",
       "core/common.h",
       "core/config.h",
@@ -2714,7 +2715,7 @@
               "default": null
             }
           ],
-          "export": "core/palette.h:35-50"
+          "export": "core/palette.h:35-56"
         },
         {
           "params": [
@@ -2724,7 +2725,7 @@
               "default": null
             }
           ],
-          "export": "core/palette.h:35-50"
+          "export": "core/palette.h:35-56"
         }
       ],
       "initialize_copy": null,
@@ -2749,7 +2750,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-50"
+          "export": "core/palette.h:35-56"
         },
         {
           "ruby_name": "set_pixel",
@@ -2776,7 +2777,18 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-50"
+          "export": "core/palette.h:35-56"
+        },
+        {
+          "ruby_name": "to_dump",
+          "cpp_name": "ToDump",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/palette.h:35-56"
         },
         {
           "ruby_name": "save_file",
@@ -2793,12 +2805,30 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-50"
+          "export": "core/palette.h:35-56"
         }
       ],
       "attributes": [],
       "data_attributes": [],
-      "class_methods": [],
+      "class_methods": [
+        {
+          "ruby_name": "from_dump",
+          "cpp_name": "FromDump",
+          "return": {
+            "cpp_type": "RefPtr<Palette>",
+            "ruby_type": "Palette"
+          },
+          "params": [
+            {
+              "name": "data",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/palette.h:35-56"
+        }
+      ],
       "class_attributes": [],
       "marshal": {
         "dump": false,
@@ -2806,7 +2836,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/palette.h:35-50",
+      "export": "core/palette.h:35-56",
       "cpp_name": "Palette",
       "cpp_parent": "Disposable",
       "header": "core/palette.h",
@@ -5421,6 +5451,203 @@
       "header": "core/effect.h",
       "kind": "class",
       "name": "Effect",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/audio_stream.h:36-68"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "start",
+          "cpp_name": "Start",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "stop",
+          "cpp_name": "Stop",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "seek",
+          "cpp_name": "Seek",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "pos",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "cursor",
+          "cpp_name": "Cursor",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "length",
+          "cpp_name": "Length",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "playing?",
+          "cpp_name": "IsPlaying",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "end?",
+          "cpp_name": "IsEnd",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "set_start_time",
+          "cpp_name": "SetStartTime",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "pos",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "ruby_name": "set_stop_time",
+          "cpp_name": "SetStopTime",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "pos",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "volume",
+          "setter": "volume=",
+          "cpp_name": "Volume",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "name": "pan",
+          "setter": "pan=",
+          "cpp_name": "Pan",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "name": "pitch",
+          "setter": "pitch=",
+          "cpp_name": "Pitch",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        },
+        {
+          "name": "loop",
+          "setter": "loop=",
+          "cpp_name": "Loop",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/audio_stream.h:36-68"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/audio_stream.h:36-68",
+      "cpp_name": "AudioStream",
+      "cpp_parent": "Object",
+      "header": "core/audio_stream.h",
+      "kind": "class",
+      "name": "AudioStream",
       "ruby_superclass": "Object",
       "glue": false
     }

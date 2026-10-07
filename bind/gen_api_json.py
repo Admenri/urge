@@ -112,6 +112,7 @@ CLASS_ORDER = [
     "WindowVX",
     "WindowXP",
     "Effect",
+    "AudioStream",
 ]
 
 # Naming policy: a declaration's Ruby name is its C++ name converted by

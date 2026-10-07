@@ -25,7 +25,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Palette  (core/palette.h:35-50)
+// Palette  (core/palette.h:35-56)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Palette, Disposable);
@@ -81,6 +81,20 @@ RB_FUNC(Palette_SetPixel) {
   return Qnil;
 }
 
+RB_FUNC(Palette_ToDump) {
+  auto* self_obj = GetSelfData<urge::Palette>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    std::string result = self_obj->ToDump();
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(Palette_SaveFile) {
   auto* self_obj = GetSelfData<urge::Palette>(self);
 
@@ -90,6 +104,19 @@ RB_FUNC(Palette_SaveFile) {
     ParseArgs(argc, argv, "s", &filename);
 
     self_obj->SaveFile(filename);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Palette_FromDump) {
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string data;
+    ParseArgs(argc, argv, "s", &data);
+
+    auto result = urge::Palette::FromDump(data);
+    return WrapObject(result.get(), kPaletteDataType);
   }
   EXC_END;
   return Qnil;
@@ -105,7 +132,9 @@ void InitPaletteBinding() {
   DefineMethod(klass, "initialize", Palette_initialize);
   DefineMethod(klass, "get_pixel", Palette_GetPixel);
   DefineMethod(klass, "set_pixel", Palette_SetPixel);
+  DefineMethod(klass, "to_dump", Palette_ToDump);
   DefineMethod(klass, "save_file", Palette_SaveFile);
+  DefineClassMethod(klass, "from_dump", Palette_FromDump);
   InitPaletteBindingAppend(klass);
 }
 // --- GENERATED END ---

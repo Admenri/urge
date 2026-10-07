@@ -47,6 +47,12 @@ class Palette : public Disposable {
   RefPtr<Color> GetPixel(int32_t x, int32_t y);
   URGE_BINDING()
   void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
+
+  URGE_BINDING()
+  static RefPtr<Palette> FromDump(std::string data);
+  URGE_BINDING()
+  std::string ToDump();
+
   URGE_BINDING()
   void SaveFile(std::string filename);
 
