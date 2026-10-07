@@ -53,9 +53,8 @@ std::vector<std::string> SplitKeys(const std::string& line) {
   size_t start = 0;
   for (;;) {
     const size_t comma = line.find(',', start);
-    const std::string name =
-        line.substr(start, comma == std::string::npos ? std::string::npos
-                                                      : comma - start);
+    const std::string name = line.substr(
+        start, comma == std::string::npos ? std::string::npos : comma - start);
     if (!name.empty())
       names.push_back(name);
     if (comma == std::string::npos)
@@ -137,6 +136,16 @@ Config::Config(std::string inifile) : inifile_(std::move(inifile)) {
   }
 
   Load();
+}
+
+std::string Config::GetValue(std::string section,
+                             std::string key,
+                             std::string defval) {
+  return parser_.Get(section, key, defval);
+}
+
+void Config::SetValue(std::string section, std::string key, std::string value) {
+  parser_.Set(section, key, value);
 }
 
 void Config::Save() {

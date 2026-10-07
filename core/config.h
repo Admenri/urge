@@ -26,14 +26,24 @@
 #include <utility>
 #include <vector>
 
+#include "core/definition.h"
 #include "core/inirw.h"
 #include "core/object.h"
 
 namespace urge {
 
+URGE_BINDING()
 class Config : public Singleton<Config> {
  public:
   Config(std::string inifile);
+
+  URGE_BINDING()
+  std::string GetValue(std::string section,
+                       std::string key,
+                       std::string defval = {});
+
+  URGE_BINDING()
+  void SetValue(std::string section, std::string key, std::string value);
 
   struct {
     int32_t rgss = 0;

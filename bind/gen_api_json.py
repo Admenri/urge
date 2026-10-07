@@ -51,7 +51,15 @@ DEFAULT_OUTPUT = os.path.join(REPO_ROOT, "bind", "api_reference.json")
 # Ruby object, while a class goes through `RB_DEF_TYPE`/`SetupSelfData`, which
 # require `Release()`/`AddRef()`.  `Singleton` has neither, so a `Singleton<T>`
 # left out of this set fails to compile the moment its glue is generated.
-MODULE_CLASSES = {"Graphics", "Input", "Audio", "Mouse", "GPUDevice", "Network"}
+MODULE_CLASSES = {
+    "Graphics",
+    "Input",
+    "Audio",
+    "Mouse",
+    "GPUDevice",
+    "Network",
+    "Config",
+}
 
 # Fixed presentation order (also the registration order of binding_init.cc:
 # every class must follow the class it derives from).  A class that is not

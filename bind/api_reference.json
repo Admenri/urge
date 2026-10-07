@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-07T09:46:22Z",
+    "generated_at": "2026-10-07T13:40:59Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
@@ -476,6 +476,72 @@
           "setter": true,
           "attr_value_type": "int32_t",
           "export": "core/audio.h:40-92"
+        }
+      ]
+    },
+    {
+      "unsupported": [],
+      "export": "core/config.h:36-45",
+      "cpp_name": "Config",
+      "cpp_parent": "Singleton",
+      "header": "core/config.h",
+      "kind": "module",
+      "name": "Config",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "get_value",
+          "cpp_name": "GetValue",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [
+            {
+              "name": "section",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "key",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "defval",
+              "type": "std::string",
+              "default": "{}"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/config.h:36-45"
+        },
+        {
+          "ruby_name": "set_value",
+          "cpp_name": "SetValue",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "section",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "key",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/config.h:36-45"
         }
       ]
     },

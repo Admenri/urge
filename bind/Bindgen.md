@@ -849,7 +849,7 @@ class / module 条目字段：
 `Singleton<T>`（`core/object.h`）两者都没有，所以它必须列进 `MODULE_CLASSES`。
 漏掉的症状是 `urge-binding` 报 `C2039: "Release": 不是 "urge::X" 的成员`，指在
 `cruby_utils.h` 的 `ReleaseDataType` / `SetupSelfData` 上，与出错的那个类看起来
-没有关系。现有模块：`Graphics`、`Input`、`Audio`。
+没有关系。现有模块：`Graphics`、`Input`、`Audio`、`Mouse`、`Network`、`Config`。
 
 
 ## 与 lime 的差异

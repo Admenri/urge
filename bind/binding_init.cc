@@ -35,6 +35,7 @@
 #include "binding_web_socket.h"
 #include "binding_fetch.h"
 #include "binding_audio.h"
+#include "binding_config.h"
 #include "binding_graphics.h"
 #include "binding_input.h"
 #include "binding_mouse.h"
@@ -94,6 +95,7 @@ void InitBindings() {
   InitWebSocketBinding();
   InitFetchBinding();
   InitAudioBinding();
+  InitConfigBinding();
   InitGraphicsBinding();
   InitInputBinding();
   InitMouseBinding();
