@@ -243,13 +243,13 @@ struct __suio {
  * to the three different kinds of output buffering is handled here.
  */
 static int BSD__sfvwrite(fp, uio)
-	register FILE *fp;
-	register struct __suio *uio;
+	FILE *fp;
+	struct __suio *uio;
 {
-	register size_t len;
-	register const char *p;
-	register struct __siov *iov;
-	register size_t w;
+	size_t len;
+	const char *p;
+	struct __siov *iov;
+	size_t w;
 
 	if ((len = uio->uio_resid) == 0)
 		return (0);
@@ -322,9 +322,9 @@ static int BSD__sfvwrite(fp, uio)
  * then reset it so that it can be reused.
  */
 static int
-BSD__sprint(FILE *fp, register struct __suio *uio)
+BSD__sprint(FILE *fp, struct __suio *uio)
 {
-	register int err;
+	int err;
 
 	if (uio->uio_resid == 0) {
 		uio->uio_iovcnt = 0;
@@ -343,7 +343,7 @@ BSD__sprint(FILE *fp, register struct __suio *uio)
  * worries about ungetc buffers and so forth.
  */
 static int
-BSD__sbprintf(register FILE *fp, const char *fmt, va_list ap)
+BSD__sbprintf(FILE *fp, const char *fmt, va_list ap)
 {
 /* We don't support files. */
 	return 0;
@@ -365,10 +365,10 @@ BSD__sbprintf(register FILE *fp, const char *fmt, va_list ap)
  * use the given digits.
  */
 static char *
-BSD__uqtoa(register u_quad_t val, char *endp, int base, int octzero, const char *xdigs)
+BSD__uqtoa(u_quad_t val, char *endp, int base, int octzero, const char *xdigs)
 {
-	register char *cp = endp;
-	register quad_t sval;
+	char *cp = endp;
+	quad_t sval;
 
 	/*
 	 * Handle the three cases separately, in the hope of getting
@@ -430,10 +430,10 @@ BSD__uqtoa(register u_quad_t val, char *endp, int base, int octzero, const char 
  * use the given digits.
  */
 static char *
-BSD__ultoa(register u_long val, char *endp, int base, int octzero, const char *xdigs)
+BSD__ultoa(u_long val, char *endp, int base, int octzero, const char *xdigs)
 {
-	register char *cp = endp;
-	register long sval;
+	char *cp = endp;
+	long sval;
 
 	/*
 	 * Handle the three cases separately, in the hope of getting
@@ -536,12 +536,12 @@ static int exponent __P((char *, int, int));
 static ssize_t
 BSD_vfprintf(FILE *fp, const char *fmt0, va_list ap)
 {
-	register const char *fmt; /* format string */
-	register int ch;	/* character from fmt */
-	register int n;		/* handy integer (short term usage) */
-	register const char *cp;/* handy char pointer (short term usage) */
-	register struct __siov *iovp;/* for PRINT macro */
-	register int flags;	/* flags as above */
+	const char *fmt; /* format string */
+	int ch;	/* character from fmt */
+	int n;		/* handy integer (short term usage) */
+	const char *cp;/* handy char pointer (short term usage) */
+	struct __siov *iovp;/* for PRINT macro */
+	int flags;	/* flags as above */
 	ssize_t ret;		/* return value accumulator */
 	int width;		/* width from format (%8d), or 0 */
 	int prec;		/* precision from format (%.3d), or -1 */
@@ -1237,7 +1237,7 @@ exponent(p0, exp, fmtch)
 	char *p0;
 	int exp, fmtch;
 {
-	register char *p, *t;
+	char *p, *t;
 	char expbuf[2 + (MAXEXP < 1000 ? 3 : MAXEXP < 10000 ? 4 : 5)]; /* >= 2 + ceil(log10(MAXEXP)) */
 
 	p = p0;

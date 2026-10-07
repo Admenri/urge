@@ -32,7 +32,7 @@ static ID id_cmp;
 #define ARY_MAX_SIZE (LONG_MAX / (int)sizeof(VALUE))
 
 void
-rb_mem_clear(register VALUE *mem, register long size)
+rb_mem_clear(VALUE *mem, long size)
 {
     while (size--) {
 	*mem++ = Qnil;
@@ -40,7 +40,7 @@ rb_mem_clear(register VALUE *mem, register long size)
 }
 
 static inline void
-memfill(register VALUE *mem, register long size, register VALUE val)
+memfill(VALUE *mem, long size, VALUE val)
 {
     while (size--) {
 	*mem++ = val;

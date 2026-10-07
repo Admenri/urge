@@ -123,6 +123,8 @@ class Bitmap : public Disposable {
   ATTR(RefPtr<Font>, Font);
 
  public:
+  void UpdateWithPixels(const void* pixels, uint32_t bytes_per_row);
+
   wgpu::RenderPassEncoder BeginRendering(
       wgpu::CommandEncoder encoder,
       std::optional<glm::vec4> clear = std::nullopt);

@@ -868,7 +868,7 @@ static void bigdivmod(VALUE x, VALUE y, volatile VALUE *divp, volatile VALUE *mo
 #define POW2_P(x) (((x)&((x)-1))==0)
 
 static inline int
-ones(register unsigned long x)
+ones(unsigned long x)
 {
 #if SIZEOF_LONG == 8
 # define MASK_55 0x5555555555555555UL
@@ -894,7 +894,7 @@ ones(register unsigned long x)
 }
 
 static inline unsigned long
-next_pow2(register unsigned long x)
+next_pow2(unsigned long x)
 {
     x |= x >> 1;
     x |= x >> 2;
@@ -908,7 +908,7 @@ next_pow2(register unsigned long x)
 }
 
 static inline int
-floor_log2(register unsigned long x)
+floor_log2(unsigned long x)
 {
     x |= x >> 1;
     x |= x >> 2;
@@ -922,7 +922,7 @@ floor_log2(register unsigned long x)
 }
 
 static inline int
-ceil_log2(register unsigned long x)
+ceil_log2(unsigned long x)
 {
     return floor_log2(x) + !POW2_P(x);
 }

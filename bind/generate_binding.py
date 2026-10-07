@@ -285,14 +285,47 @@ void DefineInputKeyConstants(VALUE mod) {
 }
 """
 
+VIDEO_MANUAL = """\
+// `Video#player_info` answers a Ruby Hash, and the generator has no `std::map`
+// codec, so both the body and its registration are hand written here.  The C++
+// accessor deliberately carries no `URGE_BINDING()` marker: the IR cannot
+// describe a Hash, and a declaration it has to skip would only show up as an
+// `unsupported` entry.
+RB_FUNC(Video_PlayerInfo) {
+  auto* self_obj = GetSelfData<urge::Video>(self);
+
+  EXC_BEGIN {
+    VALUE hash = rb_hash_new();
+    for (const auto& entry : self_obj->PlayerInfo()) {
+      VALUE key = rb_enc_str_new(entry.first.data(),
+                                 static_cast<long>(entry.first.size()),
+                                 rb_utf8_encoding());
+      VALUE value = rb_enc_str_new(entry.second.data(),
+                                   static_cast<long>(entry.second.size()),
+                                   rb_utf8_encoding());
+      rb_hash_aset(hash, key, value);
+    }
+    return hash;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+void DefineVideoPlayerInfo(VALUE klass) {
+  DefineMethod(klass, "player_info", Video_PlayerInfo);
+}
+"""
+
 HANDWRITTEN_SEED = {
     "binding_table.cc": TABLE_MANUAL,
     "binding_input.cc": INPUT_MANUAL,
+    "binding_video.cc": VIDEO_MANUAL,
 }
 
 # Statements appended to the generated Init*Binding() body.
 EXTRA_INIT_CALLS = {
     "Input": ["DefineInputKeyConstants(mod);"],
+    "Video": ["DefineVideoPlayerInfo(klass);"],
 }
 
 

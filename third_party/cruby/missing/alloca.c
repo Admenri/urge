@@ -146,7 +146,7 @@ alloca (size)			/* returns pointer to storage */
      unsigned	size;		/* # bytes to allocate */
 {
   auto char	probe;		/* probes stack depth: */
-  register char	*depth = &probe;
+  char	*depth = &probe;
 
 #if STACK_DIRECTION == 0
   if (STACK_DIR == 0)		/* unknown growth direction */
@@ -156,13 +156,13 @@ alloca (size)			/* returns pointer to storage */
   /* Reclaim garbage, defined as all alloca()ed storage that
      was allocated from deeper in the stack than currently. */
   {
-    register header	*hp;	/* traverses linked list */
+    header	*hp;	/* traverses linked list */
 
     for (hp = last_alloca_header; hp != NULL;)
       if (STACK_DIR > 0 && hp->h.deep > depth
 	  || STACK_DIR < 0 && hp->h.deep < depth)
 	{
-	  register header	*np = hp->h.next;
+	  header	*np = hp->h.next;
 
 	  xfree ((pointer) hp);	/* collect garbage */
 
@@ -180,7 +180,7 @@ alloca (size)			/* returns pointer to storage */
   /* Allocate combined header + user data storage. */
 
   {
-    register pointer	new = xmalloc (sizeof (header) + size);
+    pointer	new = xmalloc (sizeof (header) + size);
     /* address of header */
 
     ((header *)new)->h.next = last_alloca_header;

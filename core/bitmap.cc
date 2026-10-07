@@ -581,6 +581,28 @@ void Bitmap::UpdateWithPalette(RefPtr<Palette> palette) {
                        &buffer_layout, &target_size);
 }
 
+void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
+  Disposable::Guard();
+
+  if (!pixels || bytes_per_row < static_cast<uint32_t>(size_.x) * 4)
+    throw Exception(Exception::kRGSSError, "invalid pixel data for the bitmap.");
+
+  wgpu::TexelCopyTextureInfo destination;
+  destination.texture = texture_;
+
+  wgpu::TexelCopyBufferLayout buffer_layout;
+  buffer_layout.bytesPerRow = bytes_per_row;
+  buffer_layout.rowsPerImage = static_cast<uint32_t>(size_.y);
+
+  wgpu::Extent3D target_size;
+  target_size.width = static_cast<uint32_t>(size_.x);
+  target_size.height = static_cast<uint32_t>(size_.y);
+
+  g_queue.WriteTexture(&destination, pixels,
+                       static_cast<size_t>(bytes_per_row) * size_.y,
+                       &buffer_layout, &target_size);
+}
+
 ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
   if (value) {
     font_ = MakeRefCounted<Font>(*value);

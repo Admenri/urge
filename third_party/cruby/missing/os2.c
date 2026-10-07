@@ -54,8 +54,8 @@ int
 do_spawn(cmd)
 char *cmd;
 {
-    register char **a;
-    register char *s;
+    char **a;
+    char *s;
     char **argv;
     char *shell, *sw, *cmd2;
     int status;

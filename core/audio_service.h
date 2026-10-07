@@ -49,12 +49,19 @@ class AudioClip {
   bool Open(ma_engine* engine,
             ma_sound_group* bus,
             const std::string& filename);
+  bool OpenMemory(ma_engine* engine,
+                  ma_sound_group* bus,
+                  std::vector<uint8_t> bytes);
   void Close();
 
   bool IsOpen() const { return open_; }
   ma_sound* sound() { return &sound_; }
 
  private:
+  bool Prepare(ma_engine* engine,
+               ma_sound_group* bus,
+               const std::string& label);
+
   std::vector<uint8_t> bytes_;
   ma_decoder decoder_ = {};
   ma_sound sound_ = {};

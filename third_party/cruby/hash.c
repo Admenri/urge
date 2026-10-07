@@ -2214,7 +2214,7 @@ in_origenv(const char *str)
 static int
 envix(const char *nam)
 {
-    register int i, len = strlen(nam);
+    int i, len = strlen(nam);
     char **env;
 
     env = GET_ENVIRON(environ);

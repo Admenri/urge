@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cstring>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "SDL3/SDL_audio.h"
@@ -170,12 +171,30 @@ bool AudioClip::Open(ma_engine* engine,
   if (bytes_.empty())
     return false;
 
+  return Prepare(engine, bus, "the audio file '" + filename + "'");
+}
+
+bool AudioClip::OpenMemory(ma_engine* engine,
+                           ma_sound_group* bus,
+                           std::vector<uint8_t> bytes) {
+  Close();
+
+  if (!engine || bytes.empty())
+    return false;
+
+  bytes_ = std::move(bytes);
+  return Prepare(engine, bus, "the video audio track");
+}
+
+bool AudioClip::Prepare(ma_engine* engine,
+                        ma_sound_group* bus,
+                        const std::string& label) {
   ma_decoder_config config =
       ma_decoder_config_init(ma_format_f32, ma_engine_get_channels(engine),
                              ma_engine_get_sample_rate(engine));
   if (ma_decoder_init_memory(bytes_.data(), bytes_.size(), &config,
                              &decoder_) != MA_SUCCESS) {
-    LOGGER_WARN("audio '{}' is in a format the mixer cannot decode", filename);
+    LOGGER_WARN("{} is in a format the mixer cannot decode", label);
     bytes_.clear();
     return false;
   }
@@ -183,7 +202,7 @@ bool AudioClip::Open(ma_engine* engine,
   auto* source = reinterpret_cast<ma_data_source*>(&decoder_);
   if (ma_sound_init_from_data_source(engine, source, 0, bus, &sound_) !=
       MA_SUCCESS) {
-    LOGGER_WARN("audio '{}' could not be mixed", filename);
+    LOGGER_WARN("{} could not be mixed", label);
     ma_decoder_uninit(&decoder_);
     decoder_ = {};
     bytes_.clear();

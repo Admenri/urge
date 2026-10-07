@@ -240,7 +240,7 @@ st_init_strcasetable_with_size(st_index_t size)
 void
 st_clear(st_table *table)
 {
-    register st_table_entry *ptr, *next;
+    st_table_entry *ptr, *next;
     st_index_t i;
 
     if (table->entries_packed) {
@@ -322,10 +322,10 @@ count_collision(const struct st_hash_type *type)
 #define collision_check 0
 
 int
-st_lookup(st_table *table, register st_data_t key, st_data_t *value)
+st_lookup(st_table *table, st_data_t key, st_data_t *value)
 {
     st_index_t hash_val, bin_pos;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->entries_packed) {
         st_index_t i;
@@ -351,10 +351,10 @@ st_lookup(st_table *table, register st_data_t key, st_data_t *value)
 }
 
 int
-st_get_key(st_table *table, register st_data_t key, st_data_t *result)
+st_get_key(st_table *table, st_data_t key, st_data_t *result)
 {
     st_index_t hash_val, bin_pos;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->entries_packed) {
         st_index_t i;
@@ -414,7 +414,7 @@ do {\
 } while (0)
 
 static void
-unpack_entries(register st_table *table)
+unpack_entries(st_table *table)
 {
     st_index_t i;
     struct st_table_entry *packed_bins[MAX_PACKED_NUMHASH*2];
@@ -432,10 +432,10 @@ unpack_entries(register st_table *table)
 }
 
 int
-st_insert(register st_table *table, register st_data_t key, st_data_t value)
+st_insert(st_table *table, st_data_t key, st_data_t value)
 {
     st_index_t hash_val, bin_pos;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->entries_packed) {
         st_index_t i;
@@ -470,11 +470,11 @@ st_insert(register st_table *table, register st_data_t key, st_data_t value)
 }
 
 int
-st_insert2(register st_table *table, register st_data_t key, st_data_t value,
+st_insert2(st_table *table, st_data_t key, st_data_t value,
 	   st_data_t (*func)(st_data_t))
 {
     st_index_t hash_val, bin_pos;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->entries_packed) {
         st_index_t i;
@@ -533,9 +533,9 @@ st_add_direct(st_table *table, st_data_t key, st_data_t value)
 }
 
 static void
-rehash(register st_table *table)
+rehash(st_table *table)
 {
-    register st_table_entry *ptr, **new_bins;
+    st_table_entry *ptr, **new_bins;
     st_index_t i, new_num_bins, hash_val;
 
     new_num_bins = new_size(table->num_bins+1);
@@ -621,11 +621,11 @@ st_copy(st_table *old_table)
     } while (0)
 
 int
-st_delete(register st_table *table, register st_data_t *key, st_data_t *value)
+st_delete(st_table *table, st_data_t *key, st_data_t *value)
 {
     st_index_t hash_val;
     st_table_entry **prev;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->entries_packed) {
         st_index_t i;
@@ -660,10 +660,10 @@ st_delete(register st_table *table, register st_data_t *key, st_data_t *value)
 }
 
 int
-st_delete_safe(register st_table *table, register st_data_t *key, st_data_t *value, st_data_t never)
+st_delete_safe(st_table *table, st_data_t *key, st_data_t *value, st_data_t never)
 {
     st_index_t hash_val;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->entries_packed) {
 	st_index_t i;
@@ -696,11 +696,11 @@ st_delete_safe(register st_table *table, register st_data_t *key, st_data_t *val
 }
 
 int
-st_shift(register st_table *table, register st_data_t *key, st_data_t *value)
+st_shift(st_table *table, st_data_t *key, st_data_t *value)
 {
     st_index_t hash_val;
     st_table_entry **prev;
-    register st_table_entry *ptr;
+    st_table_entry *ptr;
 
     if (table->num_entries == 0) {
         if (value != 0) *value = 0;
@@ -1023,8 +1023,8 @@ st_reverse_foreach(st_table *table, int (*func)(ANYARGS), st_data_t arg)
 static st_index_t
 strhash(st_data_t arg)
 {
-    register const char *string = (const char *)arg;
-    register st_index_t hval = FNV1_32A_INIT;
+    const char *string = (const char *)arg;
+    st_index_t hval = FNV1_32A_INIT;
 
     /*
      * FNV-1a hash each octet in the buffer
@@ -1291,7 +1291,7 @@ st_hash_start(st_index_t h)
 static st_index_t
 strhash(st_data_t arg)
 {
-    register const char *string = (const char *)arg;
+    const char *string = (const char *)arg;
     return st_hash(string, strlen(string), FNV1_32A_INIT);
 }
 #endif
@@ -1348,8 +1348,8 @@ st_strncasecmp(const char *s1, const char *s2, size_t n)
 static st_index_t
 strcasehash(st_data_t arg)
 {
-    register const char *string = (const char *)arg;
-    register st_index_t hval = FNV1_32A_INIT;
+    const char *string = (const char *)arg;
+    st_index_t hval = FNV1_32A_INIT;
 
     /*
      * FNV-1a hash each octet in the buffer

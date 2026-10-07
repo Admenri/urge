@@ -22206,8 +22206,8 @@ inline
 #endif
 static unsigned int
 uniname2ctype_hash (str, len)
-     register const char *str;
-     register unsigned int len;
+     const char *str;
+     unsigned int len;
 {
 #ifndef USE_UNICODE_PROPERTIES
   static const unsigned char asso_values[] =
@@ -22248,7 +22248,7 @@ uniname2ctype_hash (str, len)
 #ifndef USE_UNICODE_PROPERTIES
   return len + asso_values[(unsigned char)str[2]] + asso_values[(unsigned char)str[0]];
 #else /* USE_UNICODE_PROPERTIES */
-  register int hval = len;
+  int hval = len;
 
   switch (hval)
     {
@@ -23118,8 +23118,8 @@ __attribute__ ((__gnu_inline__))
 #endif
 const struct uniname2ctype_struct *
 uniname2ctype_p (str, len)
-     register const char *str;
-     register unsigned int len;
+     const char *str;
+     unsigned int len;
 {
   static const struct uniname2ctype_struct wordlist[] =
     {
@@ -23840,14 +23840,14 @@ uniname2ctype_p (str, len)
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-      register int key = uniname2ctype_hash (str, len);
+      int key = uniname2ctype_hash (str, len);
 
       if (key <= MAX_HASH_VALUE && key >= 0)
         {
-          register int o = wordlist[key].name;
+          int o = wordlist[key].name;
           if (o >= 0)
             {
-              register const char *s = o + uniname2ctype_pool;
+              const char *s = o + uniname2ctype_pool;
 
               if (*str == *s && !strncmp (str + 1, s + 1, len - 1) && s[len] == '\0')
                 return &wordlist[key];

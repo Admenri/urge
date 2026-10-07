@@ -49,3 +49,8 @@ add_subdirectory(spirv-reflect)
 
 add_subdirectory(cruby)
 add_subdirectory(zlib)
+
+if(URGE_ENABLE_VIDEO)
+  add_subdirectory(dav1d)
+  add_subdirectory(webm)
+endif()

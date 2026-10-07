@@ -128,9 +128,9 @@ static char *
 dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 	   int exe_flag /* non 0 if looking for executable. */)
 {
-    register const char *dp;
-    register const char *ep;
-    register char *bp;
+    const char *dp;
+    const char *ep;
+    char *bp;
     struct stat st;
     size_t i, fnlen, fspace;
 #ifdef DOSISH
@@ -225,7 +225,7 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 #undef RETURN_IF
 
     for (dp = path;; dp = ++ep) {
-	register size_t l;
+	size_t l;
 
 	/* extract a component */
 	ep = strchr(dp, PATH_SEP[0]);

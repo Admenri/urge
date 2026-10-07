@@ -1074,7 +1074,7 @@ has_magic(const char *p, const char *pend, int flags, rb_encoding *enc)
     const int escape = !(flags & FNM_NOESCAPE);
     const int nocase = flags & FNM_CASEFOLD;
 
-    register char c;
+    char c;
 
     while (p < pend && (c = *p++) != 0) {
 	switch (c) {
@@ -1105,7 +1105,7 @@ find_dirsep(const char *p, const char *pend, int flags, rb_encoding *enc)
 {
     const int escape = !(flags & FNM_NOESCAPE);
 
-    register char c;
+    char c;
     int open = 0;
 
     while ((c = *p++) != 0) {
@@ -1138,7 +1138,7 @@ find_dirsep(const char *p, const char *pend, int flags, rb_encoding *enc)
 static void
 remove_backslashes(char *p, rb_encoding *enc)
 {
-    register const char *pend = p + strlen(p);
+    const char *pend = p + strlen(p);
     char *t = p;
     char *s = p;
 

@@ -156,8 +156,8 @@ rb_memsearch_qs(const unsigned char *xs, long m, const unsigned char *ys, long n
 static inline unsigned int
 rb_memsearch_qs_utf8_hash(const unsigned char *x)
 {
-    register const unsigned int mix = 8353;
-    register unsigned int h = *x;
+    const unsigned int mix = 8353;
+    unsigned int h = *x;
     if (h < 0xC0) {
 	return h + 256;
     }

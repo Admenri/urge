@@ -54,8 +54,8 @@ inline
 #endif
 static unsigned int
 hash (str, len)
-     register const char *str;
-     register unsigned int len;
+     const char *str;
+     unsigned int len;
 {
   static const unsigned char asso_values[] =
     {
@@ -86,7 +86,7 @@ hash (str, len)
       51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
       51, 51, 51, 51, 51, 51
     };
-  register int hval = len;
+  int hval = len;
 
   switch (hval)
     {
@@ -109,8 +109,8 @@ __attribute__ ((__gnu_inline__))
 #endif
 const struct kwtable *
 rb_reserved_word (str, len)
-     register const char *str;
-     register unsigned int len;
+     const char *str;
+     unsigned int len;
 {
   static const struct kwtable wordlist[] =
     {
@@ -202,11 +202,11 @@ rb_reserved_word (str, len)
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-      register int key = hash (str, len);
+      int key = hash (str, len);
 
       if (key <= MAX_HASH_VALUE && key >= 0)
         {
-          register const char *s = wordlist[key].name;
+          const char *s = wordlist[key].name;
 
           if (*str == *s && !strcmp (str + 1, s + 1))
             return &wordlist[key];

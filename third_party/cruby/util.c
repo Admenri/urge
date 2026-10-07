@@ -27,8 +27,8 @@
 unsigned long
 ruby_scan_oct(const char *start, size_t len, size_t *retlen)
 {
-    register const char *s = start;
-    register unsigned long retval = 0;
+    const char *s = start;
+    unsigned long retval = 0;
 
     while (len-- && *s >= '0' && *s <= '7') {
 	retval <<= 3;
@@ -42,8 +42,8 @@ unsigned long
 ruby_scan_hex(const char *start, size_t len, size_t *retlen)
 {
     static const char hexdigit[] = "0123456789abcdef0123456789ABCDEF";
-    register const char *s = start;
-    register unsigned long retval = 0;
+    const char *s = start;
+    unsigned long retval = 0;
     const char *tmp;
 
     while (len-- && *s && (tmp = strchr(hexdigit, *s))) {
@@ -203,13 +203,13 @@ ruby_strtoul(const char *str, char **endptr, int base)
 
 #define mmarg mmkind, size, high, low
 
-static void mmswap_(register char *a, register char *b, int mmkind, size_t size, size_t high, size_t low)
+static void mmswap_(char *a, char *b, int mmkind, size_t size, size_t high, size_t low)
 {
- register int s;
+ int s;
  if (a == b) return;
  if (mmkind >= 0) {
    if (mmkind > 0) {
-     register char *t = a + high;
+     char *t = a + high;
      do {
        s = A[0]; A[0] = B[0]; B[0] = s;
        s = A[1]; A[1] = B[1]; B[1] = s;
@@ -222,18 +222,18 @@ static void mmswap_(register char *a, register char *b, int mmkind, size_t size,
        if (low == 12) {s = A[2]; A[2] = B[2]; B[2] = s;}}}
  }
  else {
-   register char *t = a + size;
+   char *t = a + size;
    do {s = *a; *a++ = *b; *b++ = s;} while (a < t);
  }
 }
 #define mmswap(a,b) mmswap_((a),(b),mmarg)
 
-static void mmrot3_(register char *a, register char *b, register char *c, int mmkind, size_t size, size_t high, size_t low)
+static void mmrot3_(char *a, char *b, char *c, int mmkind, size_t size, size_t high, size_t low)
 {
- register int s;
+ int s;
  if (mmkind >= 0) {
    if (mmkind > 0) {
-     register char *t = a + high;
+     char *t = a + high;
      do {
        s = A[0]; A[0] = B[0]; B[0] = C[0]; C[0] = s;
        s = A[1]; A[1] = B[1]; B[1] = C[1]; C[1] = s;
@@ -246,7 +246,7 @@ static void mmrot3_(register char *a, register char *b, register char *c, int mm
        if (low == 12) {s = A[2]; A[2] = B[2]; B[2] = C[2]; C[2] = s;}}}
  }
  else {
-   register char *t = a + size;
+   char *t = a + size;
    do {s = *a; *a++ = *b; *b++ = *c; *c++ = s;} while (a < t);
  }
 }
@@ -273,8 +273,8 @@ void
 ruby_qsort(void* base, const size_t nel, const size_t size,
 	   int (*cmp)(const void*, const void*, void*), void *d)
 {
-  register char *l, *r, *m;          	/* l,r:left,right group   m:median point */
-  register int t, eq_l, eq_r;       	/* eq_l: all items in left group are equal to S */
+  char *l, *r, *m;          	/* l,r:left,right group   m:median point */
+  int t, eq_l, eq_r;       	/* eq_l: all items in left group are equal to S */
   char *L = base;                    	/* left end of current region */
   char *R = (char*)base + size*(nel-1); /* right end of current region */
   size_t chklim = 63;                   /* threshold of ordering element check */
@@ -303,14 +303,14 @@ ruby_qsort(void* base, const size_t nel, const size_t size,
     m = l + size * (n >> 1);    /* calculate median value */
 
     if (n >= 60) {
-      register char *m1;
-      register char *m3;
+      char *m1;
+      char *m3;
       if (n >= 200) {
 	n = size*(n>>3); /* number of bytes in splitting 8 */
 	{
-	  register char *p1 = l  + n;
-	  register char *p2 = p1 + n;
-	  register char *p3 = p2 + n;
+	  char *p1 = l  + n;
+	  char *p2 = p1 + n;
+	  char *p3 = p2 + n;
 	  m1 = med3(p1, p2, p3);
 	  p1 = m  + n;
 	  p2 = p1 + n;
@@ -1100,9 +1100,9 @@ s2b(const char *s, int nd0, int nd, ULong y9)
 }
 
 static int
-hi0bits(register ULong x)
+hi0bits(ULong x)
 {
-    register int k = 0;
+    int k = 0;
 
     if (!(x & 0xffff0000)) {
         k = 16;
@@ -1131,8 +1131,8 @@ hi0bits(register ULong x)
 static int
 lo0bits(ULong *y)
 {
-    register int k;
-    register ULong x = *y;
+    int k;
+    ULong x = *y;
 
     if (x & 7) {
         if (x & 1)
@@ -1509,7 +1509,7 @@ diff(Bigint *a, Bigint *b)
 static double
 ulp(double x_)
 {
-    register Long L;
+    Long L;
     double_u x, a;
     dval(x) = x_;
 

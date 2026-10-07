@@ -72,14 +72,36 @@ AudioStream::AudioStream(std::string filename) {
                     "the audio file could not be opened: {}", filename);
 
   clip_ = std::move(clip);
+  ApplyState();
+}
+
+AudioStream::AudioStream(std::vector<uint8_t> data, float length) {
+  auto* service = Audio::Get().service();
+  if (!service)
+    throw Exception(Exception::kRGSSError, "the audio service is unavailable.");
+
+  auto clip = std::make_unique<AudioClip>();
+  if (!clip->OpenMemory(service->engine(), service->bus(AudioBus::kSE),
+                        std::move(data)))
+    throw Exception(Exception::kRGSSError,
+                    "the audio track could not be opened.");
+
+  clip_ = std::move(clip);
+  length_ = length > 0.0f ? length : -1.0f;
+  ApplyState();
+}
+
+AudioStream::~AudioStream() = default;
+
+void AudioStream::ApplyState() {
+  if (!clip_)
+    return;
 
   ma_sound_set_volume(clip_->sound(), volume_);
   ma_sound_set_pan(clip_->sound(), pan_);
   ma_sound_set_pitch(clip_->sound(), pitch_);
   ma_sound_set_looping(clip_->sound(), loop_ ? MA_TRUE : MA_FALSE);
 }
-
-AudioStream::~AudioStream() = default;
 
 void AudioStream::Start() {
   if (clip_)
@@ -113,6 +135,9 @@ float AudioStream::Cursor() {
 float AudioStream::Length() {
   if (!clip_)
     return 0.0f;
+
+  if (length_ >= 0.0f)
+    return length_;
 
   ma_uint64 frames = 0;
   if (ma_sound_get_length_in_pcm_frames(clip_->sound(), &frames) != MA_SUCCESS)

@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// AudioStream  (core/audio_stream.h:36-68)
+// AudioStream  (core/audio_stream.h:38-71)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(AudioStream);

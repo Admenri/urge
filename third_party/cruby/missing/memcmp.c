@@ -6,9 +6,9 @@
 int
 memcmp(const void *s1, const void *s2, size_t len)
 {
-    register unsigned char *a = (unsigned char*)s1;
-    register unsigned char *b = (unsigned char*)s2;
-    register int tmp;
+    unsigned char *a = (unsigned char*)s1;
+    unsigned char *b = (unsigned char*)s2;
+    int tmp;
 
     for (; len; --len) {
 	if (tmp = *a++ - *b++)

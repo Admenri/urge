@@ -1057,7 +1057,7 @@ long_toobig(int size)
 static long
 r_long(struct load_arg *arg)
 {
-    register long x;
+    long x;
     int c = SIGN_EXTEND_CHAR(r_byte(arg));
     long i;
 

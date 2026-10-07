@@ -12898,7 +12898,7 @@ parser_prepare(struct parser_params *parser)
 static int
 parser_yylex(struct parser_params *parser)
 {
-    register int c;
+    int c;
     int space_seen = 0;
     int cmd_state;
     enum lex_state_e last_state;

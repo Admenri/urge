@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-06T16:05:56Z",
+    "generated_at": "2026-10-07T01:54:48Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
@@ -43,6 +43,10 @@
       "core/tilemap_xp.h",
       "core/uniform.h",
       "core/utility.h",
+      "core/video.h",
+      "core/video_decoder.h",
+      "core/video_demuxer.h",
+      "core/video_player.h",
       "core/viewport.h",
       "core/window_vx.h",
       "core/window_xp.h"
@@ -5464,7 +5468,7 @@
               "default": null
             }
           ],
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         }
       ],
       "initialize_copy": null,
@@ -5478,7 +5482,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "stop",
@@ -5489,7 +5493,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "seek",
@@ -5506,7 +5510,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "cursor",
@@ -5517,7 +5521,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "length",
@@ -5528,7 +5532,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "playing?",
@@ -5539,7 +5543,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "end?",
@@ -5550,7 +5554,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "set_start_time",
@@ -5567,7 +5571,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "ruby_name": "set_stop_time",
@@ -5584,7 +5588,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         }
       ],
       "attributes": [
@@ -5597,7 +5601,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "name": "pan",
@@ -5608,7 +5612,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "name": "pitch",
@@ -5619,7 +5623,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         },
         {
           "name": "loop",
@@ -5630,7 +5634,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/audio_stream.h:36-68"
+          "export": "core/audio_stream.h:38-71"
         }
       ],
       "data_attributes": [],
@@ -5642,12 +5646,180 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/audio_stream.h:36-68",
+      "export": "core/audio_stream.h:38-71",
       "cpp_name": "AudioStream",
       "cpp_parent": "Object",
       "header": "core/audio_stream.h",
       "kind": "class",
       "name": "AudioStream",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/video.h:42-75"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "play",
+          "cpp_name": "Play",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "pause",
+          "cpp_name": "Pause",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "stop",
+          "cpp_name": "Stop",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "end?",
+          "cpp_name": "End",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "playing?",
+          "cpp_name": "IsPlaying",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "seek",
+          "cpp_name": "Seek",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "pos",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "tell",
+          "cpp_name": "Tell",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "duration",
+          "cpp_name": "Duration",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "audio_stream",
+          "cpp_name": "GetAudioStream",
+          "return": {
+            "cpp_type": "RefPtr<AudioStream>",
+            "ruby_type": "AudioStream"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        },
+        {
+          "ruby_name": "render",
+          "cpp_name": "Render",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "target",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/video.h:42-75"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/video.h:42-75",
+      "cpp_name": "Video",
+      "cpp_parent": "Object",
+      "header": "core/video.h",
+      "kind": "class",
+      "name": "Video",
       "ruby_superclass": "Object",
       "glue": false
     }

@@ -22,8 +22,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "core/definition.h"
 #include "core/object.h"
@@ -37,6 +39,7 @@ class AudioStream : public Object {
  public:
   URGE_BINDING()
   AudioStream(std::string filename);
+  AudioStream(std::vector<uint8_t> data, float length);
   URGE_BINDING()
   ~AudioStream() override;
 
@@ -69,6 +72,7 @@ class AudioStream : public Object {
   ATTR(bool, Loop);
 
  private:
+  void ApplyState();
   void ApplyLoopPoint();
 
   std::unique_ptr<AudioClip> clip_;
@@ -77,6 +81,7 @@ class AudioStream : public Object {
   float volume_ = 1.0f;
   float pan_ = 0.0f;
   float pitch_ = 1.0f;
+  float length_ = -1.0f;
   bool loop_ = false;
 };
 

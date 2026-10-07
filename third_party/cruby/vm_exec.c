@@ -12,7 +12,7 @@
 #include <math.h>
 
 #if VMDEBUG > 0
-#define DECL_SC_REG(type, r, reg) register type reg_##r
+#define DECL_SC_REG(type, r, reg) type reg_##r
 
 #elif __GNUC__ && __x86_64__
 #define DECL_SC_REG(type, r, reg) register type reg_##r __asm__("r" reg)
@@ -21,7 +21,7 @@
 #define DECL_SC_REG(type, r, reg) register type reg_##r __asm__("e" reg)
 
 #else
-#define DECL_SC_REG(type, r, reg) register type reg_##r
+#define DECL_SC_REG(type, r, reg) type reg_##r
 #endif
 /* #define DECL_SC_REG(r, reg) VALUE reg_##r */
 
@@ -44,8 +44,8 @@ vm_exec_core(rb_thread_t *th, VALUE initial)
     DECL_SC_REG(VALUE, a, "12");
     DECL_SC_REG(VALUE, b, "13");
 #else
-    register VALUE reg_a;
-    register VALUE reg_b;
+    VALUE reg_a;
+    VALUE reg_b;
 #endif
 #endif
 
@@ -60,7 +60,7 @@ vm_exec_core(rb_thread_t *th, VALUE initial)
 #define USE_MACHINE_REGS 1
 
 #else
-    register rb_control_frame_t *reg_cfp;
+    rb_control_frame_t *reg_cfp;
     VALUE *reg_pc;
 #endif
 
@@ -132,7 +132,7 @@ rb_vm_get_insns_address_table(void)
 static VALUE
 vm_exec_core(rb_thread_t *th, VALUE initial)
 {
-    register rb_control_frame_t *reg_cfp = th->cfp;
+    rb_control_frame_t *reg_cfp = th->cfp;
     VALUE ret;
 
     while (*GET_PC()) {

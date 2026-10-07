@@ -6,10 +6,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 include_directories(${PROJECT_SOURCE_DIR})
 
 if(MSVC)
-  add_compile_options(/utf-8 /wd5033)
   add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
+
+# Video playback is optional.  dav1d and libwebm are native C libraries with no
+# Emscripten story, so the platform decides whether the engine is built at all.
+# The default follows the platform, but an explicit -DURGE_ENABLE_VIDEO=... on
+# the command line still wins.
+#
+# The Ruby side is not conditional: `Video` stays exported either way, and every
+# call raises while the engine is off, so a script sees one API on every
+# platform -- only the depth behind it differs.  See core/video.h.
+if(EMSCRIPTEN)
+  set(URGE_ENABLE_VIDEO_DEFAULT OFF)
+else()
+  set(URGE_ENABLE_VIDEO_DEFAULT ON)
+endif()
+option(URGE_ENABLE_VIDEO
+  "Build the AV1/Vorbis video playback engine" ${URGE_ENABLE_VIDEO_DEFAULT})
 
 add_subdirectory(third_party)
 

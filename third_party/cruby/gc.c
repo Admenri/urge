@@ -1070,7 +1070,7 @@ assign_heap_slot(rb_objspace_t *objspace)
     lo = 0;
     hi = heaps_used;
     while (lo < hi) {
-	register RVALUE *mid_membase;
+	RVALUE *mid_membase;
 	mid = (lo + hi) / 2;
 	mid_membase = objspace->heap.sorted[mid].slot->membase;
 	if (mid_membase < membase) {
@@ -1513,9 +1513,9 @@ gc_mark_stacked_objects(rb_objspace_t *objspace)
 static inline int
 is_pointer_to_heap(rb_objspace_t *objspace, void *ptr)
 {
-    register RVALUE *p = RANY(ptr);
-    register struct sorted_heaps_slot *heap;
-    register size_t hi, lo, mid;
+    RVALUE *p = RANY(ptr);
+    struct sorted_heaps_slot *heap;
+    size_t hi, lo, mid;
 
     if (p < lomem || p > himem) return FALSE;
     if ((VALUE)p % sizeof(RVALUE) != 0) return FALSE;
@@ -1539,7 +1539,7 @@ is_pointer_to_heap(rb_objspace_t *objspace, void *ptr)
 }
 
 static void
-mark_locations_array(rb_objspace_t *objspace, register VALUE *x, register long n)
+mark_locations_array(rb_objspace_t *objspace, VALUE *x, long n)
 {
     VALUE v;
     while (n--) {
@@ -1748,7 +1748,7 @@ rb_gc_mark_maybe(VALUE obj)
 static void
 gc_mark(rb_objspace_t *objspace, VALUE ptr)
 {
-    register RVALUE *obj;
+    RVALUE *obj;
 
     obj = RANY(ptr);
     if (rb_special_const_p(ptr)) return; /* special const not marked */
@@ -1769,7 +1769,7 @@ rb_gc_mark(VALUE ptr)
 static void
 gc_mark_children(rb_objspace_t *objspace, VALUE ptr)
 {
-    register RVALUE *obj = RANY(ptr);
+    RVALUE *obj = RANY(ptr);
 
     goto marking;		/* skip */
 

@@ -1133,7 +1133,7 @@ fmt_setup(char *buf, size_t size, int c, int flags, int width, int prec)
 #include "vsnprintf.c"
 
 static int
-ruby__sfvwrite(register rb_printf_buffer *fp, register struct __suio *uio)
+ruby__sfvwrite(rb_printf_buffer *fp, struct __suio *uio)
 {
     struct __siov *iov;
     VALUE result = (VALUE)fp->_bf._base;
