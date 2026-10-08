@@ -48,3 +48,26 @@ include(bind/gen_binding.cmake)
 
 add_subdirectory(bind)
 add_subdirectory(app)
+
+# The engine, its bindings and the host are UTF-8 from end to end: the sources,
+# the script runtime (the default external/internal encoding is set to UTF-8 in
+# bind/cruby_main.cc), SDL and the game data are all UTF-8.  Tell MSVC so.
+#
+# It matters twice.  First, the execution character set decides how the
+# compiler reads non-ASCII literals in the sources -- the default window title
+# `(*^▽^*)` in core/config.h is written in UTF-8, and without this MSVC would
+# read it through the system ANSI code page and store mojibake.  Second, and
+# this is what actually bites: MSVC's <format> validates a *format string*
+# against the execution character set, so on a non-UTF-8 system code page (936
+# here) any UTF-8 text handed to std::format is rejected with
+#   "Invalid encoded character in format string."
+# See core/exception.h and core/logger.h, whose runtime messages hit exactly
+# that.
+#
+# Applied to the three targets of this project only: third_party is upstream
+# code whose own encoding is its own affair.
+if(MSVC)
+  target_compile_options(urge-core PRIVATE /utf-8)
+  target_compile_options(urge-binding PRIVATE /utf-8)
+  target_compile_options(Game PRIVATE /utf-8)
+endif()

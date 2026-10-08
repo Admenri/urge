@@ -42,7 +42,19 @@ class Exception final {
   template <typename... Args>
   explicit Exception(Type type, std::string_view format, Args&&... args) {
     type_ = type;
-    message_ = std::vformat(format, std::make_format_args(args...));
+    if constexpr (sizeof...(Args) == 0) {
+      // A call with no arguments carries a ready-made message, not a format
+      // string: an OS error (SDL_GetError) or a Ruby exception, say.  Keep it
+      // verbatim.  Running it through std::vformat would *parse* it instead,
+      // and MSVC validates the format string against the execution character
+      // set -- a UTF-8 message read under the default Windows code page (936
+      // on a Chinese system) is then rejected with
+      //   "Invalid encoded character in format string."
+      // which replaces the real error with a bogus one.
+      message_.assign(format);
+    } else {
+      message_ = std::vformat(format, std::make_format_args(args...));
+    }
   }
 
   Type type() const noexcept { return type_; }
