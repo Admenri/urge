@@ -12871,7 +12871,19 @@ parser_prepare(struct parser_params *parser)
 	return;
     }
     pushback(c);
-    parser->enc = rb_enc_get(lex_lastline);
+    {
+	rb_encoding *enc = rb_enc_get(lex_lastline);
+	/* Vendored build: default the source encoding to UTF-8.  A line that
+	 * carries only a placeholder encoding (US-ASCII or ASCII-8BIT, i.e. the
+	 * encoding of an untagged C string or of a script read with the default
+	 * external encoding) does not express a real source encoding, so upgrade
+	 * it to UTF-8; a line that carries a genuine encoding such as Shift_JIS
+	 * is kept.  An explicit magic comment or BOM still wins, because those
+	 * are handled later, while lexing. */
+	if (enc == rb_usascii_encoding() || enc == rb_ascii8bit_encoding())
+	    enc = rb_utf8_encoding();
+	parser->enc = enc;
+    }
 }
 
 #define IS_ARG() (lex_state == EXPR_ARG || lex_state == EXPR_CMDARG)
@@ -16385,7 +16397,11 @@ parser_initialize(struct parser_params *parser)
 #ifdef YYMALLOC
     parser->heap = NULL;
 #endif
-    parser->enc = rb_usascii_encoding();
+    /* Vendored build: the source encoding defaults to UTF-8 rather than
+     * US-ASCII.  This is the encoding the parser starts with (and keeps for
+     * empty sources), and the one __ENCODING__ reports, so eval'ing a string
+     * with no magic comment yields UTF-8 string literals/symbols. */
+    parser->enc = rb_utf8_encoding();
 }
 
 #ifdef RIPPER

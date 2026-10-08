@@ -43,9 +43,10 @@ const Input::KeySym kDefaultKeyboardBindings[] = {
     {"A", SDL_SCANCODE_LSHIFT},     {"A", SDL_SCANCODE_RSHIFT},
     {"B", SDL_SCANCODE_ESCAPE},     {"B", SDL_SCANCODE_KP_0},
     {"B", SDL_SCANCODE_X},          {"C", SDL_SCANCODE_SPACE},
-    {"C", SDL_SCANCODE_RETURN},     {"X", SDL_SCANCODE_A},
-    {"Y", SDL_SCANCODE_S},          {"Z", SDL_SCANCODE_D},
-    {"L", SDL_SCANCODE_Q},          {"R", SDL_SCANCODE_W},
+    {"C", SDL_SCANCODE_RETURN},     {"C", SDL_SCANCODE_KP_ENTER},
+    {"X", SDL_SCANCODE_A},          {"Y", SDL_SCANCODE_S},
+    {"Z", SDL_SCANCODE_D},          {"L", SDL_SCANCODE_Q},
+    {"R", SDL_SCANCODE_W},
 };
 
 const Input::KeySym kKeyboardBindings1[] = {

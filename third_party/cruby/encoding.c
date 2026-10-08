@@ -1162,13 +1162,13 @@ rb_usascii_encindex(void)
 int
 rb_locale_encindex(void)
 {
-    VALUE charmap = rb_locale_charmap(rb_cEncoding);
-    int idx;
-
-    if (NIL_P(charmap))
-        idx = rb_usascii_encindex();
-    else if ((idx = rb_enc_find_index(StringValueCStr(charmap))) < 0)
-        idx = rb_ascii8bit_encindex();
+    /* Vendored build: the process locale is UTF-8.  The "locale" alias is
+     * already registered as UTF-8 in rb_enc_init(), and default_external,
+     * default_internal and the filesystem encoding are UTF-8 too, so resolve
+     * the locale encoding to UTF-8 instead of the platform ANSI/OEM codepage
+     * (or the US-ASCII fallback used when the charmap is unknown).  This keeps
+     * rb_locale_encoding() in agreement with Encoding.find("locale"). */
+    int idx = rb_utf8_encindex();
 
     if (rb_enc_registered("locale") < 0) enc_alias_internal("locale", idx);
 
@@ -1449,33 +1449,12 @@ set_default_internal(VALUE klass, VALUE encoding)
 VALUE
 rb_locale_charmap(VALUE klass)
 {
-#if defined NO_LOCALE_CHARMAP
+    /* Vendored build: the locale charset is always UTF-8.  Reporting UTF-8
+     * here - rather than the platform ANSI/OEM codepage, the C-locale
+     * US-ASCII, or a NULL - keeps Encoding.locale_charmap in agreement with
+     * Encoding.find("locale"), rb_locale_encoding() and the UTF-8
+     * default_external / default_internal / filesystem encodings. */
     return rb_usascii_str_new2("UTF-8");
-#elif defined _WIN32 || defined __CYGWIN__
-    const char *nl_langinfo_codeset(void);
-    const char *codeset = nl_langinfo_codeset();
-    char cp[sizeof(int) * 3 + 4];
-    if (!codeset) {
-	UINT codepage = GetConsoleCP();
-	if(!codepage) codepage = GetACP();
-	/* prefer UTF-8 when the console/ANSI codepage is UTF-8 (65001);
-	 * otherwise report the codepage as-is for compatibility. */
-	if (codepage == 65001) {
-	    codeset = "UTF-8";
-	}
-	else {
-	    snprintf(cp, sizeof(cp), "CP%d", codepage);
-	    codeset = cp;
-	}
-    }
-    return rb_usascii_str_new2(codeset);
-#elif defined HAVE_LANGINFO_H
-    char *codeset;
-    codeset = nl_langinfo(CODESET);
-    return rb_usascii_str_new2(codeset);
-#else
-    return Qnil;
-#endif
 }
 
 static void

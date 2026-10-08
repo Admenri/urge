@@ -156,8 +156,14 @@ Backend =
 | `wgpu-native` | WebGPU 实现（Rust） |
 | `zlib` | 脚本归档解压 |
 
-此外，`third_party/` 下还有三个**内嵌**依赖（非子模块）：`cruby`（CRuby 1.9.3）、
-`spirv-reflect`（描述符布局反射）与 `webgpu-cpp`（WebGPU C++ 头文件包装）。
+此外，`third_party/` 下还有四个**内嵌**依赖（非子模块）：`cruby`（CRuby 1.9.3）、
+`libffi`（外部函数调用接口，为 `Win32API` 绑定提供 x64 下的 ABI 调用）、`spirv-reflect`
+（描述符布局反射）与 `webgpu-cpp`（WebGPU C++ 头文件包装）。
+
+`libffi` 仅在 Windows 上参与构建（见 `third_party/CMakeLists.txt`）：它的唯一消费者是
+`bind/binding_win32api.cc`，而该绑定在非 Windows 平台编译为空实现。它的构建脚本是上游
+autotools 工程（`configure.ac` / `configure.host` / `Makefile.am`）的 CMake 逐行翻译，
+而非重新设计。
 
 ---
 

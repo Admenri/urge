@@ -619,6 +619,7 @@ class Sprite : public Node {
 | `TABLE_MANUAL` | `Table#[]` / `#[]=` 的手写实现（写进 `binding_table.cc` 的手写区） |
 | `INPUT_MANUAL` | `Input::*` 键常量（写进 `binding_input.cc` 的手写区） |
 | `EXTRA_INIT_CALLS` | 追加到 `Init*Binding()` 末尾的语句（`Input` → `DefineInputKeyConstants(mod);`） |
+| `EXTRA_INIT_BINDING_CALLS` | 追加到**全局** `InitBindings()` 末尾的语句，用于 IR 里根本没有条目的绑定（`Win32API` → `InitWin32APIBinding();`） |
 | `HANDWRITTEN_SEED` | 新文件首次生成时播种的手写区内容 |
 
 命名**不在**这里 —— 它只有「注解 + snake_case」两条规则，见下节。

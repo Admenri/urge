@@ -1404,7 +1404,8 @@ process_options(int argc, char **argv, struct cmdline_options *opt)
 	    eenc = rb_enc_from_index(opt->src.enc.index);
 	}
 	else {
-	    eenc = lenc;
+	    /* Vendored build: default the -e source encoding to UTF-8. */
+	    eenc = rb_utf8_encoding();
 	}
 	rb_enc_associate(opt->e_script, eenc);
 	rb_vm_set_progname(rb_progname = opt->script_name);
@@ -1634,11 +1635,11 @@ load_file_internal(VALUE arg)
     if (opt->src.enc.index >= 0) {
 	enc = rb_enc_from_index(opt->src.enc.index);
     }
-    else if (f == rb_stdin) {
-	enc = rb_locale_encoding();
-    }
     else {
-	enc = rb_usascii_encoding();
+	/* Vendored build: a script read from a file (or from stdin) defaults to
+	 * UTF-8 rather than the US-ASCII/locale encoding, so that `load` and
+	 * `require` parse non-ASCII source correctly. */
+	enc = rb_utf8_encoding();
     }
     if (NIL_P(f)) {
 	f = rb_str_new(0, 0);

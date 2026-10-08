@@ -1,0 +1,50 @@
+# Cave CI for libffi — runs on the self-hosted runners at cave.moxielogic.com.
+#
+# Cave's workflow format (parsed by cave's src/workflow.lisp): each job runs in
+# a single podman container with the repo checked out at /workspace (the
+# working directory).  Steps run sequentially via `bash -c`; a step fails the
+# job if its last command exits non-zero.  Job containers are unprivileged by
+# default; a job opts into nested containers (podman/docker-in-podman) and QEMU
+# binfmt for foreign-arch testing by setting `privileged: true`.  This baseline
+# is a clean native x86_64 build + dejagnu test gated by rlgl against the
+# shared policy, so it needs no nesting and stays unprivileged.
+name: CI
+on: [push]
+
+jobs:
+  build-and-test:
+    image: registry.fedoraproject.org/fedora:latest
+    timeout: 3600
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y --setopt=install_weak_deps=False \
+            gcc gcc-c++ make autoconf automake libtool dejagnu texinfo \
+            diffutils findutils gawk tar gzip which curl
+
+      - name: Install rlgl
+        run: |
+          curl -fsSL --retry 3 \
+            https://github.com/atgreen/red-light-green-light/releases/download/v2.0.4/rlgl-2.0.4-linux-amd64.tar.gz \
+            | tar -xzf - rlgl
+          chmod +x rlgl
+
+      - name: Configure and build
+        run: |
+          set -e
+          ./autogen.sh
+          ./configure
+          make
+
+      - name: Run testsuite and evaluate with rlgl
+        run: |
+          # Tolerate test failures here; rlgl is the gate (it compares the
+          # results against the policy and exits non-zero only on RED).
+          DEJAGNU="$(pwd)/.ci/site.exp" BOARDSDIR="$(pwd)/.ci" \
+            make check RUNTESTFLAGS="-a" || true
+          ./rlgl e \
+            -l project=libffi \
+            -l sha="$(git rev-parse --short HEAD)" \
+            -l host=x86_64-pc-linux-gnu \
+            --policy=https://github.com/libffi/rlgl-policy.git \
+            $(find . -name libffi.log)

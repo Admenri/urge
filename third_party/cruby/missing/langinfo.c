@@ -45,9 +45,10 @@
 #include "langinfo.h"
 #endif
 
-#define C_CODESET "US-ASCII"     /* Return this as the encoding of the
-				  * C/POSIX locale. Could as well one day
-				  * become "UTF-8". */
+#define C_CODESET "UTF-8"        /* Return this as the encoding of the
+				  * C/POSIX locale.  The vendored build treats
+				  * the locale as UTF-8 everywhere, so the
+				  * "no locale" case reports UTF-8 too. */
 
 #if defined _WIN32 || defined __CYGWIN__
 #define JA_CODESET "Windows-31J"
@@ -121,14 +122,9 @@ nl_langinfo_codeset(void)
      * *only* interested in locale naming conventions on platforms
      * that do not already provide an nl_langinfo(CODESET) implementation. */
   }
-#if defined _WIN32 || defined __CYGWIN__
-  /* No locale env vars set: default to UTF-8 rather than NULL, so that
-   * rb_locale_encindex() resolves to UTF-8 instead of falling back to
-   * US-ASCII/ASCII-8BIT. */
+  /* No locale env vars set: default to UTF-8 rather than NULL, so that the
+   * locale resolves to UTF-8 instead of falling back to US-ASCII/ASCII-8BIT. */
   return "UTF-8";
-#else
-  return NULL;
-#endif
 }
 
 #ifdef HAVE_LANGINFO_H

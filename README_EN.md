@@ -161,9 +161,16 @@ These dependencies are provided as Git submodules and must be fetched while clon
 | `wgpu-native` | WebGPU implementation (Rust) |
 | `zlib` | Script-archive decompression |
 
-In addition, `third_party/` contains three **vendored** dependencies (not submodules):
-`cruby` (CRuby 1.9.3), `spirv-reflect` (descriptor-layout reflection) and `webgpu-cpp`
-(the WebGPU C++ header wrapper).
+In addition, `third_party/` contains four **vendored** dependencies (not submodules):
+`cruby` (CRuby 1.9.3), `libffi` (the foreign-function interface the `Win32API` binding
+uses to make ABI-correct calls on x64), `spirv-reflect` (descriptor-layout reflection)
+and `webgpu-cpp` (the WebGPU C++ header wrapper).
+
+`libffi` takes part in the build on Windows only (see `third_party/CMakeLists.txt`):
+its sole consumer is `bind/binding_win32api.cc`, and that binding compiles to an empty
+implementation elsewhere. Its build script is a line-for-line CMake translation of the
+upstream autotools project (`configure.ac` / `configure.host` / `Makefile.am`) rather
+than a redesign of it.
 
 ---
 

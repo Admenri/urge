@@ -1,0 +1,356 @@
+name: CI emscripten
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+
+env:
+  PYODIDE_VERSION: 0.58.4
+  # PYTHON_VERSION and EMSCRIPTEN_VERSION are determined by PYODIDE_VERSION.
+  # The appropriate versions can be found in the Pyodide repodata.json
+  # "info" field, or in Makefile.envs:
+  # https://github.com/pyodide/pyodide/blob/main/Makefile.envs#L2
+  PYTHON_VERSION: 3.12.7
+  EMSCRIPTEN_VERSION: 4.0.10
+  EM_CACHE_FOLDER: emsdk-cache
+
+jobs:
+  setup-emsdk-cache:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Setup cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EM_CACHE_FOLDER }}
+          key: ${{ env.EMSCRIPTEN_VERSION }}
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EMSCRIPTEN_VERSION }}
+          actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
+
+  test-dejagnu:
+    strategy:
+      matrix:
+        target:
+          - name: wasm32
+            host: wasm32
+            configureflags:
+            testflags:
+          - name: wasm64
+            host: wasm64
+            configureflags:
+            testflags: -sMEMORY64=1
+          - name: wasm64-2
+            host: wasm64
+            configureflags: WASM64_MEMORY64=2
+            testflags: -sMEMORY64=2
+    runs-on: ubuntu-24.04
+    needs: [setup-emsdk-cache]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EM_CACHE_FOLDER }}
+          key: ${{ env.EMSCRIPTEN_VERSION }}
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EMSCRIPTEN_VERSION }}
+          actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
+
+      - name: Setup node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # This step updates emsdk's configuration file ".emscripten" to point to
+      # nodejs installed in the previous step.
+      - name: Configure emsdk to use the installed node.js
+        run: sed -i -E 's|NODE_JS = .*|NODE_JS = '"'$(which node)'"'|g' ${EMSDK}/.emscripten
+
+      - name: Install dependencies
+        run: sudo apt-get install dejagnu libltdl-dev
+
+      - name: Run tests
+        run: testsuite/emscripten/node-tests.sh
+        env:
+          TARGET_HOST: ${{ matrix.target.host }}
+          EXTRA_CONFIGURE_FLAGS: ${{ matrix.target.configureflags }}
+          EXTRA_CFLAGS: ${{ matrix.target.testflags }}
+          EXTRA_TEST_LDFLAGS: ${{ matrix.target.testflags }}
+
+      - name: Install rlgl and run
+        run: |
+          curl -fsSL --retry 3 "https://github.com/atgreen/red-light-green-light/releases/download/v2.0.4/rlgl-2.0.4-linux-amd64.tar.gz" | tar -xzf - rlgl
+          chmod +x rlgl
+          ./rlgl e -l project=libffi -l sha=${GITHUB_SHA:0:7} -l CC='emcc' -l host=wasm32-unknown-linux --policy=https://github.com/libffi/rlgl-policy.git testsuite/libffi.log
+          exit $?
+
+      - name: Upload rlgl report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlgl-report-${{ github.job }}-${{ strategy.job-index }}
+          path: rlgl-report*
+          if-no-files-found: ignore
+
+      - name: rlgl report link
+        if: always()
+        run: echo "::notice title=rlgl report::https://libffi.github.io/libffi/reports/${{ github.run_id }}/${{ github.job }}-${{ strategy.job-index }}/"
+
+  build:
+    strategy:
+      matrix:
+        target:
+          - name: wasm32
+            host: wasm32
+            configureflags:
+            testflags:
+          - name: wasm64
+            host: wasm64
+            configureflags:
+            testflags: -sMEMORY64=1
+          - name: wasm64-2
+            host: wasm64
+            configureflags: WASM64_MEMORY64=2
+            testflags: -sMEMORY64=2
+    runs-on: ubuntu-24.04
+    needs: [setup-emsdk-cache]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EM_CACHE_FOLDER }}
+          key: ${{ env.EMSCRIPTEN_VERSION }}
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v12
+        with:
+          version: ${{ env.EMSCRIPTEN_VERSION }}
+          actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
+
+      - name: Install dependencies
+        run: sudo apt-get install libltdl-dev
+
+      - name: Build
+        run: ./testsuite/emscripten/build.sh
+        env:
+          TARGET_HOST: ${{ matrix.target.host }}
+          EXTRA_CONFIGURE_FLAGS: ${{ matrix.target.configureflags }}
+
+      - name: Build tests
+        run: |
+          cp -r testsuite/libffi.call testsuite/libffi.call.test
+          cp -r testsuite/libffi.closures testsuite/libffi.closures.test
+          ./testsuite/emscripten/build-tests.sh testsuite/libffi.call.test
+          ./testsuite/emscripten/build-tests.sh testsuite/libffi.closures.test
+        env:
+          EXTRA_CFLAGS: ${{ matrix.target.testflags }}
+          EXTRA_LD_FLAGS: ${{ matrix.target.testflags }}
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-tests-${{ matrix.target.name }}
+          path: ./testsuite/libffi.c*/
+
+  test:
+    strategy:
+      matrix:
+        target:
+          - name: wasm32
+          - name: wasm64
+          - name: wasm64-2
+        browser: ["chrome"]
+        # FIXME: selenium can't find gecko driver for "firefox"
+    runs-on: ubuntu-24.04
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: built-tests-${{ matrix.target.name }}
+          path: ./testsuite/
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: pyodide-env
+          python-version: ${{ env.PYTHON_VERSION }}
+          channels: conda-forge
+
+      - name: Install test dependencies
+        run: pip install pytest-pyodide==${{ env.PYODIDE_VERSION }}
+
+      - name: Run tests
+        run: |
+          cd testsuite/emscripten/
+          mkdir test-results
+          pytest \
+            --junitxml=test-results/junit.xml \
+              test_libffi.py \
+              -k ${{ matrix.browser }} \
+              -s
+
+      - name: Install rlgl and run
+        if: success() || failure()
+        run: |
+          curl -fsSL --retry 3 "https://github.com/atgreen/red-light-green-light/releases/download/v2.0.4/rlgl-2.0.4-linux-amd64.tar.gz" | tar -xzf - rlgl
+          chmod +x rlgl
+          ./rlgl e -l project=libffi -l sha=${GITHUB_SHA:0:7} -l CC='emcc' -l host=${{ matrix.browser }} --policy=https://github.com/libffi/rlgl-policy.git testsuite/emscripten/test-results/junit.xml
+          exit $?
+
+      - name: Upload rlgl report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlgl-report-${{ github.job }}-${{ strategy.job-index }}
+          path: rlgl-report*
+          if-no-files-found: ignore
+
+      - name: rlgl report link
+        if: always()
+        run: echo "::notice title=rlgl report::https://libffi.github.io/libffi/reports/${{ github.run_id }}/${{ github.job }}-${{ strategy.job-index }}/"
+
+  # ----------------------------------------------------------------------------
+  # Publish the rlgl HTML reports to the gh-pages branch (shared with build.yml
+  # via the gh-pages-publish concurrency group).
+  publish-reports:
+    name: Publish rlgl reports
+    needs: [test-dejagnu, test]
+    if: ${{ always() && github.event_name != 'pull_request' && github.repository == 'libffi/libffi' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: gh-pages-publish
+      cancel-in-progress: false
+    steps:
+      - name: Download report artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: rlgl-report-*
+          path: incoming
+
+      - name: Publish reports to gh-pages
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ ! -d incoming ] || [ -z "$(ls -A incoming 2>/dev/null)" ]; then
+            echo "No rlgl reports to publish."; echo "published=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git clone --depth 1 --branch gh-pages \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" pages
+          cd pages
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          run_dir="reports/${{ github.run_id }}"
+          mkdir -p "$run_dir"
+          echo "${{ github.sha }}"      > "$run_dir/.sha"
+          echo "${{ github.workflow }}" > "$run_dir/.workflow"
+          for d in ../incoming/*/; do
+            [ -d "$d" ] || continue
+            key="$(basename "$d")"; key="${key#rlgl-report-}"
+            if [ -f "${d}rlgl-report.html" ]; then
+              mkdir -p "$run_dir/$key"
+              cp "${d}rlgl-report.html" "$run_dir/$key/index.html"
+              # Publish the original report so its "Original Report" link resolves.
+              cp "${d}"rlgl-report-original.* "$run_dir/$key/" 2>/dev/null || true
+            fi
+          done
+          {
+            echo '<!doctype html><html><head><meta charset="utf-8"><title>libffi rlgl reports</title>'
+            echo '<style>body{font-family:sans-serif;max-width:60em;margin:2em auto;padding:0 1em}h2{margin-top:1.5em}code{background:#f0f0f0;padding:.1em .3em}</style></head><body>'
+            echo '<h1>libffi rlgl evaluation reports</h1>'
+            for run in $(ls -1 reports 2>/dev/null | sort -rn); do
+              [ -d "reports/$run" ] || continue
+              sha="$(cut -c1-12 "reports/$run/.sha" 2>/dev/null || true)"
+              wf="$(cat "reports/$run/.workflow" 2>/dev/null || true)"
+              printf '<h2>Run <a href="https://github.com/%s/actions/runs/%s">%s</a>' "${{ github.repository }}" "$run" "$run"
+              [ -n "$wf" ]  && printf ' &middot; %s' "$wf"
+              [ -n "$sha" ] && printf ' &middot; <code>%s</code>' "$sha"
+              echo '</h2><ul>'
+              for cfg in "reports/$run"/*/; do
+                [ -d "$cfg" ] || continue
+                name="$(basename "$cfg")"
+                printf '<li><a href="%s">%s</a></li>\n' "$cfg" "$name"
+              done
+              echo '</ul>'
+            done
+            echo '</body></html>'
+          } > index.html
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nothing new to commit"
+          else
+            git commit -m "reports: ${{ github.workflow }} run ${{ github.run_id }}"
+            pushed=false
+            for i in 1 2 3 4 5; do
+              if git push origin gh-pages; then pushed=true; break; fi
+              echo "push rejected, rebasing (attempt $i)"; git pull --rebase origin gh-pages || true; sleep 3
+            done
+            if [ "$pushed" != true ]; then echo "::error::failed to push reports to gh-pages"; exit 1; fi
+          fi
+          rm -rf .git
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Pages artifact
+        if: steps.publish.outputs.published == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      - name: Deploy to GitHub Pages
+        if: steps.publish.outputs.published == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Summarize report links
+        if: always()
+        run: |
+          base="https://libffi.github.io/libffi/reports/${{ github.run_id }}"
+          {
+            echo "## rlgl reports"
+            echo ""
+            if [ -d incoming ]; then
+              for d in incoming/*/; do
+                [ -d "$d" ] || continue
+                key="$(basename "$d")"; key="${key#rlgl-report-}"
+                echo "- [$key]($base/$key/)"
+              done
+            fi
+            echo ""
+            echo "All runs: https://libffi.github.io/libffi/"
+          } >> "$GITHUB_STEP_SUMMARY"

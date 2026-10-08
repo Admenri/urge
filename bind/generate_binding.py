@@ -390,6 +390,20 @@ EXTRA_INIT_CALLS = {
     "Fetch": ["DefineFetchBody(klass);"],
 }
 
+# Statements appended to the global InitBindings(), after every per-entry
+# initialiser.  This is the hook for an initialiser that has no entry in the IR
+# at all -- a class that is not an engine class, so `core/` never names it and
+# CLASS_ORDER has nothing to list.
+#
+# Win32API is the one such binding: it is a thin libffi wrapper over
+# LoadLibrary/GetProcAddress and lives entirely in bind/binding_win32api.cc.
+# The matching `#include` sits in the preserved HANDWRITTEN INCLUDES block of
+# binding_init.cc, which is the other half of what Bindgen.md prescribes for a
+# symbol a generated file has to name ("跨文件请加进 *_INCLUDES 区").
+EXTRA_INIT_BINDING_CALLS = [
+    "InitWin32APIBinding();",
+]
+
 
 # ---------------------------------------------------------------------------
 # Small helpers
@@ -1310,6 +1324,7 @@ void InitBindings();
         "",
     ]
     body += ["  Init%sBinding();" % e["cpp_name"] for e in model.all_entries()]
+    body += ["  " + call for call in EXTRA_INIT_BINDING_CALLS]
     body.append("}")
 
     text = splice(

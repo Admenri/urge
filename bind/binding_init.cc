@@ -43,6 +43,11 @@
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
+// Win32API is the one binding with no entry in the IR, so its initialiser is
+// named by generate_binding.py's EXTRA_INIT_BINDING_CALLS rather than by a
+// class it generated.  The declaration has to reach InitBindings(), and this
+// block is the documented place for it (Bindgen.md, "generated file blocks").
+#include "binding_win32api.h"
 // --- HANDWRITTEN INCLUDES END ---
 
 namespace binding {
@@ -100,6 +105,7 @@ void InitBindings() {
   InitInputBinding();
   InitMouseBinding();
   InitNetworkBinding();
+  InitWin32APIBinding();
 }
 // --- GENERATED END ---
 

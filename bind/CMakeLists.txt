@@ -16,3 +16,12 @@ target_sources(urge-binding PRIVATE ${BINDING_SOURCES})
 
 target_include_directories(urge-binding PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(urge-binding PUBLIC ruby-static urge-core zlibstatic)
+
+# libffi backs the Win32API binding (binding_win32api.cc), which uses it to call
+# a DLL export whose signature is only known at runtime.  The dependency is
+# Windows-only for the same reason the binding is: `third_party/CMakeLists.txt`
+# only brings the library up there, and off Windows the binding compiles to an
+# empty initialiser that needs nothing from it.
+if(WIN32)
+  target_link_libraries(urge-binding PUBLIC libffi)
+endif()

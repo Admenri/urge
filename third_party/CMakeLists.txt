@@ -93,6 +93,16 @@ add_subdirectory(spirv-reflect)
 add_subdirectory(cruby)
 add_subdirectory(zlib)
 
+# libffi exists in this tree for one consumer: the Win32API binding
+# (bind/binding_win32api.cc), which uses it to call an arbitrary DLL export
+# with a signature only known at runtime.  That feature is meaningless off
+# Windows, so the dependency is only brought up there -- on any other platform
+# Win32API has nothing to call and the binding compiles to an empty
+# initialiser.
+if(WIN32)
+  add_subdirectory(libffi)
+endif()
+
 if(URGE_ENABLE_VIDEO)
   add_subdirectory(dav1d)
   add_subdirectory(webm)
