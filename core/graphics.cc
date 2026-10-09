@@ -44,6 +44,7 @@
 #include "core/mouse.h"
 #include "core/pipeline.h"
 #include "core/primitive.h"
+#include "core/sprite_batch.h"
 #include "core/uniform.h"
 
 namespace urge {
@@ -76,6 +77,7 @@ wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
 
   return wgpu::PresentMode::Fifo;
 }
+
 
 }  // namespace
 
@@ -128,8 +130,15 @@ void FPSLimiter::Delay() {
     skip_last_ = skip_now;
 
     skip_ideal_diff_ += frame_diff - ticks_per_frame_;
-    skip_ideal_diff_ =
-        std::min(skip_ideal_diff_, ticks_per_frame_ * kMaxFrameLag);
+    /* The drift is a short-term correction, not a running total: a frame
+       faster than the target hands the limiter credit which it pays back by
+       sleeping longer, and letting that credit grow without bound turns one
+       long stall into one correspondingly long sleep. Both ends stop at
+       kMaxFrameLag frames, so the limiter can neither owe nor bank more than
+       that much time. */
+    skip_ideal_diff_ = std::clamp(skip_ideal_diff_,
+                                  -ticks_per_frame_ * kMaxFrameLag,
+                                  ticks_per_frame_ * kMaxFrameLag);
 
     if (skip_reset_flag_)
       skip_ideal_diff_ = 0;
@@ -206,6 +215,7 @@ Graphics::Graphics()
 
   UniformManager::Reset(new UniformManager());
   QuadVertexManager::Reset(new QuadVertexManager());
+  SpriteBatch::Reset(new SpriteBatch());
 
   root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(config.display.width, config.display.height);
@@ -220,6 +230,7 @@ Graphics::~Graphics() {
   screen_.reset();
   root_.reset();
 
+  SpriteBatch::Reset(nullptr);
   QuadVertexManager::Reset(nullptr);
   UniformManager::Reset(nullptr);
   ShaderSet::Reset(nullptr);

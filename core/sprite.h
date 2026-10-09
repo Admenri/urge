@@ -25,6 +25,7 @@
 #include "core/definition.h"
 #include "core/effect.h"
 #include "core/node.h"
+#include "core/sprite_batch.h"
 #include "core/uniform.h"
 #include "core/viewport.h"
 
@@ -98,8 +99,12 @@ class Sprite : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  SpriteBase::SpriteParam MakeParamInternal();
+  SpriteParam MakeParamInternal(const glm::mat4& transform);
   PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter);
+  RectI ClampSrcRectInternal() const;
+  bool IsDrawableInternal() const;
+  bool CanBatchWith(const Sprite& other) const;
+  bool NextIsBatchable();
 
   RefPtr<Bitmap> bitmap_;
   RefPtr<Rect> src_rect_;
@@ -120,7 +125,6 @@ class Sprite : public Node {
   bool rgssvx_style_ = true;
 
   UniformBlockPool::Slot object_slot_ = {};
-  UniformBlockPool::Slot param_slot_ = {};
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 

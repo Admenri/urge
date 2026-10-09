@@ -32,6 +32,10 @@
 
 namespace urge {
 
+/*! The vertices one quad expands into: the two triangles which share the
+    diagonal, see PrimitiveEmitter::ExpandQuad(). */
+inline constexpr std::size_t kQuadVertexCount = 6;
+
 struct VertexData {
   glm::vec4 position = glm::vec4(0.f, 0.f, 0.f, 1.f);
   glm::vec2 texcoord = glm::vec2(0.f, 0.f);

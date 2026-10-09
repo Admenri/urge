@@ -161,28 +161,20 @@ void UniformBlockPool::CreateChunk() {
 }
 
 UniformManager::UniformManager()
-
     : object_uniforms_(ShaderSet::Get()
-                           .state.sprite.sprite_blends.at(BLEND_NORMAL)
+                           .state.plane.plane_blends.at(BLEND_NORMAL)
                            .GetBindGroupLayout(1),
                        sizeof(ObjectData),
-                       "object"),
-      sprite_uniforms_(ShaderSet::Get()
-                           .state.sprite.sprite_blends.at(BLEND_NORMAL)
-                           .GetBindGroupLayout(3),
-                       sizeof(SpriteBase::SpriteParam),
-                       "sprite") {}
+                       "object") {}
 
 UniformManager::~UniformManager() = default;
 
 void UniformManager::BeginFrame() {
   object_uniforms_.BeginFrame();
-  sprite_uniforms_.BeginFrame();
 }
 
 void UniformManager::Flush() {
   object_uniforms_.Flush();
-  sprite_uniforms_.Flush();
 }
 
 }  // namespace urge

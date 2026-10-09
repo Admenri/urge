@@ -23,6 +23,7 @@
 #pragma once
 
 #include "core/bitmap.h"
+#include "core/camera.h"
 #include "core/definition.h"
 #include "core/disposable.h"
 #include "core/drawable.h"
@@ -59,6 +60,14 @@ class Node : public Disposable {
   URGE_BINDING()
   virtual ATTR(RefPtr<Vector3>, Scale);
 
+  /*! The point of view this node and everything below it is drawn through.
+      A camera does not move the subtree: it takes over the projection and the
+      view the draws of it read, so the model transforms of the nodes stay the
+      ones the scene graph gave them. Clearing it hands the subtree back to
+      the projection of the render target. */
+  URGE_BINDING()
+  ATTR(RefPtr<Camera>, Camera);
+
  protected:
   virtual bool Prepare(DrawParam param) { return false; }
   virtual bool DoDraw(DrawParam param) { return false; }
@@ -93,6 +102,7 @@ class Node : public Disposable {
   DrawableSet children_;
   Drawable self_;
   RefPtr<Node> parent_;
+  RefPtr<Camera> camera_;
   bool world_root_ = false;
 
   bool allow_do_draw_ = false;

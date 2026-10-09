@@ -44,6 +44,8 @@ struct DrawContext {
 
   wgpu::RenderPassEncoder pass;
 
+  /*! The set a draw reads the projection and the view from. A node which
+      carries a camera replaces it for its subtree, see Node::ExecuteRendering. */
   wgpu::BindGroup scene;
 
   std::stack<RectI> scissors;

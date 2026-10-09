@@ -99,11 +99,9 @@ class UniformManager : public Singleton<UniformManager> {
   void Flush();
 
   UniformBlockPool& object_uniforms() { return object_uniforms_; }
-  UniformBlockPool& sprite_uniforms() { return sprite_uniforms_; }
 
  private:
   UniformBlockPool object_uniforms_;
-  UniformBlockPool sprite_uniforms_;
 };
 
 }  // namespace urge

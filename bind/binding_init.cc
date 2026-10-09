@@ -34,6 +34,9 @@
 #include "binding_network_event.h"
 #include "binding_web_socket.h"
 #include "binding_fetch.h"
+#include "binding_camera.h"
+#include "binding_orthographic_camera.h"
+#include "binding_perspective_camera.h"
 #include "binding_audio.h"
 #include "binding_config.h"
 #include "binding_graphics.h"
@@ -99,6 +102,9 @@ void InitBindings() {
   InitNetworkEventBinding();
   InitWebSocketBinding();
   InitFetchBinding();
+  InitCameraBinding();
+  InitOrthographicCameraBinding();
+  InitPerspectiveCameraBinding();
   InitAudioBinding();
   InitConfigBinding();
   InitGraphicsBinding();

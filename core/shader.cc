@@ -35,8 +35,8 @@
 
 #include "spirv_reflect.h"
 
-#include "core/exception.h"
 #include "core/device.h"
+#include "core/exception.h"
 #include "core/pipeline.h"
 
 namespace urge {
@@ -133,7 +133,10 @@ ShaderReflection ReflectSpirv(const std::vector<uint32_t>& spirv) {
           entry.min_binding_size = binding.block.size;
           break;
         case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-          entry.buffer = WGPUBufferBindingType_Storage;
+          entry.buffer =
+              (binding.decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE)
+                  ? WGPUBufferBindingType_ReadOnlyStorage
+                  : WGPUBufferBindingType_Storage;
           entry.min_binding_size = binding.block.size;
           break;
         case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:

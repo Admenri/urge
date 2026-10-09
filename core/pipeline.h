@@ -94,14 +94,6 @@ class TintBase : public Pipeline {
 
 class SpriteBase : public Pipeline {
  public:
-  struct alignas(16) SpriteParam {
-    glm::vec4 blend_color;
-    glm::vec4 blend_tone;
-    float bush_depth;
-    float bush_opacity;
-    float padding[2];
-  };
-
   SpriteBase();
 };
 

@@ -27,6 +27,7 @@
 
 #include "core/graphics.h"
 #include "core/primitive.h"
+#include "core/sprite_batch.h"
 #include "core/uniform.h"
 
 namespace urge {
@@ -66,11 +67,13 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
 
   uniforms.BeginFrame();
   quads.BeginFrame();
+  SpriteBatch::Get().BeginFrame();
 
   ExecutePrepare(&context);
 
   uniforms.Flush();
   quads.Upload();
+  SpriteBatch::Get().Flush();
 
   std::optional<glm::vec4> clear_color = std::nullopt;
   if (clear)
@@ -80,6 +83,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
     context.scissors.push(RectI(target->size()));
     context.pass.SetScissorRect(0, 0, target->size().x, target->size().y);
     ExecuteRendering(&context);
+    FlushSpriteBatch(&context);
   }
   context.pass.End();
   auto command_buffer = encoder.Finish(nullptr);
@@ -157,6 +161,15 @@ ATTR_DEF(Node, RefPtr<Vector3>, Scale) {
   }
 }
 
+ATTR_DEF(Node, RefPtr<Camera>, Camera) {
+  if (value.has_value()) {
+    camera_ = *value;
+    return std::nullopt;
+  } else {
+    return camera_;
+  }
+}
+
 void Node::DisposeObject() {
   self_.RemoveFromList();
   parent_.reset();
@@ -174,9 +187,19 @@ void Node::ExecutePrepare(DrawParam param) {
 }
 
 void Node::ExecuteRendering(DrawParam param) {
+  /* A camera of this node takes the scene set over for the whole subtree: the
+     set carries the projection and the view every draw of it reads, so this
+     node and everything below it are seen through the camera, and the set the
+     subtree was entered with is put back once it is done. */
+  const wgpu::BindGroup outer_scene = param->scene;
+  if (camera_)
+    param->scene = camera_->AcquireScene(param->target->size());
+
   allow_post_draw_ = allow_do_draw_ ? DoDraw(param) : false;
   children_.DispatchDraw(param);
   allow_post_draw_ ? PostDraw(param) : void();
+
+  param->scene = outer_scene;
 }
 
 void Node::RebuildModelTransform() {

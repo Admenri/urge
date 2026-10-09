@@ -29,6 +29,7 @@
 #include "core/gpu_utils.h"
 #include "core/graphics.h"
 #include "core/pipeline.h"
+#include "core/sprite_batch.h"
 
 namespace urge {
 
@@ -158,6 +159,8 @@ bool Viewport::Prepare(DrawParam param) {
 }
 
 bool Viewport::DoDraw(DrawParam param) {
+  FlushSpriteBatch(param);
+
   const RectI current_scissor = param->scissors.top();
 
   const glm::ivec2 offset = effect_ ? glm::ivec2(-origin_.x, -origin_.y)
@@ -186,6 +189,8 @@ bool Viewport::DoDraw(DrawParam param) {
 }
 
 void Viewport::PostDraw(DrawParam param) {
+  FlushSpriteBatch(param);
+
   if (effect_) {
     if (filtering_)
       FinishFilter(param);
@@ -224,7 +229,10 @@ void Viewport::PostDraw(DrawParam param) {
 
       param->pass.SetPipeline(
           ShaderSet::Get().state.viewport.tint_blends.at(BLEND_NORMAL));
-      param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+      /* The quad is placed in the coordinates of the target this node
+         composites into, so it reads the projection of that target and not
+         the one a camera of the subtree put in the scene of the traversal. */
+      param->pass.SetBindGroup(0, param->target->scene_group(), 0, nullptr);
       const uint32_t object_offset = 0;
       param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
       param->pass.SetBindGroup(2, offscreen_->texture_group(), 0, nullptr);
@@ -341,7 +349,10 @@ void Viewport::FinishFilter(DrawParam param) {
   effect->SetFilterSource(offscreen_);
 
   param->pass.SetPipeline(effect->AcquirePipeline());
-  param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+  /* The effect composites its region back in the coordinates of the target
+     the children borrowed from this node, so it reads the projection of that
+     target, see PostDraw(). */
+  param->pass.SetBindGroup(0, param->target->scene_group(), 0, nullptr);
   const uint32_t object_offset = 0;
   param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
   param->pass.SetBindGroup(2, effect->AcquireBindGroup(), 0, nullptr);

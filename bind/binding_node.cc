@@ -9,12 +9,14 @@
 #include "binding_node.h"
 
 #include "binding_bitmap.h"
+#include "binding_camera.h"
 #include "binding_color.h"
 #include "binding_disposable.h"
 #include "binding_vector3.h"
 #include "binding_vector4.h"
 
 #include "core/bitmap.h"
+#include "core/camera.h"
 #include "core/node.h"
 #include "core/utility.h"
 // --- GENERATED INCLUDES END ---
@@ -29,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/node.h:34-59)
+// Node  (core/node.h:35-68)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Node, Disposable);
@@ -111,6 +113,13 @@ BINDING_ATTR_OBJECT_REF(Node,
                         urge::Vector3,
                         kVector3DataType);
 
+// Attribute: camera (RefPtr<Camera>)
+BINDING_ATTR_OBJECT_REF(Node,
+                        urge::Node,
+                        Camera,
+                        urge::Camera,
+                        kCameraDataType);
+
 void InitNodeBindingAppend(VALUE klass);
 
 void InitNodeBinding() {
@@ -133,6 +142,8 @@ void InitNodeBinding() {
   DefineMethod(klass, "quaternion=", Node_QuaternionEqual);
   DefineMethod(klass, "scale", Node_Scale);
   DefineMethod(klass, "scale=", Node_ScaleEqual);
+  DefineMethod(klass, "camera", Node_Camera);
+  DefineMethod(klass, "camera=", Node_CameraEqual);
   InitNodeBindingAppend(klass);
 }
 // --- GENERATED END ---

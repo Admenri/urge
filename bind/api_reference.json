@@ -3,12 +3,13 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-07T13:40:59Z",
+    "generated_at": "2026-10-09T10:47:05Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
       "core/audio_stream.h",
       "core/bitmap.h",
+      "core/camera.h",
       "core/common.h",
       "core/config.h",
       "core/definition.h",
@@ -40,6 +41,7 @@
       "core/refptr.h",
       "core/shader.h",
       "core/sprite.h",
+      "core/sprite_batch.h",
       "core/table.h",
       "core/tilemap_vx.h",
       "core/tilemap_xp.h",
@@ -1591,7 +1593,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         }
       ],
       "initialize_copy": {
@@ -1602,7 +1604,7 @@
             "default": null
           }
         ],
-        "export": "core/node.h:34-59"
+        "export": "core/node.h:35-68"
       },
       "instance_methods": [
         {
@@ -1625,7 +1627,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         }
       ],
       "attributes": [
@@ -1638,7 +1640,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         },
         {
           "name": "visible",
@@ -1649,7 +1651,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         },
         {
           "name": "parent",
@@ -1660,7 +1662,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         },
         {
           "name": "position",
@@ -1671,7 +1673,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         },
         {
           "name": "quaternion",
@@ -1682,7 +1684,7 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
         },
         {
           "name": "scale",
@@ -1693,7 +1695,18 @@
           "static": false,
           "override": true,
           "header_annotation": false,
-          "export": "core/node.h:34-59"
+          "export": "core/node.h:35-68"
+        },
+        {
+          "name": "camera",
+          "setter": "camera=",
+          "cpp_name": "Camera",
+          "cpp_type": "RefPtr<Camera>",
+          "ruby_type": "Camera",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/node.h:35-68"
         }
       ],
       "data_attributes": [],
@@ -1705,7 +1718,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/node.h:34-59",
+      "export": "core/node.h:35-68",
       "cpp_name": "Node",
       "cpp_parent": "Disposable",
       "header": "core/node.h",
@@ -3383,7 +3396,7 @@
               "default": "nullptr"
             }
           ],
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         }
       ],
       "initialize_copy": null,
@@ -3408,7 +3421,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "ruby_name": "update",
@@ -3419,7 +3432,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "ruby_name": "width",
@@ -3430,7 +3443,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "ruby_name": "height",
@@ -3441,7 +3454,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         }
       ],
       "attributes": [
@@ -3454,7 +3467,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "bitmap",
@@ -3465,7 +3478,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "src_rect",
@@ -3476,7 +3489,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "x",
@@ -3487,7 +3500,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "y",
@@ -3498,7 +3511,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "ox",
@@ -3509,7 +3522,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "oy",
@@ -3520,7 +3533,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "zoom_x",
@@ -3531,7 +3544,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "zoom_y",
@@ -3542,7 +3555,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "angle",
@@ -3553,7 +3566,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "wave_amp",
@@ -3564,7 +3577,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "wave_length",
@@ -3575,7 +3588,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "wave_speed",
@@ -3586,7 +3599,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "wave_phase",
@@ -3597,7 +3610,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "mirror",
@@ -3608,7 +3621,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "bush_depth",
@@ -3619,7 +3632,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "bush_opacity",
@@ -3630,7 +3643,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "opacity",
@@ -3641,7 +3654,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "blend_type",
@@ -3652,7 +3665,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "color",
@@ -3663,7 +3676,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "tone",
@@ -3674,7 +3687,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         },
         {
           "name": "effect",
@@ -3685,7 +3698,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/sprite.h:34-93"
+          "export": "core/sprite.h:35-94"
         }
       ],
       "data_attributes": [],
@@ -3697,7 +3710,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/sprite.h:34-93",
+      "export": "core/sprite.h:35-94",
       "cpp_name": "Sprite",
       "cpp_parent": "Node",
       "header": "core/sprite.h",
@@ -6472,6 +6485,192 @@
       "kind": "class",
       "name": "Fetch",
       "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/camera.h:50-60"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [
+        {
+          "name": "position",
+          "setter": "position=",
+          "cpp_name": "Position",
+          "cpp_type": "RefPtr<Vector3>",
+          "ruby_type": "Vector3",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:50-60"
+        },
+        {
+          "name": "quaternion",
+          "setter": "quaternion=",
+          "cpp_name": "Quaternion",
+          "cpp_type": "RefPtr<Vector4>",
+          "ruby_type": "Vector4",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:50-60"
+        },
+        {
+          "name": "scale",
+          "setter": "scale=",
+          "cpp_name": "Scale",
+          "cpp_type": "RefPtr<Vector3>",
+          "ruby_type": "Vector3",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:50-60"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/camera.h:50-60",
+      "cpp_name": "Camera",
+      "cpp_parent": "Object",
+      "header": "core/camera.h",
+      "kind": "class",
+      "name": "Camera",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/camera.h:128-138"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [
+        {
+          "name": "size",
+          "setter": "size=",
+          "cpp_name": "Size",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:128-138"
+        },
+        {
+          "name": "near",
+          "setter": "near=",
+          "cpp_name": "Near",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:128-138"
+        },
+        {
+          "name": "far",
+          "setter": "far=",
+          "cpp_name": "Far",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:128-138"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/camera.h:128-138",
+      "cpp_name": "OrthographicCamera",
+      "cpp_parent": "Camera",
+      "header": "core/camera.h",
+      "kind": "class",
+      "name": "OrthographicCamera",
+      "ruby_superclass": "Camera",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/camera.h:99-109"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [
+        {
+          "name": "fov",
+          "setter": "fov=",
+          "cpp_name": "Fov",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:99-109"
+        },
+        {
+          "name": "near",
+          "setter": "near=",
+          "cpp_name": "Near",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:99-109"
+        },
+        {
+          "name": "far",
+          "setter": "far=",
+          "cpp_name": "Far",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/camera.h:99-109"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/camera.h:99-109",
+      "cpp_name": "PerspectiveCamera",
+      "cpp_parent": "Camera",
+      "header": "core/camera.h",
+      "kind": "class",
+      "name": "PerspectiveCamera",
+      "ruby_superclass": "Camera",
       "glue": false
     }
   ],

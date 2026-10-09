@@ -33,7 +33,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Sprite  (core/sprite.h:34-93)
+// Sprite  (core/sprite.h:35-94)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Sprite, Node);

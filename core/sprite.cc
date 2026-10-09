@@ -309,14 +309,16 @@ void Sprite::DisposeObject() {
 
 bool Sprite::Prepare(DrawParam param) {
   primitive_slot_ = {};
+  object_slot_ = {};
 
-  if (!Disposable::Check(bitmap_))
+  if (!IsDrawableInternal())
     return false;
 
-  if (flashing_.IsFlashing() && flashing_.IsInvalid())
-    return false;
-
-  primitive_slot_ = EmitGeometryInternal(*param->vertices);
+  /* The quad goes into the stream of the batch rather than into the batch of
+     the frame: the shader finds the parameters of the sprite by the ordinal
+     of the quad, so the stream has to hold nothing but sprite quads. */
+  PrimitiveEmitter& emitter = SpriteBatch::Get().emitter();
+  primitive_slot_ = EmitGeometryInternal(emitter);
   if (!primitive_slot_.count)
     return false;
 
@@ -331,52 +333,114 @@ bool Sprite::Prepare(DrawParam param) {
           glm::mat4(1.0f),
           glm::vec3(static_cast<float>(-ox_), static_cast<float>(-oy_), 0.0f));
 
-  UniformManager& uniforms = UniformManager::Get();
+  if (effect_) {
+    /* The shader of an Effect reads the transform of the node it belongs to
+       from the object set, so a sprite which owns one keeps the uniform it
+       always had and draws on its own. */
+    ObjectData object_data;
+    object_data.model_mat = transform;
+    object_slot_ = UniformManager::Get().object_uniforms().Acquire(object_data);
+    return object_slot_.chunk != UniformBlockPool::kInvalidChunk;
+  }
 
-  ObjectData object_data;
-  object_data.model_mat = transform;
-  object_slot_ = uniforms.object_uniforms().Acquire(object_data);
-  param_slot_ = uniforms.sprite_uniforms().Acquire(MakeParamInternal());
-
-  return object_slot_.chunk != UniformBlockPool::kInvalidChunk &&
-         param_slot_.chunk != UniformBlockPool::kInvalidChunk;
+  SpriteBatch::Get().SetParam(primitive_slot_.first,
+                              MakeParamInternal(transform));
+  return true;
 }
 
 bool Sprite::DoDraw(DrawParam param) {
-  UniformManager& uniforms = UniformManager::Get();
-  const UniformBlockPool::Chunk& object_chunk =
-      uniforms.object_uniforms().chunk(object_slot_.chunk);
-  const UniformBlockPool::Chunk& param_chunk =
-      uniforms.sprite_uniforms().chunk(param_slot_.chunk);
-
   if (effect_) {
+    UniformManager& uniforms = UniformManager::Get();
+    const UniformBlockPool::Chunk& object_chunk =
+        uniforms.object_uniforms().chunk(object_slot_.chunk);
+
     param->pass.SetPipeline(effect_->AcquirePipeline());
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
-    param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
+    param->pass.SetVertexBuffer(0, SpriteBatch::Get().emitter().buffer(), 0,
                                 WGPU_WHOLE_SIZE);
     param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
     return false;
   }
 
-  param->pass.SetPipeline(ShaderSet::Get().state.sprite.sprite_blends.at(
-      static_cast<BlendType>(blend_type_)));
+  SpriteBatch::Run& run = SpriteBatch::Get().run();
 
-  param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+  /* The run this sprite belongs to is the one its predecessor left open. The
+     vertices of the two are neighbours in the stream exactly when nothing
+     else was prepared between them, which the range check confirms: a run
+     which the predecessor opened but this sprite cannot extend is drawn now,
+     before this sprite opens the next one. */
+  const bool extends_run =
+      run.active && run.texture.get() == bitmap_.get() &&
+      run.blend_type == blend_type_ &&
+      run.scene.Get() == param->scene.Get() &&
+      run.end_vertex == primitive_slot_.first;
 
-  param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
-  param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
+  if (!extends_run) {
+    FlushSpriteBatch(param);
+    run.active = true;
+    run.texture = bitmap_;
+    run.blend_type = blend_type_;
+    run.scene = param->scene;
+    run.first_vertex = primitive_slot_.first;
+  }
 
-  param->pass.SetBindGroup(3, param_chunk.group, 1, &param_slot_.offset);
+  run.end_vertex = primitive_slot_.first + primitive_slot_.count;
 
-  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
-  param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
+  /* The last member of a run is the one whose successor cannot join it: it
+     closes the run, and the single draw the run became is issued here. */
+  if (!NextIsBatchable())
+    FlushSpriteBatch(param);
 
   return false;
 }
 
-SpriteBase::SpriteParam Sprite::MakeParamInternal() {
+bool Sprite::NextIsBatchable() {
+  if (effect_ || SpriteBatch::Get().disabled())
+    return false;
+
+  Drawable* next = NextDrawable();
+  if (!next)
+    return false;
+
+  Sprite* next_sprite = next->TryCast<Sprite>();
+  return next_sprite && next->visible() && next_sprite->CanBatchWith(*this);
+}
+
+bool Sprite::CanBatchWith(const Sprite& other) const {
+  if (effect_ || other.effect_)
+    return false;
+
+  if (!IsDrawableInternal())
+    return false;
+
+  return bitmap_.get() == other.bitmap_.get() &&
+         blend_type_ == other.blend_type_;
+}
+
+bool Sprite::IsDrawableInternal() const {
+  if (!Disposable::Check(bitmap_))
+    return false;
+
+  if (flashing_.IsFlashing() && flashing_.IsInvalid())
+    return false;
+
+  const RectI src = ClampSrcRectInternal();
+  return src.width > 0 && src.height > 0;
+}
+
+RectI Sprite::ClampSrcRectInternal() const {
+  const int32_t texture_width = bitmap_->size().x;
+  const int32_t texture_height = bitmap_->size().y;
+
+  RectI src = src_rect_->data;
+  src.width = std::clamp(src.width, 0, std::max(0, texture_width - src.x));
+  src.height = std::clamp(src.height, 0, std::max(0, texture_height - src.y));
+  return src;
+}
+
+SpriteParam Sprite::MakeParamInternal(const glm::mat4& transform) {
   glm::vec4 blend_color = color_->Normalize();
   glm::vec4 flash_color = flashing_.GetColor();
   if (flashing_.IsFlashing())
@@ -386,7 +450,8 @@ SpriteBase::SpriteParam Sprite::MakeParamInternal() {
       static_cast<float>(std::max(1, bitmap_->size().y));
   const RectI src = src_rect_->data;
 
-  SpriteBase::SpriteParam param = {};
+  SpriteParam param;
+  param.model_mat = transform;
   param.blend_color = blend_color;
   param.blend_tone = tone_->Normalize();
   param.bush_depth =
@@ -400,9 +465,7 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
   const int32_t texture_width = bitmap_->size().x;
   const int32_t texture_height = bitmap_->size().y;
 
-  RectI src = src_rect_->data;
-  src.width = std::clamp(src.width, 0, std::max(0, texture_width - src.x));
-  src.height = std::clamp(src.height, 0, std::max(0, texture_height - src.y));
+  RectI src = ClampSrcRectInternal();
   if (src.width == 0 || src.height == 0)
     return {};
 

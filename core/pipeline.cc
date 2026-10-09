@@ -128,19 +128,57 @@ void main() {
 }
 )";
 
-const char kFS_SpriteBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
+const char kVS_SpriteBatch[] = R"(#version 450
+layout(location = 0) in vec4 in_position;
+layout(location = 1) in vec2 in_texcoord;
+layout(location = 2) in vec4 in_color;
 
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
+layout(set = 0, binding = 0) uniform SceneData {
+  mat4 view_proj_mat;
+} u_scene;
 
-layout(set = 3, binding = 0) uniform SpriteParam {
+struct SpriteParam {
+  mat4 model_mat;
   vec4 blend_color;
   vec4 blend_tone;
   float bush_depth;
   float bush_opacity;
+};
+
+layout(std430, set = 1, binding = 0) readonly buffer SpriteParamArray {
+  SpriteParam params[];
 } u_sprite;
+
+layout(location = 0) out vec2 v_texcoord;
+layout(location = 1) out vec4 v_color;
+layout(location = 2) flat out vec4 v_blend_color;
+layout(location = 3) flat out vec4 v_blend_tone;
+layout(location = 4) flat out float v_bush_depth;
+layout(location = 5) flat out float v_bush_opacity;
+
+void main() {
+  SpriteParam param = u_sprite.params[gl_VertexIndex / 6];
+
+  gl_Position = u_scene.view_proj_mat * param.model_mat * in_position;
+  v_texcoord = in_texcoord;
+  v_color = in_color;
+  v_blend_color = param.blend_color;
+  v_blend_tone = param.blend_tone;
+  v_bush_depth = param.bush_depth;
+  v_bush_opacity = param.bush_opacity;
+}
+)";
+
+const char kFS_SpriteBatch[] = R"(#version 450
+layout(location = 0) in vec2 v_texcoord;
+layout(location = 1) in vec4 v_color;
+layout(location = 2) flat in vec4 v_blend_color;
+layout(location = 3) flat in vec4 v_blend_tone;
+layout(location = 4) flat in float v_bush_depth;
+layout(location = 5) flat in float v_bush_opacity;
+
+layout(set = 2, binding = 0) uniform texture2D u_texture;
+layout(set = 2, binding = 1) uniform sampler u_sampler;
 
 layout(location = 0) out vec4 o_color;
 
@@ -153,10 +191,10 @@ vec4 apply_tint(vec4 color, vec4 blend_color, vec4 blend_tone) {
 
 void main() {
   vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord);
-  vec4 result = apply_tint(color, u_sprite.blend_color, u_sprite.blend_tone);
+  vec4 result = apply_tint(color, v_blend_color, v_blend_tone);
 
-  float under_bush = v_texcoord.y > u_sprite.bush_depth ? 0.0 : 1.0;
-  result *= clamp(u_sprite.bush_opacity + under_bush, 0.0, 1.0);
+  float under_bush = v_texcoord.y > v_bush_depth ? 0.0 : 1.0;
+  result *= clamp(v_bush_opacity + under_bush, 0.0, 1.0);
 
   o_color = result * v_color;
 }
@@ -420,10 +458,9 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   size_t position = 0;
   while (position < view.size()) {
     const size_t separator = view.find_first_of(";,", position);
-    const std::string_view field =
-        Trim(view.substr(position, separator == std::string_view::npos
-                                       ? std::string_view::npos
-                                       : separator - position));
+    const std::string_view field = Trim(view.substr(
+        position, separator == std::string_view::npos ? std::string_view::npos
+                                                      : separator - position));
     position =
         separator == std::string_view::npos ? view.size() : separator + 1;
     if (field.empty())
@@ -431,9 +468,10 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
 
     const size_t equal = field.find('=');
     if (equal == std::string_view::npos)
-      throw Exception(Exception::kRGSSError,
-                      "effect: '{}' is not a blend field of the form 'key=value'",
-                      std::string(field));
+      throw Exception(
+          Exception::kRGSSError,
+          "effect: '{}' is not a blend field of the form 'key=value'",
+          std::string(field));
 
     const std::string key = Lower(Trim(field.substr(0, equal)));
     const std::string value = Lower(Trim(field.substr(equal + 1)));
@@ -451,8 +489,7 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
       state.alpha.srcFactor = ReadBlendFactor(value);
     else if (key == "dst_alpha" || key == "alpha_dst")
       state.alpha.dstFactor = ReadBlendFactor(value);
-    else if (key == "op_alpha" || key == "alpha_op" ||
-             key == "equal_alpha")
+    else if (key == "op_alpha" || key == "alpha_op" || key == "equal_alpha")
       state.alpha.operation = ReadBlendOperation(value);
     else
       throw Exception(Exception::kRGSSError,
@@ -478,7 +515,7 @@ TintBase::TintBase()
     : Pipeline(kVS_TransformBase, kFS_TintBase, {{0, 1, 2}}, {1}) {}
 
 SpriteBase::SpriteBase()
-    : Pipeline(kVS_TransformBase, kFS_SpriteBase, {{0, 1, 2}}, {1, 3}) {}
+    : Pipeline(kVS_SpriteBatch, kFS_SpriteBatch, {{0, 1, 2}}) {}
 
 PlaneBase::PlaneBase()
     : Pipeline(kVS_TransformBase, kFS_PlaneBase, {{0, 1, 2}}, {1}) {}
@@ -514,19 +551,23 @@ ShaderSet::ShaderSet() : shader() {
       primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
 
   for (BlendType type : blend_types)
-    state.geometry.geometry_blends[type] = shader.texture_base_dynamic.MakeState(
-        primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+    state.geometry.geometry_blends[type] =
+        shader.texture_base_dynamic.MakeState(
+            primitive, *depth_stencil,
+            {wgpu::ColorTargetState{.format = target,
+                                    .blend = GetBlendState(type)}});
 
   for (BlendType type : blend_types)
     state.viewport.tint_blends[type] = shader.tint_base.MakeState(
         primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+        {wgpu::ColorTargetState{.format = target,
+                                .blend = GetBlendState(type)}});
 
   for (BlendType type : blend_types)
     state.window.tint_blends[type] = shader.tint_base.MakeState(
         primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+        {wgpu::ColorTargetState{.format = target,
+                                .blend = GetBlendState(type)}});
   state.window.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(
       primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
@@ -543,12 +584,14 @@ ShaderSet::ShaderSet() : shader() {
   for (BlendType type : blend_types)
     state.sprite.sprite_blends[type] = shader.sprite_base.MakeState(
         primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+        {wgpu::ColorTargetState{.format = target,
+                                .blend = GetBlendState(type)}});
 
   for (BlendType type : blend_types)
     state.plane.plane_blends[type] = shader.plane_base.MakeState(
         primitive, *depth_stencil,
-        {wgpu::ColorTargetState{.format = target, .blend = GetBlendState(type)}});
+        {wgpu::ColorTargetState{.format = target,
+                                .blend = GetBlendState(type)}});
 
   state.tilemap.texture_dynamic_pma = shader.texture_base_dynamic.MakeState(
       primitive, *depth_stencil,
