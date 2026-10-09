@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Mouse  (core/mouse.h:38-82)
+// Mouse  (core/mouse.h:38-120)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Mouse_Update) {
@@ -67,6 +67,33 @@ RB_FUNC(Mouse_SetPosition) {
 
     urge::Mouse::Get().SetPosition(static_cast<float>(x),
         static_cast<float>(y));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_DeltaX) {
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return rb_float_new(urge::Mouse::Get().DeltaX());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_DeltaY) {
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return rb_float_new(urge::Mouse::Get().DeltaY());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_FlushDelta) {
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    urge::Mouse::Get().FlushDelta();
   }
   EXC_END;
   return Qnil;
@@ -203,6 +230,82 @@ RB_FUNC(Mouse_VisibleEqual) {
   return Qnil;
 }
 
+RB_FUNC(Mouse_Relative) {
+  EXC_BEGIN {
+    return (*urge::Mouse::Get().Attr_Relative()) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_RelativeEqual) {
+  bool value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "b", &value);
+    urge::Mouse::Get().Attr_Relative(value != 0);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_Grab) {
+  EXC_BEGIN {
+    return (*urge::Mouse::Get().Attr_Grab()) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_GrabEqual) {
+  bool value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "b", &value);
+    urge::Mouse::Get().Attr_Grab(value != 0);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_Raw) {
+  EXC_BEGIN {
+    return (*urge::Mouse::Get().Attr_Raw()) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_RawEqual) {
+  bool value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "b", &value);
+    urge::Mouse::Get().Attr_Raw(value != 0);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_SpeedScale) {
+  EXC_BEGIN {
+    return rb_float_new((*urge::Mouse::Get().Attr_SpeedScale()));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mouse_SpeedScaleEqual) {
+  double value = {};
+
+  EXC_BEGIN {
+    ParseArgs(argc, argv, "f", &value);
+    urge::Mouse::Get().Attr_SpeedScale(static_cast<float>(value));
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitMouseBindingAppend(VALUE mod);
 
 void InitMouseBinding() {
@@ -212,6 +315,9 @@ void InitMouseBinding() {
   DefineModuleFunction(mod, "x", Mouse_X);
   DefineModuleFunction(mod, "y", Mouse_Y);
   DefineModuleFunction(mod, "set_position", Mouse_SetPosition);
+  DefineModuleFunction(mod, "delta_x", Mouse_DeltaX);
+  DefineModuleFunction(mod, "delta_y", Mouse_DeltaY);
+  DefineModuleFunction(mod, "flush_delta", Mouse_FlushDelta);
   DefineModuleFunction(mod, "down?", Mouse_IsDown);
   DefineModuleFunction(mod, "up?", Mouse_IsUp);
   DefineModuleFunction(mod, "double?", Mouse_IsDouble);
@@ -224,6 +330,14 @@ void InitMouseBinding() {
   DefineModuleFunction(mod, "capture=", Mouse_CaptureEqual);
   DefineModuleFunction(mod, "visible", Mouse_Visible);
   DefineModuleFunction(mod, "visible=", Mouse_VisibleEqual);
+  DefineModuleFunction(mod, "relative", Mouse_Relative);
+  DefineModuleFunction(mod, "relative=", Mouse_RelativeEqual);
+  DefineModuleFunction(mod, "grab", Mouse_Grab);
+  DefineModuleFunction(mod, "grab=", Mouse_GrabEqual);
+  DefineModuleFunction(mod, "raw", Mouse_Raw);
+  DefineModuleFunction(mod, "raw=", Mouse_RawEqual);
+  DefineModuleFunction(mod, "speed_scale", Mouse_SpeedScale);
+  DefineModuleFunction(mod, "speed_scale=", Mouse_SpeedScaleEqual);
   InitMouseBindingAppend(mod);
 }
 // --- GENERATED END ---

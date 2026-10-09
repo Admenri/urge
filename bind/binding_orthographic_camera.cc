@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// OrthographicCamera  (core/camera.h:128-138)
+// OrthographicCamera  (core/camera.h:89-99)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(OrthographicCamera, Camera);

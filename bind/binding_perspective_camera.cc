@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// PerspectiveCamera  (core/camera.h:99-109)
+// PerspectiveCamera  (core/camera.h:67-77)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(PerspectiveCamera, Camera);

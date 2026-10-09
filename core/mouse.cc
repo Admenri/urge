@@ -24,6 +24,8 @@
 
 #include <cmath>
 
+#include "SDL3/SDL_hints.h"
+
 #include "core/graphics.h"
 #include "core/palette.h"
 
@@ -68,7 +70,14 @@ void Mouse::Update() {
     buttons_[button].clicks = raw_clicks_[button];
   }
 
-  moved_ = position_.x != last_position_.x || position_.y != last_position_.y;
+  /* This frame's motion is what arrived since the last call. Under relative
+     mode the cursor is pinned, so the position stops changing and the raw
+     displacement is the only thing left that says the mouse moved. */
+  delta_ = raw_delta_;
+  raw_delta_ = Point{};
+
+  moved_ = position_.x != last_position_.x || position_.y != last_position_.y ||
+           delta_.x != 0.0f || delta_.y != 0.0f;
   last_position_ = position_;
 
   scroll_delta_ = Point{scroll_.x - last_scroll_.x, scroll_.y - last_scroll_.y};
@@ -88,10 +97,23 @@ void Mouse::SetPosition(float x, float y) {
   if (!window)
     return;
 
-  const Point position = ScreenToWindowInternal(Point{x, y});
-  SDL_WarpMouseInWindow(window, position.x, position.y);
+  const Point target = ScreenToWindowInternal(Point{x, y});
+  SDL_WarpMouseInWindow(window, target.x, target.y);
 
-  position_ = position;
+  position_ = target;
+}
+
+float Mouse::DeltaX() {
+  return WindowToScreenDeltaInternal(delta_).x;
+}
+
+float Mouse::DeltaY() {
+  return WindowToScreenDeltaInternal(delta_).y;
+}
+
+void Mouse::FlushDelta() {
+  raw_delta_ = Point{};
+  delta_ = Point{};
 }
 
 bool Mouse::IsDown(int32_t button) {
@@ -180,13 +202,83 @@ ATTR_DEF(Mouse, bool, Visible) {
   return SDL_CursorVisible();
 }
 
+ATTR_DEF(Mouse, bool, Relative) {
+  if (value.has_value()) {
+    SDL_Window* window = Graphics::Get().window();
+    if (window && SDL_SetWindowRelativeMouseMode(window, *value)) {
+      relative_ = *value;
+
+      /* Neither the switch nor the spot the backend parked the cursor on is
+         motion the user made, so drop it rather than let it whip the camera. */
+      raw_delta_ = Point{};
+      delta_ = Point{};
+
+      if (!relative_)
+        SyncPositionFromSystemInternal();
+    }
+    return std::nullopt;
+  }
+
+  return relative_;
+}
+
+ATTR_DEF(Mouse, bool, Grab) {
+  if (value.has_value()) {
+    SDL_Window* window = Graphics::Get().window();
+    if (window && SDL_SetWindowMouseGrab(window, *value))
+      grab_ = *value;
+    return std::nullopt;
+  }
+
+  return grab_;
+}
+
+ATTR_DEF(Mouse, bool, Raw) {
+  if (value.has_value()) {
+    raw_ = *value;
+    SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE, raw_ ? "0" : "1");
+    return std::nullopt;
+  }
+
+  return raw_;
+}
+
+ATTR_DEF(Mouse, float, SpeedScale) {
+  if (value.has_value()) {
+    speed_scale_ = *value;
+
+    char text[32] = {};
+    SDL_snprintf(text, sizeof(text), "%f", static_cast<double>(speed_scale_));
+    SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SPEED_SCALE, text);
+    return std::nullopt;
+  }
+
+  return speed_scale_;
+}
+
 void Mouse::ProcessEvents(SDL_Event* event) {
   switch (event->type) {
     case SDL_EVENT_MOUSE_MOTION: {
       const SDL_MouseMotionEvent& motion = event->motion;
       position_ = Point{motion.x, motion.y};
+
+      /* Relative mode is the only place the displacement is worth keeping: the
+         backend reports the device motion straight, and it drops the motion a
+         warp would otherwise fake (SDL_HINT_MOUSE_RELATIVE_WARP_MOTION is off
+         by default). Outside it, x/y already carries the movement, and a warp
+         from SetPosition() would land here looking like the user moved. */
+      if (relative_) {
+        raw_delta_.x += motion.xrel;
+        raw_delta_.y += motion.yrel;
+      }
       break;
     }
+
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+      /* The backend hands the cursor back while the window is away, so whatever
+         it reports on the way back is not motion the user made. */
+      raw_delta_ = Point{};
+      break;
 
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP: {
@@ -244,6 +336,32 @@ Mouse::Point Mouse::ScreenToWindowInternal(const Point& position) {
 
   return Point{position.x * window_width / screen_width,
                position.y * window_height / screen_height};
+}
+
+Mouse::Point Mouse::WindowToScreenDeltaInternal(const Point& delta) {
+  float window_width = 0.0f, window_height = 0.0f;
+  if (!WindowSizeInternal(Graphics::Get().window(), &window_width,
+                          &window_height))
+    return delta;
+
+  const float screen_width = static_cast<float>(Graphics::Get().Width());
+  const float screen_height = static_cast<float>(Graphics::Get().Height());
+  if (screen_width <= 0.0f || screen_height <= 0.0f)
+    return delta;
+
+  return Point{delta.x * screen_width / window_width,
+               delta.y * screen_height / window_height};
+}
+
+void Mouse::SyncPositionFromSystemInternal() {
+  if (!Graphics::Get().window())
+    return;
+
+  float x = 0.0f, y = 0.0f;
+  SDL_GetMouseState(&x, &y);
+
+  position_ = Point{x, y};
+  last_position_ = position_;
 }
 
 }  // namespace urge

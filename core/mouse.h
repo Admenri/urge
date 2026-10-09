@@ -58,6 +58,13 @@ class Mouse : public Singleton<Mouse> {
   URGE_BINDING()
   void SetPosition(float x, float y);
 
+  URGE_BINDING()
+  float DeltaX();
+  URGE_BINDING()
+  float DeltaY();
+  URGE_BINDING()
+  void FlushDelta();
+
   URGE_BINDING(Name : "down?")
   bool IsDown(int32_t button);
   URGE_BINDING(Name : "up?")
@@ -82,6 +89,15 @@ class Mouse : public Singleton<Mouse> {
   URGE_BINDING()
   ATTR(bool, Visible);
 
+  URGE_BINDING()
+  ATTR(bool, Relative);
+  URGE_BINDING()
+  ATTR(bool, Grab);
+  URGE_BINDING()
+  ATTR(bool, Raw);
+  URGE_BINDING()
+  ATTR(float, SpeedScale);
+
   void ProcessEvents(SDL_Event* event);
 
  private:
@@ -102,6 +118,14 @@ class Mouse : public Singleton<Mouse> {
   static Point WindowToScreenInternal(const Point& position);
   static Point ScreenToWindowInternal(const Point& position);
 
+  /*! Scales a displacement the way WindowToScreenInternal scales a position,
+      so DeltaX()/DeltaY() stay in the unit X()/Y() use. */
+  static Point WindowToScreenDeltaInternal(const Point& delta);
+
+  /*! Re-reads the cursor from the system. Called when relative mode is left,
+      where the cached position no longer describes where the cursor is. */
+  void SyncPositionFromSystemInternal();
+
   std::array<bool, kButtonCount> raw_pressed_ = {};
   std::array<int32_t, kButtonCount> raw_clicks_ = {};
   std::array<ButtonState, kButtonCount> buttons_ = {};
@@ -111,7 +135,13 @@ class Mouse : public Singleton<Mouse> {
   Point scroll_;
   Point last_scroll_;
   Point scroll_delta_;
+  Point delta_;
+  Point raw_delta_;
   bool capture_ = false;
+  bool relative_ = false;
+  bool grab_ = false;
+  bool raw_ = true;
+  float speed_scale_ = 1.0f;
   SDL_Cursor* cursor_ = nullptr;
 };
 

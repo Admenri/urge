@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-09T10:47:05Z",
+    "generated_at": "2026-10-09T12:58:19Z",
     "source_headers": [
       "core/audio.h",
       "core/audio_service.h",
@@ -1133,7 +1133,7 @@
     },
     {
       "unsupported": [],
-      "export": "core/mouse.h:38-82",
+      "export": "core/mouse.h:38-120",
       "cpp_name": "Mouse",
       "cpp_parent": "Singleton",
       "header": "core/mouse.h",
@@ -1150,7 +1150,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "x",
@@ -1161,7 +1161,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "y",
@@ -1172,7 +1172,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "set_position",
@@ -1194,7 +1194,40 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "delta_x",
+          "cpp_name": "DeltaX",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "delta_y",
+          "cpp_name": "DeltaY",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "flush_delta",
+          "cpp_name": "FlushDelta",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "down?",
@@ -1211,7 +1244,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "up?",
@@ -1228,7 +1261,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "double?",
@@ -1245,7 +1278,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "press?",
@@ -1262,7 +1295,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "move?",
@@ -1279,7 +1312,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "scroll_x",
@@ -1290,7 +1323,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "scroll_y",
@@ -1301,7 +1334,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "set_cursor",
@@ -1328,7 +1361,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "capture",
@@ -1341,7 +1374,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "capture=",
@@ -1361,7 +1394,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "visible",
@@ -1374,7 +1407,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
         },
         {
           "ruby_name": "visible=",
@@ -1394,7 +1427,139 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/mouse.h:38-82"
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "relative",
+          "cpp_name": "Relative",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "relative=",
+          "cpp_name": "Relative",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "grab",
+          "cpp_name": "Grab",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "grab=",
+          "cpp_name": "Grab",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "raw",
+          "cpp_name": "Raw",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "raw=",
+          "cpp_name": "Raw",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "bool",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "speed_scale",
+          "cpp_name": "SpeedScale",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "float",
+          "export": "core/mouse.h:38-120"
+        },
+        {
+          "ruby_name": "speed_scale=",
+          "cpp_name": "SpeedScale",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "float",
+          "export": "core/mouse.h:38-120"
         }
       ]
     },
@@ -6491,7 +6656,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/camera.h:50-60"
+          "export": "core/camera.h:37-47"
         }
       ],
       "initialize_copy": null,
@@ -6506,7 +6671,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:50-60"
+          "export": "core/camera.h:37-47"
         },
         {
           "name": "quaternion",
@@ -6517,7 +6682,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:50-60"
+          "export": "core/camera.h:37-47"
         },
         {
           "name": "scale",
@@ -6528,7 +6693,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:50-60"
+          "export": "core/camera.h:37-47"
         }
       ],
       "data_attributes": [],
@@ -6540,7 +6705,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/camera.h:50-60",
+      "export": "core/camera.h:37-47",
       "cpp_name": "Camera",
       "cpp_parent": "Object",
       "header": "core/camera.h",
@@ -6553,7 +6718,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/camera.h:128-138"
+          "export": "core/camera.h:89-99"
         }
       ],
       "initialize_copy": null,
@@ -6568,7 +6733,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:128-138"
+          "export": "core/camera.h:89-99"
         },
         {
           "name": "near",
@@ -6579,7 +6744,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:128-138"
+          "export": "core/camera.h:89-99"
         },
         {
           "name": "far",
@@ -6590,7 +6755,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:128-138"
+          "export": "core/camera.h:89-99"
         }
       ],
       "data_attributes": [],
@@ -6602,7 +6767,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/camera.h:128-138",
+      "export": "core/camera.h:89-99",
       "cpp_name": "OrthographicCamera",
       "cpp_parent": "Camera",
       "header": "core/camera.h",
@@ -6615,7 +6780,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/camera.h:99-109"
+          "export": "core/camera.h:67-77"
         }
       ],
       "initialize_copy": null,
@@ -6630,7 +6795,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:99-109"
+          "export": "core/camera.h:67-77"
         },
         {
           "name": "near",
@@ -6641,7 +6806,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:99-109"
+          "export": "core/camera.h:67-77"
         },
         {
           "name": "far",
@@ -6652,7 +6817,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/camera.h:99-109"
+          "export": "core/camera.h:67-77"
         }
       ],
       "data_attributes": [],
@@ -6664,7 +6829,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/camera.h:99-109",
+      "export": "core/camera.h:67-77",
       "cpp_name": "PerspectiveCamera",
       "cpp_parent": "Camera",
       "header": "core/camera.h",
