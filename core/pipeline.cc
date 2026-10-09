@@ -69,6 +69,25 @@ void main() {
 }
 )";
 
+const char kFS_TextureMaskBase[] = R"(#version 450
+layout(location = 0) in vec2 v_texcoord;
+layout(location = 1) in vec4 v_color;
+
+layout(set = 2, binding = 0) uniform texture2D u_texture;
+layout(set = 2, binding = 1) uniform sampler u_sampler;
+
+layout(set = 3, binding = 0) uniform texture2D u_mask_texture;
+layout(set = 3, binding = 1) uniform sampler u_mask_sampler;
+
+layout(location = 0) out vec4 o_color;
+
+void main() {
+  vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord);
+  float mask_alpha = texture(sampler2D(u_mask_texture, u_mask_sampler), v_texcoord).a;
+  o_color = color * mask_alpha * v_color;
+}
+)";
+
 const char kFS_PresentBase[] = R"(#version 450
 layout(location = 0) in vec2 v_texcoord;
 layout(location = 1) in vec4 v_color;
@@ -502,6 +521,9 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
 TextureBase::TextureBase()
     : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}) {}
 
+TextureMaskBase::TextureMaskBase()
+    : Pipeline(kVS_TransformBase, kFS_TextureMaskBase, {{0, 1, 2}}) {}
+
 PresentBase::PresentBase()
     : Pipeline(kVS_TransformBase, kFS_PresentBase, {{0, 1, 2}}) {}
 
@@ -535,6 +557,10 @@ ShaderSet::ShaderSet() : shader() {
                                               BLEND_ADDITION, BLEND_SUBTRACT};
 
   state.bitmap.texture_pma = shader.texture_base.MakeState(
+      primitive, *depth_stencil,
+      {wgpu::ColorTargetState{.format = target,
+                              .blend = GetBlendState(BLEND_NORMAL)}});
+  state.bitmap.texture_mask_pma = shader.texture_mask_base.MakeState(
       primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});

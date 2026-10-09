@@ -25,7 +25,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Palette  (core/palette.h:35-56)
+// Palette  (core/palette.h:35-58)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Palette, Disposable);
@@ -48,6 +48,20 @@ RB_FUNC(Palette_initialize) {
     }
   }
   EXC_END;
+  return SetupSelfData(self, obj.get());
+}
+
+RB_FUNC(Palette_initialize_copy) {
+  VALUE other;
+  ParseArgs(argc, argv, "o", &other);
+
+  urge::RefPtr<urge::Palette> obj = nullptr;
+  EXC_BEGIN {
+    auto other_obj = GetObject<urge::Palette>(other, kPaletteDataType);
+    obj = urge::MakeRefCounted<urge::Palette>(other_obj);
+  }
+  EXC_END;
+
   return SetupSelfData(self, obj.get());
 }
 
@@ -130,6 +144,7 @@ void InitPaletteBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kPaletteDataType>);
 
   DefineMethod(klass, "initialize", Palette_initialize);
+  DefineMethod(klass, "initialize_copy", Palette_initialize_copy);
   DefineMethod(klass, "get_pixel", Palette_GetPixel);
   DefineMethod(klass, "set_pixel", Palette_SetPixel);
   DefineMethod(klass, "to_dump", Palette_ToDump);

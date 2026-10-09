@@ -84,6 +84,11 @@ int main(int argc, char* argv[]) {
     config = new urge::Config(ini);
     urge::Config::Reset(config);
 
+    /* The switches the host was started with are recorded before anything can
+       read them: the binding mirrors them onto the RGSS `$DEBUG` / `$TEST` /
+       `$BTEST` globals, and a game may look for its own. */
+    config->SetCommandLine(argc, argv);
+
 // RTP reading
 #if defined(_WIN32)
     auto add_rtp = [&](std::string key) {

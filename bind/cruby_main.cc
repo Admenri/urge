@@ -40,6 +40,20 @@ using urge::Exception;
 
 namespace {
 
+/*! Mirrors the RGSS runtime switches onto the globals a game reads.  RGSS1
+    takes its debug mode from `debug`, RGSS2/3 take their test mode from
+    `test`, and `btest` is the battle test every version understands.  A
+    switch that is absent leaves its global alone, so `$TEST` / `$BTEST` stay
+    `nil` -- falsy -- exactly as a script that merely tests them expects. */
+void SetupRuntimeSwitches(const urge::Config& config) {
+  if (config.xp() && config.HasCommandLine("debug"))
+    rb_gv_set("DEBUG", Qtrue);
+  if (!config.xp() && config.HasCommandLine("test"))
+    rb_gv_set("TEST", Qtrue);
+  if (config.HasCommandLine("btest"))
+    rb_gv_set("BTEST", Qtrue);
+}
+
 static VALUE RGSSLoadData(const char* filename) {
   auto stream = urge::IOService::Get().OpenReadRaw(filename);
   size_t data_size = 0;
@@ -91,19 +105,39 @@ RB_FUNC(rgss_stop) {
   return Qnil;
 }
 
+// `load_data` / `save_data` reach the engine through `IOService`, which
+// reports a failure by throwing `urge::Exception` (a C++ exception).  Ruby's
+// `rescue` is tag based -- it only ever sees an exception raised with
+// `rb_raise` -- so a C++ exception unwinds straight through every Ruby frame,
+// past the script's own `begin/rescue`, and only stops at the host's outermost
+// `catch` in app.cc, which answers with an error message box.  The script
+// therefore cannot handle a missing file, and a game that probes for an
+// optional save file dies instead of rescuing.  `EXC_BEGIN`/`EXC_END` is the
+// binding layer's single conversion point: it turns the C++ exception into the
+// Ruby one `ProcessException` maps it to -- an IO error becomes `Errno::ENOENT`
+// -- so `rescue` works as it does for every other binding.  The helper
+// `RGSSLoadData` itself is left bare: the constructor calls it for the game's
+// own scripts, where a failure is fatal and must still reach the host.
 RB_FUNC(load_data) {
   const char* filename;
   ParseArgs(argc, argv, "z", &filename);
-  return RGSSLoadData(filename);
+  EXC_BEGIN {
+    return RGSSLoadData(filename);
+  }
+  EXC_END;
+  return Qnil;
 }
 
 RB_FUNC(save_data) {
   VALUE data;
   const char* filename;
   ParseArgs(argc, argv, "oz", &data, &filename);
-  auto stream = urge::IOService::Get().OpenWrite(filename);
-  VALUE dumped = rb_marshal_dump(data, Qnil);
-  SDL_SaveFile_IO(stream, RSTRING_PTR(dumped), RSTRING_LEN(dumped), true);
+  EXC_BEGIN {
+    auto stream = urge::IOService::Get().OpenWrite(filename);
+    VALUE dumped = rb_marshal_dump(data, Qnil);
+    SDL_SaveFile_IO(stream, RSTRING_PTR(dumped), RSTRING_LEN(dumped), true);
+  }
+  EXC_END;
   return Qnil;
 }
 
@@ -152,6 +186,9 @@ BindingMain::BindingMain() {
 
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
   rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
+
+  // The switches a game reads are in place before any script is evaluated.
+  SetupRuntimeSwitches(config);
 
   g_reset_exception = rb_define_class("RGSSReset", rb_eStandardError);
   g_rgss_exception = rb_define_class("RGSSError", rb_eStandardError);

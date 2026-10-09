@@ -329,6 +329,38 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   g_queue.Submit(1, &command);
 }
 
+void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
+                     RefPtr<Bitmap> src_bitmap,
+                     RefPtr<Rect> src_rect,
+                     RefPtr<Bitmap> mask) {
+  Disposable::Guard();
+
+  if (!dst_rect || !src_bitmap || !src_rect || !mask)
+    throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
+
+  const std::uint32_t vertex_count =
+      primitive_
+          .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
+                    glm::vec4(1.0f))
+          .Upload();
+
+  auto encoder = g_device.CreateCommandEncoder(nullptr);
+  auto pass = BeginRendering(encoder);
+  {
+    auto pipeline = ShaderSet::Get().state.bitmap.texture_mask_pma;
+    pass.SetPipeline(pipeline);
+    pass.SetBindGroup(0, scene_group_, 0, nullptr);
+    pass.SetBindGroup(1, object_group_, 0, nullptr);
+    pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
+    pass.SetBindGroup(3, mask->texture_group_, 0, nullptr);
+    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(vertex_count, 1, 0, 0);
+  }
+  pass.End();
+  auto command = encoder.Finish(nullptr);
+  g_queue.Submit(1, &command);
+}
+
 void Bitmap::FillRect(int32_t x,
                       int32_t y,
                       int32_t width,
@@ -472,8 +504,8 @@ void Bitmap::DrawText(int32_t x,
   if (!run)
     return;
 
-  const RectI composed =
-      AlignTextRect(RectI(x, y, width, height), run->size.x, run->size.y, align);
+  const RectI composed = AlignTextRect(RectI(x, y, width, height), run->size.x,
+                                       run->size.y, align);
   const RectI blit_region =
       MakeIntersect(composed, RectI(0, 0, size_.x, size_.y));
   if (!blit_region.width || !blit_region.height)
@@ -585,7 +617,8 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
   Disposable::Guard();
 
   if (!pixels || bytes_per_row < static_cast<uint32_t>(size_.x) * 4)
-    throw Exception(Exception::kRGSSError, "invalid pixel data for the bitmap.");
+    throw Exception(Exception::kRGSSError,
+                    "invalid pixel data for the bitmap.");
 
   wgpu::TexelCopyTextureInfo destination;
   destination.texture = texture_;

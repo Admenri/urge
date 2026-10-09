@@ -67,6 +67,14 @@ class TextureBase : public Pipeline {
   TextureBase();
 };
 
+/*! TextureBase with a second texture in set 3, whose sampled alpha scales the
+    one sampled from set 2.  The two textures share `v_texcoord`, so the mask
+    is read through the very coordinates the source was read through. */
+class TextureMaskBase : public Pipeline {
+ public:
+  TextureMaskBase();
+};
+
 class PresentBase : public Pipeline {
  public:
   PresentBase();
@@ -120,6 +128,7 @@ class TransitionVague : public Pipeline {
 struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     TextureBase texture_base;
+    TextureMaskBase texture_mask_base;
     PresentBase present_base;
     TextureBaseDynamic texture_base_dynamic;
     ColorBase color_base;
@@ -133,6 +142,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
   struct {
     struct {
       wgpu::RenderPipeline texture_pma;
+      wgpu::RenderPipeline texture_mask_pma;
       wgpu::RenderPipeline color_noblend;
     } bitmap;
 

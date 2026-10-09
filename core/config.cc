@@ -22,6 +22,7 @@
 
 #include "core/config.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -146,6 +147,20 @@ std::string Config::GetValue(std::string section,
 
 void Config::SetValue(std::string section, std::string key, std::string value) {
   parser_.Set(section, key, value);
+}
+
+void Config::SetCommandLine(int argc, char* argv[]) {
+  command_line.clear();
+  if (argc > 1)
+    command_line.reserve(static_cast<size_t>(argc) - 1);
+  for (int i = 1; i < argc; ++i)
+    if (argv[i])
+      command_line.emplace_back(argv[i]);
+}
+
+bool Config::HasCommandLine(const std::string& token) const {
+  return std::find(command_line.begin(), command_line.end(), token) !=
+         command_line.end();
 }
 
 void Config::Save() {

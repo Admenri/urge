@@ -66,6 +66,11 @@ class Bitmap : public Disposable {
                   RefPtr<Rect> src_rect,
                   int32_t opacity = 255);
   URGE_BINDING()
+  void MaskBlt(RefPtr<Rect> dst_rect,
+               RefPtr<Bitmap> src_bitmap,
+               RefPtr<Rect> src_rect,
+               RefPtr<Bitmap> mask);
+  URGE_BINDING()
   void FillRect(int32_t x,
                 int32_t y,
                 int32_t width,

@@ -51,6 +51,10 @@ Palette::Palette(std::string filename) {
   }
 }
 
+Palette::Palette(RefPtr<Palette> other) {
+  image_ = SDL_ConvertSurface(other->image_, kInternalPixelFormat);
+}
+
 Palette::~Palette() {
   Disposable::Dispose();
 }

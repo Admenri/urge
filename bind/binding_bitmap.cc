@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/bitmap.h:40-122)
+// Bitmap  (core/bitmap.h:40-127)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
@@ -157,6 +157,24 @@ RB_FUNC(Bitmap_StretchBlt) {
     } else {
       rb_raise(rb_eArgError, "%s", "wrong number of arguments");
     }
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Bitmap_MaskBlt) {
+  auto* self_obj = GetSelfData<urge::Bitmap>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 4);
+    VALUE dst_rect_val, src_bitmap_val, src_rect_val, mask_val;
+    ParseArgs(argc, argv, "oooo", &dst_rect_val, &src_bitmap_val, &src_rect_val,
+        &mask_val);
+
+    self_obj->MaskBlt(GetObject<urge::Rect>(dst_rect_val, kRectDataType),
+        GetObject<urge::Bitmap>(src_bitmap_val, kBitmapDataType),
+        GetObject<urge::Rect>(src_rect_val, kRectDataType),
+        GetObject<urge::Bitmap>(mask_val, kBitmapDataType));
   }
   EXC_END;
   return Qnil;
@@ -433,6 +451,7 @@ void InitBitmapBinding() {
   DefineMethod(klass, "rect", Bitmap_GetRect);
   DefineMethod(klass, "blt", Bitmap_Blt);
   DefineMethod(klass, "stretch_blt", Bitmap_StretchBlt);
+  DefineMethod(klass, "mask_blt", Bitmap_MaskBlt);
   DefineMethod(klass, "fill_rect", Bitmap_FillRect);
   DefineMethod(klass, "gradient_fill_rect", Bitmap_GradientFillRect);
   DefineMethod(klass, "clear", Bitmap_Clear);

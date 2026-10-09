@@ -41,6 +41,8 @@ class Palette : public Disposable {
   URGE_BINDING()
   Palette(std::string filename);
   URGE_BINDING()
+  Palette(RefPtr<Palette> other);
+  URGE_BINDING()
   ~Palette() override;
 
   URGE_BINDING()
