@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUPipelineLayoutDescriptor  (core/gpu.h:391-408)
+// GPUPipelineLayoutDescriptor  (core/gpu.h:392-409)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUPipelineLayoutDescriptor, GPUObject);

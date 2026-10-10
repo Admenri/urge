@@ -58,11 +58,6 @@ void LogMessage(LogLevel level,
   if (level >= LogLevel::kOff || level < GetLogLevel())
     return;
 
-  // With no arguments the string is a plain message rather than a format, so
-  // write it verbatim: formatting it would parse runtime text (an OS error, a
-  // Ruby exception) and MSVC would reject bytes that are invalid in the
-  // execution character set with "Invalid encoded character in format
-  // string.".  Same reasoning as core/exception.h.
   if constexpr (sizeof...(Args) == 0) {
     LogWrite(level, prefix, format);
   } else {

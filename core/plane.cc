@@ -193,8 +193,7 @@ bool Plane::DoDraw(DrawParam param) {
   param->pass.SetBindGroup(2, bitmap_->texture_group(), 0, nullptr);
   param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
 
-  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
-                              WGPU_WHOLE_SIZE);
+  param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
   param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);
 
   return false;

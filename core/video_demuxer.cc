@@ -95,8 +95,8 @@ struct OggChecksumTable {
     for (uint32_t i = 0; i < 256; ++i) {
       uint32_t value = i << 24;
       for (int32_t bit = 0; bit < 8; ++bit)
-        value = (value & 0x80000000u) ? ((value << 1) ^ 0x04c11db7u)
-                                      : (value << 1);
+        value =
+            (value & 0x80000000u) ? ((value << 1) ^ 0x04c11db7u) : (value << 1);
       values[i] = value;
     }
   }
@@ -106,8 +106,8 @@ uint32_t OggChecksum(const uint8_t* data, size_t size) {
   static const OggChecksumTable table;
   uint32_t checksum = 0;
   for (size_t i = 0; i < size; ++i)
-    checksum = (checksum << 8) ^
-               table.values[((checksum >> 24) & 0xffu) ^ data[i]];
+    checksum =
+        (checksum << 8) ^ table.values[((checksum >> 24) & 0xffu) ^ data[i]];
   return checksum;
 }
 
@@ -266,7 +266,9 @@ double ResolveFrameRate(const mkvparser::VideoTrack* track) {
   return 30.0;
 }
 
-std::string ResolveCodecName(const char* name) { return name ? name : ""; }
+std::string ResolveCodecName(const char* name) {
+  return name ? name : "";
+}
 
 }  // namespace
 
@@ -368,8 +370,7 @@ bool VideoDemuxer::Open(const std::string& filename) {
       kernel->audio = audio;
       info_.audio_track = static_cast<int32_t>(audio->GetNumber());
       info_.audio_channels = static_cast<int32_t>(audio->GetChannels());
-      info_.audio_sample_rate =
-          static_cast<int32_t>(audio->GetSamplingRate());
+      info_.audio_sample_rate = static_cast<int32_t>(audio->GetSamplingRate());
       info_.audio_codec = codec;
       info_.audio_codec_name = ResolveCodecName(audio->GetCodecNameAsUTF8());
       info_.has_audio = true;
@@ -461,8 +462,9 @@ std::vector<uint8_t> VideoDemuxer::ExtractAudio() {
   }
 
   if (sample_rate > 0.0)
-    granule = std::max(granule, static_cast<int64_t>(std::llround(
-                                    info_.duration * sample_rate)));
+    granule = std::max(
+        granule,
+        static_cast<int64_t>(std::llround(info_.duration * sample_rate)));
   writer.Finish(granule);
   return writer.Take();
 }

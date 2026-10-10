@@ -688,7 +688,7 @@ wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
       .depthStencilAttachment = &depth_stencil_attachment,
   };
   return encoder.BeginRenderPass(&pass_desc);
-}  // namespace urge
+}
 
 void Bitmap::DisposeObject() {}
 

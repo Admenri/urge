@@ -110,9 +110,6 @@ void SpriteBatch::EnsureParamBuffer(std::size_t bytes) {
     return;
   }
 
-  /* The array is read as a whole, so the binding covers the buffer rather
-     than one element of it, and the shader is free to index any quad of the
-     frame with it. */
   util::BufferSet binding(param_buffer_, 0, size);
 
   param_group_ =

@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUQuerySet  (core/gpu.h:840-848)
+// GPUQuerySet  (core/gpu.h:844-852)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUQuerySet, GPUObject);

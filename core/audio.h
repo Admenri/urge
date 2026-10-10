@@ -103,7 +103,6 @@ class Audio : public Singleton<Audio> {
   AudioService* service() { return service_.get(); }
 
  private:
-
   void ApplyVolumes();
 
   std::unique_ptr<AudioService> service_;

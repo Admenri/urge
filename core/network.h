@@ -128,7 +128,9 @@ URGE_BINDING()
 class Fetch : public Object {
  public:
   URGE_BINDING()
-  Fetch(std::string url, std::string method = "GET", std::string body = "",
+  Fetch(std::string url,
+        std::string method = "GET",
+        std::string body = "",
         std::vector<std::string> headers = {});
   URGE_BINDING()
   ~Fetch() override;
@@ -192,7 +194,8 @@ class Network : public Singleton<Network> {
   RefPtr<WebSocket> OpenWebSocket(std::string url,
                                   std::vector<std::string> protocols = {});
   URGE_BINDING(Name : "fetch")
-  RefPtr<Fetch> OpenFetch(std::string url, std::string method = "GET",
+  RefPtr<Fetch> OpenFetch(std::string url,
+                          std::string method = "GET",
                           std::string body = "",
                           std::vector<std::string> headers = {});
 

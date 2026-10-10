@@ -84,7 +84,7 @@ const glm::vec2 kAutotileSrcRegular[48][4] = {
     {{0.0f, 0.0f}, {0.5f, 0.0f}, {0.0f, 0.5f}, {0.5f, 0.5f}},
 };
 
-}  // namespace
+}
 
 TilemapXPAbove::TilemapXPAbove(TilemapXP* parent,
                                RefPtr<Viewport> viewport,

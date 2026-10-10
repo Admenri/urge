@@ -44,7 +44,9 @@ namespace urge {
 
 namespace {
 
-std::size_t OnWrite(char* data, std::size_t size, std::size_t count,
+std::size_t OnWrite(char* data,
+                    std::size_t size,
+                    std::size_t count,
                     void* user) {
   auto* out = static_cast<std::string*>(user);
   const std::size_t total = size * count;
@@ -52,7 +54,9 @@ std::size_t OnWrite(char* data, std::size_t size, std::size_t count,
   return total;
 }
 
-std::size_t OnHeader(char* data, std::size_t size, std::size_t count,
+std::size_t OnHeader(char* data,
+                     std::size_t size,
+                     std::size_t count,
                      void* user) {
   auto* out = static_cast<std::vector<std::string>*>(user);
   const std::size_t total = size * count;
@@ -68,7 +72,8 @@ RefPtr<NetworkEvent> MakeEvent(int32_t type) {
 
 class CurlWebSocketImpl final : public WebSocketImpl {
  public:
-  CurlWebSocketImpl(NetworkBackend* backend, std::string url,
+  CurlWebSocketImpl(NetworkBackend* backend,
+                    std::string url,
                     std::vector<std::string> protocols)
       : backend_(backend),
         url_(std::move(url)),
@@ -189,8 +194,6 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     outgoing_.push_back(Outgoing{std::move(data), flags});
   }
 
-  /* Control frames are produced by the worker itself, so they bypass the
-     open-state check the public senders go through. */
   void QueueControl(std::string data, unsigned int flags) {
     std::lock_guard<std::mutex> lock(mutex_);
     outgoing_.push_back(Outgoing{std::move(data), flags});
@@ -222,8 +225,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
       std::size_t sent = 0;
       const CURLcode code =
           curl_ws_send(handle, item.data.data(), item.data.size(), &sent,
-                       static_cast<curl_off_t>(item.data.size()),
-                       item.flags);
+                       static_cast<curl_off_t>(item.data.size()), item.flags);
       if (code == CURLE_AGAIN) {
         std::lock_guard<std::mutex> lock(mutex_);
         outgoing_.push_front(std::move(item));
@@ -237,11 +239,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     }
   }
 
-  void HandleFrame(const std::string& chunk,
-                   const struct curl_ws_frame* meta) {
-    /* In CONNECT_ONLY mode libcurl hands the PING to the reader and leaves the
-       PONG to it, so it is queued like any other send and retried by the
-       drainer when the socket is not ready yet. */
+  void HandleFrame(const std::string& chunk, const struct curl_ws_frame* meta) {
     if (meta->flags & CURLWS_PING) {
       QueueControl(chunk, CURLWS_PONG);
       return;
@@ -264,9 +262,6 @@ class CurlWebSocketImpl final : public WebSocketImpl {
       return;
     }
 
-    /* curl reports the message type on every transport chunk of the same
-       message, so the split is driven by whether a message is already open and
-       by the continuation bit -- not by the type bits alone. */
     if (meta->flags & CURLWS_CONT) {
       if (!in_message_)
         return;
@@ -311,10 +306,6 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     curl_easy_setopt(handle, CURLOPT_CONNECT_ONLY, 2L);
     curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
 
-    /* Without this libcurl answers a PING on its own the first time it happens
-       to run -- a timing the reader does not control -- and never hands the
-       frame over.  Detaching the answer puts the PING in the queue like any
-       other event, and the reply goes out through the same drainer. */
     curl_easy_setopt(handle, CURLOPT_WS_OPTIONS, (long)CURLWS_NOAUTOPONG);
 
     curl_slist* request_headers = nullptr;
@@ -386,15 +377,11 @@ class CurlWebSocketImpl final : public WebSocketImpl {
       if (ready < 0)
         break;
 
-      /* The recv runs whatever select said: libcurl flushes work it owes the
-         peer -- the answer to a PING above all -- on the next socket call, and
-         a loop that only calls into curl when the socket is readable would
-         leave that answer sitting in the buffers. */
       for (;;) {
         std::size_t received = 0;
         const struct curl_ws_frame* meta = nullptr;
-        const CURLcode code =
-            curl_ws_recv(handle, buffer.data(), buffer.size(), &received, &meta);
+        const CURLcode code = curl_ws_recv(handle, buffer.data(), buffer.size(),
+                                           &received, &meta);
         if (code == CURLE_AGAIN)
           break;
         if (code != CURLE_OK) {
@@ -447,7 +434,9 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
 class CurlFetchImpl final : public FetchImpl {
  public:
-  CurlFetchImpl(std::string url, std::string method, std::string body,
+  CurlFetchImpl(std::string url,
+                std::string method,
+                std::string body,
                 std::vector<std::string> headers)
       : url_(std::move(url)),
         method_(std::move(method)),
@@ -484,8 +473,8 @@ class CurlFetchImpl final : public FetchImpl {
     self.error_ = std::move(result_error_);
     self.headers_ = std::move(result_headers_);
     self.done_ = true;
-    self.success_ = result_error_.empty() && result_status_ >= 200 &&
-                    result_status_ < 300;
+    self.success_ =
+        result_error_.empty() && result_status_ >= 200 && result_status_ < 300;
     self.progress_ = 1.0f;
 
     finished_ = false;
@@ -658,7 +647,8 @@ class CurlNetworkBackend final : public NetworkBackend {
     return socket;
   }
 
-  RefPtr<Fetch> OpenFetch(const std::string& url, const std::string& method,
+  RefPtr<Fetch> OpenFetch(const std::string& url,
+                          const std::string& method,
                           const std::string& body,
                           const std::vector<std::string>& headers) override {
     auto fetch = MakeRefCounted<Fetch>(url, method, body, headers);

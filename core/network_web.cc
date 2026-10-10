@@ -44,12 +44,10 @@ RefPtr<NetworkEvent> MakeEvent(int32_t type) {
   return event;
 }
 
-/* The browser delivers every WebSocket callback on the main thread, so there
-   is no worker here: the callbacks write into the same worker queue the native
-   backend fills, and `Swap` moves it across exactly as it does there. */
 class WebWebSocketImpl final : public WebSocketImpl {
  public:
-  WebWebSocketImpl(NetworkBackend* backend, std::string url,
+  WebWebSocketImpl(NetworkBackend* backend,
+                   std::string url,
                    std::vector<std::string> protocols)
       : backend_(backend),
         url_(std::move(url)),
@@ -128,7 +126,9 @@ class WebWebSocketImpl final : public WebSocketImpl {
     return event;
   }
 
-  int32_t Pending() override { return static_cast<int32_t>(main_queue_.size()); }
+  int32_t Pending() override {
+    return static_cast<int32_t>(main_queue_.size());
+  }
 
   void SendText(const std::string& data) override {
     if (ready_state_ != WebSocket::OpenState)
@@ -141,8 +141,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
     if (ready_state_ != WebSocket::OpenState)
       return;
 
-    emscripten_websocket_send_binary(socket_,
-                                     const_cast<char*>(data.data()),
+    emscripten_websocket_send_binary(socket_, const_cast<char*>(data.data()),
                                      static_cast<uint32_t>(data.size()));
   }
 
@@ -182,7 +181,8 @@ class WebWebSocketImpl final : public WebSocketImpl {
     return true;
   }
 
-  static bool OnMessage(int, const EmscriptenWebSocketMessageEvent* event,
+  static bool OnMessage(int,
+                        const EmscriptenWebSocketMessageEvent* event,
                         void* user) {
     auto* self = static_cast<WebWebSocketImpl*>(user);
     if (self->stopped_)
@@ -192,7 +192,8 @@ class WebWebSocketImpl final : public WebSocketImpl {
     return true;
   }
 
-  static bool OnClose(int, const EmscriptenWebSocketCloseEvent* event,
+  static bool OnClose(int,
+                      const EmscriptenWebSocketCloseEvent* event,
                       void* user) {
     auto* self = static_cast<WebWebSocketImpl*>(user);
     if (self->stopped_)
@@ -270,7 +271,9 @@ class WebWebSocketImpl final : public WebSocketImpl {
 
 class WebFetchImpl final : public FetchImpl {
  public:
-  WebFetchImpl(std::string url, std::string method, std::string body,
+  WebFetchImpl(std::string url,
+               std::string method,
+               std::string body,
                std::vector<std::string> headers)
       : url_(std::move(url)),
         method_(std::move(method)),
@@ -457,7 +460,8 @@ class WebNetworkBackend final : public NetworkBackend {
     return socket;
   }
 
-  RefPtr<Fetch> OpenFetch(const std::string& url, const std::string& method,
+  RefPtr<Fetch> OpenFetch(const std::string& url,
+                          const std::string& method,
                           const std::string& body,
                           const std::vector<std::string>& headers) override {
     auto fetch = MakeRefCounted<Fetch>(url, method, body, headers);

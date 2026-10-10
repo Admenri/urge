@@ -62,7 +62,8 @@ Image::Image(std::string filename) {
       });
 
   if (!image_)
-    throw Exception(Exception::kRGSSError, "failed to load image: {}", filename);
+    throw Exception(Exception::kRGSSError, "failed to load image: {}",
+                    filename);
 
   if (image_->format != kInternalPixelFormat) {
     auto* converted_image = SDL_ConvertSurface(image_, kInternalPixelFormat);
@@ -184,8 +185,7 @@ void Image::StretchBlt(RefPtr<Rect> dst_rect,
   SDL_BlendMode previous_blend = SDL_BLENDMODE_NONE;
   SDL_GetSurfaceBlendMode(source, &previous_blend);
 
-  const Uint8 alpha =
-      static_cast<Uint8>(std::clamp(opacity, 0, 255));
+  const Uint8 alpha = static_cast<Uint8>(std::clamp(opacity, 0, 255));
   SDL_SetSurfaceAlphaMod(source, alpha);
   SDL_SetSurfaceBlendMode(source, SDL_BLENDMODE_BLEND);
 
@@ -225,19 +225,19 @@ void Image::GradientFillRect(int32_t x,
 
   for (int32_t i = 0; i < steps; ++i) {
     const float t = steps > 1 ? static_cast<float>(i) / divisor : 0.0f;
-    const Uint32 color = SDL_MapRGBA(
-        details, nullptr,
-        static_cast<Uint8>(color1->data.r +
-                           (color2->data.r - color1->data.r) * t),
-        static_cast<Uint8>(color1->data.g +
-                           (color2->data.g - color1->data.g) * t),
-        static_cast<Uint8>(color1->data.b +
-                           (color2->data.b - color1->data.b) * t),
-        static_cast<Uint8>(color1->data.a +
-                           (color2->data.a - color1->data.a) * t));
+    const Uint32 color =
+        SDL_MapRGBA(details, nullptr,
+                    static_cast<Uint8>(color1->data.r +
+                                       (color2->data.r - color1->data.r) * t),
+                    static_cast<Uint8>(color1->data.g +
+                                       (color2->data.g - color1->data.g) * t),
+                    static_cast<Uint8>(color1->data.b +
+                                       (color2->data.b - color1->data.b) * t),
+                    static_cast<Uint8>(color1->data.a +
+                                       (color2->data.a - color1->data.a) * t));
 
-    SDL_Rect line = vertical ? SDL_Rect{x, y + i, width, 1}
-                             : SDL_Rect{x + i, y, 1, height};
+    SDL_Rect line =
+        vertical ? SDL_Rect{x, y + i, width, 1} : SDL_Rect{x + i, y, 1, height};
     if (!SDL_FillSurfaceRect(image_, &line, color))
       throw Exception(Exception::kRGSSError, SDL_GetError());
   }

@@ -67,7 +67,8 @@ WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
       height_(height),
       padding_(Config::Get().vxa() ? 12 : 16),
       padding_bottom_(padding_),
-      tone_(MakeRefCounted<Tone>()) {
+      tone_(MakeRefCounted<Tone>()),
+      rgss3_style_(Config::Get().vxa()) {
   Node::SetupTrait(this);
   CreateTintBinding();
 }

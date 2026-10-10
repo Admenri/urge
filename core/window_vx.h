@@ -140,6 +140,7 @@ class WindowVX : public Node {
 
   int32_t pause_index_ = 0;
   int32_t cursor_index_ = 0;
+  bool rgss3_style_ = true;
 
   UniformBlockPool::Slot object_slot_ = {};
 

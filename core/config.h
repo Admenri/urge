@@ -45,15 +45,8 @@ class Config : public Singleton<Config> {
   URGE_BINDING()
   void SetValue(std::string section, std::string key, std::string value);
 
-  /*! Records the switches the host was started with, so that the engine and
-      the script layer can look for the modes a game asks for.  The program
-      name is dropped -- it is argv[0], a path, not a switch.  The host entry
-      point calls this once, before anything reads the result. */
   void SetCommandLine(int argc, char* argv[]);
 
-  /*! True when `token` is one of the recorded switches.  The match is exact
-      and case sensitive against a whole argument, so a path that merely
-      contains the word -- `C:/debug/build/Game.exe` -- does not answer true. */
   bool HasCommandLine(const std::string& token) const;
 
   struct {
@@ -91,7 +84,6 @@ class Config : public Singleton<Config> {
 
   std::vector<std::pair<std::string, int32_t>> key_bindings;
 
-  /*! The arguments the host received after argv[0], in their original order. */
   std::vector<std::string> command_line;
 
  public:

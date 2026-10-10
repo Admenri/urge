@@ -31,11 +31,7 @@
 
 namespace urge {
 
-namespace {
-
-const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
-
-}  // namespace
+static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 Animation::Animation(std::string filename) {
   IOService::Get().OpenRead(

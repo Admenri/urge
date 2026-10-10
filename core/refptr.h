@@ -146,7 +146,6 @@ class RefPtr {
   T* ptr_ = nullptr;
 
  private:
-
   template <typename U>
   friend class RefPtr;
 

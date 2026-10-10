@@ -78,15 +78,13 @@ class NetworkBackend {
   virtual void GlobalInit() = 0;
   virtual void GlobalCleanup() = 0;
 
-  /* The pump behind `Network.update`.  Every live socket swaps its worker
-     queue into the queue the script reads, which is what fixes the visibility
-     of an event to the update call after the one that saw it arrive. */
   virtual void Update() = 0;
 
   virtual void SetMaxEvents(int32_t max_events) = 0;
 
   virtual RefPtr<WebSocket> OpenWebSocket(
-      const std::string& url, const std::vector<std::string>& protocols) = 0;
+      const std::string& url,
+      const std::vector<std::string>& protocols) = 0;
   virtual RefPtr<Fetch> OpenFetch(const std::string& url,
                                   const std::string& method,
                                   const std::string& body,

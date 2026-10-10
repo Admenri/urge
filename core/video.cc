@@ -75,8 +75,7 @@ Video::Video(std::string filename) {
         std::move(track),
         static_cast<float>(player_.duration() * kMillisecondsPerSecond));
   } catch (const Exception& error) {
-    LOGGER_WARN("the video plays without its audio track: {}",
-                error.message());
+    LOGGER_WARN("the video plays without its audio track: {}", error.message());
     audio_ = nullptr;
   }
 }
@@ -111,13 +110,17 @@ void Video::Stop() {
   audio_->Seek(0.0f);
 }
 
-bool Video::End() { return player_.ended(); }
+bool Video::End() {
+  return player_.ended();
+}
 
-bool Video::IsPlaying() { return player_.playing() && !player_.ended(); }
+bool Video::IsPlaying() {
+  return player_.playing() && !player_.ended();
+}
 
 void Video::Seek(float pos) {
-  const double seconds = static_cast<double>(pos > 0.0f ? pos : 0.0f) /
-                         kMillisecondsPerSecond;
+  const double seconds =
+      static_cast<double>(pos > 0.0f ? pos : 0.0f) / kMillisecondsPerSecond;
   player_.Seek(seconds);
 
   if (!audio_)
@@ -136,7 +139,9 @@ float Video::Duration() {
   return static_cast<float>(player_.duration() * kMillisecondsPerSecond);
 }
 
-RefPtr<AudioStream> Video::GetAudioStream() { return audio_; }
+RefPtr<AudioStream> Video::GetAudioStream() {
+  return audio_;
+}
 
 std::map<std::string, std::string> Video::PlayerInfo() {
   const VideoTrackInfo& info = player_.info();
@@ -189,18 +194,15 @@ void Video::Render(RefPtr<Bitmap> target) {
   }
 
   scaled_.resize(static_cast<size_t>(target_width) * target_height * 4);
-  const uint32_t step_x =
-      static_cast<uint32_t>(static_cast<uint64_t>(source_width) *
-                            kFixedPointOne / target_width);
-  const uint32_t step_y =
-      static_cast<uint32_t>(static_cast<uint64_t>(source_height) *
-                            kFixedPointOne / target_height);
+  const uint32_t step_x = static_cast<uint32_t>(
+      static_cast<uint64_t>(source_width) * kFixedPointOne / target_width);
+  const uint32_t step_y = static_cast<uint32_t>(
+      static_cast<uint64_t>(source_height) * kFixedPointOne / target_height);
 
   uint32_t row = 0;
   for (int32_t y = 0; y < target_height; ++y) {
     const uint8_t* source_row =
-        source->data() +
-        static_cast<size_t>(row >> 16) * source_width * 4;
+        source->data() + static_cast<size_t>(row >> 16) * source_width * 4;
     uint8_t* target_row =
         scaled_.data() + static_cast<size_t>(y) * target_width * 4;
 
@@ -230,8 +232,8 @@ void Video::SyncAudio() {
 
   const float target =
       static_cast<float>(player_.tell() * kMillisecondsPerSecond);
-  if (audio_align_ || std::fabs(audio_->Cursor() - target) >
-                          kAudioSyncTolerance) {
+  if (audio_align_ ||
+      std::fabs(audio_->Cursor() - target) > kAudioSyncTolerance) {
     audio_->Seek(target);
     audio_->Start();
     audio_align_ = false;
@@ -253,35 +255,59 @@ namespace {
 
 }  // namespace
 
-Video::Video(std::string) { VideoUnavailable(); }
+Video::Video(std::string) {
+  VideoUnavailable();
+}
 
 Video::~Video() = default;
 
-void Video::Play() { VideoUnavailable(); }
+void Video::Play() {
+  VideoUnavailable();
+}
 
-void Video::Pause() { VideoUnavailable(); }
+void Video::Pause() {
+  VideoUnavailable();
+}
 
-void Video::Stop() { VideoUnavailable(); }
+void Video::Stop() {
+  VideoUnavailable();
+}
 
-bool Video::End() { VideoUnavailable(); }
+bool Video::End() {
+  VideoUnavailable();
+}
 
-bool Video::IsPlaying() { VideoUnavailable(); }
+bool Video::IsPlaying() {
+  VideoUnavailable();
+}
 
-void Video::Seek(float) { VideoUnavailable(); }
+void Video::Seek(float) {
+  VideoUnavailable();
+}
 
-float Video::Tell() { VideoUnavailable(); }
+float Video::Tell() {
+  VideoUnavailable();
+}
 
-float Video::Duration() { VideoUnavailable(); }
+float Video::Duration() {
+  VideoUnavailable();
+}
 
-RefPtr<AudioStream> Video::GetAudioStream() { VideoUnavailable(); }
+RefPtr<AudioStream> Video::GetAudioStream() {
+  VideoUnavailable();
+}
 
 std::map<std::string, std::string> Video::PlayerInfo() {
   VideoUnavailable();
 }
 
-void Video::Update() { VideoUnavailable(); }
+void Video::Update() {
+  VideoUnavailable();
+}
 
-void Video::Render(RefPtr<Bitmap>) { VideoUnavailable(); }
+void Video::Render(RefPtr<Bitmap>) {
+  VideoUnavailable();
+}
 
 #endif
 

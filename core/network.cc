@@ -77,15 +77,25 @@ NetworkEvent::NetworkEvent() = default;
 
 NetworkEvent::~NetworkEvent() = default;
 
-int32_t NetworkEvent::GetType() { return type_; }
+int32_t NetworkEvent::GetType() {
+  return type_;
+}
 
-std::string NetworkEvent::GetText() { return text_; }
+std::string NetworkEvent::GetText() {
+  return text_;
+}
 
-int32_t NetworkEvent::GetCode() { return code_; }
+int32_t NetworkEvent::GetCode() {
+  return code_;
+}
 
-std::string NetworkEvent::GetReason() { return reason_; }
+std::string NetworkEvent::GetReason() {
+  return reason_;
+}
 
-std::string NetworkEvent::GetErrorMessage() { return message_; }
+std::string NetworkEvent::GetErrorMessage() {
+  return message_;
+}
 
 WebSocket::WebSocket(std::string url, std::vector<std::string> protocols)
     : url_(std::move(url)), protocols_(std::move(protocols)) {}
@@ -96,7 +106,9 @@ void WebSocket::Attach(std::unique_ptr<WebSocketImpl> impl) {
   impl_ = std::move(impl);
 }
 
-std::string WebSocket::GetUrl() { return url_; }
+std::string WebSocket::GetUrl() {
+  return url_;
+}
 
 int32_t WebSocket::GetReadyState() {
   if (impl_)
@@ -152,7 +164,9 @@ int32_t WebSocket::GetPending() {
   return impl_->Pending();
 }
 
-Fetch::Fetch(std::string url, std::string method, std::string body,
+Fetch::Fetch(std::string url,
+             std::string method,
+             std::string body,
              std::vector<std::string> headers)
     : url_(std::move(url)),
       method_(std::move(method)),
@@ -161,7 +175,9 @@ Fetch::Fetch(std::string url, std::string method, std::string body,
 
 Fetch::~Fetch() = default;
 
-void Fetch::Attach(std::unique_ptr<FetchImpl> impl) { impl_ = std::move(impl); }
+void Fetch::Attach(std::unique_ptr<FetchImpl> impl) {
+  impl_ = std::move(impl);
+}
 
 void Fetch::Start() {
   if (impl_)
@@ -179,23 +195,37 @@ bool Fetch::IsDone() {
   return done_;
 }
 
-bool Fetch::IsSuccess() { return success_; }
+bool Fetch::IsSuccess() {
+  return success_;
+}
 
-int32_t Fetch::GetStatus() { return status_; }
+int32_t Fetch::GetStatus() {
+  return status_;
+}
 
-std::string Fetch::GetStatusText() { return status_text_; }
+std::string Fetch::GetStatusText() {
+  return status_text_;
+}
 
-std::string Fetch::GetText() { return body_; }
+std::string Fetch::GetText() {
+  return body_;
+}
 
-std::string Fetch::GetError() { return error_; }
+std::string Fetch::GetError() {
+  return error_;
+}
 
-float Fetch::GetProgress() { return progress_; }
+float Fetch::GetProgress() {
+  return progress_;
+}
 
 std::string Fetch::GetHeader(std::string name) {
   return FindHeader(headers_, name);
 }
 
-std::vector<std::string> Fetch::GetHeaders() { return headers_; }
+std::vector<std::string> Fetch::GetHeaders() {
+  return headers_;
+}
 
 Network::Network() {
 #if URGE_ENABLE_NETWORK
@@ -232,7 +262,8 @@ RefPtr<WebSocket> Network::OpenWebSocket(std::string url,
 #endif
 }
 
-RefPtr<Fetch> Network::OpenFetch(std::string url, std::string method,
+RefPtr<Fetch> Network::OpenFetch(std::string url,
+                                 std::string method,
                                  std::string body,
                                  std::vector<std::string> headers) {
 #if URGE_ENABLE_NETWORK

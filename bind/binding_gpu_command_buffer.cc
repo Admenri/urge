@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUCommandBuffer  (core/gpu.h:858-858)
+// GPUCommandBuffer  (core/gpu.h:862-862)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUCommandBuffer, GPUObject);

@@ -71,7 +71,7 @@ class Section {
 class IniFile {
  public:
   explicit IniFile(const std::string& filename) { LoadFromFile(filename); }
-  explicit IniFile(std::string_view content, bool ) { Parse(content); }
+  explicit IniFile(std::string_view content, bool) { Parse(content); }
   IniFile() = default;
 
   void LoadFromFile(const std::string& filename) {

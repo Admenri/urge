@@ -31,8 +31,8 @@
 #include <utility>
 #include <vector>
 
-#include "core/exception.h"
 #include "core/device.h"
+#include "core/exception.h"
 #include "core/logger.h"
 #include "core/pipeline.h"
 
@@ -134,7 +134,8 @@ Effect::Effect(std::string vs_glsl,
 
 Effect::Effect(RefPtr<Effect> other) {
   if (!other)
-    throw Exception(Exception::kRGSSError, "effect: cannot copy a null effect.");
+    throw Exception(Exception::kRGSSError,
+                    "effect: cannot copy a null effect.");
 
   holder_ = other->holder_;
   resources_ = other->resources_;
@@ -186,7 +187,9 @@ void Effect::SetBlock(uint32_t slot, std::string uniform_block) {
                  static_cast<uint32_t>(uniform_block.size()));
 }
 
-wgpu::RenderPipeline Effect::AcquirePipeline() { return holder_->pipeline; }
+wgpu::RenderPipeline Effect::AcquirePipeline() {
+  return holder_->pipeline;
+}
 
 wgpu::BindGroup Effect::AcquireBindGroup() {
   if (binding_dirty_ || binding_ == nullptr)
@@ -266,8 +269,8 @@ void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
                     "effect: set 2 slot {} is not a uniform buffer binding.",
                     slot);
 
-  const uint64_t buffer_size =
-      AlignUniformSize(std::max<uint64_t>(size, found->second.min_binding_size));
+  const uint64_t buffer_size = AlignUniformSize(
+      std::max<uint64_t>(size, found->second.min_binding_size));
 
   wgpu::BufferDescriptor desc;
   desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
@@ -281,8 +284,7 @@ void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
   std::vector<std::uint8_t> staging(static_cast<std::size_t>(buffer_size), 0);
   if (size)
     std::memcpy(staging.data(), data, size);
-  GPUDevice::Get().queue().WriteBuffer(buffer, 0, staging.data(),
-                                       buffer_size);
+  GPUDevice::Get().queue().WriteBuffer(buffer, 0, staging.data(), buffer_size);
 
   SlotResource& resource = resources_[slot];
   resource.buffer = buffer;

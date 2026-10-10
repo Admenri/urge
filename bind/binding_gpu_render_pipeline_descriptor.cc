@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPipelineDescriptor  (core/gpu.h:486-550)
+// GPURenderPipelineDescriptor  (core/gpu.h:487-551)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPipelineDescriptor, GPUObject);

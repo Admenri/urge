@@ -99,9 +99,6 @@ glm::mat4 Camera::view() const {
 }
 
 glm::mat4 Camera::projection(const glm::ivec2& size) const {
-  /* The world of the engine is y-down with its origin at the top left of the
-     target, which is the projection a target is drawn with when no camera
-     takes it over. */
   return glm::ortho(0.0f, static_cast<float>(std::max(1, size.x)),
                     static_cast<float>(std::max(1, size.y)), 0.0f);
 }
@@ -118,9 +115,6 @@ wgpu::BindGroup Camera::AcquireScene(const glm::ivec2& size) {
       return nullptr;
     }
 
-    /* Every pipeline of the engine reads the scene from the set a render
-       target binds, so any of them describes the layout of the set the
-       camera carries as well. */
     util::BufferSet binding(scene_uniform_);
     scene_group_ = util::CreateBindGroup(
         ShaderSet::Get().state.bitmap.texture_pma.GetBindGroupLayout(0),
@@ -172,9 +166,6 @@ glm::mat4 PerspectiveCamera::projection(const glm::ivec2& size) const {
   const glm::mat4 lens =
       glm::perspective(glm::radians(fov_), AspectOf(size), near_, far_);
 
-  /* The standard projection is built for a y-up world and the world of the
-     engine is y-down, so the axis is flipped to keep the subtree the way the
-     screen shows it without a camera. */
   return lens * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, -1.0f, 1.0f));
 }
 
@@ -214,10 +205,6 @@ glm::mat4 OrthographicCamera::projection(const glm::ivec2& size) const {
   const float half_height = size_ > 0.0f ? size_ : height * 0.5f;
   const float half_width = half_height * AspectOf(size);
 
-  /* The box starts at the origin of the camera and the world is y-down, so
-     the top of it is the smaller y: a size of zero leaves the box at the
-     extent of the target, which is where the subtree of a node without a
-     camera is drawn. */
   return glm::ortho(0.0f, half_width * 2.0f, half_height * 2.0f, 0.0f, near_,
                     far_);
 }

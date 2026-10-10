@@ -38,7 +38,6 @@ namespace urge {
 
 class FontContext : public Singleton<FontContext> {
  public:
-
   FontContext();
   ~FontContext();
 
@@ -63,7 +62,6 @@ class FontContext : public Singleton<FontContext> {
   };
 
  private:
-
   void LoadFontDirectory(const std::string& directory);
 
   void LoadInternalFont();

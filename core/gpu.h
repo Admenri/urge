@@ -375,7 +375,8 @@ class GPUBindGroupLayoutDescriptor : public GPUObject {
   URGE_BINDING()
   void AddUniform(uint32_t binding, uint32_t visibility);
   URGE_BINDING()
-  void AddStorage(uint32_t binding, uint32_t visibility,
+  void AddStorage(uint32_t binding,
+                  uint32_t visibility,
                   bool read_only = false);
   URGE_BINDING()
   void AddTexture(uint32_t binding, uint32_t visibility);
@@ -557,7 +558,8 @@ class GPURenderPipelineDescriptor : public GPUObject {
   std::string vertex_entry_point = "main";
   RefPtr<GPUShaderModule> fragment_module;
   std::string fragment_entry_point = "main";
-  uint32_t topology = static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleList);
+  uint32_t topology =
+      static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleList);
   uint32_t format = 0;
   uint32_t vertex_stride = 0;
   std::vector<wgpu::VertexAttribute> attributes;
@@ -724,7 +726,9 @@ class GPUTexture : public GPUObject {
   URGE_BINDING()
   uint32_t SampleCount() { return texture_.GetSampleCount(); }
   URGE_BINDING()
-  uint32_t Dimension() { return static_cast<uint32_t>(texture_.GetDimension()); }
+  uint32_t Dimension() {
+    return static_cast<uint32_t>(texture_.GetDimension());
+  }
   URGE_BINDING()
   uint32_t Format() { return static_cast<uint32_t>(texture_.GetFormat()); }
   URGE_BINDING()
@@ -878,9 +882,11 @@ class GPUCommandEncoder : public GPUObject {
   RefPtr<GPUComputePassEncoder> BeginComputePass(
       RefPtr<GPUComputePassDescriptor> descriptor = nullptr);
   URGE_BINDING()
-  void CopyBufferToBuffer(RefPtr<GPUBuffer> source, uint64_t source_offset,
+  void CopyBufferToBuffer(RefPtr<GPUBuffer> source,
+                          uint64_t source_offset,
                           RefPtr<GPUBuffer> destination,
-                          uint64_t destination_offset, uint64_t size);
+                          uint64_t destination_offset,
+                          uint64_t size);
   URGE_BINDING()
   void ClearBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, uint64_t size);
   URGE_BINDING()
@@ -902,21 +908,31 @@ class GPURenderPassEncoder : public GPUObject {
   URGE_BINDING()
   void SetBindGroup(uint32_t index, RefPtr<GPUBindGroup> group);
   URGE_BINDING()
-  void SetVertexBuffer(uint32_t slot, RefPtr<GPUBuffer> buffer,
+  void SetVertexBuffer(uint32_t slot,
+                       RefPtr<GPUBuffer> buffer,
                        uint64_t offset = 0);
   URGE_BINDING()
-  void SetIndexBuffer(RefPtr<GPUBuffer> buffer, uint32_t format,
+  void SetIndexBuffer(RefPtr<GPUBuffer> buffer,
+                      uint32_t format,
                       uint64_t offset = 0);
   URGE_BINDING()
-  void Draw(uint32_t vertex_count, uint32_t instance_count = 1,
-            uint32_t first_vertex = 0, uint32_t first_instance = 0);
+  void Draw(uint32_t vertex_count,
+            uint32_t instance_count = 1,
+            uint32_t first_vertex = 0,
+            uint32_t first_instance = 0);
   URGE_BINDING()
-  void DrawIndexed(uint32_t index_count, uint32_t instance_count = 1,
-                   uint32_t first_index = 0, int32_t base_vertex = 0,
+  void DrawIndexed(uint32_t index_count,
+                   uint32_t instance_count = 1,
+                   uint32_t first_index = 0,
+                   int32_t base_vertex = 0,
                    uint32_t first_instance = 0);
   URGE_BINDING()
-  void SetViewport(float x, float y, float width, float height,
-                   float min_depth = 0.f, float max_depth = 1.f);
+  void SetViewport(float x,
+                   float y,
+                   float width,
+                   float height,
+                   float min_depth = 0.f,
+                   float max_depth = 1.f);
   URGE_BINDING()
   void SetScissorRect(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
   URGE_BINDING()
@@ -952,8 +968,7 @@ class GPUQueue : public GPUObject {
   URGE_BINDING()
   void Submit(RefPtr<GPUCommandBuffer> command_buffer);
   URGE_BINDING()
-  void WriteBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset,
-                   std::string data);
+  void WriteBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, std::string data);
 
   wgpu::Queue handle() const { return queue_; }
 
@@ -1022,9 +1037,12 @@ class GPU : public Singleton<GPU> {
   URGE_BINDING()
   enum VertexFormat {
     VertexFormatFloat32 = static_cast<uint32_t>(wgpu::VertexFormat::Float32),
-    VertexFormatFloat32x2 = static_cast<uint32_t>(wgpu::VertexFormat::Float32x2),
-    VertexFormatFloat32x3 = static_cast<uint32_t>(wgpu::VertexFormat::Float32x3),
-    VertexFormatFloat32x4 = static_cast<uint32_t>(wgpu::VertexFormat::Float32x4),
+    VertexFormatFloat32x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Float32x2),
+    VertexFormatFloat32x3 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Float32x3),
+    VertexFormatFloat32x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Float32x4),
   };
 
   URGE_BINDING()
@@ -1080,8 +1098,7 @@ class GPU : public Singleton<GPU> {
   RefPtr<GPUComputePipeline> CreateComputePipeline(
       RefPtr<GPUComputePipelineDescriptor> descriptor);
   URGE_BINDING()
-  RefPtr<GPUQuerySet> CreateQuerySet(
-      RefPtr<GPUQuerySetDescriptor> descriptor);
+  RefPtr<GPUQuerySet> CreateQuerySet(RefPtr<GPUQuerySetDescriptor> descriptor);
   URGE_BINDING()
   RefPtr<GPUCommandEncoder> CreateCommandEncoder();
 };

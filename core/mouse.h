@@ -118,12 +118,8 @@ class Mouse : public Singleton<Mouse> {
   static Point WindowToScreenInternal(const Point& position);
   static Point ScreenToWindowInternal(const Point& position);
 
-  /*! Scales a displacement the way WindowToScreenInternal scales a position,
-      so DeltaX()/DeltaY() stay in the unit X()/Y() use. */
   static Point WindowToScreenDeltaInternal(const Point& delta);
 
-  /*! Re-reads the cursor from the system. Called when relative mode is left,
-      where the cached position no longer describes where the cursor is. */
   void SyncPositionFromSystemInternal();
 
   std::array<bool, kButtonCount> raw_pressed_ = {};

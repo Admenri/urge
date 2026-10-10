@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "core/definition.h"
 #include "core/effect.h"
 #include "core/node.h"
@@ -62,6 +64,7 @@ class Viewport : public Node {
  protected:
   void DisposeObject() override;
   bool Prepare(DrawParam param) override;
+  void PostPrepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
   void PostDraw(DrawParam param) override;
 
@@ -69,12 +72,6 @@ class Viewport : public Node {
   void ResetTransform();
   void CreateEffectBindings();
   void AcquireOffscreen(const RectI& region);
-
-  bool BeginFilter(DrawParam param,
-                   const RectI& parent_scissor,
-                   const RectI& screen_scissor);
-
-  void FinishFilter(DrawParam param);
 
   RefPtr<Rect> rect_;
   glm::ivec2 origin_ = glm::ivec2(0);
@@ -91,8 +88,10 @@ class Viewport : public Node {
   RefPtr<Bitmap> filter_target_;
   wgpu::BindGroup filter_scene_;
 
-  RectI filter_region_, filter_scissor_;
+  RectI parent_scissor_, region_, filter_scissor_;
   bool filtering_ = false;
+  bool post_process_ = false;
+  std::uint32_t vertex_count_ = 0;
 
   PrimitiveEmitter primitive_;
 };

@@ -28,7 +28,9 @@
 
 namespace urge {
 
-VideoDecoder::~VideoDecoder() { Close(); }
+VideoDecoder::~VideoDecoder() {
+  Close();
+}
 
 bool VideoDecoder::Open(int32_t threads, int32_t max_frame_delay) {
   Close();

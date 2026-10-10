@@ -85,21 +85,20 @@ void ConvertPicture(const Dav1dPicture& picture,
     const Sample* luma_row =
         luma_plane + static_cast<ptrdiff_t>(row) * luma_stride;
     const Sample* chroma_u_row =
-        monochrome ? nullptr
-                   : chroma_u_plane +
-                         static_cast<ptrdiff_t>(row / chroma_row_step) *
-                             chroma_stride;
+        monochrome
+            ? nullptr
+            : chroma_u_plane +
+                  static_cast<ptrdiff_t>(row / chroma_row_step) * chroma_stride;
     const Sample* chroma_v_row =
-        monochrome ? nullptr
-                   : chroma_v_plane +
-                         static_cast<ptrdiff_t>(row / chroma_row_step) *
-                             chroma_stride;
+        monochrome
+            ? nullptr
+            : chroma_v_plane +
+                  static_cast<ptrdiff_t>(row / chroma_row_step) * chroma_stride;
     uint8_t* target = out->data() + static_cast<size_t>(row) * width * 4;
 
     for (int32_t column = 0; column < width; ++column, target += 4) {
-      int32_t luma =
-          (static_cast<int32_t>(luma_row[column]) >> shift) -
-          coefficients.luma_offset;
+      int32_t luma = (static_cast<int32_t>(luma_row[column]) >> shift) -
+                     coefficients.luma_offset;
       if (luma < 0)
         luma = 0;
 
@@ -114,13 +113,11 @@ void ConvertPicture(const Dav1dPicture& picture,
       }
 
       luma *= coefficients.luma_scale;
-      target[0] = Clamp8(
-          (luma + coefficients.red_v * chroma_v + 128) >> 8);
+      target[0] = Clamp8((luma + coefficients.red_v * chroma_v + 128) >> 8);
       target[1] = Clamp8((luma - coefficients.green_u * chroma_u -
                           coefficients.green_v * chroma_v + 128) >>
                          8);
-      target[2] = Clamp8(
-          (luma + coefficients.blue_u * chroma_u + 128) >> 8);
+      target[2] = Clamp8((luma + coefficients.blue_u * chroma_u + 128) >> 8);
       target[3] = 255;
     }
   }
@@ -130,7 +127,9 @@ void ConvertPicture(const Dav1dPicture& picture,
 
 VideoPlayer::VideoPlayer() = default;
 
-VideoPlayer::~VideoPlayer() { Close(); }
+VideoPlayer::~VideoPlayer() {
+  Close();
+}
 
 bool VideoPlayer::Open(const std::string& filename) {
   Close();
@@ -278,7 +277,9 @@ double VideoPlayer::tell() const {
   return TellLocked();
 }
 
-double VideoPlayer::duration() const { return info_.duration; }
+double VideoPlayer::duration() const {
+  return info_.duration;
+}
 
 std::vector<uint8_t> VideoPlayer::TakeAudio() {
   return std::move(audio_);
@@ -400,10 +401,10 @@ void VideoPlayer::DecodeLoop() {
         std::lock_guard<std::mutex> lock(mutex_);
         DropFrames();
       }
-      discard_before = entry.position != 0.0
-                           ? static_cast<int64_t>(entry.position *
-                                                  kMicrosecondsPerSecond)
-                           : INT64_MIN;
+      discard_before =
+          entry.position != 0.0
+              ? static_cast<int64_t>(entry.position * kMicrosecondsPerSecond)
+              : INT64_MIN;
       wake_.notify_all();
       continue;
     }

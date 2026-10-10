@@ -344,9 +344,9 @@ void ImGuiManager::BuildKeyboardPanel() {
         bindings.push_back(entry);
   };
 
-  const ImGuiTableFlags table_flags =
-      ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
-      ImGuiTableFlags_SizingStretchProp;
+  const ImGuiTableFlags table_flags = ImGuiTableFlags_BordersInnerH |
+                                      ImGuiTableFlags_RowBg |
+                                      ImGuiTableFlags_SizingStretchProp;
 
   const ImGuiStyle& style = ImGui::GetStyle();
 
@@ -373,7 +373,8 @@ void ImGuiManager::BuildKeyboardPanel() {
   }
 
   if (ImGui::BeginTable("##key_bindings", 3, table_flags)) {
-    ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed, slot_width);
+    ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed,
+                            slot_width);
     ImGui::TableSetupColumn("Current", ImGuiTableColumnFlags_WidthFixed,
                             current_width + style.CellPadding.x * 2.0f);
     ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthStretch);
@@ -647,9 +648,9 @@ void ImGuiManager::ApplyUIScale() {
       static_cast<float>(std::max(1, Graphics::Get().Width()));
   const float logical_height =
       static_cast<float>(std::max(1, Graphics::Get().Height()));
-  const float scale = std::max(
-      1.0f, std::min(io.DisplaySize.x / logical_width,
-                     io.DisplaySize.y / logical_height));
+  const float scale =
+      std::max(1.0f, std::min(io.DisplaySize.x / logical_width,
+                              io.DisplaySize.y / logical_height));
 
   if (std::abs(scale - ui_scale_) < 0.01f)
     return;

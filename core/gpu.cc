@@ -136,8 +136,8 @@ bool GPUBuffer::MapAsync(uint32_t mode, uint64_t offset, uint64_t size) {
     *static_cast<bool*>(userdata1) = (status == WGPUMapAsyncStatus_Success);
   };
   info.userdata1 = &success;
-  wgpu::Future future = buffer_.MapAsync(static_cast<wgpu::MapMode>(mode), offset,
-                                         size, info);
+  wgpu::Future future =
+      buffer_.MapAsync(static_cast<wgpu::MapMode>(mode), offset, size, info);
   GPUDevice::Get().WaitAny(future);
   return success;
 }
@@ -226,16 +226,19 @@ RefPtr<GPUComputePassEncoder> GPUCommandEncoder::BeginComputePass(
   return MakeRefCounted<GPUComputePassEncoder>(encoder);
 }
 
-void GPUCommandEncoder::CopyBufferToBuffer(
-    RefPtr<GPUBuffer> source, uint64_t source_offset,
-    RefPtr<GPUBuffer> destination, uint64_t destination_offset, uint64_t size) {
+void GPUCommandEncoder::CopyBufferToBuffer(RefPtr<GPUBuffer> source,
+                                           uint64_t source_offset,
+                                           RefPtr<GPUBuffer> destination,
+                                           uint64_t destination_offset,
+                                           uint64_t size) {
   if (!source || !destination)
     throw Exception(Exception::kGPUError, "missing copy buffer");
   encoder_.CopyBufferToBuffer(source->handle(), source_offset,
                               destination->handle(), destination_offset, size);
 }
 
-void GPUCommandEncoder::ClearBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset,
+void GPUCommandEncoder::ClearBuffer(RefPtr<GPUBuffer> buffer,
+                                    uint64_t offset,
                                     uint64_t size) {
   if (!buffer)
     throw Exception(Exception::kGPUError, "missing clear buffer");
@@ -272,7 +275,8 @@ void GPURenderPassEncoder::SetVertexBuffer(uint32_t slot,
 }
 
 void GPURenderPassEncoder::SetIndexBuffer(RefPtr<GPUBuffer> buffer,
-                                          uint32_t format, uint64_t offset) {
+                                          uint32_t format,
+                                          uint64_t offset) {
   if (!buffer)
     throw Exception(Exception::kGPUError, "missing index buffer");
   encoder_.SetIndexBuffer(buffer->handle(),
@@ -280,7 +284,8 @@ void GPURenderPassEncoder::SetIndexBuffer(RefPtr<GPUBuffer> buffer,
                           WGPU_WHOLE_SIZE);
 }
 
-void GPURenderPassEncoder::Draw(uint32_t vertex_count, uint32_t instance_count,
+void GPURenderPassEncoder::Draw(uint32_t vertex_count,
+                                uint32_t instance_count,
                                 uint32_t first_vertex,
                                 uint32_t first_instance) {
   encoder_.Draw(vertex_count, instance_count, first_vertex, first_instance);
@@ -295,19 +300,23 @@ void GPURenderPassEncoder::DrawIndexed(uint32_t index_count,
                        first_instance);
 }
 
-void GPURenderPassEncoder::SetViewport(float x, float y, float width,
-                                       float height, float min_depth,
+void GPURenderPassEncoder::SetViewport(float x,
+                                       float y,
+                                       float width,
+                                       float height,
+                                       float min_depth,
                                        float max_depth) {
   encoder_.SetViewport(x, y, width, height, min_depth, max_depth);
 }
 
-void GPURenderPassEncoder::SetScissorRect(uint32_t x, uint32_t y,
-                                          uint32_t width, uint32_t height) {
+void GPURenderPassEncoder::SetScissorRect(uint32_t x,
+                                          uint32_t y,
+                                          uint32_t width,
+                                          uint32_t height) {
   encoder_.SetScissorRect(x, y, width, height);
 }
 
-void GPUComputePassEncoder::SetPipeline(
-    RefPtr<GPUComputePipeline> pipeline) {
+void GPUComputePassEncoder::SetPipeline(RefPtr<GPUComputePipeline> pipeline) {
   if (!pipeline)
     throw Exception(Exception::kGPUError, "missing compute pipeline");
   encoder_.SetPipeline(pipeline->handle());
@@ -320,7 +329,8 @@ void GPUComputePassEncoder::SetBindGroup(uint32_t index,
   encoder_.SetBindGroup(index, group->handle(), 0, nullptr);
 }
 
-void GPUComputePassEncoder::DispatchWorkgroups(uint32_t x, uint32_t y,
+void GPUComputePassEncoder::DispatchWorkgroups(uint32_t x,
+                                               uint32_t y,
                                                uint32_t z) {
   encoder_.DispatchWorkgroups(x, y, z);
 }
@@ -332,7 +342,8 @@ void GPUQueue::Submit(RefPtr<GPUCommandBuffer> command_buffer) {
   queue_.Submit(1, commands);
 }
 
-void GPUQueue::WriteBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset,
+void GPUQueue::WriteBuffer(RefPtr<GPUBuffer> buffer,
+                           uint64_t offset,
                            std::string data) {
   if (!buffer)
     throw Exception(Exception::kGPUError, "missing write buffer");
@@ -381,9 +392,12 @@ RefPtr<GPUSampler> GPU::CreateSampler(RefPtr<GPUSamplerDescriptor> descriptor) {
     throw Exception(Exception::kGPUError, "nil sampler descriptor");
   wgpu::SamplerDescriptor desc;
   desc.label = View(descriptor->label);
-  desc.addressModeU = static_cast<wgpu::AddressMode>(descriptor->address_mode_u);
-  desc.addressModeV = static_cast<wgpu::AddressMode>(descriptor->address_mode_v);
-  desc.addressModeW = static_cast<wgpu::AddressMode>(descriptor->address_mode_w);
+  desc.addressModeU =
+      static_cast<wgpu::AddressMode>(descriptor->address_mode_u);
+  desc.addressModeV =
+      static_cast<wgpu::AddressMode>(descriptor->address_mode_v);
+  desc.addressModeW =
+      static_cast<wgpu::AddressMode>(descriptor->address_mode_w);
   desc.magFilter = static_cast<wgpu::FilterMode>(descriptor->mag_filter);
   desc.minFilter = static_cast<wgpu::FilterMode>(descriptor->min_filter);
   desc.mipmapFilter =
@@ -490,9 +504,8 @@ RefPtr<GPURenderPipeline> GPU::CreateRenderPipeline(
   vertex_buffer.stepMode = wgpu::VertexStepMode::Vertex;
   vertex_buffer.arrayStride = descriptor->vertex_stride;
   vertex_buffer.attributeCount = descriptor->attributes.size();
-  vertex_buffer.attributes = descriptor->attributes.empty()
-                                 ? nullptr
-                                 : descriptor->attributes.data();
+  vertex_buffer.attributes =
+      descriptor->attributes.empty() ? nullptr : descriptor->attributes.data();
   if (!descriptor->attributes.empty()) {
     desc.vertex.bufferCount = 1;
     desc.vertex.buffers = &vertex_buffer;

@@ -130,12 +130,6 @@ void FPSLimiter::Delay() {
     skip_last_ = skip_now;
 
     skip_ideal_diff_ += frame_diff - ticks_per_frame_;
-    /* The drift is a short-term correction, not a running total: a frame
-       faster than the target hands the limiter credit which it pays back by
-       sleeping longer, and letting that credit grow without bound turns one
-       long stall into one correspondingly long sleep. Both ends stop at
-       kMaxFrameLag frames, so the limiter can neither owe nor bank more than
-       that much time. */
     skip_ideal_diff_ =
         std::clamp(skip_ideal_diff_, -ticks_per_frame_ * kMaxFrameLag,
                    ticks_per_frame_ * kMaxFrameLag);
@@ -245,8 +239,6 @@ void Graphics::Update() {
   const double tick_freq = static_cast<double>(SDL_GetPerformanceFrequency());
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
 
-  /* The script runs between two Update() calls, so that gap is the logic of
-     the frame.  The first frame has no previous end to measure from. */
   if (last_update_end_tick_ != 0)
     logic_cost_ms_ = static_cast<float>(
         static_cast<double>(frame_begin - last_update_end_tick_) * 1000.0 /
@@ -279,8 +271,6 @@ void Graphics::Update() {
 
   limiter_.Delay();
 
-  /* Whatever is left of the frame once the scene graph and the script are
-     accounted for: events, present, audio, the frame-rate limiter. */
   last_update_end_tick_ = SDL_GetPerformanceCounter();
   other_cost_ms_ = static_cast<float>(static_cast<double>(
                                           last_update_end_tick_ - frame_begin) *

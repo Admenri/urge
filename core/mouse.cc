@@ -70,9 +70,6 @@ void Mouse::Update() {
     buttons_[button].clicks = raw_clicks_[button];
   }
 
-  /* This frame's motion is what arrived since the last call. Under relative
-     mode the cursor is pinned, so the position stops changing and the raw
-     displacement is the only thing left that says the mouse moved. */
   delta_ = raw_delta_;
   raw_delta_ = Point{};
 
@@ -208,8 +205,6 @@ ATTR_DEF(Mouse, bool, Relative) {
     if (window && SDL_SetWindowRelativeMouseMode(window, *value)) {
       relative_ = *value;
 
-      /* Neither the switch nor the spot the backend parked the cursor on is
-         motion the user made, so drop it rather than let it whip the camera. */
       raw_delta_ = Point{};
       delta_ = Point{};
 
@@ -262,11 +257,6 @@ void Mouse::ProcessEvents(SDL_Event* event) {
       const SDL_MouseMotionEvent& motion = event->motion;
       position_ = Point{motion.x, motion.y};
 
-      /* Relative mode is the only place the displacement is worth keeping: the
-         backend reports the device motion straight, and it drops the motion a
-         warp would otherwise fake (SDL_HINT_MOUSE_RELATIVE_WARP_MOTION is off
-         by default). Outside it, x/y already carries the movement, and a warp
-         from SetPosition() would land here looking like the user moved. */
       if (relative_) {
         raw_delta_.x += motion.xrel;
         raw_delta_.y += motion.yrel;
@@ -275,8 +265,6 @@ void Mouse::ProcessEvents(SDL_Event* event) {
     }
 
     case SDL_EVENT_WINDOW_FOCUS_LOST:
-      /* The backend hands the cursor back while the window is away, so whatever
-         it reports on the way back is not motion the user made. */
       raw_delta_ = Point{};
       break;
 

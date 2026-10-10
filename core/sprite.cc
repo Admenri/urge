@@ -314,9 +314,6 @@ bool Sprite::Prepare(DrawParam param) {
   if (!IsDrawableInternal())
     return false;
 
-  /* The quad goes into the stream of the batch rather than into the batch of
-     the frame: the shader finds the parameters of the sprite by the ordinal
-     of the quad, so the stream has to hold nothing but sprite quads. */
   PrimitiveEmitter& emitter = SpriteBatch::Get().emitter();
   primitive_slot_ = EmitGeometryInternal(emitter);
   if (!primitive_slot_.count)
@@ -334,9 +331,6 @@ bool Sprite::Prepare(DrawParam param) {
           glm::vec3(static_cast<float>(-ox_), static_cast<float>(-oy_), 0.0f));
 
   if (effect_) {
-    /* The shader of an Effect reads the transform of the node it belongs to
-       from the object set, so a sprite which owns one keeps the uniform it
-       always had and draws on its own. */
     ObjectData object_data;
     object_data.model_mat = transform;
     object_slot_ = UniformManager::Get().object_uniforms().Acquire(object_data);
@@ -366,16 +360,10 @@ bool Sprite::DoDraw(DrawParam param) {
 
   SpriteBatch::Run& run = SpriteBatch::Get().run();
 
-  /* The run this sprite belongs to is the one its predecessor left open. The
-     vertices of the two are neighbours in the stream exactly when nothing
-     else was prepared between them, which the range check confirms: a run
-     which the predecessor opened but this sprite cannot extend is drawn now,
-     before this sprite opens the next one. */
-  const bool extends_run =
-      run.active && run.texture.get() == bitmap_.get() &&
-      run.blend_type == blend_type_ &&
-      run.scene.Get() == param->scene.Get() &&
-      run.end_vertex == primitive_slot_.first;
+  const bool extends_run = run.active && run.texture.get() == bitmap_.get() &&
+                           run.blend_type == blend_type_ &&
+                           run.scene.Get() == param->scene.Get() &&
+                           run.end_vertex == primitive_slot_.first;
 
   if (!extends_run) {
     FlushSpriteBatch(param);
@@ -388,8 +376,6 @@ bool Sprite::DoDraw(DrawParam param) {
 
   run.end_vertex = primitive_slot_.first + primitive_slot_.count;
 
-  /* The last member of a run is the one whose successor cannot join it: it
-     closes the run, and the single draw the run became is issued here. */
   if (!NextIsBatchable())
     FlushSpriteBatch(param);
 

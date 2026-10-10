@@ -120,8 +120,8 @@ TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
 
   for (const std::string& candidate : candidates) {
     const std::string key = ToLower(candidate);
-    const auto cache_key = std::make_tuple(key, size, static_cast<int32_t>(style),
-                                           outline);
+    const auto cache_key =
+        std::make_tuple(key, size, static_cast<int32_t>(style), outline);
 
     auto cached = font_cache_.find(cache_key);
     if (cached != font_cache_.end())

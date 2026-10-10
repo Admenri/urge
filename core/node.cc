@@ -69,6 +69,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   quads.BeginFrame();
   SpriteBatch::Get().BeginFrame();
 
+  context.scissors.push(RectI(target->size()));
   ExecutePrepare(&context);
 
   uniforms.Flush();
@@ -80,8 +81,6 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
     clear_color = clear->Normalize();
   context.pass = target->BeginRendering(encoder, clear_color);
   {
-    context.scissors.push(RectI(target->size()));
-    context.pass.SetScissorRect(0, 0, target->size().x, target->size().y);
     ExecuteRendering(&context);
     FlushSpriteBatch(&context);
   }
@@ -182,15 +181,13 @@ void Node::ExecutePrepare(DrawParam param) {
     transform_.world = param->model.top();
     allow_do_draw_ = Prepare(param);
     children_.DispatchPrepare(param);
+    if (allow_do_draw_)
+      PostPrepare(param);
   }
   param->model.pop();
 }
 
 void Node::ExecuteRendering(DrawParam param) {
-  /* A camera of this node takes the scene set over for the whole subtree: the
-     set carries the projection and the view every draw of it reads, so this
-     node and everything below it are seen through the camera, and the set the
-     subtree was entered with is put back once it is done. */
   const wgpu::BindGroup outer_scene = param->scene;
   if (camera_)
     param->scene = camera_->AcquireScene(param->target->size());

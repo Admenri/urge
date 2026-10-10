@@ -67,9 +67,6 @@ class TextureBase : public Pipeline {
   TextureBase();
 };
 
-/*! TextureBase with a second texture in set 3, whose sampled alpha scales the
-    one sampled from set 2.  The two textures share `v_texcoord`, so the mask
-    is read through the very coordinates the source was read through. */
 class TextureMaskBase : public Pipeline {
  public:
   TextureMaskBase();

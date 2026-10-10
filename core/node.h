@@ -60,16 +60,12 @@ class Node : public Disposable {
   URGE_BINDING()
   virtual ATTR(RefPtr<Vector3>, Scale);
 
-  /*! The point of view this node and everything below it is drawn through.
-      A camera does not move the subtree: it takes over the projection and the
-      view the draws of it read, so the model transforms of the nodes stay the
-      ones the scene graph gave them. Clearing it hands the subtree back to
-      the projection of the render target. */
   URGE_BINDING()
   ATTR(RefPtr<Camera>, Camera);
 
  protected:
   virtual bool Prepare(DrawParam param) { return false; }
+  virtual void PostPrepare(DrawParam param) {}
   virtual bool DoDraw(DrawParam param) { return false; }
   virtual void PostDraw(DrawParam param) {}
 

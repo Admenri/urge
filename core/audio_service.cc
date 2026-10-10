@@ -231,9 +231,9 @@ AudioChannel::AudioChannel(ma_engine* engine, ma_sound_group* bus)
     : engine_(engine), bus_(bus) {}
 
 bool AudioChannel::Play(const std::string& filename,
-                       int32_t volume,
-                       int32_t pitch,
-                       float pos) {
+                        int32_t volume,
+                        int32_t pitch,
+                        float pos) {
   if (filename.empty())
     return false;
 

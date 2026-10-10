@@ -39,7 +39,6 @@ constexpr int32_t kDefaultTextureSize = 1;
 
 class DefaultTexture {
  public:
-
   static const wgpu::BindGroup& Get() {
     static DefaultTexture instance;
     return instance.group_;
