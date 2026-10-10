@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include "core/config.h"
 #include "core/device.h"
 #include "core/drawable.h"
 #include "core/gpu_utils.h"
@@ -51,7 +52,7 @@ static_assert(offsetof(SpriteParam, bush_opacity) == 100,
 }  // namespace
 
 SpriteBatch::SpriteBatch() {
-  disabled_ = std::getenv("URGE_NO_SPRITE_BATCH") != nullptr;
+  disabled_ = !Config::Get().gfx.sprite_batch;
 
   emitter_.Reserve(4096);
 
@@ -114,11 +115,11 @@ void SpriteBatch::EnsureParamBuffer(std::size_t bytes) {
      frame with it. */
   util::BufferSet binding(param_buffer_, 0, size);
 
-  param_group_ = util::CreateBindGroup(
-      ShaderSet::Get()
-          .state.sprite.sprite_blends.at(BLEND_NORMAL)
-          .GetBindGroupLayout(1),
-      {{0, binding}});
+  param_group_ =
+      util::CreateBindGroup(ShaderSet::Get()
+                                .state.sprite.sprite_blends.at(BLEND_NORMAL)
+                                .GetBindGroupLayout(1),
+                            {{0, binding}});
 }
 
 void FlushSpriteBatch(DrawContext* param) {

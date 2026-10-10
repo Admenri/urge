@@ -90,7 +90,15 @@ add_subdirectory(wgpu-cmake)
 add_subdirectory(glslang)
 add_subdirectory(spirv-reflect)
 
-add_subdirectory(cruby)
+# The interpreter is either compiled here or taken from bind/external, and the
+# top-level CMakeLists.txt has already made that choice: it leaves
+# URGE_EXTERNAL_RUBY_DIR unset when there is no drop-in, and this directory
+# then supplies `ruby-static` itself.  Either way the target name is the same,
+# so nothing downstream has to know which case it is in.
+if(NOT URGE_EXTERNAL_RUBY_DIR)
+  add_subdirectory(cruby)
+endif()
+
 add_subdirectory(zlib)
 
 # libffi exists in this tree for one consumer: the Win32API binding

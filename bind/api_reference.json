@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-10T01:53:59Z",
+    "generated_at": "2026-10-10T07:03:22Z",
     "source_headers": [
       "core/animation.h",
       "core/audio.h",
@@ -8289,6 +8289,11 @@
               "name": "viewport",
               "type": "RefPtr<Viewport>",
               "default": "nullptr"
+            },
+            {
+              "name": "tilesize",
+              "type": "int32_t",
+              "default": "32"
             }
           ],
           "export": "core/tilemap_vx.h:56-87"
@@ -8475,6 +8480,11 @@
               "name": "viewport",
               "type": "RefPtr<Viewport>",
               "default": "nullptr"
+            },
+            {
+              "name": "tilesize",
+              "type": "int32_t",
+              "default": "32"
             }
           ],
           "export": "core/tilemap_xp.h:59-93"

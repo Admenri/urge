@@ -92,15 +92,14 @@ void RenderShadowSurface(SDL_Surface*& surface) {
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
       size_(size > 0 ? size : *Attr_DefaultSize()),
-
       bold_(*Attr_DefaultBold()),
       italic_(*Attr_DefaultItalic()),
       outline_(*Attr_DefaultOutline()),
       shadow_(*Attr_DefaultShadow()),
       solid_(*Attr_DefaultSolid()),
-      color_(*Attr_DefaultColor()),
-      out_color_(*Attr_DefaultOutColor()),
-      gradient_color_(*Attr_DefaultGradientColor()) {
+      color_(MakeRefCounted<Color>(*Attr_DefaultColor())),
+      out_color_(MakeRefCounted<Color>(*Attr_DefaultOutColor())),
+      gradient_color_(MakeRefCounted<Color>(*Attr_DefaultGradientColor())) {
   if (name_.empty()) {
     auto default_name = Attr_DefaultName();
     if (default_name.has_value() && !default_name->empty())
@@ -116,9 +115,9 @@ Font::Font(RefPtr<Font> other)
       outline_(other->outline_),
       shadow_(other->shadow_),
       solid_(other->solid_),
-      color_(other->color_),
-      out_color_(other->out_color_),
-      gradient_color_(other->gradient_color_) {}
+      color_(MakeRefCounted<Color>(other->color_)),
+      out_color_(MakeRefCounted<Color>(other->out_color_)),
+      gradient_color_(MakeRefCounted<Color>(other->gradient_color_)) {}
 
 bool Font::Existed(std::string name) {
   return FontContext::Get().FontExists(name);
@@ -344,9 +343,10 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
   render_outline_color.a = 255;
 
   SDL_Surface* surface =
-      solid_ ? TTF_RenderText_Solid(font, text.c_str(), text.size(), render_color)
-             : TTF_RenderText_Blended(font, text.c_str(), text.size(),
-                                      render_color);
+      solid_
+          ? TTF_RenderText_Solid(font, text.c_str(), text.size(), render_color)
+          : TTF_RenderText_Blended(font, text.c_str(), text.size(),
+                                   render_color);
   if (!surface)
     return nullptr;
 
@@ -354,10 +354,9 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
 
   const SDL_Color gradient_top = ToSDLColor(color_);
   const SDL_Color gradient_bottom = ToSDLColor(gradient_color_);
-  if (gradient_bottom.a &&
-      (gradient_top.r != gradient_bottom.r ||
-       gradient_top.g != gradient_bottom.g ||
-       gradient_top.b != gradient_bottom.b)) {
+  if (gradient_bottom.a && (gradient_top.r != gradient_bottom.r ||
+                            gradient_top.g != gradient_bottom.g ||
+                            gradient_top.b != gradient_bottom.b)) {
     auto* pixels = static_cast<uint32_t*>(surface->pixels);
     const int32_t pitch = surface->pitch / 4;
     const auto* details = SDL_GetPixelFormatDetails(surface->format);
@@ -423,7 +422,9 @@ SDL_Surface* Font::RenderText(const std::string& text, uint8_t* font_opacity) {
   return surface;
 }
 
-bool Font::MeasureText(const std::string& text, int32_t* width, int32_t* height) {
+bool Font::MeasureText(const std::string& text,
+                       int32_t* width,
+                       int32_t* height) {
   TTF_Font* font = ttf_font();
   if (!font)
     return false;

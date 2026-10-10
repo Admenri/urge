@@ -88,6 +88,13 @@ RB_FUNC(TilemapXP_initialize) {
       ParseArgs(argc, argv, "o", &viewport_val);
       obj = urge::MakeRefCounted<urge::TilemapXP>(
           GetObject<urge::Viewport>(viewport_val, kViewportDataType));
+    } else if (argc == 2) {
+      // initialize(viewport, tilesize)
+      VALUE viewport_val;
+      int tilesize;
+      ParseArgs(argc, argv, "oi", &viewport_val, &tilesize);
+      obj = urge::MakeRefCounted<urge::TilemapXP>(
+          GetObject<urge::Viewport>(viewport_val, kViewportDataType), tilesize);
     } else {
       rb_raise(rb_eArgError, "%s", "wrong number of arguments");
     }

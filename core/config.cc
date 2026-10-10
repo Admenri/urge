@@ -187,6 +187,7 @@ void Config::Save() {
   parser_.Set("Display", "FrameSkip", display.frame_skip);
 
   parser_.Set("GFX", "Backend", gfx.backend);
+  parser_.Set("GFX", "SpriteBatch", gfx.sprite_batch);
 
   parser_.RemoveSection("KeyBinding");
   for (const auto& binding : key_bindings) {
@@ -250,6 +251,7 @@ void Config::Load() {
       parser_.GetBool("Display", "FrameSkip", display.frame_skip);
 
   gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
+  gfx.sprite_batch = parser_.GetBool("GFX", "SpriteBatch", gfx.sprite_batch);
 
   key_bindings.clear();
   for (const auto& symbol : parser_.GetKeys("KeyBinding"))

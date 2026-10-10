@@ -34,6 +34,24 @@
 
 #include "zlib.h"
 
+#ifdef URGE_EXTERNAL_RUBY
+// The prebuilt interpreter in bind/external is a modern CRuby, and a modern
+// CRuby is not fully brought up by `ruby_init()` alone: a large part of the
+// core -- `RubyVM` among it -- is defined by "builtin" iseqs that
+// `ruby_options()` installs on the way in.  The engine drives the VM by hand
+// and never calls `ruby_options()`, so that step is taken here instead.
+//
+// It is not optional.  `rb_yjit_init` dereferences state those definitions
+// create and crashes the process when they are missing, and `RubyVM::YJIT`
+// itself does not exist until they have run.
+//
+// None of the three exist in the bundled CRuby 1.9.3, and none of them are
+// declared in a public header, hence the hand-written declarations.
+extern "C" void rb_call_builtin_inits(void);
+extern "C" void rb_yjit_init_builtin_cmes(void);
+extern "C" void rb_yjit_init(int yjit);
+#endif
+
 namespace binding {
 
 using urge::Exception;
@@ -184,6 +202,10 @@ BindingMain::BindingMain() {
   RUBY_INIT_STACK;
   ruby_init();
 
+#ifdef URGE_EXTERNAL_RUBY
+  rb_call_builtin_inits();
+#endif
+
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
   rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
 
@@ -203,6 +225,22 @@ BindingMain::BindingMain() {
   DefineModuleFunction(rb_mKernel, "save_data", save_data);
 
   InitBindings();
+
+#ifdef URGE_EXTERNAL_RUBY
+  // YJIT, on by default -- it is the reason the engine can be pointed at the
+  // interpreter in bind/external at all, since the stock Windows CRuby ships
+  // without it.  The order is CRuby's own, with the RPG database and the
+  // game's scripts standing in for its prelude: the builtin CMEs are
+  // registered first, so that they are in place before anything gets a chance
+  // to redefine a core method, and the JIT is only switched on afterwards, so
+  // that what gets compiled is the game rather than the engine's own setup.
+  //
+  // `nojit` on the command line leaves the JIT off and changes nothing else.
+  // A JIT bug and a game bug look exactly alike from the outside, and this is
+  // what tells the two apart.
+  rb_yjit_init_builtin_cmes();
+  rb_yjit_init(!config.HasCommandLine("nojit"));
+#endif
 
   auto tilemap_klass = rb_const_get(
       rb_cObject, rb_intern(config.xp() ? "TilemapXP" : "TilemapVX"));

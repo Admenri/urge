@@ -34,6 +34,50 @@ option(URGE_ENABLE_VIDEO
 # see core/network.h.
 option(URGE_ENABLE_NETWORK "Build the WebSocket and HTTP client" ON)
 
+# ---------------------------------------------------------------------------
+# The script interpreter.
+#
+# `bind/external` is an optional drop-in holding a *prebuilt* CRuby: headers
+# under include/, an import library under lib/ and the DLLs under bin/.  When
+# it is there the engine links that interpreter instead of compiling the
+# bundled CRuby 1.9.3 in third_party/cruby -- and, because that drop-in is a
+# CRuby built with YJIT, the host turns the JIT on (see bind/cruby_main.cc).
+#
+# The directory is git-ignored on purpose: which interpreter a build uses is a
+# local decision, not a property of the tree.  Its absence is the default and
+# means "compile third_party/cruby".  Nothing downstream has to know which
+# case it is in, because both answer to the same target name, `ruby-static`.
+#
+# The layout is discovered rather than hard-coded, so dropping in a different
+# CRuby needs no edit here -- the versioned include directory and the DLL name
+# both change between releases.  The one file that does have to be kept in step
+# is bind/ruby-msvc/ruby/config.h; see the comment at the top of it.
+# ---------------------------------------------------------------------------
+set(URGE_EXTERNAL_RUBY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bind/external")
+if(EXISTS "${URGE_EXTERNAL_RUBY_DIR}/include")
+  file(GLOB URGE_RUBY_INCLUDE_DIRS LIST_DIRECTORIES TRUE
+    "${URGE_EXTERNAL_RUBY_DIR}/include/ruby-*")
+  file(GLOB URGE_RUBY_IMPORT_LIBS "${URGE_EXTERNAL_RUBY_DIR}/lib/*.dll.a")
+  file(GLOB URGE_RUBY_DLLS "${URGE_EXTERNAL_RUBY_DIR}/bin/*.dll")
+
+  list(LENGTH URGE_RUBY_INCLUDE_DIRS URGE_RUBY_INCLUDE_COUNT)
+  list(LENGTH URGE_RUBY_IMPORT_LIBS URGE_RUBY_IMPORT_COUNT)
+  if(NOT URGE_RUBY_INCLUDE_COUNT EQUAL 1 OR NOT URGE_RUBY_IMPORT_COUNT EQUAL 1)
+    message(FATAL_ERROR
+      "bind/external is present but does not look like a CRuby drop-in: "
+      "expected exactly one include/ruby-* directory and one lib/*.dll.a "
+      "import library, found ${URGE_RUBY_INCLUDE_COUNT} and "
+      "${URGE_RUBY_IMPORT_COUNT}.")
+  endif()
+
+  list(GET URGE_RUBY_INCLUDE_DIRS 0 URGE_RUBY_INCLUDE_DIR)
+  list(GET URGE_RUBY_IMPORT_LIBS 0 URGE_RUBY_IMPORT_LIB)
+  message(STATUS "URGE: interpreter = the CRuby in bind/external")
+else()
+  message(STATUS "URGE: interpreter = the bundled CRuby 1.9.3")
+  unset(URGE_EXTERNAL_RUBY_DIR)
+endif()
+
 add_subdirectory(third_party)
 
 add_subdirectory(core)

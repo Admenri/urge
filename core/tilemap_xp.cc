@@ -101,7 +101,8 @@ bool TilemapXPAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-TilemapXP::TilemapXP(RefPtr<Viewport> viewport) : Node(viewport, ZValue()) {
+TilemapXP::TilemapXP(RefPtr<Viewport> viewport, int32_t tilesize)
+    : Node(viewport, ZValue()), tilesize_(tilesize) {
   Node::SetupTrait(this);
 }
 

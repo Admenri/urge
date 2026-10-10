@@ -6,4 +6,5 @@
 /bind/viewer/api_embed.js
 /bind/.gen_stamp
 /bind/.glue_stamp
+/bind/external
 __pycache__/

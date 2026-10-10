@@ -339,10 +339,11 @@ bool TilemapVXAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-TilemapVX::TilemapVX(RefPtr<Viewport> viewport)
+TilemapVX::TilemapVX(RefPtr<Viewport> viewport, int32_t tilesize)
     : Node(viewport, ZValue()),
       rgss3_style_(Config::Get().vxa()),
-      above_(MakeRefCounted<TilemapVXAbove>(this, viewport)) {
+      above_(MakeRefCounted<TilemapVXAbove>(this, viewport)),
+      tilesize_(tilesize) {
   Node::SetupTrait(this);
   CreateShadowSet();
 }

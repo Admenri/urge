@@ -86,6 +86,7 @@ class Config : public Singleton<Config> {
 
   struct {
     std::string backend = {};
+    bool sprite_batch = true;
   } gfx;
 
   std::vector<std::pair<std::string, int32_t>> key_bindings;
