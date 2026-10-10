@@ -33,6 +33,7 @@
 
 #include "app/platform/win32.h"
 
+#include "core/archive.h"
 #include "core/audio.h"
 #include "core/config.h"
 #include "core/device.h"
@@ -80,6 +81,16 @@ int main(int argc, char* argv[]) {
     urge::IOService::Reset(io);
     io->SetWritePath(base_dir);
     io->AddLoadPath(".", "/");
+
+    /* A shipped game carries its resources in `<name>.acs`, named after the
+       executable exactly the way the ini above is: `Game.exe` reads
+       `Game.acs`.  It goes in front of the plain directory, so the container
+       wins wherever both have an entry and a development build that still
+       ships loose files keeps working.  A build without the `admenri/` drop-in
+       has no archiver, so this is skipped and nothing changes. */
+    std::string archive_path = app + ".acs";
+    if (urge::archive::Available() && io->Exists(archive_path))
+      io->MountArchive(archive_path);
 
     config = new urge::Config(ini);
     urge::Config::Reset(config);

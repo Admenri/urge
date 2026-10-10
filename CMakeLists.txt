@@ -78,6 +78,30 @@ else()
   unset(URGE_EXTERNAL_RUBY_DIR)
 endif()
 
+# ---------------------------------------------------------------------------
+# The encrypted asset container.
+#
+# `admenri/` is a git-ignored drop-in holding the PhysicsFS archiver for the
+# `.acs` container, the packer that writes one, and the container key.  Its
+# presence is the whole switch: a clone of the open-source tree has no
+# `admenri/`, so none of it is compiled, `core/archive.cc` answers "not
+# available", and no `.acs` file is ever opened.  Nothing else in the build
+# knows which case it is in -- see core/archive.h.
+#
+# The check is on the archiver source rather than on the directory, so an
+# empty or half-copied drop-in is treated as absent instead of failing the
+# build halfway through.
+# ---------------------------------------------------------------------------
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/admenri/acs_archiver.cc")
+  set(URGE_ENABLE_ARCHIVE_ENCRYPTION ON)
+  message(STATUS "URGE: asset containers = encrypted (admenri/ drop-in found)")
+else()
+  set(URGE_ENABLE_ARCHIVE_ENCRYPTION OFF)
+  message(STATUS "URGE: asset containers = plain (no admenri/ drop-in)")
+endif()
+
+option(URGE_BUILD_ACS_PACK "Build the .acs container packer" ON)
+
 add_subdirectory(third_party)
 
 add_subdirectory(core)

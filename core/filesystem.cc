@@ -25,6 +25,7 @@
 #include "SDL3/SDL_system.h"
 #include "physfs.h"
 
+#include "core/archive.h"
 #include "core/exception.h"
 
 #if __ANDROID__
@@ -172,6 +173,12 @@ IOService::IOService(const std::string& argv0) {
 
   if (!PHYSFS_init(init_data))
     throw Exception(Exception::kIOError, "failed to init PHYSFS.");
+
+  /* The container archiver has to be in place before anything is mounted,
+     which is why it is registered here rather than by whoever mounts a
+     container.  A build with no `admenri/` drop-in registers nothing, and the
+     call is a no-op. */
+  archive::Register();
 }
 
 IOService::~IOService() {
@@ -190,6 +197,10 @@ int32_t IOService::AddLoadPath(const std::string& new_path,
 
 int32_t IOService::RemoveLoadPath(const std::string& old_path) {
   return PHYSFS_unmount(old_path.c_str());
+}
+
+bool IOService::MountArchive(const std::string& path, bool prepend) {
+  return archive::Mount(path, prepend);
 }
 
 bool IOService::Exists(const std::string& filename) {

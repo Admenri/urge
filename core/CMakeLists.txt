@@ -23,7 +23,27 @@ else()
   list(FILTER CORE_SOURCES EXCLUDE REGEX "/network_web\\.cc$")
 endif()
 
+# `archive.cc` is the stub `urge::archive` for a build with no `admenri/`
+# drop-in; when the drop-in is there, its own `archive.cc` takes the place of
+# this one.  Exactly one of the two defines the symbols in core/archive.h, so
+# the stub is dropped from the glob rather than guarded from the inside.
+if(URGE_ENABLE_ARCHIVE_ENCRYPTION)
+  list(FILTER CORE_SOURCES EXCLUDE REGEX "/archive\\.cc$")
+endif()
+
 target_sources(urge-core PRIVATE ${CORE_SOURCES})
+
+# The container: the archiver, its key, and Monocypher underneath.  The
+# include directory is private -- nothing above `urge::archive` may reach for
+# the format or the key, and the open-source build has neither.
+if(URGE_ENABLE_ARCHIVE_ENCRYPTION)
+  target_sources(urge-core PRIVATE
+    "${PROJECT_SOURCE_DIR}/admenri/monocypher.c"
+    "${PROJECT_SOURCE_DIR}/admenri/archive.cc"
+    "${PROJECT_SOURCE_DIR}/admenri/acs_archiver.cc")
+  target_include_directories(urge-core PRIVATE "${PROJECT_SOURCE_DIR}/admenri")
+  target_link_libraries(urge-core PUBLIC zlibstatic)
+endif()
 
 if(URGE_ENABLE_VIDEO)
   target_compile_definitions(urge-core PUBLIC URGE_ENABLE_VIDEO=1)
@@ -70,4 +90,16 @@ endif()
 if(URGE_BUILD_NETWORK_TESTS AND URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)
   add_executable(urge-network-test "${CMAKE_CURRENT_SOURCE_DIR}/../test/network_test.cc")
   target_link_libraries(urge-network-test PRIVATE urge-core)
+endif()
+
+# The packer that writes the containers.  A build-time tool rather than part of
+# the engine: it links Monocypher and zlib directly and never touches urge-core,
+# so it can be built on its own with
+#   cmake --build build --target urge-acs-pack
+if(URGE_ENABLE_ARCHIVE_ENCRYPTION AND URGE_BUILD_ACS_PACK)
+  add_executable(urge-acs-pack
+    "${PROJECT_SOURCE_DIR}/admenri/acs_pack.cc"
+    "${PROJECT_SOURCE_DIR}/admenri/monocypher.c")
+  target_include_directories(urge-acs-pack PRIVATE "${PROJECT_SOURCE_DIR}/admenri")
+  target_link_libraries(urge-acs-pack PRIVATE zlibstatic)
 endif()

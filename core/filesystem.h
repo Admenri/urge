@@ -41,6 +41,13 @@ class IOService : public Singleton<IOService> {
                       const std::string& mount_point,
                       bool append = true);
   int32_t RemoveLoadPath(const std::string& old_path);
+
+  /* Mounts an encrypted container at the archive root.  A container is
+     prepended by default, so it shadows the loose directory a development
+     build still reads from -- see `AddLoadPath` for the search order.  False
+     when this build carries no archiver, or when the mount failed. */
+  bool MountArchive(const std::string& path, bool prepend = true);
+
   bool Exists(const std::string& filename);
   std::vector<std::string> EnumDir(const std::string& dir);
 

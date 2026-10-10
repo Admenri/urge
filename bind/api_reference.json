@@ -3,9 +3,10 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-10T08:07:29Z",
+    "generated_at": "2026-10-10T08:59:06Z",
     "source_headers": [
       "core/animation.h",
+      "core/archive.h",
       "core/audio.h",
       "core/audio_service.h",
       "core/audio_stream.h",
