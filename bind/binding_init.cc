@@ -9,12 +9,43 @@
 #include "binding_init.h"
 
 #include "binding_disposable.h"
+#include "binding_gpu_object.h"
+#include "binding_gpu_buffer_descriptor.h"
+#include "binding_gpu_texture_descriptor.h"
+#include "binding_gpu_texture_view_descriptor.h"
+#include "binding_gpu_sampler_descriptor.h"
+#include "binding_gpu_shader_module_descriptor.h"
+#include "binding_gpu_bind_group_layout_descriptor.h"
+#include "binding_gpu_pipeline_layout_descriptor.h"
+#include "binding_gpu_bind_group_descriptor.h"
+#include "binding_gpu_compute_pipeline_descriptor.h"
+#include "binding_gpu_render_pipeline_descriptor.h"
+#include "binding_gpu_render_pass_descriptor.h"
+#include "binding_gpu_compute_pass_descriptor.h"
+#include "binding_gpu_query_set_descriptor.h"
+#include "binding_gpu_buffer.h"
+#include "binding_gpu_texture.h"
+#include "binding_gpu_texture_view.h"
+#include "binding_gpu_sampler.h"
+#include "binding_gpu_shader_module.h"
+#include "binding_gpu_bind_group_layout.h"
+#include "binding_gpu_pipeline_layout.h"
+#include "binding_gpu_bind_group.h"
+#include "binding_gpu_render_pipeline.h"
+#include "binding_gpu_compute_pipeline.h"
+#include "binding_gpu_query_set.h"
+#include "binding_gpu_command_buffer.h"
+#include "binding_gpu_command_encoder.h"
+#include "binding_gpu_render_pass_encoder.h"
+#include "binding_gpu_compute_pass_encoder.h"
+#include "binding_gpu_queue.h"
 #include "binding_node.h"
 #include "binding_geometry.h"
 #include "binding_bitmap.h"
 #include "binding_color.h"
 #include "binding_font.h"
-#include "binding_palette.h"
+#include "binding_image.h"
+#include "binding_animation.h"
 #include "binding_plane.h"
 #include "binding_rect.h"
 #include "binding_sprite.h"
@@ -39,6 +70,7 @@
 #include "binding_perspective_camera.h"
 #include "binding_audio.h"
 #include "binding_config.h"
+#include "binding_gpu.h"
 #include "binding_graphics.h"
 #include "binding_input.h"
 #include "binding_mouse.h"
@@ -77,12 +109,43 @@ void InitBindings() {
   DefineRGSSExceptions();
 
   InitDisposableBinding();
+  InitGPUObjectBinding();
+  InitGPUBufferDescriptorBinding();
+  InitGPUTextureDescriptorBinding();
+  InitGPUTextureViewDescriptorBinding();
+  InitGPUSamplerDescriptorBinding();
+  InitGPUShaderModuleDescriptorBinding();
+  InitGPUBindGroupLayoutDescriptorBinding();
+  InitGPUPipelineLayoutDescriptorBinding();
+  InitGPUBindGroupDescriptorBinding();
+  InitGPUComputePipelineDescriptorBinding();
+  InitGPURenderPipelineDescriptorBinding();
+  InitGPURenderPassDescriptorBinding();
+  InitGPUComputePassDescriptorBinding();
+  InitGPUQuerySetDescriptorBinding();
+  InitGPUBufferBinding();
+  InitGPUTextureBinding();
+  InitGPUTextureViewBinding();
+  InitGPUSamplerBinding();
+  InitGPUShaderModuleBinding();
+  InitGPUBindGroupLayoutBinding();
+  InitGPUPipelineLayoutBinding();
+  InitGPUBindGroupBinding();
+  InitGPURenderPipelineBinding();
+  InitGPUComputePipelineBinding();
+  InitGPUQuerySetBinding();
+  InitGPUCommandBufferBinding();
+  InitGPUCommandEncoderBinding();
+  InitGPURenderPassEncoderBinding();
+  InitGPUComputePassEncoderBinding();
+  InitGPUQueueBinding();
   InitNodeBinding();
   InitGeometryBinding();
   InitBitmapBinding();
   InitColorBinding();
   InitFontBinding();
-  InitPaletteBinding();
+  InitImageBinding();
+  InitAnimationBinding();
   InitPlaneBinding();
   InitRectBinding();
   InitSpriteBinding();
@@ -107,6 +170,7 @@ void InitBindings() {
   InitPerspectiveCameraBinding();
   InitAudioBinding();
   InitConfigBinding();
+  InitGPUBinding();
   InitGraphicsBinding();
   InitInputBinding();
   InitMouseBinding();

@@ -30,11 +30,13 @@
 #include "core/disposable.h"
 #include "core/font.h"
 #include "core/font_renderer.h"
-#include "core/palette.h"
+#include "core/image.h"
 #include "core/primitive.h"
 #include "core/utility.h"
 
 namespace urge {
+
+class GPUTextureView;
 
 URGE_BINDING()
 class Bitmap : public Disposable {
@@ -119,10 +121,16 @@ class Bitmap : public Disposable {
   URGE_BINDING()
   RefPtr<Rect> TextSize(std::string str);
 
+  URGE_BINDING(Name : "texture_view")
+  RefPtr<GPUTextureView> GetTextureView();
+
   URGE_BINDING()
-  RefPtr<Palette> ToPalette();
+  RefPtr<Image> ToImage();
   URGE_BINDING()
-  void UpdateWithPalette(RefPtr<Palette> palette);
+  void UpdateWithImage(RefPtr<Image> image);
+
+  URGE_BINDING()
+  static RefPtr<Bitmap> FromImage(RefPtr<Image> image);
 
   URGE_BINDING()
   ATTR(RefPtr<Font>, Font);

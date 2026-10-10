@@ -561,7 +561,7 @@ void ImGuiManager::BuildAboutPanel() {
 
 void ImGuiManager::BuildFPSWindow() {
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
-  const ImVec2 size(U(270.0f), U(205.0f));
+  const ImVec2 size(U(270.0f), U(275.0f));
 
   const bool replace = fps_size_stale_ || fps_replace_position_;
   ImGui::SetNextWindowPos(
@@ -606,6 +606,11 @@ void ImGuiManager::BuildFPSWindow() {
 
   ImGui::Text("min / max  %.2f / %.2f ms", minimum, maximum);
   ImGui::Text("average    %.2f ms", average);
+
+  const Graphics& graphics = Graphics::Get();
+  ImGui::Text("render cost: %.2f ms", graphics.render_cost_ms());
+  ImGui::Text("logic cost:  %.2f ms", graphics.logic_cost_ms());
+  ImGui::Text("other cost:  %.2f ms", graphics.other_cost_ms());
 
   ImGui::Spacing();
   if (frame_times_.size() >= 2) {

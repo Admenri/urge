@@ -191,7 +191,7 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 
 脚本只用**构造方式**验证不需要 GPU 的类（`Disposable`、`Rect`、`Color`、`Tone`、
 `Vector2/3/4`、`Table`、`Font`）；`Bitmap`、`Node`、`Sprite`、`Viewport`、`Plane`、
-`Palette` 只做注册级检查（`allocate` 是否给出 typed data、方法名是否齐全、
+`Image` 只做注册级检查（`allocate` 是否给出 typed data、方法名是否齐全、
 `initialize`/`initialize_copy` 是否为 `private`），因为实例化它们需要活的图形设备；
 `Graphics`/`Input` 的**函数**一律不调用——它们读的单例要等窗口建立后才存在，调用会是空
 解引用——只检查模块性、方法名和 `Input::*` 常量。
@@ -222,7 +222,7 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
   调用，不关心它是声明还是内联定义。
 
 当前规模：21 个类 + 4 个模块；无跳过项（未被 `URGE_BINDING()` 标记的内部构造不再进入
-IR，例如 `Node()`、`Palette(SDL_Surface*)`、`Vector2/3/4(glm::vec*)`）。
+IR，例如 `Node()`、`Image(SDL_Surface*)`、`Vector2/3/4(glm::vec*)`）。
 
 ## 数据类型与分配器（重要）
 
@@ -420,7 +420,7 @@ void InitBitmapBinding() {
 `CLASS_ORDER`（去掉模块）：
 
 ```
-Disposable → Node → Bitmap → Color → Font → Palette → Plane → Rect → Sprite
+Disposable → Node → Bitmap → Color → Font → Image → Plane → Rect → Sprite
 → Table → Tone → Vector2 → Vector3 → Vector4 → Viewport → WindowVX → WindowXP
 ```
 
@@ -580,6 +580,32 @@ RB_FUNC(Input_Update) {
   return Qnil;
 }
 ```
+
+## 枚举常量（`URGE_BINDING()` 标记的 `enum`）
+
+`URGE_BINDING()` 标记在类体内的 `enum` 上时，每个枚举项导出一个 Ruby 常量，名字是
+C++ 名的 SCREAMING_SNAKE（`MapRead` → `MAP_READ`，`OpenState` → `OPEN_STATE`）。
+常量注册到类（`klass`）或模块（`mod`）上，与声明它的类/模块一致：
+
+```cpp
+URGE_BINDING()
+class GPU : public Singleton<GPU> {
+ public:
+  URGE_BINDING()
+  enum MapMode { MapRead = 1, MapWrite = 2 };
+  ...
+};
+```
+
+```ruby
+GPU::MAP_READ | GPU::MAP_WRITE   # => 3
+```
+
+- 生成器只读枚举项名，**值取自 C++ 侧**（`urge::GPU::MapRead`），所以隐式后继
+  （`enum { A, B }`）不需要生成器懂 C++ 求值规则，`enum` 与 `enum class` 都一样。
+- 标记只作用于紧跟的那一条声明，与 `ATTR`、方法一致；未标记的 `enum` 不进 IR。
+- 早先手写的常量表（`NetworkEvent`/`WebSocket` 的 `Define*Constants`）保持原样；
+  新代码用标记 enum 即可，不必再写手写块。
 
 ## `URGE_BINDING` 导出标记
 
@@ -771,6 +797,7 @@ class / module 条目字段：
 | `instance_methods` / `class_methods` | 实例/类方法（`static`），含 `return` 与 `params` |
 | `attributes` / `class_attributes` | `ATTR(...)` / `static ATTR(...)` → 读写对 |
 | `data_attributes` | 公开数据成员按同一规则生成读写对（urge 的头文件里没有这类声明） |
+| `constants` | `URGE_BINDING()` 标记 `enum` 的枚举项 → `{name, cpp_name, value}`，注册成类/模块常量 |
 | `marshal` | `{dump, load}`，两者都为 `true` 才生成 `_dump`/`_load` |
 | `index` | `URGE_BINDING(Name:)` 标出的 `{get, set}`（`Table#[]`/`#[]=`） |
 | `functions` | 模块函数；属性读写对是两条 `attr: true` 条目，带 `setter` 与 `attr_value_type` |

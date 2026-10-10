@@ -37,6 +37,7 @@
 #include "core/config.h"
 #include "core/device.h"
 #include "core/exception.h"
+#include "core/gpu.h"
 #include "core/gpu_utils.h"
 #include "core/imgui_manager.h"
 #include "core/input.h"
@@ -77,7 +78,6 @@ wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
 
   return wgpu::PresentMode::Fifo;
 }
-
 
 }  // namespace
 
@@ -136,9 +136,9 @@ void FPSLimiter::Delay() {
        long stall into one correspondingly long sleep. Both ends stop at
        kMaxFrameLag frames, so the limiter can neither owe nor bank more than
        that much time. */
-    skip_ideal_diff_ = std::clamp(skip_ideal_diff_,
-                                  -ticks_per_frame_ * kMaxFrameLag,
-                                  ticks_per_frame_ * kMaxFrameLag);
+    skip_ideal_diff_ =
+        std::clamp(skip_ideal_diff_, -ticks_per_frame_ * kMaxFrameLag,
+                   ticks_per_frame_ * kMaxFrameLag);
 
     if (skip_reset_flag_)
       skip_ideal_diff_ = 0;
@@ -211,6 +211,7 @@ Graphics::Graphics()
   SDL_SetWindowFullscreen(window_, config.display.fullscreen);
 
   GPUDevice::Reset(new GPUDevice(window_, config.gfx.backend));
+  GPU::Reset(new GPU());
   ShaderSet::Reset(new ShaderSet());
 
   UniformManager::Reset(new UniformManager());
@@ -234,12 +235,23 @@ Graphics::~Graphics() {
   QuadVertexManager::Reset(nullptr);
   UniformManager::Reset(nullptr);
   ShaderSet::Reset(nullptr);
+  GPU::Reset(nullptr);
   GPUDevice::Reset(nullptr);
 
   SDL_DestroyWindow(window_);
 }
 
 void Graphics::Update() {
+  const double tick_freq = static_cast<double>(SDL_GetPerformanceFrequency());
+  const uint64_t frame_begin = SDL_GetPerformanceCounter();
+
+  /* The script runs between two Update() calls, so that gap is the logic of
+     the frame.  The first frame has no previous end to measure from. */
+  if (last_update_end_tick_ != 0)
+    logic_cost_ms_ = static_cast<float>(
+        static_cast<double>(frame_begin - last_update_end_tick_) * 1000.0 /
+        tick_freq);
+
   Audio::Get().Update();
 
   if (!frame_started_) {
@@ -249,12 +261,16 @@ void Graphics::Update() {
 
   const bool skip_frame = frame_skip_ && limiter_.RequireFrameSkip();
 
+  const uint64_t render_begin = SDL_GetPerformanceCounter();
   if (!skip_frame) {
     if (!frozen_)
       root_->Render(screen_, Color::Black());
 
     ++frame_count_;
   }
+  render_cost_ms_ = static_cast<float>(
+      static_cast<double>(SDL_GetPerformanceCounter() - render_begin) * 1000.0 /
+      tick_freq);
 
   if (skip_frame)
     limiter_.Reset();
@@ -262,6 +278,16 @@ void Graphics::Update() {
   PresentInternal();
 
   limiter_.Delay();
+
+  /* Whatever is left of the frame once the scene graph and the script are
+     accounted for: events, present, audio, the frame-rate limiter. */
+  last_update_end_tick_ = SDL_GetPerformanceCounter();
+  other_cost_ms_ = static_cast<float>(static_cast<double>(
+                                          last_update_end_tick_ - frame_begin) *
+                                      1000.0 / tick_freq) -
+                   render_cost_ms_;
+  if (other_cost_ms_ < 0.0f)
+    other_cost_ms_ = 0.0f;
 }
 
 void Graphics::Wait(int32_t duration) {

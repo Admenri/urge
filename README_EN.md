@@ -295,7 +295,7 @@ takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
 
 | Category | Count | Names |
 | --- | --- | --- |
-| Classes | 21 | `Disposable`, `Node`, `Geometry`, `Bitmap`, `Color`, `Font`, `Palette`, `Plane`, `Rect`, `Sprite`, `Table`, `Tone`, `Vector2`, `Vector3`, `Vector4`, `TilemapVX`, `TilemapXP`, `Viewport`, `WindowVX`, `WindowXP`, `Effect` |
+| Classes | 22 | `Disposable`, `Node`, `Geometry`, `Bitmap`, `Color`, `Font`, `Image`, `Animation`, `Plane`, `Rect`, `Sprite`, `Table`, `Tone`, `Vector2`, `Vector3`, `Vector4`, `TilemapVX`, `TilemapXP`, `Viewport`, `WindowVX`, `WindowXP`, `Effect` |
 | Modules | 4 | `Graphics`, `Input`, `Audio`, `Mouse` |
 
 ### Core module map
@@ -319,7 +319,7 @@ takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
 | `audio.{h,cc}` | BGM / BGS / SE playback |
 | `filesystem.{h,cc}` | PhysicsFS-based virtual filesystem and RTP paths |
 | `config.{h,cc}` / `inirw.{h,cc}` | `Game.ini` parsing |
-| `palette` / `table` / `utility` | RGSS data types and value types (`Color` / `Tone` / `Rect` / `Vector2/3/4`) |
+| `image` / `animation` / `table` / `utility` | RGSS data types and value types (`Color` / `Tone` / `Rect` / `Vector2/3/4`), animated image decoding |
 | `object.h` / `refptr.h` / `disposable.h` | Reference counting, singletons and lifetime infrastructure |
 | `logger.h` | Levelled logging (with source location in Debug, stripped in Release) |
 

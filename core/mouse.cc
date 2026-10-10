@@ -27,7 +27,7 @@
 #include "SDL3/SDL_hints.h"
 
 #include "core/graphics.h"
-#include "core/palette.h"
+#include "core/image.h"
 
 namespace urge {
 
@@ -165,7 +165,7 @@ void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
     return;
   }
 
-  RefPtr<Palette> surface = image->ToPalette();
+  RefPtr<Image> surface = image->ToImage();
   if (!surface)
     return;
 

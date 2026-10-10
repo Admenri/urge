@@ -125,6 +125,14 @@ class Graphics : public Singleton<Graphics> {
   RefPtr<ScreenRootNode> root() { return root_; }
   SDL_Window* window() const { return window_; }
 
+  /*! Milliseconds the last frame spent in each phase.  `logic` is the time
+      between two `Update()` calls -- the script work of the frame -- `render`
+      is the draw submission of the scene graph, and `other` is what is left
+      of the frame (events, present, audio, the frame-rate limiter). */
+  float render_cost_ms() const { return render_cost_ms_; }
+  float logic_cost_ms() const { return logic_cost_ms_; }
+  float other_cost_ms() const { return other_cost_ms_; }
+
  private:
   friend class ScreenRootNode;
 
@@ -142,6 +150,11 @@ class Graphics : public Singleton<Graphics> {
   bool frame_skip_ = true;
   bool vsync_ = true;
   bool frame_started_ = false;
+
+  uint64_t last_update_end_tick_ = 0;
+  float render_cost_ms_ = 0.0f;
+  float logic_cost_ms_ = 0.0f;
+  float other_cost_ms_ = 0.0f;
 
   FPSLimiter limiter_;
 

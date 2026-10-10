@@ -33,6 +33,7 @@
 #include "glm/ext/matrix_clip_space.hpp"
 
 #include "core/filesystem.h"
+#include "core/gpu.h"
 #include "core/gpu_utils.h"
 #include "core/pipeline.h"
 
@@ -562,7 +563,7 @@ RefPtr<Rect> Bitmap::TextSize(std::string str) {
   return MakeRefCounted<Rect>(0, 0, width, height);
 }
 
-RefPtr<Palette> Bitmap::ToPalette() {
+RefPtr<Image> Bitmap::ToImage() {
   Disposable::Guard();
 
   auto* data = SDL_CreateSurface(size_.x, size_.y, kInternalPixelFormat);
@@ -581,16 +582,16 @@ RefPtr<Palette> Bitmap::ToPalette() {
     UnpremultiplyPixelRow(row, size_.x);
   }
 
-  return MakeRefCounted<Palette>(data);
+  return MakeRefCounted<Image>(data);
 }
 
-void Bitmap::UpdateWithPalette(RefPtr<Palette> palette) {
+void Bitmap::UpdateWithImage(RefPtr<Image> image) {
   Disposable::Guard();
 
-  auto* data = palette->image();
+  auto* data = image->image();
   if (data->w != size_.x || data->h != size_.y)
     throw Exception(Exception::kRGSSError,
-                    "palette data size mismatch bitmap size.");
+                    "image data size mismatch bitmap size.");
 
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
                                    data->h);
@@ -634,6 +635,15 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
   g_queue.WriteTexture(&destination, pixels,
                        static_cast<size_t>(bytes_per_row) * size_.y,
                        &buffer_layout, &target_size);
+}
+
+RefPtr<Bitmap> Bitmap::FromImage(RefPtr<Image> image) {
+  if (!image)
+    throw Exception(Exception::kRGSSError, "invalid image value.");
+
+  auto result = MakeRefCounted<Bitmap>(image->Width(), image->Height());
+  result->UpdateWithImage(image);
+  return result;
 }
 
 ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
@@ -681,6 +691,10 @@ wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
 }  // namespace urge
 
 void Bitmap::DisposeObject() {}
+
+RefPtr<GPUTextureView> Bitmap::GetTextureView() {
+  return MakeRefCounted<GPUTextureView>(texture_view_);
+}
 
 void Bitmap::CreateInternal(SDL_Surface* data) {
   size_ = glm::ivec2{data->w, data->h};

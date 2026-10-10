@@ -276,7 +276,7 @@ flowchart LR
 
 | 类别 | 数量 | 名称 |
 | --- | --- | --- |
-| 类 | 21 | `Disposable`、`Node`、`Geometry`、`Bitmap`、`Color`、`Font`、`Palette`、`Plane`、`Rect`、`Sprite`、`Table`、`Tone`、`Vector2`、`Vector3`、`Vector4`、`TilemapVX`、`TilemapXP`、`Viewport`、`WindowVX`、`WindowXP`、`Effect` |
+| 类 | 22 | `Disposable`、`Node`、`Geometry`、`Bitmap`、`Color`、`Font`、`Image`、`Animation`、`Plane`、`Rect`、`Sprite`、`Table`、`Tone`、`Vector2`、`Vector3`、`Vector4`、`TilemapVX`、`TilemapXP`、`Viewport`、`WindowVX`、`WindowXP`、`Effect` |
 | 模块 | 4 | `Graphics`、`Input`、`Audio`、`Mouse` |
 
 ### 核心模块地图
@@ -300,7 +300,7 @@ flowchart LR
 | `audio.{h,cc}` | BGM / BGS / SE 等音频播放 |
 | `filesystem.{h,cc}` | 基于 PhysicsFS 的虚拟文件系统与 RTP 路径 |
 | `config.{h,cc}` / `inirw.{h,cc}` | `Game.ini` 解析 |
-| `palette` / `table` / `utility` | RGSS 数据类型与值类型（`Color` / `Tone` / `Rect` / `Vector2/3/4`） |
+| `image` / `animation` / `table` / `utility` | RGSS 数据类型与值类型（`Color` / `Tone` / `Rect` / `Vector2/3/4`），动图解码 |
 | `object.h` / `refptr.h` / `disposable.h` | 引用计数、单例与生命周期基础设施 |
 | `logger.h` | 分级日志（Debug 含位置，Release 自动裁剪） |
 

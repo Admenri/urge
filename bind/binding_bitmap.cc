@@ -11,12 +11,14 @@
 #include "binding_color.h"
 #include "binding_disposable.h"
 #include "binding_font.h"
-#include "binding_palette.h"
+#include "binding_gpu_texture_view.h"
+#include "binding_image.h"
 #include "binding_rect.h"
 
 #include "core/bitmap.h"
 #include "core/font.h"
-#include "core/palette.h"
+#include "core/gpu.h"
+#include "core/image.h"
 #include "core/utility.h"
 // --- GENERATED INCLUDES END ---
 
@@ -30,7 +32,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/bitmap.h:40-127)
+// Bitmap  (core/bitmap.h:42-135)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
@@ -407,28 +409,53 @@ RB_FUNC(Bitmap_TextSize) {
   return Qnil;
 }
 
-RB_FUNC(Bitmap_ToPalette) {
+RB_FUNC(Bitmap_GetTextureView) {
   auto* self_obj = GetSelfData<urge::Bitmap>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 0);
-    auto result = self_obj->ToPalette();
-    return WrapObject(result.get(), kPaletteDataType);
+    auto result = self_obj->GetTextureView();
+    return WrapObject(result.get(), kGPUTextureViewDataType);
   }
   EXC_END;
   return Qnil;
 }
 
-RB_FUNC(Bitmap_UpdateWithPalette) {
+RB_FUNC(Bitmap_ToImage) {
+  auto* self_obj = GetSelfData<urge::Bitmap>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    auto result = self_obj->ToImage();
+    return WrapObject(result.get(), kImageDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Bitmap_UpdateWithImage) {
   auto* self_obj = GetSelfData<urge::Bitmap>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 1);
-    VALUE palette_val;
-    ParseArgs(argc, argv, "o", &palette_val);
+    VALUE image_val;
+    ParseArgs(argc, argv, "o", &image_val);
 
-    self_obj->UpdateWithPalette(
-        GetObject<urge::Palette>(palette_val, kPaletteDataType));
+    self_obj->UpdateWithImage(
+        GetObject<urge::Image>(image_val, kImageDataType));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Bitmap_FromImage) {
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE image_val;
+    ParseArgs(argc, argv, "o", &image_val);
+
+    auto result = urge::Bitmap::FromImage(GetObject<urge::Image>(image_val, kImageDataType));
+    return WrapObject(result.get(), kBitmapDataType);
   }
   EXC_END;
   return Qnil;
@@ -463,8 +490,10 @@ void InitBitmapBinding() {
   DefineMethod(klass, "radial_blur", Bitmap_RadialBlur);
   DefineMethod(klass, "draw_text", Bitmap_DrawText);
   DefineMethod(klass, "text_size", Bitmap_TextSize);
-  DefineMethod(klass, "to_palette", Bitmap_ToPalette);
-  DefineMethod(klass, "update_with_palette", Bitmap_UpdateWithPalette);
+  DefineMethod(klass, "texture_view", Bitmap_GetTextureView);
+  DefineMethod(klass, "to_image", Bitmap_ToImage);
+  DefineMethod(klass, "update_with_image", Bitmap_UpdateWithImage);
+  DefineClassMethod(klass, "from_image", Bitmap_FromImage);
   DefineMethod(klass, "font", Bitmap_Font);
   DefineMethod(klass, "font=", Bitmap_FontEqual);
   InitBitmapBindingAppend(klass);

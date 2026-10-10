@@ -91,7 +91,7 @@ python bind/viewer/viewer.py stats --json
 - **属性**是读写对，显示为读取侧 `Sprite#bitmap`，下一行给出写入侧 `Sprite#bitmap = value`。
   两条共用同一条 IR 记录。
 - **构造**显示为 `Sprite.new(viewport = nil)`。有重载的类（`Bitmap`、`Color`、`Rect`、
-  `Tone`、`Vector2/3/4`、`Viewport`、`Palette`）会列出全部重载。
+  `Tone`、`Vector2/3/4`、`Viewport`、`Image`）会列出全部重载。
 - **默认值**按脚本作者会写的字面量呈现：IR 里的 C++ 拼写 `nullptr` / `{}` / `255.f`
   分别显示为 `nil` / `[]`（或 `""`）/ `255.0`。未映射的形状原样保留，不做猜测。
 - **未能导出**的声明单独用醒目样式列出，并给出原因（例如 `internal parameter type: glm::vec2`）。

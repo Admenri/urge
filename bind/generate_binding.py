@@ -892,6 +892,25 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
     return "%s_%s(%s, urge::%s, %s);" % (prefix, suffix, owner, owner, name)
 
 
+def emit_constants(owner: str, entry: dict, receiver: str) -> list[str]:
+    """`rb_const_set` for every `URGE_BINDING()` marked enum enumerator.
+
+    The value is read from the C++ enumerator (`urge::Owner::Enumerator`)
+    rather than re-evaluated from the header text, so an enum with an implicit
+    successor is right without the generator having to know C++ rules.
+    """
+    lines: list[str] = []
+    for const in entry.get("constants", []):
+        lines.append(
+            '  rb_const_set(%s, rb_intern("%s"),' % (receiver, const["name"])
+        )
+        lines.append(
+            "               LONG2NUM(static_cast<long>(urge::%s::%s)));"
+            % (owner, const["cpp_name"])
+        )
+    return lines
+
+
 def emit_init_function(entry: dict) -> list[str]:
     name = entry["cpp_name"]
     lines = [
@@ -949,6 +968,7 @@ def emit_init_function(entry: dict) -> list[str]:
             '  DefineClassMethod(klass, "%s", %s_%sEqual);'
             % (attr["setter"], name, attr["cpp_name"])
         )
+    lines.extend(emit_constants(name, entry, "klass"))
     lines.extend("  " + call for call in EXTRA_INIT_CALLS.get(name, []))
     lines.append("  Init%sBindingAppend(klass);" % name)
     lines.append("}")
@@ -1106,6 +1126,7 @@ def emit_module(entry: dict) -> list[str]:
                 '  DefineModuleFunction(mod, "%s", %s_%s%s);'
                 % (fn["ruby_name"], name, fn["cpp_name"], "Equal" if fn.get("setter") else "")
             )
+    lines.extend(emit_constants(name, entry, "mod"))
     lines.extend("  " + call for call in EXTRA_INIT_CALLS.get(name, []))
     lines.append("  Init%sBindingAppend(mod);" % name)
     lines.append("}")

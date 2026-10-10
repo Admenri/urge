@@ -56,7 +56,7 @@ MODULE_CLASSES = {
     "Input",
     "Audio",
     "Mouse",
-    "GPUDevice",
+    "GPU",
     "Network",
     "Config",
 }
@@ -105,7 +105,8 @@ CLASS_ORDER = [
     "Bitmap",
     "Color",
     "Font",
-    "Palette",
+    "Image",
+    "Animation",
     "Plane",
     "Rect",
     "Sprite",
@@ -391,6 +392,17 @@ def ruby_attr_base(cpp_name: str) -> str:
     return camel_to_snake(cpp_name)
 
 
+def ruby_constant_name(cpp_name: str) -> str:
+    """The Ruby name of an enum constant: SCREAMING_SNAKE of the C++ name.
+
+    `MapRead` -> `MAP_READ`, `OpenState` -> `OPEN_STATE`.  This is the same
+    mechanical rule the hand written constants followed before the generator
+    could read them (`urge::NetworkEvent::Open` -> `OPEN`), so an enum declared
+    in a header names its Ruby constants without an annotation.
+    """
+    return camel_to_snake(cpp_name).upper()
+
+
 # ---------------------------------------------------------------------------
 # Declaration parsing
 # ---------------------------------------------------------------------------
@@ -510,6 +522,17 @@ ATTR_RE = re.compile(
 MARSHAL_DUMP_RE = re.compile(r"^MARSHAL_DUMP\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 MARSHAL_LOAD_RE = re.compile(r"^MARSHAL_LOAD\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 
+# A `URGE_BINDING()` marked enum exports one Ruby constant per enumerator, the
+# Ruby name being SCREAMING_SNAKE of the C++ name (`MapWrite` -> `MAP_WRITE`).
+# The declaration is scoped (`enum class`) or not; only the body matters, and
+# an optional explicit value is carried through so a constant with no `=`
+# still gets a value from the C++ side (`urge::Owner::Enumerator`).
+ENUM_RE = re.compile(
+    r"^enum\s+(?:class\s+)?(?P<name>\w+)?\s*(?::\s*[\w:]+\s*)?"
+    r"\{(?P<body>.*)\}\s*;?\s*$",
+    re.S,
+)
+
 
 def _normalize_scopes(body: str) -> str:
     """Turn an access specifier into a statement boundary.
@@ -544,6 +567,32 @@ def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
     return annotation, stmt.strip()
 
 
+def parse_enum(match: re.Match) -> list[dict[str, Any]]:
+    """Turn a marked `enum` body into constant entries.
+
+    Each entry is `{name, cpp_name, value}`: `name` is the Ruby constant,
+    `cpp_name` the C++ enumerator (the glue names it, so an explicit value is
+    not evaluated here), `value` the source text after `=` or None.
+    """
+    constants = []
+    for part in split_top_level(match.group("body")):
+        part = part.strip()
+        if not part:
+            continue
+        enumerator, _, value = part.partition("=")
+        enumerator = enumerator.strip()
+        if not enumerator:
+            continue
+        constants.append(
+            {
+                "name": ruby_constant_name(enumerator),
+                "cpp_name": enumerator,
+                "value": value.strip() or None,
+            }
+        )
+    return constants
+
+
 def parse_class(
     name: str,
     inner: str,
@@ -575,6 +624,7 @@ def parse_class(
         "data_attributes": [],
         "class_methods": [],
         "class_attributes": [],
+        "constants": [],
         "marshal": {"dump": False, "load": False},
         "index": None,
         "unsupported": [],
@@ -585,7 +635,12 @@ def parse_class(
         annotation, stmt = take_annotation(raw_stmt)
         if annotation is None or not stmt:
             continue
-        if re.match(r"^(struct|class|enum|union)\b", stmt):
+        if re.match(r"^(struct|class|union)\b", stmt):
+            continue
+
+        m = ENUM_RE.match(stmt)
+        if m:
+            result["constants"].extend(parse_enum(m))
             continue
 
         m = MARSHAL_DUMP_RE.match(stmt)

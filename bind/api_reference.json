@@ -3,8 +3,9 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-09T14:54:18Z",
+    "generated_at": "2026-10-10T01:53:59Z",
     "source_headers": [
+      "core/animation.h",
       "core/audio.h",
       "core/audio_service.h",
       "core/audio_stream.h",
@@ -23,8 +24,10 @@
       "core/font_context.h",
       "core/font_renderer.h",
       "core/geometry.h",
+      "core/gpu.h",
       "core/gpu_utils.h",
       "core/graphics.h",
+      "core/image.h",
       "core/imgui_manager.h",
       "core/inirw.h",
       "core/input.h",
@@ -34,7 +37,6 @@
       "core/network_backend.h",
       "core/node.h",
       "core/object.h",
-      "core/palette.h",
       "core/pipeline.h",
       "core/plane.h",
       "core/primitive.h",
@@ -59,6 +61,7 @@
   },
   "modules": [
     {
+      "constants": [],
       "unsupported": [],
       "export": "core/audio.h:40-92",
       "cpp_name": "Audio",
@@ -482,6 +485,7 @@
       ]
     },
     {
+      "constants": [],
       "unsupported": [],
       "export": "core/config.h:36-45",
       "cpp_name": "Config",
@@ -548,6 +552,383 @@
       ]
     },
     {
+      "constants": [
+        {
+          "name": "MAP_READ",
+          "cpp_name": "MapRead",
+          "value": "1"
+        },
+        {
+          "name": "MAP_WRITE",
+          "cpp_name": "MapWrite",
+          "value": "2"
+        },
+        {
+          "name": "COPY_SRC",
+          "cpp_name": "CopySrc",
+          "value": "4"
+        },
+        {
+          "name": "COPY_DST",
+          "cpp_name": "CopyDst",
+          "value": "8"
+        },
+        {
+          "name": "INDEX",
+          "cpp_name": "Index",
+          "value": "16"
+        },
+        {
+          "name": "VERTEX",
+          "cpp_name": "Vertex",
+          "value": "32"
+        },
+        {
+          "name": "UNIFORM",
+          "cpp_name": "Uniform",
+          "value": "64"
+        },
+        {
+          "name": "STORAGE",
+          "cpp_name": "Storage",
+          "value": "128"
+        },
+        {
+          "name": "INDIRECT",
+          "cpp_name": "Indirect",
+          "value": "256"
+        },
+        {
+          "name": "QUERY_RESOLVE",
+          "cpp_name": "QueryResolve",
+          "value": "512"
+        },
+        {
+          "name": "TEXTURE_BINDING",
+          "cpp_name": "TextureBinding",
+          "value": "4"
+        },
+        {
+          "name": "TEXTURE_STORAGE_BINDING",
+          "cpp_name": "TextureStorageBinding",
+          "value": "8"
+        },
+        {
+          "name": "TEXTURE_RENDER_ATTACHMENT",
+          "cpp_name": "TextureRenderAttachment",
+          "value": "16"
+        },
+        {
+          "name": "LOAD",
+          "cpp_name": "Load",
+          "value": "1"
+        },
+        {
+          "name": "CLEAR",
+          "cpp_name": "Clear",
+          "value": "2"
+        },
+        {
+          "name": "STORE",
+          "cpp_name": "Store",
+          "value": "1"
+        },
+        {
+          "name": "DISCARD",
+          "cpp_name": "Discard",
+          "value": "2"
+        },
+        {
+          "name": "SHADER_LANGUAGE_WGSL",
+          "cpp_name": "ShaderLanguageWgsl",
+          "value": "0"
+        },
+        {
+          "name": "SHADER_LANGUAGE_GLSL",
+          "cpp_name": "ShaderLanguageGlsl",
+          "value": "1"
+        },
+        {
+          "name": "SHADER_STAGE_VERTEX",
+          "cpp_name": "ShaderStageVertex",
+          "value": "static_cast<uint32_t>(wgpu::ShaderStage::Vertex)"
+        },
+        {
+          "name": "SHADER_STAGE_FRAGMENT",
+          "cpp_name": "ShaderStageFragment",
+          "value": "static_cast<uint32_t>(wgpu::ShaderStage::Fragment)"
+        },
+        {
+          "name": "INDEX_FORMAT_UINT16",
+          "cpp_name": "IndexFormatUint16",
+          "value": "static_cast<uint32_t>(wgpu::IndexFormat::Uint16)"
+        },
+        {
+          "name": "INDEX_FORMAT_UINT32",
+          "cpp_name": "IndexFormatUint32",
+          "value": "static_cast<uint32_t>(wgpu::IndexFormat::Uint32)"
+        },
+        {
+          "name": "VERTEX_FORMAT_FLOAT32",
+          "cpp_name": "VertexFormatFloat32",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Float32)"
+        },
+        {
+          "name": "VERTEX_FORMAT_FLOAT32X2",
+          "cpp_name": "VertexFormatFloat32x2",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Float32x2)"
+        },
+        {
+          "name": "VERTEX_FORMAT_FLOAT32X3",
+          "cpp_name": "VertexFormatFloat32x3",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Float32x3)"
+        },
+        {
+          "name": "VERTEX_FORMAT_FLOAT32X4",
+          "cpp_name": "VertexFormatFloat32x4",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Float32x4)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_UNDEFINED",
+          "cpp_name": "TextureFormatUndefined",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::Undefined)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RGBA8_UNORM",
+          "cpp_name": "TextureFormatRgba8Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RGBA8Unorm)"
+        },
+        {
+          "name": "FILTER_MODE_NEAREST",
+          "cpp_name": "FilterModeNearest",
+          "value": "static_cast<uint32_t>(wgpu::FilterMode::Nearest)"
+        },
+        {
+          "name": "FILTER_MODE_LINEAR",
+          "cpp_name": "FilterModeLinear",
+          "value": "static_cast<uint32_t>(wgpu::FilterMode::Linear)"
+        },
+        {
+          "name": "ADDRESS_MODE_CLAMP_TO_EDGE",
+          "cpp_name": "AddressModeClampToEdge",
+          "value": "static_cast<uint32_t>(wgpu::AddressMode::ClampToEdge)"
+        },
+        {
+          "name": "ADDRESS_MODE_REPEAT",
+          "cpp_name": "AddressModeRepeat",
+          "value": "static_cast<uint32_t>(wgpu::AddressMode::Repeat)"
+        },
+        {
+          "name": "ADDRESS_MODE_MIRROR_REPEAT",
+          "cpp_name": "AddressModeMirrorRepeat",
+          "value": "static_cast<uint32_t>(wgpu::AddressMode::MirrorRepeat)"
+        }
+      ],
+      "unsupported": [],
+      "export": "core/gpu.h:965-1085",
+      "cpp_name": "GPU",
+      "cpp_parent": "Singleton",
+      "header": "core/gpu.h",
+      "kind": "module",
+      "name": "GPU",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "queue",
+          "cpp_name": "queue",
+          "return": {
+            "cpp_type": "RefPtr<GPUQueue>",
+            "ruby_type": "GPUQueue"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_buffer",
+          "cpp_name": "CreateBuffer",
+          "return": {
+            "cpp_type": "RefPtr<GPUBuffer>",
+            "ruby_type": "GPUBuffer"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUBufferDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_texture",
+          "cpp_name": "CreateTexture",
+          "return": {
+            "cpp_type": "RefPtr<GPUTexture>",
+            "ruby_type": "GPUTexture"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUTextureDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_sampler",
+          "cpp_name": "CreateSampler",
+          "return": {
+            "cpp_type": "RefPtr<GPUSampler>",
+            "ruby_type": "GPUSampler"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUSamplerDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_shader_module",
+          "cpp_name": "CreateShaderModule",
+          "return": {
+            "cpp_type": "RefPtr<GPUShaderModule>",
+            "ruby_type": "GPUShaderModule"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUShaderModuleDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_bind_group_layout",
+          "cpp_name": "CreateBindGroupLayout",
+          "return": {
+            "cpp_type": "RefPtr<GPUBindGroupLayout>",
+            "ruby_type": "GPUBindGroupLayout"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUBindGroupLayoutDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_pipeline_layout",
+          "cpp_name": "CreatePipelineLayout",
+          "return": {
+            "cpp_type": "RefPtr<GPUPipelineLayout>",
+            "ruby_type": "GPUPipelineLayout"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUPipelineLayoutDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_bind_group",
+          "cpp_name": "CreateBindGroup",
+          "return": {
+            "cpp_type": "RefPtr<GPUBindGroup>",
+            "ruby_type": "GPUBindGroup"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUBindGroupDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_render_pipeline",
+          "cpp_name": "CreateRenderPipeline",
+          "return": {
+            "cpp_type": "RefPtr<GPURenderPipeline>",
+            "ruby_type": "GPURenderPipeline"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPURenderPipelineDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_compute_pipeline",
+          "cpp_name": "CreateComputePipeline",
+          "return": {
+            "cpp_type": "RefPtr<GPUComputePipeline>",
+            "ruby_type": "GPUComputePipeline"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUComputePipelineDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_query_set",
+          "cpp_name": "CreateQuerySet",
+          "return": {
+            "cpp_type": "RefPtr<GPUQuerySet>",
+            "ruby_type": "GPUQuerySet"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUQuerySetDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        },
+        {
+          "ruby_name": "create_command_encoder",
+          "cpp_name": "CreateCommandEncoder",
+          "return": {
+            "cpp_type": "RefPtr<GPUCommandEncoder>",
+            "ruby_type": "GPUCommandEncoder"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:965-1085"
+        }
+      ]
+    },
+    {
+      "constants": [],
       "unsupported": [],
       "export": "core/graphics.h:76-122",
       "cpp_name": "Graphics",
@@ -968,6 +1349,7 @@
       ]
     },
     {
+      "constants": [],
       "unsupported": [],
       "export": "core/input.h:51-75",
       "cpp_name": "Input",
@@ -1132,6 +1514,7 @@
       ]
     },
     {
+      "constants": [],
       "unsupported": [],
       "export": "core/mouse.h:38-98",
       "cpp_name": "Mouse",
@@ -1564,6 +1947,7 @@
       ]
     },
     {
+      "constants": [],
       "unsupported": [],
       "export": "core/network.h:184-201",
       "cpp_name": "Network",
@@ -1739,6 +2123,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -1752,6 +2137,2874 @@
       "kind": "class",
       "name": "Disposable",
       "ruby_superclass": "Object",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:56-56",
+      "cpp_name": "GPUObject",
+      "cpp_parent": "Object",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUObject",
+      "ruby_superclass": "Object",
+      "glue": true
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:62-84"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:62-84"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:62-84"
+        },
+        {
+          "ruby_name": "size",
+          "cpp_name": "GetSize",
+          "return": {
+            "cpp_type": "uint64_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:62-84"
+        },
+        {
+          "ruby_name": "size=",
+          "cpp_name": "SetSize",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "uint64_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:62-84"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "usage",
+          "setter": "usage=",
+          "cpp_name": "Usage",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:62-84"
+        },
+        {
+          "name": "mapped_at_creation",
+          "setter": "mapped_at_creation=",
+          "cpp_name": "MappedAtCreation",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:62-84"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:62-84",
+      "cpp_name": "GPUBufferDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUBufferDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:99-151"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:99-151"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "usage",
+          "setter": "usage=",
+          "cpp_name": "Usage",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "dimension",
+          "setter": "dimension=",
+          "cpp_name": "Dimension",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "format",
+          "setter": "format=",
+          "cpp_name": "Format",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "width",
+          "setter": "width=",
+          "cpp_name": "Width",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "height",
+          "setter": "height=",
+          "cpp_name": "Height",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "depth_or_array_layers",
+          "setter": "depth_or_array_layers=",
+          "cpp_name": "DepthOrArrayLayers",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "mip_level_count",
+          "setter": "mip_level_count=",
+          "cpp_name": "MipLevelCount",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        },
+        {
+          "name": "sample_count",
+          "setter": "sample_count=",
+          "cpp_name": "SampleCount",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:99-151"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:99-151",
+      "cpp_name": "GPUTextureDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUTextureDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:171-217"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:171-217"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "format",
+          "setter": "format=",
+          "cpp_name": "Format",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "name": "dimension",
+          "setter": "dimension=",
+          "cpp_name": "Dimension",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "name": "base_mip_level",
+          "setter": "base_mip_level=",
+          "cpp_name": "BaseMipLevel",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "name": "mip_level_count",
+          "setter": "mip_level_count=",
+          "cpp_name": "MipLevelCount",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "name": "base_array_layer",
+          "setter": "base_array_layer=",
+          "cpp_name": "BaseArrayLayer",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "name": "array_layer_count",
+          "setter": "array_layer_count=",
+          "cpp_name": "ArrayLayerCount",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        },
+        {
+          "name": "aspect",
+          "setter": "aspect=",
+          "cpp_name": "Aspect",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:171-217"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:171-217",
+      "cpp_name": "GPUTextureViewDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUTextureViewDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:236-300"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:236-300"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "address_mode_u",
+          "setter": "address_mode_u=",
+          "cpp_name": "AddressModeU",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "address_mode_v",
+          "setter": "address_mode_v=",
+          "cpp_name": "AddressModeV",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "address_mode_w",
+          "setter": "address_mode_w=",
+          "cpp_name": "AddressModeW",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "mag_filter",
+          "setter": "mag_filter=",
+          "cpp_name": "MagFilter",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "min_filter",
+          "setter": "min_filter=",
+          "cpp_name": "MinFilter",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "mipmap_filter",
+          "setter": "mipmap_filter=",
+          "cpp_name": "MipmapFilter",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "lod_min_clamp",
+          "setter": "lod_min_clamp=",
+          "cpp_name": "LodMinClamp",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "lod_max_clamp",
+          "setter": "lod_max_clamp=",
+          "cpp_name": "LodMaxClamp",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "compare",
+          "setter": "compare=",
+          "cpp_name": "Compare",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        },
+        {
+          "name": "max_anisotropy",
+          "setter": "max_anisotropy=",
+          "cpp_name": "MaxAnisotropy",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:236-300"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:236-300",
+      "cpp_name": "GPUSamplerDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUSamplerDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:322-353"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:322-353"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:322-353"
+        },
+        {
+          "ruby_name": "code",
+          "cpp_name": "GetCode",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:322-353"
+        },
+        {
+          "ruby_name": "code=",
+          "cpp_name": "SetCode",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:322-353"
+        },
+        {
+          "ruby_name": "entry_point",
+          "cpp_name": "GetEntryPoint",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:322-353"
+        },
+        {
+          "ruby_name": "entry_point=",
+          "cpp_name": "SetEntryPoint",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:322-353"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "language",
+          "setter": "language=",
+          "cpp_name": "Language",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:322-353"
+        },
+        {
+          "name": "stage",
+          "setter": "stage=",
+          "cpp_name": "Stage",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:322-353"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:322-353",
+      "cpp_name": "GPUShaderModuleDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUShaderModuleDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:365-382"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:365-382"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:365-382"
+        },
+        {
+          "ruby_name": "add_uniform",
+          "cpp_name": "AddUniform",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "visibility",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:365-382"
+        },
+        {
+          "ruby_name": "add_storage",
+          "cpp_name": "AddStorage",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "visibility",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "read_only",
+              "type": "bool",
+              "default": "false"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:365-382"
+        },
+        {
+          "ruby_name": "add_texture",
+          "cpp_name": "AddTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "visibility",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:365-382"
+        },
+        {
+          "ruby_name": "add_sampler",
+          "cpp_name": "AddSampler",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "visibility",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:365-382"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:365-382",
+      "cpp_name": "GPUBindGroupLayoutDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUBindGroupLayoutDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:391-408"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:391-408"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:391-408"
+        },
+        {
+          "ruby_name": "add_bind_group_layout",
+          "cpp_name": "AddBindGroupLayout",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "layout",
+              "type": "RefPtr<GPUBindGroupLayout>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:391-408"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "immediate_size",
+          "setter": "immediate_size=",
+          "cpp_name": "ImmediateSize",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:391-408"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:391-408",
+      "cpp_name": "GPUPipelineLayoutDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUPipelineLayoutDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:418-439"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:418-439"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:418-439"
+        },
+        {
+          "ruby_name": "add_buffer",
+          "cpp_name": "AddBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "buffer",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:418-439"
+        },
+        {
+          "ruby_name": "add_texture",
+          "cpp_name": "AddTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "view",
+              "type": "RefPtr<GPUTextureView>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:418-439"
+        },
+        {
+          "ruby_name": "add_sampler",
+          "cpp_name": "AddSampler",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "binding",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "sampler",
+              "type": "RefPtr<GPUSampler>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:418-439"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "layout",
+          "setter": "layout=",
+          "cpp_name": "Layout",
+          "cpp_type": "RefPtr<GPUBindGroupLayout>",
+          "ruby_type": "GPUBindGroupLayout",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:418-439"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:418-439",
+      "cpp_name": "GPUBindGroupDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUBindGroupDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:449-475"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:449-475"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:449-475"
+        },
+        {
+          "ruby_name": "entry_point",
+          "cpp_name": "GetEntryPoint",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:449-475"
+        },
+        {
+          "ruby_name": "entry_point=",
+          "cpp_name": "SetEntryPoint",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:449-475"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "layout",
+          "setter": "layout=",
+          "cpp_name": "Layout",
+          "cpp_type": "RefPtr<GPUPipelineLayout>",
+          "ruby_type": "GPUPipelineLayout",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:449-475"
+        },
+        {
+          "name": "module",
+          "setter": "module=",
+          "cpp_name": "Module",
+          "cpp_type": "RefPtr<GPUShaderModule>",
+          "ruby_type": "GPUShaderModule",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:449-475"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:449-475",
+      "cpp_name": "GPUComputePipelineDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUComputePipelineDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:486-550"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "ruby_name": "vertex_entry_point",
+          "cpp_name": "GetVertexEntryPoint",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "ruby_name": "vertex_entry_point=",
+          "cpp_name": "SetVertexEntryPoint",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "ruby_name": "fragment_entry_point",
+          "cpp_name": "GetFragmentEntryPoint",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "ruby_name": "fragment_entry_point=",
+          "cpp_name": "SetFragmentEntryPoint",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "ruby_name": "add_vertex_attribute",
+          "cpp_name": "AddVertexAttribute",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "location",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "format",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "layout",
+          "setter": "layout=",
+          "cpp_name": "Layout",
+          "cpp_type": "RefPtr<GPUPipelineLayout>",
+          "ruby_type": "GPUPipelineLayout",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "name": "vertex_module",
+          "setter": "vertex_module=",
+          "cpp_name": "VertexModule",
+          "cpp_type": "RefPtr<GPUShaderModule>",
+          "ruby_type": "GPUShaderModule",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "name": "fragment_module",
+          "setter": "fragment_module=",
+          "cpp_name": "FragmentModule",
+          "cpp_type": "RefPtr<GPUShaderModule>",
+          "ruby_type": "GPUShaderModule",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "name": "topology",
+          "setter": "topology=",
+          "cpp_name": "Topology",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "name": "format",
+          "setter": "format=",
+          "cpp_name": "Format",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        },
+        {
+          "name": "vertex_stride",
+          "setter": "vertex_stride=",
+          "cpp_name": "VertexStride",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:486-550"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:486-550",
+      "cpp_name": "GPURenderPipelineDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPURenderPipelineDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:567-616"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:567-616"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "color_view",
+          "setter": "color_view=",
+          "cpp_name": "ColorView",
+          "cpp_type": "RefPtr<GPUTextureView>",
+          "ruby_type": "GPUTextureView",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "name": "load_op",
+          "setter": "load_op=",
+          "cpp_name": "LoadOp",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "name": "store_op",
+          "setter": "store_op=",
+          "cpp_name": "StoreOp",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "name": "clear_r",
+          "setter": "clear_r=",
+          "cpp_name": "ClearR",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "name": "clear_g",
+          "setter": "clear_g=",
+          "cpp_name": "ClearG",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "name": "clear_b",
+          "setter": "clear_b=",
+          "cpp_name": "ClearB",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        },
+        {
+          "name": "clear_a",
+          "setter": "clear_a=",
+          "cpp_name": "ClearA",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:567-616"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:567-616",
+      "cpp_name": "GPURenderPassDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPURenderPassDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:635-642"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:635-642"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:635-642"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:635-642",
+      "cpp_name": "GPUComputePassDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUComputePassDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/gpu.h:650-667"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "label",
+          "cpp_name": "GetLabel",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:650-667"
+        },
+        {
+          "ruby_name": "label=",
+          "cpp_name": "SetLabel",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/gpu.h:650-667"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "type",
+          "setter": "type=",
+          "cpp_name": "Type",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:650-667"
+        },
+        {
+          "name": "count",
+          "setter": "count=",
+          "cpp_name": "Count",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:650-667"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:650-667",
+      "cpp_name": "GPUQuerySetDescriptor",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUQuerySetDescriptor",
+      "ruby_superclass": "GPUObject",
+      "glue": false
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "size",
+          "cpp_name": "GetSize",
+          "return": {
+            "cpp_type": "uint64_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/gpu.h:681-702"
+        },
+        {
+          "ruby_name": "map_async",
+          "cpp_name": "MapAsync",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "mode",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "size",
+              "type": "uint64_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        },
+        {
+          "ruby_name": "unmap",
+          "cpp_name": "Unmap",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        },
+        {
+          "ruby_name": "read",
+          "cpp_name": "Read",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "size",
+              "type": "uint64_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        },
+        {
+          "ruby_name": "write",
+          "cpp_name": "Write",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "data",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        },
+        {
+          "ruby_name": "destroy",
+          "cpp_name": "Destroy",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "usage",
+          "setter": "usage=",
+          "cpp_name": "Usage",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        },
+        {
+          "name": "map_state",
+          "setter": "map_state=",
+          "cpp_name": "MapState",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/gpu.h:681-702"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:681-702",
+      "cpp_name": "GPUBuffer",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUBuffer",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "width",
+          "cpp_name": "Width",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "depth_or_array_layers",
+          "cpp_name": "DepthOrArrayLayers",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "mip_level_count",
+          "cpp_name": "MipLevelCount",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "sample_count",
+          "cpp_name": "SampleCount",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "dimension",
+          "cpp_name": "Dimension",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "format",
+          "cpp_name": "Format",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "usage",
+          "cpp_name": "Usage",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "create_view",
+          "cpp_name": "CreateView",
+          "return": {
+            "cpp_type": "RefPtr<GPUTextureView>",
+            "ruby_type": "GPUTextureView"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUTextureViewDescriptor>",
+              "default": "nullptr"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        },
+        {
+          "ruby_name": "destroy",
+          "cpp_name": "Destroy",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:712-736"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:712-736",
+      "cpp_name": "GPUTexture",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUTexture",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:746-746",
+      "cpp_name": "GPUTextureView",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUTextureView",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:757-757",
+      "cpp_name": "GPUSampler",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUSampler",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:768-768",
+      "cpp_name": "GPUShaderModule",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUShaderModule",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:779-779",
+      "cpp_name": "GPUBindGroupLayout",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUBindGroupLayout",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:790-790",
+      "cpp_name": "GPUPipelineLayout",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUPipelineLayout",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:801-801",
+      "cpp_name": "GPUBindGroup",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUBindGroup",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "get_bind_group_layout",
+          "cpp_name": "GetBindGroupLayout",
+          "return": {
+            "cpp_type": "RefPtr<GPUBindGroupLayout>",
+            "ruby_type": "GPUBindGroupLayout"
+          },
+          "params": [
+            {
+              "name": "group_index",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:812-816"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:812-816",
+      "cpp_name": "GPURenderPipeline",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPURenderPipeline",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "get_bind_group_layout",
+          "cpp_name": "GetBindGroupLayout",
+          "return": {
+            "cpp_type": "RefPtr<GPUBindGroupLayout>",
+            "ruby_type": "GPUBindGroupLayout"
+          },
+          "params": [
+            {
+              "name": "group_index",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:826-830"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:826-830",
+      "cpp_name": "GPUComputePipeline",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUComputePipeline",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "type",
+          "cpp_name": "Type",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:840-848"
+        },
+        {
+          "ruby_name": "count",
+          "cpp_name": "Count",
+          "return": {
+            "cpp_type": "uint32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:840-848"
+        },
+        {
+          "ruby_name": "destroy",
+          "cpp_name": "Destroy",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:840-848"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:840-848",
+      "cpp_name": "GPUQuerySet",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUQuerySet",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:858-858",
+      "cpp_name": "GPUCommandBuffer",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUCommandBuffer",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "begin_render_pass",
+          "cpp_name": "BeginRenderPass",
+          "return": {
+            "cpp_type": "RefPtr<GPURenderPassEncoder>",
+            "ruby_type": "GPURenderPassEncoder"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPURenderPassDescriptor>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:870-886"
+        },
+        {
+          "ruby_name": "begin_compute_pass",
+          "cpp_name": "BeginComputePass",
+          "return": {
+            "cpp_type": "RefPtr<GPUComputePassEncoder>",
+            "ruby_type": "GPUComputePassEncoder"
+          },
+          "params": [
+            {
+              "name": "descriptor",
+              "type": "RefPtr<GPUComputePassDescriptor>",
+              "default": "nullptr"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:870-886"
+        },
+        {
+          "ruby_name": "copy_buffer_to_buffer",
+          "cpp_name": "CopyBufferToBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "source",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "source_offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "destination",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "destination_offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "size",
+              "type": "uint64_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:870-886"
+        },
+        {
+          "ruby_name": "clear_buffer",
+          "cpp_name": "ClearBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "buffer",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "size",
+              "type": "uint64_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:870-886"
+        },
+        {
+          "ruby_name": "finish",
+          "cpp_name": "Finish",
+          "return": {
+            "cpp_type": "RefPtr<GPUCommandBuffer>",
+            "ruby_type": "GPUCommandBuffer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:870-886"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:870-886",
+      "cpp_name": "GPUCommandEncoder",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUCommandEncoder",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "set_pipeline",
+          "cpp_name": "SetPipeline",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "pipeline",
+              "type": "RefPtr<GPURenderPipeline>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "set_bind_group",
+          "cpp_name": "SetBindGroup",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "group",
+              "type": "RefPtr<GPUBindGroup>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "set_vertex_buffer",
+          "cpp_name": "SetVertexBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "buffer",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": "0"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "set_index_buffer",
+          "cpp_name": "SetIndexBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "buffer",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "format",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": "0"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "draw",
+          "cpp_name": "Draw",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "vertex_count",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "instance_count",
+              "type": "uint32_t",
+              "default": "1"
+            },
+            {
+              "name": "first_vertex",
+              "type": "uint32_t",
+              "default": "0"
+            },
+            {
+              "name": "first_instance",
+              "type": "uint32_t",
+              "default": "0"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "draw_indexed",
+          "cpp_name": "DrawIndexed",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index_count",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "instance_count",
+              "type": "uint32_t",
+              "default": "1"
+            },
+            {
+              "name": "first_index",
+              "type": "uint32_t",
+              "default": "0"
+            },
+            {
+              "name": "base_vertex",
+              "type": "int32_t",
+              "default": "0"
+            },
+            {
+              "name": "first_instance",
+              "type": "uint32_t",
+              "default": "0"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "set_viewport",
+          "cpp_name": "SetViewport",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "min_depth",
+              "type": "float",
+              "default": "0.f"
+            },
+            {
+              "name": "max_depth",
+              "type": "float",
+              "default": "1.f"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "set_scissor_rect",
+          "cpp_name": "SetScissorRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        },
+        {
+          "ruby_name": "end",
+          "cpp_name": "End",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:896-922"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:896-922",
+      "cpp_name": "GPURenderPassEncoder",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPURenderPassEncoder",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "set_pipeline",
+          "cpp_name": "SetPipeline",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "pipeline",
+              "type": "RefPtr<GPUComputePipeline>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:930-940"
+        },
+        {
+          "ruby_name": "set_bind_group",
+          "cpp_name": "SetBindGroup",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "group",
+              "type": "RefPtr<GPUBindGroup>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:930-940"
+        },
+        {
+          "ruby_name": "dispatch_workgroups",
+          "cpp_name": "DispatchWorkgroups",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "uint32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "uint32_t",
+              "default": "1"
+            },
+            {
+              "name": "z",
+              "type": "uint32_t",
+              "default": "1"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:930-940"
+        },
+        {
+          "ruby_name": "end",
+          "cpp_name": "End",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/gpu.h:930-940"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:930-940",
+      "cpp_name": "GPUComputePassEncoder",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUComputePassEncoder",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "submit",
+          "cpp_name": "Submit",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "command_buffer",
+              "type": "RefPtr<GPUCommandBuffer>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:948-954"
+        },
+        {
+          "ruby_name": "write_buffer",
+          "cpp_name": "WriteBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "buffer",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "uint64_t",
+              "default": null
+            },
+            {
+              "name": "data",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/gpu.h:948-954"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/gpu.h:948-954",
+      "cpp_name": "GPUQueue",
+      "cpp_parent": "GPUObject",
+      "header": "core/gpu.h",
+      "kind": "class",
+      "name": "GPUQueue",
+      "ruby_superclass": "GPUObject",
       "glue": true
     },
     {
@@ -1877,6 +5130,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -2049,6 +5303,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -2074,7 +5329,7 @@
               "default": null
             }
           ],
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "params": [
@@ -2089,7 +5344,7 @@
               "default": null
             }
           ],
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         }
       ],
       "initialize_copy": {
@@ -2100,7 +5355,7 @@
             "default": null
           }
         ],
-        "export": "core/bitmap.h:40-127"
+        "export": "core/bitmap.h:42-135"
       },
       "instance_methods": [
         {
@@ -2112,7 +5367,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "height",
@@ -2123,7 +5378,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "rect",
@@ -2134,7 +5389,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "blt",
@@ -2171,7 +5426,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "stretch_blt",
@@ -2203,7 +5458,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "mask_blt",
@@ -2235,7 +5490,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "fill_rect",
@@ -2272,7 +5527,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "fill_rect",
@@ -2294,7 +5549,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -2341,7 +5596,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -2373,7 +5628,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "clear",
@@ -2384,7 +5639,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "clear_rect",
@@ -2416,7 +5671,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "clear_rect",
@@ -2433,7 +5688,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "get_pixel",
@@ -2455,7 +5710,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "set_pixel",
@@ -2482,7 +5737,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "hue_change",
@@ -2499,7 +5754,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "blur",
@@ -2510,7 +5765,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "radial_blur",
@@ -2532,7 +5787,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "draw_text",
@@ -2574,7 +5829,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "draw_text",
@@ -2601,7 +5856,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
           "ruby_name": "text_size",
@@ -2618,35 +5873,46 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
-          "ruby_name": "to_palette",
-          "cpp_name": "ToPalette",
+          "ruby_name": "texture_view",
+          "cpp_name": "GetTextureView",
           "return": {
-            "cpp_type": "RefPtr<Palette>",
-            "ruby_type": "Palette"
+            "cpp_type": "RefPtr<GPUTextureView>",
+            "ruby_type": "GPUTextureView"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/bitmap.h:42-135"
+        },
+        {
+          "ruby_name": "to_image",
+          "cpp_name": "ToImage",
+          "return": {
+            "cpp_type": "RefPtr<Image>",
+            "ruby_type": "Image"
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         },
         {
-          "ruby_name": "update_with_palette",
-          "cpp_name": "UpdateWithPalette",
+          "ruby_name": "update_with_image",
+          "cpp_name": "UpdateWithImage",
           "return": {
             "cpp_type": "void",
             "ruby_type": "nil"
           },
           "params": [
             {
-              "name": "palette",
-              "type": "RefPtr<Palette>",
+              "name": "image",
+              "type": "RefPtr<Image>",
               "default": null
             }
           ],
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         }
       ],
       "attributes": [
@@ -2659,19 +5925,38 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/bitmap.h:40-127"
+          "export": "core/bitmap.h:42-135"
         }
       ],
       "data_attributes": [],
-      "class_methods": [],
+      "class_methods": [
+        {
+          "ruby_name": "from_image",
+          "cpp_name": "FromImage",
+          "return": {
+            "cpp_type": "RefPtr<Bitmap>",
+            "ruby_type": "Bitmap"
+          },
+          "params": [
+            {
+              "name": "image",
+              "type": "RefPtr<Image>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/bitmap.h:42-135"
+        }
+      ],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
       },
       "index": null,
       "unsupported": [],
-      "export": "core/bitmap.h:40-127",
+      "export": "core/bitmap.h:42-135",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/bitmap.h",
@@ -2822,6 +6107,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": true,
         "load": true
@@ -3110,6 +6396,7 @@
           "export": "core/font.h:40-91"
         }
       ],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -3140,7 +6427,7 @@
               "default": null
             }
           ],
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
         },
         {
           "params": [
@@ -3150,20 +6437,42 @@
               "default": null
             }
           ],
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
         }
       ],
       "initialize_copy": {
         "params": [
           {
             "name": "other",
-            "type": "RefPtr<Palette>",
+            "type": "RefPtr<Image>",
             "default": null
           }
         ],
-        "export": "core/palette.h:35-58"
+        "export": "core/image.h:35-105"
       },
       "instance_methods": [
+        {
+          "ruby_name": "width",
+          "cpp_name": "Width",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
         {
           "ruby_name": "get_pixel",
           "cpp_name": "GetPixel",
@@ -3184,7 +6493,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
         },
         {
           "ruby_name": "set_pixel",
@@ -3211,7 +6520,274 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "fill_rect",
+          "cpp_name": "FillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "fill_rect",
+          "cpp_name": "FillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "color",
+              "type": "RefPtr<Color>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "blt",
+          "cpp_name": "Blt",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "src_image",
+              "type": "RefPtr<Image>",
+              "default": null
+            },
+            {
+              "name": "src_rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "opacity",
+              "type": "int32_t",
+              "default": "255"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "stretch_blt",
+          "cpp_name": "StretchBlt",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "dst_rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "src_image",
+              "type": "RefPtr<Image>",
+              "default": null
+            },
+            {
+              "name": "src_rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "opacity",
+              "type": "int32_t",
+              "default": "255"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "gradient_fill_rect",
+          "cpp_name": "GradientFillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color1",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "color2",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "vertical",
+              "type": "bool",
+              "default": "false"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "gradient_fill_rect",
+          "cpp_name": "GradientFillRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            },
+            {
+              "name": "color1",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "color2",
+              "type": "RefPtr<Color>",
+              "default": null
+            },
+            {
+              "name": "vertical",
+              "type": "bool",
+              "default": "false"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "clear",
+          "cpp_name": "Clear",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "clear_rect",
+          "cpp_name": "ClearRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
+        },
+        {
+          "ruby_name": "clear_rect",
+          "cpp_name": "ClearRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "rect",
+              "type": "RefPtr<Rect>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/image.h:35-105"
         },
         {
           "ruby_name": "to_dump",
@@ -3222,7 +6798,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
         },
         {
           "ruby_name": "save_file",
@@ -3239,7 +6815,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
         }
       ],
       "attributes": [],
@@ -3249,8 +6825,8 @@
           "ruby_name": "from_dump",
           "cpp_name": "FromDump",
           "return": {
-            "cpp_type": "RefPtr<Palette>",
-            "ruby_type": "Palette"
+            "cpp_type": "RefPtr<Image>",
+            "ruby_type": "Image"
           },
           "params": [
             {
@@ -3260,22 +6836,137 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/palette.h:35-58"
+          "export": "core/image.h:35-105"
         }
       ],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
       },
       "index": null,
       "unsupported": [],
-      "export": "core/palette.h:35-58",
-      "cpp_name": "Palette",
+      "export": "core/image.h:35-105",
+      "cpp_name": "Image",
       "cpp_parent": "Disposable",
-      "header": "core/palette.h",
+      "header": "core/image.h",
       "kind": "class",
-      "name": "Palette",
+      "name": "Image",
+      "ruby_superclass": "Disposable",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/animation.h:39-58"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "width",
+          "cpp_name": "Width",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/animation.h:39-58"
+        },
+        {
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/animation.h:39-58"
+        },
+        {
+          "ruby_name": "count",
+          "cpp_name": "Count",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/animation.h:39-58"
+        },
+        {
+          "ruby_name": "delay",
+          "cpp_name": "Delay",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/animation.h:39-58"
+        },
+        {
+          "ruby_name": "delays",
+          "cpp_name": "Delays",
+          "return": {
+            "cpp_type": "std::vector<int32_t>",
+            "ruby_type": "Array<Integer>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/animation.h:39-58"
+        },
+        {
+          "ruby_name": "frame",
+          "cpp_name": "Frame",
+          "return": {
+            "cpp_type": "RefPtr<Image>",
+            "ruby_type": "Image"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/animation.h:39-58"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "index": null,
+      "unsupported": [],
+      "export": "core/animation.h:39-58",
+      "cpp_name": "Animation",
+      "cpp_parent": "Disposable",
+      "header": "core/animation.h",
+      "kind": "class",
+      "name": "Animation",
       "ruby_superclass": "Disposable",
       "glue": false
     },
@@ -3409,6 +7100,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -3577,6 +7269,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": true,
         "load": true
@@ -3910,6 +7603,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -4024,6 +7718,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": true,
         "load": true
@@ -4231,6 +7926,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": true,
         "load": true
@@ -4333,6 +8029,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -4445,6 +8142,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -4567,6 +8265,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -4752,6 +8451,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -4954,6 +8654,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -5118,6 +8819,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -5464,6 +9166,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -5709,6 +9412,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -5873,6 +9577,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6070,6 +9775,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6238,6 +9944,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6322,6 +10029,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6501,6 +10209,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6678,6 +10387,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6740,6 +10450,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6802,6 +10513,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
@@ -6864,6 +10576,7 @@
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
+      "constants": [],
       "marshal": {
         "dump": false,
         "load": false
