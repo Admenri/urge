@@ -569,9 +569,14 @@ void WindowVX::EmitCursorInternal(PrimitiveEmitter& emitter) {
   if (openness_ != 255)
     return;
 
-  const RectI cursor = cursor_rect_->data;
+  RectI cursor = cursor_rect_->data;
   if (cursor.width <= 0 || cursor.height <= 0)
     return;
+
+  if (rgss3_style_) {
+    cursor.x -= ox_;
+    cursor.y -= oy_;
+  }
 
   const RectI region = ContentRectInternal();
   const int32_t unit = scale_ >= 4 ? scale_ * 2 : 4;
