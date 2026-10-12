@@ -41,6 +41,7 @@
 #include "core/graphics.h"
 #include "core/input.h"
 #include "core/logger.h"
+#include "core/render_stats.h"
 
 namespace urge {
 
@@ -562,7 +563,7 @@ void ImGuiManager::BuildAboutPanel() {
 
 void ImGuiManager::BuildFPSWindow() {
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
-  const ImVec2 size(U(270.0f), U(275.0f));
+  const ImVec2 size(U(270.0f), U(345.0f));
 
   const bool replace = fps_size_stale_ || fps_replace_position_;
   ImGui::SetNextWindowPos(
@@ -612,6 +613,14 @@ void ImGuiManager::BuildFPSWindow() {
   ImGui::Text("render cost: %.2f ms", graphics.render_cost_ms());
   ImGui::Text("logic cost:  %.2f ms", graphics.logic_cost_ms());
   ImGui::Text("other cost:  %.2f ms", graphics.other_cost_ms());
+
+  const RenderFrameCounters& counters = GetRenderStats().last;
+  ImGui::Spacing();
+  ImGui::Text("bitmap ops:  %u", static_cast<unsigned>(counters.bitmap_ops));
+  ImGui::Text("submits:     %u  (%u bitmap)",
+              static_cast<unsigned>(counters.frame_submits),
+              static_cast<unsigned>(counters.bitmap_submits));
+  ImGui::Text("bitmap cost: %.2f ms", counters.bitmap_total_ms());
 
   ImGui::Spacing();
   if (frame_times_.size() >= 2) {

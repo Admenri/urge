@@ -135,12 +135,10 @@ void Viewport::DisposeObject() {
 
   effect_.reset();
   offscreen_.reset();
-  filter_target_.reset();
   object_uniform_ = nullptr;
   object_group_ = nullptr;
   tint_uniform_ = nullptr;
   tint_group_ = nullptr;
-  filter_scene_ = nullptr;
   primitive_.Reset();
 }
 
@@ -156,51 +154,31 @@ bool Viewport::Prepare(DrawParam param) {
   tint.blend_tone = blend_tone;
   g_queue.WriteBuffer(tint_uniform_, 0, &tint, sizeof(tint));
 
-  filtering_ = false;
   post_process_ = false;
   vertex_count_ = 0;
 
   parent_scissor_ = param->scissors.top();
 
-  const glm::ivec2 offset = effect_ ? glm::ivec2(-origin_.x, -origin_.y)
-                                    : glm::ivec2(rect_->data.x - origin_.x,
-                                                 rect_->data.y - origin_.y);
+  const glm::ivec2 offset(rect_->data.x - origin_.x, rect_->data.y - origin_.y);
   const glm::ivec2 parent_position =
       glm::ivec2(ExtractPosition(world_transform())) - offset;
   const RectI self_scissor(parent_position.x + rect_->data.x,
                            parent_position.y + rect_->data.y, rect_->data.width,
                            rect_->data.height);
 
-  if (effect_) {
-    const RectI visible = MakeIntersect(parent_scissor_, self_scissor);
-    if (!visible()) {
-      region_ = RectI();
-      param->scissors.push(region_);
-      return true;
-    }
-
-    AcquireOffscreen(self_scissor);
-
-    region_ = RectI(visible.x - self_scissor.x, visible.y - self_scissor.y,
-                    visible.width, visible.height);
-    filter_scissor_ = visible;
-    filtering_ = true;
-
-    primitive_.EmitQuad(
-        self_scissor, MakeNorm(RectI(self_scissor.Size()), offscreen_->size()),
-        glm::vec4(1.0f));
-    vertex_count_ = primitive_.Upload();
-
-    param->scissors.push(region_);
-    return true;
-  }
-
   region_ = MakeIntersect(parent_scissor_, self_scissor);
   if (!region_())
     region_ = RectI();
   param->scissors.push(region_);
 
-  post_process_ = blend_color.a != 0.0f || blend_tone != glm::vec4(0.0f);
+  // A filter and a tint composite the region the same way: the children are
+  // drawn into the target as usual, the region is copied aside, and the copy
+  // is drawn back through whichever state applies.  Only the state differs, so
+  // the two share this ping-pong instead of the filter rendering its own
+  // children into a differently placed pass.
+  const bool has_effect = static_cast<bool>(effect_);
+  post_process_ = region_() && (has_effect || blend_color.a != 0.0f ||
+                                blend_tone != glm::vec4(0.0f));
   if (post_process_) {
     AcquireOffscreen(region_);
 
@@ -220,21 +198,6 @@ void Viewport::PostPrepare(DrawParam param) {
 bool Viewport::DoDraw(DrawParam param) {
   FlushSpriteBatch(param);
 
-  if (effect_) {
-    if (!filtering_) {
-      param->pass.SetScissorRect(0, 0, 0, 0);
-      return true;
-    }
-
-    param->pass.End();
-    param->pass = offscreen_->BeginRendering(param->command, glm::vec4(0.0f));
-
-    filter_target_ = param->target;
-    filter_scene_ = param->scene;
-    param->target = offscreen_;
-    param->scene = offscreen_->scene_group();
-  }
-
   param->pass.SetScissorRect(region_.x, region_.y, region_.width,
                              region_.height);
   return true;
@@ -243,25 +206,7 @@ bool Viewport::DoDraw(DrawParam param) {
 void Viewport::PostDraw(DrawParam param) {
   FlushSpriteBatch(param);
 
-  if (effect_ && filtering_) {
-    param->pass.End();
-
-    param->target = filter_target_;
-    param->scene = filter_scene_;
-    param->pass = param->target->BeginRendering(param->command);
-
-    effect_->SetFilterSource(offscreen_);
-
-    param->pass.SetPipeline(effect_->AcquirePipeline());
-    param->pass.SetBindGroup(0, param->target->scene_group(), 0, nullptr);
-    const uint32_t object_offset = 0;
-    param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
-    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
-    param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-    param->pass.SetScissorRect(filter_scissor_.x, filter_scissor_.y,
-                               filter_scissor_.width, filter_scissor_.height);
-    param->pass.Draw(vertex_count_, 1, 0, 0);
-  } else if (post_process_) {
+  if (post_process_) {
     wgpu::TexelCopyTextureInfo source;
     source.texture = param->target->texture();
     source.origin.x = region_.x;
@@ -278,14 +223,25 @@ void Viewport::PostDraw(DrawParam param) {
     param->command.CopyTextureToTexture(&source, &destination, &copy_size);
     param->pass = param->target->BeginRendering(param->command);
 
-    param->pass.SetPipeline(
-        ShaderSet::Get().state.viewport.tint_blends.at(BLEND_NORMAL));
-    param->pass.SetBindGroup(0, param->target->scene_group(), 0, nullptr);
     const uint32_t object_offset = 0;
+    param->pass.SetBindGroup(0, param->target->scene_group(), 0, nullptr);
     param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
-    param->pass.SetBindGroup(2, offscreen_->texture_group(), 0, nullptr);
-    param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
+
+    if (effect_) {
+      effect_->SetFilterSource(offscreen_);
+
+      param->pass.SetPipeline(effect_->AcquirePipeline());
+      param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
+    } else {
+      param->pass.SetPipeline(
+          ShaderSet::Get().state.viewport.tint_blends.at(BLEND_NORMAL));
+      param->pass.SetBindGroup(2, offscreen_->texture_group(), 0, nullptr);
+      param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
+    }
+
     param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+    param->pass.SetScissorRect(region_.x, region_.y, region_.width,
+                               region_.height);
     param->pass.Draw(vertex_count_, 1, 0, 0);
   }
 
@@ -294,13 +250,9 @@ void Viewport::PostDraw(DrawParam param) {
 }
 
 void Viewport::ResetTransform() {
-  const glm::vec3 offset =
-      effect_ ? glm::vec3(static_cast<float>(-origin_.x),
-                          static_cast<float>(-origin_.y), 0.0f)
-              : glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
-                          static_cast<float>(rect_->data.y - origin_.y), 0.0f);
-
-  Attr_Position(MakeRefCounted<Vector3>(offset));
+  Attr_Position(MakeRefCounted<Vector3>(
+      glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
+                static_cast<float>(rect_->data.y - origin_.y), 0.0f)));
 }
 
 void Viewport::CreateEffectBindings() {

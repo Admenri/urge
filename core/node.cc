@@ -25,8 +25,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
 
+#include "core/bitmap_queue.h"
 #include "core/graphics.h"
 #include "core/primitive.h"
+#include "core/render_stats.h"
 #include "core/sprite_batch.h"
 #include "core/uniform.h"
 
@@ -53,6 +55,10 @@ Node::~Node() {
 }
 
 void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
+  // The scene samples the bitmaps a script has been drawing into, so whatever
+  // the queue still holds has to reach the GPU before the pass is recorded.
+  BitmapQueue::Get().Flush();
+
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
 
   DrawContext context = {};
@@ -86,6 +92,7 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   }
   context.pass.End();
   auto command_buffer = encoder.Finish(nullptr);
+  CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command_buffer);
 }
 

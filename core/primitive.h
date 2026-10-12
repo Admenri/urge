@@ -104,6 +104,18 @@ class PrimitiveEmitter {
   void Reset();
 
   std::uint32_t Upload();
+
+  // Appends the pending batch to the vertex buffer after everything already
+  // appended and returns the range to draw.  `Upload` rewrites the buffer from
+  // its start, which a batch that is drawn and submitted on the spot can
+  // afford, but a frame that defers its submission records every draw before
+  // the buffer is read -- so each batch needs a range of its own.
+  Slot AppendUpload();
+
+  // Drops the buffers a growth replaced.  They are held until the frame that
+  // recorded draws against them has been submitted.
+  void ReleaseRetiredBuffers();
+
   const wgpu::Buffer& buffer() const { return vertex_buffer_; }
   std::uint64_t buffer_size() const {
     return vertex_buffer_ ? vertex_buffer_.GetSize() : 0;
@@ -119,6 +131,8 @@ class PrimitiveEmitter {
   std::vector<VertexData> vertices_;
   std::size_t batch_first_ = 0;
   wgpu::Buffer vertex_buffer_;
+  std::vector<wgpu::Buffer> retired_buffers_;
+  std::uint32_t uploaded_vertices_ = 0;
   PrimitiveType type_ = PrimitiveType::kTriangle;
   glm::vec4 color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
   glm::vec2 texcoord_ = glm::vec2(0.f, 0.f);

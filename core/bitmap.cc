@@ -29,13 +29,16 @@
 #include <string_view>
 #include <vector>
 
+#include "SDL3/SDL_timer.h"
 #include "SDL3_image/SDL_image.h"
 #include "glm/ext/matrix_clip_space.hpp"
 
+#include "core/bitmap_queue.h"
 #include "core/filesystem.h"
 #include "core/gpu.h"
 #include "core/gpu_utils.h"
 #include "core/pipeline.h"
+#include "core/render_stats.h"
 
 namespace urge {
 
@@ -107,6 +110,32 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   }
 }
 
+// Times one `Bitmap` drawing operation and folds it into the frame counters.
+// The marks split the cost the way the batching has to attack it: getting the
+// quad into the buffer and recording it into the pass.  The command buffer is
+// finished and submitted once per frame by `BitmapQueue`, which adds those two
+// stages to the same counters.
+class OperationTimer {
+ public:
+  OperationTimer() = default;
+
+  void MarkUploaded() { uploaded_ = SDL_GetPerformanceCounter(); }
+  void MarkRecorded() { recorded_ = SDL_GetPerformanceCounter(); }
+
+  ~OperationTimer() {
+    RenderFrameCounters& counters = GetRenderStats().current;
+    ++counters.bitmap_ops;
+    counters.bitmap_upload_ms += TicksToMilliseconds(uploaded_ - begin_);
+    counters.bitmap_record_ms +=
+        TicksToMilliseconds(SDL_GetPerformanceCounter() - uploaded_);
+  }
+
+ private:
+  std::uint64_t begin_ = SDL_GetPerformanceCounter();
+  std::uint64_t uploaded_ = 0;
+  std::uint64_t recorded_ = 0;
+};
+
 struct MapResult {
   bool invoked = false;
   WGPUMapAsyncStatus status = WGPUMapAsyncStatus_Error;
@@ -174,6 +203,7 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   encoder.CopyTextureToBuffer(&source, &destination, &copy_size);
 
   auto command = encoder.Finish(nullptr);
+  CountSubmit(false);
   gpu.queue().Submit(1, &command);
 
   MapResult mapping;
@@ -241,17 +271,20 @@ Bitmap::Bitmap(std::string filename) : font_(MakeRefCounted<Font>()) {
     image = converted_image;
   }
 
-  CreateInternal(image);
+  CreateResources({image->w, image->h});
+  UploadSurface(image);
 }
 
 Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
-  SDL_Surface* image = SDL_CreateSurface(width, height, kInternalPixelFormat);
-
-  CreateInternal(image);
+  CreateResources({width, height});
+  ClearToTransparent();
 }
 
 Bitmap::Bitmap(RefPtr<Bitmap> other)
     : Bitmap(other->size().x, other->size().y) {
+  // The copy reads a texture the queue may still be drawing into.
+  BitmapQueue::Get().Flush();
+
   auto encoder = g_device.CreateCommandEncoder(nullptr);
 
   wgpu::TexelCopyTextureInfo source, destination;
@@ -265,6 +298,7 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
   encoder.CopyTextureToTexture(&source, &destination, &copy_size);
 
   auto command = encoder.Finish(nullptr);
+  CountSubmit(false);
   g_queue.Submit(1, &command);
 }
 
@@ -308,26 +342,31 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  const std::uint32_t vertex_count =
-      primitive_
+  BitmapQueue& queue = BitmapQueue::Get();
+  queue.Pin(src_bitmap);
+
+  OperationTimer timer;
+
+  const PrimitiveEmitter::Slot slot =
+      queue.vertices()
           .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
                     glm::vec4(opacity / 255.0f))
-          .Upload();
+          .AppendUpload();
+  timer.MarkUploaded();
 
-  auto encoder = g_device.CreateCommandEncoder(nullptr);
-  auto pass = BeginRendering(encoder);
+  const wgpu::BindGroup source_group = queue.ResolveRead(this, src_bitmap);
+
+  wgpu::RenderPassEncoder pass = queue.Begin(this);
   {
     auto pipeline = ShaderSet::Get().state.bitmap.texture_pma;
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
-    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(vertex_count, 1, 0, 0);
+    pass.SetBindGroup(2, source_group, 0, nullptr);
+    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(slot.count, 1, slot.first, 0);
   }
-  pass.End();
-  auto command = encoder.Finish(nullptr);
-  g_queue.Submit(1, &command);
+  timer.MarkRecorded();
 }
 
 void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
@@ -339,27 +378,34 @@ void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect || !mask)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  const std::uint32_t vertex_count =
-      primitive_
+  BitmapQueue& queue = BitmapQueue::Get();
+  queue.Pin(src_bitmap);
+  queue.Pin(mask);
+
+  OperationTimer timer;
+
+  const PrimitiveEmitter::Slot slot =
+      queue.vertices()
           .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
                     glm::vec4(1.0f))
-          .Upload();
+          .AppendUpload();
+  timer.MarkUploaded();
 
-  auto encoder = g_device.CreateCommandEncoder(nullptr);
-  auto pass = BeginRendering(encoder);
+  const wgpu::BindGroup source_group = queue.ResolveRead(this, src_bitmap);
+  const wgpu::BindGroup mask_group = queue.ResolveRead(this, mask);
+
+  wgpu::RenderPassEncoder pass = queue.Begin(this);
   {
     auto pipeline = ShaderSet::Get().state.bitmap.texture_mask_pma;
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetBindGroup(2, src_bitmap->texture_group_, 0, nullptr);
-    pass.SetBindGroup(3, mask->texture_group_, 0, nullptr);
-    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(vertex_count, 1, 0, 0);
+    pass.SetBindGroup(2, source_group, 0, nullptr);
+    pass.SetBindGroup(3, mask_group, 0, nullptr);
+    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(slot.count, 1, slot.first, 0);
   }
-  pass.End();
-  auto command = encoder.Finish(nullptr);
-  g_queue.Submit(1, &command);
+  timer.MarkRecorded();
 }
 
 void Bitmap::FillRect(int32_t x,
@@ -400,28 +446,32 @@ void Bitmap::GradientFillRect(int32_t x,
   auto color1_norm = PremultiplyColor(color1->data);
   auto color2_norm = PremultiplyColor(color2->data);
 
+  BitmapQueue& queue = BitmapQueue::Get();
+
+  OperationTimer timer;
+
   if (vertical)
-    primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
-                        color1_norm, color2_norm, color2_norm);
+    queue.vertices().EmitQuad(RectI(x, y, width, height), RectF(),
+                              color1_norm, color1_norm, color2_norm,
+                              color2_norm);
   else
-    primitive_.EmitQuad(RectI(x, y, width, height), RectF(), color1_norm,
-                        color2_norm, color1_norm, color2_norm);
+    queue.vertices().EmitQuad(RectI(x, y, width, height), RectF(),
+                              color1_norm, color2_norm, color1_norm,
+                              color2_norm);
 
-  const std::uint32_t vertex_count = primitive_.Upload();
+  const PrimitiveEmitter::Slot slot = queue.vertices().AppendUpload();
+  timer.MarkUploaded();
 
-  auto encoder = g_device.CreateCommandEncoder(nullptr);
-  auto pass = BeginRendering(encoder);
+  wgpu::RenderPassEncoder pass = queue.Begin(this);
   {
     auto pipeline = ShaderSet::Get().state.bitmap.color_noblend;
     pass.SetPipeline(pipeline);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(vertex_count, 1, 0, 0);
+    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(slot.count, 1, slot.first, 0);
   }
-  pass.End();
-  auto command = encoder.Finish(nullptr);
-  g_queue.Submit(1, &command);
+  timer.MarkRecorded();
 }
 
 void Bitmap::GradientFillRect(RefPtr<Rect> rect,
@@ -463,6 +513,9 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
 
   if (x < 0 || y < 0 || x >= size_.x || y >= size_.y)
     return MakeRefCounted<Color>();
+
+  // The read back needs the queued drawing to have happened.
+  BitmapQueue::Get().Flush();
 
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, x, y, 1, 1);
@@ -519,25 +572,27 @@ void Bitmap::DrawText(int32_t x,
 
   const glm::vec4 opacity = PremultiplyOpacity(run->opacity);
 
-  const std::uint32_t vertex_count =
-      primitive_
+  BitmapQueue& queue = BitmapQueue::Get();
+
+  OperationTimer timer;
+
+  const PrimitiveEmitter::Slot slot =
+      queue.vertices()
           .EmitQuad(RectF(blit_region),
                     MakeNorm(source_rect, glm::vec2(run->size)), opacity)
-          .Upload();
+          .AppendUpload();
+  timer.MarkUploaded();
 
-  auto encoder = g_device.CreateCommandEncoder(nullptr);
-  auto pass = BeginRendering(encoder);
+  wgpu::RenderPassEncoder pass = queue.Begin(this);
   {
     pass.SetPipeline(ShaderSet::Get().state.bitmap.texture_pma);
     pass.SetBindGroup(0, scene_group_, 0, nullptr);
     pass.SetBindGroup(1, object_group_, 0, nullptr);
     pass.SetBindGroup(2, run->group, 0, nullptr);
-    pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(vertex_count, 1, 0, 0);
+    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
+    pass.Draw(slot.count, 1, slot.first, 0);
   }
-  pass.End();
-  auto command = encoder.Finish(nullptr);
-  g_queue.Submit(1, &command);
+  timer.MarkRecorded();
 }
 
 void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
@@ -570,6 +625,9 @@ RefPtr<Image> Bitmap::ToImage() {
   if (!data)
     throw Exception(Exception::kRGSSError, SDL_GetError());
 
+  // The read back needs the queued drawing to have happened.
+  BitmapQueue::Get().Flush();
+
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, 0, 0, size_.x, size_.y);
 
@@ -592,6 +650,10 @@ void Bitmap::UpdateWithImage(RefPtr<Image> image) {
   if (data->w != size_.x || data->h != size_.y)
     throw Exception(Exception::kRGSSError,
                     "image data size mismatch bitmap size.");
+
+  // `WriteTexture` is a queue operation: without the flush it would be ordered
+  // before the pass that is still drawing into this bitmap.
+  BitmapQueue::Get().Flush();
 
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
                                    data->h);
@@ -620,6 +682,10 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
   if (!pixels || bytes_per_row < static_cast<uint32_t>(size_.x) * 4)
     throw Exception(Exception::kRGSSError,
                     "invalid pixel data for the bitmap.");
+
+  // `WriteTexture` is a queue operation: without the flush it would be ordered
+  // before the pass that is still drawing into this bitmap.
+  BitmapQueue::Get().Flush();
 
   wgpu::TexelCopyTextureInfo destination;
   destination.texture = texture_;
@@ -697,9 +763,13 @@ RefPtr<GPUTextureView> Bitmap::GetTextureView() {
 }
 
 void Bitmap::CreateInternal(SDL_Surface* data) {
-  size_ = glm::ivec2{data->w, data->h};
+  CreateResources({data->w, data->h});
+  UploadSurface(data);
+}
 
-  SDL_PremultiplySurfaceAlpha(data, false);
+// Allocates the GPU objects a bitmap owns.
+void Bitmap::CreateResources(const glm::ivec2& size) {
+  size_ = size;
 
   wgpu::TextureDescriptor texture_desc;
   texture_desc.usage = wgpu::TextureUsage::RenderAttachment |
@@ -707,8 +777,8 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
                        wgpu::TextureUsage::CopySrc |
                        wgpu::TextureUsage::CopyDst;
   texture_desc.dimension = wgpu::TextureDimension::e2D;
-  texture_desc.size.width = data->w;
-  texture_desc.size.height = data->h;
+  texture_desc.size.width = size_.x;
+  texture_desc.size.height = size_.y;
   texture_desc.format = wgpu::TextureFormat::RGBA8Unorm;
   texture_ = g_device.CreateTexture(&texture_desc);
   texture_view_ = texture_.CreateView(nullptr);
@@ -716,25 +786,11 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   wgpu::TextureDescriptor depth_stencil_desc;
   depth_stencil_desc.usage = wgpu::TextureUsage::RenderAttachment;
   depth_stencil_desc.dimension = wgpu::TextureDimension::e2D;
-  depth_stencil_desc.size.width = data->w;
-  depth_stencil_desc.size.height = data->h;
+  depth_stencil_desc.size.width = size_.x;
+  depth_stencil_desc.size.height = size_.y;
   depth_stencil_desc.format = wgpu::TextureFormat::Depth24PlusStencil8;
   depth_stencil_ = g_device.CreateTexture(&depth_stencil_desc);
   depth_stencil_view_ = depth_stencil_.CreateView(nullptr);
-
-  wgpu::TexelCopyTextureInfo destination;
-  destination.texture = texture_;
-
-  wgpu::TexelCopyBufferLayout buffer_layout;
-  buffer_layout.bytesPerRow = data->pitch;
-  buffer_layout.rowsPerImage = data->h;
-
-  wgpu::Extent3D target_size;
-  target_size.width = data->w;
-  target_size.height = data->h;
-
-  g_queue.WriteTexture(&destination, data->pixels, data->pitch * data->h,
-                       &buffer_layout, &target_size);
 
   SceneData scene_uniform = {};
 
@@ -766,9 +822,41 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   sampler_desc.minFilter = wgpu::FilterMode::Nearest;
   sampler_ = g_device.CreateSampler(&sampler_desc);
 
-  SDL_DestroySurface(data);
-
   CreateGroup();
+}
+
+void Bitmap::UploadSurface(SDL_Surface* data) {
+  SDL_PremultiplySurfaceAlpha(data, false);
+
+  wgpu::TexelCopyTextureInfo destination;
+  destination.texture = texture_;
+
+  wgpu::TexelCopyBufferLayout buffer_layout;
+  buffer_layout.bytesPerRow = data->pitch;
+  buffer_layout.rowsPerImage = data->h;
+
+  wgpu::Extent3D target_size;
+  target_size.width = data->w;
+  target_size.height = data->h;
+
+  g_queue.WriteTexture(&destination, data->pixels, data->pitch * data->h,
+                       &buffer_layout, &target_size);
+
+  SDL_DestroySurface(data);
+}
+
+void Bitmap::ClearToTransparent() {
+  // A new bitmap starts as transparent black.  Clearing it on the GPU is a
+  // fast clear; building a zeroed surface and uploading it would move the
+  // whole bitmap through memory instead, which a script that creates one every
+  // frame cannot afford.
+  auto encoder = g_device.CreateCommandEncoder(nullptr);
+  auto pass = BeginRendering(encoder, glm::vec4(0.0f));
+  pass.End();
+
+  auto command = encoder.Finish(nullptr);
+  CountSubmit(false);
+  g_queue.Submit(1, &command);
 }
 
 void Bitmap::CreateGroup() {

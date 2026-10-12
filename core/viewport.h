@@ -85,11 +85,7 @@ class Viewport : public Node {
   wgpu::Buffer object_uniform_, tint_uniform_;
   wgpu::BindGroup object_group_, tint_group_;
 
-  RefPtr<Bitmap> filter_target_;
-  wgpu::BindGroup filter_scene_;
-
-  RectI parent_scissor_, region_, filter_scissor_;
-  bool filtering_ = false;
+  RectI parent_scissor_, region_;
   bool post_process_ = false;
   std::uint32_t vertex_count_ = 0;
 

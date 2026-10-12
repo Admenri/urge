@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "core/bitmap_queue.h"
 #include "core/gpu_utils.h"
 #include "core/pipeline.h"
 
@@ -161,6 +162,10 @@ FontRenderer::TextRun* FontRenderer::Store(std::string key,
   const std::size_t bytes = TextRunBytes(size);
 
   while (!runs_.empty() && bytes_ + bytes > kTextRunBudget) {
+    // The batch the queue is holding may still sample the run that is about to
+    // go, so it has to reach the GPU before the texture behind it is dropped.
+    BitmapQueue::Get().Flush();
+
     auto victim = runs_.begin();
     for (auto current = runs_.begin(); current != runs_.end(); ++current)
       if (current->second.stamp < victim->second.stamp)

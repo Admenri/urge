@@ -200,6 +200,7 @@ void PrimitiveEmitter::Clear() {
   vertices_.clear();
   pending_size_ = 0;
   batch_first_ = 0;
+  uploaded_vertices_ = 0;
 }
 
 void PrimitiveEmitter::Reset() {
@@ -209,6 +210,7 @@ void PrimitiveEmitter::Reset() {
   color_ = glm::vec4(1.f, 1.f, 1.f, 1.f);
   texcoord_ = glm::vec2(0.f, 0.f);
   vertex_buffer_ = nullptr;
+  retired_buffers_.clear();
 }
 
 std::uint32_t PrimitiveEmitter::Upload() {
@@ -230,6 +232,39 @@ std::uint32_t PrimitiveEmitter::Upload() {
   vertices_.clear();
   batch_first_ = 0;
   return static_cast<std::uint32_t>(count);
+}
+
+PrimitiveEmitter::Slot PrimitiveEmitter::AppendUpload() {
+  const Slot slot = End();
+
+  if (!slot.count)
+    return {};
+
+  const std::size_t bytes = slot.count * sizeof(VertexData);
+  const std::size_t offset =
+      static_cast<std::size_t>(uploaded_vertices_) * sizeof(VertexData);
+
+  if (!EnsureVertexBuffer(offset + bytes)) {
+    vertices_.clear();
+    batch_first_ = 0;
+    return {};
+  }
+
+  g_queue.WriteBuffer(vertex_buffer_, offset, vertices_.data() + slot.first,
+                      bytes);
+
+  const Slot appended{uploaded_vertices_,
+                      static_cast<std::uint32_t>(slot.count)};
+  uploaded_vertices_ += static_cast<std::uint32_t>(slot.count);
+
+  vertices_.clear();
+  batch_first_ = 0;
+  return appended;
+}
+
+void PrimitiveEmitter::ReleaseRetiredBuffers() {
+  retired_buffers_.clear();
+  uploaded_vertices_ = 0;
 }
 
 void PrimitiveEmitter::PushVertex(const glm::vec4& position) {
@@ -273,6 +308,12 @@ bool PrimitiveEmitter::EnsureVertexBuffer(std::size_t bytes) {
 
   const std::uint64_t size = std::min(
       std::max<std::uint64_t>(buffer_size() * 2, bytes), limits.maxBufferSize);
+
+  // A frame that defers its submission has draws recorded against the buffer
+  // it is about to replace, so the old one has to stay alive until the frame
+  // has been handed to the queue.
+  if (vertex_buffer_)
+    retired_buffers_.push_back(vertex_buffer_);
 
   wgpu::BufferDescriptor desc;
   desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;

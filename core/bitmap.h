@@ -157,6 +157,9 @@ class Bitmap : public Disposable {
  private:
   void DisposeObject() override;
   void CreateInternal(SDL_Surface* data);
+  void CreateResources(const glm::ivec2& size);
+  void UploadSurface(SDL_Surface* data);
+  void ClearToTransparent();
   void CreateGroup();
 
   RefPtr<Font> font_;
@@ -168,8 +171,6 @@ class Bitmap : public Disposable {
 
   wgpu::Buffer scene_uniform_, object_uniform_;
   wgpu::Sampler sampler_;
-
-  PrimitiveEmitter primitive_;
 
   wgpu::BindGroup scene_group_, object_group_, texture_group_;
 };

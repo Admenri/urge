@@ -33,6 +33,7 @@
 #include "SDL3/SDL_timer.h"
 
 #include "core/audio.h"
+#include "core/bitmap_queue.h"
 #include "core/common.h"
 #include "core/config.h"
 #include "core/device.h"
@@ -45,6 +46,7 @@
 #include "core/mouse.h"
 #include "core/pipeline.h"
 #include "core/primitive.h"
+#include "core/render_stats.h"
 #include "core/sprite_batch.h"
 #include "core/uniform.h"
 
@@ -211,6 +213,7 @@ Graphics::Graphics()
   UniformManager::Reset(new UniformManager());
   QuadVertexManager::Reset(new QuadVertexManager());
   SpriteBatch::Reset(new SpriteBatch());
+  BitmapQueue::Reset(new BitmapQueue());
 
   root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(config.display.width, config.display.height);
@@ -225,6 +228,7 @@ Graphics::~Graphics() {
   screen_.reset();
   root_.reset();
 
+  BitmapQueue::Reset(nullptr);
   SpriteBatch::Reset(nullptr);
   QuadVertexManager::Reset(nullptr);
   UniformManager::Reset(nullptr);
@@ -278,6 +282,23 @@ void Graphics::Update() {
                    render_cost_ms_;
   if (other_cost_ms_ < 0.0f)
     other_cost_ms_ = 0.0f;
+
+  RenderStats& stats = GetRenderStats();
+  stats.EndFrame();
+
+  if (Config::Get().HasCommandLine("bstats")) {
+    const RenderFrameCounters& counters = stats.last;
+
+    LOGGER_INFO(
+        "bstats ops={} bitmap_submits={} frame_submits={} upload={:.3f} "
+        "record={:.3f} finish={:.3f} submit={:.3f} bitmap={:.3f} render={:.3f} "
+        "logic={:.3f} other={:.3f}",
+        counters.bitmap_ops, counters.bitmap_submits, counters.frame_submits,
+        counters.bitmap_upload_ms, counters.bitmap_record_ms,
+        counters.bitmap_finish_ms, counters.bitmap_submit_ms,
+        counters.bitmap_total_ms(), render_cost_ms_, logic_cost_ms_,
+        other_cost_ms_);
+  }
 }
 
 void Graphics::Wait(int32_t duration) {
@@ -381,6 +402,7 @@ void Graphics::TransitionBitmap(int32_t duration,
       pass.End();
     }
     auto command = encoder.Finish(nullptr);
+    CountSubmit(false);
     GPUDevice::Get().queue().Submit(1, &command);
 
     Update();
@@ -605,6 +627,7 @@ void Graphics::PresentInternal() {
     pass.End();
   }
   auto command = encoder.Finish(nullptr);
+  CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command);
 
   surface.Present();
