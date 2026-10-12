@@ -28,3 +28,18 @@
 [submodule "third_party/curl"]
 	path = third_party/curl
 	url = https://github.com/curl/curl.git
+[submodule "third_party/ogg"]
+	path = third_party/ogg
+	url = https://github.com/xiph/ogg.git
+[submodule "third_party/vorbis"]
+	path = third_party/vorbis
+	url = https://github.com/xiph/vorbis.git
+[submodule "third_party/opus"]
+	path = third_party/opus
+	url = https://github.com/xiph/opus.git
+[submodule "third_party/opusfile"]
+	path = third_party/opusfile
+	url = https://github.com/xiph/opusfile.git
+[submodule "third_party/libwebp"]
+	path = third_party/libwebp
+	url = https://github.com/webmproject/libwebp.git
