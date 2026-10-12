@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -32,6 +33,9 @@
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_init.h"
 #include "SDL3/SDL_iostream.h"
+
+#include "decoders/libopus/miniaudio_libopus.h"
+#include "decoders/libvorbis/miniaudio_libvorbis.h"
 
 #include "core/exception.h"
 #include "core/filesystem.h"
@@ -49,6 +53,20 @@ namespace {
 constexpr size_t kBusCount = 4;
 
 constexpr size_t kMaxVoices = 24;
+
+// Ogg Vorbis and Ogg Opus are not part of miniaudio's built-in decoder set.
+// They arrive as custom decoding backends, compiled into third_party/miniaudio
+// on top of libvorbis and libopusfile -- the tree no longer carries stb_vorbis.
+// Custom backends are tried before the built-in ones, so a Vorbis or Opus
+// stream is handed to Xiph's decoders while wav, flac and mp3 still fall
+// through to miniaudio's own.
+ma_decoding_backend_vtable* kDecodingBackends[] = {
+    ma_decoding_backend_libvorbis,
+    ma_decoding_backend_libopus,
+};
+
+constexpr ma_uint32 kDecodingBackendCount =
+    static_cast<ma_uint32>(std::size(kDecodingBackends));
 
 constexpr size_t BusIndex(AudioBus bus) {
   return static_cast<size_t>(bus);
@@ -192,6 +210,8 @@ bool AudioClip::Prepare(ma_engine* engine,
   ma_decoder_config config =
       ma_decoder_config_init(ma_format_f32, ma_engine_get_channels(engine),
                              ma_engine_get_sample_rate(engine));
+  config.ppCustomBackendVTables = kDecodingBackends;
+  config.customBackendCount = kDecodingBackendCount;
   if (ma_decoder_init_memory(bytes_.data(), bytes_.size(), &config,
                              &decoder_) != MA_SUCCESS) {
     LOGGER_WARN("{} is in a format the mixer cannot decode", label);

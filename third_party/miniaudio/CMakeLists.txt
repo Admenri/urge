@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.20.1)
 
-# The wav, flac and mp3 decoders are compiled into miniaudio.c.  Ogg vorbis is
-# not -- miniaudio reaches for it through extras/stb_vorbis.c, which is brought
-# in here: its declarations are pulled into miniaudio.c, its implementation is
-# compiled below.  The optional libopus/libvorbis backends under decoders/ stay
-# out, they would drag in ogg, opus and vorbis, which this tree does not carry.
+# The wav, flac and mp3 decoders are compiled into miniaudio.c.  Ogg vorbis and
+# Ogg opus are not: they come from the two Xiph backends under decoders/, which
+# bring the real libvorbis and libopusfile in -- see third_party/vorbis,
+# third_party/opus and third_party/opusfile.  The engine plugs both of them into
+# its decoder config; see core/audio_service.cc.
 set(MINIAUDIO_SOURCE
   miniaudio.c
-  extras/stb_vorbis.c
+  decoders/libvorbis/miniaudio_libvorbis.c
+  decoders/libopus/miniaudio_libopus.c
   nodes/ma_channel_combiner_node/ma_channel_combiner_node.c
   nodes/ma_channel_separator_node/ma_channel_separator_node.c
   nodes/ma_ltrim_node/ma_ltrim_node.c
@@ -110,6 +111,12 @@ endif()
 
 # Construct compiler defines
 set(COMPILE_DEFINES)
+
+# The bundled stb_vorbis decoder is gone: Ogg Vorbis is decoded by the
+# libvorbis backend compiled above, so miniaudio must not pull its own copy of
+# extras/stb_vorbis.c in as well.  This is what keeps miniaudio.c from defining
+# MA_HAS_VORBIS and registering a second, built-in Vorbis decoder.
+list(APPEND COMPILE_DEFINES MA_NO_VORBIS)
 
 if(MINIAUDIO_NO_WASAPI)
     list(APPEND COMPILE_DEFINES MA_NO_WASAPI)
@@ -259,6 +266,12 @@ add_library(miniaudio STATIC ${MINIAUDIO_SOURCE})
 target_include_directories(miniaudio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(miniaudio PRIVATE ${COMPILE_OPTIONS})
 target_compile_definitions(miniaudio PUBLIC ${COMPILE_DEFINES})
+
+# The two decoder backends above are compiled into this library, so whatever
+# they need has to be linked here as well: libvorbisfile on top of libvorbis for
+# the Vorbis backend, libopusfile on top of libopus for the Opus one, and libogg
+# underneath both.
+target_link_libraries(miniaudio PUBLIC vorbisfile vorbis opusfile opus ogg)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   target_compile_definitions(miniaudio PUBLIC MA_ENABLE_AUDIO_WORKLETS)

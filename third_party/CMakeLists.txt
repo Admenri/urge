@@ -27,6 +27,70 @@ set(ENABLE_SPIRV ON)
 set(MINIAUDIO_NO_DEVICEIO ON)
 set(MINIAUDIO_DEBUG_OUTPUT OFF)
 
+# ---------------------------------------------------------------------------
+# The Xiph codecs: libogg, libvorbis, libopus and libopusfile.  They are
+# submodules under third_party/, pinned to a release tag, and they are what
+# decodes Ogg Vorbis and Ogg Opus for miniaudio now (see
+# third_party/miniaudio) -- replacing the stb_vorbis copy the tree used to
+# carry.
+#
+# Their upstream CMake projects are used as they ship, so the submodules stay
+# pristine.  Everything a bundled copy has no business doing is turned off:
+# tests, command line tools, pkg-config files and CMake package exports.
+# OPUS_STATIC_RUNTIME has to match the runtime the rest of the tree links
+# against (see the MSVC block in the top-level CMakeLists.txt) -- without it
+# opus is built against the DLL runtime and the final link fails.
+#
+# BUILD_TESTING is a cache entry rather than a plain variable because libogg
+# opens with `cmake_minimum_required(VERSION 2.8.12)`, where `option()` still
+# overwrites a normal variable (policy CMP0077 is OLD at that level) and
+# `include(CTest)` would put the setting back to ON.
+#
+# CMAKE_POLICY_VERSION_MINIMUM is the other half of that.  CMake 4 refuses to
+# configure a project that asks for less than 3.5, and libogg and libvorbis
+# both still ask for 2.8.12; raising the floor here keeps the submodules
+# untouched instead of patching their CMakeLists.  It only takes effect for
+# projects whose own minimum is lower, so nothing else changes.
+# ---------------------------------------------------------------------------
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+set(BUILD_TESTING OFF CACHE BOOL "Build the testing tree" FORCE)
+set(OPUS_BUILD_TESTING OFF)
+set(OPUS_BUILD_PROGRAMS OFF)
+set(OPUS_STATIC_RUNTIME ON)
+set(OPUS_INSTALL_PKG_CONFIG_MODULE OFF)
+set(OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF)
+set(INSTALL_DOCS OFF)
+set(INSTALL_PKG_CONFIG_MODULE OFF)
+set(INSTALL_CMAKE_PACKAGE_MODULE OFF)
+
+# ---------------------------------------------------------------------------
+# libwebp backs SDL_image's WEBP backend.  Only the libraries are wanted, not
+# the cwebp/dwebp/vwebp tools or the helpers they link.
+#
+# SDL_image takes WEBP either from a vendored copy of its own or from a library
+# the surrounding build already compiles.  This tree does the latter, statically
+# -- the engine is one executable -- so SDLIMAGE_WEBP_SHARED is off and the
+# lookup goes through find_package(webp), which third_party/cmake/Findwebp.cmake
+# answers with the in-tree target.
+# ---------------------------------------------------------------------------
+set(WEBP_BUILD_ANIM_UTILS OFF)
+set(WEBP_BUILD_CWEBP OFF)
+set(WEBP_BUILD_DWEBP OFF)
+set(WEBP_BUILD_GIF2WEBP OFF)
+set(WEBP_BUILD_IMG2WEBP OFF)
+set(WEBP_BUILD_VWEBP OFF)
+set(WEBP_BUILD_WEBPINFO OFF)
+set(WEBP_BUILD_WEBPMUX OFF)
+set(WEBP_BUILD_EXTRAS OFF)
+set(WEBP_BUILD_LIBWEBPMUX ON)
+set(SDLIMAGE_WEBP_SHARED OFF)
+
+# third_party/cmake holds the CMake the parent has to supply around the
+# vendored projects: the finders that resolve Ogg and webp to the targets this
+# tree builds rather than to installed copies of the libraries, and the build
+# file for libopusfile, which ships none of its own.
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # The Tint SPIR-V reader builds its IR with SPIRV-Tools, which glslang carries
 # in its External directory. Only the static library is wanted here.
 set(SPIRV_SKIP_TESTS ON)
@@ -80,9 +144,24 @@ endif()
 
 add_subdirectory(glm)
 add_subdirectory(SDL)
+
+# libwebp is what SDL_image's WEBP backend links against, so it has to be up
+# before it.
+add_subdirectory(libwebp)
+
 add_subdirectory(SDL_image)
 add_subdirectory(SDL_ttf)
 add_subdirectory(physfs)
+
+# The Xiph codecs.  libogg comes first: libvorbis and libopusfile both link it.
+add_subdirectory(ogg)
+add_subdirectory(vorbis)
+add_subdirectory(opus)
+
+# libopusfile is the odd one out: upstream ships autotools only, so the build
+# file is ours and lives in third_party/cmake/ rather than inside the submodule.
+include(cmake/opusfile.cmake)
+
 add_subdirectory(miniaudio)
 add_subdirectory(webgpu-cpp)
 add_subdirectory(imgui-docking)
