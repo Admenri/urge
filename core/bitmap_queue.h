@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "core/bitmap.h"
@@ -33,65 +34,73 @@
 
 namespace urge {
 
-// Records the drawing a script does against `Bitmap`s into one command buffer.
+// One recorded drawing command.  A `Bitmap` operation fills one of these in and
+// hands it to the queue; it never opens a pass or submits anything itself.
+struct BitmapDraw {
+  enum class Kind {
+    kTexture,
+    kTextureMask,
+    kColor,
+  };
+
+  Kind kind = Kind::kTexture;
+
+  RefPtr<Bitmap> target;
+  RefPtr<Bitmap> source;
+  RefPtr<Bitmap> mask;
+
+  // `DrawText` draws a cached text run instead of a bitmap, so it carries the
+  // run's bind group where a source bitmap would go.
+  wgpu::BindGroup text_group;
+
+  RectF rect;
+  RectF texcoord;
+  glm::vec4 colors[4] = {glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f),
+                         glm::vec4(1.0f)};
+};
+
+// Executes the drawing a script does against `Bitmap`s.
 //
-// A `Bitmap` operation is not a draw call.  It owns an encoder, a render pass
-// and a submission, so a frame that issues a few hundred of them pays the
-// submission overhead a few hundred times, and that overhead is almost all of
-// what the operation costs.  The queue keeps the frame's encoder open instead:
-// the whole batch then costs one `Finish` and one `Submit`, while the
-// operations still land in the order they arrived -- the painter's order of
-// `Bitmap` is part of the RGSS contract, so nothing is reordered, only
-// deferred.  Operations that share a target stay inside one render pass as
-// well, and every pass shares the frame's encoder.
+// A `Bitmap` operation only records: it appends a `BitmapDraw` here instead of
+// touching the GPU, so a batch costs one submission rather than one per
+// operation.  The batch runs when a bitmap's handle is actually needed --
+// `Bitmap::AcquireHandle` -- and before the scene reads the textures, and it
+// always runs in the order the commands were recorded: `Bitmap` is a painter's
+// order surface, so nothing is reordered, only deferred.
 //
-// Everything that is not a `Bitmap` operation has to `Flush()` first, because
-// a recorded draw only happens at the submission:
-//  - `Node::Render` flushes before it records its pass, so the scene reads the
-//    textures the queue wrote;
-//  - a read back (`GetPixel`, `ToImage`) needs the writes to have happened;
-//  - `WriteTexture` (`UpdateWithImage`, `UpdateWithPixels`) and
-//    `CopyTextureToTexture` (`Bitmap(other)`) on a queued target would
-//    otherwise be ordered before the pass that draws into it;
-//  - the font cache flushes before it evicts a run, whose texture a recorded
-//    draw may still sample.
+// Deferring to a single execution is what lets `PrimitiveEmitter` stay in its
+// plain form.  Every command is exactly one quad, so the batch is emitted in
+// one go and uploaded once, and a command's range is its index times the vertex
+// count of a quad -- no per-command slot bookkeeping anywhere.
+//
+// A blit may not read the bitmap it draws into, because a pass cannot sample
+// its own attachment.  `Blt`, `StretchBlt` and `MaskBlt` reject that case where
+// the command is recorded, so nothing here ever has to resolve a self read.
 class BitmapQueue : public Singleton<BitmapQueue> {
  public:
   BitmapQueue();
   ~BitmapQueue();
 
-  // Returns the pass to record `target` into, ending the previous one when it
-  // draws somewhere else.
-  wgpu::RenderPassEncoder Begin(RefPtr<Bitmap> target);
+  void Push(BitmapDraw draw);
 
-  // Keeps a bitmap a recorded draw samples alive until the batch is submitted.
-  // A script can drop its last reference to a bitmap right after blitting from
-  // it, and the Ruby collector would then take the texture with it while the
-  // recorded pass still reads it.
-  void Pin(RefPtr<Bitmap> texture);
-
-  // Returns the bind group to sample `texture` with while the pass draws into
-  // `target`.  A render pass may not sample the attachment it writes, so
-  // `bitmap.blt(0, 0, bitmap)` -- which is legal RGSS -- is served from a copy
-  // of the bitmap taken before the pass carries on, and the result is what
-  // reading it in place would have produced.
-  wgpu::BindGroup ResolveRead(RefPtr<Bitmap> target, RefPtr<Bitmap> texture);
-
-  PrimitiveEmitter& vertices() { return vertices_; }
-
-  // Ends the open pass and submits the frame's batch.  Nothing is submitted
-  // when no operation was recorded.
+  // Executes everything recorded so far.  Safe to call anywhere: it returns
+  // immediately when the batch is empty, and while the batch is already being
+  // executed.
   void Flush();
 
  private:
-  void EnsureScratch(const glm::ivec2& size);
+  void OpenPass(const RefPtr<Bitmap>& target);
+  void ClosePass();
+  void Record(const BitmapDraw& draw, std::uint32_t first_vertex);
+
+  std::vector<BitmapDraw> draws_;
 
   wgpu::CommandEncoder encoder_;
   wgpu::RenderPassEncoder pass_;
   RefPtr<Bitmap> target_;
-  RefPtr<Bitmap> scratch_;
-  std::vector<RefPtr<Bitmap>> pinned_;
+
   PrimitiveEmitter vertices_;
+  bool executing_ = false;
 };
 
 }  // namespace urge

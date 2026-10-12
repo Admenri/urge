@@ -29,7 +29,6 @@
 #include <string_view>
 #include <vector>
 
-#include "SDL3/SDL_timer.h"
 #include "SDL3_image/SDL_image.h"
 #include "glm/ext/matrix_clip_space.hpp"
 
@@ -109,32 +108,6 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
     }
   }
 }
-
-// Times one `Bitmap` drawing operation and folds it into the frame counters.
-// The marks split the cost the way the batching has to attack it: getting the
-// quad into the buffer and recording it into the pass.  The command buffer is
-// finished and submitted once per frame by `BitmapQueue`, which adds those two
-// stages to the same counters.
-class OperationTimer {
- public:
-  OperationTimer() = default;
-
-  void MarkUploaded() { uploaded_ = SDL_GetPerformanceCounter(); }
-  void MarkRecorded() { recorded_ = SDL_GetPerformanceCounter(); }
-
-  ~OperationTimer() {
-    RenderFrameCounters& counters = GetRenderStats().current;
-    ++counters.bitmap_ops;
-    counters.bitmap_upload_ms += TicksToMilliseconds(uploaded_ - begin_);
-    counters.bitmap_record_ms +=
-        TicksToMilliseconds(SDL_GetPerformanceCounter() - uploaded_);
-  }
-
- private:
-  std::uint64_t begin_ = SDL_GetPerformanceCounter();
-  std::uint64_t uploaded_ = 0;
-  std::uint64_t recorded_ = 0;
-};
 
 struct MapResult {
   bool invoked = false;
@@ -283,7 +256,7 @@ Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
 Bitmap::Bitmap(RefPtr<Bitmap> other)
     : Bitmap(other->size().x, other->size().y) {
   // The copy reads a texture the queue may still be drawing into.
-  BitmapQueue::Get().Flush();
+  AcquireHandle();
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);
 
@@ -304,6 +277,12 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
 
 Bitmap::~Bitmap() {
   Disposable::Dispose();
+}
+
+void Bitmap::AcquireHandle() {
+  // The single entry point for "the texture is needed now": whatever this
+  // bitmap recorded reaches the GPU before the caller gets a handle to it.
+  BitmapQueue::Get().Flush();
 }
 
 int32_t Bitmap::Width() {
@@ -342,31 +321,19 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  BitmapQueue& queue = BitmapQueue::Get();
-  queue.Pin(src_bitmap);
+  if (src_bitmap.get() == this)
+    throw Exception(Exception::kRGSSError,
+                    "bitmap: a blit cannot read the bitmap it draws into.");
 
-  OperationTimer timer;
+  BitmapDraw draw;
+  draw.target = this;
+  draw.source = src_bitmap;
+  draw.rect = RectF(dst_rect->data);
+  draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
+  draw.colors[0] = draw.colors[1] = draw.colors[2] = draw.colors[3] =
+      glm::vec4(opacity / 255.0f);
 
-  const PrimitiveEmitter::Slot slot =
-      queue.vertices()
-          .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
-                    glm::vec4(opacity / 255.0f))
-          .AppendUpload();
-  timer.MarkUploaded();
-
-  const wgpu::BindGroup source_group = queue.ResolveRead(this, src_bitmap);
-
-  wgpu::RenderPassEncoder pass = queue.Begin(this);
-  {
-    auto pipeline = ShaderSet::Get().state.bitmap.texture_pma;
-    pass.SetPipeline(pipeline);
-    pass.SetBindGroup(0, scene_group_, 0, nullptr);
-    pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetBindGroup(2, source_group, 0, nullptr);
-    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(slot.count, 1, slot.first, 0);
-  }
-  timer.MarkRecorded();
+  BitmapQueue::Get().Push(std::move(draw));
 }
 
 void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
@@ -378,34 +345,19 @@ void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
   if (!dst_rect || !src_bitmap || !src_rect || !mask)
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
-  BitmapQueue& queue = BitmapQueue::Get();
-  queue.Pin(src_bitmap);
-  queue.Pin(mask);
+  if (src_bitmap.get() == this || mask.get() == this)
+    throw Exception(Exception::kRGSSError,
+                    "bitmap: a mask blit cannot read the bitmap it draws into.");
 
-  OperationTimer timer;
+  BitmapDraw draw;
+  draw.kind = BitmapDraw::Kind::kTextureMask;
+  draw.target = this;
+  draw.source = src_bitmap;
+  draw.mask = mask;
+  draw.rect = RectF(dst_rect->data);
+  draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
 
-  const PrimitiveEmitter::Slot slot =
-      queue.vertices()
-          .EmitQuad(dst_rect->data, MakeNorm(src_rect->data, src_bitmap->size_),
-                    glm::vec4(1.0f))
-          .AppendUpload();
-  timer.MarkUploaded();
-
-  const wgpu::BindGroup source_group = queue.ResolveRead(this, src_bitmap);
-  const wgpu::BindGroup mask_group = queue.ResolveRead(this, mask);
-
-  wgpu::RenderPassEncoder pass = queue.Begin(this);
-  {
-    auto pipeline = ShaderSet::Get().state.bitmap.texture_mask_pma;
-    pass.SetPipeline(pipeline);
-    pass.SetBindGroup(0, scene_group_, 0, nullptr);
-    pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetBindGroup(2, source_group, 0, nullptr);
-    pass.SetBindGroup(3, mask_group, 0, nullptr);
-    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(slot.count, 1, slot.first, 0);
-  }
-  timer.MarkRecorded();
+  BitmapQueue::Get().Push(std::move(draw));
 }
 
 void Bitmap::FillRect(int32_t x,
@@ -443,35 +395,19 @@ void Bitmap::GradientFillRect(int32_t x,
   if (!color1 || !color2)
     throw Exception(Exception::kRGSSError, "invalid color value.");
 
-  auto color1_norm = PremultiplyColor(color1->data);
-  auto color2_norm = PremultiplyColor(color2->data);
+  const glm::vec4 color1_norm = PremultiplyColor(color1->data);
+  const glm::vec4 color2_norm = PremultiplyColor(color2->data);
 
-  BitmapQueue& queue = BitmapQueue::Get();
+  BitmapDraw draw;
+  draw.kind = BitmapDraw::Kind::kColor;
+  draw.target = this;
+  draw.rect = RectF(RectI(x, y, width, height));
+  draw.colors[0] = color1_norm;
+  draw.colors[1] = vertical ? color1_norm : color2_norm;
+  draw.colors[2] = vertical ? color2_norm : color1_norm;
+  draw.colors[3] = color2_norm;
 
-  OperationTimer timer;
-
-  if (vertical)
-    queue.vertices().EmitQuad(RectI(x, y, width, height), RectF(),
-                              color1_norm, color1_norm, color2_norm,
-                              color2_norm);
-  else
-    queue.vertices().EmitQuad(RectI(x, y, width, height), RectF(),
-                              color1_norm, color2_norm, color1_norm,
-                              color2_norm);
-
-  const PrimitiveEmitter::Slot slot = queue.vertices().AppendUpload();
-  timer.MarkUploaded();
-
-  wgpu::RenderPassEncoder pass = queue.Begin(this);
-  {
-    auto pipeline = ShaderSet::Get().state.bitmap.color_noblend;
-    pass.SetPipeline(pipeline);
-    pass.SetBindGroup(0, scene_group_, 0, nullptr);
-    pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(slot.count, 1, slot.first, 0);
-  }
-  timer.MarkRecorded();
+  BitmapQueue::Get().Push(std::move(draw));
 }
 
 void Bitmap::GradientFillRect(RefPtr<Rect> rect,
@@ -515,7 +451,7 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
     return MakeRefCounted<Color>();
 
   // The read back needs the queued drawing to have happened.
-  BitmapQueue::Get().Flush();
+  AcquireHandle();
 
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, x, y, 1, 1);
@@ -572,27 +508,14 @@ void Bitmap::DrawText(int32_t x,
 
   const glm::vec4 opacity = PremultiplyOpacity(run->opacity);
 
-  BitmapQueue& queue = BitmapQueue::Get();
+  BitmapDraw draw;
+  draw.target = this;
+  draw.text_group = run->group;
+  draw.rect = RectF(blit_region);
+  draw.texcoord = MakeNorm(source_rect, glm::vec2(run->size));
+  draw.colors[0] = draw.colors[1] = draw.colors[2] = draw.colors[3] = opacity;
 
-  OperationTimer timer;
-
-  const PrimitiveEmitter::Slot slot =
-      queue.vertices()
-          .EmitQuad(RectF(blit_region),
-                    MakeNorm(source_rect, glm::vec2(run->size)), opacity)
-          .AppendUpload();
-  timer.MarkUploaded();
-
-  wgpu::RenderPassEncoder pass = queue.Begin(this);
-  {
-    pass.SetPipeline(ShaderSet::Get().state.bitmap.texture_pma);
-    pass.SetBindGroup(0, scene_group_, 0, nullptr);
-    pass.SetBindGroup(1, object_group_, 0, nullptr);
-    pass.SetBindGroup(2, run->group, 0, nullptr);
-    pass.SetVertexBuffer(0, queue.vertices().buffer(), 0, WGPU_WHOLE_SIZE);
-    pass.Draw(slot.count, 1, slot.first, 0);
-  }
-  timer.MarkRecorded();
+  BitmapQueue::Get().Push(std::move(draw));
 }
 
 void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
@@ -626,7 +549,7 @@ RefPtr<Image> Bitmap::ToImage() {
     throw Exception(Exception::kRGSSError, SDL_GetError());
 
   // The read back needs the queued drawing to have happened.
-  BitmapQueue::Get().Flush();
+  AcquireHandle();
 
   const std::vector<std::uint8_t> pixels =
       ReadTextureRegion(texture_, 0, 0, size_.x, size_.y);
@@ -653,7 +576,7 @@ void Bitmap::UpdateWithImage(RefPtr<Image> image) {
 
   // `WriteTexture` is a queue operation: without the flush it would be ordered
   // before the pass that is still drawing into this bitmap.
-  BitmapQueue::Get().Flush();
+  AcquireHandle();
 
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
                                    data->h);
@@ -685,7 +608,7 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
 
   // `WriteTexture` is a queue operation: without the flush it would be ordered
   // before the pass that is still drawing into this bitmap.
-  BitmapQueue::Get().Flush();
+  AcquireHandle();
 
   wgpu::TexelCopyTextureInfo destination;
   destination.texture = texture_;

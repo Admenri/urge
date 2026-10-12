@@ -138,21 +138,50 @@ class Bitmap : public Disposable {
  public:
   void UpdateWithPixels(const void* pixels, uint32_t bytes_per_row);
 
+  // Executes the drawing this bitmap has recorded, leaving its texture up to
+  // date.  Every accessor below goes through it, so no caller ever sees a
+  // bitmap whose pending commands have not run yet.
+  void AcquireHandle();
+
   wgpu::RenderPassEncoder BeginRendering(
       wgpu::CommandEncoder encoder,
       std::optional<glm::vec4> clear = std::nullopt);
 
   glm::ivec2 size() const { return size_; }
 
-  wgpu::Texture texture() { return texture_; }
-  wgpu::TextureView texture_view() { return texture_view_; }
-  wgpu::Texture depth_stencil() { return depth_stencil_; }
-  wgpu::TextureView depth_stencil_view() { return depth_stencil_view_; }
-  wgpu::Sampler sampler() { return sampler_; }
+  wgpu::Texture texture() {
+    AcquireHandle();
+    return texture_;
+  }
+  wgpu::TextureView texture_view() {
+    AcquireHandle();
+    return texture_view_;
+  }
+  wgpu::Texture depth_stencil() {
+    AcquireHandle();
+    return depth_stencil_;
+  }
+  wgpu::TextureView depth_stencil_view() {
+    AcquireHandle();
+    return depth_stencil_view_;
+  }
+  wgpu::Sampler sampler() {
+    AcquireHandle();
+    return sampler_;
+  }
 
-  wgpu::BindGroup scene_group() { return scene_group_; }
-  wgpu::BindGroup object_group() { return object_group_; }
-  wgpu::BindGroup texture_group() { return texture_group_; }
+  wgpu::BindGroup scene_group() {
+    AcquireHandle();
+    return scene_group_;
+  }
+  wgpu::BindGroup object_group() {
+    AcquireHandle();
+    return object_group_;
+  }
+  wgpu::BindGroup texture_group() {
+    AcquireHandle();
+    return texture_group_;
+  }
 
  private:
   void DisposeObject() override;

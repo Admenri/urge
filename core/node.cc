@@ -25,7 +25,6 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#include "core/bitmap_queue.h"
 #include "core/graphics.h"
 #include "core/primitive.h"
 #include "core/render_stats.h"
@@ -55,16 +54,15 @@ Node::~Node() {
 }
 
 void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
-  // The scene samples the bitmaps a script has been drawing into, so whatever
-  // the queue still holds has to reach the GPU before the pass is recorded.
-  BitmapQueue::Get().Flush();
-
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
 
   DrawContext context = {};
   context.model.push(glm::mat4(1.0f));
   context.command = encoder;
   context.target = target;
+  /* Acquiring the target's handles runs the queue, which is what pushes the
+     drawing a script did on the bitmaps through to the GPU.  It has to happen
+     before the pass is opened, so the scene samples up-to-date textures. */
   context.scene = target->scene_group();
 
   UniformManager& uniforms = UniformManager::Get();
