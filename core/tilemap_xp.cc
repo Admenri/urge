@@ -256,6 +256,7 @@ bool TilemapXP::DoDraw(DrawParam param) {
 
 void TilemapXP::UpdateViewport() {
   auto viewport = Attr_Viewport();
+  int32_t offset_x = 0, offset_y = 0;
   int32_t viewport_ox = 0, viewport_oy = 0;
   int32_t viewport_width = 0, viewport_height = 0;
   if (viewport.has_value() && viewport.value()) {
@@ -264,6 +265,10 @@ void TilemapXP::UpdateViewport() {
     viewport_oy = viewport.value()->Attr_OY().value();
     viewport_width = rect.value()->data.width;
     viewport_height = rect.value()->data.height;
+
+    auto position = ExtractPosition(viewport.value()->local_transform());
+    offset_x = static_cast<int32_t>(position.x) + viewport_ox;
+    offset_y = static_cast<int32_t>(position.y) + viewport_oy;
   } else {
     viewport_width = Graphics::Get().Width();
     viewport_height = Graphics::Get().Height();
@@ -279,8 +284,8 @@ void TilemapXP::UpdateViewport() {
   render_viewport_.height =
       (viewport_height / tilesize_) + !!(viewport_height % tilesize_) + 2;
 
-  const int32_t display_offset_x = tilemap_real_ox % tilesize_;
-  const int32_t display_offset_y = tilemap_real_oy % tilesize_;
+  const int32_t display_offset_x = tilemap_real_ox % tilesize_ + offset_x;
+  const int32_t display_offset_y = tilemap_real_oy % tilesize_ + offset_y;
   render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
                              static_cast<float>(-display_offset_y));
   render_offset_.y -= static_cast<float>(tilesize_);
