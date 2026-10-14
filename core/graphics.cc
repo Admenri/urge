@@ -50,6 +50,8 @@
 #include "core/sprite_batch.h"
 #include "core/uniform.h"
 
+#include <cmath>
+
 namespace urge {
 
 namespace {
@@ -248,6 +250,11 @@ void Graphics::Update() {
         static_cast<double>(frame_begin - last_update_end_tick_) * 1000.0 /
         tick_freq);
 
+  // The same gap, reported to the profiler under its own name: between two
+  // `Graphics.update` calls the game runs its own Ruby, so this is the
+  // interpreter's working time for the frame.
+  GetRenderStats().ReportScriptTime(logic_cost_ms_);
+
   Audio::Get().Update();
 
   if (!frame_started_) {
@@ -284,6 +291,34 @@ void Graphics::Update() {
     other_cost_ms_ = 0.0f;
 
   RenderStats& stats = GetRenderStats();
+
+  // The profiler snapshot the debug overlay renders: the frame cost split by
+  // engine stage, plus the history the rate numbers come from.
+  const double frame_ms =
+      static_cast<double>(last_update_end_tick_ - frame_begin) * 1000.0 /
+      tick_freq;
+  {
+    FrameTimings& timings = stats.timings;
+    timings.cpu_ms = frame_ms - present_cost_ms_;
+    if (timings.cpu_ms < 0.0)
+      timings.cpu_ms = 0.0;
+    timings.present_ms = present_cost_ms_;
+    timings.update_ms = logic_cost_ms_;
+    timings.script_ms = stats.script_cost_ms();
+    timings.layout_ms = std::max(0.0, timings.update_ms - timings.script_ms);
+    timings.render_ms = render_cost_ms_;
+    timings.other_ms = other_cost_ms_ - timings.script_ms;
+    if (timings.other_ms < 0.0)
+      timings.other_ms = 0.0;
+  }
+
+  // A skipped frame does not present, so its interval spans two display
+  // frames and would look like a 30 fps hitch if it were sampled.  Only
+  // frames that actually reached the screen go into the history the rate
+  // numbers are computed from.
+  if (!skip_frame)
+    stats.frame_history.Push(frame_ms);
+
   stats.EndFrame();
 
   if (Config::Get().HasCommandLine("bstats")) {
@@ -292,12 +327,12 @@ void Graphics::Update() {
     LOGGER_INFO(
         "bstats ops={} bitmap_submits={} frame_submits={} upload={:.3f} "
         "record={:.3f} finish={:.3f} submit={:.3f} bitmap={:.3f} render={:.3f} "
-        "logic={:.3f} other={:.3f}",
+        "logic={:.3f} other={:.3f} present={:.3f} script={:.3f} frame={:.3f}",
         counters.bitmap_ops, counters.bitmap_submits, counters.frame_submits,
         counters.bitmap_upload_ms, counters.bitmap_record_ms,
         counters.bitmap_finish_ms, counters.bitmap_submit_ms,
         counters.bitmap_total_ms(), render_cost_ms_, logic_cost_ms_,
-        other_cost_ms_);
+        other_cost_ms_, present_cost_ms_, stats.timings.script_ms, frame_ms);
   }
 }
 
@@ -582,6 +617,11 @@ void Graphics::PresentInternal() {
 
   imgui.Update();
 
+  // From the moment the frame starts touching the swapchain until the image
+  // has been handed over: the acquire and the present are both blocking calls
+  // on wgpu, and when the GPU queue is full they are where a frame stalls.
+  const uint64_t present_begin = SDL_GetPerformanceCounter();
+
   wgpu::SurfaceTexture surface_texture;
   surface.GetCurrentTexture(&surface_texture);
   switch (surface_texture.status) {
@@ -592,6 +632,9 @@ void Graphics::PresentInternal() {
     case wgpu::SurfaceGetCurrentTextureStatus::Outdated:
     case wgpu::SurfaceGetCurrentTextureStatus::Lost:
       present_.configured = false;
+      present_cost_ms_ =
+          static_cast<double>(SDL_GetPerformanceCounter() - present_begin) *
+          1000.0 / SDL_GetPerformanceFrequency();
       return;
     case wgpu::SurfaceGetCurrentTextureStatus::Error:
       throw Exception(Exception::kRGSSError,
@@ -631,6 +674,10 @@ void Graphics::PresentInternal() {
   GPUDevice::Get().queue().Submit(1, &command);
 
   surface.Present();
+
+  present_cost_ms_ =
+      static_cast<double>(SDL_GetPerformanceCounter() - present_begin) * 1000.0 /
+      SDL_GetPerformanceFrequency();
 }
 
 }  // namespace urge

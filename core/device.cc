@@ -22,8 +22,10 @@
 
 #include "core/device.h"
 
+#include <string>
 #include <string_view>
 
+#include "SDL3/SDL_cpuinfo.h"
 #include "SDL3/SDL_platform_defines.h"
 
 #if defined(WEBGPU_BACKEND_WGPU)
@@ -52,7 +54,64 @@ wgpu::BackendType FromGFXBackend(std::string backend) {
   return wgpu::BackendType::Undefined;
 }
 
+std::string BackendName(wgpu::BackendType backend) {
+  switch (backend) {
+    case wgpu::BackendType::Null:
+      return "Null";
+    case wgpu::BackendType::WebGPU:
+      return "WebGPU";
+    case wgpu::BackendType::D3D11:
+      return "D3D11";
+    case wgpu::BackendType::D3D12:
+      return "D3D12";
+    case wgpu::BackendType::Metal:
+      return "Metal";
+    case wgpu::BackendType::Vulkan:
+      return "Vulkan";
+    case wgpu::BackendType::OpenGL:
+      return "OpenGL";
+    case wgpu::BackendType::OpenGLES:
+      return "OpenGL ES";
+    default:
+      return "Unknown";
+  }
+}
+
+// `wgpu::StringView` is either a null-terminated C string or an explicit
+// (pointer, length) pair, depending on the producer.  Both shapes have to be
+// handled, and a length of `WGPU_STRLEN` means "read until the null".
+std::string FromStringView(const wgpu::StringView& view) {
+  if (view.data == nullptr)
+    return {};
+  if (view.length == WGPU_STRLEN)
+    return std::string(view.data);
+  return std::string(view.data, view.length);
+}
+
 }  // namespace
+
+DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter) {
+  DeviceInfo info;
+
+  wgpu::AdapterInfo adapter_info;
+  adapter.GetInfo(&adapter_info);
+  info.adapter_device = FromStringView(adapter_info.device);
+  info.adapter_vendor = FromStringView(adapter_info.vendor);
+  info.adapter_architecture = FromStringView(adapter_info.architecture);
+  info.adapter_description = FromStringView(adapter_info.description);
+  info.backend = BackendName(adapter_info.backendType);
+  info.vendor_id = adapter_info.vendorID;
+  info.device_id = adapter_info.deviceID;
+
+  // There is no portable CPU brand query: the version of SDL this tree builds
+  // against has no `SDL_GetCPUName`, and reading `CPUID`/`/proc/cpuinfo` by
+  // hand is not worth it for an overlay.  The core count and the RAM figure
+  // are the parts that are portable, so those are what the overlay shows.
+  info.cpu_cores = SDL_GetNumLogicalCPUCores();
+  info.system_ram_mb = static_cast<uint64_t>(SDL_GetSystemRAM());
+
+  return info;
+}
 
 GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
   const std::vector<wgpu::InstanceFeatureName> instance_exts = {
@@ -169,6 +228,10 @@ void GPUDevice::CreateDevice(std::string backend) {
       LOGGER_WARN("[GPU] Backend: Unknown ({:#X})",
                   static_cast<uint32_t>(adapter_info.backendType));
   }
+
+  // The overlay shows this every frame, so it is captured once here while the
+  // adapter is still around and stored as plain strings.
+  info_ = QueryDeviceInfo(adapter_);
 
   queue_ = device_.GetQueue();
 }

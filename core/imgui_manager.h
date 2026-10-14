@@ -37,6 +37,11 @@ namespace urge {
 
 class ImGuiManager : public Singleton<ImGuiManager> {
  public:
+  // F2 walks the overlay through these in order, so the same key reveals more
+  // detail before it hides the window again.  Declared first because the
+  // accessors below hand it out.
+  enum class FpsMode { kHidden = 0, kCompact = 1, kDetailed = 2 };
+
   explicit ImGuiManager(SDL_Window* window);
   ~ImGuiManager();
 
@@ -50,7 +55,8 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void RenderDrawData(wgpu::RenderPassEncoder pass);
 
   bool settings_visible() const { return settings_visible_; }
-  bool fps_visible() const { return fps_visible_; }
+  bool fps_visible() const { return fps_mode_ != FpsMode::kHidden; }
+  FpsMode fps_mode() const { return fps_mode_; }
 
  private:
   float U(float value) const { return value * ui_scale_; }
@@ -61,6 +67,7 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildAudioPanel();
   void BuildAboutPanel();
   void BuildFPSWindow();
+  void CycleFPSMode();
 
   void StoreDisplaySettings();
   void SaveSettings();
@@ -71,7 +78,7 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   bool renderer_ready_ = false;
   wgpu::TextureFormat render_format_ = wgpu::TextureFormat::Undefined;
   bool settings_visible_ = false;
-  bool fps_visible_ = false;
+  FpsMode fps_mode_ = FpsMode::kHidden;
   int32_t capture_slot_ = -1;
   std::vector<Input::KeySym> default_bindings_;
   bool defaults_captured_ = false;
@@ -79,8 +86,6 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   bool output_devices_stale_ = true;
   std::vector<float> frame_times_;
   float ui_scale_ = 1.0f;
-  bool fps_size_stale_ = true;
-  bool fps_replace_position_ = false;
 };
 
 }  // namespace urge

@@ -114,6 +114,10 @@ RB_FUNC(marshal_load_utf8) {
 }
 
 RB_FUNC(rgss_main) {
+  // `rgss_main` in this engine runs its block once; a game's own loop around
+  // `Graphics.update` is what repeats.  Nothing has to be marked here -- the
+  // per-frame interpreter time is taken between two `Graphics.update` calls,
+  // see Graphics::Update and RenderStats::ReportScriptTime.
   return rb_funcall(rb_block_proc(), rb_intern("call"), 0);
 }
 

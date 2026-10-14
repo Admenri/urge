@@ -23,6 +23,7 @@
 #include "core/imgui_manager.h"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <filesystem>
 #include <iterator>
@@ -43,6 +44,9 @@
 #include "core/logger.h"
 #include "core/render_stats.h"
 
+#include <cstdio>
+#include <cfloat>
+
 namespace urge {
 
 namespace {
@@ -54,8 +58,6 @@ constexpr const char* kKeySlots[] = {
     "DOWN", "LEFT", "RIGHT", "UP", "A", "B", "C", "X", "Y", "Z", "L", "R",
 };
 constexpr int32_t kKeySlotCount = static_cast<int32_t>(std::size(kKeySlots));
-
-constexpr size_t kFrameTimeHistory = 240;
 
 constexpr const char* kDefaultOutputLabel = "System default";
 
@@ -112,6 +114,15 @@ ImGuiManager::ImGuiManager(SDL_Window* window) : window_(window) {
   io.IniFilename = nullptr;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+  // `fpsmonitor` opens the frame monitor in its detailed view straight away,
+  // which saves two F2 presses when the reason for launching is to profile.
+  // The token follows the engine's other switches -- `bstats`, `nojit` -- and
+  // is matched bare, exactly as written on the command line.
+  if (Config::Get().HasCommandLine("fpsmonitor")) {
+    fps_mode_ = FpsMode::kDetailed;
+    LOGGER_INFO("frame monitor detailed (command line)");
+  }
 
   ImGui::StyleColorsDark();
   ImGuiStyle& style = ImGui::GetStyle();
@@ -199,8 +210,18 @@ void ImGuiManager::ProcessEvent(const SDL_Event& event) {
     }
     LOGGER_INFO("settings overlay {}", settings_visible_ ? "shown" : "hidden");
   } else if (scancode == kToggleFPSKey) {
-    fps_visible_ = !fps_visible_;
+    CycleFPSMode();
   }
+}
+
+void ImGuiManager::CycleFPSMode() {
+  // hidden -> compact -> detailed -> hidden.  The window keeps its corner and
+  // only changes its content, so cycling through the modes feels like
+  // unfolding one window rather than opening a new one each time.
+  fps_mode_ = static_cast<FpsMode>((static_cast<int>(fps_mode_) + 1) % 3);
+
+  static const char* const kNames[] = {"hidden", "compact", "detailed"};
+  LOGGER_INFO("frame monitor {}", kNames[static_cast<int>(fps_mode_)]);
 }
 
 void ImGuiManager::SetRenderTargetFormat(wgpu::TextureFormat format) {
@@ -240,12 +261,7 @@ void ImGuiManager::Update() {
   ApplyUIScale();
   ImGui::NewFrame();
 
-  const float delta_ms = ImGui::GetIO().DeltaTime * 1000.0f;
-  frame_times_.push_back(delta_ms);
-  if (frame_times_.size() > kFrameTimeHistory)
-    frame_times_.erase(frame_times_.begin());
-
-  if (fps_visible_)
+  if (fps_visible())
     BuildFPSWindow();
 
   if (settings_visible_)
@@ -563,73 +579,188 @@ void ImGuiManager::BuildAboutPanel() {
 
 void ImGuiManager::BuildFPSWindow() {
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
-  const ImVec2 size(U(270.0f), U(345.0f));
+  const bool detailed = fps_mode_ == FpsMode::kDetailed;
 
-  const bool replace = fps_size_stale_ || fps_replace_position_;
+  // The window is pinned to the top-right corner and must never grow past the
+  // display: a game window can be dragged down to a handful of pixels, and the
+  // overlay has to stay readable (and reachable) there too.
+  //
+  // The size is computed here and set outright rather than left to
+  // `AlwaysAutoResize`.  Auto-resize is driven by the content's ideal size,
+  // and that content contains a plot whose width follows the window -- so the
+  // two feed each other, ImGui re-runs the fit after the constraint pass with
+  // no damper (`SizeFull.y` is assigned, not clamped, while auto-fitting), and
+  // the window grows without bound until the scroll region overflows.
+  // A fixed size breaks that loop: the height is whatever the current mode
+  // wants, clamped to the display, and the detail list scrolls inside it.
+  const ImVec2 display = viewport->Size;
+  const float margin = U(12.0f);
+  const float desired_width = U(detailed ? 336.0f : 210.0f);
+  const float width =
+      std::max(U(120.0f), std::min(desired_width, display.x - margin * 2.0f));
+
+  // A short window must not push the overlay off-screen, so both axes are
+  // clamped to what the display actually has.
+  const float min_height = U(60.0f);
+  const float max_height = std::max(min_height, display.y - margin * 2.0f);
+
+  // The height is the mode's natural size clamped to the display, so the
+  // overlay is compact in compact mode and only as tall as the detail needs
+  // otherwise.  `SetNextWindowSize` with a concrete height replaces what
+  // `AlwaysAutoResize` used to do, without the feedback loop.
+  const float desired_height = U(detailed ? 300.0f : 92.0f);
+  const float height = std::max(min_height, std::min(desired_height, max_height));
+
+  // Both the position and the size are set every frame.  The corner anchor
+  // depends on the width, so a window that keeps a stale position while its
+  // width is re-set would drift off the corner; the overlay is draggable-free
+  // by design (NoMove is not set, but the user has no reason to move it, and
+  // re-pinning is what keeps it glued to the corner when the window resizes).
   ImGui::SetNextWindowPos(
-      ImVec2(viewport->Pos.x + viewport->Size.x - size.x - U(12.0f),
-             viewport->Pos.y + U(12.0f)),
-      replace ? ImGuiCond_Always : ImGuiCond_Once);
-  ImGui::SetNextWindowSize(size,
-                           fps_size_stale_ ? ImGuiCond_Always : ImGuiCond_Once);
-  fps_size_stale_ = false;
+      ImVec2(viewport->Pos.x + display.x - width - margin,
+             viewport->Pos.y + margin),
+      ImGuiCond_Always);
+  ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
-  if (!ImGui::Begin("FPS monitor", &fps_visible_)) {
+  const ImGuiWindowFlags flags =
+      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
+      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
+      ImGuiWindowFlags_NoScrollWithMouse;
+
+  if (!ImGui::Begin("Frame monitor", nullptr, flags)) {
     ImGui::End();
     return;
   }
 
-  const ImVec2 origin = ImGui::GetWindowPos();
-  const ImVec2 extent = ImGui::GetWindowSize();
-  fps_replace_position_ =
-      origin.x + extent.x > viewport->Pos.x + viewport->Size.x ||
-      origin.y + extent.y > viewport->Pos.y + viewport->Size.y;
+  const RenderStats& stats = GetRenderStats();
+  const FrameTimeHistory& history = stats.frame_history;
 
-  const ImGuiIO& io = ImGui::GetIO();
-  const float frame_ms = frame_times_.empty() ? 0.0f : frame_times_.back();
+  const ImVec4 kGood(0.42f, 0.85f, 0.45f, 1.0f);
+  const ImVec4 kWarn(0.95f, 0.78f, 0.28f, 1.0f);
 
-  ImGui::Text("FPS");
+  const auto rate_text = [](double ms, char* buffer, size_t size) {
+    if (ms <= 0.0)
+      snprintf(buffer, size, "  -- ");
+    else
+      snprintf(buffer, size, "%5.1f", 1000.0 / ms);
+  };
+
+  // --- Rates, always shown: the compact view is exactly this block. --------
+  const double last_ms = history.last();
+  const double average_ms = history.Average();
+  const double one_percent_ms = history.SlowAverage(0.01);
+
+  char last_rate[32], average_rate[32], low_rate[32];
+  rate_text(last_ms, last_rate, sizeof(last_rate));
+  rate_text(average_ms, average_rate, sizeof(average_rate));
+  rate_text(one_percent_ms, low_rate, sizeof(low_rate));
+
+  ImGui::TextUnformatted("FPS");
   ImGui::SameLine();
-  ImGui::TextColored(ImVec4(0.42f, 0.85f, 0.45f, 1.0f), "%.1f", io.Framerate);
+  ImGui::TextColored(last_ms > 0.0 && last_ms <= 1000.0 / 50.0 ? kGood : kWarn,
+                     "%s", last_rate);
   ImGui::SameLine();
-  ImGui::TextDisabled("| %.2f ms", frame_ms);
+  ImGui::TextDisabled("| %.2f ms", last_ms);
 
-  float minimum = 0.0f, maximum = 0.0f, total = 0.0f;
-  if (!frame_times_.empty()) {
-    minimum = maximum = frame_times_.front();
-    for (float value : frame_times_) {
-      minimum = std::min(minimum, value);
-      maximum = std::max(maximum, value);
-      total += value;
-    }
+  ImGui::Text("avg %s   %.2f ms", average_rate, average_ms);
+  ImGui::Text("1%% low %s", low_rate);
+
+  if (!detailed) {
+    ImGui::End();
+    return;
   }
-  const float average =
-      frame_times_.empty() ? 0.0f : total / frame_times_.size();
 
-  ImGui::Text("min / max  %.2f / %.2f ms", minimum, maximum);
-  ImGui::Text("average    %.2f ms", average);
+  // --- Detailed view -------------------------------------------------------
+  ImGui::Separator();
 
-  const Graphics& graphics = Graphics::Get();
-  ImGui::Text("render cost: %.2f ms", graphics.render_cost_ms());
-  ImGui::Text("logic cost:  %.2f ms", graphics.logic_cost_ms());
-  ImGui::Text("other cost:  %.2f ms", graphics.other_cost_ms());
-
-  const RenderFrameCounters& counters = GetRenderStats().last;
-  ImGui::Spacing();
-  ImGui::Text("bitmap ops:  %u", static_cast<unsigned>(counters.bitmap_ops));
-  ImGui::Text("submits:     %u  (%u bitmap)",
-              static_cast<unsigned>(counters.frame_submits),
-              static_cast<unsigned>(counters.bitmap_submits));
-  ImGui::Text("bitmap cost: %.2f ms", counters.bitmap_total_ms());
-
-  ImGui::Spacing();
-  if (frame_times_.size() >= 2) {
-    const float scale_max = std::max(1000.0f / 30.0f, maximum * 1.15f);
-    ImGui::PlotLines("##frame_time", frame_times_.data(),
-                     static_cast<int>(frame_times_.size()), 0, "ms", 0.0f,
-                     scale_max, ImVec2(-FLT_MIN, U(84.0f)));
+  if (history.size() >= 2) {
+    // `PlotLines` wants a contiguous float array in display order, and the
+    // history keeps its samples ring-buffered, so the copy is unavoidable --
+    // but it only happens while the detailed view is on screen.  The count is
+    // clamped to `INT_MAX` rather than cast straight from `size_t`: the window
+    // is fixed at 240 samples so it never gets close, but an overflowing cast
+    // would hand the plotter a negative count and read out of bounds.
+    const std::vector<double> ordered = history.Ordered();
+    frame_times_.resize(ordered.size());
+    for (size_t i = 0; i < ordered.size(); ++i)
+      frame_times_[i] = static_cast<float>(ordered[i]);
+    const int plot_count = static_cast<int>(
+        std::min<size_t>(frame_times_.size(), static_cast<size_t>(INT_MAX)));
+    const float plot_max =
+        std::max(1000.0f / 30.0f,
+                 static_cast<float>(history.Slowest()) * 1.15f);
+    ImGui::PlotLines("##frame_time", frame_times_.data(), plot_count, 0, "ms",
+                     0.0f, plot_max, ImVec2(-FLT_MIN, U(46.0f)));
   } else {
     ImGui::TextDisabled("collecting...");
+  }
+
+  // Everything below keeps its own scroll region, so a window that was shrunk
+  // down shows the top of the list rather than rendering the tail off-screen.
+  const float body_height = ImGui::GetContentRegionAvail().y;
+  if (body_height > 0.0f) {
+    ImGui::BeginChild("##details", ImVec2(0.0f, 0.0f),
+                      ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoSavedSettings |
+                          ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+    if (ImGui::CollapsingHeader("Frame rate",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::Text("average     %8.2f ms", average_ms);
+      ImGui::Text("1%% low      %8.2f ms", one_percent_ms);
+      ImGui::Text("0.1%% low    %8.2f ms", history.SlowAverage(0.001));
+      ImGui::Text("fastest     %8.2f ms", history.Fastest());
+      ImGui::Text("slowest     %8.2f ms", history.Slowest());
+      ImGui::TextDisabled("%u samples",
+                          static_cast<unsigned>(history.size()));
+    }
+
+    if (ImGui::CollapsingHeader("Frame time",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      const FrameTimings& t = stats.timings;
+      ImGui::Text("cpu total   %8.2f ms", t.cpu_ms);
+      ImGui::Text("  script    %8.2f ms", t.script_ms);
+      ImGui::Text("  layout    %8.2f ms", t.layout_ms);
+      ImGui::Text("  render    %8.2f ms", t.render_ms);
+      ImGui::Text("  update    %8.2f ms", t.update_ms);
+      ImGui::Text("  other     %8.2f ms", t.other_ms);
+      ImGui::Text("present     %8.2f ms", t.present_ms);
+
+      ImGui::Spacing();
+      const RenderFrameCounters& counters = stats.last;
+      ImGui::Text("bitmap ops  %8u", static_cast<unsigned>(counters.bitmap_ops));
+      ImGui::Text("bitmap cost %8.2f ms", counters.bitmap_total_ms());
+      ImGui::Text("submits     %8u (%u bitmap)",
+                  static_cast<unsigned>(counters.frame_submits),
+                  static_cast<unsigned>(counters.bitmap_submits));
+    }
+
+    if (ImGui::CollapsingHeader("Device",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      const DeviceInfo& info = GPUDevice::Get().info();
+
+      const auto text_or = [](const std::string& value, const char* fallback) {
+        return value.empty() ? fallback : value.c_str();
+      };
+
+      ImGui::TextWrapped("GPU  %s", text_or(info.adapter_device, "unknown"));
+      if (!info.adapter_vendor.empty() || info.vendor_id != 0) {
+        ImGui::TextWrapped("Vendor  %s  (%04X:%04X)",
+                           text_or(info.adapter_vendor, "unknown"),
+                           static_cast<unsigned>(info.vendor_id),
+                           static_cast<unsigned>(info.device_id));
+      }
+      if (!info.adapter_architecture.empty())
+        ImGui::TextWrapped("Arch  %s", info.adapter_architecture.c_str());
+      ImGui::Text("Backend  %s", text_or(info.backend, "unknown"));
+
+      ImGui::Spacing();
+      ImGui::Text("CPU cores  %d", info.cpu_cores);
+      ImGui::Text("System RAM %llu MB",
+                  static_cast<unsigned long long>(info.system_ram_mb));
+    }
+
+    ImGui::EndChild();
   }
 
   ImGui::End();
@@ -665,7 +796,6 @@ void ImGuiManager::ApplyUIScale() {
     return;
 
   ui_scale_ = scale;
-  fps_size_stale_ = true;
   LOGGER_INFO("debug UI scale {:.2f}", scale);
 
   style = BaseStyle();

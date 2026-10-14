@@ -1,0 +1,70 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 30,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "win64-base",
+      "displayName": "Windows x64 (Visual Studio)",
+      "description": "Shared toolchain for every win64 preset: Visual Studio generator, x64 host and target. RelWithDebInfo is the default configuration, picked by the build presets.",
+      "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "win64-vendored-ruby",
+      "displayName": "Windows x64 + bundled CRuby",
+      "description": "Compiles the vendored CRuby in third_party/cruby. A prebuilt drop-in in bind/external is ignored, so both interpreters can be built from one checkout without moving files.",
+      "inherits": "win64-base",
+      "cacheVariables": {
+        "URGE_RUBY_INTERPRETER": "bundled"
+      }
+    },
+    {
+      "name": "win64-external-ruby",
+      "displayName": "Windows x64 + external CRuby",
+      "description": "Links the prebuilt CRuby in bind/external and turns YJIT on. Configure fails when the drop-in is absent rather than falling back to the bundled interpreter.",
+      "inherits": "win64-base",
+      "cacheVariables": {
+        "URGE_RUBY_INTERPRETER": "external"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "win64-vendored-ruby",
+      "displayName": "Build Game (bundled CRuby, RelWithDebInfo)",
+      "configurePreset": "win64-vendored-ruby",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "win64-external-ruby",
+      "displayName": "Build Game (external CRuby, RelWithDebInfo)",
+      "configurePreset": "win64-external-ruby",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "win64-vendored-ruby-debug",
+      "displayName": "Build Game (bundled CRuby, Debug)",
+      "configurePreset": "win64-vendored-ruby",
+      "configuration": "Debug"
+    },
+    {
+      "name": "win64-external-ruby-debug",
+      "displayName": "Build Game (external CRuby, Debug)",
+      "configurePreset": "win64-external-ruby",
+      "configuration": "Debug"
+    }
+  ]
+}

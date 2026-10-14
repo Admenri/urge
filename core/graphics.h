@@ -128,6 +128,7 @@ class Graphics : public Singleton<Graphics> {
   float render_cost_ms() const { return render_cost_ms_; }
   float logic_cost_ms() const { return logic_cost_ms_; }
   float other_cost_ms() const { return other_cost_ms_; }
+  double present_cost_ms() const { return present_cost_ms_; }
 
  private:
   friend class ScreenRootNode;
@@ -151,6 +152,7 @@ class Graphics : public Singleton<Graphics> {
   float render_cost_ms_ = 0.0f;
   float logic_cost_ms_ = 0.0f;
   float other_cost_ms_ = 0.0f;
+  double present_cost_ms_ = 0.0;
 
   FPSLimiter limiter_;
 

@@ -52,9 +52,45 @@ option(URGE_ENABLE_NETWORK "Build the WebSocket and HTTP client" ON)
 # CRuby needs no edit here -- the versioned include directory and the DLL name
 # both change between releases.  The one file that does have to be kept in step
 # is bind/ruby-msvc/ruby/config.h; see the comment at the top of it.
+#
+# `URGE_RUBY_INTERPRETER` pins that choice explicitly, which is what lets the
+# CMake presets below name an interpreter each instead of both depending on
+# whether the directory happens to be present:
+#
+#   auto      -- the default: external when the drop-in exists, else bundled.
+#   bundled   -- always compile third_party/cruby 1.9.3, even if a drop-in is
+#                present.  The drop-in is ignored rather than deleted, so one
+#                checkout can build both without moving files.
+#   external  -- always use bind/external.  A missing (or malformed) drop-in is
+#                a hard error here: refusing to configure beats silently
+#                producing a bundled build from a preset that asked for the
+#                other interpreter.
 # ---------------------------------------------------------------------------
+set(URGE_RUBY_INTERPRETER "auto" CACHE STRING
+  "Script interpreter: auto | bundled | external")
+set_property(CACHE URGE_RUBY_INTERPRETER PROPERTY STRINGS auto bundled external)
+
+if(NOT URGE_RUBY_INTERPRETER STREQUAL "auto"
+   AND NOT URGE_RUBY_INTERPRETER STREQUAL "bundled"
+   AND NOT URGE_RUBY_INTERPRETER STREQUAL "external")
+  message(FATAL_ERROR
+    "URGE_RUBY_INTERPRETER must be auto, bundled or external, "
+    "got '${URGE_RUBY_INTERPRETER}'.")
+endif()
+
+if(URGE_RUBY_INTERPRETER STREQUAL "external"
+   AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bind/external/include")
+  message(FATAL_ERROR
+    "URGE_RUBY_INTERPRETER=external was requested but bind/external has no "
+    "include/ directory.  Either drop the prebuilt CRuby into bind/external "
+    "or configure with -DURGE_RUBY_INTERPRETER=bundled.")
+endif()
+
 set(URGE_EXTERNAL_RUBY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bind/external")
-if(EXISTS "${URGE_EXTERNAL_RUBY_DIR}/include")
+if(URGE_RUBY_INTERPRETER STREQUAL "bundled")
+  message(STATUS "URGE: interpreter = the bundled CRuby 1.9.3 (forced)")
+  unset(URGE_EXTERNAL_RUBY_DIR)
+elseif(EXISTS "${URGE_EXTERNAL_RUBY_DIR}/include")
   file(GLOB URGE_RUBY_INCLUDE_DIRS LIST_DIRECTORIES TRUE
     "${URGE_EXTERNAL_RUBY_DIR}/include/ruby-*")
   file(GLOB URGE_RUBY_IMPORT_LIBS "${URGE_EXTERNAL_RUBY_DIR}/lib/*.dll.a")
