@@ -164,7 +164,7 @@ include(cmake/opusfile.cmake)
 
 add_subdirectory(miniaudio)
 add_subdirectory(webgpu-cpp)
-add_subdirectory(imgui-docking)
+add_subdirectory(imgui)
 add_subdirectory(wgpu-cmake)
 add_subdirectory(glslang)
 add_subdirectory(spirv-reflect)

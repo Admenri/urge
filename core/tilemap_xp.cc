@@ -266,7 +266,7 @@ void TilemapXP::UpdateViewport() {
     viewport_width = rect.value()->data.width;
     viewport_height = rect.value()->data.height;
 
-    auto position = ExtractPosition(viewport.value()->local_transform());
+    auto position = ExtractPosition(viewport.value()->world_transform());
     offset_x = static_cast<int32_t>(position.x) + viewport_ox;
     offset_y = static_cast<int32_t>(position.y) + viewport_oy;
   } else {
