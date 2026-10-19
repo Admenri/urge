@@ -69,6 +69,10 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildFPSWindow();
   void CycleFPSMode();
 
+  /* Bind whatever was just pressed -- a key or a pad button -- to the slot the
+     panel is waiting for. */
+  void CaptureBinding(const Input::KeySym& binding);
+
   void StoreDisplaySettings();
   void SaveSettings();
   void ApplyUIScale();

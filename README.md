@@ -155,6 +155,50 @@ Windows 上默认字体为**微软雅黑**（`msyh.ttc`），缺失时依次退�
 `simhei.ttf`、`simsun.ttc`，最后用内嵌字体；其他平台默认仍是内嵌字体。`Fonts/` 中的同名文件
 优先于系统字库。字体字节按需读入并常驻，Ruby 侧与浮层共享同一份。
 
+### 输入与手柄
+
+`core/input/` 同时管理键盘与手柄，两者映射到同一套 slot（`A` / `B` / `C` / `X` / `Y` / `Z` /
+`L` / `R` 与 `DOWN` / `LEFT` / `RIGHT` / `UP`）。手柄接上即用，支持热插拔；同一时刻只接管一个。
+
+| 手柄按键 | slot |
+| --- | --- |
+| A（南）/ B（东）/ X（西）/ Y（北） | `C` / `B` / `A` / `X` |
+| LB / RB | `L` / `R` |
+| 十字键、左摇杆 | `LEFT` / `RIGHT` / `UP` / `DOWN` |
+
+左摇杆与十字键并列驱动方向 slot（死区 50%），所以两种操作方式都原生可用。绑定保存在
+`Game.ini` 的 `[KeyBinding]`，手柄项写成 `pad:<token>`（例如 `C=Space,Return,pad:a`）；
+`[Input] PadBindings=true` 表示该文件由认识手柄的版本写过，没有它时会在加载时补上默认手柄绑定
+（老存档的升级路径）。F1 面板里点 `Add` 后按下手柄按键，即可把它绑到该 slot。
+
+> 蓝牙 Xbox 手柄需要 `third_party/SDL` 的一行本地补丁（上游把"假 HID 端点"的判定写宽了，
+> 连蓝牙手柄的真实端点也一起拒掉），原因与验证见 `third_party/PATCHES.md`。
+
+高级功能走 `Gamepad` 类：一个对象对应一只手柄，自己持有 SDL 句柄，可以同时持有多个。
+
+```ruby
+Gamepad.available_devices       # => [{ "id" => 2, "name" => "Xbox Series X Controller",
+                                #       "path" => "...", "player" => 0, "guid" => "..." }, ...]
+pad = Gamepad.new(2)            # 用 available_devices 里的 id 打开
+pad.update                      # 每帧调一次；button_trigger? / button_repeat? 靠它推进
+
+pad.button_press?(Gamepad::BUTTON_SOUTH)
+pad.button_trigger?(Gamepad::BUTTON_SOUTH)
+pad.button_repeat?(Gamepad::BUTTON_SOUTH)
+pad.get_axis_value(Gamepad::AXIS_LEFTX)     # SDL 原始值：摇杆 -32768..32767，扳机 0..32767
+pad.pressed_buttons             # => [按钮编号, ...]
+pad.connect_state               # SDL 连接状态（0=未连、1=有线、2=无线）
+pad.connect                     # 拔插后按 GUID 重新连上，成功返回 true
+pad.player_index                # 可读可写
+pad.rumble(0.5, 0.5, 200)       # 本引擎扩展：低频、高频、毫秒
+```
+
+常量 `Gamepad::AXIS_*`（`LEFTX` / `LEFTY` / `RIGHTX` / `RIGHTY` / `LEFT_TRIGGER` /
+`RIGHT_TRIGGER`）与 `Gamepad::BUTTON_*`（`SOUTH` / `EAST` / `WEST` / `NORTH` / `BACK` /
+`GUIDE` / `START` / `LEFT_STICK` / `RIGHT_STICK` / `LEFT_SHOULDER` / `RIGHT_SHOULDER` /
+`DPAD_*` / `MISC1..6` / `RIGHT_PADDLE1/2` / `LEFT_PADDLE1/2` / `TOUCHPAD`）就是 SDL 的编号。
+`Gamepad.new` 在设备已拔出时抛 `RGSSError`。
+
 ### 第三方依赖
 
 以下依赖以 Git 子模块形式提供，需在克隆时一并拉取：
@@ -293,7 +337,7 @@ flowchart LR
 
 | 类别 | 数量 | 名称 |
 | --- | --- | --- |
-| 类 | 22 | `Disposable`、`Node`、`Geometry`、`Bitmap`、`Color`、`Font`、`Image`、`Animation`、`Plane`、`Rect`、`Sprite`、`Table`、`Tone`、`Vector2`、`Vector3`、`Vector4`、`TilemapVX`、`TilemapXP`、`Viewport`、`WindowVX`、`WindowXP`、`Effect` |
+| 类 | 23 | `Disposable`、`Node`、`Gamepad`、`Geometry`、`Bitmap`、`Color`、`Font`、`Image`、`Animation`、`Plane`、`Rect`、`Sprite`、`Table`、`Tone`、`Vector2`、`Vector3`、`Vector4`、`TilemapVX`、`TilemapXP`、`Viewport`、`WindowVX`、`WindowXP`、`Effect` |
 | 模块 | 4 | `Graphics`、`Input`、`Audio`、`Mouse` |
 
 ### 核心模块地图
@@ -308,7 +352,7 @@ flowchart LR
 | `scene/` | 场景与 RGSS 节点：`node`（三阶段渲染派发）、`drawable`（可绘制链表）、`bitmap` / `bitmap_queue`、`image`、`sprite` / `sprite_batch`、`plane`、`viewport`、`window_vx` / `window_xp`、`tilemap_vx` / `tilemap_xp`、`table`、`camera`、`animation` |
 | `font/` | `font{,_context,_renderer}.{h,cc}`：字体解析（`Fonts/` → 系统字库 → 内嵌）、SDL_ttf 渲染与文本度量 |
 | `audio/` | `audio.{h,cc}`（BGM / BGS / SE）、`audio_service.{h,cc}`、`audio_stream.{h,cc}` |
-| `input/` | `input.{h,cc}` / `mouse.{h,cc}` |
+| `input/` | `input.{h,cc}`（键盘/手柄统一到 slot）、`gamepad.{h,cc}`（SDL3 手柄、热插拔、扳机/摇杆/震动、多手柄，脚本侧 `Gamepad` 类）、`mouse.{h,cc}`、`key_sym.h`（绑定项与按下/触发/重复状态机） |
 | `network/` | `network.{h,cc}`（前端）、`network_backend.h`、`network_curl.cc` / `network_web.cc`（按平台二选一） |
 | `video/` | `video{,_decoder,_demuxer,_player}.{h,cc}`：WebM/AV1 播放 |
 

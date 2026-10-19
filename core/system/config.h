@@ -29,6 +29,7 @@
 #include "core/common/definition.h"
 #include "core/common/inirw.h"
 #include "core/common/object.h"
+#include "core/input/key_sym.h"
 
 namespace urge {
 
@@ -82,7 +83,15 @@ class Config : public Singleton<Config> {
     bool sprite_batch = true;
   } gfx;
 
-  std::vector<std::pair<std::string, int32_t>> key_bindings;
+  struct {
+    /* Whether the `KeyBinding` section of the file was written by a build that
+       knows about the controller.  A file without it predates pad support, and
+       the pad defaults are added on load; after the first save the flag keeps a
+       player who unbound every pad button from getting them back. */
+    bool pad_bindings = false;
+  } input;
+
+  std::vector<KeySym> key_bindings;
 
   std::vector<std::string> command_line;
 

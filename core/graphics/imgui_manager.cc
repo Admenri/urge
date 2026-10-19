@@ -177,11 +177,33 @@ ImGuiManager::~ImGuiManager() {
   ImGui::DestroyContext();
 }
 
+void ImGuiManager::CaptureBinding(const Input::KeySym& binding) {
+  auto bindings = Input::Get().GetKeyBindings();
+  if (std::find(bindings.begin(), bindings.end(), binding) == bindings.end())
+    bindings.push_back(binding);
+
+  Input::Get().SetKeyBindings(bindings);
+  LOGGER_INFO("key binding {} += {}", binding.name,
+              Input::Get().BindingName(binding));
+  capture_slot_ = -1;
+  SaveSettings();
+}
+
 void ImGuiManager::ProcessEvent(const SDL_Event& event) {
   if (!platform_ready_)
     return;
 
   ImGui_ImplSDL3_ProcessEvent(&event);
+
+  /* A pad button is a capture candidate like a key; it never toggles the
+     overlay itself, so this returns either way. */
+  if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+    if (capture_slot_ >= 0)
+      CaptureBinding(Input::KeySym{kKeySlots[capture_slot_],
+                                   static_cast<int32_t>(event.gbutton.button),
+                                   true});
+    return;
+  }
 
   if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat)
     return;
@@ -189,16 +211,8 @@ void ImGuiManager::ProcessEvent(const SDL_Event& event) {
   const SDL_Scancode scancode = event.key.scancode;
 
   if (capture_slot_ >= 0) {
-    const Input::KeySym captured{kKeySlots[capture_slot_],
-                                 static_cast<int32_t>(scancode)};
-    auto bindings = Input::Get().GetKeyBindings();
-    if (std::find(bindings.begin(), bindings.end(), captured) == bindings.end())
-      bindings.push_back(captured);
-    Input::Get().SetKeyBindings(bindings);
-    LOGGER_INFO("key binding {} += {}", kKeySlots[capture_slot_],
-                SDL_GetScancodeName(scancode));
-    capture_slot_ = -1;
-    SaveSettings();
+    CaptureBinding(Input::KeySym{kKeySlots[capture_slot_],
+                                 static_cast<int32_t>(scancode), false});
     return;
   }
 
@@ -339,26 +353,15 @@ void ImGuiManager::BuildKeyboardPanel() {
 
   bool changed = false;
 
-  auto unbind = [&bindings](const char* slot, int32_t key) {
-    const size_t before = bindings.size();
-    bindings.erase(std::remove_if(bindings.begin(), bindings.end(),
-                                  [slot, key](const Input::KeySym& entry) {
-                                    return entry.first == slot &&
-                                           (key < 0 || entry.second == key);
-                                  }),
-                   bindings.end());
-    return bindings.size() != before;
-  };
-
   auto restore = [this, &bindings](const char* slot) {
     bindings.erase(std::remove_if(bindings.begin(), bindings.end(),
                                   [slot](const Input::KeySym& entry) {
                                     return slot == nullptr ||
-                                           entry.first == slot;
+                                           entry.name == slot;
                                   }),
                    bindings.end());
     for (const auto& entry : default_bindings_)
-      if (slot == nullptr || entry.first == slot)
+      if (slot == nullptr || entry.name == slot)
         bindings.push_back(entry);
   };
 
@@ -367,6 +370,21 @@ void ImGuiManager::BuildKeyboardPanel() {
                                       ImGuiTableFlags_SizingStretchProp;
 
   const ImGuiStyle& style = ImGui::GetStyle();
+
+  /* Which controller the entries below belong to -- or none, which is also the
+     answer when the pad is unplugged and its bindings are simply idle.  The
+     slot bindings always follow the first pad; the extra count is there so a
+     second controller does not look like it was ignored. */
+  const GamepadManager& gamepads = input.gamepads();
+  if (const GamepadDevice* pad = gamepads.primary()) {
+    if (gamepads.count() > 1)
+      ImGui::TextDisabled("Gamepad: %s (+%d)", pad->name().c_str(),
+                          gamepads.count() - 1);
+    else
+      ImGui::TextDisabled("Gamepad: %s", pad->name().c_str());
+  } else {
+    ImGui::TextDisabled("Gamepad: not connected");
+  }
 
   float slot_width = 0.0f;
   for (const char* slot : kKeySlots)
@@ -380,11 +398,11 @@ void ImGuiManager::BuildKeyboardPanel() {
     float width = 0.0f;
     int32_t count = 0;
     for (const auto& binding : bindings) {
-      if (binding.first != kKeySlots[s])
+      if (binding.name != kKeySlots[s])
         continue;
       if (count++)
         width += style.ItemSpacing.x;
-      width += ImGui::CalcTextSize(input.GetKeyName(binding.second).c_str()).x +
+      width += ImGui::CalcTextSize(input.BindingName(binding).c_str()).x +
                chip_suffix;
     }
     current_width = std::max(current_width, width);
@@ -407,19 +425,22 @@ void ImGuiManager::BuildKeyboardPanel() {
       ImGui::TextUnformatted(kKeySlots[slot]);
 
       ImGui::TableSetColumnIndex(1);
-      int32_t dropped = -1;
+      size_t dropped = bindings.size();
       int32_t chip = 0;
       if (capture_slot_ != slot) {
-        for (const auto& binding : bindings) {
-          if (binding.first != kKeySlots[slot])
+        for (size_t i = 0; i < bindings.size(); ++i) {
+          const Input::KeySym& binding = bindings[i];
+          if (binding.name != kKeySlots[slot])
             continue;
 
           if (chip++)
             ImGui::SameLine();
-          ImGui::PushID(binding.second);
-          const std::string label = input.GetKeyName(binding.second) + " x";
+          /* Keyboard and pad number their controls independently, so the id
+             needs both halves -- `A` on the pad and the `A` key share a code. */
+          ImGui::PushID(binding.gamepad ? -binding.code - 1 : binding.code);
+          const std::string label = input.BindingName(binding) + " x";
           if (ImGui::SmallButton(label.c_str()))
-            dropped = binding.second;
+            dropped = i;
           ImGui::PopID();
         }
 
@@ -429,15 +450,15 @@ void ImGuiManager::BuildKeyboardPanel() {
         }
       } else {
         ImGui::AlignTextToFramePadding();
-        ImGui::TextColored(ImVec4(1.0f, 0.78f, 0.24f, 1.0f), "press a key...");
+        ImGui::TextColored(ImVec4(1.0f, 0.78f, 0.24f, 1.0f),
+                           "press a key or a pad button...");
       }
 
-      if (dropped >= 0) {
-        if (unbind(kKeySlots[slot], dropped)) {
-          LOGGER_INFO("key binding {} -= {}", kKeySlots[slot],
-                      input.GetKeyName(dropped));
-          changed = true;
-        }
+      if (dropped < bindings.size()) {
+        LOGGER_INFO("key binding {} -= {}", kKeySlots[slot],
+                    input.BindingName(bindings[dropped]));
+        bindings.erase(bindings.begin() + dropped);
+        changed = true;
       }
 
       ImGui::TableSetColumnIndex(2);

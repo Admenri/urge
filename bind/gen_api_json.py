@@ -102,6 +102,7 @@ CLASS_ORDER = [
     "Geometry",
     "Graphics",
     "Input",
+    "Gamepad",
     "Bitmap",
     "Color",
     "Font",

@@ -548,6 +548,12 @@ void Graphics::ProcessEvents() {
   while (SDL_PollEvent(&event)) {
     imgui.ProcessEvent(event);
 
+    /* The pad keeps working while the overlay holds the game input: the
+       settings panel captures pad buttons, and a controller plugged in behind
+       the overlay still has to be picked up.  Its *state* still freezes with
+       the keyboard -- see `Input::SetBlocked` below. */
+    Input::Get().ProcessGamepadEvents(&event);
+
     if (!imgui.WantsGameInputBlocked()) {
       Input::Get().ProcessEvents(&event);
       Mouse::Get().ProcessEvents(&event);
@@ -559,6 +565,10 @@ void Graphics::ProcessEvents() {
     if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
       present_.configured = false;
   }
+
+  /* The keyboard stops receiving events while the overlay is up; the pad has to
+     be told, or it would keep driving the game behind the settings window. */
+  Input::Get().SetBlocked(imgui.WantsGameInputBlocked());
 }
 
 void Graphics::PresentInternal() {

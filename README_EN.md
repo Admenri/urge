@@ -167,6 +167,55 @@ platforms still default to the embedded face. A file of the same name under `Fon
 shadows the system one. Payloads are read on demand and kept for the lifetime of the
 context, so the script side and the overlay share one copy.
 
+### Input and gamepads
+
+`core/input/` drives the keyboard and the controller into one set of slots (`A` / `B` / `C` /
+`X` / `Y` / `Z` / `L` / `R` and `DOWN` / `LEFT` / `RIGHT` / `UP`). A pad works as soon as it is
+plugged in -- hot-plug included -- and only one pad is taken over at a time.
+
+| Pad button | Slot |
+| --- | --- |
+| A (south) / B (east) / X (west) / Y (north) | `C` / `B` / `A` / `X` |
+| LB / RB | `L` / `R` |
+| D-pad, left stick | `LEFT` / `RIGHT` / `UP` / `DOWN` |
+
+The left stick drives the direction slots alongside the d-pad (50% deadzone), so both feel
+native. Bindings live in the `[KeyBinding]` section of `Game.ini`, with pad entries written as
+`pad:<token>` (for example `C=Space,Return,pad:a`); `[Input] PadBindings=true` marks a file
+written by a build that knows about pads -- without it the pad defaults are added on load, which
+is how an old save file is upgraded. In the F1 panel, press `Add` and then a pad button to bind
+it to that slot.
+
+> A Bluetooth Xbox controller needs a one-line local patch in `third_party/SDL`: upstream
+> widened the "fake HID endpoint" test until it also rejected the real endpoint of a Bluetooth
+> pad. The reason and the verification are in `third_party/PATCHES.md`.
+
+Advanced use goes through the `Gamepad` class: one object is one controller, it owns its
+`SDL_Gamepad`, and a script may hold several at once.
+
+```ruby
+Gamepad.available_devices       # => [{ "id" => 2, "name" => "Xbox Series X Controller",
+                                #       "path" => "...", "player" => 0, "guid" => "..." }, ...]
+pad = Gamepad.new(2)            # open the id reported above
+pad.update                      # once per frame; button_trigger?/button_repeat? depend on it
+
+pad.button_press?(Gamepad::BUTTON_SOUTH)
+pad.button_trigger?(Gamepad::BUTTON_SOUTH)
+pad.button_repeat?(Gamepad::BUTTON_SOUTH)
+pad.get_axis_value(Gamepad::AXIS_LEFTX)     # raw SDL value: sticks -32768..32767, triggers 0..32767
+pad.pressed_buttons             # => [button, ...]
+pad.connect_state               # SDL connection state (0 = none, 1 = wired, 2 = wireless)
+pad.connect                     # re-attach after a replug, matched by GUID
+pad.player_index                # readable and writable
+pad.rumble(0.5, 0.5, 200)       # engine extension: low, high, milliseconds
+```
+
+The constants are SDL's numbers: `Gamepad::AXIS_*` (`LEFTX`, `LEFTY`, `RIGHTX`, `RIGHTY`,
+`LEFT_TRIGGER`, `RIGHT_TRIGGER`) and `Gamepad::BUTTON_*` (`SOUTH`, `EAST`, `WEST`, `NORTH`,
+`BACK`, `GUIDE`, `START`, `LEFT_STICK`, `RIGHT_STICK`, `LEFT_SHOULDER`, `RIGHT_SHOULDER`,
+`DPAD_*`, `MISC1..6`, `RIGHT_PADDLE1/2`, `LEFT_PADDLE1/2`, `TOUCHPAD`). `Gamepad.new` raises
+`RGSSError` when the device is already gone.
+
 ### Third-party dependencies
 
 These dependencies are provided as Git submodules and must be fetched while cloning:
@@ -321,7 +370,7 @@ takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
 
 | Category | Count | Names |
 | --- | --- | --- |
-| Classes | 22 | `Disposable`, `Node`, `Geometry`, `Bitmap`, `Color`, `Font`, `Image`, `Animation`, `Plane`, `Rect`, `Sprite`, `Table`, `Tone`, `Vector2`, `Vector3`, `Vector4`, `TilemapVX`, `TilemapXP`, `Viewport`, `WindowVX`, `WindowXP`, `Effect` |
+| Classes | 23 | `Disposable`, `Node`, `Gamepad`, `Geometry`, `Bitmap`, `Color`, `Font`, `Image`, `Animation`, `Plane`, `Rect`, `Sprite`, `Table`, `Tone`, `Vector2`, `Vector3`, `Vector4`, `TilemapVX`, `TilemapXP`, `Viewport`, `WindowVX`, `WindowXP`, `Effect` |
 | Modules | 4 | `Graphics`, `Input`, `Audio`, `Mouse` |
 
 ### Core module map
@@ -337,7 +386,7 @@ takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
 | `scene/` | Scenes and RGSS nodes: `node` (three-stage render dispatch), `drawable` (drawable list), `bitmap` / `bitmap_queue`, `image`, `sprite` / `sprite_batch`, `plane`, `viewport`, `window_vx` / `window_xp`, `tilemap_vx` / `tilemap_xp`, `table`, `camera`, `animation` |
 | `font/` | `font{,_context,_renderer}.{h,cc}`: face resolution (`Fonts/` → system → embedded), SDL_ttf rendering and text metrics |
 | `audio/` | `audio.{h,cc}` (BGM / BGS / SE), `audio_service.{h,cc}`, `audio_stream.{h,cc}` |
-| `input/` | `input.{h,cc}` / `mouse.{h,cc}` |
+| `input/` | `input.{h,cc}` (keyboard and pad into one slot table), `gamepad.{h,cc}` (SDL3 pad, hot-plug, triggers/sticks/rumble, multiple pads, and the script-side `Gamepad` class), `mouse.{h,cc}`, `key_sym.h` (binding entry and the pressed/triggered/repeated machine) |
 | `network/` | `network.{h,cc}` (front end), `network_backend.h`, `network_curl.cc` / `network_web.cc` (one backend per platform) |
 | `video/` | `video{,_decoder,_demuxer,_player}.{h,cc}`: WebM/AV1 playback |
 

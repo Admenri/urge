@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector2  (core/common/utility.h:278-294)
+// Vector2  (core/common/utility.h:278-310)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector2);
@@ -87,6 +87,12 @@ RB_FUNC(Vector2_Set) {
   return Qnil;
 }
 
+// Attribute: x (float)
+BINDING_ATTR_FLOAT(Vector2, urge::Vector2, X);
+
+// Attribute: y (float)
+BINDING_ATTR_FLOAT(Vector2, urge::Vector2, Y);
+
 void InitVector2BindingAppend(VALUE klass);
 
 void InitVector2Binding() {
@@ -96,6 +102,10 @@ void InitVector2Binding() {
   DefineMethod(klass, "initialize", Vector2_initialize);
   DefineMethod(klass, "initialize_copy", Vector2_initialize_copy);
   DefineMethod(klass, "set", Vector2_Set);
+  DefineMethod(klass, "x", Vector2_X);
+  DefineMethod(klass, "x=", Vector2_XEqual);
+  DefineMethod(klass, "y", Vector2_Y);
+  DefineMethod(klass, "y=", Vector2_YEqual);
   InitVector2BindingAppend(klass);
 }
 // --- GENERATED END ---

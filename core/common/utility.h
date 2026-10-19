@@ -300,6 +300,20 @@ class Vector2 : public Object {
     }
   }
 
+  URGE_BINDING()
+  ATTR(float, X) {
+    if (value)
+      data.x = *value;
+    return data.x;
+  }
+
+  URGE_BINDING()
+  ATTR(float, Y) {
+    if (value)
+      data.y = *value;
+    return data.y;
+  }
+
   glm::vec2 data;
 };
 
@@ -327,6 +341,27 @@ class Vector3 : public Object {
     } else {
       throw Exception(Exception::kRGSSError, "cannot set null to vector.");
     }
+  }
+
+  URGE_BINDING()
+  ATTR(float, X) {
+    if (value)
+      data.x = *value;
+    return data.x;
+  }
+
+  URGE_BINDING()
+  ATTR(float, Y) {
+    if (value)
+      data.y = *value;
+    return data.y;
+  }
+
+  URGE_BINDING()
+  ATTR(float, Z) {
+    if (value)
+      data.z = *value;
+    return data.z;
   }
 
   glm::vec3 data;
@@ -358,6 +393,34 @@ class Vector4 : public Object {
     } else {
       throw Exception(Exception::kRGSSError, "cannot set null to vector.");
     }
+  }
+
+  URGE_BINDING()
+  ATTR(float, X) {
+    if (value)
+      data.x = *value;
+    return data.x;
+  }
+
+  URGE_BINDING()
+  ATTR(float, Y) {
+    if (value)
+      data.y = *value;
+    return data.y;
+  }
+
+  URGE_BINDING()
+  ATTR(float, Z) {
+    if (value)
+      data.z = *value;
+    return data.z;
+  }
+
+  URGE_BINDING()
+  ATTR(float, W) {
+    if (value)
+      data.w = *value;
+    return data.w;
   }
 
   glm::vec4 data;

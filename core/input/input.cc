@@ -22,11 +22,47 @@
 
 #include "core/input/input.h"
 
+#include <algorithm>
+
 #include "SDL3/SDL_scancode.h"
 
 #include "core/system/config.h"
 
 namespace urge {
+
+/* Pad defaults, read as "pad control -> slot".  The face buttons follow the
+   RGSS layout rather than the Xbox one: A (south) confirms with `C`, B (east)
+   cancels with `B`, and X/Y land on the slots RPG Maker games expect. */
+const Input::KeySym kDefaultGamepadBindings[] = {
+    {"C", SDL_GAMEPAD_BUTTON_SOUTH, true},
+    {"B", SDL_GAMEPAD_BUTTON_EAST, true},
+    {"A", SDL_GAMEPAD_BUTTON_WEST, true},
+    {"X", SDL_GAMEPAD_BUTTON_NORTH, true},
+
+    {"L", SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, true},
+    {"R", SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, true},
+
+    {"LEFT", SDL_GAMEPAD_BUTTON_DPAD_LEFT, true},
+    {"RIGHT", SDL_GAMEPAD_BUTTON_DPAD_RIGHT, true},
+    {"UP", SDL_GAMEPAD_BUTTON_DPAD_UP, true},
+    {"DOWN", SDL_GAMEPAD_BUTTON_DPAD_DOWN, true},
+
+    /* The left stick drives the same four slots, so the stick feels native and
+       the d-pad still works for players who prefer it. */
+    {"LEFT", GamepadDevice::kStickLeft, true},
+    {"RIGHT", GamepadDevice::kStickRight, true},
+    {"UP", GamepadDevice::kStickUp, true},
+    {"DOWN", GamepadDevice::kStickDown, true},
+};
+
+namespace {
+
+void AppendGamepadDefaults(std::vector<Input::KeySym>& bindings) {
+  for (const auto& binding : kDefaultGamepadBindings)
+    bindings.push_back(binding);
+}
+
+}  // namespace
 
 const Input::KeySym kDefaultKeyboardBindings[] = {
     {"DOWN", SDL_SCANCODE_DOWN},    {"LEFT", SDL_SCANCODE_LEFT},
@@ -83,36 +119,40 @@ Input::Input(int32_t version) {
     for (size_t i = 0; i < std::size(kKeyboardBindings2); ++i)
       bindings_.push_back(kKeyboardBindings2[i]);
 
+  AppendGamepadDefaults(bindings_);
+
   const auto& stored = Config::Get().key_bindings;
-  if (!stored.empty())
+  if (!stored.empty()) {
     bindings_ = stored;
+
+    /* A file written before the pad existed carries no pad entry at all -- the
+       keyboard is all it could describe -- so the defaults are added back
+       instead of silently losing the controller on an upgrade.  The
+       `Input/PadBindings` flag tells the two cases apart: once a build that
+       knows about pads has saved the file, an empty pad set is a choice. */
+    const bool has_gamepad =
+        std::any_of(bindings_.begin(), bindings_.end(),
+                    [](const KeySym& binding) { return binding.gamepad; });
+    if (!has_gamepad && !Config::Get().input.pad_bindings)
+      AppendGamepadDefaults(bindings_);
+  }
+
+  /* The table is the truth from here on; mirroring it back means the save at
+     exit persists whatever the defaults produced (including the migration
+     above), not just what the file already had. */
+  Config::Get().input.pad_bindings = true;
+  Config::Get().key_bindings = bindings_;
 }
 
 Input::~Input() = default;
 
 void Input::Update() {
-  for (int32_t i = 0; i < std::size(states_); ++i) {
-    bool key_pressed = pressed_[i];
+  for (int32_t i = 0; i < std::size(states_); ++i)
+    states_[i].Update(pressed_[i]);
 
-    states_[i].trigger = !states_[i].pressed && key_pressed;
-
-    states_[i].pressed = key_pressed;
-
-    states_[i].repeat = false;
-    if (states_[i].pressed) {
-      ++states_[i].repeat_count;
-
-      bool repeated = false;
-
-      repeated = states_[i].repeat_count == 1 ||
-                 (states_[i].repeat_count >= 23 &&
-                  (states_[i].repeat_count + 1) % 6 == 0);
-
-      states_[i].repeat = repeated;
-    } else {
-      states_[i].repeat_count = 0;
-    }
-  }
+  /* Sampled here rather than from events so the axes need no event at all, and
+     so a pad freezes with the keyboard when the overlay holds the input. */
+  gamepads_.Update(!blocked_);
 
   UpdateDir4();
   UpdateDir8();
@@ -122,11 +162,9 @@ bool Input::Pressed(std::string sym) {
   if (sym.empty())
     return false;
 
-  for (auto& it : bindings_) {
-    if (it.first == sym)
-      if (states_[it.second].pressed)
-        return true;
-  }
+  for (const auto& it : bindings_)
+    if (it.name == sym && BindingPressed(it))
+      return true;
 
   return false;
 }
@@ -135,11 +173,9 @@ bool Input::Triggered(std::string sym) {
   if (sym.empty())
     return false;
 
-  for (auto& it : bindings_) {
-    if (it.first == sym)
-      if (states_[it.second].trigger)
-        return true;
-  }
+  for (const auto& it : bindings_)
+    if (it.name == sym && BindingTriggered(it))
+      return true;
 
   return false;
 }
@@ -148,13 +184,41 @@ bool Input::Repeated(std::string sym) {
   if (sym.empty())
     return false;
 
-  for (auto& it : bindings_) {
-    if (it.first == sym)
-      if (states_[it.second].repeat)
-        return true;
-  }
+  for (const auto& it : bindings_)
+    if (it.name == sym && BindingRepeated(it))
+      return true;
 
   return false;
+}
+
+bool Input::BindingPressed(const KeySym& binding) const {
+  if (binding.gamepad) {
+    const GamepadDevice* pad = gamepads_.primary();
+    return pad && pad->Pressed(binding.code);
+  }
+
+  return binding.code >= 0 && binding.code < SDL_SCANCODE_COUNT &&
+         states_[binding.code].pressed;
+}
+
+bool Input::BindingTriggered(const KeySym& binding) const {
+  if (binding.gamepad) {
+    const GamepadDevice* pad = gamepads_.primary();
+    return pad && pad->Triggered(binding.code);
+  }
+
+  return binding.code >= 0 && binding.code < SDL_SCANCODE_COUNT &&
+         states_[binding.code].trigger;
+}
+
+bool Input::BindingRepeated(const KeySym& binding) const {
+  if (binding.gamepad) {
+    const GamepadDevice* pad = gamepads_.primary();
+    return pad && pad->Repeated(binding.code);
+  }
+
+  return binding.code >= 0 && binding.code < SDL_SCANCODE_COUNT &&
+         states_[binding.code].repeat;
 }
 
 int32_t Input::Dir4() {
@@ -187,6 +251,13 @@ std::string Input::GetKeyName(int32_t keycode) {
   return SDL_GetScancodeName(static_cast<SDL_Scancode>(keycode));
 }
 
+std::string Input::BindingName(const KeySym& binding) {
+  if (binding.gamepad)
+    return GamepadDevice::ButtonLabel(binding.code);
+
+  return GetKeyName(binding.code);
+}
+
 void Input::ProcessEvents(SDL_Event* event) {
   switch (event->type) {
     case SDL_EVENT_KEY_DOWN:
@@ -200,12 +271,16 @@ void Input::ProcessEvents(SDL_Event* event) {
   }
 }
 
+void Input::ProcessGamepadEvents(SDL_Event* event) {
+  gamepads_.ProcessEvent(*event);
+}
+
 void Input::UpdateDir4() {
   bool key_states[std::size(kArrowDirsSymbol)] = {0};
-  for (auto& it : bindings_)
+  for (const auto& it : bindings_)
     for (size_t i = 0; i < std::size(kArrowDirsSymbol); ++i)
-      if (it.first == kArrowDirsSymbol[i])
-        key_states[i] |= states_[it.second].pressed;
+      if (it.name == kArrowDirsSymbol[i])
+        key_states[i] |= BindingPressed(it);
 
   int32_t dir_flag = 0;
   const int32_t dir_flags_fix[] = {
@@ -261,10 +336,10 @@ void Input::UpdateDir4() {
 
 void Input::UpdateDir8() {
   bool key_states[std::size(kArrowDirsSymbol)] = {0};
-  for (auto& it : bindings_)
+  for (const auto& it : bindings_)
     for (size_t i = 0; i < std::size(kArrowDirsSymbol); ++i)
-      if (it.first == kArrowDirsSymbol[i])
-        key_states[i] |= states_[it.second].pressed;
+      if (it.name == kArrowDirsSymbol[i])
+        key_states[i] |= BindingPressed(it);
 
   static const int32_t combos[4][4] = {
       {2, 1, 3, 0}, {1, 4, 0, 7}, {3, 0, 6, 9}, {0, 7, 9, 8}};

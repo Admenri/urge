@@ -30,6 +30,8 @@
 
 #include "core/common/definition.h"
 #include "core/common/object.h"
+#include "core/input/gamepad.h"
+#include "core/input/key_sym.h"
 
 namespace urge {
 
@@ -78,20 +80,34 @@ class Input : public Singleton<Input> {
  public:
   void ProcessEvents(SDL_Event* event);
 
-  using KeySym = std::pair<std::string, int32_t>;
+  /* Hot-plug and button edges of the pad.  Called for every event, even while
+     the settings overlay holds the game input -- see `Gamepad`. */
+  void ProcessGamepadEvents(SDL_Event* event);
+
+  /* The host reports the overlay state once a frame: while it holds the input
+     the pad freezes exactly like the keyboard, whose events stop arriving. */
+  void SetBlocked(bool blocked) { blocked_ = blocked; }
+
+  /* The pads, for the settings panel and the script-side `Gamepad` class. */
+  GamepadManager& gamepads() { return gamepads_; }
+
+  using KeySym = urge::KeySym;
   void SetKeyBindings(std::vector<KeySym> bindings) { bindings_ = bindings; }
   std::vector<KeySym> GetKeyBindings() { return bindings_; }
+
+  /* Name of a binding for the settings UI: a scancode name for the keyboard,
+     "Pad A" and friends for the controller. */
+  std::string BindingName(const KeySym& binding);
 
  private:
   void UpdateDir4();
   void UpdateDir8();
 
-  struct {
-    bool pressed = false;
-    bool trigger = false;
-    bool repeat = false;
-    int32_t repeat_count = 0;
-  } states_[SDL_SCANCODE_COUNT];
+  bool BindingPressed(const KeySym& binding) const;
+  bool BindingTriggered(const KeySym& binding) const;
+  bool BindingRepeated(const KeySym& binding) const;
+
+  KeyState states_[SDL_SCANCODE_COUNT];
 
   struct {
     int32_t active = 0;
@@ -104,6 +120,10 @@ class Input : public Singleton<Input> {
 
   bool pressed_[SDL_SCANCODE_COUNT] = {};
   std::vector<KeySym> bindings_;
+
+  GamepadManager gamepads_;
+
+  bool blocked_ = false;
 };
 
 }  // namespace urge

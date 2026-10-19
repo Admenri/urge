@@ -372,9 +372,49 @@ void DefineFetchBody(VALUE klass) {
 }
 """
 
+GAMEPAD_MANUAL = """\
+namespace {
+
+/* Device names and paths are UTF-8 on every platform SDL runs on; tagging them
+   here keeps a Chinese controller name readable from the script. */
+VALUE GamepadText(const std::string& text) {
+  return rb_enc_str_new(text.data(), static_cast<long>(text.size()),
+                        rb_utf8_encoding());
+}
+
+}  // namespace
+
+/* `Gamepad.available_devices` -- the IR can describe a `std::vector<Struct>`
+   no better than "not bindable", so the array of Hashes is built by hand,
+   the same way the reference binding does it. */
+RB_FUNC(Gamepad_available_devices) {
+  std::vector<urge::Gamepad::DeviceInfo> devices;
+
+  EXC_BEGIN {
+    devices = urge::Gamepad::GetAvailableDevices();
+  }
+  EXC_END;
+
+  VALUE result = rb_ary_new();
+
+  for (const auto& device : devices) {
+    VALUE info = rb_hash_new();
+    rb_hash_aset(info, rb_str_new2("id"), INT2NUM(device.id));
+    rb_hash_aset(info, rb_str_new2("name"), GamepadText(device.name));
+    rb_hash_aset(info, rb_str_new2("path"), GamepadText(device.path));
+    rb_hash_aset(info, rb_str_new2("player"), INT2NUM(device.player_index));
+    rb_hash_aset(info, rb_str_new2("guid"), GamepadText(device.guid));
+    rb_ary_push(result, info);
+  }
+
+  return result;
+}
+"""
+
 HANDWRITTEN_SEED = {
     "binding_table.cc": TABLE_MANUAL,
     "binding_input.cc": INPUT_MANUAL,
+    "binding_gamepad.cc": GAMEPAD_MANUAL,
     "binding_video.cc": VIDEO_MANUAL,
     "binding_network_event.cc": NETWORK_EVENT_MANUAL,
     "binding_web_socket.cc": WEBSOCKET_MANUAL,
@@ -384,6 +424,7 @@ HANDWRITTEN_SEED = {
 # Statements appended to the generated Init*Binding() body.
 EXTRA_INIT_CALLS = {
     "Input": ["DefineInputKeyConstants(mod);"],
+    "Gamepad": ['DefineClassMethod(klass, "available_devices", Gamepad_available_devices);'],
     "Video": ["DefineVideoPlayerInfo(klass);"],
     "NetworkEvent": ["DefineNetworkEventConstants(klass);"],
     "WebSocket": ["DefineWebSocketConstants(klass);"],

@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector3  (core/common/utility.h:307-323)
+// Vector3  (core/common/utility.h:321-360)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector3);
@@ -88,6 +88,15 @@ RB_FUNC(Vector3_Set) {
   return Qnil;
 }
 
+// Attribute: x (float)
+BINDING_ATTR_FLOAT(Vector3, urge::Vector3, X);
+
+// Attribute: y (float)
+BINDING_ATTR_FLOAT(Vector3, urge::Vector3, Y);
+
+// Attribute: z (float)
+BINDING_ATTR_FLOAT(Vector3, urge::Vector3, Z);
+
 void InitVector3BindingAppend(VALUE klass);
 
 void InitVector3Binding() {
@@ -97,6 +106,12 @@ void InitVector3Binding() {
   DefineMethod(klass, "initialize", Vector3_initialize);
   DefineMethod(klass, "initialize_copy", Vector3_initialize_copy);
   DefineMethod(klass, "set", Vector3_Set);
+  DefineMethod(klass, "x", Vector3_X);
+  DefineMethod(klass, "x=", Vector3_XEqual);
+  DefineMethod(klass, "y", Vector3_Y);
+  DefineMethod(klass, "y=", Vector3_YEqual);
+  DefineMethod(klass, "z", Vector3_Z);
+  DefineMethod(klass, "z=", Vector3_ZEqual);
   InitVector3BindingAppend(klass);
 }
 // --- GENERATED END ---

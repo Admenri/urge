@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     app = app.substr(0, last_sep);
   std::string ini = app + ".ini";
 
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
   TTF_Init();
 
   // Components initialize

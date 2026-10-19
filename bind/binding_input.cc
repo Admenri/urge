@@ -89,7 +89,7 @@ RB_FUNC(Input_RepeatedManual) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Input  (core/input/input.h:51-75)
+// Input  (core/input/input.h:53-77)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Input_Update) {

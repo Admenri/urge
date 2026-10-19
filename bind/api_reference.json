@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-19T13:21:50Z",
+    "generated_at": "2026-10-19T14:46:41Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -32,7 +32,9 @@
       "core/graphics/render_stats.h",
       "core/graphics/shader.h",
       "core/graphics/uniform.h",
+      "core/input/gamepad.h",
       "core/input/input.h",
+      "core/input/key_sym.h",
       "core/input/mouse.h",
       "core/network/network.h",
       "core/network/network_backend.h",
@@ -490,7 +492,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/system/config.h:36-45",
+      "export": "core/system/config.h:37-46",
       "cpp_name": "Config",
       "cpp_parent": "Singleton",
       "header": "core/system/config.h",
@@ -523,7 +525,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/system/config.h:36-45"
+          "export": "core/system/config.h:37-46"
         },
         {
           "ruby_name": "set_value",
@@ -550,7 +552,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/system/config.h:36-45"
+          "export": "core/system/config.h:37-46"
         }
       ]
     },
@@ -1334,7 +1336,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/input/input.h:51-75",
+      "export": "core/input/input.h:53-77",
       "cpp_name": "Input",
       "cpp_parent": "Singleton",
       "header": "core/input/input.h",
@@ -1351,7 +1353,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "pressed",
@@ -1368,7 +1370,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "triggered",
@@ -1385,7 +1387,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "repeated",
@@ -1402,7 +1404,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "dir4",
@@ -1413,7 +1415,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "dir8",
@@ -1424,7 +1426,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "key_press?",
@@ -1441,7 +1443,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "key_trigger?",
@@ -1458,7 +1460,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "key_repeat?",
@@ -1475,7 +1477,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         },
         {
           "ruby_name": "get_key_name",
@@ -1492,7 +1494,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:51-75"
+          "export": "core/input/input.h:53-77"
         }
       ]
     },
@@ -5317,6 +5319,366 @@
         {
           "params": [
             {
+              "name": "device_id",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/input/gamepad.h:156-252"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "update",
+          "cpp_name": "Update",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "connect",
+          "cpp_name": "Connect",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "device_id",
+          "cpp_name": "GetDeviceID",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "connect_state",
+          "cpp_name": "GetConnectState",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "get_axis_value",
+          "cpp_name": "GetAxisValue",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "axis",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "button_press?",
+          "cpp_name": "IsButtonPressed",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "button_trigger?",
+          "cpp_name": "IsButtonTriggered",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "button_repeat?",
+          "cpp_name": "IsButtonRepeated",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "button",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "pressed_buttons",
+          "cpp_name": "GetPressedButtons",
+          "return": {
+            "cpp_type": "std::vector<int32_t>",
+            "ruby_type": "Array<Integer>"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/input/gamepad.h:156-252"
+        },
+        {
+          "ruby_name": "rumble",
+          "cpp_name": "Rumble",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "low",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "high",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "duration",
+              "type": "int32_t",
+              "default": "250"
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/input/gamepad.h:156-252"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "player_index",
+          "setter": "player_index=",
+          "cpp_name": "PlayerIndex",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/input/gamepad.h:156-252"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [
+        {
+          "name": "AXIS_LEFTX",
+          "cpp_name": "AXIS_LEFTX",
+          "value": "SDL_GAMEPAD_AXIS_LEFTX"
+        },
+        {
+          "name": "AXIS_LEFTY",
+          "cpp_name": "AXIS_LEFTY",
+          "value": "SDL_GAMEPAD_AXIS_LEFTY"
+        },
+        {
+          "name": "AXIS_RIGHTX",
+          "cpp_name": "AXIS_RIGHTX",
+          "value": "SDL_GAMEPAD_AXIS_RIGHTX"
+        },
+        {
+          "name": "AXIS_RIGHTY",
+          "cpp_name": "AXIS_RIGHTY",
+          "value": "SDL_GAMEPAD_AXIS_RIGHTY"
+        },
+        {
+          "name": "AXIS_LEFT_TRIGGER",
+          "cpp_name": "AXIS_LEFT_TRIGGER",
+          "value": "SDL_GAMEPAD_AXIS_LEFT_TRIGGER"
+        },
+        {
+          "name": "AXIS_RIGHT_TRIGGER",
+          "cpp_name": "AXIS_RIGHT_TRIGGER",
+          "value": "SDL_GAMEPAD_AXIS_RIGHT_TRIGGER"
+        },
+        {
+          "name": "BUTTON_SOUTH",
+          "cpp_name": "BUTTON_SOUTH",
+          "value": "SDL_GAMEPAD_BUTTON_SOUTH"
+        },
+        {
+          "name": "BUTTON_EAST",
+          "cpp_name": "BUTTON_EAST",
+          "value": "SDL_GAMEPAD_BUTTON_EAST"
+        },
+        {
+          "name": "BUTTON_WEST",
+          "cpp_name": "BUTTON_WEST",
+          "value": "SDL_GAMEPAD_BUTTON_WEST"
+        },
+        {
+          "name": "BUTTON_NORTH",
+          "cpp_name": "BUTTON_NORTH",
+          "value": "SDL_GAMEPAD_BUTTON_NORTH"
+        },
+        {
+          "name": "BUTTON_BACK",
+          "cpp_name": "BUTTON_BACK",
+          "value": "SDL_GAMEPAD_BUTTON_BACK"
+        },
+        {
+          "name": "BUTTON_GUIDE",
+          "cpp_name": "BUTTON_GUIDE",
+          "value": "SDL_GAMEPAD_BUTTON_GUIDE"
+        },
+        {
+          "name": "BUTTON_START",
+          "cpp_name": "BUTTON_START",
+          "value": "SDL_GAMEPAD_BUTTON_START"
+        },
+        {
+          "name": "BUTTON_LEFT_STICK",
+          "cpp_name": "BUTTON_LEFT_STICK",
+          "value": "SDL_GAMEPAD_BUTTON_LEFT_STICK"
+        },
+        {
+          "name": "BUTTON_RIGHT_STICK",
+          "cpp_name": "BUTTON_RIGHT_STICK",
+          "value": "SDL_GAMEPAD_BUTTON_RIGHT_STICK"
+        },
+        {
+          "name": "BUTTON_LEFT_SHOULDER",
+          "cpp_name": "BUTTON_LEFT_SHOULDER",
+          "value": "SDL_GAMEPAD_BUTTON_LEFT_SHOULDER"
+        },
+        {
+          "name": "BUTTON_RIGHT_SHOULDER",
+          "cpp_name": "BUTTON_RIGHT_SHOULDER",
+          "value": "SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER"
+        },
+        {
+          "name": "BUTTON_DPAD_UP",
+          "cpp_name": "BUTTON_DPAD_UP",
+          "value": "SDL_GAMEPAD_BUTTON_DPAD_UP"
+        },
+        {
+          "name": "BUTTON_DPAD_DOWN",
+          "cpp_name": "BUTTON_DPAD_DOWN",
+          "value": "SDL_GAMEPAD_BUTTON_DPAD_DOWN"
+        },
+        {
+          "name": "BUTTON_DPAD_LEFT",
+          "cpp_name": "BUTTON_DPAD_LEFT",
+          "value": "SDL_GAMEPAD_BUTTON_DPAD_LEFT"
+        },
+        {
+          "name": "BUTTON_DPAD_RIGHT",
+          "cpp_name": "BUTTON_DPAD_RIGHT",
+          "value": "SDL_GAMEPAD_BUTTON_DPAD_RIGHT"
+        },
+        {
+          "name": "BUTTON_MISC1",
+          "cpp_name": "BUTTON_MISC1",
+          "value": "SDL_GAMEPAD_BUTTON_MISC1"
+        },
+        {
+          "name": "BUTTON_MISC2",
+          "cpp_name": "BUTTON_MISC2",
+          "value": "SDL_GAMEPAD_BUTTON_MISC2"
+        },
+        {
+          "name": "BUTTON_MISC3",
+          "cpp_name": "BUTTON_MISC3",
+          "value": "SDL_GAMEPAD_BUTTON_MISC3"
+        },
+        {
+          "name": "BUTTON_MISC4",
+          "cpp_name": "BUTTON_MISC4",
+          "value": "SDL_GAMEPAD_BUTTON_MISC4"
+        },
+        {
+          "name": "BUTTON_MISC5",
+          "cpp_name": "BUTTON_MISC5",
+          "value": "SDL_GAMEPAD_BUTTON_MISC5"
+        },
+        {
+          "name": "BUTTON_MISC6",
+          "cpp_name": "BUTTON_MISC6",
+          "value": "SDL_GAMEPAD_BUTTON_MISC6"
+        },
+        {
+          "name": "BUTTON_RIGHT_PADDLE1",
+          "cpp_name": "BUTTON_RIGHT_PADDLE1",
+          "value": "SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1"
+        },
+        {
+          "name": "BUTTON_RIGHT_PADDLE2",
+          "cpp_name": "BUTTON_RIGHT_PADDLE2",
+          "value": "SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2"
+        },
+        {
+          "name": "BUTTON_LEFT_PADDLE1",
+          "cpp_name": "BUTTON_LEFT_PADDLE1",
+          "value": "SDL_GAMEPAD_BUTTON_LEFT_PADDLE1"
+        },
+        {
+          "name": "BUTTON_LEFT_PADDLE2",
+          "cpp_name": "BUTTON_LEFT_PADDLE2",
+          "value": "SDL_GAMEPAD_BUTTON_LEFT_PADDLE2"
+        },
+        {
+          "name": "BUTTON_TOUCHPAD",
+          "cpp_name": "BUTTON_TOUCHPAD",
+          "value": "SDL_GAMEPAD_BUTTON_TOUCHPAD"
+        }
+      ],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/input/gamepad.h:156-252",
+      "cpp_name": "Gamepad",
+      "cpp_parent": "Object",
+      "header": "core/input/gamepad.h",
+      "kind": "class",
+      "name": "Gamepad",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
               "name": "filename",
               "type": "std::string",
               "default": null
@@ -7960,7 +8322,7 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:278-294"
+          "export": "core/common/utility.h:278-310"
         },
         {
           "params": [
@@ -7970,11 +8332,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:278-294"
+          "export": "core/common/utility.h:278-310"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:278-294"
+          "export": "core/common/utility.h:278-310"
         }
       ],
       "initialize_copy": {
@@ -7985,7 +8347,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:278-294"
+        "export": "core/common/utility.h:278-310"
       },
       "instance_methods": [
         {
@@ -8008,7 +8370,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:278-294"
+          "export": "core/common/utility.h:278-310"
         },
         {
           "ruby_name": "set",
@@ -8025,10 +8387,33 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:278-294"
+          "export": "core/common/utility.h:278-310"
         }
       ],
-      "attributes": [],
+      "attributes": [
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:278-310"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:278-310"
+        }
+      ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
@@ -8040,7 +8425,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:278-294",
+      "export": "core/common/utility.h:278-310",
       "cpp_name": "Vector2",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -8069,7 +8454,7 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:307-323"
+          "export": "core/common/utility.h:321-360"
         },
         {
           "params": [
@@ -8079,11 +8464,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:307-323"
+          "export": "core/common/utility.h:321-360"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:307-323"
+          "export": "core/common/utility.h:321-360"
         }
       ],
       "initialize_copy": {
@@ -8094,7 +8479,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:307-323"
+        "export": "core/common/utility.h:321-360"
       },
       "instance_methods": [
         {
@@ -8122,7 +8507,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:307-323"
+          "export": "core/common/utility.h:321-360"
         },
         {
           "ruby_name": "set",
@@ -8139,10 +8524,44 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:307-323"
+          "export": "core/common/utility.h:321-360"
         }
       ],
-      "attributes": [],
+      "attributes": [
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:321-360"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:321-360"
+        },
+        {
+          "name": "z",
+          "setter": "z=",
+          "cpp_name": "Z",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:321-360"
+        }
+      ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
@@ -8154,7 +8573,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:307-323",
+      "export": "core/common/utility.h:321-360",
       "cpp_name": "Vector3",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -8188,7 +8607,7 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:336-354"
+          "export": "core/common/utility.h:371-419"
         },
         {
           "params": [
@@ -8198,11 +8617,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:336-354"
+          "export": "core/common/utility.h:371-419"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:336-354"
+          "export": "core/common/utility.h:371-419"
         }
       ],
       "initialize_copy": {
@@ -8213,7 +8632,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:336-354"
+        "export": "core/common/utility.h:371-419"
       },
       "instance_methods": [
         {
@@ -8246,7 +8665,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:336-354"
+          "export": "core/common/utility.h:371-419"
         },
         {
           "ruby_name": "set",
@@ -8263,10 +8682,55 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:336-354"
+          "export": "core/common/utility.h:371-419"
         }
       ],
-      "attributes": [],
+      "attributes": [
+        {
+          "name": "x",
+          "setter": "x=",
+          "cpp_name": "X",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:371-419"
+        },
+        {
+          "name": "y",
+          "setter": "y=",
+          "cpp_name": "Y",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:371-419"
+        },
+        {
+          "name": "z",
+          "setter": "z=",
+          "cpp_name": "Z",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:371-419"
+        },
+        {
+          "name": "w",
+          "setter": "w=",
+          "cpp_name": "W",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/common/utility.h:371-419"
+        }
+      ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
@@ -8278,7 +8742,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:336-354",
+      "export": "core/common/utility.h:371-419",
       "cpp_name": "Vector4",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",

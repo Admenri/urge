@@ -41,6 +41,7 @@
 #include "binding_gpu_queue.h"
 #include "binding_node.h"
 #include "binding_geometry.h"
+#include "binding_gamepad.h"
 #include "binding_bitmap.h"
 #include "binding_color.h"
 #include "binding_font.h"
@@ -141,6 +142,7 @@ void InitBindings() {
   InitGPUQueueBinding();
   InitNodeBinding();
   InitGeometryBinding();
+  InitGamepadBinding();
   InitBitmapBinding();
   InitColorBinding();
   InitFontBinding();

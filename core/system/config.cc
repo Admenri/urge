@@ -31,6 +31,7 @@
 #include "SDL3/SDL_stdinc.h"
 
 #include "core/common/exception.h"
+#include "core/input/gamepad.h"
 #include "core/system/filesystem.h"
 
 #if defined(SDL_PLATFORM_WIN32)
@@ -79,6 +80,36 @@ int32_t ParseKeyName(const std::string& name) {
 std::string KeyNameOf(int32_t keycode) {
   const char* name = SDL_GetScancodeName(static_cast<SDL_Scancode>(keycode));
   return (name && *name) ? std::string(name) : std::to_string(keycode);
+}
+
+/* A pad entry is written as `pad:<token>` so the one `KeyBinding` section can
+   hold both devices; a scancode name never contains a colon, so an old file
+   keeps parsing exactly as before. */
+std::string KeyNameOf(const urge::KeySym& binding) {
+  if (binding.gamepad)
+    return "pad:" + GamepadDevice::ButtonToken(binding.code);
+
+  return KeyNameOf(binding.code);
+}
+
+urge::KeySym ParseKeyBinding(const std::string& symbol,
+                             const std::string& value) {
+  KeySym binding;
+  binding.name = symbol;
+
+  constexpr const char kPadPrefix[] = "pad:";
+  constexpr size_t kPadPrefixLength = sizeof(kPadPrefix) - 1;
+
+  if (value.compare(0, kPadPrefixLength, kPadPrefix) == 0) {
+    binding.gamepad = true;
+    if (!GamepadDevice::ButtonFromToken(value.substr(kPadPrefixLength),
+                                  &binding.code))
+      binding.code = -1;  // unknown token: kept, but it will never fire
+    return binding;
+  }
+
+  binding.code = ParseKeyName(value);
+  return binding;
 }
 
 bool IsUTF8Text(const std::string& text) {
@@ -189,13 +220,15 @@ void Config::Save() {
   parser_.Set("GFX", "Backend", gfx.backend);
   parser_.Set("GFX", "SpriteBatch", gfx.sprite_batch);
 
+  parser_.Set("Input", "PadBindings", input.pad_bindings);
+
   parser_.RemoveSection("KeyBinding");
   for (const auto& binding : key_bindings) {
-    std::string line = parser_.Get("KeyBinding", binding.first);
+    std::string line = parser_.Get("KeyBinding", binding.name);
     if (!line.empty())
       line += ',';
-    line += KeyNameOf(binding.second);
-    parser_.Set("KeyBinding", binding.first, line);
+    line += KeyNameOf(binding);
+    parser_.Set("KeyBinding", binding.name, line);
   }
 
   auto* stream = IOService::Get().OpenWrite(inifile_);
@@ -253,10 +286,12 @@ void Config::Load() {
   gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
   gfx.sprite_batch = parser_.GetBool("GFX", "SpriteBatch", gfx.sprite_batch);
 
+  input.pad_bindings = parser_.GetBool("Input", "PadBindings", input.pad_bindings);
+
   key_bindings.clear();
   for (const auto& symbol : parser_.GetKeys("KeyBinding"))
     for (const auto& name : SplitKeys(parser_.Get("KeyBinding", symbol)))
-      key_bindings.push_back({symbol, ParseKeyName(name)});
+      key_bindings.push_back(ParseKeyBinding(symbol, name));
 }
 
 }  // namespace urge

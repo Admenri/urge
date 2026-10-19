@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector4  (core/common/utility.h:336-354)
+// Vector4  (core/common/utility.h:371-419)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector4);
@@ -89,6 +89,18 @@ RB_FUNC(Vector4_Set) {
   return Qnil;
 }
 
+// Attribute: x (float)
+BINDING_ATTR_FLOAT(Vector4, urge::Vector4, X);
+
+// Attribute: y (float)
+BINDING_ATTR_FLOAT(Vector4, urge::Vector4, Y);
+
+// Attribute: z (float)
+BINDING_ATTR_FLOAT(Vector4, urge::Vector4, Z);
+
+// Attribute: w (float)
+BINDING_ATTR_FLOAT(Vector4, urge::Vector4, W);
+
 void InitVector4BindingAppend(VALUE klass);
 
 void InitVector4Binding() {
@@ -98,6 +110,14 @@ void InitVector4Binding() {
   DefineMethod(klass, "initialize", Vector4_initialize);
   DefineMethod(klass, "initialize_copy", Vector4_initialize_copy);
   DefineMethod(klass, "set", Vector4_Set);
+  DefineMethod(klass, "x", Vector4_X);
+  DefineMethod(klass, "x=", Vector4_XEqual);
+  DefineMethod(klass, "y", Vector4_Y);
+  DefineMethod(klass, "y=", Vector4_YEqual);
+  DefineMethod(klass, "z", Vector4_Z);
+  DefineMethod(klass, "z=", Vector4_ZEqual);
+  DefineMethod(klass, "w", Vector4_W);
+  DefineMethod(klass, "w=", Vector4_WEqual);
   InitVector4BindingAppend(klass);
 }
 // --- GENERATED END ---
