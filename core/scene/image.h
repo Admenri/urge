@@ -24,10 +24,10 @@
 
 #include "SDL3/SDL_surface.h"
 
-#include "core/definition.h"
-#include "core/disposable.h"
-#include "core/refptr.h"
-#include "core/utility.h"
+#include "core/common/definition.h"
+#include "core/common/disposable.h"
+#include "core/common/refptr.h"
+#include "core/common/utility.h"
 
 namespace urge {
 

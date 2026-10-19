@@ -15,10 +15,10 @@
 #include "binding_vector3.h"
 #include "binding_vector4.h"
 
-#include "core/bitmap.h"
-#include "core/camera.h"
-#include "core/node.h"
-#include "core/utility.h"
+#include "core/common/utility.h"
+#include "core/scene/bitmap.h"
+#include "core/scene/camera.h"
+#include "core/scene/node.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/node.h:35-63)
+// Node  (core/scene/node.h:35-63)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Node, Disposable);

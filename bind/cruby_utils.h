@@ -33,16 +33,16 @@
 // declarations, because core/*.h are parsed *after* this header:
 //
 //   WinUser.h  #define DrawText DrawTextA
-//     => core/bitmap.h's `void Bitmap::DrawText(...)` became
+//     => core/scene/bitmap.h's `void Bitmap::DrawText(...)` became
 //        `void Bitmap::DrawTextA(...)`, a member the engine never defines, and
 //        every glue TU linked against `urge::Bitmap::DrawTextA` (LNK2019).
 //
 //   wingdi.h   #define ERROR 0
 //     => today the only `ERROR` in core/ is inside a string literal
-//        ("[URGE] [ERROR] " in core/logger.h), which a macro cannot touch, but
+//        ("[URGE] [ERROR] " in core/common/logger.h), which a macro cannot touch, but
 //        any future enumerator spelled ERROR would be rewritten without a word.
 //
-// Verified by compiling a probe that includes this header and core/bitmap.h:
+// Verified by compiling a probe that includes this header and core/scene/bitmap.h:
 // DrawText -> DrawTextA and ERROR -> 0 are both live, `max`/`min` are not (the
 // build already neutralises minwindef.h).  Dropping the two here, after every
 // ruby header and before the first core/ header, is what keeps the engine's
@@ -50,9 +50,9 @@
 #undef DrawText
 #undef ERROR
 
-#include "core/exception.h"
-#include "core/object.h"
-#include "core/refptr.h"
+#include "core/common/exception.h"
+#include "core/common/object.h"
+#include "core/common/refptr.h"
 
 namespace binding {
 

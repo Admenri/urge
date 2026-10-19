@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """URGE binding IR generator.
 
-Scans the core headers (`core/*.h`) for the declarations a `URGE_BINDING()`
+Scans the core headers (`core/**/*.h`) for the declarations a `URGE_BINDING()`
 annotation marks as exported and emits a single JSON document,
 `bind/api_reference.json`, which `bind/generate_binding.py` turns into the
 CRuby glue code.  The rules this script implements are documented in
@@ -43,7 +43,7 @@ DEFAULT_OUTPUT = os.path.join(REPO_ROOT, "bind", "api_reference.json")
 # annotation precedes it.  An empty body is a plain export marker; a
 # `Name : "..."` body additionally renames the Ruby side (the one thing the
 # mechanical `camel_to_snake` rule cannot produce).  The macro itself expands
-# to nothing, see `core/definition.h`.
+# to nothing, see `core/common/definition.h`.
 
 # `Singleton<T>` classes which are exported as Ruby modules, not as classes.
 #
@@ -522,6 +522,12 @@ ATTR_RE = re.compile(
 MARSHAL_DUMP_RE = re.compile(r"^MARSHAL_DUMP\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 MARSHAL_LOAD_RE = re.compile(r"^MARSHAL_LOAD\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 
+# `KLASS_EQUAL(ty)` is one C++ operator behind three Ruby names (`==`, `eql?`,
+# `===`), so it is a marker of its own rather than a method declaration: the
+# glue registers the trio against a single generated function, and the Ruby
+# names never appear in the header.  See core/common/definition.h.
+KLASS_EQUAL_RE = re.compile(r"^KLASS_EQUAL\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
+
 # A `URGE_BINDING()` marked enum exports one Ruby constant per enumerator, the
 # Ruby name being SCREAMING_SNAKE of the C++ name (`MapWrite` -> `MAP_WRITE`).
 # The declaration is scoped (`enum class`) or not; only the body matters, and
@@ -553,7 +559,7 @@ def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
     annotation applies to the very next declaration only, which is why it is
     consumed here instead of being carried around: `URGE_BINDING` expands to
     nothing in C++, so a header reader sees it as part of the declaration it
-    documents, see `core/table.h`.
+    documents, see `core/scene/table.h`.
     """
     annotation = None
     while True:
@@ -610,7 +616,9 @@ def parse_class(
     """
     markers = [m.start() for m in re.finditer(r"URGE_BINDING\s*\(", inner)]
     last_marker = markers[-1] if markers else 0
-    export = "core/%s:%d-%d" % (
+    # `source` is already repository-relative (`core/scene/bitmap.h`), so the
+    # export marker is exactly the path a reader can open.
+    export = "%s:%d-%d" % (
         source,
         text.count("\n", 0, class_start) + 1,
         text.count("\n", 0, inner_start + last_marker) + 1,
@@ -626,6 +634,7 @@ def parse_class(
         "class_attributes": [],
         "constants": [],
         "marshal": {"dump": False, "load": False},
+        "equal": False,
         "index": None,
         "unsupported": [],
         "export": export,
@@ -650,6 +659,11 @@ def parse_class(
         m = MARSHAL_LOAD_RE.match(stmt)
         if m:
             result["marshal"]["load"] = True
+            continue
+
+        m = KLASS_EQUAL_RE.match(stmt)
+        if m:
+            result["equal"] = True
             continue
 
         m = ATTR_RE.match(stmt)
@@ -895,14 +909,20 @@ def check_base_order(ordered: list[str], classes: dict[str, dict[str, Any]]) -> 
 
 
 def build_document() -> dict[str, Any]:
-    headers = sorted(glob.glob(os.path.join(SOURCE_DIR, "*.h")))
+    # `core/` is split into functional subdirectories (common, system,
+    # graphics, scene, font, audio, input, network, video), so the scan is
+    # recursive and the IR keeps the path a class was found at -- the glue
+    # includes exactly that header.
+    headers = sorted(
+        glob.glob(os.path.join(SOURCE_DIR, "**", "*.h"), recursive=True)
+    )
     header_names = [os.path.relpath(h, REPO_ROOT).replace("\\", "/") for h in headers]
 
     classes: dict[str, dict[str, Any]] = {}
     modules: dict[str, dict[str, Any]] = {}
 
     for header in headers:
-        source = os.path.basename(header)
+        source = os.path.relpath(header, REPO_ROOT).replace("\\", "/")
         with open(header, "r", encoding="utf-8", errors="replace") as f:
             text = f.read()
         for cls in extract_classes(text):
@@ -916,7 +936,7 @@ def build_document() -> dict[str, Any]:
             )
             desc["cpp_name"] = name
             desc["cpp_parent"] = cls["parent"]
-            desc["header"] = "core/" + source
+            desc["header"] = source
 
             if name in MODULE_CLASSES:
                 desc["kind"] = "module"
@@ -966,6 +986,7 @@ def build_document() -> dict[str, Any]:
                     "class_methods",
                     "class_attributes",
                     "marshal",
+                    "equal",
                     "index",
                 ):
                     desc.pop(key, None)

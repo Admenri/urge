@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/image.h"
+#include "core/scene/image.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -28,8 +28,8 @@
 
 #include "SDL3_image/SDL_image.h"
 
-#include "core/exception.h"
-#include "core/filesystem.h"
+#include "core/common/exception.h"
+#include "core/system/filesystem.h"
 
 namespace urge {
 

@@ -10,8 +10,8 @@
 
 #include "binding_color.h"
 
-#include "core/font.h"
-#include "core/utility.h"
+#include "core/common/utility.h"
+#include "core/font/font.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -24,7 +24,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Font  (core/font.h:40-91)
+// Font  (core/font/font.h:40-91)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Font);

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/audio_service.h"
+#include "core/audio/audio_service.h"
 
 #include <algorithm>
 #include <cstring>
@@ -37,9 +37,9 @@
 #include "decoders/libopus/miniaudio_libopus.h"
 #include "decoders/libvorbis/miniaudio_libvorbis.h"
 
-#include "core/exception.h"
-#include "core/filesystem.h"
-#include "core/logger.h"
+#include "core/common/exception.h"
+#include "core/system/filesystem.h"
+#include "core/common/logger.h"
 
 #ifndef MA_NO_DEVICE_IO
 #error \

@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_vector3.h"
 
-#include "core/utility.h"
+#include "core/common/utility.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector3  (core/utility.h:301-317)
+// Vector3  (core/common/utility.h:307-323)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector3);

@@ -20,10 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/table.h"
+#include "core/scene/table.h"
 
-#include "core/exception.h"
-#include "core/object.h"
+#include "core/common/exception.h"
+#include "core/common/object.h"
 
 namespace urge {
 

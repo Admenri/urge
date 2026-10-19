@@ -26,7 +26,7 @@
 
 #include "SDL3/SDL_iostream.h"
 
-#include "core/object.h"
+#include "core/common/object.h"
 
 namespace urge {
 

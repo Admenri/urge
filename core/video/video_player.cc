@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/video_player.h"
+#include "core/video/video_player.h"
 
 #include <cstddef>
 #include <utility>

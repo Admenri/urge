@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/network_backend.h"
+#include "core/network/network_backend.h"
 
 #include <emscripten/fetch.h>
 #include <emscripten/websocket.h>

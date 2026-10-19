@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-#include "core/gpu_utils.h"
+#include "core/graphics/gpu_utils.h"
 #include "webgpu/webgpu_cpp.hpp"
 
 namespace urge {
@@ -65,7 +65,7 @@ struct ShaderSource {
 
 // The vertex layout every pipeline in the engine takes: position, texture
 // coordinate, vertex colour, in that order.  `PrimitiveEmitter` fills the
-// buffer in the same shape and core/primitive.h asserts the offsets (16 for the
+// buffer in the same shape and core/graphics/primitive.h asserts the offsets (16 for the
 // coordinate, 24 for the colour), so the two have to stay in step.  Custom
 // shaders are handed the same one, which is why an `Effect` has to feed its
 // geometry through the emitter rather than inventing its own inputs.

@@ -16,7 +16,7 @@
 #include "binding_fetch.h"
 #include "binding_web_socket.h"
 
-#include "core/network.h"
+#include "core/network/network.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Network  (core/network.h:186-204)
+// Network  (core/network/network.h:186-204)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Network_Update) {

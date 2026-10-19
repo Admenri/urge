@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_input.h"
 
-#include "core/input.h"
+#include "core/input/input.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -18,7 +18,7 @@ namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
 // RGSS key constants (`Input::DOWN`, `Input::A`, ...).  They come from the
-// table in core/input.h rather than from a declaration in the export block,
+// table in core/input/input.h rather than from a declaration in the export block,
 // so they cannot be generated.
 void DefineInputKeyConstants(VALUE mod) {
   for (const auto& binding : urge::kKeyboardBindings) {
@@ -89,7 +89,7 @@ RB_FUNC(Input_RepeatedManual) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Input  (core/input.h:51-75)
+// Input  (core/input/input.h:51-75)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Input_Update) {

@@ -16,7 +16,7 @@
 #include "binding_gpu_object.h"
 #include "binding_gpu_texture_view.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassDescriptor  (core/gpu.h:557-606)
+// GPURenderPassDescriptor  (core/graphics/gpu.h:557-606)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassDescriptor, GPUObject);

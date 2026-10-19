@@ -15,7 +15,7 @@
 
 #include "binding_camera.h"
 
-#include "core/camera.h"
+#include "core/scene/camera.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// PerspectiveCamera  (core/camera.h:67-77)
+// PerspectiveCamera  (core/scene/camera.h:67-77)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(PerspectiveCamera, Camera);

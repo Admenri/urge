@@ -26,9 +26,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "core/common.h"
-#include "core/device.h"
-#include "core/object.h"
+#include "core/common/common.h"
+#include "core/graphics/device.h"
+#include "core/common/object.h"
 
 namespace urge {
 

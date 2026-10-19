@@ -15,8 +15,8 @@
 
 #include "binding_bitmap.h"
 
-#include "core/bitmap.h"
-#include "core/mouse.h"
+#include "core/input/mouse.h"
+#include "core/scene/bitmap.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Mouse  (core/mouse.h:38-98)
+// Mouse  (core/input/mouse.h:38-98)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Mouse_Update) {

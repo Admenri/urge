@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/archive.h"
+#include "core/system/archive.h"
 
 /* The build that has no `admenri/` drop-in: no key, no archiver, no container.
    This file is what stands in for `admenri/archive.cc` so that everything

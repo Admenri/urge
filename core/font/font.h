@@ -29,10 +29,10 @@
 #include "SDL3/SDL_surface.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
-#include "core/common.h"
-#include "core/definition.h"
-#include "core/refptr.h"
-#include "core/utility.h"
+#include "core/common/common.h"
+#include "core/common/definition.h"
+#include "core/common/refptr.h"
+#include "core/common/utility.h"
 
 namespace urge {
 

@@ -15,7 +15,7 @@
 
 #include "binding_network_event.h"
 
-#include "core/network.h"
+#include "core/network/network.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -39,7 +39,7 @@ void DefineWebSocketConstants(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WebSocket  (core/network.h:78-112)
+// WebSocket  (core/network/network.h:78-112)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WebSocket);

@@ -25,12 +25,12 @@
 #include <cstdint>
 #include <vector>
 
-#include "core/bitmap.h"
-#include "core/definition.h"
-#include "core/device.h"
-#include "core/object.h"
-#include "core/primitive.h"
-#include "core/refptr.h"
+#include "core/scene/bitmap.h"
+#include "core/common/definition.h"
+#include "core/graphics/device.h"
+#include "core/common/object.h"
+#include "core/graphics/primitive.h"
+#include "core/common/refptr.h"
 
 namespace urge {
 

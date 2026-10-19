@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_table.h"
 
-#include "core/table.h"
+#include "core/scene/table.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -87,7 +87,7 @@ RB_FUNC(Table_Set) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Table  (core/table.h:33-56)
+// Table  (core/scene/table.h:33-56)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Table);

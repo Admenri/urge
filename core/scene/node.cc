@@ -20,16 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/node.h"
+#include "core/scene/node.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#include "core/graphics.h"
-#include "core/primitive.h"
-#include "core/render_stats.h"
-#include "core/sprite_batch.h"
-#include "core/uniform.h"
+#include "core/graphics/graphics.h"
+#include "core/graphics/primitive.h"
+#include "core/graphics/render_stats.h"
+#include "core/scene/sprite_batch.h"
+#include "core/graphics/uniform.h"
 
 namespace urge {
 

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/utility.h"
+#include "core/common/utility.h"
 
 namespace urge {
 
@@ -37,6 +37,10 @@ MARSHAL_LOAD_DEF(Rect) {
 
   const int32_t* ptr = reinterpret_cast<const int32_t*>(data.data());
   return MakeRefCounted<Rect>(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3));
+}
+
+KLASS_EQUAL_DEF(Rect) {
+  return data == other.data;
 }
 
 MARSHAL_DUMP_DEF(Color) {
@@ -65,6 +69,11 @@ MARSHAL_LOAD_DEF(Color) {
   return MakeRefCounted<Color>(red, green, blue, alpha);
 }
 
+KLASS_EQUAL_DEF(Color) {
+  return data.r == other.data.r && data.g == other.data.g &&
+         data.b == other.data.b && data.a == other.data.a;
+}
+
 MARSHAL_DUMP_DEF(Tone) {
   std::string serial_data(sizeof(double) * 4, 0);
 
@@ -89,6 +98,11 @@ MARSHAL_LOAD_DEF(Tone) {
   const float gray = static_cast<float>(*(ptr + 3));
 
   return MakeRefCounted<Tone>(red, green, blue, gray);
+}
+
+KLASS_EQUAL_DEF(Tone) {
+  return data.r == other.data.r && data.g == other.data.g &&
+         data.b == other.data.b && data.a == other.data.a;
 }
 
 }  // namespace urge

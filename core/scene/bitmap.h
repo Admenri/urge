@@ -25,14 +25,14 @@
 #include <cstdint>
 #include <string>
 
-#include "core/definition.h"
-#include "core/device.h"
-#include "core/disposable.h"
-#include "core/font.h"
-#include "core/font_renderer.h"
-#include "core/image.h"
-#include "core/primitive.h"
-#include "core/utility.h"
+#include "core/common/definition.h"
+#include "core/graphics/device.h"
+#include "core/common/disposable.h"
+#include "core/font/font.h"
+#include "core/font/font_renderer.h"
+#include "core/scene/image.h"
+#include "core/graphics/primitive.h"
+#include "core/common/utility.h"
 
 namespace urge {
 

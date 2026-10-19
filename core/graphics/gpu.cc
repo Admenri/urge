@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 
 #include <string>
 #include <vector>
 
-#include "core/exception.h"
+#include "core/common/exception.h"
 
 namespace urge {
 

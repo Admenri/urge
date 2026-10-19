@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "core/definition.h"
-#include "core/exception.h"
-#include "core/object.h"
+#include "core/common/definition.h"
+#include "core/common/exception.h"
+#include "core/common/object.h"
 
 namespace urge {
 

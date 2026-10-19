@@ -20,16 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/video.h"
+#include "core/video/video.h"
 
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <utility>
 
-#include "core/audio.h"
-#include "core/exception.h"
-#include "core/logger.h"
+#include "core/audio/audio.h"
+#include "core/common/exception.h"
+#include "core/common/logger.h"
 
 namespace urge {
 

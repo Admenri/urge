@@ -17,7 +17,7 @@
 #include "binding_gpu_texture_view.h"
 #include "binding_gpu_texture_view_descriptor.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTexture  (core/gpu.h:702-728)
+// GPUTexture  (core/graphics/gpu.h:702-728)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTexture, GPUObject);

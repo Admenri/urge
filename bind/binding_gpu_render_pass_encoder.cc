@@ -18,7 +18,7 @@
 #include "binding_gpu_object.h"
 #include "binding_gpu_render_pipeline.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassEncoder  (core/gpu.h:890-926)
+// GPURenderPassEncoder  (core/graphics/gpu.h:890-926)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassEncoder, GPUObject);

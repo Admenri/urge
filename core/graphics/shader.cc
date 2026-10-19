@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/shader.h"
+#include "core/graphics/shader.h"
 
 #include <algorithm>
 #include <map>
@@ -30,9 +30,9 @@
 #include <variant>
 #include <vector>
 
-#include "core/device.h"
-#include "core/exception.h"
-#include "core/pipeline.h"
+#include "core/graphics/device.h"
+#include "core/common/exception.h"
+#include "core/graphics/pipeline.h"
 
 namespace urge {
 

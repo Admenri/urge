@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/font.h"
+#include "core/font/font.h"
 
 #include <algorithm>
 #include <cstring>
@@ -29,8 +29,8 @@
 
 #include "SDL3_ttf/SDL_ttf.h"
 
-#include "core/filesystem.h"
-#include "core/font_context.h"
+#include "core/system/filesystem.h"
+#include "core/font/font_context.h"
 
 namespace urge {
 
@@ -214,12 +214,18 @@ ATTR_DEF(Font, RefPtr<Color>, GradientColor) {
 }
 
 ATTR_DEF(Font, std::vector<std::string>, DefaultName) {
-  static std::vector<std::string> default_names = {"Default.ttf"};
+  /* Empty means "whatever the platform considers the default", which the font
+     service resolves once at start-up: Microsoft YaHei on Windows, the bundled
+     face elsewhere.  Keeping the value empty lets `Font.new` follow that chain
+     instead of freezing a name that may not exist on this machine. */
+  static std::vector<std::string> default_names;
   if (value.has_value()) {
     default_names = *value;
     return std::nullopt;
-  } else {
+  } else if (!default_names.empty()) {
     return default_names;
+  } else {
+    return FontContext::Get().default_name();
   }
 }
 

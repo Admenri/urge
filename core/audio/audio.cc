@@ -20,13 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/audio.h"
+#include "core/audio/audio.h"
 
 #include <algorithm>
 
-#include "core/audio_service.h"
-#include "core/config.h"
-#include "core/logger.h"
+#include "core/audio/audio_service.h"
+#include "core/system/config.h"
+#include "core/common/logger.h"
 
 namespace urge {
 

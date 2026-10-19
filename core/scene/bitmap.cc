@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/bitmap.h"
+#include "core/scene/bitmap.h"
 
 #include <algorithm>
 #include <cstring>
@@ -32,12 +32,12 @@
 #include "SDL3_image/SDL_image.h"
 #include "glm/ext/matrix_clip_space.hpp"
 
-#include "core/bitmap_queue.h"
-#include "core/filesystem.h"
-#include "core/gpu.h"
-#include "core/gpu_utils.h"
-#include "core/pipeline.h"
-#include "core/render_stats.h"
+#include "core/scene/bitmap_queue.h"
+#include "core/system/filesystem.h"
+#include "core/graphics/gpu.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/render_stats.h"
 
 namespace urge {
 

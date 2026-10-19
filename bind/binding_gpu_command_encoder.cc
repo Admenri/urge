@@ -21,7 +21,7 @@
 #include "binding_gpu_render_pass_descriptor.h"
 #include "binding_gpu_render_pass_encoder.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -34,7 +34,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUCommandEncoder  (core/gpu.h:862-880)
+// GPUCommandEncoder  (core/graphics/gpu.h:862-880)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUCommandEncoder, GPUObject);

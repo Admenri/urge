@@ -20,14 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/network.h"
+#include "core/network/network.h"
 
 #include <algorithm>
 #include <cctype>
 #include <utility>
 
-#include "core/exception.h"
-#include "core/network_backend.h"
+#include "core/common/exception.h"
+#include "core/network/network_backend.h"
 
 namespace urge {
 

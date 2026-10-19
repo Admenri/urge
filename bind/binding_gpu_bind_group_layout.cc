@@ -15,7 +15,7 @@
 
 #include "binding_gpu_object.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupLayout  (core/gpu.h:771-771)
+// GPUBindGroupLayout  (core/graphics/gpu.h:771-771)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupLayout, GPUObject);

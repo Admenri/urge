@@ -20,17 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/camera.h"
+#include "core/scene/camera.h"
 
 #include <algorithm>
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#include "core/gpu_utils.h"
-#include "core/logger.h"
-#include "core/pipeline.h"
-#include "core/shader.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/common/logger.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/shader.h"
 
 namespace urge {
 

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/window_xp.h"
+#include "core/scene/window_xp.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -28,10 +28,10 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "core/device.h"
-#include "core/gpu_utils.h"
-#include "core/pipeline.h"
-#include "core/uniform.h"
+#include "core/graphics/device.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/uniform.h"
 
 namespace urge {
 

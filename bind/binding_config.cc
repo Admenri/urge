@@ -13,7 +13,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_config.h"
 
-#include "core/config.h"
+#include "core/system/config.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Config  (core/config.h:36-45)
+// Config  (core/system/config.h:36-45)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Config_GetValue) {

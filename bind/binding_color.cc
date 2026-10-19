@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_color.h"
 
-#include "core/utility.h"
+#include "core/common/utility.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Color  (core/utility.h:126-183)
+// Color  (core/common/utility.h:128-187)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Color);
@@ -91,6 +91,23 @@ RB_FUNC(Color__load) {
   return Qnil;
 }
 
+// Value equality: ==, eql?, === (KLASS_EQUAL)
+RB_FUNC(Color__equal) {
+  auto* self_obj = GetSelfData<urge::Color>(self);
+  VALUE other = Qnil;
+  ParseArgs(argc, argv, "o", &other);
+
+  if (!rb_typeddata_is_kind_of(other, &kColorDataType))
+    return Qfalse;
+
+  auto* other_obj = GetSelfData<urge::Color>(other);
+  EXC_BEGIN {
+    return *self_obj == *other_obj ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qfalse;
+}
+
 RB_FUNC(Color_Set) {
   auto* self_obj = GetSelfData<urge::Color>(self);
 
@@ -143,6 +160,9 @@ void InitColorBinding() {
   DefineMethod(klass, "set", Color_Set);
   DefineMethod(klass, "_dump", Color__dump);
   DefineClassMethod(klass, "_load", Color__load);
+  DefineMethod(klass, "==", Color__equal);
+  DefineMethod(klass, "eql?", Color__equal);
+  DefineMethod(klass, "===", Color__equal);
   DefineMethod(klass, "red", Color_Red);
   DefineMethod(klass, "red=", Color_RedEqual);
   DefineMethod(klass, "green", Color_Green);

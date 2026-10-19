@@ -17,7 +17,7 @@ endif()
 #
 # The Ruby side is not conditional: `Video` stays exported either way, and every
 # call raises while the engine is off, so a script sees one API on every
-# platform -- only the depth behind it differs.  See core/video.h.
+# platform -- only the depth behind it differs.  See core/video/video.h.
 if(EMSCRIPTEN)
   set(URGE_ENABLE_VIDEO_DEFAULT OFF)
 else()
@@ -31,7 +31,7 @@ option(URGE_ENABLE_VIDEO
 # platform needs a dependency the other lacks.  The switch exists so a build
 # can drop the network code -- and libcurl with it -- the way the video switch
 # drops dav1d.  `Network` stays exported either way and raises while it is off,
-# see core/network.h.
+# see core/network/network.h.
 option(URGE_ENABLE_NETWORK "Build the WebSocket and HTTP client" ON)
 
 # ---------------------------------------------------------------------------
@@ -120,9 +120,9 @@ endif()
 # `admenri/` is a git-ignored drop-in holding the PhysicsFS archiver for the
 # `.acs` container, the packer that writes one, and the container key.  Its
 # presence is the whole switch: a clone of the open-source tree has no
-# `admenri/`, so none of it is compiled, `core/archive.cc` answers "not
+# `admenri/`, so none of it is compiled, `core/system/archive.cc` answers "not
 # available", and no `.acs` file is ever opened.  Nothing else in the build
-# knows which case it is in -- see core/archive.h.
+# knows which case it is in -- see core/system/archive.h.
 #
 # The check is on the archiver source rather than on the directory, so an
 # empty or half-copied drop-in is treated as absent instead of failing the
@@ -142,7 +142,7 @@ add_subdirectory(third_party)
 
 add_subdirectory(core)
 
-# The binding glue is generated from core/*.h, so it has to be brought up to
+# The binding glue is generated from core/**/*.h, so it has to be brought up to
 # date *before* bind/CMakeLists.txt globs it.  `include` runs here, in the
 # configure step, and re-runs the two generators only when the headers (or a
 # generator) actually changed -- see bind/gen_binding.cmake.  It has to be
@@ -159,13 +159,13 @@ add_subdirectory(app)
 #
 # It matters twice.  First, the execution character set decides how the
 # compiler reads non-ASCII literals in the sources -- the default window title
-# `(*^▽^*)` in core/config.h is written in UTF-8, and without this MSVC would
+# `(*^▽^*)` in core/system/config.h is written in UTF-8, and without this MSVC would
 # read it through the system ANSI code page and store mojibake.  Second, and
 # this is what actually bites: MSVC's <format> validates a *format string*
 # against the execution character set, so on a non-UTF-8 system code page (936
 # here) any UTF-8 text handed to std::format is rejected with
 #   "Invalid encoded character in format string."
-# See core/exception.h and core/logger.h, whose runtime messages hit exactly
+# See core/common/exception.h and core/common/logger.h, whose runtime messages hit exactly
 # that.
 #
 # Applied to the three targets of this project only: third_party is upstream

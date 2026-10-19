@@ -13,10 +13,10 @@
 #include "binding_rect.h"
 #include "binding_viewport.h"
 
-#include "core/bitmap.h"
-#include "core/utility.h"
-#include "core/viewport.h"
-#include "core/window_xp.h"
+#include "core/common/utility.h"
+#include "core/scene/bitmap.h"
+#include "core/scene/viewport.h"
+#include "core/scene/window_xp.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowXP  (core/window_xp.h:49-93)
+// WindowXP  (core/scene/window_xp.h:49-93)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(WindowXP, Node);

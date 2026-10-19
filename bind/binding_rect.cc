@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_rect.h"
 
-#include "core/utility.h"
+#include "core/common/utility.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Rect  (core/utility.h:45-111)
+// Rect  (core/common/utility.h:45-113)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Rect);
@@ -84,6 +84,23 @@ RB_FUNC(Rect__load) {
   return Qnil;
 }
 
+// Value equality: ==, eql?, === (KLASS_EQUAL)
+RB_FUNC(Rect__equal) {
+  auto* self_obj = GetSelfData<urge::Rect>(self);
+  VALUE other = Qnil;
+  ParseArgs(argc, argv, "o", &other);
+
+  if (!rb_typeddata_is_kind_of(other, &kRectDataType))
+    return Qfalse;
+
+  auto* other_obj = GetSelfData<urge::Rect>(other);
+  EXC_BEGIN {
+    return *self_obj == *other_obj ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qfalse;
+}
+
 RB_FUNC(Rect_Set) {
   auto* self_obj = GetSelfData<urge::Rect>(self);
 
@@ -141,6 +158,9 @@ void InitRectBinding() {
   DefineMethod(klass, "empty", Rect_Empty);
   DefineMethod(klass, "_dump", Rect__dump);
   DefineClassMethod(klass, "_load", Rect__load);
+  DefineMethod(klass, "==", Rect__equal);
+  DefineMethod(klass, "eql?", Rect__equal);
+  DefineMethod(klass, "===", Rect__equal);
   DefineMethod(klass, "x", Rect_X);
   DefineMethod(klass, "x=", Rect_XEqual);
   DefineMethod(klass, "y", Rect_Y);

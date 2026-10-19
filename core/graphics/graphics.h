@@ -24,12 +24,12 @@
 
 #include "SDL3/SDL_video.h"
 
-#include "core/bitmap.h"
-#include "core/definition.h"
-#include "core/node.h"
-#include "core/object.h"
-#include "core/primitive.h"
-#include "core/shader.h"
+#include "core/scene/bitmap.h"
+#include "core/common/definition.h"
+#include "core/scene/node.h"
+#include "core/common/object.h"
+#include "core/graphics/primitive.h"
+#include "core/graphics/shader.h"
 
 namespace urge {
 

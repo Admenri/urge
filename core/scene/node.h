@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "core/bitmap.h"
-#include "core/camera.h"
-#include "core/definition.h"
-#include "core/disposable.h"
-#include "core/drawable.h"
-#include "core/utility.h"
+#include "core/scene/bitmap.h"
+#include "core/scene/camera.h"
+#include "core/common/definition.h"
+#include "core/common/disposable.h"
+#include "core/scene/drawable.h"
+#include "core/common/utility.h"
 
 namespace urge {
 

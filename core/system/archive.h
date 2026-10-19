@@ -38,7 +38,7 @@ namespace urge {
  *
  * The implementation is not in this tree.  It lives in the `admenri/` drop-in,
  * which is git-ignored, and this header is the whole of what the open-source
- * side sees of it: a clone without `admenri/` compiles `core/archive.cc`,
+ * side sees of it: a clone without `admenri/` compiles `core/system/archive.cc`,
  * whose three functions answer "not available" and mount nothing.  The
  * encryption is therefore a property of a build, not of the source.
  */

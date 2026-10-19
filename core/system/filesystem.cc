@@ -20,13 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/filesystem.h"
+#include "core/system/filesystem.h"
 
 #include "SDL3/SDL_system.h"
 #include "physfs.h"
 
-#include "core/archive.h"
-#include "core/exception.h"
+#include "core/system/archive.h"
+#include "core/common/exception.h"
 
 #if __ANDROID__
 #include <jni.h>

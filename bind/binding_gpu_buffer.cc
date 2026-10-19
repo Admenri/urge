@@ -15,7 +15,7 @@
 
 #include "binding_gpu_object.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBuffer  (core/gpu.h:671-692)
+// GPUBuffer  (core/graphics/gpu.h:671-692)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBuffer, GPUObject);

@@ -27,13 +27,13 @@
 #include <string>
 #include <vector>
 
-#include "core/audio_stream.h"
-#include "core/bitmap.h"
-#include "core/definition.h"
-#include "core/object.h"
-#include "core/refptr.h"
+#include "core/audio/audio_stream.h"
+#include "core/scene/bitmap.h"
+#include "core/common/definition.h"
+#include "core/common/object.h"
+#include "core/common/refptr.h"
 #if URGE_ENABLE_VIDEO
-#include "core/video_player.h"
+#include "core/video/video_player.h"
 #endif
 
 namespace urge {

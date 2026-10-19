@@ -20,13 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/pipeline.h"
+#include "core/graphics/pipeline.h"
 
 #include <algorithm>
 #include <cctype>
 #include <string>
 
-#include "core/exception.h"
+#include "core/common/exception.h"
 
 namespace urge {
 

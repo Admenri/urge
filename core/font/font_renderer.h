@@ -27,8 +27,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "core/device.h"
-#include "core/font.h"
+#include "core/graphics/device.h"
+#include "core/font/font.h"
 
 namespace urge {
 

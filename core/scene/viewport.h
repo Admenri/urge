@@ -24,10 +24,10 @@
 
 #include <cstdint>
 
-#include "core/definition.h"
-#include "core/effect.h"
-#include "core/node.h"
-#include "core/utility.h"
+#include "core/common/definition.h"
+#include "core/graphics/effect.h"
+#include "core/scene/node.h"
+#include "core/common/utility.h"
 
 namespace urge {
 

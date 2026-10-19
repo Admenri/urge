@@ -15,7 +15,7 @@
 
 #include "binding_gpu_object.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUShaderModuleDescriptor  (core/gpu.h:322-343)
+// GPUShaderModuleDescriptor  (core/graphics/gpu.h:322-343)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUShaderModuleDescriptor, GPUObject);

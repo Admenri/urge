@@ -20,18 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/sprite_batch.h"
+#include "core/scene/sprite_batch.h"
 
 #include <algorithm>
 #include <cstdlib>
 
-#include "core/config.h"
-#include "core/device.h"
-#include "core/drawable.h"
-#include "core/gpu_utils.h"
-#include "core/logger.h"
-#include "core/pipeline.h"
-#include "core/shader.h"
+#include "core/system/config.h"
+#include "core/graphics/device.h"
+#include "core/scene/drawable.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/common/logger.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/shader.h"
 
 namespace urge {
 

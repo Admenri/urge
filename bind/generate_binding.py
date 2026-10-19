@@ -274,7 +274,7 @@ RB_FUNC(Table_Set) {
 
 INPUT_MANUAL = """\
 // RGSS key constants (`Input::DOWN`, `Input::A`, ...).  They come from the
-// table in core/input.h rather than from a declaration in the export block,
+// table in core/input/input.h rather than from a declaration in the export block,
 // so they cannot be generated.
 void DefineInputKeyConstants(VALUE mod) {
   for (const auto& binding : urge::kKeyboardBindings) {
@@ -836,6 +836,35 @@ def emit_marshal(entry: dict) -> list[str]:
     ]
 
 
+def emit_equal(entry: dict) -> list[str]:
+    """`==`, `eql?` and `===` for a value class (the `KLASS_EQUAL` marker).
+
+    One C++ operator serves all three names, which is why this is emitted here
+    instead of going through `emit_method`: the marker names no C++ function the
+    method emitter could call.  A foreign object is *not equal* rather than a
+    `TypeError` -- `==` is expected to answer, not to raise.
+    """
+    name = entry["cpp_name"]
+    return [
+        "// Value equality: ==, eql?, === (KLASS_EQUAL)",
+        "RB_FUNC(%s__equal) {" % name,
+        "  auto* self_obj = GetSelfData<urge::%s>(self);" % name,
+        "  VALUE other = Qnil;",
+        '  ParseArgs(argc, argv, "o", &other);',
+        "",
+        "  if (!rb_typeddata_is_kind_of(other, &k%sDataType))" % name,
+        "    return Qfalse;",
+        "",
+        "  auto* other_obj = GetSelfData<urge::%s>(other);" % name,
+        "  EXC_BEGIN {",
+        "    return *self_obj == *other_obj ? Qtrue : Qfalse;",
+        "  }",
+        "  EXC_END;",
+        "  return Qfalse;",
+        "}",
+    ]
+
+
 def emit_method(entry: dict, group: list[dict], is_static: bool) -> list[str]:
     name = entry["cpp_name"]
     head = group[0]
@@ -950,6 +979,9 @@ def emit_init_function(entry: dict) -> list[str]:
     if entry["marshal"]["dump"] and entry["marshal"]["load"]:
         lines.append('  DefineMethod(klass, "_dump", %s__dump);' % name)
         lines.append('  DefineClassMethod(klass, "_load", %s__load);' % name)
+    if entry.get("equal"):
+        for ruby_name in ("==", "eql?", "==="):
+            lines.append('  DefineMethod(klass, "%s", %s__equal);' % (ruby_name, name))
     for group in group_overloads(entry["class_methods"]):
         lines.append(
             '  DefineClassMethod(klass, "%s", %s_%s);'
@@ -1002,6 +1034,9 @@ def emit_class(model: Model, entry: dict) -> list[str]:
         lines.append("")
     if entry["marshal"]["dump"] and entry["marshal"]["load"]:
         lines.extend(emit_marshal(entry))
+        lines.append("")
+    if entry.get("equal"):
+        lines.extend(emit_equal(entry))
         lines.append("")
     for group in group_overloads(entry["instance_methods"]):
         lines.extend(emit_method(entry, group, False))

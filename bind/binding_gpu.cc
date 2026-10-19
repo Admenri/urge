@@ -36,7 +36,7 @@
 #include "binding_gpu_texture.h"
 #include "binding_gpu_texture_descriptor.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -49,7 +49,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPU  (core/gpu.h:968-1085)
+// GPU  (core/graphics/gpu.h:968-1085)
 // -------------------------------------------------------------------------
 
 RB_FUNC(GPU_queue) {

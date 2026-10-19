@@ -28,10 +28,10 @@
 
 #include "SDL3_image/SDL_image.h"
 
-#include "core/definition.h"
-#include "core/disposable.h"
-#include "core/image.h"
-#include "core/refptr.h"
+#include "core/common/definition.h"
+#include "core/common/disposable.h"
+#include "core/scene/image.h"
+#include "core/common/refptr.h"
 
 namespace urge {
 

@@ -24,9 +24,9 @@
 
 #include "bind/binding_init.h"
 #include "bind/cruby_utils.h"
-#include "core/config.h"
-#include "core/filesystem.h"
-#include "core/graphics.h"
+#include "core/system/config.h"
+#include "core/system/filesystem.h"
+#include "core/graphics/graphics.h"
 
 #include "bind/rpg_rgss1.h"
 #include "bind/rpg_rgss2.h"

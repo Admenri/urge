@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/bitmap_queue.h"
+#include "core/scene/bitmap_queue.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -29,10 +29,10 @@
 
 #include "SDL3/SDL_timer.h"
 
-#include "core/gpu.h"
-#include "core/pipeline.h"
-#include "core/render_stats.h"
-#include "core/shader.h"
+#include "core/graphics/gpu.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/render_stats.h"
+#include "core/graphics/shader.h"
 
 namespace urge {
 

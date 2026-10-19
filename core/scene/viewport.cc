@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/viewport.h"
+#include "core/scene/viewport.h"
 
 #include <algorithm>
 
-#include "core/device.h"
-#include "core/gpu_utils.h"
-#include "core/graphics.h"
-#include "core/pipeline.h"
-#include "core/sprite_batch.h"
+#include "core/graphics/device.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/graphics/graphics.h"
+#include "core/graphics/pipeline.h"
+#include "core/scene/sprite_batch.h"
 
 namespace urge {
 

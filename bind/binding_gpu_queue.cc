@@ -17,7 +17,7 @@
 #include "binding_gpu_command_buffer.h"
 #include "binding_gpu_object.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUQueue  (core/gpu.h:952-958)
+// GPUQueue  (core/graphics/gpu.h:952-958)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUQueue, GPUObject);

@@ -28,9 +28,9 @@
 
 #include "glm/glm.hpp"
 
-#include "core/bitmap.h"
-#include "core/object.h"
-#include "core/primitive.h"
+#include "core/scene/bitmap.h"
+#include "core/common/object.h"
+#include "core/graphics/primitive.h"
 
 namespace urge {
 

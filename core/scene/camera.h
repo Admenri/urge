@@ -26,10 +26,10 @@
 
 #include "glm/glm.hpp"
 
-#include "core/definition.h"
-#include "core/device.h"
-#include "core/object.h"
-#include "core/utility.h"
+#include "core/common/definition.h"
+#include "core/graphics/device.h"
+#include "core/common/object.h"
+#include "core/common/utility.h"
 
 namespace urge {
 

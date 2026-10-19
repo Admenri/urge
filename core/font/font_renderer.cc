@@ -20,14 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/font_renderer.h"
+#include "core/font/font_renderer.h"
 
 #include <algorithm>
 #include <string>
 #include <utility>
 
-#include "core/gpu_utils.h"
-#include "core/pipeline.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/graphics/pipeline.h"
 
 namespace urge {
 

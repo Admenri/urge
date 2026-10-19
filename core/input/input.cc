@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/input.h"
+#include "core/input/input.h"
 
 #include "SDL3/SDL_scancode.h"
 
-#include "core/config.h"
+#include "core/system/config.h"
 
 namespace urge {
 

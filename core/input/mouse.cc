@@ -20,14 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/mouse.h"
+#include "core/input/mouse.h"
 
 #include <cmath>
 
 #include "SDL3/SDL_hints.h"
 
-#include "core/graphics.h"
-#include "core/image.h"
+#include "core/graphics/graphics.h"
+#include "core/scene/image.h"
 
 namespace urge {
 

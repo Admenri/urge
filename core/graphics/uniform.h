@@ -31,8 +31,8 @@
 
 #include "webgpu/webgpu_cpp.hpp"
 
-#include "core/object.h"
-#include "core/pipeline.h"
+#include "core/common/object.h"
+#include "core/graphics/pipeline.h"
 
 namespace urge {
 

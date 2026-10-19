@@ -16,8 +16,8 @@
 #include "binding_vector3.h"
 #include "binding_vector4.h"
 
-#include "core/camera.h"
-#include "core/utility.h"
+#include "core/common/utility.h"
+#include "core/scene/camera.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera  (core/camera.h:37-47)
+// Camera  (core/scene/camera.h:37-47)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Camera);

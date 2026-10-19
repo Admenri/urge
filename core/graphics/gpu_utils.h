@@ -25,7 +25,7 @@
 #include <tuple>
 #include <variant>
 
-#include "core/device.h"
+#include "core/graphics/device.h"
 
 namespace urge::util {
 

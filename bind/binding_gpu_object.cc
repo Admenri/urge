@@ -13,7 +13,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_gpu_object.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUObject  (core/gpu.h:56-56)
+// GPUObject  (core/graphics/gpu.h:56-56)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(GPUObject);

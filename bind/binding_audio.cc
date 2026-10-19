@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_audio.h"
 
-#include "core/audio.h"
+#include "core/audio/audio.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Audio  (core/audio.h:40-92)
+// Audio  (core/audio/audio.h:40-92)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Audio_SetupMIDI) {

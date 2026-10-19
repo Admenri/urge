@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "core/refptr.h"
+#include "core/common/refptr.h"
 
 namespace urge {
 

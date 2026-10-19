@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/video_demuxer.h"
+#include "core/video/video_demuxer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -30,9 +30,9 @@
 #include "SDL3/SDL_iostream.h"
 #include "mkvparser/mkvparser.h"
 
-#include "core/exception.h"
-#include "core/filesystem.h"
-#include "core/logger.h"
+#include "core/common/exception.h"
+#include "core/system/filesystem.h"
+#include "core/common/logger.h"
 
 namespace urge {
 namespace {

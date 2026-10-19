@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics.h"
+#include "core/graphics/graphics.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -32,23 +32,23 @@
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_timer.h"
 
-#include "core/audio.h"
-#include "core/bitmap_queue.h"
-#include "core/common.h"
-#include "core/config.h"
-#include "core/device.h"
-#include "core/exception.h"
-#include "core/gpu.h"
-#include "core/gpu_utils.h"
-#include "core/imgui_manager.h"
-#include "core/input.h"
-#include "core/logger.h"
-#include "core/mouse.h"
-#include "core/pipeline.h"
-#include "core/primitive.h"
-#include "core/render_stats.h"
-#include "core/sprite_batch.h"
-#include "core/uniform.h"
+#include "core/audio/audio.h"
+#include "core/scene/bitmap_queue.h"
+#include "core/common/common.h"
+#include "core/system/config.h"
+#include "core/graphics/device.h"
+#include "core/common/exception.h"
+#include "core/graphics/gpu.h"
+#include "core/graphics/gpu_utils.h"
+#include "core/graphics/imgui_manager.h"
+#include "core/input/input.h"
+#include "core/common/logger.h"
+#include "core/input/mouse.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/primitive.h"
+#include "core/graphics/render_stats.h"
+#include "core/scene/sprite_batch.h"
+#include "core/graphics/uniform.h"
 
 #include <cmath>
 

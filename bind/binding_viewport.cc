@@ -14,9 +14,9 @@
 #include "binding_rect.h"
 #include "binding_tone.h"
 
-#include "core/effect.h"
-#include "core/utility.h"
-#include "core/viewport.h"
+#include "core/common/utility.h"
+#include "core/graphics/effect.h"
+#include "core/scene/viewport.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Viewport  (core/viewport.h:35-61)
+// Viewport  (core/scene/viewport.h:35-61)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Viewport, Node);

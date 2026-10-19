@@ -20,16 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/tilemap_vx.h"
+#include "core/scene/tilemap_vx.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <vector>
 
-#include "core/config.h"
-#include "core/graphics.h"
-#include "core/pipeline.h"
+#include "core/system/config.h"
+#include "core/graphics/graphics.h"
+#include "core/graphics/pipeline.h"
 
 namespace urge {
 

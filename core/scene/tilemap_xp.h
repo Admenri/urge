@@ -26,15 +26,15 @@
 #include <utility>
 #include <vector>
 
-#include "core/bitmap.h"
-#include "core/common.h"
-#include "core/definition.h"
-#include "core/node.h"
-#include "core/primitive.h"
-#include "core/table.h"
-#include "core/uniform.h"
-#include "core/utility.h"
-#include "core/viewport.h"
+#include "core/scene/bitmap.h"
+#include "core/common/common.h"
+#include "core/common/definition.h"
+#include "core/scene/node.h"
+#include "core/graphics/primitive.h"
+#include "core/scene/table.h"
+#include "core/graphics/uniform.h"
+#include "core/common/utility.h"
+#include "core/scene/viewport.h"
 
 namespace urge {
 

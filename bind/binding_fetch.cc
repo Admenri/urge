@@ -13,7 +13,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_fetch.h"
 
-#include "core/network.h"
+#include "core/network/network.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -39,7 +39,7 @@ void DefineFetchBody(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Fetch  (core/network.h:128-161)
+// Fetch  (core/network/network.h:128-161)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Fetch);

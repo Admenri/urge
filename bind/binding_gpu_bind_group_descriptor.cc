@@ -19,7 +19,7 @@
 #include "binding_gpu_sampler.h"
 #include "binding_gpu_texture_view.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -32,7 +32,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupDescriptor  (core/gpu.h:407-428)
+// GPUBindGroupDescriptor  (core/graphics/gpu.h:407-428)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupDescriptor, GPUObject);

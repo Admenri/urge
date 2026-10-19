@@ -33,7 +33,7 @@ what you work with.
 | 3D transform node tree | A single `Node` base class with parent/child hierarchy, position/rotation/scale and Z ordering |
 | Custom shaders | `Effect` attaches an arbitrary WGSL fragment shader to a node or to a subtree |
 | Embedded CRuby | Runs RPG Maker script archives (Marshal + zlib) directly, with no external Ruby installation |
-| Generated bindings | The CRuby glue is mechanically generated from the export blocks in `core/*.h`; signatures are the contract |
+| Generated bindings | The CRuby glue is mechanically generated from the export blocks in `core/**/*.h`; signatures are the contract |
 | High pixel density | Logical resolution is decoupled from physical pixels, so the window scales correctly on HiDPI displays |
 | Virtual filesystem | Scripts, assets and RTP paths are mounted through PhysicsFS |
 
@@ -145,6 +145,28 @@ Configuration keys:
 | `Audio` | `Soundfont` | `Fonts/Default.sf2` | MIDI soundfont |
 | `GFX` | `Backend` | empty (auto) | wgpu backend selection |
 
+### Fonts
+
+The Ruby `Font` class and the debug overlay (F1 / F2) share one font service,
+`core/font_context.*`, so both always draw from the same face. A name is resolved in this
+order, first hit wins:
+
+1. `Fonts/` — faces shipped with the game (read through the load paths, so an `.acs`
+   archive can carry them);
+2. system fonts — on Windows `%WINDIR%\Fonts` and
+   `%LOCALAPPDATA%\Microsoft\Windows\Fonts`;
+3. the face compiled into the executable (`core/resources/embed.ttf.bin`), always
+   available as the last resort.
+
+A face may be named by file (`msyh.ttc`, `simhei.ttf`, extension optional) or by family
+(`Microsoft YaHei`, `微软雅黑`, `SimHei`); the family index is built only on the first
+lookup that misses the file-name map, and reads nothing but each font's `name` table. On
+Windows the default face is **Microsoft YaHei** (`msyh.ttc`), falling back through
+`msyh.ttf`, `Deng.ttf`, `simhei.ttf` and `simsun.ttc` to the embedded face; other
+platforms still default to the embedded face. A file of the same name under `Fonts/`
+shadows the system one. Payloads are read on demand and kept for the lifetime of the
+context, so the script side and the overlay share one copy.
+
 ### Third-party dependencies
 
 These dependencies are provided as Git submodules and must be fetched while cloning:
@@ -222,7 +244,7 @@ convention is:
 
 To cut per-frame CPU cost, the engine batches in two places:
 
-- **Uniform pools** (`core/uniform.h`): the per-drawable data of a frame is packed into a
+- **Uniform pools** (`core/graphics/uniform.h`): the per-drawable data of a frame is packed into a
   few large buffers and addressed with a `dynamic offset`, instead of one buffer per
   drawable.
 - **Frame vertex batch** (`core/primitive.{h,cc}`): the whole frame shares a single vertex
@@ -276,12 +298,12 @@ constant that matches their target version.
 ### Binding generation
 
 Classes in `core/` marked with `/*-export.begin-*/` … `/*-export.end-*/` are exported to
-Ruby. The pipeline reads only `core/*.h`; it neither modifies the engine sources nor
+Ruby. The pipeline reads only `core/**/*.h`; it neither modifies the engine sources nor
 depends on CRuby VM internals:
 
 ```mermaid
 flowchart LR
-  H["core/*.h<br/>export blocks"] --> G["gen_api_json.py"]
+  H["core/**/*.h<br/>export blocks"] --> G["gen_api_json.py"]
   G --> IR["bind/api_reference.json"]
   IR --> B["generate_binding.py"]
   B --> C["bind/binding_*.{h,cc}"]
@@ -304,28 +326,20 @@ takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
 
 ### Core module map
 
-| File(s) | Responsibility |
+`core/` is grouped by function, and the include path mirrors the directory
+(`core/<group>/<file>`):
+
+| Directory | Contents |
 | --- | --- |
-| `graphics.{h,cc}` | Main loop, window and swapchain, present, transitions, snapshots, frame-rate control |
-| `node.{h,cc}` | Node base class and three-stage render dispatch |
-| `drawable.{h,cc}` | Intrusive list of drawables (`DrawableSet`) |
-| `sprite` / `plane` / `viewport` / `geometry` | Main node implementations |
-| `window_vx` / `window_xp` / `tilemap_vx` / `tilemap_xp` | RGSS window and element nodes |
-| `bitmap.{h,cc}` | Bitmaps, GPU textures, and drawing operations such as `Blt`, gradients and text |
-| `gpu.{h,cc}` | wgpu device/queue wrapper and validation-layer log callback |
-| `gpuwrapper.{h,cc}` | Exposes the wgpu object graph to Ruby |
-| `pipeline.{h,cc}` / `shader.{h,cc}` | Render pipelines and the shader system |
-| `primitive.{h,cc}` | Frame vertex batch (`PrimitiveEmitter` / `QuadVertexManager`) |
-| `uniform.{h,cc}` | Per-frame uniform pools (`UniformBlockPool` / `UniformManager`) |
-| `effect.{h,cc}` | Custom shader effects |
-| `font{,_context}.{h,cc}` | SDL_ttf font loading, rendering and text metrics |
-| `input.{h,cc}` / `mouse.{h,cc}` | Keyboard and mouse input |
-| `audio.{h,cc}` | BGM / BGS / SE playback |
-| `filesystem.{h,cc}` | PhysicsFS-based virtual filesystem and RTP paths |
-| `config.{h,cc}` / `inirw.{h,cc}` | `Game.ini` parsing |
-| `image` / `animation` / `table` / `utility` | RGSS data types and value types (`Color` / `Tone` / `Rect` / `Vector2/3/4`), animated image decoding |
-| `object.h` / `refptr.h` / `disposable.h` | Reference counting, singletons and lifetime infrastructure |
-| `logger.h` | Levelled logging (with source location in Debug, stripped in Release) |
+| `common/` | Infrastructure: `definition.h` (`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` macros), `object.h`, `refptr.h`, `disposable.h`, `utility.{h,cc}` (`Rect` / `Color` / `Tone` / `Vector2/3/4`), `exception.h`, `logger.h`, `inirw.h` |
+| `system/` | Host facilities: `config.{h,cc}` (`Game.ini`), `filesystem.{h,cc}` (PhysicsFS and RTP paths), `archive.{h,cc}` (`.acs` container) |
+| `graphics/` | Rendering: `graphics.{h,cc}` (main loop, window and swapchain, present, transitions, snapshots, frame-rate control), `gpu.{h,cc}`, `pipeline.{h,cc}`, `shader.{h,cc}`, `effect.{h,cc}`, `primitive.{h,cc}` (frame vertex batch), `uniform.{h,cc}` (per-frame uniform pools), `geometry.{h,cc}`, `device.{h,cc}`, `imgui_manager.{h,cc}`, `render_stats.h` |
+| `scene/` | Scenes and RGSS nodes: `node` (three-stage render dispatch), `drawable` (drawable list), `bitmap` / `bitmap_queue`, `image`, `sprite` / `sprite_batch`, `plane`, `viewport`, `window_vx` / `window_xp`, `tilemap_vx` / `tilemap_xp`, `table`, `camera`, `animation` |
+| `font/` | `font{,_context,_renderer}.{h,cc}`: face resolution (`Fonts/` → system → embedded), SDL_ttf rendering and text metrics |
+| `audio/` | `audio.{h,cc}` (BGM / BGS / SE), `audio_service.{h,cc}`, `audio_stream.{h,cc}` |
+| `input/` | `input.{h,cc}` / `mouse.{h,cc}` |
+| `network/` | `network.{h,cc}` (front end), `network_backend.h`, `network_curl.cc` / `network_web.cc` (one backend per platform) |
+| `video/` | `video{,_decoder,_demuxer,_player}.{h,cc}`: WebM/AV1 playback |
 
 ---
 

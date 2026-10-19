@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.30)
 
 # ---------------------------------------------------------------------------
-# Regenerate the binding glue from core/*.h, but only when it would change.
+# Regenerate the binding glue from core/**/*.h, but only when it would change.
 #
 #     cmake -P bind/gen_binding.cmake
 #
 # Run from the top-level CMakeLists.txt at configure time, and by hand after a
 # header change.  The pipeline is
 #
-#     core/*.h --gen_api_json.py--> api_reference.json --generate_binding.py--> binding_*.{h,cc}
+#     core/**/*.h --gen_api_json.py--> api_reference.json --generate_binding.py--> binding_*.{h,cc}
 #
 # and every step is skipped unless its inputs really differ.  That matters for
 # more than speed: `binding_*.cc` are compiled into `urge-binding`, and a file

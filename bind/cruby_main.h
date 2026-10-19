@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "core/object.h"
+#include "core/common/object.h"
 
 namespace binding {
 

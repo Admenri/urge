@@ -30,8 +30,8 @@
 #include "SDL3/SDL_video.h"
 #include "webgpu/webgpu_cpp.hpp"
 
-#include "core/input.h"
-#include "core/object.h"
+#include "core/input/input.h"
+#include "core/common/object.h"
 
 namespace urge {
 

@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_disposable.h"
 
-#include "core/disposable.h"
+#include "core/common/disposable.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Disposable  (core/disposable.h:32-36)
+// Disposable  (core/common/disposable.h:32-36)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Disposable);

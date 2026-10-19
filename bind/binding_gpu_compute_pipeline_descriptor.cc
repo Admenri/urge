@@ -17,7 +17,7 @@
 #include "binding_gpu_pipeline_layout.h"
 #include "binding_gpu_shader_module.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePipelineDescriptor  (core/gpu.h:438-464)
+// GPUComputePipelineDescriptor  (core/graphics/gpu.h:438-464)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePipelineDescriptor, GPUObject);

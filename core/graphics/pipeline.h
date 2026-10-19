@@ -29,10 +29,10 @@
 #include <string_view>
 #include <vector>
 
-#include "core/common.h"
-#include "core/device.h"
-#include "core/object.h"
-#include "core/shader.h"
+#include "core/common/common.h"
+#include "core/graphics/device.h"
+#include "core/common/object.h"
+#include "core/graphics/shader.h"
 
 namespace urge {
 

@@ -25,11 +25,11 @@
 #include <functional>
 #include <stack>
 
-#include "core/bitmap.h"
-#include "core/common.h"
-#include "core/device.h"
-#include "core/object.h"
-#include "core/primitive.h"
+#include "core/scene/bitmap.h"
+#include "core/common/common.h"
+#include "core/graphics/device.h"
+#include "core/common/object.h"
+#include "core/graphics/primitive.h"
 
 namespace urge {
 

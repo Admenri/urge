@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 
-#include "core/definition.h"
-#include "core/object.h"
+#include "core/common/definition.h"
+#include "core/common/object.h"
 
 namespace urge {
 

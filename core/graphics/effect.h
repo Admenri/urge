@@ -27,11 +27,11 @@
 #include <string>
 #include <vector>
 
-#include "core/bitmap.h"
-#include "core/definition.h"
-#include "core/object.h"
-#include "core/pipeline.h"
-#include "core/shader.h"
+#include "core/scene/bitmap.h"
+#include "core/common/definition.h"
+#include "core/common/object.h"
+#include "core/graphics/pipeline.h"
+#include "core/graphics/shader.h"
 
 namespace urge {
 

@@ -24,11 +24,11 @@
 
 #include <functional>
 
-#include "core/common.h"
+#include "core/common/common.h"
 
-#include "core/definition.h"
-#include "core/exception.h"
-#include "core/object.h"
+#include "core/common/definition.h"
+#include "core/common/exception.h"
+#include "core/common/object.h"
 
 namespace urge {
 
@@ -55,6 +55,8 @@ class Rect : public Object {
   MARSHAL_DUMP(Rect);
   URGE_BINDING()
   MARSHAL_LOAD(Rect);
+  URGE_BINDING()
+  KLASS_EQUAL(Rect);
 
   URGE_BINDING()
   void Set(int32_t xv, int32_t yv, int32_t wv, int32_t hv) {
@@ -144,6 +146,8 @@ class Color : public Object {
   MARSHAL_DUMP(Color);
   URGE_BINDING()
   MARSHAL_LOAD(Color);
+  URGE_BINDING()
+  KLASS_EQUAL(Color);
 
   URGE_BINDING()
   void Set(float r, float g, float b, float a = 255.f) {
@@ -213,6 +217,8 @@ class Tone : public Object {
   MARSHAL_DUMP(Tone);
   URGE_BINDING()
   MARSHAL_LOAD(Tone);
+  URGE_BINDING()
+  KLASS_EQUAL(Tone);
 
   URGE_BINDING()
   void Set(float r, float g, float b, float a = 0.f) {

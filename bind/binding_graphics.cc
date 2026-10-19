@@ -10,8 +10,8 @@
 
 #include "binding_bitmap.h"
 
-#include "core/bitmap.h"
-#include "core/graphics.h"
+#include "core/graphics/graphics.h"
+#include "core/scene/bitmap.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -24,7 +24,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Graphics  (core/graphics.h:76-122)
+// Graphics  (core/graphics/graphics.h:76-122)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {

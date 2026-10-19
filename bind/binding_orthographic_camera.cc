@@ -15,7 +15,7 @@
 
 #include "binding_camera.h"
 
-#include "core/camera.h"
+#include "core/scene/camera.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// OrthographicCamera  (core/camera.h:89-99)
+// OrthographicCamera  (core/scene/camera.h:89-99)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(OrthographicCamera, Camera);

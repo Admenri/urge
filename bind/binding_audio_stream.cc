@@ -13,7 +13,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_audio_stream.h"
 
-#include "core/audio_stream.h"
+#include "core/audio/audio_stream.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// AudioStream  (core/audio_stream.h:38-71)
+// AudioStream  (core/audio/audio_stream.h:38-71)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(AudioStream);

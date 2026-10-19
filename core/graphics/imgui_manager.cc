@@ -20,12 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/imgui_manager.h"
+#include "core/graphics/imgui_manager.h"
 
 #include <algorithm>
 #include <climits>
 #include <cmath>
-#include <filesystem>
 #include <iterator>
 #include <string>
 
@@ -36,13 +35,14 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_wgpu.h"
 
-#include "core/audio.h"
-#include "core/config.h"
-#include "core/device.h"
-#include "core/graphics.h"
-#include "core/input.h"
-#include "core/logger.h"
-#include "core/render_stats.h"
+#include "core/audio/audio.h"
+#include "core/system/config.h"
+#include "core/graphics/device.h"
+#include "core/font/font_context.h"
+#include "core/graphics/graphics.h"
+#include "core/input/input.h"
+#include "core/common/logger.h"
+#include "core/graphics/render_stats.h"
 
 #include <cstdio>
 #include <cfloat>
@@ -61,11 +61,7 @@ constexpr int32_t kKeySlotCount = static_cast<int32_t>(std::size(kKeySlots));
 
 constexpr const char* kDefaultOutputLabel = "System default";
 
-const char* const kFontCandidates[] = {
-    "C:/Windows/Fonts/segoeui.ttf",
-    "C:/Windows/Fonts/arial.ttf",
-    "C:/Windows/Fonts/tahoma.ttf",
-};
+constexpr float kUiFontSize = 16.0f;
 
 const char kLicenseSource[] = R"(MIT License
 
@@ -133,18 +129,23 @@ ImGuiManager::ImGuiManager(SDL_Window* window) : window_(window) {
   style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
   style.WindowBorderSize = 1.0f;
 
+  /* The overlay draws with the same face as the game instead of opening a file
+     of its own: on Windows both land on Microsoft YaHei, and a project that
+     ships its own `Fonts/` faces still gets them through the same lookup.  The
+     payload belongs to the font context, which outlives this manager, so the
+     atlas only borrows it. */
   bool font_loaded = false;
-  for (const char* path : kFontCandidates) {
-    std::error_code error;
-    if (!std::filesystem::exists(path, error))
-      continue;
-
+  const std::string& ui_font = FontContext::Get().default_font();
+  if (const FontContext::FontData* data = FontContext::Get().FindFont(ui_font)) {
     ImFontConfig config;
-    config.SizePixels = 16.0f;
-    if (io.Fonts->AddFontFromFileTTF(path, 16.0f, &config)) {
+    config.SizePixels = kUiFontSize;
+    config.FontDataOwnedByAtlas = false;
+
+    if (io.Fonts->AddFontFromMemoryTTF(data->data,
+                                       static_cast<int>(data->size),
+                                       kUiFontSize, &config)) {
       font_loaded = true;
-      LOGGER_INFO("debug UI font: {}", path);
-      break;
+      LOGGER_INFO("debug UI font: {} ({} KiB)", ui_font, data->size / 1024);
     }
   }
 

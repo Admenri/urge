@@ -16,9 +16,9 @@
 #include "binding_audio_stream.h"
 #include "binding_bitmap.h"
 
-#include "core/audio_stream.h"
-#include "core/bitmap.h"
-#include "core/video.h"
+#include "core/audio/audio_stream.h"
+#include "core/scene/bitmap.h"
+#include "core/video/video.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -59,7 +59,7 @@ void DefineVideoPlayerInfo(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Video  (core/video.h:42-75)
+// Video  (core/video/video.h:42-75)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Video);

@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_vector4.h"
 
-#include "core/utility.h"
+#include "core/common/utility.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector4  (core/utility.h:330-348)
+// Vector4  (core/common/utility.h:336-354)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector4);

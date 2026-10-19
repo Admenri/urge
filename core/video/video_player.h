@@ -31,8 +31,8 @@
 #include <thread>
 #include <vector>
 
-#include "core/video_decoder.h"
-#include "core/video_demuxer.h"
+#include "core/video/video_decoder.h"
+#include "core/video/video_demuxer.h"
 
 namespace urge {
 

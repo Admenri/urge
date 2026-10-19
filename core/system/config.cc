@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/config.h"
+#include "core/system/config.h"
 
 #include <algorithm>
 #include <string>
@@ -30,8 +30,8 @@
 #include "SDL3/SDL_platform_defines.h"
 #include "SDL3/SDL_stdinc.h"
 
-#include "core/exception.h"
-#include "core/filesystem.h"
+#include "core/common/exception.h"
+#include "core/system/filesystem.h"
 
 #if defined(SDL_PLATFORM_WIN32)
 #include <windows.h>

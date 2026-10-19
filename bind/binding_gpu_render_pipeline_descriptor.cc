@@ -17,7 +17,7 @@
 #include "binding_gpu_pipeline_layout.h"
 #include "binding_gpu_shader_module.h"
 
-#include "core/gpu.h"
+#include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPipelineDescriptor  (core/gpu.h:475-539)
+// GPURenderPipelineDescriptor  (core/graphics/gpu.h:475-539)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPipelineDescriptor, GPUObject);

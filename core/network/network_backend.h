@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include "core/network.h"
+#include "core/network/network.h"
 
 namespace urge {
 

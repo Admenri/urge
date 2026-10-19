@@ -30,7 +30,7 @@ API——既有工程原则上无需改动脚本即可运行。
 | 3D 变换节点树 | 统一的 `Node` 基类，支持父子层级、位置/旋转/缩放与 Z 排序 |
 | 自定义着色器效果 | `Effect` 可将任意 WGSL 片元着色器挂载到节点或其子树上 |
 | 内嵌 CRuby | 直接执行 RPG Maker 的脚本归档（Marshal + zlib），无需外部 Ruby 环境 |
-| 自动绑定生成 | 由 `core/*.h` 的导出块机械生成 CRuby 胶水，签名即契约 |
+| 自动绑定生成 | 由 `core/**/*.h` 的导出块机械生成 CRuby 胶水，签名即契约 |
 | 高像素密度适配 | 逻辑分辨率与物理像素解耦，高分屏下按系统缩放显示 |
 | 虚拟文件系统 | 通过 PhysicsFS 统一装载脚本、资源与 RTP 路径 |
 
@@ -140,6 +140,21 @@ Backend =
 | `Audio` | `Soundfont` | `Fonts/Default.sf2` | MIDI 音色库 |
 | `GFX` | `Backend` | 空（自动） | wgpu 后端选择 |
 
+### 字体
+
+Ruby 的 `Font` 与调试浮层（F1 / F2）共用同一个字体服务 `core/font_context.*`，两者永远画同一
+个字形来源。字体名按以下顺序解析，先命中者胜：
+
+1. `Fonts/` —— 游戏自带的字库（经加载路径读取，因此也能来自 `.acs` 归档）；
+2. 系统字库 —— Windows 上为 `%WINDIR%\Fonts` 与 `%LOCALAPPDATA%\Microsoft\Windows\Fonts`；
+3. 编译进可执行文件的内嵌字体（`core/resources/embed.ttf.bin`），始终可作为兜底。
+
+字体既可写文件名（`msyh.ttc`、`simhei.ttf`，可省略扩展名），也可写族名（`Microsoft YaHei`、
+`微软雅黑`、`SimHei`）——族名索引在首次按文件名查不到时才建立，只读各字体的 `name` 表。
+Windows 上默认字体为**微软雅黑**（`msyh.ttc`），缺失时依次退到 `msyh.ttf`、`Deng.ttf`、
+`simhei.ttf`、`simsun.ttc`，最后用内嵌字体；其他平台默认仍是内嵌字体。`Fonts/` 中的同名文件
+优先于系统字库。字体字节按需读入并常驻，Ruby 侧与浮层共享同一份。
+
 ### 第三方依赖
 
 以下依赖以 Git 子模块形式提供，需在克隆时一并拉取：
@@ -209,7 +224,7 @@ graph TD
 
 为降低每帧的 CPU 开销，引擎采用两项批次化设计：
 
-- **uniform 池**（`core/uniform.h`）：把一帧中同类逐绘制数据集中写入少数大缓冲区，以
+- **uniform 池**（`core/graphics/uniform.h`）：把一帧中同类逐绘制数据集中写入少数大缓冲区，以
   `dynamic offset` 寻址，取代"每个绘制对象一个缓冲区"。
 - **帧顶点批**（`core/primitive.{h,cc}`）：整个帧共享一个顶点缓冲区，每个绘制对象以
   `firstVertex` 定位自己的顶点区间，把每帧数百次 `WriteBuffer` 压缩为一次。
@@ -258,11 +273,11 @@ graph TD
 ### 绑定生成
 
 `core/` 中带 `/*-export.begin-*/` … `/*-export.end-*/` 标记的类会被导出到 Ruby。整条链路
-只读取 `core/*.h`，不修改任何引擎源码，也不依赖 CRuby VM 的私有结构：
+只读取 `core/**/*.h`，不修改任何引擎源码，也不依赖 CRuby VM 的私有结构：
 
 ```mermaid
 flowchart LR
-  H["core/*.h<br/>导出块"] --> G["gen_api_json.py"]
+  H["core/**/*.h<br/>导出块"] --> G["gen_api_json.py"]
   G --> IR["bind/api_reference.json"]
   IR --> B["generate_binding.py"]
   B --> C["bind/binding_*.{h,cc}"]
@@ -283,28 +298,19 @@ flowchart LR
 
 ### 核心模块地图
 
-| 文件 | 职责 |
+`core/` 按功能分组，include 路径就是目录路径（`core/<组>/<文件>`）：
+
+| 目录 | 内容 |
 | --- | --- |
-| `graphics.{h,cc}` | 主循环、窗口与交换链、present、转场、快照、帧率控制 |
-| `node.{h,cc}` | 节点基类与三阶段渲染派发 |
-| `drawable.{h,cc}` | 可绘制对象的侵入式链表（`DrawableSet`） |
-| `sprite` / `plane` / `viewport` / `geometry` | 主要节点实现 |
-| `window_vx` / `window_xp` / `tilemap_vx` / `tilemap_xp` | RGSS 窗口与元件节点 |
-| `bitmap.{h,cc}` | 位图、GPU 纹理以及 `Blt` / 渐变 / 文字等绘制操作 |
-| `gpu.{h,cc}` | wgpu 设备与队列封装、校验层日志回调 |
-| `gpuwrapper.{h,cc}` | 把 wgpu 对象图导出到 Ruby |
-| `pipeline.{h,cc}` / `shader.{h,cc}` | 渲染管线与着色器系统 |
-| `primitive.{h,cc}` | 帧顶点批（`PrimitiveEmitter` / `QuadVertexManager`） |
-| `uniform.{h,cc}` | 逐帧 uniform 池（`UniformBlockPool` / `UniformManager`） |
-| `effect.{h,cc}` | 自定义着色器效果 |
-| `font{,_context}.{h,cc}` | SDL_ttf 字体加载、渲染与文本度量 |
-| `input.{h,cc}` / `mouse.{h,cc}` | 键盘与鼠标输入 |
-| `audio.{h,cc}` | BGM / BGS / SE 等音频播放 |
-| `filesystem.{h,cc}` | 基于 PhysicsFS 的虚拟文件系统与 RTP 路径 |
-| `config.{h,cc}` / `inirw.{h,cc}` | `Game.ini` 解析 |
-| `image` / `animation` / `table` / `utility` | RGSS 数据类型与值类型（`Color` / `Tone` / `Rect` / `Vector2/3/4`），动图解码 |
-| `object.h` / `refptr.h` / `disposable.h` | 引用计数、单例与生命周期基础设施 |
-| `logger.h` | 分级日志（Debug 含位置，Release 自动裁剪） |
+| `common/` | 基础设施：`definition.h`（`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` 宏）、`object.h`、`refptr.h`、`disposable.h`、`utility.{h,cc}`（`Rect` / `Color` / `Tone` / `Vector2/3/4`）、`exception.h`、`logger.h`、`inirw.h` |
+| `system/` | 宿主设施：`config.{h,cc}`（`Game.ini`）、`filesystem.{h,cc}`（PhysicsFS 与 RTP 路径）、`archive.{h,cc}`（`.acs` 容器） |
+| `graphics/` | 渲染：`graphics.{h,cc}`（主循环、窗口与交换链、present、转场、快照、帧率控制）、`gpu.{h,cc}`、`pipeline.{h,cc}`、`shader.{h,cc}`、`effect.{h,cc}`、`primitive.{h,cc}`（帧顶点批）、`uniform.{h,cc}`（逐帧 uniform 池）、`geometry.{h,cc}`、`device.{h,cc}`、`imgui_manager.{h,cc}`、`render_stats.h` |
+| `scene/` | 场景与 RGSS 节点：`node`（三阶段渲染派发）、`drawable`（可绘制链表）、`bitmap` / `bitmap_queue`、`image`、`sprite` / `sprite_batch`、`plane`、`viewport`、`window_vx` / `window_xp`、`tilemap_vx` / `tilemap_xp`、`table`、`camera`、`animation` |
+| `font/` | `font{,_context,_renderer}.{h,cc}`：字体解析（`Fonts/` → 系统字库 → 内嵌）、SDL_ttf 渲染与文本度量 |
+| `audio/` | `audio.{h,cc}`（BGM / BGS / SE）、`audio_service.{h,cc}`、`audio_stream.{h,cc}` |
+| `input/` | `input.{h,cc}` / `mouse.{h,cc}` |
+| `network/` | `network.{h,cc}`（前端）、`network_backend.h`、`network_curl.cc` / `network_web.cc`（按平台二选一） |
+| `video/` | `video{,_decoder,_demuxer,_player}.{h,cc}`：WebM/AV1 播放 |
 
 ---
 

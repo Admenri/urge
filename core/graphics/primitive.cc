@@ -20,14 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/primitive.h"
+#include "core/graphics/primitive.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 
-#include "core/logger.h"
+#include "core/common/logger.h"
 
 namespace urge {
 

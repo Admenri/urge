@@ -8,7 +8,7 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_tone.h"
 
-#include "core/utility.h"
+#include "core/common/utility.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Tone  (core/utility.h:203-252)
+// Tone  (core/common/utility.h:207-258)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Tone);
@@ -91,6 +91,23 @@ RB_FUNC(Tone__load) {
   return Qnil;
 }
 
+// Value equality: ==, eql?, === (KLASS_EQUAL)
+RB_FUNC(Tone__equal) {
+  auto* self_obj = GetSelfData<urge::Tone>(self);
+  VALUE other = Qnil;
+  ParseArgs(argc, argv, "o", &other);
+
+  if (!rb_typeddata_is_kind_of(other, &kToneDataType))
+    return Qfalse;
+
+  auto* other_obj = GetSelfData<urge::Tone>(other);
+  EXC_BEGIN {
+    return *self_obj == *other_obj ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qfalse;
+}
+
 RB_FUNC(Tone_Set) {
   auto* self_obj = GetSelfData<urge::Tone>(self);
 
@@ -143,6 +160,9 @@ void InitToneBinding() {
   DefineMethod(klass, "set", Tone_Set);
   DefineMethod(klass, "_dump", Tone__dump);
   DefineClassMethod(klass, "_load", Tone__load);
+  DefineMethod(klass, "==", Tone__equal);
+  DefineMethod(klass, "eql?", Tone__equal);
+  DefineMethod(klass, "===", Tone__equal);
   DefineMethod(klass, "red", Tone_Red);
   DefineMethod(klass, "red=", Tone_RedEqual);
   DefineMethod(klass, "green", Tone_Green);

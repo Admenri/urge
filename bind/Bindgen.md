@@ -1,10 +1,10 @@
 # URGE CRuby C++ Binding Generator
 
-本目录保存由 `core/` 头文件导出的 CRuby 胶水代码。整条链路只读取 `core/*.h`，
+本目录保存由 `core/` 头文件导出的 CRuby 胶水代码。整条链路只读取 `core/**/*.h`，
 不依赖 CRuby VM 私有结构，也不修改任何引擎源码。
 
 ```
-core/*.h ──gen_api_json.py──▶ bind/api_reference.json ──generate_binding.py──▶ bind/binding_*.{h,cc}
+core/**/*.h ──gen_api_json.py──▶ bind/api_reference.json ──generate_binding.py──▶ bind/binding_*.{h,cc}
                                                                     └────────▶ bind/binding_init.{h,cc}
 bind/api_reference.json ──▶ bind/viewer/   只读查看器（UI + 命令行查询）
 bind/cruby_utils.{h,cc}   ← 手写运行时层（不生成）
@@ -19,7 +19,7 @@ CRuby 解释器来自 `third_party/cruby`（1.9.3），CMake 目标为 `ruby-sta
 （见下节）。手动跑只在调试生成器时需要：
 
 ```bash
-python bind/gen_api_json.py          # core/*.h  → bind/api_reference.json
+python bind/gen_api_json.py          # core/**/*.h  → bind/api_reference.json
 python bind/generate_binding.py      # IR       → bind/binding_*.{h,cc}
 ```
 
@@ -41,7 +41,7 @@ python bind/generate_binding.py      # IR       → bind/binding_*.{h,cc}
 于是每次 configure 都会评估一次，但**只在产出真的会变时才写出文件**：
 
 ```
-core/*.h ──gen_api_json.py──▶ api_reference.json ──generate_binding.py──▶ binding_*.{h,cc}
+core/**/*.h ──gen_api_json.py──▶ api_reference.json ──generate_binding.py──▶ binding_*.{h,cc}
 ```
 
 两级缓存，各自一个 stamp 文件：
@@ -95,7 +95,7 @@ core/*.h ──gen_api_json.py──▶ api_reference.json ──generate_bindin
 
 这条规则不是可选的整洁性要求，而是构建正确性的前提。`bind/CMakeLists.txt` 是
 `file(GLOB ... "*.cc")`，所以遗留文件**仍会被编译**——而它是对着已经不存在的 API
-生成的，于是构建在一个人根本没编辑过的文件上失败。实测过：`core/gpu.h` 里的
+生成的，于是构建在一个人根本没编辑过的文件上失败。实测过：`core/graphics/gpu.h` 里的
 `Gpu*` 系列被删到只剩一个未导出的 `GPUDevice` 之后，`bind/` 里留下 **62 个**
 `binding_gpu_*` 文件，全部无法编译。
 
@@ -205,9 +205,9 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 
 ## 输入与导出范围
 
-- 只扫描 `core/*.h`；`meta.source_headers` 记录全部被扫描文件。
+- 只扫描 `core/**/*.h`；`meta.source_headers` 记录全部被扫描文件。
 - 类声明前带 `URGE_BINDING()` 标记的类进入 IR；类体内同样带标记的成员（构造函数、
-  方法、`ATTR(...)`、`MARSHAL_*`）才导出，其它声明忽略（`Drawable`、`IniFile`、
+  方法、`ATTR(...)`、`MARSHAL_*`、`KLASS_EQUAL`）才导出，其它声明忽略（`Drawable`、`IniFile`、
   `Config` 等不导出）。
 - 构造函数与其它成员同一规则：**只有带 `URGE_BINDING()` 标记的才导出**。参数含内部
   C++ 类型（`ZValue`、`glm::vec*`、`SDL_Surface*`、`DrawParam`）的标记声明不导出，
@@ -310,20 +310,20 @@ return SetupSelfData(self, object.get());
 ### Win32 宏污染（`cruby_utils.h` 顶部的 `#undef`，勿删）
 
 `<windows.h>` 会沿着 `ruby.h` → `third_party/cruby/thread_win32.h` 进入**每一个**胶水
-TU，而它把若干短名字定义成宏。函数式宏会静默改写引擎自己的声明，因为 `core/*.h` 是在
+TU，而它把若干短名字定义成宏。函数式宏会静默改写引擎自己的声明，因为 `core/**/*.h` 是在
 `cruby_utils.h` **之后**被解析的：
 
 | 来源 | 宏 | 后果 |
 | --- | --- | --- |
-| `WinUser.h` | `DrawText` → `DrawTextA` | `core/bitmap.h` 的 `void Bitmap::DrawText(...)` 变成 `Bitmap::DrawTextA`，引擎从未定义该成员 → 每个 TU 都链到 `urge::Bitmap::DrawTextA`，`LNK2019` |
-| `wingdi.h` | `ERROR` → `0` | 目前 `core/` 里唯一的 `ERROR` 在字符串字面量中（`core/logger.h` 的 `"[URGE] [ERROR] "`），宏碰不到；但将来任何拼作 `ERROR` 的枚举量会被无声改写 |
+| `WinUser.h` | `DrawText` → `DrawTextA` | `core/scene/bitmap.h` 的 `void Bitmap::DrawText(...)` 变成 `Bitmap::DrawTextA`，引擎从未定义该成员 → 每个 TU 都链到 `urge::Bitmap::DrawTextA`，`LNK2019` |
+| `wingdi.h` | `ERROR` → `0` | 目前 `core/` 里唯一的 `ERROR` 在字符串字面量中（`core/common/logger.h` 的 `"[URGE] [ERROR] "`），宏碰不到；但将来任何拼作 `ERROR` 的枚举量会被无声改写 |
 
 因此 `cruby_utils.h` 在**全部 ruby 头之后、第一个 `core/` 头之前** `#undef` 掉这两个宏。
-实测方式：编译一个同时包含 `cruby_utils.h` 与 `core/bitmap.h` 的探针，用 `#ifdef` + `#pragma
+实测方式：编译一个同时包含 `cruby_utils.h` 与 `core/scene/bitmap.h` 的探针，用 `#ifdef` + `#pragma
 message` 打印 —— `DrawText` 确实是宏、`ERROR` 确实是宏，而 `min`/`max` 不是（`minwindef.h`
 的那一对在本构建里已被中和）。
 
-新增导出方法前，若方法名与 Win32 宏撞名，先机械核对一遍：把 `core/*.h` 的全部标识符与
+新增导出方法前，若方法名与 Win32 宏撞名，先机械核对一遍：把 `core/**/*.h` 的全部标识符与
 SDK `um/`、`shared/` 下的 `#define` 取交集。已知可达的冲突只有上表两条。
 
 固定数量参数用 `CheckArgc(argc, N)`：引擎侧方法都以 `-1` 注册（`DefineMethod` 固定传
@@ -534,6 +534,39 @@ RB_FUNC(Class__load) {
 `_dump` 用 `DefineMethod(klass, "_dump", ...)`、`_load` 用
 `DefineClassMethod(klass, "_load", ...)` 注册。
 
+### 值相等（`KLASS_EQUAL`）
+
+`KLASS_EQUAL(ty)`（`core/common/definition.h`）是一个**标记**，不是普通方法声明：它背后只有
+一个 C++ `operator==`，却要对应三个 Ruby 名。声明里没有生成器能直接调用的 C++ 函数名
+（`operator==` 既不能拼成 `RB_FUNC` 符号，`camel_to_snake` 也只会得到垃圾），所以
+`gen_api_json.py` 单独识别它，IR 里只留 `"equal": true`，由
+`generate_binding.py` 的 `emit_equal()` 生成一个函数、注册三个名字：
+
+```cpp
+RB_FUNC(Class__equal) {
+  auto* self_obj = GetSelfData<urge::Class>(self);
+  VALUE other = Qnil;
+  ParseArgs(argc, argv, "o", &other);
+
+  if (!rb_typeddata_is_kind_of(other, &kClassDataType))
+    return Qfalse;
+
+  auto* other_obj = GetSelfData<urge::Class>(other);
+  EXC_BEGIN {
+    return *self_obj == *other_obj ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qfalse;
+}
+```
+
+- 注册为 `==`、`eql?`、`===` 三个名字（同一个函数），语义都是**值相等**；
+- 类型不符返回 `false` 而不是抛 `TypeError` —— `==` 的约定是"回答"，不是"报错"；
+- C++ 侧只声明 `operator==` / `operator!=`，比较体写在类自己的 `.cc` 里
+  （`KLASS_EQUAL_DEF(ty) { ... }`），因为只有类知道它的载荷怎么比：
+  `Rect` 比 `RectI`，`Color` / `Tone` 逐分量比 `glm::vec4`；
+- 没有这个标记的类保留 Ruby 默认的同一性比较。
+
 ### 模块属性
 
 模块属性（`Graphics.frame_rate` / `frame_count` / `brightness`）走单例：
@@ -625,7 +658,7 @@ class Sprite : public Node {
 };
 ```
 
-- 宏本身在 `core/definition.h` 里展开为空，只在扫描期有意义。
+- 宏本身在 `core/common/definition.h` 里展开为空，只在扫描期有意义。
 - `URGE_BINDING()` 是**导出标记**：它把紧跟其后的那一条声明（或类）导出到 Ruby。
   没有标记的声明留在引擎内部。类与成员各标各的，类没有标记则整类不进入 IR。
 - 空注解体与带 `Name : "..."` 的注解体都是导出标记；后者额外把 C++ 名映射成
@@ -721,7 +754,7 @@ void InitTilemapVXBindingAppend(VALUE klass) {
 `Set(value, x, y, z)`，参数需要重排；越界读返回 `nil`、越界写忽略。`Table::Get` 返回
 `int16_t`，用 `INT2NUM`。
 
-`Input` 的键常量表在 `core/input.h` 的 `urge::kKeyboardBindings` 里，不从类体标记声明，
+`Input` 的键常量表在 `core/input/input.h` 的 `urge::kKeyboardBindings` 里，不从类体标记声明，
 因此用 `DefineInputKeyConstants(mod)` 遍历注册。
 
 ## 命名映射规则
@@ -744,6 +777,7 @@ void InitTilemapVXBindingAppend(VALUE klass) {
 
 - 构造函数 → `initialize`、拷贝构造 → `initialize_copy`；
 - `MARSHAL_DUMP`/`MARSHAL_LOAD` → `_dump`/`_load`；
+- `KLASS_EQUAL` → `==` / `eql?` / `===`（一个函数注册三个名字）；
 - `ATTR(type, name)` → `name` 与 `name=`（写入侧 `name=`）。
 
 ### 现行名字一览
@@ -835,7 +869,7 @@ class / module 条目字段：
 
 改动任一导出声明时须同步：
 
-1. 在 `core/*.h` 的类与声明前加 `URGE_BINDING()` 标记（改名再加 `Name : "..."`）；
+1. 在 `core/**/*.h` 的类与声明前加 `URGE_BINDING()` 标记（改名再加 `Name : "..."`）；
 2. **新增导出类时**：把类名加进 `gen_api_json.py` 的 `CLASS_ORDER`（排在它基类之后）。
    不登记也能导出，但会被排到列表末尾，可能落在基类**之前**，而注册顺序要求派生类在后。
    漏登记现在会被 `check_base_order` 直接拦下（见「运行时验证」上方的 `CLASS_ORDER`
@@ -874,7 +908,7 @@ class / module 条目字段：
 - **模块**（`MODULE_CLASSES`）：靠 `Ty::Get()` 取单例，不产生 Ruby 对象。
 - **类**：走 `RB_DEF_TYPE` / `SetupSelfData`，模板里要求 `Release()` 与 `AddRef()`。
 
-`Singleton<T>`（`core/object.h`）两者都没有，所以它必须列进 `MODULE_CLASSES`。
+`Singleton<T>`（`core/common/object.h`）两者都没有，所以它必须列进 `MODULE_CLASSES`。
 漏掉的症状是 `urge-binding` 报 `C2039: "Release": 不是 "urge::X" 的成员`，指在
 `cruby_utils.h` 的 `ReleaseDataType` / `SetupSelfData` 上，与出错的那个类看起来
 没有关系。现有模块：`Graphics`、`Input`、`Audio`、`Mouse`、`Network`、`Config`。

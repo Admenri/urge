@@ -28,8 +28,8 @@
 
 #include "SDL3/SDL_events.h"
 
-#include "core/definition.h"
-#include "core/object.h"
+#include "core/common/definition.h"
+#include "core/common/object.h"
 
 namespace urge {
 

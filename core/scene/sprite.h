@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "core/definition.h"
-#include "core/effect.h"
-#include "core/node.h"
-#include "core/sprite_batch.h"
-#include "core/uniform.h"
-#include "core/viewport.h"
+#include "core/common/definition.h"
+#include "core/graphics/effect.h"
+#include "core/scene/node.h"
+#include "core/scene/sprite_batch.h"
+#include "core/graphics/uniform.h"
+#include "core/scene/viewport.h"
 
 namespace urge {
 

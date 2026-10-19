@@ -16,11 +16,11 @@
 #include "binding_tone.h"
 #include "binding_viewport.h"
 
-#include "core/bitmap.h"
-#include "core/effect.h"
-#include "core/sprite.h"
-#include "core/utility.h"
-#include "core/viewport.h"
+#include "core/common/utility.h"
+#include "core/graphics/effect.h"
+#include "core/scene/bitmap.h"
+#include "core/scene/sprite.h"
+#include "core/scene/viewport.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -33,7 +33,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Sprite  (core/sprite.h:35-94)
+// Sprite  (core/scene/sprite.h:35-94)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Sprite, Node);

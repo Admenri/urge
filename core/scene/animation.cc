@@ -20,14 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/animation.h"
+#include "core/scene/animation.h"
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
-#include "core/exception.h"
-#include "core/filesystem.h"
+#include "core/common/exception.h"
+#include "core/system/filesystem.h"
 
 namespace urge {
 
