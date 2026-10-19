@@ -7,9 +7,6 @@
 [submodule "third_party/SDL_image"]
 	path = third_party/SDL_image
 	url = https://github.com/libsdl-org/SDL_image.git
-[submodule "third_party/glslang"]
-	path = third_party/glslang
-	url = https://github.com/KhronosGroup/glslang.git
 [submodule "third_party/wgpu-cmake/wgpu-native"]
 	path = third_party/wgpu-cmake/wgpu-native
 	url = https://github.com/Admenri/wgpu-native.git
@@ -19,9 +16,6 @@
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib.git
-[submodule "third_party/SPIRV-Tools"]
-	path = third_party/SPIRV-Tools
-	url = https://github.com/KhronosGroup/SPIRV-Tools.git
 [submodule "third_party/SDL_ttf"]
 	path = third_party/SDL_ttf
 	url = https://github.com/libsdl-org/SDL_ttf
@@ -29,17 +23,14 @@
 	path = third_party/curl
 	url = https://github.com/curl/curl.git
 [submodule "third_party/ogg"]
-	path = third_party/ogg
+	path = third_party/miniaudio/external/ogg
 	url = https://github.com/xiph/ogg.git
 [submodule "third_party/vorbis"]
-	path = third_party/vorbis
+	path = third_party/miniaudio/external/vorbis
 	url = https://github.com/xiph/vorbis.git
 [submodule "third_party/opus"]
-	path = third_party/opus
+	path = third_party/miniaudio/external/opus
 	url = https://github.com/xiph/opus.git
 [submodule "third_party/opusfile"]
-	path = third_party/opusfile
+	path = third_party/miniaudio/external/opusfile
 	url = https://github.com/xiph/opusfile.git
-[submodule "third_party/libwebp"]
-	path = third_party/libwebp
-	url = https://github.com/webmproject/libwebp.git
