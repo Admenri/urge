@@ -58,7 +58,14 @@ else()
 endif()
 
 target_link_libraries(urge-core PUBLIC glm SDL3::SDL3-static SDL3_ttf::SDL3_ttf SDL3_image::SDL3_image-static physfs-static)
-target_link_libraries(urge-core PUBLIC webgpu-cpp-header glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-reflect)
+
+# The shader sources are WGSL, which both wgpu backends parse themselves, so
+# there is no GLSL front end (glslang) and no SPIR-V reflector in the build any
+# more.  Nothing reads the shaders either: each one carries the bind group
+# entries it declares (core/shader.h, `util::CreateBindLayout`) and the vertex
+# layout is the shared `QuadVertexLayout()`.  A shader written at run time --
+# `Effect` -- gets a null pipeline layout and the device derives one.
+target_link_libraries(urge-core PUBLIC webgpu-cpp-header)
 
 target_link_libraries(urge-core PUBLIC webgpu_wgpu)
 target_compile_definitions(urge-core PUBLIC WEBGPU_BACKEND_WGPU=1)

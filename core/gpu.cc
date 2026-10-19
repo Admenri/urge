@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "core/exception.h"
-#include "core/shader.h"
 
 namespace urge {
 
@@ -416,27 +415,18 @@ RefPtr<GPUShaderModule> GPU::CreateShaderModule(
     RefPtr<GPUShaderModuleDescriptor> descriptor) {
   if (!descriptor)
     throw Exception(Exception::kGPUError, "nil shader module descriptor");
-  wgpu::ShaderModule module;
-  if (descriptor->language == ShaderLanguageGlsl) {
-    wgpu::ShaderStage stage = descriptor->stage == ShaderStageFragment
-                                  ? wgpu::ShaderStage::Fragment
-                                  : wgpu::ShaderStage::Vertex;
-    Shader shader = Shader::Compile(stage, descriptor->code);
-    wgpu::ShaderSourceSPIRV spirv;
-    spirv.code = shader.spirv().data();
-    spirv.codeSize = shader.spirv().size();
-    wgpu::ShaderModuleDescriptor desc;
-    desc.label = View(descriptor->label);
-    desc.nextInChain = &spirv;
-    module = GPUDevice::Get().device().CreateShaderModule(&desc);
-  } else {
-    wgpu::ShaderSourceWGSL source;
-    source.code = View(descriptor->code);
-    wgpu::ShaderModuleDescriptor desc;
-    desc.label = View(descriptor->label);
-    desc.nextInChain = &source;
-    module = GPUDevice::Get().device().CreateShaderModule(&desc);
-  }
+  // The source is WGSL, and it is the only thing that goes into the module:
+  // there is no language to select and no stage to declare, because both wgpu
+  // backends read the `@vertex` / `@fragment` attributes out of the text.
+  if (descriptor->code.empty())
+    throw Exception(Exception::kGPUError,
+                    "shader module descriptor has no WGSL source");
+  wgpu::ShaderSourceWGSL source;
+  source.code = View(descriptor->code);
+  wgpu::ShaderModuleDescriptor desc;
+  desc.label = View(descriptor->label);
+  desc.nextInChain = &source;
+  wgpu::ShaderModule module = GPUDevice::Get().device().CreateShaderModule(&desc);
   if (!module)
     throw Exception(Exception::kGPUError, "failed to create shader module");
   return MakeRefCounted<GPUShaderModule>(module);

@@ -14,14 +14,6 @@ set(SDLTTF_SAMPLES OFF)
 set(SDLTTF_INSTALL OFF)
 set(SDLTTF_WERROR OFF)
 
-set(ENABLE_GLSLANG_BINARIES OFF)
-set(ENABLE_GLSLANG_JS OFF)
-set(GLSLANG_TESTS OFF)
-set(GLSLANG_ENABLE_INSTALL OFF)
-set(ENABLE_HLSL OFF)
-set(ENABLE_OPT OFF)
-set(ENABLE_SPIRV ON)
-
 # miniaudio renders into a buffer the engine hands to SDL, so it must not open
 # a sound card of its own: SDL owns the device and the format negotiation.
 set(MINIAUDIO_NO_DEVICEIO ON)
@@ -29,10 +21,16 @@ set(MINIAUDIO_DEBUG_OUTPUT OFF)
 
 # ---------------------------------------------------------------------------
 # The Xiph codecs: libogg, libvorbis, libopus and libopusfile.  They are
-# submodules under third_party/, pinned to a release tag, and they are what
-# decodes Ogg Vorbis and Ogg Opus for miniaudio now (see
+# submodules under third_party/miniaudio/external/, pinned to a release tag,
+# and they are what decodes Ogg Vorbis and Ogg Opus for miniaudio now (see
 # third_party/miniaudio) -- replacing the stb_vorbis copy the tree used to
 # carry.
+#
+# They sit inside miniaudio's own `external/` directory because that library is
+# their only consumer: the two decoder backends under miniaudio/decoders are the
+# one place in the tree that opens them.  Keeping them next to the consumer is
+# what makes it obvious that dropping Ogg support means dropping four
+# submodules and nothing else.
 #
 # Their upstream CMake projects are used as they ship, so the submodules stay
 # pristine.  Everything a bundled copy has no business doing is turned off:
@@ -67,11 +65,14 @@ set(INSTALL_CMAKE_PACKAGE_MODULE OFF)
 # libwebp backs SDL_image's WEBP backend.  Only the libraries are wanted, not
 # the cwebp/dwebp/vwebp tools or the helpers they link.
 #
-# SDL_image takes WEBP either from a vendored copy of its own or from a library
-# the surrounding build already compiles.  This tree does the latter, statically
-# -- the engine is one executable -- so SDLIMAGE_WEBP_SHARED is off and the
-# lookup goes through find_package(webp), which third_party/cmake/Findwebp.cmake
-# answers with the in-tree target.
+# It sits at SDL_image/external/libwebp -- the slot SDL_image itself reserves
+# for a vendored WEBP -- but the tree still does not turn SDLIMAGE_VENDORED on,
+# because that would pull in the rest of SDL_image's external/ tree (jpeg, png,
+# tiff, jxl, avif) as well.  SDL_image therefore takes WEBP from a library the
+# surrounding build already compiles: statically, since the engine is one
+# executable, so SDLIMAGE_WEBP_SHARED is off and the lookup goes through
+# find_package(webp), which third_party/cmake/Findwebp.cmake answers with the
+# in-tree target.
 # ---------------------------------------------------------------------------
 set(WEBP_BUILD_ANIM_UTILS OFF)
 set(WEBP_BUILD_CWEBP OFF)
@@ -90,14 +91,6 @@ set(SDLIMAGE_WEBP_SHARED OFF)
 # tree builds rather than to installed copies of the libraries, and the build
 # file for libopusfile, which ships none of its own.
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# The Tint SPIR-V reader builds its IR with SPIRV-Tools, which glslang carries
-# in its External directory. Only the static library is wanted here.
-set(SPIRV_SKIP_TESTS ON)
-set(SPIRV_SKIP_EXECUTABLES ON)
-set(SPIRV_WERROR OFF)
-set(SPIRV_TOOLS_BUILD_STATIC ON)
-set(SKIP_SPIRV_TOOLS_INSTALL ON)
 
 # libcurl carries the HTTP and WebSocket client.  Only the static library is
 # wanted, so the tool, the examples and the test suite are all off, and the
@@ -145,18 +138,23 @@ endif()
 add_subdirectory(glm)
 add_subdirectory(SDL)
 
-# libwebp is what SDL_image's WEBP backend links against, so it has to be up
-# before it.
-add_subdirectory(libwebp)
+# libwebp lives inside SDL_image's own `external/` directory -- the slot
+# upstream keeps for a vendored WEBP backend -- because the image library is
+# its only consumer in this tree.  It still has to come up first: SDL_image's
+# WEBP backend links the targets it defines.
+add_subdirectory(SDL_image/external/libwebp)
 
 add_subdirectory(SDL_image)
 add_subdirectory(SDL_ttf)
 add_subdirectory(physfs)
 
-# The Xiph codecs.  libogg comes first: libvorbis and libopusfile both link it.
-add_subdirectory(ogg)
-add_subdirectory(vorbis)
-add_subdirectory(opus)
+# The Xiph codecs live inside miniaudio's `external/` directory: the audio
+# engine's two decoder backends (decoders/libvorbis, decoders/libopus) are the
+# only consumers, so they travel with it instead of sitting at the top of
+# third_party/.  libogg comes first: libvorbis and libopusfile both link it.
+add_subdirectory(miniaudio/external/ogg)
+add_subdirectory(miniaudio/external/vorbis)
+add_subdirectory(miniaudio/external/opus)
 
 # libopusfile is the odd one out: upstream ships autotools only, so the build
 # file is ours and lives in third_party/cmake/ rather than inside the submodule.
@@ -166,8 +164,12 @@ add_subdirectory(miniaudio)
 add_subdirectory(webgpu-cpp)
 add_subdirectory(imgui)
 add_subdirectory(wgpu-cmake)
-add_subdirectory(glslang)
-add_subdirectory(spirv-reflect)
+
+# glslang and spirv-reflect used to sit here.  The renderer now speaks WGSL --
+# the shading language both wgpu backends consume natively -- so no GLSL is
+# compiled at run time any more and there is no SPIR-V to reflect over.  The
+# reflection the pipelines need is read out of the WGSL source by
+# core/wgsl_reflect.cc.
 
 # The interpreter is either compiled here or taken from bind/external, and the
 # top-level CMakeLists.txt has already made that choice: it leaves
@@ -191,6 +193,17 @@ if(WIN32)
 endif()
 
 if(URGE_ENABLE_VIDEO)
+  # dav1d compiles its thirteen `*_tmpl.c` sources once per bit depth, so
+  # dropping the 16-bit build removes thirteen translation units -- about a
+  # tenth of what dav1d costs.  It also drops 10- and 12-bit AV1, so it is a
+  # switch rather than the default: a video that decodes today should not stop
+  # decoding because someone wanted a slightly faster build.
+  option(URGE_VIDEO_AV1_8BIT_ONLY
+    "Build dav1d for 8-bit video only (drops 10/12-bit AV1)" OFF)
+  if(URGE_VIDEO_AV1_8BIT_ONLY)
+    set(DAV1D_BITDEPTHS 8 CACHE STRING "enabled bitdepths" FORCE)
+  endif()
+
   add_subdirectory(dav1d)
   add_subdirectory(webm)
 endif()

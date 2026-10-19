@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-12T08:52:06Z",
+    "generated_at": "2026-10-19T09:22:43Z",
     "source_headers": [
       "core/animation.h",
       "core/archive.h",
@@ -642,26 +642,6 @@
           "value": "2"
         },
         {
-          "name": "SHADER_LANGUAGE_WGSL",
-          "cpp_name": "ShaderLanguageWgsl",
-          "value": "0"
-        },
-        {
-          "name": "SHADER_LANGUAGE_GLSL",
-          "cpp_name": "ShaderLanguageGlsl",
-          "value": "1"
-        },
-        {
-          "name": "SHADER_STAGE_VERTEX",
-          "cpp_name": "ShaderStageVertex",
-          "value": "static_cast<uint32_t>(wgpu::ShaderStage::Vertex)"
-        },
-        {
-          "name": "SHADER_STAGE_FRAGMENT",
-          "cpp_name": "ShaderStageFragment",
-          "value": "static_cast<uint32_t>(wgpu::ShaderStage::Fragment)"
-        },
-        {
           "name": "INDEX_FORMAT_UINT16",
           "cpp_name": "IndexFormatUint16",
           "value": "static_cast<uint32_t>(wgpu::IndexFormat::Uint16)"
@@ -728,7 +708,7 @@
         }
       ],
       "unsupported": [],
-      "export": "core/gpu.h:980-1102",
+      "export": "core/gpu.h:968-1085",
       "cpp_name": "GPU",
       "cpp_parent": "Singleton",
       "header": "core/gpu.h",
@@ -745,7 +725,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_buffer",
@@ -762,7 +742,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_texture",
@@ -779,7 +759,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_sampler",
@@ -796,7 +776,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_shader_module",
@@ -813,7 +793,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_bind_group_layout",
@@ -830,7 +810,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_pipeline_layout",
@@ -847,7 +827,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_bind_group",
@@ -864,7 +844,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_render_pipeline",
@@ -881,7 +861,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_compute_pipeline",
@@ -898,7 +878,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_query_set",
@@ -915,7 +895,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         },
         {
           "ruby_name": "create_command_encoder",
@@ -926,7 +906,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:980-1102"
+          "export": "core/gpu.h:968-1085"
         }
       ]
     },
@@ -2731,7 +2711,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         }
       ],
       "initialize_copy": null,
@@ -2745,7 +2725,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         },
         {
           "ruby_name": "label=",
@@ -2762,7 +2742,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         },
         {
           "ruby_name": "code",
@@ -2773,7 +2753,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         },
         {
           "ruby_name": "code=",
@@ -2790,7 +2770,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         },
         {
           "ruby_name": "entry_point",
@@ -2801,7 +2781,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         },
         {
           "ruby_name": "entry_point=",
@@ -2818,33 +2798,10 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:322-353"
+          "export": "core/gpu.h:322-343"
         }
       ],
-      "attributes": [
-        {
-          "name": "language",
-          "setter": "language=",
-          "cpp_name": "Language",
-          "cpp_type": "uint32_t",
-          "ruby_type": "Integer",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/gpu.h:322-353"
-        },
-        {
-          "name": "stage",
-          "setter": "stage=",
-          "cpp_name": "Stage",
-          "cpp_type": "uint32_t",
-          "ruby_type": "Integer",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/gpu.h:322-353"
-        }
-      ],
+      "attributes": [],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
@@ -2855,7 +2812,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:322-353",
+      "export": "core/gpu.h:322-343",
       "cpp_name": "GPUShaderModuleDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -2868,7 +2825,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         }
       ],
       "initialize_copy": null,
@@ -2882,7 +2839,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         },
         {
           "ruby_name": "label=",
@@ -2899,7 +2856,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         },
         {
           "ruby_name": "add_uniform",
@@ -2921,7 +2878,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         },
         {
           "ruby_name": "add_storage",
@@ -2948,7 +2905,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         },
         {
           "ruby_name": "add_texture",
@@ -2970,7 +2927,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         },
         {
           "ruby_name": "add_sampler",
@@ -2992,7 +2949,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:365-383"
+          "export": "core/gpu.h:353-371"
         }
       ],
       "attributes": [],
@@ -3006,7 +2963,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:365-383",
+      "export": "core/gpu.h:353-371",
       "cpp_name": "GPUBindGroupLayoutDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3019,7 +2976,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:392-409"
+          "export": "core/gpu.h:380-397"
         }
       ],
       "initialize_copy": null,
@@ -3033,7 +2990,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:392-409"
+          "export": "core/gpu.h:380-397"
         },
         {
           "ruby_name": "label=",
@@ -3050,7 +3007,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:392-409"
+          "export": "core/gpu.h:380-397"
         },
         {
           "ruby_name": "add_bind_group_layout",
@@ -3067,7 +3024,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:392-409"
+          "export": "core/gpu.h:380-397"
         }
       ],
       "attributes": [
@@ -3080,7 +3037,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:392-409"
+          "export": "core/gpu.h:380-397"
         }
       ],
       "data_attributes": [],
@@ -3093,7 +3050,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:392-409",
+      "export": "core/gpu.h:380-397",
       "cpp_name": "GPUPipelineLayoutDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3106,7 +3063,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         }
       ],
       "initialize_copy": null,
@@ -3120,7 +3077,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         },
         {
           "ruby_name": "label=",
@@ -3137,7 +3094,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         },
         {
           "ruby_name": "add_buffer",
@@ -3159,7 +3116,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         },
         {
           "ruby_name": "add_texture",
@@ -3181,7 +3138,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         },
         {
           "ruby_name": "add_sampler",
@@ -3203,7 +3160,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         }
       ],
       "attributes": [
@@ -3216,7 +3173,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:419-440"
+          "export": "core/gpu.h:407-428"
         }
       ],
       "data_attributes": [],
@@ -3229,7 +3186,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:419-440",
+      "export": "core/gpu.h:407-428",
       "cpp_name": "GPUBindGroupDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3242,7 +3199,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         }
       ],
       "initialize_copy": null,
@@ -3256,7 +3213,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         },
         {
           "ruby_name": "label=",
@@ -3273,7 +3230,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         },
         {
           "ruby_name": "entry_point",
@@ -3284,7 +3241,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         },
         {
           "ruby_name": "entry_point=",
@@ -3301,7 +3258,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         }
       ],
       "attributes": [
@@ -3314,7 +3271,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         },
         {
           "name": "module",
@@ -3325,7 +3282,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:450-476"
+          "export": "core/gpu.h:438-464"
         }
       ],
       "data_attributes": [],
@@ -3338,7 +3295,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:450-476",
+      "export": "core/gpu.h:438-464",
       "cpp_name": "GPUComputePipelineDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3351,7 +3308,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         }
       ],
       "initialize_copy": null,
@@ -3365,7 +3322,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "ruby_name": "label=",
@@ -3382,7 +3339,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "ruby_name": "vertex_entry_point",
@@ -3393,7 +3350,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "ruby_name": "vertex_entry_point=",
@@ -3410,7 +3367,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "ruby_name": "fragment_entry_point",
@@ -3421,7 +3378,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "ruby_name": "fragment_entry_point=",
@@ -3438,7 +3395,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "ruby_name": "add_vertex_attribute",
@@ -3465,7 +3422,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         }
       ],
       "attributes": [
@@ -3478,7 +3435,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "name": "vertex_module",
@@ -3489,7 +3446,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "name": "fragment_module",
@@ -3500,7 +3457,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "name": "topology",
@@ -3511,7 +3468,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "name": "format",
@@ -3522,7 +3479,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         },
         {
           "name": "vertex_stride",
@@ -3533,7 +3490,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:487-551"
+          "export": "core/gpu.h:475-539"
         }
       ],
       "data_attributes": [],
@@ -3546,7 +3503,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:487-551",
+      "export": "core/gpu.h:475-539",
       "cpp_name": "GPURenderPipelineDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3559,7 +3516,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         }
       ],
       "initialize_copy": null,
@@ -3573,7 +3530,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "ruby_name": "label=",
@@ -3590,7 +3547,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         }
       ],
       "attributes": [
@@ -3603,7 +3560,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "name": "load_op",
@@ -3614,7 +3571,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "name": "store_op",
@@ -3625,7 +3582,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "name": "clear_r",
@@ -3636,7 +3593,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "name": "clear_g",
@@ -3647,7 +3604,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "name": "clear_b",
@@ -3658,7 +3615,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         },
         {
           "name": "clear_a",
@@ -3669,7 +3626,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:569-618"
+          "export": "core/gpu.h:557-606"
         }
       ],
       "data_attributes": [],
@@ -3682,7 +3639,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:569-618",
+      "export": "core/gpu.h:557-606",
       "cpp_name": "GPURenderPassDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3695,7 +3652,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:637-644"
+          "export": "core/gpu.h:625-632"
         }
       ],
       "initialize_copy": null,
@@ -3709,7 +3666,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:637-644"
+          "export": "core/gpu.h:625-632"
         },
         {
           "ruby_name": "label=",
@@ -3726,7 +3683,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:637-644"
+          "export": "core/gpu.h:625-632"
         }
       ],
       "attributes": [],
@@ -3740,7 +3697,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:637-644",
+      "export": "core/gpu.h:625-632",
       "cpp_name": "GPUComputePassDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3753,7 +3710,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/gpu.h:652-669"
+          "export": "core/gpu.h:640-657"
         }
       ],
       "initialize_copy": null,
@@ -3767,7 +3724,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:652-669"
+          "export": "core/gpu.h:640-657"
         },
         {
           "ruby_name": "label=",
@@ -3784,7 +3741,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/gpu.h:652-669"
+          "export": "core/gpu.h:640-657"
         }
       ],
       "attributes": [
@@ -3797,7 +3754,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:652-669"
+          "export": "core/gpu.h:640-657"
         },
         {
           "name": "count",
@@ -3808,7 +3765,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:652-669"
+          "export": "core/gpu.h:640-657"
         }
       ],
       "data_attributes": [],
@@ -3821,7 +3778,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:652-669",
+      "export": "core/gpu.h:640-657",
       "cpp_name": "GPUQuerySetDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3843,7 +3800,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         },
         {
           "ruby_name": "map_async",
@@ -3870,7 +3827,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         },
         {
           "ruby_name": "unmap",
@@ -3881,7 +3838,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         },
         {
           "ruby_name": "read",
@@ -3903,7 +3860,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         },
         {
           "ruby_name": "write",
@@ -3925,7 +3882,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         },
         {
           "ruby_name": "destroy",
@@ -3936,7 +3893,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         }
       ],
       "attributes": [
@@ -3949,7 +3906,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         },
         {
           "name": "map_state",
@@ -3960,7 +3917,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/gpu.h:683-704"
+          "export": "core/gpu.h:671-692"
         }
       ],
       "data_attributes": [],
@@ -3973,7 +3930,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:683-704",
+      "export": "core/gpu.h:671-692",
       "cpp_name": "GPUBuffer",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -3995,7 +3952,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "height",
@@ -4006,7 +3963,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "depth_or_array_layers",
@@ -4017,7 +3974,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "mip_level_count",
@@ -4028,7 +3985,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "sample_count",
@@ -4039,7 +3996,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "dimension",
@@ -4050,7 +4007,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "format",
@@ -4061,7 +4018,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "usage",
@@ -4072,7 +4029,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "create_view",
@@ -4089,7 +4046,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         },
         {
           "ruby_name": "destroy",
@@ -4100,7 +4057,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:714-740"
+          "export": "core/gpu.h:702-728"
         }
       ],
       "attributes": [],
@@ -4114,7 +4071,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:714-740",
+      "export": "core/gpu.h:702-728",
       "cpp_name": "GPUTexture",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4138,7 +4095,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:750-750",
+      "export": "core/gpu.h:738-738",
       "cpp_name": "GPUTextureView",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4162,7 +4119,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:761-761",
+      "export": "core/gpu.h:749-749",
       "cpp_name": "GPUSampler",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4186,7 +4143,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:772-772",
+      "export": "core/gpu.h:760-760",
       "cpp_name": "GPUShaderModule",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4210,7 +4167,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:783-783",
+      "export": "core/gpu.h:771-771",
       "cpp_name": "GPUBindGroupLayout",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4234,7 +4191,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:794-794",
+      "export": "core/gpu.h:782-782",
       "cpp_name": "GPUPipelineLayout",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4258,7 +4215,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:805-805",
+      "export": "core/gpu.h:793-793",
       "cpp_name": "GPUBindGroup",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4286,7 +4243,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:816-820"
+          "export": "core/gpu.h:804-808"
         }
       ],
       "attributes": [],
@@ -4300,7 +4257,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:816-820",
+      "export": "core/gpu.h:804-808",
       "cpp_name": "GPURenderPipeline",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4328,7 +4285,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:830-834"
+          "export": "core/gpu.h:818-822"
         }
       ],
       "attributes": [],
@@ -4342,7 +4299,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:830-834",
+      "export": "core/gpu.h:818-822",
       "cpp_name": "GPUComputePipeline",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4364,7 +4321,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:844-852"
+          "export": "core/gpu.h:832-840"
         },
         {
           "ruby_name": "count",
@@ -4375,7 +4332,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:844-852"
+          "export": "core/gpu.h:832-840"
         },
         {
           "ruby_name": "destroy",
@@ -4386,7 +4343,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:844-852"
+          "export": "core/gpu.h:832-840"
         }
       ],
       "attributes": [],
@@ -4400,7 +4357,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:844-852",
+      "export": "core/gpu.h:832-840",
       "cpp_name": "GPUQuerySet",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4424,7 +4381,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:862-862",
+      "export": "core/gpu.h:850-850",
       "cpp_name": "GPUCommandBuffer",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4452,7 +4409,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:874-892"
+          "export": "core/gpu.h:862-880"
         },
         {
           "ruby_name": "begin_compute_pass",
@@ -4469,7 +4426,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:874-892"
+          "export": "core/gpu.h:862-880"
         },
         {
           "ruby_name": "copy_buffer_to_buffer",
@@ -4506,7 +4463,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:874-892"
+          "export": "core/gpu.h:862-880"
         },
         {
           "ruby_name": "clear_buffer",
@@ -4533,7 +4490,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:874-892"
+          "export": "core/gpu.h:862-880"
         },
         {
           "ruby_name": "finish",
@@ -4544,7 +4501,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:874-892"
+          "export": "core/gpu.h:862-880"
         }
       ],
       "attributes": [],
@@ -4558,7 +4515,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:874-892",
+      "export": "core/gpu.h:862-880",
       "cpp_name": "GPUCommandEncoder",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4586,7 +4543,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "set_bind_group",
@@ -4608,7 +4565,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "set_vertex_buffer",
@@ -4635,7 +4592,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "set_index_buffer",
@@ -4662,7 +4619,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "draw",
@@ -4694,7 +4651,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "draw_indexed",
@@ -4731,7 +4688,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "set_viewport",
@@ -4773,7 +4730,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "set_scissor_rect",
@@ -4805,7 +4762,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         },
         {
           "ruby_name": "end",
@@ -4816,7 +4773,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:902-938"
+          "export": "core/gpu.h:890-926"
         }
       ],
       "attributes": [],
@@ -4830,7 +4787,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:902-938",
+      "export": "core/gpu.h:890-926",
       "cpp_name": "GPURenderPassEncoder",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4858,7 +4815,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:946-956"
+          "export": "core/gpu.h:934-944"
         },
         {
           "ruby_name": "set_bind_group",
@@ -4880,7 +4837,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:946-956"
+          "export": "core/gpu.h:934-944"
         },
         {
           "ruby_name": "dispatch_workgroups",
@@ -4907,7 +4864,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:946-956"
+          "export": "core/gpu.h:934-944"
         },
         {
           "ruby_name": "end",
@@ -4918,7 +4875,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/gpu.h:946-956"
+          "export": "core/gpu.h:934-944"
         }
       ],
       "attributes": [],
@@ -4932,7 +4889,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:946-956",
+      "export": "core/gpu.h:934-944",
       "cpp_name": "GPUComputePassEncoder",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -4960,7 +4917,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:964-970"
+          "export": "core/gpu.h:952-958"
         },
         {
           "ruby_name": "write_buffer",
@@ -4987,7 +4944,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/gpu.h:964-970"
+          "export": "core/gpu.h:952-958"
         }
       ],
       "attributes": [],
@@ -5001,7 +4958,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/gpu.h:964-970",
+      "export": "core/gpu.h:952-958",
       "cpp_name": "GPUQueue",
       "cpp_parent": "GPUObject",
       "header": "core/gpu.h",
@@ -9446,12 +9403,12 @@
         {
           "params": [
             {
-              "name": "vs_glsl",
+              "name": "vs_wgsl",
               "type": "std::string",
               "default": null
             },
             {
-              "name": "fs_glsl",
+              "name": "fs_wgsl",
               "type": "std::string",
               "default": null
             },
@@ -9461,7 +9418,7 @@
               "default": "{}"
             }
           ],
-          "export": "core/effect.h:39-58"
+          "export": "core/effect.h:39-74"
         }
       ],
       "initialize_copy": {
@@ -9472,7 +9429,7 @@
             "default": null
           }
         ],
-        "export": "core/effect.h:39-58"
+        "export": "core/effect.h:39-74"
       },
       "instance_methods": [
         {
@@ -9495,7 +9452,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:39-58"
+          "export": "core/effect.h:39-74"
         },
         {
           "ruby_name": "set_int",
@@ -9517,7 +9474,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:39-58"
+          "export": "core/effect.h:39-74"
         },
         {
           "ruby_name": "set_texture",
@@ -9539,7 +9496,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:39-58"
+          "export": "core/effect.h:39-74"
         },
         {
           "ruby_name": "set_sampler",
@@ -9561,7 +9518,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:39-58"
+          "export": "core/effect.h:39-74"
         },
         {
           "ruby_name": "set_block",
@@ -9583,7 +9540,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/effect.h:39-58"
+          "export": "core/effect.h:39-74"
         }
       ],
       "attributes": [],
@@ -9597,7 +9554,7 @@
       },
       "index": null,
       "unsupported": [],
-      "export": "core/effect.h:39-58",
+      "export": "core/effect.h:39-74",
       "cpp_name": "Effect",
       "cpp_parent": "Object",
       "header": "core/effect.h",

@@ -40,6 +40,12 @@ namespace urge {
 
 namespace {
 
+// A custom shader enters at the same names the built-in ones do.  The engine
+// cannot look the entry point up in the source any more -- the layout comes
+// from the device, which is only told a name -- so this is the convention.
+constexpr std::string_view kVertexEntry = "vs_main";
+constexpr std::string_view kFragmentEntry = "fs_main";
+
 uint64_t AlignUniformSize(uint64_t size) {
   constexpr uint64_t kAlignment = 16;
   return ((size + kAlignment - 1) / kAlignment) * kAlignment;
@@ -55,24 +61,6 @@ class EffectDefaults {
   wgpu::TextureView white_view() const { return white_view_; }
 
   wgpu::Sampler sampler() const { return sampler_; }
-
-  wgpu::Buffer zero_buffer(uint64_t size) {
-    const uint64_t aligned = AlignUniformSize(size);
-    const auto found = buffers_.find(aligned);
-    if (found != buffers_.end())
-      return found->second;
-
-    wgpu::BufferDescriptor desc;
-    desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
-    desc.size = aligned;
-    wgpu::Buffer buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-
-    const std::vector<std::uint8_t> zeros(static_cast<std::size_t>(aligned), 0);
-    GPUDevice::Get().queue().WriteBuffer(buffer, 0, zeros.data(), aligned);
-
-    buffers_.emplace(aligned, buffer);
-    return buffer;
-  }
 
  private:
   EffectDefaults() {
@@ -115,20 +103,14 @@ class EffectDefaults {
   wgpu::Texture texture_;
   wgpu::TextureView white_view_;
   wgpu::Sampler sampler_;
-  std::map<uint64_t, wgpu::Buffer> buffers_;
 };
-
-bool IsUniformBuffer(const ShaderBinding& binding) {
-  return !binding.texture && !binding.sampler &&
-         binding.buffer == WGPUBufferBindingType_Uniform;
-}
 
 }  // namespace
 
-Effect::Effect(std::string vs_glsl,
-               std::string fs_glsl,
+Effect::Effect(std::string vs_wgsl,
+               std::string fs_wgsl,
                std::string blend_states) {
-  CreateInternal(std::move(vs_glsl), std::move(fs_glsl),
+  CreateInternal(std::move(vs_wgsl), std::move(fs_wgsl),
                  std::move(blend_states));
 }
 
@@ -155,30 +137,16 @@ void Effect::SetInt(uint32_t slot, std::vector<int32_t> data) {
 }
 
 void Effect::SetTexture(uint32_t slot, RefPtr<Bitmap> texture) {
-  const auto found = holder_->custom_bindings.find(slot);
-  if (found == holder_->custom_bindings.end())
-    throw Exception(Exception::kRGSSError,
-                    "effect: the stages declare no binding at set 2 slot {}.",
-                    slot);
-  if (!found->second.texture)
-    throw Exception(Exception::kRGSSError,
-                    "effect: set 2 slot {} is not a texture binding.", slot);
-
-  resources_[slot].bitmap = texture;
+  SlotResource& resource = resources_[slot];
+  resource.kind = SlotKind::kTexture;
+  resource.bitmap = texture;
   binding_dirty_ = true;
 }
 
 void Effect::SetSampler(uint32_t slot, RefPtr<Bitmap> texture) {
-  const auto found = holder_->custom_bindings.find(slot);
-  if (found == holder_->custom_bindings.end())
-    throw Exception(Exception::kRGSSError,
-                    "effect: the stages declare no binding at set 2 slot {}.",
-                    slot);
-  if (!found->second.sampler)
-    throw Exception(Exception::kRGSSError,
-                    "effect: set 2 slot {} is not a sampler binding.", slot);
-
-  resources_[slot].bitmap = texture;
+  SlotResource& resource = resources_[slot];
+  resource.kind = SlotKind::kSampler;
+  resource.bitmap = texture;
   binding_dirty_ = true;
 }
 
@@ -198,79 +166,69 @@ wgpu::BindGroup Effect::AcquireBindGroup() {
 }
 
 void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
-  const auto stage = [&](uint32_t slot, bool wants_texture) {
-    const auto found = holder_->custom_bindings.find(slot);
-    if (found == holder_->custom_bindings.end())
-      return;
-
-    const ShaderBinding& info = found->second;
-    if (wants_texture ? !info.texture : !info.sampler)
-      return;
-
+  // The filter convention: the canvas goes in as a texture at slot 0 and its
+  // sampler at slot 1.  Both are filled here because a filter shader samples
+  // the canvas and has nothing else to bind.
+  const auto stage = [&](uint32_t slot, SlotKind kind) {
     SlotResource& resource = resources_[slot];
-    if (resource.bitmap.get() == texture.get())
+    if (resource.bitmap.get() == texture.get() && resource.kind == kind)
       return;
 
+    resource.kind = kind;
     resource.bitmap = texture;
     binding_dirty_ = true;
   };
 
-  stage(0, true);
-  stage(1, false);
+  stage(0, SlotKind::kTexture);
+  stage(1, SlotKind::kSampler);
 }
 
-void Effect::CreateInternal(std::string vs_glsl,
-                            std::string fs_glsl,
+void Effect::CreateInternal(std::string vs_wgsl,
+                            std::string fs_wgsl,
                             std::string blend_states) {
-  if (vs_glsl.empty() || fs_glsl.empty())
+  if (vs_wgsl.empty() || fs_wgsl.empty())
     throw Exception(Exception::kRGSSError,
                     "effect: the vertex and the fragment stage both need a "
                     "source.");
 
   const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states);
 
-  Pipeline shader(vs_glsl, fs_glsl, {{0, 1, 2}}, {1}, 3);
-
-  const std::vector<ShaderBinding> scene = shader.group_bindings(0);
-  const std::vector<ShaderBinding> object = shader.group_bindings(1);
-  if (scene.size() != 1 || !IsUniformBuffer(scene[0]) ||
-      scene[0].min_binding_size < sizeof(SceneData) || object.size() != 1 ||
-      !IsUniformBuffer(object[0]) ||
-      object[0].min_binding_size < sizeof(ObjectData))
-    throw Exception(
-        Exception::kRGSSError,
-        "effect: the stages have to declare the scene uniform at set 0 "
-        "binding 0 and the object uniform at set 1 binding 0, like the built "
-        "in shaders.");
+  // A null pipeline layout: the device reads the two stages and builds one.
+  // That is the only way a shader written at run time can be laid out, and
+  // `GetBindGroupLayout` below is how the result comes back.
+  const ShaderSource vertex{vs_wgsl, kVertexEntry, {}};
+  const ShaderSource fragment{fs_wgsl, kFragmentEntry, {}};
+  Pipeline shader = Pipeline::AutoLayout(vertex, fragment, QuadVertexLayout());
 
   const wgpu::RenderPipeline pipeline =
       shader.MakeDefaultState(blend ? &*blend : nullptr);
 
+  // The engine binds its own scene and object groups at 0 and 1, so a shader
+  // that never declares them would only fail once a frame was already being
+  // drawn.  The derived layout is the earliest place it shows up: a group the
+  // shader did not declare has no layout.
+  if (!pipeline.GetBindGroupLayout(0) || !pipeline.GetBindGroupLayout(1))
+    throw Exception(
+        Exception::kRGSSError,
+        "effect: the stages have to declare the scene uniform at "
+        "@group(0) @binding(0) and the object uniform at @group(1) "
+        "@binding(0), like the built in shaders do.");
+
   auto holder = MakeRefCounted<PipelineHolder>();
   holder->pipeline = pipeline;
-  for (const ShaderBinding& binding : shader.group_bindings(2))
-    holder->custom_bindings.emplace(binding.binding, binding);
 
   holder_ = std::move(holder);
   binding_dirty_ = true;
 
-  LOGGER_DEBUG("effect: pipeline built with {} custom binding(s)",
-               holder_->custom_bindings.size());
+  LOGGER_DEBUG("effect: pipeline built with a layout derived from the stages");
 }
 
 void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
-  const auto found = holder_->custom_bindings.find(slot);
-  if (found == holder_->custom_bindings.end())
-    throw Exception(Exception::kRGSSError,
-                    "effect: the stages declare no binding at set 2 slot {}.",
-                    slot);
-  if (!IsUniformBuffer(found->second))
-    throw Exception(Exception::kRGSSError,
-                    "effect: set 2 slot {} is not a uniform buffer binding.",
-                    slot);
-
-  const uint64_t buffer_size = AlignUniformSize(
-      std::max<uint64_t>(size, found->second.min_binding_size));
+  // There is no minimum to size against any more -- the device owns the layout
+  // -- so the buffer is exactly as big as what was handed in, rounded up to a
+  // whole uniform.  A shader whose struct is larger than the bytes the script
+  // sends is a device error on the next draw.
+  const uint64_t buffer_size = AlignUniformSize(std::max<uint64_t>(size, 16));
 
   wgpu::BufferDescriptor desc;
   desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
@@ -287,7 +245,9 @@ void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
   GPUDevice::Get().queue().WriteBuffer(buffer, 0, staging.data(), buffer_size);
 
   SlotResource& resource = resources_[slot];
+  resource.kind = SlotKind::kBuffer;
   resource.buffer = buffer;
+  resource.size = buffer_size;
   binding_dirty_ = true;
 }
 
@@ -298,34 +258,36 @@ void Effect::RebuildBindGroup() {
                     "effect: the pipeline carries no custom bind group.");
 
   std::vector<wgpu::BindGroupEntry> entries;
-  entries.reserve(holder_->custom_bindings.size());
+  entries.reserve(resources_.size());
 
-  for (const auto& [binding, info] : holder_->custom_bindings) {
-    const auto found = resources_.find(binding);
-    const SlotResource* resource =
-        found == resources_.end() ? nullptr : &found->second;
-
+  // One entry per slot the script has filled.  The layout the device derived
+  // is the authority on what it wants; since the engine cannot read it, a slot
+  // that was never set is simply absent, and a shader that declares one the
+  // script does not fill is a device error at the next draw.
+  for (const auto& [binding, resource] : resources_) {
     wgpu::BindGroupEntry entry;
     entry.binding = binding;
 
-    if (info.texture) {
-      const bool usable =
-          resource && resource->bitmap && !resource->bitmap->IsDisposed();
-      entry.textureView = usable ? resource->bitmap->texture_view()
-                                 : EffectDefaults::Get().white_view();
-    } else if (info.sampler) {
-      const bool usable =
-          resource && resource->bitmap && !resource->bitmap->IsDisposed();
-      entry.sampler = usable ? resource->bitmap->sampler()
-                             : EffectDefaults::Get().sampler();
-    } else if (resource && resource->buffer) {
-      entry.buffer = resource->buffer;
-      entry.offset = 0;
-      entry.size = WGPU_WHOLE_SIZE;
-    } else {
-      entry.buffer = EffectDefaults::Get().zero_buffer(info.min_binding_size);
-      entry.offset = 0;
-      entry.size = WGPU_WHOLE_SIZE;
+    switch (resource.kind) {
+      case SlotKind::kTexture: {
+        const bool usable =
+            resource.bitmap && !resource.bitmap->IsDisposed();
+        entry.textureView = usable ? resource.bitmap->texture_view()
+                                   : EffectDefaults::Get().white_view();
+        break;
+      }
+      case SlotKind::kSampler: {
+        const bool usable =
+            resource.bitmap && !resource.bitmap->IsDisposed();
+        entry.sampler = usable ? resource.bitmap->sampler()
+                               : EffectDefaults::Get().sampler();
+        break;
+      }
+      case SlotKind::kBuffer:
+        entry.buffer = resource.buffer;
+        entry.offset = 0;
+        entry.size = WGPU_WHOLE_SIZE;
+        break;
     }
 
     entries.push_back(entry);

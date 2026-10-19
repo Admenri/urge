@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePassDescriptor  (core/gpu.h:637-644)
+// GPUComputePassDescriptor  (core/gpu.h:625-632)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePassDescriptor, GPUObject);

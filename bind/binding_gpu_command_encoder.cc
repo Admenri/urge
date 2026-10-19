@@ -34,7 +34,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUCommandEncoder  (core/gpu.h:874-892)
+// GPUCommandEncoder  (core/gpu.h:862-880)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUCommandEncoder, GPUObject);

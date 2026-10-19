@@ -49,7 +49,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPU  (core/gpu.h:980-1102)
+// GPU  (core/gpu.h:968-1085)
 // -------------------------------------------------------------------------
 
 RB_FUNC(GPU_queue) {
@@ -253,14 +253,6 @@ void InitGPUBinding() {
                LONG2NUM(static_cast<long>(urge::GPU::Store)));
   rb_const_set(mod, rb_intern("DISCARD"),
                LONG2NUM(static_cast<long>(urge::GPU::Discard)));
-  rb_const_set(mod, rb_intern("SHADER_LANGUAGE_WGSL"),
-               LONG2NUM(static_cast<long>(urge::GPU::ShaderLanguageWgsl)));
-  rb_const_set(mod, rb_intern("SHADER_LANGUAGE_GLSL"),
-               LONG2NUM(static_cast<long>(urge::GPU::ShaderLanguageGlsl)));
-  rb_const_set(mod, rb_intern("SHADER_STAGE_VERTEX"),
-               LONG2NUM(static_cast<long>(urge::GPU::ShaderStageVertex)));
-  rb_const_set(mod, rb_intern("SHADER_STAGE_FRAGMENT"),
-               LONG2NUM(static_cast<long>(urge::GPU::ShaderStageFragment)));
   rb_const_set(mod, rb_intern("INDEX_FORMAT_UINT16"),
                LONG2NUM(static_cast<long>(urge::GPU::IndexFormatUint16)));
   rb_const_set(mod, rb_intern("INDEX_FORMAT_UINT32"),

@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUShaderModuleDescriptor  (core/gpu.h:322-353)
+// GPUShaderModuleDescriptor  (core/gpu.h:322-343)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUShaderModuleDescriptor, GPUObject);
@@ -127,16 +127,6 @@ RB_FUNC(GPUShaderModuleDescriptor_SetEntryPoint) {
   return Qnil;
 }
 
-// Attribute: language (uint32_t)
-BINDING_ATTR_INT(GPUShaderModuleDescriptor,
-                 urge::GPUShaderModuleDescriptor,
-                 Language);
-
-// Attribute: stage (uint32_t)
-BINDING_ATTR_INT(GPUShaderModuleDescriptor,
-                 urge::GPUShaderModuleDescriptor,
-                 Stage);
-
 void InitGPUShaderModuleDescriptorBindingAppend(VALUE klass);
 
 void InitGPUShaderModuleDescriptorBinding() {
@@ -151,10 +141,6 @@ void InitGPUShaderModuleDescriptorBinding() {
   DefineMethod(klass, "code=", GPUShaderModuleDescriptor_SetCode);
   DefineMethod(klass, "entry_point", GPUShaderModuleDescriptor_GetEntryPoint);
   DefineMethod(klass, "entry_point=", GPUShaderModuleDescriptor_SetEntryPoint);
-  DefineMethod(klass, "language", GPUShaderModuleDescriptor_Language);
-  DefineMethod(klass, "language=", GPUShaderModuleDescriptor_LanguageEqual);
-  DefineMethod(klass, "stage", GPUShaderModuleDescriptor_Stage);
-  DefineMethod(klass, "stage=", GPUShaderModuleDescriptor_StageEqual);
   InitGPUShaderModuleDescriptorBindingAppend(klass);
 }
 // --- GENERATED END ---

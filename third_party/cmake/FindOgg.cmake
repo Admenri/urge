@@ -3,12 +3,13 @@
 FindOgg
 -------
 
-This tree carries its own libogg -- the submodule at ``third_party/ogg`` -- and
-that project already defines the ``Ogg::ogg`` target, so there is nothing on the
-system for a finder to locate.  libvorbis asks for the package through
-``find_package(Ogg REQUIRED)`` and looks it up on ``CMAKE_MODULE_PATH``, where
-this module sits ahead of the copy in ``vorbis/cmake`` -- the one that would go
-looking for an installed libogg and fail.
+This tree carries its own libogg -- the submodule at
+``third_party/miniaudio/external/ogg`` -- and that project already defines the
+``Ogg::ogg`` target, so there is nothing on the system for a finder to locate.
+libvorbis asks for the package through ``find_package(Ogg REQUIRED)`` and looks
+it up on ``CMAKE_MODULE_PATH``, where this module sits ahead of the copy in
+``vorbis/cmake`` -- the one that would go looking for an installed libogg and
+fail.
 
 Result Variables
 ^^^^^^^^^^^^^^^^

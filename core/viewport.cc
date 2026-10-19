@@ -140,7 +140,6 @@ void Viewport::DisposeObject() {
   object_group_ = nullptr;
   tint_uniform_ = nullptr;
   tint_group_ = nullptr;
-  filter_scene_ = nullptr;
   primitive_.Reset();
 }
 
@@ -161,47 +160,48 @@ bool Viewport::Prepare(DrawParam param) {
 
   parent_scissor_ = param->scissors.top();
 
-  // An effect turns the viewport into an offscreen canvas.  The children are
-  // drawn in the viewport's own space, so the rect offset drops out of the
-  // transform -- and with it any camera, which belongs to the target rather
-  // than to the canvas.  It is applied once, when the canvas is composited.
-  const glm::ivec2 offset = effect_ ? glm::ivec2(-origin_.x, -origin_.y)
-                                    : glm::ivec2(rect_->data.x - origin_.x,
-                                                 rect_->data.y - origin_.y);
+  // The rect offset is part of the viewport transform in both modes: with an
+  // effect the children are drawn exactly where they would be without one, only
+  // onto the canvas instead of onto the target.
+  const glm::ivec2 offset = glm::ivec2(rect_->data.x - origin_.x,
+                                       rect_->data.y - origin_.y);
   const glm::ivec2 parent_position =
       glm::ivec2(ExtractPosition(world_transform())) - offset;
   const RectI self_scissor(parent_position.x + rect_->data.x,
                            parent_position.y + rect_->data.y, rect_->data.width,
                            rect_->data.height);
 
-  if (effect_) {
-    // Neither phase of the canvas needs a scissor rect.  The children are
-    // clipped by the canvas texture itself, and the composite covers exactly
-    // the viewport rect on the target -- a scissor could only cut into a
-    // canvas that the composite is free to move, scale or rotate.
-    AcquireOffscreen(self_scissor);
+  region_ = MakeIntersect(parent_scissor_, self_scissor);
+  if (!region_())
+    region_ = RectI();
 
-    primitive_.EmitQuad(
-        self_scissor, MakeNorm(RectI(self_scissor.Size()), offscreen_->size()),
-        glm::vec4(1.0f));
+  if (effect_) {
+    // The canvas covers the whole target, so it shares the target coordinate
+    // space and projection: a child lands on the same pixel it would land on
+    // without an effect, and the composite samples the viewport rect back out
+    // of the canvas.  That is what makes the effect blend state act against
+    // what is already on the target instead of against an empty canvas.
+    AcquireOffscreen(param->target->size());
+
+    primitive_.EmitQuad(self_scissor,
+                        MakeNorm(RectF(self_scissor),
+                                 glm::vec2(offscreen_->size())),
+                        glm::vec4(1.0f));
     vertex_count_ = primitive_.Upload();
 
-    param->scissors.push(RectI(self_scissor.Size()));
+    param->scissors.push(region_);
     return true;
   }
 
   // Without an effect the children are drawn straight into the target and the
   // tint composites through a copy of that region -- the tint pass has no
   // source of its own to render into an offscreen.
-  region_ = MakeIntersect(parent_scissor_, self_scissor);
-  if (!region_())
-    region_ = RectI();
   param->scissors.push(region_);
 
   post_process_ =
       region_() && (blend_color.a != 0.0f || blend_tone != glm::vec4(0.0f));
   if (post_process_) {
-    AcquireOffscreen(region_);
+    AcquireOffscreen(glm::ivec2(region_.width, region_.height));
 
     primitive_.EmitQuad(region_,
                         MakeNorm(RectI(region_.Size()), offscreen_->size()),
@@ -220,17 +220,17 @@ bool Viewport::DoDraw(DrawParam param) {
   FlushSpriteBatch(param);
 
   if (effect_) {
-    // Offscreen phase: the children land on the canvas, which the camera does
-    // not touch -- the canvas has its own projection, so `param->scene` is
-    // deliberately dropped here.  The canvas bounds are the clip, so the pass
-    // keeps its default scissor rect.
+    // Offscreen phase: the children land on the canvas with the same scene and
+    // the same transforms they would have on the target -- only the attachment
+    // changes.  The clip is the viewport rect, in target coordinates.
     param->pass.End();
     param->pass = offscreen_->BeginRendering(param->command, glm::vec4(0.0f));
 
     filter_target_ = param->target;
-    filter_scene_ = param->scene;
     param->target = offscreen_;
-    param->scene = offscreen_->scene_group();
+
+    param->pass.SetScissorRect(region_.x, region_.y, region_.width,
+                               region_.height);
     return true;
   }
 
@@ -246,22 +246,25 @@ void Viewport::PostDraw(DrawParam param) {
     param->pass.End();
 
     param->target = filter_target_;
-    param->scene = filter_scene_;
     param->pass = param->target->BeginRendering(param->command);
 
     effect_->SetFilterSource(offscreen_);
 
-    // Composite phase: the canvas is drawn onto the target through
-    // `param->scene`, so a camera moves the canvas as a whole and the effect's
-    // vertex stage and blend state do the work they are meant to.  The quad
-    // spans exactly the viewport rect, so the target bounds clip it.
-    param->pass.SetPipeline(effect_->AcquirePipeline());
-    param->pass.SetBindGroup(0, param->scene, 0, nullptr);
-    const uint32_t object_offset = 0;
-    param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
-    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
-    param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
-    param->pass.Draw(vertex_count_, 1, 0, 0);
+    // Composite phase: the canvas region is drawn back onto the target with the
+    // effect pipeline, so its blend state works against what the target already
+    // holds.  The quad spans the viewport rect; the scissor keeps it inside the
+    // same clip the children had.
+    if (region_()) {
+      param->pass.SetPipeline(effect_->AcquirePipeline());
+      param->pass.SetBindGroup(0, param->scene, 0, nullptr);
+      const uint32_t object_offset = 0;
+      param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
+      param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
+      param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
+      param->pass.SetScissorRect(region_.x, region_.y, region_.width,
+                                 region_.height);
+      param->pass.Draw(vertex_count_, 1, 0, 0);
+    }
   } else if (post_process_) {
     wgpu::TexelCopyTextureInfo source;
     source.texture = param->target->texture();
@@ -297,14 +300,12 @@ void Viewport::PostDraw(DrawParam param) {
 }
 
 void Viewport::ResetTransform() {
-  // An effect makes the viewport an offscreen canvas, whose content is placed
-  // by the composite rather than by the rect -- so the offset is dropped here
-  // and the canvas starts at its own origin.
+  // The rect offset belongs to the transform in both modes.  An effect does not
+  // move the children -- it only puts a canvas between them and the target --
+  // so switching one on must not shift anything.
   const glm::vec3 offset =
-      effect_ ? glm::vec3(static_cast<float>(-origin_.x),
-                          static_cast<float>(-origin_.y), 0.0f)
-              : glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
-                          static_cast<float>(rect_->data.y - origin_.y), 0.0f);
+      glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
+                static_cast<float>(rect_->data.y - origin_.y), 0.0f);
 
   Attr_Position(MakeRefCounted<Vector3>(offset));
 }
@@ -334,15 +335,14 @@ void Viewport::CreateEffectBindings() {
                                       {{0, util::BufferSet(tint_uniform_)}});
 }
 
-void Viewport::AcquireOffscreen(const RectI& region) {
-  if (offscreen_ && offscreen_->size().x >= region.width &&
-      offscreen_->size().y >= region.height)
+void Viewport::AcquireOffscreen(glm::ivec2 size) {
+  if (offscreen_ && offscreen_->size().x >= size.x &&
+      offscreen_->size().y >= size.y)
     return;
 
-  const int32_t width =
-      std::max(region.width, offscreen_ ? offscreen_->size().x : 0);
+  const int32_t width = std::max(size.x, offscreen_ ? offscreen_->size().x : 0);
   const int32_t height =
-      std::max(region.height, offscreen_ ? offscreen_->size().y : 0);
+      std::max(size.y, offscreen_ ? offscreen_->size().y : 0);
   offscreen_ = MakeRefCounted<Bitmap>(width, height);
 }
 

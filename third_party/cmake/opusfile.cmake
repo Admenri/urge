@@ -1,9 +1,10 @@
 # ---------------------------------------------------------------------------
 # libopusfile is the one Xiph library in this tree that ships no CMake build --
 # upstream carries autotools only -- and the submodule under
-# third_party/opusfile is kept as upstream's tree verbatim, so its build file
-# lives here in the parent instead of inside the submodule.  It is pulled in
-# with `include(cmake/opusfile.cmake)` from third_party/CMakeLists.txt.
+# third_party/miniaudio/external/opusfile is kept as upstream's tree verbatim,
+# so its build file lives here in the parent instead of inside the submodule.
+# It is pulled in with `include(cmake/opusfile.cmake)` from
+# third_party/CMakeLists.txt.
 #
 # Only the core library is built.  The `opusurl` half of the project (http.c,
 # wincerts.c) exists for streaming over HTTP, which the engine has no use for;
@@ -18,7 +19,7 @@
 # particular must stay undefined: miniaudio decodes through op_read_float().
 # ---------------------------------------------------------------------------
 
-set(OPUSFILE_DIR "${CMAKE_CURRENT_LIST_DIR}/../opusfile")
+set(OPUSFILE_DIR "${CMAKE_CURRENT_LIST_DIR}/../miniaudio/external/opusfile")
 
 add_library(opusfile STATIC
   "${OPUSFILE_DIR}/src/info.c"

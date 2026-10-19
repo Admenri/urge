@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePassEncoder  (core/gpu.h:946-956)
+// GPUComputePassEncoder  (core/gpu.h:934-944)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePassEncoder, GPUObject);

@@ -71,7 +71,7 @@ class Viewport : public Node {
  private:
   void ResetTransform();
   void CreateEffectBindings();
-  void AcquireOffscreen(const RectI& region);
+  void AcquireOffscreen(glm::ivec2 size);
 
   RefPtr<Rect> rect_;
   glm::ivec2 origin_ = glm::ivec2(0);
@@ -86,7 +86,6 @@ class Viewport : public Node {
   wgpu::BindGroup object_group_, tint_group_;
 
   RefPtr<Bitmap> filter_target_;
-  wgpu::BindGroup filter_scene_;
 
   RectI parent_scissor_, region_;
   bool post_process_ = false;

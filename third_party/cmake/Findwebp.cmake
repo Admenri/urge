@@ -3,12 +3,13 @@
 Findwebp
 --------
 
-This tree carries its own libwebp -- the submodule at ``third_party/libwebp`` --
-so the library is never looked up on the system: the project that compiles it
-has already defined the ``webp``, ``webpdemux`` and ``libwebpmux`` targets.
-SDL_image reaches WEBP through ``find_package(webp)`` whenever it is *not*
-building a vendored copy of the library itself, and this module answers that
-call by aliasing the in-tree targets under the names it expects.
+This tree carries its own libwebp -- the submodule at
+``third_party/SDL_image/external/libwebp`` -- so the library is never looked up
+on the system: the project that compiles it has already defined the ``webp``,
+``webpdemux`` and ``libwebpmux`` targets.  SDL_image reaches WEBP through
+``find_package(webp)`` whenever it is *not* building a vendored copy of the
+library itself, and this module answers that call by aliasing the in-tree
+targets under the names it expects.
 
 Result Variables
 ^^^^^^^^^^^^^^^^

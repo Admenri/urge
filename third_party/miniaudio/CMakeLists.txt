@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.20.1)
 
 # The wav, flac and mp3 decoders are compiled into miniaudio.c.  Ogg vorbis and
 # Ogg opus are not: they come from the two Xiph backends under decoders/, which
-# bring the real libvorbis and libopusfile in -- see third_party/vorbis,
-# third_party/opus and third_party/opusfile.  The engine plugs both of them into
-# its decoder config; see core/audio_service.cc.
+# bring the real libvorbis and libopusfile in -- see external/vorbis,
+# external/opus and external/opusfile.  The engine plugs both of them into its
+# decoder config; see core/audio_service.cc.
 set(MINIAUDIO_SOURCE
   miniaudio.c
   decoders/libvorbis/miniaudio_libvorbis.c

@@ -114,13 +114,11 @@ DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter) {
 }
 
 GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
-  const std::vector<wgpu::InstanceFeatureName> instance_exts = {
-      wgpu::InstanceFeatureName::ShaderSourceSPIRV,
-  };
-
+  // WGSL is WebGPU's own shading language, so an instance needs no feature to
+  // accept a shader module: there is nothing left to request here.  The tree
+  // used to ask for `ShaderSourceSPIRV`, because every shader went through
+  // glslang first; that path is gone, and with it the requirement.
   wgpu::InstanceDescriptor instance_desc;
-  instance_desc.requiredFeatureCount = instance_exts.size();
-  instance_desc.requiredFeatures = instance_exts.data();
 #if defined(WEBGPU_BACKEND_WGPU)
   WGPUInstanceExtras instance_extras = {};
   instance_extras.chain.sType =

@@ -32,265 +32,477 @@ namespace urge {
 
 namespace {
 
-const char kVS_TransformBase[] = R"(#version 450
-layout(location = 0) in vec4 in_position;
-layout(location = 1) in vec2 in_texcoord;
-layout(location = 2) in vec4 in_color;
+// ---------------------------------------------------------------------------
+// The shaders.
+//
+// They are WGSL because that is what both wgpu backends parse: nothing is
+// translated on the way to the device, and nothing is read back out of these
+// strings either -- the bind group entries each stage declares are written by
+// hand right under the source, and the vertex attributes are the shared
+// `QuadVertexLayout()` in core/shader.h.
+//
+// Three conventions hold across all of them, and a custom `Effect` has to hold
+// to the first two:
+//
+//   set 0  binding 0  -- the scene uniform  (`SceneData`)
+//   set 1  binding 0  -- the object uniform (`ObjectData`), or the sprite
+//                        parameter array for the batched stage
+//   set 2, set 3      -- whatever the stage itself samples
+//
+// The entries below are what `util::CreateBindLayout` turns into a
+// `wgpu::BindGroupLayout` per group.  They are the hand-written half of what
+// used to come out of a reflection pass, so they have to match the source they
+// sit next to -- a binding the shader declares and the layout does not is a
+// device error, and so is the other way round.
+// ---------------------------------------------------------------------------
 
-layout(set = 0, binding = 0) uniform SceneData {
-  mat4 view_proj_mat;
-} u_scene;
-
-layout(set = 1, binding = 0) uniform ObjectData {
-  mat4 model_mat;
-} u_object;
-
-layout(location = 0) out vec2 v_texcoord;
-layout(location = 1) out vec4 v_color;
-
-void main() {
-  gl_Position = u_scene.view_proj_mat * u_object.model_mat * in_position;
-  v_texcoord = in_texcoord;
-  v_color = in_color;
-}
-)";
-
-const char kFS_TextureBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
-
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
-
-layout(location = 0) out vec4 o_color;
-
-void main() {
-  o_color = texture(sampler2D(u_texture, u_sampler), v_texcoord) * v_color;
-}
-)";
-
-const char kFS_TextureMaskBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
-
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
-
-layout(set = 3, binding = 0) uniform texture2D u_mask_texture;
-layout(set = 3, binding = 1) uniform sampler u_mask_sampler;
-
-layout(location = 0) out vec4 o_color;
-
-void main() {
-  vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord);
-  float mask_alpha = texture(sampler2D(u_mask_texture, u_mask_sampler), v_texcoord).a;
-  o_color = color * mask_alpha * v_color;
-}
-)";
-
-const char kFS_PresentBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
-
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
-
-layout(location = 0) out vec4 o_color;
-
-vec3 srgb_to_linear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(vec3(0.04045), c));
+util::LayoutEntry Uniform(uint32_t binding,
+                          wgpu::ShaderStage stage,
+                          uint64_t size) {
+  return {binding, stage, util::BufferLayout::Uniform(false, size)};
 }
 
-void main() {
-  vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord) * v_color;
-  o_color = vec4(srgb_to_linear(color.rgb), color.a);
-}
-)";
-
-const char kFS_ColorBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
-
-layout(location = 0) out vec4 o_color;
-
-void main() {
-  o_color = v_color;
-}
-)";
-
-const char kFS_TintBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
-
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
-
-layout(set = 3, binding = 0) uniform TintParam {
-  vec4 blend_color;
-  vec4 blend_tone;
-} u_tint;
-
-layout(location = 0) out vec4 o_color;
-
-vec4 apply_tint(vec4 color, vec4 blend_color, vec4 blend_tone) {
-  float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-  vec4 result = vec4(mix(color.rgb, vec3(luminance), blend_tone.a), color.a);
-  result = vec4(result.rgb + blend_tone.rgb * result.a, result.a);
-  return vec4(mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
+util::LayoutEntry ReadOnlyStorage(uint32_t binding,
+                                  wgpu::ShaderStage stage,
+                                  uint64_t size) {
+  return {binding, stage, util::BufferLayout::ReadOnlyStorage(false, size)};
 }
 
-void main() {
-  vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord);
-  o_color = apply_tint(color, u_tint.blend_color, u_tint.blend_tone) * v_color;
+util::LayoutEntry Texture(uint32_t binding, wgpu::ShaderStage stage) {
+  return {binding, stage,
+          util::TextureLayout::Float(wgpu::TextureViewDimension::e2D)};
 }
-)";
 
-const char kVS_SpriteBatch[] = R"(#version 450
-layout(location = 0) in vec4 in_position;
-layout(location = 1) in vec2 in_texcoord;
-layout(location = 2) in vec4 in_color;
+util::LayoutEntry Sampler(uint32_t binding, wgpu::ShaderStage stage) {
+  return {binding, stage, util::SamplerLayout::Filtering()};
+}
 
-layout(set = 0, binding = 0) uniform SceneData {
-  mat4 view_proj_mat;
-} u_scene;
-
-struct SpriteParam {
-  mat4 model_mat;
-  vec4 blend_color;
-  vec4 blend_tone;
-  float bush_depth;
-  float bush_opacity;
+const ShaderSource kVS_TransformBase = {
+    R"(
+struct SceneData {
+  view_proj_mat: mat4x4<f32>,
 };
 
-layout(std430, set = 1, binding = 0) readonly buffer SpriteParamArray {
-  SpriteParam params[];
-} u_sprite;
+struct ObjectData {
+  model_mat: mat4x4<f32>,
+};
 
-layout(location = 0) out vec2 v_texcoord;
-layout(location = 1) out vec4 v_color;
-layout(location = 2) flat out vec4 v_blend_color;
-layout(location = 3) flat out vec4 v_blend_tone;
-layout(location = 4) flat out float v_bush_depth;
-layout(location = 5) flat out float v_bush_opacity;
+@group(0) @binding(0) var<uniform> u_scene: SceneData;
+@group(1) @binding(0) var<uniform> u_object: ObjectData;
 
-void main() {
-  SpriteParam param = u_sprite.params[gl_VertexIndex / 6];
+struct VertexInput {
+  @location(0) in_position: vec4<f32>,
+  @location(1) in_texcoord: vec2<f32>,
+  @location(2) in_color: vec4<f32>,
+};
 
-  gl_Position = u_scene.view_proj_mat * param.model_mat * in_position;
-  v_texcoord = in_texcoord;
-  v_color = in_color;
-  v_blend_color = param.blend_color;
-  v_blend_tone = param.blend_tone;
-  v_bush_depth = param.bush_depth;
-  v_bush_opacity = param.bush_opacity;
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+@vertex
+fn vs_main(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  output.position =
+      u_scene.view_proj_mat * u_object.model_mat * input.in_position;
+  output.v_texcoord = input.in_texcoord;
+  output.v_color = input.in_color;
+  return output;
 }
-)";
+)",
+    "vs_main",
+    {
+        {0, {Uniform(0, wgpu::ShaderStage::Vertex, sizeof(SceneData))}},
+        {1, {Uniform(0, wgpu::ShaderStage::Vertex, sizeof(ObjectData))}},
+    },
+};
 
-const char kFS_SpriteBatch[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
-layout(location = 2) flat in vec4 v_blend_color;
-layout(location = 3) flat in vec4 v_blend_tone;
-layout(location = 4) flat in float v_bush_depth;
-layout(location = 5) flat in float v_bush_opacity;
+const ShaderSource kFS_TextureBase = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
 
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
 
-layout(location = 0) out vec4 o_color;
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  return textureSample(u_texture, u_sampler, input.v_texcoord) * input.v_color;
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
 
-vec4 apply_tint(vec4 color, vec4 blend_color, vec4 blend_tone) {
-  float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-  vec4 result = vec4(mix(color.rgb, vec3(luminance), blend_tone.a), color.a);
-  result = vec4(result.rgb + blend_tone.rgb * result.a, result.a);
-  return vec4(mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
+const ShaderSource kFS_TextureMaskBase = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
+
+@group(3) @binding(0) var u_mask_texture: texture_2d<f32>;
+@group(3) @binding(1) var u_mask_sampler: sampler;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let color = textureSample(u_texture, u_sampler, input.v_texcoord);
+  let mask_alpha =
+      textureSample(u_mask_texture, u_mask_sampler, input.v_texcoord).a;
+  return color * mask_alpha * input.v_color;
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+        {3,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
+
+const ShaderSource kFS_PresentBase = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+fn srgb_to_linear(c: vec3<f32>) -> vec3<f32> {
+  let lo = c / 12.92;
+  let hi = pow((c + vec3<f32>(0.055)) / 1.055, vec3<f32>(2.4));
+  return mix(lo, hi, step(vec3<f32>(0.04045), c));
 }
 
-void main() {
-  vec4 color = texture(sampler2D(u_texture, u_sampler), v_texcoord);
-  vec4 result = apply_tint(color, v_blend_color, v_blend_tone);
-
-  float under_bush = v_texcoord.y > v_bush_depth ? 0.0 : 1.0;
-  result *= clamp(v_bush_opacity + under_bush, 0.0, 1.0);
-
-  o_color = result * v_color;
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let color = textureSample(u_texture, u_sampler, input.v_texcoord) * input.v_color;
+  return vec4<f32>(srgb_to_linear(color.rgb), color.a);
 }
-)";
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
 
-const char kFS_PlaneBase[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
+const ShaderSource kFS_ColorBase = {
+    R"(
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
 
-layout(set = 2, binding = 0) uniform texture2D u_texture;
-layout(set = 2, binding = 1) uniform sampler u_sampler;
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  return input.v_color;
+}
+)",
+    "fs_main",
+    {},
+};
 
-layout(set = 3, binding = 0) uniform PlaneParam {
-  vec4 blend_color;
-  vec4 blend_tone;
-} u_plane;
+const ShaderSource kFS_TintBase = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
 
-layout(location = 0) out vec4 o_color;
+struct TintParam {
+  blend_color: vec4<f32>,
+  blend_tone: vec4<f32>,
+};
 
-vec4 apply_tint(vec4 color, vec4 blend_color, vec4 blend_tone) {
-  float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-  vec4 result = vec4(mix(color.rgb, vec3(luminance), blend_tone.a), color.a);
-  result = vec4(result.rgb + blend_tone.rgb * result.a, result.a);
-  return vec4(mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
+@group(3) @binding(0) var<uniform> u_tint: TintParam;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+fn apply_tint(color: vec4<f32>,
+              blend_color: vec4<f32>,
+              blend_tone: vec4<f32>) -> vec4<f32> {
+  let luminance = dot(color.rgb, vec3<f32>(0.299, 0.587, 0.114));
+  var result =
+      vec4<f32>(mix(color.rgb, vec3<f32>(luminance), blend_tone.a), color.a);
+  result = vec4<f32>(result.rgb + blend_tone.rgb * result.a, result.a);
+  return vec4<f32>(
+      mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
 }
 
-void main() {
-  vec2 texcoord = fract(v_texcoord);
-  vec4 color = texture(sampler2D(u_texture, u_sampler), texcoord);
-  o_color = apply_tint(color, u_plane.blend_color, u_plane.blend_tone) * v_color;
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let color = textureSample(u_texture, u_sampler, input.v_texcoord);
+  return apply_tint(color, u_tint.blend_color, u_tint.blend_tone) * input.v_color;
 }
-)";
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+        {3,
+         {Uniform(0,
+                  wgpu::ShaderStage::Fragment,
+                  sizeof(TintBase::TintParam))}},
+    },
+};
 
-const char kFS_TransitionAlpha[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
+const ShaderSource kVS_SpriteBatch = {
+    R"(
+struct SceneData {
+  view_proj_mat: mat4x4<f32>,
+};
 
-layout(set = 2, binding = 0) uniform texture2D u_frozen_scene;
-layout(set = 2, binding = 1) uniform sampler u_frozen_sampler;
-layout(set = 2, binding = 2) uniform texture2D u_current_scene;
-layout(set = 2, binding = 3) uniform sampler u_current_sampler;
+struct SpriteParam {
+  model_mat: mat4x4<f32>,
+  blend_color: vec4<f32>,
+  blend_tone: vec4<f32>,
+  bush_depth: f32,
+  bush_opacity: f32,
+};
 
-layout(location = 0) out vec4 o_color;
+struct SpriteParamArray {
+  params: array<SpriteParam>,
+};
 
-void main() {
-  vec4 frozen = texture(sampler2D(u_frozen_scene, u_frozen_sampler), v_texcoord);
-  vec4 current = texture(sampler2D(u_current_scene, u_current_sampler), v_texcoord);
-  float progress = v_color.a;
-  o_color = vec4(mix(frozen.rgb, current.rgb, progress), 1.0);
+@group(0) @binding(0) var<uniform> u_scene: SceneData;
+@group(1) @binding(0) var<storage, read> u_sprite: SpriteParamArray;
+
+struct VertexInput {
+  @builtin(vertex_index) vertex_index: u32,
+  @location(0) in_position: vec4<f32>,
+  @location(1) in_texcoord: vec2<f32>,
+  @location(2) in_color: vec4<f32>,
+};
+
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+  @location(2) @interpolate(flat) v_blend_color: vec4<f32>,
+  @location(3) @interpolate(flat) v_blend_tone: vec4<f32>,
+  @location(4) @interpolate(flat) v_bush_depth: f32,
+  @location(5) @interpolate(flat) v_bush_opacity: f32,
+};
+
+@vertex
+fn vs_main(input: VertexInput) -> VertexOutput {
+  // Six vertices per sprite, so the index is a flat divide.
+  let param = u_sprite.params[input.vertex_index / 6u];
+
+  var output: VertexOutput;
+  output.position = u_scene.view_proj_mat * param.model_mat * input.in_position;
+  output.v_texcoord = input.in_texcoord;
+  output.v_color = input.in_color;
+  output.v_blend_color = param.blend_color;
+  output.v_blend_tone = param.blend_tone;
+  output.v_bush_depth = param.bush_depth;
+  output.v_bush_opacity = param.bush_opacity;
+  return output;
 }
-)";
+)",
+    "vs_main",
+    {
+        {0, {Uniform(0, wgpu::ShaderStage::Vertex, sizeof(SceneData))}},
+        {1, {ReadOnlyStorage(0, wgpu::ShaderStage::Vertex, 0)}},
+    },
+};
 
-const char kFS_TransitionMap[] = R"(#version 450
-layout(location = 0) in vec2 v_texcoord;
-layout(location = 1) in vec4 v_color;
+const ShaderSource kFS_SpriteBatch = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
 
-layout(set = 2, binding = 0) uniform texture2D u_frozen_scene;
-layout(set = 2, binding = 1) uniform sampler u_frozen_sampler;
-layout(set = 2, binding = 2) uniform texture2D u_current_scene;
-layout(set = 2, binding = 3) uniform sampler u_current_sampler;
-layout(set = 2, binding = 4) uniform texture2D u_mapping_texture;
-layout(set = 2, binding = 5) uniform sampler u_mapping_sampler;
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+  @location(2) @interpolate(flat) v_blend_color: vec4<f32>,
+  @location(3) @interpolate(flat) v_blend_tone: vec4<f32>,
+  @location(4) @interpolate(flat) v_bush_depth: f32,
+  @location(5) @interpolate(flat) v_bush_opacity: f32,
+};
 
-layout(location = 0) out vec4 o_color;
-
-void main() {
-  vec4 frozen = texture(sampler2D(u_frozen_scene, u_frozen_sampler), v_texcoord);
-  vec4 current = texture(sampler2D(u_current_scene, u_current_sampler), v_texcoord);
-  float mapped = texture(sampler2D(u_mapping_texture, u_mapping_sampler), v_texcoord).r;
-
-  float vague = v_color.r;
-  float progress = v_color.a;
-  float threshold = clamp(mapped, progress, progress + vague);
-
-  o_color = vec4(mix(frozen.rgb, current.rgb, 1.0 - (threshold - progress) / vague), 1.0);
+fn apply_tint(color: vec4<f32>,
+              blend_color: vec4<f32>,
+              blend_tone: vec4<f32>) -> vec4<f32> {
+  let luminance = dot(color.rgb, vec3<f32>(0.299, 0.587, 0.114));
+  var result =
+      vec4<f32>(mix(color.rgb, vec3<f32>(luminance), blend_tone.a), color.a);
+  result = vec4<f32>(result.rgb + blend_tone.rgb * result.a, result.a);
+  return vec4<f32>(
+      mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
 }
-)";
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let color = textureSample(u_texture, u_sampler, input.v_texcoord);
+  var result = apply_tint(color, input.v_blend_color, input.v_blend_tone);
+
+  // `bush_depth` is a v coordinate, so the *top* of the sprite is the small
+  // y: above the bush line the sprite is drawn whole, below it `bush_opacity`
+  // takes over.  Written as an `if` rather than `select` on purpose --
+  // `select(f, t, cond)` yields the *second* argument when cond is true, the
+  // opposite order from GLSL's `cond ? a : b`, and getting that backwards
+  // turns every sprite into a half transparent one (the engine's default
+  // bush opacity is 128/255).
+  var under_bush = 1.0;
+  if (input.v_texcoord.y > input.v_bush_depth) {
+    under_bush = 0.0;
+  }
+  result = result * clamp(input.v_bush_opacity + under_bush, 0.0, 1.0);
+
+  return result * input.v_color;
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
+
+const ShaderSource kFS_PlaneBase = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
+
+struct PlaneParam {
+  blend_color: vec4<f32>,
+  blend_tone: vec4<f32>,
+};
+
+@group(3) @binding(0) var<uniform> u_plane: PlaneParam;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+fn apply_tint(color: vec4<f32>,
+              blend_color: vec4<f32>,
+              blend_tone: vec4<f32>) -> vec4<f32> {
+  let luminance = dot(color.rgb, vec3<f32>(0.299, 0.587, 0.114));
+  var result =
+      vec4<f32>(mix(color.rgb, vec3<f32>(luminance), blend_tone.a), color.a);
+  result = vec4<f32>(result.rgb + blend_tone.rgb * result.a, result.a);
+  return vec4<f32>(
+      mix(result.rgb, blend_color.rgb * result.a, blend_color.a), result.a);
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let texcoord = fract(input.v_texcoord);
+  let color = textureSample(u_texture, u_sampler, texcoord);
+  return apply_tint(color, u_plane.blend_color, u_plane.blend_tone) *
+         input.v_color;
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+        {3,
+         {Uniform(0,
+                  wgpu::ShaderStage::Fragment,
+                  sizeof(PlaneBase::PlaneParam))}},
+    },
+};
+
+const ShaderSource kFS_TransitionAlpha = {
+    R"(
+@group(2) @binding(0) var u_frozen_scene: texture_2d<f32>;
+@group(2) @binding(1) var u_frozen_sampler: sampler;
+@group(2) @binding(2) var u_current_scene: texture_2d<f32>;
+@group(2) @binding(3) var u_current_sampler: sampler;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let frozen =
+      textureSample(u_frozen_scene, u_frozen_sampler, input.v_texcoord);
+  let current =
+      textureSample(u_current_scene, u_current_sampler, input.v_texcoord);
+  let progress = input.v_color.a;
+  return vec4<f32>(mix(frozen.rgb, current.rgb, progress), 1.0);
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment),
+          Texture(2, wgpu::ShaderStage::Fragment),
+          Sampler(3, wgpu::ShaderStage::Fragment)}},
+    },
+};
+
+const ShaderSource kFS_TransitionMap = {
+    R"(
+@group(2) @binding(0) var u_frozen_scene: texture_2d<f32>;
+@group(2) @binding(1) var u_frozen_sampler: sampler;
+@group(2) @binding(2) var u_current_scene: texture_2d<f32>;
+@group(2) @binding(3) var u_current_sampler: sampler;
+@group(2) @binding(4) var u_mapping_texture: texture_2d<f32>;
+@group(2) @binding(5) var u_mapping_sampler: sampler;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let frozen =
+      textureSample(u_frozen_scene, u_frozen_sampler, input.v_texcoord);
+  let current =
+      textureSample(u_current_scene, u_current_sampler, input.v_texcoord);
+  let mapped =
+      textureSample(u_mapping_texture, u_mapping_sampler, input.v_texcoord).r;
+
+  let vague = input.v_color.r;
+  let progress = input.v_color.a;
+  let threshold = clamp(mapped, progress, progress + vague);
+
+  return vec4<f32>(
+      mix(frozen.rgb, current.rgb, 1.0 - (threshold - progress) / vague), 1.0);
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment),
+          Texture(2, wgpu::ShaderStage::Fragment),
+          Sampler(3, wgpu::ShaderStage::Fragment),
+          Texture(4, wgpu::ShaderStage::Fragment),
+          Sampler(5, wgpu::ShaderStage::Fragment)}},
+    },
+};
 
 wgpu::DepthStencilState* GetStencilWriteState() {
   static wgpu::DepthStencilState state{
@@ -519,34 +731,34 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
 }
 
 TextureBase::TextureBase()
-    : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_TextureBase, QuadVertexLayout()) {}
 
 TextureMaskBase::TextureMaskBase()
-    : Pipeline(kVS_TransformBase, kFS_TextureMaskBase, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_TextureMaskBase, QuadVertexLayout()) {}
 
 PresentBase::PresentBase()
-    : Pipeline(kVS_TransformBase, kFS_PresentBase, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_PresentBase, QuadVertexLayout()) {}
 
 TextureBaseDynamic::TextureBaseDynamic()
-    : Pipeline(kVS_TransformBase, kFS_TextureBase, {{0, 1, 2}}, {1}) {}
+    : Pipeline(kVS_TransformBase, kFS_TextureBase, QuadVertexLayout(), {1}) {}
 
 ColorBase::ColorBase()
-    : Pipeline(kVS_TransformBase, kFS_ColorBase, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_ColorBase, QuadVertexLayout()) {}
 
 TintBase::TintBase()
-    : Pipeline(kVS_TransformBase, kFS_TintBase, {{0, 1, 2}}, {1}) {}
+    : Pipeline(kVS_TransformBase, kFS_TintBase, QuadVertexLayout(), {1}) {}
 
 SpriteBase::SpriteBase()
-    : Pipeline(kVS_SpriteBatch, kFS_SpriteBatch, {{0, 1, 2}}) {}
+    : Pipeline(kVS_SpriteBatch, kFS_SpriteBatch, QuadVertexLayout()) {}
 
 PlaneBase::PlaneBase()
-    : Pipeline(kVS_TransformBase, kFS_PlaneBase, {{0, 1, 2}}, {1}) {}
+    : Pipeline(kVS_TransformBase, kFS_PlaneBase, QuadVertexLayout(), {1}) {}
 
 TransitionAlpha::TransitionAlpha()
-    : Pipeline(kVS_TransformBase, kFS_TransitionAlpha, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_TransitionAlpha, QuadVertexLayout()) {}
 
 TransitionVague::TransitionVague()
-    : Pipeline(kVS_TransformBase, kFS_TransitionMap, {{0, 1, 2}}) {}
+    : Pipeline(kVS_TransformBase, kFS_TransitionMap, QuadVertexLayout()) {}
 
 ShaderSet::ShaderSet() : shader() {
   wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();

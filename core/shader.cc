@@ -27,13 +27,8 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
-
-#include "SPIRV/GlslangToSpv.h"
-#include "glslang/Public/ResourceLimits.h"
-#include "glslang/Public/ShaderLang.h"
-
-#include "spirv_reflect.h"
 
 #include "core/device.h"
 #include "core/exception.h"
@@ -43,344 +38,150 @@ namespace urge {
 
 namespace {
 
-class GlslangGuard {
- public:
-  GlslangGuard() { glslang::InitializeProcess(); }
-  ~GlslangGuard() { glslang::FinalizeProcess(); }
-};
-
-GlslangGuard& GetGlslang() {
-  static GlslangGuard guard;
-  return guard;
-}
-
 [[noreturn]] void Fail(std::string_view what, const std::string& detail) {
   throw Exception(Exception::kGPUError, "shader {} failed: {}", what, detail);
 }
 
-EShLanguage ToLanguage(wgpu::ShaderStage stage) {
-  switch (stage) {
-    case wgpu::ShaderStage::Vertex:
-      return EShLangVertex;
-    case wgpu::ShaderStage::Fragment:
-      return EShLangFragment;
-    default:
-      throw Exception(Exception::kGPUError, "shader stage {} is not supported",
-                      static_cast<uint64_t>(stage));
-  }
-}
+// The device takes the WGSL text as it stands: both wgpu backends carry their
+// own parser.  Nothing here reads the source -- the layouts it goes with are
+// written by hand next to it.
+wgpu::ShaderModule CreateModule(std::string_view wgsl) {
+  wgpu::ShaderSourceWGSL source;
+  source.code = wgsl;
 
-std::vector<uint32_t> CompileToSpirv(wgpu::ShaderStage stage,
-                                     std::string_view glsl) {
-  GetGlslang();
-
-  const EShLanguage language = ToLanguage(stage);
-  glslang::TShader shader(language);
-
-  const std::string source(glsl);
-  const char* source_ptr = source.c_str();
-  shader.setStrings(&source_ptr, 1);
-
-  shader.setEnvInput(glslang::EShSourceGlsl, language, glslang::EShClientVulkan,
-                     100);
-  shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-  shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
-
-  shader.setAutoMapBindings(false);
-  shader.setAutoMapLocations(false);
-
-  if (!shader.parse(GetDefaultResources(), 450, false, EShMsgDefault))
-    Fail("compile", shader.getInfoLog());
-
-  glslang::TProgram program;
-  program.addShader(&shader);
-  if (!program.link(EShMsgDefault))
-    Fail("link", program.getInfoLog());
-
-  std::vector<uint32_t> spirv;
-  glslang::SpvOptions options;
-  options.generateDebugInfo = false;
-  glslang::GlslangToSpv(*program.getIntermediate(language), spirv, &options);
-  if (spirv.empty())
-    Fail("translate", "the compiler produced no SPIR-V");
-  return spirv;
-}
-
-ShaderReflection ReflectSpirv(const std::vector<uint32_t>& spirv) {
-  SpvReflectShaderModule module = {};
-  const SpvReflectResult result = spvReflectCreateShaderModule(
-      spirv.size() * sizeof(uint32_t), spirv.data(), &module);
-  if (result != SPV_REFLECT_RESULT_SUCCESS)
-    Fail("reflect", std::to_string(static_cast<int>(result)));
-
-  ShaderReflection reflection;
-  for (uint32_t set_index = 0; set_index < module.descriptor_set_count;
-       ++set_index) {
-    const SpvReflectDescriptorSet& set = module.descriptor_sets[set_index];
-    while (reflection.groups.size() <= set.set)
-      reflection.groups.emplace_back();
-
-    ShaderGroup& group = reflection.groups[set.set];
-    for (uint32_t binding_index = 0; binding_index < set.binding_count;
-         ++binding_index) {
-      const SpvReflectDescriptorBinding& binding = *set.bindings[binding_index];
-
-      ShaderBinding entry;
-      entry.binding = binding.binding;
-      switch (binding.descriptor_type) {
-        case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-          entry.buffer = WGPUBufferBindingType_Uniform;
-          entry.min_binding_size = binding.block.size;
-          break;
-        case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-          entry.buffer =
-              (binding.decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE)
-                  ? WGPUBufferBindingType_ReadOnlyStorage
-                  : WGPUBufferBindingType_Storage;
-          entry.min_binding_size = binding.block.size;
-          break;
-        case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-          entry.texture = true;
-          break;
-        case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:
-          entry.sampler = true;
-          break;
-        default:
-          Fail("reflect", "a binding kind the engine does not use");
-      }
-      group.bindings.push_back(entry);
-    }
-  }
-
-  for (uint32_t index = 0; index < module.input_variable_count; ++index) {
-    const SpvReflectInterfaceVariable* variable = module.input_variables[index];
-
-    if (variable->location == static_cast<uint32_t>(-1))
-      continue;
-
-    ShaderAttribute attribute;
-    attribute.location = variable->location;
-    switch (variable->format) {
-      case SpvReflectFormat::SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT:
-        attribute.format = WGPUVertexFormat_Float32x4;
-        break;
-      case SpvReflectFormat::SPV_REFLECT_FORMAT_R32G32B32_SFLOAT:
-        attribute.format = WGPUVertexFormat_Float32x3;
-        break;
-      case SpvReflectFormat::SPV_REFLECT_FORMAT_R32G32_SFLOAT:
-        attribute.format = WGPUVertexFormat_Float32x2;
-        break;
-      case SpvReflectFormat::SPV_REFLECT_FORMAT_R32_SFLOAT:
-        attribute.format = WGPUVertexFormat_Float32;
-        break;
-      default:
-        Fail("reflect", "a vertex format the engine does not use");
-    }
-    reflection.attributes.push_back(attribute);
-  }
-
-  spvReflectDestroyShaderModule(&module);
-  return reflection;
-}
-
-wgpu::ShaderModule CreateModule(const Shader& shader) {
   wgpu::ShaderModuleDescriptor module_desc;
-  wgpu::ShaderSourceSPIRV spirv;
-  spirv.code = shader.spirv().data();
-  spirv.codeSize = shader.spirv().size();
-  module_desc.nextInChain = &spirv;
+  module_desc.nextInChain = &source;
 
   wgpu::ShaderModule module =
       GPUDevice::Get().device().CreateShaderModule(&module_desc);
   if (module == nullptr)
-    Fail("module", "the device rejected the SPIRV of the shader");
+    Fail("module", "the device rejected the WGSL of the shader");
   return module;
 }
 
-wgpu::BindGroupLayoutEntry MakeEntry(const ShaderBinding& binding,
-                                     wgpu::ShaderStage visibility,
-                                     bool dynamic_offset) {
-  wgpu::BindGroupLayoutEntry entry;
-  entry.binding = binding.binding;
-  entry.visibility = visibility;
-
-  if (binding.texture) {
-    entry.texture.sampleType = wgpu::TextureSampleType::Float;
-    entry.texture.viewDimension = wgpu::TextureViewDimension::e2D;
-  } else if (binding.sampler) {
-    entry.sampler.type = wgpu::SamplerBindingType::Filtering;
-  } else {
-    entry.buffer.type = static_cast<wgpu::BufferBindingType>(binding.buffer);
-    entry.buffer.minBindingSize = binding.min_binding_size;
-    entry.buffer.hasDynamicOffset = dynamic_offset;
-  }
-  return entry;
-}
-
-std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
-    const Shader& vertex,
-    const Shader& fragment,
-    const std::set<uint32_t>& dynamic_sets,
-    uint32_t min_sets) {
-  const std::vector<ShaderGroup>& vertex_groups = vertex.reflection().groups;
-  const std::vector<ShaderGroup>& fragment_groups =
-      fragment.reflection().groups;
-
-  std::vector<wgpu::BindGroupLayout> layouts;
-  const size_t group_count =
-      std::max({vertex_groups.size(), fragment_groups.size(),
-                static_cast<size_t>(min_sets)});
-
-  for (size_t group = 0; group < group_count; ++group) {
-    std::map<uint32_t, wgpu::BindGroupLayoutEntry> entries;
-    const bool dynamic_offset =
-        dynamic_sets.contains(static_cast<uint32_t>(group));
-    const auto add = [&entries, dynamic_offset](
-                         const std::vector<ShaderBinding>& bindings,
-                         wgpu::ShaderStage visibility) {
-      for (const ShaderBinding& binding : bindings) {
-        const auto found = entries.find(binding.binding);
-        if (found == entries.end())
-          entries.emplace(binding.binding,
-                          MakeEntry(binding, visibility, dynamic_offset));
-        else
-          found->second.visibility |= visibility;
-      }
-    };
-
-    if (group < vertex_groups.size())
-      add(vertex_groups[group].bindings, wgpu::ShaderStage::Vertex);
-    if (group < fragment_groups.size())
-      add(fragment_groups[group].bindings, wgpu::ShaderStage::Fragment);
-
-    std::vector<wgpu::BindGroupLayoutEntry> ordered;
-    ordered.reserve(entries.size());
-    for (const auto& entry : entries)
-      ordered.push_back(entry.second);
-
-    wgpu::BindGroupLayoutDescriptor layout_desc;
-    layout_desc.entryCount = ordered.size();
-    layout_desc.entries = ordered.empty() ? nullptr : ordered.data();
-
-    wgpu::BindGroupLayout layout =
-        GPUDevice::Get().device().CreateBindGroupLayout(&layout_desc);
-    if (layout == nullptr)
-      Fail("layout", "the device rejected a bind group layout of the shader");
-    layouts.push_back(layout);
-  }
-  return layouts;
-}
-
-uint64_t FormatSize(WGPUVertexFormat format) {
+uint64_t FormatSize(wgpu::VertexFormat format) {
   switch (format) {
     default:
-    case WGPUVertexFormat_Uint32x2:
-    case WGPUVertexFormat_Sint32x2:
-    case WGPUVertexFormat_Float32x2:
+    case wgpu::VertexFormat::Uint32x2:
+    case wgpu::VertexFormat::Sint32x2:
+    case wgpu::VertexFormat::Float32x2:
       return 8;
-    case WGPUVertexFormat_Uint32x3:
-    case WGPUVertexFormat_Sint32x3:
-    case WGPUVertexFormat_Float32x3:
+    case wgpu::VertexFormat::Uint32x3:
+    case wgpu::VertexFormat::Sint32x3:
+    case wgpu::VertexFormat::Float32x3:
       return 12;
-    case WGPUVertexFormat_Uint32x4:
-    case WGPUVertexFormat_Sint32x4:
-    case WGPUVertexFormat_Float32x4:
+    case wgpu::VertexFormat::Uint32x4:
+    case wgpu::VertexFormat::Sint32x4:
+    case wgpu::VertexFormat::Float32x4:
       return 16;
   }
 }
 
-std::vector<ShaderBinding> MergeGroupBindings(
-    const std::vector<ShaderGroup>& vertex_groups,
-    const std::vector<ShaderGroup>& fragment_groups,
-    uint32_t set) {
-  std::map<uint32_t, ShaderBinding> merged;
-  const auto add = [&merged, set](const std::vector<ShaderGroup>& groups) {
-    if (set >= groups.size())
-      return;
-    for (const ShaderBinding& binding : groups[set].bindings)
-      merged.emplace(binding.binding, binding);
-  };
-  add(vertex_groups);
-  add(fragment_groups);
+// A dynamic offset belongs to the pipeline rather than to the stage: the same
+// vertex shader feeds draws that address their object uniform through the pool
+// and draws that bind one of their own.  So the flag is stamped on here,
+// instead of writing the vertex stage's layout twice.
+void MarkDynamic(util::LayoutEntry* entry) {
+  if (auto* buffer = std::get_if<util::BufferLayout>(&std::get<2>(*entry)))
+    buffer->has_dynamic_offset = true;
+}
 
-  std::vector<ShaderBinding> bindings;
-  bindings.reserve(merged.size());
-  for (const auto& entry : merged)
-    bindings.push_back(entry.second);
-  return bindings;
+// One layout per `@group`, in group order, from the lists both stages declare.
+// Neither stage ever declares the same binding in the same group in this
+// engine, so merging is a concatenation per group number.
+std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
+    const ShaderSource& vertex,
+    const ShaderSource& fragment,
+    const std::set<uint32_t>& dynamic_sets) {
+  std::map<uint32_t, std::vector<util::LayoutEntry>> merged;
+  const auto append = [&merged](const ShaderSource& stage) {
+    for (const auto& [set, entries] : stage.groups) {
+      std::vector<util::LayoutEntry>& into = merged[set];
+      into.insert(into.end(), entries.begin(), entries.end());
+    }
+  };
+  append(vertex);
+  append(fragment);
+
+  std::vector<wgpu::BindGroupLayout> layouts;
+  const uint32_t group_count = merged.empty() ? 0 : merged.rbegin()->first + 1;
+
+  for (uint32_t group = 0; group < group_count; ++group) {
+    std::vector<util::LayoutEntry> entries;
+    const auto found = merged.find(group);
+    if (found != merged.end())
+      entries = found->second;
+
+    if (dynamic_sets.contains(group))
+      for (util::LayoutEntry& entry : entries)
+        MarkDynamic(&entry);
+
+    wgpu::BindGroupLayout layout = util::CreateBindLayout(entries);
+    if (layout == nullptr)
+      Fail("layout", "the device rejected a bind group layout of the shader");
+    layouts.push_back(std::move(layout));
+  }
+  return layouts;
 }
 
 }  // namespace
 
-Shader Shader::Compile(wgpu::ShaderStage stage, std::string_view glsl) {
-  const std::vector<uint32_t> spirv = CompileToSpirv(stage, glsl);
-
-  Shader shader;
-  shader.reflection_ = ReflectSpirv(spirv);
-  shader.spirv_ = spirv;
-
-  shader.entry_point_ = "main";
-  return shader;
-}
-
-Pipeline::Pipeline(std::string_view vs_glsl,
-                   std::string_view fs_glsl,
-                   std::vector<std::vector<uint32_t>> vb_layouts,
-                   const std::set<uint32_t>& dynamic_sets,
-                   uint32_t min_sets)
-    : vertex_(Shader::Compile(wgpu::ShaderStage::Vertex, vs_glsl)),
-      fragment_(Shader::Compile(wgpu::ShaderStage::Fragment, fs_glsl)),
-      dynamic_sets_(dynamic_sets) {
+void Pipeline::Initialize(
+    const ShaderSource& vertex,
+    const ShaderSource& fragment,
+    std::vector<std::vector<VertexAttribute>> vertex_layout,
+    const std::set<uint32_t>* dynamic_sets) {
   const wgpu::Device device = GPUDevice::Get().device();
 
-  vertex_module_ = CreateModule(vertex_);
-  fragment_module_ = CreateModule(fragment_);
+  vertex_module_ = CreateModule(vertex.wgsl);
+  fragment_module_ = CreateModule(fragment.wgsl);
+  vertex_entry_ = vertex.entry_point;
+  fragment_entry_ = fragment.entry_point;
 
-  const std::vector<wgpu::BindGroupLayout> group_layouts =
-      CreateGroupLayouts(vertex_, fragment_, dynamic_sets_, min_sets);
+  // Without `dynamic_sets` the pipeline is left with a null layout, which is the
+  // device's cue to derive one from the two stages -- see Pipeline::AutoLayout.
+  if (dynamic_sets != nullptr) {
+    const std::vector<wgpu::BindGroupLayout> groups =
+        CreateGroupLayouts(vertex, fragment, *dynamic_sets);
 
-  wgpu::PipelineLayoutDescriptor layout_desc;
-  layout_desc.bindGroupLayoutCount = group_layouts.size();
-  layout_desc.bindGroupLayouts =
-      group_layouts.empty() ? nullptr : group_layouts.data();
-  layout_ = device.CreatePipelineLayout(&layout_desc);
-  if (layout_ == nullptr)
-    Fail("layout", "the device rejected the pipeline layout of the shader");
-
-  std::map<uint32_t, size_t> slot_of_location;
-  for (size_t slot = 0; slot < vb_layouts.size(); ++slot) {
-    for (const uint32_t location : vb_layouts[slot])
-      slot_of_location.emplace(location, slot);
+    wgpu::PipelineLayoutDescriptor layout_desc;
+    layout_desc.bindGroupLayoutCount = groups.size();
+    layout_desc.bindGroupLayouts =
+        groups.empty() ? nullptr : groups.data();
+    layout_ = device.CreatePipelineLayout(&layout_desc);
+    if (layout_ == nullptr)
+      Fail("layout", "the device rejected the pipeline layout of the shader");
   }
 
-  std::vector<ShaderAttribute> attributes = vertex_.reflection().attributes;
-  std::sort(attributes.begin(), attributes.end(),
-            [](const ShaderAttribute& left, const ShaderAttribute& right) {
-              return left.location < right.location;
-            });
-
-  buffers_.resize(vb_layouts.size());
-  for (const ShaderAttribute& shader_attribute : attributes) {
-    const auto found = slot_of_location.find(shader_attribute.location);
-    if (found == slot_of_location.end())
-      Fail("vertex", "location " + std::to_string(shader_attribute.location) +
-                         " is not fed by a vertex buffer layout");
-
-    VertexBuffer& buffer = buffers_[found->second];
-    wgpu::VertexAttribute attribute;
-    attribute.format = static_cast<wgpu::VertexFormat>(shader_attribute.format);
-    attribute.offset = buffer.stride;
-    attribute.shaderLocation = shader_attribute.location;
-    buffer.attributes.push_back(attribute);
-    buffer.stride += FormatSize(shader_attribute.format);
-
-    slot_of_location.erase(found);
+  buffers_.reserve(vertex_layout.size());
+  for (const std::vector<VertexAttribute>& slot : vertex_layout) {
+    VertexBuffer buffer;
+    for (const VertexAttribute& attribute : slot) {
+      wgpu::VertexAttribute mapped;
+      mapped.format = attribute.format;
+      mapped.offset = buffer.stride;
+      mapped.shaderLocation = attribute.location;
+      buffer.attributes.push_back(mapped);
+      buffer.stride += FormatSize(attribute.format);
+    }
+    buffers_.push_back(std::move(buffer));
   }
+}
 
-  if (!slot_of_location.empty())
-    Fail("vertex", "location " +
-                       std::to_string(slot_of_location.begin()->first) +
-                       " is not read by the vertex shader");
+Pipeline::Pipeline(const ShaderSource& vertex,
+                   const ShaderSource& fragment,
+                   std::vector<std::vector<VertexAttribute>> vertex_layout,
+                   const std::set<uint32_t>& dynamic_sets) {
+  Initialize(vertex, fragment, std::move(vertex_layout), &dynamic_sets);
+}
+
+Pipeline Pipeline::AutoLayout(
+    const ShaderSource& vertex,
+    const ShaderSource& fragment,
+    std::vector<std::vector<VertexAttribute>> vertex_layout) {
+  Pipeline pipeline;
+  pipeline.Initialize(vertex, fragment, std::move(vertex_layout), nullptr);
+  return pipeline;
 }
 
 wgpu::RenderPipeline Pipeline::MakeState(
@@ -402,13 +203,13 @@ wgpu::RenderPipeline Pipeline::MakeState(
 
   wgpu::VertexState vertex_state;
   vertex_state.module = vertex_module_;
-  vertex_state.entryPoint = std::string_view(vertex_.entry_point());
+  vertex_state.entryPoint = vertex_entry_;
   vertex_state.bufferCount = buffers.size();
   vertex_state.buffers = buffers.empty() ? nullptr : buffers.data();
 
   wgpu::FragmentState fragment_state;
   fragment_state.module = fragment_module_;
-  fragment_state.entryPoint = std::string_view(fragment_.entry_point());
+  fragment_state.entryPoint = fragment_entry_;
   fragment_state.targetCount = blends.size();
   fragment_state.targets = blends.empty() ? nullptr : blends.data();
 
@@ -435,11 +236,6 @@ wgpu::RenderPipeline Pipeline::MakeDefaultState(const wgpu::BlendState* blend) {
 
   return MakeState(GetDefaultPrimitiveState(), *GetDepthStencilState(),
                    {target});
-}
-
-std::vector<ShaderBinding> Pipeline::group_bindings(uint32_t set) const {
-  return MergeGroupBindings(vertex_.reflection().groups,
-                            fragment_.reflection().groups, set);
 }
 
 }  // namespace urge

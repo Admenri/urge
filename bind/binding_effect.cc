@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Effect  (core/effect.h:39-58)
+// Effect  (core/effect.h:39-74)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Effect);
@@ -38,15 +38,15 @@ RB_FUNC(Effect_initialize) {
   urge::RefPtr<urge::Effect> obj = nullptr;
   EXC_BEGIN {
     if (argc == 2) {
-      // initialize(vs_glsl, fs_glsl)
-      std::string vs_glsl, fs_glsl;
-      ParseArgs(argc, argv, "ss", &vs_glsl, &fs_glsl);
-      obj = urge::MakeRefCounted<urge::Effect>(vs_glsl, fs_glsl);
+      // initialize(vs_wgsl, fs_wgsl)
+      std::string vs_wgsl, fs_wgsl;
+      ParseArgs(argc, argv, "ss", &vs_wgsl, &fs_wgsl);
+      obj = urge::MakeRefCounted<urge::Effect>(vs_wgsl, fs_wgsl);
     } else if (argc == 3) {
-      // initialize(vs_glsl, fs_glsl, blend_states)
-      std::string vs_glsl, fs_glsl, blend_states;
-      ParseArgs(argc, argv, "sss", &vs_glsl, &fs_glsl, &blend_states);
-      obj = urge::MakeRefCounted<urge::Effect>(vs_glsl, fs_glsl, blend_states);
+      // initialize(vs_wgsl, fs_wgsl, blend_states)
+      std::string vs_wgsl, fs_wgsl, blend_states;
+      ParseArgs(argc, argv, "sss", &vs_wgsl, &fs_wgsl, &blend_states);
+      obj = urge::MakeRefCounted<urge::Effect>(vs_wgsl, fs_wgsl, blend_states);
     } else {
       rb_raise(rb_eArgError, "%s", "wrong number of arguments");
     }

@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassDescriptor  (core/gpu.h:569-618)
+// GPURenderPassDescriptor  (core/gpu.h:557-606)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassDescriptor, GPUObject);

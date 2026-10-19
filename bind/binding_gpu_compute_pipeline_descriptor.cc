@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePipelineDescriptor  (core/gpu.h:450-476)
+// GPUComputePipelineDescriptor  (core/gpu.h:438-464)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePipelineDescriptor, GPUObject);

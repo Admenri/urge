@@ -334,20 +334,10 @@ class GPUShaderModuleDescriptor : public GPUObject {
   URGE_BINDING(Name : "code=")
   void SetCode(std::string value) { code = value; }
 
-  URGE_BINDING()
-  ATTR(uint32_t, Language) {
-    if (value)
-      language = *value;
-    return language;
-  }
-
-  URGE_BINDING()
-  ATTR(uint32_t, Stage) {
-    if (value)
-      stage = *value;
-    return stage;
-  }
-
+  // `entry_point` names the function the pipeline will call.  It is carried on
+  // the descriptor for the caller's own bookkeeping: `Shader` reads the real
+  // name back out of the source (`@vertex` / `@fragment`), because a module may
+  // declare more than one entry point and the attribute is what identifies it.
   URGE_BINDING(Name : "entry_point")
   std::string GetEntryPoint() { return entry_point; }
   URGE_BINDING(Name : "entry_point=")
@@ -356,8 +346,6 @@ class GPUShaderModuleDescriptor : public GPUObject {
  public:
   std::string label;
   std::string code;
-  uint32_t language = 0;
-  uint32_t stage = 0;
   std::string entry_point = "main";
 };
 
@@ -1016,17 +1004,12 @@ class GPU : public Singleton<GPU> {
     Discard = 2,
   };
 
-  URGE_BINDING()
-  enum ShaderLanguage {
-    ShaderLanguageWgsl = 0,
-    ShaderLanguageGlsl = 1,
-  };
-
-  URGE_BINDING()
-  enum ShaderStage {
-    ShaderStageVertex = static_cast<uint32_t>(wgpu::ShaderStage::Vertex),
-    ShaderStageFragment = static_cast<uint32_t>(wgpu::ShaderStage::Fragment),
-  };
+  // There is no `ShaderLanguage` here on purpose.  WGSL is the only shading
+  // language the renderer takes -- wgpu parses it directly, so there is nothing
+  // to choose between and no `GPU::SHADER_LANGUAGE_*` constant to pass.  The
+  // language selector and the `stage` that went with it were only ever there to
+  // drive the GLSL -> SPIR-V front end; both are gone with it, and a shader
+  // module is now built from its source and nothing else.
 
   URGE_BINDING()
   enum IndexFormat {

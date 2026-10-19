@@ -31,7 +31,7 @@ what you work with.
 | RGSS1 / 2 / 3 compatible | The version is derived from the `RGSS` key in `Game.ini`, or inferred from the archive extension |
 | WebGPU backend | Built on wgpu-native; every render target is `RGBA8Unorm` and the present pass compensates for sRGB |
 | 3D transform node tree | A single `Node` base class with parent/child hierarchy, position/rotation/scale and Z ordering |
-| Custom shaders | `Effect` attaches an arbitrary GLSL fragment shader to a node or to a subtree |
+| Custom shaders | `Effect` attaches an arbitrary WGSL fragment shader to a node or to a subtree |
 | Embedded CRuby | Runs RPG Maker script archives (Marshal + zlib) directly, with no external Ruby installation |
 | Generated bindings | The CRuby glue is mechanically generated from the export blocks in `core/*.h`; signatures are the contract |
 | High pixel density | Logical resolution is decoupled from physical pixels, so the window scales correctly on HiDPI displays |
@@ -44,7 +44,7 @@ what you work with.
 | Language | C++20 | Engine and host |
 | Window / input / audio | SDL3, SDL_image, SDL_ttf | Platform abstraction, image decoding, font rasterisation |
 | Graphics API | WebGPU (wgpu-native) | Rendering backend |
-| Shader toolchain | glslang + SPIRV-Tools + spirv-reflect | GLSL → SPIR-V compilation and descriptor-layout reflection |
+| Shader toolchain | none | WGSL goes straight to wgpu; a small in-tree reflector derives the descriptor layout |
 | Scripting runtime | CRuby 1.9.3 (`third_party/cruby`) | Executes RGSS scripts |
 | Virtual filesystem | PhysicsFS (physfs) | Asset and RTP mounting |
 | Math | glm | Vectors, matrices, projections |
@@ -156,15 +156,17 @@ These dependencies are provided as Git submodules and must be fetched while clon
 | `SDL_image` | Image decoding |
 | `SDL_ttf` | TrueType rasterisation (bundles FreeType / HarfBuzz / PlutoSVG) |
 | `physfs` | Virtual filesystem |
-| `glslang` | GLSL → SPIR-V compilation |
-| `SPIRV-Tools` | SPIR-V toolchain |
 | `wgpu-native` | WebGPU implementation (Rust) |
 | `zlib` | Script-archive decompression |
 
-In addition, `third_party/` contains four **vendored** dependencies (not submodules):
+In addition, `third_party/` contains several **vendored** dependencies (not submodules):
 `cruby` (CRuby 1.9.3), `libffi` (the foreign-function interface the `Win32API` binding
-uses to make ABI-correct calls on x64), `spirv-reflect` (descriptor-layout reflection)
-and `webgpu-cpp` (the WebGPU C++ header wrapper).
+uses to make ABI-correct calls on x64), `webgpu-cpp` (the WebGPU C++ header wrapper),
+`miniaudio`, `imgui`, `dav1d` and `webm`.
+
+The decoding libraries travel with their only consumer: `libwebp` lives in
+`third_party/SDL_image/external/`, and `ogg` / `vorbis` / `opus` / `opusfile` live in
+`third_party/miniaudio/external/`.
 
 `libffi` takes part in the build on Windows only (see `third_party/CMakeLists.txt`):
 its sole consumer is `bind/binding_win32api.cc`, and that binding compiles to an empty
@@ -206,8 +208,10 @@ format, `RGBA8Unorm`. When the swapchain is an `*Srgb` format, the present pass 
 fragment shader that performs an **exact piecewise sRGB inverse encoding**, which cancels
 the sRGB target's own encode and reproduces the authored colour on any swapchain format.
 
-Shaders are authored in **GLSL**, compiled to SPIR-V by glslang at build time, and
-reflected by spirv-reflect to derive the descriptor layout. The bind-group convention is:
+Shaders are authored in **WGSL** and handed to wgpu as they are -- both backends carry
+their own WGSL front end, so nothing is translated at run time. The descriptor layout the
+pipeline needs is read back out of the source by `core/wgsl_reflect.cc`. The bind-group
+convention is:
 
 | Set | Contents |
 | --- | --- |

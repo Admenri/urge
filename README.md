@@ -28,7 +28,7 @@ API——既有工程原则上无需改动脚本即可运行。
 | RGSS1 / 2 / 3 兼容 | 依据 `Game.ini` 的 `RGSS` 字段或脚本归档扩展名自动判定版本 |
 | WebGPU 渲染后端 | 基于 wgpu-native，渲染目标统一为 `RGBA8Unorm`，present 阶段做 sRGB 补偿 |
 | 3D 变换节点树 | 统一的 `Node` 基类，支持父子层级、位置/旋转/缩放与 Z 排序 |
-| 自定义着色器效果 | `Effect` 可将任意 GLSL 片元着色器挂载到节点或其子树上 |
+| 自定义着色器效果 | `Effect` 可将任意 WGSL 片元着色器挂载到节点或其子树上 |
 | 内嵌 CRuby | 直接执行 RPG Maker 的脚本归档（Marshal + zlib），无需外部 Ruby 环境 |
 | 自动绑定生成 | 由 `core/*.h` 的导出块机械生成 CRuby 胶水，签名即契约 |
 | 高像素密度适配 | 逻辑分辨率与物理像素解耦，高分屏下按系统缩放显示 |
@@ -41,7 +41,7 @@ API——既有工程原则上无需改动脚本即可运行。
 | 语言 | C++20 | 引擎与宿主 |
 | 窗口 / 输入 / 音频 | SDL3、SDL_image、SDL_ttf | 平台抽象、位图解码、字体栅格化 |
 | 图形 API | WebGPU（wgpu-native） | 渲染后端 |
-| 着色器工具链 | glslang + SPIRV-Tools + spirv-reflect | GLSL → SPIR-V 编译与描述符布局反射 |
+| 着色器工具链 | 无外部依赖 | WGSL 直接交给 wgpu，描述符布局由自研反射器从源码读出 |
 | 脚本运行时 | CRuby 1.9.3（`third_party/cruby`） | 执行 RGSS 脚本 |
 | 虚拟文件系统 | PhysicsFS（physfs） | 资源与 RTP 装载 |
 | 数学库 | glm | 向量、矩阵与投影 |
@@ -151,14 +151,15 @@ Backend =
 | `SDL_image` | 位图解码 |
 | `SDL_ttf` | TrueType 字体栅格化（内含 FreeType / HarfBuzz / PlutoSVG） |
 | `physfs` | 虚拟文件系统 |
-| `glslang` | GLSL → SPIR-V 编译 |
-| `SPIRV-Tools` | SPIR-V 工具链 |
 | `wgpu-native` | WebGPU 实现（Rust） |
 | `zlib` | 脚本归档解压 |
 
-此外，`third_party/` 下还有四个**内嵌**依赖（非子模块）：`cruby`（CRuby 1.9.3）、
-`libffi`（外部函数调用接口，为 `Win32API` 绑定提供 x64 下的 ABI 调用）、`spirv-reflect`
-（描述符布局反射）与 `webgpu-cpp`（WebGPU C++ 头文件包装）。
+此外，`third_party/` 下还有几个**内嵌**依赖（非子模块）：`cruby`（CRuby 1.9.3）、
+`libffi`（外部函数调用接口，为 `Win32API` 绑定提供 x64 下的 ABI 调用）、`webgpu-cpp`
+（WebGPU C++ 头文件包装）、`miniaudio`、`imgui`、`dav1d` 与 `webm`。
+
+解码类库跟着它们的消费者走：`libwebp` 位于 `third_party/SDL_image/external/`，
+`ogg` / `vorbis` / `opus` / `opusfile` 位于 `third_party/miniaudio/external/`。
 
 `libffi` 仅在 Windows 上参与构建（见 `third_party/CMakeLists.txt`）：它的唯一消费者是
 `bind/binding_win32api.cc`，而该绑定在非 Windows 平台编译为空实现。它的构建脚本是上游
@@ -195,8 +196,9 @@ graph TD
 `*Srgb` 格式，present 阶段用一个片元着色器做**精确的分段 sRGB 反编码**，使 sRGB 目标的
 再编码相互抵消，从而在任意交换链格式下还原作者意图的颜色。
 
-着色器以 **GLSL** 编写，构建期由 glslang 编译为 SPIR-V，并由 spirv-reflect 反射出描述符
-布局；绑定的集合（set）约定为：
+着色器以 **WGSL** 编写，源码原样交给 wgpu（两端后端都自带 WGSL 前端），没有任何运行期
+翻译步骤；管线需要的描述符布局由 `core/wgsl_reflect.cc` 直接读源码得出。绑定的集合（set）
+约定为：
 
 | Set | 内容 |
 | --- | --- |
