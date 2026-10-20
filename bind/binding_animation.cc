@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Animation  (core/canvas/animation.h:18-37)
+// Animation  (core/canvas/animation.h:39-58)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Animation, Disposable);

@@ -226,6 +226,9 @@ bool Viewport::DoDraw(DrawParam param) {
 }
 
 void Viewport::PostDraw(DrawParam param) {
+  if (!param->pass)
+    return;
+
   FlushSpriteBatch(param);
 
   if (effect_) {

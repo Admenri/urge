@@ -23,9 +23,11 @@
 #include "core/scene/camera.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #include "core/common/logger.h"
 #include "core/render/gpu_utils.h"
@@ -132,7 +134,48 @@ wgpu::BindGroup Camera::AcquireScene(const glm::ivec2& size) {
   return scene_group_;
 }
 
+std::vector<float> Camera::ViewProjection(int32_t width, int32_t height) {
+  const glm::ivec2 size(std::max(1, width), std::max(1, height));
+  const glm::mat4 matrix = projection(size) * view();
+
+  std::vector<float> result(16);
+  const float* data = glm::value_ptr(matrix);
+  for (size_t i = 0; i < 16; ++i)
+    result[i] = data[i];
+  return result;
+}
+
+bool Camera::IsVisible(const glm::vec3& center,
+                       float radius,
+                       const glm::ivec2& size) const {
+  const glm::mat4 matrix = projection(size) * view();
+
+  const auto row = [&matrix](int index) {
+    return glm::vec4(matrix[0][index], matrix[1][index], matrix[2][index],
+                     matrix[3][index]);
+  };
+
+  const glm::vec4 planes[6] = {
+      row(3) + row(0), row(3) - row(0), row(3) + row(1),
+      row(3) - row(1), row(3) + row(2), row(3) - row(2),
+  };
+
+  for (const glm::vec4& plane : planes) {
+    const float length = glm::length(glm::vec3(plane));
+    if (length <= 0.0f)
+      continue;
+
+    const glm::vec3 normal = glm::vec3(plane) / length;
+    const float distance = plane.w / length;
+    if (glm::dot(normal, center) + distance < -radius)
+      return false;
+  }
+
+  return true;
+}
+
 PerspectiveCamera::PerspectiveCamera() = default;
+
 PerspectiveCamera::~PerspectiveCamera() = default;
 
 ATTR_DEF(PerspectiveCamera, float, Fov) {
@@ -163,10 +206,7 @@ ATTR_DEF(PerspectiveCamera, float, Far) {
 }
 
 glm::mat4 PerspectiveCamera::projection(const glm::ivec2& size) const {
-  const glm::mat4 lens =
-      glm::perspective(glm::radians(fov_), AspectOf(size), near_, far_);
-
-  return lens * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, -1.0f, 1.0f));
+  return glm::perspective(glm::radians(fov_), AspectOf(size), near_, far_);
 }
 
 OrthographicCamera::OrthographicCamera() = default;

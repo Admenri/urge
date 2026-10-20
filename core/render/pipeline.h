@@ -60,6 +60,8 @@ wgpu::PrimitiveState GetDefaultPrimitiveState();
 
 wgpu::DepthStencilState* GetDepthStencilState();
 
+wgpu::DepthStencilState* GetDepthStencilTestState();
+
 std::optional<wgpu::BlendState> ParseBlendState(std::string_view states);
 
 class TextureBase : public Pipeline {

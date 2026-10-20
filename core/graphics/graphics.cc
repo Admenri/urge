@@ -180,6 +180,9 @@ bool ScreenRootNode::DoDraw(DrawParam param) {
 }
 
 void ScreenRootNode::PostDraw(DrawParam param) {
+  if (!param->pass)
+    return;
+
   auto pipeline = ShaderSet::Get().state.graphics.color_pma;
   param->pass.SetPipeline(pipeline);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);

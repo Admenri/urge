@@ -76,7 +76,8 @@ uint64_t FormatSize(wgpu::VertexFormat format) {
 
 void MarkDynamic(util::LayoutEntry* entry) {
   if (auto* buffer = std::get_if<util::BufferLayout>(&std::get<2>(*entry)))
-    buffer->has_dynamic_offset = true;
+    if (buffer->type == wgpu::BufferBindingType::Uniform)
+      buffer->has_dynamic_offset = true;
 }
 
 std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(

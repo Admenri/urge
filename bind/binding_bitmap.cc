@@ -11,6 +11,7 @@
 #include "binding_color.h"
 #include "binding_disposable.h"
 #include "binding_font.h"
+#include "binding_gpu_texture.h"
 #include "binding_gpu_texture_view.h"
 #include "binding_image.h"
 #include "binding_rect.h"
@@ -32,7 +33,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/canvas/bitmap.h:21-114)
+// Bitmap  (core/canvas/bitmap.h:43-140)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
@@ -421,6 +422,30 @@ RB_FUNC(Bitmap_GetTextureView) {
   return Qnil;
 }
 
+RB_FUNC(Bitmap_GetTexture) {
+  auto* self_obj = GetSelfData<urge::Bitmap>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    auto result = self_obj->GetTexture();
+    return WrapObject(result.get(), kGPUTextureDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Bitmap_GetDepthStencilView) {
+  auto* self_obj = GetSelfData<urge::Bitmap>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    auto result = self_obj->GetDepthStencilView();
+    return WrapObject(result.get(), kGPUTextureViewDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(Bitmap_ToImage) {
   auto* self_obj = GetSelfData<urge::Bitmap>(self);
 
@@ -491,6 +516,8 @@ void InitBitmapBinding() {
   DefineMethod(klass, "draw_text", Bitmap_DrawText);
   DefineMethod(klass, "text_size", Bitmap_TextSize);
   DefineMethod(klass, "texture_view", Bitmap_GetTextureView);
+  DefineMethod(klass, "texture", Bitmap_GetTexture);
+  DefineMethod(klass, "depth_stencil_view", Bitmap_GetDepthStencilView);
   DefineMethod(klass, "to_image", Bitmap_ToImage);
   DefineMethod(klass, "update_with_image", Bitmap_UpdateWithImage);
   DefineClassMethod(klass, "from_image", Bitmap_FromImage);

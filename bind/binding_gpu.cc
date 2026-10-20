@@ -49,7 +49,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPU  (core/graphics/gpu.h:943-1053)
+// GPU  (core/graphics/gpu.h:1109-1536)
 // -------------------------------------------------------------------------
 
 RB_FUNC(GPU_queue) {
@@ -245,6 +245,10 @@ void InitGPUBinding() {
                LONG2NUM(static_cast<long>(urge::GPU::TextureStorageBinding)));
   rb_const_set(mod, rb_intern("TEXTURE_RENDER_ATTACHMENT"),
                LONG2NUM(static_cast<long>(urge::GPU::TextureRenderAttachment)));
+  rb_const_set(mod, rb_intern("TEXTURE_COPY_SRC"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureCopySrc)));
+  rb_const_set(mod, rb_intern("TEXTURE_COPY_DST"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureCopyDst)));
   rb_const_set(mod, rb_intern("LOAD"),
                LONG2NUM(static_cast<long>(urge::GPU::Load)));
   rb_const_set(mod, rb_intern("CLEAR"),
@@ -253,10 +257,48 @@ void InitGPUBinding() {
                LONG2NUM(static_cast<long>(urge::GPU::Store)));
   rb_const_set(mod, rb_intern("DISCARD"),
                LONG2NUM(static_cast<long>(urge::GPU::Discard)));
+  rb_const_set(mod, rb_intern("INDEX_FORMAT_UNDEFINED"),
+               LONG2NUM(static_cast<long>(urge::GPU::IndexFormatUndefined)));
   rb_const_set(mod, rb_intern("INDEX_FORMAT_UINT16"),
                LONG2NUM(static_cast<long>(urge::GPU::IndexFormatUint16)));
   rb_const_set(mod, rb_intern("INDEX_FORMAT_UINT32"),
                LONG2NUM(static_cast<long>(urge::GPU::IndexFormatUint32)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT8X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint8x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT8X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint8x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT8X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint8x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT8X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint8x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UNORM8X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUnorm8x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UNORM8X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUnorm8x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SNORM8X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSnorm8x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SNORM8X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSnorm8x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT16X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint16x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT16X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint16x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT16X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint16x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT16X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint16x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UNORM16X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUnorm16x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UNORM16X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUnorm16x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SNORM16X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSnorm16x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SNORM16X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSnorm16x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_FLOAT16X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatFloat16x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_FLOAT16X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatFloat16x4)));
   rb_const_set(mod, rb_intern("VERTEX_FORMAT_FLOAT32"),
                LONG2NUM(static_cast<long>(urge::GPU::VertexFormatFloat32)));
   rb_const_set(mod, rb_intern("VERTEX_FORMAT_FLOAT32X2"),
@@ -265,20 +307,274 @@ void InitGPUBinding() {
                LONG2NUM(static_cast<long>(urge::GPU::VertexFormatFloat32x3)));
   rb_const_set(mod, rb_intern("VERTEX_FORMAT_FLOAT32X4"),
                LONG2NUM(static_cast<long>(urge::GPU::VertexFormatFloat32x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT32"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint32)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT32X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint32x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT32X3"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint32x3)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_UINT32X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatUint32x4)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT32"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint32)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT32X2"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint32x2)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT32X3"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint32x3)));
+  rb_const_set(mod, rb_intern("VERTEX_FORMAT_SINT32X4"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexFormatSint32x4)));
+  rb_const_set(mod, rb_intern("VERTEX_STEP_MODE_VERTEX"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexStepModeVertex)));
+  rb_const_set(mod, rb_intern("VERTEX_STEP_MODE_INSTANCE"),
+               LONG2NUM(static_cast<long>(urge::GPU::VertexStepModeInstance)));
   rb_const_set(mod, rb_intern("TEXTURE_FORMAT_UNDEFINED"),
                LONG2NUM(static_cast<long>(urge::GPU::TextureFormatUndefined)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R8_UNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR8Unorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R8_SNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR8Snorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R8_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR8Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R8_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR8Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R16_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR16Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R16_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR16Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R16_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR16Float)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG8_UNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg8Unorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG8_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg8Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG8_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg8Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R32_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR32Float)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R32_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR32Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_R32_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatR32Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG16_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg16Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG16_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg16Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG16_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg16Float)));
   rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA8_UNORM"),
                LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba8Unorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA8_UNORM_SRGB"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba8UnormSrgb)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA8_SNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba8Snorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA8_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba8Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA8_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba8Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_BGRA8_UNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatBgra8Unorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_BGRA8_UNORM_SRGB"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatBgra8UnormSrgb)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGB10A2_UNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgb10a2Unorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG11B10_UFLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg11b10Ufloat)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG32_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg32Float)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG32_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg32Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RG32_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRg32Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA16_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba16Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA16_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba16Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA16_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba16Float)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA32_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba32Float)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA32_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba32Uint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_RGBA32_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatRgba32Sint)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_STENCIL8"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatStencil8)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_DEPTH16_UNORM"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatDepth16Unorm)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_DEPTH24_PLUS"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatDepth24Plus)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_DEPTH24_PLUS_STENCIL8"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatDepth24PlusStencil8)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_DEPTH32_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatDepth32Float)));
+  rb_const_set(mod, rb_intern("TEXTURE_FORMAT_DEPTH32_FLOAT_STENCIL8"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureFormatDepth32FloatStencil8)));
+  rb_const_set(mod, rb_intern("TEXTURE_DIMENSION1D"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureDimension1D)));
+  rb_const_set(mod, rb_intern("TEXTURE_DIMENSION2D"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureDimension2D)));
+  rb_const_set(mod, rb_intern("TEXTURE_DIMENSION3D"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureDimension3D)));
+  rb_const_set(mod, rb_intern("TEXTURE_ASPECT_ALL"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureAspectAll)));
+  rb_const_set(mod, rb_intern("TEXTURE_ASPECT_STENCIL_ONLY"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureAspectStencilOnly)));
+  rb_const_set(mod, rb_intern("TEXTURE_ASPECT_DEPTH_ONLY"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureAspectDepthOnly)));
+  rb_const_set(mod, rb_intern("TEXTURE_VIEW_DIMENSION1D"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureViewDimension1D)));
+  rb_const_set(mod, rb_intern("TEXTURE_VIEW_DIMENSION2D"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureViewDimension2D)));
+  rb_const_set(mod, rb_intern("TEXTURE_VIEW_DIMENSION2D_ARRAY"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureViewDimension2DArray)));
+  rb_const_set(mod, rb_intern("TEXTURE_VIEW_DIMENSION_CUBE"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureViewDimensionCube)));
+  rb_const_set(mod, rb_intern("TEXTURE_VIEW_DIMENSION_CUBE_ARRAY"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureViewDimensionCubeArray)));
+  rb_const_set(mod, rb_intern("TEXTURE_VIEW_DIMENSION3D"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureViewDimension3D)));
+  rb_const_set(mod, rb_intern("TEXTURE_SAMPLE_TYPE_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureSampleTypeFloat)));
+  rb_const_set(mod, rb_intern("TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureSampleTypeUnfilterableFloat)));
+  rb_const_set(mod, rb_intern("TEXTURE_SAMPLE_TYPE_DEPTH"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureSampleTypeDepth)));
+  rb_const_set(mod, rb_intern("TEXTURE_SAMPLE_TYPE_SINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureSampleTypeSint)));
+  rb_const_set(mod, rb_intern("TEXTURE_SAMPLE_TYPE_UINT"),
+               LONG2NUM(static_cast<long>(urge::GPU::TextureSampleTypeUint)));
+  rb_const_set(mod, rb_intern("SAMPLER_BINDING_TYPE_FILTERING"),
+               LONG2NUM(static_cast<long>(urge::GPU::SamplerBindingTypeFiltering)));
+  rb_const_set(mod, rb_intern("SAMPLER_BINDING_TYPE_NON_FILTERING"),
+               LONG2NUM(static_cast<long>(urge::GPU::SamplerBindingTypeNonFiltering)));
+  rb_const_set(mod, rb_intern("SAMPLER_BINDING_TYPE_COMPARISON"),
+               LONG2NUM(static_cast<long>(urge::GPU::SamplerBindingTypeComparison)));
+  rb_const_set(mod, rb_intern("SHADER_STAGE_NONE"),
+               LONG2NUM(static_cast<long>(urge::GPU::ShaderStageNone)));
+  rb_const_set(mod, rb_intern("SHADER_STAGE_VERTEX"),
+               LONG2NUM(static_cast<long>(urge::GPU::ShaderStageVertex)));
+  rb_const_set(mod, rb_intern("SHADER_STAGE_FRAGMENT"),
+               LONG2NUM(static_cast<long>(urge::GPU::ShaderStageFragment)));
+  rb_const_set(mod, rb_intern("SHADER_STAGE_COMPUTE"),
+               LONG2NUM(static_cast<long>(urge::GPU::ShaderStageCompute)));
+  rb_const_set(mod, rb_intern("PRIMITIVE_TOPOLOGY_POINT_LIST"),
+               LONG2NUM(static_cast<long>(urge::GPU::PrimitiveTopologyPointList)));
+  rb_const_set(mod, rb_intern("PRIMITIVE_TOPOLOGY_LINE_LIST"),
+               LONG2NUM(static_cast<long>(urge::GPU::PrimitiveTopologyLineList)));
+  rb_const_set(mod, rb_intern("PRIMITIVE_TOPOLOGY_LINE_STRIP"),
+               LONG2NUM(static_cast<long>(urge::GPU::PrimitiveTopologyLineStrip)));
+  rb_const_set(mod, rb_intern("PRIMITIVE_TOPOLOGY_TRIANGLE_LIST"),
+               LONG2NUM(static_cast<long>(urge::GPU::PrimitiveTopologyTriangleList)));
+  rb_const_set(mod, rb_intern("PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"),
+               LONG2NUM(static_cast<long>(urge::GPU::PrimitiveTopologyTriangleStrip)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_NEVER"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionNever)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_LESS"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionLess)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_EQUAL"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionEqual)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_LESS_EQUAL"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionLessEqual)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_GREATER"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionGreater)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_NOT_EQUAL"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionNotEqual)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_GREATER_EQUAL"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionGreaterEqual)));
+  rb_const_set(mod, rb_intern("COMPARE_FUNCTION_ALWAYS"),
+               LONG2NUM(static_cast<long>(urge::GPU::CompareFunctionAlways)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_KEEP"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationKeep)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_ZERO"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationZero)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_REPLACE"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationReplace)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_INVERT"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationInvert)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_INCREMENT_CLAMP"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationIncrementClamp)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_DECREMENT_CLAMP"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationDecrementClamp)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_INCREMENT_WRAP"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationIncrementWrap)));
+  rb_const_set(mod, rb_intern("STENCIL_OPERATION_DECREMENT_WRAP"),
+               LONG2NUM(static_cast<long>(urge::GPU::StencilOperationDecrementWrap)));
+  rb_const_set(mod, rb_intern("CULL_MODE_NONE"),
+               LONG2NUM(static_cast<long>(urge::GPU::CullModeNone)));
+  rb_const_set(mod, rb_intern("CULL_MODE_FRONT"),
+               LONG2NUM(static_cast<long>(urge::GPU::CullModeFront)));
+  rb_const_set(mod, rb_intern("CULL_MODE_BACK"),
+               LONG2NUM(static_cast<long>(urge::GPU::CullModeBack)));
+  rb_const_set(mod, rb_intern("FRONT_FACE_CCW"),
+               LONG2NUM(static_cast<long>(urge::GPU::FrontFaceCCW)));
+  rb_const_set(mod, rb_intern("FRONT_FACE_CW"),
+               LONG2NUM(static_cast<long>(urge::GPU::FrontFaceCW)));
+  rb_const_set(mod, rb_intern("BLEND_OPERATION_ADD"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendOperationAdd)));
+  rb_const_set(mod, rb_intern("BLEND_OPERATION_SUBTRACT"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendOperationSubtract)));
+  rb_const_set(mod, rb_intern("BLEND_OPERATION_REVERSE_SUBTRACT"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendOperationReverseSubtract)));
+  rb_const_set(mod, rb_intern("BLEND_OPERATION_MIN"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendOperationMin)));
+  rb_const_set(mod, rb_intern("BLEND_OPERATION_MAX"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendOperationMax)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ZERO"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorZero)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ONE"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorOne)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_SRC"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorSrc)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ONE_MINUS_SRC"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorOneMinusSrc)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_SRC_ALPHA"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorSrcAlpha)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ONE_MINUS_SRC_ALPHA"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorOneMinusSrcAlpha)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_DST"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorDst)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ONE_MINUS_DST"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorOneMinusDst)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_DST_ALPHA"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorDstAlpha)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ONE_MINUS_DST_ALPHA"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorOneMinusDstAlpha)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_SRC_ALPHA_SATURATED"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorSrcAlphaSaturated)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_CONSTANT"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorConstant)));
+  rb_const_set(mod, rb_intern("BLEND_FACTOR_ONE_MINUS_CONSTANT"),
+               LONG2NUM(static_cast<long>(urge::GPU::BlendFactorOneMinusConstant)));
+  rb_const_set(mod, rb_intern("COLOR_WRITE_MASK_NONE"),
+               LONG2NUM(static_cast<long>(urge::GPU::ColorWriteMaskNone)));
+  rb_const_set(mod, rb_intern("COLOR_WRITE_MASK_RED"),
+               LONG2NUM(static_cast<long>(urge::GPU::ColorWriteMaskRed)));
+  rb_const_set(mod, rb_intern("COLOR_WRITE_MASK_GREEN"),
+               LONG2NUM(static_cast<long>(urge::GPU::ColorWriteMaskGreen)));
+  rb_const_set(mod, rb_intern("COLOR_WRITE_MASK_BLUE"),
+               LONG2NUM(static_cast<long>(urge::GPU::ColorWriteMaskBlue)));
+  rb_const_set(mod, rb_intern("COLOR_WRITE_MASK_ALPHA"),
+               LONG2NUM(static_cast<long>(urge::GPU::ColorWriteMaskAlpha)));
+  rb_const_set(mod, rb_intern("COLOR_WRITE_MASK_ALL"),
+               LONG2NUM(static_cast<long>(urge::GPU::ColorWriteMaskAll)));
   rb_const_set(mod, rb_intern("FILTER_MODE_NEAREST"),
                LONG2NUM(static_cast<long>(urge::GPU::FilterModeNearest)));
   rb_const_set(mod, rb_intern("FILTER_MODE_LINEAR"),
                LONG2NUM(static_cast<long>(urge::GPU::FilterModeLinear)));
+  rb_const_set(mod, rb_intern("MIPMAP_FILTER_MODE_NEAREST"),
+               LONG2NUM(static_cast<long>(urge::GPU::MipmapFilterModeNearest)));
+  rb_const_set(mod, rb_intern("MIPMAP_FILTER_MODE_LINEAR"),
+               LONG2NUM(static_cast<long>(urge::GPU::MipmapFilterModeLinear)));
   rb_const_set(mod, rb_intern("ADDRESS_MODE_CLAMP_TO_EDGE"),
                LONG2NUM(static_cast<long>(urge::GPU::AddressModeClampToEdge)));
   rb_const_set(mod, rb_intern("ADDRESS_MODE_REPEAT"),
                LONG2NUM(static_cast<long>(urge::GPU::AddressModeRepeat)));
   rb_const_set(mod, rb_intern("ADDRESS_MODE_MIRROR_REPEAT"),
                LONG2NUM(static_cast<long>(urge::GPU::AddressModeMirrorRepeat)));
+  rb_const_set(mod, rb_intern("QUERY_TYPE_OCCLUSION"),
+               LONG2NUM(static_cast<long>(urge::GPU::QueryTypeOcclusion)));
+  rb_const_set(mod, rb_intern("QUERY_TYPE_TIMESTAMP"),
+               LONG2NUM(static_cast<long>(urge::GPU::QueryTypeTimestamp)));
   InitGPUBindingAppend(mod);
 }
 // --- GENERATED END ---

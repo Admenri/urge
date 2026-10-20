@@ -49,7 +49,7 @@ void DefineNetworkEventConstants(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// NetworkEvent  (core/network/network.h:20-43)
+// NetworkEvent  (core/network/network.h:41-64)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(NetworkEvent);

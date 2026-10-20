@@ -35,6 +35,7 @@
 #include "core/common/logger.h"
 #include "core/render/device.h"
 #include "core/render/pipeline.h"
+#include "core/render/wgsl_reflect.h"
 
 namespace urge {
 
@@ -118,6 +119,9 @@ Effect::Effect(RefPtr<Effect> other) {
 
   holder_ = other->holder_;
   resources_ = other->resources_;
+  vs_wgsl_ = other->vs_wgsl_;
+  fs_wgsl_ = other->fs_wgsl_;
+  blend_states_ = other->blend_states_;
   binding_dirty_ = true;
 }
 
@@ -153,6 +157,8 @@ void Effect::SetBlock(uint32_t slot, std::string uniform_block) {
 }
 
 wgpu::RenderPipeline Effect::AcquirePipeline() {
+  if (!holder_)
+    RebuildPipeline();
   return holder_->pipeline;
 }
 
@@ -185,20 +191,57 @@ void Effect::CreateInternal(std::string vs_wgsl,
                     "effect: the vertex and the fragment stage both need a "
                     "source.");
 
-  const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states);
+  vs_wgsl_ = std::move(vs_wgsl);
+  fs_wgsl_ = std::move(fs_wgsl);
+  blend_states_ = std::move(blend_states);
 
-  const ShaderSource vertex{vs_wgsl, kVertexEntry, {}};
-  const ShaderSource fragment{fs_wgsl, kFragmentEntry, {}};
-  Pipeline shader = Pipeline::AutoLayout(vertex, fragment, QuadVertexLayout());
+  RebuildPipeline();
+}
+
+void Effect::RebuildPipeline() {
+  using util::BufferLayout;
+  using util::LayoutEntry;
+
+  const auto vertex_stage = wgpu::ShaderStage::Vertex;
+
+  std::vector<std::pair<uint32_t, std::vector<LayoutEntry>>> groups;
+  groups.push_back(
+      {0,
+       {LayoutEntry{0, vertex_stage,
+                    BufferLayout::Uniform(false, sizeof(SceneData))}}});
+  groups.push_back(
+      {1,
+       {LayoutEntry{0, vertex_stage,
+                    BufferLayout::Uniform(true, sizeof(ObjectData))}}});
+
+  const std::vector<wgsl::LayoutGroup> reflected =
+      wgsl::Reflect(vs_wgsl_, fs_wgsl_);
+  uint32_t max_group = 1;
+  for (const wgsl::LayoutGroup& group : reflected)
+    max_group = std::max(max_group, group.first);
+
+  for (uint32_t index = 2; index <= max_group; ++index) {
+    std::vector<LayoutEntry> entries;
+    for (const wgsl::LayoutGroup& group : reflected)
+      if (group.first == index)
+        entries = group.second;
+    groups.push_back({index, std::move(entries)});
+  }
+
+  const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states_);
+
+  const ShaderSource vertex{vs_wgsl_, kVertexEntry, groups};
+  const ShaderSource fragment{fs_wgsl_, kFragmentEntry, {}};
+  Pipeline shader(vertex, fragment, QuadVertexLayout(), {1});
+
+  wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
+
+  wgpu::ColorTargetState target;
+  target.format = kColorTargetFormat;
+  target.blend = blend ? &*blend : nullptr;
 
   const wgpu::RenderPipeline pipeline =
-      shader.MakeDefaultState(blend ? &*blend : nullptr);
-
-  if (!pipeline.GetBindGroupLayout(0) || !pipeline.GetBindGroupLayout(1))
-    throw Exception(Exception::kRGSSError,
-                    "effect: the stages have to declare the scene uniform at "
-                    "@group(0) @binding(0) and the object uniform at @group(1) "
-                    "@binding(0), like the built in shaders do.");
+      shader.MakeState(primitive, *GetDepthStencilState(), {target});
 
   auto holder = MakeRefCounted<PipelineHolder>();
   holder->pipeline = pipeline;
@@ -206,7 +249,7 @@ void Effect::CreateInternal(std::string vs_wgsl,
   holder_ = std::move(holder);
   binding_dirty_ = true;
 
-  LOGGER_DEBUG("effect: pipeline built with a layout derived from the stages");
+  LOGGER_DEBUG("effect: pipeline built from the reflected layout");
 }
 
 void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {

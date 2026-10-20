@@ -38,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Geometry  (core/scene/geometry.h:18-40)
+// Geometry  (core/scene/geometry.h:39-61)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Geometry, Node);

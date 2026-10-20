@@ -51,6 +51,20 @@ inline std::vector<std::vector<VertexAttribute>> QuadVertexLayout() {
            {2, wgpu::VertexFormat::Float32x4}}};
 }
 
+inline std::vector<std::vector<VertexAttribute>> MeshVertexLayout() {
+  return {{{0, wgpu::VertexFormat::Float32x3},
+           {1, wgpu::VertexFormat::Float32x3},
+           {2, wgpu::VertexFormat::Float32x2}}};
+}
+
+inline std::vector<std::vector<VertexAttribute>> SkinnedMeshVertexLayout() {
+  return {{{0, wgpu::VertexFormat::Float32x3},
+           {1, wgpu::VertexFormat::Float32x3},
+           {2, wgpu::VertexFormat::Float32x2},
+           {3, wgpu::VertexFormat::Uint32x4},
+           {4, wgpu::VertexFormat::Float32x4}}};
+}
+
 class Pipeline {
  public:
   Pipeline(const ShaderSource& vertex,

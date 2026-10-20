@@ -638,7 +638,8 @@ ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
 }
 
 wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
-                                               std::optional<glm::vec4> clear) {
+                                               std::optional<glm::vec4> clear,
+                                               bool clear_depth) {
   wgpu::RenderPassColorAttachment color_attachment = {
       .view = texture_view_,
       .loadOp = wgpu::LoadOp::Load,
@@ -657,11 +658,11 @@ wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
 
   wgpu::RenderPassDepthStencilAttachment depth_stencil_attachment = {
       .view = depth_stencil_view_,
-      .depthLoadOp = wgpu::LoadOp::Clear,
-      .depthStoreOp = wgpu::StoreOp::Discard,
+      .depthLoadOp = clear_depth ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load,
+      .depthStoreOp = wgpu::StoreOp::Store,
       .depthClearValue = 1.0f,
-      .stencilLoadOp = wgpu::LoadOp::Clear,
-      .stencilStoreOp = wgpu::StoreOp::Discard,
+      .stencilLoadOp = clear_depth ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load,
+      .stencilStoreOp = wgpu::StoreOp::Store,
       .stencilClearValue = 0,
   };
   wgpu::RenderPassDescriptor pass_desc = {
@@ -675,7 +676,18 @@ wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
 void Bitmap::DisposeObject() {}
 
 RefPtr<GPUTextureView> Bitmap::GetTextureView() {
+  AcquireHandle();
   return MakeRefCounted<GPUTextureView>(texture_view_);
+}
+
+RefPtr<GPUTexture> Bitmap::GetTexture() {
+  AcquireHandle();
+  return MakeRefCounted<GPUTexture>(texture_);
+}
+
+RefPtr<GPUTextureView> Bitmap::GetDepthStencilView() {
+  AcquireHandle();
+  return MakeRefCounted<GPUTextureView>(depth_stencil_view_);
 }
 
 void Bitmap::CreateInternal(SDL_Surface* data) {

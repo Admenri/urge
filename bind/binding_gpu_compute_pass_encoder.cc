@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePassEncoder  (core/graphics/gpu.h:909-919)
+// GPUComputePassEncoder  (core/graphics/gpu.h:1057-1073)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePassEncoder, GPUObject);
@@ -93,6 +93,45 @@ RB_FUNC(GPUComputePassEncoder_DispatchWorkgroups) {
   return Qnil;
 }
 
+RB_FUNC(GPUComputePassEncoder_InsertDebugMarker) {
+  auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string marker_label;
+    ParseArgs(argc, argv, "s", &marker_label);
+
+    self_obj->InsertDebugMarker(marker_label);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUComputePassEncoder_PushDebugGroup) {
+  auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string group_label;
+    ParseArgs(argc, argv, "s", &group_label);
+
+    self_obj->PushDebugGroup(group_label);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUComputePassEncoder_PopDebugGroup) {
+  auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    self_obj->PopDebugGroup();
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(GPUComputePassEncoder_End) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
@@ -114,6 +153,9 @@ void InitGPUComputePassEncoderBinding() {
   DefineMethod(klass, "set_pipeline", GPUComputePassEncoder_SetPipeline);
   DefineMethod(klass, "set_bind_group", GPUComputePassEncoder_SetBindGroup);
   DefineMethod(klass, "dispatch_workgroups", GPUComputePassEncoder_DispatchWorkgroups);
+  DefineMethod(klass, "insert_debug_marker", GPUComputePassEncoder_InsertDebugMarker);
+  DefineMethod(klass, "push_debug_group", GPUComputePassEncoder_PushDebugGroup);
+  DefineMethod(klass, "pop_debug_group", GPUComputePassEncoder_PopDebugGroup);
   DefineMethod(klass, "end", GPUComputePassEncoder_End);
   InitGPUComputePassEncoderBindingAppend(klass);
 }

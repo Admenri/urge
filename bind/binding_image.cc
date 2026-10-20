@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Image  (core/canvas/image.h:14-84)
+// Image  (core/canvas/image.h:35-105)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Image, Disposable);

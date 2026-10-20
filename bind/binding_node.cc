@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/scene/node.h:14-42)
+// Node  (core/scene/node.h:35-63)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Node, Disposable);

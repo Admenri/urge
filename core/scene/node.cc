@@ -37,7 +37,8 @@ Node::Node()
     : self_([&](DrawParam param) { ExecutePrepare(param); },
             [&](DrawParam param) { ExecuteRendering(param); },
             ZValue()),
-      world_root_(true) {}
+      world_root_(true) {
+}
 
 Node::Node(RefPtr<Node> parent, const ZValue& z)
     : self_([&](DrawParam param) { ExecutePrepare(param); },
@@ -83,9 +84,11 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.pass = target->BeginRendering(encoder, clear_color);
   {
     ExecuteRendering(&context);
-    FlushSpriteBatch(&context);
+    if (context.pass)
+      FlushSpriteBatch(&context);
   }
-  context.pass.End();
+  if (context.pass)
+    context.pass.End();
   auto command_buffer = encoder.Finish(nullptr);
   CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command_buffer);
@@ -113,9 +116,6 @@ ATTR_DEF(Node, bool, Visible) {
 
 ATTR_DEF(Node, RefPtr<Node>, Parent) {
   if (value.has_value()) {
-    if (world_root_)
-      throw Exception(Exception::kRGSSError, "cannot set world root parent.");
-
     parent_ = *value;
     DrawableSet* default_parent = &Graphics::Get().root()->children_;
     DrawableSet* parent = parent_ ? &parent_->children_ : default_parent;

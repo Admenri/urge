@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTextureDescriptor  (core/graphics/gpu.h:78-130)
+// GPUTextureDescriptor  (core/graphics/gpu.h:100-152)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTextureDescriptor, GPUObject);

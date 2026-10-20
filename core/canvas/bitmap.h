@@ -36,6 +36,7 @@
 
 namespace urge {
 
+class GPUTexture;
 class GPUTextureView;
 
 URGE_BINDING()
@@ -123,6 +124,10 @@ class Bitmap : public Disposable {
 
   URGE_BINDING(Name : "texture_view")
   RefPtr<GPUTextureView> GetTextureView();
+  URGE_BINDING(Name : "texture")
+  RefPtr<GPUTexture> GetTexture();
+  URGE_BINDING(Name : "depth_stencil_view")
+  RefPtr<GPUTextureView> GetDepthStencilView();
 
   URGE_BINDING()
   RefPtr<Image> ToImage();
@@ -142,7 +147,8 @@ class Bitmap : public Disposable {
 
   wgpu::RenderPassEncoder BeginRendering(
       wgpu::CommandEncoder encoder,
-      std::optional<glm::vec4> clear = std::nullopt);
+      std::optional<glm::vec4> clear = std::nullopt,
+      bool clear_depth = true);
 
   glm::ivec2 size() const { return size_; }
 

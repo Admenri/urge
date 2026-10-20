@@ -59,7 +59,7 @@ void DefineVideoPlayerInfo(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Video  (core/video/video.h:21-54)
+// Video  (core/video/video.h:42-75)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Video);

@@ -645,6 +645,24 @@ wgpu::DepthStencilState* GetDepthStencilState() {
   return &state;
 }
 
+wgpu::DepthStencilState* GetDepthStencilTestState() {
+  static wgpu::DepthStencilState state{
+      .format = wgpu::TextureFormat::Depth24PlusStencil8,
+      .depthWriteEnabled = true,
+      .depthCompare = wgpu::CompareFunction::LessEqual,
+      .stencilFront = {.compare = wgpu::CompareFunction::Always,
+                       .failOp = wgpu::StencilOperation::Keep,
+                       .depthFailOp = wgpu::StencilOperation::Keep,
+                       .passOp = wgpu::StencilOperation::Keep},
+      .stencilBack = {.compare = wgpu::CompareFunction::Always,
+                      .failOp = wgpu::StencilOperation::Keep,
+                      .depthFailOp = wgpu::StencilOperation::Keep,
+                      .passOp = wgpu::StencilOperation::Keep},
+      .stencilReadMask = 0x00,
+      .stencilWriteMask = 0x00};
+  return &state;
+}
+
 std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   const std::string text = Lower(Trim(states));
 

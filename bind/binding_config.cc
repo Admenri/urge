@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Config  (core/system/config.h:16-25)
+// Config  (core/system/config.h:37-46)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Config_GetValue) {

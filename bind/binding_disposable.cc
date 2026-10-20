@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Disposable  (core/common/disposable.h:11-15)
+// Disposable  (core/common/disposable.h:32-36)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Disposable);

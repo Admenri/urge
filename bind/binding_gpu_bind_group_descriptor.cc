@@ -32,7 +32,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupDescriptor  (core/graphics/gpu.h:382-403)
+// GPUBindGroupDescriptor  (core/graphics/gpu.h:409-435)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupDescriptor, GPUObject);
@@ -91,6 +91,24 @@ RB_FUNC(GPUBindGroupDescriptor_AddBuffer) {
   return Qnil;
 }
 
+RB_FUNC(GPUBindGroupDescriptor_AddBufferRange) {
+  auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 4);
+    uint32_t binding;
+    VALUE buffer_val;
+    uint64_t offset, size;
+    ParseArgs(argc, argv, "uopp", &binding, &buffer_val, &offset, &size);
+
+    self_obj->AddBufferRange(binding,
+        GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset,
+        size);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(GPUBindGroupDescriptor_AddTexture) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
@@ -141,6 +159,7 @@ void InitGPUBindGroupDescriptorBinding() {
   DefineMethod(klass, "label", GPUBindGroupDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUBindGroupDescriptor_SetLabel);
   DefineMethod(klass, "add_buffer", GPUBindGroupDescriptor_AddBuffer);
+  DefineMethod(klass, "add_buffer_range", GPUBindGroupDescriptor_AddBufferRange);
   DefineMethod(klass, "add_texture", GPUBindGroupDescriptor_AddTexture);
   DefineMethod(klass, "add_sampler", GPUBindGroupDescriptor_AddSampler);
   DefineMethod(klass, "layout", GPUBindGroupDescriptor_Layout);

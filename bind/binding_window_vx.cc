@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowVX  (core/scene/window_vx.h:15-71)
+// WindowVX  (core/scene/window_vx.h:36-92)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(WindowVX, Node);

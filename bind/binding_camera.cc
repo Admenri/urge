@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera  (core/scene/camera.h:37-47)
+// Camera  (core/scene/camera.h:38-57)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Camera);
@@ -43,6 +43,20 @@ RB_FUNC(Camera_initialize) {
   }
   EXC_END;
   return SetupSelfData(self, obj.get());
+}
+
+RB_FUNC(Camera_ViewProjection) {
+  auto* self_obj = GetSelfData<urge::Camera>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    int width, height;
+    ParseArgs(argc, argv, "ii", &width, &height);
+
+    return WrapVectorOf<float>(self_obj->ViewProjection(width, height));
+  }
+  EXC_END;
+  return Qnil;
 }
 
 // Attribute: position (RefPtr<Vector3>)
@@ -73,6 +87,7 @@ void InitCameraBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kCameraDataType>);
 
   DefineMethod(klass, "initialize", Camera_initialize);
+  DefineMethod(klass, "view_projection", Camera_ViewProjection);
   DefineMethod(klass, "position", Camera_Position);
   DefineMethod(klass, "position=", Camera_PositionEqual);
   DefineMethod(klass, "quaternion", Camera_Quaternion);

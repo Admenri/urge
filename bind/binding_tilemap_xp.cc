@@ -71,7 +71,7 @@ RB_FUNC(TilemapXP_Autotiles) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// TilemapXP  (core/scene/tilemap_xp.h:38-72)
+// TilemapXP  (core/scene/tilemap_xp.h:59-93)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(TilemapXP, Node);

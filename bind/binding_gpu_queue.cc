@@ -16,6 +16,7 @@
 #include "binding_gpu_buffer.h"
 #include "binding_gpu_command_buffer.h"
 #include "binding_gpu_object.h"
+#include "binding_gpu_texture.h"
 
 #include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
@@ -30,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUQueue  (core/graphics/gpu.h:927-933)
+// GPUQueue  (core/graphics/gpu.h:1081-1091)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUQueue, GPUObject);
@@ -68,6 +69,48 @@ RB_FUNC(GPUQueue_WriteBuffer) {
   return Qnil;
 }
 
+RB_FUNC(GPUQueue_WriteTexture) {
+  auto* self_obj = GetSelfData<urge::GPUQueue>(self);
+
+  EXC_BEGIN {
+    if (argc == 7) {
+      // write_texture(texture, mip_level, x, y, width, height, data)
+      VALUE texture_val;
+      uint32_t mip_level, x, y, width, height;
+      std::string data;
+      ParseArgs(argc, argv, "ouuuuus", &texture_val, &mip_level, &x, &y, &width,
+          &height, &data);
+      self_obj->WriteTexture(
+          GetObject<urge::GPUTexture>(texture_val, kGPUTextureDataType),
+          mip_level, x, y, width, height, data);
+    } else if (argc == 8) {
+      // write_texture(texture, mip_level, x, y, width, height, data, bytes_per_row)
+      VALUE texture_val;
+      uint32_t mip_level, x, y, width, height, bytes_per_row;
+      std::string data;
+      ParseArgs(argc, argv, "ouuuuusu", &texture_val, &mip_level, &x, &y,
+          &width, &height, &data, &bytes_per_row);
+      self_obj->WriteTexture(
+          GetObject<urge::GPUTexture>(texture_val, kGPUTextureDataType),
+          mip_level, x, y, width, height, data, bytes_per_row);
+    } else if (argc == 9) {
+      // write_texture(texture, mip_level, x, y, width, height, data, bytes_per_row, rows_per_image)
+      VALUE texture_val;
+      uint32_t mip_level, x, y, width, height, bytes_per_row, rows_per_image;
+      std::string data;
+      ParseArgs(argc, argv, "ouuuuusuu", &texture_val, &mip_level, &x, &y,
+          &width, &height, &data, &bytes_per_row, &rows_per_image);
+      self_obj->WriteTexture(
+          GetObject<urge::GPUTexture>(texture_val, kGPUTextureDataType),
+          mip_level, x, y, width, height, data, bytes_per_row, rows_per_image);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitGPUQueueBindingAppend(VALUE klass);
 
 void InitGPUQueueBinding() {
@@ -77,6 +120,7 @@ void InitGPUQueueBinding() {
 
   DefineMethod(klass, "submit", GPUQueue_Submit);
   DefineMethod(klass, "write_buffer", GPUQueue_WriteBuffer);
+  DefineMethod(klass, "write_texture", GPUQueue_WriteTexture);
   InitGPUQueueBindingAppend(klass);
 }
 // --- GENERATED END ---

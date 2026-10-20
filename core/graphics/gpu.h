@@ -23,6 +23,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -363,9 +364,14 @@ class GPUBindGroupLayoutDescriptor : public GPUObject {
                   uint32_t visibility,
                   bool read_only = false);
   URGE_BINDING()
-  void AddTexture(uint32_t binding, uint32_t visibility);
+  void AddTexture(uint32_t binding,
+                  uint32_t visibility,
+                  uint32_t sample_type = 0,
+                  uint32_t view_dimension = 0);
   URGE_BINDING()
-  void AddSampler(uint32_t binding, uint32_t visibility);
+  void AddSampler(uint32_t binding,
+                  uint32_t visibility,
+                  uint32_t sampler_type = 0);
 
  public:
   std::string label;
@@ -420,6 +426,11 @@ class GPUBindGroupDescriptor : public GPUObject {
   URGE_BINDING()
   void AddBuffer(uint32_t binding, RefPtr<GPUBuffer> buffer);
   URGE_BINDING()
+  void AddBufferRange(uint32_t binding,
+                      RefPtr<GPUBuffer> buffer,
+                      uint64_t offset,
+                      uint64_t size);
+  URGE_BINDING()
   void AddTexture(uint32_t binding, RefPtr<GPUTextureView> view);
   URGE_BINDING()
   void AddSampler(uint32_t binding, RefPtr<GPUSampler> sampler);
@@ -470,6 +481,18 @@ class GPUComputePipelineDescriptor : public GPUObject {
 URGE_BINDING()
 class GPURenderPipelineDescriptor : public GPUObject {
  public:
+  struct VertexBufferLayout {
+    uint64_t stride = 0;
+    uint32_t step_mode = 1;
+    std::vector<wgpu::VertexAttribute> attributes;
+  };
+
+  struct ColorTarget {
+    uint32_t format = 0;
+    uint32_t write_mask = 0xF;
+    std::optional<wgpu::BlendState> blend;
+  };
+
   URGE_BINDING()
   GPURenderPipelineDescriptor() = default;
 
@@ -519,21 +542,59 @@ class GPURenderPipelineDescriptor : public GPUObject {
   }
 
   URGE_BINDING()
-  ATTR(uint32_t, Format) {
-    if (value)
-      format = *value;
-    return format;
-  }
+  void AddVertexAttribute(uint32_t slot,
+                          uint32_t location,
+                          uint32_t format,
+                          uint64_t offset);
 
   URGE_BINDING()
-  ATTR(uint32_t, VertexStride) {
-    if (value)
-      vertex_stride = *value;
-    return vertex_stride;
-  }
+  void SetVertexBuffer(uint32_t slot, uint64_t stride, uint32_t step_mode = 1);
 
   URGE_BINDING()
-  void AddVertexAttribute(uint32_t location, uint32_t format, uint64_t offset);
+  void AddColorTarget(uint32_t format, uint32_t write_mask = 0xF);
+
+  URGE_BINDING()
+  void SetColorBlend(uint32_t index,
+                     uint32_t color_op,
+                     uint32_t src_factor,
+                     uint32_t dst_factor,
+                     uint32_t alpha_op = 0,
+                     uint32_t alpha_src = 0,
+                     uint32_t alpha_dst = 0);
+
+  URGE_BINDING()
+  void SetDepthStencil(uint32_t format,
+                       bool depth_write,
+                       uint32_t depth_compare,
+                       int32_t depth_bias = 0,
+                       float bias_slope_scale = 0.f,
+                       float bias_clamp = 0.f);
+
+  URGE_BINDING()
+  void SetStencilFront(uint32_t compare,
+                       uint32_t fail_op,
+                       uint32_t depth_fail_op,
+                       uint32_t pass_op);
+
+  URGE_BINDING()
+  void SetStencilBack(uint32_t compare,
+                      uint32_t fail_op,
+                      uint32_t depth_fail_op,
+                      uint32_t pass_op);
+
+  URGE_BINDING()
+  void SetStencilMasks(uint32_t read_mask, uint32_t write_mask);
+
+  URGE_BINDING()
+  void SetPrimitive(uint32_t topology,
+                    uint32_t cull_mode = 0,
+                    uint32_t front_face = 0,
+                    uint32_t strip_index_format = 0);
+
+  URGE_BINDING()
+  void SetMultisample(uint32_t count,
+                      uint32_t mask = 0xFFFFFFFF,
+                      bool alpha_to_coverage = false);
 
  public:
   std::string label;
@@ -544,14 +605,31 @@ class GPURenderPipelineDescriptor : public GPUObject {
   std::string fragment_entry_point = "main";
   uint32_t topology =
       static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleList);
-  uint32_t format = 0;
-  uint32_t vertex_stride = 0;
-  std::vector<wgpu::VertexAttribute> attributes;
+  uint32_t cull_mode = 0;
+  uint32_t front_face = 0;
+  uint32_t strip_index_format = 0;
+  uint32_t sample_count = 1;
+  uint32_t sample_mask = 0xFFFFFFFFu;
+  bool alpha_to_coverage = false;
+  std::vector<VertexBufferLayout> vertex_buffers;
+  std::vector<ColorTarget> color_targets;
+  std::optional<wgpu::DepthStencilState> depth_stencil;
 };
 
 URGE_BINDING()
 class GPURenderPassDescriptor : public GPUObject {
  public:
+  struct ColorAttachment {
+    RefPtr<GPUTextureView> view;
+    RefPtr<GPUTextureView> resolve;
+    uint32_t load_op = 1;
+    uint32_t store_op = 1;
+    float clear_r = 0.f;
+    float clear_g = 0.f;
+    float clear_b = 0.f;
+    float clear_a = 1.f;
+  };
+
   URGE_BINDING()
   GPURenderPassDescriptor() = default;
 
@@ -561,60 +639,47 @@ class GPURenderPassDescriptor : public GPUObject {
   void SetLabel(std::string value) { label = value; }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUTextureView>, ColorView) {
-    if (value)
-      color_view = *value;
-    return color_view;
-  }
+  void AddColorAttachment(RefPtr<GPUTextureView> view,
+                          uint32_t load_op,
+                          uint32_t store_op,
+                          float clear_r = 0.f,
+                          float clear_g = 0.f,
+                          float clear_b = 0.f,
+                          float clear_a = 1.f);
 
   URGE_BINDING()
-  ATTR(uint32_t, LoadOp) {
-    if (value)
-      load_op = *value;
-    return load_op;
-  }
+  void SetColorResolve(RefPtr<GPUTextureView> resolve);
 
   URGE_BINDING()
-  ATTR(uint32_t, StoreOp) {
-    if (value)
-      store_op = *value;
-    return store_op;
-  }
+  void SetDepthStencilAttachment(RefPtr<GPUTextureView> view,
+                                 uint32_t depth_load_op,
+                                 uint32_t depth_store_op,
+                                 float depth_clear_value = 1.f,
+                                 uint32_t stencil_load_op = 2,
+                                 uint32_t stencil_store_op = 1,
+                                 uint32_t stencil_clear_value = 0,
+                                 bool depth_read_only = false,
+                                 bool stencil_read_only = false);
 
   URGE_BINDING()
-  ATTR(float, ClearR) {
-    if (value)
-      clear_r = *value;
-    return clear_r;
-  }
-  URGE_BINDING()
-  ATTR(float, ClearG) {
-    if (value)
-      clear_g = *value;
-    return clear_g;
-  }
-  URGE_BINDING()
-  ATTR(float, ClearB) {
-    if (value)
-      clear_b = *value;
-    return clear_b;
-  }
-  URGE_BINDING()
-  ATTR(float, ClearA) {
-    if (value)
-      clear_a = *value;
-    return clear_a;
-  }
+  void SetOcclusionQuerySet(RefPtr<GPUQuerySet> query_set);
 
  public:
   std::string label;
-  RefPtr<GPUTextureView> color_view;
-  uint32_t load_op = 1;
-  uint32_t store_op = 1;
-  float clear_r = 0.f;
-  float clear_g = 0.f;
-  float clear_b = 0.f;
-  float clear_a = 1.f;
+
+  std::vector<ColorAttachment> color_attachments;
+
+  RefPtr<GPUTextureView> depth_view;
+  uint32_t depth_load_op = 2;
+  uint32_t depth_store_op = 1;
+  float depth_clear_value = 1.f;
+  uint32_t stencil_load_op = 2;
+  uint32_t stencil_store_op = 1;
+  uint32_t stencil_clear_value = 0;
+  bool depth_read_only = false;
+  bool stencil_read_only = false;
+
+  RefPtr<GPUQuerySet> occlusion_query_set;
 };
 
 URGE_BINDING()
@@ -872,7 +937,53 @@ class GPUCommandEncoder : public GPUObject {
                           uint64_t destination_offset,
                           uint64_t size);
   URGE_BINDING()
+  void CopyBufferToTexture(RefPtr<GPUBuffer> source,
+                           uint32_t bytes_per_row,
+                           uint32_t rows_per_image,
+                           RefPtr<GPUTexture> destination,
+                           uint32_t destination_mip_level,
+                           uint32_t destination_x,
+                           uint32_t destination_y,
+                           uint32_t width,
+                           uint32_t height,
+                           uint32_t depth_or_array_layers = 1);
+  URGE_BINDING()
+  void CopyTextureToBuffer(RefPtr<GPUTexture> source,
+                           uint32_t source_mip_level,
+                           uint32_t source_x,
+                           uint32_t source_y,
+                           RefPtr<GPUBuffer> destination,
+                           uint32_t bytes_per_row,
+                           uint32_t rows_per_image,
+                           uint32_t width,
+                           uint32_t height,
+                           uint32_t depth_or_array_layers = 1);
+  URGE_BINDING()
+  void CopyTextureToTexture(RefPtr<GPUTexture> source,
+                            uint32_t source_mip_level,
+                            uint32_t source_x,
+                            uint32_t source_y,
+                            RefPtr<GPUTexture> destination,
+                            uint32_t destination_mip_level,
+                            uint32_t destination_x,
+                            uint32_t destination_y,
+                            uint32_t width,
+                            uint32_t height,
+                            uint32_t depth_or_array_layers = 1);
+  URGE_BINDING()
+  void ResolveQuerySet(RefPtr<GPUQuerySet> query_set,
+                       uint32_t first_query,
+                       uint32_t query_count,
+                       RefPtr<GPUBuffer> destination,
+                       uint64_t destination_offset);
+  URGE_BINDING()
   void ClearBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, uint64_t size);
+  URGE_BINDING()
+  void InsertDebugMarker(std::string marker_label);
+  URGE_BINDING()
+  void PushDebugGroup(std::string group_label);
+  URGE_BINDING()
+  void PopDebugGroup();
   URGE_BINDING()
   RefPtr<GPUCommandBuffer> Finish();
 
@@ -911,6 +1022,12 @@ class GPURenderPassEncoder : public GPUObject {
                    int32_t base_vertex = 0,
                    uint32_t first_instance = 0);
   URGE_BINDING()
+  void DrawIndirect(RefPtr<GPUBuffer> indirect_buffer,
+                    uint64_t indirect_offset = 0);
+  URGE_BINDING()
+  void DrawIndexedIndirect(RefPtr<GPUBuffer> indirect_buffer,
+                           uint64_t indirect_offset = 0);
+  URGE_BINDING()
   void SetViewport(float x,
                    float y,
                    float width,
@@ -919,6 +1036,16 @@ class GPURenderPassEncoder : public GPUObject {
                    float max_depth = 1.f);
   URGE_BINDING()
   void SetScissorRect(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+  URGE_BINDING()
+  void SetStencilReference(uint32_t reference);
+  URGE_BINDING()
+  void SetBlendConstant(float r, float g, float b, float a);
+  URGE_BINDING()
+  void InsertDebugMarker(std::string marker_label);
+  URGE_BINDING()
+  void PushDebugGroup(std::string group_label);
+  URGE_BINDING()
+  void PopDebugGroup();
   URGE_BINDING()
   void End() { encoder_.End(); }
 
@@ -938,6 +1065,12 @@ class GPUComputePassEncoder : public GPUObject {
   URGE_BINDING()
   void DispatchWorkgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1);
   URGE_BINDING()
+  void InsertDebugMarker(std::string marker_label);
+  URGE_BINDING()
+  void PushDebugGroup(std::string group_label);
+  URGE_BINDING()
+  void PopDebugGroup();
+  URGE_BINDING()
   void End() { encoder_.End(); }
 
  private:
@@ -952,7 +1085,19 @@ class GPUQueue : public GPUObject {
   URGE_BINDING()
   void Submit(RefPtr<GPUCommandBuffer> command_buffer);
   URGE_BINDING()
-  void WriteBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, std::string data);
+  void WriteBuffer(RefPtr<GPUBuffer> buffer,
+                   uint64_t offset,
+                   std::string data);
+  URGE_BINDING()
+  void WriteTexture(RefPtr<GPUTexture> texture,
+                    uint32_t mip_level,
+                    uint32_t x,
+                    uint32_t y,
+                    uint32_t width,
+                    uint32_t height,
+                    std::string data,
+                    uint32_t bytes_per_row = 0,
+                    uint32_t rows_per_image = 1);
 
   wgpu::Queue handle() const { return queue_; }
 
@@ -986,6 +1131,8 @@ class GPU : public Singleton<GPU> {
     TextureBinding = 4,
     TextureStorageBinding = 8,
     TextureRenderAttachment = 16,
+    TextureCopySrc = 32,
+    TextureCopyDst = 64,
   };
 
   URGE_BINDING()
@@ -1002,12 +1149,45 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum IndexFormat {
+    IndexFormatUndefined = static_cast<uint32_t>(wgpu::IndexFormat::Undefined),
     IndexFormatUint16 = static_cast<uint32_t>(wgpu::IndexFormat::Uint16),
     IndexFormatUint32 = static_cast<uint32_t>(wgpu::IndexFormat::Uint32),
   };
 
   URGE_BINDING()
   enum VertexFormat {
+    VertexFormatUint8x2 = static_cast<uint32_t>(wgpu::VertexFormat::Uint8x2),
+    VertexFormatUint8x4 = static_cast<uint32_t>(wgpu::VertexFormat::Uint8x4),
+    VertexFormatSint8x2 = static_cast<uint32_t>(wgpu::VertexFormat::Sint8x2),
+    VertexFormatSint8x4 = static_cast<uint32_t>(wgpu::VertexFormat::Sint8x4),
+    VertexFormatUnorm8x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x2),
+    VertexFormatUnorm8x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x4),
+    VertexFormatSnorm8x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Snorm8x2),
+    VertexFormatSnorm8x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Snorm8x4),
+    VertexFormatUint16x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Uint16x2),
+    VertexFormatUint16x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Uint16x4),
+    VertexFormatSint16x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Sint16x2),
+    VertexFormatSint16x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Sint16x4),
+    VertexFormatUnorm16x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Unorm16x2),
+    VertexFormatUnorm16x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Unorm16x4),
+    VertexFormatSnorm16x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Snorm16x2),
+    VertexFormatSnorm16x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Snorm16x4),
+    VertexFormatFloat16x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Float16x2),
+    VertexFormatFloat16x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Float16x4),
     VertexFormatFloat32 = static_cast<uint32_t>(wgpu::VertexFormat::Float32),
     VertexFormatFloat32x2 =
         static_cast<uint32_t>(wgpu::VertexFormat::Float32x2),
@@ -1015,14 +1195,282 @@ class GPU : public Singleton<GPU> {
         static_cast<uint32_t>(wgpu::VertexFormat::Float32x3),
     VertexFormatFloat32x4 =
         static_cast<uint32_t>(wgpu::VertexFormat::Float32x4),
+    VertexFormatUint32 = static_cast<uint32_t>(wgpu::VertexFormat::Uint32),
+    VertexFormatUint32x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Uint32x2),
+    VertexFormatUint32x3 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Uint32x3),
+    VertexFormatUint32x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Uint32x4),
+    VertexFormatSint32 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32),
+    VertexFormatSint32x2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Sint32x2),
+    VertexFormatSint32x3 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Sint32x3),
+    VertexFormatSint32x4 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Sint32x4),
+  };
+
+  URGE_BINDING()
+  enum VertexStepMode {
+    VertexStepModeVertex =
+        static_cast<uint32_t>(wgpu::VertexStepMode::Vertex),
+    VertexStepModeInstance =
+        static_cast<uint32_t>(wgpu::VertexStepMode::Instance),
   };
 
   URGE_BINDING()
   enum TextureFormat {
     TextureFormatUndefined =
         static_cast<uint32_t>(wgpu::TextureFormat::Undefined),
+    TextureFormatR8Unorm = static_cast<uint32_t>(wgpu::TextureFormat::R8Unorm),
+    TextureFormatR8Snorm = static_cast<uint32_t>(wgpu::TextureFormat::R8Snorm),
+    TextureFormatR8Uint = static_cast<uint32_t>(wgpu::TextureFormat::R8Uint),
+    TextureFormatR8Sint = static_cast<uint32_t>(wgpu::TextureFormat::R8Sint),
+    TextureFormatR16Uint = static_cast<uint32_t>(wgpu::TextureFormat::R16Uint),
+    TextureFormatR16Sint = static_cast<uint32_t>(wgpu::TextureFormat::R16Sint),
+    TextureFormatR16Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::R16Float),
+    TextureFormatRg8Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG8Unorm),
+    TextureFormatRg8Uint = static_cast<uint32_t>(wgpu::TextureFormat::RG8Uint),
+    TextureFormatRg8Sint = static_cast<uint32_t>(wgpu::TextureFormat::RG8Sint),
+    TextureFormatR32Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::R32Float),
+    TextureFormatR32Uint = static_cast<uint32_t>(wgpu::TextureFormat::R32Uint),
+    TextureFormatR32Sint = static_cast<uint32_t>(wgpu::TextureFormat::R32Sint),
+    TextureFormatRg16Uint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG16Uint),
+    TextureFormatRg16Sint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG16Sint),
+    TextureFormatRg16Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG16Float),
     TextureFormatRgba8Unorm =
         static_cast<uint32_t>(wgpu::TextureFormat::RGBA8Unorm),
+    TextureFormatRgba8UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA8UnormSrgb),
+    TextureFormatRgba8Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA8Snorm),
+    TextureFormatRgba8Uint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA8Uint),
+    TextureFormatRgba8Sint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA8Sint),
+    TextureFormatBgra8Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BGRA8Unorm),
+    TextureFormatBgra8UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::BGRA8UnormSrgb),
+    TextureFormatRgb10a2Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGB10A2Unorm),
+    TextureFormatRg11b10Ufloat =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG11B10Ufloat),
+    TextureFormatRg32Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG32Float),
+    TextureFormatRg32Uint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG32Uint),
+    TextureFormatRg32Sint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG32Sint),
+    TextureFormatRgba16Uint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Uint),
+    TextureFormatRgba16Sint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Sint),
+    TextureFormatRgba16Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Float),
+    TextureFormatRgba32Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA32Float),
+    TextureFormatRgba32Uint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA32Uint),
+    TextureFormatRgba32Sint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA32Sint),
+    TextureFormatStencil8 =
+        static_cast<uint32_t>(wgpu::TextureFormat::Stencil8),
+    TextureFormatDepth16Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::Depth16Unorm),
+    TextureFormatDepth24Plus =
+        static_cast<uint32_t>(wgpu::TextureFormat::Depth24Plus),
+    TextureFormatDepth24PlusStencil8 =
+        static_cast<uint32_t>(wgpu::TextureFormat::Depth24PlusStencil8),
+    TextureFormatDepth32Float =
+        static_cast<uint32_t>(wgpu::TextureFormat::Depth32Float),
+    TextureFormatDepth32FloatStencil8 =
+        static_cast<uint32_t>(wgpu::TextureFormat::Depth32FloatStencil8),
+  };
+
+  URGE_BINDING()
+  enum TextureDimension {
+    TextureDimension1D =
+        static_cast<uint32_t>(wgpu::TextureDimension::e1D),
+    TextureDimension2D =
+        static_cast<uint32_t>(wgpu::TextureDimension::e2D),
+    TextureDimension3D =
+        static_cast<uint32_t>(wgpu::TextureDimension::e3D),
+  };
+
+  URGE_BINDING()
+  enum TextureAspect {
+    TextureAspectAll = static_cast<uint32_t>(wgpu::TextureAspect::All),
+    TextureAspectStencilOnly =
+        static_cast<uint32_t>(wgpu::TextureAspect::StencilOnly),
+    TextureAspectDepthOnly =
+        static_cast<uint32_t>(wgpu::TextureAspect::DepthOnly),
+  };
+
+  URGE_BINDING()
+  enum TextureViewDimension {
+    TextureViewDimension1D =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::e1D),
+    TextureViewDimension2D =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::e2D),
+    TextureViewDimension2DArray =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::e2DArray),
+    TextureViewDimensionCube =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::Cube),
+    TextureViewDimensionCubeArray =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::CubeArray),
+    TextureViewDimension3D =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::e3D),
+  };
+
+  URGE_BINDING()
+  enum TextureSampleType {
+    TextureSampleTypeFloat =
+        static_cast<uint32_t>(wgpu::TextureSampleType::Float),
+    TextureSampleTypeUnfilterableFloat =
+        static_cast<uint32_t>(wgpu::TextureSampleType::UnfilterableFloat),
+    TextureSampleTypeDepth =
+        static_cast<uint32_t>(wgpu::TextureSampleType::Depth),
+    TextureSampleTypeSint =
+        static_cast<uint32_t>(wgpu::TextureSampleType::Sint),
+    TextureSampleTypeUint =
+        static_cast<uint32_t>(wgpu::TextureSampleType::Uint),
+  };
+
+  URGE_BINDING()
+  enum SamplerBindingType {
+    SamplerBindingTypeFiltering =
+        static_cast<uint32_t>(wgpu::SamplerBindingType::Filtering),
+    SamplerBindingTypeNonFiltering =
+        static_cast<uint32_t>(wgpu::SamplerBindingType::NonFiltering),
+    SamplerBindingTypeComparison =
+        static_cast<uint32_t>(wgpu::SamplerBindingType::Comparison),
+  };
+
+  URGE_BINDING()
+  enum ShaderStage {
+    ShaderStageNone = static_cast<uint32_t>(wgpu::ShaderStage::None),
+    ShaderStageVertex = static_cast<uint32_t>(wgpu::ShaderStage::Vertex),
+    ShaderStageFragment = static_cast<uint32_t>(wgpu::ShaderStage::Fragment),
+    ShaderStageCompute = static_cast<uint32_t>(wgpu::ShaderStage::Compute),
+  };
+
+  URGE_BINDING()
+  enum PrimitiveTopology {
+    PrimitiveTopologyPointList =
+        static_cast<uint32_t>(wgpu::PrimitiveTopology::PointList),
+    PrimitiveTopologyLineList =
+        static_cast<uint32_t>(wgpu::PrimitiveTopology::LineList),
+    PrimitiveTopologyLineStrip =
+        static_cast<uint32_t>(wgpu::PrimitiveTopology::LineStrip),
+    PrimitiveTopologyTriangleList =
+        static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleList),
+    PrimitiveTopologyTriangleStrip =
+        static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleStrip),
+  };
+
+  URGE_BINDING()
+  enum CompareFunction {
+    CompareFunctionNever =
+        static_cast<uint32_t>(wgpu::CompareFunction::Never),
+    CompareFunctionLess =
+        static_cast<uint32_t>(wgpu::CompareFunction::Less),
+    CompareFunctionEqual =
+        static_cast<uint32_t>(wgpu::CompareFunction::Equal),
+    CompareFunctionLessEqual =
+        static_cast<uint32_t>(wgpu::CompareFunction::LessEqual),
+    CompareFunctionGreater =
+        static_cast<uint32_t>(wgpu::CompareFunction::Greater),
+    CompareFunctionNotEqual =
+        static_cast<uint32_t>(wgpu::CompareFunction::NotEqual),
+    CompareFunctionGreaterEqual =
+        static_cast<uint32_t>(wgpu::CompareFunction::GreaterEqual),
+    CompareFunctionAlways =
+        static_cast<uint32_t>(wgpu::CompareFunction::Always),
+  };
+
+  URGE_BINDING()
+  enum StencilOperation {
+    StencilOperationKeep =
+        static_cast<uint32_t>(wgpu::StencilOperation::Keep),
+    StencilOperationZero =
+        static_cast<uint32_t>(wgpu::StencilOperation::Zero),
+    StencilOperationReplace =
+        static_cast<uint32_t>(wgpu::StencilOperation::Replace),
+    StencilOperationInvert =
+        static_cast<uint32_t>(wgpu::StencilOperation::Invert),
+    StencilOperationIncrementClamp =
+        static_cast<uint32_t>(wgpu::StencilOperation::IncrementClamp),
+    StencilOperationDecrementClamp =
+        static_cast<uint32_t>(wgpu::StencilOperation::DecrementClamp),
+    StencilOperationIncrementWrap =
+        static_cast<uint32_t>(wgpu::StencilOperation::IncrementWrap),
+    StencilOperationDecrementWrap =
+        static_cast<uint32_t>(wgpu::StencilOperation::DecrementWrap),
+  };
+
+  URGE_BINDING()
+  enum CullMode {
+    CullModeNone = static_cast<uint32_t>(wgpu::CullMode::None),
+    CullModeFront = static_cast<uint32_t>(wgpu::CullMode::Front),
+    CullModeBack = static_cast<uint32_t>(wgpu::CullMode::Back),
+  };
+
+  URGE_BINDING()
+  enum FrontFace {
+    FrontFaceCCW = static_cast<uint32_t>(wgpu::FrontFace::CCW),
+    FrontFaceCW = static_cast<uint32_t>(wgpu::FrontFace::CW),
+  };
+
+  URGE_BINDING()
+  enum BlendOperation {
+    BlendOperationAdd = static_cast<uint32_t>(wgpu::BlendOperation::Add),
+    BlendOperationSubtract =
+        static_cast<uint32_t>(wgpu::BlendOperation::Subtract),
+    BlendOperationReverseSubtract =
+        static_cast<uint32_t>(wgpu::BlendOperation::ReverseSubtract),
+    BlendOperationMin = static_cast<uint32_t>(wgpu::BlendOperation::Min),
+    BlendOperationMax = static_cast<uint32_t>(wgpu::BlendOperation::Max),
+  };
+
+  URGE_BINDING()
+  enum BlendFactor {
+    BlendFactorZero = static_cast<uint32_t>(wgpu::BlendFactor::Zero),
+    BlendFactorOne = static_cast<uint32_t>(wgpu::BlendFactor::One),
+    BlendFactorSrc = static_cast<uint32_t>(wgpu::BlendFactor::Src),
+    BlendFactorOneMinusSrc =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusSrc),
+    BlendFactorSrcAlpha = static_cast<uint32_t>(wgpu::BlendFactor::SrcAlpha),
+    BlendFactorOneMinusSrcAlpha =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusSrcAlpha),
+    BlendFactorDst = static_cast<uint32_t>(wgpu::BlendFactor::Dst),
+    BlendFactorOneMinusDst =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusDst),
+    BlendFactorDstAlpha = static_cast<uint32_t>(wgpu::BlendFactor::DstAlpha),
+    BlendFactorOneMinusDstAlpha =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusDstAlpha),
+    BlendFactorSrcAlphaSaturated =
+        static_cast<uint32_t>(wgpu::BlendFactor::SrcAlphaSaturated),
+    BlendFactorConstant = static_cast<uint32_t>(wgpu::BlendFactor::Constant),
+    BlendFactorOneMinusConstant =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusConstant),
+  };
+
+  URGE_BINDING()
+  enum ColorWriteMask {
+    ColorWriteMaskNone = static_cast<uint32_t>(wgpu::ColorWriteMask::None),
+    ColorWriteMaskRed = static_cast<uint32_t>(wgpu::ColorWriteMask::Red),
+    ColorWriteMaskGreen = static_cast<uint32_t>(wgpu::ColorWriteMask::Green),
+    ColorWriteMaskBlue = static_cast<uint32_t>(wgpu::ColorWriteMask::Blue),
+    ColorWriteMaskAlpha = static_cast<uint32_t>(wgpu::ColorWriteMask::Alpha),
+    ColorWriteMaskAll = static_cast<uint32_t>(wgpu::ColorWriteMask::All),
   };
 
   URGE_BINDING()
@@ -1032,12 +1480,26 @@ class GPU : public Singleton<GPU> {
   };
 
   URGE_BINDING()
+  enum MipmapFilterMode {
+    MipmapFilterModeNearest =
+        static_cast<uint32_t>(wgpu::MipmapFilterMode::Nearest),
+    MipmapFilterModeLinear =
+        static_cast<uint32_t>(wgpu::MipmapFilterMode::Linear),
+  };
+
+  URGE_BINDING()
   enum AddressMode {
     AddressModeClampToEdge =
         static_cast<uint32_t>(wgpu::AddressMode::ClampToEdge),
     AddressModeRepeat = static_cast<uint32_t>(wgpu::AddressMode::Repeat),
     AddressModeMirrorRepeat =
         static_cast<uint32_t>(wgpu::AddressMode::MirrorRepeat),
+  };
+
+  URGE_BINDING()
+  enum QueryType {
+    QueryTypeOcclusion = static_cast<uint32_t>(wgpu::QueryType::Occlusion),
+    QueryTypeTimestamp = static_cast<uint32_t>(wgpu::QueryType::Timestamp),
   };
 
   GPU() = default;

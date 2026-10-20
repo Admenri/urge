@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Plane  (core/scene/plane.h:14-39)
+// Plane  (core/scene/plane.h:35-60)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Plane, Node);

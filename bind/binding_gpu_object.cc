@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUObject  (core/graphics/gpu.h:35-35)
+// GPUObject  (core/graphics/gpu.h:57-57)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(GPUObject);

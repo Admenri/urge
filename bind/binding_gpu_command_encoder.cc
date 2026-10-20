@@ -18,8 +18,10 @@
 #include "binding_gpu_compute_pass_descriptor.h"
 #include "binding_gpu_compute_pass_encoder.h"
 #include "binding_gpu_object.h"
+#include "binding_gpu_query_set.h"
 #include "binding_gpu_render_pass_descriptor.h"
 #include "binding_gpu_render_pass_encoder.h"
+#include "binding_gpu_texture.h"
 
 #include "core/graphics/gpu.h"
 // --- GENERATED INCLUDES END ---
@@ -34,7 +36,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUCommandEncoder  (core/graphics/gpu.h:837-855)
+// GPUCommandEncoder  (core/graphics/gpu.h:923-987)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUCommandEncoder, GPUObject);
@@ -96,6 +98,139 @@ RB_FUNC(GPUCommandEncoder_CopyBufferToBuffer) {
   return Qnil;
 }
 
+RB_FUNC(GPUCommandEncoder_CopyBufferToTexture) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    if (argc == 9) {
+      // copy_buffer_to_texture(source, bytes_per_row, rows_per_image, destination, destination_mip_level, destination_x, destination_y, width, height)
+      VALUE source_val, destination_val;
+      uint32_t bytes_per_row, rows_per_image, destination_mip_level, destination_x, destination_y, width, height;
+      ParseArgs(argc, argv, "ouuouuuuu", &source_val, &bytes_per_row,
+          &rows_per_image, &destination_val, &destination_mip_level,
+          &destination_x, &destination_y, &width, &height);
+      self_obj->CopyBufferToTexture(
+          GetObject<urge::GPUBuffer>(source_val, kGPUBufferDataType),
+          bytes_per_row, rows_per_image,
+          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
+          destination_mip_level, destination_x, destination_y, width, height);
+    } else if (argc == 10) {
+      // copy_buffer_to_texture(source, bytes_per_row, rows_per_image, destination, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers)
+      VALUE source_val, destination_val;
+      uint32_t bytes_per_row, rows_per_image, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers;
+      ParseArgs(argc, argv, "ouuouuuuuu", &source_val, &bytes_per_row,
+          &rows_per_image, &destination_val, &destination_mip_level,
+          &destination_x, &destination_y, &width, &height,
+          &depth_or_array_layers);
+      self_obj->CopyBufferToTexture(
+          GetObject<urge::GPUBuffer>(source_val, kGPUBufferDataType),
+          bytes_per_row, rows_per_image,
+          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
+          destination_mip_level, destination_x, destination_y, width, height,
+          depth_or_array_layers);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUCommandEncoder_CopyTextureToBuffer) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    if (argc == 9) {
+      // copy_texture_to_buffer(source, source_mip_level, source_x, source_y, destination, bytes_per_row, rows_per_image, width, height)
+      VALUE source_val, destination_val;
+      uint32_t source_mip_level, source_x, source_y, bytes_per_row, rows_per_image, width, height;
+      ParseArgs(argc, argv, "ouuuouuuu", &source_val, &source_mip_level,
+          &source_x, &source_y, &destination_val, &bytes_per_row,
+          &rows_per_image, &width, &height);
+      self_obj->CopyTextureToBuffer(
+          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
+          source_mip_level, source_x, source_y,
+          GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
+          bytes_per_row, rows_per_image, width, height);
+    } else if (argc == 10) {
+      // copy_texture_to_buffer(source, source_mip_level, source_x, source_y, destination, bytes_per_row, rows_per_image, width, height, depth_or_array_layers)
+      VALUE source_val, destination_val;
+      uint32_t source_mip_level, source_x, source_y, bytes_per_row, rows_per_image, width, height, depth_or_array_layers;
+      ParseArgs(argc, argv, "ouuuouuuuu", &source_val, &source_mip_level,
+          &source_x, &source_y, &destination_val, &bytes_per_row,
+          &rows_per_image, &width, &height, &depth_or_array_layers);
+      self_obj->CopyTextureToBuffer(
+          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
+          source_mip_level, source_x, source_y,
+          GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
+          bytes_per_row, rows_per_image, width, height, depth_or_array_layers);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUCommandEncoder_CopyTextureToTexture) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    if (argc == 10) {
+      // copy_texture_to_texture(source, source_mip_level, source_x, source_y, destination, destination_mip_level, destination_x, destination_y, width, height)
+      VALUE source_val, destination_val;
+      uint32_t source_mip_level, source_x, source_y, destination_mip_level, destination_x, destination_y, width, height;
+      ParseArgs(argc, argv, "ouuuouuuuu", &source_val, &source_mip_level,
+          &source_x, &source_y, &destination_val, &destination_mip_level,
+          &destination_x, &destination_y, &width, &height);
+      self_obj->CopyTextureToTexture(
+          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
+          source_mip_level, source_x, source_y,
+          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
+          destination_mip_level, destination_x, destination_y, width, height);
+    } else if (argc == 11) {
+      // copy_texture_to_texture(source, source_mip_level, source_x, source_y, destination, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers)
+      VALUE source_val, destination_val;
+      uint32_t source_mip_level, source_x, source_y, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers;
+      ParseArgs(argc, argv, "ouuuouuuuuu", &source_val, &source_mip_level,
+          &source_x, &source_y, &destination_val, &destination_mip_level,
+          &destination_x, &destination_y, &width, &height,
+          &depth_or_array_layers);
+      self_obj->CopyTextureToTexture(
+          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
+          source_mip_level, source_x, source_y,
+          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
+          destination_mip_level, destination_x, destination_y, width, height,
+          depth_or_array_layers);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUCommandEncoder_ResolveQuerySet) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 5);
+    VALUE query_set_val, destination_val;
+    uint32_t first_query, query_count;
+    uint64_t destination_offset;
+    ParseArgs(argc, argv, "ouuop", &query_set_val, &first_query, &query_count,
+        &destination_val, &destination_offset);
+
+    self_obj->ResolveQuerySet(
+        GetObject<urge::GPUQuerySet>(query_set_val, kGPUQuerySetDataType),
+        first_query, query_count,
+        GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
+        destination_offset);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(GPUCommandEncoder_ClearBuffer) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
@@ -108,6 +243,45 @@ RB_FUNC(GPUCommandEncoder_ClearBuffer) {
     self_obj->ClearBuffer(
         GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset,
         size);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUCommandEncoder_InsertDebugMarker) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string marker_label;
+    ParseArgs(argc, argv, "s", &marker_label);
+
+    self_obj->InsertDebugMarker(marker_label);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUCommandEncoder_PushDebugGroup) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string group_label;
+    ParseArgs(argc, argv, "s", &group_label);
+
+    self_obj->PushDebugGroup(group_label);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPUCommandEncoder_PopDebugGroup) {
+  auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    self_obj->PopDebugGroup();
   }
   EXC_END;
   return Qnil;
@@ -135,7 +309,14 @@ void InitGPUCommandEncoderBinding() {
   DefineMethod(klass, "begin_render_pass", GPUCommandEncoder_BeginRenderPass);
   DefineMethod(klass, "begin_compute_pass", GPUCommandEncoder_BeginComputePass);
   DefineMethod(klass, "copy_buffer_to_buffer", GPUCommandEncoder_CopyBufferToBuffer);
+  DefineMethod(klass, "copy_buffer_to_texture", GPUCommandEncoder_CopyBufferToTexture);
+  DefineMethod(klass, "copy_texture_to_buffer", GPUCommandEncoder_CopyTextureToBuffer);
+  DefineMethod(klass, "copy_texture_to_texture", GPUCommandEncoder_CopyTextureToTexture);
+  DefineMethod(klass, "resolve_query_set", GPUCommandEncoder_ResolveQuerySet);
   DefineMethod(klass, "clear_buffer", GPUCommandEncoder_ClearBuffer);
+  DefineMethod(klass, "insert_debug_marker", GPUCommandEncoder_InsertDebugMarker);
+  DefineMethod(klass, "push_debug_group", GPUCommandEncoder_PushDebugGroup);
+  DefineMethod(klass, "pop_debug_group", GPUCommandEncoder_PopDebugGroup);
   DefineMethod(klass, "finish", GPUCommandEncoder_Finish);
   InitGPUCommandEncoderBindingAppend(klass);
 }

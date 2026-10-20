@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupLayoutDescriptor  (core/graphics/gpu.h:328-346)
+// GPUBindGroupLayoutDescriptor  (core/graphics/gpu.h:350-371)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupLayoutDescriptor, GPUObject);
@@ -112,11 +112,25 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddTexture) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupLayoutDescriptor>(self);
 
   EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t binding, visibility;
-    ParseArgs(argc, argv, "uu", &binding, &visibility);
-
-    self_obj->AddTexture(binding, visibility);
+    if (argc == 2) {
+      // add_texture(binding, visibility)
+      uint32_t binding, visibility;
+      ParseArgs(argc, argv, "uu", &binding, &visibility);
+      self_obj->AddTexture(binding, visibility);
+    } else if (argc == 3) {
+      // add_texture(binding, visibility, sample_type)
+      uint32_t binding, visibility, sample_type;
+      ParseArgs(argc, argv, "uuu", &binding, &visibility, &sample_type);
+      self_obj->AddTexture(binding, visibility, sample_type);
+    } else if (argc == 4) {
+      // add_texture(binding, visibility, sample_type, view_dimension)
+      uint32_t binding, visibility, sample_type, view_dimension;
+      ParseArgs(argc, argv, "uuuu", &binding, &visibility, &sample_type,
+          &view_dimension);
+      self_obj->AddTexture(binding, visibility, sample_type, view_dimension);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
   }
   EXC_END;
   return Qnil;
@@ -126,11 +140,19 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddSampler) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupLayoutDescriptor>(self);
 
   EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t binding, visibility;
-    ParseArgs(argc, argv, "uu", &binding, &visibility);
-
-    self_obj->AddSampler(binding, visibility);
+    if (argc == 2) {
+      // add_sampler(binding, visibility)
+      uint32_t binding, visibility;
+      ParseArgs(argc, argv, "uu", &binding, &visibility);
+      self_obj->AddSampler(binding, visibility);
+    } else if (argc == 3) {
+      // add_sampler(binding, visibility, sampler_type)
+      uint32_t binding, visibility, sampler_type;
+      ParseArgs(argc, argv, "uuu", &binding, &visibility, &sampler_type);
+      self_obj->AddSampler(binding, visibility, sampler_type);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
   }
   EXC_END;
   return Qnil;

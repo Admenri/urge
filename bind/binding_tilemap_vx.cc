@@ -71,7 +71,7 @@ RB_FUNC(Tilemap_GetBitmaps) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// TilemapVX  (core/scene/tilemap_vx.h:35-66)
+// TilemapVX  (core/scene/tilemap_vx.h:56-87)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(TilemapVX, Node);

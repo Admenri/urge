@@ -79,8 +79,13 @@ class Effect : public Object {
   void CreateInternal(std::string vs_wgsl,
                       std::string fs_wgsl,
                       std::string blend_states);
+  void RebuildPipeline();
   void SetBufferBytes(uint32_t slot, const void* data, uint32_t size);
   void RebuildBindGroup();
+
+  std::string vs_wgsl_;
+  std::string fs_wgsl_;
+  std::string blend_states_;
 
   RefPtr<PipelineHolder> holder_;
   std::map<uint32_t, SlotResource> resources_;

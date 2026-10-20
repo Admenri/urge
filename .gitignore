@@ -9,3 +9,9 @@
 /bind/external
 /admenri
 __pycache__/
+/test/*/Game.exe
+/test/*/Data
+/test/*/*.log
+/test/*/*.glb
+/test/*/*.png
+/test/*/gltf_image_*

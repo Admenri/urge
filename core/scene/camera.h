@@ -23,6 +23,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "glm/glm.hpp"
 
@@ -52,6 +53,13 @@ class Camera : public Object {
 
   virtual glm::mat4 projection(const glm::ivec2& size) const;
   wgpu::BindGroup AcquireScene(const glm::ivec2& size);
+
+  URGE_BINDING()
+  std::vector<float> ViewProjection(int32_t width, int32_t height);
+
+  bool IsVisible(const glm::vec3& center,
+                 float radius,
+                 const glm::ivec2& size) const;
 
  protected:
   RefPtr<Vector3> position_;

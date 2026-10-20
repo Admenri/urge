@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassEncoder  (core/graphics/gpu.h:865-901)
+// GPURenderPassEncoder  (core/graphics/gpu.h:997-1049)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassEncoder, GPUObject);
@@ -200,6 +200,58 @@ RB_FUNC(GPURenderPassEncoder_DrawIndexed) {
   return Qnil;
 }
 
+RB_FUNC(GPURenderPassEncoder_DrawIndirect) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    if (argc == 1) {
+      // draw_indirect(indirect_buffer)
+      VALUE indirect_buffer_val;
+      ParseArgs(argc, argv, "o", &indirect_buffer_val);
+      self_obj->DrawIndirect(
+          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType));
+    } else if (argc == 2) {
+      // draw_indirect(indirect_buffer, indirect_offset)
+      VALUE indirect_buffer_val;
+      uint64_t indirect_offset;
+      ParseArgs(argc, argv, "op", &indirect_buffer_val, &indirect_offset);
+      self_obj->DrawIndirect(
+          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType),
+          indirect_offset);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPURenderPassEncoder_DrawIndexedIndirect) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    if (argc == 1) {
+      // draw_indexed_indirect(indirect_buffer)
+      VALUE indirect_buffer_val;
+      ParseArgs(argc, argv, "o", &indirect_buffer_val);
+      self_obj->DrawIndexedIndirect(
+          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType));
+    } else if (argc == 2) {
+      // draw_indexed_indirect(indirect_buffer, indirect_offset)
+      VALUE indirect_buffer_val;
+      uint64_t indirect_offset;
+      ParseArgs(argc, argv, "op", &indirect_buffer_val, &indirect_offset);
+      self_obj->DrawIndexedIndirect(
+          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType),
+          indirect_offset);
+    } else {
+      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+    }
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(GPURenderPassEncoder_SetViewport) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
@@ -247,6 +299,74 @@ RB_FUNC(GPURenderPassEncoder_SetScissorRect) {
   return Qnil;
 }
 
+RB_FUNC(GPURenderPassEncoder_SetStencilReference) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    uint32_t reference;
+    ParseArgs(argc, argv, "u", &reference);
+
+    self_obj->SetStencilReference(reference);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPURenderPassEncoder_SetBlendConstant) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 4);
+    double r, g, b, a;
+    ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
+
+    self_obj->SetBlendConstant(static_cast<float>(r), static_cast<float>(g),
+        static_cast<float>(b), static_cast<float>(a));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPURenderPassEncoder_InsertDebugMarker) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string marker_label;
+    ParseArgs(argc, argv, "s", &marker_label);
+
+    self_obj->InsertDebugMarker(marker_label);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPURenderPassEncoder_PushDebugGroup) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string group_label;
+    ParseArgs(argc, argv, "s", &group_label);
+
+    self_obj->PushDebugGroup(group_label);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(GPURenderPassEncoder_PopDebugGroup) {
+  auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    self_obj->PopDebugGroup();
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(GPURenderPassEncoder_End) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
@@ -271,8 +391,15 @@ void InitGPURenderPassEncoderBinding() {
   DefineMethod(klass, "set_index_buffer", GPURenderPassEncoder_SetIndexBuffer);
   DefineMethod(klass, "draw", GPURenderPassEncoder_Draw);
   DefineMethod(klass, "draw_indexed", GPURenderPassEncoder_DrawIndexed);
+  DefineMethod(klass, "draw_indirect", GPURenderPassEncoder_DrawIndirect);
+  DefineMethod(klass, "draw_indexed_indirect", GPURenderPassEncoder_DrawIndexedIndirect);
   DefineMethod(klass, "set_viewport", GPURenderPassEncoder_SetViewport);
   DefineMethod(klass, "set_scissor_rect", GPURenderPassEncoder_SetScissorRect);
+  DefineMethod(klass, "set_stencil_reference", GPURenderPassEncoder_SetStencilReference);
+  DefineMethod(klass, "set_blend_constant", GPURenderPassEncoder_SetBlendConstant);
+  DefineMethod(klass, "insert_debug_marker", GPURenderPassEncoder_InsertDebugMarker);
+  DefineMethod(klass, "push_debug_group", GPURenderPassEncoder_PushDebugGroup);
+  DefineMethod(klass, "pop_debug_group", GPURenderPassEncoder_PopDebugGroup);
   DefineMethod(klass, "end", GPURenderPassEncoder_End);
   InitGPURenderPassEncoderBindingAppend(klass);
 }
