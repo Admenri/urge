@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "core/scene/bitmap.h"
-#include "core/scene/camera.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/disposable.h"
-#include "core/scene/drawable.h"
 #include "core/common/utility.h"
+#include "core/scene/camera.h"
+#include "core/scene/drawable.h"
 
 namespace urge {
 
@@ -118,4 +118,4 @@ class Node : public Disposable {
   } transform_;
 };
 
-}  // namespace urge
+}

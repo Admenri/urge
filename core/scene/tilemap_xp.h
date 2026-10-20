@@ -26,14 +26,14 @@
 #include <utility>
 #include <vector>
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/common.h"
 #include "core/common/definition.h"
-#include "core/scene/node.h"
-#include "core/graphics/primitive.h"
-#include "core/scene/table.h"
-#include "core/graphics/uniform.h"
+#include "core/common/table.h"
 #include "core/common/utility.h"
+#include "core/render/primitive.h"
+#include "core/render/uniform.h"
+#include "core/scene/node.h"
 #include "core/scene/viewport.h"
 
 namespace urge {
@@ -153,4 +153,4 @@ class TilemapXP : public Node {
   std::vector<TileLayer> above_layers_;
 };
 
-}  // namespace urge
+}

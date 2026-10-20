@@ -26,10 +26,10 @@
 #include "glm/gtc/quaternion.hpp"
 
 #include "core/graphics/graphics.h"
-#include "core/graphics/primitive.h"
-#include "core/graphics/render_stats.h"
+#include "core/render/primitive.h"
+#include "core/render/render_stats.h"
+#include "core/render/uniform.h"
 #include "core/scene/sprite_batch.h"
-#include "core/graphics/uniform.h"
 
 namespace urge {
 
@@ -60,9 +60,6 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   context.model.push(glm::mat4(1.0f));
   context.command = encoder;
   context.target = target;
-  /* Acquiring the target's handles runs the queue, which is what pushes the
-     drawing a script did on the bitmaps through to the GPU.  It has to happen
-     before the pass is opened, so the scene samples up-to-date textures. */
   context.scene = target->scene_group();
 
   UniformManager& uniforms = UniformManager::Get();
@@ -216,4 +213,4 @@ void Node::RebuildModelTransform() {
   transform_.local = model;
 }
 
-}  // namespace urge
+}

@@ -85,4 +85,4 @@ class AudioStream : public Object {
   bool loop_ = false;
 };
 
-}  // namespace urge
+}

@@ -20,16 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/uniform.h"
+#include "core/render/uniform.h"
 
 #include <algorithm>
 #include <cstring>
 #include <utility>
 
-#include "core/graphics/device.h"
 #include "core/common/exception.h"
-#include "core/graphics/gpu_utils.h"
 #include "core/common/logger.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
 
 namespace urge {
 
@@ -41,7 +41,7 @@ constexpr uint32_t kDefaultChunkSize = 64 * 1024;
 
 constexpr uint32_t kMaxChunkSize = 1024 * 1024;
 
-}  // namespace
+}
 
 UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
                                    uint32_t element_size,
@@ -177,4 +177,4 @@ void UniformManager::Flush() {
   object_uniforms_.Flush();
 }
 
-}  // namespace urge
+}

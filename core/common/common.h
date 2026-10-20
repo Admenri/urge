@@ -179,4 +179,4 @@ inline glm::vec2 ExtractPosition(const glm::mat4& matrix) {
   return glm::vec2(std::lround(matrix[3].x), std::lround(matrix[3].y));
 }
 
-}  // namespace urge
+}

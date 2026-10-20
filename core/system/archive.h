@@ -26,38 +26,14 @@
 
 namespace urge {
 
-/* The encrypted asset container.
- *
- * A shipped game carries its resources in a single `<name>.acs` file next to
- * the executable -- `Game.exe` reads `Game.acs`, the way it already reads
- * `Game.ini`.  The container is a PhysicsFS archive, so once it is registered
- * and mounted every read through `IOService` goes through it and nothing else
- * in the engine has to know it is there: `Bitmap.new("Graphics/...")`,
- * `load_data`, the audio mixer and the font loader all keep working as they
- * do against a plain directory.
- *
- * The implementation is not in this tree.  It lives in the `admenri/` drop-in,
- * which is git-ignored, and this header is the whole of what the open-source
- * side sees of it: a clone without `admenri/` compiles `core/system/archive.cc`,
- * whose three functions answer "not available" and mount nothing.  The
- * encryption is therefore a property of a build, not of the source.
- */
 namespace archive {
 
-/* True when this build carries the container archiver, i.e. `admenri/` was
-   present when CMake configured the project. */
 bool Available();
 
-/* Registers the `.acs` archiver with PhysicsFS, which must be up already.
-   `IOService` calls this from its constructor, so a caller holding an
-   `IOService` never has to; calling it again is a no-op. */
 void Register();
 
-/* Mounts `path` at the archive root.  Prepending is the default, so a
-   container shadows the loose directory a development build reads instead.
-   Returns false when this build has no archiver, or when the mount failed. */
 bool Mount(const std::string& path, bool prepend = true);
 
-}  // namespace archive
+}
 
-}  // namespace urge
+}

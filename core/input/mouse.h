@@ -28,7 +28,7 @@
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
 
@@ -141,4 +141,4 @@ class Mouse : public Singleton<Mouse> {
   SDL_Cursor* cursor_ = nullptr;
 };
 
-}  // namespace urge
+}

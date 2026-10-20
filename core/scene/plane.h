@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
+#include "core/render/primitive.h"
+#include "core/render/uniform.h"
 #include "core/scene/node.h"
-#include "core/graphics/primitive.h"
-#include "core/graphics/uniform.h"
 #include "core/scene/viewport.h"
 
 namespace urge {
@@ -84,4 +84,4 @@ class Plane : public Node {
   wgpu::BindGroup tint_group_;
 };
 
-}  // namespace urge
+}

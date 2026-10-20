@@ -560,7 +560,7 @@ def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
     annotation applies to the very next declaration only, which is why it is
     consumed here instead of being carried around: `URGE_BINDING` expands to
     nothing in C++, so a header reader sees it as part of the declaration it
-    documents, see `core/scene/table.h`.
+    documents, see `core/common/table.h`.
     """
     annotation = None
     while True:
@@ -617,7 +617,7 @@ def parse_class(
     """
     markers = [m.start() for m in re.finditer(r"URGE_BINDING\s*\(", inner)]
     last_marker = markers[-1] if markers else 0
-    # `source` is already repository-relative (`core/scene/bitmap.h`), so the
+    # `source` is already repository-relative (`core/canvas/bitmap.h`), so the
     # export marker is exactly the path a reader can open.
     export = "%s:%d-%d" % (
         source,

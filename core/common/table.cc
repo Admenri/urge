@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/scene/table.h"
+#include "core/common/table.h"
 
 #include "core/common/exception.h"
 #include "core/common/object.h"
@@ -109,4 +109,4 @@ void Table::Set(int16_t value, int32_t x, int32_t y, int32_t z) {
   data_.at(index) = value;
 }
 
-}  // namespace urge
+}

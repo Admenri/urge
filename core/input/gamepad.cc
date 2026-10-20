@@ -36,17 +36,13 @@ namespace urge {
 
 namespace {
 
-/* Half of the stick's travel.  Low enough that a deliberate push always
-   registers, high enough that a worn stick does not walk the character. */
 constexpr int16_t kStickDeadzone = 16384;
 
-/* Tokens of the four virtual buttons, in `VirtualButton` order.  They follow
-   the shape SDL uses for its own ("dpleft", "leftshoulder"), so the ini reads
-   the same whether an entry is a real button or a stick direction. */
 constexpr const char* kStickTokens[4] = {"lsleft", "lsright", "lsup", "lsdown"};
 
-constexpr const char* kStickLabels[4] = {"Pad L-Stick Left", "Pad L-Stick Right",
-                                         "Pad L-Stick Up", "Pad L-Stick Down"};
+constexpr const char* kStickLabels[4] = {"Pad L-Stick Left",
+                                         "Pad L-Stick Right", "Pad L-Stick Up",
+                                         "Pad L-Stick Down"};
 
 float NormalizeAxis(SDL_GamepadAxis axis, Sint16 value) {
   if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ||
@@ -60,17 +56,19 @@ Uint16 NormalizeRumble(float value) {
   return static_cast<Uint16>(std::clamp(value, 0.0f, 1.0f) * 65535.0f + 0.5f);
 }
 
-}  // namespace
+}
 
-GamepadDevice::~GamepadDevice() { Close(); }
+GamepadDevice::~GamepadDevice() {
+  Close();
+}
 
 bool GamepadDevice::Open(SDL_JoystickID instance_id) {
   Close();
 
   SDL_Gamepad* pad = SDL_OpenGamepad(instance_id);
   if (!pad) {
-    LOGGER_WARN("[Gamepad] cannot open {}: {}", static_cast<int32_t>(instance_id),
-                SDL_GetError());
+    LOGGER_WARN("[Gamepad] cannot open {}: {}",
+                static_cast<int32_t>(instance_id), SDL_GetError());
     return false;
   }
 
@@ -266,10 +264,6 @@ void GamepadDevice::ResetState() {
     state = KeyState{};
 }
 
-// ---------------------------------------------------------------------------
-// GamepadManager
-// ---------------------------------------------------------------------------
-
 GamepadManager::GamepadManager() {
   if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
     LOGGER_WARN("[Gamepad] subsystem unavailable: {}", SDL_GetError());
@@ -279,10 +273,6 @@ GamepadManager::GamepadManager() {
   ready_ = true;
   OpenExisting();
 
-  /* A controller that never shows up in this line is invisible to the engine:
-     "1 joystick(s), 1 gamepad(s)" means the pad is fine and the problem is
-     above this layer, while "0" means SDL never claimed it.  See the note on
-     the Bluetooth HID patch in third_party/PATCHES.md. */
   int32_t joystick_count = 0;
   SDL_JoystickID* joysticks = SDL_GetJoysticks(&joystick_count);
   SDL_free(joysticks);
@@ -291,7 +281,9 @@ GamepadManager::GamepadManager() {
               count());
 }
 
-GamepadManager::~GamepadManager() { devices_.clear(); }
+GamepadManager::~GamepadManager() {
+  devices_.clear();
+}
 
 void GamepadManager::ProcessEvent(const SDL_Event& event) {
   switch (event.type) {
@@ -364,10 +356,6 @@ void GamepadManager::OpenExisting() {
   SDL_free(ids);
 }
 
-// ---------------------------------------------------------------------------
-// Gamepad (script side)
-// ---------------------------------------------------------------------------
-
 Gamepad::Gamepad(int32_t device_id) : id_(device_id) {
   device_ = SDL_OpenGamepad(device_id);
   if (!device_) {
@@ -380,7 +368,9 @@ Gamepad::Gamepad(int32_t device_id) : id_(device_id) {
   guid_ = text;
 }
 
-Gamepad::~Gamepad() { Close(); }
+Gamepad::~Gamepad() {
+  Close();
+}
 
 void Gamepad::Close() {
   if (device_)
@@ -439,8 +429,6 @@ bool Gamepad::Connect() {
   if (device_ && SDL_GamepadConnected(device_))
     return true;
 
-  /* The instance id of a pad changes across a replug, so the GUID written when
-     the handle was built is what identifies the same physical controller. */
   id_ = 0;
 
   int32_t count = 0;
@@ -526,4 +514,4 @@ bool Gamepad::Rumble(float low, float high, int32_t duration) {
                            static_cast<Uint32>(std::max(duration, 0)));
 }
 
-}  // namespace urge
+}

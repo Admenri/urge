@@ -71,7 +71,7 @@ std::string FindHeader(const std::vector<std::string>& lines,
   return std::string();
 }
 
-}  // namespace
+}
 
 NetworkEvent::NetworkEvent() = default;
 
@@ -294,4 +294,4 @@ ATTR_DEF(Network, int32_t, MaxEvents) {
   return max_events_;
 }
 
-}  // namespace urge
+}

@@ -37,16 +37,6 @@
 
 namespace urge {
 
-/* One physical controller: the SDL handle, the raw button set, the axes and
-   rumble.  Internal -- the script side goes through `Gamepad` below, which is
-   a handle onto one of these by index.
-
-   Buttons are numbered with SDL's `SDL_GamepadButton` values, and the left
-   stick is folded into the same numbering as four virtual buttons
-   (`kStickLeft` ...) so a slot can bind "stick left" exactly like "d-pad
-   left".  The right stick is deliberately absent from that set: it is a
-   camera control and no RGSS slot asks for one -- `Gamepad#right_stick`
-   exposes it as an axis instead. */
 class GamepadDevice {
  public:
   enum VirtualButton : int32_t {
@@ -77,18 +67,14 @@ class GamepadDevice {
   bool Triggered(int32_t button) const;
   bool Repeated(int32_t button) const;
 
-  /* -1..1 for sticks, 0..1 for triggers (SDL's own ranges, normalized). */
   float Axis(int32_t axis) const;
 
   bool Rumble(float low, float high, int32_t duration_ms);
 
-  /* Stable token for the ini file ("a", "leftshoulder", "lsleft", ...). */
   static std::string ButtonToken(int32_t button);
 
-  /* Human-readable form for the settings UI ("Pad A", "Pad LB", ...). */
   static std::string ButtonLabel(int32_t button);
 
-  /* Inverse of `ButtonToken`. */
   static bool ButtonFromToken(const std::string& token, int32_t* button);
 
  private:
@@ -102,12 +88,6 @@ class GamepadDevice {
   KeyState states_[kButtonCount];
 };
 
-/* Every attached controller, in the order they were plugged in.
-
-   Indices are positions in that list, so unplugging a pad shifts the ones
-   behind it down -- a handle taken before the change may then refer to a
-   different pad.  The list is compact on purpose: `count` and the valid index
-   range always agree, which is the least surprising thing for a script. */
 class GamepadManager {
  public:
   GamepadManager();
@@ -134,28 +114,9 @@ class GamepadManager {
   bool ready_ = false;
 };
 
-/* One controller, owned by the script.
-
-     Gamepad.available_devices        # => [{ id:, name:, path:, player:, guid: }, ...]
-     pad = Gamepad.new(device_id)     # opens the device
-     pad.update                       # poll once per frame
-     pad.button_press?(Gamepad::BUTTON_SOUTH)
-     pad.button_trigger?(Gamepad::BUTTON_SOUTH)
-     pad.button_repeat?(Gamepad::BUTTON_SOUTH)
-     pad.get_axis_value(Gamepad::AXIS_LEFTX)      # raw SDL value
-     pad.pressed_buttons              # => [button, ...]
-     pad.connect_state                # SDL_JoystickConnectionState
-     pad.player_index / pad.player_index = 1
-     pad.rumble(0.5, 0.5, 200)        # engine extension
-
-   The object owns its own `SDL_Gamepad`, so a script may hold several pads at
-   once.  `update` polls the device (no SDL events involved), which is why a
-   pad created here works independently of `Input`'s slot bindings -- those
-   follow the primary pad through `GamepadManager` instead. */
 URGE_BINDING()
 class Gamepad : public Object {
  public:
-  /* One entry of `Gamepad.available_devices`; the glue turns it into a Hash. */
   struct DeviceInfo {
     int32_t id = 0;
     std::string name;
@@ -166,7 +127,6 @@ class Gamepad : public Object {
 
   static std::vector<DeviceInfo> GetAvailableDevices();
 
-  /* SDL's axis numbering, under the names the reference API uses. */
   URGE_BINDING()
   enum Axis {
     AXIS_LEFTX = SDL_GAMEPAD_AXIS_LEFTX,
@@ -177,7 +137,6 @@ class Gamepad : public Object {
     AXIS_RIGHT_TRIGGER = SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
   };
 
-  /* SDL's button numbering, under the names the reference API uses. */
   URGE_BINDING()
   enum Button {
     BUTTON_SOUTH = SDL_GAMEPAD_BUTTON_SOUTH,
@@ -208,18 +167,14 @@ class Gamepad : public Object {
     BUTTON_TOUCHPAD = SDL_GAMEPAD_BUTTON_TOUCHPAD,
   };
 
-  /* Opens `device_id`; throws RGSSError when the pad is gone. */
   URGE_BINDING()
   Gamepad(int32_t device_id);
   URGE_BINDING()
   ~Gamepad() override;
 
-  /* Poll the buttons.  `button_trigger?` / `button_repeat?` only move here. */
   URGE_BINDING()
   void Update();
 
-  /* Re-open the same physical pad after it was unplugged and plugged back in,
-     matched by GUID.  False when it is not present. */
   URGE_BINDING()
   bool Connect();
 
@@ -247,8 +202,6 @@ class Gamepad : public Object {
   URGE_BINDING()
   ATTR(int32_t, PlayerIndex);
 
-  /* Not part of the reference API: this engine also drives the motors.  `low`
-     and `high` are 0..1, `duration` is milliseconds (0 keeps them running). */
   URGE_BINDING()
   bool Rumble(float low, float high, int32_t duration = 250);
 
@@ -261,4 +214,4 @@ class Gamepad : public Object {
   KeyState states_[SDL_GAMEPAD_BUTTON_COUNT];
 };
 
-}  // namespace urge
+}

@@ -26,8 +26,8 @@
 
 #include "SDL3/SDL_hints.h"
 
+#include "core/canvas/image.h"
 #include "core/graphics/graphics.h"
-#include "core/scene/image.h"
 
 namespace urge {
 
@@ -46,7 +46,7 @@ bool WindowSizeInternal(SDL_Window* window, float* width, float* height) {
   return true;
 }
 
-}  // namespace
+}
 
 Mouse::Mouse() = default;
 
@@ -352,4 +352,4 @@ void Mouse::SyncPositionFromSystemInternal() {
   last_position_ = position_;
 }
 
-}  // namespace urge
+}

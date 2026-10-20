@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/imgui_manager.h"
+#include "core/render/imgui_manager.h"
 
 #include <algorithm>
 #include <climits>
@@ -36,16 +36,16 @@
 #include "imgui_impl_wgpu.h"
 
 #include "core/audio/audio.h"
-#include "core/system/config.h"
-#include "core/graphics/device.h"
+#include "core/common/logger.h"
 #include "core/font/font_context.h"
 #include "core/graphics/graphics.h"
 #include "core/input/input.h"
-#include "core/common/logger.h"
-#include "core/graphics/render_stats.h"
+#include "core/render/device.h"
+#include "core/render/render_stats.h"
+#include "core/system/config.h"
 
-#include <cstdio>
 #include <cfloat>
+#include <cstdio>
 
 namespace urge {
 
@@ -99,7 +99,7 @@ ImGuiStyle& BaseStyle() {
   return base;
 }
 
-}  // namespace
+}
 
 ImGuiManager::ImGuiManager(SDL_Window* window) : window_(window) {
   IMGUI_CHECKVERSION();
@@ -111,10 +111,6 @@ ImGuiManager::ImGuiManager(SDL_Window* window) : window_(window) {
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-  // `fpsmonitor` opens the frame monitor in its detailed view straight away,
-  // which saves two F2 presses when the reason for launching is to profile.
-  // The token follows the engine's other switches -- `bstats`, `nojit` -- and
-  // is matched bare, exactly as written on the command line.
   if (Config::Get().HasCommandLine("fpsmonitor")) {
     fps_mode_ = FpsMode::kDetailed;
     LOGGER_INFO("frame monitor detailed (command line)");
@@ -129,20 +125,15 @@ ImGuiManager::ImGuiManager(SDL_Window* window) : window_(window) {
   style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
   style.WindowBorderSize = 1.0f;
 
-  /* The overlay draws with the same face as the game instead of opening a file
-     of its own: on Windows both land on Microsoft YaHei, and a project that
-     ships its own `Fonts/` faces still gets them through the same lookup.  The
-     payload belongs to the font context, which outlives this manager, so the
-     atlas only borrows it. */
   bool font_loaded = false;
   const std::string& ui_font = FontContext::Get().default_font();
-  if (const FontContext::FontData* data = FontContext::Get().FindFont(ui_font)) {
+  if (const FontContext::FontData* data =
+          FontContext::Get().FindFont(ui_font)) {
     ImFontConfig config;
     config.SizePixels = kUiFontSize;
     config.FontDataOwnedByAtlas = false;
 
-    if (io.Fonts->AddFontFromMemoryTTF(data->data,
-                                       static_cast<int>(data->size),
+    if (io.Fonts->AddFontFromMemoryTTF(data->data, static_cast<int>(data->size),
                                        kUiFontSize, &config)) {
       font_loaded = true;
       LOGGER_INFO("debug UI font: {} ({} KiB)", ui_font, data->size / 1024);
@@ -195,8 +186,6 @@ void ImGuiManager::ProcessEvent(const SDL_Event& event) {
 
   ImGui_ImplSDL3_ProcessEvent(&event);
 
-  /* A pad button is a capture candidate like a key; it never toggles the
-     overlay itself, so this returns either way. */
   if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
     if (capture_slot_ >= 0)
       CaptureBinding(Input::KeySym{kKeySlots[capture_slot_],
@@ -230,9 +219,6 @@ void ImGuiManager::ProcessEvent(const SDL_Event& event) {
 }
 
 void ImGuiManager::CycleFPSMode() {
-  // hidden -> compact -> detailed -> hidden.  The window keeps its corner and
-  // only changes its content, so cycling through the modes feels like
-  // unfolding one window rather than opening a new one each time.
   fps_mode_ = static_cast<FpsMode>((static_cast<int>(fps_mode_) + 1) % 3);
 
   static const char* const kNames[] = {"hidden", "compact", "detailed"};
@@ -371,10 +357,6 @@ void ImGuiManager::BuildKeyboardPanel() {
 
   const ImGuiStyle& style = ImGui::GetStyle();
 
-  /* Which controller the entries below belong to -- or none, which is also the
-     answer when the pad is unplugged and its bindings are simply idle.  The
-     slot bindings always follow the first pad; the extra count is there so a
-     second controller does not look like it was ignored. */
   const GamepadManager& gamepads = input.gamepads();
   if (const GamepadDevice* pad = gamepads.primary()) {
     if (gamepads.count() > 1)
@@ -435,8 +417,6 @@ void ImGuiManager::BuildKeyboardPanel() {
 
           if (chip++)
             ImGui::SameLine();
-          /* Keyboard and pad number their controls independently, so the id
-             needs both halves -- `A` on the pad and the `A` key share a code. */
           ImGui::PushID(binding.gamepad ? -binding.code - 1 : binding.code);
           const std::string label = input.BindingName(binding) + " x";
           if (ImGui::SmallButton(label.c_str()))
@@ -603,45 +583,22 @@ void ImGuiManager::BuildFPSWindow() {
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
   const bool detailed = fps_mode_ == FpsMode::kDetailed;
 
-  // The window is pinned to the top-right corner and must never grow past the
-  // display: a game window can be dragged down to a handful of pixels, and the
-  // overlay has to stay readable (and reachable) there too.
-  //
-  // The size is computed here and set outright rather than left to
-  // `AlwaysAutoResize`.  Auto-resize is driven by the content's ideal size,
-  // and that content contains a plot whose width follows the window -- so the
-  // two feed each other, ImGui re-runs the fit after the constraint pass with
-  // no damper (`SizeFull.y` is assigned, not clamped, while auto-fitting), and
-  // the window grows without bound until the scroll region overflows.
-  // A fixed size breaks that loop: the height is whatever the current mode
-  // wants, clamped to the display, and the detail list scrolls inside it.
   const ImVec2 display = viewport->Size;
   const float margin = U(12.0f);
   const float desired_width = U(detailed ? 336.0f : 210.0f);
   const float width =
       std::max(U(120.0f), std::min(desired_width, display.x - margin * 2.0f));
 
-  // A short window must not push the overlay off-screen, so both axes are
-  // clamped to what the display actually has.
   const float min_height = U(60.0f);
   const float max_height = std::max(min_height, display.y - margin * 2.0f);
 
-  // The height is the mode's natural size clamped to the display, so the
-  // overlay is compact in compact mode and only as tall as the detail needs
-  // otherwise.  `SetNextWindowSize` with a concrete height replaces what
-  // `AlwaysAutoResize` used to do, without the feedback loop.
   const float desired_height = U(detailed ? 300.0f : 92.0f);
-  const float height = std::max(min_height, std::min(desired_height, max_height));
+  const float height =
+      std::max(min_height, std::min(desired_height, max_height));
 
-  // Both the position and the size are set every frame.  The corner anchor
-  // depends on the width, so a window that keeps a stale position while its
-  // width is re-set would drift off the corner; the overlay is draggable-free
-  // by design (NoMove is not set, but the user has no reason to move it, and
-  // re-pinning is what keeps it glued to the corner when the window resizes).
-  ImGui::SetNextWindowPos(
-      ImVec2(viewport->Pos.x + display.x - width - margin,
-             viewport->Pos.y + margin),
-      ImGuiCond_Always);
+  ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + display.x - width - margin,
+                                 viewport->Pos.y + margin),
+                          ImGuiCond_Always);
   ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
   const ImGuiWindowFlags flags =
@@ -667,7 +624,6 @@ void ImGuiManager::BuildFPSWindow() {
       snprintf(buffer, size, "%5.1f", 1000.0 / ms);
   };
 
-  // --- Rates, always shown: the compact view is exactly this block. --------
   const double last_ms = history.last();
   const double average_ms = history.Average();
   const double one_percent_ms = history.SlowAverage(0.01);
@@ -692,53 +648,39 @@ void ImGuiManager::BuildFPSWindow() {
     return;
   }
 
-  // --- Detailed view -------------------------------------------------------
   ImGui::Separator();
 
   if (history.size() >= 2) {
-    // `PlotLines` wants a contiguous float array in display order, and the
-    // history keeps its samples ring-buffered, so the copy is unavoidable --
-    // but it only happens while the detailed view is on screen.  The count is
-    // clamped to `INT_MAX` rather than cast straight from `size_t`: the window
-    // is fixed at 240 samples so it never gets close, but an overflowing cast
-    // would hand the plotter a negative count and read out of bounds.
     const std::vector<double> ordered = history.Ordered();
     frame_times_.resize(ordered.size());
     for (size_t i = 0; i < ordered.size(); ++i)
       frame_times_[i] = static_cast<float>(ordered[i]);
     const int plot_count = static_cast<int>(
         std::min<size_t>(frame_times_.size(), static_cast<size_t>(INT_MAX)));
-    const float plot_max =
-        std::max(1000.0f / 30.0f,
-                 static_cast<float>(history.Slowest()) * 1.15f);
+    const float plot_max = std::max(
+        1000.0f / 30.0f, static_cast<float>(history.Slowest()) * 1.15f);
     ImGui::PlotLines("##frame_time", frame_times_.data(), plot_count, 0, "ms",
                      0.0f, plot_max, ImVec2(-FLT_MIN, U(46.0f)));
   } else {
     ImGui::TextDisabled("collecting...");
   }
 
-  // Everything below keeps its own scroll region, so a window that was shrunk
-  // down shows the top of the list rather than rendering the tail off-screen.
   const float body_height = ImGui::GetContentRegionAvail().y;
   if (body_height > 0.0f) {
-    ImGui::BeginChild("##details", ImVec2(0.0f, 0.0f),
-                      ImGuiChildFlags_None,
+    ImGui::BeginChild("##details", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoSavedSettings |
                           ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-    if (ImGui::CollapsingHeader("Frame rate",
-                                ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Frame rate", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Text("average     %8.2f ms", average_ms);
       ImGui::Text("1%% low      %8.2f ms", one_percent_ms);
       ImGui::Text("0.1%% low    %8.2f ms", history.SlowAverage(0.001));
       ImGui::Text("fastest     %8.2f ms", history.Fastest());
       ImGui::Text("slowest     %8.2f ms", history.Slowest());
-      ImGui::TextDisabled("%u samples",
-                          static_cast<unsigned>(history.size()));
+      ImGui::TextDisabled("%u samples", static_cast<unsigned>(history.size()));
     }
 
-    if (ImGui::CollapsingHeader("Frame time",
-                                ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Frame time", ImGuiTreeNodeFlags_DefaultOpen)) {
       const FrameTimings& t = stats.timings;
       ImGui::Text("cpu total   %8.2f ms", t.cpu_ms);
       ImGui::Text("  script    %8.2f ms", t.script_ms);
@@ -750,15 +692,15 @@ void ImGuiManager::BuildFPSWindow() {
 
       ImGui::Spacing();
       const RenderFrameCounters& counters = stats.last;
-      ImGui::Text("bitmap ops  %8u", static_cast<unsigned>(counters.bitmap_ops));
+      ImGui::Text("bitmap ops  %8u",
+                  static_cast<unsigned>(counters.bitmap_ops));
       ImGui::Text("bitmap cost %8.2f ms", counters.bitmap_total_ms());
       ImGui::Text("submits     %8u (%u bitmap)",
                   static_cast<unsigned>(counters.frame_submits),
                   static_cast<unsigned>(counters.bitmap_submits));
     }
 
-    if (ImGui::CollapsingHeader("Device",
-                                ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Device", ImGuiTreeNodeFlags_DefaultOpen)) {
       const DeviceInfo& info = GPUDevice::Get().info();
 
       const auto text_or = [](const std::string& value, const char* fallback) {
@@ -825,4 +767,4 @@ void ImGuiManager::ApplyUIScale() {
   style.FontScaleMain = scale;
 }
 
-}  // namespace urge
+}

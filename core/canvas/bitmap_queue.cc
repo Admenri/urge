@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/scene/bitmap_queue.h"
+#include "core/canvas/bitmap_queue.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -30,20 +30,17 @@
 #include "SDL3/SDL_timer.h"
 
 #include "core/graphics/gpu.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/render_stats.h"
-#include "core/graphics/shader.h"
+#include "core/render/pipeline.h"
+#include "core/render/render_stats.h"
+#include "core/render/shader.h"
 
 namespace urge {
 
 namespace {
 
-// A frame of bitmap drawing is a few hundred quads at most; reserving them up
-// front keeps the vertex buffer from being replaced while the batch is being
-// recorded.
 constexpr std::size_t kInitialVertexCapacity = 8192;
 
-}  // namespace
+}
 
 BitmapQueue::BitmapQueue() {
   vertices_.Reserve(kInitialVertexCapacity);
@@ -93,13 +90,9 @@ void BitmapQueue::Record(const BitmapDraw& draw, std::uint32_t first_vertex) {
   pass_.SetBindGroup(1, draw.target->object_group(), 0, nullptr);
 
   if (draw.kind != BitmapDraw::Kind::kColor) {
-    // A pass may not sample the attachment it writes, so a blit whose source is
-    // its own destination is rejected where it is recorded -- which is why a
-    // command never has to resolve a self read here.
-    pass_.SetBindGroup(2,
-                       draw.text_group ? draw.text_group
-                                       : draw.source->texture_group(),
-                       0, nullptr);
+    pass_.SetBindGroup(
+        2, draw.text_group ? draw.text_group : draw.source->texture_group(), 0,
+        nullptr);
     if (masked)
       pass_.SetBindGroup(3, draw.mask->texture_group(), 0, nullptr);
   }
@@ -119,8 +112,6 @@ void BitmapQueue::Flush() {
 
   const std::uint64_t begin = SDL_GetPerformanceCounter();
 
-  // Every command is one quad, so the batch goes into the buffer in one go and
-  // each command's range follows from its index.
   for (const BitmapDraw& draw : draws) {
     vertices_.EmitQuad(draw.rect, draw.texcoord, draw.colors[0], draw.colors[1],
                        draw.colors[2], draw.colors[3]);
@@ -131,8 +122,7 @@ void BitmapQueue::Flush() {
   const std::uint64_t uploaded = SDL_GetPerformanceCounter();
 
   for (std::size_t index = 0; index < draws.size(); ++index)
-    Record(draws[index],
-           static_cast<std::uint32_t>(index) * kQuadVertexCount);
+    Record(draws[index], static_cast<std::uint32_t>(index) * kQuadVertexCount);
 
   ClosePass();
 
@@ -156,4 +146,4 @@ void BitmapQueue::Flush() {
   executing_ = false;
 }
 
-}  // namespace urge
+}

@@ -25,11 +25,11 @@
 #include <functional>
 #include <stack>
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/common.h"
-#include "core/graphics/device.h"
 #include "core/common/object.h"
-#include "core/graphics/primitive.h"
+#include "core/render/device.h"
+#include "core/render/primitive.h"
 
 namespace urge {
 
@@ -187,4 +187,4 @@ class FlashableNode {
   bool invalid_ = false;
 };
 
-}  // namespace urge
+}

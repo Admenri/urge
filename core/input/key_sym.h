@@ -27,31 +27,18 @@
 
 namespace urge {
 
-/* One entry of the input binding table: a slot name (`A`, `LEFT`, ...) and the
-   physical control that drives it.
-
-   `gamepad` selects the numbering space of `code` -- an SDL scancode for the
-   keyboard, a `Gamepad` button number otherwise.  Both spaces are small
-   integers that overlap, so without the flag the pad's `A` and the keyboard's
-   `A` would be the same entry. */
 struct KeySym {
   std::string name;
   int32_t code = 0;
   bool gamepad = false;
 
   bool operator==(const KeySym& other) const {
-    return name == other.name && code == other.code &&
-           gamepad == other.gamepad;
+    return name == other.name && code == other.code && gamepad == other.gamepad;
   }
 
   bool operator!=(const KeySym& other) const { return !(*this == other); }
 };
 
-/* Pressed / triggered / repeated bookkeeping, one per physical control.
-
-   The keyboard and the pad share this machine on purpose: RGSS repeats after a
-   short delay and then every few frames, and the two devices must not drift
-   apart.  `Update` is fed the polled state once per frame. */
 struct KeyState {
   bool pressed = false;
   bool trigger = false;
@@ -72,13 +59,10 @@ struct KeyState {
     }
   }
 
-  /* Drop the edges but keep what is held: what a key does when the settings
-     overlay takes the input away (its events stop arriving, so it neither
-     repeats nor fires again until the overlay closes). */
   void Freeze() {
     trigger = false;
     repeat = false;
   }
 };
 
-}  // namespace urge
+}

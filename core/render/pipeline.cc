@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/pipeline.h"
+#include "core/render/pipeline.h"
 
 #include <algorithm>
 #include <cctype>
@@ -31,30 +31,6 @@
 namespace urge {
 
 namespace {
-
-// ---------------------------------------------------------------------------
-// The shaders.
-//
-// They are WGSL because that is what both wgpu backends parse: nothing is
-// translated on the way to the device, and nothing is read back out of these
-// strings either -- the bind group entries each stage declares are written by
-// hand right under the source, and the vertex attributes are the shared
-// `QuadVertexLayout()` in core/shader.h.
-//
-// Three conventions hold across all of them, and a custom `Effect` has to hold
-// to the first two:
-//
-//   set 0  binding 0  -- the scene uniform  (`SceneData`)
-//   set 1  binding 0  -- the object uniform (`ObjectData`), or the sprite
-//                        parameter array for the batched stage
-//   set 2, set 3      -- whatever the stage itself samples
-//
-// The entries below are what `util::CreateBindLayout` turns into a
-// `wgpu::BindGroupLayout` per group.  They are the hand-written half of what
-// used to come out of a reflection pass, so they have to match the source they
-// sit next to -- a binding the shader declares and the layout does not is a
-// device error, and so is the other way round.
-// ---------------------------------------------------------------------------
 
 util::LayoutEntry Uniform(uint32_t binding,
                           wgpu::ShaderStage stage,
@@ -607,7 +583,7 @@ wgpu::BlendOperation ReadBlendOperation(const std::string& name) {
                   "effect: '{}' is not a blend operation name", name);
 }
 
-}  // namespace
+}
 
 wgpu::BlendState* GetBlendState(BlendType type) {
   static wgpu::BlendState normal{
@@ -837,4 +813,4 @@ ShaderSet::ShaderSet() : shader() {
                               .blend = GetBlendState(BLEND_NORMAL)}});
 }
 
-}  // namespace urge
+}

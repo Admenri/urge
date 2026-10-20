@@ -13,8 +13,8 @@
 #include "binding_table.h"
 #include "binding_viewport.h"
 
-#include "core/scene/bitmap.h"
-#include "core/scene/table.h"
+#include "core/canvas/bitmap.h"
+#include "core/common/table.h"
 #include "core/scene/tilemap_vx.h"
 #include "core/scene/viewport.h"
 // --- GENERATED INCLUDES END ---
@@ -71,7 +71,7 @@ RB_FUNC(Tilemap_GetBitmaps) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// TilemapVX  (core/scene/tilemap_vx.h:56-87)
+// TilemapVX  (core/scene/tilemap_vx.h:35-66)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(TilemapVX, Node);

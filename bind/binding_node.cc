@@ -15,8 +15,8 @@
 #include "binding_vector3.h"
 #include "binding_vector4.h"
 
+#include "core/canvas/bitmap.h"
 #include "core/common/utility.h"
-#include "core/scene/bitmap.h"
 #include "core/scene/camera.h"
 #include "core/scene/node.h"
 // --- GENERATED INCLUDES END ---
@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/scene/node.h:35-63)
+// Node  (core/scene/node.h:14-42)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Node, Disposable);

@@ -31,8 +31,8 @@
 #include "mkvparser/mkvparser.h"
 
 #include "core/common/exception.h"
-#include "core/system/filesystem.h"
 #include "core/common/logger.h"
+#include "core/system/filesystem.h"
 
 namespace urge {
 namespace {
@@ -270,7 +270,7 @@ std::string ResolveCodecName(const char* name) {
   return name ? name : "";
 }
 
-}  // namespace
+}
 
 struct VideoDemuxer::Kernel {
   ~Kernel() {
@@ -538,4 +538,4 @@ bool VideoDemuxer::Seek(double seconds) {
   return true;
 }
 
-}  // namespace urge
+}

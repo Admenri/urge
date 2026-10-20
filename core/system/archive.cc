@@ -22,12 +22,6 @@
 
 #include "core/system/archive.h"
 
-/* The build that has no `admenri/` drop-in: no key, no archiver, no container.
-   This file is what stands in for `admenri/archive.cc` so that everything
-   above it -- `IOService`, `app.cc` -- can be written once and never ask which
-   of the two it was linked against.  CMake picks exactly one of them; see
-   core/CMakeLists.txt. */
-
 namespace urge {
 namespace archive {
 
@@ -43,5 +37,5 @@ bool Mount(const std::string& path, bool prepend) {
   return false;
 }
 
-}  // namespace archive
-}  // namespace urge
+}
+}

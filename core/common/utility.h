@@ -426,4 +426,4 @@ class Vector4 : public Object {
   glm::vec4 data;
 };
 
-}  // namespace urge
+}

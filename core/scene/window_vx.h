@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
-#include "core/scene/node.h"
-#include "core/graphics/primitive.h"
-#include "core/graphics/uniform.h"
 #include "core/common/utility.h"
+#include "core/render/primitive.h"
+#include "core/render/uniform.h"
+#include "core/scene/node.h"
 #include "core/scene/viewport.h"
 
 namespace urge {
@@ -155,4 +155,4 @@ class WindowVX : public Node {
   PrimitiveEmitter::Slot cursor_slot_ = {};
   PrimitiveEmitter::Slot contents_slot_ = {};
 };
-}  // namespace urge
+}

@@ -24,12 +24,12 @@
 
 #include "SDL3/SDL_video.h"
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
-#include "core/scene/node.h"
 #include "core/common/object.h"
-#include "core/graphics/primitive.h"
-#include "core/graphics/shader.h"
+#include "core/render/primitive.h"
+#include "core/render/shader.h"
+#include "core/scene/node.h"
 
 namespace urge {
 
@@ -169,4 +169,4 @@ class Graphics : public Singleton<Graphics> {
   } present_;
 };
 
-}  // namespace urge
+}

@@ -59,7 +59,7 @@ float FramesToMilliseconds(ma_uint32 rate, ma_uint64 frames) {
   return static_cast<float>(static_cast<double>(frames) * 1000.0 / rate);
 }
 
-}  // namespace
+}
 
 AudioStream::AudioStream(std::string filename) {
   auto* service = Audio::Get().service();
@@ -230,4 +230,4 @@ void AudioStream::ApplyLoopPoint() {
                 start_time_, stop_time_);
 }
 
-}  // namespace urge
+}

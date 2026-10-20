@@ -27,8 +27,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "core/graphics/device.h"
 #include "core/font/font.h"
+#include "core/render/device.h"
 
 namespace urge {
 
@@ -63,4 +63,4 @@ class FontRenderer {
   std::uint64_t stamp_ = 0;
 };
 
-}  // namespace urge
+}

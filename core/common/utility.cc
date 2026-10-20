@@ -105,4 +105,4 @@ KLASS_EQUAL_DEF(Tone) {
          data.b == other.data.b && data.a == other.data.a;
 }
 
-}  // namespace urge
+}

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 
 #include <algorithm>
 #include <cstring>
@@ -32,12 +32,12 @@
 #include "SDL3_image/SDL_image.h"
 #include "glm/ext/matrix_clip_space.hpp"
 
-#include "core/scene/bitmap_queue.h"
-#include "core/system/filesystem.h"
+#include "core/canvas/bitmap_queue.h"
 #include "core/graphics/gpu.h"
-#include "core/graphics/gpu_utils.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/render_stats.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/render_stats.h"
+#include "core/system/filesystem.h"
 
 namespace urge {
 
@@ -227,7 +227,7 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   return pixels;
 }
 
-}  // namespace
+}
 
 Bitmap::Bitmap(std::string filename) : font_(MakeRefCounted<Font>()) {
   SDL_Surface* image = nullptr;
@@ -255,7 +255,6 @@ Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
 
 Bitmap::Bitmap(RefPtr<Bitmap> other)
     : Bitmap(other->size().x, other->size().y) {
-  // The copy reads a texture the queue may still be drawing into.
   AcquireHandle();
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);
@@ -280,9 +279,8 @@ Bitmap::~Bitmap() {
 }
 
 void Bitmap::AcquireHandle() {
-  // The single entry point for "the texture is needed now": whatever this
-  // bitmap recorded reaches the GPU before the caller gets a handle to it.
-  BitmapQueue::Get().Flush();
+  if (BitmapQueue* queue = BitmapQueue::TryGet())
+    queue->Flush();
 }
 
 int32_t Bitmap::Width() {
@@ -346,8 +344,9 @@ void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
     throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
 
   if (src_bitmap.get() == this || mask.get() == this)
-    throw Exception(Exception::kRGSSError,
-                    "bitmap: a mask blit cannot read the bitmap it draws into.");
+    throw Exception(
+        Exception::kRGSSError,
+        "bitmap: a mask blit cannot read the bitmap it draws into.");
 
   BitmapDraw draw;
   draw.kind = BitmapDraw::Kind::kTextureMask;
@@ -450,7 +449,6 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
   if (x < 0 || y < 0 || x >= size_.x || y >= size_.y)
     return MakeRefCounted<Color>();
 
-  // The read back needs the queued drawing to have happened.
   AcquireHandle();
 
   const std::vector<std::uint8_t> pixels =
@@ -548,7 +546,6 @@ RefPtr<Image> Bitmap::ToImage() {
   if (!data)
     throw Exception(Exception::kRGSSError, SDL_GetError());
 
-  // The read back needs the queued drawing to have happened.
   AcquireHandle();
 
   const std::vector<std::uint8_t> pixels =
@@ -574,8 +571,6 @@ void Bitmap::UpdateWithImage(RefPtr<Image> image) {
     throw Exception(Exception::kRGSSError,
                     "image data size mismatch bitmap size.");
 
-  // `WriteTexture` is a queue operation: without the flush it would be ordered
-  // before the pass that is still drawing into this bitmap.
   AcquireHandle();
 
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
@@ -606,8 +601,6 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
     throw Exception(Exception::kRGSSError,
                     "invalid pixel data for the bitmap.");
 
-  // `WriteTexture` is a queue operation: without the flush it would be ordered
-  // before the pass that is still drawing into this bitmap.
   AcquireHandle();
 
   wgpu::TexelCopyTextureInfo destination;
@@ -690,7 +683,6 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
   UploadSurface(data);
 }
 
-// Allocates the GPU objects a bitmap owns.
 void Bitmap::CreateResources(const glm::ivec2& size) {
   size_ = size;
 
@@ -769,10 +761,6 @@ void Bitmap::UploadSurface(SDL_Surface* data) {
 }
 
 void Bitmap::ClearToTransparent() {
-  // A new bitmap starts as transparent black.  Clearing it on the GPU is a
-  // fast clear; building a zeroed surface and uploading it would move the
-  // whole bitmap through memory instead, which a script that creates one every
-  // frame cannot afford.
   auto encoder = g_device.CreateCommandEncoder(nullptr);
   auto pass = BeginRendering(encoder, glm::vec4(0.0f));
   pass.End();
@@ -794,4 +782,4 @@ void Bitmap::CreateGroup() {
                                        {1, util::SamplerSet(sampler_)}});
 }
 
-}  // namespace urge
+}

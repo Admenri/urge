@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector2  (core/common/utility.h:278-310)
+// Vector2  (core/common/utility.h:257-289)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector2);

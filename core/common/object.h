@@ -40,6 +40,7 @@ template <typename Ty>
 class Singleton {
  public:
   static Ty& Get() { return *instance_.get(); }
+  static Ty* TryGet() { return instance_.get(); }
   static void Reset(Ty* instance) { instance_.reset(instance); }
 
  private:
@@ -51,4 +52,4 @@ class Object : public RefCounted<Object> {
   virtual ~Object() = default;
 };
 
-}  // namespace urge
+}

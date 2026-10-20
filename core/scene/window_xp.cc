@@ -28,10 +28,10 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "core/graphics/device.h"
-#include "core/graphics/gpu_utils.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/uniform.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/uniform.h"
 
 namespace urge {
 
@@ -46,7 +46,7 @@ constexpr int32_t kCursorOpacityStep = 8;
 
 constexpr int32_t kContentOffset = 8;
 
-}  // namespace
+}
 
 WindowXPAbove::WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()), parent_(parent) {
@@ -732,4 +732,4 @@ RectI WindowXP::ContentRectInternal() const {
                std::max(0, height_ - kContentOffset * 2 * scale_));
 }
 
-}  // namespace urge
+}

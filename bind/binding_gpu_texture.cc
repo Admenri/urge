@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTexture  (core/graphics/gpu.h:702-728)
+// GPUTexture  (core/graphics/gpu.h:677-703)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTexture, GPUObject);

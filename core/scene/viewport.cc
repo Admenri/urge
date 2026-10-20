@@ -24,10 +24,10 @@
 
 #include <algorithm>
 
-#include "core/graphics/device.h"
-#include "core/graphics/gpu_utils.h"
 #include "core/graphics/graphics.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
 #include "core/scene/sprite_batch.h"
 
 namespace urge {
@@ -160,11 +160,8 @@ bool Viewport::Prepare(DrawParam param) {
 
   parent_scissor_ = param->scissors.top();
 
-  // The rect offset is part of the viewport transform in both modes: with an
-  // effect the children are drawn exactly where they would be without one, only
-  // onto the canvas instead of onto the target.
-  const glm::ivec2 offset = glm::ivec2(rect_->data.x - origin_.x,
-                                       rect_->data.y - origin_.y);
+  const glm::ivec2 offset =
+      glm::ivec2(rect_->data.x - origin_.x, rect_->data.y - origin_.y);
   const glm::ivec2 parent_position =
       glm::ivec2(ExtractPosition(world_transform())) - offset;
   const RectI self_scissor(parent_position.x + rect_->data.x,
@@ -176,26 +173,18 @@ bool Viewport::Prepare(DrawParam param) {
     region_ = RectI();
 
   if (effect_) {
-    // The canvas covers the whole target, so it shares the target coordinate
-    // space and projection: a child lands on the same pixel it would land on
-    // without an effect, and the composite samples the viewport rect back out
-    // of the canvas.  That is what makes the effect blend state act against
-    // what is already on the target instead of against an empty canvas.
     AcquireOffscreen(param->target->size());
 
-    primitive_.EmitQuad(self_scissor,
-                        MakeNorm(RectF(self_scissor),
-                                 glm::vec2(offscreen_->size())),
-                        glm::vec4(1.0f));
+    primitive_.EmitQuad(
+        self_scissor,
+        MakeNorm(RectF(self_scissor), glm::vec2(offscreen_->size())),
+        glm::vec4(1.0f));
     vertex_count_ = primitive_.Upload();
 
     param->scissors.push(region_);
     return true;
   }
 
-  // Without an effect the children are drawn straight into the target and the
-  // tint composites through a copy of that region -- the tint pass has no
-  // source of its own to render into an offscreen.
   param->scissors.push(region_);
 
   post_process_ =
@@ -220,9 +209,6 @@ bool Viewport::DoDraw(DrawParam param) {
   FlushSpriteBatch(param);
 
   if (effect_) {
-    // Offscreen phase: the children land on the canvas with the same scene and
-    // the same transforms they would have on the target -- only the attachment
-    // changes.  The clip is the viewport rect, in target coordinates.
     param->pass.End();
     param->pass = offscreen_->BeginRendering(param->command, glm::vec4(0.0f));
 
@@ -250,10 +236,6 @@ void Viewport::PostDraw(DrawParam param) {
 
     effect_->SetFilterSource(offscreen_);
 
-    // Composite phase: the canvas region is drawn back onto the target with the
-    // effect pipeline, so its blend state works against what the target already
-    // holds.  The quad spans the viewport rect; the scissor keeps it inside the
-    // same clip the children had.
     if (region_()) {
       param->pass.SetPipeline(effect_->AcquirePipeline());
       param->pass.SetBindGroup(0, param->scene, 0, nullptr);
@@ -300,9 +282,6 @@ void Viewport::PostDraw(DrawParam param) {
 }
 
 void Viewport::ResetTransform() {
-  // The rect offset belongs to the transform in both modes.  An effect does not
-  // move the children -- it only puts a canvas between them and the target --
-  // so switching one on must not shift anything.
   const glm::vec3 offset =
       glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
                 static_cast<float>(rect_->data.y - origin_.y), 0.0f);
@@ -346,4 +325,4 @@ void Viewport::AcquireOffscreen(glm::ivec2 size) {
   offscreen_ = MakeRefCounted<Bitmap>(width, height);
 }
 
-}  // namespace urge
+}

@@ -114,4 +114,4 @@ class Audio : public Singleton<Audio> {
   std::string output_device_;
 };
 
-}  // namespace urge
+}

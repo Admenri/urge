@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBufferDescriptor  (core/graphics/gpu.h:62-84)
+// GPUBufferDescriptor  (core/graphics/gpu.h:41-63)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBufferDescriptor, GPUObject);

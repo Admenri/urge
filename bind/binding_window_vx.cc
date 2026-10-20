@@ -14,8 +14,8 @@
 #include "binding_tone.h"
 #include "binding_viewport.h"
 
+#include "core/canvas/bitmap.h"
 #include "core/common/utility.h"
-#include "core/scene/bitmap.h"
 #include "core/scene/viewport.h"
 #include "core/scene/window_vx.h"
 // --- GENERATED INCLUDES END ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowVX  (core/scene/window_vx.h:36-92)
+// WindowVX  (core/scene/window_vx.h:15-71)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(WindowVX, Node);

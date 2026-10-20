@@ -21,10 +21,10 @@
 #include "binding_vector3.h"
 #include "binding_viewport.h"
 
+#include "core/canvas/bitmap.h"
 #include "core/common/utility.h"
 #include "core/graphics/effect.h"
-#include "core/graphics/geometry.h"
-#include "core/scene/bitmap.h"
+#include "core/scene/geometry.h"
 #include "core/scene/viewport.h"
 // --- GENERATED INCLUDES END ---
 
@@ -38,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Geometry  (core/graphics/geometry.h:39-61)
+// Geometry  (core/scene/geometry.h:18-40)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Geometry, Node);

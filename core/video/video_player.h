@@ -128,4 +128,4 @@ class VideoPlayer {
   std::chrono::steady_clock::time_point resumed_at_;
 };
 
-}  // namespace urge
+}

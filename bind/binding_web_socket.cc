@@ -39,7 +39,7 @@ void DefineWebSocketConstants(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WebSocket  (core/network/network.h:78-112)
+// WebSocket  (core/network/network.h:57-91)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WebSocket);

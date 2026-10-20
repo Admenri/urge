@@ -129,4 +129,4 @@ void DrawableSet::DispatchDraw(DrawParam param) {
       node->on_draw_(param);
 }
 
-}  // namespace urge
+}

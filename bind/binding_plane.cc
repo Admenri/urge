@@ -14,8 +14,8 @@
 #include "binding_tone.h"
 #include "binding_viewport.h"
 
+#include "core/canvas/bitmap.h"
 #include "core/common/utility.h"
-#include "core/scene/bitmap.h"
 #include "core/scene/plane.h"
 #include "core/scene/viewport.h"
 // --- GENERATED INCLUDES END ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Plane  (core/scene/plane.h:35-60)
+// Plane  (core/scene/plane.h:14-39)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Plane, Node);

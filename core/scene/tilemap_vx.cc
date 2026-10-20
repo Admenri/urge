@@ -27,9 +27,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "core/system/config.h"
 #include "core/graphics/graphics.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/pipeline.h"
+#include "core/system/config.h"
 
 namespace urge {
 
@@ -323,7 +323,7 @@ const RectF kAutotileSrcWaterfall[] = {
     {0.0f, 0.0f, 0.5f, 1.0f}, {1.5f, 0.0f, 0.5f, 1.0f},
 };
 
-}  // namespace
+}
 
 TilemapVXAbove::TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport)
     : Node(viewport, ZValue(200)), parent_(parent) {}
@@ -991,4 +991,4 @@ void TilemapVX::DrawAboveLayer(DrawParam param) {
   DrawLayer(param, &above_layer_);
 }
 
-}  // namespace urge
+}

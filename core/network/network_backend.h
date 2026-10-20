@@ -100,4 +100,4 @@ class NetworkBackend {
 
 std::unique_ptr<NetworkBackend> CreateNetworkBackend();
 
-}  // namespace urge
+}

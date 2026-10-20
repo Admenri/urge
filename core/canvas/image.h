@@ -114,4 +114,4 @@ class Image : public Disposable {
   SDL_Surface* image_ = nullptr;
 };
 
-}  // namespace urge
+}

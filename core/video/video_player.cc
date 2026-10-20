@@ -123,7 +123,7 @@ void ConvertPicture(const Dav1dPicture& picture,
   }
 }
 
-}  // namespace
+}
 
 VideoPlayer::VideoPlayer() = default;
 
@@ -525,4 +525,4 @@ void VideoPlayer::ResetPosition() {
   DropFrames();
 }
 
-}  // namespace urge
+}

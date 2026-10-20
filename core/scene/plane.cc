@@ -27,11 +27,11 @@
 #include <cstdint>
 #include <span>
 
-#include "core/graphics/device.h"
-#include "core/graphics/gpu_utils.h"
 #include "core/common/logger.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/uniform.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/uniform.h"
 
 namespace urge {
 
@@ -41,7 +41,7 @@ constexpr float kMinLinearDeterminant = 1e-6f;
 
 constexpr float kMinZoom = 1e-6f;
 
-}  // namespace
+}
 
 Plane::Plane(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
@@ -259,4 +259,4 @@ PrimitiveEmitter::Slot Plane::EmitGeometryInternal(PrimitiveEmitter& primitive,
   return primitive.End();
 }
 
-}  // namespace urge
+}

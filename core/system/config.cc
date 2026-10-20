@@ -82,9 +82,6 @@ std::string KeyNameOf(int32_t keycode) {
   return (name && *name) ? std::string(name) : std::to_string(keycode);
 }
 
-/* A pad entry is written as `pad:<token>` so the one `KeyBinding` section can
-   hold both devices; a scancode name never contains a colon, so an old file
-   keeps parsing exactly as before. */
 std::string KeyNameOf(const urge::KeySym& binding) {
   if (binding.gamepad)
     return "pad:" + GamepadDevice::ButtonToken(binding.code);
@@ -103,8 +100,8 @@ urge::KeySym ParseKeyBinding(const std::string& symbol,
   if (value.compare(0, kPadPrefixLength, kPadPrefix) == 0) {
     binding.gamepad = true;
     if (!GamepadDevice::ButtonFromToken(value.substr(kPadPrefixLength),
-                                  &binding.code))
-      binding.code = -1;  // unknown token: kept, but it will never fire
+                                        &binding.code))
+      binding.code = -1;
     return binding;
   }
 
@@ -155,7 +152,7 @@ std::string NormalizeUTF8(const std::string& text) {
   return AnsiToUTF8(text);
 }
 
-}  // namespace
+}
 
 Config::Config(std::string inifile) : inifile_(std::move(inifile)) {
   auto stream = IOService::Get().OpenReadRaw(inifile_);
@@ -286,7 +283,8 @@ void Config::Load() {
   gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
   gfx.sprite_batch = parser_.GetBool("GFX", "SpriteBatch", gfx.sprite_batch);
 
-  input.pad_bindings = parser_.GetBool("Input", "PadBindings", input.pad_bindings);
+  input.pad_bindings =
+      parser_.GetBool("Input", "PadBindings", input.pad_bindings);
 
   key_bindings.clear();
   for (const auto& symbol : parser_.GetKeys("KeyBinding"))
@@ -294,4 +292,4 @@ void Config::Load() {
       key_bindings.push_back(ParseKeyBinding(symbol, name));
 }
 
-}  // namespace urge
+}

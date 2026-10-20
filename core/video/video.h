@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "core/audio/audio_stream.h"
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
 #include "core/common/refptr.h"
@@ -86,4 +86,4 @@ class Video : public Object {
 #endif
 };
 
-}  // namespace urge
+}

@@ -27,9 +27,9 @@
 #include "glm/glm.hpp"
 
 #include "core/common/definition.h"
-#include "core/graphics/device.h"
 #include "core/common/object.h"
 #include "core/common/utility.h"
+#include "core/render/device.h"
 
 namespace urge {
 
@@ -107,4 +107,4 @@ class OrthographicCamera : public Camera {
   float far_ = 1000.0f;
 };
 
-}  // namespace urge
+}

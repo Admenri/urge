@@ -32,7 +32,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupDescriptor  (core/graphics/gpu.h:407-428)
+// GPUBindGroupDescriptor  (core/graphics/gpu.h:382-403)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupDescriptor, GPUObject);

@@ -104,4 +104,4 @@ class Font : public Object {
   RefPtr<Color> color_, out_color_, gradient_color_;
 };
 
-}  // namespace urge
+}

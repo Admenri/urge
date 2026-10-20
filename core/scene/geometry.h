@@ -26,11 +26,11 @@
 #include <vector>
 
 #include "core/common/definition.h"
-#include "core/graphics/effect.h"
-#include "core/scene/node.h"
 #include "core/common/object.h"
-#include "core/graphics/primitive.h"
-#include "core/graphics/uniform.h"
+#include "core/graphics/effect.h"
+#include "core/render/primitive.h"
+#include "core/render/uniform.h"
+#include "core/scene/node.h"
 #include "core/scene/viewport.h"
 
 namespace urge {
@@ -84,4 +84,4 @@ class Geometry : public Node {
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 
-}  // namespace urge
+}

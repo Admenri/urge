@@ -79,7 +79,7 @@ inline LogLevel& CurrentLevel() {
   return level;
 }
 
-}  // namespace logger_detail
+}
 
 inline LogLevel GetLogLevel() {
   return logger_detail::CurrentLevel();
@@ -125,7 +125,7 @@ inline void LogWrite(LogLevel level,
   std::fflush(stderr);
 }
 
-}  // namespace urge
+}
 
 #define URGE_LOGGER_STRINGIFY_IMPL(text) #text
 #define URGE_LOGGER_STRINGIFY(text) URGE_LOGGER_STRINGIFY_IMPL(text)

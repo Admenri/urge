@@ -25,13 +25,13 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "core/system/config.h"
-#include "core/graphics/device.h"
-#include "core/scene/drawable.h"
-#include "core/graphics/gpu_utils.h"
 #include "core/common/logger.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/shader.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/shader.h"
+#include "core/scene/drawable.h"
+#include "core/system/config.h"
 
 namespace urge {
 
@@ -49,7 +49,7 @@ static_assert(offsetof(SpriteParam, bush_depth) == 96,
 static_assert(offsetof(SpriteParam, bush_opacity) == 100,
               "unexpected SpriteParam layout");
 
-}  // namespace
+}
 
 SpriteBatch::SpriteBatch() {
   disabled_ = !Config::Get().gfx.sprite_batch;
@@ -140,4 +140,4 @@ void FlushSpriteBatch(DrawContext* param) {
   param->pass.Draw(count, 1, run.first_vertex, 0);
 }
 
-}  // namespace urge
+}

@@ -25,8 +25,8 @@
 #include <algorithm>
 
 #include "core/audio/audio_service.h"
-#include "core/system/config.h"
 #include "core/common/logger.h"
+#include "core/system/config.h"
 
 namespace urge {
 
@@ -36,7 +36,7 @@ int32_t ClampVolume(int32_t volume) {
   return std::clamp(volume, 0, 100);
 }
 
-}  // namespace
+}
 
 Audio::Audio()
     : service_(AudioService::Create(Config::Get().audio.output_device)) {
@@ -242,4 +242,4 @@ void Audio::ApplyVolumes() {
   service_->SetBusVolume(AudioBus::kSE, settings.se_volume);
 }
 
-}  // namespace urge
+}

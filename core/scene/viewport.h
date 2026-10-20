@@ -25,9 +25,9 @@
 #include <cstdint>
 
 #include "core/common/definition.h"
+#include "core/common/utility.h"
 #include "core/graphics/effect.h"
 #include "core/scene/node.h"
-#include "core/common/utility.h"
 
 namespace urge {
 
@@ -94,4 +94,4 @@ class Viewport : public Node {
   PrimitiveEmitter primitive_;
 };
 
-}  // namespace urge
+}

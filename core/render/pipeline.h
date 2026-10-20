@@ -30,9 +30,9 @@
 #include <vector>
 
 #include "core/common/common.h"
-#include "core/graphics/device.h"
 #include "core/common/object.h"
-#include "core/graphics/shader.h"
+#include "core/render/device.h"
+#include "core/render/shader.h"
 
 namespace urge {
 
@@ -180,4 +180,4 @@ struct ShaderSet : public Singleton<ShaderSet> {
   ShaderSet();
 };
 
-}  // namespace urge
+}

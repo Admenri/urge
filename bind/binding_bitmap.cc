@@ -15,11 +15,11 @@
 #include "binding_image.h"
 #include "binding_rect.h"
 
+#include "core/canvas/bitmap.h"
+#include "core/canvas/image.h"
 #include "core/common/utility.h"
 #include "core/font/font.h"
 #include "core/graphics/gpu.h"
-#include "core/scene/bitmap.h"
-#include "core/scene/image.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -32,7 +32,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/scene/bitmap.h:42-135)
+// Bitmap  (core/canvas/bitmap.h:21-114)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);

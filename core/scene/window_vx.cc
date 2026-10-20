@@ -29,11 +29,11 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/uniform.h"
 #include "core/system/config.h"
-#include "core/graphics/device.h"
-#include "core/graphics/gpu_utils.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/uniform.h"
 
 namespace urge {
 
@@ -55,7 +55,7 @@ constexpr int32_t kSliceSize = 8;
 
 constexpr int32_t kCellSize = 32;
 
-}  // namespace
+}
 
 WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
     : Node(nullptr, ZValue(100, std::numeric_limits<int32_t>::max())),
@@ -745,4 +745,4 @@ void WindowVX::CreateTintBinding() {
                                       {{0, util::BufferSet(tint_uniform_)}});
 }
 
-}  // namespace urge
+}

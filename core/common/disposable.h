@@ -61,4 +61,4 @@ class Disposable : public Object {
   bool disposed_ = false;
 };
 
-}  // namespace urge
+}

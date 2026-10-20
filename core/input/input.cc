@@ -30,9 +30,6 @@
 
 namespace urge {
 
-/* Pad defaults, read as "pad control -> slot".  The face buttons follow the
-   RGSS layout rather than the Xbox one: A (south) confirms with `C`, B (east)
-   cancels with `B`, and X/Y land on the slots RPG Maker games expect. */
 const Input::KeySym kDefaultGamepadBindings[] = {
     {"C", SDL_GAMEPAD_BUTTON_SOUTH, true},
     {"B", SDL_GAMEPAD_BUTTON_EAST, true},
@@ -47,8 +44,6 @@ const Input::KeySym kDefaultGamepadBindings[] = {
     {"UP", SDL_GAMEPAD_BUTTON_DPAD_UP, true},
     {"DOWN", SDL_GAMEPAD_BUTTON_DPAD_DOWN, true},
 
-    /* The left stick drives the same four slots, so the stick feels native and
-       the d-pad still works for players who prefer it. */
     {"LEFT", GamepadDevice::kStickLeft, true},
     {"RIGHT", GamepadDevice::kStickRight, true},
     {"UP", GamepadDevice::kStickUp, true},
@@ -62,7 +57,7 @@ void AppendGamepadDefaults(std::vector<Input::KeySym>& bindings) {
     bindings.push_back(binding);
 }
 
-}  // namespace
+}
 
 const Input::KeySym kDefaultKeyboardBindings[] = {
     {"DOWN", SDL_SCANCODE_DOWN},    {"LEFT", SDL_SCANCODE_LEFT},
@@ -125,11 +120,6 @@ Input::Input(int32_t version) {
   if (!stored.empty()) {
     bindings_ = stored;
 
-    /* A file written before the pad existed carries no pad entry at all -- the
-       keyboard is all it could describe -- so the defaults are added back
-       instead of silently losing the controller on an upgrade.  The
-       `Input/PadBindings` flag tells the two cases apart: once a build that
-       knows about pads has saved the file, an empty pad set is a choice. */
     const bool has_gamepad =
         std::any_of(bindings_.begin(), bindings_.end(),
                     [](const KeySym& binding) { return binding.gamepad; });
@@ -137,9 +127,6 @@ Input::Input(int32_t version) {
       AppendGamepadDefaults(bindings_);
   }
 
-  /* The table is the truth from here on; mirroring it back means the save at
-     exit persists whatever the defaults produced (including the migration
-     above), not just what the file already had. */
   Config::Get().input.pad_bindings = true;
   Config::Get().key_bindings = bindings_;
 }
@@ -150,8 +137,6 @@ void Input::Update() {
   for (int32_t i = 0; i < std::size(states_); ++i)
     states_[i].Update(pressed_[i]);
 
-  /* Sampled here rather than from events so the axes need no event at all, and
-     so a pad freezes with the keyboard when the overlay holds the input. */
   gamepads_.Update(!blocked_);
 
   UpdateDir4();
@@ -371,4 +356,4 @@ void Input::UpdateDir8() {
   }
 }
 
-}  // namespace urge
+}

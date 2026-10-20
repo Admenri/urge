@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "core/graphics/graphics.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/pipeline.h"
 
 namespace urge {
 
@@ -570,4 +570,4 @@ bool TilemapXP::HasAboveLayer(int32_t id) const {
          above_layers_[id].valid;
 }
 
-}  // namespace urge
+}

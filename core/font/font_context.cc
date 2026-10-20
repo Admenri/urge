@@ -30,9 +30,9 @@
 
 #include "SDL3/SDL_stdinc.h"
 
-#include "core/system/filesystem.h"
 #include "core/common/logger.h"
 #include "core/resources/embed.ttf.bin"
+#include "core/system/filesystem.h"
 
 namespace urge {
 
@@ -47,9 +47,6 @@ constexpr float kFontRealScale = 0.9f;
 constexpr int32_t kMinFontSize = 6;
 constexpr int32_t kMaxFontSize = 96;
 
-/* Windows defaults, most preferred first: Microsoft YaHei, then the faces every
-   Chinese install of the system carries, so a stripped-down image still lands
-   on something readable before the embedded face takes over. */
 #if defined(_WIN32)
 constexpr const char* kWindowsDefaultFaces[] = {
     "msyh.ttc", "msyh.ttf", "Deng.ttf", "simhei.ttf", "simsun.ttc",
@@ -58,12 +55,11 @@ constexpr const char* kWindowsDefaultFaces[] = {
 
 constexpr const char* kFontExtensions[] = {".ttf", ".ttc", ".otf"};
 
-/* A `name` table is tiny; anything larger is not one. */
 constexpr uint32_t kMaxNameTableBytes = 1u << 20;
 
 constexpr uint32_t kMaxSfntTables = 512;
 
-constexpr uint32_t kTtcTag = 0x74746366u;  // 'ttcf'
+constexpr uint32_t kTtcTag = 0x74746366u;
 
 std::string ToLower(std::string value) {
   std::transform(
@@ -89,10 +85,6 @@ std::string PathToUtf8(const std::filesystem::path& path) {
   return std::string(utf8.begin(), utf8.end());
 }
 
-/* Environment strings are UTF-8 on every platform SDL supports, while a
-   `std::filesystem::path` built from a narrow string is decoded with the ANSI
-   code page on Windows -- which mangles a user name such as "张三" in
-   `%LOCALAPPDATA%`.  Going through `u8string` keeps the bytes as they are. */
 std::filesystem::path FromUtf8(const std::string& text) {
   return std::filesystem::path(std::u8string(text.begin(), text.end()));
 }
@@ -126,9 +118,6 @@ void AppendUtf8(std::string& out, uint32_t code) {
   }
 }
 
-/* The `name` table stores Windows strings as UTF-16BE, which is the only form
-   the family aliases need -- a localized face carries "微软雅黑" there next to
-   "Microsoft YaHei". */
 std::string Utf16BeToUtf8(const uint8_t* data, size_t length) {
   std::string out;
   out.reserve(length);
@@ -182,11 +171,10 @@ void ParseNameTable(const uint8_t* table,
     const uint32_t text_length = ReadBE16(record + 8);
     const uint32_t text_offset = ReadBE16(record + 10);
 
-    /* 1 = family, 4 = full name.  Both are what a user types. */
     if (name_id != 1 && name_id != 4)
       continue;
-    if (!text_length || static_cast<size_t>(storage) + text_offset + text_length >
-                            length)
+    if (!text_length ||
+        static_cast<size_t>(storage) + text_offset + text_length > length)
       continue;
 
     const uint8_t* text = table + storage + text_offset;
@@ -205,7 +193,6 @@ void ParseNameTable(const uint8_t* table,
   }
 }
 
-/* Family names of the first face of an in-memory font file. */
 bool ParseFamilyNames(const uint8_t* data,
                       size_t size,
                       std::vector<std::string>* names) {
@@ -238,9 +225,6 @@ bool ParseFamilyNames(const uint8_t* data,
   return true;
 }
 
-/* Same as above, but only the offset table and the `name` table are read, which
-   keeps indexing a system font directory cheap -- a CJK collection is tens of
-   megabytes and only a few hundred bytes of it matter here. */
 bool ReadFileFamilyNames(const std::string& path,
                          std::vector<std::string>* names) {
   SDL_IOStream* stream = SDL_IOFromFile(path.c_str(), "rb");
@@ -277,9 +261,9 @@ bool ReadFileFamilyNames(const std::string& path,
 
   if (ok) {
     records.assign(length, 0);
-    ok = SDL_SeekIO(stream, static_cast<Sint64>(offset), SDL_IO_SEEK_SET) >=
-             0 &&
-         SDL_ReadIO(stream, records.data(), records.size()) == records.size();
+    ok =
+        SDL_SeekIO(stream, static_cast<Sint64>(offset), SDL_IO_SEEK_SET) >= 0 &&
+        SDL_ReadIO(stream, records.data(), records.size()) == records.size();
     if (ok)
       ParseNameTable(records.data(), length, names);
   }
@@ -288,7 +272,7 @@ bool ReadFileFamilyNames(const std::string& path,
   return ok;
 }
 
-}  // namespace
+}
 
 FontContext::FontContext() {
   if (!TTF_Init()) {
@@ -308,9 +292,6 @@ FontContext::FontContext() {
   LoadFontDirectory(kFontDirectory);
   LoadSystemFonts();
 
-  /* The embedded face closes every chain, so a machine whose system fonts are
-     missing or unreadable still renders text.  It stays uncompressed in the
-     executable and is only copied out when something asks for it. */
   Entry embedded;
   embedded.embedded = true;
   entries_.emplace(ToLower(kEmbeddedFontName), std::move(embedded));
@@ -409,7 +390,6 @@ std::string FontContext::Resolve(const std::string& name) {
   if (entries_.find(key) != entries_.end())
     return key;
 
-  /* "msyh" is a natural way to name a face that lives in "msyh.ttc". */
   for (const char* extension : kFontExtensions) {
     const std::string with_extension = key + extension;
     if (entries_.find(with_extension) != entries_.end())
@@ -460,9 +440,8 @@ const FontContext::FontData* FontContext::Load(Entry& entry) {
   const int64_t size = SDL_GetIOSize(stream);
   void* memory = size > 0 ? SDL_malloc(static_cast<size_t>(size)) : nullptr;
 
-  if (!memory ||
-      SDL_ReadIO(stream, memory, static_cast<size_t>(size)) !=
-          static_cast<size_t>(size)) {
+  if (!memory || SDL_ReadIO(stream, memory, static_cast<size_t>(size)) !=
+                     static_cast<size_t>(size)) {
     SDL_free(memory);
     SDL_CloseIO(stream);
     LOGGER_ERROR("[Font] cannot read {}: {}", entry.path, SDL_GetError());
@@ -475,7 +454,8 @@ const FontContext::FontData* FontContext::Load(Entry& entry) {
   entry.data.size = size;
   entry.data.data = memory;
 
-  LOGGER_INFO("[Font] Loaded system font: {} ({} KiB)", entry.path, size / 1024);
+  LOGGER_INFO("[Font] Loaded system font: {} ({} KiB)", entry.path,
+              size / 1024);
   return &entry.data;
 }
 
@@ -483,7 +463,6 @@ void FontContext::LoadFontDirectory(const std::string& directory) {
   std::vector<std::string> files = IOService::Get().EnumDir(directory);
 
   for (const std::string& file : files) {
-    /* `Fonts/` also holds things like the soundfont; only faces belong here. */
     if (!HasFontExtension(file))
       continue;
 
@@ -525,10 +504,8 @@ void FontContext::LoadSystemFonts() {
   else
     directories.emplace_back("C:\\Windows\\Fonts");
 
-  /* Faces a user installed "for me only" live outside the system directory. */
   if (const char* local = SDL_getenv("LOCALAPPDATA"))
-    directories.push_back(std::string(local) +
-                          "\\Microsoft\\Windows\\Fonts");
+    directories.push_back(std::string(local) + "\\Microsoft\\Windows\\Fonts");
 
   for (const std::string& directory : directories) {
     std::error_code error;
@@ -548,8 +525,6 @@ void FontContext::LoadSystemFonts() {
         const std::string name = PathToUtf8(item.path().filename());
         const std::string key = ToLower(name);
 
-        /* Bundled faces shadow the system ones: a game that ships `msyh.ttc`
-           means it. */
         if (HasFontExtension(name) && entries_.find(key) == entries_.end()) {
           Entry entry;
           entry.path = PathToUtf8(item.path());
@@ -572,8 +547,6 @@ void FontContext::BuildFamilyIndex() {
   if (family_index_ready_)
     return;
 
-  /* Marked first: a failing directory still must not be rescanned on every
-     lookup. */
   family_index_ready_ = true;
 
   const uint64_t start = SDL_GetTicks();
@@ -634,4 +607,4 @@ TTF_Font* FontContext::OpenFont(const std::string& key,
   return font;
 }
 
-}  // namespace urge
+}

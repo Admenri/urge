@@ -28,9 +28,9 @@
 
 #include "SDL3_image/SDL_image.h"
 
+#include "core/canvas/image.h"
 #include "core/common/definition.h"
 #include "core/common/disposable.h"
-#include "core/scene/image.h"
 #include "core/common/refptr.h"
 
 namespace urge {
@@ -64,4 +64,4 @@ class Animation : public Disposable {
   IMG_Animation* animation_ = nullptr;
 };
 
-}  // namespace urge
+}

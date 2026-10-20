@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/primitive.h"
+#include "core/render/primitive.h"
 
 #include <algorithm>
 #include <cassert>
@@ -312,4 +312,4 @@ std::uint32_t QuadVertexManager::Upload() {
   return vertex_count_;
 }
 
-}  // namespace urge
+}

@@ -84,10 +84,6 @@ class Config : public Singleton<Config> {
   } gfx;
 
   struct {
-    /* Whether the `KeyBinding` section of the file was written by a build that
-       knows about the controller.  A file without it predates pad support, and
-       the pad defaults are added on load; after the first save the flag keeps a
-       player who unbound every pad button from getting them back. */
     bool pad_bindings = false;
   } input;
 
@@ -109,4 +105,4 @@ class Config : public Singleton<Config> {
   ini::IniFile parser_;
 };
 
-}  // namespace urge
+}

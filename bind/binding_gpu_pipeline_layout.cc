@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUPipelineLayout  (core/graphics/gpu.h:782-782)
+// GPUPipelineLayout  (core/graphics/gpu.h:757-757)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUPipelineLayout, GPUObject);

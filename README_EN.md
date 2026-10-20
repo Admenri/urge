@@ -293,7 +293,7 @@ convention is:
 
 To cut per-frame CPU cost, the engine batches in two places:
 
-- **Uniform pools** (`core/graphics/uniform.h`): the per-drawable data of a frame is packed into a
+- **Uniform pools** (`core/render/uniform.h`): the per-drawable data of a frame is packed into a
   few large buffers and addressed with a `dynamic offset`, instead of one buffer per
   drawable.
 - **Frame vertex batch** (`core/primitive.{h,cc}`): the whole frame shares a single vertex
@@ -380,10 +380,12 @@ takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
 
 | Directory | Contents |
 | --- | --- |
-| `common/` | Infrastructure: `definition.h` (`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` macros), `object.h`, `refptr.h`, `disposable.h`, `utility.{h,cc}` (`Rect` / `Color` / `Tone` / `Vector2/3/4`), `exception.h`, `logger.h`, `inirw.h` |
+| `common/` | Infrastructure and data classes: `definition.h` (`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` macros), `object.h`, `refptr.h`, `disposable.h`, `utility.{h,cc}` (`Rect` / `Color` / `Tone` / `Vector2/3/4`), `table.{h,cc}` (`Table`), `exception.h`, `logger.h`, `inirw.h` |
 | `system/` | Host facilities: `config.{h,cc}` (`Game.ini`), `filesystem.{h,cc}` (PhysicsFS and RTP paths), `archive.{h,cc}` (`.acs` container) |
-| `graphics/` | Rendering: `graphics.{h,cc}` (main loop, window and swapchain, present, transitions, snapshots, frame-rate control), `gpu.{h,cc}`, `pipeline.{h,cc}`, `shader.{h,cc}`, `effect.{h,cc}`, `primitive.{h,cc}` (frame vertex batch), `uniform.{h,cc}` (per-frame uniform pools), `geometry.{h,cc}`, `device.{h,cc}`, `imgui_manager.{h,cc}`, `render_stats.h` |
-| `scene/` | Scenes and RGSS nodes: `node` (three-stage render dispatch), `drawable` (drawable list), `bitmap` / `bitmap_queue`, `image`, `sprite` / `sprite_batch`, `plane`, `viewport`, `window_vx` / `window_xp`, `tilemap_vx` / `tilemap_xp`, `table`, `camera`, `animation` |
+| `graphics/` | **Graphics classes exported to Ruby**: `graphics.{h,cc}` (the `Graphics` module: main loop, window and swapchain, present, transitions, snapshots, frame-rate control), `gpu.{h,cc}` (the `GPU` module and every `GPU*` descriptor/object), `effect.{h,cc}` (`Effect`, custom shaders) |
+| `render/` | **Internal rendering (not exported)**: `device.{h,cc}` (wgpu device and queue), `pipeline.{h,cc}`, `shader.{h,cc}`, `gpu_utils.h` (bind group/layout helpers), `primitive.{h,cc}` (frame vertex batch), `uniform.{h,cc}` (per-frame uniform pools), `render_stats.h`, `imgui_manager.{h,cc}` (the F1/F2 overlay) |
+| `scene/` | **Scene nodes**: `node` (three-stage render dispatch), `drawable` (drawable list), `sprite` / `sprite_batch`, `plane`, `viewport`, `window_vx` / `window_xp`, `tilemap_vx` / `tilemap_xp`, `geometry`, `camera` |
+| `canvas/` | **The canvas and what hangs off it**: `bitmap.{h,cc}` (bitmaps, GPU textures, `Blt`/gradients/text), `bitmap_queue.{h,cc}` (draw command queue), `image.{h,cc}` (palette), `animation.{h,cc}` (frame list) |
 | `font/` | `font{,_context,_renderer}.{h,cc}`: face resolution (`Fonts/` → system → embedded), SDL_ttf rendering and text metrics |
 | `audio/` | `audio.{h,cc}` (BGM / BGS / SE), `audio_service.{h,cc}`, `audio_stream.{h,cc}` |
 | `input/` | `input.{h,cc}` (keyboard and pad into one slot table), `gamepad.{h,cc}` (SDL3 pad, hot-plug, triggers/sticks/rumble, multiple pads, and the script-side `Gamepad` class), `mouse.{h,cc}`, `key_sym.h` (binding entry and the pressed/triggered/repeated machine) |

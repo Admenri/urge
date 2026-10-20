@@ -17,8 +17,8 @@
 #include "binding_disposable.h"
 #include "binding_rect.h"
 
+#include "core/canvas/image.h"
 #include "core/common/utility.h"
-#include "core/scene/image.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Image  (core/scene/image.h:35-105)
+// Image  (core/canvas/image.h:14-84)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Image, Disposable);

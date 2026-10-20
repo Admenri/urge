@@ -62,7 +62,7 @@ target_link_libraries(urge-core PUBLIC glm SDL3::SDL3-static SDL3_ttf::SDL3_ttf 
 # The shader sources are WGSL, which both wgpu backends parse themselves, so
 # there is no GLSL front end (glslang) and no SPIR-V reflector in the build any
 # more.  Nothing reads the shaders either: each one carries the bind group
-# entries it declares (core/graphics/shader.h, `util::CreateBindLayout`) and the vertex
+# entries it declares (core/render/shader.h, `util::CreateBindLayout`) and the vertex
 # layout is the shared `QuadVertexLayout()`.  A shader written at run time --
 # `Effect` -- gets a null pipeline layout and the device derives one.
 target_link_libraries(urge-core PUBLIC webgpu-cpp-header)
@@ -70,7 +70,7 @@ target_link_libraries(urge-core PUBLIC webgpu-cpp-header)
 target_link_libraries(urge-core PUBLIC webgpu_wgpu)
 target_compile_definitions(urge-core PUBLIC WEBGPU_BACKEND_WGPU=1)
 
-# The in-engine debug interface (core/graphics/imgui_manager.cc) lives in this library,
+# The in-engine debug interface (core/render/imgui_manager.cc) lives in this library,
 # so both the headers and the backend selector come from the ImGui target.
 target_link_libraries(urge-core PUBLIC imgui-docking)
 

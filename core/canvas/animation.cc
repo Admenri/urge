@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/scene/animation.h"
+#include "core/canvas/animation.h"
 
 #include <cstdint>
 #include <string>
@@ -105,4 +105,4 @@ void Animation::DisposeObject() {
   animation_ = nullptr;
 }
 
-}  // namespace urge
+}

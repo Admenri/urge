@@ -35,7 +35,7 @@ wgpu::StringView View(const std::string& text) {
   return wgpu::StringView(text);
 }
 
-}  // namespace
+}
 
 void GPUBindGroupLayoutDescriptor::AddUniform(uint32_t binding,
                                               uint32_t visibility) {
@@ -415,9 +415,6 @@ RefPtr<GPUShaderModule> GPU::CreateShaderModule(
     RefPtr<GPUShaderModuleDescriptor> descriptor) {
   if (!descriptor)
     throw Exception(Exception::kGPUError, "nil shader module descriptor");
-  // The source is WGSL, and it is the only thing that goes into the module:
-  // there is no language to select and no stage to declare, because both wgpu
-  // backends read the `@vertex` / `@fragment` attributes out of the text.
   if (descriptor->code.empty())
     throw Exception(Exception::kGPUError,
                     "shader module descriptor has no WGSL source");
@@ -426,7 +423,8 @@ RefPtr<GPUShaderModule> GPU::CreateShaderModule(
   wgpu::ShaderModuleDescriptor desc;
   desc.label = View(descriptor->label);
   desc.nextInChain = &source;
-  wgpu::ShaderModule module = GPUDevice::Get().device().CreateShaderModule(&desc);
+  wgpu::ShaderModule module =
+      GPUDevice::Get().device().CreateShaderModule(&desc);
   if (!module)
     throw Exception(Exception::kGPUError, "failed to create shader module");
   return MakeRefCounted<GPUShaderModule>(module);
@@ -558,4 +556,4 @@ RefPtr<GPUCommandEncoder> GPU::CreateCommandEncoder() {
   return MakeRefCounted<GPUCommandEncoder>(encoder);
 }
 
-}  // namespace urge
+}

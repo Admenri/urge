@@ -486,10 +486,10 @@ class WebNetworkBackend final : public NetworkBackend {
   int32_t max_events_ = 1024;
 };
 
-}  // namespace
+}
 
 std::unique_ptr<NetworkBackend> CreateNetworkBackend() {
   return std::make_unique<WebNetworkBackend>();
 }
 
-}  // namespace urge
+}

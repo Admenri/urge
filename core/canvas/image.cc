@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/scene/image.h"
+#include "core/canvas/image.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -46,7 +46,7 @@ Uint32 MapColor(SDL_Surface* surface, const RefPtr<Color>& color) {
                      static_cast<Uint8>(color->data.a));
 }
 
-}  // namespace
+}
 
 Image::Image(SDL_Surface* image) : image_(image) {}
 
@@ -332,4 +332,4 @@ void Image::DisposeObject() {
   image_ = nullptr;
 }
 
-}  // namespace urge
+}

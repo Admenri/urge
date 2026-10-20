@@ -268,7 +268,7 @@ graph TD
 
 为降低每帧的 CPU 开销，引擎采用两项批次化设计：
 
-- **uniform 池**（`core/graphics/uniform.h`）：把一帧中同类逐绘制数据集中写入少数大缓冲区，以
+- **uniform 池**（`core/render/uniform.h`）：把一帧中同类逐绘制数据集中写入少数大缓冲区，以
   `dynamic offset` 寻址，取代"每个绘制对象一个缓冲区"。
 - **帧顶点批**（`core/primitive.{h,cc}`）：整个帧共享一个顶点缓冲区，每个绘制对象以
   `firstVertex` 定位自己的顶点区间，把每帧数百次 `WriteBuffer` 压缩为一次。
@@ -346,10 +346,12 @@ flowchart LR
 
 | 目录 | 内容 |
 | --- | --- |
-| `common/` | 基础设施：`definition.h`（`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` 宏）、`object.h`、`refptr.h`、`disposable.h`、`utility.{h,cc}`（`Rect` / `Color` / `Tone` / `Vector2/3/4`）、`exception.h`、`logger.h`、`inirw.h` |
+| `common/` | 基础设施与数据类：`definition.h`（`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` 宏）、`object.h`、`refptr.h`、`disposable.h`、`utility.{h,cc}`（`Rect` / `Color` / `Tone` / `Vector2/3/4`）、`table.{h,cc}`（`Table` 数据表）、`exception.h`、`logger.h`、`inirw.h` |
 | `system/` | 宿主设施：`config.{h,cc}`（`Game.ini`）、`filesystem.{h,cc}`（PhysicsFS 与 RTP 路径）、`archive.{h,cc}`（`.acs` 容器） |
-| `graphics/` | 渲染：`graphics.{h,cc}`（主循环、窗口与交换链、present、转场、快照、帧率控制）、`gpu.{h,cc}`、`pipeline.{h,cc}`、`shader.{h,cc}`、`effect.{h,cc}`、`primitive.{h,cc}`（帧顶点批）、`uniform.{h,cc}`（逐帧 uniform 池）、`geometry.{h,cc}`、`device.{h,cc}`、`imgui_manager.{h,cc}`、`render_stats.h` |
-| `scene/` | 场景与 RGSS 节点：`node`（三阶段渲染派发）、`drawable`（可绘制链表）、`bitmap` / `bitmap_queue`、`image`、`sprite` / `sprite_batch`、`plane`、`viewport`、`window_vx` / `window_xp`、`tilemap_vx` / `tilemap_xp`、`table`、`camera`、`animation` |
+| `graphics/` | **导出到 Ruby 的图形类**：`graphics.{h,cc}`（`Graphics` 模块：主循环、窗口与交换链、present、转场、快照、帧率控制）、`gpu.{h,cc}`（`GPU` 模块与全部 `GPU*` 描述符/对象）、`effect.{h,cc}`（`Effect` 自定义着色器） |
+| `render/` | **内部渲染实现（不导出）**：`device.{h,cc}`（wgpu 设备与队列）、`pipeline.{h,cc}`、`shader.{h,cc}`、`gpu_utils.h`（绑定组/布局辅助）、`primitive.{h,cc}`（帧顶点批）、`uniform.{h,cc}`（逐帧 uniform 池）、`render_stats.h`、`imgui_manager.{h,cc}`（F1/F2 调试浮层） |
+| `scene/` | **场景 node**：`node`（三阶段渲染派发）、`drawable`（可绘制链表）、`sprite` / `sprite_batch`、`plane`、`viewport`、`window_vx` / `window_xp`、`tilemap_vx` / `tilemap_xp`、`geometry`、`camera` |
+| `canvas/` | **画布与附属**：`bitmap.{h,cc}`（位图、GPU 纹理、`Blt`/渐变/文字绘制）、`bitmap_queue.{h,cc}`（绘制命令队列）、`image.{h,cc}`（调色板）、`animation.{h,cc}`（帧序列） |
 | `font/` | `font{,_context,_renderer}.{h,cc}`：字体解析（`Fonts/` → 系统字库 → 内嵌）、SDL_ttf 渲染与文本度量 |
 | `audio/` | `audio.{h,cc}`（BGM / BGS / SE）、`audio_service.{h,cc}`、`audio_stream.{h,cc}` |
 | `input/` | `input.{h,cc}`（键盘/手柄统一到 slot）、`gamepad.{h,cc}`（SDL3 手柄、热插拔、扳机/摇杆/震动、多手柄，脚本侧 `Gamepad` 类）、`mouse.{h,cc}`、`key_sym.h`（绑定项与按下/触发/重复状态机） |

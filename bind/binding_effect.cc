@@ -15,8 +15,8 @@
 
 #include "binding_bitmap.h"
 
+#include "core/canvas/bitmap.h"
 #include "core/graphics/effect.h"
-#include "core/scene/bitmap.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Effect  (core/graphics/effect.h:39-74)
+// Effect  (core/graphics/effect.h:18-37)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Effect);

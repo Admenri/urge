@@ -25,7 +25,7 @@
 #include <tuple>
 #include <variant>
 
-#include "core/graphics/device.h"
+#include "core/render/device.h"
 
 namespace urge::util {
 
@@ -225,4 +225,4 @@ inline wgpu::BindGroupLayout CreateBindLayout(
   return g_device.CreateBindGroupLayout(&layout_desc);
 }
 
-}  // namespace urge::util
+}

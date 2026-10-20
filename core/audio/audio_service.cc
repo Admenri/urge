@@ -38,8 +38,8 @@
 #include "decoders/libvorbis/miniaudio_libvorbis.h"
 
 #include "core/common/exception.h"
-#include "core/system/filesystem.h"
 #include "core/common/logger.h"
+#include "core/system/filesystem.h"
 
 #ifndef MA_NO_DEVICE_IO
 #error \
@@ -54,12 +54,6 @@ constexpr size_t kBusCount = 4;
 
 constexpr size_t kMaxVoices = 24;
 
-// Ogg Vorbis and Ogg Opus are not part of miniaudio's built-in decoder set.
-// They arrive as custom decoding backends, compiled into third_party/miniaudio
-// on top of libvorbis and libopusfile -- the tree no longer carries stb_vorbis.
-// Custom backends are tried before the built-in ones, so a Vorbis or Opus
-// stream is handed to Xiph's decoders while wav, flac and mp3 still fall
-// through to miniaudio's own.
 ma_decoding_backend_vtable* kDecodingBackends[] = {
     ma_decoding_backend_libvorbis,
     ma_decoding_backend_libopus,
@@ -171,7 +165,7 @@ void SDLCALL PullState::Callback(void* userdata,
                          static_cast<int>(wanted));
 }
 
-}  // namespace
+}
 
 AudioClip::~AudioClip() {
   Close();
@@ -595,4 +589,4 @@ void AudioService::CloseOutput() {
   }
 }
 
-}  // namespace urge
+}

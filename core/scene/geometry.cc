@@ -20,16 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/geometry.h"
+#include "core/scene/geometry.h"
 
 #include <algorithm>
 #include <cstdint>
 
-#include "core/graphics/device.h"
-#include "core/graphics/gpu_utils.h"
 #include "core/common/logger.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/uniform.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/uniform.h"
 
 namespace urge {
 
@@ -95,7 +95,7 @@ class DefaultTexture {
   wgpu::BindGroup group_;
 };
 
-}  // namespace
+}
 
 Geometry::Geometry(RefPtr<Viewport> viewport) : Node(viewport, ZValue()) {
   Node::SetupTrait(this);
@@ -282,4 +282,4 @@ PrimitiveEmitter::Slot Geometry::EmitGeometryInternal(
   return emitter.End();
 }
 
-}  // namespace urge
+}

@@ -110,4 +110,4 @@ bool VideoDecoder::Decode(const uint8_t* data,
   return true;
 }
 
-}  // namespace urge
+}

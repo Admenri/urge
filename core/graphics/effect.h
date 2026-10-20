@@ -27,33 +27,17 @@
 #include <string>
 #include <vector>
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/shader.h"
+#include "core/render/pipeline.h"
+#include "core/render/shader.h"
 
 namespace urge {
 
 URGE_BINDING()
 class Effect : public Object {
  public:
-  // Both stages are WGSL, and each one enters at `vs_main` / `fs_main` -- the
-  // same names the built-in shaders use.  They have to declare the scene
-  // uniform at `@group(0) @binding(0)` and the object uniform at
-  // `@group(1) @binding(0)`, because those two groups are the engine's own.
-  //
-  // Everything else is up to the source: the pipeline is built with a null
-  // layout, so the device derives one from the two stages, and whatever the
-  // shader declared under `@group(2)` is then read back off the pipeline with
-  // `GetBindGroupLayout(2)`.  That is also why every binding the shader
-  // declares has to be set before the first draw: the engine cannot know what
-  // the shader asked for until the device has looked at it, so there is
-  // nothing to fall back on for a slot the script never touched.
-  //
-  // Which setter is used is what says what a slot holds -- `SetTexture` fills
-  // a texture view, `SetSampler` a sampler, `SetFloat`/`SetInt`/`SetBlock` a
-  // uniform buffer.
   URGE_BINDING()
   Effect(std::string vs_wgsl,
          std::string fs_wgsl,
@@ -83,9 +67,6 @@ class Effect : public Object {
     wgpu::RenderPipeline pipeline;
   };
 
-  // What a slot carries.  The engine no longer reads the shader, so the kind
-  // comes from the setter that was used on the slot: there is no other place
-  // that knows whether `@group(2) @binding(3)` is a texture or a buffer.
   enum class SlotKind { kTexture, kSampler, kBuffer };
 
   struct SlotResource {
@@ -108,4 +89,4 @@ class Effect : public Object {
   bool binding_dirty_ = false;
 };
 
-}  // namespace urge
+}

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/shader.h"
+#include "core/render/shader.h"
 
 #include <algorithm>
 #include <map>
@@ -30,9 +30,9 @@
 #include <variant>
 #include <vector>
 
-#include "core/graphics/device.h"
 #include "core/common/exception.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/device.h"
+#include "core/render/pipeline.h"
 
 namespace urge {
 
@@ -42,9 +42,6 @@ namespace {
   throw Exception(Exception::kGPUError, "shader {} failed: {}", what, detail);
 }
 
-// The device takes the WGSL text as it stands: both wgpu backends carry their
-// own parser.  Nothing here reads the source -- the layouts it goes with are
-// written by hand next to it.
 wgpu::ShaderModule CreateModule(std::string_view wgsl) {
   wgpu::ShaderSourceWGSL source;
   source.code = wgsl;
@@ -77,18 +74,11 @@ uint64_t FormatSize(wgpu::VertexFormat format) {
   }
 }
 
-// A dynamic offset belongs to the pipeline rather than to the stage: the same
-// vertex shader feeds draws that address their object uniform through the pool
-// and draws that bind one of their own.  So the flag is stamped on here,
-// instead of writing the vertex stage's layout twice.
 void MarkDynamic(util::LayoutEntry* entry) {
   if (auto* buffer = std::get_if<util::BufferLayout>(&std::get<2>(*entry)))
     buffer->has_dynamic_offset = true;
 }
 
-// One layout per `@group`, in group order, from the lists both stages declare.
-// Neither stage ever declares the same binding in the same group in this
-// engine, so merging is a concatenation per group number.
 std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
     const ShaderSource& vertex,
     const ShaderSource& fragment,
@@ -124,7 +114,7 @@ std::vector<wgpu::BindGroupLayout> CreateGroupLayouts(
   return layouts;
 }
 
-}  // namespace
+}
 
 void Pipeline::Initialize(
     const ShaderSource& vertex,
@@ -138,16 +128,13 @@ void Pipeline::Initialize(
   vertex_entry_ = vertex.entry_point;
   fragment_entry_ = fragment.entry_point;
 
-  // Without `dynamic_sets` the pipeline is left with a null layout, which is the
-  // device's cue to derive one from the two stages -- see Pipeline::AutoLayout.
   if (dynamic_sets != nullptr) {
     const std::vector<wgpu::BindGroupLayout> groups =
         CreateGroupLayouts(vertex, fragment, *dynamic_sets);
 
     wgpu::PipelineLayoutDescriptor layout_desc;
     layout_desc.bindGroupLayoutCount = groups.size();
-    layout_desc.bindGroupLayouts =
-        groups.empty() ? nullptr : groups.data();
+    layout_desc.bindGroupLayouts = groups.empty() ? nullptr : groups.data();
     layout_ = device.CreatePipelineLayout(&layout_desc);
     if (layout_ == nullptr)
       Fail("layout", "the device rejected the pipeline layout of the shader");
@@ -238,4 +225,4 @@ wgpu::RenderPipeline Pipeline::MakeDefaultState(const wgpu::BlendState* blend) {
                    {target});
 }
 
-}  // namespace urge
+}

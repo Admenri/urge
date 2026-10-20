@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroup  (core/graphics/gpu.h:793-793)
+// GPUBindGroup  (core/graphics/gpu.h:768-768)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroup, GPUObject);

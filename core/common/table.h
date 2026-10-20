@@ -61,4 +61,4 @@ class Table : public Object {
   std::vector<int16_t> data_;
 };
 
-}  // namespace urge
+}

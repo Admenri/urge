@@ -281,4 +281,4 @@ class IniFile {
   std::vector<std::string> sectionOrder_;
 };
 
-}  // namespace ini
+}

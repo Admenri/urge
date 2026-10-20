@@ -28,9 +28,9 @@
 
 #include "glm/glm.hpp"
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/object.h"
-#include "core/graphics/primitive.h"
+#include "core/render/primitive.h"
 
 namespace urge {
 
@@ -87,4 +87,4 @@ class SpriteBatch : public Singleton<SpriteBatch> {
 
 void FlushSpriteBatch(DrawContext* param);
 
-}  // namespace urge
+}

@@ -29,8 +29,8 @@
 
 #include "SDL3_ttf/SDL_ttf.h"
 
-#include "core/system/filesystem.h"
 #include "core/font/font_context.h"
+#include "core/system/filesystem.h"
 
 namespace urge {
 
@@ -87,7 +87,7 @@ void RenderShadowSurface(SDL_Surface*& surface) {
   surface = shadow;
 }
 
-}  // namespace
+}
 
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
@@ -214,10 +214,6 @@ ATTR_DEF(Font, RefPtr<Color>, GradientColor) {
 }
 
 ATTR_DEF(Font, std::vector<std::string>, DefaultName) {
-  /* Empty means "whatever the platform considers the default", which the font
-     service resolves once at start-up: Microsoft YaHei on Windows, the bundled
-     face elsewhere.  Keeping the value empty lets `Font.new` follow that chain
-     instead of freezing a name that may not exist on this machine. */
   static std::vector<std::string> default_names;
   if (value.has_value()) {
     default_names = *value;
@@ -448,4 +444,4 @@ bool Font::MeasureText(const std::string& text,
   return true;
 }
 
-}  // namespace urge
+}

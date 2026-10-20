@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassEncoder  (core/graphics/gpu.h:890-926)
+// GPURenderPassEncoder  (core/graphics/gpu.h:865-901)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassEncoder, GPUObject);

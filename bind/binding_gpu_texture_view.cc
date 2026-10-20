@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTextureView  (core/graphics/gpu.h:738-738)
+// GPUTextureView  (core/graphics/gpu.h:713-713)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTextureView, GPUObject);

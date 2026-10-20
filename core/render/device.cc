@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/graphics/device.h"
+#include "core/render/device.h"
 
 #include <string>
 #include <string_view>
@@ -77,9 +77,6 @@ std::string BackendName(wgpu::BackendType backend) {
   }
 }
 
-// `wgpu::StringView` is either a null-terminated C string or an explicit
-// (pointer, length) pair, depending on the producer.  Both shapes have to be
-// handled, and a length of `WGPU_STRLEN` means "read until the null".
 std::string FromStringView(const wgpu::StringView& view) {
   if (view.data == nullptr)
     return {};
@@ -88,7 +85,7 @@ std::string FromStringView(const wgpu::StringView& view) {
   return std::string(view.data, view.length);
 }
 
-}  // namespace
+}
 
 DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter) {
   DeviceInfo info;
@@ -103,10 +100,6 @@ DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter) {
   info.vendor_id = adapter_info.vendorID;
   info.device_id = adapter_info.deviceID;
 
-  // There is no portable CPU brand query: the version of SDL this tree builds
-  // against has no `SDL_GetCPUName`, and reading `CPUID`/`/proc/cpuinfo` by
-  // hand is not worth it for an overlay.  The core count and the RAM figure
-  // are the parts that are portable, so those are what the overlay shows.
   info.cpu_cores = SDL_GetNumLogicalCPUCores();
   info.system_ram_mb = static_cast<uint64_t>(SDL_GetSystemRAM());
 
@@ -114,10 +107,6 @@ DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter) {
 }
 
 GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
-  // WGSL is WebGPU's own shading language, so an instance needs no feature to
-  // accept a shader module: there is nothing left to request here.  The tree
-  // used to ask for `ShaderSourceSPIRV`, because every shader went through
-  // glslang first; that path is gone, and with it the requirement.
   wgpu::InstanceDescriptor instance_desc;
 #if defined(WEBGPU_BACKEND_WGPU)
   WGPUInstanceExtras instance_extras = {};
@@ -227,11 +216,9 @@ void GPUDevice::CreateDevice(std::string backend) {
                   static_cast<uint32_t>(adapter_info.backendType));
   }
 
-  // The overlay shows this every frame, so it is captured once here while the
-  // adapter is still around and stored as plain strings.
   info_ = QueryDeviceInfo(adapter_);
 
   queue_ = device_.GetQueue();
 }
 
-}  // namespace urge
+}

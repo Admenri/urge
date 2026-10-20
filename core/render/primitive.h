@@ -27,8 +27,8 @@
 #include <vector>
 
 #include "core/common/common.h"
-#include "core/graphics/device.h"
 #include "core/common/object.h"
+#include "core/render/device.h"
 
 namespace urge {
 
@@ -148,4 +148,4 @@ class QuadVertexManager : public Singleton<QuadVertexManager> {
   std::uint32_t vertex_count_ = 0;
 };
 
-}  // namespace urge
+}

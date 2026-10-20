@@ -226,4 +226,4 @@ RefPtr<T> MakeRefCounted(Args&&... args) {
   return RefPtr<T>(obj);
 }
 
-}  // namespace urge
+}

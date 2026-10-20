@@ -39,20 +39,9 @@
 #define MARSHAL_LOAD(ty) static RefPtr<ty> MarshalLoad(std::string data);
 #define MARSHAL_LOAD_DEF(ty) RefPtr<ty> ty::MarshalLoad(std::string data)
 
-/* Value equality, exported to Ruby as `==`, `eql?` and `===`.
-
-   The marker declares the operator pair; the body belongs to the class' `.cc`,
-   because only the class knows what "equal" means for its payload:
-
-     URGE_BINDING()
-     KLASS_EQUAL(Rect);
-     ...
-     KLASS_EQUAL_DEF(Rect) { return data == other.data; }
-
-   `gen_api_json.py` reads the marker and the glue registers all three Ruby
-   names against the one C++ operator -- see bind/Bindgen.md.  A class without
-   the marker keeps Ruby's identity comparison. */
-#define KLASS_EQUAL(ty)                   \
-  bool operator==(const ty& other) const; \
-  bool operator!=(const ty& other) const { return !(*this == other); }
+#define KLASS_EQUAL(ty)                    \
+  bool operator==(const ty& other) const;  \
+  bool operator!=(const ty& other) const { \
+    return !(*this == other);              \
+  }
 #define KLASS_EQUAL_DEF(ty) bool ty::operator==(const ty& other) const

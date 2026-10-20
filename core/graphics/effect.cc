@@ -31,18 +31,15 @@
 #include <utility>
 #include <vector>
 
-#include "core/graphics/device.h"
 #include "core/common/exception.h"
 #include "core/common/logger.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/device.h"
+#include "core/render/pipeline.h"
 
 namespace urge {
 
 namespace {
 
-// A custom shader enters at the same names the built-in ones do.  The engine
-// cannot look the entry point up in the source any more -- the layout comes
-// from the device, which is only told a name -- so this is the convention.
 constexpr std::string_view kVertexEntry = "vs_main";
 constexpr std::string_view kFragmentEntry = "fs_main";
 
@@ -105,7 +102,7 @@ class EffectDefaults {
   wgpu::Sampler sampler_;
 };
 
-}  // namespace
+}
 
 Effect::Effect(std::string vs_wgsl,
                std::string fs_wgsl,
@@ -166,9 +163,6 @@ wgpu::BindGroup Effect::AcquireBindGroup() {
 }
 
 void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
-  // The filter convention: the canvas goes in as a texture at slot 0 and its
-  // sampler at slot 1.  Both are filled here because a filter shader samples
-  // the canvas and has nothing else to bind.
   const auto stage = [&](uint32_t slot, SlotKind kind) {
     SlotResource& resource = resources_[slot];
     if (resource.bitmap.get() == texture.get() && resource.kind == kind)
@@ -193,9 +187,6 @@ void Effect::CreateInternal(std::string vs_wgsl,
 
   const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states);
 
-  // A null pipeline layout: the device reads the two stages and builds one.
-  // That is the only way a shader written at run time can be laid out, and
-  // `GetBindGroupLayout` below is how the result comes back.
   const ShaderSource vertex{vs_wgsl, kVertexEntry, {}};
   const ShaderSource fragment{fs_wgsl, kFragmentEntry, {}};
   Pipeline shader = Pipeline::AutoLayout(vertex, fragment, QuadVertexLayout());
@@ -203,16 +194,11 @@ void Effect::CreateInternal(std::string vs_wgsl,
   const wgpu::RenderPipeline pipeline =
       shader.MakeDefaultState(blend ? &*blend : nullptr);
 
-  // The engine binds its own scene and object groups at 0 and 1, so a shader
-  // that never declares them would only fail once a frame was already being
-  // drawn.  The derived layout is the earliest place it shows up: a group the
-  // shader did not declare has no layout.
   if (!pipeline.GetBindGroupLayout(0) || !pipeline.GetBindGroupLayout(1))
-    throw Exception(
-        Exception::kRGSSError,
-        "effect: the stages have to declare the scene uniform at "
-        "@group(0) @binding(0) and the object uniform at @group(1) "
-        "@binding(0), like the built in shaders do.");
+    throw Exception(Exception::kRGSSError,
+                    "effect: the stages have to declare the scene uniform at "
+                    "@group(0) @binding(0) and the object uniform at @group(1) "
+                    "@binding(0), like the built in shaders do.");
 
   auto holder = MakeRefCounted<PipelineHolder>();
   holder->pipeline = pipeline;
@@ -224,10 +210,6 @@ void Effect::CreateInternal(std::string vs_wgsl,
 }
 
 void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
-  // There is no minimum to size against any more -- the device owns the layout
-  // -- so the buffer is exactly as big as what was handed in, rounded up to a
-  // whole uniform.  A shader whose struct is larger than the bytes the script
-  // sends is a device error on the next draw.
   const uint64_t buffer_size = AlignUniformSize(std::max<uint64_t>(size, 16));
 
   wgpu::BufferDescriptor desc;
@@ -260,25 +242,19 @@ void Effect::RebuildBindGroup() {
   std::vector<wgpu::BindGroupEntry> entries;
   entries.reserve(resources_.size());
 
-  // One entry per slot the script has filled.  The layout the device derived
-  // is the authority on what it wants; since the engine cannot read it, a slot
-  // that was never set is simply absent, and a shader that declares one the
-  // script does not fill is a device error at the next draw.
   for (const auto& [binding, resource] : resources_) {
     wgpu::BindGroupEntry entry;
     entry.binding = binding;
 
     switch (resource.kind) {
       case SlotKind::kTexture: {
-        const bool usable =
-            resource.bitmap && !resource.bitmap->IsDisposed();
+        const bool usable = resource.bitmap && !resource.bitmap->IsDisposed();
         entry.textureView = usable ? resource.bitmap->texture_view()
                                    : EffectDefaults::Get().white_view();
         break;
       }
       case SlotKind::kSampler: {
-        const bool usable =
-            resource.bitmap && !resource.bitmap->IsDisposed();
+        const bool usable = resource.bitmap && !resource.bitmap->IsDisposed();
         entry.sampler = usable ? resource.bitmap->sampler()
                                : EffectDefaults::Get().sampler();
         break;
@@ -305,4 +281,4 @@ void Effect::RebuildBindGroup() {
   binding_dirty_ = false;
 }
 
-}  // namespace urge
+}

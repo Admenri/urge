@@ -29,9 +29,9 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
-#include "core/graphics/device.h"
 #include "core/common/object.h"
 #include "core/common/refptr.h"
+#include "core/render/device.h"
 
 namespace urge {
 
@@ -334,10 +334,6 @@ class GPUShaderModuleDescriptor : public GPUObject {
   URGE_BINDING(Name : "code=")
   void SetCode(std::string value) { code = value; }
 
-  // `entry_point` names the function the pipeline will call.  It is carried on
-  // the descriptor for the caller's own bookkeeping: `Shader` reads the real
-  // name back out of the source (`@vertex` / `@fragment`), because a module may
-  // declare more than one entry point and the attribute is what identifies it.
   URGE_BINDING(Name : "entry_point")
   std::string GetEntryPoint() { return entry_point; }
   URGE_BINDING(Name : "entry_point=")
@@ -1004,13 +1000,6 @@ class GPU : public Singleton<GPU> {
     Discard = 2,
   };
 
-  // There is no `ShaderLanguage` here on purpose.  WGSL is the only shading
-  // language the renderer takes -- wgpu parses it directly, so there is nothing
-  // to choose between and no `GPU::SHADER_LANGUAGE_*` constant to pass.  The
-  // language selector and the `stage` that went with it were only ever there to
-  // drive the GLSL -> SPIR-V front end; both are gone with it, and a shader
-  // module is now built from its source and nothing else.
-
   URGE_BINDING()
   enum IndexFormat {
     IndexFormatUint16 = static_cast<uint32_t>(wgpu::IndexFormat::Uint16),
@@ -1086,4 +1075,4 @@ class GPU : public Singleton<GPU> {
   RefPtr<GPUCommandEncoder> CreateCommandEncoder();
 };
 
-}  // namespace urge
+}

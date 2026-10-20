@@ -25,14 +25,14 @@
 #include <cstdint>
 #include <string>
 
+#include "core/canvas/image.h"
 #include "core/common/definition.h"
-#include "core/graphics/device.h"
 #include "core/common/disposable.h"
+#include "core/common/utility.h"
 #include "core/font/font.h"
 #include "core/font/font_renderer.h"
-#include "core/scene/image.h"
-#include "core/graphics/primitive.h"
-#include "core/common/utility.h"
+#include "core/render/device.h"
+#include "core/render/primitive.h"
 
 namespace urge {
 
@@ -138,9 +138,6 @@ class Bitmap : public Disposable {
  public:
   void UpdateWithPixels(const void* pixels, uint32_t bytes_per_row);
 
-  // Executes the drawing this bitmap has recorded, leaving its texture up to
-  // date.  Every accessor below goes through it, so no caller ever sees a
-  // bitmap whose pending commands have not run yet.
   void AcquireHandle();
 
   wgpu::RenderPassEncoder BeginRendering(
@@ -204,4 +201,4 @@ class Bitmap : public Disposable {
   wgpu::BindGroup scene_group_, object_group_, texture_group_;
 };
 
-}  // namespace urge
+}

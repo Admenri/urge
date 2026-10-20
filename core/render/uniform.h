@@ -32,7 +32,7 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/object.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/pipeline.h"
 
 namespace urge {
 
@@ -104,4 +104,4 @@ class UniformManager : public Singleton<UniformManager> {
   UniformBlockPool object_uniforms_;
 };
 
-}  // namespace urge
+}

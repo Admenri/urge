@@ -167,4 +167,4 @@ class AudioService {
   std::string output_device_;
 };
 
-}  // namespace urge
+}

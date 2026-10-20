@@ -33,7 +33,7 @@
 // declarations, because core/*.h are parsed *after* this header:
 //
 //   WinUser.h  #define DrawText DrawTextA
-//     => core/scene/bitmap.h's `void Bitmap::DrawText(...)` became
+//     => core/canvas/bitmap.h's `void Bitmap::DrawText(...)` became
 //        `void Bitmap::DrawTextA(...)`, a member the engine never defines, and
 //        every glue TU linked against `urge::Bitmap::DrawTextA` (LNK2019).
 //
@@ -42,7 +42,7 @@
 //        ("[URGE] [ERROR] " in core/common/logger.h), which a macro cannot touch, but
 //        any future enumerator spelled ERROR would be rewritten without a word.
 //
-// Verified by compiling a probe that includes this header and core/scene/bitmap.h:
+// Verified by compiling a probe that includes this header and core/canvas/bitmap.h:
 // DrawText -> DrawTextA and ERROR -> 0 are both live, `max`/`min` are not (the
 // build already neutralises minwindef.h).  Dropping the two here, after every
 // ruby header and before the first core/ header, is what keeps the engine's

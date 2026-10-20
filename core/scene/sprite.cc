@@ -30,11 +30,11 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "core/system/config.h"
-#include "core/graphics/device.h"
 #include "core/common/logger.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/uniform.h"
+#include "core/render/device.h"
+#include "core/render/pipeline.h"
+#include "core/render/uniform.h"
+#include "core/system/config.h"
 
 namespace urge {
 
@@ -50,7 +50,7 @@ float DegreesToRadians(float degrees) {
   return degrees * (kPi / 180.0f);
 }
 
-}  // namespace
+}
 
 Sprite::Sprite(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
@@ -503,4 +503,4 @@ PrimitiveEmitter::Slot Sprite::EmitGeometryInternal(
   return primitive.End();
 }
 
-}  // namespace urge
+}

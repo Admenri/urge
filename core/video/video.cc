@@ -59,7 +59,7 @@ std::string FormatBitrate(const VideoTrackInfo& info) {
                       info.duration);
 }
 
-}  // namespace
+}
 
 Video::Video(std::string filename) {
   if (!player_.Open(filename))
@@ -253,7 +253,7 @@ namespace {
                   "video playback is not available in this build.");
 }
 
-}  // namespace
+}
 
 Video::Video(std::string) {
   VideoUnavailable();
@@ -311,4 +311,4 @@ void Video::Render(RefPtr<Bitmap>) {
 
 #endif
 
-}  // namespace urge
+}

@@ -13,8 +13,8 @@
 #include "binding_table.h"
 #include "binding_viewport.h"
 
-#include "core/scene/bitmap.h"
-#include "core/scene/table.h"
+#include "core/canvas/bitmap.h"
+#include "core/common/table.h"
 #include "core/scene/tilemap_xp.h"
 #include "core/scene/viewport.h"
 // --- GENERATED INCLUDES END ---
@@ -71,7 +71,7 @@ RB_FUNC(TilemapXP_Autotiles) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// TilemapXP  (core/scene/tilemap_xp.h:59-93)
+// TilemapXP  (core/scene/tilemap_xp.h:38-72)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(TilemapXP, Node);

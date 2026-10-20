@@ -26,8 +26,8 @@
 #include <string>
 #include <utility>
 
-#include "core/graphics/gpu_utils.h"
-#include "core/graphics/pipeline.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
 
 namespace urge {
 
@@ -112,7 +112,7 @@ std::pair<wgpu::Texture, wgpu::TextureView> CreateTextTexture(
   return {texture, texture.CreateView(nullptr)};
 }
 
-}  // namespace
+}
 
 FontRenderer::TextRun* FontRenderer::Acquire(Font& font,
                                              const std::string& text) {
@@ -160,9 +160,6 @@ FontRenderer::TextRun* FontRenderer::Store(std::string key,
                                            std::uint8_t opacity) {
   const std::size_t bytes = TextRunBytes(size);
 
-  // A run that is evicted here is safe to drop even when the queue still holds
-  // a command that samples it: the command keeps its own reference to the bind
-  // group, and through it to the texture.
   while (!runs_.empty() && bytes_ + bytes > kTextRunBudget) {
     auto victim = runs_.begin();
     for (auto current = runs_.begin(); current != runs_.end(); ++current)
@@ -185,4 +182,4 @@ FontRenderer::TextRun* FontRenderer::Store(std::string key,
   return &entry.first->second;
 }
 
-}  // namespace urge
+}

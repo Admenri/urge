@@ -16,8 +16,8 @@
 #include "binding_disposable.h"
 #include "binding_image.h"
 
-#include "core/scene/animation.h"
-#include "core/scene/image.h"
+#include "core/canvas/animation.h"
+#include "core/canvas/image.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Animation  (core/scene/animation.h:39-58)
+// Animation  (core/canvas/animation.h:18-37)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Animation, Disposable);

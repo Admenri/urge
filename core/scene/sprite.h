@@ -24,9 +24,9 @@
 
 #include "core/common/definition.h"
 #include "core/graphics/effect.h"
+#include "core/render/uniform.h"
 #include "core/scene/node.h"
 #include "core/scene/sprite_batch.h"
-#include "core/graphics/uniform.h"
 #include "core/scene/viewport.h"
 
 namespace urge {
@@ -128,4 +128,4 @@ class Sprite : public Node {
   PrimitiveEmitter::Slot primitive_slot_ = {};
 };
 
-}  // namespace urge
+}

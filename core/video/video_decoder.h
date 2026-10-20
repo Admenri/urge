@@ -63,4 +63,4 @@ class VideoDecoder {
   Dav1dContext* context_ = nullptr;
 };
 
-}  // namespace urge
+}

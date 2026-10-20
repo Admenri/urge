@@ -80,23 +80,16 @@ class Input : public Singleton<Input> {
  public:
   void ProcessEvents(SDL_Event* event);
 
-  /* Hot-plug and button edges of the pad.  Called for every event, even while
-     the settings overlay holds the game input -- see `Gamepad`. */
   void ProcessGamepadEvents(SDL_Event* event);
 
-  /* The host reports the overlay state once a frame: while it holds the input
-     the pad freezes exactly like the keyboard, whose events stop arriving. */
   void SetBlocked(bool blocked) { blocked_ = blocked; }
 
-  /* The pads, for the settings panel and the script-side `Gamepad` class. */
   GamepadManager& gamepads() { return gamepads_; }
 
   using KeySym = urge::KeySym;
   void SetKeyBindings(std::vector<KeySym> bindings) { bindings_ = bindings; }
   std::vector<KeySym> GetKeyBindings() { return bindings_; }
 
-  /* Name of a binding for the settings UI: a scancode name for the keyboard,
-     "Pad A" and friends for the controller. */
   std::string BindingName(const KeySym& binding);
 
  private:
@@ -126,4 +119,4 @@ class Input : public Singleton<Input> {
   bool blocked_ = false;
 };
 
-}  // namespace urge
+}

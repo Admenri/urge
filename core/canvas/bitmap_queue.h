@@ -25,17 +25,15 @@
 #include <cstdint>
 #include <vector>
 
-#include "core/scene/bitmap.h"
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
-#include "core/graphics/device.h"
 #include "core/common/object.h"
-#include "core/graphics/primitive.h"
 #include "core/common/refptr.h"
+#include "core/render/device.h"
+#include "core/render/primitive.h"
 
 namespace urge {
 
-// One recorded drawing command.  A `Bitmap` operation fills one of these in and
-// hands it to the queue; it never opens a pass or submits anything itself.
 struct BitmapDraw {
   enum class Kind {
     kTexture,
@@ -49,8 +47,6 @@ struct BitmapDraw {
   RefPtr<Bitmap> source;
   RefPtr<Bitmap> mask;
 
-  // `DrawText` draws a cached text run instead of a bitmap, so it carries the
-  // run's bind group where a source bitmap would go.
   wgpu::BindGroup text_group;
 
   RectF rect;
@@ -59,23 +55,6 @@ struct BitmapDraw {
                          glm::vec4(1.0f)};
 };
 
-// Executes the drawing a script does against `Bitmap`s.
-//
-// A `Bitmap` operation only records: it appends a `BitmapDraw` here instead of
-// touching the GPU, so a batch costs one submission rather than one per
-// operation.  The batch runs when a bitmap's handle is actually needed --
-// `Bitmap::AcquireHandle` -- and before the scene reads the textures, and it
-// always runs in the order the commands were recorded: `Bitmap` is a painter's
-// order surface, so nothing is reordered, only deferred.
-//
-// Deferring to a single execution is what lets `PrimitiveEmitter` stay in its
-// plain form.  Every command is exactly one quad, so the batch is emitted in
-// one go and uploaded once, and a command's range is its index times the vertex
-// count of a quad -- no per-command slot bookkeeping anywhere.
-//
-// A blit may not read the bitmap it draws into, because a pass cannot sample
-// its own attachment.  `Blt`, `StretchBlt` and `MaskBlt` reject that case where
-// the command is recorded, so nothing here ever has to resolve a self read.
 class BitmapQueue : public Singleton<BitmapQueue> {
  public:
   BitmapQueue();
@@ -83,9 +62,6 @@ class BitmapQueue : public Singleton<BitmapQueue> {
 
   void Push(BitmapDraw draw);
 
-  // Executes everything recorded so far.  Safe to call anywhere: it returns
-  // immediately when the batch is empty, and while the batch is already being
-  // executed.
   void Flush();
 
  private:
@@ -103,4 +79,4 @@ class BitmapQueue : public Singleton<BitmapQueue> {
   bool executing_ = false;
 };
 
-}  // namespace urge
+}

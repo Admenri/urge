@@ -57,4 +57,4 @@ class Exception final {
   std::string message_;
 };
 
-}  // namespace urge
+}

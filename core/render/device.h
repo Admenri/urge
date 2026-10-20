@@ -34,14 +34,6 @@
 
 namespace urge {
 
-// What the overlay shows about the device the frame is being drawn on.  The
-// adapter fields are read once when the device is created -- `GetInfo` is not
-// meant to be called per frame -- and the CPU fields are cheap SDL queries.
-//
-// These replace a raw `wgpu::AdapterInfo` on purpose: an `AdapterInfo` owns
-// heap memory through the C API and is neither copyable nor movable in the
-// generated C++ wrapper, so it cannot be stored as a member of anything that
-// gets copied.  Plain strings can.
 struct DeviceInfo {
   std::string adapter_device;
   std::string adapter_vendor;
@@ -51,15 +43,10 @@ struct DeviceInfo {
   uint32_t vendor_id = 0;
   uint32_t device_id = 0;
 
-  // No CPU brand string: SDL has no portable query for it in this tree, so
-  // the count and the RAM figure are what is reported.
   int cpu_cores = 0;
   uint64_t system_ram_mb = 0;
 };
 
-// The strings the overlay prints are ASCII by construction (device names,
-// backend names), but the numbers next to them want a stable field to line up
-// on, so the whole struct is filled once at creation time.
 DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter);
 
 #define g_adapter GPUDevice::Get().adapter()
@@ -90,4 +77,4 @@ class GPUDevice : public Singleton<GPUDevice> {
   DeviceInfo info_;
 };
 
-}  // namespace urge
+}

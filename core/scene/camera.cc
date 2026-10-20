@@ -27,10 +27,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#include "core/graphics/gpu_utils.h"
 #include "core/common/logger.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/shader.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/pipeline.h"
+#include "core/render/shader.h"
 
 namespace urge {
 
@@ -42,7 +42,7 @@ float AspectOf(const glm::ivec2& size) {
   return width / height;
 }
 
-}  // namespace
+}
 
 Camera::Camera()
     : position_(MakeRefCounted<Vector3>(0.0f)),
@@ -209,4 +209,4 @@ glm::mat4 OrthographicCamera::projection(const glm::ivec2& size) const {
                     far_);
 }
 
-}  // namespace urge
+}

@@ -25,8 +25,8 @@
 #include "SDL3/SDL_system.h"
 #include "physfs.h"
 
-#include "core/system/archive.h"
 #include "core/common/exception.h"
+#include "core/system/archive.h"
 
 #if __ANDROID__
 #include <jni.h>
@@ -159,7 +159,7 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
   return PHYSFS_ENUM_OK;
 }
 
-}  // namespace
+}
 
 IOService::IOService(const std::string& argv0) {
   const char* init_data = argv0.c_str();
@@ -174,10 +174,6 @@ IOService::IOService(const std::string& argv0) {
   if (!PHYSFS_init(init_data))
     throw Exception(Exception::kIOError, "failed to init PHYSFS.");
 
-  /* The container archiver has to be in place before anything is mounted,
-     which is why it is registered here rather than by whoever mounts a
-     container.  A build with no `admenri/` drop-in registers nothing, and the
-     call is a no-op. */
   archive::Register();
 }
 
@@ -269,4 +265,4 @@ SDL_IOStream* IOService::OpenWrite(const std::string& filename) {
   return WrapperRWops(file);
 }
 
-}  // namespace urge
+}

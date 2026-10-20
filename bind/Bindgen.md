@@ -315,11 +315,11 @@ TU，而它把若干短名字定义成宏。函数式宏会静默改写引擎自
 
 | 来源 | 宏 | 后果 |
 | --- | --- | --- |
-| `WinUser.h` | `DrawText` → `DrawTextA` | `core/scene/bitmap.h` 的 `void Bitmap::DrawText(...)` 变成 `Bitmap::DrawTextA`，引擎从未定义该成员 → 每个 TU 都链到 `urge::Bitmap::DrawTextA`，`LNK2019` |
+| `WinUser.h` | `DrawText` → `DrawTextA` | `core/canvas/bitmap.h` 的 `void Bitmap::DrawText(...)` 变成 `Bitmap::DrawTextA`，引擎从未定义该成员 → 每个 TU 都链到 `urge::Bitmap::DrawTextA`，`LNK2019` |
 | `wingdi.h` | `ERROR` → `0` | 目前 `core/` 里唯一的 `ERROR` 在字符串字面量中（`core/common/logger.h` 的 `"[URGE] [ERROR] "`），宏碰不到；但将来任何拼作 `ERROR` 的枚举量会被无声改写 |
 
 因此 `cruby_utils.h` 在**全部 ruby 头之后、第一个 `core/` 头之前** `#undef` 掉这两个宏。
-实测方式：编译一个同时包含 `cruby_utils.h` 与 `core/scene/bitmap.h` 的探针，用 `#ifdef` + `#pragma
+实测方式：编译一个同时包含 `cruby_utils.h` 与 `core/canvas/bitmap.h` 的探针，用 `#ifdef` + `#pragma
 message` 打印 —— `DrawText` 确实是宏、`ERROR` 确实是宏，而 `min`/`max` 不是（`minwindef.h`
 的那一对在本构建里已被中和）。
 

@@ -33,22 +33,22 @@
 #include "SDL3/SDL_timer.h"
 
 #include "core/audio/audio.h"
-#include "core/scene/bitmap_queue.h"
+#include "core/canvas/bitmap_queue.h"
 #include "core/common/common.h"
-#include "core/system/config.h"
-#include "core/graphics/device.h"
 #include "core/common/exception.h"
-#include "core/graphics/gpu.h"
-#include "core/graphics/gpu_utils.h"
-#include "core/graphics/imgui_manager.h"
-#include "core/input/input.h"
 #include "core/common/logger.h"
+#include "core/graphics/gpu.h"
+#include "core/input/input.h"
 #include "core/input/mouse.h"
-#include "core/graphics/pipeline.h"
-#include "core/graphics/primitive.h"
-#include "core/graphics/render_stats.h"
+#include "core/render/device.h"
+#include "core/render/gpu_utils.h"
+#include "core/render/imgui_manager.h"
+#include "core/render/pipeline.h"
+#include "core/render/primitive.h"
+#include "core/render/render_stats.h"
+#include "core/render/uniform.h"
 #include "core/scene/sprite_batch.h"
-#include "core/graphics/uniform.h"
+#include "core/system/config.h"
 
 #include <cmath>
 
@@ -83,7 +83,7 @@ wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
   return wgpu::PresentMode::Fifo;
 }
 
-}  // namespace
+}
 
 FPSLimiter::FPSLimiter(int frame_rate)
     : disabled_(
@@ -250,9 +250,6 @@ void Graphics::Update() {
         static_cast<double>(frame_begin - last_update_end_tick_) * 1000.0 /
         tick_freq);
 
-  // The same gap, reported to the profiler under its own name: between two
-  // `Graphics.update` calls the game runs its own Ruby, so this is the
-  // interpreter's working time for the frame.
   GetRenderStats().ReportScriptTime(logic_cost_ms_);
 
   Audio::Get().Update();
@@ -292,8 +289,6 @@ void Graphics::Update() {
 
   RenderStats& stats = GetRenderStats();
 
-  // The profiler snapshot the debug overlay renders: the frame cost split by
-  // engine stage, plus the history the rate numbers come from.
   const double frame_ms =
       static_cast<double>(last_update_end_tick_ - frame_begin) * 1000.0 /
       tick_freq;
@@ -312,10 +307,6 @@ void Graphics::Update() {
       timings.other_ms = 0.0;
   }
 
-  // A skipped frame does not present, so its interval spans two display
-  // frames and would look like a 30 fps hitch if it were sampled.  Only
-  // frames that actually reached the screen go into the history the rate
-  // numbers are computed from.
   if (!skip_frame)
     stats.frame_history.Push(frame_ms);
 
@@ -548,10 +539,6 @@ void Graphics::ProcessEvents() {
   while (SDL_PollEvent(&event)) {
     imgui.ProcessEvent(event);
 
-    /* The pad keeps working while the overlay holds the game input: the
-       settings panel captures pad buttons, and a controller plugged in behind
-       the overlay still has to be picked up.  Its *state* still freezes with
-       the keyboard -- see `Input::SetBlocked` below. */
     Input::Get().ProcessGamepadEvents(&event);
 
     if (!imgui.WantsGameInputBlocked()) {
@@ -566,8 +553,6 @@ void Graphics::ProcessEvents() {
       present_.configured = false;
   }
 
-  /* The keyboard stops receiving events while the overlay is up; the pad has to
-     be told, or it would keep driving the game behind the settings window. */
   Input::Get().SetBlocked(imgui.WantsGameInputBlocked());
 }
 
@@ -627,9 +612,6 @@ void Graphics::PresentInternal() {
 
   imgui.Update();
 
-  // From the moment the frame starts touching the swapchain until the image
-  // has been handed over: the acquire and the present are both blocking calls
-  // on wgpu, and when the GPU queue is full they are where a frame stalls.
   const uint64_t present_begin = SDL_GetPerformanceCounter();
 
   wgpu::SurfaceTexture surface_texture;
@@ -686,8 +668,8 @@ void Graphics::PresentInternal() {
   surface.Present();
 
   present_cost_ms_ =
-      static_cast<double>(SDL_GetPerformanceCounter() - present_begin) * 1000.0 /
-      SDL_GetPerformanceFrequency();
+      static_cast<double>(SDL_GetPerformanceCounter() - present_begin) *
+      1000.0 / SDL_GetPerformanceFrequency();
 }
 
-}  // namespace urge
+}

@@ -30,16 +30,13 @@
 #include "SDL3/SDL_video.h"
 #include "webgpu/webgpu_cpp.hpp"
 
-#include "core/input/input.h"
 #include "core/common/object.h"
+#include "core/input/input.h"
 
 namespace urge {
 
 class ImGuiManager : public Singleton<ImGuiManager> {
  public:
-  // F2 walks the overlay through these in order, so the same key reveals more
-  // detail before it hides the window again.  Declared first because the
-  // accessors below hand it out.
   enum class FpsMode { kHidden = 0, kCompact = 1, kDetailed = 2 };
 
   explicit ImGuiManager(SDL_Window* window);
@@ -69,8 +66,6 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildFPSWindow();
   void CycleFPSMode();
 
-  /* Bind whatever was just pressed -- a key or a pad button -- to the slot the
-     panel is waiting for. */
   void CaptureBinding(const Input::KeySym& binding);
 
   void StoreDisplaySettings();
@@ -92,4 +87,4 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   float ui_scale_ = 1.0f;
 };
 
-}  // namespace urge
+}
