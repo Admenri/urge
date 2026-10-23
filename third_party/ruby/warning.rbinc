@@ -1,0 +1,52 @@
+// -*- c -*-
+// DO NOT MODIFY THIS FILE DIRECTLY.
+// auto-generated file
+//   by ./tool/mk_builtin_loader.rb
+//   with warning.rb
+#include "internal/compilers.h"     /* for MAYBE_UNUSED */
+#include "internal/warnings.h"      /* for COMPILER_WARNING_PUSH */
+#include "ruby/ruby.h"              /* for VALUE */
+#include "builtin.h"                /* for RB_BUILTIN_FUNCTION */
+struct rb_execution_context_struct; /* in vm_core.h */
+
+static VALUE builtin_inline_class_53(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const category__ptr = (VALUE *)&ec->cfp->ep[-4];
+MAYBE_UNUSED(const VALUE) category = *category__ptr;
+#line 53 "warning.rb"
+return NIL_P(category);
+#line 18 "warning.rbinc"
+}
+
+static VALUE builtin_inline_class_55(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const category__ptr = (VALUE *)&ec->cfp->ep[-4];
+MAYBE_UNUSED(const VALUE) category = *category__ptr;
+#line 55 "warning.rb"
+return rb_to_symbol_type(category);
+#line 26 "warning.rbinc"
+}
+
+void Init_builtin_warning(void)
+{
+  // table definition
+  static const struct rb_builtin_function warning_table[] = {
+    RB_BUILTIN_FUNCTION(0, _bi53, builtin_inline_class_53, 0),
+    RB_BUILTIN_FUNCTION(1, rb_warn_m, rb_warn_m, 3),
+    RB_BUILTIN_FUNCTION(2, _bi55, builtin_inline_class_55, 0),
+    RB_BUILTIN_FUNCTION(-1, NULL, NULL, 0),
+  };
+
+  // arity_check
+COMPILER_WARNING_PUSH
+#if GCC_VERSION_SINCE(5, 1, 0) || defined __clang__
+COMPILER_WARNING_ERROR(-Wincompatible-pointer-types)
+#endif
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_53);
+  if (0) rb_builtin_function_check_arity3(rb_warn_m);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_55);
+COMPILER_WARNING_POP
+
+  // load
+  rb_load_with_builtin_functions("warning", warning_table);
+}

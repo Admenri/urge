@@ -1,0 +1,40 @@
+// -*- c -*-
+// DO NOT MODIFY THIS FILE DIRECTLY.
+// auto-generated file
+//   by ./tool/mk_builtin_loader.rb
+//   with timev.rb
+#include "internal/compilers.h"     /* for MAYBE_UNUSED */
+#include "internal/warnings.h"      /* for COMPILER_WARNING_PUSH */
+#include "ruby/ruby.h"              /* for VALUE */
+#include "builtin.h"                /* for RB_BUILTIN_FUNCTION */
+struct rb_execution_context_struct; /* in vm_core.h */
+
+void Init_builtin_timev(void)
+{
+  // table definition
+  static const struct rb_builtin_function timev_table[] = {
+    RB_BUILTIN_FUNCTION(0, time_s_now, time_s_now, 1),
+    RB_BUILTIN_FUNCTION(1, time_s_at1, time_s_at1, 1),
+    RB_BUILTIN_FUNCTION(2, time_s_at, time_s_at, 4),
+    RB_BUILTIN_FUNCTION(3, time_init_now, time_init_now, 1),
+    RB_BUILTIN_FUNCTION(4, time_init_parse, time_init_parse, 3),
+    RB_BUILTIN_FUNCTION(5, time_init_args, time_init_args, 7),
+    RB_BUILTIN_FUNCTION(-1, NULL, NULL, 0),
+  };
+
+  // arity_check
+COMPILER_WARNING_PUSH
+#if GCC_VERSION_SINCE(5, 1, 0) || defined __clang__
+COMPILER_WARNING_ERROR(-Wincompatible-pointer-types)
+#endif
+  if (0) rb_builtin_function_check_arity1(time_s_now);
+  if (0) rb_builtin_function_check_arity1(time_s_at1);
+  if (0) rb_builtin_function_check_arity4(time_s_at);
+  if (0) rb_builtin_function_check_arity1(time_init_now);
+  if (0) rb_builtin_function_check_arity3(time_init_parse);
+  if (0) rb_builtin_function_check_arity7(time_init_args);
+COMPILER_WARNING_POP
+
+  // load
+  rb_load_with_builtin_functions("timev", timev_table);
+}

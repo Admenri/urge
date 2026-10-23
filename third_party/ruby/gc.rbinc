@@ -1,0 +1,115 @@
+// -*- c -*-
+// DO NOT MODIFY THIS FILE DIRECTLY.
+// auto-generated file
+//   by ./tool/mk_builtin_loader.rb
+//   with gc.rb
+#include "internal/compilers.h"     /* for MAYBE_UNUSED */
+#include "internal/warnings.h"      /* for COMPILER_WARNING_PUSH */
+#include "ruby/ruby.h"              /* for VALUE */
+#include "builtin.h"                /* for RB_BUILTIN_FUNCTION */
+struct rb_execution_context_struct; /* in vm_core.h */
+
+static VALUE builtin_inline_class_445(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const hash__ptr = (VALUE *)&ec->cfp->ep[-3];
+MAYBE_UNUSED(const VALUE) hash = *hash__ptr;
+#line 445 "gc.rb"
+return RBOOL(RB_TYPE_P(hash, T_HASH));
+#line 18 "gc.rbinc"
+}
+
+static VALUE builtin_inline_class_503(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const hash_or_key__ptr = (VALUE *)&ec->cfp->ep[-3];
+MAYBE_UNUSED(const VALUE) hash_or_key = *hash_or_key__ptr;
+#line 503 "gc.rb"
+return RBOOL(!SYMBOL_P(hash_or_key) && !RB_TYPE_P(hash_or_key, T_HASH));
+#line 26 "gc.rbinc"
+}
+
+static VALUE builtin_inline_class_507(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const hash_or_key__ptr = (VALUE *)&ec->cfp->ep[-3];
+MAYBE_UNUSED(const VALUE) hash_or_key = *hash_or_key__ptr;
+#line 507 "gc.rb"
+
+      return rb_gc_latest_gc_info(hash_or_key);
+#line 35 "gc.rbinc"
+}
+
+static VALUE builtin_inline_class_537(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const flag__ptr = (VALUE *)&ec->cfp->ep[-3];
+MAYBE_UNUSED(const VALUE) flag = *flag__ptr;
+#line 537 "gc.rb"
+
+      rb_gc_impl_set_measure_total_time(rb_gc_get_objspace(), flag);
+      return flag;
+#line 45 "gc.rbinc"
+}
+
+static VALUE builtin_inline_class_550(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 550 "gc.rb"
+return 
+      RBOOL(rb_gc_impl_get_measure_total_time(rb_gc_get_objspace()));
+#line 53 "gc.rbinc"
+}
+
+static VALUE builtin_inline_class_586(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 586 "gc.rb"
+return 
+      ULL2NUM(rb_gc_impl_get_total_time(rb_gc_get_objspace()));
+#line 61 "gc.rbinc"
+}
+
+void Init_builtin_gc(void)
+{
+  // table definition
+  static const struct rb_builtin_function gc_table[] = {
+    RB_BUILTIN_FUNCTION(0, gc_start_internal, gc_start_internal, 4),
+    RB_BUILTIN_FUNCTION(1, gc_enable, gc_enable, 0),
+    RB_BUILTIN_FUNCTION(2, gc_disable, gc_disable, 0),
+    RB_BUILTIN_FUNCTION(3, gc_stress_get, gc_stress_get, 0),
+    RB_BUILTIN_FUNCTION(4, gc_stress_set_m, gc_stress_set_m, 1),
+    RB_BUILTIN_FUNCTION(5, gc_count, gc_count, 0),
+    RB_BUILTIN_FUNCTION(6, gc_stat, gc_stat, 1),
+    RB_BUILTIN_FUNCTION(7, gc_stat_heap, gc_stat_heap, 2),
+    RB_BUILTIN_FUNCTION(8, _bi445, builtin_inline_class_445, 0),
+    RB_BUILTIN_FUNCTION(9, gc_config_set, gc_config_set, 1),
+    RB_BUILTIN_FUNCTION(10, gc_config_get, gc_config_get, 0),
+    RB_BUILTIN_FUNCTION(11, _bi503, builtin_inline_class_503, 0),
+    RB_BUILTIN_FUNCTION(12, _bi507, builtin_inline_class_507, 0),
+    RB_BUILTIN_FUNCTION(13, _bi537, builtin_inline_class_537, 0),
+    RB_BUILTIN_FUNCTION(14, _bi550, builtin_inline_class_550, 0),
+    RB_BUILTIN_FUNCTION(15, _bi586, builtin_inline_class_586, 0),
+    RB_BUILTIN_FUNCTION(-1, NULL, NULL, 0),
+  };
+
+  // arity_check
+COMPILER_WARNING_PUSH
+#if GCC_VERSION_SINCE(5, 1, 0) || defined __clang__
+COMPILER_WARNING_ERROR(-Wincompatible-pointer-types)
+#endif
+  if (0) rb_builtin_function_check_arity4(gc_start_internal);
+  if (0) rb_builtin_function_check_arity0(gc_enable);
+  if (0) rb_builtin_function_check_arity0(gc_disable);
+  if (0) rb_builtin_function_check_arity0(gc_stress_get);
+  if (0) rb_builtin_function_check_arity1(gc_stress_set_m);
+  if (0) rb_builtin_function_check_arity0(gc_count);
+  if (0) rb_builtin_function_check_arity1(gc_stat);
+  if (0) rb_builtin_function_check_arity2(gc_stat_heap);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_445);
+  if (0) rb_builtin_function_check_arity1(gc_config_set);
+  if (0) rb_builtin_function_check_arity0(gc_config_get);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_503);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_507);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_537);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_550);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_586);
+COMPILER_WARNING_POP
+
+  // load
+  rb_load_with_builtin_functions("gc", gc_table);
+}

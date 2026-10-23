@@ -1,0 +1,158 @@
+// -*- c -*-
+// DO NOT MODIFY THIS FILE DIRECTLY.
+// auto-generated file
+//   by ./tool/mk_builtin_loader.rb
+//   with array.rb
+#include "internal/compilers.h"     /* for MAYBE_UNUSED */
+#include "internal/warnings.h"      /* for COMPILER_WARNING_PUSH */
+#include "ruby/ruby.h"              /* for VALUE */
+#include "builtin.h"                /* for RB_BUILTIN_FUNCTION */
+struct rb_execution_context_struct; /* in vm_core.h */
+
+static VALUE builtin_inline_class_132(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 132 "array.rb"
+return  ary_first(self);
+#line 17 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_135(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 135 "array.rb"
+return  ary_first(self);
+#line 24 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_137(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const n__ptr = (VALUE *)&ec->cfp->ep[-4];
+MAYBE_UNUSED(const VALUE) n = *n__ptr;
+#line 137 "array.rb"
+return   ary_take_first_or_last_n(self, NUM2LONG(n), ARY_TAKE_FIRST);
+#line 32 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_169(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 169 "array.rb"
+return  ary_last(self);
+#line 39 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_172(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 172 "array.rb"
+return  ary_last(self);
+#line 46 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_174(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const n__ptr = (VALUE *)&ec->cfp->ep[-4];
+MAYBE_UNUSED(const VALUE) n = *n__ptr;
+#line 174 "array.rb"
+return  ary_take_first_or_last_n(self, NUM2LONG(n), ARY_TAKE_LAST);
+#line 54 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_223(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 223 "array.rb"
+return SIZED_ENUMERATOR(self, 0, 0, ary_enum_length);
+#line 61 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_227(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const value__ptr = (VALUE *)&ec->cfp->ep[-3];
+VALUE *const _i__ptr = (VALUE *)&ec->cfp->ep[-4];
+#line 227 "array.rb"
+return  ary_fetch_next(self, LOCAL_PTR(_i), LOCAL_PTR(value));
+#line 70 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_241(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 241 "array.rb"
+return SIZED_ENUMERATOR(self, 0, 0, ary_enum_length);
+#line 77 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_247(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const value__ptr = (VALUE *)&ec->cfp->ep[-4];
+VALUE *const _i__ptr = (VALUE *)&ec->cfp->ep[-5];
+#line 247 "array.rb"
+return  ary_fetch_next(self, LOCAL_PTR(_i), LOCAL_PTR(value));
+#line 86 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_266(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 266 "array.rb"
+return SIZED_ENUMERATOR(self, 0, 0, ary_enum_length);
+#line 93 "array.rbinc"
+}
+
+static VALUE builtin_inline_class_272(struct rb_execution_context_struct *ec, const VALUE self)
+{
+VALUE *const value__ptr = (VALUE *)&ec->cfp->ep[-4];
+VALUE *const _i__ptr = (VALUE *)&ec->cfp->ep[-5];
+#line 272 "array.rb"
+return  ary_fetch_next(self, LOCAL_PTR(_i), LOCAL_PTR(value));
+#line 102 "array.rbinc"
+}
+
+void Init_builtin_array(void)
+{
+  // table definition
+  static const struct rb_builtin_function array_table[] = {
+    RB_BUILTIN_FUNCTION(0, rb_ary_shuffle_bang, rb_ary_shuffle_bang, 1),
+    RB_BUILTIN_FUNCTION(1, rb_ary_shuffle, rb_ary_shuffle, 1),
+    RB_BUILTIN_FUNCTION(2, ary_sample0, ary_sample0, 0),
+    RB_BUILTIN_FUNCTION(3, ary_sample, ary_sample, 3),
+    RB_BUILTIN_FUNCTION(4, _bi132, builtin_inline_class_132, 0),
+    RB_BUILTIN_FUNCTION(5, _bi135, builtin_inline_class_135, 0),
+    RB_BUILTIN_FUNCTION(6, _bi137, builtin_inline_class_137, 0),
+    RB_BUILTIN_FUNCTION(7, _bi169, builtin_inline_class_169, 0),
+    RB_BUILTIN_FUNCTION(8, _bi172, builtin_inline_class_172, 0),
+    RB_BUILTIN_FUNCTION(9, _bi174, builtin_inline_class_174, 0),
+    RB_BUILTIN_FUNCTION(10, rb_builtin_basic_definition_p, rb_builtin_basic_definition_p, 1),
+    RB_BUILTIN_FUNCTION(11, _bi223, builtin_inline_class_223, 0),
+    RB_BUILTIN_FUNCTION(12, _bi227, builtin_inline_class_227, 0),
+    RB_BUILTIN_FUNCTION(13, _bi241, builtin_inline_class_241, 0),
+    RB_BUILTIN_FUNCTION(14, ary_sized_alloc, ary_sized_alloc, 0),
+    RB_BUILTIN_FUNCTION(15, _bi247, builtin_inline_class_247, 0),
+    RB_BUILTIN_FUNCTION(16, _bi266, builtin_inline_class_266, 0),
+    RB_BUILTIN_FUNCTION(17, _bi272, builtin_inline_class_272, 0),
+    RB_BUILTIN_FUNCTION(-1, NULL, NULL, 0),
+  };
+
+  // arity_check
+COMPILER_WARNING_PUSH
+#if GCC_VERSION_SINCE(5, 1, 0) || defined __clang__
+COMPILER_WARNING_ERROR(-Wincompatible-pointer-types)
+#endif
+  if (0) rb_builtin_function_check_arity1(rb_ary_shuffle_bang);
+  if (0) rb_builtin_function_check_arity1(rb_ary_shuffle);
+  if (0) rb_builtin_function_check_arity0(ary_sample0);
+  if (0) rb_builtin_function_check_arity3(ary_sample);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_132);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_135);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_137);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_169);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_172);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_174);
+  if (0) rb_builtin_function_check_arity1(rb_builtin_basic_definition_p);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_223);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_227);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_241);
+  if (0) rb_builtin_function_check_arity0(ary_sized_alloc);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_247);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_266);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_272);
+COMPILER_WARNING_POP
+
+  // load
+  rb_load_with_builtin_functions("array", array_table);
+}

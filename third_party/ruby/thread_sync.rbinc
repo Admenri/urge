@@ -1,0 +1,61 @@
+// -*- c -*-
+// DO NOT MODIFY THIS FILE DIRECTLY.
+// auto-generated file
+//   by ./tool/mk_builtin_loader.rb
+//   with thread_sync.rb
+#include "internal/compilers.h"     /* for MAYBE_UNUSED */
+#include "internal/warnings.h"      /* for COMPILER_WARNING_PUSH */
+#include "ruby/ruby.h"              /* for VALUE */
+#include "builtin.h"                /* for RB_BUILTIN_FUNCTION */
+struct rb_execution_context_struct; /* in vm_core.h */
+
+static VALUE builtin_inline_class_84(struct rb_execution_context_struct *ec, const VALUE self)
+{
+#line 84 "thread_sync.rb"
+return  RBOOL(mutex_locked_p(mutex_ptr(self)));
+#line 17 "thread_sync.rbinc"
+}
+
+void Init_builtin_thread_sync(void)
+{
+  // table definition
+  static const struct rb_builtin_function thread_sync_table[] = {
+    RB_BUILTIN_FUNCTION(0, rb_queue_pop, rb_queue_pop, 2),
+    RB_BUILTIN_FUNCTION(1, rb_szqueue_pop, rb_szqueue_pop, 2),
+    RB_BUILTIN_FUNCTION(2, rb_szqueue_push, rb_szqueue_push, 3),
+    RB_BUILTIN_FUNCTION(3, _bi84, builtin_inline_class_84, 0),
+    RB_BUILTIN_FUNCTION(4, rb_mut_owned_p, rb_mut_owned_p, 0),
+    RB_BUILTIN_FUNCTION(5, rb_mut_lock, rb_mut_lock, 0),
+    RB_BUILTIN_FUNCTION(6, rb_mut_trylock, rb_mut_trylock, 0),
+    RB_BUILTIN_FUNCTION(7, rb_mut_unlock, rb_mut_unlock, 0),
+    RB_BUILTIN_FUNCTION(8, rb_mut_synchronize, rb_mut_synchronize, 0),
+    RB_BUILTIN_FUNCTION(9, rb_mut_sleep, rb_mut_sleep, 1),
+    RB_BUILTIN_FUNCTION(10, rb_condvar_signal, rb_condvar_signal, 0),
+    RB_BUILTIN_FUNCTION(11, rb_condvar_broadcast, rb_condvar_broadcast, 0),
+    RB_BUILTIN_FUNCTION(12, rb_condvar_wait, rb_condvar_wait, 2),
+    RB_BUILTIN_FUNCTION(-1, NULL, NULL, 0),
+  };
+
+  // arity_check
+COMPILER_WARNING_PUSH
+#if GCC_VERSION_SINCE(5, 1, 0) || defined __clang__
+COMPILER_WARNING_ERROR(-Wincompatible-pointer-types)
+#endif
+  if (0) rb_builtin_function_check_arity2(rb_queue_pop);
+  if (0) rb_builtin_function_check_arity2(rb_szqueue_pop);
+  if (0) rb_builtin_function_check_arity3(rb_szqueue_push);
+  if (0) rb_builtin_function_check_arity0(builtin_inline_class_84);
+  if (0) rb_builtin_function_check_arity0(rb_mut_owned_p);
+  if (0) rb_builtin_function_check_arity0(rb_mut_lock);
+  if (0) rb_builtin_function_check_arity0(rb_mut_trylock);
+  if (0) rb_builtin_function_check_arity0(rb_mut_unlock);
+  if (0) rb_builtin_function_check_arity0(rb_mut_synchronize);
+  if (0) rb_builtin_function_check_arity1(rb_mut_sleep);
+  if (0) rb_builtin_function_check_arity0(rb_condvar_signal);
+  if (0) rb_builtin_function_check_arity0(rb_condvar_broadcast);
+  if (0) rb_builtin_function_check_arity2(rb_condvar_wait);
+COMPILER_WARNING_POP
+
+  // load
+  rb_load_with_builtin_functions("thread_sync", thread_sync_table);
+}

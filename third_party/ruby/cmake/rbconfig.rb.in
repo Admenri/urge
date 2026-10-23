@@ -1,0 +1,154 @@
+# encoding: ascii-8bit
+# frozen-string-literal: false
+#
+# RbConfig for a CMake build of Ruby.
+#
+# This file replaces the one that mkconfig.rb used to derive from the
+# generated Makefile.  It contains the same information, computed by CMake.
+#
+module RbConfig
+  RUBY_VERSION.start_with?("@RUBY_LIB_VERSION_MAJOR@.@RUBY_LIB_VERSION_MINOR@.") or
+    raise "ruby lib version (@RUBY_LIB_VERSION@) doesn't match executable version (#{RUBY_VERSION})"
+
+  # Directory the interpreter was built in; only meaningful in a build tree.
+  TOPDIR = File.dirname(__FILE__).chomp!("/lib/ruby/@RUBY_LIB_VERSION@/@RUBY_ARCH@") || "@RUBY_PREFIX@"
+  DESTDIR = '' unless defined? DESTDIR
+
+  CONFIG = {}
+  CONFIG["DESTDIR"] = DESTDIR
+  CONFIG["MAJOR"] = "@RUBY_LIB_VERSION_MAJOR@"
+  CONFIG["MINOR"] = "@RUBY_LIB_VERSION_MINOR@"
+  CONFIG["TEENY"] = "@RUBY_LIB_VERSION_TEENY@"
+  CONFIG["PATCHLEVEL"] = "0"
+  CONFIG["EXEEXT"] = "@RUBY_EXEEXT@"
+  CONFIG["prefix"] = (TOPDIR || DESTDIR + "@RUBY_PREFIX@")
+  CONFIG["exec_prefix"] = "$(prefix)"
+  CONFIG["bindir"] = "$(exec_prefix)/bin"
+  CONFIG["libdir"] = "$(exec_prefix)/lib"
+  CONFIG["includedir"] = "$(prefix)/include"
+  CONFIG["oldincludedir"] = "/usr/include"
+  CONFIG["datadir"] = "$(prefix)/share"
+  CONFIG["mandir"] = "$(datadir)/man"
+  CONFIG["docdir"] = "$(datadir)/doc"
+  CONFIG["ruby_install_name"] = "@RUBY_BASE_NAME@"
+  CONFIG["RUBY_INSTALL_NAME"] = "@RUBY_BASE_NAME@"
+  CONFIG["RUBY_SO_NAME"] = "@RUBY_BASE_NAME@"
+  CONFIG["PACKAGE"] = "ruby"
+  CONFIG["PATH_SEPARATOR"] = "@RUBY_PATH_SEPARATOR@"
+  CONFIG["CONFIGURE"] = "cmake"
+  CONFIG["configure_args"] = "@RUBY_CONFIGURE_ARGS_STR@"
+  CONFIG["CC"] = "@RUBY_CC@"
+  CONFIG["CPP"] = "@RUBY_CC@ -E"
+  CONFIG["CXX"] = ""
+  CONFIG["LD"] = "@RUBY_CC@"
+  CONFIG["AR"] = "@RUBY_AR@"
+  CONFIG["ARFLAGS"] = "rcD "
+  CONFIG["RANLIB"] = "@RUBY_RANLIB@"
+  CONFIG["NM"] = ""
+  CONFIG["OBJEXT"] = "o"
+  CONFIG["LIBEXT"] = "a"
+  CONFIG["DLEXT"] = "@RUBY_DLEXT@"
+  CONFIG["SOEXT"] = "@RUBY_SOEXT@"
+  CONFIG["LDSHARED"] = "@RUBY_CC@ -shared"
+  CONFIG["CCDLFLAGS"] = ""
+  CONFIG["CFLAGS"] = "@RUBY_CFLAGS@"
+  CONFIG["CXXFLAGS"] = ""
+  CONFIG["CPPFLAGS"] = ""
+  CONFIG["LDFLAGS"] = "@RUBY_LDFLAGS@"
+  CONFIG["DLDFLAGS"] = ""
+  CONFIG["ARCH_FLAG"] = ""
+  CONFIG["STATIC"] = ""
+  CONFIG["LIBRUBY"] = "lib$(RUBY_SO_NAME).a"
+  CONFIG["LIBRUBY_SO"] = "lib$(RUBY_SO_NAME).@RUBY_SOEXT@"
+  CONFIG["LIBRUBY_A"] = "lib$(RUBY_SO_NAME)-static.a"
+  CONFIG["LIBRUBYARG"] = "$(LIBRUBYARG_STATIC)"
+  CONFIG["LIBRUBYARG_SHARED"] = ""
+  CONFIG["LIBRUBYARG_STATIC"] = "-l$(RUBY_SO_NAME)-static"
+  CONFIG["LIBRUBY_RELATIVE"] = "no"
+  CONFIG["ENABLE_SHARED"] = "no"
+  CONFIG["MAINLIBS"] = "@RUBY_LINK_LIBS_STR@"
+  CONFIG["LIBS"] = "@RUBY_LINK_LIBS_STR@"
+  CONFIG["SOLIBS"] = "$(MAINLIBS)"
+  CONFIG["DLDLIBS"] = ""
+  CONFIG["XLDFLAGS"] = ""
+  CONFIG["EXTLDFLAGS"] = ""
+  CONFIG["EXTDLDFLAGS"] = ""
+  CONFIG["RUBY_PROGRAM_VERSION"] = "@RUBY_PROGRAM_VERSION@"
+  CONFIG["RUBY_BASE_NAME"] = "@RUBY_BASE_NAME@"
+  CONFIG["RUBY_VERSION_NAME"] = "@RUBY_BASE_NAME@-@RUBY_LIB_VERSION@"
+  CONFIG["RUBY_LIB_VERSION"] = "@RUBY_LIB_VERSION@"
+  CONFIG["ruby_version"] = "@RUBY_LIB_VERSION@"
+  CONFIG["ruby_pc"] = "ruby-@RUBY_LIB_VERSION_MAJOR@.@RUBY_LIB_VERSION_MINOR@.pc"
+  CONFIG["UNIVERSAL_INTS"] = ""
+  CONFIG["UNIVERSAL_ARCHNAMES"] = ""
+  CONFIG["arch"] = "@RUBY_ARCH@"
+  CONFIG["sitearch"] = "@RUBY_ARCH@"
+  CONFIG["host_os"] = "@RUBY_HOST_OS@"
+  CONFIG["host_cpu"] = "@RUBY_HOST_CPU@"
+  CONFIG["target_os"] = "@RUBY_HOST_OS@"
+  CONFIG["target_cpu"] = "@RUBY_HOST_CPU@"
+  CONFIG["build_os"] = "@RUBY_HOST_OS@"
+  CONFIG["build_cpu"] = "@RUBY_HOST_CPU@"
+  CONFIG["target"] = "@RUBY_ARCH@"
+  CONFIG["target_alias"] = "@RUBY_ARCH@"
+  CONFIG["host"] = "@RUBY_ARCH@"
+  CONFIG["build"] = "@RUBY_ARCH@"
+
+  # --- directories --------------------------------------------------------
+  CONFIG["rubylibprefix"] = "$(libdir)/ruby"
+  CONFIG["rubyarchprefix"] = "$(rubylibprefix)/$(arch)"
+  CONFIG["rubysitearchprefix"] = "$(rubylibprefix)/$(sitearch)"
+  CONFIG["rubylibdir"] = "$(libdir)/ruby/$(ruby_version)"
+  CONFIG["rubyarchdir"] = "$(rubylibdir)/$(arch)"
+  CONFIG["archdir"] = "$(rubyarchdir)"
+  CONFIG["sitedir"] = "$(libdir)/ruby/site_ruby"
+  CONFIG["sitelibdir"] = "$(sitedir)/$(ruby_version)"
+  CONFIG["sitearchdir"] = "$(sitelibdir)/$(sitearch)"
+  CONFIG["vendordir"] = "$(libdir)/ruby/vendor_ruby"
+  CONFIG["vendorlibdir"] = "$(vendordir)/$(ruby_version)"
+  CONFIG["vendorarchdir"] = "$(vendorlibdir)/$(sitearch)"
+  CONFIG["rubyhdrdir"] = "$(includedir)/ruby-$(ruby_version)"
+  CONFIG["rubyarchhdrdir"] = "$(rubyhdrdir)/$(arch)"
+  CONFIG["sitehdrdir"] = "$(rubyhdrdir)/site_ruby"
+  CONFIG["sitearchhdrdir"] = "$(sitehdrdir)/$(sitearch)"
+  CONFIG["vendorhdrdir"] = "$(rubyhdrdir)/vendor_ruby"
+  CONFIG["vendorarchhdrdir"] = "$(vendorhdrdir)/$(sitearch)"
+  CONFIG["hdrdir"] = "$(rubyhdrdir)"
+  CONFIG["topdir"] = "$(rubyhdrdir)"
+  CONFIG["UNICODE_VERSION"] = "17.0.0"
+  CONFIG["UNICODE_EMOJI_VERSION"] = "17.0"
+
+  # MAKEFILE_CONFIG keeps the unexpanded $(...) references, exactly like the
+  # original mkconfig.rb output.
+  MAKEFILE_CONFIG = {}
+  CONFIG.each {|k, v| MAKEFILE_CONFIG[k] = v.dup}
+
+  def RbConfig::expand(val, config = CONFIG)
+    20.times do
+      newval = val.gsub(/\$\$|\$\(([^()]+)\)|\$\{([^{}]+)\}/) do
+        var = $&
+        name = $1 || $2
+        if name && config.key?(name) && config[name] != false && config[name] != var
+          config[name]
+        else
+          var
+        end
+      end
+      break if newval == val
+      val = newval
+    end
+    val
+  end
+
+  CONFIG.each_key {|k| CONFIG[k] = RbConfig.expand(CONFIG[k].dup)}
+
+  # Returns the absolute pathname of the ruby command.
+  def RbConfig.ruby
+    File.join(
+      RbConfig::CONFIG["bindir"],
+      RbConfig::CONFIG["ruby_install_name"] + RbConfig::CONFIG["EXEEXT"]
+    )
+  end
+end
+# Non-nil if configured for cross compiling.
+CROSS_COMPILING = nil unless defined? CROSS_COMPILING
