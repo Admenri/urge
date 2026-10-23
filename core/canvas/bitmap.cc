@@ -499,12 +499,9 @@ void Bitmap::SavePpm(std::string filename) {
     for (int32_t x = 0; x < size_.x; ++x) {
       const std::uint8_t* source =
           pixels.data() + (static_cast<std::size_t>(y) * size_.x + x) * 4;
-      row[static_cast<std::size_t>(x) * 3 + 0] =
-          static_cast<char>(source[0]);
-      row[static_cast<std::size_t>(x) * 3 + 1] =
-          static_cast<char>(source[1]);
-      row[static_cast<std::size_t>(x) * 3 + 2] =
-          static_cast<char>(source[2]);
+      row[static_cast<std::size_t>(x) * 3 + 0] = static_cast<char>(source[0]);
+      row[static_cast<std::size_t>(x) * 3 + 1] = static_cast<char>(source[1]);
+      row[static_cast<std::size_t>(x) * 3 + 2] = static_cast<char>(source[2]);
     }
     out.write(row.data(), static_cast<std::streamsize>(row.size()));
   }

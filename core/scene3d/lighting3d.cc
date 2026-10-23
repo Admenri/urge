@@ -131,8 +131,8 @@ wgpu::TextureView AcquireEmptyShadowView() {
     return view;
 
   wgpu::TextureDescriptor desc;
-  desc.usage = wgpu::TextureUsage::TextureBinding |
-               wgpu::TextureUsage::RenderAttachment;
+  desc.usage =
+      wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::RenderAttachment;
   desc.dimension = wgpu::TextureDimension::e2D;
   desc.size.width = 1;
   desc.size.height = 1;
@@ -166,8 +166,8 @@ wgpu::TextureView AcquireEmptyShadowArrayView() {
     return view;
 
   wgpu::TextureDescriptor desc;
-  desc.usage = wgpu::TextureUsage::TextureBinding |
-               wgpu::TextureUsage::RenderAttachment;
+  desc.usage =
+      wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::RenderAttachment;
   desc.dimension = wgpu::TextureDimension::e2D;
   desc.size.width = 1;
   desc.size.height = 1;
@@ -190,8 +190,8 @@ wgpu::TextureView AcquireEmptyShadowCubeView() {
     return view;
 
   wgpu::TextureDescriptor desc;
-  desc.usage = wgpu::TextureUsage::TextureBinding |
-               wgpu::TextureUsage::RenderAttachment;
+  desc.usage =
+      wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::RenderAttachment;
   desc.dimension = wgpu::TextureDimension::e2D;
   desc.size.width = 1;
   desc.size.height = 1;

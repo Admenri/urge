@@ -34,8 +34,7 @@ void Scene3D::Add(RefPtr<Node3D> node) {
   AddChild(std::move(node));
 }
 
-void Scene3D::CollectCameras(Node3D* node,
-                             std::vector<RefPtr<Camera3D>>& out) {
+void Scene3D::CollectCameras(Node3D* node, std::vector<RefPtr<Camera3D>>& out) {
   if (Camera3D* camera = dynamic_cast<Camera3D*>(node))
     out.push_back(RefPtr<Camera3D>(camera));
 

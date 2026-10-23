@@ -189,9 +189,9 @@ void ComputePass3D::RebuildBindGroup() {
                             "buffer.");
 
           if (found != buffer_data_.end())
-            GPUDevice::Get().queue().WriteBuffer(buffer, 0, found->second.data(),
-                                                 found->second.size() *
-                                                     sizeof(float));
+            GPUDevice::Get().queue().WriteBuffer(
+                buffer, 0, found->second.data(),
+                found->second.size() * sizeof(float));
         }
 
         entry.buffer = buffer;
@@ -339,12 +339,11 @@ RefPtr<RenderGraphPass3D> RenderGraph3D::GetPass(std::string name) {
 }
 
 void RenderGraph3D::RemovePass(std::string name) {
-  passes_.erase(
-      std::remove_if(passes_.begin(), passes_.end(),
-                     [&name](const RefPtr<RenderGraphPass3D>& pass) {
-                       return pass->GetName() == name;
-                     }),
-      passes_.end());
+  passes_.erase(std::remove_if(passes_.begin(), passes_.end(),
+                               [&name](const RefPtr<RenderGraphPass3D>& pass) {
+                                 return pass->GetName() == name;
+                               }),
+                passes_.end());
 }
 
 void RenderGraph3D::Clear() {
@@ -410,8 +409,7 @@ RefPtr<RenderTarget3D> RenderGraph3D::ShadowTarget(const std::string& name,
 
   const int32_t clamped = std::clamp(layers, 1, 6);
   auto it = shadow_targets_.find(name);
-  if (it != shadow_targets_.end() &&
-      it->second->LayerCount() == clamped &&
+  if (it != shadow_targets_.end() && it->second->LayerCount() == clamped &&
       it->second->Width() == shadow_size_)
     return it->second;
 
@@ -437,12 +435,10 @@ RefPtr<RenderTarget3D> RenderGraph3D::Target(const std::string& name) {
     return nullptr;
 
   const glm::ivec2 base = final_target_->size();
-  const int32_t width =
-      std::max(1, static_cast<int32_t>(static_cast<float>(base.x) *
-                                       desc->second.scale));
-  const int32_t height =
-      std::max(1, static_cast<int32_t>(static_cast<float>(base.y) *
-                                       desc->second.scale));
+  const int32_t width = std::max(
+      1, static_cast<int32_t>(static_cast<float>(base.x) * desc->second.scale));
+  const int32_t height = std::max(
+      1, static_cast<int32_t>(static_cast<float>(base.y) * desc->second.scale));
 
   auto it = targets_.find(name);
   if (it != targets_.end() && it->second->Width() == width &&
@@ -481,8 +477,7 @@ RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(RenderGraphPass3D* pass) {
 
   const glm::ivec2 base = final_target_->size();
   auto cached = mrt_targets_.find(key);
-  if (cached != mrt_targets_.end() &&
-      cached->second->Width() == base.x &&
+  if (cached != mrt_targets_.end() && cached->second->Width() == base.x &&
       cached->second->Height() == base.y)
     return cached->second;
 
@@ -639,8 +634,9 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
   if (!target)
     return;
 
-  RefPtr<Camera3D> camera = pass->camera() ? pass->camera()
-                                           : (camera_ ? camera_ : context->GetCamera());
+  RefPtr<Camera3D> camera = pass->camera()
+                                ? pass->camera()
+                                : (camera_ ? camera_ : context->GetCamera());
 
   glm::vec3 light_direction(0.0f, -1.0f, 0.0f);
   bool has_directional_light = false;
@@ -669,9 +665,8 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
 
     context->SetShadowCascades(cascades);
     context->SetShadowFade(pass->cascade_fade());
-    context->SetShadowSplits(
-        camera->ComputeSplits(cascades, pass->split_lambda(),
-                              pass->shadow_distance()));
+    context->SetShadowSplits(camera->ComputeSplits(
+        cascades, pass->split_lambda(), pass->shadow_distance()));
 
     for (int32_t cascade = 0; cascade < cascades; ++cascade) {
       context->SetShadow(target, matrices[cascade], cascade);
@@ -697,8 +692,9 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
 
 void RenderGraph3D::ExecuteRasterPass(RenderContext3D* context,
                                       RenderGraphPass3D* pass) {
-  RefPtr<Camera3D> camera = pass->camera() ? pass->camera()
-                                           : (camera_ ? camera_ : context->GetCamera());
+  RefPtr<Camera3D> camera = pass->camera()
+                                ? pass->camera()
+                                : (camera_ ? camera_ : context->GetCamera());
   if (camera)
     context->SetViewProjection(camera);
 
@@ -717,10 +713,9 @@ void RenderGraph3D::ExecuteRasterPass(RenderContext3D* context,
   context->BeginPassEx(target, clears, (pass->clear_flags() & 2u) != 0,
                        (pass->clear_flags() & 4u) != 0, 0);
 
-  const uint32_t layers =
-      pass->layers() != 0
-          ? pass->layers()
-          : (camera ? camera->culling_mask() : 0xFFFFFFFFu);
+  const uint32_t layers = pass->layers() != 0
+                              ? pass->layers()
+                              : (camera ? camera->culling_mask() : 0xFFFFFFFFu);
 
   context->DrawFilter(pass->tags(), pass->tag_ids(), pass->queue_min(),
                       pass->queue_max(), layers);

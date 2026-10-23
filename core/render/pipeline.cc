@@ -746,8 +746,8 @@ SpriteBase::SpriteBase()
                kFS_SpriteBatch,
                SpriteVertexLayout(),
                {},
-               {wgpu::VertexStepMode::Vertex,
-                wgpu::VertexStepMode::Instance}) {}
+               {wgpu::VertexStepMode::Vertex, wgpu::VertexStepMode::Instance}) {
+}
 
 PlaneBase::PlaneBase()
     : Pipeline(kVS_TransformBase, kFS_PlaneBase, QuadVertexLayout(), {1}) {}

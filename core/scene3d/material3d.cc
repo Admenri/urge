@@ -172,8 +172,7 @@ MaterialPass3D::MaterialPass3D(std::string tag,
                                std::string fs_wgsl)
     : tag_(std::move(tag)),
       vs_wgsl_(ComposeShader3D(vs_wgsl)),
-      fs_wgsl_(fs_wgsl.empty() ? std::string()
-                               : ComposeShader3D(fs_wgsl)) {
+      fs_wgsl_(fs_wgsl.empty() ? std::string() : ComposeShader3D(fs_wgsl)) {
   if (vs_wgsl_.empty())
     throw Exception(Exception::kRGSSError,
                     "material3d: a pass needs a vertex source.");
@@ -251,8 +250,8 @@ void MaterialPass3D::SetTextureSlot(int32_t slot, RefPtr<Bitmap> texture) {
     return;
   if (slot < 0 || slot >= static_cast<int32_t>(texture_names_.size()))
     throw Exception(Exception::kRGSSError,
-                    "material3d: texture slot {} is out of range (0..{}).", slot,
-                    static_cast<int32_t>(texture_names_.size()) - 1);
+                    "material3d: texture slot {} is out of range (0..{}).",
+                    slot, static_cast<int32_t>(texture_names_.size()) - 1);
 
   texture_map_[texture_names_[slot]] = std::move(texture);
   binding_dirty_ = true;
@@ -292,8 +291,8 @@ void MaterialPass3D::SetUniformSlot(int32_t slot, std::vector<float> values) {
     return;
   if (slot < 0 || slot >= static_cast<int32_t>(uniform_names_.size()))
     throw Exception(Exception::kRGSSError,
-                    "material3d: uniform slot {} is out of range (0..{}).", slot,
-                    static_cast<int32_t>(uniform_names_.size()) - 1);
+                    "material3d: uniform slot {} is out of range (0..{}).",
+                    slot, static_cast<int32_t>(uniform_names_.size()) - 1);
 
   uniform_map_[uniform_names_[slot]] = std::move(values);
   binding_dirty_ = true;
@@ -349,10 +348,9 @@ void MaterialPass3D::EnsureBuilder() {
   for (const Slot& slot : slots_) {
     switch (slot.kind) {
       case wgsl::BindingKind::kUniform:
-        material.push_back(
-            {slot.binding, both_stages,
-             util::BufferLayout::Uniform(false,
-                                         std::max<uint64_t>(slot.size, 16))});
+        material.push_back({slot.binding, both_stages,
+                            util::BufferLayout::Uniform(
+                                false, std::max<uint64_t>(slot.size, 16))});
         break;
       case wgsl::BindingKind::kTextureCube:
         material.push_back(
@@ -389,9 +387,8 @@ void MaterialPass3D::EnsureBuilder() {
 
   LayoutGroups groups;
   groups.push_back({kGroupView, ViewEntries()});
-  groups.push_back({kGroupMesh, fullscreen_
-                                     ? std::vector<util::LayoutEntry>()
-                                     : MeshEntries()});
+  groups.push_back({kGroupMesh, fullscreen_ ? std::vector<util::LayoutEntry>()
+                                            : MeshEntries()});
   groups.push_back({kGroupMaterial, std::move(material)});
   groups.push_back({kGroupGlobals, GlobalsEntries()});
 
@@ -415,10 +412,9 @@ void MaterialPass3D::EnsureShadowBuilder() {
   const ShaderSource vertex{vs_wgsl_, vertex_entry_, groups};
   const ShaderSource fragment{};
 
-  shadow_builder_ =
-      std::make_unique<Pipeline>(vertex, fragment, VertexLayout(),
-                                 std::set<uint32_t>{kGroupView},
-                                 MeshStepModes(instanced_));
+  shadow_builder_ = std::make_unique<Pipeline>(vertex, fragment, VertexLayout(),
+                                               std::set<uint32_t>{kGroupView},
+                                               MeshStepModes(instanced_));
 }
 
 wgpu::DepthStencilState MaterialPass3D::MakeDepthState(
@@ -427,22 +423,20 @@ wgpu::DepthStencilState MaterialPass3D::MakeDepthState(
   state.format = format;
   state.depthWriteEnabled =
       depth_write_ ? wgpu::OptionalBool::True : wgpu::OptionalBool::False;
-  state.depthCompare = depth_test_ ? static_cast<wgpu::CompareFunction>(
-                                         depth_compare_)
-                                   : wgpu::CompareFunction::Always;
+  state.depthCompare = depth_test_
+                           ? static_cast<wgpu::CompareFunction>(depth_compare_)
+                           : wgpu::CompareFunction::Always;
   state.depthBias = depth_bias_;
   state.depthBiasSlopeScale = depth_bias_slope_;
   state.depthBiasClamp = depth_bias_clamp_;
 
   if (stencil_ && IsStencilFormat(format)) {
-    state.stencilFront = MakeStencilFace(stencil_front_compare_,
-                                         stencil_front_fail_,
-                                         stencil_front_depth_fail_,
-                                         stencil_front_pass_);
-    state.stencilBack = MakeStencilFace(stencil_back_compare_,
-                                        stencil_back_fail_,
-                                        stencil_back_depth_fail_,
-                                        stencil_back_pass_);
+    state.stencilFront =
+        MakeStencilFace(stencil_front_compare_, stencil_front_fail_,
+                        stencil_front_depth_fail_, stencil_front_pass_);
+    state.stencilBack =
+        MakeStencilFace(stencil_back_compare_, stencil_back_fail_,
+                        stencil_back_depth_fail_, stencil_back_pass_);
     state.stencilReadMask = static_cast<uint32_t>(stencil_read_mask_);
     state.stencilWriteMask = static_cast<uint32_t>(stencil_write_mask_);
   } else {
@@ -486,12 +480,12 @@ wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
   primitive.topology = static_cast<wgpu::PrimitiveTopology>(topology_);
   primitive.cullMode = static_cast<wgpu::CullMode>(
       target.cull >= 0 ? target.cull : static_cast<int32_t>(cull_));
-  primitive.frontFace = target.flip_winding
-                            ? (static_cast<wgpu::FrontFace>(front_face_) ==
-                                       wgpu::FrontFace::CCW
-                                   ? wgpu::FrontFace::CW
-                                   : wgpu::FrontFace::CCW)
-                            : static_cast<wgpu::FrontFace>(front_face_);
+  primitive.frontFace =
+      target.flip_winding
+          ? (static_cast<wgpu::FrontFace>(front_face_) == wgpu::FrontFace::CCW
+                 ? wgpu::FrontFace::CW
+                 : wgpu::FrontFace::CCW)
+          : static_cast<wgpu::FrontFace>(front_face_);
 
   std::optional<wgpu::DepthStencilState> depth;
   if (target.depth != wgpu::TextureFormat::Undefined)
@@ -542,12 +536,12 @@ wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
   wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
   primitive.topology = wgpu::PrimitiveTopology::TriangleList;
   primitive.cullMode = static_cast<wgpu::CullMode>(cull_);
-  primitive.frontFace = target.flip_winding
-                            ? (static_cast<wgpu::FrontFace>(front_face_) ==
-                                       wgpu::FrontFace::CCW
-                                   ? wgpu::FrontFace::CW
-                                   : wgpu::FrontFace::CCW)
-                            : static_cast<wgpu::FrontFace>(front_face_);
+  primitive.frontFace =
+      target.flip_winding
+          ? (static_cast<wgpu::FrontFace>(front_face_) == wgpu::FrontFace::CCW
+                 ? wgpu::FrontFace::CW
+                 : wgpu::FrontFace::CCW)
+          : static_cast<wgpu::FrontFace>(front_face_);
 
   wgpu::MultisampleState samples;
   samples.count = target.samples;
@@ -589,8 +583,9 @@ void MaterialPass3D::RebuildBindGroup() {
           desc.size = size;
           buffer = GPUDevice::Get().device().CreateBuffer(&desc);
           if (buffer == nullptr)
-            throw Exception(Exception::kGPUError,
-                            "material3d: the device rejected a uniform buffer.");
+            throw Exception(
+                Exception::kGPUError,
+                "material3d: the device rejected a uniform buffer.");
         }
 
         std::vector<float> data(static_cast<size_t>(size / 4), 0.0f);
@@ -661,8 +656,8 @@ RefPtr<MaterialPass3D> Material3D::AddPass(std::string tag,
                       "material3d: the pass tag '{}' is already used.", tag);
   }
 
-  auto pass = MakeRefCounted<MaterialPass3D>(
-      std::move(tag), std::move(vs_wgsl), std::move(fs_wgsl));
+  auto pass = MakeRefCounted<MaterialPass3D>(std::move(tag), std::move(vs_wgsl),
+                                             std::move(fs_wgsl));
   passes_.push_back(pass);
   return pass;
 }

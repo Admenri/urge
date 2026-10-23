@@ -71,8 +71,7 @@ void Animation3D::AddTrack(int32_t bone,
   track.bone = bone;
   track.path = path;
   track.stride = stride;
-  track.interpolation =
-      interpolation == kStep ? kStep : kLinear;
+  track.interpolation = interpolation == kStep ? kStep : kLinear;
   track.times = std::move(times);
   track.values = std::move(values);
 
@@ -82,7 +81,8 @@ void Animation3D::AddTrack(int32_t bone,
 
 void Animation3D::AddEvent(float time, std::string name) {
   if (name.empty())
-    throw Exception(Exception::kRGSSError, "animation3d: an event needs a name.");
+    throw Exception(Exception::kRGSSError,
+                    "animation3d: an event needs a name.");
 
   Event event;
   event.time = std::max(0.0f, time);
@@ -105,9 +105,8 @@ void Animation3D::CollectEvents(float from,
                                 std::vector<std::string>& out) const {
   const bool wrapped = to < from;
   for (const Event& event : events_) {
-    const bool crossed =
-        wrapped ? (event.time > from || event.time <= to)
-                : (event.time > from && event.time <= to);
+    const bool crossed = wrapped ? (event.time > from || event.time <= to)
+                                 : (event.time > from && event.time <= to);
     if (crossed)
       out.push_back(event.name);
   }
@@ -121,7 +120,8 @@ float Animation3D::EventTime(int32_t index) const {
 
 void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
   if (!skeleton)
-    throw Exception(Exception::kRGSSError, "animation3d: a skeleton is needed.");
+    throw Exception(Exception::kRGSSError,
+                    "animation3d: a skeleton is needed.");
 
   if (skeleton->pose_open()) {
     Sample(skeleton.get(), time, 1.0f, nullptr);
@@ -135,7 +135,8 @@ void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
 
 void Animation3D::Blend(RefPtr<Skeleton3D> skeleton, float time, float weight) {
   if (!skeleton)
-    throw Exception(Exception::kRGSSError, "animation3d: a skeleton is needed.");
+    throw Exception(Exception::kRGSSError,
+                    "animation3d: a skeleton is needed.");
   if (!skeleton->pose_open())
     throw Exception(Exception::kRGSSError,
                     "animation3d: call skeleton.begin_pose before blend.");
@@ -148,10 +149,12 @@ void Animation3D::BlendMasked(RefPtr<Skeleton3D> skeleton,
                               float weight,
                               RefPtr<BoneMask3D> mask) {
   if (!skeleton)
-    throw Exception(Exception::kRGSSError, "animation3d: a skeleton is needed.");
-  if (!skeleton->pose_open())
     throw Exception(Exception::kRGSSError,
-                    "animation3d: call skeleton.begin_pose before blend_masked.");
+                    "animation3d: a skeleton is needed.");
+  if (!skeleton->pose_open())
+    throw Exception(
+        Exception::kRGSSError,
+        "animation3d: call skeleton.begin_pose before blend_masked.");
 
   Sample(skeleton.get(), time, std::clamp(weight, 0.0f, 1.0f),
          mask ? mask->weights() : nullptr);

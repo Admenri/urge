@@ -149,9 +149,9 @@ std::vector<glm::mat4> Camera3D::ComputeCascades(
 
       for (int32_t corner = 0; corner < 4; ++corner) {
         const float x = (corner == 1 || corner == 2) ? half_width : -half_width;
-        const float y = (corner == 2 || corner == 3) ? half_height : -half_height;
-        const glm::vec4 world =
-            camera_to_world * glm::vec4(x, y, -depth, 1.0f);
+        const float y =
+            (corner == 2 || corner == 3) ? half_height : -half_height;
+        const glm::vec4 world = camera_to_world * glm::vec4(x, y, -depth, 1.0f);
         corners[index++] = glm::vec3(world);
       }
     }
@@ -206,10 +206,10 @@ std::vector<float> Camera3D::ShadowCascades(RefPtr<Vector3> light_direction,
                                             int32_t shadow_size) {
   const glm::vec3 direction =
       light_direction ? light_direction->data : glm::vec3(0.0f, -1.0f, 0.0f);
-  const std::vector<glm::mat4> matrices = ComputeCascades(
-      direction, count, lambda,
-      glm::ivec2(std::max(1, width), std::max(1, height)), max_distance,
-      shadow_size);
+  const std::vector<glm::mat4> matrices =
+      ComputeCascades(direction, count, lambda,
+                      glm::ivec2(std::max(1, width), std::max(1, height)),
+                      max_distance, shadow_size);
 
   std::vector<float> result;
   result.reserve(matrices.size() * 16);

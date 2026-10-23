@@ -342,10 +342,11 @@ GlbFile ParseGlb(const std::vector<uint8_t>& data, const std::string& path) {
       break;
 
     if (chunk_type == 0x4E4F534Au) {
-      file.json = JsonParser(std::string_view(
-                                 reinterpret_cast<const char*>(data.data() + begin),
-                                 end - begin))
-                      .Parse();
+      file.json =
+          JsonParser(std::string_view(
+                         reinterpret_cast<const char*>(data.data() + begin),
+                         end - begin))
+              .Parse();
     } else if (chunk_type == 0x004E4942u) {
       file.bin.assign(data.begin() + begin, data.begin() + end);
     }
@@ -355,7 +356,8 @@ GlbFile ParseGlb(const std::vector<uint8_t>& data, const std::string& path) {
   }
 
   if (file.json.IsNull())
-    throw Exception(Exception::kRGSSError, "gltf: '{}' has no JSON chunk.", path);
+    throw Exception(Exception::kRGSSError, "gltf: '{}' has no JSON chunk.",
+                    path);
   return file;
 }
 
@@ -441,13 +443,14 @@ AccessorData ReadAccessor(const GlbFile& glb, int index) {
   if (view_index < 0 || result.count == 0 || result.components == 0)
     return result;
 
-  const Json& view = glb.json["bufferViews"].At(static_cast<size_t>(view_index));
+  const Json& view =
+      glb.json["bufferViews"].At(static_cast<size_t>(view_index));
   const size_t component_size = ComponentSize(component_type);
   const size_t base = static_cast<size_t>(view["byteOffset"].Int()) +
                       static_cast<size_t>(accessor["byteOffset"].Int());
   const size_t packed = result.components * component_size;
-  const size_t stride = static_cast<size_t>(
-      view["byteStride"].Int(static_cast<int>(packed)));
+  const size_t stride =
+      static_cast<size_t>(view["byteStride"].Int(static_cast<int>(packed)));
 
   const bool normalized = accessor["normalized"].Bool();
   double scale = 1.0;
@@ -558,11 +561,10 @@ glm::mat4 NodeMatrix(const Json& node) {
 
   glm::quat rotation(1.0f, 0.0f, 0.0f, 0.0f);
   if (node["rotation"].IsArray() && node["rotation"].Size() == 4) {
-    rotation = glm::quat(
-        static_cast<float>(node["rotation"].At(3).Number(1.0)),
-        static_cast<float>(node["rotation"].At(0).Number()),
-        static_cast<float>(node["rotation"].At(1).Number()),
-        static_cast<float>(node["rotation"].At(2).Number()));
+    rotation = glm::quat(static_cast<float>(node["rotation"].At(3).Number(1.0)),
+                         static_cast<float>(node["rotation"].At(0).Number()),
+                         static_cast<float>(node["rotation"].At(1).Number()),
+                         static_cast<float>(node["rotation"].At(2).Number()));
     rotation = glm::normalize(rotation);
   }
 
@@ -589,8 +591,8 @@ Transform Decompose(const glm::mat4& matrix) {
   const glm::vec3 axis_x(matrix[0]);
   const glm::vec3 axis_y(matrix[1]);
   const glm::vec3 axis_z(matrix[2]);
-  result.scale = glm::vec3(glm::length(axis_x), glm::length(axis_y),
-                           glm::length(axis_z));
+  result.scale =
+      glm::vec3(glm::length(axis_x), glm::length(axis_y), glm::length(axis_z));
 
   glm::mat3 basis(axis_x / std::max(result.scale.x, 1.0e-6f),
                   axis_y / std::max(result.scale.y, 1.0e-6f),
@@ -600,8 +602,8 @@ Transform Decompose(const glm::mat4& matrix) {
 }
 
 MaterialSource3D BuildMaterialSource(const GlbFile& glb,
-                                  const std::vector<RefPtr<Bitmap>>& images,
-                                  size_t index) {
+                                     const std::vector<RefPtr<Bitmap>>& images,
+                                     size_t index) {
   const Json& definition = glb.json["materials"].At(index);
   const Json& pbr = definition["pbrMetallicRoughness"];
 
@@ -619,7 +621,8 @@ MaterialSource3D BuildMaterialSource(const GlbFile& glb,
   if (texture_index >= 0 &&
       static_cast<size_t>(texture_index) < glb.json["textures"].Size()) {
     const int image_index =
-        glb.json["textures"].At(static_cast<size_t>(texture_index))["source"]
+        glb.json["textures"]
+            .At(static_cast<size_t>(texture_index))["source"]
             .Int(-1);
     if (image_index >= 0 && static_cast<size_t>(image_index) < images.size())
       source.texture = images[static_cast<size_t>(image_index)];
@@ -634,9 +637,9 @@ RefPtr<Material3D> BuildMaterial(const MaterialSource3D& source, bool unlit) {
       std::string(kLitVertexShader),
       std::string(unlit ? kUnlitFragmentShader : kLitFragmentShader));
 
-  pass->SetUniform("u_mat", {source.color.r, source.color.g, source.color.b,
-                             source.color.a, source.roughness, source.metallic,
-                             0.0f, 0.0f});
+  pass->SetUniform(
+      "u_mat", {source.color.r, source.color.g, source.color.b, source.color.a,
+                source.roughness, source.metallic, 0.0f, 0.0f});
   pass->Attr_TagId(1);
 
   if (source.transparent) {
@@ -685,9 +688,12 @@ RefPtr<Mesh3D> BuildMesh(const GlbFile& glb,
 
       if (normals.count > i && normals.components >= 3) {
         const size_t normal_offset = i * normals.components;
-        vertices.push_back(static_cast<float>(normals.values[normal_offset + 0]));
-        vertices.push_back(static_cast<float>(normals.values[normal_offset + 1]));
-        vertices.push_back(static_cast<float>(normals.values[normal_offset + 2]));
+        vertices.push_back(
+            static_cast<float>(normals.values[normal_offset + 0]));
+        vertices.push_back(
+            static_cast<float>(normals.values[normal_offset + 1]));
+        vertices.push_back(
+            static_cast<float>(normals.values[normal_offset + 2]));
       } else {
         vertices.push_back(0.0f);
         vertices.push_back(1.0f);
@@ -768,8 +774,7 @@ void GLTFModel3D::Load(std::string path) {
       continue;
     }
 
-    SDL_IOStream* stream =
-        SDL_IOFromConstMem(glb.bin.data() + offset, length);
+    SDL_IOStream* stream = SDL_IOFromConstMem(glb.bin.data() + offset, length);
     SDL_Surface* surface = stream ? IMG_Load_IO(stream, true) : nullptr;
     images_.push_back(Bitmap::FromSurface(surface));
   }
@@ -790,52 +795,50 @@ void GLTFModel3D::Load(std::string path) {
 
   std::vector<RefPtr<Mesh3D>> built(meshes_json.Size());
 
-  std::function<void(size_t, Node3D*)> build_node =
-      [&](size_t node_index, Node3D* parent) {
-        const Json& node = glb.json["nodes"].At(node_index);
+  std::function<void(size_t, Node3D*)> build_node = [&](size_t node_index,
+                                                        Node3D* parent) {
+    const Json& node = glb.json["nodes"].At(node_index);
 
-        RefPtr<Node3D> object;
-        if (node["mesh"].IsNumber()) {
-          const size_t mesh_index = static_cast<size_t>(node["mesh"].Int());
-          if (mesh_index >= built.size()) {
-            built.resize(mesh_index + 1);
-          }
-          if (!built[mesh_index]) {
-            std::vector<SubMesh3D> submeshes;
-            built[mesh_index] = BuildMesh(glb, mesh_index, &submeshes);
-            meshes_[mesh_index] = built[mesh_index];
-          }
+    RefPtr<Node3D> object;
+    if (node["mesh"].IsNumber()) {
+      const size_t mesh_index = static_cast<size_t>(node["mesh"].Int());
+      if (mesh_index >= built.size()) {
+        built.resize(mesh_index + 1);
+      }
+      if (!built[mesh_index]) {
+        std::vector<SubMesh3D> submeshes;
+        built[mesh_index] = BuildMesh(glb, mesh_index, &submeshes);
+        meshes_[mesh_index] = built[mesh_index];
+      }
 
-          auto renderer = MakeRefCounted<MeshRenderer3D>();
-          renderer->Attr_Mesh(built[mesh_index]);
-          const Json& primitives = glb.json["meshes"].At(mesh_index)["primitives"];
-          for (size_t p = 0; p < primitives.Size(); ++p) {
-            const int slot = std::max(0, primitives.At(p)["material"].Int(0));
-            const size_t material_index = static_cast<size_t>(slot);
-            renderer->SetMaterial(
-                slot, material_index < materials_.size()
-                          ? materials_[material_index]
-                          : materials_.front());
-          }
-          object = renderer;
-        } else {
-          object = MakeRefCounted<Node3D>();
-        }
+      auto renderer = MakeRefCounted<MeshRenderer3D>();
+      renderer->Attr_Mesh(built[mesh_index]);
+      const Json& primitives = glb.json["meshes"].At(mesh_index)["primitives"];
+      for (size_t p = 0; p < primitives.Size(); ++p) {
+        const int slot = std::max(0, primitives.At(p)["material"].Int(0));
+        const size_t material_index = static_cast<size_t>(slot);
+        renderer->SetMaterial(slot, material_index < materials_.size()
+                                        ? materials_[material_index]
+                                        : materials_.front());
+      }
+      object = renderer;
+    } else {
+      object = MakeRefCounted<Node3D>();
+    }
 
-        const Transform transform = Decompose(NodeMatrix(node));
-        object->SetLocalPosition(transform.position);
-        object->SetLocalRotation(glm::vec4(transform.rotation.x,
-                                           transform.rotation.y,
-                                           transform.rotation.z,
-                                           transform.rotation.w));
-        object->SetLocalScale(transform.scale);
-        parent->AddChild(object);
-        ++node_count_;
+    const Transform transform = Decompose(NodeMatrix(node));
+    object->SetLocalPosition(transform.position);
+    object->SetLocalRotation(
+        glm::vec4(transform.rotation.x, transform.rotation.y,
+                  transform.rotation.z, transform.rotation.w));
+    object->SetLocalScale(transform.scale);
+    parent->AddChild(object);
+    ++node_count_;
 
-        const Json& children = node["children"];
-        for (size_t i = 0; i < children.Size(); ++i)
-          build_node(static_cast<size_t>(children.At(i).Int()), object.get());
-      };
+    const Json& children = node["children"];
+    for (size_t i = 0; i < children.Size(); ++i)
+      build_node(static_cast<size_t>(children.At(i).Int()), object.get());
+  };
 
   const Json& scenes = glb.json["scenes"];
   const size_t scene_index = static_cast<size_t>(glb.json["scene"].Int(0));
@@ -855,10 +858,9 @@ void GLTFModel3D::Load(std::string path) {
         const float radius = mesh->bounds_radius();
         const glm::mat4 world = node->world_matrix();
         for (int corner = 0; corner < 8; ++corner) {
-          const glm::vec3 offset(
-              (corner & 1) ? radius : -radius,
-              (corner & 2) ? radius : -radius,
-              (corner & 4) ? radius : -radius);
+          const glm::vec3 offset((corner & 1) ? radius : -radius,
+                                 (corner & 2) ? radius : -radius,
+                                 (corner & 4) ? radius : -radius);
           const glm::vec3 point =
               glm::vec3(world * glm::vec4(center + offset, 1.0f));
           minimum = glm::min(minimum, point);
@@ -881,10 +883,9 @@ void GLTFModel3D::Load(std::string path) {
   bounds_min_ = minimum;
   bounds_max_ = maximum;
 
-  const double elapsed =
-      std::chrono::duration<double, std::milli>(
-          std::chrono::steady_clock::now() - started)
-          .count();
+  const double elapsed = std::chrono::duration<double, std::milli>(
+                             std::chrono::steady_clock::now() - started)
+                             .count();
 
   LOGGER_INFO(
       "gltf: '{}' -> {} nodes, {} meshes, {} materials, {} images in {:.1f} ms",

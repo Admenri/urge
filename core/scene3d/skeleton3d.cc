@@ -159,10 +159,9 @@ void Skeleton3D::ResetPose() {
 
   for (size_t i = 0; i < bones_.size(); ++i) {
     bones_[i]->SetLocalPosition(rest_[i].position);
-    bones_[i]->SetLocalRotation(glm::vec4(rest_[i].rotation.x,
-                                         rest_[i].rotation.y,
-                                         rest_[i].rotation.z,
-                                         rest_[i].rotation.w));
+    bones_[i]->SetLocalRotation(
+        glm::vec4(rest_[i].rotation.x, rest_[i].rotation.y, rest_[i].rotation.z,
+                  rest_[i].rotation.w));
     bones_[i]->SetLocalScale(rest_[i].scale);
   }
 }

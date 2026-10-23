@@ -39,8 +39,8 @@ namespace {
 
 constexpr size_t kFloatsPerVertex = 8;
 constexpr size_t kStaticStride = kFloatsPerVertex * sizeof(float);
-constexpr size_t kSkinnedStride = kStaticStride + 4 * sizeof(uint32_t) +
-                                  4 * sizeof(float);
+constexpr size_t kSkinnedStride =
+    kStaticStride + 4 * sizeof(uint32_t) + 4 * sizeof(float);
 
 }
 
@@ -220,8 +220,7 @@ void Mesh3D::Upload() {
       throw Exception(Exception::kGPUError,
                       "mesh3d: the device rejected the vertex buffer.");
     GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0,
-                                         vertex_bytes_.data(),
-                                         descriptor.size);
+                                         vertex_bytes_.data(), descriptor.size);
   }
 
   if (!indices_.empty()) {
@@ -260,7 +259,8 @@ wgpu::Buffer Mesh3D::AcquireJointBuffer(uint64_t frame_token) {
     recreated = true;
   }
 
-  GPUDevice::Get().queue().WriteBuffer(joint_buffer_, 0, matrices.data(), bytes);
+  GPUDevice::Get().queue().WriteBuffer(joint_buffer_, 0, matrices.data(),
+                                       bytes);
 
   joint_frame_ = frame_token;
   if (recreated)
@@ -275,7 +275,8 @@ wgpu::BindGroup Mesh3D::AcquireGroup(uint32_t chunk_index,
     joints = AcquireDummyJointBuffer();
 
   auto it = groups_.find(chunk_index);
-  if (it != groups_.end() && it->second.mesh_buffer.Get() == mesh_buffer.Get() &&
+  if (it != groups_.end() &&
+      it->second.mesh_buffer.Get() == mesh_buffer.Get() &&
       it->second.joints.Get() == joints.Get())
     return it->second.group;
 

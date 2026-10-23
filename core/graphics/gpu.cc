@@ -103,9 +103,8 @@ void GPUBindGroupLayoutDescriptor::AddTexture(uint32_t binding,
       sample_type ? static_cast<wgpu::TextureSampleType>(sample_type)
                   : wgpu::TextureSampleType::Float;
   entry.texture.viewDimension =
-      view_dimension
-          ? static_cast<wgpu::TextureViewDimension>(view_dimension)
-          : wgpu::TextureViewDimension::e2D;
+      view_dimension ? static_cast<wgpu::TextureViewDimension>(view_dimension)
+                     : wgpu::TextureViewDimension::e2D;
   entry.texture.multisampled = false;
   entries.push_back(entry);
 }
@@ -116,9 +115,9 @@ void GPUBindGroupLayoutDescriptor::AddSampler(uint32_t binding,
   wgpu::BindGroupLayoutEntry entry = {};
   entry.binding = binding;
   entry.visibility = static_cast<wgpu::ShaderStage>(visibility);
-  entry.sampler.type =
-      sampler_type ? static_cast<wgpu::SamplerBindingType>(sampler_type)
-                   : wgpu::SamplerBindingType::Filtering;
+  entry.sampler.type = sampler_type
+                           ? static_cast<wgpu::SamplerBindingType>(sampler_type)
+                           : wgpu::SamplerBindingType::Filtering;
   entries.push_back(entry);
 }
 
@@ -215,8 +214,8 @@ void GPURenderPipelineDescriptor::SetColorBlend(uint32_t index,
   color.dstFactor = static_cast<wgpu::BlendFactor>(dst_factor);
 
   wgpu::BlendComponent alpha;
-  alpha.operation = static_cast<wgpu::BlendOperation>(
-      alpha_op ? alpha_op : color_op);
+  alpha.operation =
+      static_cast<wgpu::BlendOperation>(alpha_op ? alpha_op : color_op);
   alpha.srcFactor =
       static_cast<wgpu::BlendFactor>(alpha_src ? alpha_src : src_factor);
   alpha.dstFactor =
@@ -471,9 +470,9 @@ RefPtr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
   desc.colorAttachments = attachments.data();
   desc.depthStencilAttachment =
       descriptor->depth_view ? &depth_stencil : nullptr;
-  desc.occlusionQuerySet =
-      descriptor->occlusion_query_set ? descriptor->occlusion_query_set->handle()
-                                      : nullptr;
+  desc.occlusionQuerySet = descriptor->occlusion_query_set
+                               ? descriptor->occlusion_query_set->handle()
+                               : nullptr;
 
   wgpu::RenderPassEncoder encoder = encoder_.BeginRenderPass(&desc);
   if (!encoder)
@@ -522,9 +521,8 @@ void GPUCommandEncoder::CopyBufferToTexture(RefPtr<GPUBuffer> source,
   source_info.layout.bytesPerRow = bytes_per_row;
   source_info.layout.rowsPerImage = rows_per_image;
 
-  const wgpu::TexelCopyTextureInfo destination_info =
-      CopyTextureInfo(destination, destination_mip_level, destination_x,
-                      destination_y);
+  const wgpu::TexelCopyTextureInfo destination_info = CopyTextureInfo(
+      destination, destination_mip_level, destination_x, destination_y);
 
   wgpu::Extent3D copy_size;
   copy_size.width = width;
@@ -564,18 +562,17 @@ void GPUCommandEncoder::CopyTextureToBuffer(RefPtr<GPUTexture> source,
   encoder_.CopyTextureToBuffer(&source_info, &destination_info, &copy_size);
 }
 
-void GPUCommandEncoder::CopyTextureToTexture(
-    RefPtr<GPUTexture> source,
-    uint32_t source_mip_level,
-    uint32_t source_x,
-    uint32_t source_y,
-    RefPtr<GPUTexture> destination,
-    uint32_t destination_mip_level,
-    uint32_t destination_x,
-    uint32_t destination_y,
-    uint32_t width,
-    uint32_t height,
-    uint32_t depth_or_array_layers) {
+void GPUCommandEncoder::CopyTextureToTexture(RefPtr<GPUTexture> source,
+                                             uint32_t source_mip_level,
+                                             uint32_t source_x,
+                                             uint32_t source_y,
+                                             RefPtr<GPUTexture> destination,
+                                             uint32_t destination_mip_level,
+                                             uint32_t destination_x,
+                                             uint32_t destination_y,
+                                             uint32_t width,
+                                             uint32_t height,
+                                             uint32_t depth_or_array_layers) {
   if (!source || !destination)
     throw Exception(Exception::kGPUError, "missing copy texture");
   if (source->handle().Get() == destination->handle().Get())
@@ -583,9 +580,8 @@ void GPUCommandEncoder::CopyTextureToTexture(
 
   const wgpu::TexelCopyTextureInfo source_info =
       CopyTextureInfo(source, source_mip_level, source_x, source_y);
-  const wgpu::TexelCopyTextureInfo destination_info =
-      CopyTextureInfo(destination, destination_mip_level, destination_x,
-                      destination_y);
+  const wgpu::TexelCopyTextureInfo destination_info = CopyTextureInfo(
+      destination, destination_mip_level, destination_x, destination_y);
 
   wgpu::Extent3D copy_size;
   copy_size.width = width;
@@ -990,8 +986,7 @@ RefPtr<GPURenderPipeline> GPU::CreateRenderPipeline(
     wgpu::ColorTargetState target;
     target.format = static_cast<wgpu::TextureFormat>(source.format);
     target.blend = source.blend ? &*source.blend : nullptr;
-    target.writeMask =
-        static_cast<wgpu::ColorWriteMask>(source.write_mask);
+    target.writeMask = static_cast<wgpu::ColorWriteMask>(source.write_mask);
     targets.push_back(target);
   }
 

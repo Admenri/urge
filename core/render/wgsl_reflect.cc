@@ -124,9 +124,7 @@ class Reflector {
     ParseStructs();
   }
 
-  std::vector<std::pair<uint32_t, uint32_t>> Bindings() const {
-    return order_;
-  }
+  std::vector<std::pair<uint32_t, uint32_t>> Bindings() const { return order_; }
 
   std::vector<BindingInfo> Infos() const {
     std::vector<BindingInfo> result;
@@ -139,7 +137,8 @@ class Reflector {
     return result;
   }
 
-  std::optional<util::LayoutEntry> Entry(uint32_t group, uint32_t binding) const {
+  std::optional<util::LayoutEntry> Entry(uint32_t group,
+                                         uint32_t binding) const {
     auto it = entries_.find({group, binding});
     if (it == entries_.end())
       return std::nullopt;
@@ -153,12 +152,13 @@ class Reflector {
     static const std::regex kBinding(
         R"(@group\((\d+)\)\s*@binding\((\d+)\)\s*var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);)");
 
-    const auto begin = std::sregex_iterator(source_.begin(), source_.end(),
-                                            kBinding);
+    const auto begin =
+        std::sregex_iterator(source_.begin(), source_.end(), kBinding);
     const auto end = std::sregex_iterator();
     for (auto it = begin; it != end; ++it) {
       const uint32_t group = static_cast<uint32_t>(std::stoul((*it)[1].str()));
-      const uint32_t binding = static_cast<uint32_t>(std::stoul((*it)[2].str()));
+      const uint32_t binding =
+          static_cast<uint32_t>(std::stoul((*it)[2].str()));
       const std::string address = Trim((*it)[3].str());
       const std::string name = (*it)[4].str();
       const std::string type = Trim((*it)[5].str());
@@ -205,12 +205,11 @@ class Reflector {
     if (address.rfind("storage", 0) == 0) {
       const TypeLayout layout = SizeOf(type);
       if (address.find("read_write") != std::string::npos)
-        return util::LayoutEntry{binding, stage,
-                                 util::BufferLayout::Storage(false,
-                                                             layout.size)};
-      return util::LayoutEntry{binding, stage,
-                               util::BufferLayout::ReadOnlyStorage(
-                                   false, layout.size)};
+        return util::LayoutEntry{
+            binding, stage, util::BufferLayout::Storage(false, layout.size)};
+      return util::LayoutEntry{
+          binding, stage,
+          util::BufferLayout::ReadOnlyStorage(false, layout.size)};
     }
 
     if (type == "sampler")
@@ -228,14 +227,14 @@ class Reflector {
       const size_t open = type.find('<');
       if (open == std::string::npos || comma == std::string::npos)
         return std::nullopt;
-      const std::string format_name = Trim(type.substr(open + 1, comma - open - 1));
+      const std::string format_name =
+          Trim(type.substr(open + 1, comma - open - 1));
       const wgpu::TextureFormat format = ParseTextureFormat(format_name);
       if (format == wgpu::TextureFormat::Undefined)
         return std::nullopt;
       return util::LayoutEntry{
           binding, stage,
-          util::StorageTextureLayout::WriteOnly(
-              format, DimensionOfType(type))};
+          util::StorageTextureLayout::WriteOnly(format, DimensionOfType(type))};
     }
     if (type.rfind("texture_cube", 0) == 0)
       return util::LayoutEntry{
@@ -415,10 +414,11 @@ std::vector<LayoutGroup> Reflect(std::string_view vertex_source,
   std::vector<LayoutGroup> result;
   result.reserve(groups.size());
   for (auto& [group, entries] : groups) {
-    std::sort(entries.begin(), entries.end(),
-              [](const util::LayoutEntry& left, const util::LayoutEntry& right) {
-                return std::get<0>(left) < std::get<0>(right);
-              });
+    std::sort(
+        entries.begin(), entries.end(),
+        [](const util::LayoutEntry& left, const util::LayoutEntry& right) {
+          return std::get<0>(left) < std::get<0>(right);
+        });
     result.emplace_back(group, std::move(entries));
   }
   return result;

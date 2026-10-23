@@ -77,10 +77,7 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
 }
 
 World3D::World3D(int32_t x, int32_t y, int32_t width, int32_t height)
-    : x_(x),
-      y_(y),
-      width_(std::max(1, width)),
-      height_(std::max(1, height)) {
+    : x_(x), y_(y), width_(std::max(1, width)), height_(std::max(1, height)) {
   Node::SetupTrait(this);
   Attr_Parent(nullptr);
 }
@@ -112,7 +109,7 @@ void World3D::EnsureTarget() {
     return;
 
   target_ = MakeRefCounted<RenderTarget3D>(width_, height_, format_,
-                                          "depth32float", 1);
+                                           "depth32float", 1);
   texture_group_ = nullptr;
 }
 
@@ -131,8 +128,7 @@ void World3D::EnsureQuadPipeline() {
   const wgpu::ShaderModule module = device.CreateShaderModule(&module_desc);
 
   const std::vector<util::LayoutEntry> quad_entries = {
-      {0, wgpu::ShaderStage::Vertex,
-       util::BufferLayout::Uniform(false, 32)},
+      {0, wgpu::ShaderStage::Vertex, util::BufferLayout::Uniform(false, 32)},
   };
   const std::vector<util::LayoutEntry> texture_entries = {
       {0, wgpu::ShaderStage::Fragment,
@@ -213,8 +209,9 @@ void World3D::UpdateQuad(glm::ivec2 target_size) {
     glm::vec4 target;
   } data;
 
-  data.rect = glm::vec4(static_cast<float>(x_), static_cast<float>(y_),
-                        static_cast<float>(width_), static_cast<float>(height_));
+  data.rect =
+      glm::vec4(static_cast<float>(x_), static_cast<float>(y_),
+                static_cast<float>(width_), static_cast<float>(height_));
   const glm::vec2 size(static_cast<float>(std::max(1, target_size.x)),
                        static_cast<float>(std::max(1, target_size.y)));
   data.target = glm::vec4(size, 1.0f / size.x, 1.0f / size.y);

@@ -687,8 +687,8 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
   const int32_t inner_height = dest.height - unit * 2;
 
   if (inner_width > 0) {
-    emit_patch(RectI(src.x + source_unit, src.y,
-                     src.width - source_unit * 2, source_unit),
+    emit_patch(RectI(src.x + source_unit, src.y, src.width - source_unit * 2,
+                     source_unit),
                RectI(left + unit, top, inner_width, unit));
     emit_patch(RectI(src.x + source_unit, src.y + src.height - source_unit,
                      src.width - source_unit * 2, source_unit),
@@ -706,8 +706,7 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
 
   if (draw_center && inner_width > 0 && inner_height > 0) {
     emit_patch(RectI(src.x + source_unit, src.y + source_unit,
-                     src.width - source_unit * 2,
-                     src.height - source_unit * 2),
+                     src.width - source_unit * 2, src.height - source_unit * 2),
                RectI(left + unit, top + unit, inner_width, inner_height));
   }
 }

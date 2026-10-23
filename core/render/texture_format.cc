@@ -36,7 +36,8 @@ std::string Normalize(std::string_view name) {
   for (const char ch : name) {
     if (ch == '_' || ch == '-' || ch == ' ')
       continue;
-    result.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+    result.push_back(
+        static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
   }
   return result;
 }

@@ -37,8 +37,7 @@ Node::Node()
     : self_([&](DrawParam param) { ExecutePrepare(param); },
             [&](DrawParam param) { ExecuteRendering(param); },
             ZValue()),
-      world_root_(true) {
-}
+      world_root_(true) {}
 
 Node::Node(RefPtr<Node> parent, const ZValue& z)
     : self_([&](DrawParam param) { ExecutePrepare(param); },

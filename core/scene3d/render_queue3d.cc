@@ -100,9 +100,8 @@ void RenderQueue3D::CollectNode(Node3D* node,
       const glm::vec3 center = renderer->world_center();
       const float radius = renderer->world_radius();
 
-      const bool culled =
-          camera && camera->Culled(center, radius, target_size,
-                                   renderer->layers());
+      const bool culled = camera && camera->Culled(center, radius, target_size,
+                                                   renderer->layers());
 
       if (!culled) {
         const MeshData mesh_data = {world, glm::inverseTranspose(world)};
@@ -110,8 +109,8 @@ void RenderQueue3D::CollectNode(Node3D* node,
         const float distance = glm::length(center - eye);
 
         for (const SubMesh3D& submesh : mesh->submeshes()) {
-          const auto found =
-              renderer->materials().find(static_cast<int32_t>(submesh.mat_slot));
+          const auto found = renderer->materials().find(
+              static_cast<int32_t>(submesh.mat_slot));
           if (found == renderer->materials().end() || !found->second)
             continue;
 

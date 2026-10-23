@@ -320,10 +320,9 @@ void Graphics::Update() {
   timings.set_phase(FramePhase::kUpdate, update_span - bitmap_in_update -
                                              present_cost_ms_ - delay_ms);
 
-  const double measured = timings.phase(FramePhase::kScript) +
-                          timings.phase(FramePhase::kUpdate) +
-                          timings.phase(FramePhase::kBitmap) +
-                          timings.phase(FramePhase::kPresent);
+  const double measured =
+      timings.phase(FramePhase::kScript) + timings.phase(FramePhase::kUpdate) +
+      timings.phase(FramePhase::kBitmap) + timings.phase(FramePhase::kPresent);
   timings.set_phase(FramePhase::kOther, timings.total_ms - measured);
 
   if (!skip_frame) {
@@ -344,10 +343,9 @@ void Graphics::Update() {
         counters.bitmap_upload_ms, counters.bitmap_record_ms,
         counters.bitmap_finish_ms, counters.bitmap_submit_ms,
         counters.bitmap_total_ms(), render_cost_ms_,
-        timings.phase(FramePhase::kScript),
-        timings.phase(FramePhase::kUpdate),
-        timings.phase(FramePhase::kPresent),
-        timings.phase(FramePhase::kOther), timings.total_ms);
+        timings.phase(FramePhase::kScript), timings.phase(FramePhase::kUpdate),
+        timings.phase(FramePhase::kPresent), timings.phase(FramePhase::kOther),
+        timings.total_ms);
   }
 
   if (frame_callback_)

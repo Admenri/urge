@@ -61,7 +61,8 @@ class ComputePass3D : public Object {
   URGE_BINDING()
   void SetTexture(std::string name, RefPtr<Bitmap> texture);
   URGE_BINDING()
-  void SetTarget(std::string name, RefPtr<RenderTarget3D> target,
+  void SetTarget(std::string name,
+                 RefPtr<RenderTarget3D> target,
                  int32_t index);
 
   URGE_BINDING(Name : "dispatch_x")
@@ -325,7 +326,8 @@ class RenderGraphPass3D : public Object {
   bool enabled_ = true;
   uint32_t kind_ = 0;
   std::vector<std::string> colors_;
-  RefPtr<Color> clear_color_ = MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f);
+  RefPtr<Color> clear_color_ =
+      MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f);
   uint32_t clear_flags_ = 3;
   std::vector<std::string> tags_;
   std::vector<int32_t> tag_ids_;
@@ -423,8 +425,7 @@ class RenderGraph3D : public Object {
   RefPtr<RenderTarget3D> ShadowTarget(const std::string& name, int32_t layers);
   void ExecuteShadowPass(RenderContext3D* context, RenderGraphPass3D* pass);
   void ExecuteRasterPass(RenderContext3D* context, RenderGraphPass3D* pass);
-  void ExecuteFullscreenPass(RenderContext3D* context,
-                             RenderGraphPass3D* pass);
+  void ExecuteFullscreenPass(RenderContext3D* context, RenderGraphPass3D* pass);
 
   std::vector<RefPtr<RenderGraphPass3D>> passes_;
   std::map<std::string, RefPtr<RenderTarget3D>> targets_;

@@ -39,8 +39,9 @@ void AnimationStateMachine3D::AddState(std::string name,
                                        RefPtr<Animation3D> animation,
                                        bool loop) {
   if (name.empty())
-    throw Exception(Exception::kRGSSError, "state machine 3d: a state needs a "
-                                          "name.");
+    throw Exception(Exception::kRGSSError,
+                    "state machine 3d: a state needs a "
+                    "name.");
   if (!animation)
     throw Exception(Exception::kRGSSError,
                     "state machine 3d: a state needs an animation.");
@@ -167,8 +168,8 @@ void AnimationStateMachine3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
     State& previous = states_[previous_index_];
     AdvanceTime(previous_time_, previous, delta);
 
-    const float weight =
-        std::clamp(blend_time_ / std::max(blend_duration_, 0.0001f), 0.0f, 1.0f);
+    const float weight = std::clamp(
+        blend_time_ / std::max(blend_duration_, 0.0001f), 0.0f, 1.0f);
     previous.animation->Blend(skeleton, previous_time_, 1.0f - weight);
     current.animation->Blend(skeleton, current_time_, weight);
   } else {

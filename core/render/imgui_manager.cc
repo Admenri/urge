@@ -590,7 +590,8 @@ struct PhaseStyle {
 
 const PhaseStyle kPhaseStyles[kFramePhaseCount] = {
     {FramePhase::kScript, "Scripts", ImVec4(0.96f, 0.66f, 0.26f, 1.0f)},
-    {FramePhase::kUpdate, "Graphics::Update", ImVec4(0.36f, 0.63f, 0.96f, 1.0f)},
+    {FramePhase::kUpdate, "Graphics::Update",
+     ImVec4(0.36f, 0.63f, 0.96f, 1.0f)},
     {FramePhase::kBitmap, "BitmapQueue", ImVec4(0.30f, 0.82f, 0.72f, 1.0f)},
     {FramePhase::kPresent, "Present", ImVec4(0.71f, 0.50f, 0.96f, 1.0f)},
     {FramePhase::kOther, "Other", ImVec4(0.55f, 0.58f, 0.63f, 1.0f)},
@@ -663,12 +664,12 @@ void DrawPhaseDonut(const FrameTimings& timings, float radius) {
   snprintf(value, sizeof(value), "%.1f", total);
   const ImVec2 value_size = ImGui::CalcTextSize(value);
   const ImVec2 unit_size = ImGui::CalcTextSize("ms");
-  draw->AddText(ImVec2(center.x - value_size.x * 0.5f,
-                       center.y - value_size.y * 0.92f),
-                ImGui::GetColorU32(ImGuiCol_Text), value);
-  draw->AddText(ImVec2(center.x - unit_size.x * 0.5f,
-                       center.y + value_size.y * 0.08f),
-                ImGui::GetColorU32(ImGuiCol_TextDisabled), "ms");
+  draw->AddText(
+      ImVec2(center.x - value_size.x * 0.5f, center.y - value_size.y * 0.92f),
+      ImGui::GetColorU32(ImGuiCol_Text), value);
+  draw->AddText(
+      ImVec2(center.x - unit_size.x * 0.5f, center.y + value_size.y * 0.08f),
+      ImGui::GetColorU32(ImGuiCol_TextDisabled), "ms");
 
   ImGui::Dummy(ImVec2(radius * 2.0f, radius * 2.0f));
 }
@@ -705,10 +706,10 @@ void DrawPhaseLegend(const FrameTimings& timings, float width) {
                         ImVec2(start.x + box, y + (line + box) * 0.5f),
                         ImGui::GetColorU32(style_entry.color), 2.0f);
 
-    draw->PushClipRect(ImVec2(label_x, y),
-                       ImVec2(std::max(label_x, value_x - style.ItemSpacing.x),
-                              y + line),
-                       true);
+    draw->PushClipRect(
+        ImVec2(label_x, y),
+        ImVec2(std::max(label_x, value_x - style.ItemSpacing.x), y + line),
+        true);
     draw->AddText(ImVec2(label_x, y), ImGui::GetColorU32(ImGuiCol_Text),
                   style_entry.label);
     draw->PopClipRect();
@@ -733,8 +734,8 @@ void DrawPhaseHistory(const FrameTimingRing& ring,
   const ImVec2 origin = ImGui::GetCursorScreenPos();
   const ImVec2 far_corner(origin.x + width, origin.y + height);
 
-  draw->AddRectFilled(origin, far_corner,
-                      ImGui::GetColorU32(ImGuiCol_FrameBg), 3.0f);
+  draw->AddRectFilled(origin, far_corner, ImGui::GetColorU32(ImGuiCol_FrameBg),
+                      3.0f);
 
   const std::size_t count = ring.size();
   if (count == 0) {
@@ -883,8 +884,8 @@ void ImGuiManager::BuildFPSWindow() {
   ImGui::SetNextWindowSize(size, mode_changed && !geometry.custom
                                      ? ImGuiCond_Always
                                      : ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSizeConstraints(
-      ImVec2(U(148.0f), U(44.0f)), ImVec2(display.x, display.y));
+  ImGui::SetNextWindowSizeConstraints(ImVec2(U(148.0f), U(44.0f)),
+                                      ImVec2(display.x, display.y));
 
   if (!ImGui::Begin("Frame monitor", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::End();
@@ -931,12 +932,10 @@ void ImGuiManager::BuildFPSWindow() {
       if (fixed.y + actual_size.y > bottom)
         fixed.y = bottom - actual_size.y;
 
-      fixed.x = std::min(
-          std::max(fixed.x, viewport->Pos.x),
-          std::max(viewport->Pos.x, right - U(64.0f)));
-      fixed.y = std::min(
-          std::max(fixed.y, viewport->Pos.y),
-          std::max(viewport->Pos.y, bottom - U(28.0f)));
+      fixed.x = std::min(std::max(fixed.x, viewport->Pos.x),
+                         std::max(viewport->Pos.x, right - U(64.0f)));
+      fixed.y = std::min(std::max(fixed.y, viewport->Pos.y),
+                         std::max(viewport->Pos.y, bottom - U(28.0f)));
 
       if (fixed.x != actual_pos.x || fixed.y != actual_pos.y) {
         ImGui::SetWindowPos(fixed);

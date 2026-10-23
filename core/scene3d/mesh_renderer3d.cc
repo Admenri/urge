@@ -114,9 +114,8 @@ void MeshRenderer3D::SetInstanceMatrices(std::vector<float> data) {
                     "mesh renderer 3d: the device rejected the instance "
                     "buffer.");
 
-  GPUDevice::Get().queue().WriteBuffer(instance_buffer_, 0,
-                                       instance_matrices_.data(),
-                                       descriptor.size);
+  GPUDevice::Get().queue().WriteBuffer(
+      instance_buffer_, 0, instance_matrices_.data(), descriptor.size);
 }
 
 }

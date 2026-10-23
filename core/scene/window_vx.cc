@@ -71,9 +71,10 @@ RectI ApplyOpenness(const RectI& rect, int32_t height, int32_t openness) {
 }
 
 WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
-    : Node(nullptr, Config::Get().vxa()
-                        ? ZValue(100, std::numeric_limits<int32_t>::max())
-                        : ZValue()),
+    : Node(nullptr,
+           Config::Get().vxa()
+               ? ZValue(100, std::numeric_limits<int32_t>::max())
+               : ZValue()),
       contents_(MakeRefCounted<Bitmap>(1, 1)),
       cursor_rect_(MakeRefCounted<Rect>()),
       x_(x),
@@ -471,8 +472,8 @@ void WindowVX::EmitGroundInternal(PrimitiveEmitter& emitter) {
   const int32_t unit_y =
       openness_ >= 255
           ? unit
-          : std::max(1, static_cast<int32_t>(
-                            static_cast<int64_t>(unit) * openness_ / 255));
+          : std::max(1, static_cast<int32_t>(static_cast<int64_t>(unit) *
+                                             openness_ / 255));
 
   EmitNineSliceInternal(emitter, frame_source,
                         ApplyOpenness(frame_dest, height_, openness_), unit,
@@ -728,8 +729,8 @@ void WindowVX::EmitNineSliceInternal(PrimitiveEmitter& emitter,
   const int32_t inner_height = dest.height - unit_y * 2;
 
   if (inner_width > 0) {
-    emit_patch(RectI(src.x + source_unit, src.y,
-                     src.width - source_unit * 2, source_unit),
+    emit_patch(RectI(src.x + source_unit, src.y, src.width - source_unit * 2,
+                     source_unit),
                RectI(left + unit, top, inner_width, unit_y));
     emit_patch(RectI(src.x + source_unit, src.y + src.height - source_unit,
                      src.width - source_unit * 2, source_unit),
@@ -747,8 +748,7 @@ void WindowVX::EmitNineSliceInternal(PrimitiveEmitter& emitter,
 
   if (draw_center && inner_width > 0 && inner_height > 0) {
     emit_patch(RectI(src.x + source_unit, src.y + source_unit,
-                     src.width - source_unit * 2,
-                     src.height - source_unit * 2),
+                     src.width - source_unit * 2, src.height - source_unit * 2),
                RectI(left + unit, top + unit_y, inner_width, inner_height));
   }
 }

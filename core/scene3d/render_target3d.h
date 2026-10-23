@@ -59,7 +59,10 @@ class RenderTarget3D : public Object {
                  std::string depth_format,
                  int32_t samples);
   RenderTarget3D(int32_t width, int32_t height, bool with_color);
-  RenderTarget3D(int32_t width, int32_t height, bool with_color, int32_t layers);
+  RenderTarget3D(int32_t width,
+                 int32_t height,
+                 bool with_color,
+                 int32_t layers);
   explicit RenderTarget3D(const RenderTargetDesc3D& desc);
   ~RenderTarget3D() override;
 

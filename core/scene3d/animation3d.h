@@ -74,9 +74,7 @@ class Animation3D : public Object {
 
   const std::vector<Event>& events() const { return events_; }
 
-  void CollectEvents(float from,
-                     float to,
-                     std::vector<std::string>& out) const;
+  void CollectEvents(float from, float to, std::vector<std::string>& out) const;
 
   URGE_BINDING()
   float Duration() const { return duration_; }

@@ -97,7 +97,6 @@ class Drawable {
   void SetParent(DrawableSet* parent);
   void RemoveFromList();
 
-
   Drawable* Prev() { return prev_; }
   Drawable* Next() { return next_; }
 
@@ -133,7 +132,7 @@ class Drawable {
   ZValue z_ = {};
 
   size_t trait_type_ = 0;
-  void* self_data_ = nullptr;
+  void* self_data_ = nullptr;
 };
 
 class DrawableSet {
@@ -143,7 +142,6 @@ class DrawableSet {
 
   void DispatchPrepare(DrawParam param);
   void DispatchDraw(DrawParam param);
-
 
  private:
   friend class Drawable;

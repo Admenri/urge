@@ -1085,9 +1085,7 @@ class GPUQueue : public GPUObject {
   URGE_BINDING()
   void Submit(RefPtr<GPUCommandBuffer> command_buffer);
   URGE_BINDING()
-  void WriteBuffer(RefPtr<GPUBuffer> buffer,
-                   uint64_t offset,
-                   std::string data);
+  void WriteBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, std::string data);
   URGE_BINDING()
   void WriteTexture(RefPtr<GPUTexture> texture,
                     uint32_t mip_level,
@@ -1160,22 +1158,14 @@ class GPU : public Singleton<GPU> {
     VertexFormatUint8x4 = static_cast<uint32_t>(wgpu::VertexFormat::Uint8x4),
     VertexFormatSint8x2 = static_cast<uint32_t>(wgpu::VertexFormat::Sint8x2),
     VertexFormatSint8x4 = static_cast<uint32_t>(wgpu::VertexFormat::Sint8x4),
-    VertexFormatUnorm8x2 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x2),
-    VertexFormatUnorm8x4 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x4),
-    VertexFormatSnorm8x2 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Snorm8x2),
-    VertexFormatSnorm8x4 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Snorm8x4),
-    VertexFormatUint16x2 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Uint16x2),
-    VertexFormatUint16x4 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Uint16x4),
-    VertexFormatSint16x2 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Sint16x2),
-    VertexFormatSint16x4 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Sint16x4),
+    VertexFormatUnorm8x2 = static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x2),
+    VertexFormatUnorm8x4 = static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x4),
+    VertexFormatSnorm8x2 = static_cast<uint32_t>(wgpu::VertexFormat::Snorm8x2),
+    VertexFormatSnorm8x4 = static_cast<uint32_t>(wgpu::VertexFormat::Snorm8x4),
+    VertexFormatUint16x2 = static_cast<uint32_t>(wgpu::VertexFormat::Uint16x2),
+    VertexFormatUint16x4 = static_cast<uint32_t>(wgpu::VertexFormat::Uint16x4),
+    VertexFormatSint16x2 = static_cast<uint32_t>(wgpu::VertexFormat::Sint16x2),
+    VertexFormatSint16x4 = static_cast<uint32_t>(wgpu::VertexFormat::Sint16x4),
     VertexFormatUnorm16x2 =
         static_cast<uint32_t>(wgpu::VertexFormat::Unorm16x2),
     VertexFormatUnorm16x4 =
@@ -1196,25 +1186,18 @@ class GPU : public Singleton<GPU> {
     VertexFormatFloat32x4 =
         static_cast<uint32_t>(wgpu::VertexFormat::Float32x4),
     VertexFormatUint32 = static_cast<uint32_t>(wgpu::VertexFormat::Uint32),
-    VertexFormatUint32x2 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Uint32x2),
-    VertexFormatUint32x3 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Uint32x3),
-    VertexFormatUint32x4 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Uint32x4),
+    VertexFormatUint32x2 = static_cast<uint32_t>(wgpu::VertexFormat::Uint32x2),
+    VertexFormatUint32x3 = static_cast<uint32_t>(wgpu::VertexFormat::Uint32x3),
+    VertexFormatUint32x4 = static_cast<uint32_t>(wgpu::VertexFormat::Uint32x4),
     VertexFormatSint32 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32),
-    VertexFormatSint32x2 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Sint32x2),
-    VertexFormatSint32x3 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Sint32x3),
-    VertexFormatSint32x4 =
-        static_cast<uint32_t>(wgpu::VertexFormat::Sint32x4),
+    VertexFormatSint32x2 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32x2),
+    VertexFormatSint32x3 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32x3),
+    VertexFormatSint32x4 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32x4),
   };
 
   URGE_BINDING()
   enum VertexStepMode {
-    VertexStepModeVertex =
-        static_cast<uint32_t>(wgpu::VertexStepMode::Vertex),
+    VertexStepModeVertex = static_cast<uint32_t>(wgpu::VertexStepMode::Vertex),
     VertexStepModeInstance =
         static_cast<uint32_t>(wgpu::VertexStepMode::Instance),
   };
@@ -1297,12 +1280,9 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum TextureDimension {
-    TextureDimension1D =
-        static_cast<uint32_t>(wgpu::TextureDimension::e1D),
-    TextureDimension2D =
-        static_cast<uint32_t>(wgpu::TextureDimension::e2D),
-    TextureDimension3D =
-        static_cast<uint32_t>(wgpu::TextureDimension::e3D),
+    TextureDimension1D = static_cast<uint32_t>(wgpu::TextureDimension::e1D),
+    TextureDimension2D = static_cast<uint32_t>(wgpu::TextureDimension::e2D),
+    TextureDimension3D = static_cast<uint32_t>(wgpu::TextureDimension::e3D),
   };
 
   URGE_BINDING()
@@ -1378,12 +1358,9 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum CompareFunction {
-    CompareFunctionNever =
-        static_cast<uint32_t>(wgpu::CompareFunction::Never),
-    CompareFunctionLess =
-        static_cast<uint32_t>(wgpu::CompareFunction::Less),
-    CompareFunctionEqual =
-        static_cast<uint32_t>(wgpu::CompareFunction::Equal),
+    CompareFunctionNever = static_cast<uint32_t>(wgpu::CompareFunction::Never),
+    CompareFunctionLess = static_cast<uint32_t>(wgpu::CompareFunction::Less),
+    CompareFunctionEqual = static_cast<uint32_t>(wgpu::CompareFunction::Equal),
     CompareFunctionLessEqual =
         static_cast<uint32_t>(wgpu::CompareFunction::LessEqual),
     CompareFunctionGreater =
@@ -1398,10 +1375,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum StencilOperation {
-    StencilOperationKeep =
-        static_cast<uint32_t>(wgpu::StencilOperation::Keep),
-    StencilOperationZero =
-        static_cast<uint32_t>(wgpu::StencilOperation::Zero),
+    StencilOperationKeep = static_cast<uint32_t>(wgpu::StencilOperation::Keep),
+    StencilOperationZero = static_cast<uint32_t>(wgpu::StencilOperation::Zero),
     StencilOperationReplace =
         static_cast<uint32_t>(wgpu::StencilOperation::Replace),
     StencilOperationInvert =

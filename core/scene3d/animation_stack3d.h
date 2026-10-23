@@ -111,9 +111,7 @@ class AnimationStack3D : public Object {
   URGE_BINDING()
   void ClearLayers();
   URGE_BINDING()
-  int32_t LayerCount() const {
-    return static_cast<int32_t>(layers_.size());
-  }
+  int32_t LayerCount() const { return static_cast<int32_t>(layers_.size()); }
   URGE_BINDING()
   RefPtr<AnimationLayer3D> LayerAt(int32_t index) const;
 

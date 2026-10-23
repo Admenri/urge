@@ -66,8 +66,9 @@ RenderContext3D::RenderContext3D(wgpu::CommandEncoder encoder,
     : encoder_(encoder),
       target_(std::move(target)),
       ambient_(MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f)) {
-  mesh_pool_ = std::make_unique<UniformBlockPool>(AcquireMeshUniformLayout(),
-                                                  sizeof(MeshData), "mesh3d");
+  mesh_pool_ = std::make_unique<UniformBlockPool>(
+      AcquireMeshUniformLayout(), static_cast<uint32_t>(sizeof(MeshData)),
+      "mesh3d");
   view_stride_ = ViewStride();
   mesh_pool_->BeginFrame();
 }
@@ -162,8 +163,8 @@ void RenderContext3D::SetPointShadow(
   point_light_index_ = light_index;
   point_range_ = std::max(range, 0.01f);
   for (uint32_t i = 0; i < 6; ++i)
-    point_faces_[i] = i < face_matrices.size() ? face_matrices[i]
-                                               : glm::mat4(1.0f);
+    point_faces_[i] =
+        i < face_matrices.size() ? face_matrices[i] : glm::mat4(1.0f);
 }
 
 void RenderContext3D::UploadView(int32_t slot) {
@@ -181,8 +182,9 @@ void RenderContext3D::UploadView(int32_t slot) {
     desc.size = needed;
     view_buffer_ = device.CreateBuffer(&desc);
     if (view_buffer_ == nullptr)
-      throw Exception(Exception::kGPUError,
-                      "render context 3d: the device rejected the view buffer.");
+      throw Exception(
+          Exception::kGPUError,
+          "render context 3d: the device rejected the view buffer.");
     view_group_ = nullptr;
     shadow_view_group_ = nullptr;
   }
@@ -194,8 +196,10 @@ void RenderContext3D::UploadView(int32_t slot) {
     data.view_proj = camera_->view_projection(pass_size_);
   if (camera_) {
     data.view = camera_->view();
-    data.camera_position = glm::vec4(glm::vec3(camera_->world_matrix()[3]), 0.0f);
-    data.camera_forward = glm::vec4(-glm::vec3(camera_->world_matrix()[2]), 0.0f);
+    data.camera_position =
+        glm::vec4(glm::vec3(camera_->world_matrix()[3]), 0.0f);
+    data.camera_forward =
+        glm::vec4(-glm::vec3(camera_->world_matrix()[2]), 0.0f);
   }
   if (ambient_) {
     const glm::vec4 color = ambient_->Normalize();
@@ -225,8 +229,8 @@ void RenderContext3D::UploadView(int32_t slot) {
   for (uint32_t i = 0; i < kMaxCascades; ++i)
     data.cascade_matrices[i] = shadow_matrices_[i];
 
-  data.point_shadow_params =
-      glm::vec4(static_cast<float>(point_light_index_), point_range_, 0.0f, 0.0f);
+  data.point_shadow_params = glm::vec4(static_cast<float>(point_light_index_),
+                                       point_range_, 0.0f, 0.0f);
   for (uint32_t i = 0; i < 6; ++i)
     data.point_face_view_proj[i] = point_faces_[i];
 
@@ -409,7 +413,7 @@ void RenderContext3D::BeginPassEx(RefPtr<RenderTarget3D> target,
   pass_size_ = target->size();
   pass_layer_ = layer;
   pass_ = target->BeginRendering(encoder_, colors, clear_depth, clear_stencil,
-                                layer);
+                                 layer);
 
   pass_serial_ = (pass_serial_ + 1) % kMaxViewSlots;
 
@@ -434,10 +438,7 @@ RefPtr<GPURenderPassEncoder> RenderContext3D::GetPass() {
   return MakeRefCounted<GPURenderPassEncoder>(pass_);
 }
 
-void RenderContext3D::SetViewport(float x,
-                                  float y,
-                                  float width,
-                                  float height) {
+void RenderContext3D::SetViewport(float x, float y, float width, float height) {
   if (pass_)
     pass_.SetViewport(x, y, width, height, 0.0f, 1.0f);
 }
@@ -468,8 +469,7 @@ void RenderContext3D::Draw(const RenderQueue3D::Item& item) {
   if (!item.mesh || !item.pass)
     return;
   if (item.slot.chunk == UniformBlockPool::kInvalidChunk)
-    throw Exception(Exception::kGPUError,
-                    "the mesh has no mesh uniform slot.");
+    throw Exception(Exception::kGPUError, "the mesh has no mesh uniform slot.");
 
   const bool shadow_mode = shadow_pass_mode_ || item.pass->depth_only();
 
@@ -521,7 +521,8 @@ void RenderContext3D::Draw(const RenderQueue3D::Item& item) {
 
   uint32_t instances = 1;
   if (item.pass->instanced() && item.renderer)
-    instances = static_cast<uint32_t>(std::max(1, item.renderer->InstanceCount()));
+    instances =
+        static_cast<uint32_t>(std::max(1, item.renderer->InstanceCount()));
 
   pass_.DrawIndexed(item.index_count, instances, item.index_offset, 0, 0);
 }

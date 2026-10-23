@@ -106,8 +106,8 @@ void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
     wgpu::TextureDescriptor color_desc;
     color_desc.usage = wgpu::TextureUsage::RenderAttachment;
     if (samples_ == 1)
-      color_desc.usage |= wgpu::TextureUsage::TextureBinding |
-                          wgpu::TextureUsage::CopySrc;
+      color_desc.usage |=
+          wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
     if (desc.storage && IsStorageCapable(format))
       color_desc.usage |= wgpu::TextureUsage::StorageBinding;
     color_desc.dimension = wgpu::TextureDimension::e2D;
@@ -255,8 +255,7 @@ wgpu::RenderPassEncoder RenderTarget3D::BeginRendering(
 
     wgpu::RenderPassColorAttachment attachment = {};
     attachment.view = color_views_[index];
-    attachment.resolveTarget =
-        samples_ > 1 ? resolve_views_[index] : nullptr;
+    attachment.resolveTarget = samples_ > 1 ? resolve_views_[index] : nullptr;
     attachment.loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
     attachment.storeOp = wgpu::StoreOp::Store;
     if (clear) {
