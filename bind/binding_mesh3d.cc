@@ -13,11 +13,8 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_mesh3d.h"
 
-#include "binding_material3d.h"
-#include "binding_node3d.h"
 #include "binding_skeleton3d.h"
 
-#include "core/scene3d/material3d.h"
 #include "core/scene3d/mesh3d.h"
 #include "core/scene3d/skeleton3d.h"
 // --- GENERATED INCLUDES END ---
@@ -32,10 +29,10 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Mesh3D  (core/scene3d/mesh3d.h:42-77)
+// Mesh3D  (core/scene3d/mesh3d.h:46-93)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE_INHERIT(Mesh3D, Node3D);
+RB_DEF_TYPE(Mesh3D);
 
 RB_FUNC(Mesh3D_initialize) {
   urge::RefPtr<urge::Mesh3D> obj = nullptr;
@@ -85,6 +82,84 @@ RB_FUNC(Mesh3D_SetIndices) {
     ParseArgs(argc, argv, "o", &data_val);
 
     self_obj->SetIndices(GetVectorOf<uint32_t>(data_val));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mesh3D_AddSubmesh) {
+  auto* self_obj = GetSelfData<urge::Mesh3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 3);
+    int index_offset, index_count, mat_slot;
+    ParseArgs(argc, argv, "iii", &index_offset, &index_count, &mat_slot);
+
+    self_obj->AddSubmesh(index_offset, index_count, mat_slot);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mesh3D_ClearSubmeshes) {
+  auto* self_obj = GetSelfData<urge::Mesh3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    self_obj->ClearSubmeshes();
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mesh3D_SubmeshCount) {
+  auto* self_obj = GetSelfData<urge::Mesh3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return LONG2NUM(self_obj->SubmeshCount());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mesh3D_SubmeshIndexOffset) {
+  auto* self_obj = GetSelfData<urge::Mesh3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    int index;
+    ParseArgs(argc, argv, "i", &index);
+
+    return LONG2NUM(self_obj->SubmeshIndexOffset(index));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mesh3D_SubmeshIndexCount) {
+  auto* self_obj = GetSelfData<urge::Mesh3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    int index;
+    ParseArgs(argc, argv, "i", &index);
+
+    return LONG2NUM(self_obj->SubmeshIndexCount(index));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Mesh3D_SubmeshMatSlot) {
+  auto* self_obj = GetSelfData<urge::Mesh3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    int index;
+    ParseArgs(argc, argv, "i", &index);
+
+    return LONG2NUM(self_obj->SubmeshMatSlot(index));
   }
   EXC_END;
   return Qnil;
@@ -178,13 +253,6 @@ RB_FUNC(Mesh3D_BoundsRadius) {
   return Qnil;
 }
 
-// Attribute: material (RefPtr<Material3D>)
-BINDING_ATTR_OBJECT_REF(Mesh3D,
-                        urge::Mesh3D,
-                        Material,
-                        urge::Material3D,
-                        kMaterial3DDataType);
-
 // Attribute: skeleton (RefPtr<Skeleton3D>)
 BINDING_ATTR_OBJECT_REF(Mesh3D,
                         urge::Mesh3D,
@@ -195,14 +263,19 @@ BINDING_ATTR_OBJECT_REF(Mesh3D,
 void InitMesh3DBindingAppend(VALUE klass);
 
 void InitMesh3DBinding() {
-  auto parent = rb_const_get(rb_cObject, rb_intern("Node3D"));
-  auto klass = rb_define_class("Mesh3D", parent);
+  auto klass = rb_define_class("Mesh3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kMesh3DDataType>);
 
   DefineMethod(klass, "initialize", Mesh3D_initialize);
   DefineMethod(klass, "set_vertices", Mesh3D_SetVertices);
   DefineMethod(klass, "set_skinned_vertices", Mesh3D_SetSkinnedVertices);
   DefineMethod(klass, "set_indices", Mesh3D_SetIndices);
+  DefineMethod(klass, "add_submesh", Mesh3D_AddSubmesh);
+  DefineMethod(klass, "clear_submeshes", Mesh3D_ClearSubmeshes);
+  DefineMethod(klass, "submesh_count", Mesh3D_SubmeshCount);
+  DefineMethod(klass, "submesh_index_offset", Mesh3D_SubmeshIndexOffset);
+  DefineMethod(klass, "submesh_index_count", Mesh3D_SubmeshIndexCount);
+  DefineMethod(klass, "submesh_mat_slot", Mesh3D_SubmeshMatSlot);
   DefineMethod(klass, "vertex_count", Mesh3D_VertexCount);
   DefineMethod(klass, "index_count", Mesh3D_IndexCount);
   DefineMethod(klass, "bone_count", Mesh3D_BoneCount);
@@ -211,8 +284,6 @@ void InitMesh3DBinding() {
   DefineMethod(klass, "bounds_min", Mesh3D_BoundsMin);
   DefineMethod(klass, "bounds_max", Mesh3D_BoundsMax);
   DefineMethod(klass, "bounds_radius", Mesh3D_BoundsRadius);
-  DefineMethod(klass, "material", Mesh3D_Material);
-  DefineMethod(klass, "material=", Mesh3D_MaterialEqual);
   DefineMethod(klass, "skeleton", Mesh3D_Skeleton);
   DefineMethod(klass, "skeleton=", Mesh3D_SkeletonEqual);
   InitMesh3DBindingAppend(klass);

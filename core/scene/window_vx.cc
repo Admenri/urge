@@ -39,26 +39,41 @@ namespace urge {
 
 namespace {
 
-constexpr int32_t kPauseIndexTable[] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-};
+constexpr int32_t kPauseCycle = 32;
 
-constexpr int32_t kCursorAlphaTable[] = {
-    255, 247, 239, 231, 223, 215, 207, 199, 191, 183, 175, 167, 159, 151,
-    143, 135, 127, 119, 111, 103, 95,  103, 111, 119, 127, 135, 143, 151,
-    159, 167, 175, 183, 191, 199, 207, 215, 223, 231, 239, 247,
-};
+constexpr int32_t kPauseFrameTicks = 8;
+
+constexpr int32_t kCursorOpacityMin = 128;
+constexpr int32_t kCursorOpacityMax = 255;
+
+constexpr int32_t kCursorOpacityStep = 8;
 
 constexpr int32_t kSliceSize = 8;
 
 constexpr int32_t kCellSize = 32;
 
+RectI ApplyOpenness(const RectI& rect, int32_t height, int32_t openness) {
+  if (openness >= 255)
+    return rect;
+
+  const float norm = static_cast<float>(openness) / 255.0f;
+  const float center = static_cast<float>(height) / 2.0f;
+
+  const float top = static_cast<float>(rect.y);
+  const float bottom = top + static_cast<float>(rect.height);
+  const float scaled_top = center + (top - center) * norm;
+  const float scaled_bottom = center + (bottom - center) * norm;
+
+  return RectI(rect.x, static_cast<int32_t>(scaled_top), rect.width,
+               static_cast<int32_t>(scaled_bottom - scaled_top));
+}
+
 }
 
 WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
-    : Node(nullptr, ZValue(100, std::numeric_limits<int32_t>::max())),
+    : Node(nullptr, Config::Get().vxa()
+                        ? ZValue(100, std::numeric_limits<int32_t>::max())
+                        : ZValue()),
       contents_(MakeRefCounted<Bitmap>(1, 1)),
       cursor_rect_(MakeRefCounted<Rect>()),
       x_(x),
@@ -67,6 +82,7 @@ WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
       height_(height),
       padding_(Config::Get().vxa() ? 12 : 16),
       padding_bottom_(padding_),
+      back_opacity_(Config::Get().vxa() ? 192 : 255),
       tone_(MakeRefCounted<Tone>()),
       rgss3_style_(Config::Get().vxa()) {
   Node::SetupTrait(this);
@@ -83,15 +99,18 @@ WindowVX::~WindowVX() {
 
 void WindowVX::Update() {
   if (pause_) {
-    pause_index_ += 1;
-    pause_index_ =
-        pause_index_ % static_cast<int32_t>(std::size(kPauseIndexTable));
+    pause_index_ = (pause_index_ + 1) % kPauseCycle;
   }
 
   if (active_) {
-    cursor_index_ += 1;
-    cursor_index_ =
-        cursor_index_ % static_cast<int32_t>(std::size(kCursorAlphaTable));
+    cursor_opacity_ += cursor_fade_ ? -kCursorOpacityStep : kCursorOpacityStep;
+    if (cursor_opacity_ > kCursorOpacityMax) {
+      cursor_opacity_ = kCursorOpacityMax;
+      cursor_fade_ = true;
+    } else if (cursor_opacity_ < kCursorOpacityMin) {
+      cursor_opacity_ = kCursorOpacityMin;
+      cursor_fade_ = false;
+    }
   }
 }
 
@@ -302,6 +321,7 @@ void WindowVX::DisposeObject() {
 
 bool WindowVX::Prepare(DrawParam param) {
   background_slot_ = {};
+  tiled_slot_ = {};
   ground_slot_ = {};
   stencil_clear_slot_ = {};
   stencil_slot_ = {};
@@ -331,6 +351,10 @@ bool WindowVX::Prepare(DrawParam param) {
   const std::size_t background_first = emitter.size();
   EmitBackgroundInternal(emitter);
   background_slot_ = capture(background_first);
+
+  const std::size_t tiled_first = emitter.size();
+  EmitTiledBackgroundInternal(emitter);
+  tiled_slot_ = capture(tiled_first);
 
   const std::size_t ground_first = emitter.size();
   EmitGroundInternal(emitter);
@@ -367,7 +391,7 @@ bool WindowVX::DoDraw(DrawParam param) {
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 
-  if (background_slot_.count) {
+  if (background_slot_.count || tiled_slot_.count) {
     TintBase::TintParam tint = {};
     tint.blend_tone = tone_->Normalize();
     GPUDevice::Get().queue().WriteBuffer(tint_uniform_, 0, &tint, sizeof(tint));
@@ -377,7 +401,14 @@ bool WindowVX::DoDraw(DrawParam param) {
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
     param->pass.SetBindGroup(2, window_skin_->texture_group(), 0, nullptr);
     param->pass.SetBindGroup(3, tint_group_, 0, nullptr);
-    param->pass.Draw(background_slot_.count, 1, background_slot_.first, 0);
+
+    if (background_slot_.count) {
+      param->pass.Draw(background_slot_.count, 1, background_slot_.first, 0);
+    }
+
+    if (tiled_slot_.count) {
+      param->pass.Draw(tiled_slot_.count, 1, tiled_slot_.first, 0);
+    }
   }
 
   if (ground_slot_.count) {
@@ -429,38 +460,23 @@ void WindowVX::EmitGroundInternal(PrimitiveEmitter& emitter) {
   if (width_ < scale_ * 2 || height_ < scale_ * 2)
     return;
 
-  const int32_t cell = kCellSize * scale_;
   const int32_t unit = kSliceSize * scale_;
-
-  const RectI background_tile_source(0, cell, cell, cell);
 
   const RectI frame_source(32 * scale_, 0, unit * 4, unit * 4);
 
-  const RectI background_dest(scale_, scale_, width_ - 2 * scale_,
-                              height_ - 2 * scale_);
   const RectI frame_dest(0, 0, width_, height_);
 
-  const float openness = static_cast<float>(openness_) / 255.0f;
-  const float center_y = static_cast<float>(height_) / 2.0f;
-
-  const auto apply_openness = [&](const RectI& rect) -> RectI {
-    const float top = static_cast<float>(rect.y);
-    const float bottom = top + static_cast<float>(rect.height);
-    const float scaled_top = center_y + (top - center_y) * openness;
-    const float scaled_bottom = center_y + (bottom - center_y) * openness;
-    return RectI(rect.x, static_cast<int32_t>(scaled_top), rect.width,
-                 static_cast<int32_t>(scaled_bottom - scaled_top));
-  };
-
-  const glm::vec4 background_color =
-      glm::vec4(static_cast<float>(opacity_) / 255.0f *
-                static_cast<float>(back_opacity_) / 255.0f);
-  EmitTiledInternal(emitter, background_tile_source,
-                    apply_openness(background_dest), background_color);
-
   const glm::vec4 frame_color(static_cast<float>(opacity_) / 255.0f);
-  EmitNineSliceInternal(emitter, frame_source, apply_openness(frame_dest), unit,
-                        frame_color, false);
+
+  const int32_t unit_y =
+      openness_ >= 255
+          ? unit
+          : std::max(1, static_cast<int32_t>(
+                            static_cast<int64_t>(unit) * openness_ / 255));
+
+  EmitNineSliceInternal(emitter, frame_source,
+                        ApplyOpenness(frame_dest, height_, openness_), unit,
+                        frame_color, false, unit_y);
 
   if (openness_ != 255)
     return;
@@ -497,13 +513,33 @@ void WindowVX::EmitGroundInternal(PrimitiveEmitter& emitter) {
   }
 
   if (pause_) {
-    const int32_t frame = kPauseIndexTable[pause_index_];
+    const int32_t frame = pause_index_ / kPauseFrameTicks;
     const RectI pause_src((48 + (frame % 2) * 8) * scale_,
                           (32 + (frame / 2) * 8) * scale_, unit, unit);
     const RectI pause_dest(arrow_x, height_ - unit, unit, unit);
 
     EmitSliceInternal(emitter, pause_src, pause_dest, glm::vec4(1.0f));
   }
+}
+
+void WindowVX::EmitTiledBackgroundInternal(PrimitiveEmitter& emitter) {
+  if (width_ < scale_ * 2 || height_ < scale_ * 2)
+    return;
+
+  const int32_t cell = kCellSize * scale_;
+
+  const RectI background_tile_source(0, cell, cell, cell);
+
+  const RectI background_dest(scale_, scale_, width_ - 2 * scale_,
+                              height_ - 2 * scale_);
+
+  const glm::vec4 background_color =
+      glm::vec4(static_cast<float>(opacity_) / 255.0f *
+                static_cast<float>(back_opacity_) / 255.0f);
+
+  EmitTiledInternal(emitter, background_tile_source,
+                    ApplyOpenness(background_dest, height_, openness_),
+                    background_color);
 }
 
 void WindowVX::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
@@ -517,23 +553,13 @@ void WindowVX::EmitBackgroundInternal(PrimitiveEmitter& emitter) {
   const RectI background_dest(scale_, scale_, width_ - 2 * scale_,
                               height_ - 2 * scale_);
 
-  const float openness = static_cast<float>(openness_) / 255.0f;
-  const float center_y = static_cast<float>(height_) / 2.0f;
-
-  const float top = static_cast<float>(background_dest.y);
-  const float bottom = top + static_cast<float>(background_dest.height);
-  const float scaled_top = center_y + (top - center_y) * openness;
-  const float scaled_bottom = center_y + (bottom - center_y) * openness;
-
-  const RectI dest(background_dest.x, static_cast<int32_t>(scaled_top),
-                   background_dest.width,
-                   static_cast<int32_t>(scaled_bottom - scaled_top));
-
   const glm::vec4 background_color =
       glm::vec4(static_cast<float>(opacity_) / 255.0f *
                 static_cast<float>(back_opacity_) / 255.0f);
 
-  EmitSliceInternal(emitter, background_source, dest, background_color);
+  EmitSliceInternal(emitter, background_source,
+                    ApplyOpenness(background_dest, height_, openness_),
+                    background_color);
 }
 
 void WindowVX::EmitStencilClearInternal(PrimitiveEmitter& emitter,
@@ -580,16 +606,15 @@ void WindowVX::EmitCursorInternal(PrimitiveEmitter& emitter) {
 
   const RectI region = ContentRectInternal();
   const int32_t unit = scale_ >= 4 ? scale_ * 2 : 4;
-  const int32_t alpha = kCursorAlphaTable[cursor_index_];
   const glm::vec4 color(static_cast<float>(contents_opacity_) / 255.0f *
-                        static_cast<float>(alpha) / 255.0f);
+                        static_cast<float>(cursor_opacity_) / 255.0f);
 
   EmitNineSliceInternal(emitter,
                         RectI(kCellSize * scale_, kCellSize * scale_,
                               kSliceSize * 2 * scale_, kSliceSize * 2 * scale_),
                         RectI(region.x + cursor.x, region.y + cursor.y,
                               cursor.width, cursor.height),
-                        unit, color, true);
+                        unit, color, true, 0, true);
 }
 
 void WindowVX::EmitContentsInternal(PrimitiveEmitter& emitter) {
@@ -657,9 +682,21 @@ void WindowVX::EmitNineSliceInternal(PrimitiveEmitter& emitter,
                                      const RectI& dest,
                                      int32_t unit,
                                      const glm::vec4& color,
-                                     bool draw_center) {
+                                     bool draw_center,
+                                     int32_t unit_y,
+                                     bool stretch) {
   if (!src() || !dest() || unit <= 0)
     return;
+
+  if (unit_y <= 0)
+    unit_y = unit;
+
+  const auto emit_patch = [&](const RectI& src_part, const RectI& dest_part) {
+    if (stretch)
+      EmitSliceInternal(emitter, src_part, dest_part, color);
+    else
+      EmitTiledInternal(emitter, src_part, dest_part, color);
+  };
 
   const int32_t left = dest.x;
   const int32_t top = dest.y;
@@ -672,58 +709,47 @@ void WindowVX::EmitNineSliceInternal(PrimitiveEmitter& emitter,
     return;
 
   EmitSliceInternal(emitter, RectI(src.x, src.y, source_unit, source_unit),
-                    RectI(left, top, unit, unit), color);
+                    RectI(left, top, unit, unit_y), color);
   EmitSliceInternal(
       emitter,
       RectI(src.x + src.width - source_unit, src.y, source_unit, source_unit),
-      RectI(right - unit, top, unit, unit), color);
+      RectI(right - unit, top, unit, unit_y), color);
   EmitSliceInternal(
       emitter,
       RectI(src.x + src.width - source_unit, src.y + src.height - source_unit,
             source_unit, source_unit),
-      RectI(right - unit, bottom - unit, unit, unit), color);
+      RectI(right - unit, bottom - unit_y, unit, unit_y), color);
   EmitSliceInternal(
       emitter,
       RectI(src.x, src.y + src.height - source_unit, source_unit, source_unit),
-      RectI(left, bottom - unit, unit, unit), color);
+      RectI(left, bottom - unit_y, unit, unit_y), color);
 
   const int32_t inner_width = dest.width - unit * 2;
-  const int32_t inner_height = dest.height - unit * 2;
+  const int32_t inner_height = dest.height - unit_y * 2;
 
   if (inner_width > 0) {
-    const RectI edge_top(src.x + source_unit, src.y,
-                         src.width - source_unit * 2, source_unit);
-    const RectI edge_bottom(src.x + source_unit,
-                            src.y + src.height - source_unit,
-                            src.width - source_unit * 2, source_unit);
-
-    EmitTiledInternal(emitter, edge_top,
-                      RectI(left + unit, top, inner_width, unit), color);
-    EmitTiledInternal(emitter, edge_bottom,
-                      RectI(left + unit, bottom - unit, inner_width, unit),
-                      color);
+    emit_patch(RectI(src.x + source_unit, src.y,
+                     src.width - source_unit * 2, source_unit),
+               RectI(left + unit, top, inner_width, unit_y));
+    emit_patch(RectI(src.x + source_unit, src.y + src.height - source_unit,
+                     src.width - source_unit * 2, source_unit),
+               RectI(left + unit, bottom - unit_y, inner_width, unit_y));
   }
 
   if (inner_height > 0) {
-    const RectI edge_left(src.x, src.y + source_unit, source_unit,
-                          src.height - source_unit * 2);
-    const RectI edge_right(src.x + src.width - source_unit, src.y + source_unit,
-                           source_unit, src.height - source_unit * 2);
-
-    EmitTiledInternal(emitter, edge_left,
-                      RectI(left, top + unit, unit, inner_height), color);
-    EmitTiledInternal(emitter, edge_right,
-                      RectI(right - unit, top + unit, unit, inner_height),
-                      color);
+    emit_patch(RectI(src.x, src.y + source_unit, source_unit,
+                     src.height - source_unit * 2),
+               RectI(left, top + unit_y, unit, inner_height));
+    emit_patch(RectI(src.x + src.width - source_unit, src.y + source_unit,
+                     source_unit, src.height - source_unit * 2),
+               RectI(right - unit, top + unit_y, unit, inner_height));
   }
 
   if (draw_center && inner_width > 0 && inner_height > 0) {
-    const RectI centre(src.x + source_unit, src.y + source_unit,
-                       src.width - source_unit * 2,
-                       src.height - source_unit * 2);
-    EmitTiledInternal(emitter, centre,
-                      RectI(left + unit, top + unit, inner_width, inner_height),
-                      color);
+    emit_patch(RectI(src.x + source_unit, src.y + source_unit,
+                     src.width - source_unit * 2,
+                     src.height - source_unit * 2),
+               RectI(left + unit, top + unit_y, inner_width, inner_height));
   }
 }
 

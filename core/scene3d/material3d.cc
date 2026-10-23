@@ -27,10 +27,12 @@
 
 #include "core/common/exception.h"
 #include "core/common/logger.h"
+#include "core/graphics/gpu.h"
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
-#include "core/render/shader.h"
+#include "core/render/texture_format.h"
 #include "core/scene3d/lighting3d.h"
+#include "core/scene3d/shader_lib3d.h"
 
 namespace urge {
 
@@ -40,7 +42,6 @@ constexpr uint32_t kGroupView = 0;
 constexpr uint32_t kGroupMesh = 1;
 constexpr uint32_t kGroupMaterial = 2;
 constexpr uint32_t kGroupGlobals = 3;
-constexpr uint32_t kFirstReflectedGroup = 4;
 
 using LayoutGroups =
     std::vector<std::pair<uint32_t, std::vector<util::LayoutEntry>>>;
@@ -135,85 +136,63 @@ uint64_t VertexFormatBytes(wgpu::VertexFormat format) {
   }
 }
 
-wgpu::RenderPipeline BuildDepthOnlyPipeline(const LayoutGroups& groups,
-                                            const std::string& vs_wgsl,
-                                            uint32_t cull,
-                                            bool skinned) {
-  const wgpu::Device device = GPUDevice::Get().device();
-
-  std::vector<wgpu::BindGroupLayout> layouts;
-  layouts.reserve(groups.size());
-  for (const auto& group : groups)
-    layouts.push_back(util::CreateBindLayout(group.second));
-
-  wgpu::PipelineLayoutDescriptor layout_desc;
-  layout_desc.bindGroupLayoutCount = layouts.size();
-  layout_desc.bindGroupLayouts = layouts.empty() ? nullptr : layouts.data();
-  const wgpu::PipelineLayout pipeline_layout =
-      device.CreatePipelineLayout(&layout_desc);
-
-  wgpu::ShaderSourceWGSL source;
-  source.code = wgpu::StringView(vs_wgsl);
-  wgpu::ShaderModuleDescriptor module_desc;
-  module_desc.nextInChain = &source;
-  const wgpu::ShaderModule module = device.CreateShaderModule(&module_desc);
-
-  wgpu::DepthStencilState depth;
-  depth.format = wgpu::TextureFormat::Depth32Float;
-  depth.depthWriteEnabled = wgpu::OptionalBool::True;
-  depth.depthCompare = wgpu::CompareFunction::LessEqual;
-  depth.depthBias = 2;
-  depth.depthBiasSlopeScale = 2.0f;
-
-  const std::vector<std::vector<VertexAttribute>> layout =
-      skinned ? SkinnedMeshVertexLayout() : MeshVertexLayout();
-
-  std::vector<wgpu::VertexAttribute> attributes;
-  attributes.reserve(layout[0].size());
-  uint64_t stride = 0;
-  for (const VertexAttribute& attribute : layout[0]) {
-    wgpu::VertexAttribute entry = {};
-    entry.shaderLocation = attribute.location;
-    entry.format = attribute.format;
-    entry.offset = stride;
-    attributes.push_back(entry);
-    stride += VertexFormatBytes(attribute.format);
-  }
-
-  wgpu::VertexBufferLayout vertex_buffer = {};
-  vertex_buffer.stepMode = wgpu::VertexStepMode::Vertex;
-  vertex_buffer.arrayStride = stride;
-  vertex_buffer.attributeCount = attributes.size();
-  vertex_buffer.attributes = attributes.data();
-
-  wgpu::RenderPipelineDescriptor desc;
-  desc.layout = pipeline_layout;
-  desc.vertex.module = module;
-  desc.vertex.entryPoint = wgpu::StringView("vs_main");
-  desc.vertex.bufferCount = 1;
-  desc.vertex.buffers = &vertex_buffer;
-  desc.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-  desc.primitive.cullMode = static_cast<wgpu::CullMode>(cull);
-  desc.primitive.frontFace = wgpu::FrontFace::CCW;
-  desc.depthStencil = &depth;
-
-  return device.CreateRenderPipeline(&desc);
+wgpu::StencilFaceState MakeStencilFace(uint32_t compare,
+                                       uint32_t fail,
+                                       uint32_t depth_fail,
+                                       uint32_t pass) {
+  wgpu::StencilFaceState state;
+  state.compare = static_cast<wgpu::CompareFunction>(compare);
+  state.failOp = static_cast<wgpu::StencilOperation>(fail);
+  state.depthFailOp = static_cast<wgpu::StencilOperation>(depth_fail);
+  state.passOp = static_cast<wgpu::StencilOperation>(pass);
+  return state;
 }
 
+}
+
+std::string PipelineTargetState3D::Key() const {
+  std::string key;
+  key.reserve(colors.size() * 4 + 16);
+  for (const wgpu::TextureFormat format : colors) {
+    key += std::to_string(static_cast<uint32_t>(format));
+    key.push_back(',');
+  }
+  key.push_back('|');
+  key += std::to_string(static_cast<uint32_t>(depth));
+  key.push_back('|');
+  key += std::to_string(samples);
+  key.push_back('|');
+  key += std::to_string(cull);
+  key.push_back(flip_winding ? 'f' : 'n');
+  return key;
 }
 
 MaterialPass3D::MaterialPass3D(std::string tag,
                                std::string vs_wgsl,
                                std::string fs_wgsl)
     : tag_(std::move(tag)),
-      vs_wgsl_(std::move(vs_wgsl)),
-      fs_wgsl_(std::move(fs_wgsl)) {
+      vs_wgsl_(ComposeShader3D(vs_wgsl)),
+      fs_wgsl_(fs_wgsl.empty() ? std::string()
+                               : ComposeShader3D(fs_wgsl)) {
   if (vs_wgsl_.empty())
     throw Exception(Exception::kRGSSError,
                     "material3d: a pass needs a vertex source.");
 }
 
 MaterialPass3D::~MaterialPass3D() = default;
+
+void MaterialPass3D::SetSources(std::string vs_wgsl, std::string fs_wgsl) {
+  vs_wgsl_ = ComposeShader3D(vs_wgsl);
+  fs_wgsl_ = fs_wgsl.empty() ? std::string() : ComposeShader3D(fs_wgsl);
+  builder_.reset();
+  shadow_builder_.reset();
+  pipelines_.clear();
+  shadow_pipelines_.clear();
+  slots_.clear();
+  binding_ = nullptr;
+  state_dirty_ = true;
+  binding_dirty_ = true;
+}
 
 void MaterialPass3D::CollectSlots() {
   slots_.clear();
@@ -227,8 +206,21 @@ void MaterialPass3D::CollectSlots() {
       wgsl::ReflectBindings(vs_wgsl_, fs_wgsl_);
 
   for (const wgsl::BindingInfo& info : infos) {
+    if (info.group > kGroupGlobals)
+      throw Exception(Exception::kRGSSError,
+                      "material3d: the pass '{}' declares group({}); a 3D "
+                      "material may only use groups 0..3.",
+                      tag_, info.group);
     if (info.group != kGroupMaterial)
       continue;
+    if (info.kind == wgsl::BindingKind::kStorage ||
+        info.kind == wgsl::BindingKind::kStorageReadWrite ||
+        info.kind == wgsl::BindingKind::kStorageTexture)
+      throw Exception(Exception::kRGSSError,
+                      "material3d: the pass '{}' binds '{}' as a storage "
+                      "resource in group 2; storage buffers and storage "
+                      "textures belong to a compute pass.",
+                      tag_, info.name);
 
     Slot slot;
     slot.name = info.name;
@@ -279,6 +271,15 @@ void MaterialPass3D::SetTexture(std::string name, RefPtr<Bitmap> texture) {
   binding_dirty_ = true;
 }
 
+void MaterialPass3D::SetTextureView(std::string name,
+                                    RefPtr<GPUTextureView> view) {
+  const auto found = view_map_.find(name);
+  if (found != view_map_.end() && found->second.get() == view.get())
+    return;
+  view_map_[std::move(name)] = std::move(view);
+  binding_dirty_ = true;
+}
+
 RefPtr<Bitmap> MaterialPass3D::GetTexture(std::string name) const {
   const auto it = texture_map_.find(name);
   return it == texture_map_.end() ? nullptr : it->second;
@@ -324,10 +325,238 @@ std::vector<std::string> MaterialPass3D::SlotNames() const {
   return result;
 }
 
-wgpu::RenderPipeline MaterialPass3D::AcquirePipeline() {
-  if (pipeline_dirty_ || !holder_)
-    RebuildPipeline();
-  return holder_->pipeline;
+std::vector<std::vector<VertexAttribute>> MaterialPass3D::VertexLayout() const {
+  if (fullscreen_)
+    return {};
+  if (instanced_)
+    return skinned_ ? InstancedSkinnedMeshVertexLayout()
+                    : InstancedMeshVertexLayout();
+  return skinned_ ? SkinnedMeshVertexLayout() : MeshVertexLayout();
+}
+
+void MaterialPass3D::EnsureBuilder() {
+  if (builder_)
+    return;
+
+  CollectSlots();
+
+  const auto both_stages = static_cast<wgpu::ShaderStage>(
+      static_cast<uint32_t>(wgpu::ShaderStage::Vertex) |
+      static_cast<uint32_t>(wgpu::ShaderStage::Fragment));
+
+  std::vector<util::LayoutEntry> material;
+  material.reserve(slots_.size());
+  for (const Slot& slot : slots_) {
+    switch (slot.kind) {
+      case wgsl::BindingKind::kUniform:
+        material.push_back(
+            {slot.binding, both_stages,
+             util::BufferLayout::Uniform(false,
+                                         std::max<uint64_t>(slot.size, 16))});
+        break;
+      case wgsl::BindingKind::kTextureCube:
+        material.push_back(
+            {slot.binding, wgpu::ShaderStage::Fragment,
+             util::TextureLayout::Float(wgpu::TextureViewDimension::Cube)});
+        break;
+      case wgsl::BindingKind::kTextureArray:
+        material.push_back(
+            {slot.binding, wgpu::ShaderStage::Fragment,
+             util::TextureLayout::Float(wgpu::TextureViewDimension::e2DArray)});
+        break;
+      case wgsl::BindingKind::kTextureDepth:
+        material.push_back(
+            {slot.binding, wgpu::ShaderStage::Fragment,
+             util::TextureLayout::Depth(wgpu::TextureViewDimension::e2D)});
+        break;
+      case wgsl::BindingKind::kSampler:
+        material.push_back({slot.binding, wgpu::ShaderStage::Fragment,
+                            util::SamplerLayout::Filtering()});
+        break;
+      case wgsl::BindingKind::kSamplerComparison:
+        material.push_back({slot.binding, wgpu::ShaderStage::Fragment,
+                            util::SamplerLayout::Comparison()});
+        break;
+      default:
+        material.push_back(
+            {slot.binding, wgpu::ShaderStage::Fragment,
+             util::TextureLayout::Float(wgpu::TextureViewDimension::e2D)});
+        break;
+    }
+  }
+
+  material_layout_ = util::CreateBindLayout(material);
+
+  LayoutGroups groups;
+  groups.push_back({kGroupView, ViewEntries()});
+  groups.push_back({kGroupMesh, fullscreen_
+                                     ? std::vector<util::LayoutEntry>()
+                                     : MeshEntries()});
+  groups.push_back({kGroupMaterial, std::move(material)});
+  groups.push_back({kGroupGlobals, GlobalsEntries()});
+
+  const ShaderSource vertex{vs_wgsl_, vertex_entry_, groups};
+  const ShaderSource fragment{fs_wgsl_, fragment_entry_, {}};
+
+  builder_ = std::make_unique<Pipeline>(vertex, fragment, VertexLayout(),
+                                        std::set<uint32_t>{kGroupMesh},
+                                        MeshStepModes(instanced_));
+  group_count_ = static_cast<uint32_t>(groups.size());
+}
+
+void MaterialPass3D::EnsureShadowBuilder() {
+  if (shadow_builder_)
+    return;
+
+  LayoutGroups groups;
+  groups.push_back({kGroupView, ShadowViewEntries()});
+  groups.push_back({kGroupMesh, MeshEntries()});
+
+  const ShaderSource vertex{vs_wgsl_, vertex_entry_, groups};
+  const ShaderSource fragment{};
+
+  shadow_builder_ =
+      std::make_unique<Pipeline>(vertex, fragment, VertexLayout(),
+                                 std::set<uint32_t>{kGroupView},
+                                 MeshStepModes(instanced_));
+}
+
+wgpu::DepthStencilState MaterialPass3D::MakeDepthState(
+    wgpu::TextureFormat format) const {
+  wgpu::DepthStencilState state;
+  state.format = format;
+  state.depthWriteEnabled =
+      depth_write_ ? wgpu::OptionalBool::True : wgpu::OptionalBool::False;
+  state.depthCompare = depth_test_ ? static_cast<wgpu::CompareFunction>(
+                                         depth_compare_)
+                                   : wgpu::CompareFunction::Always;
+  state.depthBias = depth_bias_;
+  state.depthBiasSlopeScale = depth_bias_slope_;
+  state.depthBiasClamp = depth_bias_clamp_;
+
+  if (stencil_ && IsStencilFormat(format)) {
+    state.stencilFront = MakeStencilFace(stencil_front_compare_,
+                                         stencil_front_fail_,
+                                         stencil_front_depth_fail_,
+                                         stencil_front_pass_);
+    state.stencilBack = MakeStencilFace(stencil_back_compare_,
+                                        stencil_back_fail_,
+                                        stencil_back_depth_fail_,
+                                        stencil_back_pass_);
+    state.stencilReadMask = static_cast<uint32_t>(stencil_read_mask_);
+    state.stencilWriteMask = static_cast<uint32_t>(stencil_write_mask_);
+  } else {
+    state.stencilFront = MakeStencilFace(8, 0, 0, 0);
+    state.stencilBack = MakeStencilFace(8, 0, 0, 0);
+    state.stencilReadMask = 0;
+    state.stencilWriteMask = 0;
+  }
+
+  return state;
+}
+
+wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
+    const PipelineTargetState3D& target) {
+  if (state_dirty_) {
+    pipelines_.clear();
+    shadow_pipelines_.clear();
+    state_dirty_ = false;
+  }
+
+  const std::string key = target.Key();
+  for (const auto& entry : pipelines_)
+    if (entry.first == key)
+      return entry.second;
+
+  EnsureBuilder();
+
+  const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_);
+
+  std::vector<wgpu::ColorTargetState> colors;
+  colors.reserve(target.colors.size());
+  for (const wgpu::TextureFormat format : target.colors) {
+    wgpu::ColorTargetState state;
+    state.format = format;
+    state.blend = blend ? &*blend : nullptr;
+    state.writeMask = static_cast<wgpu::ColorWriteMask>(color_write_mask_);
+    colors.push_back(state);
+  }
+
+  wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
+  primitive.topology = static_cast<wgpu::PrimitiveTopology>(topology_);
+  primitive.cullMode = static_cast<wgpu::CullMode>(
+      target.cull >= 0 ? target.cull : static_cast<int32_t>(cull_));
+  primitive.frontFace = target.flip_winding
+                            ? (static_cast<wgpu::FrontFace>(front_face_) ==
+                                       wgpu::FrontFace::CCW
+                                   ? wgpu::FrontFace::CW
+                                   : wgpu::FrontFace::CCW)
+                            : static_cast<wgpu::FrontFace>(front_face_);
+
+  std::optional<wgpu::DepthStencilState> depth;
+  if (target.depth != wgpu::TextureFormat::Undefined)
+    depth = MakeDepthState(target.depth);
+
+  wgpu::MultisampleState samples;
+  samples.count = target.samples;
+  samples.alphaToCoverageEnabled = alpha_to_coverage_;
+
+  const wgpu::RenderPipeline pipeline =
+      builder_->MakeState(primitive, depth, colors, samples);
+
+  pipelines_.emplace_back(key, pipeline);
+  binding_dirty_ = true;
+  return pipeline;
+}
+
+wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
+    const PipelineTargetState3D& target) {
+  if (state_dirty_) {
+    pipelines_.clear();
+    shadow_pipelines_.clear();
+    state_dirty_ = false;
+  }
+
+  const std::string key = target.Key();
+  for (const auto& entry : shadow_pipelines_)
+    if (entry.first == key)
+      return entry.second;
+
+  EnsureShadowBuilder();
+
+  wgpu::DepthStencilState depth;
+  depth.format = target.depth == wgpu::TextureFormat::Undefined
+                     ? wgpu::TextureFormat::Depth32Float
+                     : target.depth;
+  depth.depthWriteEnabled = wgpu::OptionalBool::True;
+  depth.depthCompare = wgpu::CompareFunction::LessEqual;
+  depth.depthBias = depth_bias_ != 0 ? depth_bias_ : 2;
+  depth.depthBiasSlopeScale =
+      depth_bias_slope_ != 0.0f ? depth_bias_slope_ : 2.0f;
+  depth.depthBiasClamp = depth_bias_clamp_;
+  depth.stencilFront = MakeStencilFace(8, 0, 0, 0);
+  depth.stencilBack = MakeStencilFace(8, 0, 0, 0);
+  depth.stencilReadMask = 0;
+  depth.stencilWriteMask = 0;
+
+  wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
+  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+  primitive.cullMode = static_cast<wgpu::CullMode>(cull_);
+  primitive.frontFace = target.flip_winding
+                            ? (static_cast<wgpu::FrontFace>(front_face_) ==
+                                       wgpu::FrontFace::CCW
+                                   ? wgpu::FrontFace::CW
+                                   : wgpu::FrontFace::CCW)
+                            : static_cast<wgpu::FrontFace>(front_face_);
+
+  wgpu::MultisampleState samples;
+  samples.count = target.samples;
+
+  const wgpu::RenderPipeline pipeline =
+      shadow_builder_->MakeState(primitive, depth, {}, samples);
+
+  shadow_pipelines_.emplace_back(key, pipeline);
+  return pipeline;
 }
 
 wgpu::BindGroup MaterialPass3D::AcquireBindGroup() {
@@ -340,154 +569,8 @@ bool MaterialPass3D::HasGroup(uint32_t group) const {
   return group < group_count_;
 }
 
-void MaterialPass3D::RebuildPipeline() {
-  using util::BufferLayout;
-  using util::LayoutEntry;
-  using util::SamplerLayout;
-  using util::TextureLayout;
-
-  const auto both_stages = static_cast<wgpu::ShaderStage>(
-      static_cast<uint32_t>(wgpu::ShaderStage::Vertex) |
-      static_cast<uint32_t>(wgpu::ShaderStage::Fragment));
-
-  CollectSlots();
-
-  LayoutGroups groups;
-  groups.push_back(
-      {kGroupView, depth_only_ ? ShadowViewEntries() : ViewEntries()});
-  groups.push_back({kGroupMesh, MeshEntries()});
-
-  if (depth_only_) {
-    const wgpu::RenderPipeline pipeline =
-        BuildDepthOnlyPipeline(groups, vs_wgsl_, cull_, skinned_);
-    if (!pipeline)
-      throw Exception(Exception::kGPUError,
-                      "material3d: the device rejected the shadow pipeline.");
-
-    auto holder = MakeRefCounted<PipelineHolder>();
-    holder->pipeline = pipeline;
-
-    holder_ = std::move(holder);
-    group_count_ = static_cast<uint32_t>(groups.size());
-    pipeline_dirty_ = false;
-    binding_dirty_ = false;
-
-    LOGGER_DEBUG("material3d: shadow pass built its pipeline");
-    return;
-  }
-
-  if (fs_wgsl_.empty())
-    throw Exception(Exception::kRGSSError,
-                    "material3d: a lit pass needs a fragment source.");
-
-  std::vector<LayoutEntry> material;
-  material.reserve(slots_.size());
-  for (const Slot& slot : slots_) {
-    switch (slot.kind) {
-      case wgsl::BindingKind::kUniform:
-        material.push_back(
-            {slot.binding, both_stages,
-             BufferLayout::Uniform(false, std::max<uint64_t>(slot.size, 16))});
-        break;
-      case wgsl::BindingKind::kStorage:
-        material.push_back({slot.binding, both_stages,
-                            BufferLayout::ReadOnlyStorage(false, slot.size)});
-        break;
-      case wgsl::BindingKind::kTextureCube:
-        material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
-             TextureLayout::Float(wgpu::TextureViewDimension::Cube)});
-        break;
-      case wgsl::BindingKind::kTextureArray:
-        material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
-             TextureLayout::Float(wgpu::TextureViewDimension::e2DArray)});
-        break;
-      case wgsl::BindingKind::kTextureDepth:
-        material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
-             TextureLayout::Depth(wgpu::TextureViewDimension::e2D)});
-        break;
-      case wgsl::BindingKind::kSampler:
-        material.push_back({slot.binding, wgpu::ShaderStage::Fragment,
-                            SamplerLayout::Filtering()});
-        break;
-      case wgsl::BindingKind::kSamplerComparison:
-        material.push_back({slot.binding, wgpu::ShaderStage::Fragment,
-                            SamplerLayout::Comparison()});
-        break;
-      default:
-        material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
-             TextureLayout::Float(wgpu::TextureViewDimension::e2D)});
-        break;
-    }
-  }
-  groups.push_back({kGroupMaterial, std::move(material)});
-  groups.push_back({kGroupGlobals, GlobalsEntries()});
-
-  const std::vector<wgsl::LayoutGroup> reflected =
-      wgsl::Reflect(vs_wgsl_, fs_wgsl_);
-  uint32_t max_group = kFirstReflectedGroup - 1;
-  for (const wgsl::LayoutGroup& group : reflected)
-    max_group = std::max(max_group, group.first);
-
-  for (uint32_t index = kFirstReflectedGroup; index <= max_group; ++index) {
-    std::vector<LayoutEntry> entries;
-    for (const wgsl::LayoutGroup& group : reflected)
-      if (group.first == index)
-        entries = group.second;
-    groups.push_back({index, std::move(entries)});
-  }
-
-  const ShaderSource vertex{vs_wgsl_, "vs_main", groups};
-  const ShaderSource fragment{fs_wgsl_, "fs_main", {}};
-  Pipeline shader(vertex, fragment,
-                  skinned_ ? SkinnedMeshVertexLayout() : MeshVertexLayout(),
-                  {1});
-
-  wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
-  primitive.cullMode = static_cast<wgpu::CullMode>(cull_);
-  primitive.frontFace = wgpu::FrontFace::CCW;
-
-  wgpu::DepthStencilState depth;
-  depth.format = wgpu::TextureFormat::Depth32Float;
-  depth.depthWriteEnabled =
-      depth_write_ ? wgpu::OptionalBool::True : wgpu::OptionalBool::False;
-  depth.depthCompare = depth_test_ ? wgpu::CompareFunction::LessEqual
-                                   : wgpu::CompareFunction::Always;
-  depth.stencilFront.compare = wgpu::CompareFunction::Always;
-  depth.stencilFront.failOp = wgpu::StencilOperation::Keep;
-  depth.stencilFront.depthFailOp = wgpu::StencilOperation::Keep;
-  depth.stencilFront.passOp = wgpu::StencilOperation::Keep;
-  depth.stencilBack = depth.stencilFront;
-  depth.stencilReadMask = 0;
-  depth.stencilWriteMask = 0;
-
-  const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_);
-
-  wgpu::ColorTargetState target;
-  target.format = kColorTargetFormat;
-  target.blend = blend ? &*blend : nullptr;
-
-  const wgpu::RenderPipeline pipeline =
-      shader.MakeState(primitive, depth, {target});
-
-  auto holder = MakeRefCounted<PipelineHolder>();
-  holder->pipeline = pipeline;
-
-  holder_ = std::move(holder);
-  group_count_ = static_cast<uint32_t>(groups.size());
-  pipeline_dirty_ = false;
-  binding_dirty_ = true;
-
-  LOGGER_DEBUG("material3d: pass '{}' reflected {} slots", tag_,
-               static_cast<int32_t>(slots_.size()));
-}
-
 void MaterialPass3D::RebuildBindGroup() {
-  if (!holder_ || pipeline_dirty_)
-    AcquirePipeline();
+  EnsureBuilder();
 
   std::vector<wgpu::BindGroupEntry> entries;
   entries.reserve(slots_.size());
@@ -531,12 +614,18 @@ void MaterialPass3D::RebuildBindGroup() {
         entry.sampler = MaterialDefaults::Get().shadow_sampler();
         break;
       default: {
-        const auto found = texture_map_.find(slot.name);
-        RefPtr<Bitmap> texture =
-            found == texture_map_.end() ? nullptr : found->second;
-        const bool usable = texture && !texture->IsDisposed();
-        entry.textureView =
-            usable ? texture->texture_view() : MaterialDefaults::Get().white_view();
+        const auto view = view_map_.find(slot.name);
+        if (view != view_map_.end() && view->second)
+          entry.textureView = view->second->handle();
+
+        if (entry.textureView == nullptr) {
+          const auto found = texture_map_.find(slot.name);
+          RefPtr<Bitmap> texture =
+              found == texture_map_.end() ? nullptr : found->second;
+          const bool usable = texture && !texture->IsDisposed();
+          entry.textureView = usable ? texture->texture_view()
+                                     : MaterialDefaults::Get().white_view();
+        }
         break;
       }
     }
@@ -545,7 +634,7 @@ void MaterialPass3D::RebuildBindGroup() {
   }
 
   wgpu::BindGroupDescriptor desc;
-  desc.layout = holder_->pipeline.GetBindGroupLayout(kGroupMaterial);
+  desc.layout = material_layout_;
   desc.entryCount = entries.size();
   desc.entries = entries.empty() ? nullptr : entries.data();
 
@@ -580,19 +669,9 @@ RefPtr<MaterialPass3D> Material3D::AddPass(std::string tag,
 
 RefPtr<MaterialPass3D> Material3D::AddShadowPass(std::string tag,
                                                  std::string vs_wgsl) {
-  if (tag.empty())
-    throw Exception(Exception::kRGSSError, "material3d: a pass needs a tag.");
-
-  for (const RefPtr<MaterialPass3D>& pass : passes_) {
-    if (pass->tag() == tag)
-      throw Exception(Exception::kRGSSError,
-                      "material3d: the pass tag '{}' is already used.", tag);
-  }
-
-  auto pass = MakeRefCounted<MaterialPass3D>(std::move(tag), std::move(vs_wgsl),
-                                             std::string());
+  RefPtr<MaterialPass3D> pass =
+      AddPass(std::move(tag), std::move(vs_wgsl), std::string());
   pass->set_depth_only(true);
-  passes_.push_back(pass);
   return pass;
 }
 
@@ -621,6 +700,12 @@ std::vector<std::string> Material3D::Tags() const {
   for (const RefPtr<MaterialPass3D>& pass : passes_)
     tags.push_back(pass->tag());
   return tags;
+}
+
+RefPtr<MaterialPass3D> Material3D::PassAt(int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(passes_.size()))
+    return nullptr;
+  return passes_[index];
 }
 
 }

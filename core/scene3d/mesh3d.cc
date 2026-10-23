@@ -48,16 +48,6 @@ Mesh3D::Mesh3D() = default;
 
 Mesh3D::~Mesh3D() = default;
 
-ATTR_DEF(Mesh3D, RefPtr<Material3D>, Material) {
-  if (value.has_value()) {
-    if (*value)
-      material_ = *value;
-    return std::nullopt;
-  } else {
-    return material_;
-  }
-}
-
 ATTR_DEF(Mesh3D, RefPtr<Skeleton3D>, Skeleton) {
   if (value.has_value()) {
     skeleton_ = *value;
@@ -123,7 +113,59 @@ void Mesh3D::SetSkinnedVertices(std::vector<float> data,
 void Mesh3D::SetIndices(std::vector<uint32_t> data) {
   indices_ = std::move(data);
   index_count_ = static_cast<int32_t>(indices_.size());
+
+  submeshes_.clear();
+  if (index_count_ > 0) {
+    SubMesh3D submesh;
+    submesh.index_offset = 0;
+    submesh.index_count = static_cast<uint32_t>(index_count_);
+    submesh.mat_slot = 0;
+    submeshes_.push_back(submesh);
+  }
+
   Upload();
+}
+
+void Mesh3D::AddSubmesh(int32_t index_offset,
+                        int32_t index_count,
+                        int32_t mat_slot) {
+  if (index_offset < 0 || index_count <= 0)
+    throw Exception(Exception::kRGSSError,
+                    "mesh3d: a submesh needs a non-negative offset and a "
+                    "positive index count.");
+  if (index_offset + index_count > index_count_)
+    throw Exception(Exception::kRGSSError,
+                    "mesh3d: the submesh range [{}, {}) is outside the index "
+                    "buffer ({} indices).",
+                    index_offset, index_offset + index_count, index_count_);
+
+  SubMesh3D submesh;
+  submesh.index_offset = static_cast<uint32_t>(index_offset);
+  submesh.index_count = static_cast<uint32_t>(index_count);
+  submesh.mat_slot = static_cast<uint32_t>(std::max(0, mat_slot));
+  submeshes_.push_back(submesh);
+}
+
+void Mesh3D::ClearSubmeshes() {
+  submeshes_.clear();
+}
+
+int32_t Mesh3D::SubmeshIndexOffset(int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(submeshes_.size()))
+    return 0;
+  return static_cast<int32_t>(submeshes_[index].index_offset);
+}
+
+int32_t Mesh3D::SubmeshIndexCount(int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(submeshes_.size()))
+    return 0;
+  return static_cast<int32_t>(submeshes_[index].index_count);
+}
+
+int32_t Mesh3D::SubmeshMatSlot(int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(submeshes_.size()))
+    return 0;
+  return static_cast<int32_t>(submeshes_[index].mat_slot);
 }
 
 int32_t Mesh3D::BoneCount() const {

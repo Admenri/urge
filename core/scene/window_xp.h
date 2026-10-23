@@ -120,7 +120,8 @@ class WindowXP : public Node {
                              const RectI& dest,
                              int32_t unit,
                              const glm::vec4& color,
-                             bool draw_center = true);
+                             bool draw_center = true,
+                             bool stretch = false);
 
   void CreateTintBinding();
   RectI ContentRectInternal() const;

@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Material3D  (core/scene3d/material3d.h:207-227)
+// Material3D  (core/scene3d/material3d.h:545-567)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Material3D);
@@ -138,6 +138,21 @@ RB_FUNC(Material3D_Tags) {
   return Qnil;
 }
 
+RB_FUNC(Material3D_PassAt) {
+  auto* self_obj = GetSelfData<urge::Material3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    int index;
+    ParseArgs(argc, argv, "i", &index);
+
+    auto result = self_obj->PassAt(index);
+    return WrapObject(result.get(), kMaterialPass3DDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitMaterial3DBindingAppend(VALUE klass);
 
 void InitMaterial3DBinding() {
@@ -152,6 +167,7 @@ void InitMaterial3DBinding() {
   DefineMethod(klass, "remove_pass", Material3D_RemovePass);
   DefineMethod(klass, "pass_count", Material3D_PassCount);
   DefineMethod(klass, "tags", Material3D_Tags);
+  DefineMethod(klass, "pass_at", Material3D_PassAt);
   InitMaterial3DBindingAppend(klass);
 }
 // --- GENERATED END ---

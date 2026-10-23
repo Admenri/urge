@@ -86,13 +86,7 @@ wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
 }
 
 FPSLimiter::FPSLimiter(int frame_rate)
-    : disabled_(
-#if defined(OS_EMSCRIPTEN)
-          true
-#else
-          false
-#endif
-          ),
+    : disabled_(false),
       last_tick_count_(SDL_GetPerformanceCounter()),
       tick_freq_(SDL_GetPerformanceFrequency()),
       tick_freq_ns_((double)tick_freq_ / 1e9),
@@ -239,23 +233,43 @@ Graphics::~Graphics() {
   UniformManager::Reset(nullptr);
   ShaderSet::Reset(nullptr);
   GPU::Reset(nullptr);
+#if defined(OS_EMSCRIPTEN)
+  /* wgpu-native's device destructor waits for the queue to drain and panics
+     when that times out, which on the web is always: the module is being torn
+     down and nothing can make progress any more.  The page is going away
+     anyway, so the device is leaked rather than destroyed -- the alternative is
+     an abort that hides whatever error got us here. */
+  GPUDevice::Release();
+#else
   GPUDevice::Reset(nullptr);
+#endif
 
   SDL_DestroyWindow(window_);
 }
 
 void Graphics::Update() {
-  const double tick_freq = static_cast<double>(SDL_GetPerformanceFrequency());
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
 
-  if (last_update_end_tick_ != 0)
-    logic_cost_ms_ = static_cast<float>(
-        static_cast<double>(frame_begin - last_update_end_tick_) * 1000.0 /
-        tick_freq);
+  RenderStats& stats = GetRenderStats();
 
-  GetRenderStats().ReportScriptTime(logic_cost_ms_);
+  /* The script's share of the frame is the gap since the previous frame ended:
+     `Graphics.update` returns into the game and the game comes back here.
+     Everything measured below is the engine's share. */
+  const double script_span =
+      last_update_end_tick_ == 0
+          ? 0.0
+          : TicksToMilliseconds(frame_begin - last_update_end_tick_);
+  logic_cost_ms_ = static_cast<float>(script_span);
+
+  /* Bitmap work the script itself forced -- `Bitmap#get_pixel` has to drain
+     the queue -- is already counted; it belongs to the script bucket rather
+     than to the engine's, and is kept apart below so nothing is counted
+     twice. */
+  const double bitmap_before_update = stats.current.bitmap_total_ms();
 
   Audio::Get().Update();
+  Input::Get().Update();
+  Mouse::Get().Update();
 
   if (!frame_started_) {
     frame_started_ = true;
@@ -272,46 +286,50 @@ void Graphics::Update() {
     ++frame_count_;
   }
   render_cost_ms_ = static_cast<float>(
-      static_cast<double>(SDL_GetPerformanceCounter() - render_begin) * 1000.0 /
-      tick_freq);
+      TicksToMilliseconds(SDL_GetPerformanceCounter() - render_begin));
 
   if (skip_frame)
     limiter_.Reset();
 
   PresentInternal();
 
+  /* The limiter's own wait is measured apart from the engine's work: it is the
+     frame's idle time, and reporting it as part of `Graphics.update` would
+     hide how much of the frame the engine actually costs. */
+  const uint64_t delay_begin = SDL_GetPerformanceCounter();
   limiter_.Delay();
+  const double delay_ms =
+      TicksToMilliseconds(SDL_GetPerformanceCounter() - delay_begin);
 
   last_update_end_tick_ = SDL_GetPerformanceCounter();
-  other_cost_ms_ = static_cast<float>(static_cast<double>(
-                                          last_update_end_tick_ - frame_begin) *
-                                      1000.0 / tick_freq) -
-                   render_cost_ms_;
-  if (other_cost_ms_ < 0.0f)
-    other_cost_ms_ = 0.0f;
 
-  RenderStats& stats = GetRenderStats();
+  const double update_span =
+      TicksToMilliseconds(last_update_end_tick_ - frame_begin);
+  const double bitmap_total = stats.current.bitmap_total_ms();
+  const double bitmap_in_update =
+      std::max(0.0, bitmap_total - bitmap_before_update);
 
-  const double frame_ms =
-      static_cast<double>(last_update_end_tick_ - frame_begin) * 1000.0 /
-      tick_freq;
-  {
-    FrameTimings& timings = stats.timings;
-    timings.cpu_ms = frame_ms - present_cost_ms_;
-    if (timings.cpu_ms < 0.0)
-      timings.cpu_ms = 0.0;
-    timings.present_ms = present_cost_ms_;
-    timings.update_ms = logic_cost_ms_;
-    timings.script_ms = stats.script_cost_ms();
-    timings.layout_ms = std::max(0.0, timings.update_ms - timings.script_ms);
-    timings.render_ms = render_cost_ms_;
-    timings.other_ms = other_cost_ms_ - timings.script_ms;
-    if (timings.other_ms < 0.0)
-      timings.other_ms = 0.0;
+  other_cost_ms_ =
+      static_cast<float>(std::max(0.0, update_span - render_cost_ms_));
+
+  FrameTimings& timings = stats.timings;
+  timings.total_ms = script_span + update_span;
+  timings.set_phase(FramePhase::kScript, script_span - bitmap_before_update);
+  timings.set_phase(FramePhase::kBitmap, bitmap_total);
+  timings.set_phase(FramePhase::kPresent, present_cost_ms_);
+  timings.set_phase(FramePhase::kUpdate, update_span - bitmap_in_update -
+                                             present_cost_ms_ - delay_ms);
+
+  const double measured = timings.phase(FramePhase::kScript) +
+                          timings.phase(FramePhase::kUpdate) +
+                          timings.phase(FramePhase::kBitmap) +
+                          timings.phase(FramePhase::kPresent);
+  timings.set_phase(FramePhase::kOther, timings.total_ms - measured);
+
+  if (!skip_frame) {
+    stats.frame_history.Push(timings.total_ms);
+    stats.timing_history.Push(timings);
   }
-
-  if (!skip_frame)
-    stats.frame_history.Push(frame_ms);
 
   stats.EndFrame();
 
@@ -321,13 +339,19 @@ void Graphics::Update() {
     LOGGER_INFO(
         "bstats ops={} bitmap_submits={} frame_submits={} upload={:.3f} "
         "record={:.3f} finish={:.3f} submit={:.3f} bitmap={:.3f} render={:.3f} "
-        "logic={:.3f} other={:.3f} present={:.3f} script={:.3f} frame={:.3f}",
+        "script={:.3f} update={:.3f} present={:.3f} other={:.3f} frame={:.3f}",
         counters.bitmap_ops, counters.bitmap_submits, counters.frame_submits,
         counters.bitmap_upload_ms, counters.bitmap_record_ms,
         counters.bitmap_finish_ms, counters.bitmap_submit_ms,
-        counters.bitmap_total_ms(), render_cost_ms_, logic_cost_ms_,
-        other_cost_ms_, present_cost_ms_, stats.timings.script_ms, frame_ms);
+        counters.bitmap_total_ms(), render_cost_ms_,
+        timings.phase(FramePhase::kScript),
+        timings.phase(FramePhase::kUpdate),
+        timings.phase(FramePhase::kPresent),
+        timings.phase(FramePhase::kOther), timings.total_ms);
   }
+
+  if (frame_callback_)
+    frame_callback_();
 }
 
 void Graphics::Wait(int32_t duration) {

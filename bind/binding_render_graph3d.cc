@@ -16,10 +16,12 @@
 #include "binding_camera3d.h"
 #include "binding_color.h"
 #include "binding_render_graph_pass3d.h"
+#include "binding_render_target3d.h"
 
 #include "core/common/utility.h"
 #include "core/scene3d/camera3d.h"
 #include "core/scene3d/render_graph3d.h"
+#include "core/scene3d/render_target3d.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -32,7 +34,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraph3D  (core/scene3d/render_graph3d.h:202-231)
+// RenderGraph3D  (core/scene3d/render_graph3d.h:355-402)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraph3D);
@@ -113,6 +115,91 @@ RB_FUNC(RenderGraph3D_PassCount) {
   return Qnil;
 }
 
+RB_FUNC(RenderGraph3D_PassAt) {
+  auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    int index;
+    ParseArgs(argc, argv, "i", &index);
+
+    auto result = self_obj->PassAt(index);
+    return WrapObject(result.get(), kRenderGraphPass3DDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraph3D_AddTexture) {
+  auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 3);
+    std::string name, format;
+    int samples;
+    ParseArgs(argc, argv, "ssi", &name, &format, &samples);
+
+    self_obj->AddTexture(name, format, samples);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraph3D_AddStorageTexture) {
+  auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    std::string name, format;
+    ParseArgs(argc, argv, "ss", &name, &format);
+
+    self_obj->AddStorageTexture(name, format);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraph3D_SetTextureScale) {
+  auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    std::string name;
+    double scale;
+    ParseArgs(argc, argv, "sf", &name, &scale);
+
+    self_obj->SetTextureScale(name, static_cast<float>(scale));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraph3D_GetTexture) {
+  auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string name;
+    ParseArgs(argc, argv, "s", &name);
+
+    auto result = self_obj->GetTexture(name);
+    return WrapObject(result.get(), kRenderTarget3DDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraph3D_TextureNames) {
+  auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return WrapVectorOf<std::string>(self_obj->TextureNames());
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(RenderGraph3D_GetAmbient) {
   auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
 
@@ -161,6 +248,12 @@ void InitRenderGraph3DBinding() {
   DefineMethod(klass, "remove_pass", RenderGraph3D_RemovePass);
   DefineMethod(klass, "clear", RenderGraph3D_Clear);
   DefineMethod(klass, "pass_count", RenderGraph3D_PassCount);
+  DefineMethod(klass, "pass_at", RenderGraph3D_PassAt);
+  DefineMethod(klass, "add_texture", RenderGraph3D_AddTexture);
+  DefineMethod(klass, "add_storage_texture", RenderGraph3D_AddStorageTexture);
+  DefineMethod(klass, "set_texture_scale", RenderGraph3D_SetTextureScale);
+  DefineMethod(klass, "get_texture", RenderGraph3D_GetTexture);
+  DefineMethod(klass, "texture_names", RenderGraph3D_TextureNames);
   DefineMethod(klass, "ambient", RenderGraph3D_GetAmbient);
   DefineMethod(klass, "ambient=", RenderGraph3D_SetAmbient);
   DefineMethod(klass, "shadow_size", RenderGraph3D_ShadowSize);

@@ -38,12 +38,6 @@ util::LayoutEntry Uniform(uint32_t binding,
   return {binding, stage, util::BufferLayout::Uniform(false, size)};
 }
 
-util::LayoutEntry ReadOnlyStorage(uint32_t binding,
-                                  wgpu::ShaderStage stage,
-                                  uint64_t size) {
-  return {binding, stage, util::BufferLayout::ReadOnlyStorage(false, size)};
-}
-
 util::LayoutEntry Texture(uint32_t binding, wgpu::ShaderStage stage) {
   return {binding, stage,
           util::TextureLayout::Float(wgpu::TextureViewDimension::e2D)};
@@ -248,26 +242,22 @@ struct SceneData {
   view_proj_mat: mat4x4<f32>,
 };
 
-struct SpriteParam {
-  model_mat: mat4x4<f32>,
-  blend_color: vec4<f32>,
-  blend_tone: vec4<f32>,
-  bush_depth: f32,
-  bush_opacity: f32,
-};
-
-struct SpriteParamArray {
-  params: array<SpriteParam>,
-};
-
 @group(0) @binding(0) var<uniform> u_scene: SceneData;
-@group(1) @binding(0) var<storage, read> u_sprite: SpriteParamArray;
 
 struct VertexInput {
   @builtin(vertex_index) vertex_index: u32,
   @location(0) in_position: vec4<f32>,
   @location(1) in_texcoord: vec2<f32>,
   @location(2) in_color: vec4<f32>,
+  // One instance per quad: the sprite's model matrix, its tint, and the bush
+  // pair.  See SpriteVertexLayout() in shader.h.
+  @location(3) in_model_0: vec4<f32>,
+  @location(4) in_model_1: vec4<f32>,
+  @location(5) in_model_2: vec4<f32>,
+  @location(6) in_model_3: vec4<f32>,
+  @location(7) in_blend_color: vec4<f32>,
+  @location(8) in_blend_tone: vec4<f32>,
+  @location(9) in_bush: vec4<f32>,
 };
 
 struct VertexOutput {
@@ -282,24 +272,23 @@ struct VertexOutput {
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
-  // Six vertices per sprite, so the index is a flat divide.
-  let param = u_sprite.params[input.vertex_index / 6u];
+  let model = mat4x4<f32>(input.in_model_0, input.in_model_1, input.in_model_2,
+                          input.in_model_3);
 
   var output: VertexOutput;
-  output.position = u_scene.view_proj_mat * param.model_mat * input.in_position;
+  output.position = u_scene.view_proj_mat * model * input.in_position;
   output.v_texcoord = input.in_texcoord;
   output.v_color = input.in_color;
-  output.v_blend_color = param.blend_color;
-  output.v_blend_tone = param.blend_tone;
-  output.v_bush_depth = param.bush_depth;
-  output.v_bush_opacity = param.bush_opacity;
+  output.v_blend_color = input.in_blend_color;
+  output.v_blend_tone = input.in_blend_tone;
+  output.v_bush_depth = input.in_bush.x;
+  output.v_bush_opacity = input.in_bush.y;
   return output;
 }
 )",
     "vs_main",
     {
         {0, {Uniform(0, wgpu::ShaderStage::Vertex, sizeof(SceneData))}},
-        {1, {ReadOnlyStorage(0, wgpu::ShaderStage::Vertex, 0)}},
     },
 };
 
@@ -600,6 +589,13 @@ wgpu::BlendState* GetBlendState(BlendType type) {
       .alpha = {.operation = wgpu::BlendOperation::Add,
                 .srcFactor = wgpu::BlendFactor::One,
                 .dstFactor = wgpu::BlendFactor::One}};
+  static wgpu::BlendState alpha{
+      .color = {.operation = wgpu::BlendOperation::Add,
+                .srcFactor = wgpu::BlendFactor::SrcAlpha,
+                .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha},
+      .alpha = {.operation = wgpu::BlendOperation::Add,
+                .srcFactor = wgpu::BlendFactor::One,
+                .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha}};
   static wgpu::BlendState subtract{
       .color = {.operation = wgpu::BlendOperation::ReverseSubtract,
                 .srcFactor = wgpu::BlendFactor::One,
@@ -618,6 +614,8 @@ wgpu::BlendState* GetBlendState(BlendType type) {
       return &addition;
     case BLEND_SUBTRACT:
       return &subtract;
+    case BLEND_ALPHA:
+      return &alpha;
   }
 }
 
@@ -666,9 +664,10 @@ wgpu::DepthStencilState* GetDepthStencilTestState() {
 std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
   const std::string text = Lower(Trim(states));
 
-  if (text.empty() || text == "normal" || text == "alpha" ||
-      text == "premultiplied")
+  if (text.empty() || text == "normal" || text == "premultiplied")
     return *GetBlendState(BLEND_NORMAL);
+  if (text == "alpha" || text == "straight" || text == "translucent")
+    return *GetBlendState(BLEND_ALPHA);
   if (text == "none" || text == "off" || text == "disable" ||
       text == "disabled")
     return std::nullopt;
@@ -743,7 +742,12 @@ TintBase::TintBase()
     : Pipeline(kVS_TransformBase, kFS_TintBase, QuadVertexLayout(), {1}) {}
 
 SpriteBase::SpriteBase()
-    : Pipeline(kVS_SpriteBatch, kFS_SpriteBatch, QuadVertexLayout()) {}
+    : Pipeline(kVS_SpriteBatch,
+               kFS_SpriteBatch,
+               SpriteVertexLayout(),
+               {},
+               {wgpu::VertexStepMode::Vertex,
+                wgpu::VertexStepMode::Instance}) {}
 
 PlaneBase::PlaneBase()
     : Pipeline(kVS_TransformBase, kFS_PlaneBase, QuadVertexLayout(), {1}) {}

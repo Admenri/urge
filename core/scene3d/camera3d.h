@@ -24,44 +24,24 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "glm/glm.hpp"
 
-#include "webgpu/webgpu_cpp.hpp"
-
 #include "core/common/definition.h"
 #include "core/common/object.h"
 #include "core/common/utility.h"
+#include "core/scene3d/node3d.h"
 
 namespace urge {
 
 URGE_BINDING()
-class Camera3D : public Object {
+class Camera3D : public Node3D {
  public:
   URGE_BINDING()
   Camera3D();
   ~Camera3D() override;
-
-  URGE_BINDING()
-  ATTR(RefPtr<Vector3>, Position) {
-    if (value.has_value()) {
-      if (*value)
-        position_ = *value;
-      return std::nullopt;
-    }
-    return position_;
-  }
-
-  URGE_BINDING()
-  ATTR(RefPtr<Vector4>, Rotation) {
-    if (value.has_value()) {
-      if (*value)
-        rotation_ = *value;
-      return std::nullopt;
-    }
-    return rotation_;
-  }
 
   URGE_BINDING()
   ATTR(float, Fov) {
@@ -98,7 +78,43 @@ class Camera3D : public Object {
     return ortho_size_;
   }
 
-  glm::mat4 transform() const;
+  URGE_BINDING(Name : "culling_mask")
+  ATTR(uint32_t, CullingMask) {
+    if (value.has_value())
+      culling_mask_ = *value;
+    return culling_mask_;
+  }
+
+  URGE_BINDING(Name : "clear_flags")
+  ATTR(uint32_t, ClearFlags) {
+    if (value.has_value())
+      clear_flags_ = *value;
+    return clear_flags_;
+  }
+
+  URGE_BINDING(Name : "clear_color")
+  ATTR(RefPtr<Color>, ClearColor) {
+    if (value.has_value()) {
+      if (*value)
+        clear_color_ = *value;
+      return std::nullopt;
+    }
+    return clear_color_;
+  }
+
+  URGE_BINDING(Name : "priority")
+  ATTR(int32_t, Priority) {
+    if (value.has_value())
+      priority_ = *value;
+    return priority_;
+  }
+
+  URGE_BINDING(Name : "target")
+  std::string GetTarget() const { return target_; }
+  URGE_BINDING(Name : "target=")
+  void SetTarget(std::string value) { target_ = std::move(value); }
+
+  glm::mat4 transform() const { return world_matrix(); }
   glm::mat4 view() const;
   glm::mat4 projection(const glm::ivec2& size) const;
   glm::mat4 view_projection(const glm::ivec2& size) const;
@@ -132,17 +148,31 @@ class Camera3D : public Object {
   bool IsVisible(const glm::vec3& center,
                  float radius,
                  const glm::ivec2& size) const;
+  bool Culled(const glm::vec3& center,
+              float radius,
+              const glm::ivec2& size,
+              uint32_t layers) const;
 
+  bool clear_color_enabled() const { return (clear_flags_ & 1u) != 0; }
+  bool clear_depth_enabled() const { return (clear_flags_ & 2u) != 0; }
+  bool clear_stencil_enabled() const { return (clear_flags_ & 4u) != 0; }
+  uint32_t culling_mask() const { return culling_mask_; }
+  const RefPtr<Color>& clear_color() const { return clear_color_; }
+  int32_t priority() const { return priority_; }
+  const std::string& target() const { return target_; }
 
  private:
-  RefPtr<Vector3> position_;
-  RefPtr<Vector4> rotation_;
   float fov_ = 50.0f;
   float near_ = 0.1f;
   float far_ = 1000.0f;
   bool orthographic_ = false;
   float ortho_size_ = 10.0f;
-
+  uint32_t culling_mask_ = 0xFFFFFFFFu;
+  uint32_t clear_flags_ = 3;
+  RefPtr<Color> clear_color_ =
+      MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f);
+  int32_t priority_ = 0;
+  std::string target_;
 };
 
 }

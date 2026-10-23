@@ -28,48 +28,138 @@
 #include <string>
 #include <vector>
 
+#include "webgpu/webgpu_cpp.hpp"
+
+#include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/graphics/gpu.h"
+#include "core/common/utility.h"
+#include "core/render/wgsl_reflect.h"
 #include "core/scene3d/camera3d.h"
 #include "core/scene3d/light3d.h"
+#include "core/scene3d/material3d.h"
+#include "core/scene3d/render_target3d.h"
 
 namespace urge {
 
+class GPURenderPassEncoder;
+class GPUTextureView;
 class RenderContext3D;
-class RenderTarget3D;
 class RenderGraph3D;
-class RenderGraphPass3D;
 
-class GraphPassProc3D : public RefCounted<GraphPassProc3D> {
+URGE_BINDING()
+class ComputePass3D : public Object {
  public:
-  virtual ~GraphPassProc3D() = default;
-  virtual void Invoke(RenderGraphPass3D* pass) = 0;
+  URGE_BINDING()
+  ComputePass3D(std::string wgsl, std::string entry);
+  ~ComputePass3D() override;
+
+  URGE_BINDING()
+  void SetUniform(std::string name, std::vector<float> values);
+  URGE_BINDING()
+  void SetBuffer(std::string name, std::vector<float> values);
+  URGE_BINDING()
+  void SetTexture(std::string name, RefPtr<Bitmap> texture);
+  URGE_BINDING()
+  void SetTarget(std::string name, RefPtr<RenderTarget3D> target,
+                 int32_t index);
+
+  URGE_BINDING(Name : "dispatch_x")
+  ATTR(int32_t, DispatchX) {
+    if (value.has_value())
+      dispatch_x_ = std::max(0, *value);
+    return dispatch_x_;
+  }
+  URGE_BINDING(Name : "dispatch_y")
+  ATTR(int32_t, DispatchY) {
+    if (value.has_value())
+      dispatch_y_ = std::max(0, *value);
+    return dispatch_y_;
+  }
+  URGE_BINDING(Name : "dispatch_z")
+  ATTR(int32_t, DispatchZ) {
+    if (value.has_value())
+      dispatch_z_ = std::max(0, *value);
+    return dispatch_z_;
+  }
+
+  void Execute(RenderContext3D* context);
+
+ private:
+  struct Slot {
+    std::string name;
+    uint32_t binding = 0;
+    wgsl::BindingKind kind = wgsl::BindingKind::kUniform;
+    uint64_t size = 0;
+  };
+
+  void EnsurePipeline();
+  void RebuildBindGroup();
+
+  std::string wgsl_;
+  std::string entry_;
+  int32_t dispatch_x_ = 1;
+  int32_t dispatch_y_ = 1;
+  int32_t dispatch_z_ = 1;
+
+  std::vector<Slot> slots_;
+  std::map<std::string, std::vector<float>> uniform_map_;
+  std::map<std::string, RefPtr<Bitmap>> texture_map_;
+  std::map<std::string, std::pair<RefPtr<RenderTarget3D>, int32_t>> target_map_;
+  std::map<std::string, wgpu::Buffer> uniform_buffers_;
+  std::map<std::string, std::vector<float>> buffer_data_;
+  std::map<std::string, wgpu::Buffer> storage_buffers_;
+
+  wgpu::ComputePipeline pipeline_ = nullptr;
+  wgpu::BindGroup binding_ = nullptr;
+  bool binding_dirty_ = true;
 };
 
 URGE_BINDING()
 class RenderGraphPass3D : public Object {
  public:
   explicit RenderGraphPass3D(std::string name);
+  ~RenderGraphPass3D() override;
 
   URGE_BINDING(Name : "name")
   std::string GetName() const { return name_; }
 
-  URGE_BINDING(Name : "color")
-  std::string GetColor() const { return color_; }
-  URGE_BINDING(Name : "color=")
-  void SetColor(std::string value) { color_ = std::move(value); }
+  URGE_BINDING(Name : "enabled")
+  ATTR(bool, Enabled) {
+    if (value.has_value())
+      enabled_ = *value;
+    return enabled_;
+  }
+
+  URGE_BINDING(Name : "kind")
+  ATTR(uint32_t, Kind) {
+    if (value.has_value())
+      kind_ = *value;
+    return kind_;
+  }
+
+  URGE_BINDING(Name : "colors")
+  std::vector<std::string> GetColors() const { return colors_; }
+  URGE_BINDING(Name : "colors=")
+  void SetColors(std::vector<std::string> value) { colors_ = std::move(value); }
 
   URGE_BINDING(Name : "clear_color")
   RefPtr<Color> GetClearColor() const { return clear_color_; }
   URGE_BINDING(Name : "clear_color=")
   void SetClearColor(RefPtr<Color> value) { clear_color_ = std::move(value); }
 
-  URGE_BINDING(Name : "clear_depth")
-  ATTR(bool, ClearDepth) {
+  URGE_BINDING(Name : "clear_flags")
+  ATTR(uint32_t, ClearFlags) {
     if (value.has_value())
-      clear_depth_ = *value;
-    return clear_depth_;
+      clear_flags_ = *value;
+    return clear_flags_;
+  }
+
+  URGE_BINDING(Name : "cull_override")
+  ATTR(int32_t, CullOverride) {
+    if (value.has_value())
+      cull_override_ = *value;
+    return cull_override_;
   }
 
   URGE_BINDING(Name : "sort_back_to_front")
@@ -92,6 +182,59 @@ class RenderGraphPass3D : public Object {
       camera_ = *value;
     return camera_;
   }
+
+  URGE_BINDING(Name : "layers")
+  ATTR(uint32_t, Layers) {
+    if (value.has_value())
+      layers_ = *value;
+    return layers_;
+  }
+
+  URGE_BINDING(Name : "queue_min")
+  ATTR(int32_t, QueueMin) {
+    if (value.has_value())
+      queue_min_ = *value;
+    return queue_min_;
+  }
+
+  URGE_BINDING(Name : "queue_max")
+  ATTR(int32_t, QueueMax) {
+    if (value.has_value())
+      queue_max_ = *value;
+    return queue_max_;
+  }
+
+  URGE_BINDING(Name : "tags")
+  std::vector<std::string> GetTags() const { return tags_; }
+  URGE_BINDING(Name : "tags=")
+  void SetTags(std::vector<std::string> value) { tags_ = std::move(value); }
+
+  URGE_BINDING(Name : "tag_ids")
+  std::vector<int32_t> GetTagIds() const { return tag_ids_; }
+  URGE_BINDING(Name : "tag_ids=")
+  void SetTagIds(std::vector<int32_t> value) { tag_ids_ = std::move(value); }
+
+  URGE_BINDING()
+  void BindTexture(std::string slot, std::string texture);
+  URGE_BINDING(Name : "bindings")
+  std::vector<std::string> GetBindings() const;
+
+  URGE_BINDING(Name : "reads")
+  std::vector<std::string> GetReads() const { return reads_; }
+  URGE_BINDING(Name : "reads=")
+  void SetReads(std::vector<std::string> value) { reads_ = std::move(value); }
+
+  URGE_BINDING(Name : "material")
+  RefPtr<MaterialPass3D> GetMaterial() const { return material_; }
+  URGE_BINDING(Name : "material=")
+  void SetMaterial(RefPtr<MaterialPass3D> value) {
+    material_ = std::move(value);
+  }
+
+  URGE_BINDING(Name : "compute")
+  RefPtr<ComputePass3D> GetCompute() const { return compute_; }
+  URGE_BINDING(Name : "compute=")
+  void SetCompute(RefPtr<ComputePass3D> value) { compute_ = std::move(value); }
 
   URGE_BINDING(Name : "cascades")
   ATTR(int32_t, Cascades) {
@@ -135,16 +278,6 @@ class RenderGraphPass3D : public Object {
     return shadow_distance_;
   }
 
-  URGE_BINDING(Name : "tags")
-  std::vector<std::string> GetTags() const { return tags_; }
-  URGE_BINDING(Name : "tags=")
-  void SetTags(std::vector<std::string> value) { tags_ = std::move(value); }
-
-  URGE_BINDING(Name : "reads")
-  std::vector<std::string> GetReads() const { return reads_; }
-  URGE_BINDING(Name : "reads=")
-  void SetReads(std::vector<std::string> value) { reads_ = std::move(value); }
-
   URGE_BINDING(Name : "texture")
   RefPtr<GPUTextureView> GetTexture(std::string name);
   URGE_BINDING(Name : "pass")
@@ -156,35 +289,54 @@ class RenderGraphPass3D : public Object {
   URGE_BINDING(Name : "height")
   int32_t Height();
 
-  void SetProc(RefPtr<GraphPassProc3D> proc) { proc_ = std::move(proc); }
-  RefPtr<GraphPassProc3D> GetProc() const { return proc_; }
   void SetOwner(RenderGraph3D* graph) { graph_ = graph; }
   void SetContext(RenderContext3D* context) { context_ = context; }
 
-  const std::string& color() const { return color_; }
+  const std::string& name() const { return name_; }
+  uint32_t kind() const { return kind_; }
+  const std::vector<std::string>& colors() const { return colors_; }
   const std::vector<std::string>& tags() const { return tags_; }
+  const std::vector<int32_t>& tag_ids() const { return tag_ids_; }
   const std::vector<std::string>& reads() const { return reads_; }
-  bool clear_depth() const { return clear_depth_; }
+  const std::map<std::string, std::string>& bindings() const {
+    return bindings_;
+  }
+  bool enabled() const { return enabled_; }
   bool depth_only() const { return depth_only_; }
-  RefPtr<Camera3D> camera() const { return camera_; }
+  bool sort_back_to_front() const { return sort_back_to_front_; }
+  uint32_t layers() const { return layers_; }
+  uint32_t clear_flags() const { return clear_flags_; }
+  int32_t queue_min() const { return queue_min_; }
+  int32_t cull_override() const { return cull_override_; }
+  int32_t queue_max() const { return queue_max_; }
   int32_t cascades() const { return cascades_; }
-  RefPtr<Light3D> shadow_light() const { return shadow_light_; }
   float split_lambda() const { return split_lambda_; }
   float cascade_fade() const { return cascade_fade_; }
-  RefPtr<Light3D> point_shadow_light() const { return point_shadow_light_; }
   float shadow_distance() const { return shadow_distance_; }
-  bool sort_back_to_front() const { return sort_back_to_front_; }
-  const RefPtr<Color>& clear_color() const { return clear_color_; }
+  RefPtr<Camera3D> camera() const { return camera_; }
+  RefPtr<Light3D> shadow_light() const { return shadow_light_; }
+  RefPtr<Light3D> point_shadow_light() const { return point_shadow_light_; }
+  RefPtr<Color> clear_color() const { return clear_color_; }
+  RefPtr<MaterialPass3D> material() const { return material_; }
+  RefPtr<ComputePass3D> compute() const { return compute_; }
 
  private:
   std::string name_;
-  std::string color_;
-  RefPtr<Color> clear_color_;
+  bool enabled_ = true;
+  uint32_t kind_ = 0;
+  std::vector<std::string> colors_;
+  RefPtr<Color> clear_color_ = MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f);
+  uint32_t clear_flags_ = 3;
   std::vector<std::string> tags_;
+  std::vector<int32_t> tag_ids_;
   std::vector<std::string> reads_;
-  bool clear_depth_ = true;
+  std::map<std::string, std::string> bindings_;
   bool sort_back_to_front_ = false;
   bool depth_only_ = false;
+  uint32_t layers_ = 0;
+  int32_t cull_override_ = -1;
+  int32_t queue_min_ = 0;
+  int32_t queue_max_ = 4000;
   RefPtr<Camera3D> camera_;
   RefPtr<Light3D> shadow_light_;
   RefPtr<Light3D> point_shadow_light_;
@@ -192,8 +344,9 @@ class RenderGraphPass3D : public Object {
   float split_lambda_ = 0.6f;
   float cascade_fade_ = 0.15f;
   float shadow_distance_ = 60.0f;
+  RefPtr<MaterialPass3D> material_;
+  RefPtr<ComputePass3D> compute_;
 
-  RefPtr<GraphPassProc3D> proc_;
   RenderGraph3D* graph_ = nullptr;
   RenderContext3D* context_ = nullptr;
 };
@@ -215,6 +368,19 @@ class RenderGraph3D : public Object {
   void Clear();
   URGE_BINDING()
   int32_t PassCount() const { return static_cast<int32_t>(passes_.size()); }
+  URGE_BINDING()
+  RefPtr<RenderGraphPass3D> PassAt(int32_t index) const;
+
+  URGE_BINDING()
+  void AddTexture(std::string name, std::string format, int32_t samples);
+  URGE_BINDING()
+  void AddStorageTexture(std::string name, std::string format);
+  URGE_BINDING()
+  void SetTextureScale(std::string name, float scale);
+  URGE_BINDING()
+  RefPtr<RenderTarget3D> GetTexture(std::string name);
+  URGE_BINDING()
+  std::vector<std::string> TextureNames() const;
 
   URGE_BINDING(Name : "ambient")
   RefPtr<Color> GetAmbient() const { return ambient_; }
@@ -223,8 +389,13 @@ class RenderGraph3D : public Object {
 
   URGE_BINDING(Name : "shadow_size")
   ATTR(int32_t, ShadowSize) {
-    if (value.has_value())
-      shadow_size_ = std::max(16, *value);
+    if (value.has_value()) {
+      const int32_t size = std::max(16, *value);
+      if (size != shadow_size_) {
+        shadow_size_ = size;
+        shadow_targets_.clear();
+      }
+    }
     return shadow_size_;
   }
 
@@ -237,15 +408,31 @@ class RenderGraph3D : public Object {
 
   void Execute(RenderContext3D* context);
   RefPtr<RenderTarget3D> Target(const std::string& name);
-  RefPtr<RenderTarget3D> ShadowTarget(const std::string& name,
-                                      int32_t layers);
+  RefPtr<RenderTarget3D> TargetForPass(RenderGraphPass3D* pass);
+  wgpu::TextureView ResolveColorView(const std::string& name);
 
  private:
+  struct TextureDesc {
+    wgpu::TextureFormat format = wgpu::TextureFormat::RGBA8Unorm;
+    int32_t samples = 1;
+    float scale = 1.0f;
+    bool storage = false;
+  };
+
   std::vector<size_t> BuildOrder() const;
+  RefPtr<RenderTarget3D> ShadowTarget(const std::string& name, int32_t layers);
+  void ExecuteShadowPass(RenderContext3D* context, RenderGraphPass3D* pass);
+  void ExecuteRasterPass(RenderContext3D* context, RenderGraphPass3D* pass);
+  void ExecuteFullscreenPass(RenderContext3D* context,
+                             RenderGraphPass3D* pass);
 
   std::vector<RefPtr<RenderGraphPass3D>> passes_;
   std::map<std::string, RefPtr<RenderTarget3D>> targets_;
   std::map<std::string, RefPtr<RenderTarget3D>> shadow_targets_;
+  std::map<std::string, RefPtr<RenderTarget3D>> mrt_targets_;
+  std::map<std::string, std::pair<RefPtr<RenderTarget3D>, int32_t>>
+      attachment_views_;
+  std::map<std::string, TextureDesc> textures_;
   RefPtr<RenderTarget3D> final_target_;
   RefPtr<Color> ambient_;
   RefPtr<Camera3D> camera_;

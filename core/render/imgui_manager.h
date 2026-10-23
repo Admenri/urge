@@ -64,6 +64,8 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildAudioPanel();
   void BuildAboutPanel();
   void BuildFPSWindow();
+  void LoadFpsGeometry();
+  void SaveFpsGeometry();
   void CycleFPSMode();
 
   void CaptureBinding(const Input::KeySym& binding);
@@ -85,6 +87,26 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   bool output_devices_stale_ = true;
   std::vector<float> frame_times_;
   float ui_scale_ = 1.0f;
+
+  /* The frame monitor is the player's window, not the engine's: it is moved and
+     resized like any other, and the geometry is kept in logical units so a
+     change of display scale does not move it.  It is remembered across runs
+     because a game that clips the overlay is a game whose overlay is gone for
+     good otherwise.  The two modes are remembered apart -- a window made wide
+     enough for the breakdown must not make the one-line preview tall. */
+  struct FpsWindowGeometry {
+    float width = 0.0f;
+    float height = 0.0f;
+    bool custom = false;
+  };
+
+  bool fps_geometry_loaded_ = false;
+  bool fps_window_has_position_ = false;
+  bool fps_geometry_dirty_ = false;
+  FpsMode fps_applied_mode_ = FpsMode::kHidden;
+  float fps_window_x_ = 0.0f;
+  float fps_window_y_ = 0.0f;
+  FpsWindowGeometry fps_window_[2];
 };
 
 }

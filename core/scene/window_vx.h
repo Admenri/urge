@@ -103,6 +103,7 @@ class WindowVX : public Node {
 
   void EmitGroundInternal(PrimitiveEmitter& emitter);
   void EmitBackgroundInternal(PrimitiveEmitter& emitter);
+  void EmitTiledBackgroundInternal(PrimitiveEmitter& emitter);
   void EmitStencilClearInternal(PrimitiveEmitter& emitter, glm::ivec2 size);
   void EmitStencilInternal(PrimitiveEmitter& emitter);
   void EmitCursorInternal(PrimitiveEmitter& emitter);
@@ -120,7 +121,9 @@ class WindowVX : public Node {
                              const RectI& dest,
                              int32_t unit,
                              const glm::vec4& color,
-                             bool draw_center = true);
+                             bool draw_center = true,
+                             int32_t unit_y = 0,
+                             bool stretch = false);
 
   RectI ContentRectInternal() const;
   void CreateTintBinding();
@@ -139,7 +142,8 @@ class WindowVX : public Node {
   int32_t scale_ = 2;
 
   int32_t pause_index_ = 0;
-  int32_t cursor_index_ = 0;
+  int32_t cursor_opacity_ = 255;
+  bool cursor_fade_ = false;
   bool rgss3_style_ = true;
 
   UniformBlockPool::Slot object_slot_ = {};
@@ -148,6 +152,7 @@ class WindowVX : public Node {
   wgpu::BindGroup tint_group_;
 
   PrimitiveEmitter::Slot background_slot_ = {};
+  PrimitiveEmitter::Slot tiled_slot_ = {};
   PrimitiveEmitter::Slot ground_slot_ = {};
   PrimitiveEmitter::Slot stencil_clear_slot_ = {};
   PrimitiveEmitter::Slot stencil_slot_ = {};

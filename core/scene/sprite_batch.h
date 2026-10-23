@@ -70,7 +70,7 @@ class SpriteBatch : public Singleton<SpriteBatch> {
 
   void SetParam(uint32_t vertex_first, const SpriteParam& param);
 
-  wgpu::BindGroup param_group() { return param_group_; }
+  wgpu::Buffer param_buffer() { return param_buffer_; }
 
   Run& run() { return run_; }
 
@@ -80,7 +80,6 @@ class SpriteBatch : public Singleton<SpriteBatch> {
   PrimitiveEmitter emitter_;
   std::vector<SpriteParam> params_;
   wgpu::Buffer param_buffer_ = nullptr;
-  wgpu::BindGroup param_group_ = nullptr;
   Run run_;
   bool disabled_ = false;
 };

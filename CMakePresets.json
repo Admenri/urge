@@ -25,19 +25,18 @@
     {
       "name": "win64-vendored-ruby",
       "displayName": "Windows x64 + bundled CRuby",
-      "description": "Compiles the vendored CRuby in third_party/cruby. A prebuilt drop-in in bind/external is ignored, so both interpreters can be built from one checkout without moving files.",
-      "inherits": "win64-base",
-      "cacheVariables": {
-        "URGE_RUBY_INTERPRETER": "bundled"
-      }
+      "description": "Compiles the vendored CRuby in third_party/ruby; the interpreter is never taken from outside the tree.",
+      "inherits": "win64-base"
     },
     {
-      "name": "win64-external-ruby",
-      "displayName": "Windows x64 + external CRuby",
-      "description": "Links the prebuilt CRuby in bind/external and turns YJIT on. Configure fails when the drop-in is absent rather than falling back to the bundled interpreter.",
-      "inherits": "win64-base",
+      "name": "emscripten-wasm32",
+      "displayName": "WebAssembly (Emscripten)",
+      "description": "Cross-compiles the engine for wasm32 with the Emscripten SDK. The toolchain file is the one inside the SDK, referenced through $EMSDK, so no install path is recorded in this tree: source emsdk_env (or export EMSDK) first. Ninja, cargo and the wasm32-unknown-emscripten Rust target are needed as well. Set URGE_WEB_ASSETS to a game directory to preload it into the module's filesystem.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
-        "URGE_RUBY_INTERPRETER": "external"
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     }
   ],
@@ -49,22 +48,15 @@
       "configuration": "RelWithDebInfo"
     },
     {
-      "name": "win64-external-ruby",
-      "displayName": "Build Game (external CRuby, RelWithDebInfo)",
-      "configurePreset": "win64-external-ruby",
-      "configuration": "RelWithDebInfo"
-    },
-    {
       "name": "win64-vendored-ruby-debug",
       "displayName": "Build Game (bundled CRuby, Debug)",
       "configurePreset": "win64-vendored-ruby",
       "configuration": "Debug"
     },
     {
-      "name": "win64-external-ruby-debug",
-      "displayName": "Build Game (external CRuby, Debug)",
-      "configurePreset": "win64-external-ruby",
-      "configuration": "Debug"
+      "name": "emscripten-wasm32",
+      "displayName": "Build Game (wasm32, RelWithDebInfo)",
+      "configurePreset": "emscripten-wasm32"
     }
   ]
 }

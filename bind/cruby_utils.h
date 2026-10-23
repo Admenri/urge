@@ -28,9 +28,9 @@
 #endif
 
 // <windows.h> reaches every glue TU from inside ruby.h -- on Win32
-// third_party/cruby/thread_win32.h includes it -- and it #defines a few short
-// names as macros.  A function-like macro silently rewrites the engine's own
-// declarations, because core/*.h are parsed *after* this header:
+// ruby/win32.h includes <winsock2.h>, which includes it -- and it #defines a
+// few short names as macros.  A function-like macro silently rewrites the
+// engine's own declarations, because core/*.h are parsed *after* this header:
 //
 //   WinUser.h  #define DrawText DrawTextA
 //     => core/canvas/bitmap.h's `void Bitmap::DrawText(...)` became

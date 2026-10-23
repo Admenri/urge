@@ -27,9 +27,7 @@
 #include <vector>
 
 #include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/quaternion.hpp"
 #include "glm/gtc/type_ptr.hpp"
-
 
 namespace urge {
 
@@ -43,26 +41,18 @@ float AspectOf(const glm::ivec2& size) {
 
 }
 
-Camera3D::Camera3D()
-    : position_(MakeRefCounted<Vector3>(0.0f)),
-      rotation_(MakeRefCounted<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)) {}
+Camera3D::Camera3D() = default;
 
 Camera3D::~Camera3D() = default;
-
-glm::mat4 Camera3D::transform() const {
-  glm::mat4 result = glm::translate(glm::mat4(1.0f), position_->data);
-  result *= glm::mat4_cast(glm::quat(rotation_->data.w, rotation_->data.x,
-                                     rotation_->data.y, rotation_->data.z));
-  return result;
-}
 
 glm::mat4 Camera3D::view() const {
   return glm::inverse(transform());
 }
 
 glm::mat4 Camera3D::projection(const glm::ivec2& size) const {
+  const float aspect = AspectOf(size);
+
   if (orthographic_) {
-    const float aspect = AspectOf(size);
     const float half_height = ortho_size_;
     const float half_width = half_height * aspect;
 
@@ -73,7 +63,17 @@ glm::mat4 Camera3D::projection(const glm::ivec2& size) const {
     result[3][2] = near_ / (near_ - far_);
     return result;
   }
-  return glm::perspective(glm::radians(fov_), AspectOf(size), near_, far_);
+
+  const float focal = 1.0f / std::tan(glm::radians(fov_) * 0.5f);
+  const float depth = near_ - far_;
+
+  glm::mat4 result(0.0f);
+  result[0][0] = focal / aspect;
+  result[1][1] = focal;
+  result[2][2] = far_ / depth;
+  result[2][3] = -1.0f;
+  result[3][2] = near_ * far_ / depth;
+  return result;
 }
 
 glm::mat4 Camera3D::view_projection(const glm::ivec2& size) const {
@@ -165,13 +165,14 @@ std::vector<glm::mat4> Camera3D::ComputeCascades(
     for (const glm::vec3& corner : corners)
       radius = std::max(radius, glm::length(corner - center));
     radius = std::max(radius, 0.5f);
+    radius = std::ceil(radius * 4.0f) / 4.0f;
 
     const glm::mat4 light_view =
         glm::lookAt(center - direction * (radius * 2.0f), center, up);
 
     glm::vec3 center_light = glm::vec3(light_view * glm::vec4(center, 1.0f));
-    const float texel = (radius * 2.0f) / static_cast<float>(
-                                            std::max(shadow_size, 16));
+    const float texel =
+        (radius * 2.0f) / static_cast<float>(std::max(shadow_size, 16));
     center_light.x = std::floor(center_light.x / texel) * texel;
     center_light.y = std::floor(center_light.y / texel) * texel;
 
@@ -205,16 +206,17 @@ std::vector<float> Camera3D::ShadowCascades(RefPtr<Vector3> light_direction,
                                             int32_t shadow_size) {
   const glm::vec3 direction =
       light_direction ? light_direction->data : glm::vec3(0.0f, -1.0f, 0.0f);
-  const glm::ivec2 size(std::max(1, width), std::max(1, height));
-
   const std::vector<glm::mat4> matrices = ComputeCascades(
-      direction, count, lambda, size, max_distance, shadow_size);
+      direction, count, lambda,
+      glm::ivec2(std::max(1, width), std::max(1, height)), max_distance,
+      shadow_size);
 
-  std::vector<float> result(matrices.size() * 16);
-  for (size_t i = 0; i < matrices.size(); ++i) {
-    const float* data = glm::value_ptr(matrices[i]);
-    for (size_t j = 0; j < 16; ++j)
-      result[i * 16 + j] = data[j];
+  std::vector<float> result;
+  result.reserve(matrices.size() * 16);
+  for (const glm::mat4& matrix : matrices) {
+    const float* data = glm::value_ptr(matrix);
+    for (size_t i = 0; i < 16; ++i)
+      result.push_back(data[i]);
   }
   return result;
 }
@@ -246,6 +248,15 @@ bool Camera3D::IsVisible(const glm::vec3& center,
   }
 
   return true;
+}
+
+bool Camera3D::Culled(const glm::vec3& center,
+                      float radius,
+                      const glm::ivec2& size,
+                      uint32_t layers) const {
+  if ((layers & culling_mask_) == 0)
+    return true;
+  return !IsVisible(center, radius, size);
 }
 
 }

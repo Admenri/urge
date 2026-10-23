@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <fstream>
 #include <span>
 #include <string>
 #include <string_view>
@@ -274,6 +275,24 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
   g_queue.Submit(1, &command);
 }
 
+RefPtr<Bitmap> Bitmap::FromSurface(SDL_Surface* surface) {
+  if (!surface)
+    return nullptr;
+
+  if (surface->format != kInternalPixelFormat) {
+    SDL_Surface* converted = SDL_ConvertSurface(surface, kInternalPixelFormat);
+    SDL_DestroySurface(surface);
+    surface = converted;
+    if (!surface)
+      return nullptr;
+  }
+
+  auto bitmap = MakeRefCounted<Bitmap>(surface->w, surface->h);
+  bitmap->UploadSurface(surface);
+  SDL_DestroySurface(surface);
+  return bitmap;
+}
+
 Bitmap::~Bitmap() {
   Disposable::Dispose();
 }
@@ -456,6 +475,39 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
 
   const glm::vec4 color = UnpremultiplyColor(pixels.data());
   return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
+}
+
+void Bitmap::SavePpm(std::string filename) {
+  Disposable::Guard();
+  AcquireHandle();
+
+  const std::vector<std::uint8_t> pixels =
+      ReadTextureRegion(texture_, 0, 0, size_.x, size_.y);
+  if (pixels.empty())
+    throw Exception(Exception::kRGSSError,
+                    "bitmap: the read back of '{}' is empty.", filename);
+
+  std::ofstream out(filename, std::ios::binary);
+  if (!out)
+    throw Exception(Exception::kRGSSError, "bitmap: cannot write '{}'.",
+                    filename);
+
+  out << "P6\n" << size_.x << " " << size_.y << "\n255\n";
+
+  std::vector<char> row(static_cast<std::size_t>(size_.x) * 3);
+  for (int32_t y = 0; y < size_.y; ++y) {
+    for (int32_t x = 0; x < size_.x; ++x) {
+      const std::uint8_t* source =
+          pixels.data() + (static_cast<std::size_t>(y) * size_.x + x) * 4;
+      row[static_cast<std::size_t>(x) * 3 + 0] =
+          static_cast<char>(source[0]);
+      row[static_cast<std::size_t>(x) * 3 + 1] =
+          static_cast<char>(source[1]);
+      row[static_cast<std::size_t>(x) * 3 + 2] =
+          static_cast<char>(source[2]);
+    }
+    out.write(row.data(), static_cast<std::streamsize>(row.size()));
+  }
 }
 
 void Bitmap::SetPixel(int32_t x, int32_t y, RefPtr<Color> color) {

@@ -29,6 +29,8 @@
 #include <regex>
 #include <string>
 
+#include "core/render/texture_format.h"
+
 namespace urge::wgsl {
 
 namespace {
@@ -200,8 +202,12 @@ class Reflector {
                                util::BufferLayout::Uniform(false, layout.size)};
     }
 
-    if (address == "storage") {
+    if (address.rfind("storage", 0) == 0) {
       const TypeLayout layout = SizeOf(type);
+      if (address.find("read_write") != std::string::npos)
+        return util::LayoutEntry{binding, stage,
+                                 util::BufferLayout::Storage(false,
+                                                             layout.size)};
       return util::LayoutEntry{binding, stage,
                                util::BufferLayout::ReadOnlyStorage(
                                    false, layout.size)};
@@ -217,8 +223,20 @@ class Reflector {
       return util::LayoutEntry{
           binding, stage,
           util::TextureLayout::Depth(wgpu::TextureViewDimension::e2D)};
-    if (type.rfind("texture_storage", 0) == 0)
-      return std::nullopt;
+    if (type.rfind("texture_storage", 0) == 0) {
+      const size_t comma = type.find(',');
+      const size_t open = type.find('<');
+      if (open == std::string::npos || comma == std::string::npos)
+        return std::nullopt;
+      const std::string format_name = Trim(type.substr(open + 1, comma - open - 1));
+      const wgpu::TextureFormat format = ParseTextureFormat(format_name);
+      if (format == wgpu::TextureFormat::Undefined)
+        return std::nullopt;
+      return util::LayoutEntry{
+          binding, stage,
+          util::StorageTextureLayout::WriteOnly(
+              format, DimensionOfType(type))};
+    }
     if (type.rfind("texture_cube", 0) == 0)
       return util::LayoutEntry{
           binding, stage,
@@ -236,12 +254,22 @@ class Reflector {
     return std::nullopt;
   }
 
+  static wgpu::TextureViewDimension DimensionOfType(const std::string& type) {
+    if (type.rfind("texture_storage_2d_array", 0) == 0)
+      return wgpu::TextureViewDimension::e2DArray;
+    return wgpu::TextureViewDimension::e2D;
+  }
+
   static BindingKind KindOf(const std::string& address,
                             const std::string& type) {
     if (address == "uniform")
       return BindingKind::kUniform;
-    if (address == "storage")
-      return BindingKind::kStorage;
+    if (address.rfind("storage", 0) == 0)
+      return address.find("read_write") != std::string::npos
+                 ? BindingKind::kStorageReadWrite
+                 : BindingKind::kStorage;
+    if (type.rfind("texture_storage", 0) == 0)
+      return BindingKind::kStorageTexture;
     if (type == "sampler")
       return BindingKind::kSampler;
     if (type == "sampler_comparison")

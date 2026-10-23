@@ -120,8 +120,20 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
 
   if (window != nullptr) {
     wgpu::SurfaceDescriptor surface_desc;
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+    /* There is no window handle to hand over in a browser: the surface is the
+       HTML canvas, and Emscripten's EGL -- which wgpu's GLES backend renders
+       through -- always binds to the module canvas.  The selector has to name
+       that same element, which is the `#canvas` the shell hands to the module
+       as `Module.canvas`. */
+    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas_source = {};
+    canvas_source.chain.sType = static_cast<WGPUSType>(
+        WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector);
+    canvas_source.selector = WGPUStringView{"#canvas", WGPU_STRLEN};
+    surface_desc.nextInChain =
+        reinterpret_cast<wgpu::ChainedStruct*>(&canvas_source.chain);
+#elif defined(SDL_PLATFORM_WIN32)
     SDL_PropertiesID window_prop = SDL_GetWindowProperties(window);
-#if defined(SDL_PLATFORM_WIN32)
     wgpu::SurfaceSourceWindowsHWND win_hwnd;
     win_hwnd.hinstance = SDL_GetPointerProperty(
         window_prop, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
@@ -166,6 +178,14 @@ void GPUDevice::CreateDevice(std::string backend) {
     adapter_request.compatibleSurface = surface_;
   instance_.RequestAdapter(&adapter_request, adapter_callback);
 
+  /* A backend may complete the request before returning from RequestAdapter
+     (the GLES one does, on Emscripten and on the desktop) -- but it is allowed
+     not to, and there is no event loop running yet to deliver a deferred
+     callback.  Pumping the instance once here makes the two cases look the
+     same to the rest of this function. */
+  if (!adapter_)
+    instance_.ProcessEvents();
+
   WGPURequestDeviceCallbackInfo device_callback = {};
   device_callback.mode = WGPUCallbackMode_AllowProcessEvents;
   device_callback.callback = [](WGPURequestDeviceStatus status,
@@ -178,6 +198,9 @@ void GPUDevice::CreateDevice(std::string backend) {
 
   wgpu::DeviceDescriptor device_desc;
   adapter_.RequestDevice(&device_desc, device_callback);
+
+  if (!device_)
+    instance_.ProcessEvents();
 
   wgpu::AdapterInfo adapter_info;
   adapter_.GetInfo(&adapter_info);

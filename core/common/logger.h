@@ -79,6 +79,18 @@ inline LogLevel& CurrentLevel() {
   return level;
 }
 
+using LogSink = void (*)(std::string_view line, void* user);
+
+inline LogSink& SinkCallback() {
+  static LogSink callback = nullptr;
+  return callback;
+}
+
+inline void*& SinkUser() {
+  static void* user = nullptr;
+  return user;
+}
+
 }
 
 inline LogLevel GetLogLevel() {
@@ -87,6 +99,11 @@ inline LogLevel GetLogLevel() {
 
 inline void SetLogLevel(LogLevel level) {
   logger_detail::CurrentLevel() = level;
+}
+
+inline void SetLogSink(logger_detail::LogSink callback, void* user) {
+  logger_detail::SinkCallback() = callback;
+  logger_detail::SinkUser() = user;
 }
 
 inline void LogWrite(LogLevel level,
@@ -116,6 +133,9 @@ inline void LogWrite(LogLevel level,
     line.push_back('\n');
 
     std::fwrite(line.data(), 1, line.size(), stderr);
+
+    if (auto sink = logger_detail::SinkCallback())
+      sink(line, logger_detail::SinkUser());
 
     if (last)
       break;

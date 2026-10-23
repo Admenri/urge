@@ -26,10 +26,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderTarget3D  (core/scene3d/render_target3d.h:41-53)
+// RenderTarget3D  (core/scene3d/render_target3d.h:53-86)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderTarget3D);
+
+RB_FUNC(RenderTarget3D_initialize) {
+  urge::RefPtr<urge::RenderTarget3D> obj = nullptr;
+  EXC_BEGIN {
+    CheckArgc(argc, 5);
+    int width, height, samples;
+    std::string color_format, depth_format;
+    ParseArgs(argc, argv, "iissi", &width, &height, &color_format,
+        &depth_format, &samples);
+
+    obj = urge::MakeRefCounted<urge::RenderTarget3D>(width, height,
+        color_format, depth_format, samples);
+  }
+  EXC_END;
+  return SetupSelfData(self, obj.get());
+}
 
 RB_FUNC(RenderTarget3D_Width) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
@@ -75,16 +91,92 @@ RB_FUNC(RenderTarget3D_LayerCount) {
   return Qnil;
 }
 
+RB_FUNC(RenderTarget3D_ColorCount) {
+  auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return LONG2NUM(self_obj->ColorCount());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderTarget3D_SampleCount) {
+  auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return LONG2NUM(self_obj->SampleCount());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderTarget3D_HasDepth) {
+  auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return self_obj->HasDepth() ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderTarget3D_HasStencil) {
+  auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return self_obj->HasStencil() ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderTarget3D_ColorFormats) {
+  auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return WrapVectorOf<std::string>(self_obj->ColorFormats());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderTarget3D_DepthFormat) {
+  auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    std::string result = self_obj->DepthFormat();
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
+  }
+  EXC_END;
+  return Qnil;
+}
+
 void InitRenderTarget3DBindingAppend(VALUE klass);
 
 void InitRenderTarget3DBinding() {
   auto klass = rb_define_class("RenderTarget3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRenderTarget3DDataType>);
 
+  DefineMethod(klass, "initialize", RenderTarget3D_initialize);
   DefineMethod(klass, "width", RenderTarget3D_Width);
   DefineMethod(klass, "height", RenderTarget3D_Height);
   DefineMethod(klass, "has_color", RenderTarget3D_HasColor);
   DefineMethod(klass, "layers", RenderTarget3D_LayerCount);
+  DefineMethod(klass, "color_count", RenderTarget3D_ColorCount);
+  DefineMethod(klass, "samples", RenderTarget3D_SampleCount);
+  DefineMethod(klass, "has_depth", RenderTarget3D_HasDepth);
+  DefineMethod(klass, "has_stencil", RenderTarget3D_HasStencil);
+  DefineMethod(klass, "color_formats", RenderTarget3D_ColorFormats);
+  DefineMethod(klass, "depth_format", RenderTarget3D_DepthFormat);
   InitRenderTarget3DBindingAppend(klass);
 }
 // --- GENERATED END ---

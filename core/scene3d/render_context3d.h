@@ -22,9 +22,12 @@
 
 #pragma once
 
+#include <array>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "webgpu/webgpu_cpp.hpp"
 
@@ -33,14 +36,15 @@
 #include "core/common/utility.h"
 #include "core/render/uniform.h"
 #include "core/scene3d/lighting3d.h"
+#include "core/scene3d/material3d.h"
 #include "core/scene3d/render_queue3d.h"
 #include "core/scene3d/render_target3d.h"
 
 namespace urge {
 
 class Camera3D;
+class GPUBuffer;
 class GPURenderPassEncoder;
-class Mesh3D;
 class Node3D;
 
 URGE_BINDING()
@@ -49,19 +53,9 @@ class RenderContext3D : public Object {
   RenderContext3D(wgpu::CommandEncoder encoder, RefPtr<RenderTarget3D> target);
   ~RenderContext3D() override;
 
+  void BeginFrame(wgpu::CommandEncoder encoder, RefPtr<RenderTarget3D> target);
   void Collect(Node3D* root, Camera3D* camera);
   void Flush();
-  void SetShadow(RefPtr<RenderTarget3D> target, const glm::mat4& view_proj);
-  void SetShadow(RefPtr<RenderTarget3D> target,
-                 const glm::mat4& view_proj,
-                 int32_t cascade);
-  void SetShadowSplits(std::vector<float> splits);
-  void SetShadowCascades(int32_t count);
-  void SetShadowFade(float ratio);
-  void SetPointShadow(RefPtr<RenderTarget3D> target,
-                      const std::vector<glm::mat4>& face_matrices,
-                      int32_t light_index,
-                      float range);
 
   URGE_BINDING(Name : "target")
   RefPtr<RenderTarget3D> GetTarget() { return target_; }
@@ -79,27 +73,70 @@ class RenderContext3D : public Object {
   void SetViewProjection(RefPtr<Camera3D> camera);
   void SetViewOverride(const glm::mat4& view_proj);
 
+  void SetShadow(RefPtr<RenderTarget3D> target, const glm::mat4& view_proj);
+  void SetShadow(RefPtr<RenderTarget3D> target,
+                 const glm::mat4& view_proj,
+                 int32_t cascade);
+  void SetShadowSplits(std::vector<float> splits);
+  void SetShadowCascades(int32_t count);
+  void SetShadowFade(float ratio);
+  void SetPointShadow(RefPtr<RenderTarget3D> target,
+                      const std::vector<glm::mat4>& face_matrices,
+                      int32_t light_index,
+                      float range);
+
   URGE_BINDING()
   void BeginPass(RefPtr<RenderTarget3D> target,
                  RefPtr<Color> clear = nullptr,
                  bool clear_depth = true);
-  void BeginPass(RefPtr<RenderTarget3D> target,
-                 RefPtr<Color> clear,
-                 bool clear_depth,
-                 int32_t layer);
+  URGE_BINDING()
+  void BeginPassEx(RefPtr<RenderTarget3D> target,
+                   std::vector<RefPtr<Color>> clears,
+                   bool clear_depth,
+                   bool clear_stencil,
+                   int32_t layer);
   URGE_BINDING()
   void EndPass();
   URGE_BINDING(Name : "pass")
   RefPtr<GPURenderPassEncoder> GetPass();
 
   URGE_BINDING()
-  void Draw(RefPtr<Mesh3D> mesh, std::string tag);
+  int32_t DrawFilter(std::vector<std::string> tags,
+                     std::vector<int32_t> tag_ids,
+                     int32_t queue_min,
+                     int32_t queue_max,
+                     uint32_t layers);
   URGE_BINDING()
-  int32_t DrawTag(std::string tag);
+  bool DrawItem(int32_t index);
+
+  void Draw(const RenderQueue3D::Item& item);
+  void DrawFullscreen(RefPtr<MaterialPass3D> pass);
+  void SetShadowPassMode(bool value) { shadow_pass_mode_ = value; }
+  void SetCullOverride(int32_t value) { cull_override_ = value; }
+  void SetSortBackToFront(bool value) { sort_back_to_front_ = value; }
+
+  URGE_BINDING()
+  void SetViewport(float x, float y, float width, float height);
+  URGE_BINDING()
+  void SetScissorRect(int32_t x, int32_t y, int32_t width, int32_t height);
+  URGE_BINDING()
+  void DrawIndexedIndirect(RefPtr<GPUBuffer> buffer, int32_t offset);
+
+  wgpu::CommandEncoder encoder() const { return encoder_; }
+  wgpu::RenderPassEncoder pass() const { return pass_; }
+  PipelineTargetState3D target_state() const;
+  uint64_t frame_token() const { return frame_token_; }
 
  private:
-  void UpdateView(bool shadow_pass, int32_t cascade);
-  void UpdateGlobals();
+  struct GlobalsSlot {
+    wgpu::Buffer buffer = nullptr;
+    wgpu::BindGroup group = nullptr;
+  };
+
+  void UploadView(int32_t slot);
+  void UploadShadowView(int32_t slot);
+  void UpdateGlobals(int32_t slot);
+  wgpu::BindGroup GlobalsGroup(int32_t slot);
 
   wgpu::CommandEncoder encoder_ = nullptr;
   RefPtr<RenderTarget3D> target_;
@@ -110,6 +147,7 @@ class RenderContext3D : public Object {
   glm::ivec2 pass_size_ = glm::ivec2(1);
   wgpu::RenderPassEncoder pass_ = nullptr;
   uint64_t frame_token_ = 0;
+  int32_t pass_layer_ = 0;
 
   RefPtr<Color> ambient_;
   RefPtr<RenderTarget3D> shadow_target_;
@@ -123,16 +161,20 @@ class RenderContext3D : public Object {
   glm::mat4 point_faces_[6] = {};
   int32_t point_light_index_ = -1;
   float point_range_ = 10.0f;
-  bool view_dirty_ = true;
+
+  int32_t pass_serial_ = 0;
+  bool shadow_pass_mode_ = false;
+  int32_t cull_override_ = -1;
+  bool sort_back_to_front_ = false;
+  std::array<bool, 16> view_uploaded_ = {};
 
   wgpu::Buffer view_buffer_ = nullptr;
-  wgpu::Buffer shadow_view_buffer_ = nullptr;
-  uint32_t shadow_view_offset_ = 0;
+  uint32_t view_stride_ = 0;
   wgpu::BindGroup view_group_ = nullptr;
   wgpu::BindGroup shadow_view_group_ = nullptr;
+  const void* view_group_shadow_target_ = nullptr;
 
-  wgpu::Buffer globals_buffer_ = nullptr;
-  wgpu::BindGroup globals_group_ = nullptr;
+  std::vector<GlobalsSlot> globals_slots_;
 
   std::unique_ptr<UniformBlockPool> mesh_pool_;
 };

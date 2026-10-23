@@ -36,8 +36,8 @@ set(MINIAUDIO_DEBUG_OUTPUT OFF)
 # pristine.  Everything a bundled copy has no business doing is turned off:
 # tests, command line tools, pkg-config files and CMake package exports.
 # OPUS_STATIC_RUNTIME has to match the runtime the rest of the tree links
-# against (see the MSVC block in the top-level CMakeLists.txt) -- without it
-# opus is built against the DLL runtime and the final link fails.
+# against (see the MSVC block in the top-level CMakeLists.txt) -- the tree is
+# on the DLL runtime because the script interpreter needs it, so opus is too.
 #
 # BUILD_TESTING is a cache entry rather than a plain variable because libogg
 # opens with `cmake_minimum_required(VERSION 2.8.12)`, where `option()` still
@@ -54,7 +54,7 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 set(BUILD_TESTING OFF CACHE BOOL "Build the testing tree" FORCE)
 set(OPUS_BUILD_TESTING OFF)
 set(OPUS_BUILD_PROGRAMS OFF)
-set(OPUS_STATIC_RUNTIME ON)
+set(OPUS_STATIC_RUNTIME OFF)
 set(OPUS_INSTALL_PKG_CONFIG_MODULE OFF)
 set(OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF)
 set(INSTALL_DOCS OFF)
@@ -171,14 +171,9 @@ add_subdirectory(wgpu-cmake)
 # reflection the pipelines need is read out of the WGSL source by
 # core/wgsl_reflect.cc.
 
-# The interpreter is either compiled here or taken from bind/external, and the
-# top-level CMakeLists.txt has already made that choice: it leaves
-# URGE_EXTERNAL_RUBY_DIR unset when there is no drop-in, and this directory
-# then supplies `ruby-static` itself.  Either way the target name is the same,
-# so nothing downstream has to know which case it is in.
-if(NOT URGE_EXTERNAL_RUBY_DIR)
-  add_subdirectory(cruby)
-endif()
+# The interpreter.  It is always the CRuby in third_party/ruby -- there is no
+# other source for `ruby-static` -- and this is the only place it is compiled.
+add_subdirectory(ruby)
 
 add_subdirectory(zlib)
 
@@ -208,6 +203,6 @@ if(URGE_ENABLE_VIDEO)
   add_subdirectory(webm)
 endif()
 
-if(URGE_ENABLE_NETWORK)
+if(URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)
   add_subdirectory(curl)
 endif()

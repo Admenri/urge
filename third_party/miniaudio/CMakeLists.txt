@@ -273,6 +273,9 @@ target_compile_definitions(miniaudio PUBLIC ${COMPILE_DEFINES})
 # underneath both.
 target_link_libraries(miniaudio PUBLIC vorbisfile vorbis opusfile opus ogg)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  target_compile_definitions(miniaudio PUBLIC MA_ENABLE_AUDIO_WORKLETS)
-endif()
+# `MA_ENABLE_AUDIO_WORKLETS` is deliberately not defined for Emscripten.
+# miniaudio's worklet backend pulls in Emscripten's audio worklet runtime, which
+# requires `-sWASM_WORKERS` and therefore shared memory plus atomics -- and a
+# module with atomics cannot link a single object built without them, which is
+# everything else in this tree.  Without the macro miniaudio falls back to
+# ScriptProcessorNode, which runs on the main thread and needs nothing special.

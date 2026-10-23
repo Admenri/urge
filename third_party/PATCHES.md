@@ -24,3 +24,20 @@
 - 验证：打补丁后同一行日志变成 `driver = SDL_JOYSTICK_HIDAPI_XBOX_ONE (ENABLED)`，
   引擎输出 `[Gamepad] 1 joystick(s), 1 gamepad(s)` 与
   `[Gamepad] connected: Xbox Series X Controller`。
+
+## `imgui` —— Emscripten + wgpu-native 被当成已废弃的 `-sUSE_WEBGPU`
+
+- 文件：`backends/imgui_impl_wgpu.cpp`，文件顶部
+- 现象：`#if defined(__EMSCRIPTEN__) && defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)` 直接
+  `#error Emscripten <4.0.10 with '-sUSE_WEBGPU=1' is not supported anymore.`，
+  Emscripten 上根本编不过。
+- 原因：上游写这条判断时，wgpu 在 Emscripten 上的唯一形态是那个已删除的 `-sUSE_WEBGPU`
+  运行时；而现在 wgpu-native 自己就能编到 `wasm32-unknown-emscripten`（GLES / WebGL 2 后端），
+  用的还是这个 backend 本来就在写的那份 `webgpu.h`。
+- 补丁：删掉那条 `#error`（保留三种 backend 宏必须选一个的那条判断）。
+
+  ```c
+  -#if defined(__EMSCRIPTEN__) && defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+  -#error Emscripten <4.0.10 with '-sUSE_WEBGPU=1' is not supported anymore.
+  -#endif
+  ```

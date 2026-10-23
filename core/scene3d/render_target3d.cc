@@ -27,15 +27,9 @@
 
 #include "core/common/exception.h"
 #include "core/render/device.h"
+#include "core/render/texture_format.h"
 
 namespace urge {
-
-namespace {
-
-constexpr wgpu::TextureFormat kShadowDepthFormat =
-    wgpu::TextureFormat::Depth32Float;
-
-}
 
 RenderTarget3D::RenderTarget3D(int32_t width, int32_t height, bool with_color)
     : RenderTarget3D(width, height, with_color, 1) {}
@@ -43,45 +37,134 @@ RenderTarget3D::RenderTarget3D(int32_t width, int32_t height, bool with_color)
 RenderTarget3D::RenderTarget3D(int32_t width,
                                int32_t height,
                                bool with_color,
-                               int32_t layers)
-    : size_(std::max(1, width), std::max(1, height)),
-      layers_(std::clamp(layers, 1, 8)) {
-  CreateResources(size_.x, size_.y, with_color, layers_);
+                               int32_t layers) {
+  RenderTargetDesc3D desc;
+  desc.width = width;
+  desc.height = height;
+  if (with_color)
+    desc.colors.push_back(wgpu::TextureFormat::RGBA8Unorm);
+  desc.depth = wgpu::TextureFormat::Depth32Float;
+  desc.layers = layers;
+  CreateResources(desc);
+}
+
+RenderTarget3D::RenderTarget3D(int32_t width,
+                               int32_t height,
+                               std::string color_format,
+                               std::string depth_format,
+                               int32_t samples) {
+  RenderTargetDesc3D desc;
+  desc.width = width;
+  desc.height = height;
+  desc.samples = static_cast<uint32_t>(std::max(1, samples));
+
+  if (!color_format.empty()) {
+    const wgpu::TextureFormat format = ParseTextureFormat(color_format);
+    if (format == wgpu::TextureFormat::Undefined)
+      throw Exception(Exception::kRGSSError,
+                      "render target 3d: '{}' is not a texture format.",
+                      color_format);
+    desc.colors.push_back(format);
+  }
+
+  if (!depth_format.empty()) {
+    const wgpu::TextureFormat format = ParseTextureFormat(depth_format);
+    if (format == wgpu::TextureFormat::Undefined || !IsDepthFormat(format))
+      throw Exception(Exception::kRGSSError,
+                      "render target 3d: '{}' is not a depth format.",
+                      depth_format);
+    desc.depth = format;
+  } else {
+    desc.depth = wgpu::TextureFormat::Undefined;
+  }
+
+  CreateResources(desc);
+}
+
+RenderTarget3D::RenderTarget3D(const RenderTargetDesc3D& desc) {
+  CreateResources(desc);
 }
 
 RenderTarget3D::~RenderTarget3D() = default;
 
-void RenderTarget3D::CreateResources(int32_t width,
-                                     int32_t height,
-                                     bool with_color,
-                                     int32_t layers) {
+void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
   const wgpu::Device device = GPUDevice::Get().device();
 
-  if (with_color) {
+  size_ = glm::ivec2(std::max(1, desc.width), std::max(1, desc.height));
+  layers_ = std::clamp(static_cast<int32_t>(desc.layers), 1, 8);
+  samples_ = std::max<uint32_t>(1, desc.samples);
+  const uint32_t mip_levels = std::max<uint32_t>(1, desc.mip_levels);
+
+  for (const wgpu::TextureFormat format : desc.colors) {
+    if (IsDepthFormat(format))
+      throw Exception(Exception::kRGSSError,
+                      "render target 3d: '{}' is a depth format, not a color "
+                      "format.",
+                      TextureFormatName(format));
+    color_formats_.push_back(format);
+
     wgpu::TextureDescriptor color_desc;
-    color_desc.usage = wgpu::TextureUsage::RenderAttachment |
-                       wgpu::TextureUsage::TextureBinding |
-                       wgpu::TextureUsage::CopySrc;
+    color_desc.usage = wgpu::TextureUsage::RenderAttachment;
+    if (samples_ == 1)
+      color_desc.usage |= wgpu::TextureUsage::TextureBinding |
+                          wgpu::TextureUsage::CopySrc;
+    if (desc.storage && IsStorageCapable(format))
+      color_desc.usage |= wgpu::TextureUsage::StorageBinding;
     color_desc.dimension = wgpu::TextureDimension::e2D;
-    color_desc.size.width = static_cast<uint32_t>(width);
-    color_desc.size.height = static_cast<uint32_t>(height);
-    color_desc.format = wgpu::TextureFormat::RGBA8Unorm;
-    color_texture_ = device.CreateTexture(&color_desc);
-    if (!color_texture_)
+    color_desc.size.width = static_cast<uint32_t>(size_.x);
+    color_desc.size.height = static_cast<uint32_t>(size_.y);
+    color_desc.size.depthOrArrayLayers = 1;
+    color_desc.format = format;
+    color_desc.sampleCount = samples_;
+    color_desc.mipLevelCount = mip_levels;
+
+    wgpu::Texture texture = device.CreateTexture(&color_desc);
+    if (!texture)
       throw Exception(Exception::kGPUError,
                       "render target 3d: the device rejected the color "
                       "texture.");
-    color_view_ = color_texture_.CreateView(nullptr);
+    color_textures_.push_back(texture);
+    color_views_.push_back(texture.CreateView(nullptr));
+
+    if (samples_ > 1) {
+      wgpu::TextureDescriptor resolve_desc;
+      resolve_desc.usage = wgpu::TextureUsage::RenderAttachment |
+                           wgpu::TextureUsage::TextureBinding |
+                           wgpu::TextureUsage::CopySrc;
+      resolve_desc.dimension = wgpu::TextureDimension::e2D;
+      resolve_desc.size.width = static_cast<uint32_t>(size_.x);
+      resolve_desc.size.height = static_cast<uint32_t>(size_.y);
+      resolve_desc.size.depthOrArrayLayers = 1;
+      resolve_desc.format = format;
+      resolve_desc.mipLevelCount = mip_levels;
+
+      wgpu::Texture resolved = device.CreateTexture(&resolve_desc);
+      if (!resolved)
+        throw Exception(Exception::kGPUError,
+                        "render target 3d: the device rejected the resolve "
+                        "texture.");
+      color_textures_.push_back(resolved);
+      resolve_views_.push_back(resolved.CreateView(nullptr));
+    } else {
+      resolve_views_.push_back(color_views_.back());
+    }
   }
 
+  depth_format_ = desc.depth;
+  if (depth_format_ == wgpu::TextureFormat::Undefined)
+    return;
+
   wgpu::TextureDescriptor depth_desc;
-  depth_desc.usage = wgpu::TextureUsage::RenderAttachment |
-                     wgpu::TextureUsage::TextureBinding;
+  depth_desc.usage = wgpu::TextureUsage::RenderAttachment;
+  if (samples_ == 1)
+    depth_desc.usage |= wgpu::TextureUsage::TextureBinding;
   depth_desc.dimension = wgpu::TextureDimension::e2D;
-  depth_desc.size.width = static_cast<uint32_t>(width);
-  depth_desc.size.height = static_cast<uint32_t>(height);
-  depth_desc.size.depthOrArrayLayers = static_cast<uint32_t>(layers);
-  depth_desc.format = kShadowDepthFormat;
+  depth_desc.size.width = static_cast<uint32_t>(size_.x);
+  depth_desc.size.height = static_cast<uint32_t>(size_.y);
+  depth_desc.size.depthOrArrayLayers = static_cast<uint32_t>(layers_);
+  depth_desc.format = depth_format_;
+  depth_desc.sampleCount = samples_;
+
   depth_texture_ = device.CreateTexture(&depth_desc);
   if (!depth_texture_)
     throw Exception(Exception::kGPUError,
@@ -90,14 +173,14 @@ void RenderTarget3D::CreateResources(int32_t width,
   wgpu::TextureViewDescriptor array_desc;
   array_desc.dimension = wgpu::TextureViewDimension::e2DArray;
   array_desc.baseArrayLayer = 0;
-  array_desc.arrayLayerCount = static_cast<uint32_t>(layers);
+  array_desc.arrayLayerCount = static_cast<uint32_t>(layers_);
   depth_array_view_ = depth_texture_.CreateView(&array_desc);
   if (!depth_array_view_)
     throw Exception(Exception::kGPUError,
                     "render target 3d: the device rejected the depth array "
                     "view.");
 
-  if (layers == 6) {
+  if (layers_ == 6) {
     wgpu::TextureViewDescriptor cube_desc;
     cube_desc.dimension = wgpu::TextureViewDimension::Cube;
     cube_desc.baseArrayLayer = 0;
@@ -109,8 +192,8 @@ void RenderTarget3D::CreateResources(int32_t width,
                       "view.");
   }
 
-  layer_views_.resize(layers);
-  for (int32_t layer = 0; layer < layers; ++layer) {
+  layer_views_.resize(layers_);
+  for (int32_t layer = 0; layer < layers_; ++layer) {
     wgpu::TextureViewDescriptor layer_desc;
     layer_desc.dimension = wgpu::TextureViewDimension::e2D;
     layer_desc.baseArrayLayer = static_cast<uint32_t>(layer);
@@ -118,9 +201,37 @@ void RenderTarget3D::CreateResources(int32_t width,
     layer_views_[layer] = depth_texture_.CreateView(&layer_desc);
     if (!layer_views_[layer])
       throw Exception(Exception::kGPUError,
-                      "render target 3d: the device rejected a depth layer "
+                      "render target 3d: the device rejected the depth layer "
                       "view.");
   }
+}
+
+bool RenderTarget3D::HasStencil() const {
+  return IsStencilFormat(depth_format_);
+}
+
+std::vector<std::string> RenderTarget3D::ColorFormats() const {
+  std::vector<std::string> result;
+  result.reserve(color_formats_.size());
+  for (const wgpu::TextureFormat format : color_formats_)
+    result.push_back(TextureFormatName(format));
+  return result;
+}
+
+std::string RenderTarget3D::DepthFormat() const {
+  return TextureFormatName(depth_format_);
+}
+
+wgpu::TextureView RenderTarget3D::color_view(int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(color_views_.size()))
+    return nullptr;
+  return color_views_[index];
+}
+
+wgpu::TextureView RenderTarget3D::sampled_view(int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(resolve_views_.size()))
+    return nullptr;
+  return resolve_views_[index];
 }
 
 wgpu::TextureView RenderTarget3D::depth_view(int32_t layer) const {
@@ -131,35 +242,58 @@ wgpu::TextureView RenderTarget3D::depth_view(int32_t layer) const {
 
 wgpu::RenderPassEncoder RenderTarget3D::BeginRendering(
     wgpu::CommandEncoder encoder,
-    std::optional<glm::vec4> clear,
+    const std::vector<std::optional<glm::vec4>>& clears,
     bool clear_depth,
+    bool clear_stencil,
     int32_t layer) {
-  wgpu::RenderPassColorAttachment color_attachment = {};
-  if (color_view_) {
-    color_attachment.view = color_view_;
-    color_attachment.loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
-    color_attachment.storeOp = wgpu::StoreOp::Store;
+  std::vector<wgpu::RenderPassColorAttachment> attachments;
+  attachments.reserve(color_views_.size());
+
+  for (size_t index = 0; index < color_views_.size(); ++index) {
+    const std::optional<glm::vec4>& clear =
+        index < clears.size() ? clears[index] : std::nullopt;
+
+    wgpu::RenderPassColorAttachment attachment = {};
+    attachment.view = color_views_[index];
+    attachment.resolveTarget =
+        samples_ > 1 ? resolve_views_[index] : nullptr;
+    attachment.loadOp = clear ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
+    attachment.storeOp = wgpu::StoreOp::Store;
     if (clear) {
-      color_attachment.clearValue.r = clear->r;
-      color_attachment.clearValue.g = clear->g;
-      color_attachment.clearValue.b = clear->b;
-      color_attachment.clearValue.a = clear->a;
+      attachment.clearValue.r = clear->r;
+      attachment.clearValue.g = clear->g;
+      attachment.clearValue.b = clear->b;
+      attachment.clearValue.a = clear->a;
     }
+    attachments.push_back(attachment);
   }
 
   wgpu::RenderPassDepthStencilAttachment depth_attachment = {};
-  depth_attachment.view = depth_view(layer);
-  depth_attachment.depthLoadOp =
-      clear_depth ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
-  depth_attachment.depthStoreOp = wgpu::StoreOp::Store;
-  depth_attachment.depthClearValue = 1.0f;
+  const bool has_depth = depth_texture_ != nullptr;
+  if (has_depth) {
+    const int32_t clamped =
+        std::clamp(layer, 0, static_cast<int32_t>(layer_views_.size()) - 1);
+    depth_attachment.view = layer_views_[clamped];
+    depth_attachment.depthLoadOp =
+        clear_depth ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
+    depth_attachment.depthStoreOp = wgpu::StoreOp::Store;
+    depth_attachment.depthClearValue = 1.0f;
+
+    if (IsStencilFormat(depth_format_)) {
+      depth_attachment.stencilLoadOp =
+          clear_stencil ? wgpu::LoadOp::Clear : wgpu::LoadOp::Load;
+      depth_attachment.stencilStoreOp = wgpu::StoreOp::Store;
+      depth_attachment.stencilClearValue = 0;
+    }
+  }
 
   wgpu::RenderPassDescriptor desc = {};
-  if (color_view_) {
-    desc.colorAttachmentCount = 1;
-    desc.colorAttachments = &color_attachment;
+  if (!attachments.empty()) {
+    desc.colorAttachmentCount = attachments.size();
+    desc.colorAttachments = attachments.data();
   }
-  desc.depthStencilAttachment = &depth_attachment;
+  if (has_depth)
+    desc.depthStencilAttachment = &depth_attachment;
 
   return encoder.BeginRenderPass(&desc);
 }

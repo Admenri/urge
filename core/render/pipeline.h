@@ -49,6 +49,7 @@ enum BlendType : int32_t {
   BLEND_NORMAL = 0,
   BLEND_ADDITION,
   BLEND_SUBTRACT,
+  BLEND_ALPHA,
 };
 
 wgpu::BlendState* GetBlendState(BlendType type);

@@ -13,9 +13,6 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_render_queue3d.h"
 
-#include "binding_mesh3d.h"
-
-#include "core/scene3d/mesh3d.h"
 #include "core/scene3d/render_queue3d.h"
 // --- GENERATED INCLUDES END ---
 
@@ -29,53 +26,27 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderQueue3D  (core/scene3d/render_queue3d.h:42-93)
+// RenderQueue3D  (core/scene3d/render_queue3d.h:43-96)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderQueue3D);
 
-RB_FUNC(RenderQueue3D_TagCount) {
-  auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
-
+RB_FUNC(RenderQueue3D_initialize) {
+  urge::RefPtr<urge::RenderQueue3D> obj = nullptr;
   EXC_BEGIN {
     CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->TagCount());
+    obj = urge::MakeRefCounted<urge::RenderQueue3D>();
   }
   EXC_END;
-  return Qnil;
-}
-
-RB_FUNC(RenderQueue3D_Tags) {
-  auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
-
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->Tags());
-  }
-  EXC_END;
-  return Qnil;
+  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(RenderQueue3D_Count) {
   auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
 
   EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string tag;
-    ParseArgs(argc, argv, "s", &tag);
-
-    return LONG2NUM(self_obj->Count(tag));
-  }
-  EXC_END;
-  return Qnil;
-}
-
-RB_FUNC(RenderQueue3D_TotalCount) {
-  auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
-
-  EXC_BEGIN {
     CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->TotalCount());
+    return LONG2NUM(self_obj->Count());
   }
   EXC_END;
   return Qnil;
@@ -92,47 +63,12 @@ RB_FUNC(RenderQueue3D_LightCount) {
   return Qnil;
 }
 
-RB_FUNC(RenderQueue3D_MeshAt) {
+RB_FUNC(RenderQueue3D_Tags) {
   auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
 
   EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string tag;
-    int index;
-    ParseArgs(argc, argv, "si", &tag, &index);
-
-    auto result = self_obj->MeshAt(tag, index);
-    return WrapObject(result.get(), kMesh3DDataType);
-  }
-  EXC_END;
-  return Qnil;
-}
-
-RB_FUNC(RenderQueue3D_DistanceAt) {
-  auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
-
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string tag;
-    int index;
-    ParseArgs(argc, argv, "si", &tag, &index);
-
-    return rb_float_new(self_obj->DistanceAt(tag, index));
-  }
-  EXC_END;
-  return Qnil;
-}
-
-RB_FUNC(RenderQueue3D_SortByDistance) {
-  auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
-
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string tag;
-    bool back_to_front;
-    ParseArgs(argc, argv, "sb", &tag, &back_to_front);
-
-    self_obj->SortByDistance(tag, back_to_front);
+    CheckArgc(argc, 0);
+    return WrapVectorOf<std::string>(self_obj->Tags());
   }
   EXC_END;
   return Qnil;
@@ -144,14 +80,10 @@ void InitRenderQueue3DBinding() {
   auto klass = rb_define_class("RenderQueue3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRenderQueue3DDataType>);
 
-  DefineMethod(klass, "tag_count", RenderQueue3D_TagCount);
-  DefineMethod(klass, "tags", RenderQueue3D_Tags);
+  DefineMethod(klass, "initialize", RenderQueue3D_initialize);
   DefineMethod(klass, "count", RenderQueue3D_Count);
-  DefineMethod(klass, "total_count", RenderQueue3D_TotalCount);
   DefineMethod(klass, "light_count", RenderQueue3D_LightCount);
-  DefineMethod(klass, "mesh_at", RenderQueue3D_MeshAt);
-  DefineMethod(klass, "distance_at", RenderQueue3D_DistanceAt);
-  DefineMethod(klass, "sort_by_distance", RenderQueue3D_SortByDistance);
+  DefineMethod(klass, "tags", RenderQueue3D_Tags);
   InitRenderQueue3DBindingAppend(klass);
 }
 // --- GENERATED END ---

@@ -48,6 +48,8 @@ class Bitmap : public Disposable {
   Bitmap(int32_t width, int32_t height);
   URGE_BINDING()
   Bitmap(RefPtr<Bitmap> other);
+
+  static RefPtr<Bitmap> FromSurface(SDL_Surface* surface);
   URGE_BINDING()
   ~Bitmap() override;
 
@@ -102,6 +104,8 @@ class Bitmap : public Disposable {
   void ClearRect(RefPtr<Rect> rect);
   URGE_BINDING()
   RefPtr<Color> GetPixel(int32_t x, int32_t y);
+  URGE_BINDING()
+  void SavePpm(std::string filename);
   URGE_BINDING()
   void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
   URGE_BINDING()

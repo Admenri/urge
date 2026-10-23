@@ -178,8 +178,9 @@ void Win32API_Free(void* pointer) {
   delete object;
 }
 
-// Ruby 1.9.3's rb_data_type_t has no `flags` member, so the initialiser stops
-// at `data`; the reserved slots inside `function` zero-fill.
+// The initialiser stops at `data`: `flags` is optional (it selects GC and
+// compaction behaviour, and zero means "neither"), and the reserved slots
+// inside `function` zero-fill.
 const rb_data_type_t kWin32APIDataType = {
     "Win32API",
     {nullptr, Win32API_Free, nullptr},

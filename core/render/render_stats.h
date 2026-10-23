@@ -23,6 +23,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -37,14 +38,45 @@ inline double TicksToMilliseconds(std::uint64_t ticks) {
   return static_cast<double>(ticks) * 1000.0 / frequency;
 }
 
+/* The parts of a frame the monitor reports on.  They are the buckets a frame
+   period is cut into, and they add up to it: whatever the four measured ones
+   leave over lands in `kOther`, which is the pacing wait of the frame limiter
+   and anything the sampler could not attribute. */
+enum class FramePhase : std::uint8_t {
+  kScript = 0,  // the game's Ruby code, between two `Graphics.update` calls
+  kUpdate,      // Graphics::Update, minus the two below
+  kBitmap,      // BitmapQueue: vertex upload, recording, submission
+  kPresent,     // swapchain acquire, encode, submit, present
+  kOther,       // frame limiter wait and the unmeasured rest
+};
+
+inline constexpr std::size_t kFramePhaseCount = 5;
+
 struct FrameTimings {
-  double cpu_ms = 0.0;
-  double update_ms = 0.0;
-  double script_ms = 0.0;
-  double layout_ms = 0.0;
-  double render_ms = 0.0;
-  double present_ms = 0.0;
-  double other_ms = 0.0;
+  /* Wall time from the start of one `Graphics.update` to the start of the
+     next: the period the player actually sees, and the only figure a frame
+     rate may be derived from.  Timing the inside of `Graphics.update` alone
+     reports the length of the engine's share of the frame -- with a heavy
+     script and a vertical sync that blocks the present, that share is a third
+     of the period, and the rate derived from it reads three times too high. */
+  double total_ms = 0.0;
+
+  std::array<double, kFramePhaseCount> phase_ms{};
+
+  double phase(FramePhase phase) const {
+    return phase_ms[static_cast<std::size_t>(phase)];
+  }
+
+  void set_phase(FramePhase phase, double milliseconds) {
+    phase_ms[static_cast<std::size_t>(phase)] = std::max(0.0, milliseconds);
+  }
+
+  double Sum() const {
+    double total = 0.0;
+    for (double value : phase_ms)
+      total += value;
+    return total;
+  }
 };
 
 struct RenderFrameCounters {
@@ -114,6 +146,22 @@ class FrameTimeHistory {
     return total / static_cast<double>(samples_.size());
   }
 
+  /* Average of the newest `count` samples -- the frame rate shown large is
+     taken from a window about a second long, so it moves at the speed of the
+     eye instead of at the speed of a single frame. */
+  double RecentAverage(size_t count) const {
+    if (samples_.empty() || count == 0)
+      return 0.0;
+
+    const std::vector<double> ordered = Ordered();
+    count = std::min(count, ordered.size());
+
+    double total = 0.0;
+    for (size_t i = ordered.size() - count; i < ordered.size(); ++i)
+      total += ordered[i];
+    return total / static_cast<double>(count);
+  }
+
   double SlowAverage(double ratio) const {
     const std::vector<double>& sorted = Sorted();
     if (sorted.empty())
@@ -158,33 +206,56 @@ class FrameTimeHistory {
   mutable bool sorted_stale_ = true;
 };
 
+/* The per-frame breakdown, kept for the stacked chart.  A ring rather than a
+   growing vector: the monitor runs for the whole session and only the newest
+   few seconds are ever drawn. */
+class FrameTimingRing {
+ public:
+  static constexpr std::size_t kCapacity = 180;
+
+  void Push(const FrameTimings& timings) {
+    samples_[next_] = timings;
+    next_ = (next_ + 1) % kCapacity;
+    if (count_ < kCapacity)
+      ++count_;
+  }
+
+  void Clear() {
+    next_ = 0;
+    count_ = 0;
+  }
+
+  std::size_t size() const { return count_; }
+
+  /* `index` counts from the oldest sample still held. */
+  const FrameTimings& At(std::size_t index) const {
+    const std::size_t oldest = (next_ + kCapacity - count_) % kCapacity;
+    return samples_[(oldest + index) % kCapacity];
+  }
+
+ private:
+  std::array<FrameTimings, kCapacity> samples_{};
+  std::size_t next_ = 0;
+  std::size_t count_ = 0;
+};
+
 struct RenderStats {
   RenderFrameCounters current;
   RenderFrameCounters last;
 
   FrameTimings timings;
   FrameTimeHistory frame_history;
+  FrameTimingRing timing_history;
 
   void EndFrame() {
     last = current;
     current = RenderFrameCounters();
   }
-
-  void ReportScriptTime(double milliseconds) { script_cost_ms_ = milliseconds; }
-
-  double script_cost_ms() const { return script_cost_ms_; }
-
- private:
-  double script_cost_ms_ = 0.0;
 };
 
 inline RenderStats& GetRenderStats() {
   static RenderStats stats;
   return stats;
-}
-
-inline const FrameTimeHistory& GetFrameHistory() {
-  return GetRenderStats().frame_history;
 }
 
 inline void CountSubmit(bool bitmap) {

@@ -87,7 +87,8 @@ bool WindowXPAbove::Prepare(DrawParam param) {
   };
 
   const std::size_t stencil_clear_first = emitter.size();
-  parent_->EmitStencilClearInternal(emitter, param->target->size());
+  if (Disposable::Check(parent_->contents_))
+    parent_->EmitStencilClearInternal(emitter, param->target->size());
   parent_->stencil_clear_slot_ = capture(stencil_clear_first);
 
   const std::size_t stencil_first = emitter.size();
@@ -127,6 +128,24 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
                            &window->above_object_slot_.offset);
   param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0, WGPU_WHOLE_SIZE);
 
+  if (window->cursor_slot_.count || window->arrows_slot_.count) {
+    param->pass.SetPipeline(ShaderSet::Get().state.window.texture_dynamic_pma);
+
+    if (window->cursor_slot_.count) {
+      param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
+                               nullptr);
+      param->pass.Draw(window->cursor_slot_.count, 1,
+                       window->cursor_slot_.first, 0);
+    }
+
+    if (window->arrows_slot_.count) {
+      param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
+                               nullptr);
+      param->pass.Draw(window->arrows_slot_.count, 1,
+                       window->arrows_slot_.first, 0);
+    }
+  }
+
   if (window->stencil_clear_slot_.count) {
     param->pass.SetPipeline(
         ShaderSet::Get().state.window.texture_stencil_write);
@@ -147,31 +166,12 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
                      window->stencil_slot_.first, 0);
   }
 
-  if (window->cursor_slot_.count || window->arrows_slot_.count ||
-      window->contents_slot_.count) {
+  if (window->contents_slot_.count && Disposable::Check(window->contents_)) {
     param->pass.SetPipeline(ShaderSet::Get().state.window.texture_stencil_test);
     param->pass.SetStencilReference(WindowXP::kStencilReference);
-
-    if (window->cursor_slot_.count) {
-      param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
-                               nullptr);
-      param->pass.Draw(window->cursor_slot_.count, 1,
-                       window->cursor_slot_.first, 0);
-    }
-
-    if (window->arrows_slot_.count) {
-      param->pass.SetBindGroup(2, window->windowskin_->texture_group(), 0,
-                               nullptr);
-      param->pass.Draw(window->arrows_slot_.count, 1,
-                       window->arrows_slot_.first, 0);
-    }
-
-    if (window->contents_slot_.count && Disposable::Check(window->contents_)) {
-      param->pass.SetBindGroup(2, window->contents_->texture_group(), 0,
-                               nullptr);
-      param->pass.Draw(window->contents_slot_.count, 1,
-                       window->contents_slot_.first, 0);
-    }
+    param->pass.SetBindGroup(2, window->contents_->texture_group(), 0, nullptr);
+    param->pass.Draw(window->contents_slot_.count, 1,
+                     window->contents_slot_.first, 0);
   }
 
   return false;
@@ -510,9 +510,7 @@ void WindowXP::EmitStencilInternal(PrimitiveEmitter& emitter) {
   if (!region())
     return;
 
-  const bool has_cursor =
-      cursor_rect_->data.width > 0 && cursor_rect_->data.height > 0;
-  if (!has_cursor && !pause_ && !Disposable::Check(contents_))
+  if (!Disposable::Check(contents_))
     return;
 
   emitter.EmitQuad(RectF(region),
@@ -535,7 +533,7 @@ void WindowXP::EmitCursorInternal(PrimitiveEmitter& emitter) {
             kSliceSize * 2 * scale_),
       RectI(kContentOffset * scale_ + cursor.x,
             kContentOffset * scale_ + cursor.y, cursor.width, cursor.height),
-      scale_, color, true);
+      scale_, color, true, true);
 }
 
 void WindowXP::EmitArrowsInternal(PrimitiveEmitter& emitter) {
@@ -647,9 +645,17 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
                                      const RectI& dest,
                                      int32_t unit,
                                      const glm::vec4& color,
-                                     bool draw_center) {
+                                     bool draw_center,
+                                     bool stretch) {
   if (!src() || !dest() || unit <= 0)
     return;
+
+  const auto emit_patch = [&](const RectI& src_part, const RectI& dest_part) {
+    if (stretch)
+      EmitSliceInternal(emitter, src_part, dest_part, color);
+    else
+      EmitTiledInternal(emitter, src_part, dest_part, color);
+  };
 
   const int32_t left = dest.x;
   const int32_t top = dest.y;
@@ -681,35 +687,28 @@ void WindowXP::EmitNineSliceInternal(PrimitiveEmitter& emitter,
   const int32_t inner_height = dest.height - unit * 2;
 
   if (inner_width > 0) {
-    EmitTiledInternal(emitter,
-                      RectI(src.x + source_unit, src.y,
-                            src.width - source_unit * 2, source_unit),
-                      RectI(left + unit, top, inner_width, unit), color);
-    EmitTiledInternal(
-        emitter,
-        RectI(src.x + source_unit, src.y + src.height - source_unit,
-              src.width - source_unit * 2, source_unit),
-        RectI(left + unit, bottom - unit, inner_width, unit), color);
+    emit_patch(RectI(src.x + source_unit, src.y,
+                     src.width - source_unit * 2, source_unit),
+               RectI(left + unit, top, inner_width, unit));
+    emit_patch(RectI(src.x + source_unit, src.y + src.height - source_unit,
+                     src.width - source_unit * 2, source_unit),
+               RectI(left + unit, bottom - unit, inner_width, unit));
   }
 
   if (inner_height > 0) {
-    EmitTiledInternal(emitter,
-                      RectI(src.x, src.y + source_unit, source_unit,
-                            src.height - source_unit * 2),
-                      RectI(left, top + unit, unit, inner_height), color);
-    EmitTiledInternal(
-        emitter,
-        RectI(src.x + src.width - source_unit, src.y + source_unit, source_unit,
-              src.height - source_unit * 2),
-        RectI(right - unit, top + unit, unit, inner_height), color);
+    emit_patch(RectI(src.x, src.y + source_unit, source_unit,
+                     src.height - source_unit * 2),
+               RectI(left, top + unit, unit, inner_height));
+    emit_patch(RectI(src.x + src.width - source_unit, src.y + source_unit,
+                     source_unit, src.height - source_unit * 2),
+               RectI(right - unit, top + unit, unit, inner_height));
   }
 
   if (draw_center && inner_width > 0 && inner_height > 0) {
-    EmitTiledInternal(
-        emitter,
-        RectI(src.x + source_unit, src.y + source_unit,
-              src.width - source_unit * 2, src.height - source_unit * 2),
-        RectI(left + unit, top + unit, inner_width, inner_height), color);
+    emit_patch(RectI(src.x + source_unit, src.y + source_unit,
+                     src.width - source_unit * 2,
+                     src.height - source_unit * 2),
+               RectI(left + unit, top + unit, inner_width, inner_height));
   }
 }
 

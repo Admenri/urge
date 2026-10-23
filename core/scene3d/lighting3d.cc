@@ -39,7 +39,7 @@ constexpr auto kBothStages = static_cast<wgpu::ShaderStage>(
 
 std::vector<util::LayoutEntry> ViewEntries() {
   return {
-      {0, kBothStages, util::BufferLayout::Uniform(false, sizeof(ViewData))},
+      {0, kBothStages, util::BufferLayout::Uniform(true, sizeof(ViewData))},
       {1, wgpu::ShaderStage::Fragment,
        util::TextureLayout::Depth(wgpu::TextureViewDimension::e2D)},
       {2, wgpu::ShaderStage::Fragment, util::SamplerLayout::Comparison()},
@@ -61,9 +61,8 @@ std::vector<util::LayoutEntry> ShadowViewEntries() {
 
 std::vector<util::LayoutEntry> MeshEntries() {
   return {
-      {0, wgpu::ShaderStage::Vertex,
-       util::BufferLayout::Uniform(true, sizeof(MeshData))},
-      {1, wgpu::ShaderStage::Vertex, util::BufferLayout::ReadOnlyStorage()},
+      {0, kBothStages, util::BufferLayout::Uniform(true, sizeof(MeshData))},
+      {1, kBothStages, util::BufferLayout::ReadOnlyStorage()},
   };
 }
 

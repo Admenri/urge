@@ -45,7 +45,7 @@ what you work with.
 | Window / input / audio | SDL3, SDL_image, SDL_ttf | Platform abstraction, image decoding, font rasterisation |
 | Graphics API | WebGPU (wgpu-native) | Rendering backend |
 | Shader toolchain | none | WGSL goes straight to wgpu; a small in-tree reflector derives the descriptor layout |
-| Scripting runtime | CRuby 1.9.3 (`third_party/cruby`) | Executes RGSS scripts |
+| Scripting runtime | CRuby 4.0.0 (`third_party/ruby`) | Executes RGSS scripts |
 | Virtual filesystem | PhysicsFS (physfs) | Asset and RTP mounting |
 | Math | glm | Vectors, matrices, projections |
 | Compression | zlib | Script-archive decompression |
@@ -231,7 +231,7 @@ These dependencies are provided as Git submodules and must be fetched while clon
 | `zlib` | Script-archive decompression |
 
 In addition, `third_party/` contains several **vendored** dependencies (not submodules):
-`cruby` (CRuby 1.9.3), `libffi` (the foreign-function interface the `Win32API` binding
+`ruby` (CRuby 4.0.0), `libffi` (the foreign-function interface the `Win32API` binding
 uses to make ABI-correct calls on x64), `webgpu-cpp` (the WebGPU C++ header wrapper),
 `miniaudio`, `imgui`, `dav1d` and `webm`.
 

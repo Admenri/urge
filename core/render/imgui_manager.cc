@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <cstdlib>
 #include <iterator>
 #include <string>
 
@@ -579,118 +580,487 @@ void ImGuiManager::BuildAboutPanel() {
   ImGui::EndChild();
 }
 
+namespace {
+
+struct PhaseStyle {
+  FramePhase phase;
+  const char* label;
+  ImVec4 color;
+};
+
+const PhaseStyle kPhaseStyles[kFramePhaseCount] = {
+    {FramePhase::kScript, "Scripts", ImVec4(0.96f, 0.66f, 0.26f, 1.0f)},
+    {FramePhase::kUpdate, "Graphics::Update", ImVec4(0.36f, 0.63f, 0.96f, 1.0f)},
+    {FramePhase::kBitmap, "BitmapQueue", ImVec4(0.30f, 0.82f, 0.72f, 1.0f)},
+    {FramePhase::kPresent, "Present", ImVec4(0.71f, 0.50f, 0.96f, 1.0f)},
+    {FramePhase::kOther, "Other", ImVec4(0.55f, 0.58f, 0.63f, 1.0f)},
+};
+
+constexpr float kTwoPi = 6.28318530718f;
+
+const ImVec4 kGood(0.42f, 0.85f, 0.45f, 1.0f);
+const ImVec4 kWarn(0.95f, 0.78f, 0.28f, 1.0f);
+const ImVec4 kBad(0.94f, 0.42f, 0.40f, 1.0f);
+
+/* A ring of the frame's phases, drawn as a filled circle with the total in the
+   middle.  The wedges are plain sectors -- convex, so the draw list can fill
+   them directly -- and the hole is painted over them in the window colour,
+   which keeps the result a donut without any of the triangulation a real
+   annulus would need. */
+void DrawPhaseDonut(const FrameTimings& timings, float radius) {
+  ImDrawList* draw = ImGui::GetWindowDrawList();
+  const ImVec2 origin = ImGui::GetCursorScreenPos();
+  const ImVec2 center(origin.x + radius, origin.y + radius);
+
+  int visible = 0;
+  for (const PhaseStyle& style : kPhaseStyles) {
+    if (timings.phase(style.phase) > 0.0)
+      ++visible;
+  }
+
+  const double total = timings.total_ms;
+  if (total > 0.0 && visible > 0) {
+    const float gap = visible > 1 ? 0.02f : 0.0f;
+    float angle = -kTwoPi * 0.25f;
+
+    ImVector<ImVec2> points;
+    for (const PhaseStyle& style : kPhaseStyles) {
+      const double value = timings.phase(style.phase);
+      if (value <= 0.0)
+        continue;
+
+      const float sweep = static_cast<float>(value / total) * kTwoPi;
+      const float begin = angle + gap * 0.5f;
+      const float end = angle + sweep - gap * 0.5f;
+      angle += sweep;
+      if (end <= begin)
+        continue;
+
+      const int segments = std::max(
+          2, static_cast<int>(std::ceil((end - begin) / kTwoPi * 120.0f)));
+
+      points.clear();
+      points.push_back(center);
+      for (int i = 0; i <= segments; ++i) {
+        const float a =
+            begin + (end - begin) * static_cast<float>(i) / segments;
+        points.push_back(ImVec2(center.x + std::cos(a) * radius,
+                                center.y + std::sin(a) * radius));
+      }
+
+      draw->AddConvexPolyFilled(points.Data, points.Size,
+                                ImGui::GetColorU32(style.color));
+    }
+  } else {
+    draw->AddCircleFilled(center, radius, ImGui::GetColorU32(ImGuiCol_FrameBg),
+                          64);
+  }
+
+  draw->AddCircleFilled(center, radius * 0.62f,
+                        ImGui::GetColorU32(ImGuiCol_WindowBg), 64);
+
+  char value[32];
+  snprintf(value, sizeof(value), "%.1f", total);
+  const ImVec2 value_size = ImGui::CalcTextSize(value);
+  const ImVec2 unit_size = ImGui::CalcTextSize("ms");
+  draw->AddText(ImVec2(center.x - value_size.x * 0.5f,
+                       center.y - value_size.y * 0.92f),
+                ImGui::GetColorU32(ImGuiCol_Text), value);
+  draw->AddText(ImVec2(center.x - unit_size.x * 0.5f,
+                       center.y + value_size.y * 0.08f),
+                ImGui::GetColorU32(ImGuiCol_TextDisabled), "ms");
+
+  ImGui::Dummy(ImVec2(radius * 2.0f, radius * 2.0f));
+}
+
+/* The legend is drawn by hand rather than with a table: the numbers have to sit
+   against the window's right edge whatever the width is, and a table lays
+   itself out against a width it only learns after the fact -- on a narrow
+   window it simply spills past the border. */
+void DrawPhaseLegend(const FrameTimings& timings, float width) {
+  ImDrawList* draw = ImGui::GetWindowDrawList();
+  const ImGuiStyle& style = ImGui::GetStyle();
+
+  const double total = timings.total_ms;
+  const float line = ImGui::GetTextLineHeight();
+  const float row_height = line + style.ItemSpacing.y * 0.5f;
+  const float box = line * 0.7f;
+
+  const ImVec2 start = ImGui::GetCursorScreenPos();
+  const float right = start.x + width;
+  float y = start.y;
+
+  for (const PhaseStyle& style_entry : kPhaseStyles) {
+    const double value = timings.phase(style_entry.phase);
+    const double share = total > 0.0 ? value / total * 100.0 : 0.0;
+
+    char text[64];
+    snprintf(text, sizeof(text), "%.2f ms   %.1f%%", value, share);
+    const ImVec2 text_size = ImGui::CalcTextSize(text);
+
+    const float value_x = right - text_size.x;
+    const float label_x = start.x + box + style.ItemSpacing.x;
+
+    draw->AddRectFilled(ImVec2(start.x, y + (line - box) * 0.5f),
+                        ImVec2(start.x + box, y + (line + box) * 0.5f),
+                        ImGui::GetColorU32(style_entry.color), 2.0f);
+
+    draw->PushClipRect(ImVec2(label_x, y),
+                       ImVec2(std::max(label_x, value_x - style.ItemSpacing.x),
+                              y + line),
+                       true);
+    draw->AddText(ImVec2(label_x, y), ImGui::GetColorU32(ImGuiCol_Text),
+                  style_entry.label);
+    draw->PopClipRect();
+
+    draw->AddText(ImVec2(value_x, y), ImGui::GetColorU32(ImGuiCol_TextDisabled),
+                  text);
+
+    y += row_height;
+  }
+
+  ImGui::Dummy(ImVec2(width, y - start.y));
+}
+
+/* One vertical bar per frame, each split into its phases, newest on the right.
+   The bar height is the frame period, so the budget line reads directly: bars
+   above it are frames that missed the target. */
+void DrawPhaseHistory(const FrameTimingRing& ring,
+                      float width,
+                      float height,
+                      double budget_ms) {
+  ImDrawList* draw = ImGui::GetWindowDrawList();
+  const ImVec2 origin = ImGui::GetCursorScreenPos();
+  const ImVec2 far_corner(origin.x + width, origin.y + height);
+
+  draw->AddRectFilled(origin, far_corner,
+                      ImGui::GetColorU32(ImGuiCol_FrameBg), 3.0f);
+
+  const std::size_t count = ring.size();
+  if (count == 0) {
+    ImGui::Dummy(ImVec2(width, height));
+    return;
+  }
+
+  double peak = std::max(budget_ms, 1.0);
+  for (std::size_t i = 0; i < count; ++i)
+    peak = std::max(peak, ring.At(i).total_ms);
+  peak *= 1.1;
+
+  const float slot = width / static_cast<float>(FrameTimingRing::kCapacity);
+  const float bar = std::max(1.0f, slot - 1.0f);
+
+  draw->PushClipRect(origin, far_corner, true);
+  for (std::size_t i = 0; i < count; ++i) {
+    const FrameTimings& sample = ring.At(i);
+    const float x = origin.x + width - static_cast<float>(count - i) * slot;
+
+    float y = origin.y + height;
+    for (const PhaseStyle& style : kPhaseStyles) {
+      const double value = sample.phase(style.phase);
+      if (value <= 0.0)
+        continue;
+
+      const float phase_height = static_cast<float>(value / peak) * height;
+      draw->AddRectFilled(ImVec2(x, y - phase_height), ImVec2(x + bar, y),
+                          ImGui::GetColorU32(style.color));
+      y -= phase_height;
+    }
+  }
+
+  if (budget_ms > 0.0) {
+    const float y =
+        origin.y + height - static_cast<float>(budget_ms / peak) * height;
+    draw->AddLine(ImVec2(origin.x, y), ImVec2(origin.x + width, y),
+                  ImGui::GetColorU32(ImGuiCol_TextDisabled), 1.0f);
+  }
+  draw->PopClipRect();
+
+  ImGui::Dummy(ImVec2(width, height));
+}
+
+float ParseGeometry(const std::string& text, float fallback) {
+  if (text.empty())
+    return fallback;
+
+  char* end = nullptr;
+  const float value = std::strtof(text.c_str(), &end);
+  if (end == text.c_str() || *end != '\0' || !std::isfinite(value))
+    return fallback;
+  return value;
+}
+
+}
+
+void ImGuiManager::LoadFpsGeometry() {
+  fps_geometry_loaded_ = true;
+
+  auto& config = Config::Get();
+
+  static constexpr const char* kWidthKeys[2] = {"FpsWindowCompactWidth",
+                                                "FpsWindowDetailedWidth"};
+  static constexpr const char* kHeightKeys[2] = {"FpsWindowCompactHeight",
+                                                 "FpsWindowDetailedHeight"};
+
+  for (int mode = 0; mode < 2; ++mode) {
+    FpsWindowGeometry& geometry = fps_window_[mode];
+    geometry.width =
+        ParseGeometry(config.GetValue("Debug", kWidthKeys[mode]), 0.0f);
+    geometry.height =
+        ParseGeometry(config.GetValue("Debug", kHeightKeys[mode]), 0.0f);
+    geometry.custom = geometry.width > 0.0f && geometry.height > 0.0f;
+  }
+
+  /* A negative coordinate is the "never placed" sentinel: a window the player
+     put against the left or top edge sits at zero, which is a real place. */
+  const float x = ParseGeometry(config.GetValue("Debug", "FpsWindowX"), -1.0f);
+  const float y = ParseGeometry(config.GetValue("Debug", "FpsWindowY"), -1.0f);
+
+  fps_window_has_position_ = x >= 0.0f && y >= 0.0f;
+  fps_window_x_ = x;
+  fps_window_y_ = y;
+}
+
+void ImGuiManager::SaveFpsGeometry() {
+  auto& config = Config::Get();
+
+  static constexpr const char* kWidthKeys[2] = {"FpsWindowCompactWidth",
+                                                "FpsWindowDetailedWidth"};
+  static constexpr const char* kHeightKeys[2] = {"FpsWindowCompactHeight",
+                                                 "FpsWindowDetailedHeight"};
+
+  config.SetValue("Debug", "FpsWindowX",
+                  std::to_string(static_cast<int>(fps_window_x_)));
+  config.SetValue("Debug", "FpsWindowY",
+                  std::to_string(static_cast<int>(fps_window_y_)));
+
+  for (int mode = 0; mode < 2; ++mode) {
+    const FpsWindowGeometry& geometry = fps_window_[mode];
+    if (!geometry.custom)
+      continue;
+    config.SetValue("Debug", kWidthKeys[mode],
+                    std::to_string(static_cast<int>(geometry.width)));
+    config.SetValue("Debug", kHeightKeys[mode],
+                    std::to_string(static_cast<int>(geometry.height)));
+  }
+
+  config.Save();
+}
+
 void ImGuiManager::BuildFPSWindow() {
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
   const bool detailed = fps_mode_ == FpsMode::kDetailed;
+  const int mode = detailed ? 1 : 0;
 
-  const ImVec2 display = viewport->Size;
+  if (!fps_geometry_loaded_)
+    LoadFpsGeometry();
+
   const float margin = U(12.0f);
-  const float desired_width = U(detailed ? 336.0f : 210.0f);
-  const float width =
-      std::max(U(120.0f), std::min(desired_width, display.x - margin * 2.0f));
+  const ImVec2 display = viewport->Size;
 
-  const float min_height = U(60.0f);
-  const float max_height = std::max(min_height, display.y - margin * 2.0f);
+  const bool mode_changed = fps_applied_mode_ != fps_mode_;
+  fps_applied_mode_ = fps_mode_;
 
-  const float desired_height = U(detailed ? 300.0f : 92.0f);
-  const float height =
-      std::max(min_height, std::min(desired_height, max_height));
+  const ImVec2 default_size(detailed ? U(340.0f) : U(232.0f),
+                            detailed ? U(520.0f) : U(124.0f));
 
-  ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + display.x - width - margin,
-                                 viewport->Pos.y + margin),
-                          ImGuiCond_Always);
-  ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+  FpsWindowGeometry& geometry = fps_window_[mode];
 
-  const ImGuiWindowFlags flags =
-      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
-      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
-      ImGuiWindowFlags_NoScrollWithMouse;
+  ImVec2 size(geometry.width * ui_scale_, geometry.height * ui_scale_);
+  if (!geometry.custom || size.x < 1.0f || size.y < 1.0f)
+    size = default_size;
 
-  if (!ImGui::Begin("Frame monitor", nullptr, flags)) {
+  ImVec2 pos(fps_window_x_ * ui_scale_, fps_window_y_ * ui_scale_);
+  if (!fps_window_has_position_)
+    pos = ImVec2(viewport->Pos.x + display.x - size.x - margin,
+                 viewport->Pos.y + margin);
+
+  /* Neither the size nor the place is fixed: the monitor is a normal window
+     the player can drag and resize, and the defaults only decide where it
+     shows up the first time.  On a game whose own window is smaller than the
+     overlay, moving it and shrinking it is the only way to read it. */
+  ImGui::SetNextWindowPos(pos, ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(size, mode_changed && !geometry.custom
+                                     ? ImGuiCond_Always
+                                     : ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSizeConstraints(
+      ImVec2(U(148.0f), U(44.0f)), ImVec2(display.x, display.y));
+
+  if (!ImGui::Begin("Frame monitor", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::End();
     return;
   }
 
+  /* Geometry the player changed is taken back from the window itself, so a
+     drag or a resize survives the next frame, the next mode and the next
+     run. */
+  {
+    const ImVec2 actual_pos = ImGui::GetWindowPos();
+    const ImVec2 actual_size = ImGui::GetWindowSize();
+
+    if (std::abs(actual_size.x - size.x) > 1.0f ||
+        std::abs(actual_size.y - size.y) > 1.0f)
+      geometry.custom = true;
+
+    const float width = actual_size.x / ui_scale_;
+    const float height = actual_size.y / ui_scale_;
+    if (std::abs(actual_pos.x / ui_scale_ - fps_window_x_) > 0.5f ||
+        std::abs(actual_pos.y / ui_scale_ - fps_window_y_) > 0.5f ||
+        std::abs(width - geometry.width) > 0.5f ||
+        std::abs(height - geometry.height) > 0.5f) {
+      fps_window_x_ = actual_pos.x / ui_scale_;
+      fps_window_y_ = actual_pos.y / ui_scale_;
+      geometry.width = width;
+      geometry.height = height;
+      fps_window_has_position_ = true;
+      fps_geometry_dirty_ = true;
+    }
+
+    /* A window that no longer fits -- because the mode changed, the player
+       resized it, or the display shrank since it was placed -- is pulled back
+       inside, and a window dragged past the edge keeps enough of its title bar
+       on screen to be caught again.  Nothing moves while the mouse is down:
+       that would fight the drag that is placing it. */
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+      const float right = viewport->Pos.x + display.x;
+      const float bottom = viewport->Pos.y + display.y;
+
+      ImVec2 fixed = actual_pos;
+      if (fixed.x + actual_size.x > right)
+        fixed.x = right - actual_size.x;
+      if (fixed.y + actual_size.y > bottom)
+        fixed.y = bottom - actual_size.y;
+
+      fixed.x = std::min(
+          std::max(fixed.x, viewport->Pos.x),
+          std::max(viewport->Pos.x, right - U(64.0f)));
+      fixed.y = std::min(
+          std::max(fixed.y, viewport->Pos.y),
+          std::max(viewport->Pos.y, bottom - U(28.0f)));
+
+      if (fixed.x != actual_pos.x || fixed.y != actual_pos.y) {
+        ImGui::SetWindowPos(fixed);
+        fps_window_x_ = fixed.x / ui_scale_;
+        fps_window_y_ = fixed.y / ui_scale_;
+        fps_geometry_dirty_ = true;
+      }
+    }
+  }
+
+  if (fps_geometry_dirty_ && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+    SaveFpsGeometry();
+    fps_geometry_dirty_ = false;
+  }
+
   const RenderStats& stats = GetRenderStats();
   const FrameTimeHistory& history = stats.frame_history;
+  const FrameTimings& timings = stats.timings;
 
-  const ImVec4 kGood(0.42f, 0.85f, 0.45f, 1.0f);
-  const ImVec4 kWarn(0.95f, 0.78f, 0.28f, 1.0f);
+  const int32_t target_rate =
+      std::max(1, Graphics::Get().Attr_FrameRate().value_or(60));
+  const double budget_ms = 1000.0 / static_cast<double>(target_rate);
 
-  const auto rate_text = [](double ms, char* buffer, size_t size) {
-    if (ms <= 0.0)
-      snprintf(buffer, size, "  -- ");
-    else
-      snprintf(buffer, size, "%5.1f", 1000.0 / ms);
-  };
-
-  const double last_ms = history.last();
+  const double recent_ms = history.RecentAverage(60);
+  const double fps = recent_ms > 0.0 ? 1000.0 / recent_ms : 0.0;
   const double average_ms = history.Average();
   const double one_percent_ms = history.SlowAverage(0.01);
 
-  char last_rate[32], average_rate[32], low_rate[32];
-  rate_text(last_ms, last_rate, sizeof(last_rate));
-  rate_text(average_ms, average_rate, sizeof(average_rate));
-  rate_text(one_percent_ms, low_rate, sizeof(low_rate));
+  const ImVec4 rate_color =
+      fps >= static_cast<double>(target_rate) * 0.97
+          ? kGood
+          : (fps >= static_cast<double>(target_rate) * 0.80 ? kWarn : kBad);
 
-  ImGui::TextUnformatted("FPS");
-  ImGui::SameLine();
-  ImGui::TextColored(last_ms > 0.0 && last_ms <= 1000.0 / 50.0 ? kGood : kWarn,
-                     "%s", last_rate);
-  ImGui::SameLine();
-  ImGui::TextDisabled("| %.2f ms", last_ms);
+  {
+    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.9f);
+    ImGui::TextColored(rate_color, "%.1f fps", fps);
+    ImGui::PopFont();
+  }
 
-  ImGui::Text("avg %s   %.2f ms", average_rate, average_ms);
-  ImGui::Text("1%% low %s", low_rate);
+  ImGui::TextDisabled("%.2f ms   avg %.1f   1%% low %.1f", recent_ms,
+                      1000.0 / std::max(average_ms, 0.001),
+                      1000.0 / std::max(one_percent_ms, 0.001));
 
   if (!detailed) {
+    if (history.size() >= 2) {
+      const std::vector<double> ordered = history.Ordered();
+      frame_times_.resize(ordered.size());
+      for (size_t i = 0; i < ordered.size(); ++i)
+        frame_times_[i] = static_cast<float>(ordered[i]);
+
+      const int plot_count = static_cast<int>(
+          std::min<size_t>(frame_times_.size(), static_cast<size_t>(INT_MAX)));
+      const float plot_max =
+          std::max(static_cast<float>(budget_ms) * 1.6f,
+                   static_cast<float>(history.Slowest()) * 1.1f);
+      ImGui::PlotLines("##frame_time", frame_times_.data(), plot_count, 0,
+                       nullptr, 0.0f, plot_max, ImVec2(-FLT_MIN, U(24.0f)));
+    }
+
     ImGui::End();
     return;
   }
 
   ImGui::Separator();
 
-  if (history.size() >= 2) {
-    const std::vector<double> ordered = history.Ordered();
-    frame_times_.resize(ordered.size());
-    for (size_t i = 0; i < ordered.size(); ++i)
-      frame_times_[i] = static_cast<float>(ordered[i]);
-    const int plot_count = static_cast<int>(
-        std::min<size_t>(frame_times_.size(), static_cast<size_t>(INT_MAX)));
-    const float plot_max = std::max(
-        1000.0f / 30.0f, static_cast<float>(history.Slowest()) * 1.15f);
-    ImGui::PlotLines("##frame_time", frame_times_.data(), plot_count, 0, "ms",
-                     0.0f, plot_max, ImVec2(-FLT_MIN, U(46.0f)));
-  } else {
-    ImGui::TextDisabled("collecting...");
-  }
+  /* Everything below scrolls: the window can be made as small as the player
+     likes and nothing is lost, it is only scrolled to. */
+  if (ImGui::BeginChild("##frame_monitor_body", ImVec2(0.0f, 0.0f),
+                        ImGuiChildFlags_None,
+                        ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+    ImGui::Spacing();
+    ImGui::TextDisabled("Frame composition");
 
-  const float body_height = ImGui::GetContentRegionAvail().y;
-  if (body_height > 0.0f) {
-    ImGui::BeginChild("##details", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None,
-                      ImGuiWindowFlags_NoSavedSettings |
-                          ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    /* The ring sits above the legend rather than beside it: the legend needs
+       the full width for "Graphics::Update" and "BitmapQueue", and a window
+       narrow enough to make that a problem is a window the player chose. */
+    const float radius = U(50.0f);
+    const float available = ImGui::GetContentRegionAvail().x;
+    if (available > radius * 2.0f)
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                           (available - radius * 2.0f) * 0.5f);
+    DrawPhaseDonut(timings, radius);
 
-    if (ImGui::CollapsingHeader("Frame rate", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::Spacing();
+    DrawPhaseLegend(timings, ImGui::GetContentRegionAvail().x);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    ImGui::TextDisabled("Frame time");
+    if (history.size() >= 2) {
+      const std::vector<double> ordered = history.Ordered();
+      frame_times_.resize(ordered.size());
+      for (size_t i = 0; i < ordered.size(); ++i)
+        frame_times_[i] = static_cast<float>(ordered[i]);
+
+      const int plot_count = static_cast<int>(
+          std::min<size_t>(frame_times_.size(), static_cast<size_t>(INT_MAX)));
+      const float plot_max =
+          std::max(static_cast<float>(budget_ms) * 1.6f,
+                   static_cast<float>(history.Slowest()) * 1.1f);
+      ImGui::PlotLines("##frame_time_curve", frame_times_.data(), plot_count, 0,
+                       nullptr, 0.0f, plot_max, ImVec2(-FLT_MIN, U(48.0f)));
+    } else {
+      ImGui::TextDisabled("collecting...");
+    }
+
+    ImGui::Spacing();
+    ImGui::TextDisabled("Composition over time");
+    DrawPhaseHistory(stats.timing_history, ImGui::GetContentRegionAvail().x,
+                     U(52.0f), budget_ms);
+
+    ImGui::Spacing();
+    if (ImGui::CollapsingHeader("Frame rate")) {
       ImGui::Text("average     %8.2f ms", average_ms);
       ImGui::Text("1%% low      %8.2f ms", one_percent_ms);
       ImGui::Text("0.1%% low    %8.2f ms", history.SlowAverage(0.001));
       ImGui::Text("fastest     %8.2f ms", history.Fastest());
       ImGui::Text("slowest     %8.2f ms", history.Slowest());
+      ImGui::Text("budget      %8.2f ms  (%d fps)", budget_ms, target_rate);
       ImGui::TextDisabled("%u samples", static_cast<unsigned>(history.size()));
     }
 
-    if (ImGui::CollapsingHeader("Frame time", ImGuiTreeNodeFlags_DefaultOpen)) {
-      const FrameTimings& t = stats.timings;
-      ImGui::Text("cpu total   %8.2f ms", t.cpu_ms);
-      ImGui::Text("  script    %8.2f ms", t.script_ms);
-      ImGui::Text("  layout    %8.2f ms", t.layout_ms);
-      ImGui::Text("  render    %8.2f ms", t.render_ms);
-      ImGui::Text("  update    %8.2f ms", t.update_ms);
-      ImGui::Text("  other     %8.2f ms", t.other_ms);
-      ImGui::Text("present     %8.2f ms", t.present_ms);
-
-      ImGui::Spacing();
+    if (ImGui::CollapsingHeader("Counters")) {
       const RenderFrameCounters& counters = stats.last;
       ImGui::Text("bitmap ops  %8u",
                   static_cast<unsigned>(counters.bitmap_ops));
@@ -700,7 +1070,7 @@ void ImGuiManager::BuildFPSWindow() {
                   static_cast<unsigned>(counters.bitmap_submits));
     }
 
-    if (ImGui::CollapsingHeader("Device", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Device")) {
       const DeviceInfo& info = GPUDevice::Get().info();
 
       const auto text_or = [](const std::string& value, const char* fallback) {
@@ -723,9 +1093,8 @@ void ImGuiManager::BuildFPSWindow() {
       ImGui::Text("System RAM %llu MB",
                   static_cast<unsigned long long>(info.system_ram_mb));
     }
-
-    ImGui::EndChild();
   }
+  ImGui::EndChild();
 
   ImGui::End();
 }

@@ -42,6 +42,9 @@
 #include "binding_node.h"
 #include "binding_node3d.h"
 #include "binding_camera3d.h"
+#include "binding_light3d.h"
+#include "binding_scene3d.h"
+#include "binding_mesh_renderer3d.h"
 #include "binding_skeleton3d.h"
 #include "binding_bone_mask3d.h"
 #include "binding_animation3d.h"
@@ -49,13 +52,16 @@
 #include "binding_animation_stack3d.h"
 #include "binding_animation_state_machine3d.h"
 #include "binding_mesh3d.h"
-#include "binding_light3d.h"
+#include "binding_gltf_model3d.h"
 #include "binding_material_pass3d.h"
 #include "binding_material3d.h"
+#include "binding_render_target3d.h"
+#include "binding_compute_pass3d.h"
 #include "binding_render_queue3d.h"
 #include "binding_render_context3d.h"
 #include "binding_render_graph_pass3d.h"
 #include "binding_render_graph3d.h"
+#include "binding_forward_pipeline3d.h"
 #include "binding_world3d.h"
 #include "binding_geometry.h"
 #include "binding_gamepad.h"
@@ -86,7 +92,6 @@
 #include "binding_camera.h"
 #include "binding_orthographic_camera.h"
 #include "binding_perspective_camera.h"
-#include "binding_render_target3d.h"
 #include "binding_audio.h"
 #include "binding_config.h"
 #include "binding_gpu.h"
@@ -161,6 +166,9 @@ void InitBindings() {
   InitNodeBinding();
   InitNode3DBinding();
   InitCamera3DBinding();
+  InitLight3DBinding();
+  InitScene3DBinding();
+  InitMeshRenderer3DBinding();
   InitSkeleton3DBinding();
   InitBoneMask3DBinding();
   InitAnimation3DBinding();
@@ -168,13 +176,16 @@ void InitBindings() {
   InitAnimationStack3DBinding();
   InitAnimationStateMachine3DBinding();
   InitMesh3DBinding();
-  InitLight3DBinding();
+  InitGLTFModel3DBinding();
   InitMaterialPass3DBinding();
   InitMaterial3DBinding();
+  InitRenderTarget3DBinding();
+  InitComputePass3DBinding();
   InitRenderQueue3DBinding();
   InitRenderContext3DBinding();
   InitRenderGraphPass3DBinding();
   InitRenderGraph3DBinding();
+  InitForwardPipeline3DBinding();
   InitWorld3DBinding();
   InitGeometryBinding();
   InitGamepadBinding();
@@ -205,7 +216,6 @@ void InitBindings() {
   InitCameraBinding();
   InitOrthographicCameraBinding();
   InitPerspectiveCameraBinding();
-  InitRenderTarget3DBinding();
   InitAudioBinding();
   InitConfigBinding();
   InitGPUBinding();

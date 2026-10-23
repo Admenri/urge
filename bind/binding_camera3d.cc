@@ -13,8 +13,9 @@
 // --- GENERATED INCLUDES BEGIN ---
 #include "binding_camera3d.h"
 
+#include "binding_color.h"
+#include "binding_node3d.h"
 #include "binding_vector3.h"
-#include "binding_vector4.h"
 
 #include "core/common/utility.h"
 #include "core/scene3d/camera3d.h"
@@ -30,10 +31,10 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera3D  (core/scene3d/camera3d.h:40-129)
+// Camera3D  (core/scene3d/camera3d.h:40-145)
 // -------------------------------------------------------------------------
 
-RB_DEF_TYPE(Camera3D);
+RB_DEF_TYPE_INHERIT(Camera3D, Node3D);
 
 RB_FUNC(Camera3D_initialize) {
   urge::RefPtr<urge::Camera3D> obj = nullptr;
@@ -43,6 +44,34 @@ RB_FUNC(Camera3D_initialize) {
   }
   EXC_END;
   return SetupSelfData(self, obj.get());
+}
+
+RB_FUNC(Camera3D_GetTarget) {
+  auto* self_obj = GetSelfData<urge::Camera3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    std::string result = self_obj->GetTarget();
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(Camera3D_SetTarget) {
+  auto* self_obj = GetSelfData<urge::Camera3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string value;
+    ParseArgs(argc, argv, "s", &value);
+
+    self_obj->SetTarget(value);
+  }
+  EXC_END;
+  return Qnil;
 }
 
 RB_FUNC(Camera3D_ShadowSplits) {
@@ -91,20 +120,6 @@ RB_FUNC(Camera3D_ViewProjection) {
   return Qnil;
 }
 
-// Attribute: position (RefPtr<Vector3>)
-BINDING_ATTR_OBJECT_REF(Camera3D,
-                        urge::Camera3D,
-                        Position,
-                        urge::Vector3,
-                        kVector3DataType);
-
-// Attribute: rotation (RefPtr<Vector4>)
-BINDING_ATTR_OBJECT_REF(Camera3D,
-                        urge::Camera3D,
-                        Rotation,
-                        urge::Vector4,
-                        kVector4DataType);
-
 // Attribute: fov (float)
 BINDING_ATTR_FLOAT(Camera3D, urge::Camera3D, Fov);
 
@@ -120,20 +135,35 @@ BINDING_ATTR_BOOL(Camera3D, urge::Camera3D, Orthographic);
 // Attribute: ortho_size (float)
 BINDING_ATTR_FLOAT(Camera3D, urge::Camera3D, OrthoSize);
 
+// Attribute: culling_mask (uint32_t)
+BINDING_ATTR_INT(Camera3D, urge::Camera3D, CullingMask);
+
+// Attribute: clear_flags (uint32_t)
+BINDING_ATTR_INT(Camera3D, urge::Camera3D, ClearFlags);
+
+// Attribute: clear_color (RefPtr<Color>)
+BINDING_ATTR_OBJECT(Camera3D,
+                    urge::Camera3D,
+                    ClearColor,
+                    urge::Color,
+                    kColorDataType);
+
+// Attribute: priority (int32_t)
+BINDING_ATTR_INT(Camera3D, urge::Camera3D, Priority);
+
 void InitCamera3DBindingAppend(VALUE klass);
 
 void InitCamera3DBinding() {
-  auto klass = rb_define_class("Camera3D", rb_cObject);
+  auto parent = rb_const_get(rb_cObject, rb_intern("Node3D"));
+  auto klass = rb_define_class("Camera3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kCamera3DDataType>);
 
   DefineMethod(klass, "initialize", Camera3D_initialize);
+  DefineMethod(klass, "target", Camera3D_GetTarget);
+  DefineMethod(klass, "target=", Camera3D_SetTarget);
   DefineMethod(klass, "shadow_splits", Camera3D_ShadowSplits);
   DefineMethod(klass, "shadow_cascades", Camera3D_ShadowCascades);
   DefineMethod(klass, "view_projection", Camera3D_ViewProjection);
-  DefineMethod(klass, "position", Camera3D_Position);
-  DefineMethod(klass, "position=", Camera3D_PositionEqual);
-  DefineMethod(klass, "rotation", Camera3D_Rotation);
-  DefineMethod(klass, "rotation=", Camera3D_RotationEqual);
   DefineMethod(klass, "fov", Camera3D_Fov);
   DefineMethod(klass, "fov=", Camera3D_FovEqual);
   DefineMethod(klass, "near", Camera3D_Near);
@@ -144,6 +174,14 @@ void InitCamera3DBinding() {
   DefineMethod(klass, "orthographic=", Camera3D_OrthographicEqual);
   DefineMethod(klass, "ortho_size", Camera3D_OrthoSize);
   DefineMethod(klass, "ortho_size=", Camera3D_OrthoSizeEqual);
+  DefineMethod(klass, "culling_mask", Camera3D_CullingMask);
+  DefineMethod(klass, "culling_mask=", Camera3D_CullingMaskEqual);
+  DefineMethod(klass, "clear_flags", Camera3D_ClearFlags);
+  DefineMethod(klass, "clear_flags=", Camera3D_ClearFlagsEqual);
+  DefineMethod(klass, "clear_color", Camera3D_ClearColor);
+  DefineMethod(klass, "clear_color=", Camera3D_ClearColorEqual);
+  DefineMethod(klass, "priority", Camera3D_Priority);
+  DefineMethod(klass, "priority=", Camera3D_PriorityEqual);
   InitCamera3DBindingAppend(klass);
 }
 // --- GENERATED END ---

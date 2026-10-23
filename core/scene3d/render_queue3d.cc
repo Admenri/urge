@@ -25,28 +25,21 @@
 #include <algorithm>
 #include <utility>
 
+#include "glm/gtc/matrix_inverse.hpp"
+
 #include "core/scene3d/camera3d.h"
 #include "core/scene3d/light3d.h"
 #include "core/scene3d/lighting3d.h"
-#include "core/scene3d/material3d.h"
-#include "core/scene3d/mesh3d.h"
 #include "core/scene3d/node3d.h"
 
 namespace urge {
 
-namespace {
+RenderQueue3D::RenderQueue3D() = default;
 
-float MaxAxisScale(const glm::mat4& matrix) {
-  const float x = glm::length(glm::vec3(matrix[0]));
-  const float y = glm::length(glm::vec3(matrix[1]));
-  const float z = glm::length(glm::vec3(matrix[2]));
-  return std::max(x, std::max(y, z));
-}
-
-}
+RenderQueue3D::~RenderQueue3D() = default;
 
 void RenderQueue3D::Clear() {
-  tags_.clear();
+  items_.clear();
   lights_.clear();
 }
 
@@ -60,18 +53,18 @@ void RenderQueue3D::Collect(Node3D* root,
 
   glm::vec3 eye(0.0f);
   if (camera)
-    eye = glm::vec3(camera->transform()[3]);
+    eye = glm::vec3(camera->world_matrix()[3]);
 
   CollectNode(root, glm::mat4(1.0f), camera, eye, target_size, pool);
 
-  for (auto& entry : tags_) {
-    std::stable_sort(entry.second.begin(), entry.second.end(),
-                     [](const Item& left, const Item& right) {
-                       if (left.pipeline_key != right.pipeline_key)
-                         return left.pipeline_key < right.pipeline_key;
-                       return left.distance < right.distance;
-                     });
-  }
+  std::stable_sort(items_.begin(), items_.end(),
+                   [](const Item& left, const Item& right) {
+                     if (left.queue != right.queue)
+                       return left.queue < right.queue;
+                     if (left.state_key != right.state_key)
+                       return left.state_key < right.state_key;
+                     return left.distance < right.distance;
+                   });
 }
 
 void RenderQueue3D::CollectNode(Node3D* node,
@@ -85,46 +78,64 @@ void RenderQueue3D::CollectNode(Node3D* node,
 
   const glm::mat4 world = parent * node->local_matrix();
 
-  {
-    if (Light3D* light = dynamic_cast<Light3D*>(node)) {
-      LightItem item;
-      item.type = light->type();
-      item.position = glm::vec3(world[3]);
-      item.direction = -glm::normalize(glm::vec3(world[2]));
-      item.color = light->color_value();
-      item.intensity = light->intensity();
-      item.range = light->range();
-      item.cast_shadow = light->cast_shadow();
-      lights_.push_back(item);
-    }
+  if (Light3D* light = dynamic_cast<Light3D*>(node)) {
+    LightItem item;
+    item.type = static_cast<int32_t>(light->type());
+    item.position = glm::vec3(world[3]);
+    item.direction = -glm::normalize(glm::vec3(world[2]));
+    item.color = light->color_value();
+    item.intensity = light->intensity();
+    item.range = light->range();
+    item.cast_shadow = light->cast_shadow();
+    lights_.push_back(item);
+  }
 
-    Mesh3D* mesh = dynamic_cast<Mesh3D*>(node);
-    RefPtr<Material3D> material = mesh ? mesh->material() : nullptr;
-    if (mesh && material && mesh->index_count() > 0 && mesh->VertexCount() > 0) {
-      const glm::vec3 center =
-          glm::vec3(world * glm::vec4(mesh->bounds_center(), 1.0f));
-      const float radius = mesh->bounds_radius() * MaxAxisScale(world);
+  if (MeshRenderer3D* renderer = dynamic_cast<MeshRenderer3D*>(node)) {
+    RefPtr<Mesh3D> mesh = renderer->mesh();
+    const bool drawable = mesh && mesh->index_count() > 0 &&
+                          mesh->VertexCount() > 0 &&
+                          !renderer->materials().empty();
+    if (drawable) {
+      renderer->UpdateBounds();
+      const glm::vec3 center = renderer->world_center();
+      const float radius = renderer->world_radius();
 
-      if (!camera || camera->IsVisible(center, radius, target_size)) {
-        const MeshData mesh_data = {world};
+      const bool culled =
+          camera && camera->Culled(center, radius, target_size,
+                                   renderer->layers());
+
+      if (!culled) {
+        const MeshData mesh_data = {world, glm::inverseTranspose(world)};
         const UniformBlockPool::Slot slot = pool.Acquire(mesh_data);
         const float distance = glm::length(center - eye);
 
-        for (const std::string& tag : material->Tags()) {
-          RefPtr<MaterialPass3D> pass = material->GetPass(tag);
-          if (!pass)
+        for (const SubMesh3D& submesh : mesh->submeshes()) {
+          const auto found =
+              renderer->materials().find(static_cast<int32_t>(submesh.mat_slot));
+          if (found == renderer->materials().end() || !found->second)
             continue;
 
-          Item item;
-          item.mesh = RefPtr<Mesh3D>(mesh);
-          item.tag = tag;
-          item.model = world;
-          item.center = center;
-          item.distance = distance;
-          item.pipeline_key = pass->AcquirePipeline().Get();
-          item.slot = slot;
+          for (const std::string& tag : found->second->Tags()) {
+            RefPtr<MaterialPass3D> pass = found->second->GetPass(tag);
+            if (!pass)
+              continue;
 
-          tags_[tag].push_back(std::move(item));
+            Item item;
+            item.renderer = RefPtr<MeshRenderer3D>(renderer);
+            item.mesh = mesh;
+            item.pass = pass;
+            item.tag = tag;
+            item.index_offset = submesh.index_offset;
+            item.index_count = submesh.index_count;
+            item.layers = renderer->layers();
+            item.queue = pass->queue();
+            item.tag_id = pass->tag_id();
+            item.distance = distance;
+            item.model = world;
+            item.state_key = reinterpret_cast<uint64_t>(pass.get());
+            item.slot = slot;
+            items_.push_back(std::move(item));
+          }
         }
       }
     }
@@ -134,78 +145,71 @@ void RenderQueue3D::CollectNode(Node3D* node,
     CollectNode(child.get(), world, camera, eye, target_size, pool);
 }
 
-const std::vector<RenderQueue3D::Item>* RenderQueue3D::Items(
-    const std::string& tag) const {
-  auto it = tags_.find(tag);
-  return it == tags_.end() ? nullptr : &it->second;
+std::vector<const RenderQueue3D::Item*> RenderQueue3D::Filter(
+    const std::vector<std::string>& tags,
+    const std::vector<int32_t>& tag_ids,
+    int32_t queue_min,
+    int32_t queue_max,
+    uint32_t layers) const {
+  std::vector<const Item*> result;
+  result.reserve(items_.size());
+
+  const bool all_tags = tags.empty() && tag_ids.empty();
+
+  for (const Item& item : items_) {
+    if ((item.layers & layers) == 0)
+      continue;
+    if (item.queue < queue_min || item.queue > queue_max)
+      continue;
+
+    if (!all_tags) {
+      bool matched = false;
+      for (const std::string& tag : tags) {
+        if (item.tag == tag) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        for (const int32_t id : tag_ids) {
+          if (item.tag_id == id) {
+            matched = true;
+            break;
+          }
+        }
+      }
+      if (!matched)
+        continue;
+    }
+
+    result.push_back(&item);
+  }
+
+  return result;
 }
 
-const RenderQueue3D::Item* RenderQueue3D::Find(
-    Mesh3D* mesh,
-    const std::string& tag) const {
-  const std::vector<Item>* items = Items(tag);
-  if (!items)
-    return nullptr;
-  for (const Item& item : *items)
-    if (item.mesh.get() == mesh)
-      return &item;
-  return nullptr;
-}
-
-int32_t RenderQueue3D::TagCount() const {
-  return static_cast<int32_t>(tags_.size());
+void RenderQueue3D::SortByDistance(std::vector<const Item*>& items,
+                                   bool back_to_front) {
+  if (back_to_front) {
+    std::stable_sort(items.begin(), items.end(),
+                     [](const Item* left, const Item* right) {
+                       return left->distance > right->distance;
+                     });
+  } else {
+    std::stable_sort(items.begin(), items.end(),
+                     [](const Item* left, const Item* right) {
+                       return left->distance < right->distance;
+                     });
+  }
 }
 
 std::vector<std::string> RenderQueue3D::Tags() const {
   std::vector<std::string> result;
-  result.reserve(tags_.size());
-  for (const auto& entry : tags_)
-    result.push_back(entry.first);
-  return result;
-}
-
-int32_t RenderQueue3D::Count(std::string tag) const {
-  const std::vector<Item>* items = Items(tag);
-  return items ? static_cast<int32_t>(items->size()) : 0;
-}
-
-int32_t RenderQueue3D::TotalCount() const {
-  int32_t total = 0;
-  for (const auto& entry : tags_)
-    total += static_cast<int32_t>(entry.second.size());
-  return total;
-}
-
-RefPtr<Mesh3D> RenderQueue3D::MeshAt(std::string tag, int32_t index) const {
-  const std::vector<Item>* items = Items(tag);
-  if (!items || index < 0 || index >= static_cast<int32_t>(items->size()))
-    return nullptr;
-  return (*items)[index].mesh;
-}
-
-float RenderQueue3D::DistanceAt(std::string tag, int32_t index) const {
-  const std::vector<Item>* items = Items(tag);
-  if (!items || index < 0 || index >= static_cast<int32_t>(items->size()))
-    return 0.0f;
-  return (*items)[index].distance;
-}
-
-void RenderQueue3D::SortByDistance(std::string tag, bool back_to_front) {
-  auto it = tags_.find(tag);
-  if (it == tags_.end())
-    return;
-
-  if (back_to_front) {
-    std::stable_sort(it->second.begin(), it->second.end(),
-                     [](const Item& left, const Item& right) {
-                       return left.distance > right.distance;
-                     });
-  } else {
-    std::stable_sort(it->second.begin(), it->second.end(),
-                     [](const Item& left, const Item& right) {
-                       return left.distance < right.distance;
-                     });
+  for (const Item& item : items_) {
+    if (std::find(result.begin(), result.end(), item.tag) == result.end())
+      result.push_back(item.tag);
   }
+  return result;
 }
 
 }

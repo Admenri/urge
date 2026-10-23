@@ -10,8 +10,34 @@ bind/api_reference.json ──▶ bind/viewer/   只读查看器（UI + 命令�
 bind/cruby_utils.{h,cc}   ← 手写运行时层（不生成）
 ```
 
-CRuby 解释器来自 `third_party/cruby`（1.9.3），CMake 目标为 `ruby-static`，其
+CRuby 解释器来自 `third_party/ruby`（4.0.0），CMake 目标为 `ruby-static`，其
 `target_include_directories` 是 `PUBLIC`，所以只要链接它就能 `#include "ruby.h"`。
+
+## 解释器启动契约（4.0 与 1.9.3 的分界）
+
+`bind/cruby_main.cc` 手工驱动 VM，不走 `ruby_options()`，因此
+`ruby_process_options()` 里那几步必须自己补上，缺一步就是运行期缺方法/缺常量：
+
+```cpp
+ruby_init();                 // rb_call_inits()：C 侧 Init_* 全部跑完
+Init_enc();                  // enc/encdb.c：Encoding::UTF_8 等常量
+Init_ext();                  // dmyext.c：核心构建下是空实现，保持顺序一致
+rb_call_builtin_inits();     // array.rb / hash.rb / kernel.rb 等 builtin iseq
+```
+
+- 漏 `Init_enc()`：`Encoding::UTF_8` 未初始化，脚本里任何
+  `str.encoding == Encoding::UTF_8` 都 NameError。
+- 漏 `rb_call_builtin_inits()`：`Array#sum`、`Hash#transform_values` 这类
+  「用 Ruby 写的核心」全部 NoMethodError。
+- 三个符号都不在公开头文件里，靠 `extern "C"` 手写声明（定义分别在
+  `inits.c`、`enc/encdb.c`、`dmyext.c`）。
+
+**CRT 必须是动态版（`/MD`）。** Ruby 的 Win32 层靠 `win32/win32.c` 里
+`__pioinfo`（扫描 `ucrtbase.dll` 中 `_isatty` 的机器码定位）维护 fd 表，用于
+socket↔fd 关联和 fcntl 模拟。静态 CRT 下 `_open` 在镜像自己的表里分配 fd，
+而 Ruby 写的是 DLL 的表，两者永不一致：第一个 `File.open` 就在
+`rb_maygvl_fd_fix_cloexec` 里 EBADF。顶层 `CMakeLists.txt` 因此把整棵树设为
+`MultiThreadedDLL`，`third_party/ruby/CMakeLists.txt` 在配置期会拒绝 `/MT`。
 
 ## 运行方式
 
@@ -196,7 +222,7 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 `Graphics`/`Input` 的**函数**一律不调用——它们读的单例要等窗口建立后才存在，调用会是空
 解引用——只检查模块性、方法名和 `Input::*` 常量。
 
-两个与 Ruby 1.9.3 有关的坑已经写在脚本注释里，改动时不要"修回去"：
+两个与解释器版本有关的坑已经写在脚本注释里，改动时不要"修回去"：
 
 - `$stdout.sync = true` 必须设：`main()` 不调用 `ruby_cleanup`，否则 `puts` 的输出留在
   缓冲区里，报告只剩 C 侧的 `printf`。
@@ -246,7 +272,7 @@ rb_define_alloc_func(klass, ClassAllocate<&kKlassDataType>);
 ### 派生类的类型链（`RB_DEF_TYPE_INHERIT`）
 
 `rb_check_typeddata` 判定的依据是 `rb_data_type_t` 自身的 `parent` 链
-（`rb_typeddata_inherited_p`，见 `third_party/cruby/error.c`），**既不是** C++ 的继承关系，
+（`rb_typeddata_inherited_p`，见 `third_party/ruby/error.c`），**既不是** C++ 的继承关系，
 **也不是** Ruby 的类层级。所以 `Node#parent=`（要 `kNodeDataType`）拿到一个 `Viewport` 的
 VALUE 时会抛 `wrong argument type Viewport (expected Node)`，哪怕 `Viewport : public Node`。
 
@@ -303,13 +329,15 @@ return SetupSelfData(self, object.get());
 `RB_DATATYPE_*`，也不得手工访问 `argv[i]`。对象通过 `GetObject<T>(value, kTDataType)`
 转换，返回对象通过 `WrapObject(ptr, kTDataType)` 转换（`nullptr` 返回 `nil`）。
 
-1.9.3 上没有 `rb_utf8_str_new_cstr` / `rb_enc_str_new_cstr`；返回 `std::string` 用
-`rb_enc_str_new(ptr, len, rb_utf8_encoding())`，返回 C 字符串用
-`rb_enc_str_new(ptr, std::strlen(ptr), rb_utf8_encoding())`。
+返回 `std::string` 一律用 `rb_enc_str_new(ptr, len, rb_utf8_encoding())`——长度显式，
+不依赖 NUL 结尾；返回 C 字符串用
+`rb_enc_str_new(ptr, std::strlen(ptr), rb_utf8_encoding())`。4.0 虽然提供了
+`rb_utf8_str_new_cstr` / `rb_enc_str_new_cstr`，但生成器不用它们：前者假定 NUL 结尾，
+而 IR 里的 `const char*` 并不保证。
 
 ### Win32 宏污染（`cruby_utils.h` 顶部的 `#undef`，勿删）
 
-`<windows.h>` 会沿着 `ruby.h` → `third_party/cruby/thread_win32.h` 进入**每一个**胶水
+`<windows.h>` 会沿着 `ruby.h` → `ruby/win32.h` → `<winsock2.h>` 进入**每一个**胶水
 TU，而它把若干短名字定义成宏。函数式宏会静默改写引擎自己的声明，因为 `core/**/*.h` 是在
 `cruby_utils.h` **之后**被解析的：
 
@@ -932,4 +960,4 @@ class / module 条目字段：
 | 异常包裹 | 视情况 | 每个函数体统一 `EXC_BEGIN`/`EXC_END` |
 | 类集合 | `ViewportChild`/`Effect`/`Tilemap`/`Window` 等 | `Node` 为通用 3D 节点基类，无 `ViewportChild`/`Effect`/`Tilemap` |
 | 入口点 | `binding/cruby_main.cc` 自带 `main` | 本目录只产静态库，入口点归宿主 |
-| CRuby 版本 | `3rdparty/ruby-193` | `third_party/cruby`（同为 1.9.3，头文件逐字节一致） |
+| CRuby 版本 | `3rdparty/ruby-193` | `third_party/ruby`（4.0.0，CMake 构建） |

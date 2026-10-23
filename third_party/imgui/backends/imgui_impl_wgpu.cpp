@@ -66,9 +66,11 @@
 #if !defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) && !defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) && !defined(IMGUI_IMPL_WEBGPU_BACKEND_WGVK)
 #error Exactly one of IMGUI_IMPL_WEBGPU_BACKEND_DAWN, IMGUI_IMPL_WEBGPU_BACKEND_WGPU or IMGUI_IMPL_WEBGPU_BACKEND_WGVK must be defined!
 #endif
-#if defined(__EMSCRIPTEN__) && defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
-#error Emscripten <4.0.10 with '-sUSE_WEBGPU=1' is not supported anymore.
-#endif
+// Local patch (see third_party/PATCHES.md): upstream rejects every Emscripten
+// build with the WGPU backend, because the only one it knew of was the removed
+// `-sUSE_WEBGPU=1` runtime.  wgpu-native itself now builds for Emscripten (its
+// GLES backend on WebGL 2), and the header it is compiled against is the very
+// same one this backend is written for -- so the combination is valid here.
 
 // Dear ImGui prototypes from imgui_internal.h
 extern ImGuiID ImHashData(const void* data_p, size_t data_size, ImU32 seed);

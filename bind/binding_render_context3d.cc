@@ -15,15 +15,14 @@
 
 #include "binding_camera3d.h"
 #include "binding_color.h"
+#include "binding_gpu_buffer.h"
 #include "binding_gpu_render_pass_encoder.h"
-#include "binding_mesh3d.h"
 #include "binding_render_queue3d.h"
 #include "binding_render_target3d.h"
 
 #include "core/common/utility.h"
 #include "core/graphics/gpu.h"
 #include "core/scene3d/camera3d.h"
-#include "core/scene3d/mesh3d.h"
 #include "core/scene3d/render_context3d.h"
 #include "core/scene3d/render_queue3d.h"
 #include "core/scene3d/render_target3d.h"
@@ -39,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderContext3D  (core/scene3d/render_context3d.h:47-97)
+// RenderContext3D  (core/scene3d/render_context3d.h:51-122)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderContext3D);
@@ -177,30 +176,77 @@ RB_FUNC(RenderContext3D_GetPass) {
   return Qnil;
 }
 
-RB_FUNC(RenderContext3D_Draw) {
+RB_FUNC(RenderContext3D_DrawFilter) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   EXC_BEGIN {
-    CheckArgc(argc, 2);
-    VALUE mesh_val;
-    std::string tag;
-    ParseArgs(argc, argv, "os", &mesh_val, &tag);
+    CheckArgc(argc, 5);
+    VALUE tags_val, tag_ids_val;
+    int queue_min, queue_max;
+    uint32_t layers;
+    ParseArgs(argc, argv, "ooiiu", &tags_val, &tag_ids_val, &queue_min,
+        &queue_max, &layers);
 
-    self_obj->Draw(GetObject<urge::Mesh3D>(mesh_val, kMesh3DDataType), tag);
+    return LONG2NUM(self_obj->DrawFilter(GetVectorOf<std::string>(tags_val), GetVectorOf<int32_t>(tag_ids_val), queue_min, queue_max, layers));
   }
   EXC_END;
   return Qnil;
 }
 
-RB_FUNC(RenderContext3D_DrawTag) {
+RB_FUNC(RenderContext3D_DrawItem) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 1);
-    std::string tag;
-    ParseArgs(argc, argv, "s", &tag);
+    int index;
+    ParseArgs(argc, argv, "i", &index);
 
-    return LONG2NUM(self_obj->DrawTag(tag));
+    return self_obj->DrawItem(index) ? Qtrue : Qfalse;
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderContext3D_SetViewport) {
+  auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 4);
+    double x, y, width, height;
+    ParseArgs(argc, argv, "ffff", &x, &y, &width, &height);
+
+    self_obj->SetViewport(static_cast<float>(x), static_cast<float>(y),
+        static_cast<float>(width), static_cast<float>(height));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderContext3D_SetScissorRect) {
+  auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 4);
+    int x, y, width, height;
+    ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
+
+    self_obj->SetScissorRect(x, y, width, height);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderContext3D_DrawIndexedIndirect) {
+  auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    VALUE buffer_val;
+    int offset;
+    ParseArgs(argc, argv, "oi", &buffer_val, &offset);
+
+    self_obj->DrawIndexedIndirect(
+        GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset);
   }
   EXC_END;
   return Qnil;
@@ -221,8 +267,11 @@ void InitRenderContext3DBinding() {
   DefineMethod(klass, "begin_pass", RenderContext3D_BeginPass);
   DefineMethod(klass, "end_pass", RenderContext3D_EndPass);
   DefineMethod(klass, "pass", RenderContext3D_GetPass);
-  DefineMethod(klass, "draw", RenderContext3D_Draw);
-  DefineMethod(klass, "draw_tag", RenderContext3D_DrawTag);
+  DefineMethod(klass, "draw_filter", RenderContext3D_DrawFilter);
+  DefineMethod(klass, "draw_item", RenderContext3D_DrawItem);
+  DefineMethod(klass, "set_viewport", RenderContext3D_SetViewport);
+  DefineMethod(klass, "set_scissor_rect", RenderContext3D_SetScissorRect);
+  DefineMethod(klass, "draw_indexed_indirect", RenderContext3D_DrawIndexedIndirect);
   InitRenderContext3DBindingAppend(klass);
 }
 // --- GENERATED END ---

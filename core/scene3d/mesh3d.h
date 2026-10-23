@@ -24,7 +24,6 @@
 
 #include <cstdint>
 #include <map>
-#include <string>
 #include <vector>
 
 #include "glm/glm.hpp"
@@ -32,14 +31,19 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
-#include "core/scene3d/material3d.h"
-#include "core/scene3d/node3d.h"
+#include "core/common/object.h"
 #include "core/scene3d/skeleton3d.h"
 
 namespace urge {
 
+struct SubMesh3D {
+  uint32_t index_offset = 0;
+  uint32_t index_count = 0;
+  uint32_t mat_slot = 0;
+};
+
 URGE_BINDING()
-class Mesh3D : public Node3D {
+class Mesh3D : public Object {
  public:
   URGE_BINDING()
   Mesh3D();
@@ -55,7 +59,19 @@ class Mesh3D : public Node3D {
   void SetIndices(std::vector<uint32_t> data);
 
   URGE_BINDING()
-  ATTR(RefPtr<Material3D>, Material);
+  void AddSubmesh(int32_t index_offset, int32_t index_count, int32_t mat_slot);
+  URGE_BINDING()
+  void ClearSubmeshes();
+  URGE_BINDING()
+  int32_t SubmeshCount() const {
+    return static_cast<int32_t>(submeshes_.size());
+  }
+  URGE_BINDING()
+  int32_t SubmeshIndexOffset(int32_t index) const;
+  URGE_BINDING()
+  int32_t SubmeshIndexCount(int32_t index) const;
+  URGE_BINDING()
+  int32_t SubmeshMatSlot(int32_t index) const;
 
   URGE_BINDING()
   ATTR(RefPtr<Skeleton3D>, Skeleton);
@@ -83,8 +99,8 @@ class Mesh3D : public Node3D {
   bool skinned() const { return skinned_; }
   glm::vec3 bounds_center() const { return bounds_center_; }
   float bounds_radius() const { return bounds_radius_; }
-  RefPtr<Material3D> material() const { return material_; }
   RefPtr<Skeleton3D> skeleton() const { return skeleton_; }
+  const std::vector<SubMesh3D>& submeshes() const { return submeshes_; }
 
   wgpu::Buffer AcquireJointBuffer(uint64_t frame_token);
   wgpu::BindGroup AcquireGroup(uint32_t chunk_index,
@@ -101,11 +117,11 @@ class Mesh3D : public Node3D {
   void Upload();
   void UpdateBounds();
 
-  RefPtr<Material3D> material_;
   RefPtr<Skeleton3D> skeleton_;
 
   std::vector<uint8_t> vertex_bytes_;
   std::vector<uint32_t> indices_;
+  std::vector<SubMesh3D> submeshes_;
   bool skinned_ = false;
   uint32_t vertex_stride_ = 32;
 

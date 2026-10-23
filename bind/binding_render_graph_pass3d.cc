@@ -15,21 +15,23 @@
 
 #include "binding_camera3d.h"
 #include "binding_color.h"
+#include "binding_compute_pass3d.h"
 #include "binding_gpu_render_pass_encoder.h"
 #include "binding_gpu_texture_view.h"
 #include "binding_light3d.h"
+#include "binding_material_pass3d.h"
 #include "binding_render_context3d.h"
 
 #include "core/common/utility.h"
 #include "core/graphics/gpu.h"
 #include "core/scene3d/camera3d.h"
 #include "core/scene3d/light3d.h"
+#include "core/scene3d/material3d.h"
 #include "core/scene3d/render_context3d.h"
 #include "core/scene3d/render_graph3d.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
-#include "binding_graph_proc3d.h"
 // --- HANDWRITTEN INCLUDES END ---
 
 namespace binding {
@@ -39,7 +41,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraphPass3D  (core/scene3d/render_graph3d.h:51-156)
+// RenderGraphPass3D  (core/scene3d/render_graph3d.h:119-289)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraphPass3D);
@@ -58,29 +60,26 @@ RB_FUNC(RenderGraphPass3D_GetName) {
   return Qnil;
 }
 
-RB_FUNC(RenderGraphPass3D_GetColor) {
+RB_FUNC(RenderGraphPass3D_GetColors) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 0);
-    std::string result = self_obj->GetColor();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
+    return WrapVectorOf<std::string>(self_obj->GetColors());
   }
   EXC_END;
   return Qnil;
 }
 
-RB_FUNC(RenderGraphPass3D_SetColor) {
+RB_FUNC(RenderGraphPass3D_SetColors) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+    VALUE value_val;
+    ParseArgs(argc, argv, "o", &value_val);
 
-    self_obj->SetColor(value);
+    self_obj->SetColors(GetVectorOf<std::string>(value_val));
   }
   EXC_END;
   return Qnil;
@@ -137,6 +136,56 @@ RB_FUNC(RenderGraphPass3D_SetTags) {
   return Qnil;
 }
 
+RB_FUNC(RenderGraphPass3D_GetTagIds) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return WrapVectorOf<int32_t>(self_obj->GetTagIds());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_SetTagIds) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE value_val;
+    ParseArgs(argc, argv, "o", &value_val);
+
+    self_obj->SetTagIds(GetVectorOf<int32_t>(value_val));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_BindTexture) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 2);
+    std::string slot, texture;
+    ParseArgs(argc, argv, "ss", &slot, &texture);
+
+    self_obj->BindTexture(slot, texture);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_GetBindings) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    return WrapVectorOf<std::string>(self_obj->GetBindings());
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(RenderGraphPass3D_GetReads) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
@@ -157,6 +206,60 @@ RB_FUNC(RenderGraphPass3D_SetReads) {
     ParseArgs(argc, argv, "o", &value_val);
 
     self_obj->SetReads(GetVectorOf<std::string>(value_val));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_GetMaterial) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    auto result = self_obj->GetMaterial();
+    return WrapObject(result.get(), kMaterialPass3DDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_SetMaterial) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE value_val;
+    ParseArgs(argc, argv, "o", &value_val);
+
+    self_obj->SetMaterial(
+        GetObject<urge::MaterialPass3D>(value_val, kMaterialPass3DDataType));
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_GetCompute) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    auto result = self_obj->GetCompute();
+    return WrapObject(result.get(), kComputePass3DDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(RenderGraphPass3D_SetCompute) {
+  auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    VALUE value_val;
+    ParseArgs(argc, argv, "o", &value_val);
+
+    self_obj->SetCompute(
+        GetObject<urge::ComputePass3D>(value_val, kComputePass3DDataType));
   }
   EXC_END;
   return Qnil;
@@ -223,8 +326,17 @@ RB_FUNC(RenderGraphPass3D_Height) {
   return Qnil;
 }
 
-// Attribute: clear_depth (bool)
-BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, ClearDepth);
+// Attribute: enabled (bool)
+BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, Enabled);
+
+// Attribute: kind (uint32_t)
+BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Kind);
+
+// Attribute: clear_flags (uint32_t)
+BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, ClearFlags);
+
+// Attribute: cull_override (int32_t)
+BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, CullOverride);
 
 // Attribute: sort_back_to_front (bool)
 BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, SortBackToFront);
@@ -238,6 +350,15 @@ BINDING_ATTR_OBJECT_REF(RenderGraphPass3D,
                         Camera,
                         urge::Camera3D,
                         kCamera3DDataType);
+
+// Attribute: layers (uint32_t)
+BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Layers);
+
+// Attribute: queue_min (int32_t)
+BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, QueueMin);
+
+// Attribute: queue_max (int32_t)
+BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, QueueMax);
 
 // Attribute: cascades (int32_t)
 BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Cascades);
@@ -272,27 +393,47 @@ void InitRenderGraphPass3DBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kRenderGraphPass3DDataType>);
 
   DefineMethod(klass, "name", RenderGraphPass3D_GetName);
-  DefineMethod(klass, "color", RenderGraphPass3D_GetColor);
-  DefineMethod(klass, "color=", RenderGraphPass3D_SetColor);
+  DefineMethod(klass, "colors", RenderGraphPass3D_GetColors);
+  DefineMethod(klass, "colors=", RenderGraphPass3D_SetColors);
   DefineMethod(klass, "clear_color", RenderGraphPass3D_GetClearColor);
   DefineMethod(klass, "clear_color=", RenderGraphPass3D_SetClearColor);
   DefineMethod(klass, "tags", RenderGraphPass3D_GetTags);
   DefineMethod(klass, "tags=", RenderGraphPass3D_SetTags);
+  DefineMethod(klass, "tag_ids", RenderGraphPass3D_GetTagIds);
+  DefineMethod(klass, "tag_ids=", RenderGraphPass3D_SetTagIds);
+  DefineMethod(klass, "bind_texture", RenderGraphPass3D_BindTexture);
+  DefineMethod(klass, "bindings", RenderGraphPass3D_GetBindings);
   DefineMethod(klass, "reads", RenderGraphPass3D_GetReads);
   DefineMethod(klass, "reads=", RenderGraphPass3D_SetReads);
+  DefineMethod(klass, "material", RenderGraphPass3D_GetMaterial);
+  DefineMethod(klass, "material=", RenderGraphPass3D_SetMaterial);
+  DefineMethod(klass, "compute", RenderGraphPass3D_GetCompute);
+  DefineMethod(klass, "compute=", RenderGraphPass3D_SetCompute);
   DefineMethod(klass, "texture", RenderGraphPass3D_GetTexture);
   DefineMethod(klass, "pass", RenderGraphPass3D_GetPass);
   DefineMethod(klass, "context", RenderGraphPass3D_GetContext);
   DefineMethod(klass, "width", RenderGraphPass3D_Width);
   DefineMethod(klass, "height", RenderGraphPass3D_Height);
-  DefineMethod(klass, "clear_depth", RenderGraphPass3D_ClearDepth);
-  DefineMethod(klass, "clear_depth=", RenderGraphPass3D_ClearDepthEqual);
+  DefineMethod(klass, "enabled", RenderGraphPass3D_Enabled);
+  DefineMethod(klass, "enabled=", RenderGraphPass3D_EnabledEqual);
+  DefineMethod(klass, "kind", RenderGraphPass3D_Kind);
+  DefineMethod(klass, "kind=", RenderGraphPass3D_KindEqual);
+  DefineMethod(klass, "clear_flags", RenderGraphPass3D_ClearFlags);
+  DefineMethod(klass, "clear_flags=", RenderGraphPass3D_ClearFlagsEqual);
+  DefineMethod(klass, "cull_override", RenderGraphPass3D_CullOverride);
+  DefineMethod(klass, "cull_override=", RenderGraphPass3D_CullOverrideEqual);
   DefineMethod(klass, "sort_back_to_front", RenderGraphPass3D_SortBackToFront);
   DefineMethod(klass, "sort_back_to_front=", RenderGraphPass3D_SortBackToFrontEqual);
   DefineMethod(klass, "depth_only", RenderGraphPass3D_DepthOnly);
   DefineMethod(klass, "depth_only=", RenderGraphPass3D_DepthOnlyEqual);
   DefineMethod(klass, "camera", RenderGraphPass3D_Camera);
   DefineMethod(klass, "camera=", RenderGraphPass3D_CameraEqual);
+  DefineMethod(klass, "layers", RenderGraphPass3D_Layers);
+  DefineMethod(klass, "layers=", RenderGraphPass3D_LayersEqual);
+  DefineMethod(klass, "queue_min", RenderGraphPass3D_QueueMin);
+  DefineMethod(klass, "queue_min=", RenderGraphPass3D_QueueMinEqual);
+  DefineMethod(klass, "queue_max", RenderGraphPass3D_QueueMax);
+  DefineMethod(klass, "queue_max=", RenderGraphPass3D_QueueMaxEqual);
   DefineMethod(klass, "cascades", RenderGraphPass3D_Cascades);
   DefineMethod(klass, "cascades=", RenderGraphPass3D_CascadesEqual);
   DefineMethod(klass, "shadow_light", RenderGraphPass3D_ShadowLight);
@@ -316,7 +457,7 @@ void InitRenderGraphPass3DBinding() {
 // differs from its C++ one -- belong here. The block is preserved
 // verbatim; empty it and the generator writes this body back.
 void InitRenderGraphPass3DBindingAppend(VALUE klass) {
-  InitGraphPassProc3DBinding(klass);
+  (void)klass;
 }
 // --- HANDWRITTEN INIT END ---
 

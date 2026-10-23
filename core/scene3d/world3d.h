@@ -23,13 +23,16 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
 #include "core/scene/node.h"
 #include "core/scene3d/camera3d.h"
+#include "core/scene3d/forward_pipeline3d.h"
 #include "core/scene3d/node3d.h"
+#include "core/scene3d/render_context3d.h"
 #include "core/scene3d/render_graph3d.h"
 #include "core/scene3d/render_target3d.h"
 
@@ -71,27 +74,50 @@ class World3D : public Node {
     return height_;
   }
 
+  URGE_BINDING(Name : "format")
+  std::string GetFormat() const { return format_; }
+  URGE_BINDING(Name : "format=")
+  void SetFormat(std::string value) {
+    if (value != format_) {
+      format_ = std::move(value);
+      target_ = nullptr;
+      texture_group_ = nullptr;
+    }
+  }
+
+  URGE_BINDING(Name : "scene")
+  ATTR(RefPtr<Node3D>, Scene) {
+    if (value.has_value()) {
+      scene_ = *value;
+      return std::nullopt;
+    }
+    return scene_;
+  }
+
   URGE_BINDING(Name : "camera")
   ATTR(RefPtr<Camera3D>, Camera) {
-    if (value.has_value())
+    if (value.has_value()) {
       camera_ = *value;
+      return std::nullopt;
+    }
     return camera_;
   }
 
   URGE_BINDING(Name : "graph")
   ATTR(RefPtr<RenderGraph3D>, Graph) {
-    if (value.has_value())
+    if (value.has_value()) {
       graph_ = *value;
+      return std::nullopt;
+    }
     return graph_;
   }
 
-  URGE_BINDING(Name : "root")
-  RefPtr<Node3D> GetRoot() const { return root_; }
-  URGE_BINDING(Name : "root=")
-  void SetRoot(RefPtr<Node3D> value) { root_ = std::move(value); }
-
   URGE_BINDING(Name : "target")
   RefPtr<RenderTarget3D> GetTarget() const { return target_; }
+  URGE_BINDING(Name : "context")
+  RefPtr<RenderContext3D> GetContext() const { return context_; }
+
+  RefPtr<RenderGraph3D> ActiveGraph();
 
  protected:
   void DisposeObject() override;
@@ -99,19 +125,23 @@ class World3D : public Node {
   bool DoDraw(DrawParam param) override;
 
  private:
-  void RenderScene(DrawParam param);
+  void EnsureTarget();
   void EnsureQuadPipeline();
+  void RenderScene(DrawParam param);
   void UpdateQuad(glm::ivec2 target_size);
 
   int32_t x_ = 0;
   int32_t y_ = 0;
   int32_t width_ = 1;
   int32_t height_ = 1;
+  std::string format_ = "rgba8unorm";
 
+  RefPtr<Node3D> scene_;
   RefPtr<Camera3D> camera_;
   RefPtr<RenderGraph3D> graph_;
-  RefPtr<Node3D> root_;
+  RefPtr<ForwardPipeline3D> default_graph_;
   RefPtr<RenderTarget3D> target_;
+  RefPtr<RenderContext3D> context_;
 
   wgpu::RenderPipeline quad_pipeline_ = nullptr;
   wgpu::Buffer quad_uniform_ = nullptr;

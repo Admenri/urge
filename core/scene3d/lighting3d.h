@@ -45,6 +45,7 @@ struct LightData {
 
 struct ViewData {
   glm::mat4 view_proj = glm::mat4(1.0f);
+  glm::mat4 view = glm::mat4(1.0f);
   glm::vec4 camera_position = glm::vec4(0.0f);
   glm::vec4 ambient = glm::vec4(0.0f);
   glm::mat4 light_view_proj = glm::mat4(1.0f);
@@ -61,6 +62,7 @@ struct ViewData {
 
 struct MeshData {
   glm::mat4 model = glm::mat4(1.0f);
+  glm::mat4 normal = glm::mat4(1.0f);
 };
 
 struct GlobalsData {

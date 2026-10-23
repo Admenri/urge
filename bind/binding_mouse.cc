@@ -349,7 +349,11 @@ void InitMouseBinding() {
 // differs from its C++ one -- belong here. The block is preserved
 // verbatim; empty it and the generator writes this body back.
 void InitMouseBindingAppend(VALUE klass) {
-  (void)klass;
+  rb_const_set(klass, rb_intern("LEFT"), INT2NUM(urge::Mouse::Left));
+  rb_const_set(klass, rb_intern("MIDDLE"), INT2NUM(urge::Mouse::Middle));
+  rb_const_set(klass, rb_intern("RIGHT"), INT2NUM(urge::Mouse::Right));
+  rb_const_set(klass, rb_intern("X1"), INT2NUM(urge::Mouse::X1));
+  rb_const_set(klass, rb_intern("X2"), INT2NUM(urge::Mouse::X2));
 }
 // --- HANDWRITTEN INIT END ---
 

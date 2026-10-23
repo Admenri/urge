@@ -16,11 +16,13 @@
 #include "binding_camera3d.h"
 #include "binding_node.h"
 #include "binding_node3d.h"
+#include "binding_render_context3d.h"
 #include "binding_render_graph3d.h"
 #include "binding_render_target3d.h"
 
 #include "core/scene3d/camera3d.h"
 #include "core/scene3d/node3d.h"
+#include "core/scene3d/render_context3d.h"
 #include "core/scene3d/render_graph3d.h"
 #include "core/scene3d/render_target3d.h"
 #include "core/scene3d/world3d.h"
@@ -36,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// World3D  (core/scene3d/world3d.h:39-93)
+// World3D  (core/scene3d/world3d.h:42-117)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(World3D, Node);
@@ -54,27 +56,29 @@ RB_FUNC(World3D_initialize) {
   return SetupSelfData(self, obj.get());
 }
 
-RB_FUNC(World3D_GetRoot) {
+RB_FUNC(World3D_GetFormat) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 0);
-    auto result = self_obj->GetRoot();
-    return WrapObject(result.get(), kNode3DDataType);
+    std::string result = self_obj->GetFormat();
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
   }
   EXC_END;
   return Qnil;
 }
 
-RB_FUNC(World3D_SetRoot) {
+RB_FUNC(World3D_SetFormat) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
   EXC_BEGIN {
     CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+    std::string value;
+    ParseArgs(argc, argv, "s", &value);
 
-    self_obj->SetRoot(GetObject<urge::Node3D>(value_val, kNode3DDataType));
+    self_obj->SetFormat(value);
   }
   EXC_END;
   return Qnil;
@@ -92,6 +96,18 @@ RB_FUNC(World3D_GetTarget) {
   return Qnil;
 }
 
+RB_FUNC(World3D_GetContext) {
+  auto* self_obj = GetSelfData<urge::World3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    auto result = self_obj->GetContext();
+    return WrapObject(result.get(), kRenderContext3DDataType);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 // Attribute: x (int32_t)
 BINDING_ATTR_INT(World3D, urge::World3D, X);
 
@@ -103,6 +119,13 @@ BINDING_ATTR_INT(World3D, urge::World3D, Width);
 
 // Attribute: height (int32_t)
 BINDING_ATTR_INT(World3D, urge::World3D, Height);
+
+// Attribute: scene (RefPtr<Node3D>)
+BINDING_ATTR_OBJECT_REF(World3D,
+                        urge::World3D,
+                        Scene,
+                        urge::Node3D,
+                        kNode3DDataType);
 
 // Attribute: camera (RefPtr<Camera3D>)
 BINDING_ATTR_OBJECT_REF(World3D,
@@ -126,9 +149,10 @@ void InitWorld3DBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kWorld3DDataType>);
 
   DefineMethod(klass, "initialize", World3D_initialize);
-  DefineMethod(klass, "root", World3D_GetRoot);
-  DefineMethod(klass, "root=", World3D_SetRoot);
+  DefineMethod(klass, "format", World3D_GetFormat);
+  DefineMethod(klass, "format=", World3D_SetFormat);
   DefineMethod(klass, "target", World3D_GetTarget);
+  DefineMethod(klass, "context", World3D_GetContext);
   DefineMethod(klass, "x", World3D_X);
   DefineMethod(klass, "x=", World3D_XEqual);
   DefineMethod(klass, "y", World3D_Y);
@@ -137,6 +161,8 @@ void InitWorld3DBinding() {
   DefineMethod(klass, "width=", World3D_WidthEqual);
   DefineMethod(klass, "height", World3D_Height);
   DefineMethod(klass, "height=", World3D_HeightEqual);
+  DefineMethod(klass, "scene", World3D_Scene);
+  DefineMethod(klass, "scene=", World3D_SceneEqual);
   DefineMethod(klass, "camera", World3D_Camera);
   DefineMethod(klass, "camera=", World3D_CameraEqual);
   DefineMethod(klass, "graph", World3D_Graph);

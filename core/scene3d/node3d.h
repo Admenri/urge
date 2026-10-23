@@ -77,6 +77,13 @@ class Node3D : public Object {
     return visible_;
   }
 
+  URGE_BINDING(Name : "layers")
+  ATTR(uint32_t, Layers) {
+    if (value.has_value())
+      layers_ = *value;
+    return layers_;
+  }
+
   URGE_BINDING(Name : "parent")
   RefPtr<Node3D> GetParent() const { return parent_; }
   URGE_BINDING(Name : "parent=")
@@ -107,6 +114,7 @@ class Node3D : public Object {
 
   const std::vector<RefPtr<Node3D>>& children() const { return children_; }
   bool visible() const { return visible_; }
+  uint32_t layers() const { return layers_; }
 
  private:
   void RemoveChildRaw(Node3D* child);
@@ -115,6 +123,7 @@ class Node3D : public Object {
   RefPtr<Vector4> rotation_;
   RefPtr<Vector3> scale_;
   bool visible_ = true;
+  uint32_t layers_ = 1;
 
   Node3D* parent_ = nullptr;
   std::vector<RefPtr<Node3D>> children_;

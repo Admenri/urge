@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node3D  (core/scene3d/node3d.h:37-97)
+// Node3D  (core/scene3d/node3d.h:37-104)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Node3D);
@@ -160,6 +160,9 @@ BINDING_ATTR_OBJECT_REF(Node3D,
 // Attribute: visible (bool)
 BINDING_ATTR_BOOL(Node3D, urge::Node3D, Visible);
 
+// Attribute: layers (uint32_t)
+BINDING_ATTR_INT(Node3D, urge::Node3D, Layers);
+
 void InitNode3DBindingAppend(VALUE klass);
 
 void InitNode3DBinding() {
@@ -182,6 +185,8 @@ void InitNode3DBinding() {
   DefineMethod(klass, "scale=", Node3D_ScaleEqual);
   DefineMethod(klass, "visible", Node3D_Visible);
   DefineMethod(klass, "visible=", Node3D_VisibleEqual);
+  DefineMethod(klass, "layers", Node3D_Layers);
+  DefineMethod(klass, "layers=", Node3D_LayersEqual);
   InitNode3DBindingAppend(klass);
 }
 // --- GENERATED END ---

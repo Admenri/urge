@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// MaterialPass3D  (core/scene3d/material3d.h:41-155)
+// MaterialPass3D  (core/scene3d/material3d.h:55-442)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(MaterialPass3D);
@@ -43,6 +43,62 @@ RB_FUNC(MaterialPass3D_GetTag) {
     return rb_enc_str_new(result.data(),
                          static_cast<long>(result.size()),
                          rb_utf8_encoding());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(MaterialPass3D_GetVertexEntry) {
+  auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    std::string result = self_obj->GetVertexEntry();
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(MaterialPass3D_SetVertexEntry) {
+  auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string value;
+    ParseArgs(argc, argv, "s", &value);
+
+    self_obj->SetVertexEntry(value);
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(MaterialPass3D_GetFragmentEntry) {
+  auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 0);
+    std::string result = self_obj->GetFragmentEntry();
+    return rb_enc_str_new(result.data(),
+                         static_cast<long>(result.size()),
+                         rb_utf8_encoding());
+  }
+  EXC_END;
+  return Qnil;
+}
+
+RB_FUNC(MaterialPass3D_SetFragmentEntry) {
+  auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string value;
+    ParseArgs(argc, argv, "s", &value);
+
+    self_obj->SetFragmentEntry(value);
   }
   EXC_END;
   return Qnil;
@@ -254,20 +310,92 @@ RB_FUNC(MaterialPass3D_SlotNames) {
   return Qnil;
 }
 
+// Attribute: tag_id (int32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, TagId);
+
+// Attribute: queue (int32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Queue);
+
+// Attribute: skinned (bool)
+BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Skinned);
+
+// Attribute: instanced (bool)
+BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Instanced);
+
+// Attribute: fullscreen (bool)
+BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Fullscreen);
+
+// Attribute: depth_only (bool)
+BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthOnly);
+
+// Attribute: topology (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Topology);
+
+// Attribute: front_face (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, FrontFace);
+
+// Attribute: cull (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Cull);
+
 // Attribute: depth_test (bool)
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthTest);
 
 // Attribute: depth_write (bool)
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthWrite);
 
-// Attribute: cull (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Cull);
+// Attribute: depth_compare (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, DepthCompare);
 
-// Attribute: skinned (bool)
-BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Skinned);
+// Attribute: depth_bias (int32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, DepthBias);
 
-// Attribute: depth_only (bool)
-BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthOnly);
+// Attribute: depth_bias_slope (float)
+BINDING_ATTR_FLOAT(MaterialPass3D, urge::MaterialPass3D, DepthBiasSlope);
+
+// Attribute: depth_bias_clamp (float)
+BINDING_ATTR_FLOAT(MaterialPass3D, urge::MaterialPass3D, DepthBiasClamp);
+
+// Attribute: stencil (bool)
+BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Stencil);
+
+// Attribute: stencil_ref (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilRef);
+
+// Attribute: stencil_read_mask (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilReadMask);
+
+// Attribute: stencil_write_mask (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilWriteMask);
+
+// Attribute: stencil_front_compare (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontCompare);
+
+// Attribute: stencil_front_fail (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontFail);
+
+// Attribute: stencil_front_depth_fail (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontDepthFail);
+
+// Attribute: stencil_front_pass (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontPass);
+
+// Attribute: stencil_back_compare (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackCompare);
+
+// Attribute: stencil_back_fail (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackFail);
+
+// Attribute: stencil_back_depth_fail (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackDepthFail);
+
+// Attribute: stencil_back_pass (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackPass);
+
+// Attribute: color_write_mask (uint32_t)
+BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, ColorWriteMask);
+
+// Attribute: alpha_to_coverage (bool)
+BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, AlphaToCoverage);
 
 // Attribute: texture (RefPtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(MaterialPass3D,
@@ -283,6 +411,10 @@ void InitMaterialPass3DBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kMaterialPass3DDataType>);
 
   DefineMethod(klass, "tag", MaterialPass3D_GetTag);
+  DefineMethod(klass, "vertex_entry", MaterialPass3D_GetVertexEntry);
+  DefineMethod(klass, "vertex_entry=", MaterialPass3D_SetVertexEntry);
+  DefineMethod(klass, "fragment_entry", MaterialPass3D_GetFragmentEntry);
+  DefineMethod(klass, "fragment_entry=", MaterialPass3D_SetFragmentEntry);
   DefineMethod(klass, "blend", MaterialPass3D_GetBlend);
   DefineMethod(klass, "blend=", MaterialPass3D_SetBlend);
   DefineMethod(klass, "params", MaterialPass3D_GetParams);
@@ -298,16 +430,64 @@ void InitMaterialPass3DBinding() {
   DefineMethod(klass, "get_uniform", MaterialPass3D_GetUniform);
   DefineMethod(klass, "uniform_slot_count", MaterialPass3D_UniformSlotCount);
   DefineMethod(klass, "slot_names", MaterialPass3D_SlotNames);
+  DefineMethod(klass, "tag_id", MaterialPass3D_TagId);
+  DefineMethod(klass, "tag_id=", MaterialPass3D_TagIdEqual);
+  DefineMethod(klass, "queue", MaterialPass3D_Queue);
+  DefineMethod(klass, "queue=", MaterialPass3D_QueueEqual);
+  DefineMethod(klass, "skinned", MaterialPass3D_Skinned);
+  DefineMethod(klass, "skinned=", MaterialPass3D_SkinnedEqual);
+  DefineMethod(klass, "instanced", MaterialPass3D_Instanced);
+  DefineMethod(klass, "instanced=", MaterialPass3D_InstancedEqual);
+  DefineMethod(klass, "fullscreen", MaterialPass3D_Fullscreen);
+  DefineMethod(klass, "fullscreen=", MaterialPass3D_FullscreenEqual);
+  DefineMethod(klass, "depth_only", MaterialPass3D_DepthOnly);
+  DefineMethod(klass, "depth_only=", MaterialPass3D_DepthOnlyEqual);
+  DefineMethod(klass, "topology", MaterialPass3D_Topology);
+  DefineMethod(klass, "topology=", MaterialPass3D_TopologyEqual);
+  DefineMethod(klass, "front_face", MaterialPass3D_FrontFace);
+  DefineMethod(klass, "front_face=", MaterialPass3D_FrontFaceEqual);
+  DefineMethod(klass, "cull", MaterialPass3D_Cull);
+  DefineMethod(klass, "cull=", MaterialPass3D_CullEqual);
   DefineMethod(klass, "depth_test", MaterialPass3D_DepthTest);
   DefineMethod(klass, "depth_test=", MaterialPass3D_DepthTestEqual);
   DefineMethod(klass, "depth_write", MaterialPass3D_DepthWrite);
   DefineMethod(klass, "depth_write=", MaterialPass3D_DepthWriteEqual);
-  DefineMethod(klass, "cull", MaterialPass3D_Cull);
-  DefineMethod(klass, "cull=", MaterialPass3D_CullEqual);
-  DefineMethod(klass, "skinned", MaterialPass3D_Skinned);
-  DefineMethod(klass, "skinned=", MaterialPass3D_SkinnedEqual);
-  DefineMethod(klass, "depth_only", MaterialPass3D_DepthOnly);
-  DefineMethod(klass, "depth_only=", MaterialPass3D_DepthOnlyEqual);
+  DefineMethod(klass, "depth_compare", MaterialPass3D_DepthCompare);
+  DefineMethod(klass, "depth_compare=", MaterialPass3D_DepthCompareEqual);
+  DefineMethod(klass, "depth_bias", MaterialPass3D_DepthBias);
+  DefineMethod(klass, "depth_bias=", MaterialPass3D_DepthBiasEqual);
+  DefineMethod(klass, "depth_bias_slope", MaterialPass3D_DepthBiasSlope);
+  DefineMethod(klass, "depth_bias_slope=", MaterialPass3D_DepthBiasSlopeEqual);
+  DefineMethod(klass, "depth_bias_clamp", MaterialPass3D_DepthBiasClamp);
+  DefineMethod(klass, "depth_bias_clamp=", MaterialPass3D_DepthBiasClampEqual);
+  DefineMethod(klass, "stencil", MaterialPass3D_Stencil);
+  DefineMethod(klass, "stencil=", MaterialPass3D_StencilEqual);
+  DefineMethod(klass, "stencil_ref", MaterialPass3D_StencilRef);
+  DefineMethod(klass, "stencil_ref=", MaterialPass3D_StencilRefEqual);
+  DefineMethod(klass, "stencil_read_mask", MaterialPass3D_StencilReadMask);
+  DefineMethod(klass, "stencil_read_mask=", MaterialPass3D_StencilReadMaskEqual);
+  DefineMethod(klass, "stencil_write_mask", MaterialPass3D_StencilWriteMask);
+  DefineMethod(klass, "stencil_write_mask=", MaterialPass3D_StencilWriteMaskEqual);
+  DefineMethod(klass, "stencil_front_compare", MaterialPass3D_StencilFrontCompare);
+  DefineMethod(klass, "stencil_front_compare=", MaterialPass3D_StencilFrontCompareEqual);
+  DefineMethod(klass, "stencil_front_fail", MaterialPass3D_StencilFrontFail);
+  DefineMethod(klass, "stencil_front_fail=", MaterialPass3D_StencilFrontFailEqual);
+  DefineMethod(klass, "stencil_front_depth_fail", MaterialPass3D_StencilFrontDepthFail);
+  DefineMethod(klass, "stencil_front_depth_fail=", MaterialPass3D_StencilFrontDepthFailEqual);
+  DefineMethod(klass, "stencil_front_pass", MaterialPass3D_StencilFrontPass);
+  DefineMethod(klass, "stencil_front_pass=", MaterialPass3D_StencilFrontPassEqual);
+  DefineMethod(klass, "stencil_back_compare", MaterialPass3D_StencilBackCompare);
+  DefineMethod(klass, "stencil_back_compare=", MaterialPass3D_StencilBackCompareEqual);
+  DefineMethod(klass, "stencil_back_fail", MaterialPass3D_StencilBackFail);
+  DefineMethod(klass, "stencil_back_fail=", MaterialPass3D_StencilBackFailEqual);
+  DefineMethod(klass, "stencil_back_depth_fail", MaterialPass3D_StencilBackDepthFail);
+  DefineMethod(klass, "stencil_back_depth_fail=", MaterialPass3D_StencilBackDepthFailEqual);
+  DefineMethod(klass, "stencil_back_pass", MaterialPass3D_StencilBackPass);
+  DefineMethod(klass, "stencil_back_pass=", MaterialPass3D_StencilBackPassEqual);
+  DefineMethod(klass, "color_write_mask", MaterialPass3D_ColorWriteMask);
+  DefineMethod(klass, "color_write_mask=", MaterialPass3D_ColorWriteMaskEqual);
+  DefineMethod(klass, "alpha_to_coverage", MaterialPass3D_AlphaToCoverage);
+  DefineMethod(klass, "alpha_to_coverage=", MaterialPass3D_AlphaToCoverageEqual);
   DefineMethod(klass, "texture", MaterialPass3D_Texture);
   DefineMethod(klass, "texture=", MaterialPass3D_TextureEqual);
   InitMaterialPass3DBindingAppend(klass);

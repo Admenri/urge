@@ -33,7 +33,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/canvas/bitmap.h:43-140)
+// Bitmap  (core/canvas/bitmap.h:43-144)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
@@ -303,6 +303,20 @@ RB_FUNC(Bitmap_GetPixel) {
   return Qnil;
 }
 
+RB_FUNC(Bitmap_SavePpm) {
+  auto* self_obj = GetSelfData<urge::Bitmap>(self);
+
+  EXC_BEGIN {
+    CheckArgc(argc, 1);
+    std::string filename;
+    ParseArgs(argc, argv, "s", &filename);
+
+    self_obj->SavePpm(filename);
+  }
+  EXC_END;
+  return Qnil;
+}
+
 RB_FUNC(Bitmap_SetPixel) {
   auto* self_obj = GetSelfData<urge::Bitmap>(self);
 
@@ -509,6 +523,7 @@ void InitBitmapBinding() {
   DefineMethod(klass, "clear", Bitmap_Clear);
   DefineMethod(klass, "clear_rect", Bitmap_ClearRect);
   DefineMethod(klass, "get_pixel", Bitmap_GetPixel);
+  DefineMethod(klass, "save_ppm", Bitmap_SavePpm);
   DefineMethod(klass, "set_pixel", Bitmap_SetPixel);
   DefineMethod(klass, "hue_change", Bitmap_HueChange);
   DefineMethod(klass, "blur", Bitmap_Blur);

@@ -29,7 +29,6 @@
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
 #include "core/render/pipeline.h"
-#include "core/scene3d/render_context3d.h"
 
 namespace urge {
 
@@ -83,6 +82,7 @@ World3D::World3D(int32_t x, int32_t y, int32_t width, int32_t height)
       width_(std::max(1, width)),
       height_(std::max(1, height)) {
   Node::SetupTrait(this);
+  Attr_Parent(nullptr);
 }
 
 World3D::~World3D() {
@@ -91,10 +91,29 @@ World3D::~World3D() {
 
 void World3D::DisposeObject() {
   Node::DisposeObject();
+  context_.reset();
   target_.reset();
-  root_.reset();
+  default_graph_.reset();
   graph_.reset();
   camera_.reset();
+  scene_.reset();
+}
+
+RefPtr<RenderGraph3D> World3D::ActiveGraph() {
+  if (graph_)
+    return graph_;
+  if (!default_graph_)
+    default_graph_ = MakeRefCounted<ForwardPipeline3D>();
+  return default_graph_;
+}
+
+void World3D::EnsureTarget() {
+  if (target_ && target_->Width() == width_ && target_->Height() == height_)
+    return;
+
+  target_ = MakeRefCounted<RenderTarget3D>(width_, height_, format_,
+                                          "depth32float", 1);
+  texture_group_ = nullptr;
 }
 
 void World3D::EnsureQuadPipeline() {
@@ -221,20 +240,26 @@ void World3D::UpdateQuad(glm::ivec2 target_size) {
 }
 
 void World3D::RenderScene(DrawParam param) {
-  const glm::ivec2 size(width_, height_);
-  if (!target_ || target_->Width() != size.x || target_->Height() != size.y) {
-    target_ = MakeRefCounted<RenderTarget3D>(size.x, size.y, true);
-    texture_group_ = nullptr;
-  }
+  EnsureTarget();
+  if (!target_)
+    return;
 
-  RenderContext3D context(param->command, target_);
-  context.Collect(root_.get(), camera_.get());
-  context.Flush();
-  graph_->Execute(&context);
+  RefPtr<RenderGraph3D> graph = ActiveGraph();
+  if (!graph)
+    return;
+
+  if (!context_)
+    context_ = MakeRefCounted<RenderContext3D>(param->command, target_);
+  else
+    context_->BeginFrame(param->command, target_);
+
+  context_->Collect(scene_.get(), camera_.get());
+  context_->Flush();
+  graph->Execute(context_.get());
 }
 
 bool World3D::Prepare(DrawParam param) {
-  if (!root_ || !graph_ || !camera_)
+  if (!scene_ || !camera_)
     return false;
   if (width_ <= 0 || height_ <= 0)
     return false;

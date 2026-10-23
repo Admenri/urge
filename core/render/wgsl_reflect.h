@@ -37,10 +37,12 @@ using LayoutGroup = std::pair<uint32_t, std::vector<util::LayoutEntry>>;
 enum class BindingKind {
   kUniform,
   kStorage,
+  kStorageReadWrite,
   kTexture2D,
   kTextureCube,
   kTextureArray,
   kTextureDepth,
+  kStorageTexture,
   kSampler,
   kSamplerComparison,
 };

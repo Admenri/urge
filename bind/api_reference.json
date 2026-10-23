@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-20T09:10:31Z",
+    "generated_at": "2026-10-22T12:31:57Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -41,6 +41,7 @@
       "core/render/primitive.h",
       "core/render/render_stats.h",
       "core/render/shader.h",
+      "core/render/texture_format.h",
       "core/render/uniform.h",
       "core/render/wgsl_reflect.h",
       "core/scene3d/animation3d.h",
@@ -48,15 +49,20 @@
       "core/scene3d/animation_state_machine3d.h",
       "core/scene3d/bone_mask3d.h",
       "core/scene3d/camera3d.h",
+      "core/scene3d/forward_pipeline3d.h",
+      "core/scene3d/gltf_loader3d.h",
       "core/scene3d/light3d.h",
       "core/scene3d/lighting3d.h",
       "core/scene3d/material3d.h",
       "core/scene3d/mesh3d.h",
+      "core/scene3d/mesh_renderer3d.h",
       "core/scene3d/node3d.h",
       "core/scene3d/render_context3d.h",
       "core/scene3d/render_graph3d.h",
       "core/scene3d/render_queue3d.h",
       "core/scene3d/render_target3d.h",
+      "core/scene3d/scene3d.h",
+      "core/scene3d/shader_lib3d.h",
       "core/scene3d/skeleton3d.h",
       "core/scene3d/world3d.h",
       "core/scene/camera.h",
@@ -79,7 +85,20 @@
       "core/video/video_demuxer.h",
       "core/video/video_player.h"
     ],
-    "skipped": []
+    "skipped": [
+      {
+        "class": "Scene3D",
+        "kind": "method",
+        "signature": "std::vector<RefPtr<Camera3D>> Cameras()",
+        "reason": "internal parameter type: std::vector<RefPtr<Camera3D>>"
+      },
+      {
+        "class": "RenderContext3D",
+        "kind": "method",
+        "signature": "void BeginPassEx(RefPtr<RenderTarget3D>, std::vector<RefPtr<Color>>, bool, bool, int32_t)",
+        "reason": "internal parameter type: std::vector<RefPtr<Color>>"
+      }
+    ]
   },
   "modules": [
     {
@@ -2093,7 +2112,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/input/input.h:53-77",
+      "export": "core/input/input.h:55-79",
       "cpp_name": "Input",
       "cpp_parent": "Singleton",
       "header": "core/input/input.h",
@@ -2110,7 +2129,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "pressed",
@@ -2127,7 +2146,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "triggered",
@@ -2144,7 +2163,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "repeated",
@@ -2161,7 +2180,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "dir4",
@@ -2172,7 +2191,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "dir8",
@@ -2183,7 +2202,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "key_press?",
@@ -2200,7 +2219,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "key_trigger?",
@@ -2217,7 +2236,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "key_repeat?",
@@ -2234,7 +2253,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         },
         {
           "ruby_name": "get_key_name",
@@ -2251,7 +2270,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/input/input.h:53-77"
+          "export": "core/input/input.h:55-79"
         }
       ]
     },
@@ -6787,7 +6806,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         }
       ],
       "initialize_copy": null,
@@ -6801,7 +6820,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "ruby_name": "parent=",
@@ -6818,7 +6837,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "ruby_name": "add_child",
@@ -6835,7 +6854,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "ruby_name": "remove_child",
@@ -6852,7 +6871,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "ruby_name": "child_count",
@@ -6863,7 +6882,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "ruby_name": "child_at",
@@ -6880,7 +6899,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "ruby_name": "world_matrix",
@@ -6891,7 +6910,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         }
       ],
       "attributes": [
@@ -6904,7 +6923,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "name": "rotation",
@@ -6915,7 +6934,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "name": "scale",
@@ -6926,7 +6945,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
         },
         {
           "name": "visible",
@@ -6937,7 +6956,18 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/node3d.h:37-97"
+          "export": "core/scene3d/node3d.h:37-104"
+        },
+        {
+          "name": "layers",
+          "setter": "layers=",
+          "cpp_name": "Layers",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/node3d.h:37-104"
         }
       ],
       "data_attributes": [],
@@ -6951,7 +6981,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/node3d.h:37-97",
+      "export": "core/scene3d/node3d.h:37-104",
       "cpp_name": "Node3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/node3d.h",
@@ -6964,11 +6994,39 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         }
       ],
       "initialize_copy": null,
       "instance_methods": [
+        {
+          "ruby_name": "target",
+          "cpp_name": "GetTarget",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/camera3d.h:40-145"
+        },
+        {
+          "ruby_name": "target=",
+          "cpp_name": "SetTarget",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/scene3d/camera3d.h:40-145"
+        },
         {
           "ruby_name": "shadow_splits",
           "cpp_name": "ShadowSplits",
@@ -6994,7 +7052,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         },
         {
           "ruby_name": "shadow_cascades",
@@ -7041,7 +7099,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         },
         {
           "ruby_name": "view_projection",
@@ -7063,32 +7121,10 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         }
       ],
       "attributes": [
-        {
-          "name": "position",
-          "setter": "position=",
-          "cpp_name": "Position",
-          "cpp_type": "RefPtr<Vector3>",
-          "ruby_type": "Vector3",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
-        },
-        {
-          "name": "rotation",
-          "setter": "rotation=",
-          "cpp_name": "Rotation",
-          "cpp_type": "RefPtr<Vector4>",
-          "ruby_type": "Vector4",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
-        },
         {
           "name": "fov",
           "setter": "fov=",
@@ -7098,7 +7134,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         },
         {
           "name": "near",
@@ -7109,7 +7145,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         },
         {
           "name": "far",
@@ -7120,7 +7156,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         },
         {
           "name": "orthographic",
@@ -7131,7 +7167,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
         },
         {
           "name": "ortho_size",
@@ -7142,7 +7178,51 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-129"
+          "export": "core/scene3d/camera3d.h:40-145"
+        },
+        {
+          "name": "culling_mask",
+          "setter": "culling_mask=",
+          "cpp_name": "CullingMask",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/camera3d.h:40-145"
+        },
+        {
+          "name": "clear_flags",
+          "setter": "clear_flags=",
+          "cpp_name": "ClearFlags",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/camera3d.h:40-145"
+        },
+        {
+          "name": "clear_color",
+          "setter": "clear_color=",
+          "cpp_name": "ClearColor",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/camera3d.h:40-145"
+        },
+        {
+          "name": "priority",
+          "setter": "priority=",
+          "cpp_name": "Priority",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/camera3d.h:40-145"
         }
       ],
       "data_attributes": [],
@@ -7156,13 +7236,352 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/camera3d.h:40-129",
+      "export": "core/scene3d/camera3d.h:40-145",
       "cpp_name": "Camera3D",
-      "cpp_parent": "Object",
+      "cpp_parent": "Node3D",
       "header": "core/scene3d/camera3d.h",
       "kind": "class",
       "name": "Camera3D",
-      "ruby_superclass": "Object",
+      "ruby_superclass": "Node3D",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/scene3d/light3d.h:36-73"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [],
+      "attributes": [
+        {
+          "name": "type",
+          "setter": "type=",
+          "cpp_name": "Type",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/scene3d/light3d.h:36-73"
+        },
+        {
+          "name": "color",
+          "setter": "color=",
+          "cpp_name": "Color",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/scene3d/light3d.h:36-73"
+        },
+        {
+          "name": "intensity",
+          "setter": "intensity=",
+          "cpp_name": "Intensity",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/scene3d/light3d.h:36-73"
+        },
+        {
+          "name": "range",
+          "setter": "range=",
+          "cpp_name": "Range",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/scene3d/light3d.h:36-73"
+        },
+        {
+          "name": "cast_shadow",
+          "setter": "cast_shadow=",
+          "cpp_name": "CastShadow",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": false,
+          "export": "core/scene3d/light3d.h:36-73"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/scene3d/light3d.h:36-73",
+      "cpp_name": "Light3D",
+      "cpp_parent": "Node3D",
+      "header": "core/scene3d/light3d.h",
+      "kind": "class",
+      "name": "Light3D",
+      "ruby_superclass": "Node3D",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/scene3d/scene3d.h:37-57"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "add",
+          "cpp_name": "Add",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "node",
+              "type": "RefPtr<Node3D>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/scene3d.h:37-57"
+        },
+        {
+          "ruby_name": "node_count",
+          "cpp_name": "NodeCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/scene3d.h:37-57"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "ambient",
+          "setter": "ambient=",
+          "cpp_name": "Ambient",
+          "cpp_type": "RefPtr<Color>",
+          "ruby_type": "Color",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/scene3d.h:37-57"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [
+        {
+          "kind": "method",
+          "signature": "std::vector<RefPtr<Camera3D>> Cameras()",
+          "reason": "internal parameter type: std::vector<RefPtr<Camera3D>>"
+        }
+      ],
+      "export": "core/scene3d/scene3d.h:37-57",
+      "cpp_name": "Scene3D",
+      "cpp_parent": "Node3D",
+      "header": "core/scene3d/scene3d.h",
+      "kind": "class",
+      "name": "Scene3D",
+      "ruby_superclass": "Node3D",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "set_material",
+          "cpp_name": "SetMaterial",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "material",
+              "type": "RefPtr<Material3D>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "ruby_name": "get_material",
+          "cpp_name": "GetMaterial",
+          "return": {
+            "cpp_type": "RefPtr<Material3D>",
+            "ruby_type": "Material3D"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "ruby_name": "material_count",
+          "cpp_name": "MaterialCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "ruby_name": "bounds_center",
+          "cpp_name": "BoundsCenter",
+          "return": {
+            "cpp_type": "std::vector<float>",
+            "ruby_type": "Array<Float>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "ruby_name": "bounds_radius",
+          "cpp_name": "BoundsRadius",
+          "return": {
+            "cpp_type": "std::vector<float>",
+            "ruby_type": "Array<Float>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "ruby_name": "set_instance_matrices",
+          "cpp_name": "SetInstanceMatrices",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "data",
+              "type": "std::vector<float>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "ruby_name": "instance_count",
+          "cpp_name": "InstanceCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "mesh",
+          "setter": "mesh=",
+          "cpp_name": "Mesh",
+          "cpp_type": "RefPtr<Mesh3D>",
+          "ruby_type": "Mesh3D",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "name": "cast_shadow",
+          "setter": "cast_shadow=",
+          "cpp_name": "CastShadow",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "name": "receive_shadow",
+          "setter": "receive_shadow=",
+          "cpp_name": "ReceiveShadow",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        },
+        {
+          "name": "render_queue",
+          "setter": "render_queue=",
+          "cpp_name": "RenderQueue",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/mesh_renderer3d.h:41-87"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/scene3d/mesh_renderer3d.h:41-87",
+      "cpp_name": "MeshRenderer3D",
+      "cpp_parent": "Node3D",
+      "header": "core/scene3d/mesh_renderer3d.h",
+      "kind": "class",
+      "name": "MeshRenderer3D",
+      "ruby_superclass": "Node3D",
       "glue": false
     },
     {
@@ -8117,7 +8536,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         }
       ],
       "initialize_copy": null,
@@ -8137,7 +8556,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "set_skinned_vertices",
@@ -8164,7 +8583,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "set_indices",
@@ -8181,7 +8600,107 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
+        },
+        {
+          "ruby_name": "add_submesh",
+          "cpp_name": "AddSubmesh",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index_offset",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "index_count",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "mat_slot",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh3d.h:46-93"
+        },
+        {
+          "ruby_name": "clear_submeshes",
+          "cpp_name": "ClearSubmeshes",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh3d.h:46-93"
+        },
+        {
+          "ruby_name": "submesh_count",
+          "cpp_name": "SubmeshCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh3d.h:46-93"
+        },
+        {
+          "ruby_name": "submesh_index_offset",
+          "cpp_name": "SubmeshIndexOffset",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh3d.h:46-93"
+        },
+        {
+          "ruby_name": "submesh_index_count",
+          "cpp_name": "SubmeshIndexCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh3d.h:46-93"
+        },
+        {
+          "ruby_name": "submesh_mat_slot",
+          "cpp_name": "SubmeshMatSlot",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "vertex_count",
@@ -8192,7 +8711,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "index_count",
@@ -8203,7 +8722,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "bone_count",
@@ -8214,7 +8733,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "skinned",
@@ -8225,7 +8744,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "bounds_center",
@@ -8236,7 +8755,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "bounds_min",
@@ -8247,7 +8766,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "bounds_max",
@@ -8258,7 +8777,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         },
         {
           "ruby_name": "bounds_radius",
@@ -8269,21 +8788,10 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         }
       ],
       "attributes": [
-        {
-          "name": "material",
-          "setter": "material=",
-          "cpp_name": "Material",
-          "cpp_type": "RefPtr<Material3D>",
-          "ruby_type": "Material3D",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
-        },
         {
           "name": "skeleton",
           "setter": "skeleton=",
@@ -8293,7 +8801,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/scene3d/mesh3d.h:42-77"
+          "export": "core/scene3d/mesh3d.h:46-93"
         }
       ],
       "data_attributes": [],
@@ -8307,79 +8815,186 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/mesh3d.h:42-77",
+      "export": "core/scene3d/mesh3d.h:46-93",
       "cpp_name": "Mesh3D",
-      "cpp_parent": "Node3D",
+      "cpp_parent": "Object",
       "header": "core/scene3d/mesh3d.h",
       "kind": "class",
       "name": "Mesh3D",
-      "ruby_superclass": "Node3D",
+      "ruby_superclass": "Object",
       "glue": false
     },
     {
       "constructors": [
         {
-          "params": [],
-          "export": "core/scene3d/light3d.h:36-73"
+          "params": [
+            {
+              "name": "path",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
         }
       ],
       "initialize_copy": null,
-      "instance_methods": [],
+      "instance_methods": [
+        {
+          "ruby_name": "root",
+          "cpp_name": "GetRoot",
+          "return": {
+            "cpp_type": "RefPtr<Node3D>",
+            "ruby_type": "Node3D"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "material_count",
+          "cpp_name": "MaterialCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "mesh_count",
+          "cpp_name": "MeshCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "image_count",
+          "cpp_name": "ImageCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "node_count",
+          "cpp_name": "NodeCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "bounds_center",
+          "cpp_name": "BoundsCenter",
+          "return": {
+            "cpp_type": "std::vector<float>",
+            "ruby_type": "Array<Float>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "bounds_size",
+          "cpp_name": "BoundsSize",
+          "return": {
+            "cpp_type": "std::vector<float>",
+            "ruby_type": "Array<Float>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "bounds_radius",
+          "cpp_name": "BoundsRadius",
+          "return": {
+            "cpp_type": "float",
+            "ruby_type": "Float"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "fit",
+          "cpp_name": "Fit",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "size",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "set_material",
+          "cpp_name": "SetMaterial",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "material",
+              "type": "RefPtr<Material3D>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        },
+        {
+          "ruby_name": "get_material",
+          "cpp_name": "GetMaterial",
+          "return": {
+            "cpp_type": "RefPtr<Material3D>",
+            "ruby_type": "Material3D"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
+        }
+      ],
       "attributes": [
         {
-          "name": "type",
-          "setter": "type=",
-          "cpp_name": "Type",
-          "cpp_type": "uint32_t",
-          "ruby_type": "Integer",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
-        },
-        {
-          "name": "color",
-          "setter": "color=",
-          "cpp_name": "Color",
-          "cpp_type": "RefPtr<Color>",
-          "ruby_type": "Color",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
-        },
-        {
-          "name": "intensity",
-          "setter": "intensity=",
-          "cpp_name": "Intensity",
-          "cpp_type": "float",
-          "ruby_type": "Float",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
-        },
-        {
-          "name": "range",
-          "setter": "range=",
-          "cpp_name": "Range",
-          "cpp_type": "float",
-          "ruby_type": "Float",
-          "static": false,
-          "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
-        },
-        {
-          "name": "cast_shadow",
-          "setter": "cast_shadow=",
-          "cpp_name": "CastShadow",
+          "name": "unlit",
+          "setter": "unlit=",
+          "cpp_name": "Unlit",
           "cpp_type": "bool",
           "ruby_type": "Boolean",
           "static": false,
           "override": false,
-          "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "header_annotation": true,
+          "export": "core/scene3d/gltf_loader3d.h:50-91"
         }
       ],
       "data_attributes": [],
@@ -8393,13 +9008,13 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/light3d.h:36-73",
-      "cpp_name": "Light3D",
-      "cpp_parent": "Node3D",
-      "header": "core/scene3d/light3d.h",
+      "export": "core/scene3d/gltf_loader3d.h:50-91",
+      "cpp_name": "GLTFModel3D",
+      "cpp_parent": "Object",
+      "header": "core/scene3d/gltf_loader3d.h",
       "kind": "class",
-      "name": "Light3D",
-      "ruby_superclass": "Node3D",
+      "name": "GLTFModel3D",
+      "ruby_superclass": "Object",
       "glue": false
     },
     {
@@ -8415,7 +9030,63 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "ruby_name": "vertex_entry",
+          "cpp_name": "GetVertexEntry",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "ruby_name": "vertex_entry=",
+          "cpp_name": "SetVertexEntry",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "ruby_name": "fragment_entry",
+          "cpp_name": "GetFragmentEntry",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "ruby_name": "fragment_entry=",
+          "cpp_name": "SetFragmentEntry",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "blend",
@@ -8426,7 +9097,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "blend=",
@@ -8443,7 +9114,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "params",
@@ -8454,7 +9125,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "params=",
@@ -8471,7 +9142,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "set_texture_slot",
@@ -8493,7 +9164,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "get_texture_slot",
@@ -8510,7 +9181,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "texture_slot_count",
@@ -8521,7 +9192,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "set_texture",
@@ -8543,7 +9214,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "get_texture",
@@ -8560,7 +9231,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "set_uniform_slot",
@@ -8582,7 +9253,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "get_uniform_slot",
@@ -8599,7 +9270,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "set_uniform",
@@ -8621,7 +9292,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "get_uniform",
@@ -8638,7 +9309,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "uniform_slot_count",
@@ -8649,7 +9320,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "ruby_name": "slot_names",
@@ -8660,42 +9331,31 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         }
       ],
       "attributes": [
         {
-          "name": "depth_test",
-          "setter": "depth_test=",
-          "cpp_name": "DepthTest",
-          "cpp_type": "bool",
-          "ruby_type": "Boolean",
-          "static": false,
-          "override": false,
-          "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
-        },
-        {
-          "name": "depth_write",
-          "setter": "depth_write=",
-          "cpp_name": "DepthWrite",
-          "cpp_type": "bool",
-          "ruby_type": "Boolean",
-          "static": false,
-          "override": false,
-          "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
-        },
-        {
-          "name": "cull",
-          "setter": "cull=",
-          "cpp_name": "Cull",
-          "cpp_type": "uint32_t",
+          "name": "tag_id",
+          "setter": "tag_id=",
+          "cpp_name": "TagId",
+          "cpp_type": "int32_t",
           "ruby_type": "Integer",
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "queue",
+          "setter": "queue=",
+          "cpp_name": "Queue",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "name": "skinned",
@@ -8706,7 +9366,29 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "instanced",
+          "setter": "instanced=",
+          "cpp_name": "Instanced",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "fullscreen",
+          "setter": "fullscreen=",
+          "cpp_name": "Fullscreen",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "name": "depth_only",
@@ -8717,7 +9399,260 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "topology",
+          "setter": "topology=",
+          "cpp_name": "Topology",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "front_face",
+          "setter": "front_face=",
+          "cpp_name": "FrontFace",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "cull",
+          "setter": "cull=",
+          "cpp_name": "Cull",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "depth_test",
+          "setter": "depth_test=",
+          "cpp_name": "DepthTest",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "depth_write",
+          "setter": "depth_write=",
+          "cpp_name": "DepthWrite",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "depth_compare",
+          "setter": "depth_compare=",
+          "cpp_name": "DepthCompare",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "depth_bias",
+          "setter": "depth_bias=",
+          "cpp_name": "DepthBias",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "depth_bias_slope",
+          "setter": "depth_bias_slope=",
+          "cpp_name": "DepthBiasSlope",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "depth_bias_clamp",
+          "setter": "depth_bias_clamp=",
+          "cpp_name": "DepthBiasClamp",
+          "cpp_type": "float",
+          "ruby_type": "Float",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil",
+          "setter": "stencil=",
+          "cpp_name": "Stencil",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_ref",
+          "setter": "stencil_ref=",
+          "cpp_name": "StencilRef",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_read_mask",
+          "setter": "stencil_read_mask=",
+          "cpp_name": "StencilReadMask",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_write_mask",
+          "setter": "stencil_write_mask=",
+          "cpp_name": "StencilWriteMask",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_front_compare",
+          "setter": "stencil_front_compare=",
+          "cpp_name": "StencilFrontCompare",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_front_fail",
+          "setter": "stencil_front_fail=",
+          "cpp_name": "StencilFrontFail",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_front_depth_fail",
+          "setter": "stencil_front_depth_fail=",
+          "cpp_name": "StencilFrontDepthFail",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_front_pass",
+          "setter": "stencil_front_pass=",
+          "cpp_name": "StencilFrontPass",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_back_compare",
+          "setter": "stencil_back_compare=",
+          "cpp_name": "StencilBackCompare",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_back_fail",
+          "setter": "stencil_back_fail=",
+          "cpp_name": "StencilBackFail",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_back_depth_fail",
+          "setter": "stencil_back_depth_fail=",
+          "cpp_name": "StencilBackDepthFail",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "stencil_back_pass",
+          "setter": "stencil_back_pass=",
+          "cpp_name": "StencilBackPass",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "color_write_mask",
+          "setter": "color_write_mask=",
+          "cpp_name": "ColorWriteMask",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
+        },
+        {
+          "name": "alpha_to_coverage",
+          "setter": "alpha_to_coverage=",
+          "cpp_name": "AlphaToCoverage",
+          "cpp_type": "bool",
+          "ruby_type": "Boolean",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/material3d.h:55-442"
         },
         {
           "name": "texture",
@@ -8728,7 +9663,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:41-155"
+          "export": "core/scene3d/material3d.h:55-442"
         }
       ],
       "data_attributes": [],
@@ -8742,7 +9677,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/material3d.h:41-155",
+      "export": "core/scene3d/material3d.h:55-442",
       "cpp_name": "MaterialPass3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/material3d.h",
@@ -8755,7 +9690,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         }
       ],
       "initialize_copy": null,
@@ -8785,7 +9720,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         },
         {
           "ruby_name": "add_shadow_pass",
@@ -8807,7 +9742,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         },
         {
           "ruby_name": "get_pass",
@@ -8824,7 +9759,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         },
         {
           "ruby_name": "has_pass",
@@ -8841,7 +9776,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         },
         {
           "ruby_name": "remove_pass",
@@ -8858,7 +9793,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         },
         {
           "ruby_name": "pass_count",
@@ -8869,7 +9804,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
         },
         {
           "ruby_name": "tags",
@@ -8880,7 +9815,24 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:207-227"
+          "export": "core/scene3d/material3d.h:545-567"
+        },
+        {
+          "ruby_name": "pass_at",
+          "cpp_name": "PassAt",
+          "return": {
+            "cpp_type": "RefPtr<MaterialPass3D>",
+            "ruby_type": "MaterialPass3D"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/material3d.h:545-567"
         }
       ],
       "attributes": [],
@@ -8895,7 +9847,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/material3d.h:207-227",
+      "export": "core/scene3d/material3d.h:545-567",
       "cpp_name": "Material3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/material3d.h",
@@ -8905,135 +9857,149 @@
       "glue": false
     },
     {
-      "constructors": [],
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "color_format",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "depth_format",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "samples",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "export": "core/scene3d/render_target3d.h:53-86"
+        }
+      ],
       "initialize_copy": null,
       "instance_methods": [
         {
-          "ruby_name": "tag_count",
-          "cpp_name": "TagCount",
+          "ruby_name": "width",
+          "cpp_name": "Width",
           "return": {
             "cpp_type": "int32_t",
             "ruby_type": "Integer"
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
+          "export": "core/scene3d/render_target3d.h:53-86"
         },
         {
-          "ruby_name": "tags",
-          "cpp_name": "Tags",
+          "ruby_name": "height",
+          "cpp_name": "Height",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "has_color",
+          "cpp_name": "HasColor",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "layers",
+          "cpp_name": "LayerCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "color_count",
+          "cpp_name": "ColorCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "samples",
+          "cpp_name": "SampleCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "has_depth",
+          "cpp_name": "HasDepth",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "has_stencil",
+          "cpp_name": "HasStencil",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/render_target3d.h:53-86"
+        },
+        {
+          "ruby_name": "color_formats",
+          "cpp_name": "ColorFormats",
           "return": {
             "cpp_type": "std::vector<std::string>",
             "ruby_type": "Array<String>"
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
+          "export": "core/scene3d/render_target3d.h:53-86"
         },
         {
-          "ruby_name": "count",
-          "cpp_name": "Count",
+          "ruby_name": "depth_format",
+          "cpp_name": "DepthFormat",
           "return": {
-            "cpp_type": "int32_t",
-            "ruby_type": "Integer"
-          },
-          "params": [
-            {
-              "name": "tag",
-              "type": "std::string",
-              "default": null
-            }
-          ],
-          "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
-        },
-        {
-          "ruby_name": "total_count",
-          "cpp_name": "TotalCount",
-          "return": {
-            "cpp_type": "int32_t",
-            "ruby_type": "Integer"
+            "cpp_type": "std::string",
+            "ruby_type": "String"
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
-        },
-        {
-          "ruby_name": "light_count",
-          "cpp_name": "LightCount",
-          "return": {
-            "cpp_type": "int32_t",
-            "ruby_type": "Integer"
-          },
-          "params": [],
-          "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
-        },
-        {
-          "ruby_name": "mesh_at",
-          "cpp_name": "MeshAt",
-          "return": {
-            "cpp_type": "RefPtr<Mesh3D>",
-            "ruby_type": "Mesh3D"
-          },
-          "params": [
-            {
-              "name": "tag",
-              "type": "std::string",
-              "default": null
-            },
-            {
-              "name": "index",
-              "type": "int32_t",
-              "default": null
-            }
-          ],
-          "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
-        },
-        {
-          "ruby_name": "distance_at",
-          "cpp_name": "DistanceAt",
-          "return": {
-            "cpp_type": "float",
-            "ruby_type": "Float"
-          },
-          "params": [
-            {
-              "name": "tag",
-              "type": "std::string",
-              "default": null
-            },
-            {
-              "name": "index",
-              "type": "int32_t",
-              "default": null
-            }
-          ],
-          "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
-        },
-        {
-          "ruby_name": "sort_by_distance",
-          "cpp_name": "SortByDistance",
-          "return": {
-            "cpp_type": "void",
-            "ruby_type": "nil"
-          },
-          "params": [
-            {
-              "name": "tag",
-              "type": "std::string",
-              "default": null
-            },
-            {
-              "name": "back_to_front",
-              "type": "bool",
-              "default": null
-            }
-          ],
-          "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:42-93"
+          "export": "core/scene3d/render_target3d.h:53-86"
         }
       ],
       "attributes": [],
@@ -9048,14 +10014,247 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_queue3d.h:42-93",
+      "export": "core/scene3d/render_target3d.h:53-86",
+      "cpp_name": "RenderTarget3D",
+      "cpp_parent": "Object",
+      "header": "core/scene3d/render_target3d.h",
+      "kind": "class",
+      "name": "RenderTarget3D",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [
+            {
+              "name": "wgsl",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "entry",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "set_uniform",
+          "cpp_name": "SetUniform",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "values",
+              "type": "std::vector<float>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        },
+        {
+          "ruby_name": "set_buffer",
+          "cpp_name": "SetBuffer",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "values",
+              "type": "std::vector<float>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        },
+        {
+          "ruby_name": "set_texture",
+          "cpp_name": "SetTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "texture",
+              "type": "RefPtr<Bitmap>",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        },
+        {
+          "ruby_name": "set_target",
+          "cpp_name": "SetTarget",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "target",
+              "type": "RefPtr<RenderTarget3D>",
+              "default": null
+            },
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "dispatch_x",
+          "setter": "dispatch_x=",
+          "cpp_name": "DispatchX",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        },
+        {
+          "name": "dispatch_y",
+          "setter": "dispatch_y=",
+          "cpp_name": "DispatchY",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        },
+        {
+          "name": "dispatch_z",
+          "setter": "dispatch_z=",
+          "cpp_name": "DispatchZ",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:51-79"
+        }
+      ],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/scene3d/render_graph3d.h:51-79",
+      "cpp_name": "ComputePass3D",
+      "cpp_parent": "Object",
+      "header": "core/scene3d/render_graph3d.h",
+      "kind": "class",
+      "name": "ComputePass3D",
+      "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/scene3d/render_queue3d.h:43-96"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "count",
+          "cpp_name": "Count",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_queue3d.h:43-96"
+        },
+        {
+          "ruby_name": "light_count",
+          "cpp_name": "LightCount",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_queue3d.h:43-96"
+        },
+        {
+          "ruby_name": "tags",
+          "cpp_name": "Tags",
+          "return": {
+            "cpp_type": "std::vector<std::string>",
+            "ruby_type": "Array<String>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/render_queue3d.h:43-96"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/scene3d/render_queue3d.h:43-96",
       "cpp_name": "RenderQueue3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_queue3d.h",
       "kind": "class",
       "name": "RenderQueue3D",
       "ruby_superclass": "Object",
-      "glue": true
+      "glue": false
     },
     {
       "constructors": [],
@@ -9070,7 +10269,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "camera",
@@ -9081,7 +10280,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "queue",
@@ -9092,7 +10291,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "ambient",
@@ -9103,7 +10302,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "ambient=",
@@ -9120,7 +10319,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "set_view_projection",
@@ -9137,7 +10336,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "begin_pass",
@@ -9164,7 +10363,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "end_pass",
@@ -9175,7 +10374,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
           "ruby_name": "pass",
@@ -9186,46 +10385,147 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
         },
         {
-          "ruby_name": "draw",
-          "cpp_name": "Draw",
-          "return": {
-            "cpp_type": "void",
-            "ruby_type": "nil"
-          },
-          "params": [
-            {
-              "name": "mesh",
-              "type": "RefPtr<Mesh3D>",
-              "default": null
-            },
-            {
-              "name": "tag",
-              "type": "std::string",
-              "default": null
-            }
-          ],
-          "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:47-97"
-        },
-        {
-          "ruby_name": "draw_tag",
-          "cpp_name": "DrawTag",
+          "ruby_name": "draw_filter",
+          "cpp_name": "DrawFilter",
           "return": {
             "cpp_type": "int32_t",
             "ruby_type": "Integer"
           },
           "params": [
             {
-              "name": "tag",
-              "type": "std::string",
+              "name": "tags",
+              "type": "std::vector<std::string>",
+              "default": null
+            },
+            {
+              "name": "tag_ids",
+              "type": "std::vector<int32_t>",
+              "default": null
+            },
+            {
+              "name": "queue_min",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "queue_max",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "layers",
+              "type": "uint32_t",
               "default": null
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:47-97"
+          "export": "core/scene3d/render_context3d.h:51-122"
+        },
+        {
+          "ruby_name": "draw_item",
+          "cpp_name": "DrawItem",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_context3d.h:51-122"
+        },
+        {
+          "ruby_name": "set_viewport",
+          "cpp_name": "SetViewport",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "float",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_context3d.h:51-122"
+        },
+        {
+          "ruby_name": "set_scissor_rect",
+          "cpp_name": "SetScissorRect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_context3d.h:51-122"
+        },
+        {
+          "ruby_name": "draw_indexed_indirect",
+          "cpp_name": "DrawIndexedIndirect",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "buffer",
+              "type": "RefPtr<GPUBuffer>",
+              "default": null
+            },
+            {
+              "name": "offset",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_context3d.h:51-122"
         }
       ],
       "attributes": [],
@@ -9239,8 +10539,14 @@
       },
       "equal": false,
       "index": null,
-      "unsupported": [],
-      "export": "core/scene3d/render_context3d.h:47-97",
+      "unsupported": [
+        {
+          "kind": "method",
+          "signature": "void BeginPassEx(RefPtr<RenderTarget3D>, std::vector<RefPtr<Color>>, bool, bool, int32_t)",
+          "reason": "internal parameter type: std::vector<RefPtr<Color>>"
+        }
+      ],
+      "export": "core/scene3d/render_context3d.h:51-122",
       "cpp_name": "RenderContext3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_context3d.h",
@@ -9262,22 +10568,22 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
-          "ruby_name": "color",
-          "cpp_name": "GetColor",
+          "ruby_name": "colors",
+          "cpp_name": "GetColors",
           "return": {
-            "cpp_type": "std::string",
-            "ruby_type": "String"
+            "cpp_type": "std::vector<std::string>",
+            "ruby_type": "Array<String>"
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
-          "ruby_name": "color=",
-          "cpp_name": "SetColor",
+          "ruby_name": "colors=",
+          "cpp_name": "SetColors",
           "return": {
             "cpp_type": "void",
             "ruby_type": "nil"
@@ -9285,12 +10591,12 @@
           "params": [
             {
               "name": "value",
-              "type": "std::string",
+              "type": "std::vector<std::string>",
               "default": null
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "clear_color",
@@ -9301,7 +10607,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "clear_color=",
@@ -9318,7 +10624,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "tags",
@@ -9329,7 +10635,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "tags=",
@@ -9346,7 +10652,68 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "tag_ids",
+          "cpp_name": "GetTagIds",
+          "return": {
+            "cpp_type": "std::vector<int32_t>",
+            "ruby_type": "Array<Integer>"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "tag_ids=",
+          "cpp_name": "SetTagIds",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::vector<int32_t>",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "bind_texture",
+          "cpp_name": "BindTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "slot",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "texture",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "bindings",
+          "cpp_name": "GetBindings",
+          "return": {
+            "cpp_type": "std::vector<std::string>",
+            "ruby_type": "Array<String>"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "reads",
@@ -9357,7 +10724,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "reads=",
@@ -9374,7 +10741,63 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "material",
+          "cpp_name": "GetMaterial",
+          "return": {
+            "cpp_type": "RefPtr<MaterialPass3D>",
+            "ruby_type": "MaterialPass3D"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "material=",
+          "cpp_name": "SetMaterial",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "RefPtr<MaterialPass3D>",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "compute",
+          "cpp_name": "GetCompute",
+          "return": {
+            "cpp_type": "RefPtr<ComputePass3D>",
+            "ruby_type": "ComputePass3D"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "ruby_name": "compute=",
+          "cpp_name": "SetCompute",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "RefPtr<ComputePass3D>",
+              "default": null
+            }
+          ],
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "texture",
@@ -9391,7 +10814,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "pass",
@@ -9402,7 +10825,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "context",
@@ -9413,7 +10836,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "width",
@@ -9424,7 +10847,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "ruby_name": "height",
@@ -9435,20 +10858,53 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         }
       ],
       "attributes": [
         {
-          "name": "clear_depth",
-          "setter": "clear_depth=",
-          "cpp_name": "ClearDepth",
+          "name": "enabled",
+          "setter": "enabled=",
+          "cpp_name": "Enabled",
           "cpp_type": "bool",
           "ruby_type": "Boolean",
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "name": "kind",
+          "setter": "kind=",
+          "cpp_name": "Kind",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "name": "clear_flags",
+          "setter": "clear_flags=",
+          "cpp_name": "ClearFlags",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "name": "cull_override",
+          "setter": "cull_override=",
+          "cpp_name": "CullOverride",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "sort_back_to_front",
@@ -9459,7 +10915,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "depth_only",
@@ -9470,7 +10926,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "camera",
@@ -9481,7 +10937,40 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "name": "layers",
+          "setter": "layers=",
+          "cpp_name": "Layers",
+          "cpp_type": "uint32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "name": "queue_min",
+          "setter": "queue_min=",
+          "cpp_name": "QueueMin",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
+        },
+        {
+          "name": "queue_max",
+          "setter": "queue_max=",
+          "cpp_name": "QueueMax",
+          "cpp_type": "int32_t",
+          "ruby_type": "Integer",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "cascades",
@@ -9492,7 +10981,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "shadow_light",
@@ -9503,7 +10992,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "point_shadow_light",
@@ -9514,7 +11003,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "cascade_fade",
@@ -9525,7 +11014,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "split_lambda",
@@ -9536,7 +11025,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         },
         {
           "name": "shadow_distance",
@@ -9547,7 +11036,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-156"
+          "export": "core/scene3d/render_graph3d.h:119-289"
         }
       ],
       "data_attributes": [],
@@ -9561,7 +11050,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:51-156",
+      "export": "core/scene3d/render_graph3d.h:119-289",
       "cpp_name": "RenderGraphPass3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",
@@ -9574,7 +11063,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         }
       ],
       "initialize_copy": null,
@@ -9594,7 +11083,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "ruby_name": "get_pass",
@@ -9611,7 +11100,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "ruby_name": "remove_pass",
@@ -9628,7 +11117,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "ruby_name": "clear",
@@ -9639,7 +11128,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "ruby_name": "pass_count",
@@ -9650,7 +11139,123 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
+        },
+        {
+          "ruby_name": "pass_at",
+          "cpp_name": "PassAt",
+          "return": {
+            "cpp_type": "RefPtr<RenderGraphPass3D>",
+            "ruby_type": "RenderGraphPass3D"
+          },
+          "params": [
+            {
+              "name": "index",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:355-402"
+        },
+        {
+          "ruby_name": "add_texture",
+          "cpp_name": "AddTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "format",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "samples",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:355-402"
+        },
+        {
+          "ruby_name": "add_storage_texture",
+          "cpp_name": "AddStorageTexture",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "format",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:355-402"
+        },
+        {
+          "ruby_name": "set_texture_scale",
+          "cpp_name": "SetTextureScale",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "scale",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:355-402"
+        },
+        {
+          "ruby_name": "get_texture",
+          "cpp_name": "GetTexture",
+          "return": {
+            "cpp_type": "RefPtr<RenderTarget3D>",
+            "ruby_type": "RenderTarget3D"
+          },
+          "params": [
+            {
+              "name": "name",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:355-402"
+        },
+        {
+          "ruby_name": "texture_names",
+          "cpp_name": "TextureNames",
+          "return": {
+            "cpp_type": "std::vector<std::string>",
+            "ruby_type": "Array<String>"
+          },
+          "params": [],
+          "header_annotation": false,
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "ruby_name": "ambient",
@@ -9661,7 +11266,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "ruby_name": "ambient=",
@@ -9678,7 +11283,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         }
       ],
       "attributes": [
@@ -9691,7 +11296,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         },
         {
           "name": "camera",
@@ -9702,7 +11307,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:202-231"
+          "export": "core/scene3d/render_graph3d.h:355-402"
         }
       ],
       "data_attributes": [],
@@ -9716,13 +11321,146 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:202-231",
+      "export": "core/scene3d/render_graph3d.h:355-402",
       "cpp_name": "RenderGraph3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",
       "kind": "class",
       "name": "RenderGraph3D",
       "ruby_superclass": "Object",
+      "glue": false
+    },
+    {
+      "constructors": [
+        {
+          "params": [],
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        }
+      ],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "set_cascades",
+          "cpp_name": "SetCascades",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "count",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        },
+        {
+          "ruby_name": "set_shadow_distance",
+          "cpp_name": "SetShadowDistance",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "distance",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        },
+        {
+          "ruby_name": "set_split_lambda",
+          "cpp_name": "SetSplitLambda",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "lambda",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        },
+        {
+          "ruby_name": "set_cascade_fade",
+          "cpp_name": "SetCascadeFade",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "fade",
+              "type": "float",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        },
+        {
+          "ruby_name": "set_shadow_enabled",
+          "cpp_name": "SetShadowEnabled",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        },
+        {
+          "ruby_name": "set_queue_split",
+          "cpp_name": "SetQueueSplit",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "queue",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/scene3d/forward_pipeline3d.h:34-50"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/scene3d/forward_pipeline3d.h:34-50",
+      "cpp_name": "ForwardPipeline3D",
+      "cpp_parent": "RenderGraph3D",
+      "header": "core/scene3d/forward_pipeline3d.h",
+      "kind": "class",
+      "name": "ForwardPipeline3D",
+      "ruby_superclass": "RenderGraph3D",
       "glue": false
     },
     {
@@ -9750,25 +11488,25 @@
               "default": null
             }
           ],
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         }
       ],
       "initialize_copy": null,
       "instance_methods": [
         {
-          "ruby_name": "root",
-          "cpp_name": "GetRoot",
+          "ruby_name": "format",
+          "cpp_name": "GetFormat",
           "return": {
-            "cpp_type": "RefPtr<Node3D>",
-            "ruby_type": "Node3D"
+            "cpp_type": "std::string",
+            "ruby_type": "String"
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
-          "ruby_name": "root=",
-          "cpp_name": "SetRoot",
+          "ruby_name": "format=",
+          "cpp_name": "SetFormat",
           "return": {
             "cpp_type": "void",
             "ruby_type": "nil"
@@ -9776,12 +11514,12 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<Node3D>",
+              "type": "std::string",
               "default": null
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
           "ruby_name": "target",
@@ -9792,7 +11530,18 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
+        },
+        {
+          "ruby_name": "context",
+          "cpp_name": "GetContext",
+          "return": {
+            "cpp_type": "RefPtr<RenderContext3D>",
+            "ruby_type": "RenderContext3D"
+          },
+          "params": [],
+          "header_annotation": true,
+          "export": "core/scene3d/world3d.h:42-117"
         }
       ],
       "attributes": [
@@ -9805,7 +11554,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
           "name": "y",
@@ -9816,7 +11565,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
           "name": "width",
@@ -9827,7 +11576,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
           "name": "height",
@@ -9838,7 +11587,18 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
+        },
+        {
+          "name": "scene",
+          "setter": "scene=",
+          "cpp_name": "Scene",
+          "cpp_type": "RefPtr<Node3D>",
+          "ruby_type": "Node3D",
+          "static": false,
+          "override": false,
+          "header_annotation": true,
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
           "name": "camera",
@@ -9849,7 +11609,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         },
         {
           "name": "graph",
@@ -9860,7 +11620,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:39-93"
+          "export": "core/scene3d/world3d.h:42-117"
         }
       ],
       "data_attributes": [],
@@ -9874,7 +11634,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/world3d.h:39-93",
+      "export": "core/scene3d/world3d.h:42-117",
       "cpp_name": "World3D",
       "cpp_parent": "Node",
       "header": "core/scene3d/world3d.h",
@@ -10427,7 +12187,7 @@
               "default": null
             }
           ],
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "params": [
@@ -10442,7 +12202,7 @@
               "default": null
             }
           ],
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         }
       ],
       "initialize_copy": {
@@ -10453,7 +12213,7 @@
             "default": null
           }
         ],
-        "export": "core/canvas/bitmap.h:43-140"
+        "export": "core/canvas/bitmap.h:43-144"
       },
       "instance_methods": [
         {
@@ -10465,7 +12225,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "height",
@@ -10476,7 +12236,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "rect",
@@ -10487,7 +12247,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "blt",
@@ -10524,7 +12284,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "stretch_blt",
@@ -10556,7 +12316,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "mask_blt",
@@ -10588,7 +12348,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "fill_rect",
@@ -10625,7 +12385,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "fill_rect",
@@ -10647,7 +12407,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -10694,7 +12454,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -10726,7 +12486,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "clear",
@@ -10737,7 +12497,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "clear_rect",
@@ -10769,7 +12529,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "clear_rect",
@@ -10786,7 +12546,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "get_pixel",
@@ -10808,7 +12568,24 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
+        },
+        {
+          "ruby_name": "save_ppm",
+          "cpp_name": "SavePpm",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "filename",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "set_pixel",
@@ -10835,7 +12612,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "hue_change",
@@ -10852,7 +12629,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "blur",
@@ -10863,7 +12640,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "radial_blur",
@@ -10885,7 +12662,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "draw_text",
@@ -10927,7 +12704,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "draw_text",
@@ -10954,7 +12731,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "text_size",
@@ -10971,7 +12748,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "texture_view",
@@ -10982,7 +12759,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "texture",
@@ -10993,7 +12770,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "depth_stencil_view",
@@ -11004,7 +12781,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "to_image",
@@ -11015,7 +12792,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         },
         {
           "ruby_name": "update_with_image",
@@ -11032,7 +12809,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         }
       ],
       "attributes": [
@@ -11045,7 +12822,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         }
       ],
       "data_attributes": [],
@@ -11065,7 +12842,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-140"
+          "export": "core/canvas/bitmap.h:43-144"
         }
       ],
       "class_attributes": [],
@@ -11077,7 +12854,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/bitmap.h:43-140",
+      "export": "core/canvas/bitmap.h:43-144",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/canvas/bitmap.h",
@@ -15873,76 +17650,6 @@
       "name": "PerspectiveCamera",
       "ruby_superclass": "Camera",
       "glue": false
-    },
-    {
-      "constructors": [],
-      "initialize_copy": null,
-      "instance_methods": [
-        {
-          "ruby_name": "width",
-          "cpp_name": "Width",
-          "return": {
-            "cpp_type": "int32_t",
-            "ruby_type": "Integer"
-          },
-          "params": [],
-          "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:41-53"
-        },
-        {
-          "ruby_name": "height",
-          "cpp_name": "Height",
-          "return": {
-            "cpp_type": "int32_t",
-            "ruby_type": "Integer"
-          },
-          "params": [],
-          "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:41-53"
-        },
-        {
-          "ruby_name": "has_color",
-          "cpp_name": "HasColor",
-          "return": {
-            "cpp_type": "bool",
-            "ruby_type": "Boolean"
-          },
-          "params": [],
-          "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:41-53"
-        },
-        {
-          "ruby_name": "layers",
-          "cpp_name": "LayerCount",
-          "return": {
-            "cpp_type": "int32_t",
-            "ruby_type": "Integer"
-          },
-          "params": [],
-          "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:41-53"
-        }
-      ],
-      "attributes": [],
-      "data_attributes": [],
-      "class_methods": [],
-      "class_attributes": [],
-      "constants": [],
-      "marshal": {
-        "dump": false,
-        "load": false
-      },
-      "equal": false,
-      "index": null,
-      "unsupported": [],
-      "export": "core/scene3d/render_target3d.h:41-53",
-      "cpp_name": "RenderTarget3D",
-      "cpp_parent": "Object",
-      "header": "core/scene3d/render_target3d.h",
-      "kind": "class",
-      "name": "RenderTarget3D",
-      "ruby_superclass": "Object",
-      "glue": true
     }
   ],
   "aliases": []

@@ -62,7 +62,6 @@ SpriteBatch::SpriteBatch() {
 
 SpriteBatch::~SpriteBatch() {
   emitter_.Reset();
-  param_group_ = nullptr;
   param_buffer_ = nullptr;
 }
 
@@ -99,24 +98,17 @@ void SpriteBatch::EnsureParamBuffer(std::size_t bytes) {
   const std::uint64_t size =
       std::max<std::uint64_t>(bytes, kInitialParamSlots * sizeof(SpriteParam));
 
+  /* A vertex buffer, not a storage buffer: the run is drawn instanced, one
+     instance per quad, with these parameters as the per-instance attributes.
+     WebGL 2 -- which the web build renders through -- has no storage buffers at
+     all, and the GLES backend refuses a layout that asks for one. */
   wgpu::BufferDescriptor desc;
-  desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+  desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
   desc.size = size;
   param_buffer_ = g_device.CreateBuffer(&desc);
 
-  if (!param_buffer_) {
+  if (!param_buffer_)
     LOGGER_ERROR("the device rejected a {} byte sprite parameter buffer", size);
-    param_group_ = nullptr;
-    return;
-  }
-
-  util::BufferSet binding(param_buffer_, 0, size);
-
-  param_group_ =
-      util::CreateBindGroup(ShaderSet::Get()
-                                .state.sprite.sprite_blends.at(BLEND_NORMAL)
-                                .GetBindGroupLayout(1),
-                            {{0, binding}});
 }
 
 void FlushSpriteBatch(DrawContext* param) {
@@ -133,11 +125,17 @@ void FlushSpriteBatch(DrawContext* param) {
   param->pass.SetPipeline(ShaderSet::Get().state.sprite.sprite_blends.at(
       static_cast<BlendType>(run.blend_type)));
   param->pass.SetBindGroup(0, run.scene, 0, nullptr);
-  param->pass.SetBindGroup(1, SpriteBatch::Get().param_group(), 0, nullptr);
   param->pass.SetBindGroup(2, run.texture->texture_group(), 0, nullptr);
   param->pass.SetVertexBuffer(0, SpriteBatch::Get().emitter().buffer(), 0,
                               WGPU_WHOLE_SIZE);
-  param->pass.Draw(count, 1, run.first_vertex, 0);
+  param->pass.SetVertexBuffer(1, SpriteBatch::Get().param_buffer(), 0,
+                              WGPU_WHOLE_SIZE);
+
+  /* Six vertices per quad, one instance each.  The run starts at
+     `first_vertex` in the shared vertex buffer, and the parameters are indexed
+     by quad, so the instance index is the same number divided by six. */
+  param->pass.Draw(kQuadVertexCount, count / kQuadVertexCount, run.first_vertex,
+                   run.first_vertex / kQuadVertexCount);
 }
 
 }

@@ -130,11 +130,22 @@ class Graphics : public Singleton<Graphics> {
   float other_cost_ms() const { return other_cost_ms_; }
   double present_cost_ms() const { return present_cost_ms_; }
 
+  /* Called once at the end of every frame, after the frame has been presented
+     and the script's `Graphics.update` is about to return.  The host installs
+     it for work that has to happen between frames rather than inside them --
+     on the web that is the garbage collection, which can only run where the
+     interpreter's own stack is the only thing holding live objects (see
+     bind/cruby_main.cc).  Nothing else uses it. */
+  using FrameCallback = void (*)();
+  void SetFrameCallback(FrameCallback callback) { frame_callback_ = callback; }
+
  private:
   friend class ScreenRootNode;
 
   void ProcessEvents();
   void PresentInternal();
+
+  FrameCallback frame_callback_ = nullptr;
 
   SDL_Window* window_ = nullptr;
   RefPtr<ScreenRootNode> root_;

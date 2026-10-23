@@ -7,7 +7,35 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 if(MSVC)
   add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  # The dynamic CRT is not a preference here, it is what the script
+  # interpreter requires.  Ruby's Windows port keeps its own view of the
+  # process file descriptors by reaching into the CRT's table (`__pioinfo` in
+  # win32/win32.c, located by scanning `_isatty` inside ucrtbase.dll) -- to
+  # associate sockets with fds and to emulate fcntl.  That table only exists in
+  # ucrtbase.dll: with the static CRT the scan finds the DLL's table while
+  # `_open` allocates from the image's own, so the two disagree and the first
+  # `File.open` fails with EBADF.  Everything in the tree therefore shares the
+  # DLL runtime, which is also why the executable ships next to
+  # vcruntime140.dll (the UCRT itself is part of Windows).
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
+if(EMSCRIPTEN)
+  # The engine is single threaded, and the browser has no threads unless the
+  # module is built with shared memory and atomics -- which nothing here does.
+  # `OS_EMSCRIPTEN` is what the frame loop and the window code branch on.
+  add_compile_definitions(OS_EMSCRIPTEN)
+
+  # Rust panics are compiled with WebAssembly exceptions, so the C++ side has
+  # to use the same mechanism: with the JS-based scheme a C++ `throw` unwinding
+  # through a Rust frame (and the other way round) cannot work.
+  add_compile_options(-fwasm-exceptions)
+  add_link_options(-fwasm-exceptions)
+
+  # harfbuzz escalates its own warnings to errors from inside `hb.hh`, and it
+  # reaches for pthreads whenever `<pthread.h>` exists -- Emscripten declares
+  # it, but this module has no threads.
+  add_compile_definitions(HB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR HB_NO_MT)
 endif()
 
 # Video playback is optional.  dav1d and libwebm are native C libraries with no
@@ -37,82 +65,11 @@ option(URGE_ENABLE_NETWORK "Build the WebSocket and HTTP client" ON)
 # ---------------------------------------------------------------------------
 # The script interpreter.
 #
-# `bind/external` is an optional drop-in holding a *prebuilt* CRuby: headers
-# under include/, an import library under lib/ and the DLLs under bin/.  When
-# it is there the engine links that interpreter instead of compiling the
-# bundled CRuby 1.9.3 in third_party/cruby -- and, because that drop-in is a
-# CRuby built with YJIT, the host turns the JIT on (see bind/cruby_main.cc).
-#
-# The directory is git-ignored on purpose: which interpreter a build uses is a
-# local decision, not a property of the tree.  Its absence is the default and
-# means "compile third_party/cruby".  Nothing downstream has to know which
-# case it is in, because both answer to the same target name, `ruby-static`.
-#
-# The layout is discovered rather than hard-coded, so dropping in a different
-# CRuby needs no edit here -- the versioned include directory and the DLL name
-# both change between releases.  The one file that does have to be kept in step
-# is bind/ruby-msvc/ruby/config.h; see the comment at the top of it.
-#
-# `URGE_RUBY_INTERPRETER` pins that choice explicitly, which is what lets the
-# CMake presets below name an interpreter each instead of both depending on
-# whether the directory happens to be present:
-#
-#   auto      -- the default: external when the drop-in exists, else bundled.
-#   bundled   -- always compile third_party/cruby 1.9.3, even if a drop-in is
-#                present.  The drop-in is ignored rather than deleted, so one
-#                checkout can build both without moving files.
-#   external  -- always use bind/external.  A missing (or malformed) drop-in is
-#                a hard error here: refusing to configure beats silently
-#                producing a bundled build from a preset that asked for the
-#                other interpreter.
+# There is exactly one: the CRuby in third_party/ruby, compiled from source
+# by third_party/CMakeLists.txt and linked as `ruby-static`.  Nothing outside
+# the tree is consulted, so a build never depends on which interpreter happens
+# to be installed on the machine.
 # ---------------------------------------------------------------------------
-set(URGE_RUBY_INTERPRETER "auto" CACHE STRING
-  "Script interpreter: auto | bundled | external")
-set_property(CACHE URGE_RUBY_INTERPRETER PROPERTY STRINGS auto bundled external)
-
-if(NOT URGE_RUBY_INTERPRETER STREQUAL "auto"
-   AND NOT URGE_RUBY_INTERPRETER STREQUAL "bundled"
-   AND NOT URGE_RUBY_INTERPRETER STREQUAL "external")
-  message(FATAL_ERROR
-    "URGE_RUBY_INTERPRETER must be auto, bundled or external, "
-    "got '${URGE_RUBY_INTERPRETER}'.")
-endif()
-
-if(URGE_RUBY_INTERPRETER STREQUAL "external"
-   AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bind/external/include")
-  message(FATAL_ERROR
-    "URGE_RUBY_INTERPRETER=external was requested but bind/external has no "
-    "include/ directory.  Either drop the prebuilt CRuby into bind/external "
-    "or configure with -DURGE_RUBY_INTERPRETER=bundled.")
-endif()
-
-set(URGE_EXTERNAL_RUBY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bind/external")
-if(URGE_RUBY_INTERPRETER STREQUAL "bundled")
-  message(STATUS "URGE: interpreter = the bundled CRuby 1.9.3 (forced)")
-  unset(URGE_EXTERNAL_RUBY_DIR)
-elseif(EXISTS "${URGE_EXTERNAL_RUBY_DIR}/include")
-  file(GLOB URGE_RUBY_INCLUDE_DIRS LIST_DIRECTORIES TRUE
-    "${URGE_EXTERNAL_RUBY_DIR}/include/ruby-*")
-  file(GLOB URGE_RUBY_IMPORT_LIBS "${URGE_EXTERNAL_RUBY_DIR}/lib/*.dll.a")
-  file(GLOB URGE_RUBY_DLLS "${URGE_EXTERNAL_RUBY_DIR}/bin/*.dll")
-
-  list(LENGTH URGE_RUBY_INCLUDE_DIRS URGE_RUBY_INCLUDE_COUNT)
-  list(LENGTH URGE_RUBY_IMPORT_LIBS URGE_RUBY_IMPORT_COUNT)
-  if(NOT URGE_RUBY_INCLUDE_COUNT EQUAL 1 OR NOT URGE_RUBY_IMPORT_COUNT EQUAL 1)
-    message(FATAL_ERROR
-      "bind/external is present but does not look like a CRuby drop-in: "
-      "expected exactly one include/ruby-* directory and one lib/*.dll.a "
-      "import library, found ${URGE_RUBY_INCLUDE_COUNT} and "
-      "${URGE_RUBY_IMPORT_COUNT}.")
-  endif()
-
-  list(GET URGE_RUBY_INCLUDE_DIRS 0 URGE_RUBY_INCLUDE_DIR)
-  list(GET URGE_RUBY_IMPORT_LIBS 0 URGE_RUBY_IMPORT_LIB)
-  message(STATUS "URGE: interpreter = the CRuby in bind/external")
-else()
-  message(STATUS "URGE: interpreter = the bundled CRuby 1.9.3")
-  unset(URGE_EXTERNAL_RUBY_DIR)
-endif()
 
 # ---------------------------------------------------------------------------
 # The encrypted asset container.

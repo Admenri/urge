@@ -26,7 +26,9 @@
 #include <cstdint>
 #include <format>
 #include <string>
+#include <string_view>
 
+#include "SDL3/SDL_iostream.h"
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_messagebox.h"
 #include "SDL3_ttf/SDL_ttf.h"
@@ -51,8 +53,34 @@
 
 #include "bind/cruby_main.h"
 
+namespace {
+
+SDL_IOStream* g_log_stream = nullptr;
+
+/* The mirror of `stderr` on disk.  It is written line by line and flushed at
+   once: a run that dies in the interpreter never reaches the orderly shutdown
+   below, so a line still sitting in the stream buffer would be the one line the
+   report needed. */
+void WriteLogFile(std::string_view line, void* user) {
+  auto stream = static_cast<SDL_IOStream*>(user);
+  if (!stream)
+    return;
+  SDL_WriteIO(stream, line.data(), line.size());
+  SDL_FlushIO(stream);
+}
+
+}  // namespace
+
 
 int main(int argc, char* argv[]) {
+#if defined(OS_EMSCRIPTEN)
+  /* A browser has no executable path to take the name from: argv[0] is
+     whatever the module was started with, and the working directory is the
+     root of the preloaded filesystem.  The name is fixed instead, which is
+     what the shell and the preloaded `Game.ini` are written for. */
+  std::string app = "Game";
+  std::string base_dir = "/";
+#else
   // App name
   std::string app(argv[0]);
   for (size_t i = 0; i < app.size(); ++i)
@@ -66,22 +94,46 @@ int main(int argc, char* argv[]) {
     base_dir = app.substr(0, last_sep);
     app = app.substr(last_sep + 1);
   }
+#endif
 
-  last_sep = app.find_last_of('.');
-  if (last_sep != std::string::npos)
-    app = app.substr(0, last_sep);
+  // The extension never belongs to the name: `Game.exe` and `Game` are the
+  // same game, and both read `Game.ini`.
+  auto extension_sep = app.find_last_of('.');
+  if (extension_sep != std::string::npos)
+    app = app.substr(0, extension_sep);
   std::string ini = app + ".ini";
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
   TTF_Init();
+
+  /* A game handed to a player is started by double-clicking it, so there is no
+     console behind `stderr` and the message box is the only place a failure is
+     ever seen -- until the click that closes it.  The same lines are mirrored
+     into `<name>.log` beside the executable, which is what a bug report is made
+     of.  A directory that refuses the file costs the mirror, never the run. */
+  std::string log_path;
+#if !defined(OS_EMSCRIPTEN)
+  log_path = base_dir + "/" + app + ".log";
+  g_log_stream = SDL_IOFromFile(log_path.c_str(), "w");
+  if (g_log_stream)
+    urge::SetLogSink(&WriteLogFile, g_log_stream);
+#endif
 
   // Components initialize
   urge::Config* config = nullptr;
   try {
     auto io = new urge::IOService(argv[0]);
     urge::IOService::Reset(io);
+#if defined(OS_EMSCRIPTEN)
+    /* The preloaded game is the root of the module's in-memory filesystem, so
+       both paths are absolute: a relative one would be resolved against a
+       working directory the browser does not really have. */
+    io->SetWritePath(base_dir);
+    io->AddLoadPath(base_dir, "/");
+#else
     io->SetWritePath(base_dir);
     io->AddLoadPath(".", "/");
+#endif
 
     /* A shipped game carries its resources in `<name>.acs`, named after the
        executable exactly the way the ini above is: `Game.exe` reads
@@ -146,13 +198,26 @@ int main(int argc, char* argv[]) {
     auto network = new urge::Network();
     urge::Network::Reset(network);
 
+
     // Binding entry
     binding::BindingMain binding_main;
+
   } catch (const urge::Exception& exc) {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE Core",
-                             exc.message().c_str(), nullptr);
+    /* The message box is the desktop's way of saying what went wrong; in a
+       browser there is no modal to put it in, and the console is the only place
+       a failure can be read from, so it goes there first. */
+    LOGGER_ERROR("[Host] {}", exc.message());
+    std::string message = exc.message();
+    if (g_log_stream)
+      message += "\n\nFull log: " + log_path;
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE Core", message.c_str(),
+                             nullptr);
   } catch (const std::exception& exc) {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE Core", exc.what(),
+    LOGGER_ERROR("[Host] {}", exc.what());
+    std::string message = exc.what();
+    if (g_log_stream)
+      message += "\n\nFull log: " + log_path;
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE Core", message.c_str(),
                              nullptr);
   }
 
@@ -170,6 +235,12 @@ int main(int argc, char* argv[]) {
   urge::Audio::Reset(nullptr);
   urge::Config::Reset(nullptr);
   urge::IOService::Reset(nullptr);
+
+  if (g_log_stream) {
+    urge::SetLogSink(nullptr, nullptr);
+    SDL_CloseIO(g_log_stream);
+    g_log_stream = nullptr;
+  }
 
   TTF_Quit();
   SDL_Quit();

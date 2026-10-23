@@ -78,6 +78,10 @@ const Input::KeySym kDefaultKeyboardBindings[] = {
     {"X", SDL_SCANCODE_A},          {"Y", SDL_SCANCODE_S},
     {"Z", SDL_SCANCODE_D},          {"L", SDL_SCANCODE_Q},
     {"R", SDL_SCANCODE_W},
+
+    {"W", SDL_SCANCODE_W},          {"S", SDL_SCANCODE_S},
+    {"D", SDL_SCANCODE_D},          {"Q", SDL_SCANCODE_Q},
+    {"E", SDL_SCANCODE_E},          {"A", SDL_SCANCODE_A},
 };
 
 const Input::KeySym kKeyboardBindings1[] = {

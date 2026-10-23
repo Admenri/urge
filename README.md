@@ -42,7 +42,7 @@ API——既有工程原则上无需改动脚本即可运行。
 | 窗口 / 输入 / 音频 | SDL3、SDL_image、SDL_ttf | 平台抽象、位图解码、字体栅格化 |
 | 图形 API | WebGPU（wgpu-native） | 渲染后端 |
 | 着色器工具链 | 无外部依赖 | WGSL 直接交给 wgpu，描述符布局由自研反射器从源码读出 |
-| 脚本运行时 | CRuby 1.9.3（`third_party/cruby`） | 执行 RGSS 脚本 |
+| 脚本运行时 | CRuby 4.0.0（`third_party/ruby`） | 执行 RGSS 脚本 |
 | 虚拟文件系统 | PhysicsFS（physfs） | 资源与 RTP 装载 |
 | 数学库 | glm | 向量、矩阵与投影 |
 | 压缩 | zlib | 脚本归档解压 |
@@ -213,7 +213,7 @@ pad.rumble(0.5, 0.5, 200)       # 本引擎扩展：低频、高频、毫秒
 | `wgpu-native` | WebGPU 实现（Rust） |
 | `zlib` | 脚本归档解压 |
 
-此外，`third_party/` 下还有几个**内嵌**依赖（非子模块）：`cruby`（CRuby 1.9.3）、
+此外，`third_party/` 下还有几个**内嵌**依赖（非子模块）：`ruby`（CRuby 4.0.0）、
 `libffi`（外部函数调用接口，为 `Win32API` 绑定提供 x64 下的 ABI 调用）、`webgpu-cpp`
 （WebGPU C++ 头文件包装）、`miniaudio`、`imgui`、`dav1d` 与 `webm`。
 

@@ -121,11 +121,13 @@ void Pipeline::Initialize(
     const ShaderSource& vertex,
     const ShaderSource& fragment,
     std::vector<std::vector<VertexAttribute>> vertex_layout,
-    const std::set<uint32_t>* dynamic_sets) {
+    const std::set<uint32_t>* dynamic_sets,
+    std::vector<wgpu::VertexStepMode> step_modes) {
   const wgpu::Device device = GPUDevice::Get().device();
 
   vertex_module_ = CreateModule(vertex.wgsl);
-  fragment_module_ = CreateModule(fragment.wgsl);
+  if (!fragment.wgsl.empty())
+    fragment_module_ = CreateModule(fragment.wgsl);
   vertex_entry_ = vertex.entry_point;
   fragment_entry_ = fragment.entry_point;
 
@@ -152,6 +154,8 @@ void Pipeline::Initialize(
       buffer.attributes.push_back(mapped);
       buffer.stride += FormatSize(attribute.format);
     }
+    if (buffers_.size() < step_modes.size())
+      buffer.step_mode = step_modes[buffers_.size()];
     buffers_.push_back(std::move(buffer));
   }
 }
@@ -159,8 +163,10 @@ void Pipeline::Initialize(
 Pipeline::Pipeline(const ShaderSource& vertex,
                    const ShaderSource& fragment,
                    std::vector<std::vector<VertexAttribute>> vertex_layout,
-                   const std::set<uint32_t>& dynamic_sets) {
-  Initialize(vertex, fragment, std::move(vertex_layout), &dynamic_sets);
+                   const std::set<uint32_t>& dynamic_sets,
+                   std::vector<wgpu::VertexStepMode> step_modes) {
+  Initialize(vertex, fragment, std::move(vertex_layout), &dynamic_sets,
+             std::move(step_modes));
 }
 
 Pipeline Pipeline::AutoLayout(
@@ -168,7 +174,7 @@ Pipeline Pipeline::AutoLayout(
     const ShaderSource& fragment,
     std::vector<std::vector<VertexAttribute>> vertex_layout) {
   Pipeline pipeline;
-  pipeline.Initialize(vertex, fragment, std::move(vertex_layout), nullptr);
+  pipeline.Initialize(vertex, fragment, std::move(vertex_layout), nullptr, {});
   return pipeline;
 }
 
@@ -181,7 +187,7 @@ wgpu::RenderPipeline Pipeline::MakeState(
   buffers.reserve(buffers_.size());
   for (const VertexBuffer& buffer : buffers_) {
     wgpu::VertexBufferLayout layout;
-    layout.stepMode = wgpu::VertexStepMode::Vertex;
+    layout.stepMode = buffer.step_mode;
     layout.arrayStride = buffer.stride;
     layout.attributeCount = buffer.attributes.size();
     layout.attributes =
@@ -207,7 +213,8 @@ wgpu::RenderPipeline Pipeline::MakeState(
   descriptor.primitive = primitive;
   descriptor.depthStencil = depth ? &*depth : nullptr;
   descriptor.multisample = samples;
-  descriptor.fragment = &fragment_state;
+  if (fragment_module_ != nullptr)
+    descriptor.fragment = &fragment_state;
 
   wgpu::RenderPipeline pipeline =
       GPUDevice::Get().device().CreateRenderPipeline(&descriptor);

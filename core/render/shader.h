@@ -51,6 +51,25 @@ inline std::vector<std::vector<VertexAttribute>> QuadVertexLayout() {
            {2, wgpu::VertexFormat::Float32x4}}};
 }
 
+/* The sprite batch draws a whole run of quads with one call, so the per-sprite
+   data -- the model matrix and the tint -- travels as a second vertex buffer
+   with instance step mode: one instance per quad, six vertices each.  It is one
+   `SpriteParam` wide (112 bytes), laid out exactly like the structure:
+   four rows of the matrix, the two colours, and (bush_depth, bush_opacity,
+   padding, padding) in the last vector. */
+inline std::vector<std::vector<VertexAttribute>> SpriteVertexLayout() {
+  return {{{0, wgpu::VertexFormat::Float32x4},
+           {1, wgpu::VertexFormat::Float32x2},
+           {2, wgpu::VertexFormat::Float32x4}},
+          {{3, wgpu::VertexFormat::Float32x4},
+           {4, wgpu::VertexFormat::Float32x4},
+           {5, wgpu::VertexFormat::Float32x4},
+           {6, wgpu::VertexFormat::Float32x4},
+           {7, wgpu::VertexFormat::Float32x4},
+           {8, wgpu::VertexFormat::Float32x4},
+           {9, wgpu::VertexFormat::Float32x4}}};
+}
+
 inline std::vector<std::vector<VertexAttribute>> MeshVertexLayout() {
   return {{{0, wgpu::VertexFormat::Float32x3},
            {1, wgpu::VertexFormat::Float32x3},
@@ -65,12 +84,42 @@ inline std::vector<std::vector<VertexAttribute>> SkinnedMeshVertexLayout() {
            {4, wgpu::VertexFormat::Float32x4}}};
 }
 
+inline std::vector<std::vector<VertexAttribute>> InstancedMeshVertexLayout() {
+  return {{{0, wgpu::VertexFormat::Float32x3},
+           {1, wgpu::VertexFormat::Float32x3},
+           {2, wgpu::VertexFormat::Float32x2}},
+          {{5, wgpu::VertexFormat::Float32x4},
+           {6, wgpu::VertexFormat::Float32x4},
+           {7, wgpu::VertexFormat::Float32x4},
+           {8, wgpu::VertexFormat::Float32x4}}};
+}
+
+inline std::vector<std::vector<VertexAttribute>>
+InstancedSkinnedMeshVertexLayout() {
+  return {{{0, wgpu::VertexFormat::Float32x3},
+           {1, wgpu::VertexFormat::Float32x3},
+           {2, wgpu::VertexFormat::Float32x2},
+           {3, wgpu::VertexFormat::Uint32x4},
+           {4, wgpu::VertexFormat::Float32x4}},
+          {{5, wgpu::VertexFormat::Float32x4},
+           {6, wgpu::VertexFormat::Float32x4},
+           {7, wgpu::VertexFormat::Float32x4},
+           {8, wgpu::VertexFormat::Float32x4}}};
+}
+
+inline std::vector<wgpu::VertexStepMode> MeshStepModes(bool instanced) {
+  if (!instanced)
+    return {wgpu::VertexStepMode::Vertex};
+  return {wgpu::VertexStepMode::Vertex, wgpu::VertexStepMode::Instance};
+}
+
 class Pipeline {
  public:
   Pipeline(const ShaderSource& vertex,
            const ShaderSource& fragment,
            std::vector<std::vector<VertexAttribute>> vertex_layout,
-           const std::set<uint32_t>& dynamic_sets = {});
+           const std::set<uint32_t>& dynamic_sets = {},
+           std::vector<wgpu::VertexStepMode> step_modes = {});
 
   static Pipeline AutoLayout(
       const ShaderSource& vertex,
@@ -88,6 +137,7 @@ class Pipeline {
   struct VertexBuffer {
     uint64_t stride = 0;
     std::vector<wgpu::VertexAttribute> attributes;
+    wgpu::VertexStepMode step_mode = wgpu::VertexStepMode::Vertex;
   };
 
   Pipeline() = default;
@@ -95,7 +145,8 @@ class Pipeline {
   void Initialize(const ShaderSource& vertex,
                   const ShaderSource& fragment,
                   std::vector<std::vector<VertexAttribute>> vertex_layout,
-                  const std::set<uint32_t>* dynamic_sets);
+                  const std::set<uint32_t>* dynamic_sets,
+                  std::vector<wgpu::VertexStepMode> step_modes);
 
   wgpu::ShaderModule vertex_module_;
   wgpu::ShaderModule fragment_module_;

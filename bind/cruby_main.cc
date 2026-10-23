@@ -27,6 +27,7 @@
 #include "core/system/config.h"
 #include "core/system/filesystem.h"
 #include "core/graphics/graphics.h"
+#include "core/common/logger.h"
 
 #include "bind/rpg_rgss1.h"
 #include "bind/rpg_rgss2.h"
@@ -34,23 +35,30 @@
 
 #include "zlib.h"
 
-#ifdef URGE_EXTERNAL_RUBY
-// The prebuilt interpreter in bind/external is a modern CRuby, and a modern
-// CRuby is not fully brought up by `ruby_init()` alone: a large part of the
-// core -- `RubyVM` among it -- is defined by "builtin" iseqs that
-// `ruby_options()` installs on the way in.  The engine drives the VM by hand
-// and never calls `ruby_options()`, so that step is taken here instead.
+// `ruby_init()` only runs the C initialisers (`rb_call_inits`).  Two further
+// steps of the normal start-up path live in `ruby_process_options()`, which the
+// engine never calls because it drives the VM by hand:
 //
-// It is not optional.  `rb_yjit_init` dereferences state those definitions
-// create and crashes the process when they are missing, and `RubyVM::YJIT`
-// itself does not exist until they have run.
+//   * `rb_call_builtin_inits()` installs the core written in Ruby and compiled
+//     into the interpreter as "builtin" iseqs (`array.rb`, `hash.rb`,
+//     `kernel.rb`, ...).  Without it those methods simply do not exist and a
+//     game fails with NoMethodError on calls the interpreter is expected to
+//     answer.
+//   * `Init_enc()` runs the encoding database (`enc/encdb.c`), which is what
+//     defines `Encoding::UTF_8` and the other encoding constants.  Without it
+//     `Encoding::UTF_8` is an uninitialized constant and every
+//     `str.encoding == Encoding::UTF_8` check in a script raises NameError.
 //
-// None of the three exist in the bundled CRuby 1.9.3, and none of them are
-// declared in a public header, hence the hand-written declarations.
+// `Init_ext()` is the third: a core-only build links the no-op stub from
+// dmyext.c, but calling it keeps the sequence identical to the interpreter's
+// own and leaves room for statically linked extensions later.
+//
+// All three are internal to the interpreter -- `inits.c`, `enc/encdb.c` and
+// `dmyext.c` define them, but no public header names them -- hence the
+// hand-written declarations.
 extern "C" void rb_call_builtin_inits(void);
-extern "C" void rb_yjit_init_builtin_cmes(void);
-extern "C" void rb_yjit_init(int yjit);
-#endif
+extern "C" void Init_enc(void);
+extern "C" void Init_ext(void);
 
 namespace binding {
 
@@ -90,17 +98,23 @@ RB_FUNC(marshal_load_utf8) {
   VALUE port, proc = Qnil;
   ParseArgs(argc, argv, "o|o", &port, &proc);
 
-  auto string_utf8 = [](VALUE arg) -> VALUE {
-    if (RB_TYPE_P(arg, RUBY_T_STRING))
-      rb_enc_associate(arg, rb_utf8_encoding());
-    return arg;
+  /* `rb_proc_new` takes a block function -- (yielded, data, argc, argv,
+     blockarg) -- and calls it with all five.  A narrower C function happens to
+     work on a native target because the extra arguments are ignored, but on
+     wasm an indirect call is typed, so a two-argument function called through a
+     five-argument slot traps with "function signature mismatch". */
+  auto string_utf8 = [](VALUE yielded, VALUE self, int argc, const VALUE *argv,
+                        VALUE blockarg) -> VALUE {
+    if (RB_TYPE_P(yielded, RUBY_T_STRING))
+      rb_enc_associate(yielded, rb_utf8_encoding());
+    return yielded;
   };
 
-  auto utf8_conv = [](VALUE arg, VALUE proc) -> VALUE {
-    if (RB_TYPE_P(arg, RUBY_T_STRING))
-      rb_enc_associate(arg, rb_utf8_encoding());
-    arg = rb_funcall(proc, rb_intern("call"), 1, arg);
-    return arg;
+  auto utf8_conv = [](VALUE yielded, VALUE self, int argc, const VALUE *argv,
+                      VALUE blockarg) -> VALUE {
+    if (RB_TYPE_P(yielded, RUBY_T_STRING))
+      rb_enc_associate(yielded, rb_utf8_encoding());
+    return rb_funcall(self, rb_intern("call"), 1, yielded);
   };
 
   VALUE utf8Proc;
@@ -116,9 +130,11 @@ RB_FUNC(marshal_load_utf8) {
 RB_FUNC(rgss_main) {
   // `rgss_main` in this engine runs its block once; a game's own loop around
   // `Graphics.update` is what repeats.  Nothing has to be marked here -- the
-  // per-frame interpreter time is taken between two `Graphics.update` calls,
-  // see Graphics::Update and RenderStats::ReportScriptTime.
-  return rb_funcall(rb_block_proc(), rb_intern("call"), 0);
+  // per-frame interpreter time is the gap between two `Graphics.update` calls,
+  // which Graphics::Update measures into FramePhase::kScript.
+  VALUE block = rb_block_proc();
+  VALUE result = rb_funcall(block, rb_intern("call"), 0);
+  return result;
 }
 
 RB_FUNC(rgss_stop) {
@@ -196,6 +212,28 @@ VALUE EvalString(VALUE string, VALUE filename, int32_t* state) {
 
 }  // namespace
 
+#if defined(OS_EMSCRIPTEN)
+namespace {
+
+/* A full mark and sweep every frame would cost more than the frame itself, and
+   the interpreter allocates little enough between frames that a second of them
+   fits comfortably in the heap. */
+constexpr int kCollectInterval = 60;
+
+void CollectGarbage() {
+  static int frames = 0;
+  if (++frames < kCollectInterval)
+    return;
+  frames = 0;
+
+  rb_gc_enable();
+  rb_gc_start();
+  rb_gc_disable();
+}
+
+}
+#endif
+
 BindingMain::BindingMain() {
   auto& config = urge::Config::Get();
 
@@ -205,9 +243,25 @@ BindingMain::BindingMain() {
 
   RUBY_INIT_STACK;
   ruby_init();
-
-#ifdef URGE_EXTERNAL_RUBY
+  Init_enc();
+  Init_ext();
   rb_call_builtin_inits();
+
+#if defined(OS_EMSCRIPTEN)
+  /* The interpreter's garbage collector is conservative: it finds the objects
+     C code is holding by scanning the machine stack.  On wasm a local variable
+     lives in a wasm *local*, not in linear memory, so a VALUE that only sits in
+     a local across an allocation is invisible to that scan and is collected
+     while still in use -- which is what makes the heap rot at -O1 and above
+     (`class Foo; end` under `GC.stress` is enough to see it).
+
+     The fix is to collect only where that cannot happen: automatic collection
+     is switched off here, and `CollectGarbage` runs a full collection from the
+     frame callback, at the point where the script has returned from
+     `Graphics.update` and everything alive is reachable from the interpreter's
+     own stacks and globals.  See Graphics::SetFrameCallback. */
+  rb_gc_disable();
+  urge::Graphics::Get().SetFrameCallback(&CollectGarbage);
 #endif
 
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
@@ -230,30 +284,25 @@ BindingMain::BindingMain() {
 
   InitBindings();
 
-#ifdef URGE_EXTERNAL_RUBY
-  // YJIT, on by default -- it is the reason the engine can be pointed at the
-  // interpreter in bind/external at all, since the stock Windows CRuby ships
-  // without it.  The order is CRuby's own, with the RPG database and the
-  // game's scripts standing in for its prelude: the builtin CMEs are
-  // registered first, so that they are in place before anything gets a chance
-  // to redefine a core method, and the JIT is only switched on afterwards, so
-  // that what gets compiled is the game rather than the engine's own setup.
-  //
-  // `nojit` on the command line leaves the JIT off and changes nothing else.
-  // A JIT bug and a game bug look exactly alike from the outside, and this is
-  // what tells the two apart.
-  rb_yjit_init_builtin_cmes();
-  rb_yjit_init(!config.HasCommandLine("nojit"));
-#endif
-
   auto tilemap_klass = rb_const_get(
       rb_cObject, rb_intern(config.xp() ? "TilemapXP" : "TilemapVX"));
   auto window_klass = rb_const_get(
       rb_cObject, rb_intern(config.xp() ? "WindowXP" : "WindowVX"));
-  rb_const_set(rb_mKernel, rb_intern("Tilemap"), tilemap_klass);
-  rb_const_set(rb_mKernel, rb_intern("Window"), window_klass);
 
-  rb_const_set(rb_mKernel, rb_intern("RGSS_VERSION"),
+  /* The aliases have to live in `Object`, not in `Kernel`.  Reading a constant
+     finds one in `Kernel` just as well -- it is an ancestor of `Object` -- but
+     *defining* a class does not: `class Foo` resolves the name with
+     `rb_const_defined_at(Object, :Foo)`, which never looks at ancestors.  With
+     the alias parked in `Kernel`, a game that reopens the class the way every
+     RGSS script does -- `class Window`, to add a method -- silently creates a
+     second, empty `Object::Window` that shadows the engine's one, and the next
+     `class Window_Base < Window` compares the fresh class against the
+     `WindowVX` superclass the earlier definition got and raises
+     "TypeError: superclass mismatch for class Window_Base". */
+  rb_const_set(rb_cObject, rb_intern("Tilemap"), tilemap_klass);
+  rb_const_set(rb_cObject, rb_intern("Window"), window_klass);
+
+  rb_const_set(rb_cObject, rb_intern("RGSS_VERSION"),
                LONG2NUM(config.game.rgss));
 
   // RPG database
