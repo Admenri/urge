@@ -182,6 +182,12 @@ ruby_apply_compile_options(rubycore)
 #
 # It contains no builtin binary and no extension loading, and provides its own
 # Init_enc/Init_ext (miniinit.c).  It is used to generate builtin_binary.rbbin.
+#
+# On the web its garbage collector finds the objects a C frame is holding by
+# scanning the machine stack and the wasm locals -- `emscripten_scan_stack` /
+# `emscripten_scan_registers` -- and those are Asyncify operations, so the tool
+# needs `-sASYNCIFY`.  That is why the module uses JS-based exceptions rather
+# than wasm ones; see the top-level CMakeLists.txt.
 # ---------------------------------------------------------------------------
 add_executable(miniruby
   $<TARGET_OBJECTS:rubycore>
@@ -193,6 +199,35 @@ target_include_directories(miniruby PRIVATE ${RUBY_INCLUDE_DIRS})
 target_compile_definitions(miniruby PRIVATE RUBY_EXPORT ${RUBY_EXTRA_DEFINITIONS})
 ruby_apply_compile_options(miniruby)
 ruby_link_libraries(miniruby)
+
+if(EMSCRIPTEN)
+  # miniruby is a build tool, not part of the game: it is run under node to
+  # generate builtin_binary.rbbin.  NODERAWFS is what lets it read the source
+  # tree and write its output without the whole of it being preloaded into the
+  # module, and the heap has to be able to grow -- parsing the builtin Ruby
+  # files does not fit in the default 16 MiB.  The pre-js shim is for the
+  # NODERAWFS `fstat` that traps on the three stdio streams, see the file.
+  #
+  # ASYNCIFY is not optional either: the conservative GC finds the objects a C
+  # frame is holding by scanning the stack and the wasm locals, which is
+  # `emscripten_scan_stack` / `emscripten_scan_registers`, which are Asyncify
+  # operations.  Without it every collection aborts with "Please compile your
+  # program with async support".  The directory drops `-fwasm-exceptions` above,
+  # which cannot be mixed with Asyncify.
+  target_link_options(miniruby PRIVATE
+    "-sNODERAWFS=1"
+    "-sALLOW_MEMORY_GROWTH=1"
+    "-sINITIAL_MEMORY=134217728"
+    # Prism compiles a file by recursing over its nodes, and the builtin Ruby
+    # files nest deep enough that the 64 KiB default stack is exhausted halfway
+    # through -- and a wasm stack overflow does not trap, it walks off the end
+    # and writes over the heap, which surfaces later as a divide by zero inside
+    # the allocator.  The engine sets the same 16 MiB for the same reason.
+    "-sSTACK_SIZE=16777216"
+    "-sASYNCIFY"
+    "-sASYNCIFY_STACK_SIZE=8388608"
+    "--pre-js=${RUBY_SOURCE_DIR}/wasm/miniruby_pre.js")
+endif()
 
 # ---------------------------------------------------------------------------
 # libruby-static -- the interpreter without main(), plus the builtin binary.

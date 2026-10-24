@@ -4497,7 +4497,7 @@ rb_syswait(rb_pid_t pid)
     rb_waitpid(pid, &status, 0);
 }
 
-#if !defined HAVE_WORKING_FORK && !defined HAVE_SPAWNV && !defined __EMSCRIPTEN__
+#if !defined HAVE_WORKING_FORK && !defined HAVE_SPAWNV
 char *
 rb_execarg_commandline(const struct rb_execarg *eargp, VALUE *prog)
 {

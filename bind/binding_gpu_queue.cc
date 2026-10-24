@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUQueue  (core/graphics/gpu.h:1081-1091)
+// GPUQueue  (core/graphics/gpu.h:1081-1089)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUQueue, GPUObject);

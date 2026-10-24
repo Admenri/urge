@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include "wasm/machine.h"
 #include "wasm/asyncify.h"
 

@@ -337,7 +337,7 @@ bool Sprite::Prepare(DrawParam param) {
     return object_slot_.chunk != UniformBlockPool::kInvalidChunk;
   }
 
-  SpriteBatch::Get().SetParam(primitive_slot_.first,
+  SpriteBatch::Get().SetParam(primitive_slot_.first, primitive_slot_.count,
                               MakeParamInternal(transform));
   return true;
 }

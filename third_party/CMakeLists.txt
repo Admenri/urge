@@ -161,6 +161,13 @@ add_subdirectory(miniaudio/external/opus)
 include(cmake/opusfile.cmake)
 
 add_subdirectory(miniaudio)
+
+# The web build's WebGPU implementation, before anything asks for its header:
+# webgpu-cpp generates the C++ wrapper from it at configure time.
+if(EMSCRIPTEN)
+  include(cmake/emdawnwebgpu.cmake)
+endif()
+
 add_subdirectory(webgpu-cpp)
 add_subdirectory(imgui)
 add_subdirectory(wgpu-cmake)

@@ -32,6 +32,40 @@
 #include <jni.h>
 #endif
 
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten.h>
+
+EM_JS(int, emjs_resolve_path, (const char* file_path, char* buffer, int capacity), {
+  const resolved = window.resolveAsyncPath(UTF8ToString(file_path));
+  if (!resolved) return 0;
+  const bytes = new TextEncoder().encode(resolved);
+  if (capacity < bytes.length + 1) return bytes.length + 1;
+  HEAPU8.set(bytes, buffer);
+  HEAPU8[buffer + bytes.length] = 0;
+  return bytes.length + 1;
+});
+
+EM_JS(int, emjs_list_dir, (const char* dir_path, char* buffer, int capacity), {
+  const children = window.listAsyncDir(UTF8ToString(dir_path));
+  if (!children) return 0;
+  const bytes = new TextEncoder().encode(children.join("\n"));
+  if (capacity < bytes.length + 1) return bytes.length + 1;
+  HEAPU8.set(bytes, buffer);
+  HEAPU8[buffer + bytes.length] = 0;
+  return bytes.length + 1;
+});
+
+EM_JS(bool, emjs_is_file_cached, (const char* file_path), {
+  return window.isAsyncFileCached(UTF8ToString(file_path));
+});
+
+EM_JS(void, emjs_load_file_async, (const char* file_path), {
+  Asyncify.handleSleep((wake_up) => {
+    window.fetchLazyAsset(UTF8ToString(file_path), wake_up);
+  });
+});
+#endif
+
 namespace urge {
 
 namespace {
@@ -51,6 +85,68 @@ const char* FindFileExtName(const char* filename) {
 
   return nullptr;
 }
+
+#if defined(OS_EMSCRIPTEN)
+std::string ResolveAsyncPath(const std::string& path) {
+  const int needed = emjs_resolve_path(path.c_str(), nullptr, 0);
+  if (needed <= 0)
+    return path;
+
+  std::string buffer(needed, '\0');
+  emjs_resolve_path(path.c_str(), buffer.data(), needed);
+  buffer.pop_back();
+  return buffer;
+}
+
+void EnsureAsyncFile(const std::string& path) {
+  if (!emjs_is_file_cached(path.c_str()))
+    emjs_load_file_async(path.c_str());
+}
+
+bool SameFileName(const std::string& lhs, const std::string& rhs) {
+  if (lhs.size() != rhs.size())
+    return false;
+
+  for (size_t i = 0; i < lhs.size(); ++i)
+    if (tolower(static_cast<unsigned char>(lhs[i])) !=
+        tolower(static_cast<unsigned char>(rhs[i])))
+      return false;
+
+  return true;
+}
+
+void AppendAsyncDir(const std::string& dir, std::vector<std::string>& files) {
+  const int needed = emjs_list_dir(dir.c_str(), nullptr, 0);
+  if (needed <= 0)
+    return;
+
+  std::string buffer(needed, '\0');
+  emjs_list_dir(dir.c_str(), buffer.data(), needed);
+  buffer.pop_back();
+
+  size_t begin = 0;
+  while (begin < buffer.size()) {
+    size_t end = buffer.find('\n', begin);
+    if (end == std::string::npos)
+      end = buffer.size();
+
+    std::string name = buffer.substr(begin, end - begin);
+    begin = end + 1;
+    if (name.empty())
+      continue;
+
+    bool known = false;
+    for (const auto& existing : files)
+      if (SameFileName(existing, name)) {
+        known = true;
+        break;
+      }
+
+    if (!known)
+      files.push_back(std::move(name));
+  }
+}
+#endif
 
 SDL_IOStream* WrapperRWops(PHYSFS_File* handle) {
   auto PHYS_RWopsSize = [](void* userdata) -> Sint64 {
@@ -200,7 +296,11 @@ bool IOService::MountArchive(const std::string& path, bool prepend) {
 }
 
 bool IOService::Exists(const std::string& filename) {
+#if defined(OS_EMSCRIPTEN)
+  return PHYSFS_exists(ResolveAsyncPath(filename).c_str());
+#else
   return PHYSFS_exists(filename.c_str());
+#endif
 }
 
 std::vector<std::string> IOService::EnumDir(const std::string& dir) {
@@ -217,22 +317,34 @@ std::vector<std::string> IOService::EnumDir(const std::string& dir) {
       },
       &files);
 
+#if defined(OS_EMSCRIPTEN)
+  AppendAsyncDir(dir, files);
+#endif
+
   return files;
 }
 
 void IOService::OpenRead(const std::string& file_path, OpenCallback callback) {
+#if defined(OS_EMSCRIPTEN)
+  const std::string resolved_path = ResolveAsyncPath(file_path);
+  EnsureAsyncFile(resolved_path);
+  const std::string& path = resolved_path;
+#else
+  const std::string& path = file_path;
+#endif
+
   std::string dir, file;
-  const size_t last_slash_pos = file_path.find_last_of('/');
+  const size_t last_slash_pos = path.find_last_of('/');
   if (last_slash_pos != std::string::npos) {
-    dir = file_path.substr(0, last_slash_pos);
-    file = file_path.substr(last_slash_pos + 1);
+    dir = path.substr(0, last_slash_pos);
+    file = path.substr(last_slash_pos + 1);
   } else {
-    file = file_path;
+    file = path;
   }
 
   OpenReadEnumData data;
   data.callback = callback;
-  data.full_path = file_path;
+  data.full_path = path;
   data.dir_path = dir;
   data.file_name = file;
   ToLower(data.file_name);
@@ -248,7 +360,13 @@ void IOService::OpenRead(const std::string& file_path, OpenCallback callback) {
 }
 
 SDL_IOStream* IOService::OpenReadRaw(const std::string& filename) {
+#if defined(OS_EMSCRIPTEN)
+  const std::string resolved_path = ResolveAsyncPath(filename);
+  EnsureAsyncFile(resolved_path);
+  PHYSFS_File* file = PHYSFS_openRead(resolved_path.c_str());
+#else
   PHYSFS_File* file = PHYSFS_openRead(filename.c_str());
+#endif
   if (!file)
     throw Exception(Exception::kIOError, "{}: {}",
                     PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()), filename);

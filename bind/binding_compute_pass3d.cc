@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// ComputePass3D  (core/scene3d/render_graph3d.h:51-79)
+// ComputePass3D  (core/scene3d/render_graph3d.h:51-80)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(ComputePass3D);

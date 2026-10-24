@@ -31,7 +31,7 @@
     {
       "name": "emscripten-wasm32",
       "displayName": "WebAssembly (Emscripten)",
-      "description": "Cross-compiles the engine for wasm32 with the Emscripten SDK. The toolchain file is the one inside the SDK, referenced through $EMSDK, so no install path is recorded in this tree: source emsdk_env (or export EMSDK) first. Ninja, cargo and the wasm32-unknown-emscripten Rust target are needed as well. Set URGE_WEB_ASSETS to a game directory to preload it into the module's filesystem.",
+      "description": "Cross-compiles the engine for wasm32 with the Emscripten SDK. The toolchain file is the one inside the SDK, referenced through $EMSDK, so no install path is recorded in this tree: source emsdk_env (or export EMSDK) first. Ninja, cargo and the wasm32-unknown-emscripten Rust target are needed as well. Set URGE_WEB_ASSETS to a game directory: it is published beside the module as assets/ and indexed by app/build_mapping.py, so the game loads its resources on demand instead of the page waiting for all of them.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",

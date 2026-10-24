@@ -34,7 +34,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraph3D  (core/scene3d/render_graph3d.h:355-402)
+// RenderGraph3D  (core/scene3d/render_graph3d.h:357-404)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraph3D);

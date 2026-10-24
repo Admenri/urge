@@ -26,11 +26,41 @@ if(EMSCRIPTEN)
   # `OS_EMSCRIPTEN` is what the frame loop and the window code branch on.
   add_compile_definitions(OS_EMSCRIPTEN)
 
-  # Rust panics are compiled with WebAssembly exceptions, so the C++ side has
-  # to use the same mechanism: with the JS-based scheme a C++ `throw` unwinding
-  # through a Rust frame (and the other way round) cannot work.
-  add_compile_options(-fwasm-exceptions)
-  add_link_options(-fwasm-exceptions)
+  # JS-based exceptions, not WebAssembly ones.
+  #
+  # A module has one exception model, and the Rust half used to dictate it: a
+  # `wasm32-unknown-emscripten` crate defaults to `panic=unwind`, which on wasm
+  # is WebAssembly exceptions, so the C++ side had to use `-fwasm-exceptions` to
+  # be able to unwind across a Rust frame.  But Emscripten states plainly that
+  # Asyncify and wasm exceptions cannot be mixed ("Parts of the program that mix
+  # ASYNCIFY and exceptions will not compile"), and this module needs Asyncify
+  # for everything: the frame loop sleeps, CRuby's fibers swap stacks, and the
+  # conservative GC spills wasm locals with `emscripten_scan_registers`.
+  #
+  # wgpu-native is therefore built with `panic=abort` (see
+  # third_party/wgpu-cmake/CMakeLists.txt): a Rust panic traps instead of
+  # unwinding, which changes nothing for us because nothing in wgpu-native
+  # catches a panic and the engine cannot recover from one either.  With the
+  # Rust half free of landing pads, the C++ half takes the exception model
+  # Asyncify was designed against.  The cost is that a C++ `throw` can no longer
+  # cross a Rust frame -- do not throw out of a wgpu callback.
+  add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fexceptions>")
+
+  # `-fexceptions` alone is only the compiler half, and it is deliberately C++
+  # only: on C it makes clang emit cleanup handlers that reference the C++
+  # unwinder (`__resumeException`), and a C link never pulls that runtime in --
+  # Emscripten says so itself, "setting DISABLE_EXCEPTION_CATCHING is not
+  # meaningful unless linking as C++".  Ruby is C and throws nothing.
+  #
+  # The link half belongs to the executable that catches: see app/CMakeLists.txt.
+
+  # Nothing sets `-sSUPPORT_LONGJMP` here on purpose: with wasm exceptions gone
+  # it defaults to the JavaScript longjmp, which is the one that goes with the
+  # JavaScript exceptions above.  Asking for `SUPPORT_LONGJMP=wasm` would be
+  # rejected outright -- Emscripten's wasm longjmp is built on wasm exceptions,
+  # and `emcc` refuses the pair ("SUPPORT_LONGJMP=wasm cannot be used with
+  # DISABLE_EXCEPTION_CATCHING=0").  Ruby does not need it either: its own
+  # setjmp is the Asyncify-based one in wasm/setjmp.c.
 
   # harfbuzz escalates its own warnings to errors from inside `hb.hh`, and it
   # reaches for pthreads whenever `<pthread.h>` exists -- Emscripten declares

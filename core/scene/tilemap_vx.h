@@ -94,6 +94,7 @@ class TilemapVX : public Node {
     RefPtr<Bitmap> texture;
     RectF source;
     RectF destination;
+    glm::vec4 color = glm::vec4(1.0f);
   };
 
   struct TileDraw {

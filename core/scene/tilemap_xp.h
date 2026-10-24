@@ -102,6 +102,7 @@ class TilemapXP : public Node {
     RefPtr<Bitmap> texture;
     RectF source;
     RectF destination;
+    glm::vec4 color = glm::vec4(1.0f);
   };
 
   struct TileDraw {
@@ -139,6 +140,8 @@ class TilemapXP : public Node {
   glm::vec2 render_offset_ = glm::vec2(0.0f);
   UniformBlockPool::Slot object_slot_ = {};
   int32_t anim_index_ = 0;
+  int32_t flash_timer_ = 0;
+  int32_t flash_opacity_ = 0;
 
   RefPtr<Bitmap> tileset_;
   Autotile autotiles_[7] = {};

@@ -85,6 +85,11 @@ class TextureBaseDynamic : public Pipeline {
   TextureBaseDynamic();
 };
 
+class TilemapBase : public Pipeline {
+ public:
+  TilemapBase();
+};
+
 class ColorBase : public Pipeline {
  public:
   ColorBase();
@@ -135,6 +140,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
     TintBase tint_base;
     SpriteBase sprite_base;
     PlaneBase plane_base;
+    TilemapBase tilemap_base;
     TransitionAlpha transition_alpha;
     TransitionVague transition_vague;
   } shader;
@@ -177,6 +183,7 @@ struct ShaderSet : public Singleton<ShaderSet> {
 
     struct {
       wgpu::RenderPipeline texture_dynamic_pma;
+      wgpu::RenderPipeline texture_flash;
     } tilemap;
   } state;
 

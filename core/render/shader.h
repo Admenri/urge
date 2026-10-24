@@ -51,25 +51,6 @@ inline std::vector<std::vector<VertexAttribute>> QuadVertexLayout() {
            {2, wgpu::VertexFormat::Float32x4}}};
 }
 
-/* The sprite batch draws a whole run of quads with one call, so the per-sprite
-   data -- the model matrix and the tint -- travels as a second vertex buffer
-   with instance step mode: one instance per quad, six vertices each.  It is one
-   `SpriteParam` wide (112 bytes), laid out exactly like the structure:
-   four rows of the matrix, the two colours, and (bush_depth, bush_opacity,
-   padding, padding) in the last vector. */
-inline std::vector<std::vector<VertexAttribute>> SpriteVertexLayout() {
-  return {{{0, wgpu::VertexFormat::Float32x4},
-           {1, wgpu::VertexFormat::Float32x2},
-           {2, wgpu::VertexFormat::Float32x4}},
-          {{3, wgpu::VertexFormat::Float32x4},
-           {4, wgpu::VertexFormat::Float32x4},
-           {5, wgpu::VertexFormat::Float32x4},
-           {6, wgpu::VertexFormat::Float32x4},
-           {7, wgpu::VertexFormat::Float32x4},
-           {8, wgpu::VertexFormat::Float32x4},
-           {9, wgpu::VertexFormat::Float32x4}}};
-}
-
 inline std::vector<std::vector<VertexAttribute>> MeshVertexLayout() {
   return {{{0, wgpu::VertexFormat::Float32x3},
            {1, wgpu::VertexFormat::Float32x3},

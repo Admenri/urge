@@ -52,6 +52,19 @@
 
 #include <cmath>
 
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten.h>
+
+/* A WebGPU surface can only be presented from inside an animation frame
+   callback -- emdawnwebgpu aborts otherwise ("wgpuSurfacePresent is
+   unsupported (use requestAnimationFrame via html5.h instead)").  This is the
+   wait that puts the frame back inside one, and it doubles as the frame pacer:
+   the browser's refresh is the clock, so nothing else has to sleep. */
+EM_JS(void, urge_wait_animation_frame, (void), {
+  Asyncify.handleSleep((wake_up) => requestAnimationFrame(() => wake_up()));
+});
+#endif
+
 namespace urge {
 
 namespace {
@@ -107,6 +120,12 @@ void FPSLimiter::SetFrameRate(int frame_rate) {
 }
 
 void FPSLimiter::Delay() {
+#if defined(OS_EMSCRIPTEN)
+  /* Nothing to wait for here: WaitAnimationFrame() has already paced the frame,
+     and it has to be the one doing it -- a surface present outside an animation
+     frame callback is refused by the browser. */
+  return;
+#else
   if (disabled_)
     return;
 
@@ -136,7 +155,24 @@ void FPSLimiter::Delay() {
       skip_ideal_diff_ = 0;
     skip_reset_flag_ = false;
   }
+#endif
 }
+
+#if defined(OS_EMSCRIPTEN)
+void FPSLimiter::WaitAnimationFrame() {
+  /* One animation frame is the minimum -- the present that follows has to be
+     inside one -- and a frame rate below the display's is honoured by waiting
+     for more than one. */
+  do {
+    urge_wait_animation_frame();
+  } while (!disabled_ &&
+           SDL_GetPerformanceCounter() - last_tick_count_ < ticks_per_frame_);
+
+  last_tick_count_ = SDL_GetPerformanceCounter();
+  skip_last_ = last_tick_count_;
+  skip_ideal_diff_ = 0;
+}
+#endif
 
 bool FPSLimiter::RequireFrameSkip() {
   if (disabled_)
@@ -248,6 +284,13 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Update() {
+#if defined(OS_EMSCRIPTEN)
+  /* The frame begins by waiting for an animation frame: the surface present at
+     the end of it is only accepted from inside one.  Waiting before
+     `frame_begin` also keeps the idle time out of the frame's accounting. */
+  limiter_.WaitAnimationFrame();
+#endif
+
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
 
   RenderStats& stats = GetRenderStats();
@@ -690,7 +733,15 @@ void Graphics::PresentInternal() {
   CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command);
 
+#if defined(OS_EMSCRIPTEN)
+  /* The canvas is presented when the animation frame callback returns, so there
+     is nothing to hand over here -- and emdawnwebgpu does not implement
+     wgpuSurfacePresent at all ("TODO: This could probably be emulated with
+     ASYNCIFY"), it aborts.  That is why the frame begins by waiting for an
+     animation frame: the end of this callback is the present. */
+#else
   surface.Present();
+#endif
 
   present_cost_ms_ =
       static_cast<double>(SDL_GetPerformanceCounter() - present_begin) *

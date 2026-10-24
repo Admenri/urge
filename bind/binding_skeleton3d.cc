@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Skeleton3D  (core/scene3d/skeleton3d.h:38-65)
+// Skeleton3D  (core/scene3d/skeleton3d.h:38-64)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Skeleton3D);

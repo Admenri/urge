@@ -79,15 +79,51 @@ configure_file("${CMAKE_CURRENT_LIST_DIR}/encdb.h"
 # --- builtin_binary.rbbin -------------------------------------------------
 set(RUBY_BUILTIN_BINARY_RBBIN "${RUBY_BINARY_DIR}/builtin_binary.rbbin")
 
+# miniruby is a native executable everywhere except on the web, where the only
+# thing the toolchain produces is a JavaScript module.  It is still a build
+# tool, so it runs on the build machine -- under node, which the Emscripten
+# toolchain already needs.
+set(RUBY_MINIRUBY_RUNNER "")
+if(EMSCRIPTEN)
+  find_program(RUBY_JS_RUNNER NAMES node nodejs)
+  if(NOT RUBY_JS_RUNNER)
+    message(FATAL_ERROR
+      "The Emscripten build generates builtin_binary.rbbin by running miniruby "
+      "under node, and no node executable was found.")
+  endif()
+  set(RUBY_MINIRUBY_RUNNER "${RUBY_JS_RUNNER}")
+endif()
+
+# Ruby's own path handling is POSIX: "J:/x" does not start with a slash, so it
+# is a *relative* path to the interpreter and gets joined onto the working
+# directory.  NODERAWFS resolves a drive-less path against the current drive,
+# which is exactly where it came from, so the build machine's drive letter is
+# dropped from every path miniruby is handed.
+function(ruby_host_tool_path out path)
+  if(EMSCRIPTEN)
+    string(REGEX REPLACE "^[A-Za-z]:" "" _path "${path}")
+    string(REPLACE "\\" "/" _path "${_path}")
+    set(${out} "${_path}" PARENT_SCOPE)
+  else()
+    set(${out} "${path}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 function(ruby_generate_builtin_binary)
+  ruby_host_tool_path(_lib "${RUBY_SOURCE_DIR}/lib")
+  ruby_host_tool_path(_build "${RUBY_BINARY_DIR}")
+  ruby_host_tool_path(_tool "${RUBY_SOURCE_DIR}/tool/generic_erb.rb")
+  ruby_host_tool_path(_template "${RUBY_SOURCE_DIR}/template/builtin_binary.rbbin.tmpl")
+  ruby_host_tool_path(_output "${RUBY_BUILTIN_BINARY_RBBIN}")
+
   add_custom_command(
     OUTPUT "${RUBY_BUILTIN_BINARY_RBBIN}"
-    COMMAND $<TARGET_FILE:miniruby>
-            -I "${RUBY_SOURCE_DIR}/lib"
-            -I "${RUBY_BINARY_DIR}"
-            "${RUBY_SOURCE_DIR}/tool/generic_erb.rb"
-            -o "${RUBY_BUILTIN_BINARY_RBBIN}"
-            "${RUBY_SOURCE_DIR}/template/builtin_binary.rbbin.tmpl"
+    COMMAND ${RUBY_MINIRUBY_RUNNER} $<TARGET_FILE:miniruby>
+            -I "${_lib}"
+            -I "${_build}"
+            "${_tool}"
+            -o "${_output}"
+            "${_template}"
     DEPENDS miniruby
             "${RUBY_SOURCE_DIR}/tool/generic_erb.rb"
             "${RUBY_SOURCE_DIR}/template/builtin_binary.rbbin.tmpl"

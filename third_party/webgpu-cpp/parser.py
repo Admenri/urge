@@ -112,11 +112,21 @@ class WGPUParser:
     def _process_function(self, block: str) -> None:
         first_token = block.find("(")
         last_token = block.find(")")
-        start_token = block.rfind(" wgpu")
-        func_name = block[start_token + 1 : first_token]
+        # The function's own name is the identifier right before its parameter
+        # list.  It is not always a `wgpu*` one -- emdawnwebgpu exports
+        # `emscripten_webgpu_get_device` from the very same header -- so it is
+        # read off the declaration instead of searched for, and anything that is
+        # not part of the `wgpu` API is left out: the wrapper maps names to the
+        # C symbols by prefixing `wgpu`, which only works for those.
+        name_match = re.search(r"(\w+)\s*$", block[:first_token].rstrip())
+        func_name = name_match.group(1) if name_match else ""
+        if not func_name.startswith("wgpu"):
+            return
 
         params_decl = block[first_token + 1 : last_token]
-        return_type = block[:start_token].replace("WGPU_EXPORT", "").strip()
+        return_type = block[: first_token - len(func_name)].replace(
+            "WGPU_EXPORT", ""
+        ).strip()
 
         param_list = []
         for param in params_decl.split(","):

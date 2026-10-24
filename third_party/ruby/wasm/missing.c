@@ -190,3 +190,15 @@ waitpid(pid_t pid, int *wstatus, int options)
     errno = ENOTSUP;
     return -1;
 }
+
+// signal.c asks this when a fatal signal has no sigaltstack to run on.  A wasm
+// trap is not a signal, so no fault address ever reaches the handler, and the
+// stack it would have to compare against is the interpreter's own fiber stack.
+// The real definitions live in thread_pthread.c / thread_win32.c, neither of
+// which is part of a single-threaded wasm build.
+WASM_MISSING_LIBC_FUNC
+int
+ruby_stack_overflowed_p(const struct rb_thread_struct *th, const void *addr)
+{
+    return 0;
+}

@@ -45,6 +45,12 @@ class FPSLimiter {
 
   void SetFrameRate(int frame_rate);
   void Delay();
+#if defined(OS_EMSCRIPTEN)
+  /* Waits for the browser to be ready for the next frame.  It replaces the
+     timed wait above on the web, where a surface can only be presented from
+     inside an animation frame callback. */
+  void WaitAnimationFrame();
+#endif
   bool RequireFrameSkip();
   void Reset();
   void Synchronize();

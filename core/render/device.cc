@@ -32,11 +32,38 @@
 #include "wgpu.h"
 #endif
 
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten.h>
+#endif
+
+#include "core/common/exception.h"
 #include "core/common/logger.h"
 
 namespace urge {
 
 namespace {
+
+#if defined(OS_EMSCRIPTEN)
+/* The browser answers RequestAdapter and RequestDevice on its own event loop,
+   and no loop is running while this constructor blocks: a single
+   ProcessEvents() would arrive before the promise settled almost every time,
+   and the engine would go on to use a null adapter.  Yielding with Asyncify is
+   what lets the promise settle -- the frame loop does exactly this every frame.
+   A browser without WebGPU never answers at all, so the wait is bounded and
+   reports the failure instead of hanging. */
+constexpr int kGpuWaitFrames = 600;
+
+template <typename Ready>
+bool WaitForGpuObject(wgpu::Instance instance, Ready ready) {
+  for (int frame = 0; frame < kGpuWaitFrames; ++frame) {
+    instance.ProcessEvents();
+    if (ready())
+      return true;
+    emscripten_sleep(0);
+  }
+  return ready();
+}
+#endif
 
 wgpu::BackendType FromGFXBackend(std::string backend) {
   if (backend == "d3d11")
@@ -182,9 +209,16 @@ void GPUDevice::CreateDevice(std::string backend) {
      (the GLES one does, on Emscripten and on the desktop) -- but it is allowed
      not to, and there is no event loop running yet to deliver a deferred
      callback.  Pumping the instance once here makes the two cases look the
-     same to the rest of this function. */
+     same to the rest of this function.  The browser is the other extreme: it
+     always answers later, so there the wait has to yield. */
+#if defined(OS_EMSCRIPTEN)
+  if (!WaitForGpuObject(instance_, [this] { return adapter_ != nullptr; }))
+    throw Exception(Exception::kGPUError,
+                    "the browser provided no WebGPU adapter");
+#else
   if (!adapter_)
     instance_.ProcessEvents();
+#endif
 
   WGPURequestDeviceCallbackInfo device_callback = {};
   device_callback.mode = WGPUCallbackMode_AllowProcessEvents;
@@ -199,8 +233,14 @@ void GPUDevice::CreateDevice(std::string backend) {
   wgpu::DeviceDescriptor device_desc;
   adapter_.RequestDevice(&device_desc, device_callback);
 
+#if defined(OS_EMSCRIPTEN)
+  if (!WaitForGpuObject(instance_, [this] { return device_ != nullptr; }))
+    throw Exception(Exception::kGPUError,
+                    "the browser provided no WebGPU device");
+#else
   if (!device_)
     instance_.ProcessEvents();
+#endif
 
   wgpu::AdapterInfo adapter_info;
   adapter_.GetInfo(&adapter_info);

@@ -115,6 +115,9 @@ void TilemapXP::Update() {
   for (auto& it : autotiles_)
     max_anim_index *= std::max(1, it.frames);
   anim_index_ = ++anim_index_ % (max_anim_index * 16);
+
+  flash_timer_ = ++flash_timer_ % 32;
+  flash_opacity_ = std::abs(16 - flash_timer_) * 8 + 32;
 }
 
 void TilemapXP::SetTileset(RefPtr<Bitmap> bitmap) {
@@ -242,7 +245,7 @@ bool TilemapXP::Prepare(DrawParam param) {
   object_slot_ = {};
   if (any_layer || any_above) {
     UniformManager& uniforms = UniformManager::Get();
-    const ObjectData object_data = {glm::mat4(1.0f)};
+    const ObjectData object_data = {world_transform()};
     object_slot_ = uniforms.object_uniforms().Acquire(object_data);
   }
 
@@ -256,7 +259,6 @@ bool TilemapXP::DoDraw(DrawParam param) {
 
 void TilemapXP::UpdateViewport() {
   auto viewport = Attr_Viewport();
-  int32_t offset_x = 0, offset_y = 0;
   int32_t viewport_ox = 0, viewport_oy = 0;
   int32_t viewport_width = 0, viewport_height = 0;
   if (viewport.has_value() && viewport.value()) {
@@ -265,10 +267,6 @@ void TilemapXP::UpdateViewport() {
     viewport_oy = viewport.value()->Attr_OY().value();
     viewport_width = rect.value()->data.width;
     viewport_height = rect.value()->data.height;
-
-    auto position = ExtractPosition(viewport.value()->world_transform());
-    offset_x = static_cast<int32_t>(position.x) + viewport_ox;
-    offset_y = static_cast<int32_t>(position.y) + viewport_oy;
   } else {
     viewport_width = Graphics::Get().Width();
     viewport_height = Graphics::Get().Height();
@@ -284,10 +282,9 @@ void TilemapXP::UpdateViewport() {
   render_viewport_.height =
       (viewport_height / tilesize_) + !!(viewport_height % tilesize_) + 2;
 
-  const int32_t display_offset_x = tilemap_real_ox % tilesize_ + offset_x;
-  const int32_t display_offset_y = tilemap_real_oy % tilesize_ + offset_y;
-  render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
-                             static_cast<float>(-display_offset_y));
+  render_offset_ = glm::vec2(
+      static_cast<float>(-(tilemap_real_ox % tilesize_) + viewport_ox),
+      static_cast<float>(-(tilemap_real_oy % tilesize_) + viewport_oy));
   render_offset_.y -= static_cast<float>(tilesize_);
 }
 
@@ -319,7 +316,7 @@ void TilemapXP::UpdateAboves() {
 
 void TilemapXP::UpdateOrder() {
   for (int32_t i = 0; i < static_cast<int32_t>(aboves_.size()); ++i) {
-    const int32_t layer_order = 32 * (render_viewport_.y + i + 2) - oy_;
+    const int32_t layer_order = 32 * (render_viewport_.y + i + 1) - oy_;
     aboves_[i]->Attr_Z(layer_order);
   }
 }
@@ -332,11 +329,12 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
 
   auto push_quad = [](const RefPtr<Bitmap>& texture,
                       std::vector<TileQuad>* target, const RectF& source,
-                      const RectF& destination) {
+                      const RectF& destination, const glm::vec4& color) {
     TileQuad quad;
     quad.texture = texture;
     quad.source = source;
     quad.destination = destination;
+    quad.color = color;
     target->push_back(quad);
   };
 
@@ -371,6 +369,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
   };
 
   auto process_autotile = [&](int32_t x, int32_t y, int16_t tile_id,
+                              const glm::vec4& color,
                               std::vector<TileQuad>* target) {
     const int32_t autotile_id = tile_id / 48 - 1;
 
@@ -384,7 +383,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
       return;
 
     const int32_t frames = std::max(1, autotile.frames);
-    const int32_t frame = anim_index_ % frames;
+    const int32_t frame = (anim_index_ / 16) % frames;
 
     if (autotile.texture->size().y >= tilesize_ * 4) {
       const glm::vec2* autotile_src_pos = kAutotileSrcRegular[pattern_id];
@@ -400,7 +399,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
                         tilesize_ / 2.0f);
         set_autotile_pos(chunk_pos, i);
 
-        push_quad(autotile.texture, target, tex_src, chunk_pos);
+        push_quad(autotile.texture, target, tex_src, chunk_pos, color);
       }
     } else if (autotile.texture->size().y <= tilesize_) {
       const RectF single_tex(frame * tilesize_ + 0.5f, 0.5f, tilesize_ - 1.0f,
@@ -408,7 +407,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
       const RectF single_pos(x * tilesize_, y * tilesize_, tilesize_,
                              tilesize_);
 
-      push_quad(autotile.texture, target, single_tex, single_pos);
+      push_quad(autotile.texture, target, single_tex, single_pos, color);
     }
   };
 
@@ -454,8 +453,19 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
       target = &(*aboves)[index];
     }
 
+    const int16_t flash_color = get_wrap_data(
+        flash_data_, x + render_viewport_.x, y + render_viewport_.y, 0);
+
+    glm::vec4 color(0.0f);
+    if (flash_color) {
+      color.b = ((flash_color & 0x000F) >> 0) / 15.0f;
+      color.g = ((flash_color & 0x00F0) >> 4) / 15.0f;
+      color.r = ((flash_color & 0x0F00) >> 8) / 15.0f;
+      color.a = static_cast<float>(flash_opacity_) / 255.0f;
+    }
+
     if (tile_id < 48 * 8)
-      return process_autotile(x, y, tile_id, target);
+      return process_autotile(x, y, tile_id, color, target);
 
     if (Disposable::Check(tileset_)) {
       const int32_t tileset_id = tile_id - 48 * 8;
@@ -466,7 +476,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
                            tilesize_ - 1.0f, tilesize_ - 1.0f);
       const RectF quad_pos(x * tilesize_, y * tilesize_, tilesize_, tilesize_);
 
-      push_quad(tileset_, target, quad_tex, quad_pos);
+      push_quad(tileset_, target, quad_tex, quad_pos, color);
     }
   };
 
@@ -483,8 +493,6 @@ void TilemapXP::BuildLayers() {
   std::vector<TileQuad> ground;
   std::vector<std::vector<TileQuad>> aboves;
   ParseTiles(&ground, &aboves);
-
-  const glm::vec4 color(1.0f);
 
   auto build = [&](const std::vector<TileQuad>& quads, TileLayer* layer) {
     layer->draws.clear();
@@ -503,12 +511,13 @@ void TilemapXP::BuildLayers() {
       const glm::vec2 texture_size(static_cast<float>(texture->size().x),
                                    static_cast<float>(texture->size().y));
 
-      layer->primitive.BeginQuad().Color4f(color);
+      layer->primitive.BeginQuad();
       while (index < quads.size() && quads[index].texture == texture) {
         RectF dest = quads[index].destination;
         dest.x += render_offset_.x;
         dest.y += render_offset_.y;
 
+        layer->primitive.Color4f(quads[index].color);
         layer->primitive.Rect(dest,
                               MakeNorm(quads[index].source, texture_size));
         ++index;
@@ -548,7 +557,7 @@ void TilemapXP::DrawLayer(DrawParam param, const TileLayer& layer) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_dynamic_pma);
+  param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_flash);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetVertexBuffer(0, layer.primitive.buffer(), 0, WGPU_WHOLE_SIZE);

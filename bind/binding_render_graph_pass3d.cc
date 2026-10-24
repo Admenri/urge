@@ -41,7 +41,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraphPass3D  (core/scene3d/render_graph3d.h:119-289)
+// RenderGraphPass3D  (core/scene3d/render_graph3d.h:120-290)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraphPass3D);

@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Animation3D  (core/scene3d/animation3d.h:37-104)
+// Animation3D  (core/scene3d/animation3d.h:37-102)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Animation3D);

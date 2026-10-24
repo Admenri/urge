@@ -471,7 +471,7 @@ bool TilemapVX::Prepare(DrawParam param) {
 
   if (map_layer_.valid || above_layer_.valid) {
     UniformManager& uniforms = UniformManager::Get();
-    const ObjectData object_data = {glm::mat4(1.0f)};
+    const ObjectData object_data = {world_transform()};
     object_slot_ = uniforms.object_uniforms().Acquire(object_data);
   }
 
@@ -505,7 +505,6 @@ void TilemapVX::CreateShadowSet() {
 
 void TilemapVX::UpdateViewport() {
   auto viewport = Attr_Viewport();
-  int32_t offset_x = 0, offset_y = 0;
   int32_t viewport_ox = 0, viewport_oy = 0;
   int32_t viewport_width = 0, viewport_height = 0;
   if (viewport.has_value() && viewport.value()) {
@@ -514,10 +513,6 @@ void TilemapVX::UpdateViewport() {
     viewport_oy = viewport.value()->Attr_OY().value();
     viewport_width = rect.value()->data.width;
     viewport_height = rect.value()->data.height;
-
-    auto position = ExtractPosition(viewport.value()->world_transform());
-    offset_x = static_cast<int32_t>(position.x) + viewport_ox;
-    offset_y = static_cast<int32_t>(position.y) + viewport_oy;
   } else {
     viewport_width = Graphics::Get().Width();
     viewport_height = Graphics::Get().Height();
@@ -533,15 +528,16 @@ void TilemapVX::UpdateViewport() {
   render_viewport_.height =
       (viewport_height / tilesize_) + !!(viewport_height % tilesize_) + 2;
 
-  const int32_t display_offset_x = tilemap_real_ox % tilesize_ + offset_x;
-  const int32_t display_offset_y = tilemap_real_oy % tilesize_ + offset_y;
-  render_offset_ = glm::vec2(static_cast<float>(-display_offset_x),
-                             static_cast<float>(-display_offset_y));
+  render_offset_ = glm::vec2(
+      static_cast<float>(-(tilemap_real_ox % tilesize_) + viewport_ox),
+      static_cast<float>(-(tilemap_real_oy % tilesize_) + viewport_oy));
   render_offset_.y -= static_cast<float>(tilesize_);
 }
 
 void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
   quads->clear();
+
+  glm::vec4 tile_color(0.0f);
 
   auto push_quad = [&](const RefPtr<Bitmap>& texture, const RectF& source,
                        const RectF& destination) {
@@ -549,6 +545,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     quad.texture = texture;
     quad.source = source;
     quad.destination = destination;
+    quad.color = tile_color;
     quads->push_back(quad);
   };
 
@@ -816,6 +813,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
   };
 
   auto process_shadow_tile = [&](int8_t shadow_id, int32_t x, int32_t y) {
+    tile_color = glm::vec4(0.0f);
     const RectF tex(shadow_id * tilesize_ + 0.5f, tilesize_ + 0.5f,
                     tilesize_ - 1.0f, tilesize_ - 1.0f);
     const RectF pos(x * tilesize_, y * tilesize_, tilesize_, tilesize_);
@@ -899,6 +897,17 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
         const int16_t under_tile_id =
             get_wrap_data(map_data_, x + ox, y + oy + 1, 0);
 
+        const int16_t flash_color =
+            get_wrap_data(flash_data_, x + ox, y + oy, 0);
+
+        tile_color = glm::vec4(0.0f);
+        if (flash_color) {
+          tile_color.b = ((flash_color & 0x000F) >> 0) / 15.0f;
+          tile_color.g = ((flash_color & 0x00F0) >> 4) / 15.0f;
+          tile_color.r = ((flash_color & 0x0F00) >> 8) / 15.0f;
+          tile_color.a = static_cast<float>(flash_opacity_) / 255.0f;
+        }
+
         process_common_tile(tile_id, x, y, z, under_tile_id);
       }
     }
@@ -925,8 +934,6 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
 
   layer->primitive.Clear();
 
-  const glm::vec4 color(1.0f);
-
   size_t index = 0;
   while (index < quads.size()) {
     const RefPtr<Bitmap>& texture = quads[index].texture;
@@ -939,12 +946,13 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
     const glm::vec2 texture_size(static_cast<float>(texture->size().x),
                                  static_cast<float>(texture->size().y));
 
-    layer->primitive.BeginQuad().Color4f(color);
+    layer->primitive.BeginQuad();
     while (index < quads.size() && quads[index].texture == texture) {
       RectF dest = quads[index].destination;
       dest.x += render_offset_.x;
       dest.y += render_offset_.y;
 
+      layer->primitive.Color4f(quads[index].color);
       layer->primitive.Rect(dest, MakeNorm(quads[index].source, texture_size));
       ++index;
     }
@@ -976,7 +984,7 @@ void TilemapVX::DrawLayer(DrawParam param, TileLayer* layer) {
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-  param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_dynamic_pma);
+  param->pass.SetPipeline(ShaderSet::Get().state.tilemap.texture_flash);
   param->pass.SetBindGroup(0, param->scene, 0, nullptr);
   param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
   param->pass.SetVertexBuffer(0, layer->primitive.buffer(), 0, WGPU_WHOLE_SIZE);

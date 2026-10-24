@@ -68,7 +68,12 @@ target_link_libraries(urge-core PUBLIC glm SDL3::SDL3-static SDL3_ttf::SDL3_ttf 
 target_link_libraries(urge-core PUBLIC webgpu-cpp-header)
 
 target_link_libraries(urge-core PUBLIC webgpu_wgpu)
-target_compile_definitions(urge-core PUBLIC WEBGPU_BACKEND_WGPU=1)
+if(NOT EMSCRIPTEN)
+  # wgpu-native's own extensions -- `wgpuDevicePoll`, `WGPUInstanceExtras`,
+  # `wgpu.h` -- which the web build does not have: there the same C API is
+  # implemented by emdawnwebgpu (see third_party/wgpu-cmake/CMakeLists.txt).
+  target_compile_definitions(urge-core PUBLIC WEBGPU_BACKEND_WGPU=1)
+endif()
 
 # The in-engine debug interface (core/render/imgui_manager.cc) lives in this library,
 # so both the headers and the backend selector come from the ImGui target.

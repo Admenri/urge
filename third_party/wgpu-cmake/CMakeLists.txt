@@ -1,72 +1,31 @@
 cmake_minimum_required(VERSION 3.22)
 
 # ---------------------------------------------------------------------------
-# Emscripten.
+# Emscripten: emdawnwebgpu, not wgpu-native.
 #
-# wgpu-native builds for `wasm32-unknown-emscripten`, where the only backend is
-# wgpu's GLES one on top of WebGL 2 -- so the desktop backends are compiled out
-# and only `wgsl` (the shading language the engine writes) and `gles` are on.
+# The web build used to cross-compile wgpu-native for wasm32 with cargo and link
+# a Rust static library into the module.  It does not any more: Emscripten ships
+# a port, maintained in Dawn, that implements the very same <webgpu/webgpu.h> on
+# top of the browser's WebGPU.  The render layer's C API calls therefore go
+# straight to the browser with nothing in between -- no cargo, no Rust, no
+# second WebGPU implementation to keep in step.
 #
-# Corrosion is not used here: it drives cargo for the host target, while this is
-# a cross build that produces a static library for em++ to link into the module
-# (an Emscripten module needs an entry point, so the `cdylib` half of the crate
-# cannot be linked on its own).  The archive is imported as a plain target and
-# the flags the backend needs travel with `webgpu_wgpu`.
+# `--use-port` has to be passed to both the compile and the link, as the port
+# requires.  `cpp_bindings=false` keeps Dawn's own C++ wrapper out of the
+# include path: the engine is written against the wrapper
+# third_party/webgpu-cpp generates from the same header, and two `namespace
+# wgpu` definitions in one build is one too many.
 #
-# `EMSDK` has to be in the environment: bindgen lays the bindings out for wasm32
-# with the Emscripten sysroot, and without it every structure holding a pointer
-# would be generated at host width.
+# The port itself is installed at configure time by
+# third_party/cmake/emdawnwebgpu.cmake, because the C++ wrapper is generated
+# from its header before anything is compiled.
 # ---------------------------------------------------------------------------
 if(EMSCRIPTEN)
-  find_program(URGE_CARGO NAMES cargo)
-  if(NOT URGE_CARGO)
-    message(FATAL_ERROR
-      "cargo was not found on PATH.  wgpu-native is built from source, and the "
-      "Emscripten build compiles it for wasm32.")
-  endif()
-
-  set(URGE_WGPU_TARGET wasm32-unknown-emscripten)
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(URGE_WGPU_PROFILE_DIR debug)
-    set(URGE_WGPU_PROFILE_FLAG)
-  else()
-    set(URGE_WGPU_PROFILE_DIR release)
-    set(URGE_WGPU_PROFILE_FLAG --release)
-  endif()
-
-  set(URGE_WGPU_LIBRARY
-    "${CMAKE_CURRENT_SOURCE_DIR}/wgpu-native/target/${URGE_WGPU_TARGET}/${URGE_WGPU_PROFILE_DIR}/libwgpu_native.a")
-
-  add_custom_command(
-    OUTPUT "${URGE_WGPU_LIBRARY}"
-    COMMAND "${URGE_CARGO}" rustc --lib --crate-type staticlib
-            --target "${URGE_WGPU_TARGET}" ${URGE_WGPU_PROFILE_FLAG}
-            --no-default-features --features wgsl,gles
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/wgpu-native"
-    COMMENT "Building wgpu-native for ${URGE_WGPU_TARGET} (GLES / WebGL 2)"
-    VERBATIM)
-
-  # `ALL` so the archive exists before anything links against it: an imported
-  # target is not part of the build graph, and the custom command's OUTPUT is
-  # only reached through this target.
-  add_custom_target(wgpu-native-emscripten ALL DEPENDS "${URGE_WGPU_LIBRARY}")
-
-  add_library(wgpu_native STATIC IMPORTED GLOBAL)
-  set_target_properties(wgpu_native PROPERTIES
-    IMPORTED_LOCATION "${URGE_WGPU_LIBRARY}")
-
   add_library(webgpu_wgpu INTERFACE)
-  target_link_libraries(webgpu_wgpu INTERFACE wgpu_native)
-  add_dependencies(webgpu_wgpu wgpu-native-emscripten)
-
-  # Emscripten exposes WebGL 2 and nothing older or newer, and wgpu-hal reaches
-  # every GL entry point through `eglGetProcAddress`, which the runtime only
-  # links in when this is set.
+  target_compile_options(webgpu_wgpu INTERFACE
+    "--use-port=emdawnwebgpu:cpp_bindings=false")
   target_link_options(webgpu_wgpu INTERFACE
-    "-sMIN_WEBGL_VERSION=2"
-    "-sMAX_WEBGL_VERSION=2"
-    "-sGL_ENABLE_GET_PROC_ADDRESS")
-
+    "--use-port=emdawnwebgpu:cpp_bindings=false")
   return()
 endif()
 

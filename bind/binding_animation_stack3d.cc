@@ -32,7 +32,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// AnimationStack3D  (core/scene3d/animation_stack3d.h:100-125)
+// AnimationStack3D  (core/scene3d/animation_stack3d.h:100-123)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(AnimationStack3D);

@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-22T12:31:57Z",
+    "generated_at": "2026-10-24T08:59:23Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -1486,7 +1486,7 @@
         }
       ],
       "unsupported": [],
-      "export": "core/graphics/gpu.h:1109-1536",
+      "export": "core/graphics/gpu.h:1107-1511",
       "cpp_name": "GPU",
       "cpp_parent": "Singleton",
       "header": "core/graphics/gpu.h",
@@ -1503,7 +1503,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_buffer",
@@ -1520,7 +1520,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_texture",
@@ -1537,7 +1537,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_sampler",
@@ -1554,7 +1554,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_shader_module",
@@ -1571,7 +1571,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_bind_group_layout",
@@ -1588,7 +1588,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_pipeline_layout",
@@ -1605,7 +1605,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_bind_group",
@@ -1622,7 +1622,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_render_pipeline",
@@ -1639,7 +1639,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_compute_pipeline",
@@ -1656,7 +1656,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_query_set",
@@ -1673,7 +1673,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         },
         {
           "ruby_name": "create_command_encoder",
@@ -1684,14 +1684,14 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1109-1536"
+          "export": "core/graphics/gpu.h:1107-1511"
         }
       ]
     },
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/graphics/graphics.h:76-122",
+      "export": "core/graphics/graphics.h:82-128",
       "cpp_name": "Graphics",
       "cpp_parent": "Singleton",
       "header": "core/graphics/graphics.h",
@@ -1708,7 +1708,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "wait",
@@ -1725,7 +1725,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "fadein",
@@ -1742,7 +1742,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "fadeout",
@@ -1759,7 +1759,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "freeze",
@@ -1770,7 +1770,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "transition",
@@ -1797,7 +1797,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "transition_bitmap",
@@ -1824,7 +1824,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "snap_to_bitmap",
@@ -1835,7 +1835,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_reset",
@@ -1846,7 +1846,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "width",
@@ -1857,7 +1857,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "height",
@@ -1868,7 +1868,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "resize_screen",
@@ -1890,7 +1890,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "play_movie",
@@ -1907,7 +1907,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_rate",
@@ -1920,7 +1920,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_rate=",
@@ -1940,7 +1940,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_count",
@@ -1953,7 +1953,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_count=",
@@ -1973,7 +1973,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "brightness",
@@ -1986,7 +1986,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "brightness=",
@@ -2006,7 +2006,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_skip",
@@ -2019,7 +2019,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "frame_skip=",
@@ -2039,7 +2039,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "fullscreen",
@@ -2052,7 +2052,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "fullscreen=",
@@ -2072,7 +2072,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "v_sync",
@@ -2085,7 +2085,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         },
         {
           "ruby_name": "v_sync=",
@@ -2105,7 +2105,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:76-122"
+          "export": "core/graphics/graphics.h:82-128"
         }
       ]
     },
@@ -6554,7 +6554,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1081-1091"
+          "export": "core/graphics/gpu.h:1081-1089"
         },
         {
           "ruby_name": "write_buffer",
@@ -6581,7 +6581,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1081-1091"
+          "export": "core/graphics/gpu.h:1081-1089"
         },
         {
           "ruby_name": "write_texture",
@@ -6638,7 +6638,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1081-1091"
+          "export": "core/graphics/gpu.h:1081-1089"
         }
       ],
       "attributes": [],
@@ -6653,7 +6653,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:1081-1091",
+      "export": "core/graphics/gpu.h:1081-1089",
       "cpp_name": "GPUQueue",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -7588,7 +7588,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         }
       ],
       "initialize_copy": null,
@@ -7613,7 +7613,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "bone_count",
@@ -7624,7 +7624,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "bone_at",
@@ -7641,7 +7641,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "bone_parent",
@@ -7658,7 +7658,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "joint_matrices",
@@ -7669,7 +7669,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "begin_pose",
@@ -7680,7 +7680,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "end_pose",
@@ -7691,7 +7691,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "capture_rest_pose",
@@ -7702,7 +7702,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         },
         {
           "ruby_name": "reset_pose",
@@ -7713,7 +7713,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/skeleton3d.h:38-65"
+          "export": "core/scene3d/skeleton3d.h:38-64"
         }
       ],
       "attributes": [],
@@ -7728,7 +7728,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/skeleton3d.h:38-65",
+      "export": "core/scene3d/skeleton3d.h:38-64",
       "cpp_name": "Skeleton3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/skeleton3d.h",
@@ -7856,7 +7856,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         }
       ],
       "initialize_copy": null,
@@ -7896,7 +7896,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "add_event",
@@ -7918,7 +7918,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "event_count",
@@ -7929,7 +7929,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "event_name",
@@ -7946,7 +7946,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "event_time",
@@ -7963,7 +7963,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "duration",
@@ -7974,7 +7974,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "track_count",
@@ -7985,7 +7985,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "apply",
@@ -8007,7 +8007,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "blend",
@@ -8034,7 +8034,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "ruby_name": "blend_masked",
@@ -8066,7 +8066,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         }
       ],
       "attributes": [
@@ -8079,7 +8079,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         },
         {
           "name": "speed",
@@ -8090,7 +8090,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/animation3d.h:37-104"
+          "export": "core/scene3d/animation3d.h:37-102"
         }
       ],
       "data_attributes": [],
@@ -8104,7 +8104,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/animation3d.h:37-104",
+      "export": "core/scene3d/animation3d.h:37-102",
       "cpp_name": "Animation3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/animation3d.h",
@@ -8210,7 +8210,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         }
       ],
       "initialize_copy": null,
@@ -8235,7 +8235,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "remove_layer",
@@ -8252,7 +8252,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "clear_layers",
@@ -8263,7 +8263,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "layer_count",
@@ -8274,7 +8274,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "layer_at",
@@ -8291,7 +8291,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "update",
@@ -8313,7 +8313,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "take_events",
@@ -8324,7 +8324,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         },
         {
           "ruby_name": "event_count",
@@ -8335,7 +8335,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/animation_stack3d.h:100-125"
+          "export": "core/scene3d/animation_stack3d.h:100-123"
         }
       ],
       "attributes": [],
@@ -8350,7 +8350,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/animation_stack3d.h:100-125",
+      "export": "core/scene3d/animation_stack3d.h:100-123",
       "cpp_name": "AnimationStack3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/animation_stack3d.h",
@@ -9886,7 +9886,7 @@
               "default": null
             }
           ],
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         }
       ],
       "initialize_copy": null,
@@ -9900,7 +9900,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "height",
@@ -9911,7 +9911,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "has_color",
@@ -9922,7 +9922,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "layers",
@@ -9933,7 +9933,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "color_count",
@@ -9944,7 +9944,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "samples",
@@ -9955,7 +9955,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "has_depth",
@@ -9966,7 +9966,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "has_stencil",
@@ -9977,7 +9977,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "color_formats",
@@ -9988,7 +9988,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         },
         {
           "ruby_name": "depth_format",
@@ -9999,7 +9999,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-86"
+          "export": "core/scene3d/render_target3d.h:53-89"
         }
       ],
       "attributes": [],
@@ -10014,7 +10014,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_target3d.h:53-86",
+      "export": "core/scene3d/render_target3d.h:53-89",
       "cpp_name": "RenderTarget3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_target3d.h",
@@ -10038,7 +10038,7 @@
               "default": null
             }
           ],
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         }
       ],
       "initialize_copy": null,
@@ -10063,7 +10063,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         },
         {
           "ruby_name": "set_buffer",
@@ -10085,7 +10085,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         },
         {
           "ruby_name": "set_texture",
@@ -10107,7 +10107,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         },
         {
           "ruby_name": "set_target",
@@ -10134,7 +10134,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         }
       ],
       "attributes": [
@@ -10147,7 +10147,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         },
         {
           "name": "dispatch_y",
@@ -10158,7 +10158,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         },
         {
           "name": "dispatch_z",
@@ -10169,7 +10169,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:51-79"
+          "export": "core/scene3d/render_graph3d.h:51-80"
         }
       ],
       "data_attributes": [],
@@ -10183,7 +10183,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:51-79",
+      "export": "core/scene3d/render_graph3d.h:51-80",
       "cpp_name": "ComputePass3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",
@@ -10568,7 +10568,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "colors",
@@ -10579,7 +10579,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "colors=",
@@ -10596,7 +10596,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "clear_color",
@@ -10607,7 +10607,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "clear_color=",
@@ -10624,7 +10624,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "tags",
@@ -10635,7 +10635,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "tags=",
@@ -10652,7 +10652,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "tag_ids",
@@ -10663,7 +10663,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "tag_ids=",
@@ -10680,7 +10680,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "bind_texture",
@@ -10702,7 +10702,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "bindings",
@@ -10713,7 +10713,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "reads",
@@ -10724,7 +10724,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "reads=",
@@ -10741,7 +10741,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "material",
@@ -10752,7 +10752,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "material=",
@@ -10769,7 +10769,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "compute",
@@ -10780,7 +10780,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "compute=",
@@ -10797,7 +10797,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "texture",
@@ -10814,7 +10814,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "pass",
@@ -10825,7 +10825,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "context",
@@ -10836,7 +10836,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "width",
@@ -10847,7 +10847,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "ruby_name": "height",
@@ -10858,7 +10858,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         }
       ],
       "attributes": [
@@ -10871,7 +10871,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "kind",
@@ -10882,7 +10882,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "clear_flags",
@@ -10893,7 +10893,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "cull_override",
@@ -10904,7 +10904,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "sort_back_to_front",
@@ -10915,7 +10915,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "depth_only",
@@ -10926,7 +10926,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "camera",
@@ -10937,7 +10937,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "layers",
@@ -10948,7 +10948,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "queue_min",
@@ -10959,7 +10959,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "queue_max",
@@ -10970,7 +10970,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "cascades",
@@ -10981,7 +10981,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "shadow_light",
@@ -10992,7 +10992,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "point_shadow_light",
@@ -11003,7 +11003,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "cascade_fade",
@@ -11014,7 +11014,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "split_lambda",
@@ -11025,7 +11025,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         },
         {
           "name": "shadow_distance",
@@ -11036,7 +11036,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:119-289"
+          "export": "core/scene3d/render_graph3d.h:120-290"
         }
       ],
       "data_attributes": [],
@@ -11050,7 +11050,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:119-289",
+      "export": "core/scene3d/render_graph3d.h:120-290",
       "cpp_name": "RenderGraphPass3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",
@@ -11063,7 +11063,7 @@
       "constructors": [
         {
           "params": [],
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         }
       ],
       "initialize_copy": null,
@@ -11083,7 +11083,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "get_pass",
@@ -11100,7 +11100,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "remove_pass",
@@ -11117,7 +11117,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "clear",
@@ -11128,7 +11128,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "pass_count",
@@ -11139,7 +11139,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "pass_at",
@@ -11156,7 +11156,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "add_texture",
@@ -11183,7 +11183,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "add_storage_texture",
@@ -11205,7 +11205,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "set_texture_scale",
@@ -11227,7 +11227,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "get_texture",
@@ -11244,7 +11244,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "texture_names",
@@ -11255,7 +11255,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "ambient",
@@ -11266,7 +11266,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "ruby_name": "ambient=",
@@ -11283,7 +11283,7 @@
             }
           ],
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         }
       ],
       "attributes": [
@@ -11296,7 +11296,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         },
         {
           "name": "camera",
@@ -11307,7 +11307,7 @@
           "static": false,
           "override": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:355-402"
+          "export": "core/scene3d/render_graph3d.h:357-404"
         }
       ],
       "data_attributes": [],
@@ -11321,7 +11321,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:355-402",
+      "export": "core/scene3d/render_graph3d.h:357-404",
       "cpp_name": "RenderGraph3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",

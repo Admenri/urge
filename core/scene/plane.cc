@@ -37,9 +37,7 @@ namespace urge {
 
 namespace {
 
-constexpr float kMinLinearDeterminant = 1e-6f;
-
-constexpr float kMinZoom = 1e-6f;
+constexpr int64_t kMaxPlaneTiles = 1 << 18;
 
 }
 
@@ -169,7 +167,7 @@ bool Plane::Prepare(DrawParam param) {
 
   UniformManager& uniforms = UniformManager::Get();
 
-  const ObjectData object_data = {glm::mat4(1.0f)};
+  const ObjectData object_data = {world_transform()};
   object_slot_ = uniforms.object_uniforms().Acquire(object_data);
 
   PlaneBase::PlaneParam plane_param = {};
@@ -219,42 +217,49 @@ PrimitiveEmitter::Slot Plane::EmitGeometryInternal(PrimitiveEmitter& primitive,
   if (texture_size.x <= 0 || texture_size.y <= 0)
     return {};
 
-  if (std::abs(zoom_x_) < kMinZoom || std::abs(zoom_y_) < kMinZoom)
-    return {};
-
   const RectI region(param->target->size());
   if (!region())
     return {};
 
-  const glm::mat4 transform = world_transform();
-  const glm::vec2 root =
-      ExtractPosition(transform) -
-      glm::vec2(static_cast<float>(ox_), static_cast<float>(oy_));
+  const float item_x =
+      std::max(1.0f, static_cast<float>(texture_size.x) * zoom_x_);
+  const float item_y =
+      std::max(1.0f, static_cast<float>(texture_size.y) * zoom_y_);
 
-  const glm::mat2 linear(transform);
-  if (std::abs(glm::determinant(linear)) < kMinLinearDeterminant)
-    return {};
-  const glm::mat2 inverse_linear = glm::inverse(linear);
-
-  const glm::vec2 tile_size(static_cast<float>(texture_size.x) * zoom_x_,
-                            static_cast<float>(texture_size.y) * zoom_y_);
-
-  const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
-
-  const auto emit_corner = [&](float x, float y) {
-    const glm::vec2 corner(x, y);
-    primitive.Texcoord2f(inverse_linear * (corner - root) / tile_size);
-    primitive.Vertex2f(corner);
+  const auto value_wrap = [](float value, float range) {
+    const float result = std::fmod(value, range);
+    return result < 0.0f ? result + range : result;
   };
 
+  const float wrap_ox = value_wrap(static_cast<float>(ox_), item_x);
+  const float wrap_oy = value_wrap(static_cast<float>(oy_), item_y);
+
+  const float total_x = static_cast<float>(region.width) + wrap_ox;
+  const float total_y = static_cast<float>(region.height) + wrap_oy;
+  const int32_t tile_x = static_cast<int32_t>(std::ceil(total_x / item_x));
+  const int32_t tile_y = static_cast<int32_t>(std::ceil(total_y / item_y));
+
+  if (tile_x <= 0 || tile_y <= 0)
+    return {};
+
+  if (static_cast<int64_t>(tile_x) * static_cast<int64_t>(tile_y) >
+      kMaxPlaneTiles)
+    return {};
+
+  const glm::vec4 color(static_cast<float>(opacity_) / 255.0f);
+  const RectF texcoord(0.0f, 0.0f, 1.0f, 1.0f);
+
   primitive.BeginQuad().Color4f(color);
-  emit_corner(static_cast<float>(region.x), static_cast<float>(region.y));
-  emit_corner(static_cast<float>(region.x + region.width),
-              static_cast<float>(region.y));
-  emit_corner(static_cast<float>(region.x),
-              static_cast<float>(region.y + region.height));
-  emit_corner(static_cast<float>(region.x + region.width),
-              static_cast<float>(region.y + region.height));
+
+  float current_y = -wrap_oy;
+  for (int32_t y = 0; y < tile_y; ++y) {
+    float current_x = -wrap_ox;
+    for (int32_t x = 0; x < tile_x; ++x) {
+      primitive.Rect(RectF(current_x, current_y, item_x, item_y), texcoord);
+      current_x += item_x;
+    }
+    current_y += item_y;
+  }
 
   return primitive.End();
 }

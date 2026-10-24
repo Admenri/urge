@@ -617,14 +617,39 @@ if((HAVE_ELF_H OR HAVE_ELF_ABI_H) AND EXISTS "${RUBY_SOURCE_DIR}/addr2line.c")
 endif()
 
 # --- WebAssembly (Emscripten) ---------------------------------------------
-# Not verified in this repository yet; the sources are the ones listed in
-# wasm/GNUmakefile.in.
+# The sources are the ones listed in wasm/GNUmakefile.in.
 if(EMSCRIPTEN)
   foreach(_w missing fiber machine setjmp runtime)
     if(EXISTS "${RUBY_SOURCE_DIR}/wasm/${_w}.c")
       list(APPEND RUBY_PLATFORM_SOURCES "${RUBY_SOURCE_DIR}/wasm/${_w}.c")
     endif()
   endforeach()
+
+  # `rb_wasm_get_stack_pointer` reads the `__stack_pointer` global, which no C
+  # function can do: the compiler's own prologue moves the pointer it would be
+  # reading.  wasm/machine_core.S is the only definition in the tree, written in
+  # the WebAssembly dialect clang assembles, so it has to be built as ASM.
+  if(EXISTS "${RUBY_SOURCE_DIR}/wasm/machine_core.S")
+    if(NOT CMAKE_ASM_COMPILER)
+      set(CMAKE_ASM_COMPILER "${CMAKE_C_COMPILER}")
+    endif()
+    enable_language(ASM)
+    set_source_files_properties("${RUBY_SOURCE_DIR}/wasm/machine_core.S"
+      PROPERTIES LANGUAGE ASM)
+    list(APPEND RUBY_PLATFORM_SOURCES "${RUBY_SOURCE_DIR}/wasm/machine_core.S")
+  endif()
+
+  # Two of the function probes above believe the sysroot's headers instead of
+  # the runtime: `copy_file_range`, `lutimes` and `initgroups` are declared and
+  # have no implementation, and the probe only takes their address, so nothing
+  # has to link.  Ruby has a portable fallback for the first two and drops
+  # `Process.initgroups` for the third, which is all a browser can offer -- it
+  # has no user database to ask.
+  foreach(_absent COPY_FILE_RANGE LUTIMES INITGROUPS)
+    string(REGEX REPLACE "#define HAVE_${_absent} 1\n" ""
+      RUBY_FEATURE_DEFINES "${RUBY_FEATURE_DEFINES}")
+  endforeach()
+
   set(RUBY_THREAD_MODEL "none")
   set(RUBY_THREAD_IMPL_H "thread_none.h")
   set(RUBY_THREAD_IMPL_SRC "thread_none.c")
