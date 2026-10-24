@@ -141,5 +141,41 @@
 - 注意：`--pre-js` 的内容变化不会让 ninja 重链 miniruby（它只在命令行里以路径出现），
   改完要删掉 `miniruby.js` 再编。
 
+## `ruby` —— 静态链接时每个 Ruby 全局变量都报 LNK4217 / LNK4286
+
+- 文件：`include/ruby/internal/dllexport.h`，`RUBY_EXTERN` 的定义
+- 现象：`Game.exe` 链接时刷出几百行警告，每个 `binding_*.obj` 一份：
+
+  ```
+  LINK : warning LNK4286: 符号"rb_cObject"(在"ruby-static.lib(object.obj)"中定义)
+         已由"urge-binding.lib(binding_sprite.obj)"导入
+  LINK : warning LNK4217: 符号"rb_eStandardError"(在"ruby-static.lib(error.obj)"中定义)
+         已由"urge-binding.lib(cruby_main.obj)"(函数 ...)中导入
+  ```
+
+- 原因：上游只有"编 DLL"和"用 DLL"两种视角。`RUBY_EXTERN` 在 `RUBY_EXPORT`（编 DLL 的人）
+  眼里是 `extern`，在别人眼里是 `extern __declspec(dllimport)`。本树是**静态**链接，
+  消费方（`bind/`）编译时走的是后一条，于是每个全局变量都生成 `__imp_rb_cObject` 这类
+  导入引用；链接期这些符号其实就在同一个 `ruby-static.lib` 里，链接器只能就地造一个
+  IAT 条目把它们圆过去——这就是 LNK4217/LNK4286 的含义。能跑，但每个变量多一层间接，
+  而且几百行噪声盖住了真正的警告。
+- 补丁：给 `RUBY_EXTERN` 增加一个消费方视角的开关，只改链接属性、不动任何声明。
+
+  ```c
+  -#if defined(RUBY_EXPORT)
+  +#if defined(RUBY_EXPORT) || defined(RUBY_STATIC)
+   # define RUBY_EXTERN extern
+  ```
+
+  配合 `third_party/ruby/CMakeLists.txt` 里 `ruby-static` 的
+  `target_compile_definitions(ruby-static PUBLIC RUBY_STATIC)`：`PUBLIC` 让所有
+  链接它的目标（`urge-binding`、`ruby`）自动继承。
+- 为什么不用 `RUBY_EXPORT` 代替：那个宏不止管 `RUBY_EXTERN`，还会让
+  `ruby/backward.h` 不被包含、让 `rb_f_notimplement` 从函数指针变成函数、让
+  `RBIMPL_ATTR_DEPRECATED_EXT` 失效——它表达的是"我正在编这个 DLL"，不是"我在静态链接它"。
+- 验证：`cmake --build --preset win64-vendored-ruby --target Game` 链接输出里
+  LNK4217/LNK4286 归零，`Game.exe` 运行正常（winprobe / sprite_probe 全绿）。
+
+
 
 

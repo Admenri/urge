@@ -250,6 +250,16 @@ add_library(ruby-static STATIC
 set_target_properties(ruby-static PROPERTIES OUTPUT_NAME "${RUBY_BASE_NAME}-static")
 target_include_directories(ruby-static PUBLIC ${RUBY_INCLUDE_DIRS})
 target_compile_definitions(ruby-static PRIVATE RUBY_EXPORT ${RUBY_EXTRA_DEFINITIONS})
+# `RUBY_EXPORT` is what the interpreter's own translation units see: on Windows
+# it makes RUBY_EXTERN a plain `extern`, so the symbols are defined rather than
+# imported.  Everything that *consumes* this library needs the same view of
+# those declarations -- without it MSVC reads `extern __declspec(dllimport)`
+# from ruby.h and emits an `__imp_rb_cObject`-style reference for every global
+# the binding touches, which the linker then satisfies from the static archive
+# instead of a DLL (LNK4217 / LNK4286, one per symbol per object).  `RUBY_STATIC`
+# is the consumer-side spelling of the same thing: see
+# include/ruby/internal/dllexport.h.
+target_compile_definitions(ruby-static PUBLIC RUBY_STATIC)
 ruby_apply_compile_options(ruby-static)
 ruby_link_libraries(ruby-static)
 

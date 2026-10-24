@@ -37,7 +37,7 @@
  * ```
  */
 #undef RUBY_EXTERN
-#if defined(RUBY_EXPORT)
+#if defined(RUBY_EXPORT) || defined(RUBY_STATIC)
 # define RUBY_EXTERN extern
 #elif defined(_WIN32)
 # define RUBY_EXTERN extern __declspec(dllimport)
