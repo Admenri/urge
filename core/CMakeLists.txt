@@ -96,14 +96,6 @@ if(URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)
   target_link_libraries(urge-core PUBLIC libcurl)
 endif()
 
-# A headless harness that drives the fetch and WebSocket backends against the
-# Python server in test/network_server.py.  Kept behind a switch so a normal
-# build never carries it.
-if(URGE_BUILD_NETWORK_TESTS AND URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)
-  add_executable(urge-network-test "${CMAKE_CURRENT_SOURCE_DIR}/../test/network_test.cc")
-  target_link_libraries(urge-network-test PRIVATE urge-core)
-endif()
-
 # The packer that writes the containers.  A build-time tool rather than part of
 # the engine: it links Monocypher and zlib directly and never touches urge-core,
 # so it can be built on its own with

@@ -28,22 +28,13 @@ if(EMSCRIPTEN)
 
   # JS-based exceptions, not WebAssembly ones.
   #
-  # A module has one exception model, and the Rust half used to dictate it: a
-  # `wasm32-unknown-emscripten` crate defaults to `panic=unwind`, which on wasm
-  # is WebAssembly exceptions, so the C++ side had to use `-fwasm-exceptions` to
-  # be able to unwind across a Rust frame.  But Emscripten states plainly that
-  # Asyncify and wasm exceptions cannot be mixed ("Parts of the program that mix
-  # ASYNCIFY and exceptions will not compile"), and this module needs Asyncify
-  # for everything: the frame loop sleeps, CRuby's fibers swap stacks, and the
-  # conservative GC spills wasm locals with `emscripten_scan_registers`.
-  #
-  # wgpu-native is therefore built with `panic=abort` (see
-  # third_party/wgpu-cmake/CMakeLists.txt): a Rust panic traps instead of
-  # unwinding, which changes nothing for us because nothing in wgpu-native
-  # catches a panic and the engine cannot recover from one either.  With the
-  # Rust half free of landing pads, the C++ half takes the exception model
-  # Asyncify was designed against.  The cost is that a C++ `throw` can no longer
-  # cross a Rust frame -- do not throw out of a wgpu callback.
+  # Emscripten states plainly that Asyncify and wasm exceptions cannot be mixed
+  # ("Parts of the program that mix ASYNCIFY and exceptions will not compile"),
+  # and this module needs Asyncify for everything: the frame loop sleeps, CRuby's
+  # fibers swap stacks, and the conservative GC spills wasm locals with
+  # `emscripten_scan_registers`.  The JavaScript exception model is the one
+  # Asyncify was designed against, and it is the default here -- nothing asks
+  # for `-fwasm-exceptions`.
   add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fexceptions>")
 
   # `-fexceptions` alone is only the compiler half, and it is deliberately C++
@@ -61,11 +52,6 @@ if(EMSCRIPTEN)
   # and `emcc` refuses the pair ("SUPPORT_LONGJMP=wasm cannot be used with
   # DISABLE_EXCEPTION_CATCHING=0").  Ruby does not need it either: its own
   # setjmp is the Asyncify-based one in wasm/setjmp.c.
-
-  # harfbuzz escalates its own warnings to errors from inside `hb.hh`, and it
-  # reaches for pthreads whenever `<pthread.h>` exists -- Emscripten declares
-  # it, but this module has no threads.
-  add_compile_definitions(HB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR HB_NO_MT)
 endif()
 
 # Video playback is optional.  dav1d and libwebm are native C libraries with no
