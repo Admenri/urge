@@ -43,7 +43,6 @@ class Font : public Object {
   Font(std::vector<std::string> names = {}, int32_t size = 0);
   URGE_BINDING()
   Font(RefPtr<Font> other);
-  URGE_BINDING()
   ~Font() override = default;
 
   URGE_BINDING(Name : "exist?")

@@ -40,7 +40,6 @@ class Node : public Disposable {
   explicit Node();
   URGE_BINDING()
   Node(RefPtr<Node> parent);
-  URGE_BINDING()
   ~Node() override;
 
   URGE_BINDING()

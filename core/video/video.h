@@ -43,7 +43,6 @@ class Video : public Object {
  public:
   URGE_BINDING()
   Video(URGE_EXCEPT, std::string filename);
-  URGE_BINDING()
   ~Video() override;
 
   URGE_BINDING()

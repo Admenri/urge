@@ -50,7 +50,6 @@ class NetworkEvent : public Object {
 
   URGE_BINDING()
   NetworkEvent();
-  URGE_BINDING()
   ~NetworkEvent() override;
 
   URGE_BINDING(Name : "type")
@@ -86,7 +85,6 @@ class WebSocket : public Object {
 
   URGE_BINDING()
   WebSocket(std::string url, std::vector<std::string> protocols = {});
-  URGE_BINDING()
   ~WebSocket() override;
 
   URGE_BINDING(Name : "url")
@@ -132,7 +130,6 @@ class Fetch : public Object {
         std::string method = "GET",
         std::string body = "",
         std::vector<std::string> headers = {});
-  URGE_BINDING()
   ~Fetch() override;
 
   URGE_BINDING()

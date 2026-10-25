@@ -43,7 +43,6 @@ class World3D : public Node {
  public:
   URGE_BINDING()
   World3D(int32_t x, int32_t y, int32_t width, int32_t height);
-  URGE_BINDING()
   ~World3D() override;
 
   URGE_BINDING(Name : "x")

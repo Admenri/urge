@@ -36,7 +36,6 @@ class Plane : public Node {
  public:
   URGE_BINDING()
   Plane(MaybePtr<Viewport> viewport = nullptr);
-  URGE_BINDING()
   ~Plane() override;
 
   URGE_BINDING()

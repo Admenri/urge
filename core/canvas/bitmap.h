@@ -50,7 +50,6 @@ class Bitmap : public Disposable {
   Bitmap(RefPtr<Bitmap> other);
 
   static RefPtr<Bitmap> FromSurface(SDL_Surface* surface);
-  URGE_BINDING()
   ~Bitmap() override;
 
   URGE_BINDING()

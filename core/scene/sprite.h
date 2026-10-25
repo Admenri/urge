@@ -36,7 +36,6 @@ class Sprite : public Node {
  public:
   URGE_BINDING()
   Sprite(MaybePtr<Viewport> viewport = nullptr);
-  URGE_BINDING()
   ~Sprite() override;
 
   URGE_BINDING()

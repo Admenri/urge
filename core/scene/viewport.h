@@ -40,7 +40,6 @@ class Viewport : public Node {
   Viewport(RefPtr<Rect> rect);
   URGE_BINDING()
   Viewport();
-  URGE_BINDING()
   ~Viewport() override;
 
   URGE_BINDING()

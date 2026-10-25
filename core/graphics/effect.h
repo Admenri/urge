@@ -44,7 +44,6 @@ class Effect : public Object {
          std::string blend_states = {});
   URGE_BINDING()
   Effect(URGE_EXCEPT, RefPtr<Effect> other);
-  URGE_BINDING()
   ~Effect();
 
   URGE_BINDING()

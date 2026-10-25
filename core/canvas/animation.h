@@ -40,7 +40,6 @@ class Animation : public Disposable {
  public:
   URGE_BINDING()
   Animation(URGE_EXCEPT, std::string filename);
-  URGE_BINDING()
   ~Animation() override;
 
   URGE_BINDING()

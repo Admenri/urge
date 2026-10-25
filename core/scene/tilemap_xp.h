@@ -60,7 +60,6 @@ class TilemapXP : public Node {
  public:
   URGE_BINDING()
   TilemapXP(MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
-  URGE_BINDING()
   ~TilemapXP() override;
 
   URGE_BINDING()

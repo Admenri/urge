@@ -42,7 +42,6 @@ class Image : public Disposable {
   Image(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
   Image(RefPtr<Image> other);
-  URGE_BINDING()
   ~Image() override;
 
   URGE_BINDING()

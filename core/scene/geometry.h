@@ -40,7 +40,6 @@ class Geometry : public Node {
  public:
   URGE_BINDING()
   Geometry(MaybePtr<Viewport> viewport = nullptr);
-  URGE_BINDING()
   ~Geometry() override;
 
   URGE_BINDING()

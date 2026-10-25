@@ -169,7 +169,6 @@ class Gamepad : public Object {
 
   URGE_BINDING()
   Gamepad(URGE_EXCEPT, int32_t device_id);
-  URGE_BINDING()
   ~Gamepad() override;
 
   URGE_BINDING()

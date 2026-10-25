@@ -40,7 +40,6 @@ class AudioStream : public Object {
   URGE_BINDING()
   AudioStream(URGE_EXCEPT, std::string filename);
   AudioStream(URGE_EXCEPT, std::vector<uint8_t> data, float length);
-  URGE_BINDING()
   ~AudioStream() override;
 
   URGE_BINDING()
