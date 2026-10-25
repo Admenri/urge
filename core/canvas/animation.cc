@@ -33,8 +33,8 @@ namespace urge {
 
 static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
-Animation::Animation(std::string filename) {
-  IOService::Get().OpenRead(
+Animation::Animation(URGE_EXCEPT, std::string filename) {
+  IOService::Get().OpenRead(exception_state, 
       filename, [&](SDL_IOStream* stream, const std::string& ext) {
         animation_ = IMG_LoadAnimationTyped_IO(stream, true, ext.c_str());
         return !!animation_;
@@ -45,26 +45,30 @@ Animation::~Animation() {
   Disposable::Dispose();
 }
 
-int32_t Animation::Width() {
-  Disposable::Guard();
+int32_t Animation::Width(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   return animation_->w;
 }
 
-int32_t Animation::Height() {
-  Disposable::Guard();
+int32_t Animation::Height(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   return animation_->h;
 }
 
-int32_t Animation::Count() {
-  Disposable::Guard();
+int32_t Animation::Count(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   return animation_->count;
 }
 
-int32_t Animation::Delay(int32_t index) {
-  Disposable::Guard();
+int32_t Animation::Delay(URGE_EXCEPT, int32_t index) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   if (index < 0 || index >= animation_->count)
     return -1;
@@ -72,15 +76,17 @@ int32_t Animation::Delay(int32_t index) {
   return animation_->delays[index];
 }
 
-std::vector<int32_t> Animation::Delays() {
-  Disposable::Guard();
+std::vector<int32_t> Animation::Delays(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   return std::vector<int32_t>(animation_->delays,
                               animation_->delays + animation_->count);
 }
 
-RefPtr<Image> Animation::Frame(int32_t index) {
-  Disposable::Guard();
+RefPtr<Image> Animation::Frame(URGE_EXCEPT, int32_t index) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   if (index < 0 || index >= animation_->count)
     return nullptr;

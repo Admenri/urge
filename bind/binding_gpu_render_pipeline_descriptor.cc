@@ -39,12 +39,12 @@ RB_FUNC(GPURenderPipelineDescriptor_initialize) {
 
   urge::GPURenderPipelineDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPURenderPipelineDescriptor> value = urge::MakeRefCounted<urge::GPURenderPipelineDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -58,9 +58,9 @@ RB_FUNC(GPURenderPipelineDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -79,9 +79,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -92,9 +92,9 @@ RB_FUNC(GPURenderPipelineDescriptor_GetVertexEntryPoint) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetVertexEntryPoint());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -113,9 +113,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetVertexEntryPoint) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetVertexEntryPoint(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -126,9 +126,9 @@ RB_FUNC(GPURenderPipelineDescriptor_GetFragmentEntryPoint) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetFragmentEntryPoint());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -147,9 +147,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetFragmentEntryPoint) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetFragmentEntryPoint(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -162,9 +162,9 @@ RB_FUNC(GPURenderPipelineDescriptor_AddVertexAttribute) {
   uint64_t offset;
   ParseArgs(argc, argv, "uuup", &slot, &location, &format, &offset);
 
-  CPP_BEGIN {
+  {
     self_obj->AddVertexAttribute(slot, location, format, offset);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -178,9 +178,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetVertexBuffer) {
     uint64_t stride;
     ParseArgs(argc, argv, "up", &slot, &stride);
 
-    CPP_BEGIN {
+    {
       self_obj->SetVertexBuffer(slot, stride);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -189,9 +189,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetVertexBuffer) {
     uint64_t stride;
     ParseArgs(argc, argv, "upu", &slot, &stride, &step_mode);
 
-    CPP_BEGIN {
+    {
       self_obj->SetVertexBuffer(slot, stride, step_mode);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -207,9 +207,9 @@ RB_FUNC(GPURenderPipelineDescriptor_AddColorTarget) {
     uint32_t format;
     ParseArgs(argc, argv, "u", &format);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorTarget(format);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -217,9 +217,9 @@ RB_FUNC(GPURenderPipelineDescriptor_AddColorTarget) {
     uint32_t format, write_mask;
     ParseArgs(argc, argv, "uu", &format, &write_mask);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorTarget(format, write_mask);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -235,9 +235,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetColorBlend) {
     uint32_t index, color_op, src_factor, dst_factor;
     ParseArgs(argc, argv, "uuuu", &index, &color_op, &src_factor, &dst_factor);
 
-    CPP_BEGIN {
+    {
       self_obj->SetColorBlend(index, color_op, src_factor, dst_factor);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 5) {
@@ -246,10 +246,10 @@ RB_FUNC(GPURenderPipelineDescriptor_SetColorBlend) {
     ParseArgs(argc, argv, "uuuuu", &index, &color_op, &src_factor, &dst_factor,
         &alpha_op);
 
-    CPP_BEGIN {
+    {
       self_obj->SetColorBlend(index, color_op, src_factor, dst_factor,
           alpha_op);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 6) {
@@ -258,10 +258,10 @@ RB_FUNC(GPURenderPipelineDescriptor_SetColorBlend) {
     ParseArgs(argc, argv, "uuuuuu", &index, &color_op, &src_factor, &dst_factor,
         &alpha_op, &alpha_src);
 
-    CPP_BEGIN {
+    {
       self_obj->SetColorBlend(index, color_op, src_factor, dst_factor, alpha_op,
           alpha_src);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 7) {
@@ -270,10 +270,10 @@ RB_FUNC(GPURenderPipelineDescriptor_SetColorBlend) {
     ParseArgs(argc, argv, "uuuuuuu", &index, &color_op, &src_factor,
         &dst_factor, &alpha_op, &alpha_src, &alpha_dst);
 
-    CPP_BEGIN {
+    {
       self_obj->SetColorBlend(index, color_op, src_factor, dst_factor, alpha_op,
           alpha_src, alpha_dst);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -290,9 +290,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetDepthStencil) {
     bool depth_write;
     ParseArgs(argc, argv, "ubu", &format, &depth_write, &depth_compare);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencil(format, depth_write, depth_compare);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -303,9 +303,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetDepthStencil) {
     ParseArgs(argc, argv, "ubui", &format, &depth_write, &depth_compare,
         &depth_bias);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencil(format, depth_write, depth_compare, depth_bias);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 5) {
@@ -317,10 +317,10 @@ RB_FUNC(GPURenderPipelineDescriptor_SetDepthStencil) {
     ParseArgs(argc, argv, "ubuif", &format, &depth_write, &depth_compare,
         &depth_bias, &bias_slope_scale);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencil(format, depth_write, depth_compare, depth_bias,
           static_cast<float>(bias_slope_scale));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 6) {
@@ -332,10 +332,10 @@ RB_FUNC(GPURenderPipelineDescriptor_SetDepthStencil) {
     ParseArgs(argc, argv, "ubuiff", &format, &depth_write, &depth_compare,
         &depth_bias, &bias_slope_scale, &bias_clamp);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencil(format, depth_write, depth_compare, depth_bias,
           static_cast<float>(bias_slope_scale), static_cast<float>(bias_clamp));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -350,9 +350,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetStencilFront) {
   uint32_t compare, fail_op, depth_fail_op, pass_op;
   ParseArgs(argc, argv, "uuuu", &compare, &fail_op, &depth_fail_op, &pass_op);
 
-  CPP_BEGIN {
+  {
     self_obj->SetStencilFront(compare, fail_op, depth_fail_op, pass_op);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -364,9 +364,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetStencilBack) {
   uint32_t compare, fail_op, depth_fail_op, pass_op;
   ParseArgs(argc, argv, "uuuu", &compare, &fail_op, &depth_fail_op, &pass_op);
 
-  CPP_BEGIN {
+  {
     self_obj->SetStencilBack(compare, fail_op, depth_fail_op, pass_op);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -378,9 +378,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetStencilMasks) {
   uint32_t read_mask, write_mask;
   ParseArgs(argc, argv, "uu", &read_mask, &write_mask);
 
-  CPP_BEGIN {
+  {
     self_obj->SetStencilMasks(read_mask, write_mask);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -393,9 +393,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetPrimitive) {
     uint32_t topology;
     ParseArgs(argc, argv, "u", &topology);
 
-    CPP_BEGIN {
+    {
       self_obj->SetPrimitive(topology);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -403,9 +403,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetPrimitive) {
     uint32_t topology, cull_mode;
     ParseArgs(argc, argv, "uu", &topology, &cull_mode);
 
-    CPP_BEGIN {
+    {
       self_obj->SetPrimitive(topology, cull_mode);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -413,9 +413,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetPrimitive) {
     uint32_t topology, cull_mode, front_face;
     ParseArgs(argc, argv, "uuu", &topology, &cull_mode, &front_face);
 
-    CPP_BEGIN {
+    {
       self_obj->SetPrimitive(topology, cull_mode, front_face);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -424,10 +424,10 @@ RB_FUNC(GPURenderPipelineDescriptor_SetPrimitive) {
     ParseArgs(argc, argv, "uuuu", &topology, &cull_mode, &front_face,
         &strip_index_format);
 
-    CPP_BEGIN {
+    {
       self_obj->SetPrimitive(topology, cull_mode, front_face,
           strip_index_format);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -443,9 +443,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetMultisample) {
     uint32_t count;
     ParseArgs(argc, argv, "u", &count);
 
-    CPP_BEGIN {
+    {
       self_obj->SetMultisample(count);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -453,9 +453,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetMultisample) {
     uint32_t count, mask;
     ParseArgs(argc, argv, "uu", &count, &mask);
 
-    CPP_BEGIN {
+    {
       self_obj->SetMultisample(count, mask);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -464,9 +464,9 @@ RB_FUNC(GPURenderPipelineDescriptor_SetMultisample) {
     bool alpha_to_coverage;
     ParseArgs(argc, argv, "uub", &count, &mask, &alpha_to_coverage);
 
-    CPP_BEGIN {
+    {
       self_obj->SetMultisample(count, mask, alpha_to_coverage);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

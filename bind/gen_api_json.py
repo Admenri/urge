@@ -437,15 +437,26 @@ def ruby_constant_name(cpp_name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def parse_params(params_text: str) -> list[dict[str, Any]]:
-    """Parse a C++ parameter list into {name, type, default} entries."""
+def parse_params(params_text: str) -> tuple[list[dict[str, Any]], bool]:
+    """Parse a C++ parameter list into `({name, type, default}, has_exception)`.
+
+    `URGE_EXCEPT` is not a parameter: it is the marker that says the call can
+    report a failure, and the glue supplies the `urge::ExceptionState` it
+    names.  It is stripped here and carried out as a flag, which is what the
+    rest of the pipeline keys on -- a declaration without it cannot fail, and
+    the generated binding neither declares a state nor checks one.
+    """
     params = []
+    has_exception = False
     if not params_text.strip():
-        return params
+        return params, has_exception
     prev_type = None
     for part in split_top_level(params_text):
         part = part.strip()
         if not part:
+            continue
+        if part == "URGE_EXCEPT":
+            has_exception = True
             continue
         if part == "...":
             params.append({"name": "...", "type": "..."})
@@ -488,7 +499,7 @@ def parse_params(params_text: str) -> list[dict[str, Any]]:
         params.append(
             {"name": name, "type": type_str + arr_suffix, "default": default}
         )
-    return params
+    return params, has_exception
 
 
 def analyze_call(stmt: str) -> Optional[dict]:
@@ -524,7 +535,7 @@ def analyze_call(stmt: str) -> Optional[dict]:
             if depth == 0:
                 close = k
                 break
-    params = parse_params(stmt[paren + 1 : close])
+    params, has_exception = parse_params(stmt[paren + 1 : close])
     return_type = stmt[:name_start].strip()
     return_type = re.sub(
         r"^(static|virtual|inline|explicit|constexpr)\s+", "", return_type
@@ -536,12 +547,13 @@ def analyze_call(stmt: str) -> Optional[dict]:
         "params": params,
         "return_type": return_type,
         "is_static": bool(re.match(r"^\s*(static|constexpr)\b", stmt)),
+        "has_exception": has_exception,
     }
 
 
 ATTR_RE = re.compile(
     r"^(?P<mods>(?:static\s+|virtual\s+)*)"
-    r"ATTR\s*\(\s*(?P<type>.+?)\s*,\s*(?P<name>\w+)\s*\)"
+    r"ATTR(?P<exc>_EXC)?\s*\(\s*(?P<type>.+?)\s*,\s*(?P<name>\w+)\s*\)"
     r"(?P<tail>\s*override\s*)?"
     r"\s*(?P<body>\{.*\})?"
     r"\s*;?\s*$",
@@ -711,6 +723,7 @@ def parse_class(
                 "ruby_type": map_ruby_type(cpp_type),
                 "static": static,
                 "override": override,
+                "has_exception": bool(m.group("exc")),
                 "header_annotation": bool(annotation["name"]),
                 "export": export,
             }
@@ -756,9 +769,19 @@ def parse_class(
                 )
                 continue
             if len(params) == 1 and params[0]["type"] == "RefPtr<" + name + ">":
-                result["initialize_copy"] = {"params": params, "export": export}
+                result["initialize_copy"] = {
+                    "params": params,
+                    "has_exception": call["has_exception"],
+                    "export": export,
+                }
             else:
-                result["constructors"].append({"params": params, "export": export})
+                result["constructors"].append(
+                    {
+                        "params": params,
+                        "has_exception": call["has_exception"],
+                        "export": export,
+                    }
+                )
             continue
 
         bad = [p["type"] for p in params if not is_bindable_type(p["type"])]
@@ -787,6 +810,7 @@ def parse_class(
                 "ruby_name": ruby_name,
                 "cpp_name": func_name,
                 "params": params,
+                "has_exception": call["has_exception"],
                 "export": export,
             }
             continue
@@ -796,6 +820,7 @@ def parse_class(
             "cpp_name": func_name,
             "return": {"cpp_type": return_type, "ruby_type": map_ruby_type(return_type)},
             "params": params,
+            "has_exception": call["has_exception"],
             "header_annotation": bool(annotation["name"]),
             "export": export,
         }

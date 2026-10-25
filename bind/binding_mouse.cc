@@ -34,9 +34,9 @@ namespace binding {
 
 RB_FUNC(Mouse_Update) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -45,9 +45,9 @@ RB_FUNC(Mouse_X) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().X();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -56,9 +56,9 @@ RB_FUNC(Mouse_Y) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().Y();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -68,10 +68,10 @@ RB_FUNC(Mouse_SetPosition) {
   double x, y;
   ParseArgs(argc, argv, "ff", &x, &y);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().SetPosition(static_cast<float>(x),
         static_cast<float>(y));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -80,9 +80,9 @@ RB_FUNC(Mouse_DeltaX) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().DeltaX();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -91,18 +91,18 @@ RB_FUNC(Mouse_DeltaY) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().DeltaY();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
 
 RB_FUNC(Mouse_FlushDelta) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().FlushDelta();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -114,9 +114,9 @@ RB_FUNC(Mouse_IsDown) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().IsDown(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -128,9 +128,9 @@ RB_FUNC(Mouse_IsUp) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().IsUp(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -142,9 +142,9 @@ RB_FUNC(Mouse_IsDouble) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().IsDouble(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -156,9 +156,9 @@ RB_FUNC(Mouse_IsPress) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().IsPress(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -170,9 +170,9 @@ RB_FUNC(Mouse_IsMove) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().IsMove(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -181,9 +181,9 @@ RB_FUNC(Mouse_ScrollX) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().ScrollX();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -192,14 +192,15 @@ RB_FUNC(Mouse_ScrollY) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = urge::Mouse::Get().ScrollY();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
 
 RB_FUNC(Mouse_SetCursor) {
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE image_val;
   urge::Bitmap* image;
@@ -207,9 +208,10 @@ RB_FUNC(Mouse_SetCursor) {
   ParseArgs(argc, argv, "oii", &image_val, &hot_x, &hot_y);
   image = CheckMaybeObject<urge::Bitmap>(image_val, kBitmapDataType);
 
-  CPP_BEGIN {
-    urge::Mouse::Get().SetCursor(image, hot_x, hot_y);
-  } CPP_END;
+  {
+    urge::Mouse::Get().SetCursor(exception_state, image, hot_x, hot_y);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -219,9 +221,9 @@ RB_FUNC(Mouse_Capture) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Mouse::Get().Attr_Capture());
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -231,9 +233,9 @@ RB_FUNC(Mouse_CaptureEqual) {
   bool value;
   ParseArgs(argc, argv, "b", &value);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Attr_Capture(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -243,9 +245,9 @@ RB_FUNC(Mouse_Visible) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Mouse::Get().Attr_Visible());
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -255,9 +257,9 @@ RB_FUNC(Mouse_VisibleEqual) {
   bool value;
   ParseArgs(argc, argv, "b", &value);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Attr_Visible(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -267,9 +269,9 @@ RB_FUNC(Mouse_Relative) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Mouse::Get().Attr_Relative());
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -279,9 +281,9 @@ RB_FUNC(Mouse_RelativeEqual) {
   bool value;
   ParseArgs(argc, argv, "b", &value);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Attr_Relative(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -291,9 +293,9 @@ RB_FUNC(Mouse_Grab) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Mouse::Get().Attr_Grab());
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -303,9 +305,9 @@ RB_FUNC(Mouse_GrabEqual) {
   bool value;
   ParseArgs(argc, argv, "b", &value);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Attr_Grab(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -315,9 +317,9 @@ RB_FUNC(Mouse_Raw) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Mouse::Get().Attr_Raw());
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -327,9 +329,9 @@ RB_FUNC(Mouse_RawEqual) {
   bool value;
   ParseArgs(argc, argv, "b", &value);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Attr_Raw(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -339,9 +341,9 @@ RB_FUNC(Mouse_SpeedScale) {
 
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Mouse::Get().Attr_SpeedScale());
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -351,9 +353,9 @@ RB_FUNC(Mouse_SpeedScaleEqual) {
   double value;
   ParseArgs(argc, argv, "f", &value);
 
-  CPP_BEGIN {
+  {
     urge::Mouse::Get().Attr_SpeedScale(static_cast<float>(value));
-  } CPP_END;
+  }
 
   return Qnil;
 }

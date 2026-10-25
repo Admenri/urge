@@ -43,18 +43,19 @@ constexpr uint32_t kMaxChunkSize = 1024 * 1024;
 
 }
 
-UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
+UniformBlockPool::UniformBlockPool(URGE_EXCEPT, wgpu::BindGroupLayout layout,
                                    uint32_t element_size,
                                    std::string_view name)
     : layout_(layout), name_(name), element_size_(element_size) {
-  if (layout_ == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "the uniform pool '{}' was given no bind group layout.",
+  if (layout_ == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "the uniform pool '{}' was given no bind group layout.",
                     name_);
-  if (element_size_ == 0)
-    throw Exception(Exception::kGPUError,
-                    "the uniform pool '{}' was given an empty element.", name_);
-
+    return;
+  }
+  if (element_size_ == 0) {
+    exception_state.Throw(ExceptionState::kGPUError, "the uniform pool '{}' was given an empty element.", name_);
+    return;
+  }
   wgpu::Limits limits = {};
 
   GPUDevice::Get().device().GetLimits(&limits);
@@ -85,7 +86,7 @@ UniformBlockPool::UniformBlockPool(wgpu::BindGroupLayout layout,
   LOGGER_TRACE("uniform pool '{}': alignment {} / binding limit {}", name_,
                alignment, binding_limit);
 
-  CreateChunk();
+  CreateChunk(exception_state);
   BeginFrame();
 }
 
@@ -97,20 +98,20 @@ void UniformBlockPool::BeginFrame() {
   active_chunk_ = 0;
 }
 
-UniformBlockPool::Slot UniformBlockPool::Acquire(const void* data,
+UniformBlockPool::Slot UniformBlockPool::Acquire(URGE_EXCEPT, const void* data,
                                                  uint32_t size) {
-  if (size > element_size_)
-    throw Exception(Exception::kGPUError,
-                    "the uniform pool '{}' holds {} byte elements but was "
+  if (size > element_size_) {
+    exception_state.Throw(ExceptionState::kGPUError, "the uniform pool '{}' holds {} byte elements but was "
                     "given {} bytes.",
                     name_, element_size_, size);
-
+    return {};
+  }
   while (active_chunk_ < chunks_.size() &&
          chunks_[active_chunk_].used == chunks_[active_chunk_].capacity)
     ++active_chunk_;
 
   if (active_chunk_ >= chunks_.size())
-    CreateChunk();
+    CreateChunk(exception_state);
 
   const uint32_t offset = chunks_[active_chunk_].used++ * slot_stride_;
   std::memcpy(staging_[active_chunk_].data() + offset, data, size);
@@ -134,7 +135,7 @@ void UniformBlockPool::Flush() {
   }
 }
 
-void UniformBlockPool::CreateChunk() {
+void UniformBlockPool::CreateChunk(URGE_EXCEPT) {
   wgpu::BufferDescriptor buffer_desc;
   buffer_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
   buffer_desc.size = chunk_size_;
@@ -150,18 +151,18 @@ void UniformBlockPool::CreateChunk() {
   if (chunk.buffer == nullptr || chunk.group == nullptr) {
     LOGGER_ERROR("uniform pool '{}': the device rejected a chunk of {} bytes",
                  name_, chunk_size_);
-    throw Exception(Exception::kGPUError,
-                    "the device rejected a chunk of the uniform pool '{}'.",
+    exception_state.Throw(ExceptionState::kGPUError, "the device rejected a chunk of the uniform pool '{}'.",
                     name_);
-  }
+    return;  }
 
   chunks_.push_back(std::move(chunk));
   staging_.emplace_back(chunk_size_);
   active_chunk_ = static_cast<uint32_t>(chunks_.size() - 1);
 }
 
-UniformManager::UniformManager()
-    : object_uniforms_(ShaderSet::Get()
+UniformManager::UniformManager(URGE_EXCEPT)
+    : object_uniforms_(exception_state,
+                       ShaderSet::Get()
                            .state.plane.plane_blends.at(BLEND_NORMAL)
                            .GetBindGroupLayout(1),
                        sizeof(ObjectData),

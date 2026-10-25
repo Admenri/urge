@@ -36,7 +36,7 @@ RB_FUNC(Video_PlayerInfo) {
 
   VALUE result = Qnil;
 
-  CPP_BEGIN {
+  {
     result = rb_hash_new();
     for (const auto& entry : self_obj->PlayerInfo()) {
       VALUE key = rb_enc_str_new(entry.first.data(),
@@ -47,7 +47,7 @@ RB_FUNC(Video_PlayerInfo) {
                                    rb_utf8_encoding());
       rb_hash_aset(result, key, value);
     }
-  } CPP_END;
+  }
 
   return result;
 }
@@ -64,6 +64,7 @@ void DefineVideoPlayerInfo(VALUE klass) {
 RB_DEF_TYPE(Video);
 
 RB_FUNC(Video_initialize) {
+  urge::ExceptionState exception_state;
   VALUE filename_val;
   const char* filename_data;
   size_t filename_size;
@@ -72,13 +73,14 @@ RB_FUNC(Video_initialize) {
 
   urge::Video* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Video> value = urge::MakeRefCounted<urge::Video>(
-        std::string(filename_data, filename_size));
+        exception_state, std::string(filename_data, filename_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -90,9 +92,9 @@ RB_FUNC(Video_Play) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Play();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -101,9 +103,9 @@ RB_FUNC(Video_Pause) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Pause();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -112,9 +114,9 @@ RB_FUNC(Video_Stop) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Stop();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -125,9 +127,9 @@ RB_FUNC(Video_End) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->End();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -138,9 +140,9 @@ RB_FUNC(Video_IsPlaying) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsPlaying();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -152,9 +154,9 @@ RB_FUNC(Video_Seek) {
   double pos;
   ParseArgs(argc, argv, "f", &pos);
 
-  CPP_BEGIN {
+  {
     self_obj->Seek(static_cast<float>(pos));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -165,9 +167,9 @@ RB_FUNC(Video_Tell) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Tell();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -178,9 +180,9 @@ RB_FUNC(Video_Duration) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Duration();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -191,12 +193,12 @@ RB_FUNC(Video_GetAudioStream) {
   CheckArgc(argc, 0);
   urge::AudioStream* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::AudioStream> value = self_obj->GetAudioStream();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kAudioStreamDataType);
   if (result)
@@ -208,9 +210,9 @@ RB_FUNC(Video_Update) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -218,15 +220,17 @@ RB_FUNC(Video_Update) {
 RB_FUNC(Video_Render) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE target_val;
   urge::Bitmap* target;
   ParseArgs(argc, argv, "o", &target_val);
   target = CheckObject<urge::Bitmap>(target_val, kBitmapDataType);
 
-  CPP_BEGIN {
-    self_obj->Render(target);
-  } CPP_END;
+  {
+    self_obj->Render(exception_state, target);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }

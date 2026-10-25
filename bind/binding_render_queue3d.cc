@@ -35,12 +35,12 @@ RB_FUNC(RenderQueue3D_initialize) {
 
   urge::RenderQueue3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderQueue3D> value = urge::MakeRefCounted<urge::RenderQueue3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -54,9 +54,9 @@ RB_FUNC(RenderQueue3D_Count) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Count();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -67,9 +67,9 @@ RB_FUNC(RenderQueue3D_LightCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->LightCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -80,9 +80,9 @@ RB_FUNC(RenderQueue3D_Tags) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->Tags());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;

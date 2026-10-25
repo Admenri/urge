@@ -26,13 +26,14 @@
 
 #include "SDL3/SDL_iostream.h"
 
+#include "core/common/definition.h"
 #include "core/common/object.h"
 
 namespace urge {
 
 class IOService : public Singleton<IOService> {
  public:
-  IOService(const std::string& argv0);
+  IOService(URGE_EXCEPT, const std::string& argv0);
   ~IOService();
 
   bool SetWritePath(const std::string& path);
@@ -48,9 +49,9 @@ class IOService : public Singleton<IOService> {
   std::vector<std::string> EnumDir(const std::string& dir);
 
   using OpenCallback = std::function<bool(SDL_IOStream*, const std::string&)>;
-  void OpenRead(const std::string& file_path, OpenCallback callback);
-  SDL_IOStream* OpenReadRaw(const std::string& filename);
-  SDL_IOStream* OpenWrite(const std::string& filename);
+  void OpenRead(URGE_EXCEPT, const std::string& file_path, OpenCallback callback);
+  SDL_IOStream* OpenReadRaw(URGE_EXCEPT, const std::string& filename);
+  SDL_IOStream* OpenWrite(URGE_EXCEPT, const std::string& filename);
 };
 
 }

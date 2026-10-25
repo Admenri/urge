@@ -39,12 +39,12 @@ RB_FUNC(Light3D_initialize) {
 
   urge::Light3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Light3D> value = urge::MakeRefCounted<urge::Light3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)

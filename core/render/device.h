@@ -27,6 +27,7 @@
 #include <variant>
 #include <vector>
 
+#include "core/common/definition.h"
 #include "SDL3/SDL_video.h"
 #include "webgpu/webgpu_cpp.hpp"
 
@@ -54,7 +55,7 @@ DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter);
 #define g_queue GPUDevice::Get().queue()
 class GPUDevice : public Singleton<GPUDevice> {
  public:
-  GPUDevice(SDL_Window* window, std::string backend);
+  GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend);
 
   wgpu::Device device() const { return device_; }
   wgpu::Adapter adapter() const { return adapter_; }
@@ -66,7 +67,7 @@ class GPUDevice : public Singleton<GPUDevice> {
   void WaitAny(wgpu::Future future);
 
  private:
-  void CreateDevice(std::string backend);
+  void CreateDevice(URGE_EXCEPT, std::string backend);
 
   wgpu::Instance instance_;
   wgpu::Surface surface_;

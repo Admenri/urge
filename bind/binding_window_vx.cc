@@ -41,12 +41,12 @@ RB_FUNC(WindowVX_initialize) {
 
     urge::WindowVX* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -61,13 +61,13 @@ RB_FUNC(WindowVX_initialize) {
 
     urge::WindowVX* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
           viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -80,13 +80,13 @@ RB_FUNC(WindowVX_initialize) {
 
     urge::WindowVX* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
           x, y, width, height);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -101,9 +101,9 @@ RB_FUNC(WindowVX_Update) {
   auto* self_obj = GetSelfData<urge::WindowVX>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -115,9 +115,9 @@ RB_FUNC(WindowVX_Move) {
   int x, y, width, height;
   ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
-  CPP_BEGIN {
+  {
     self_obj->Move(x, y, width, height);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -128,9 +128,9 @@ RB_FUNC(WindowVX_Opened) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Opened();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -141,9 +141,9 @@ RB_FUNC(WindowVX_Closed) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Closed();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }

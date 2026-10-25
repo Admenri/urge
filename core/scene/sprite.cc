@@ -66,8 +66,9 @@ Sprite::~Sprite() {
   Disposable::Dispose();
 }
 
-void Sprite::Flash(RefPtr<Color> color, int32_t duration) {
-  Disposable::Guard();
+void Sprite::Flash(URGE_EXCEPT, RefPtr<Color> color, int32_t duration) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
   std::optional<glm::vec4> flash_color = std::nullopt;
   if (color)
@@ -75,8 +76,9 @@ void Sprite::Flash(RefPtr<Color> color, int32_t duration) {
   flashing_.Setup(flash_color, duration);
 }
 
-void Sprite::Update() {
-  Disposable::Guard();
+void Sprite::Update(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
   wave_phase_ += wave_speed_ / 180.0f;
   wave_phase_ = std::fmod(wave_phase_, 360.0f);
@@ -333,7 +335,10 @@ bool Sprite::Prepare(DrawParam param) {
   if (effect_) {
     ObjectData object_data;
     object_data.model_mat = transform;
-    object_slot_ = UniformManager::Get().object_uniforms().Acquire(object_data);
+    // The pool answers an invalid chunk when it refuses; the draw path has
+    // no state of its own to report into.
+    ExceptionState acquire_state;
+    object_slot_ = UniformManager::Get().object_uniforms().Acquire(acquire_state, object_data);
     return object_slot_.chunk != UniformBlockPool::kInvalidChunk;
   }
 
@@ -343,15 +348,18 @@ bool Sprite::Prepare(DrawParam param) {
 }
 
 bool Sprite::DoDraw(DrawParam param) {
+  // The draw path has no state of its own: the effect answers a null
+  // pipeline, which leaves this object undrawn.
+  ExceptionState effect_state;
   if (effect_) {
     UniformManager& uniforms = UniformManager::Get();
     const UniformBlockPool::Chunk& object_chunk =
         uniforms.object_uniforms().chunk(object_slot_.chunk);
 
-    param->pass.SetPipeline(effect_->AcquirePipeline());
+    param->pass.SetPipeline(effect_->AcquirePipeline(effect_state));
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
-    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
+    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0, nullptr);
     param->pass.SetVertexBuffer(0, SpriteBatch::Get().emitter().buffer(), 0,
                                 WGPU_WHOLE_SIZE);
     param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);

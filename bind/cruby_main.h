@@ -22,13 +22,14 @@
 
 #pragma once
 
+#include "core/common/exception.h"
 #include "core/common/object.h"
 
 namespace binding {
 
 class BindingMain {
  public:
-  BindingMain();
+  explicit BindingMain(urge::ExceptionState& exception_state);
   ~BindingMain();
 
  private:

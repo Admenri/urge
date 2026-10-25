@@ -117,7 +117,7 @@ class World3D : public Node {
   URGE_BINDING(Name : "context")
   RefPtr<RenderContext3D> GetContext() const { return context_; }
 
-  RefPtr<RenderGraph3D> ActiveGraph();
+  RefPtr<RenderGraph3D> ActiveGraph(URGE_EXCEPT);
 
  protected:
   void DisposeObject() override;
@@ -125,10 +125,10 @@ class World3D : public Node {
   bool DoDraw(DrawParam param) override;
 
  private:
-  void EnsureTarget();
-  void EnsureQuadPipeline();
-  void RenderScene(DrawParam param);
-  void UpdateQuad(glm::ivec2 target_size);
+  void EnsureTarget(URGE_EXCEPT);
+  void EnsureQuadPipeline(URGE_EXCEPT);
+  void RenderScene(URGE_EXCEPT, DrawParam param);
+  void UpdateQuad(URGE_EXCEPT, glm::ivec2 target_size);
 
   int32_t x_ = 0;
   int32_t y_ = 0;

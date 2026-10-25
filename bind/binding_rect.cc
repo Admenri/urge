@@ -32,12 +32,12 @@ RB_FUNC(Rect_initialize) {
 
     urge::Rect* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -50,13 +50,13 @@ RB_FUNC(Rect_initialize) {
 
     urge::Rect* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>(xv, yv,
           wv, hv);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -75,12 +75,12 @@ RB_FUNC(Rect_initialize_copy) {
 
   urge::Rect* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -93,9 +93,9 @@ RB_FUNC(Rect__dump) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(urge::Rect::MarshalDump(urge::RefPtr<urge::Rect>(self_obj)));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -112,14 +112,16 @@ RB_FUNC(Rect__load) {
   size_t data_size;
   CheckString(data_val, &data_data, &data_size);
 
+  urge::ExceptionState exception_state;
   urge::Rect* result = nullptr;
 
-  CPP_BEGIN {
-    urge::RefPtr<urge::Rect> value = urge::Rect::MarshalLoad(std::string(data_data, data_size));
+  {
+    urge::RefPtr<urge::Rect> value = urge::Rect::MarshalLoad(exception_state, std::string(data_data, data_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(rb_obj_alloc(self), result);
   if (result)
@@ -140,9 +142,9 @@ RB_FUNC(Rect__equal) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = *self_obj == *other_obj;
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -157,9 +159,9 @@ RB_FUNC(Rect_Set) {
     ParseArgs(argc, argv, "o", &rect_val);
     rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(rect);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -167,9 +169,9 @@ RB_FUNC(Rect_Set) {
     int xv, yv, wv, hv;
     ParseArgs(argc, argv, "iiii", &xv, &yv, &wv, &hv);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(xv, yv, wv, hv);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -181,9 +183,9 @@ RB_FUNC(Rect_Empty) {
   auto* self_obj = GetSelfData<urge::Rect>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Empty();
-  } CPP_END;
+  }
 
   return Qnil;
 }

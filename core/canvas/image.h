@@ -39,7 +39,7 @@ class Image : public Disposable {
   URGE_BINDING()
   Image(int32_t width, int32_t height);
   URGE_BINDING()
-  Image(std::string filename);
+  Image(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
   Image(RefPtr<Image> other);
   URGE_BINDING()
@@ -51,33 +51,33 @@ class Image : public Disposable {
   int32_t Height();
 
   URGE_BINDING()
-  RefPtr<Color> GetPixel(int32_t x, int32_t y);
+  RefPtr<Color> GetPixel(URGE_EXCEPT, int32_t x, int32_t y);
   URGE_BINDING()
-  void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
+  void SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color);
 
   URGE_BINDING()
-  void FillRect(int32_t x,
+  void FillRect(URGE_EXCEPT, int32_t x,
                 int32_t y,
                 int32_t width,
                 int32_t height,
                 RefPtr<Color> color);
   URGE_BINDING()
-  void FillRect(RefPtr<Rect> rect, RefPtr<Color> color);
+  void FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color);
 
   URGE_BINDING()
-  void Blt(int32_t x,
+  void Blt(URGE_EXCEPT, int32_t x,
            int32_t y,
            RefPtr<Image> src_image,
            RefPtr<Rect> src_rect,
            int32_t opacity = 255);
   URGE_BINDING()
-  void StretchBlt(RefPtr<Rect> dst_rect,
+  void StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
                   RefPtr<Image> src_image,
                   RefPtr<Rect> src_rect,
                   int32_t opacity = 255);
 
   URGE_BINDING()
-  void GradientFillRect(int32_t x,
+  void GradientFillRect(URGE_EXCEPT, int32_t x,
                         int32_t y,
                         int32_t width,
                         int32_t height,
@@ -85,25 +85,25 @@ class Image : public Disposable {
                         RefPtr<Color> color2,
                         bool vertical = false);
   URGE_BINDING()
-  void GradientFillRect(RefPtr<Rect> rect,
+  void GradientFillRect(URGE_EXCEPT, RefPtr<Rect> rect,
                         RefPtr<Color> color1,
                         RefPtr<Color> color2,
                         bool vertical = false);
 
   URGE_BINDING()
-  void Clear();
+  void Clear(URGE_EXCEPT);
   URGE_BINDING()
-  void ClearRect(int32_t x, int32_t y, int32_t width, int32_t height);
+  void ClearRect(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING()
-  void ClearRect(RefPtr<Rect> rect);
+  void ClearRect(URGE_EXCEPT, RefPtr<Rect> rect);
 
   URGE_BINDING()
-  static RefPtr<Image> FromDump(std::string data);
+  static RefPtr<Image> FromDump(URGE_EXCEPT, std::string data);
   URGE_BINDING()
-  std::string ToDump();
+  std::string ToDump(URGE_EXCEPT);
 
   URGE_BINDING()
-  void SaveFile(std::string filename);
+  void SaveFile(URGE_EXCEPT, std::string filename);
 
  public:
   SDL_Surface* image() { return image_; }

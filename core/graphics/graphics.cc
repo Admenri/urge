@@ -221,7 +221,7 @@ void ScreenRootNode::PostDraw(DrawParam param) {
   param->pass.Draw(slot_.count, 1, slot_.first, 0);
 }
 
-Graphics::Graphics()
+Graphics::Graphics(URGE_EXCEPT)
     : frame_rate_(Config::Get().xp() ? 40 : 60), limiter_(frame_rate_) {
   auto& config = Config::Get();
 
@@ -241,11 +241,11 @@ Graphics::Graphics()
 
   SDL_SetWindowFullscreen(window_, config.display.fullscreen);
 
-  GPUDevice::Reset(new GPUDevice(window_, config.gfx.backend));
+  GPUDevice::Reset(new GPUDevice(exception_state, window_, config.gfx.backend));
   GPU::Reset(new GPU());
   ShaderSet::Reset(new ShaderSet());
 
-  UniformManager::Reset(new UniformManager());
+  UniformManager::Reset(new UniformManager(exception_state));
   QuadVertexManager::Reset(new QuadVertexManager());
   SpriteBatch::Reset(new SpriteBatch());
   BitmapQueue::Reset(new BitmapQueue());
@@ -283,7 +283,7 @@ Graphics::~Graphics() {
   SDL_DestroyWindow(window_);
 }
 
-void Graphics::Update() {
+void Graphics::Update(URGE_EXCEPT) {
 #if defined(OS_EMSCRIPTEN)
   /* The frame begins by waiting for an animation frame: the surface present at
      the end of it is only accepted from inside one.  Waiting before
@@ -334,7 +334,7 @@ void Graphics::Update() {
   if (skip_frame)
     limiter_.Reset();
 
-  PresentInternal();
+  PresentInternal(exception_state);
 
   /* The limiter's own wait is measured apart from the engine's work: it is the
      frame's idle time, and reporting it as part of `Graphics.update` would
@@ -395,53 +395,53 @@ void Graphics::Update() {
     frame_callback_();
 }
 
-void Graphics::Wait(int32_t duration) {
+void Graphics::Wait(URGE_EXCEPT, int32_t duration) {
   for (int32_t i = 0; i < duration; ++i)
-    Update();
+    Update(exception_state);
 }
 
-void Graphics::Fadein(int32_t duration) {
+void Graphics::Fadein(URGE_EXCEPT, int32_t duration) {
   duration = std::max(duration, 1);
   int32_t step = (255 - brightness_) / duration;
   for (int32_t i = 0; i < duration; ++i) {
     brightness_ += step;
     brightness_ = std::clamp<int32_t>(brightness_, 0, 255);
 
-    Update();
+    Update(exception_state);
   }
   brightness_ = 255;
 }
 
-void Graphics::Fadeout(int32_t duration) {
+void Graphics::Fadeout(URGE_EXCEPT, int32_t duration) {
   duration = std::max(duration, 1);
   int32_t step = brightness_ / duration;
   for (int32_t i = 0; i < duration; ++i) {
     brightness_ -= step;
     brightness_ = std::clamp<int32_t>(brightness_, 0, 255);
 
-    Update();
+    Update(exception_state);
   }
   brightness_ = 0;
 }
 
-void Graphics::Freeze() {
+void Graphics::Freeze(URGE_EXCEPT) {
   if (!frozen_) {
     root_->Render(screen_, Color::Black());
     frozen_ = true;
   }
 }
 
-void Graphics::Transition(int32_t duration,
+void Graphics::Transition(URGE_EXCEPT, int32_t duration,
                           std::string filename,
                           int32_t vague) {
   RefPtr<Bitmap> mapping = nullptr;
   if (!filename.empty())
-    mapping = MakeRefCounted<Bitmap>(filename);
+    mapping = MakeRefCounted<Bitmap>(exception_state, filename);
 
-  TransitionBitmap(duration, mapping, vague);
+  TransitionBitmap(exception_state, duration, mapping, vague);
 }
 
-void Graphics::TransitionBitmap(int32_t duration,
+void Graphics::TransitionBitmap(URGE_EXCEPT, int32_t duration,
                                 RefPtr<Bitmap> bitmap,
                                 int32_t vague) {
   if (!frozen_)
@@ -499,7 +499,7 @@ void Graphics::TransitionBitmap(int32_t duration,
     CountSubmit(false);
     GPUDevice::Get().queue().Submit(1, &command);
 
-    Update();
+    Update(exception_state);
   }
 
   frozen_ = false;
@@ -533,9 +533,9 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
                         SDL_WINDOWPOS_CENTERED);
 }
 
-void Graphics::PlayMovie(std::string filename) {
-  throw Exception(Exception::kRGSSError, "unimplement video playback.");
-}
+void Graphics::PlayMovie(URGE_EXCEPT, std::string filename) {
+  exception_state.Throw(ExceptionState::kRGSSError, "unimplement video playback.");
+  return;}
 
 ATTR_DEF(Graphics, int32_t, FrameRate) {
   if (value.has_value()) {
@@ -600,7 +600,7 @@ ATTR_DEF(Graphics, bool, VSync) {
   }
 }
 
-void Graphics::ProcessEvents() {
+void Graphics::ProcessEvents(URGE_EXCEPT) {
   auto& imgui = ImGuiManager::Get();
 
   SDL_Event event = {};
@@ -610,13 +610,14 @@ void Graphics::ProcessEvents() {
     Input::Get().ProcessGamepadEvents(&event);
 
     if (!imgui.WantsGameInputBlocked()) {
-      Input::Get().ProcessEvents(&event);
-      Mouse::Get().ProcessEvents(&event);
+      Input::Get().ProcessEvents(exception_state, &event);
+      Mouse::Get().ProcessEvents(exception_state, &event);
     }
 
-    if (event.type == SDL_EVENT_QUIT)
-      throw Exception(Exception::kExitError, {});
-
+    if (event.type == SDL_EVENT_QUIT) {
+      exception_state.Throw(ExceptionState::kExitError, {});
+      return;
+    }
     if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
       present_.configured = false;
   }
@@ -624,11 +625,11 @@ void Graphics::ProcessEvents() {
   Input::Get().SetBlocked(imgui.WantsGameInputBlocked());
 }
 
-void Graphics::PresentInternal() {
+void Graphics::PresentInternal(URGE_EXCEPT) {
   auto surface = GPUDevice::Get().swapchain();
   auto& imgui = ImGuiManager::Get();
 
-  ProcessEvents();
+  ProcessEvents(exception_state);
 
   if (!present_.configured) {
     int pixel_width = Width();
@@ -697,9 +698,8 @@ void Graphics::PresentInternal() {
           1000.0 / SDL_GetPerformanceFrequency();
       return;
     case wgpu::SurfaceGetCurrentTextureStatus::Error:
-      throw Exception(Exception::kRGSSError,
-                      "failed to acquire surface texture.");
-      break;
+      exception_state.Throw(ExceptionState::kRGSSError, "failed to acquire surface texture.");
+      return;      break;
   }
 
   present_.primitive.EmitQuad(RectI(0, 0, Width(), Height()), RectI(0, 0, 1, 1),
@@ -734,11 +734,11 @@ void Graphics::PresentInternal() {
   GPUDevice::Get().queue().Submit(1, &command);
 
 #if defined(OS_EMSCRIPTEN)
-  /* The canvas is presented when the animation frame callback returns, so there
-     is nothing to hand over here -- and emdawnwebgpu does not implement
-     wgpuSurfacePresent at all ("TODO: This could probably be emulated with
-     ASYNCIFY"), it aborts.  That is why the frame begins by waiting for an
-     animation frame: the end of this callback is the present. */
+                                                                                
+                                                                        
+                                                                           
+                                                                           
+                                                                 
 #else
   surface.Present();
 #endif

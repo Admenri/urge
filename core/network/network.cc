@@ -34,9 +34,9 @@ namespace urge {
 namespace {
 
 #if !URGE_ENABLE_NETWORK
-[[noreturn]] void NetworkUnavailable() {
-  throw Exception(Exception::kRGSSError,
-                  "network is not available in this build.");
+void NetworkUnavailable(URGE_EXCEPT) {
+  exception_state.Throw(ExceptionState::kRGSSError,
+                        "network is not available in this build.");
 }
 #endif
 
@@ -253,23 +253,27 @@ void Network::CloseAll() {
 #endif
 }
 
-RefPtr<WebSocket> Network::OpenWebSocket(std::string url,
+RefPtr<WebSocket> Network::OpenWebSocket(URGE_EXCEPT,
+                                         std::string url,
                                          std::vector<std::string> protocols) {
 #if URGE_ENABLE_NETWORK
   return backend_->OpenWebSocket(url, protocols);
 #else
-  NetworkUnavailable();
+  NetworkUnavailable(exception_state);
+  return nullptr;
 #endif
 }
 
-RefPtr<Fetch> Network::OpenFetch(std::string url,
+RefPtr<Fetch> Network::OpenFetch(URGE_EXCEPT,
+                                 std::string url,
                                  std::string method,
                                  std::string body,
                                  std::vector<std::string> headers) {
 #if URGE_ENABLE_NETWORK
   return backend_->OpenFetch(url, method, body, headers);
 #else
-  NetworkUnavailable();
+  NetworkUnavailable(exception_state);
+  return nullptr;
 #endif
 }
 

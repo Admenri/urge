@@ -50,16 +50,16 @@ class Mesh3D : public Object {
   ~Mesh3D() override;
 
   URGE_BINDING()
-  void SetVertices(std::vector<float> data);
+  void SetVertices(URGE_EXCEPT, std::vector<float> data);
   URGE_BINDING()
-  void SetSkinnedVertices(std::vector<float> data,
+  void SetSkinnedVertices(URGE_EXCEPT, std::vector<float> data,
                           std::vector<uint32_t> joints,
                           std::vector<float> weights);
   URGE_BINDING()
-  void SetIndices(std::vector<uint32_t> data);
+  void SetIndices(URGE_EXCEPT, std::vector<uint32_t> data);
 
   URGE_BINDING()
-  void AddSubmesh(int32_t index_offset, int32_t index_count, int32_t mat_slot);
+  void AddSubmesh(URGE_EXCEPT, int32_t index_offset, int32_t index_count, int32_t mat_slot);
   URGE_BINDING()
   void ClearSubmeshes();
   URGE_BINDING()
@@ -102,8 +102,8 @@ class Mesh3D : public Object {
   RefPtr<Skeleton3D> skeleton() const { return skeleton_; }
   const std::vector<SubMesh3D>& submeshes() const { return submeshes_; }
 
-  wgpu::Buffer AcquireJointBuffer(uint64_t frame_token);
-  wgpu::BindGroup AcquireGroup(uint32_t chunk_index,
+  wgpu::Buffer AcquireJointBuffer(URGE_EXCEPT, uint64_t frame_token);
+  wgpu::BindGroup AcquireGroup(URGE_EXCEPT, uint32_t chunk_index,
                                wgpu::Buffer mesh_buffer,
                                wgpu::Buffer joints);
 
@@ -114,7 +114,7 @@ class Mesh3D : public Object {
     wgpu::BindGroup group = nullptr;
   };
 
-  void Upload();
+  void Upload(URGE_EXCEPT);
   void UpdateBounds();
 
   RefPtr<Skeleton3D> skeleton_;

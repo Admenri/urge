@@ -38,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderContext3D  (core/scene3d/render_context3d.h:51-122)
+// RenderContext3D  (core/scene3d/render_context3d.h:51-124)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderContext3D);
@@ -49,12 +49,12 @@ RB_FUNC(RenderContext3D_GetTarget) {
   CheckArgc(argc, 0);
   urge::RenderTarget3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderTarget3D> value = self_obj->GetTarget();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kRenderTarget3DDataType);
   if (result)
@@ -68,12 +68,12 @@ RB_FUNC(RenderContext3D_GetCamera) {
   CheckArgc(argc, 0);
   urge::Camera3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Camera3D> value = self_obj->GetCamera();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kCamera3DDataType);
   if (result)
@@ -87,12 +87,12 @@ RB_FUNC(RenderContext3D_GetQueue) {
   CheckArgc(argc, 0);
   urge::RenderQueue3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderQueue3D> value = self_obj->GetQueue();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kRenderQueue3DDataType);
   if (result)
@@ -106,12 +106,12 @@ RB_FUNC(RenderContext3D_GetAmbient) {
   CheckArgc(argc, 0);
   urge::Color* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Color> value = self_obj->GetAmbient();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kColorDataType);
   if (result)
@@ -128,9 +128,9 @@ RB_FUNC(RenderContext3D_SetAmbient) {
   ParseArgs(argc, argv, "o", &value_val);
   value = CheckMaybeObject<urge::Color>(value_val, kColorDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetAmbient(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -144,9 +144,9 @@ RB_FUNC(RenderContext3D_SetViewProjection) {
   ParseArgs(argc, argv, "o", &camera_val);
   camera = CheckMaybeObject<urge::Camera3D>(camera_val, kCamera3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetViewProjection(camera);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -156,18 +156,21 @@ RB_FUNC(RenderContext3D_BeginPass) {
 
   if (argc == 1) {
     // begin_pass(target)
+    urge::ExceptionState exception_state;
     VALUE target_val;
     urge::RenderTarget3D* target;
     ParseArgs(argc, argv, "o", &target_val);
     target = CheckObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType);
 
-    CPP_BEGIN {
-      self_obj->BeginPass(target);
-    } CPP_END;
+    {
+      self_obj->BeginPass(exception_state, target);
+    }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 2) {
     // begin_pass(target, clear)
+    urge::ExceptionState exception_state;
     VALUE target_val, clear_val;
     urge::RenderTarget3D* target;
     urge::Color* clear;
@@ -175,13 +178,15 @@ RB_FUNC(RenderContext3D_BeginPass) {
     target = CheckObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType);
     clear = CheckMaybeObject<urge::Color>(clear_val, kColorDataType);
 
-    CPP_BEGIN {
-      self_obj->BeginPass(target, clear);
-    } CPP_END;
+    {
+      self_obj->BeginPass(exception_state, target, clear);
+    }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 3) {
     // begin_pass(target, clear, clear_depth)
+    urge::ExceptionState exception_state;
     VALUE target_val, clear_val;
     urge::RenderTarget3D* target;
     urge::Color* clear;
@@ -190,9 +195,10 @@ RB_FUNC(RenderContext3D_BeginPass) {
     target = CheckObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType);
     clear = CheckMaybeObject<urge::Color>(clear_val, kColorDataType);
 
-    CPP_BEGIN {
-      self_obj->BeginPass(target, clear, clear_depth);
-    } CPP_END;
+    {
+      self_obj->BeginPass(exception_state, target, clear, clear_depth);
+    }
+    RaiseException(exception_state);
 
     return Qnil;
   } else {
@@ -204,9 +210,9 @@ RB_FUNC(RenderContext3D_EndPass) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->EndPass();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -217,12 +223,12 @@ RB_FUNC(RenderContext3D_GetPass) {
   CheckArgc(argc, 0);
   urge::GPURenderPassEncoder* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPURenderPassEncoder> value = self_obj->GetPass();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPURenderPassEncoderDataType);
   if (result)
@@ -233,6 +239,7 @@ RB_FUNC(RenderContext3D_GetPass) {
 RB_FUNC(RenderContext3D_DrawFilter) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 5);
   VALUE tags_val, tag_ids_val;
   int queue_min, queue_max;
@@ -244,10 +251,12 @@ RB_FUNC(RenderContext3D_DrawFilter) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
-    result = self_obj->DrawFilter(TakeVectorOf<std::string>(tags_val),
-        TakeVectorOf<int32_t>(tag_ids_val), queue_min, queue_max, layers);
-  } CPP_END;
+  {
+    result = self_obj->DrawFilter(exception_state,
+        TakeVectorOf<std::string>(tags_val), TakeVectorOf<int32_t>(tag_ids_val),
+        queue_min, queue_max, layers);
+  }
+  RaiseException(exception_state);
 
   return LONG2NUM(result);
 }
@@ -255,15 +264,17 @@ RB_FUNC(RenderContext3D_DrawFilter) {
 RB_FUNC(RenderContext3D_DrawItem) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   int index;
   ParseArgs(argc, argv, "i", &index);
 
   bool result = false;
 
-  CPP_BEGIN {
-    result = self_obj->DrawItem(index);
-  } CPP_END;
+  {
+    result = self_obj->DrawItem(exception_state, index);
+  }
+  RaiseException(exception_state);
 
   return result ? Qtrue : Qfalse;
 }
@@ -275,10 +286,10 @@ RB_FUNC(RenderContext3D_SetViewport) {
   double x, y, width, height;
   ParseArgs(argc, argv, "ffff", &x, &y, &width, &height);
 
-  CPP_BEGIN {
+  {
     self_obj->SetViewport(static_cast<float>(x), static_cast<float>(y),
         static_cast<float>(width), static_cast<float>(height));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -290,9 +301,9 @@ RB_FUNC(RenderContext3D_SetScissorRect) {
   int x, y, width, height;
   ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
-  CPP_BEGIN {
+  {
     self_obj->SetScissorRect(x, y, width, height);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -307,9 +318,9 @@ RB_FUNC(RenderContext3D_DrawIndexedIndirect) {
   ParseArgs(argc, argv, "oi", &buffer_val, &offset);
   buffer = CheckMaybeObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->DrawIndexedIndirect(buffer, offset);
-  } CPP_END;
+  }
 
   return Qnil;
 }

@@ -61,21 +61,25 @@ std::string FormatBitrate(const VideoTrackInfo& info) {
 
 }
 
-Video::Video(std::string filename) {
-  if (!player_.Open(filename))
-    throw Exception(Exception::kRGSSError, "the video could not be opened: {}",
+Video::Video(URGE_EXCEPT, std::string filename) {
+  if (!player_.Open(exception_state, filename)) {
+    exception_state.Throw(ExceptionState::kRGSSError, "the video could not be opened: {}",
                     filename);
-
+    return;
+  }
   std::vector<uint8_t> track = player_.TakeAudio();
   if (track.empty())
     return;
 
-  try {
-    audio_ = MakeRefCounted<AudioStream>(
-        std::move(track),
-        static_cast<float>(player_.duration() * kMillisecondsPerSecond));
-  } catch (const Exception& error) {
-    LOGGER_WARN("the video plays without its audio track: {}", error.message());
+  // A video without its audio track still plays, so the failure is a warning
+  // and a state of its own rather than the caller's.
+  ExceptionState audio_state;
+  audio_ = MakeRefCounted<AudioStream>(
+      audio_state, std::move(track),
+      static_cast<float>(player_.duration() * kMillisecondsPerSecond));
+  if (audio_state.HadException()) {
+    LOGGER_WARN("the video plays without its audio track: {}",
+                audio_state.message());
     audio_ = nullptr;
   }
 }
@@ -170,7 +174,7 @@ void Video::Update() {
   SyncAudio();
 }
 
-void Video::Render(RefPtr<Bitmap> target) {
+void Video::Render(URGE_EXCEPT, RefPtr<Bitmap> target) {
   const std::vector<uint8_t>* source = player_.rgba();
   if (!source || source->empty())
     return;
@@ -185,7 +189,7 @@ void Video::Render(RefPtr<Bitmap> target) {
     return;
 
   if (source_width == target_width && source_height == target_height) {
-    target->UpdateWithPixels(source->data(),
+    target->UpdateWithPixels(exception_state, source->data(),
                              static_cast<uint32_t>(source_width) * 4);
     return;
   }
@@ -213,7 +217,7 @@ void Video::Render(RefPtr<Bitmap> target) {
     row += step_y;
   }
 
-  target->UpdateWithPixels(scaled_.data(),
+  target->UpdateWithPixels(exception_state, scaled_.data(),
                            static_cast<uint32_t>(target_width) * 4);
 }
 
@@ -245,15 +249,22 @@ void Video::SyncAudio() {
 
 namespace {
 
-[[noreturn]] void VideoUnavailable() {
-  throw Exception(Exception::kRGSSError,
-                  "video playback is not available in this build.");
+// The stubs answer the failure the only way they can: `Video.new` is the one
+// call that carries a state, so that is where a script hears about it, and
+// everything else leaves a log line and answers a default.
+void VideoUnavailable(URGE_EXCEPT) {
+  exception_state.Throw(ExceptionState::kRGSSError,
+                        "video playback is not available in this build.");
+}
+
+void VideoUnavailable() {
+  LOGGER_ERROR("[Video] video playback is not available in this build.");
 }
 
 }
 
-Video::Video(std::string) {
-  VideoUnavailable();
+Video::Video(URGE_EXCEPT, std::string) {
+  VideoUnavailable(exception_state);
 }
 
 Video::~Video() = default;

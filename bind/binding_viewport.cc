@@ -40,12 +40,12 @@ RB_FUNC(Viewport_initialize) {
 
     urge::Viewport* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -60,13 +60,13 @@ RB_FUNC(Viewport_initialize) {
 
     urge::Viewport* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>(
           rect);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -79,13 +79,13 @@ RB_FUNC(Viewport_initialize) {
 
     urge::Viewport* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>(
           x, y, width, height);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -99,6 +99,7 @@ RB_FUNC(Viewport_initialize) {
 RB_FUNC(Viewport_Flash) {
   auto* self_obj = GetSelfData<urge::Viewport>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE color_val;
   urge::Color* color;
@@ -106,9 +107,10 @@ RB_FUNC(Viewport_Flash) {
   ParseArgs(argc, argv, "oi", &color_val, &duration);
   color = CheckMaybeObject<urge::Color>(color_val, kColorDataType);
 
-  CPP_BEGIN {
-    self_obj->Flash(color, duration);
-  } CPP_END;
+  {
+    self_obj->Flash(exception_state, color, duration);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -116,10 +118,13 @@ RB_FUNC(Viewport_Flash) {
 RB_FUNC(Viewport_Update) {
   auto* self_obj = GetSelfData<urge::Viewport>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
-  CPP_BEGIN {
-    self_obj->Update();
-  } CPP_END;
+
+  {
+    self_obj->Update(exception_state);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }

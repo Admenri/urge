@@ -56,7 +56,7 @@ URGE_BINDING()
 class TilemapVX : public Node {
  public:
   URGE_BINDING()
-  TilemapVX(MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
+  TilemapVX(URGE_EXCEPT, MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
   URGE_BINDING()
   ~TilemapVX() override;
 
@@ -125,7 +125,7 @@ class TilemapVX : public Node {
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  void CreateShadowSet();
+  void CreateShadowSet(URGE_EXCEPT);
   void UpdateViewport();
   void CollectMapData(bool above, std::vector<TileQuad>* quads);
   void BuildLayer(bool above, TileLayer* layer);

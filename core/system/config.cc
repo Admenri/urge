@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <charconv>
 #include "core/system/config.h"
 
 #include <algorithm>
@@ -70,11 +71,14 @@ int32_t ParseKeyName(const std::string& name) {
   const auto scancode = SDL_GetScancodeFromName(name.c_str());
   if (scancode != SDL_SCANCODE_UNKNOWN)
     return static_cast<int32_t>(scancode);
-  try {
-    return std::stoi(name);
-  } catch (...) {
+  // `std::stoi` reports a bad string by throwing, and this build has no
+  // exceptions: `from_chars` answers the same question as a return code.
+  int32_t value = static_cast<int32_t>(SDL_SCANCODE_UNKNOWN);
+  const auto parsed = std::from_chars(name.data(), name.data() + name.size(),
+                                      value);
+  if (parsed.ec != std::errc() || parsed.ptr != name.data() + name.size())
     return static_cast<int32_t>(SDL_SCANCODE_UNKNOWN);
-  }
+  return value;
 }
 
 std::string KeyNameOf(int32_t keycode) {
@@ -154,8 +158,8 @@ std::string NormalizeUTF8(const std::string& text) {
 
 }
 
-Config::Config(std::string inifile) : inifile_(std::move(inifile)) {
-  auto stream = IOService::Get().OpenReadRaw(inifile_);
+Config::Config(URGE_EXCEPT, std::string inifile) : inifile_(std::move(inifile)) {
+  auto stream = IOService::Get().OpenReadRaw(exception_state, inifile_);
   if (stream) {
     size_t data_size = 0;
     auto* data_ptr = SDL_LoadFile_IO(stream, &data_size, true);
@@ -191,7 +195,7 @@ bool Config::HasCommandLine(const std::string& token) const {
          command_line.end();
 }
 
-void Config::Save() {
+void Config::Save(URGE_EXCEPT) {
   parser_.Set("Game", "RGSS", game.rgss);
   parser_.Set("Game", "Scripts", game.scripts);
   parser_.Set("Game", "Title", game.title);
@@ -228,7 +232,7 @@ void Config::Save() {
     parser_.Set("KeyBinding", binding.name, line);
   }
 
-  auto* stream = IOService::Get().OpenWrite(inifile_);
+  auto* stream = IOService::Get().OpenWrite(exception_state, inifile_);
   if (!stream)
     return;
   const std::string text = parser_.ToString();

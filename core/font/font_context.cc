@@ -274,11 +274,11 @@ bool ReadFileFamilyNames(const std::string& path,
 
 }
 
-FontContext::FontContext() {
+FontContext::FontContext(URGE_EXCEPT) {
   if (!TTF_Init()) {
-    throw Exception(Exception::kRGSSError, "TTF_Init failed: {}",
+    exception_state.Throw(ExceptionState::kRGSSError, "TTF_Init failed: {}",
                     SDL_GetError());
-  }
+    return;  }
 
 #if defined(_WIN32)
   for (const char* face : kWindowsDefaultFaces)
@@ -289,7 +289,7 @@ FontContext::FontContext() {
 
   LOGGER_INFO("[Font] Search Path: {}", kFontDirectory);
 
-  LoadFontDirectory(kFontDirectory);
+  LoadFontDirectory(exception_state, kFontDirectory);
   LoadSystemFonts();
 
   Entry embedded;
@@ -459,7 +459,7 @@ const FontContext::FontData* FontContext::Load(Entry& entry) {
   return &entry.data;
 }
 
-void FontContext::LoadFontDirectory(const std::string& directory) {
+void FontContext::LoadFontDirectory(URGE_EXCEPT, const std::string& directory) {
   std::vector<std::string> files = IOService::Get().EnumDir(directory);
 
   for (const std::string& file : files) {
@@ -468,11 +468,13 @@ void FontContext::LoadFontDirectory(const std::string& directory) {
 
     const std::string path = directory + file;
     SDL_IOStream* stream = nullptr;
-    try {
-      stream = IOService::Get().OpenReadRaw(path);
-    } catch (...) {
+    // A font that cannot be read is skipped, not reported: the directory holds
+    // whatever the user dropped in it, and one bad file must not fail the
+    // whole context.  Hence a state of its own, thrown away per file.
+    ExceptionState open_state;
+    stream = IOService::Get().OpenReadRaw(open_state, path);
+    if (open_state.HadException())
       continue;
-    }
 
     const int64_t size = SDL_GetIOSize(stream);
     void* memory = size > 0 ? SDL_malloc(static_cast<size_t>(size)) : nullptr;

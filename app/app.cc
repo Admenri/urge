@@ -119,10 +119,15 @@ int main(int argc, char* argv[]) {
     urge::SetLogSink(&WriteLogFile, g_log_stream);
 #endif
 
-  // Components initialize
+  // Components initialize.  Every constructor that can fail reports through
+  // the state below, so the sequence stops at the first one that does.
   urge::Config* config = nullptr;
-  try {
-    auto io = new urge::IOService(argv[0]);
+  urge::ExceptionState exception_state;
+
+  auto run = [&]() {
+    auto io = new urge::IOService(exception_state, argv[0]);
+    if (exception_state.HadException())
+      return;
     urge::IOService::Reset(io);
 #if defined(OS_EMSCRIPTEN)
     /* The preloaded game is the root of the module's in-memory filesystem, so
@@ -145,7 +150,7 @@ int main(int argc, char* argv[]) {
     if (urge::archive::Available() && io->Exists(archive_path))
       io->MountArchive(archive_path);
 
-    config = new urge::Config(ini);
+    config = new urge::Config(exception_state, ini);
     urge::Config::Reset(config);
 
     /* The switches the host was started with are recorded before anything can
@@ -185,10 +190,10 @@ int main(int argc, char* argv[]) {
 
     /* The font service is set up after the load paths are mounted -- it reads
        the font directory off them -- and before anything that can draw text. */
-    auto font_context = new urge::FontContext();
+    auto font_context = new urge::FontContext(exception_state);
     urge::FontContext::Reset(font_context);
 
-    auto graphics = new urge::Graphics();
+    auto graphics = new urge::Graphics(exception_state);
     urge::Graphics::Reset(graphics);
 
     /* The network service owns no window and no device: it is built after
@@ -200,21 +205,18 @@ int main(int argc, char* argv[]) {
 
 
     // Binding entry
-    binding::BindingMain binding_main;
+    binding::BindingMain binding_main(exception_state);
 
-  } catch (const urge::Exception& exc) {
+  };
+
+  run();
+
+  if (exception_state.HadException()) {
     /* The message box is the desktop's way of saying what went wrong; in a
        browser there is no modal to put it in, and the console is the only place
        a failure can be read from, so it goes there first. */
-    LOGGER_ERROR("[Host] {}", exc.message());
-    std::string message = exc.message();
-    if (g_log_stream)
-      message += "\n\nFull log: " + log_path;
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE Core", message.c_str(),
-                             nullptr);
-  } catch (const std::exception& exc) {
-    LOGGER_ERROR("[Host] {}", exc.what());
-    std::string message = exc.what();
+    LOGGER_ERROR("[Host] {}", exception_state.message());
+    std::string message = exception_state.message();
     if (g_log_stream)
       message += "\n\nFull log: " + log_path;
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "URGE Core", message.c_str(),
@@ -225,7 +227,7 @@ int main(int argc, char* argv[]) {
      starts where this one ended.  A run that never got as far as the
      configuration has nothing to write. */
   if (config)
-    config->Save();
+    config->Save(exception_state);
 
   urge::Network::Reset(nullptr);
   urge::Graphics::Reset(nullptr);

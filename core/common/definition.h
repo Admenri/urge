@@ -25,6 +25,7 @@
 #include <optional>
 #include <string>
 
+#include "core/common/exception.h"
 #include "core/common/refptr.h"
 
 namespace urge {
@@ -51,15 +52,35 @@ using MaybePtr = RefPtr<T>;
 
 #define URGE_BINDING(...)
 
+/*! First parameter of a declaration that may report a failure.
+
+    The marker is the whole contract, and the binding generator reads it: a
+    declaration carrying `URGE_EXCEPT` is called with a state the caller
+    inspects afterwards, and one without it cannot fail -- the glue does not
+    carry a state for it and does not check one.
+
+    There is deliberately no default argument.  Every call site has to decide
+    what to do with a failure: forward the state it was given, or make one of
+    its own and log.  A default would let a call silently swallow it.
+*/
+#define URGE_EXCEPT ExceptionState& exception_state
+
 #define ATTR(ty, name) \
   std::optional<ty> Attr_##name(std::optional<ty> value = std::nullopt)
+#define ATTR_EXC(ty, name)                                             \
+  std::optional<ty> Attr_##name(URGE_EXCEPT,                           \
+                                std::optional<ty> value = std::nullopt)
 #define ATTR_DEF(klass, ty, name) \
   std::optional<ty> klass::Attr_##name(std::optional<ty> value)
+#define ATTR_EXC_DEF(klass, ty, name) \
+  std::optional<ty> klass::Attr_##name(URGE_EXCEPT, std::optional<ty> value)
 
 #define MARSHAL_DUMP(ty) static std::string MarshalDump(RefPtr<ty> obj);
 #define MARSHAL_DUMP_DEF(ty) std::string ty::MarshalDump(RefPtr<ty> obj)
-#define MARSHAL_LOAD(ty) static RefPtr<ty> MarshalLoad(std::string data);
-#define MARSHAL_LOAD_DEF(ty) RefPtr<ty> ty::MarshalLoad(std::string data)
+#define MARSHAL_LOAD(ty) \
+  static RefPtr<ty> MarshalLoad(URGE_EXCEPT, std::string data);
+#define MARSHAL_LOAD_DEF(ty) \
+  RefPtr<ty> ty::MarshalLoad(URGE_EXCEPT, std::string data)
 
 #define KLASS_EQUAL(ty)                    \
   bool operator==(const ty& other) const;  \

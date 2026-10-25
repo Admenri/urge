@@ -40,12 +40,12 @@ RB_FUNC(Node_initialize) {
 
   urge::Node* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -61,12 +61,12 @@ RB_FUNC(Node_initialize_copy) {
 
   urge::Node* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -84,9 +84,9 @@ RB_FUNC(Node_Render) {
     ParseArgs(argc, argv, "o", &target_val);
     target = CheckObject<urge::Bitmap>(target_val, kBitmapDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->Render(target);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -98,9 +98,9 @@ RB_FUNC(Node_Render) {
     target = CheckObject<urge::Bitmap>(target_val, kBitmapDataType);
     clear = CheckMaybeObject<urge::Color>(clear_val, kColorDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->Render(target, clear);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

@@ -56,8 +56,9 @@ Viewport::~Viewport() {
   Disposable::Dispose();
 }
 
-void Viewport::Flash(RefPtr<Color> color, int32_t duration) {
-  Disposable::Guard();
+void Viewport::Flash(URGE_EXCEPT, RefPtr<Color> color, int32_t duration) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
   std::optional<glm::vec4> flash_color = std::nullopt;
   if (color)
@@ -65,8 +66,9 @@ void Viewport::Flash(RefPtr<Color> color, int32_t duration) {
   flashing_.Setup(flash_color, duration);
 }
 
-void Viewport::Update() {
-  Disposable::Guard();
+void Viewport::Update(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
   flashing_.Update();
 }
@@ -206,6 +208,9 @@ void Viewport::PostPrepare(DrawParam param) {
 }
 
 bool Viewport::DoDraw(DrawParam param) {
+  // The draw path has no state of its own: the effect answers a null
+  // pipeline, which leaves this object undrawn.
+  ExceptionState effect_state;
   FlushSpriteBatch(param);
 
   if (effect_) {
@@ -226,6 +231,8 @@ bool Viewport::DoDraw(DrawParam param) {
 }
 
 void Viewport::PostDraw(DrawParam param) {
+  // Same as DoDraw: the filter pass reports into a state of its own.
+  ExceptionState effect_state;
   if (!param->pass)
     return;
 
@@ -240,11 +247,11 @@ void Viewport::PostDraw(DrawParam param) {
     effect_->SetFilterSource(offscreen_);
 
     if (region_()) {
-      param->pass.SetPipeline(effect_->AcquirePipeline());
+      param->pass.SetPipeline(effect_->AcquirePipeline(effect_state));
       param->pass.SetBindGroup(0, param->scene, 0, nullptr);
       const uint32_t object_offset = 0;
       param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
-      param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
+      param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0, nullptr);
       param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
       param->pass.SetScissorRect(region_.x, region_.y, region_.width,
                                  region_.height);

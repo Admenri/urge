@@ -39,12 +39,12 @@ RB_FUNC(Camera_initialize) {
 
   urge::Camera* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Camera> value = urge::MakeRefCounted<urge::Camera>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -61,9 +61,9 @@ RB_FUNC(Camera_ViewProjection) {
 
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->ViewProjection(width, height));
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;

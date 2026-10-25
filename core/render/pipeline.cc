@@ -592,20 +592,23 @@ constexpr BlendName<wgpu::BlendOperation> kBlendOperations[] = {
     {"max", wgpu::BlendOperation::Max},
 };
 
-wgpu::BlendFactor ReadBlendFactor(const std::string& name) {
+wgpu::BlendFactor ReadBlendFactor(URGE_EXCEPT, const std::string& name) {
   for (const BlendName<wgpu::BlendFactor>& entry : kBlendFactors)
     if (name == entry.name)
       return entry.value;
-  throw Exception(Exception::kRGSSError,
-                  "effect: '{}' is not a blend factor name", name);
+  exception_state.Throw(ExceptionState::kRGSSError,
+                        "effect: '{}' is not a blend factor name", name);
+  return {};
 }
 
-wgpu::BlendOperation ReadBlendOperation(const std::string& name) {
+wgpu::BlendOperation ReadBlendOperation(URGE_EXCEPT,
+                                       const std::string& name) {
   for (const BlendName<wgpu::BlendOperation>& entry : kBlendOperations)
     if (name == entry.name)
       return entry.value;
-  throw Exception(Exception::kRGSSError,
-                  "effect: '{}' is not a blend operation name", name);
+  exception_state.Throw(ExceptionState::kRGSSError,
+                        "effect: '{}' is not a blend operation name", name);
+  return {};
 }
 
 }
@@ -697,7 +700,8 @@ wgpu::DepthStencilState* GetDepthStencilTestState() {
   return &state;
 }
 
-std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
+std::optional<wgpu::BlendState> ParseBlendState(URGE_EXCEPT,
+                                                std::string_view states) {
   const std::string text = Lower(Trim(states));
 
   if (text.empty() || text == "normal" || text == "premultiplied")
@@ -727,33 +731,37 @@ std::optional<wgpu::BlendState> ParseBlendState(std::string_view states) {
       continue;
 
     const size_t equal = field.find('=');
-    if (equal == std::string_view::npos)
-      throw Exception(
-          Exception::kRGSSError,
+    if (equal == std::string_view::npos) {
+      exception_state.Throw(
+          ExceptionState::kRGSSError,
           "effect: '{}' is not a blend field of the form 'key=value'",
           std::string(field));
+      return std::nullopt;
+    }
 
     const std::string key = Lower(Trim(field.substr(0, equal)));
     const std::string value = Lower(Trim(field.substr(equal + 1)));
 
     if (key == "src_color" || key == "src_rgb" || key == "color_src" ||
         key == "src")
-      state.color.srcFactor = ReadBlendFactor(value);
+      state.color.srcFactor = ReadBlendFactor(exception_state, value);
     else if (key == "dst_color" || key == "dst_rgb" || key == "color_dst" ||
              key == "dst")
-      state.color.dstFactor = ReadBlendFactor(value);
+      state.color.dstFactor = ReadBlendFactor(exception_state, value);
     else if (key == "op_color" || key == "color_op" || key == "equal_rgb" ||
              key == "equal_color")
-      state.color.operation = ReadBlendOperation(value);
+      state.color.operation = ReadBlendOperation(exception_state, value);
     else if (key == "src_alpha" || key == "alpha_src")
-      state.alpha.srcFactor = ReadBlendFactor(value);
+      state.alpha.srcFactor = ReadBlendFactor(exception_state, value);
     else if (key == "dst_alpha" || key == "alpha_dst")
-      state.alpha.dstFactor = ReadBlendFactor(value);
+      state.alpha.dstFactor = ReadBlendFactor(exception_state, value);
     else if (key == "op_alpha" || key == "alpha_op" || key == "equal_alpha")
-      state.alpha.operation = ReadBlendOperation(value);
-    else
-      throw Exception(Exception::kRGSSError,
-                      "effect: '{}' is not a blend field name", key);
+      state.alpha.operation = ReadBlendOperation(exception_state, value);
+    else {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "effect: '{}' is not a blend field name", key);
+      return std::nullopt;
+    }
   }
 
   return state;

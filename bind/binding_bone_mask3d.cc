@@ -35,12 +35,12 @@ RB_FUNC(BoneMask3D_initialize) {
 
   urge::BoneMask3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::BoneMask3D> value = urge::MakeRefCounted<urge::BoneMask3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -55,9 +55,9 @@ RB_FUNC(BoneMask3D_Resize) {
   int count;
   ParseArgs(argc, argv, "i", &count);
 
-  CPP_BEGIN {
+  {
     self_obj->Resize(count);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -69,9 +69,9 @@ RB_FUNC(BoneMask3D_Fill) {
   double weight;
   ParseArgs(argc, argv, "f", &weight);
 
-  CPP_BEGIN {
+  {
     self_obj->Fill(static_cast<float>(weight));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -84,9 +84,9 @@ RB_FUNC(BoneMask3D_Set) {
   double weight;
   ParseArgs(argc, argv, "if", &index, &weight);
 
-  CPP_BEGIN {
+  {
     self_obj->Set(index, static_cast<float>(weight));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -100,9 +100,9 @@ RB_FUNC(BoneMask3D_Get) {
 
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Get(index);
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -113,9 +113,9 @@ RB_FUNC(BoneMask3D_Count) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Count();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

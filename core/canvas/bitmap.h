@@ -43,7 +43,7 @@ URGE_BINDING()
 class Bitmap : public Disposable {
  public:
   URGE_BINDING()
-  Bitmap(std::string filename);
+  Bitmap(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
   Bitmap(int32_t width, int32_t height);
   URGE_BINDING()
@@ -60,31 +60,31 @@ class Bitmap : public Disposable {
   URGE_BINDING(Name : "rect")
   RefPtr<Rect> GetRect();
   URGE_BINDING()
-  void Blt(int32_t x,
+  void Blt(URGE_EXCEPT, int32_t x,
            int32_t y,
            RefPtr<Bitmap> src_bitmap,
            RefPtr<Rect> src_rect,
            int32_t opacity = 255);
   URGE_BINDING()
-  void StretchBlt(RefPtr<Rect> dst_rect,
+  void StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
                   RefPtr<Bitmap> src_bitmap,
                   RefPtr<Rect> src_rect,
                   int32_t opacity = 255);
   URGE_BINDING()
-  void MaskBlt(RefPtr<Rect> dst_rect,
+  void MaskBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
                RefPtr<Bitmap> src_bitmap,
                RefPtr<Rect> src_rect,
                RefPtr<Bitmap> mask);
   URGE_BINDING()
-  void FillRect(int32_t x,
+  void FillRect(URGE_EXCEPT, int32_t x,
                 int32_t y,
                 int32_t width,
                 int32_t height,
                 RefPtr<Color> color);
   URGE_BINDING()
-  void FillRect(RefPtr<Rect> rect, RefPtr<Color> color);
+  void FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color);
   URGE_BINDING()
-  void GradientFillRect(int32_t x,
+  void GradientFillRect(URGE_EXCEPT, int32_t x,
                         int32_t y,
                         int32_t width,
                         int32_t height,
@@ -92,37 +92,37 @@ class Bitmap : public Disposable {
                         RefPtr<Color> color2,
                         bool vertical = false);
   URGE_BINDING()
-  void GradientFillRect(RefPtr<Rect> rect,
+  void GradientFillRect(URGE_EXCEPT, RefPtr<Rect> rect,
                         RefPtr<Color> color1,
                         RefPtr<Color> color2,
                         bool vertical = false);
   URGE_BINDING()
-  void Clear();
+  void Clear(URGE_EXCEPT);
   URGE_BINDING()
-  void ClearRect(int32_t x, int32_t y, int32_t width, int32_t height);
+  void ClearRect(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING()
-  void ClearRect(RefPtr<Rect> rect);
+  void ClearRect(URGE_EXCEPT, RefPtr<Rect> rect);
   URGE_BINDING()
-  RefPtr<Color> GetPixel(int32_t x, int32_t y);
+  RefPtr<Color> GetPixel(URGE_EXCEPT, int32_t x, int32_t y);
   URGE_BINDING()
-  void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
+  void SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color);
   URGE_BINDING()
-  void HueChange(int32_t hue);
+  void HueChange(URGE_EXCEPT, int32_t hue);
   URGE_BINDING()
-  void Blur();
+  void Blur(URGE_EXCEPT);
   URGE_BINDING()
-  void RadialBlur(int32_t angle, int32_t division);
+  void RadialBlur(URGE_EXCEPT, int32_t angle, int32_t division);
   URGE_BINDING()
-  void DrawText(int32_t x,
+  void DrawText(URGE_EXCEPT, int32_t x,
                 int32_t y,
                 int32_t width,
                 int32_t height,
                 std::string str,
                 int32_t align = 0);
   URGE_BINDING()
-  void DrawText(RefPtr<Rect> rect, std::string str, int32_t align = 0);
+  void DrawText(URGE_EXCEPT, RefPtr<Rect> rect, std::string str, int32_t align = 0);
   URGE_BINDING()
-  RefPtr<Rect> TextSize(std::string str);
+  RefPtr<Rect> TextSize(URGE_EXCEPT, std::string str);
 
   URGE_BINDING(Name : "texture_view")
   RefPtr<GPUTextureView> GetTextureView();
@@ -132,23 +132,22 @@ class Bitmap : public Disposable {
   RefPtr<GPUTextureView> GetDepthStencilView();
 
   URGE_BINDING()
-  RefPtr<Image> ToImage();
+  RefPtr<Image> ToImage(URGE_EXCEPT);
   URGE_BINDING()
-  void UpdateWithImage(RefPtr<Image> image);
+  void UpdateWithImage(URGE_EXCEPT, RefPtr<Image> image);
 
   URGE_BINDING()
-  static RefPtr<Bitmap> FromImage(RefPtr<Image> image);
+  static RefPtr<Bitmap> FromImage(URGE_EXCEPT, RefPtr<Image> image);
 
   URGE_BINDING()
   ATTR(RefPtr<Font>, Font);
 
  public:
-  void UpdateWithPixels(const void* pixels, uint32_t bytes_per_row);
+  void UpdateWithPixels(URGE_EXCEPT, const void* pixels, uint32_t bytes_per_row);
 
   void AcquireHandle();
 
-  wgpu::RenderPassEncoder BeginRendering(
-      wgpu::CommandEncoder encoder,
+  wgpu::RenderPassEncoder BeginRendering(wgpu::CommandEncoder encoder,
       std::optional<glm::vec4> clear = std::nullopt,
       bool clear_depth = true);
 

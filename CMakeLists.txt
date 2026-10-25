@@ -26,32 +26,16 @@ if(EMSCRIPTEN)
   # `OS_EMSCRIPTEN` is what the frame loop and the window code branch on.
   add_compile_definitions(OS_EMSCRIPTEN)
 
-  # JS-based exceptions, not WebAssembly ones.
-  #
-  # Emscripten states plainly that Asyncify and wasm exceptions cannot be mixed
-  # ("Parts of the program that mix ASYNCIFY and exceptions will not compile"),
-  # and this module needs Asyncify for everything: the frame loop sleeps, CRuby's
-  # fibers swap stacks, and the conservative GC spills wasm locals with
-  # `emscripten_scan_registers`.  The JavaScript exception model is the one
-  # Asyncify was designed against, and it is the default here -- nothing asks
-  # for `-fwasm-exceptions`.
-  add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fexceptions>")
-
-  # `-fexceptions` alone is only the compiler half, and it is deliberately C++
-  # only: on C it makes clang emit cleanup handlers that reference the C++
-  # unwinder (`__resumeException`), and a C link never pulls that runtime in --
-  # Emscripten says so itself, "setting DISABLE_EXCEPTION_CATCHING is not
-  # meaningful unless linking as C++".  Ruby is C and throws nothing.
-  #
-  # The link half belongs to the executable that catches: see app/CMakeLists.txt.
-
-  # Nothing sets `-sSUPPORT_LONGJMP` here on purpose: with wasm exceptions gone
-  # it defaults to the JavaScript longjmp, which is the one that goes with the
-  # JavaScript exceptions above.  Asking for `SUPPORT_LONGJMP=wasm` would be
-  # rejected outright -- Emscripten's wasm longjmp is built on wasm exceptions,
-  # and `emcc` refuses the pair ("SUPPORT_LONGJMP=wasm cannot be used with
-  # DISABLE_EXCEPTION_CATCHING=0").  Ruby does not need it either: its own
-  # setjmp is the Asyncify-based one in wasm/setjmp.c.
+  # Nothing here asks for `-fexceptions` or `-fwasm-exceptions`: the engine has
+  # no C++ `try`/`throw` left (see the `/EHs-c-` block at the bottom of this
+  # file), so there is nothing for a C++ unwinder to do.  What still unwinds is
+  # CRuby's `longjmp`, which is a separate mechanism and is untouched by this:
+  # with wasm exceptions off it defaults to the JavaScript longjmp, which is
+  # what Asyncify was designed against.  Asking for `SUPPORT_LONGJMP=wasm`
+  # would be rejected outright -- Emscripten's wasm longjmp is built on wasm
+  # exceptions, and the two cannot be mixed ("Parts of the program that mix
+  # ASYNCIFY and exceptions will not compile").  Ruby does not need it either:
+  # its own setjmp is the Asyncify-based one in wasm/setjmp.c.
 endif()
 
 # Video playback is optional.  dav1d and libwebm are native C libraries with no
@@ -147,4 +131,38 @@ if(MSVC)
   target_compile_options(urge-core PRIVATE /utf-8)
   target_compile_options(urge-binding PRIVATE /utf-8)
   target_compile_options(Game PRIVATE /utf-8)
+endif()
+
+# The engine has no C++ exceptions.  A failure is an `urge::ExceptionState` the
+# caller passes in and inspects afterwards (core/common/exception.h), so no
+# declaration in core/, bind/ or app/ may throw or catch -- and the three
+# targets are built so that it cannot happen by accident:
+#
+#   /EHs-c-             no unwind semantics at all
+#   /we4530             a `try` block is an *error*.  Without this, MSVC only
+#                       warns (C4530: "exception handler used, but unwind
+#                       semantics are not enabled") and compiles the handler
+#                       anyway, which is a catch that never catches.
+#   _HAS_EXCEPTIONS=0   the STL takes its non-throwing paths instead of
+#                       `throw`ing `bad_alloc` / `out_of_range` out of a build
+#                       with no unwinder.  It aborts instead, which is the only
+#                       thing left to do; the point is that the library stops
+#                       compiling `throw` statements we cannot catch.
+#
+# Clang (the Emscripten build) spells the same thing `-fno-exceptions`; the
+# `-fexceptions` this used to need existed for the try/catch bridge in the
+# glue, which is gone.
+#
+# third_party is upstream code: it keeps its own settings, and none of it is
+# C++ that throws on the paths this engine takes.
+if(MSVC)
+  foreach(target urge-core urge-binding Game)
+    target_compile_options(${target} PRIVATE /EHs-c- /we4530)
+    target_compile_definitions(${target} PRIVATE _HAS_EXCEPTIONS=0)
+  endforeach()
+else()
+  foreach(target urge-core urge-binding Game)
+    target_compile_options(${target} PRIVATE -fno-exceptions)
+    target_compile_definitions(${target} PRIVATE _HAS_EXCEPTIONS=0)
+  endforeach()
 endif()

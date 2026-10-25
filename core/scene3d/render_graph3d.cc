@@ -51,21 +51,24 @@ glm::vec3 LightDirection(const Light3D* light) {
 
 }
 
-ComputePass3D::ComputePass3D(std::string wgsl, std::string entry)
+ComputePass3D::ComputePass3D(URGE_EXCEPT, std::string wgsl, std::string entry)
     : wgsl_(std::move(wgsl)), entry_(std::move(entry)) {
-  if (wgsl_.empty())
-    throw Exception(Exception::kRGSSError,
-                    "compute pass 3d: a compute pass needs a source.");
+  if (wgsl_.empty()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "compute pass 3d: a compute pass needs a source.");
+    return;
+  }
   if (entry_.empty())
     entry_ = "cs_main";
 
   const std::vector<wgsl::BindingInfo> infos = wgsl::ReflectBindings(wgsl_, "");
   for (const wgsl::BindingInfo& info : infos) {
-    if (info.group != 0)
-      throw Exception(Exception::kRGSSError,
-                      "compute pass 3d: '{}' is in group({}); a compute pass "
-                      "may only use group 0.",
-                      info.name, info.group);
+    if (info.group != 0) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "compute pass 3d: '{}' is in group({}); a compute "
+                            "pass may only use group 0.",
+                            info.name, info.group);
+      return;
+    }
 
     Slot slot;
     slot.name = info.name;
@@ -106,7 +109,7 @@ void ComputePass3D::SetTarget(std::string name,
   binding_dirty_ = true;
 }
 
-void ComputePass3D::EnsurePipeline() {
+void ComputePass3D::EnsurePipeline(URGE_EXCEPT) {
   if (pipeline_)
     return;
 
@@ -117,22 +120,22 @@ void ComputePass3D::EnsurePipeline() {
   module_desc.nextInChain = &source;
   const wgpu::ShaderModule module =
       GPUDevice::Get().device().CreateShaderModule(&module_desc);
-  if (!module)
-    throw Exception(Exception::kGPUError,
-                    "compute pass 3d: the device rejected the WGSL.");
-
+  if (!module) {
+    exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected the WGSL.");
+    return;
+  }
   wgpu::ComputePipelineDescriptor desc;
   desc.layout = nullptr;
   desc.compute.module = module;
   desc.compute.entryPoint = wgpu::StringView(entry_);
   pipeline_ = GPUDevice::Get().device().CreateComputePipeline(&desc);
-  if (!pipeline_)
-    throw Exception(Exception::kGPUError,
-                    "compute pass 3d: the device rejected the pipeline.");
-}
+  if (!pipeline_) {
+    exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected the pipeline.");
+    return;
+  }}
 
-void ComputePass3D::RebuildBindGroup() {
-  EnsurePipeline();
+void ComputePass3D::RebuildBindGroup(URGE_EXCEPT) {
+  EnsurePipeline(exception_state);
 
   std::vector<wgpu::BindGroupEntry> entries;
   entries.reserve(slots_.size());
@@ -150,11 +153,11 @@ void ComputePass3D::RebuildBindGroup() {
           desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
           desc.size = size;
           buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-          if (buffer == nullptr)
-            throw Exception(Exception::kGPUError,
-                            "compute pass 3d: the device rejected a uniform "
+          if (buffer == nullptr) {
+            exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected a uniform "
                             "buffer.");
-        }
+            return;
+          }        }
 
         std::vector<float> data(static_cast<size_t>(size / 4), 0.0f);
         const auto found = uniform_map_.find(slot.name);
@@ -183,11 +186,11 @@ void ComputePass3D::RebuildBindGroup() {
           desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
           desc.size = bytes;
           buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-          if (buffer == nullptr)
-            throw Exception(Exception::kGPUError,
-                            "compute pass 3d: the device rejected a storage "
+          if (buffer == nullptr) {
+            exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected a storage "
                             "buffer.");
-
+            return;
+          }
           if (found != buffer_data_.end())
             GPUDevice::Get().queue().WriteBuffer(
                 buffer, 0, found->second.data(),
@@ -238,19 +241,20 @@ void ComputePass3D::RebuildBindGroup() {
   desc.entryCount = entries.size();
   desc.entries = entries.empty() ? nullptr : entries.data();
   binding_ = GPUDevice::Get().device().CreateBindGroup(&desc);
-  if (binding_ == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "compute pass 3d: the device rejected the bind group.");
+  if (binding_ == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected the bind group.");
+    return;
+  }
   binding_dirty_ = false;
 }
 
-void ComputePass3D::Execute(RenderContext3D* context) {
+void ComputePass3D::Execute(URGE_EXCEPT, RenderContext3D* context) {
   if (!context || !context->encoder())
     return;
 
-  EnsurePipeline();
+  EnsurePipeline(exception_state);
   if (binding_dirty_ || binding_ == nullptr)
-    RebuildBindGroup();
+    RebuildBindGroup(exception_state);
 
   wgpu::ComputePassDescriptor desc;
   const wgpu::ComputePassEncoder encoder =
@@ -282,10 +286,11 @@ std::vector<std::string> RenderGraphPass3D::GetBindings() const {
   return result;
 }
 
-RefPtr<GPUTextureView> RenderGraphPass3D::GetTexture(std::string name) {
+RefPtr<GPUTextureView> RenderGraphPass3D::GetTexture(URGE_EXCEPT,
+                                                    std::string name) {
   if (!graph_)
     return nullptr;
-  RefPtr<RenderTarget3D> target = graph_->Target(name);
+  RefPtr<RenderTarget3D> target = graph_->Target(exception_state, name);
   return target ? MakeRefCounted<GPUTextureView>(target->sampled_view(0))
                 : nullptr;
 }
@@ -314,16 +319,16 @@ RenderGraph3D::RenderGraph3D() = default;
 
 RenderGraph3D::~RenderGraph3D() = default;
 
-RefPtr<RenderGraphPass3D> RenderGraph3D::AddPass(std::string name) {
-  if (name.empty())
-    throw Exception(Exception::kRGSSError,
-                    "render graph 3d: a pass needs a name.");
-
-  for (const RefPtr<RenderGraphPass3D>& pass : passes_) {
-    if (pass->GetName() == name)
-      throw Exception(Exception::kRGSSError,
-                      "render graph 3d: the pass '{}' already exists.", name);
+RefPtr<RenderGraphPass3D> RenderGraph3D::AddPass(URGE_EXCEPT, std::string name) {
+  if (name.empty()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: a pass needs a name.");
+    return {};
   }
+  for (const RefPtr<RenderGraphPass3D>& pass : passes_) {
+    if (pass->GetName() == name) {
+      exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: the pass '{}' already exists.", name);
+      return {};
+    }  }
 
   auto pass = MakeRefCounted<RenderGraphPass3D>(std::move(name));
   pass->SetOwner(this);
@@ -358,14 +363,14 @@ RefPtr<RenderGraphPass3D> RenderGraph3D::PassAt(int32_t index) const {
   return passes_[index];
 }
 
-void RenderGraph3D::AddTexture(std::string name,
+void RenderGraph3D::AddTexture(URGE_EXCEPT, std::string name,
                                std::string format,
                                int32_t samples) {
   const wgpu::TextureFormat parsed = ParseTextureFormat(format);
-  if (parsed == wgpu::TextureFormat::Undefined)
-    throw Exception(Exception::kRGSSError,
-                    "render graph 3d: '{}' is not a texture format.", format);
-
+  if (parsed == wgpu::TextureFormat::Undefined) {
+    exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: '{}' is not a texture format.", format);
+    return;
+  }
   TextureDesc desc;
   desc.format = parsed;
   desc.samples = std::max(1, samples);
@@ -373,25 +378,29 @@ void RenderGraph3D::AddTexture(std::string name,
   targets_.clear();
 }
 
-void RenderGraph3D::AddStorageTexture(std::string name, std::string format) {
-  AddTexture(name, std::move(format), 1);
+void RenderGraph3D::AddStorageTexture(URGE_EXCEPT,
+                                      std::string name,
+                                      std::string format) {
+  AddTexture(exception_state, name, std::move(format), 1);
   const auto it = textures_.find(name);
   if (it != textures_.end())
     it->second.storage = true;
   targets_.clear();
 }
 
-void RenderGraph3D::SetTextureScale(std::string name, float scale) {
+void RenderGraph3D::SetTextureScale(URGE_EXCEPT, std::string name, float scale) {
   const auto it = textures_.find(name);
-  if (it == textures_.end())
-    throw Exception(Exception::kRGSSError,
-                    "render graph 3d: the texture '{}' does not exist.", name);
+  if (it == textures_.end()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: the texture '{}' does not exist.", name);
+    return;
+  }
   it->second.scale = std::clamp(scale, 0.05f, 4.0f);
   targets_.clear();
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::GetTexture(std::string name) {
-  return Target(name);
+RefPtr<RenderTarget3D> RenderGraph3D::GetTexture(URGE_EXCEPT,
+                                                std::string name) {
+  return Target(exception_state, name);
 }
 
 std::vector<std::string> RenderGraph3D::TextureNames() const {
@@ -402,7 +411,8 @@ std::vector<std::string> RenderGraph3D::TextureNames() const {
   return names;
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::ShadowTarget(const std::string& name,
+RefPtr<RenderTarget3D> RenderGraph3D::ShadowTarget(URGE_EXCEPT,
+                                                   const std::string& name,
                                                    int32_t layers) {
   if (IsFinalTarget(name))
     return nullptr;
@@ -413,13 +423,15 @@ RefPtr<RenderTarget3D> RenderGraph3D::ShadowTarget(const std::string& name,
       it->second->Width() == shadow_size_)
     return it->second;
 
-  auto target = MakeRefCounted<RenderTarget3D>(shadow_size_, shadow_size_,
+  auto target = MakeRefCounted<RenderTarget3D>(exception_state, shadow_size_,
+                                             shadow_size_,
                                                false, clamped);
   shadow_targets_[name] = target;
   return target;
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::Target(const std::string& name) {
+RefPtr<RenderTarget3D> RenderGraph3D::Target(URGE_EXCEPT,
+                                             const std::string& name) {
   if (IsFinalTarget(name))
     return final_target_;
 
@@ -458,15 +470,15 @@ RefPtr<RenderTarget3D> RenderGraph3D::Target(const std::string& name) {
     target_desc.depth = wgpu::TextureFormat::Depth32Float;
   }
 
-  auto target = MakeRefCounted<RenderTarget3D>(target_desc);
+  auto target = MakeRefCounted<RenderTarget3D>(exception_state, target_desc);
   targets_[name] = target;
   return target;
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(RenderGraphPass3D* pass) {
+RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(URGE_EXCEPT, RenderGraphPass3D* pass) {
   const std::vector<std::string>& colors = pass->colors();
   if (colors.size() <= 1)
-    return Target(colors.empty() ? std::string() : colors[0]);
+    return Target(exception_state, colors.empty() ? std::string() : colors[0]);
 
   if (!final_target_)
     return nullptr;
@@ -489,11 +501,12 @@ RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(RenderGraphPass3D* pass) {
   std::vector<std::string> names;
   for (const std::string& color : colors) {
     const auto texture = textures_.find(color);
-    if (texture == textures_.end())
-      throw Exception(Exception::kRGSSError,
-                      "render graph 3d: the pass '{}' writes '{}', which is "
+    if (texture == textures_.end()) {
+      exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: the pass '{}' writes '{}', which is "
                       "not a declared texture.",
                       pass->name(), color);
+      return {};
+    }
     if (IsDepthFormat(texture->second.format))
       continue;
     desc.colors.push_back(texture->second.format);
@@ -506,19 +519,20 @@ RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(RenderGraphPass3D* pass) {
   if (desc.colors.empty())
     return nullptr;
 
-  auto target = MakeRefCounted<RenderTarget3D>(desc);
+  auto target = MakeRefCounted<RenderTarget3D>(exception_state, desc);
   mrt_targets_[key] = target;
   for (size_t i = 0; i < names.size(); ++i)
     attachment_views_[names[i]] = {target, static_cast<int32_t>(i)};
   return target;
 }
 
-wgpu::TextureView RenderGraph3D::ResolveColorView(const std::string& name) {
+wgpu::TextureView RenderGraph3D::ResolveColorView(URGE_EXCEPT,
+                                                 const std::string& name) {
   const auto found = attachment_views_.find(name);
   if (found != attachment_views_.end() && found->second.first)
     return found->second.first->sampled_view(found->second.second);
 
-  RefPtr<RenderTarget3D> target = Target(name);
+  RefPtr<RenderTarget3D> target = Target(exception_state, name);
   return target ? target->sampled_view(0) : nullptr;
 }
 
@@ -568,7 +582,8 @@ std::vector<size_t> RenderGraph3D::BuildOrder() const {
   return order;
 }
 
-void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
+void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
+                                      RenderContext3D* context,
                                       RenderGraphPass3D* pass) {
   const std::string target_name =
       pass->colors().empty() ? std::string("shadow") : pass->colors()[0];
@@ -591,7 +606,7 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
       }
     }
 
-    RefPtr<RenderTarget3D> target = ShadowTarget(target_name, 6);
+    RefPtr<RenderTarget3D> target = ShadowTarget(exception_state, target_name, 6);
     if (!target)
       return;
 
@@ -619,10 +634,10 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
 
     for (int32_t face = 0; face < 6; ++face) {
       context->SetViewOverride(faces[face]);
-      context->BeginPassEx(target, {}, (pass->clear_flags() & 2u) != 0,
+      context->BeginPassEx(exception_state, target, {}, (pass->clear_flags() & 2u) != 0,
                            (pass->clear_flags() & 4u) != 0, face);
       context->SetShadowPassMode(true);
-      context->DrawFilter(pass->tags(), pass->tag_ids(), pass->queue_min(),
+      context->DrawFilter(exception_state, pass->tags(), pass->tag_ids(), pass->queue_min(),
                           pass->queue_max(), pass->layers());
       context->EndPass();
     }
@@ -630,7 +645,7 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
   }
 
   const int32_t cascades = std::clamp(pass->cascades(), 1, 4);
-  RefPtr<RenderTarget3D> target = ShadowTarget(target_name, cascades);
+  RefPtr<RenderTarget3D> target = ShadowTarget(exception_state, target_name, cascades);
   if (!target)
     return;
 
@@ -671,10 +686,10 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
     for (int32_t cascade = 0; cascade < cascades; ++cascade) {
       context->SetShadow(target, matrices[cascade], cascade);
       context->SetViewOverride(matrices[cascade]);
-      context->BeginPassEx(target, {}, (pass->clear_flags() & 2u) != 0,
+      context->BeginPassEx(exception_state, target, {}, (pass->clear_flags() & 2u) != 0,
                            (pass->clear_flags() & 4u) != 0, cascade);
       context->SetShadowPassMode(true);
-      context->DrawFilter(pass->tags(), pass->tag_ids(), pass->queue_min(),
+      context->DrawFilter(exception_state, pass->tags(), pass->tag_ids(), pass->queue_min(),
                           pass->queue_max(), pass->layers());
       context->EndPass();
     }
@@ -682,15 +697,16 @@ void RenderGraph3D::ExecuteShadowPass(RenderContext3D* context,
   }
 
   context->SetShadow(target, camera->view_projection(target->size()));
-  context->BeginPassEx(target, {}, (pass->clear_flags() & 2u) != 0,
+  context->BeginPassEx(exception_state, target, {}, (pass->clear_flags() & 2u) != 0,
                        (pass->clear_flags() & 4u) != 0, 0);
   context->SetShadowPassMode(true);
-  context->DrawFilter(pass->tags(), pass->tag_ids(), pass->queue_min(),
+  context->DrawFilter(exception_state, pass->tags(), pass->tag_ids(), pass->queue_min(),
                       pass->queue_max(), pass->layers());
   context->EndPass();
 }
 
-void RenderGraph3D::ExecuteRasterPass(RenderContext3D* context,
+void RenderGraph3D::ExecuteRasterPass(URGE_EXCEPT,
+                                      RenderContext3D* context,
                                       RenderGraphPass3D* pass) {
   RefPtr<Camera3D> camera = pass->camera()
                                 ? pass->camera()
@@ -698,7 +714,7 @@ void RenderGraph3D::ExecuteRasterPass(RenderContext3D* context,
   if (camera)
     context->SetViewProjection(camera);
 
-  RefPtr<RenderTarget3D> target = TargetForPass(pass);
+  RefPtr<RenderTarget3D> target = TargetForPass(exception_state, pass);
   if (!target)
     return;
 
@@ -710,19 +726,20 @@ void RenderGraph3D::ExecuteRasterPass(RenderContext3D* context,
   context->SetShadowPassMode(false);
   context->SetCullOverride(pass->cull_override());
   context->SetSortBackToFront(pass->sort_back_to_front());
-  context->BeginPassEx(target, clears, (pass->clear_flags() & 2u) != 0,
+  context->BeginPassEx(exception_state, target, clears, (pass->clear_flags() & 2u) != 0,
                        (pass->clear_flags() & 4u) != 0, 0);
 
   const uint32_t layers = pass->layers() != 0
                               ? pass->layers()
                               : (camera ? camera->culling_mask() : 0xFFFFFFFFu);
 
-  context->DrawFilter(pass->tags(), pass->tag_ids(), pass->queue_min(),
+  context->DrawFilter(exception_state, pass->tags(), pass->tag_ids(), pass->queue_min(),
                       pass->queue_max(), layers);
   context->EndPass();
 }
 
-void RenderGraph3D::ExecuteFullscreenPass(RenderContext3D* context,
+void RenderGraph3D::ExecuteFullscreenPass(URGE_EXCEPT,
+                                          RenderContext3D* context,
                                           RenderGraphPass3D* pass) {
   RefPtr<MaterialPass3D> material = pass->material();
   if (!material)
@@ -730,14 +747,15 @@ void RenderGraph3D::ExecuteFullscreenPass(RenderContext3D* context,
 
   const std::string target_name =
       pass->colors().empty() ? std::string() : pass->colors()[0];
-  RefPtr<RenderTarget3D> target = Target(target_name);
+  RefPtr<RenderTarget3D> target = Target(exception_state, target_name);
   if (!target)
     return;
 
   material->set_fullscreen(true);
 
   for (const auto& binding : pass->bindings()) {
-    const wgpu::TextureView view = ResolveColorView(binding.second);
+    const wgpu::TextureView view =
+        ResolveColorView(exception_state, binding.second);
     if (!view)
       continue;
     material->SetTextureView(binding.first,
@@ -749,13 +767,13 @@ void RenderGraph3D::ExecuteFullscreenPass(RenderContext3D* context,
       static_cast<size_t>(target->ColorCount()),
       clear_color ? pass->clear_color() : RefPtr<Color>());
 
-  context->BeginPassEx(target, clears, (pass->clear_flags() & 2u) != 0,
+  context->BeginPassEx(exception_state, target, clears, (pass->clear_flags() & 2u) != 0,
                        (pass->clear_flags() & 4u) != 0, 0);
-  context->DrawFullscreen(material);
+  context->DrawFullscreen(exception_state, material);
   context->EndPass();
 }
 
-void RenderGraph3D::Execute(RenderContext3D* context) {
+void RenderGraph3D::Execute(URGE_EXCEPT, RenderContext3D* context) {
   if (!context || !context->GetTarget())
     return;
 
@@ -776,16 +794,16 @@ void RenderGraph3D::Execute(RenderContext3D* context) {
     switch (pass->kind()) {
       case 2:
         if (pass->compute())
-          pass->compute()->Execute(context);
+          pass->compute()->Execute(exception_state, context);
         break;
       case 1:
-        ExecuteFullscreenPass(context, pass);
+        ExecuteFullscreenPass(exception_state, context, pass);
         break;
       default:
         if (pass->depth_only())
-          ExecuteShadowPass(context, pass);
+          ExecuteShadowPass(exception_state, context, pass);
         else
-          ExecuteRasterPass(context, pass);
+          ExecuteRasterPass(exception_state, context, pass);
         break;
     }
 

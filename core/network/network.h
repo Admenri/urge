@@ -191,10 +191,12 @@ class Network : public Singleton<Network> {
   URGE_BINDING()
   void Update();
   URGE_BINDING(Name : "websocket")
-  RefPtr<WebSocket> OpenWebSocket(std::string url,
+  RefPtr<WebSocket> OpenWebSocket(URGE_EXCEPT,
+                                  std::string url,
                                   std::vector<std::string> protocols = {});
   URGE_BINDING(Name : "fetch")
-  RefPtr<Fetch> OpenFetch(std::string url,
+  RefPtr<Fetch> OpenFetch(URGE_EXCEPT,
+                          std::string url,
                           std::string method = "GET",
                           std::string body = "",
                           std::vector<std::string> headers = {});

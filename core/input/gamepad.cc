@@ -356,12 +356,12 @@ void GamepadManager::OpenExisting() {
   SDL_free(ids);
 }
 
-Gamepad::Gamepad(int32_t device_id) : id_(device_id) {
+Gamepad::Gamepad(URGE_EXCEPT, int32_t device_id) : id_(device_id) {
   device_ = SDL_OpenGamepad(device_id);
   if (!device_) {
-    throw Exception(Exception::kRGSSError, "failed to open gamepad {}: {}",
+    exception_state.Throw(ExceptionState::kRGSSError, "failed to open gamepad {}: {}",
                     device_id, SDL_GetError());
-  }
+    return;  }
 
   char text[33] = {};
   SDL_GUIDToString(SDL_GetGamepadGUIDForID(id_), text, sizeof(text));

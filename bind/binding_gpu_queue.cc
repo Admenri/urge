@@ -45,9 +45,9 @@ RB_FUNC(GPUQueue_Submit) {
   ParseArgs(argc, argv, "o", &command_buffer_val);
   command_buffer = CheckObject<urge::GPUCommandBuffer>(command_buffer_val, kGPUCommandBufferDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->Submit(command_buffer);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -65,9 +65,9 @@ RB_FUNC(GPUQueue_WriteBuffer) {
   buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
   CheckString(data_val, &data_data, &data_size);
 
-  CPP_BEGIN {
+  {
     self_obj->WriteBuffer(buffer, offset, std::string(data_data, data_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -87,10 +87,10 @@ RB_FUNC(GPUQueue_WriteTexture) {
     texture = CheckObject<urge::GPUTexture>(texture_val, kGPUTextureDataType);
     CheckString(data_val, &data_data, &data_size);
 
-    CPP_BEGIN {
+    {
       self_obj->WriteTexture(texture, mip_level, x, y, width, height,
           std::string(data_data, data_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 8) {
@@ -105,10 +105,10 @@ RB_FUNC(GPUQueue_WriteTexture) {
     texture = CheckObject<urge::GPUTexture>(texture_val, kGPUTextureDataType);
     CheckString(data_val, &data_data, &data_size);
 
-    CPP_BEGIN {
+    {
       self_obj->WriteTexture(texture, mip_level, x, y, width, height,
           std::string(data_data, data_size), bytes_per_row);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 9) {
@@ -123,10 +123,10 @@ RB_FUNC(GPUQueue_WriteTexture) {
     texture = CheckObject<urge::GPUTexture>(texture_val, kGPUTextureDataType);
     CheckString(data_val, &data_data, &data_size);
 
-    CPP_BEGIN {
+    {
       self_obj->WriteTexture(texture, mip_level, x, y, width, height,
           std::string(data_data, data_size), bytes_per_row, rows_per_image);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

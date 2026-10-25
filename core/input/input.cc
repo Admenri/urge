@@ -247,7 +247,7 @@ std::string Input::BindingName(const KeySym& binding) {
   return GetKeyName(binding.code);
 }
 
-void Input::ProcessEvents(SDL_Event* event) {
+void Input::ProcessEvents(URGE_EXCEPT, SDL_Event* event) {
   switch (event->type) {
     case SDL_EVENT_KEY_DOWN:
       pressed_[event->key.scancode] = true;

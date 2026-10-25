@@ -845,7 +845,11 @@ void ImGuiManager::SaveFpsGeometry() {
                     std::to_string(static_cast<int>(geometry.height)));
   }
 
-  config.Save();
+  // A settings write that fails costs the file, never the run.
+  ExceptionState save_state;
+  config.Save(save_state);
+  if (save_state.HadException())
+    LOGGER_ERROR("[ImGui] {}", save_state.message());
 }
 
 void ImGuiManager::BuildFPSWindow() {
@@ -1109,7 +1113,10 @@ void ImGuiManager::StoreDisplaySettings() {
 
 void ImGuiManager::SaveSettings() {
   Config::Get().key_bindings = Input::Get().GetKeyBindings();
-  Config::Get().Save();
+  ExceptionState save_state;
+  Config::Get().Save(save_state);
+  if (save_state.HadException())
+    LOGGER_ERROR("[ImGui] {}", save_state.message());
 }
 
 void ImGuiManager::ApplyUIScale() {

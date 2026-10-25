@@ -41,12 +41,12 @@ RB_FUNC(Plane_initialize) {
 
     urge::Plane* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Plane> value = urge::MakeRefCounted<urge::Plane>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -61,13 +61,13 @@ RB_FUNC(Plane_initialize) {
 
     urge::Plane* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Plane> value = urge::MakeRefCounted<urge::Plane>(
           viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)

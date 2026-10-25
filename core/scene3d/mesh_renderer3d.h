@@ -48,7 +48,7 @@ class MeshRenderer3D : public Node3D {
   ATTR(MaybePtr<Mesh3D>, Mesh);
 
   URGE_BINDING()
-  void SetMaterial(int32_t slot, MaybePtr<Material3D> material);
+  void SetMaterial(URGE_EXCEPT, int32_t slot, MaybePtr<Material3D> material);
   URGE_BINDING()
   RefPtr<Material3D> GetMaterial(int32_t slot) const;
   URGE_BINDING(Name : "material_count")
@@ -83,7 +83,7 @@ class MeshRenderer3D : public Node3D {
   std::vector<float> BoundsRadius();
 
   URGE_BINDING()
-  void SetInstanceMatrices(std::vector<float> data);
+  void SetInstanceMatrices(URGE_EXCEPT, std::vector<float> data);
   URGE_BINDING(Name : "instance_count")
   int32_t InstanceCount() const { return instance_count_; }
 

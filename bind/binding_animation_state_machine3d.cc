@@ -40,12 +40,12 @@ RB_FUNC(AnimationStateMachine3D_initialize) {
 
   urge::AnimationStateMachine3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::AnimationStateMachine3D> value = urge::MakeRefCounted<urge::AnimationStateMachine3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -56,6 +56,7 @@ RB_FUNC(AnimationStateMachine3D_initialize) {
 RB_FUNC(AnimationStateMachine3D_AddState) {
   auto* self_obj = GetSelfData<urge::AnimationStateMachine3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE name_val, animation_val;
   const char* name_data;
@@ -66,9 +67,11 @@ RB_FUNC(AnimationStateMachine3D_AddState) {
   CheckString(name_val, &name_data, &name_size);
   animation = CheckObject<urge::Animation3D>(animation_val, kAnimation3DDataType);
 
-  CPP_BEGIN {
-    self_obj->AddState(std::string(name_data, name_size), animation, loop);
-  } CPP_END;
+  {
+    self_obj->AddState(exception_state, std::string(name_data, name_size),
+        animation, loop);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -76,6 +79,7 @@ RB_FUNC(AnimationStateMachine3D_AddState) {
 RB_FUNC(AnimationStateMachine3D_AddTransition) {
   auto* self_obj = GetSelfData<urge::AnimationStateMachine3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 4);
   VALUE from_val, to_val;
   const char* from_data;
@@ -86,11 +90,12 @@ RB_FUNC(AnimationStateMachine3D_AddTransition) {
   CheckString(from_val, &from_data, &from_size);
   CheckString(to_val, &to_data, &to_size);
 
-  CPP_BEGIN {
-    self_obj->AddTransition(std::string(from_data, from_size),
+  {
+    self_obj->AddTransition(exception_state, std::string(from_data, from_size),
         std::string(to_data, to_size), static_cast<float>(duration),
         static_cast<float>(exit_time));
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -98,6 +103,7 @@ RB_FUNC(AnimationStateMachine3D_AddTransition) {
 RB_FUNC(AnimationStateMachine3D_Play) {
   auto* self_obj = GetSelfData<urge::AnimationStateMachine3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE name_val;
   const char* name_data;
@@ -107,9 +113,10 @@ RB_FUNC(AnimationStateMachine3D_Play) {
 
   bool result = false;
 
-  CPP_BEGIN {
-    result = self_obj->Play(std::string(name_data, name_size));
-  } CPP_END;
+  {
+    result = self_obj->Play(exception_state, std::string(name_data, name_size));
+  }
+  RaiseException(exception_state);
 
   return result ? Qtrue : Qfalse;
 }
@@ -117,6 +124,7 @@ RB_FUNC(AnimationStateMachine3D_Play) {
 RB_FUNC(AnimationStateMachine3D_Update) {
   auto* self_obj = GetSelfData<urge::AnimationStateMachine3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE skeleton_val;
   urge::Skeleton3D* skeleton;
@@ -124,9 +132,10 @@ RB_FUNC(AnimationStateMachine3D_Update) {
   ParseArgs(argc, argv, "of", &skeleton_val, &delta);
   skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
 
-  CPP_BEGIN {
-    self_obj->Update(skeleton, static_cast<float>(delta));
-  } CPP_END;
+  {
+    self_obj->Update(exception_state, skeleton, static_cast<float>(delta));
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -137,9 +146,9 @@ RB_FUNC(AnimationStateMachine3D_CurrentState) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->CurrentState());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -154,9 +163,9 @@ RB_FUNC(AnimationStateMachine3D_Blending) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Blending();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -167,9 +176,9 @@ RB_FUNC(AnimationStateMachine3D_StateTime) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->StateTime();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -180,9 +189,9 @@ RB_FUNC(AnimationStateMachine3D_TakeEvents) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->TakeEvents());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;

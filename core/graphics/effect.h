@@ -39,27 +39,27 @@ URGE_BINDING()
 class Effect : public Object {
  public:
   URGE_BINDING()
-  Effect(std::string vs_wgsl,
+  Effect(URGE_EXCEPT, std::string vs_wgsl,
          std::string fs_wgsl,
          std::string blend_states = {});
   URGE_BINDING()
-  Effect(RefPtr<Effect> other);
+  Effect(URGE_EXCEPT, RefPtr<Effect> other);
   URGE_BINDING()
   ~Effect();
 
   URGE_BINDING()
-  void SetFloat(uint32_t slot, std::vector<float> data);
+  void SetFloat(URGE_EXCEPT, uint32_t slot, std::vector<float> data);
   URGE_BINDING()
-  void SetInt(uint32_t slot, std::vector<int32_t> data);
+  void SetInt(URGE_EXCEPT, uint32_t slot, std::vector<int32_t> data);
   URGE_BINDING()
   void SetTexture(uint32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
   void SetSampler(uint32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
-  void SetBlock(uint32_t slot, std::string uniform_block);
+  void SetBlock(URGE_EXCEPT, uint32_t slot, std::string uniform_block);
 
-  wgpu::RenderPipeline AcquirePipeline();
-  wgpu::BindGroup AcquireBindGroup();
+  wgpu::RenderPipeline AcquirePipeline(URGE_EXCEPT);
+  wgpu::BindGroup AcquireBindGroup(URGE_EXCEPT);
   void SetFilterSource(RefPtr<Bitmap> texture);
 
  private:
@@ -76,12 +76,12 @@ class Effect : public Object {
     uint64_t size = 0;
   };
 
-  void CreateInternal(std::string vs_wgsl,
+  void CreateInternal(URGE_EXCEPT, std::string vs_wgsl,
                       std::string fs_wgsl,
                       std::string blend_states);
-  void RebuildPipeline();
-  void SetBufferBytes(uint32_t slot, const void* data, uint32_t size);
-  void RebuildBindGroup();
+  void RebuildPipeline(URGE_EXCEPT);
+  void SetBufferBytes(URGE_EXCEPT, uint32_t slot, const void* data, uint32_t size);
+  void RebuildBindGroup(URGE_EXCEPT);
 
   std::string vs_wgsl_;
   std::string fs_wgsl_;

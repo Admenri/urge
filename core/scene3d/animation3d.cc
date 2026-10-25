@@ -49,24 +49,25 @@ Animation3D::Animation3D() = default;
 
 Animation3D::~Animation3D() = default;
 
-void Animation3D::AddTrack(int32_t bone,
+void Animation3D::AddTrack(URGE_EXCEPT, int32_t bone,
                            int32_t path,
                            std::vector<float> times,
                            std::vector<float> values,
                            int32_t interpolation) {
-  if (path != kTranslation && path != kRotation && path != kScale)
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: unknown channel path {}.", path);
-
+  if (path != kTranslation && path != kRotation && path != kScale) {
+    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: unknown channel path {}.", path);
+    return;
+  }
   const int32_t stride = path == kRotation ? 4 : 3;
-  if (times.empty())
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: a track needs at least one key.");
-  if (values.size() != times.size() * static_cast<size_t>(stride))
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: the value count does not match the key "
+  if (times.empty()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: a track needs at least one key.");
+    return;
+  }
+  if (values.size() != times.size() * static_cast<size_t>(stride)) {
+    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: the value count does not match the key "
                     "count.");
-
+    return;
+  }
   Track track;
   track.bone = bone;
   track.path = path;
@@ -79,11 +80,11 @@ void Animation3D::AddTrack(int32_t bone,
   tracks_.push_back(std::move(track));
 }
 
-void Animation3D::AddEvent(float time, std::string name) {
-  if (name.empty())
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: an event needs a name.");
-
+void Animation3D::AddEvent(URGE_EXCEPT, float time, std::string name) {
+  if (name.empty()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: an event needs a name.");
+    return;
+  }
   Event event;
   event.time = std::max(0.0f, time);
   event.name = std::move(name);
@@ -129,22 +130,25 @@ void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
   skeleton->EndPose();
 }
 
-void Animation3D::Blend(RefPtr<Skeleton3D> skeleton, float time, float weight) {
-  if (!skeleton->pose_open())
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: call skeleton.begin_pose before blend.");
-
+void Animation3D::Blend(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float time, float weight) {
+  if (!skeleton->pose_open()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: call skeleton.begin_pose before blend.");
+    return;
+  }
   Sample(skeleton.get(), time, std::clamp(weight, 0.0f, 1.0f), nullptr);
 }
 
-void Animation3D::BlendMasked(RefPtr<Skeleton3D> skeleton,
+void Animation3D::BlendMasked(URGE_EXCEPT,
+                              RefPtr<Skeleton3D> skeleton,
                               float time,
                               float weight,
                               RefPtr<BoneMask3D> mask) {
-  if (!skeleton->pose_open())
-    throw Exception(
-        Exception::kRGSSError,
+  if (!skeleton->pose_open()) {
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
         "animation3d: call skeleton.begin_pose before blend_masked.");
+    return;
+  }
 
   Sample(skeleton.get(), time, std::clamp(weight, 0.0f, 1.0f),
          mask ? mask->weights() : nullptr);

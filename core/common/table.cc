@@ -23,12 +23,28 @@
 #include "core/common/table.h"
 
 #include "core/common/exception.h"
+#include "core/common/logger.h"
 #include "core/common/object.h"
 
 namespace urge {
 
 Table::Table(int32_t xsize, int32_t ysize, int32_t zsize) {
-  Resize(xsize, ysize, zsize);
+  // The constructor cannot report, so a size that `Resize` would reject is
+  // clamped here: a table the script asked for is still a table.
+  constexpr int64_t kMaxElements = 1 << 26;
+  const int64_t elements = static_cast<int64_t>(xsize) * ysize * zsize;
+  if (xsize < 0 || ysize < 0 || zsize < 0 || elements > kMaxElements) {
+    LOGGER_ERROR("[Table] {}x{}x{} is not a valid size; using 0x0x1", xsize,
+                 ysize, zsize);
+    xsize = 0;
+    ysize = 0;
+    zsize = 1;
+  }
+  xsize_ = xsize;
+  ysize_ = ysize;
+  zsize_ = zsize;
+  data_.assign(static_cast<size_t>(static_cast<int64_t>(xsize) * ysize * zsize),
+               0);
 }
 
 Table::Table(RefPtr<Table> other)
@@ -69,8 +85,10 @@ MARSHAL_LOAD_DEF(Table) {
   uint32_t data_size = *(raw_ptr + 4);
 
   RefPtr<Table> obj = MakeRefCounted<Table>(xsize, ysize, zsize);
-  if (data_size != obj->xsize_ * obj->ysize_ * obj->zsize_)
-    throw Exception(Exception::kRGSSError, "invalid table serialize data");
+  if (data_size != obj->xsize_ * obj->ysize_ * obj->zsize_) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid table serialize data");
+    return nullptr;
+  }
 
   if (data_size)
     std::memcpy(obj->data_.data(), raw_ptr + 5, data_size * sizeof(int16_t));
@@ -78,12 +96,24 @@ MARSHAL_LOAD_DEF(Table) {
   return obj;
 }
 
-void Table::Resize(int32_t xsize, int32_t ysize, int32_t zsize) {
+void Table::Resize(URGE_EXCEPT, int32_t xsize, int32_t ysize, int32_t zsize) {
+  // A negative side multiplies into a huge `size_t`, and `vector::resize` on
+  // that aborts the process in a build without exceptions.  Zero is legal: an
+  // empty table is what the RGSS data files carry.
+  constexpr int64_t kMaxElements = 1 << 26;
+  const int64_t elements = static_cast<int64_t>(xsize) * ysize * zsize;
+  if (xsize < 0 || ysize < 0 || zsize < 0 || elements > kMaxElements) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "table: {}x{}x{} is not a valid size.", xsize, ysize,
+                          zsize);
+    return;
+  }
+
   xsize_ = xsize;
   ysize_ = ysize;
   zsize_ = zsize;
 
-  data_.resize(xsize * ysize * zsize, 0);
+  data_.resize(static_cast<size_t>(elements), 0);
   data_.shrink_to_fit();
 }
 

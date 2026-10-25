@@ -31,12 +31,12 @@
 
 namespace urge {
 
-AnimationLayer3D::AnimationLayer3D(RefPtr<Animation3D> animation, float weight)
+AnimationLayer3D::AnimationLayer3D(URGE_EXCEPT, RefPtr<Animation3D> animation, float weight)
     : animation_(std::move(animation)), weight_(std::max(0.0f, weight)) {
-  if (!animation_)
-    throw Exception(Exception::kRGSSError,
-                    "animation layer 3d: an animation is needed.");
-}
+  if (!animation_) {
+    exception_state.Throw(ExceptionState::kRGSSError, "animation layer 3d: an animation is needed.");
+    return;
+  }}
 
 AnimationLayer3D::~AnimationLayer3D() = default;
 
@@ -45,9 +45,12 @@ AnimationStack3D::AnimationStack3D() = default;
 AnimationStack3D::~AnimationStack3D() = default;
 
 RefPtr<AnimationLayer3D> AnimationStack3D::AddLayer(
+    URGE_EXCEPT,
     RefPtr<Animation3D> animation,
     float weight) {
-  auto layer = MakeRefCounted<AnimationLayer3D>(std::move(animation), weight);
+  auto layer =
+      MakeRefCounted<AnimationLayer3D>(exception_state, std::move(animation),
+                                       weight);
   layers_.push_back(layer);
   return layer;
 }
@@ -69,7 +72,7 @@ RefPtr<AnimationLayer3D> AnimationStack3D::LayerAt(int32_t index) const {
   return layers_[index];
 }
 
-void AnimationStack3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
+void AnimationStack3D::Update(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float delta) {
   skeleton->BeginPose();
 
   for (const RefPtr<AnimationLayer3D>& layer : layers_) {
@@ -94,9 +97,10 @@ void AnimationStack3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
     layer->Attr_Time(to);
 
     if (layer->mask())
-      animation->BlendMasked(skeleton, to, layer->weight(), layer->mask());
+      animation->BlendMasked(exception_state, skeleton, to, layer->weight(),
+                             layer->mask());
     else
-      animation->Blend(skeleton, to, layer->weight());
+      animation->Blend(exception_state, skeleton, to, layer->weight());
   }
 
   skeleton->EndPose();

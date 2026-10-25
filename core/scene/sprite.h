@@ -40,9 +40,9 @@ class Sprite : public Node {
   ~Sprite() override;
 
   URGE_BINDING()
-  void Flash(MaybePtr<Color> color, int32_t duration);
+  void Flash(URGE_EXCEPT, MaybePtr<Color> color, int32_t duration);
   URGE_BINDING()
-  void Update();
+  void Update(URGE_EXCEPT);
 
   URGE_BINDING()
   int32_t Width();

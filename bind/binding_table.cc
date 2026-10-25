@@ -44,7 +44,7 @@ RB_FUNC(Table_Get) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     if (x < 0 || x >= self_obj->Xsize()) {
       result = 0;
     } else if (argc == 1) {
@@ -58,7 +58,7 @@ RB_FUNC(Table_Get) {
     } else {
       result = self_obj->Get(x, y, z);
     }
-  } CPP_END;
+  }
 
   return INT2NUM(result);
 }
@@ -80,11 +80,11 @@ RB_FUNC(Table_Set) {
     ArgcError(argc);
   }
 
-  CPP_BEGIN {
+  {
     if (x >= 0 && x < self_obj->Xsize() && y >= 0 && y < self_obj->Ysize() &&
         z >= 0 && z < self_obj->Zsize())
       self_obj->Set(static_cast<int16_t>(value), x, y, z);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -92,7 +92,7 @@ RB_FUNC(Table_Set) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Table  (core/common/table.h:33-56)
+// Table  (core/common/table.h:33-57)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Table);
@@ -105,13 +105,13 @@ RB_FUNC(Table_initialize) {
 
     urge::Table* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(
           xsize);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -124,13 +124,13 @@ RB_FUNC(Table_initialize) {
 
     urge::Table* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(xsize,
           ysize);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -143,13 +143,13 @@ RB_FUNC(Table_initialize) {
 
     urge::Table* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(xsize,
           ysize, zsize);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -168,12 +168,12 @@ RB_FUNC(Table_initialize_copy) {
 
   urge::Table* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -186,9 +186,9 @@ RB_FUNC(Table__dump) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(urge::Table::MarshalDump(urge::RefPtr<urge::Table>(self_obj)));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -205,14 +205,16 @@ RB_FUNC(Table__load) {
   size_t data_size;
   CheckString(data_val, &data_data, &data_size);
 
+  urge::ExceptionState exception_state;
   urge::Table* result = nullptr;
 
-  CPP_BEGIN {
-    urge::RefPtr<urge::Table> value = urge::Table::MarshalLoad(std::string(data_data, data_size));
+  {
+    urge::RefPtr<urge::Table> value = urge::Table::MarshalLoad(exception_state, std::string(data_data, data_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(rb_obj_alloc(self), result);
   if (result)
@@ -225,32 +227,38 @@ RB_FUNC(Table_Resize) {
 
   if (argc == 1) {
     // resize(xsize)
+    urge::ExceptionState exception_state;
     int xsize;
     ParseArgs(argc, argv, "i", &xsize);
 
-    CPP_BEGIN {
-      self_obj->Resize(xsize);
-    } CPP_END;
+    {
+      self_obj->Resize(exception_state, xsize);
+    }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 2) {
     // resize(xsize, ysize)
+    urge::ExceptionState exception_state;
     int xsize, ysize;
     ParseArgs(argc, argv, "ii", &xsize, &ysize);
 
-    CPP_BEGIN {
-      self_obj->Resize(xsize, ysize);
-    } CPP_END;
+    {
+      self_obj->Resize(exception_state, xsize, ysize);
+    }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 3) {
     // resize(xsize, ysize, zsize)
+    urge::ExceptionState exception_state;
     int xsize, ysize, zsize;
     ParseArgs(argc, argv, "iii", &xsize, &ysize, &zsize);
 
-    CPP_BEGIN {
-      self_obj->Resize(xsize, ysize, zsize);
-    } CPP_END;
+    {
+      self_obj->Resize(exception_state, xsize, ysize, zsize);
+    }
+    RaiseException(exception_state);
 
     return Qnil;
   } else {
@@ -264,9 +272,9 @@ RB_FUNC(Table_Xsize) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Xsize();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -277,9 +285,9 @@ RB_FUNC(Table_Ysize) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Ysize();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -290,9 +298,9 @@ RB_FUNC(Table_Zsize) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Zsize();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

@@ -37,12 +37,12 @@ RB_FUNC(PerspectiveCamera_initialize) {
 
   urge::PerspectiveCamera* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::PerspectiveCamera> value = urge::MakeRefCounted<urge::PerspectiveCamera>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)

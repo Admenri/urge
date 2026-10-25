@@ -31,11 +31,11 @@ RB_FUNC(NetworkEvent_Data) {
   const char* data = nullptr;
   size_t size = 0;
 
-  CPP_BEGIN {
+  {
     const std::string& payload = self_obj->data();
     data = payload.data();
     size = payload.size();
-  } CPP_END;
+  }
 
   return rb_enc_str_new(data, static_cast<long>(size),
                         rb_ascii8bit_encoding());
@@ -65,12 +65,12 @@ RB_FUNC(NetworkEvent_initialize) {
 
   urge::NetworkEvent* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::NetworkEvent> value = urge::MakeRefCounted<urge::NetworkEvent>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -84,9 +84,9 @@ RB_FUNC(NetworkEvent_GetType) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetType();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -97,9 +97,9 @@ RB_FUNC(NetworkEvent_GetText) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetText());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -114,9 +114,9 @@ RB_FUNC(NetworkEvent_GetCode) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetCode();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -127,9 +127,9 @@ RB_FUNC(NetworkEvent_GetReason) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetReason());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -144,9 +144,9 @@ RB_FUNC(NetworkEvent_GetErrorMessage) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetErrorMessage());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),

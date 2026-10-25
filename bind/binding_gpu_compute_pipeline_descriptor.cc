@@ -39,12 +39,12 @@ RB_FUNC(GPUComputePipelineDescriptor_initialize) {
 
   urge::GPUComputePipelineDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUComputePipelineDescriptor> value = urge::MakeRefCounted<urge::GPUComputePipelineDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -58,9 +58,9 @@ RB_FUNC(GPUComputePipelineDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -79,9 +79,9 @@ RB_FUNC(GPUComputePipelineDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -92,9 +92,9 @@ RB_FUNC(GPUComputePipelineDescriptor_GetEntryPoint) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetEntryPoint());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -113,9 +113,9 @@ RB_FUNC(GPUComputePipelineDescriptor_SetEntryPoint) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetEntryPoint(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }

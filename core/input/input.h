@@ -80,7 +80,7 @@ class Input : public Singleton<Input> {
   std::string GetKeyName(int32_t keycode);
 
  public:
-  void ProcessEvents(SDL_Event* event);
+  void ProcessEvents(URGE_EXCEPT, SDL_Event* event);
 
   void ProcessGamepadEvents(SDL_Event* event);
 

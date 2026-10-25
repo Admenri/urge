@@ -206,187 +206,45 @@ inline VALUE WrapObject(Ty* ptr, const rb_data_type_t& type) {
   return SetupSelfData(object, ptr);
 }
 
-inline void ProcessException(const urge::Exception& exception) {
+//! Raises the Ruby exception an `urge::ExceptionState` recorded.
+/*!
+    The engine reports a failure by writing into a state the caller passes in
+    (`core/common/exception.h`), so this is where it turns into a Ruby
+    exception.  A clean state is a no-op, which is why every generated binding
+    can call it unconditionally on the way out.
+
+    The state has no destructor and no heap, so calling this from the binding's
+    own frame is safe: there is nothing for the `longjmp` behind `rb_raise` to
+    skip over.  That is the whole reason the engine has no C++ exceptions --
+    see the comment on `ExceptionState`.
+*/
+inline void RaiseException(const urge::ExceptionState& exception_state) {
+  if (!exception_state.HadException())
+    return;
   VALUE klass = rb_eStandardError;
-  switch (exception.type()) {
-    case urge::Exception::kExitError:
+  switch (exception_state.type()) {
+    case urge::ExceptionState::kExitError:
       klass = rb_eSystemExit;
       break;
-    case urge::Exception::kResetError:
+    case urge::ExceptionState::kResetError:
       klass = g_reset_exception;
       break;
-    case urge::Exception::kRGSSError:
+    case urge::ExceptionState::kRGSSError:
       // GPU failures are engine side, but a game must still be able to catch
       // them with the same rescue clauses it uses for RGSS errors.
-    case urge::Exception::kGPUError:
+    case urge::ExceptionState::kGPUError:
       klass = g_rgss_exception;
       break;
-    case urge::Exception::kIOError:
+    case urge::ExceptionState::kIOError:
       klass = rb_const_get(rb_const_get(rb_cObject, rb_intern("Errno")),
                            rb_intern("ENOENT"));
       break;
     default:
       break;
   }
-  rb_raise(klass, "%s", exception.message().c_str());
-}
-
-// Exception process (legacy shape, hand-written glue only)
-//
-// `EXC_END` raises from inside the catch body, which is exactly what breaks on
-// the web: a raise must not be issued from a frame that still holds a landing
-// pad.  Generated glue uses `CPP_BEGIN`/`CPP_END` below instead.  The one
-// remaining caller is `binding_win32api.cc`, which never builds for Emscripten.
-#define EXC_BEGIN try
-#define EXC_END                              \
-  catch (const urge::Exception& exception) { \
-    ProcessException(exception);             \
-  }
-
-// ---------------------------------------------------------------------------
-// The three-phase bridge
-//
-// Every generated binding is one function with three phases:
-//
-//   RB_FUNC(Width) {
-//     urge::Bitmap* self_obj = GetSelfData<urge::Bitmap>(self);  // 1. Ruby -> C
-//     CheckArgc(argc, 0);                                       //    bare data,
-//                                                               //    may raise
-//     int32_t result = 0;                                       //    result slot
-//     CPP_BEGIN {                                               // 2. pure C++
-//       result = self_obj->Width();                             //    no Ruby API
-//     } CPP_END;                                                //    the only
-//                                                               //    try/catch
-//     return LONG2NUM(result);                                  // 3. C++ -> Ruby
-//   }
-//
-// Why the split is where it is, all measured with
-// `build/web-test/frame_shape_probe.rb` against the web build:
-//
-//   * A frame that owns something with a destructor cannot raise.  The compiler
-//     gives such a frame a landing pad for the cleanup, and the longjmp behind
-//     `rb_raise` is dispatched into it.  Probe A (no try/catch anywhere, one
-//     `std::string` alive) traps, so this is about the destructor alone and has
-//     nothing to do with try/catch.  Hence phase 1 and phase 3 hold bare data
-//     only.
-//   * A raise issued inside a try region is dispatched into that region's
-//     landing pad.  Probe C traps.
-//   * A raise before or after a try region in the same frame is fine, as long
-//     as the frame owns nothing.  Probes D, E and F pass -- which is why the
-//     three phases can live in one function and nothing has to be split.
-//   * Phase 2 may own whatever it likes: it is a real exception region, so
-//     destructors run on both paths.
-//
-// The contract in one line: phase 2 contains no call that can raise or
-// longjmp.  `generate_binding.py` enforces it (PHASE2_FORBIDDEN) instead of
-// leaving it to review.
-// ---------------------------------------------------------------------------
-
-namespace detail {
-
-//! What phase 2 leaves behind for phase 3 to raise.  Lives outside the frames
-//! so the raise has nothing to destroy.
-struct PendingError {
-  bool active = false;
-  VALUE klass = rb_eStandardError;
-  char message[4096] = {};
-};
-
-inline PendingError& Pending() {
-  static PendingError pending;
-  return pending;
-}
-
-//! The Ruby class an engine error is reported as.
-inline VALUE ErrorClass(urge::Exception::Type type) {
-  switch (type) {
-    case urge::Exception::kExitError:
-      return rb_eSystemExit;
-    case urge::Exception::kResetError:
-      return g_reset_exception;
-    case urge::Exception::kRGSSError:
-      // GPU failures are engine side, but a game must still be able to catch
-      // them with the same rescue clauses it uses for RGSS errors.
-    case urge::Exception::kGPUError:
-      return g_rgss_exception;
-    case urge::Exception::kIOError:
-      return rb_const_get(rb_const_get(rb_cObject, rb_intern("Errno")),
-                          rb_intern("ENOENT"));
-    default:
-      return rb_eStandardError;
-  }
-}
-
-inline std::string_view ExceptionTypeName(urge::Exception::Type type) {
-  switch (type) {
-    case urge::Exception::kRGSSError:
-      return "RGSSError";
-    case urge::Exception::kGPUError:
-      return "GPUError";
-    case urge::Exception::kIOError:
-      return "IOError";
-    case urge::Exception::kExitError:
-      return "ExitError";
-    case urge::Exception::kResetError:
-      return "ResetError";
-    default:
-      return "Error";
-  }
-}
-
-// Parking is also where the error is logged: on the web there is no message
-// box, so this line is the only trace a failing core call leaves behind.
-inline void ParkError(const urge::Exception& exception) {
-  LOGGER_ERROR("[Binding] {}: {}", ExceptionTypeName(exception.type()),
-               exception.message());
-  auto& pending = Pending();
-  pending.active = true;
-  pending.klass = ErrorClass(exception.type());
-  snprintf(pending.message, sizeof pending.message, "%s",
-           exception.message().c_str());
-}
-
-//! A failure that is not an `urge::Exception`.
-inline void ParkUnknown() {
-  LOGGER_ERROR("[Binding] a non-engine C++ exception escaped a core call");
-  auto& pending = Pending();
-  pending.active = true;
-  pending.klass = rb_eStandardError;
-  snprintf(pending.message, sizeof pending.message, "%s",
-           "a non-engine C++ exception escaped a core call");
-}
-
-}  // namespace detail
-
-//! Turns what `CPP_END` parked into a Ruby exception; a no-op on the happy path.
-/*!
-    Called from the binding's own frame, which owns nothing by construction, so
-    the raise reaches the VM `setjmp` instead of a landing pad.
-*/
-inline void RaisePending() {
-  auto& pending = detail::Pending();
-  if (!pending.active)
-    return;
-  const VALUE klass = pending.klass;
-  const char* message = pending.message;
-  pending.active = false;
+  const char* message = exception_state.message();
   rb_raise(klass, "%s", message);
 }
-
-//! Phase 2's two ends: the only `try`/`catch` in the glue.
-/*!
-    The catch bodies only move data -- no raise, no allocation that could throw
-    -- and `RaisePending()` runs after they have closed.
-*/
-#define CPP_BEGIN try
-#define CPP_END                             \
-  catch (const urge::Exception& exception) { \
-    detail::ParkError(exception);           \
-  }                                          \
-  catch (...) {                              \
-    detail::ParkUnknown();                   \
-  }                                          \
-  RaisePending()
 
 // ---------------------------------------------------------------------------
 // Phase 1 helpers: Ruby -> bare C
@@ -684,9 +542,9 @@ VALUE TagUTF8IfValid(VALUE str);
     auto* self_obj = GetSelfData<selfty>(self); \
     CheckArgc(argc, 0);                         \
     int32_t result = 0;                         \
-    CPP_BEGIN {                                 \
+    {                                 \
       result = *self_obj->Attr_##cap();         \
-    } CPP_END;                                  \
+    }                                  \
     return INT2NUM(result);                     \
   }                                             \
   RB_FUNC(ty##_##cap##Equal) {                  \
@@ -694,9 +552,9 @@ VALUE TagUTF8IfValid(VALUE str);
     CheckArgc(argc, 1);                         \
     int value = 0;                              \
     ParseArgs(argc, argv, "i", &value);         \
-    CPP_BEGIN {                                 \
+    {                                 \
       self_obj->Attr_##cap(value);              \
-    } CPP_END;                                  \
+    }                                  \
     return Qnil;                                \
   }
 
@@ -705,9 +563,9 @@ VALUE TagUTF8IfValid(VALUE str);
     auto* self_obj = GetSelfData<selfty>(self);        \
     CheckArgc(argc, 0);                                \
     double result = 0.0;                               \
-    CPP_BEGIN {                                        \
+    {                                        \
       result = *self_obj->Attr_##cap();                \
-    } CPP_END;                                         \
+    }                                         \
     return rb_float_new(result);                       \
   }                                                    \
   RB_FUNC(ty##_##cap##Equal) {                         \
@@ -715,9 +573,9 @@ VALUE TagUTF8IfValid(VALUE str);
     CheckArgc(argc, 1);                                \
     double value = 0.0;                                \
     ParseArgs(argc, argv, "f", &value);                \
-    CPP_BEGIN {                                        \
+    {                                        \
       self_obj->Attr_##cap(static_cast<float>(value)); \
-    } CPP_END;                                         \
+    }                                         \
     return Qnil;                                       \
   }
 
@@ -726,9 +584,9 @@ VALUE TagUTF8IfValid(VALUE str);
     auto* self_obj = GetSelfData<selfty>(self);        \
     CheckArgc(argc, 0);                                \
     bool result = false;                               \
-    CPP_BEGIN {                                        \
+    {                                        \
       result = *self_obj->Attr_##cap();                \
-    } CPP_END;                                         \
+    }                                         \
     return result ? Qtrue : Qfalse;                    \
   }                                                    \
   RB_FUNC(ty##_##cap##Equal) {                         \
@@ -736,9 +594,9 @@ VALUE TagUTF8IfValid(VALUE str);
     CheckArgc(argc, 1);                                \
     bool value = false;                                \
     ParseArgs(argc, argv, "b", &value);                \
-    CPP_BEGIN {                                        \
+    {                                        \
       self_obj->Attr_##cap(value != 0);                \
-    } CPP_END;                                         \
+    }                                         \
     return Qnil;                                       \
   }
 
@@ -750,9 +608,9 @@ VALUE TagUTF8IfValid(VALUE str);
     auto* self_obj = GetSelfData<selfty>(self);                \
     CheckArgc(argc, 0);                                        \
     std::vector<elem>* result = nullptr;                       \
-    CPP_BEGIN {                                                \
+    {                                                \
       result = new std::vector<elem>(*self_obj->Attr_##cap()); \
-    } CPP_END;                                                 \
+    }                                                 \
     VALUE value = WrapVectorOf<elem>(*result);                 \
     delete result;                                             \
     return value;                                              \
@@ -763,10 +621,10 @@ VALUE TagUTF8IfValid(VALUE str);
     VALUE value = Qnil;                                        \
     ParseArgs(argc, argv, "o", &value);                        \
     CheckVectorOf<elem>(value);                                \
-    CPP_BEGIN {                                                \
+    {                                                \
       std::vector<elem> items = TakeVectorOf<elem>(value);     \
       self_obj->Attr_##cap(items);                             \
-    } CPP_END;                                                 \
+    }                                                 \
     return Qnil;                                               \
   }
 
@@ -782,11 +640,11 @@ VALUE TagUTF8IfValid(VALUE str);
     auto* self_obj = GetSelfData<selfty>(self);                 \
     CheckArgc(argc, 0);                                         \
     objty* result = nullptr;                                    \
-    CPP_BEGIN {                                                 \
+    {                                                 \
       urge::RefPtr<objty> ptr = *self_obj->Attr_##cap();         \
       result = ptr.get();                                       \
       if (result) result->AddRef();                             \
-    } CPP_END;                                                  \
+    }                                                  \
     VALUE value = WrapObject(result, dataty);                   \
     if (result) result->Release();                              \
     return value;                                               \
@@ -797,9 +655,9 @@ VALUE TagUTF8IfValid(VALUE str);
     VALUE value = Qnil;                                         \
     ParseArgs(argc, argv, "o", &value);                         \
     objty* object = check<objty>(value, dataty);                \
-    CPP_BEGIN {                                                 \
+    {                                                 \
       self_obj->Attr_##cap(object);                             \
-    } CPP_END;                                                  \
+    }                                                  \
     return Qnil;                                                \
   }
 
@@ -811,11 +669,11 @@ VALUE TagUTF8IfValid(VALUE str);
     auto* self_obj = GetSelfData<selfty>(self);                 \
     CheckArgc(argc, 0);                                         \
     objty* result = nullptr;                                    \
-    CPP_BEGIN {                                                 \
+    {                                                 \
       urge::RefPtr<objty> ptr = *self_obj->Attr_##cap();         \
       result = ptr.get();                                       \
       if (result) result->AddRef();                             \
-    } CPP_END;                                                  \
+    }                                                  \
     VALUE cached = rb_iv_get(self, "_" #cap);                   \
     if (!NIL_P(cached)) {                                       \
       if (result) result->Release();                            \
@@ -832,9 +690,9 @@ VALUE TagUTF8IfValid(VALUE str);
     VALUE value = Qnil;                                         \
     ParseArgs(argc, argv, "o", &value);                         \
     objty* object = check<objty>(value, dataty);                \
-    CPP_BEGIN {                                                 \
+    {                                                 \
       self_obj->Attr_##cap(object);                             \
-    } CPP_END;                                                  \
+    }                                                  \
     rb_iv_set(self, "_" #cap, value);                           \
     return Qnil;                                                \
   }
@@ -845,18 +703,18 @@ VALUE TagUTF8IfValid(VALUE str);
   RB_FUNC(ty##_##cap) {                         \
     CheckArgc(argc, 0);                         \
     int32_t result = 0;                         \
-    CPP_BEGIN {                                 \
+    {                                 \
       result = *selfty::Attr_##cap();           \
-    } CPP_END;                                  \
+    }                                  \
     return INT2NUM(result);                     \
   }                                             \
   RB_FUNC(ty##_##cap##Equal) {                  \
     CheckArgc(argc, 1);                         \
     int value = 0;                              \
     ParseArgs(argc, argv, "i", &value);         \
-    CPP_BEGIN {                                 \
+    {                                 \
       selfty::Attr_##cap(value);                \
-    } CPP_END;                                  \
+    }                                  \
     return Qnil;                                \
   }
 
@@ -864,18 +722,18 @@ VALUE TagUTF8IfValid(VALUE str);
   RB_FUNC(ty##_##cap) {                                \
     CheckArgc(argc, 0);                                \
     double result = 0.0;                               \
-    CPP_BEGIN {                                        \
+    {                                        \
       result = *selfty::Attr_##cap();                  \
-    } CPP_END;                                         \
+    }                                         \
     return rb_float_new(result);                       \
   }                                                    \
   RB_FUNC(ty##_##cap##Equal) {                         \
     CheckArgc(argc, 1);                                \
     double value = 0.0;                                \
     ParseArgs(argc, argv, "f", &value);                \
-    CPP_BEGIN {                                        \
+    {                                        \
       selfty::Attr_##cap(static_cast<float>(value));   \
-    } CPP_END;                                         \
+    }                                         \
     return Qnil;                                       \
   }
 
@@ -883,18 +741,18 @@ VALUE TagUTF8IfValid(VALUE str);
   RB_FUNC(ty##_##cap) {                                \
     CheckArgc(argc, 0);                                \
     bool result = false;                               \
-    CPP_BEGIN {                                        \
+    {                                        \
       result = *selfty::Attr_##cap();                  \
-    } CPP_END;                                         \
+    }                                         \
     return result ? Qtrue : Qfalse;                    \
   }                                                    \
   RB_FUNC(ty##_##cap##Equal) {                         \
     CheckArgc(argc, 1);                                \
     bool value = false;                                \
     ParseArgs(argc, argv, "b", &value);                \
-    CPP_BEGIN {                                        \
+    {                                        \
       selfty::Attr_##cap(value != 0);                  \
-    } CPP_END;                                         \
+    }                                         \
     return Qnil;                                       \
   }
 
@@ -902,9 +760,9 @@ VALUE TagUTF8IfValid(VALUE str);
   RB_FUNC(ty##_##cap) {                                          \
     CheckArgc(argc, 0);                                          \
     std::vector<elem>* result = nullptr;                         \
-    CPP_BEGIN {                                                  \
+    {                                                  \
       result = new std::vector<elem>(*selfty::Attr_##cap());     \
-    } CPP_END;                                                   \
+    }                                                   \
     VALUE value = WrapVectorOf<elem>(*result);                   \
     delete result;                                               \
     return value;                                                \
@@ -914,10 +772,10 @@ VALUE TagUTF8IfValid(VALUE str);
     VALUE value = Qnil;                                          \
     ParseArgs(argc, argv, "o", &value);                          \
     CheckVectorOf<elem>(value);                                  \
-    CPP_BEGIN {                                                  \
+    {                                                  \
       std::vector<elem> items = TakeVectorOf<elem>(value);       \
       selfty::Attr_##cap(items);                                 \
-    } CPP_END;                                                   \
+    }                                                   \
     return Qnil;                                                 \
   }
 
@@ -925,11 +783,11 @@ VALUE TagUTF8IfValid(VALUE str);
   RB_FUNC(ty##_##cap) {                                           \
     CheckArgc(argc, 0);                                           \
     objty* result = nullptr;                                      \
-    CPP_BEGIN {                                                   \
+    {                                                   \
       urge::RefPtr<objty> ptr = *selfty::Attr_##cap();             \
       result = ptr.get();                                         \
       if (result) result->AddRef();                               \
-    } CPP_END;                                                    \
+    }                                                    \
     VALUE value = WrapObject(result, dataty);                     \
     if (result) result->Release();                                \
     return value;                                                 \
@@ -939,10 +797,19 @@ VALUE TagUTF8IfValid(VALUE str);
     VALUE value = Qnil;                                           \
     ParseArgs(argc, argv, "o", &value);                           \
     objty* object = check<objty>(value, dataty);                  \
-    CPP_BEGIN {                                                   \
+    {                                                   \
       selfty::Attr_##cap(object);                                 \
-    } CPP_END;                                                    \
+    }                                                    \
     return Qnil;                                                  \
   }
+
+// The `ATTR_EXC` family: the accessor itself takes the state, because the
+// getter or the setter can fail (a slot lookup, a material rebuild).  Same
+// shape as the macros above, with `RaiseException` after the call.
+#define BINDING_ATTR_INT_EXC(ty, selfty, cap)     RB_FUNC(ty##_##cap) {                             urge::ExceptionState exception_state;           auto* self_obj = GetSelfData<selfty>(self);     CheckArgc(argc, 0);                             int32_t result = 0;                             result = *self_obj->Attr_##cap(exception_state);     RaiseException(exception_state);                return INT2NUM(result);                       }                                               RB_FUNC(ty##_##cap##Equal) {                      urge::ExceptionState exception_state;           auto* self_obj = GetSelfData<selfty>(self);     CheckArgc(argc, 1);                             int value = 0;                                  ParseArgs(argc, argv, "i", &value);             self_obj->Attr_##cap(exception_state, value);     RaiseException(exception_state);                return Qnil;                                  }
+
+#define BINDING_ATTR_BOOL_EXC(ty, selfty, cap)    RB_FUNC(ty##_##cap) {                             urge::ExceptionState exception_state;           auto* self_obj = GetSelfData<selfty>(self);     CheckArgc(argc, 0);                             bool result = false;                            result = *self_obj->Attr_##cap(exception_state);     RaiseException(exception_state);                return result ? Qtrue : Qfalse;               }                                               RB_FUNC(ty##_##cap##Equal) {                      urge::ExceptionState exception_state;           auto* self_obj = GetSelfData<selfty>(self);     CheckArgc(argc, 1);                             bool value = false;                             ParseArgs(argc, argv, "b", &value);             self_obj->Attr_##cap(exception_state, value != 0);     RaiseException(exception_state);                return Qnil;                                  }
+
+#define BINDING_ATTR_OBJECT_REF_EXC(ty, selfty, cap, objty, dataty, check)   RB_FUNC(ty##_##cap) {                             urge::ExceptionState exception_state;           auto* self_obj = GetSelfData<selfty>(self);     CheckArgc(argc, 0);                             objty* result = nullptr;                        {                                                 urge::RefPtr<objty> ptr = *self_obj->Attr_##cap(exception_state);       result = ptr.get();                             if (result) result->AddRef();                 }                                               RaiseException(exception_state);                VALUE cached = rb_iv_get(self, "_" #cap);       if (!NIL_P(cached)) {                             if (result) result->Release();                  return cached;                                }                                               VALUE object = WrapObject(result, dataty);      if (result) result->Release();                  rb_iv_set(self, "_" #cap, object);              return object;                                }                                               RB_FUNC(ty##_##cap##Equal) {                      urge::ExceptionState exception_state;           auto* self_obj = GetSelfData<selfty>(self);     CheckArgc(argc, 1);                             VALUE value = Qnil;                             ParseArgs(argc, argv, "o", &value);             objty* object = check<objty>(value, dataty);     self_obj->Attr_##cap(exception_state, object);     RaiseException(exception_state);                rb_iv_set(self, "_" #cap, value);               return Qnil;                                  }
 
 }  // namespace binding

@@ -40,12 +40,12 @@ RB_FUNC(Camera3D_initialize) {
 
   urge::Camera3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Camera3D> value = urge::MakeRefCounted<urge::Camera3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -59,9 +59,9 @@ RB_FUNC(Camera3D_GetTarget) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetTarget());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -80,9 +80,9 @@ RB_FUNC(Camera3D_SetTarget) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTarget(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -97,10 +97,10 @@ RB_FUNC(Camera3D_ShadowSplits) {
 
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(
         self_obj->ShadowSplits(count, static_cast<float>(lambda), static_cast<float>(max_distance)));
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -121,10 +121,10 @@ RB_FUNC(Camera3D_ShadowCascades) {
 
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(
         self_obj->ShadowCascades(light_direction, count, static_cast<float>(lambda), width, height, static_cast<float>(max_distance), shadow_size));
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -140,9 +140,9 @@ RB_FUNC(Camera3D_ViewProjection) {
 
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->ViewProjection(width, height));
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;

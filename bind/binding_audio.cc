@@ -26,9 +26,9 @@ namespace binding {
 
 RB_FUNC(Audio_SetupMIDI) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Audio::Get().SetupMIDI();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -42,9 +42,9 @@ RB_FUNC(Audio_BGMPlay) {
     ParseArgs(argc, argv, "o", &filename_val);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -56,10 +56,10 @@ RB_FUNC(Audio_BGMPlay) {
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
           volume);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -71,10 +71,10 @@ RB_FUNC(Audio_BGMPlay) {
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
           volume, pitch);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -87,10 +87,10 @@ RB_FUNC(Audio_BGMPlay) {
     ParseArgs(argc, argv, "oiif", &filename_val, &volume, &pitch, &pos);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
           volume, pitch, static_cast<float>(pos));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -100,9 +100,9 @@ RB_FUNC(Audio_BGMPlay) {
 
 RB_FUNC(Audio_BGMStop) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Audio::Get().BGMStop();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -112,9 +112,9 @@ RB_FUNC(Audio_BGMFade) {
   int time;
   ParseArgs(argc, argv, "i", &time);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().BGMFade(time);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -123,9 +123,9 @@ RB_FUNC(Audio_BGMPos) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = urge::Audio::Get().BGMPos();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -139,9 +139,9 @@ RB_FUNC(Audio_BGSPlay) {
     ParseArgs(argc, argv, "o", &filename_val);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -153,10 +153,10 @@ RB_FUNC(Audio_BGSPlay) {
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
           volume);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -168,10 +168,10 @@ RB_FUNC(Audio_BGSPlay) {
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
           volume, pitch);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -184,10 +184,10 @@ RB_FUNC(Audio_BGSPlay) {
     ParseArgs(argc, argv, "oiif", &filename_val, &volume, &pitch, &pos);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
           volume, pitch, static_cast<float>(pos));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -197,9 +197,9 @@ RB_FUNC(Audio_BGSPlay) {
 
 RB_FUNC(Audio_BGSStop) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Audio::Get().BGSStop();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -209,9 +209,9 @@ RB_FUNC(Audio_BGSFade) {
   int time;
   ParseArgs(argc, argv, "i", &time);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().BGSFade(time);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -220,9 +220,9 @@ RB_FUNC(Audio_BGSPos) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = urge::Audio::Get().BGSPos();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -236,9 +236,9 @@ RB_FUNC(Audio_MEPlay) {
     ParseArgs(argc, argv, "o", &filename_val);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().MEPlay(std::string(filename_data, filename_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -250,10 +250,10 @@ RB_FUNC(Audio_MEPlay) {
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().MEPlay(std::string(filename_data, filename_size),
           volume);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -265,10 +265,10 @@ RB_FUNC(Audio_MEPlay) {
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().MEPlay(std::string(filename_data, filename_size),
           volume, pitch);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -278,9 +278,9 @@ RB_FUNC(Audio_MEPlay) {
 
 RB_FUNC(Audio_MEStop) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Audio::Get().MEStop();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -290,9 +290,9 @@ RB_FUNC(Audio_MEFade) {
   int time;
   ParseArgs(argc, argv, "i", &time);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().MEFade(time);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -306,9 +306,9 @@ RB_FUNC(Audio_SEPlay) {
     ParseArgs(argc, argv, "o", &filename_val);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().SEPlay(std::string(filename_data, filename_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -320,10 +320,10 @@ RB_FUNC(Audio_SEPlay) {
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().SEPlay(std::string(filename_data, filename_size),
           volume);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -335,10 +335,10 @@ RB_FUNC(Audio_SEPlay) {
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
     CheckString(filename_val, &filename_data, &filename_size);
 
-    CPP_BEGIN {
+    {
       urge::Audio::Get().SEPlay(std::string(filename_data, filename_size),
           volume, pitch);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -348,9 +348,9 @@ RB_FUNC(Audio_SEPlay) {
 
 RB_FUNC(Audio_SEStop) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Audio::Get().SEStop();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -360,9 +360,9 @@ RB_FUNC(Audio_MasterVolume) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Audio::Get().Attr_MasterVolume());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -372,9 +372,9 @@ RB_FUNC(Audio_MasterVolumeEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().Attr_MasterVolume(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -384,9 +384,9 @@ RB_FUNC(Audio_BGMVolume) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Audio::Get().Attr_BGMVolume());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -396,9 +396,9 @@ RB_FUNC(Audio_BGMVolumeEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().Attr_BGMVolume(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -408,9 +408,9 @@ RB_FUNC(Audio_BGSVolume) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Audio::Get().Attr_BGSVolume());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -420,9 +420,9 @@ RB_FUNC(Audio_BGSVolumeEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().Attr_BGSVolume(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -432,9 +432,9 @@ RB_FUNC(Audio_MEVolume) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Audio::Get().Attr_MEVolume());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -444,9 +444,9 @@ RB_FUNC(Audio_MEVolumeEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().Attr_MEVolume(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -456,9 +456,9 @@ RB_FUNC(Audio_SEVolume) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Audio::Get().Attr_SEVolume());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -468,9 +468,9 @@ RB_FUNC(Audio_SEVolumeEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Audio::Get().Attr_SEVolume(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }

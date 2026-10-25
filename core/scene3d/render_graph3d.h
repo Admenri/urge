@@ -51,7 +51,7 @@ URGE_BINDING()
 class ComputePass3D : public Object {
  public:
   URGE_BINDING()
-  ComputePass3D(std::string wgsl, std::string entry);
+  ComputePass3D(URGE_EXCEPT, std::string wgsl, std::string entry);
   ~ComputePass3D() override;
 
   URGE_BINDING()
@@ -84,7 +84,7 @@ class ComputePass3D : public Object {
     return dispatch_z_;
   }
 
-  void Execute(RenderContext3D* context);
+  void Execute(URGE_EXCEPT, RenderContext3D* context);
 
  private:
   struct Slot {
@@ -94,8 +94,8 @@ class ComputePass3D : public Object {
     uint64_t size = 0;
   };
 
-  void EnsurePipeline();
-  void RebuildBindGroup();
+  void EnsurePipeline(URGE_EXCEPT);
+  void RebuildBindGroup(URGE_EXCEPT);
 
   std::string wgsl_;
   std::string entry_;
@@ -280,7 +280,7 @@ class RenderGraphPass3D : public Object {
   }
 
   URGE_BINDING(Name : "texture")
-  RefPtr<GPUTextureView> GetTexture(std::string name);
+  RefPtr<GPUTextureView> GetTexture(URGE_EXCEPT, std::string name);
   URGE_BINDING(Name : "pass")
   RefPtr<GPURenderPassEncoder> GetPass();
   URGE_BINDING(Name : "context")
@@ -361,7 +361,7 @@ class RenderGraph3D : public Object {
   ~RenderGraph3D() override;
 
   URGE_BINDING()
-  RefPtr<RenderGraphPass3D> AddPass(std::string name);
+  RefPtr<RenderGraphPass3D> AddPass(URGE_EXCEPT, std::string name);
   URGE_BINDING()
   RefPtr<RenderGraphPass3D> GetPass(std::string name);
   URGE_BINDING()
@@ -374,13 +374,13 @@ class RenderGraph3D : public Object {
   RefPtr<RenderGraphPass3D> PassAt(int32_t index) const;
 
   URGE_BINDING()
-  void AddTexture(std::string name, std::string format, int32_t samples);
+  void AddTexture(URGE_EXCEPT, std::string name, std::string format, int32_t samples);
   URGE_BINDING()
-  void AddStorageTexture(std::string name, std::string format);
+  void AddStorageTexture(URGE_EXCEPT, std::string name, std::string format);
   URGE_BINDING()
-  void SetTextureScale(std::string name, float scale);
+  void SetTextureScale(URGE_EXCEPT, std::string name, float scale);
   URGE_BINDING()
-  RefPtr<RenderTarget3D> GetTexture(std::string name);
+  RefPtr<RenderTarget3D> GetTexture(URGE_EXCEPT, std::string name);
   URGE_BINDING()
   std::vector<std::string> TextureNames() const;
 
@@ -408,10 +408,10 @@ class RenderGraph3D : public Object {
     return camera_;
   }
 
-  void Execute(RenderContext3D* context);
-  RefPtr<RenderTarget3D> Target(const std::string& name);
-  RefPtr<RenderTarget3D> TargetForPass(RenderGraphPass3D* pass);
-  wgpu::TextureView ResolveColorView(const std::string& name);
+  void Execute(URGE_EXCEPT, RenderContext3D* context);
+  RefPtr<RenderTarget3D> Target(URGE_EXCEPT, const std::string& name);
+  RefPtr<RenderTarget3D> TargetForPass(URGE_EXCEPT, RenderGraphPass3D* pass);
+  wgpu::TextureView ResolveColorView(URGE_EXCEPT, const std::string& name);
 
  private:
   struct TextureDesc {
@@ -422,10 +422,17 @@ class RenderGraph3D : public Object {
   };
 
   std::vector<size_t> BuildOrder() const;
-  RefPtr<RenderTarget3D> ShadowTarget(const std::string& name, int32_t layers);
-  void ExecuteShadowPass(RenderContext3D* context, RenderGraphPass3D* pass);
-  void ExecuteRasterPass(RenderContext3D* context, RenderGraphPass3D* pass);
-  void ExecuteFullscreenPass(RenderContext3D* context, RenderGraphPass3D* pass);
+  RefPtr<RenderTarget3D> ShadowTarget(URGE_EXCEPT,
+                                      const std::string& name, int32_t layers);
+  void ExecuteShadowPass(URGE_EXCEPT,
+                         RenderContext3D* context,
+                         RenderGraphPass3D* pass);
+  void ExecuteRasterPass(URGE_EXCEPT,
+                         RenderContext3D* context,
+                         RenderGraphPass3D* pass);
+  void ExecuteFullscreenPass(URGE_EXCEPT,
+                             RenderContext3D* context,
+                             RenderGraphPass3D* pass);
 
   std::vector<RefPtr<RenderGraphPass3D>> passes_;
   std::map<std::string, RefPtr<RenderTarget3D>> targets_;

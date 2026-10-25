@@ -43,7 +43,8 @@ class Table : public Object {
   MARSHAL_LOAD(Table);
 
   URGE_BINDING()
-  void Resize(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
+  void Resize(URGE_EXCEPT, int32_t xsize, int32_t ysize = 1,
+              int32_t zsize = 1);
   URGE_BINDING()
   int32_t Xsize();
   URGE_BINDING()

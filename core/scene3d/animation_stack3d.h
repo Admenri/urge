@@ -39,7 +39,7 @@ class Skeleton3D;
 URGE_BINDING()
 class AnimationLayer3D : public Object {
  public:
-  AnimationLayer3D(RefPtr<Animation3D> animation, float weight);
+  AnimationLayer3D(URGE_EXCEPT, RefPtr<Animation3D> animation, float weight);
   ~AnimationLayer3D() override;
 
   URGE_BINDING(Name : "animation")
@@ -104,7 +104,8 @@ class AnimationStack3D : public Object {
   ~AnimationStack3D() override;
 
   URGE_BINDING()
-  RefPtr<AnimationLayer3D> AddLayer(RefPtr<Animation3D> animation,
+  RefPtr<AnimationLayer3D> AddLayer(URGE_EXCEPT,
+                                    RefPtr<Animation3D> animation,
                                     float weight);
   URGE_BINDING()
   void RemoveLayer(MaybePtr<AnimationLayer3D> layer);
@@ -116,7 +117,7 @@ class AnimationStack3D : public Object {
   RefPtr<AnimationLayer3D> LayerAt(int32_t index) const;
 
   URGE_BINDING()
-  void Update(RefPtr<Skeleton3D> skeleton, float delta);
+  void Update(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float delta);
 
   URGE_BINDING()
   std::vector<std::string> TakeEvents();

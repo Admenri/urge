@@ -105,14 +105,14 @@ class EffectDefaults {
 
 }
 
-Effect::Effect(std::string vs_wgsl,
+Effect::Effect(URGE_EXCEPT, std::string vs_wgsl,
                std::string fs_wgsl,
                std::string blend_states) {
-  CreateInternal(std::move(vs_wgsl), std::move(fs_wgsl),
+  CreateInternal(exception_state, std::move(vs_wgsl), std::move(fs_wgsl),
                  std::move(blend_states));
 }
 
-Effect::Effect(RefPtr<Effect> other) {
+Effect::Effect(URGE_EXCEPT, RefPtr<Effect> other) {
   holder_ = other->holder_;
   resources_ = other->resources_;
   vs_wgsl_ = other->vs_wgsl_;
@@ -123,13 +123,13 @@ Effect::Effect(RefPtr<Effect> other) {
 
 Effect::~Effect() = default;
 
-void Effect::SetFloat(uint32_t slot, std::vector<float> data) {
-  SetBufferBytes(slot, data.data(),
+void Effect::SetFloat(URGE_EXCEPT, uint32_t slot, std::vector<float> data) {
+  SetBufferBytes(exception_state, slot, data.data(),
                  static_cast<uint32_t>(data.size() * sizeof(float)));
 }
 
-void Effect::SetInt(uint32_t slot, std::vector<int32_t> data) {
-  SetBufferBytes(slot, data.data(),
+void Effect::SetInt(URGE_EXCEPT, uint32_t slot, std::vector<int32_t> data) {
+  SetBufferBytes(exception_state, slot, data.data(),
                  static_cast<uint32_t>(data.size() * sizeof(int32_t)));
 }
 
@@ -147,20 +147,20 @@ void Effect::SetSampler(uint32_t slot, RefPtr<Bitmap> texture) {
   binding_dirty_ = true;
 }
 
-void Effect::SetBlock(uint32_t slot, std::string uniform_block) {
-  SetBufferBytes(slot, uniform_block.data(),
+void Effect::SetBlock(URGE_EXCEPT, uint32_t slot, std::string uniform_block) {
+  SetBufferBytes(exception_state, slot, uniform_block.data(),
                  static_cast<uint32_t>(uniform_block.size()));
 }
 
-wgpu::RenderPipeline Effect::AcquirePipeline() {
+wgpu::RenderPipeline Effect::AcquirePipeline(URGE_EXCEPT) {
   if (!holder_)
-    RebuildPipeline();
+    RebuildPipeline(exception_state);
   return holder_->pipeline;
 }
 
-wgpu::BindGroup Effect::AcquireBindGroup() {
+wgpu::BindGroup Effect::AcquireBindGroup(URGE_EXCEPT) {
   if (binding_dirty_ || binding_ == nullptr)
-    RebuildBindGroup();
+    RebuildBindGroup(exception_state);
   return binding_;
 }
 
@@ -179,17 +179,17 @@ void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
   stage(1, SlotKind::kSampler);
 }
 
-void Effect::CreateInternal(std::string vs_wgsl,
+void Effect::CreateInternal(URGE_EXCEPT, std::string vs_wgsl,
                             std::string fs_wgsl,
                             std::string blend_states) {
   vs_wgsl_ = std::move(vs_wgsl);
   fs_wgsl_ = std::move(fs_wgsl);
   blend_states_ = std::move(blend_states);
 
-  RebuildPipeline();
+  RebuildPipeline(exception_state);
 }
 
-void Effect::RebuildPipeline() {
+void Effect::RebuildPipeline(URGE_EXCEPT) {
   using util::BufferLayout;
   using util::LayoutEntry;
 
@@ -219,7 +219,7 @@ void Effect::RebuildPipeline() {
     groups.push_back({index, std::move(entries)});
   }
 
-  const std::optional<wgpu::BlendState> blend = ParseBlendState(blend_states_);
+  const std::optional<wgpu::BlendState> blend = ParseBlendState(exception_state, blend_states_);
 
   const ShaderSource vertex{vs_wgsl_, kVertexEntry, groups};
   const ShaderSource fragment{fs_wgsl_, kFragmentEntry, {}};
@@ -243,18 +243,18 @@ void Effect::RebuildPipeline() {
   LOGGER_DEBUG("effect: pipeline built from the reflected layout");
 }
 
-void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
+void Effect::SetBufferBytes(URGE_EXCEPT, uint32_t slot, const void* data, uint32_t size) {
   const uint64_t buffer_size = AlignUniformSize(std::max<uint64_t>(size, 16));
 
   wgpu::BufferDescriptor desc;
   desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
   desc.size = buffer_size;
   wgpu::Buffer buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-  if (buffer == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "effect: the device rejected a {} byte uniform buffer.",
+  if (buffer == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "effect: the device rejected a {} byte uniform buffer.",
                     buffer_size);
-
+    return;
+  }
   std::vector<std::uint8_t> staging(static_cast<std::size_t>(buffer_size), 0);
   if (size)
     std::memcpy(staging.data(), data, size);
@@ -267,12 +267,12 @@ void Effect::SetBufferBytes(uint32_t slot, const void* data, uint32_t size) {
   binding_dirty_ = true;
 }
 
-void Effect::RebuildBindGroup() {
+void Effect::RebuildBindGroup(URGE_EXCEPT) {
   const wgpu::BindGroupLayout layout = holder_->pipeline.GetBindGroupLayout(2);
-  if (layout == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "effect: the pipeline carries no custom bind group.");
-
+  if (layout == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "effect: the pipeline carries no custom bind group.");
+    return;
+  }
   std::vector<wgpu::BindGroupEntry> entries;
   entries.reserve(resources_.size());
 
@@ -309,9 +309,10 @@ void Effect::RebuildBindGroup() {
   group_desc.entries = entries.empty() ? nullptr : entries.data();
 
   binding_ = GPUDevice::Get().device().CreateBindGroup(&group_desc);
-  if (binding_ == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "effect: the device rejected the custom bind group.");
+  if (binding_ == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "effect: the device rejected the custom bind group.");
+    return;
+  }
   binding_dirty_ = false;
 }
 

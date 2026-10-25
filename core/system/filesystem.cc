@@ -257,7 +257,7 @@ PHYSFS_EnumerateCallbackResult OpenReadEnumCallback(void* data,
 
 }
 
-IOService::IOService(const std::string& argv0) {
+IOService::IOService(URGE_EXCEPT, const std::string& argv0) {
   const char* init_data = argv0.c_str();
 
 #if defined(OS_ANDROID)
@@ -267,9 +267,10 @@ IOService::IOService(const std::string& argv0) {
   init_data = (const char*)&ainit;
 #endif
 
-  if (!PHYSFS_init(init_data))
-    throw Exception(Exception::kIOError, "failed to init PHYSFS.");
-
+  if (!PHYSFS_init(init_data)) {
+    exception_state.Throw(ExceptionState::kIOError, "failed to init PHYSFS.");
+    return;
+  }
   archive::Register();
 }
 
@@ -324,7 +325,7 @@ std::vector<std::string> IOService::EnumDir(const std::string& dir) {
   return files;
 }
 
-void IOService::OpenRead(const std::string& file_path, OpenCallback callback) {
+void IOService::OpenRead(URGE_EXCEPT, const std::string& file_path, OpenCallback callback) {
 #if defined(OS_EMSCRIPTEN)
   const std::string resolved_path = ResolveAsyncPath(file_path);
   EnsureAsyncFile(resolved_path);
@@ -352,14 +353,16 @@ void IOService::OpenRead(const std::string& file_path, OpenCallback callback) {
 
   PHYSFS_enumerate(dir.c_str(), OpenReadEnumCallback, &data);
 
-  if (!data.physfs_error.empty())
-    throw Exception(Exception::kIOError, data.physfs_error);
+  if (!data.physfs_error.empty()) {
+    exception_state.Throw(ExceptionState::kIOError, data.physfs_error);
+    return;
+  }
+  if (data.match_count <= 0) {
+    exception_state.Throw(ExceptionState::kIOError, "No file match: {}", file_path);
+    return;
+  }}
 
-  if (data.match_count <= 0)
-    throw Exception(Exception::kIOError, "No file match: {}", file_path);
-}
-
-SDL_IOStream* IOService::OpenReadRaw(const std::string& filename) {
+SDL_IOStream* IOService::OpenReadRaw(URGE_EXCEPT, const std::string& filename) {
 #if defined(OS_EMSCRIPTEN)
   const std::string resolved_path = ResolveAsyncPath(filename);
   EnsureAsyncFile(resolved_path);
@@ -367,19 +370,21 @@ SDL_IOStream* IOService::OpenReadRaw(const std::string& filename) {
 #else
   PHYSFS_File* file = PHYSFS_openRead(filename.c_str());
 #endif
-  if (!file)
-    throw Exception(Exception::kIOError, "{}: {}",
+  if (!file) {
+    exception_state.Throw(ExceptionState::kIOError, "{}: {}",
                     PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()), filename);
-
+    return {};
+  }
   return WrapperRWops(file);
 }
 
-SDL_IOStream* IOService::OpenWrite(const std::string& filename) {
+SDL_IOStream* IOService::OpenWrite(URGE_EXCEPT, const std::string& filename) {
   PHYSFS_File* file = PHYSFS_openWrite(filename.c_str());
-  if (!file)
-    throw Exception(Exception::kIOError, "{}: {}",
+  if (!file) {
+    exception_state.Throw(ExceptionState::kIOError, "{}: {}",
                     PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()), filename);
-
+    return {};
+  }
   return WrapperRWops(file);
 }
 

@@ -296,10 +296,13 @@ class JsonParser {
   size_t index_ = 0;
 };
 
-std::vector<uint8_t> ReadFile(const std::string& path) {
-  SDL_IOStream* stream = IOService::Get().OpenReadRaw(path);
-  if (!stream)
-    throw Exception(Exception::kRGSSError, "gltf: cannot open '{}'.", path);
+std::vector<uint8_t> ReadFile(URGE_EXCEPT, const std::string& path) {
+  SDL_IOStream* stream = IOService::Get().OpenReadRaw(exception_state, path);
+  if (!stream) {
+    exception_state.Throw(ExceptionState::kRGSSError, "gltf: cannot open '{}'.",
+                          path);
+    return {};
+  }
 
   const Sint64 size = SDL_GetIOSize(stream);
   std::vector<uint8_t> data(static_cast<size_t>(std::max<Sint64>(0, size)));
@@ -314,17 +317,24 @@ struct GlbFile {
   std::vector<uint8_t> bin;
 };
 
-GlbFile ParseGlb(const std::vector<uint8_t>& data, const std::string& path) {
-  if (data.size() < 12)
-    throw Exception(Exception::kRGSSError, "gltf: '{}' is too small.", path);
+GlbFile ParseGlb(URGE_EXCEPT,
+                 const std::vector<uint8_t>& data,
+                 const std::string& path) {
+  if (data.size() < 12) {
+    exception_state.Throw(ExceptionState::kRGSSError, "gltf: '{}' is too small.",
+                          path);
+    return {};
+  }
 
   uint32_t magic = 0;
   uint32_t length = 0;
   std::memcpy(&magic, data.data(), sizeof(magic));
   std::memcpy(&length, data.data() + 8, sizeof(length));
-  if (magic != 0x46546C67u)
-    throw Exception(Exception::kRGSSError,
-                    "gltf: '{}' is not a binary glb container.", path);
+  if (magic != 0x46546C67u) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "gltf: '{}' is not a binary glb container.", path);
+    return {};
+  }
 
   length = std::min<uint32_t>(length, static_cast<uint32_t>(data.size()));
 
@@ -355,9 +365,11 @@ GlbFile ParseGlb(const std::vector<uint8_t>& data, const std::string& path) {
     offset = (offset + 3) & ~static_cast<size_t>(3);
   }
 
-  if (file.json.IsNull())
-    throw Exception(Exception::kRGSSError, "gltf: '{}' has no JSON chunk.",
-                    path);
+  if (file.json.IsNull()) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "gltf: '{}' has no JSON chunk.", path);
+    return {};
+  }
   return file;
 }
 
@@ -630,9 +642,12 @@ MaterialSource3D BuildMaterialSource(const GlbFile& glb,
   return source;
 }
 
-RefPtr<Material3D> BuildMaterial(const MaterialSource3D& source, bool unlit) {
+RefPtr<Material3D> BuildMaterial(URGE_EXCEPT,
+                                 const MaterialSource3D& source,
+                                 bool unlit) {
   auto material = MakeRefCounted<Material3D>();
   RefPtr<MaterialPass3D> pass = material->AddPass(
+      exception_state,
       source.transparent ? "transparent" : "opaque",
       std::string(kLitVertexShader),
       std::string(unlit ? kUnlitFragmentShader : kLitFragmentShader));
@@ -655,7 +670,8 @@ RefPtr<Material3D> BuildMaterial(const MaterialSource3D& source, bool unlit) {
   return material;
 }
 
-RefPtr<Mesh3D> BuildMesh(const GlbFile& glb,
+RefPtr<Mesh3D> BuildMesh(URGE_EXCEPT,
+                         const GlbFile& glb,
                          size_t mesh_index,
                          std::vector<SubMesh3D>* submeshes) {
   const Json& definition = glb.json["meshes"].At(mesh_index);
@@ -733,11 +749,11 @@ RefPtr<Mesh3D> BuildMesh(const GlbFile& glb,
   }
 
   auto mesh = MakeRefCounted<Mesh3D>();
-  mesh->SetVertices(std::move(vertices));
-  mesh->SetIndices(std::move(indices));
+  mesh->SetVertices(exception_state, std::move(vertices));
+  mesh->SetIndices(exception_state, std::move(indices));
   mesh->ClearSubmeshes();
   for (const SubMesh3D& submesh : *submeshes)
-    mesh->AddSubmesh(static_cast<int32_t>(submesh.index_offset),
+    mesh->AddSubmesh(exception_state, static_cast<int32_t>(submesh.index_offset),
                      static_cast<int32_t>(submesh.index_count),
                      static_cast<int32_t>(submesh.mat_slot));
   return mesh;
@@ -745,16 +761,19 @@ RefPtr<Mesh3D> BuildMesh(const GlbFile& glb,
 
 }
 
-GLTFModel3D::GLTFModel3D(std::string path) {
-  Load(std::move(path));
+GLTFModel3D::GLTFModel3D(URGE_EXCEPT, std::string path) {
+  Load(exception_state, std::move(path));
 }
 
 GLTFModel3D::~GLTFModel3D() = default;
 
-void GLTFModel3D::Load(std::string path) {
+void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
   const auto started = std::chrono::steady_clock::now();
 
-  const GlbFile glb = ParseGlb(ReadFile(path), path);
+  const GlbFile glb = ParseGlb(exception_state, ReadFile(exception_state, path),
+                               path);
+  if (exception_state.HadException())
+    return;
 
   const Json& image_list = glb.json["images"];
   for (size_t i = 0; i < image_list.Size(); ++i) {
@@ -786,7 +805,7 @@ void GLTFModel3D::Load(std::string path) {
     material_sources_.push_back(MaterialSource3D{});
 
   for (const MaterialSource3D& source : material_sources_)
-    materials_.push_back(BuildMaterial(source, unlit_));
+    materials_.push_back(BuildMaterial(exception_state, source, unlit_));
 
   root_ = MakeRefCounted<Node3D>();
 
@@ -807,7 +826,7 @@ void GLTFModel3D::Load(std::string path) {
       }
       if (!built[mesh_index]) {
         std::vector<SubMesh3D> submeshes;
-        built[mesh_index] = BuildMesh(glb, mesh_index, &submeshes);
+        built[mesh_index] = BuildMesh(exception_state, glb, mesh_index, &submeshes);
         meshes_[mesh_index] = built[mesh_index];
       }
 
@@ -817,7 +836,8 @@ void GLTFModel3D::Load(std::string path) {
       for (size_t p = 0; p < primitives.Size(); ++p) {
         const int slot = std::max(0, primitives.At(p)["material"].Int(0));
         const size_t material_index = static_cast<size_t>(slot);
-        renderer->SetMaterial(slot, material_index < materials_.size()
+        renderer->SetMaterial(exception_state, slot,
+                              material_index < materials_.size()
                                         ? materials_[material_index]
                                         : materials_.front());
       }
@@ -923,7 +943,7 @@ void GLTFModel3D::Fit(float size) {
   root_->SetLocalPosition(-center * scale);
 }
 
-void GLTFModel3D::RebuildMaterials() {
+void GLTFModel3D::RebuildMaterials(URGE_EXCEPT) {
   if (material_sources_.empty() || !root_)
     return;
 
@@ -932,7 +952,7 @@ void GLTFModel3D::RebuildMaterials() {
       break;
     const RefPtr<Material3D> previous = materials_[i];
     const RefPtr<Material3D> replacement =
-        BuildMaterial(material_sources_[i], unlit_);
+        BuildMaterial(exception_state, material_sources_[i], unlit_);
     materials_[i] = replacement;
 
     std::function<void(Node3D*)> rebind = [&](Node3D* node) {
@@ -942,7 +962,7 @@ void GLTFModel3D::RebuildMaterials() {
           if (entry.second.get() == previous.get())
             slots.push_back(entry.first);
         for (const int32_t slot : slots)
-          renderer->SetMaterial(slot, replacement);
+          renderer->SetMaterial(exception_state, slot, replacement);
       }
       for (const RefPtr<Node3D>& child : node->children())
         rebind(child.get());
@@ -951,12 +971,12 @@ void GLTFModel3D::RebuildMaterials() {
   }
 }
 
-void GLTFModel3D::SetMaterial(int32_t index, RefPtr<Material3D> material) {
-  if (index < 0 || static_cast<size_t>(index) >= materials_.size())
-    throw Exception(Exception::kRGSSError,
-                    "gltf: material index {} is out of range (0..{}).", index,
+void GLTFModel3D::SetMaterial(URGE_EXCEPT, int32_t index, RefPtr<Material3D> material) {
+  if (index < 0 || static_cast<size_t>(index) >= materials_.size()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "gltf: material index {} is out of range (0..{}).", index,
                     static_cast<int32_t>(materials_.size()) - 1);
-
+    return;
+  }
   const RefPtr<Material3D> previous = materials_[static_cast<size_t>(index)];
   materials_[static_cast<size_t>(index)] = material;
 
@@ -970,7 +990,7 @@ void GLTFModel3D::SetMaterial(int32_t index, RefPtr<Material3D> material) {
         if (entry.second.get() == previous.get())
           slots.push_back(entry.first);
       for (const int32_t slot : slots)
-        renderer->SetMaterial(slot, material);
+        renderer->SetMaterial(exception_state, slot, material);
     }
 
     for (const RefPtr<Node3D>& child : node->children())

@@ -49,12 +49,12 @@ RB_FUNC(Geometry_initialize) {
 
     urge::Geometry* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Geometry> value = urge::MakeRefCounted<urge::Geometry>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -69,13 +69,13 @@ RB_FUNC(Geometry_initialize) {
 
     urge::Geometry* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Geometry> value = urge::MakeRefCounted<urge::Geometry>(
           viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -89,6 +89,7 @@ RB_FUNC(Geometry_initialize) {
 RB_FUNC(Geometry_SetPosition) {
   auto* self_obj = GetSelfData<urge::Geometry>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   int triangle, point;
   VALUE position_val;
@@ -96,9 +97,10 @@ RB_FUNC(Geometry_SetPosition) {
   ParseArgs(argc, argv, "iio", &triangle, &point, &position_val);
   position = CheckObject<urge::Vector3>(position_val, kVector3DataType);
 
-  CPP_BEGIN {
-    self_obj->SetPosition(triangle, point, position);
-  } CPP_END;
+  {
+    self_obj->SetPosition(exception_state, triangle, point, position);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -106,6 +108,7 @@ RB_FUNC(Geometry_SetPosition) {
 RB_FUNC(Geometry_SetTexcoord) {
   auto* self_obj = GetSelfData<urge::Geometry>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   int triangle, point;
   VALUE texcoord_val;
@@ -113,9 +116,10 @@ RB_FUNC(Geometry_SetTexcoord) {
   ParseArgs(argc, argv, "iio", &triangle, &point, &texcoord_val);
   texcoord = CheckObject<urge::Vector2>(texcoord_val, kVector2DataType);
 
-  CPP_BEGIN {
-    self_obj->SetTexcoord(triangle, point, texcoord);
-  } CPP_END;
+  {
+    self_obj->SetTexcoord(exception_state, triangle, point, texcoord);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -123,6 +127,7 @@ RB_FUNC(Geometry_SetTexcoord) {
 RB_FUNC(Geometry_SetColor) {
   auto* self_obj = GetSelfData<urge::Geometry>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   int triangle, point;
   VALUE color_val;
@@ -130,9 +135,10 @@ RB_FUNC(Geometry_SetColor) {
   ParseArgs(argc, argv, "iio", &triangle, &point, &color_val);
   color = CheckObject<urge::Color>(color_val, kColorDataType);
 
-  CPP_BEGIN {
-    self_obj->SetColor(triangle, point, color);
-  } CPP_END;
+  {
+    self_obj->SetColor(exception_state, triangle, point, color);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -146,7 +152,7 @@ BINDING_ATTR_OBJECT_REF(Geometry,
                         CheckMaybeObject);
 
 // Attribute: capacity (int32_t)
-BINDING_ATTR_INT(Geometry, urge::Geometry, Capacity);
+BINDING_ATTR_INT_EXC(Geometry, urge::Geometry, Capacity);
 
 // Attribute: bitmap (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(Geometry,

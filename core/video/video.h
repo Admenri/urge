@@ -42,7 +42,7 @@ URGE_BINDING()
 class Video : public Object {
  public:
   URGE_BINDING()
-  Video(std::string filename);
+  Video(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
   ~Video() override;
 
@@ -73,7 +73,7 @@ class Video : public Object {
   URGE_BINDING()
   void Update();
   URGE_BINDING()
-  void Render(RefPtr<Bitmap> target);
+  void Render(URGE_EXCEPT, RefPtr<Bitmap> target);
 
  private:
 #if URGE_ENABLE_VIDEO

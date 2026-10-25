@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Material3D  (core/scene3d/material3d.h:545-567)
+// Material3D  (core/scene3d/material3d.h:547-571)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Material3D);
@@ -37,12 +37,12 @@ RB_FUNC(Material3D_initialize) {
 
   urge::Material3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Material3D> value = urge::MakeRefCounted<urge::Material3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -53,6 +53,7 @@ RB_FUNC(Material3D_initialize) {
 RB_FUNC(Material3D_AddPass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE tag_val, vs_wgsl_val, fs_wgsl_val;
   const char* tag_data;
@@ -66,15 +67,16 @@ RB_FUNC(Material3D_AddPass) {
 
   urge::MaterialPass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::MaterialPass3D> value = self_obj->AddPass(
-        std::string(tag_data, tag_size),
+        exception_state, std::string(tag_data, tag_size),
         std::string(vs_wgsl_data, vs_wgsl_size),
         std::string(fs_wgsl_data, fs_wgsl_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE value = WrapObject(result, kMaterialPass3DDataType);
   if (result)
@@ -85,6 +87,7 @@ RB_FUNC(Material3D_AddPass) {
 RB_FUNC(Material3D_AddShadowPass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE tag_val, vs_wgsl_val;
   const char* tag_data;
@@ -96,14 +99,15 @@ RB_FUNC(Material3D_AddShadowPass) {
 
   urge::MaterialPass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::MaterialPass3D> value = self_obj->AddShadowPass(
-        std::string(tag_data, tag_size),
+        exception_state, std::string(tag_data, tag_size),
         std::string(vs_wgsl_data, vs_wgsl_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE value = WrapObject(result, kMaterialPass3DDataType);
   if (result)
@@ -123,13 +127,13 @@ RB_FUNC(Material3D_GetPass) {
 
   urge::MaterialPass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::MaterialPass3D> value = self_obj->GetPass(
         std::string(tag_data, tag_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kMaterialPass3DDataType);
   if (result)
@@ -149,9 +153,9 @@ RB_FUNC(Material3D_HasPass) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->HasPass(std::string(tag_data, tag_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -166,9 +170,9 @@ RB_FUNC(Material3D_RemovePass) {
   ParseArgs(argc, argv, "o", &tag_val);
   CheckString(tag_val, &tag_data, &tag_size);
 
-  CPP_BEGIN {
+  {
     self_obj->RemovePass(std::string(tag_data, tag_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -179,9 +183,9 @@ RB_FUNC(Material3D_PassCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->PassCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -192,9 +196,9 @@ RB_FUNC(Material3D_Tags) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->Tags());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -210,12 +214,12 @@ RB_FUNC(Material3D_PassAt) {
 
   urge::MaterialPass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::MaterialPass3D> value = self_obj->PassAt(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kMaterialPass3DDataType);
   if (result)

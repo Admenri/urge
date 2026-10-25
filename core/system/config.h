@@ -36,7 +36,7 @@ namespace urge {
 URGE_BINDING()
 class Config : public Singleton<Config> {
  public:
-  Config(std::string inifile);
+  Config(URGE_EXCEPT, std::string inifile);
 
   URGE_BINDING()
   std::string GetValue(std::string section,
@@ -96,7 +96,7 @@ class Config : public Singleton<Config> {
   bool vx() const { return game.rgss == 2; }
   bool vxa() const { return game.rgss == 3; }
 
-  void Save();
+  void Save(URGE_EXCEPT);
 
  private:
   void Load();

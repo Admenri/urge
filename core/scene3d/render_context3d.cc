@@ -61,12 +61,13 @@ uint64_t NextFrameToken() {
 
 }
 
-RenderContext3D::RenderContext3D(wgpu::CommandEncoder encoder,
+RenderContext3D::RenderContext3D(URGE_EXCEPT,
+                                 wgpu::CommandEncoder encoder,
                                  RefPtr<RenderTarget3D> target)
     : encoder_(encoder),
       target_(std::move(target)),
       ambient_(MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f)) {
-  mesh_pool_ = std::make_unique<UniformBlockPool>(
+  mesh_pool_ = std::make_unique<UniformBlockPool>(exception_state, 
       AcquireMeshUniformLayout(), static_cast<uint32_t>(sizeof(MeshData)),
       "mesh3d");
   view_stride_ = ViewStride();
@@ -167,7 +168,7 @@ void RenderContext3D::SetPointShadow(
         i < face_matrices.size() ? face_matrices[i] : glm::mat4(1.0f);
 }
 
-void RenderContext3D::UploadView(int32_t slot) {
+void RenderContext3D::UploadView(URGE_EXCEPT, int32_t slot) {
   if (slot < 0 || slot >= kMaxViewSlots)
     return;
   if (view_uploaded_[slot])
@@ -181,10 +182,12 @@ void RenderContext3D::UploadView(int32_t slot) {
     desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
     desc.size = needed;
     view_buffer_ = device.CreateBuffer(&desc);
-    if (view_buffer_ == nullptr)
-      throw Exception(
-          Exception::kGPUError,
+    if (view_buffer_ == nullptr) {
+      exception_state.Throw(
+          ExceptionState::kGPUError,
           "render context 3d: the device rejected the view buffer.");
+      return;
+    }
     view_group_ = nullptr;
     shadow_view_group_ = nullptr;
   }
@@ -274,19 +277,20 @@ void RenderContext3D::UploadView(int32_t slot) {
   desc.entryCount = 7;
   desc.entries = entries;
   view_group_ = device.CreateBindGroup(&desc);
-  if (view_group_ == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "render context 3d: the device rejected the view group.");
+  if (view_group_ == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "render context 3d: the device rejected the view group.");
+    return;
+  }
   view_group_shadow_target_ = shadow_target_.get();
 }
 
-void RenderContext3D::UploadShadowView(int32_t slot) {
+void RenderContext3D::UploadShadowView(URGE_EXCEPT, int32_t slot) {
   if (slot < 0 || slot >= kMaxViewSlots)
     return;
   if (view_uploaded_[slot])
     return;
 
-  UploadView(slot);
+  UploadView(exception_state, slot);
 
   if (shadow_view_group_ != nullptr)
     return;
@@ -302,13 +306,13 @@ void RenderContext3D::UploadShadowView(int32_t slot) {
   desc.entryCount = 1;
   desc.entries = &entry;
   shadow_view_group_ = GPUDevice::Get().device().CreateBindGroup(&desc);
-  if (shadow_view_group_ == nullptr)
-    throw Exception(Exception::kGPUError,
-                    "render context 3d: the device rejected the shadow view "
+  if (shadow_view_group_ == nullptr) {
+    exception_state.Throw(ExceptionState::kGPUError, "render context 3d: the device rejected the shadow view "
                     "group.");
-}
+    return;
+  }}
 
-void RenderContext3D::UpdateGlobals(int32_t slot) {
+void RenderContext3D::UpdateGlobals(URGE_EXCEPT, int32_t slot) {
   if (slot < 0 || slot >= kMaxViewSlots)
     return;
 
@@ -321,11 +325,11 @@ void RenderContext3D::UpdateGlobals(int32_t slot) {
     desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
     desc.size = sizeof(GlobalsData);
     target.buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-    if (target.buffer == nullptr)
-      throw Exception(Exception::kGPUError,
-                      "render context 3d: the device rejected the globals "
+    if (target.buffer == nullptr) {
+      exception_state.Throw(ExceptionState::kGPUError, "render context 3d: the device rejected the globals "
                       "buffer.");
-
+      return;
+    }
     wgpu::BindGroupEntry entry = {};
     entry.binding = 0;
     entry.buffer = target.buffer;
@@ -337,11 +341,11 @@ void RenderContext3D::UpdateGlobals(int32_t slot) {
     desc_group.entryCount = 1;
     desc_group.entries = &entry;
     target.group = GPUDevice::Get().device().CreateBindGroup(&desc_group);
-    if (target.group == nullptr)
-      throw Exception(Exception::kGPUError,
-                      "render context 3d: the device rejected the globals "
+    if (target.group == nullptr) {
+      exception_state.Throw(ExceptionState::kGPUError, "render context 3d: the device rejected the globals "
                       "group.");
-  }
+      return;
+    }  }
 
   static double last_seconds = 0.0;
   static uint64_t frame_index = 0;
@@ -360,8 +364,8 @@ void RenderContext3D::UpdateGlobals(int32_t slot) {
   GPUDevice::Get().queue().WriteBuffer(target.buffer, 0, &data, sizeof(data));
 }
 
-wgpu::BindGroup RenderContext3D::GlobalsGroup(int32_t slot) {
-  UpdateGlobals(slot);
+wgpu::BindGroup RenderContext3D::GlobalsGroup(URGE_EXCEPT, int32_t slot) {
+  UpdateGlobals(exception_state, slot);
   if (slot < 0 || static_cast<size_t>(slot) >= globals_slots_.size())
     return nullptr;
   return globals_slots_[slot].group;
@@ -378,24 +382,25 @@ PipelineTargetState3D RenderContext3D::target_state() const {
   return state;
 }
 
-void RenderContext3D::BeginPass(RefPtr<RenderTarget3D> target,
+void RenderContext3D::BeginPass(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
                                 RefPtr<Color> clear,
                                 bool clear_depth) {
   std::vector<RefPtr<Color>> clears;
   if (clear)
     clears.push_back(clear);
-  BeginPassEx(std::move(target), std::move(clears), clear_depth, clear_depth,
-              0);
+  BeginPassEx(exception_state, std::move(target), std::move(clears),
+              clear_depth, clear_depth, 0);
 }
 
-void RenderContext3D::BeginPassEx(RefPtr<RenderTarget3D> target,
+void RenderContext3D::BeginPassEx(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
                                   std::vector<RefPtr<Color>> clears,
                                   bool clear_depth,
                                   bool clear_stencil,
                                   int32_t layer) {
-  if (!encoder_)
-    throw Exception(Exception::kRGSSError, "render context has no encoder.");
-
+  if (!encoder_) {
+    exception_state.Throw(ExceptionState::kRGSSError, "render context has no encoder.");
+    return;
+  }
   if (pass_) {
     pass_.End();
     pass_ = nullptr;
@@ -418,9 +423,9 @@ void RenderContext3D::BeginPassEx(RefPtr<RenderTarget3D> target,
   const bool shadow_pass =
       shadow_target_ && target.get() == shadow_target_.get();
   if (shadow_pass)
-    UploadShadowView(pass_serial_);
+    UploadShadowView(exception_state, pass_serial_);
   else
-    UploadView(pass_serial_);
+    UploadView(exception_state, pass_serial_);
 }
 
 void RenderContext3D::EndPass() {
@@ -460,24 +465,26 @@ void RenderContext3D::DrawIndexedIndirect(RefPtr<GPUBuffer> buffer,
                             static_cast<uint64_t>(std::max(0, offset)));
 }
 
-void RenderContext3D::Draw(const RenderQueue3D::Item& item) {
-  if (!pass_)
-    throw Exception(Exception::kRGSSError,
-                    "no render pass is open, call begin_pass first.");
+void RenderContext3D::Draw(URGE_EXCEPT, const RenderQueue3D::Item& item) {
+  if (!pass_) {
+    exception_state.Throw(ExceptionState::kRGSSError, "no render pass is open, call begin_pass first.");
+    return;
+  }
   if (!item.mesh || !item.pass)
     return;
-  if (item.slot.chunk == UniformBlockPool::kInvalidChunk)
-    throw Exception(Exception::kGPUError, "the mesh has no mesh uniform slot.");
-
+  if (item.slot.chunk == UniformBlockPool::kInvalidChunk) {
+    exception_state.Throw(ExceptionState::kGPUError, "the mesh has no mesh uniform slot.");
+    return;
+  }
   const bool shadow_mode = shadow_pass_mode_ || item.pass->depth_only();
 
   PipelineTargetState3D state = target_state();
   state.flip_winding = glm::determinant(glm::mat3(item.model)) < 0.0f;
   const wgpu::RenderPipeline pipeline =
       shadow_mode ? item.pass->AcquireDepthOnlyPipeline(state)
-                  : item.pass->AcquirePipeline(state);
+                  : item.pass->AcquirePipeline(exception_state, state);
 
-  const wgpu::Buffer joints = item.mesh->AcquireJointBuffer(frame_token_);
+  const wgpu::Buffer joints = item.mesh->AcquireJointBuffer(exception_state, frame_token_);
   const UniformBlockPool::Chunk& chunk = mesh_pool_->chunk(item.slot.chunk);
 
   uint32_t view_offset = static_cast<uint32_t>(pass_serial_) * view_stride_;
@@ -492,14 +499,16 @@ void RenderContext3D::Draw(const RenderQueue3D::Item& item) {
 
   uint32_t mesh_offset = item.slot.offset;
   pass_.SetBindGroup(
-      1, item.mesh->AcquireGroup(item.slot.chunk, chunk.buffer, joints), 1,
+      1, item.mesh->AcquireGroup(exception_state, item.slot.chunk, chunk.buffer, joints), 1,
       &mesh_offset);
 
   if (!shadow_mode) {
     if (item.pass->HasGroup(2))
-      pass_.SetBindGroup(2, item.pass->AcquireBindGroup(), 0, nullptr);
+      pass_.SetBindGroup(2, item.pass->AcquireBindGroup(exception_state), 0,
+                         nullptr);
     if (item.pass->HasGroup(3)) {
-      const wgpu::BindGroup globals = GlobalsGroup(pass_serial_);
+      const wgpu::BindGroup globals =
+          GlobalsGroup(exception_state, pass_serial_);
       if (globals)
         pass_.SetBindGroup(3, globals, 0, nullptr);
     }
@@ -525,7 +534,8 @@ void RenderContext3D::Draw(const RenderQueue3D::Item& item) {
   pass_.DrawIndexed(item.index_count, instances, item.index_offset, 0, 0);
 }
 
-int32_t RenderContext3D::DrawFilter(std::vector<std::string> tags,
+int32_t RenderContext3D::DrawFilter(URGE_EXCEPT,
+                                    std::vector<std::string> tags,
                                     std::vector<int32_t> tag_ids,
                                     int32_t queue_min,
                                     int32_t queue_max,
@@ -550,25 +560,27 @@ int32_t RenderContext3D::DrawFilter(std::vector<std::string> tags,
     RenderQueue3D::SortByDistance(items, true);
 
   for (const RenderQueue3D::Item* item : items)
-    Draw(*item);
+    Draw(exception_state, *item);
 
   return static_cast<int32_t>(items.size());
 }
 
-void RenderContext3D::DrawFullscreen(RefPtr<MaterialPass3D> pass) {
+void RenderContext3D::DrawFullscreen(URGE_EXCEPT,
+                                     RefPtr<MaterialPass3D> pass) {
   if (!pass_ || !pass)
     return;
 
   const PipelineTargetState3D state = target_state();
-  pass_.SetPipeline(pass->AcquirePipeline(state));
+  pass_.SetPipeline(pass->AcquirePipeline(exception_state, state));
 
   uint32_t view_offset = static_cast<uint32_t>(pass_serial_) * view_stride_;
   pass_.SetBindGroup(0, view_group_, 1, &view_offset);
 
   if (pass->HasGroup(2))
-    pass_.SetBindGroup(2, pass->AcquireBindGroup(), 0, nullptr);
+    pass_.SetBindGroup(2, pass->AcquireBindGroup(exception_state), 0, nullptr);
   if (pass->HasGroup(3)) {
-    const wgpu::BindGroup globals = GlobalsGroup(pass_serial_);
+    const wgpu::BindGroup globals =
+        GlobalsGroup(exception_state, pass_serial_);
     if (globals)
       pass_.SetBindGroup(3, globals, 0, nullptr);
   }
@@ -579,13 +591,13 @@ void RenderContext3D::DrawFullscreen(RefPtr<MaterialPass3D> pass) {
   pass_.Draw(3, 1, 0, 0);
 }
 
-bool RenderContext3D::DrawItem(int32_t index) {
+bool RenderContext3D::DrawItem(URGE_EXCEPT, int32_t index) {
   if (!queue_)
     return false;
   const std::vector<RenderQueue3D::Item>& items = queue_->items();
   if (index < 0 || index >= static_cast<int32_t>(items.size()))
     return false;
-  Draw(items[index]);
+  Draw(exception_state, items[index]);
   return true;
 }
 

@@ -131,10 +131,10 @@ VideoPlayer::~VideoPlayer() {
   Close();
 }
 
-bool VideoPlayer::Open(const std::string& filename) {
+bool VideoPlayer::Open(URGE_EXCEPT, const std::string& filename) {
   Close();
 
-  if (!demuxer_.Open(filename))
+  if (!demuxer_.Open(exception_state, filename))
     return false;
 
   const uint32_t threads = std::thread::hardware_concurrency();

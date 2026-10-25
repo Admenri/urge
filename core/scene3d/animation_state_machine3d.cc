@@ -35,17 +35,18 @@ AnimationStateMachine3D::AnimationStateMachine3D() = default;
 
 AnimationStateMachine3D::~AnimationStateMachine3D() = default;
 
-void AnimationStateMachine3D::AddState(std::string name,
+void AnimationStateMachine3D::AddState(URGE_EXCEPT, std::string name,
                                        RefPtr<Animation3D> animation,
                                        bool loop) {
-  if (name.empty())
-    throw Exception(Exception::kRGSSError,
-                    "state machine 3d: a state needs a "
+  if (name.empty()) {
+    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: a state needs a "
                     "name.");
-  if (FindState(name) >= 0)
-    throw Exception(Exception::kRGSSError,
-                    "state machine 3d: the state '{}' already exists.", name);
-
+    return;
+  }
+  if (FindState(name) >= 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: the state '{}' already exists.", name);
+    return;
+  }
   State state;
   state.name = std::move(name);
   state.animation = std::move(animation);
@@ -53,16 +54,16 @@ void AnimationStateMachine3D::AddState(std::string name,
   states_.push_back(std::move(state));
 }
 
-void AnimationStateMachine3D::AddTransition(std::string from,
+void AnimationStateMachine3D::AddTransition(URGE_EXCEPT, std::string from,
                                             std::string to,
                                             float duration,
                                             float exit_time) {
-  if (FindState(from) < 0 || FindState(to) < 0)
-    throw Exception(Exception::kRGSSError,
-                    "state machine 3d: transition '{}' -> '{}' uses an unknown "
+  if (FindState(from) < 0 || FindState(to) < 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: transition '{}' -> '{}' uses an unknown "
                     "state.",
                     from, to);
-
+    return;
+  }
   Transition transition;
   transition.from = std::move(from);
   transition.to = std::move(to);
@@ -100,11 +101,12 @@ void AnimationStateMachine3D::AdvanceTime(float& time,
   }
 }
 
-bool AnimationStateMachine3D::Play(std::string name) {
+bool AnimationStateMachine3D::Play(URGE_EXCEPT, std::string name) {
   const int32_t index = FindState(name);
-  if (index < 0)
-    throw Exception(Exception::kRGSSError,
-                    "state machine 3d: the state '{}' does not exist.", name);
+  if (index < 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: the state '{}' does not exist.", name);
+    return {};
+  }
   if (index == current_index_)
     return false;
 
@@ -130,7 +132,9 @@ bool AnimationStateMachine3D::Play(std::string name) {
   return true;
 }
 
-void AnimationStateMachine3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
+void AnimationStateMachine3D::Update(URGE_EXCEPT,
+                                     RefPtr<Skeleton3D> skeleton,
+                                     float delta) {
   if (current_index_ < 0)
     return;
 
@@ -150,7 +154,7 @@ void AnimationStateMachine3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
       if (transition.from != current.name || transition.exit_time < 0.0f)
         continue;
       if (current_time_ >= transition.exit_time) {
-        Play(transition.to);
+        Play(exception_state, transition.to);
         return;
       }
     }
@@ -164,10 +168,13 @@ void AnimationStateMachine3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
 
     const float weight = std::clamp(
         blend_time_ / std::max(blend_duration_, 0.0001f), 0.0f, 1.0f);
-    previous.animation->Blend(skeleton, previous_time_, 1.0f - weight);
-    current.animation->Blend(skeleton, current_time_, weight);
+    previous.animation->Blend(exception_state, skeleton, previous_time_,
+                              1.0f - weight);
+    current.animation->Blend(exception_state, skeleton, current_time_,
+                             weight);
   } else {
-    current.animation->Blend(skeleton, current_time_, 1.0f);
+    current.animation->Blend(exception_state, skeleton, current_time_,
+                             1.0f);
   }
 
   skeleton->EndPose();

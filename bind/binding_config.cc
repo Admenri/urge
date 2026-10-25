@@ -42,10 +42,10 @@ RB_FUNC(Config_GetValue) {
 
     std::string* result = nullptr;
 
-    CPP_BEGIN {
+    {
       result = new std::string(
           urge::Config::Get().GetValue(std::string(section_data, section_size), std::string(key_data, key_size)));
-    } CPP_END;
+    }
 
     VALUE value = rb_enc_str_new(
         result->data(), static_cast<long>(result->size()),
@@ -66,10 +66,10 @@ RB_FUNC(Config_GetValue) {
 
     std::string* result = nullptr;
 
-    CPP_BEGIN {
+    {
       result = new std::string(
           urge::Config::Get().GetValue(std::string(section_data, section_size), std::string(key_data, key_size), std::string(defval_data, defval_size)));
-    } CPP_END;
+    }
 
     VALUE value = rb_enc_str_new(
         result->data(), static_cast<long>(result->size()),
@@ -93,10 +93,10 @@ RB_FUNC(Config_SetValue) {
   CheckString(key_val, &key_data, &key_size);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     urge::Config::Get().SetValue(std::string(section_data, section_size),
         std::string(key_data, key_size), std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }

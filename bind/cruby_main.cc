@@ -62,8 +62,6 @@ extern "C" void Init_ext(void);
 
 namespace binding {
 
-using urge::Exception;
-
 namespace {
 
 /*! Mirrors the RGSS runtime switches onto the globals a game reads.  RGSS1
@@ -80,8 +78,11 @@ void SetupRuntimeSwitches(const urge::Config& config) {
     rb_gv_set("BTEST", Qtrue);
 }
 
-static VALUE RGSSLoadData(const char* filename) {
-  auto stream = urge::IOService::Get().OpenReadRaw(filename);
+static VALUE RGSSLoadData(urge::ExceptionState& exception_state,
+                          const char* filename) {
+  auto stream = urge::IOService::Get().OpenReadRaw(exception_state, filename);
+  if (exception_state.HadException())
+    return Qnil;
   size_t data_size = 0;
   auto data_ptr = SDL_LoadFile_IO(stream, &data_size, true);
 
@@ -138,8 +139,11 @@ RB_FUNC(rgss_main) {
 }
 
 RB_FUNC(rgss_stop) {
-  for (;;)
-    urge::Graphics::Get().Update();
+  urge::ExceptionState exception_state;
+  for (;;) {
+    urge::Graphics::Get().Update(exception_state);
+    RaiseException(exception_state);
+  }
   return Qnil;
 }
 
@@ -160,11 +164,9 @@ RB_FUNC(load_data) {
   const char* filename = nullptr;
   ParseArgs(argc, argv, "z", &filename);
 
-  VALUE result = Qnil;
-
-  CPP_BEGIN {
-    result = RGSSLoadData(filename);
-  } CPP_END;
+  urge::ExceptionState exception_state;
+  VALUE result = RGSSLoadData(exception_state, filename);
+  RaiseException(exception_state);
 
   return result;
 }
@@ -180,10 +182,13 @@ RB_FUNC(save_data) {
   const char* bytes = RSTRING_PTR(dumped);
   long length = RSTRING_LEN(dumped);
 
-  CPP_BEGIN {
-    auto stream = urge::IOService::Get().OpenWrite(filename);
-    SDL_SaveFile_IO(stream, bytes, length, true);
-  } CPP_END;
+  {
+    urge::ExceptionState exception_state;
+    auto stream = urge::IOService::Get().OpenWrite(exception_state, filename);
+    if (stream)
+      SDL_SaveFile_IO(stream, bytes, length, true);
+    RaiseException(exception_state);
+  }
 
   return Qnil;
 }
@@ -243,7 +248,7 @@ void CollectGarbage() {
 }
 #endif
 
-BindingMain::BindingMain() {
+BindingMain::BindingMain(urge::ExceptionState& exception_state) {
   auto& config = urge::Config::Get();
 
   int argc = 0;
@@ -319,13 +324,21 @@ BindingMain::BindingMain() {
                            : config.vx() ? rpg_rgss2
                                          : rpg_rgss3;
   rb_eval_string_protect(rpg_source, &error_state_);
-  if (error_state_)
-    throw Exception(Exception::kRGSSError, "failed to load RPG database.");
+  if (error_state_) {
+    exception_state.Throw(urge::ExceptionState::kRGSSError,
+                          "failed to load RPG database.");
+    return;
+  }
 
   // Marshal decode
-  VALUE scripts = RGSSLoadData(config.game.scripts.c_str());
-  if (!RB_TYPE_P(scripts, T_ARRAY))
-    throw Exception(Exception::kRGSSError, "invalid scripts file.");
+  VALUE scripts = RGSSLoadData(exception_state, config.game.scripts.c_str());
+  if (exception_state.HadException())
+    return;
+  if (!RB_TYPE_P(scripts, T_ARRAY)) {
+    exception_state.Throw(urge::ExceptionState::kRGSSError,
+                          "invalid scripts file.");
+    return;
+  }
 
   // Zlib decode
   std::vector<uint8_t> buffer(1024);
@@ -349,8 +362,11 @@ BindingMain::BindingMain() {
       if (result == Z_BUF_ERROR)
         buffer.resize(buffer.size() + 1024);
     } while (result == Z_BUF_ERROR);
-    if (result != Z_OK)
-      throw Exception(Exception::kRGSSError, "failed to decompress script");
+    if (result != Z_OK) {
+      exception_state.Throw(urge::ExceptionState::kRGSSError,
+                            "failed to decompress script");
+      return;
+    }
 
     VALUE script_str =
         rb_str_new(reinterpret_cast<const char*>(buffer.data()), output_size);
@@ -380,7 +396,8 @@ BindingMain::BindingMain() {
   if (error_state_) {
     VALUE exc = rb_errinfo();
     if (rb_obj_class(exc) != rb_eSystemExit)
-      throw Exception(Exception::kRGSSError, RubyExceptionMessage(exc));
+      exception_state.Throw(urge::ExceptionState::kRGSSError,
+                            RubyExceptionMessage(exc));
   }
 }
 

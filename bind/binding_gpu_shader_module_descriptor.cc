@@ -37,12 +37,12 @@ RB_FUNC(GPUShaderModuleDescriptor_initialize) {
 
   urge::GPUShaderModuleDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUShaderModuleDescriptor> value = urge::MakeRefCounted<urge::GPUShaderModuleDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -56,9 +56,9 @@ RB_FUNC(GPUShaderModuleDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -77,9 +77,9 @@ RB_FUNC(GPUShaderModuleDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -90,9 +90,9 @@ RB_FUNC(GPUShaderModuleDescriptor_GetCode) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetCode());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -111,9 +111,9 @@ RB_FUNC(GPUShaderModuleDescriptor_SetCode) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetCode(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -124,9 +124,9 @@ RB_FUNC(GPUShaderModuleDescriptor_GetEntryPoint) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetEntryPoint());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -145,9 +145,9 @@ RB_FUNC(GPUShaderModuleDescriptor_SetEntryPoint) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetEntryPoint(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }

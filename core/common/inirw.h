@@ -27,6 +27,7 @@
 #include <fstream>
 #include <istream>
 #include <sstream>
+#include <charconv>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -101,11 +102,11 @@ class IniFile {
     auto s = Get(section, key);
     if (s.empty())
       return defaultVal;
-    try {
-      return std::stoi(s);
-    } catch (...) {
+    int32_t value = defaultVal;
+    const auto parsed = std::from_chars(s.data(), s.data() + s.size(), value);
+    if (parsed.ec != std::errc() || parsed.ptr != s.data() + s.size())
       return defaultVal;
-    }
+    return value;
   }
 
   float GetFloat(const std::string& section,
@@ -114,11 +115,11 @@ class IniFile {
     auto s = Get(section, key);
     if (s.empty())
       return defaultVal;
-    try {
-      return std::stof(s);
-    } catch (...) {
+    float value = defaultVal;
+    const auto parsed = std::from_chars(s.data(), s.data() + s.size(), value);
+    if (parsed.ec != std::errc() || parsed.ptr != s.data() + s.size())
       return defaultVal;
-    }
+    return value;
   }
 
   bool GetBool(const std::string& section,

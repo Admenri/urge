@@ -32,8 +32,10 @@ MARSHAL_DUMP_DEF(Rect) {
 
 MARSHAL_LOAD_DEF(Rect) {
   const size_t size = data.size();
-  if (size < sizeof(int32_t) * 4)
-    throw Exception(Exception::kRGSSError, "invalid data length ({})", size);
+  if (size < sizeof(int32_t) * 4) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid data length ({})", size);
+    return nullptr;
+  }
 
   const int32_t* ptr = reinterpret_cast<const int32_t*>(data.data());
   return MakeRefCounted<Rect>(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3));
@@ -57,8 +59,10 @@ MARSHAL_DUMP_DEF(Color) {
 
 MARSHAL_LOAD_DEF(Color) {
   const size_t size = data.size();
-  if (size < sizeof(double) * 4)
-    throw Exception(Exception::kRGSSError, "invalid data length ({})", size);
+  if (size < sizeof(double) * 4) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid data length ({})", size);
+    return nullptr;
+  }
 
   const double* ptr = reinterpret_cast<const double*>(data.data());
   const float red = static_cast<float>(*(ptr + 0));
@@ -88,8 +92,10 @@ MARSHAL_DUMP_DEF(Tone) {
 
 MARSHAL_LOAD_DEF(Tone) {
   const size_t size = data.size();
-  if (size < sizeof(double) * 4)
-    throw Exception(Exception::kRGSSError, "invalid data length ({})", size);
+  if (size < sizeof(double) * 4) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid data length ({})", size);
+    return nullptr;
+  }
 
   const double* ptr = reinterpret_cast<const double*>(data.data());
   const float red = static_cast<float>(*(ptr + 0));

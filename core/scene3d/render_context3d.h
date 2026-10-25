@@ -50,7 +50,9 @@ class Node3D;
 URGE_BINDING()
 class RenderContext3D : public Object {
  public:
-  RenderContext3D(wgpu::CommandEncoder encoder, RefPtr<RenderTarget3D> target);
+  RenderContext3D(URGE_EXCEPT,
+                  wgpu::CommandEncoder encoder,
+                  RefPtr<RenderTarget3D> target);
   ~RenderContext3D() override;
 
   void BeginFrame(wgpu::CommandEncoder encoder, RefPtr<RenderTarget3D> target);
@@ -86,11 +88,11 @@ class RenderContext3D : public Object {
                       float range);
 
   URGE_BINDING()
-  void BeginPass(RefPtr<RenderTarget3D> target,
+  void BeginPass(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
                  MaybePtr<Color> clear = nullptr,
                  bool clear_depth = true);
   URGE_BINDING()
-  void BeginPassEx(RefPtr<RenderTarget3D> target,
+  void BeginPassEx(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
                    std::vector<RefPtr<Color>> clears,
                    bool clear_depth,
                    bool clear_stencil,
@@ -101,16 +103,16 @@ class RenderContext3D : public Object {
   RefPtr<GPURenderPassEncoder> GetPass();
 
   URGE_BINDING()
-  int32_t DrawFilter(std::vector<std::string> tags,
+  int32_t DrawFilter(URGE_EXCEPT, std::vector<std::string> tags,
                      std::vector<int32_t> tag_ids,
                      int32_t queue_min,
                      int32_t queue_max,
                      uint32_t layers);
   URGE_BINDING()
-  bool DrawItem(int32_t index);
+  bool DrawItem(URGE_EXCEPT, int32_t index);
 
-  void Draw(const RenderQueue3D::Item& item);
-  void DrawFullscreen(RefPtr<MaterialPass3D> pass);
+  void Draw(URGE_EXCEPT, const RenderQueue3D::Item& item);
+  void DrawFullscreen(URGE_EXCEPT, RefPtr<MaterialPass3D> pass);
   void SetShadowPassMode(bool value) { shadow_pass_mode_ = value; }
   void SetCullOverride(int32_t value) { cull_override_ = value; }
   void SetSortBackToFront(bool value) { sort_back_to_front_ = value; }
@@ -133,10 +135,10 @@ class RenderContext3D : public Object {
     wgpu::BindGroup group = nullptr;
   };
 
-  void UploadView(int32_t slot);
-  void UploadShadowView(int32_t slot);
-  void UpdateGlobals(int32_t slot);
-  wgpu::BindGroup GlobalsGroup(int32_t slot);
+  void UploadView(URGE_EXCEPT, int32_t slot);
+  void UploadShadowView(URGE_EXCEPT, int32_t slot);
+  void UpdateGlobals(URGE_EXCEPT, int32_t slot);
+  wgpu::BindGroup GlobalsGroup(URGE_EXCEPT, int32_t slot);
 
   wgpu::CommandEncoder encoder_ = nullptr;
   RefPtr<RenderTarget3D> target_;

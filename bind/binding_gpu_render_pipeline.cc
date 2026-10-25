@@ -43,13 +43,13 @@ RB_FUNC(GPURenderPipeline_GetBindGroupLayout) {
 
   urge::GPUBindGroupLayout* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBindGroupLayout> value = self_obj->GetBindGroupLayout(
         group_index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUBindGroupLayoutDataType);
   if (result)

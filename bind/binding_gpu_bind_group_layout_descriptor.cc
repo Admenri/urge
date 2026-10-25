@@ -37,12 +37,12 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_initialize) {
 
   urge::GPUBindGroupLayoutDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBindGroupLayoutDescriptor> value = urge::MakeRefCounted<urge::GPUBindGroupLayoutDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -56,9 +56,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -77,9 +77,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -91,9 +91,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddUniform) {
   uint32_t binding, visibility;
   ParseArgs(argc, argv, "uu", &binding, &visibility);
 
-  CPP_BEGIN {
+  {
     self_obj->AddUniform(binding, visibility);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -106,9 +106,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddStorage) {
     uint32_t binding, visibility;
     ParseArgs(argc, argv, "uu", &binding, &visibility);
 
-    CPP_BEGIN {
+    {
       self_obj->AddStorage(binding, visibility);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -117,9 +117,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddStorage) {
     bool read_only;
     ParseArgs(argc, argv, "uub", &binding, &visibility, &read_only);
 
-    CPP_BEGIN {
+    {
       self_obj->AddStorage(binding, visibility, read_only);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -135,9 +135,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddTexture) {
     uint32_t binding, visibility;
     ParseArgs(argc, argv, "uu", &binding, &visibility);
 
-    CPP_BEGIN {
+    {
       self_obj->AddTexture(binding, visibility);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -145,9 +145,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddTexture) {
     uint32_t binding, visibility, sample_type;
     ParseArgs(argc, argv, "uuu", &binding, &visibility, &sample_type);
 
-    CPP_BEGIN {
+    {
       self_obj->AddTexture(binding, visibility, sample_type);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -156,9 +156,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddTexture) {
     ParseArgs(argc, argv, "uuuu", &binding, &visibility, &sample_type,
         &view_dimension);
 
-    CPP_BEGIN {
+    {
       self_obj->AddTexture(binding, visibility, sample_type, view_dimension);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -174,9 +174,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddSampler) {
     uint32_t binding, visibility;
     ParseArgs(argc, argv, "uu", &binding, &visibility);
 
-    CPP_BEGIN {
+    {
       self_obj->AddSampler(binding, visibility);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -184,9 +184,9 @@ RB_FUNC(GPUBindGroupLayoutDescriptor_AddSampler) {
     uint32_t binding, visibility, sampler_type;
     ParseArgs(argc, argv, "uuu", &binding, &visibility, &sampler_type);
 
-    CPP_BEGIN {
+    {
       self_obj->AddSampler(binding, visibility, sampler_type);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

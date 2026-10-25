@@ -31,10 +31,10 @@
 
 namespace urge {
 
-RenderTarget3D::RenderTarget3D(int32_t width, int32_t height, bool with_color)
-    : RenderTarget3D(width, height, with_color, 1) {}
+RenderTarget3D::RenderTarget3D(URGE_EXCEPT, int32_t width, int32_t height, bool with_color)
+    : RenderTarget3D(exception_state, width, height, with_color, 1) {}
 
-RenderTarget3D::RenderTarget3D(int32_t width,
+RenderTarget3D::RenderTarget3D(URGE_EXCEPT, int32_t width,
                                int32_t height,
                                bool with_color,
                                int32_t layers) {
@@ -45,10 +45,10 @@ RenderTarget3D::RenderTarget3D(int32_t width,
     desc.colors.push_back(wgpu::TextureFormat::RGBA8Unorm);
   desc.depth = wgpu::TextureFormat::Depth32Float;
   desc.layers = layers;
-  CreateResources(desc);
+  CreateResources(exception_state, desc);
 }
 
-RenderTarget3D::RenderTarget3D(int32_t width,
+RenderTarget3D::RenderTarget3D(URGE_EXCEPT, int32_t width,
                                int32_t height,
                                std::string color_format,
                                std::string depth_format,
@@ -60,34 +60,36 @@ RenderTarget3D::RenderTarget3D(int32_t width,
 
   if (!color_format.empty()) {
     const wgpu::TextureFormat format = ParseTextureFormat(color_format);
-    if (format == wgpu::TextureFormat::Undefined)
-      throw Exception(Exception::kRGSSError,
-                      "render target 3d: '{}' is not a texture format.",
+    if (format == wgpu::TextureFormat::Undefined) {
+      exception_state.Throw(ExceptionState::kRGSSError, "render target 3d: '{}' is not a texture format.",
                       color_format);
+      return;
+    }
     desc.colors.push_back(format);
   }
 
   if (!depth_format.empty()) {
     const wgpu::TextureFormat format = ParseTextureFormat(depth_format);
-    if (format == wgpu::TextureFormat::Undefined || !IsDepthFormat(format))
-      throw Exception(Exception::kRGSSError,
-                      "render target 3d: '{}' is not a depth format.",
+    if (format == wgpu::TextureFormat::Undefined || !IsDepthFormat(format)) {
+      exception_state.Throw(ExceptionState::kRGSSError, "render target 3d: '{}' is not a depth format.",
                       depth_format);
+      return;
+    }
     desc.depth = format;
   } else {
     desc.depth = wgpu::TextureFormat::Undefined;
   }
 
-  CreateResources(desc);
+  CreateResources(exception_state, desc);
 }
 
-RenderTarget3D::RenderTarget3D(const RenderTargetDesc3D& desc) {
-  CreateResources(desc);
+RenderTarget3D::RenderTarget3D(URGE_EXCEPT, const RenderTargetDesc3D& desc) {
+  CreateResources(exception_state, desc);
 }
 
 RenderTarget3D::~RenderTarget3D() = default;
 
-void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
+void RenderTarget3D::CreateResources(URGE_EXCEPT, const RenderTargetDesc3D& desc) {
   const wgpu::Device device = GPUDevice::Get().device();
 
   size_ = glm::ivec2(std::max(1, desc.width), std::max(1, desc.height));
@@ -96,11 +98,12 @@ void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
   const uint32_t mip_levels = std::max<uint32_t>(1, desc.mip_levels);
 
   for (const wgpu::TextureFormat format : desc.colors) {
-    if (IsDepthFormat(format))
-      throw Exception(Exception::kRGSSError,
-                      "render target 3d: '{}' is a depth format, not a color "
+    if (IsDepthFormat(format)) {
+      exception_state.Throw(ExceptionState::kRGSSError, "render target 3d: '{}' is a depth format, not a color "
                       "format.",
                       TextureFormatName(format));
+      return;
+    }
     color_formats_.push_back(format);
 
     wgpu::TextureDescriptor color_desc;
@@ -119,10 +122,11 @@ void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
     color_desc.mipLevelCount = mip_levels;
 
     wgpu::Texture texture = device.CreateTexture(&color_desc);
-    if (!texture)
-      throw Exception(Exception::kGPUError,
-                      "render target 3d: the device rejected the color "
+    if (!texture) {
+      exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the color "
                       "texture.");
+      return;
+    }
     color_textures_.push_back(texture);
     color_views_.push_back(texture.CreateView(nullptr));
 
@@ -139,10 +143,11 @@ void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
       resolve_desc.mipLevelCount = mip_levels;
 
       wgpu::Texture resolved = device.CreateTexture(&resolve_desc);
-      if (!resolved)
-        throw Exception(Exception::kGPUError,
-                        "render target 3d: the device rejected the resolve "
+      if (!resolved) {
+        exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the resolve "
                         "texture.");
+        return;
+      }
       color_textures_.push_back(resolved);
       resolve_views_.push_back(resolved.CreateView(nullptr));
     } else {
@@ -166,31 +171,31 @@ void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
   depth_desc.sampleCount = samples_;
 
   depth_texture_ = device.CreateTexture(&depth_desc);
-  if (!depth_texture_)
-    throw Exception(Exception::kGPUError,
-                    "render target 3d: the device rejected the depth texture.");
-
+  if (!depth_texture_) {
+    exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the depth texture.");
+    return;
+  }
   wgpu::TextureViewDescriptor array_desc;
   array_desc.dimension = wgpu::TextureViewDimension::e2DArray;
   array_desc.baseArrayLayer = 0;
   array_desc.arrayLayerCount = static_cast<uint32_t>(layers_);
   depth_array_view_ = depth_texture_.CreateView(&array_desc);
-  if (!depth_array_view_)
-    throw Exception(Exception::kGPUError,
-                    "render target 3d: the device rejected the depth array "
+  if (!depth_array_view_) {
+    exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the depth array "
                     "view.");
-
+    return;
+  }
   if (layers_ == 6) {
     wgpu::TextureViewDescriptor cube_desc;
     cube_desc.dimension = wgpu::TextureViewDimension::Cube;
     cube_desc.baseArrayLayer = 0;
     cube_desc.arrayLayerCount = 6;
     depth_cube_view_ = depth_texture_.CreateView(&cube_desc);
-    if (!depth_cube_view_)
-      throw Exception(Exception::kGPUError,
-                      "render target 3d: the device rejected the depth cube "
+    if (!depth_cube_view_) {
+      exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the depth cube "
                       "view.");
-  }
+      return;
+    }  }
 
   layer_views_.resize(layers_);
   for (int32_t layer = 0; layer < layers_; ++layer) {
@@ -199,11 +204,11 @@ void RenderTarget3D::CreateResources(const RenderTargetDesc3D& desc) {
     layer_desc.baseArrayLayer = static_cast<uint32_t>(layer);
     layer_desc.arrayLayerCount = 1;
     layer_views_[layer] = depth_texture_.CreateView(&layer_desc);
-    if (!layer_views_[layer])
-      throw Exception(Exception::kGPUError,
-                      "render target 3d: the device rejected the depth layer "
+    if (!layer_views_[layer]) {
+      exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the depth layer "
                       "view.");
-  }
+      return;
+    }  }
 }
 
 bool RenderTarget3D::HasStencil() const {

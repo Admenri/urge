@@ -105,7 +105,9 @@ void RenderQueue3D::CollectNode(Node3D* node,
 
       if (!culled) {
         const MeshData mesh_data = {world, glm::inverseTranspose(world)};
-        const UniformBlockPool::Slot slot = pool.Acquire(mesh_data);
+        ExceptionState acquire_state;
+        const UniformBlockPool::Slot slot =
+            pool.Acquire(acquire_state, mesh_data);
         const float distance = glm::length(center - eye);
 
         for (const SubMesh3D& submesh : mesh->submeshes()) {

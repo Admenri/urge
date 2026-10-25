@@ -42,7 +42,7 @@ class Skeleton3D : public Object {
   ~Skeleton3D() override;
 
   URGE_BINDING()
-  void SetBones(std::vector<int32_t> parents, std::vector<float> inverse_bind);
+  void SetBones(URGE_EXCEPT, std::vector<int32_t> parents, std::vector<float> inverse_bind);
 
   URGE_BINDING()
   int32_t BoneCount() const { return static_cast<int32_t>(bones_.size()); }

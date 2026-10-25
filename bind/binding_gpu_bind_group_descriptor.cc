@@ -41,12 +41,12 @@ RB_FUNC(GPUBindGroupDescriptor_initialize) {
 
   urge::GPUBindGroupDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBindGroupDescriptor> value = urge::MakeRefCounted<urge::GPUBindGroupDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -60,9 +60,9 @@ RB_FUNC(GPUBindGroupDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -81,9 +81,9 @@ RB_FUNC(GPUBindGroupDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -98,9 +98,9 @@ RB_FUNC(GPUBindGroupDescriptor_AddBuffer) {
   ParseArgs(argc, argv, "uo", &binding, &buffer_val);
   buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->AddBuffer(binding, buffer);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -116,9 +116,9 @@ RB_FUNC(GPUBindGroupDescriptor_AddBufferRange) {
   ParseArgs(argc, argv, "uopp", &binding, &buffer_val, &offset, &size);
   buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->AddBufferRange(binding, buffer, offset, size);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -133,9 +133,9 @@ RB_FUNC(GPUBindGroupDescriptor_AddTexture) {
   ParseArgs(argc, argv, "uo", &binding, &view_val);
   view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->AddTexture(binding, view);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -150,9 +150,9 @@ RB_FUNC(GPUBindGroupDescriptor_AddSampler) {
   ParseArgs(argc, argv, "uo", &binding, &sampler_val);
   sampler = CheckObject<urge::GPUSampler>(sampler_val, kGPUSamplerDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->AddSampler(binding, sampler);
-  } CPP_END;
+  }
 
   return Qnil;
 }

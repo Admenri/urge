@@ -39,12 +39,12 @@ RB_FUNC(GPURenderPassDescriptor_initialize) {
 
   urge::GPURenderPassDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPURenderPassDescriptor> value = urge::MakeRefCounted<urge::GPURenderPassDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -58,9 +58,9 @@ RB_FUNC(GPURenderPassDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -79,9 +79,9 @@ RB_FUNC(GPURenderPassDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -97,9 +97,9 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
     ParseArgs(argc, argv, "ouu", &view_val, &load_op, &store_op);
     view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorAttachment(view, load_op, store_op);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -111,10 +111,10 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
     ParseArgs(argc, argv, "ouuf", &view_val, &load_op, &store_op, &clear_r);
     view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorAttachment(view, load_op, store_op,
           static_cast<float>(clear_r));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 5) {
@@ -127,10 +127,10 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
         &clear_g);
     view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorAttachment(view, load_op, store_op,
           static_cast<float>(clear_r), static_cast<float>(clear_g));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 6) {
@@ -143,11 +143,11 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
         &clear_g, &clear_b);
     view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorAttachment(view, load_op, store_op,
           static_cast<float>(clear_r), static_cast<float>(clear_g),
           static_cast<float>(clear_b));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 7) {
@@ -160,11 +160,11 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
         &clear_g, &clear_b, &clear_a);
     view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->AddColorAttachment(view, load_op, store_op,
           static_cast<float>(clear_r), static_cast<float>(clear_g),
           static_cast<float>(clear_b), static_cast<float>(clear_a));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -181,9 +181,9 @@ RB_FUNC(GPURenderPassDescriptor_SetColorResolve) {
   ParseArgs(argc, argv, "o", &resolve_val);
   resolve = CheckMaybeObject<urge::GPUTextureView>(resolve_val, kGPUTextureViewDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetColorResolve(resolve);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -199,9 +199,9 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
     ParseArgs(argc, argv, "ouu", &view_val, &depth_load_op, &depth_store_op);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -214,10 +214,10 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
         &depth_clear_value);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 5) {
@@ -230,10 +230,10 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
         &depth_clear_value, &stencil_load_op);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value), stencil_load_op);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 6) {
@@ -246,11 +246,11 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
         &depth_clear_value, &stencil_load_op, &stencil_store_op);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 7) {
@@ -264,11 +264,11 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
         &stencil_clear_value);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op, stencil_clear_value);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 8) {
@@ -283,11 +283,11 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
         &stencil_store_op, &stencil_clear_value, &depth_read_only);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op, stencil_clear_value, depth_read_only);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 9) {
@@ -303,12 +303,12 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
         &stencil_read_only);
     view = CheckMaybeObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op, stencil_clear_value, depth_read_only,
           stencil_read_only);
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -325,9 +325,9 @@ RB_FUNC(GPURenderPassDescriptor_SetOcclusionQuerySet) {
   ParseArgs(argc, argv, "o", &query_set_val);
   query_set = CheckMaybeObject<urge::GPUQuerySet>(query_set_val, kGPUQuerySetDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetOcclusionQuerySet(query_set);
-  } CPP_END;
+  }
 
   return Qnil;
 }

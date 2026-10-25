@@ -82,7 +82,7 @@ class Mouse : public Singleton<Mouse> {
   int32_t ScrollY();
 
   URGE_BINDING()
-  void SetCursor(MaybePtr<Bitmap> image, int32_t hot_x, int32_t hot_y);
+  void SetCursor(URGE_EXCEPT, MaybePtr<Bitmap> image, int32_t hot_x, int32_t hot_y);
 
   URGE_BINDING()
   ATTR(bool, Capture);
@@ -98,7 +98,7 @@ class Mouse : public Singleton<Mouse> {
   URGE_BINDING()
   ATTR(float, SpeedScale);
 
-  void ProcessEvents(SDL_Event* event);
+  void ProcessEvents(URGE_EXCEPT, SDL_Event* event);
 
  private:
   struct Point {

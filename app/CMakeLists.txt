@@ -73,13 +73,10 @@ if(EMSCRIPTEN)
     # The filesystem is only reached from JavaScript here -- the bridge writes
     # the files in -- and the linker cannot see a use it never compiles.
     "-sFORCE_FILESYSTEM=1"
-    # The link half of the JavaScript exception model.  `-fexceptions` (set for
-    # C++ at the top level) only marks the frames that may throw; this is what
-    # makes the linker emit `invoke_*` wrappers so a `catch` actually runs.  It
-    # is set here rather than globally because it is only meaningful on a C++
-    # link, and the ruby executables are C.
-    "-fexceptions"
-    "-sDISABLE_EXCEPTION_CATCHING=0"
+    # No `-fexceptions` / `-sDISABLE_EXCEPTION_CATCHING=0` here: the engine has
+    # no C++ `try`/`throw` left, so there is no handler for the linker to emit
+    # an `invoke_*` wrapper around.  CRuby's `longjmp` is a separate mechanism
+    # and still works, see the Emscripten block in the top level CMakeLists.
     "--shell-file=${CMAKE_CURRENT_SOURCE_DIR}/urge_index.html")
 
   add_custom_command(TARGET Game POST_BUILD

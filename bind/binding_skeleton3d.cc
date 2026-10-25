@@ -38,12 +38,12 @@ RB_FUNC(Skeleton3D_initialize) {
 
   urge::Skeleton3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Skeleton3D> value = urge::MakeRefCounted<urge::Skeleton3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -54,16 +54,18 @@ RB_FUNC(Skeleton3D_initialize) {
 RB_FUNC(Skeleton3D_SetBones) {
   auto* self_obj = GetSelfData<urge::Skeleton3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE parents_val, inverse_bind_val;
   ParseArgs(argc, argv, "oo", &parents_val, &inverse_bind_val);
   CheckVectorOf<int32_t>(parents_val);
   CheckVectorOf<float>(inverse_bind_val);
 
-  CPP_BEGIN {
-    self_obj->SetBones(TakeVectorOf<int32_t>(parents_val),
+  {
+    self_obj->SetBones(exception_state, TakeVectorOf<int32_t>(parents_val),
         TakeVectorOf<float>(inverse_bind_val));
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -74,9 +76,9 @@ RB_FUNC(Skeleton3D_BoneCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->BoneCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -90,12 +92,12 @@ RB_FUNC(Skeleton3D_BoneAt) {
 
   urge::Node3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node3D> value = self_obj->BoneAt(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kNode3DDataType);
   if (result)
@@ -112,9 +114,9 @@ RB_FUNC(Skeleton3D_BoneParent) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->BoneParent(index);
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -125,9 +127,9 @@ RB_FUNC(Skeleton3D_JointMatrices) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->JointMatrices());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -138,9 +140,9 @@ RB_FUNC(Skeleton3D_BeginPose) {
   auto* self_obj = GetSelfData<urge::Skeleton3D>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->BeginPose();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -149,9 +151,9 @@ RB_FUNC(Skeleton3D_EndPose) {
   auto* self_obj = GetSelfData<urge::Skeleton3D>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->EndPose();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -160,9 +162,9 @@ RB_FUNC(Skeleton3D_CaptureRestPose) {
   auto* self_obj = GetSelfData<urge::Skeleton3D>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->CaptureRestPose();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -171,9 +173,9 @@ RB_FUNC(Skeleton3D_ResetPose) {
   auto* self_obj = GetSelfData<urge::Skeleton3D>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->ResetPose();
-  } CPP_END;
+  }
 
   return Qnil;
 }

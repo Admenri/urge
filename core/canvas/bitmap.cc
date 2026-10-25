@@ -22,6 +22,8 @@
 
 #include "core/canvas/bitmap.h"
 
+#include "core/common/logger.h"
+
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -212,10 +214,10 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 
 }
 
-Bitmap::Bitmap(std::string filename) : font_(MakeRefCounted<Font>()) {
+Bitmap::Bitmap(URGE_EXCEPT, std::string filename) : font_(MakeRefCounted<Font>()) {
   SDL_Surface* image = nullptr;
 
-  IOService::Get().OpenRead(
+  IOService::Get().OpenRead(exception_state, 
       filename, [&](SDL_IOStream* stream, const std::string& ext) {
         image = IMG_LoadTyped_IO(stream, true, ext.c_str());
         return !!image;
@@ -296,23 +298,25 @@ RefPtr<Rect> Bitmap::GetRect() {
   return MakeRefCounted<Rect>(0, 0, size_.x, size_.y);
 }
 
-void Bitmap::Blt(int32_t x,
+void Bitmap::Blt(URGE_EXCEPT, int32_t x,
                  int32_t y,
                  RefPtr<Bitmap> src_bitmap,
                  RefPtr<Rect> src_rect,
                  int32_t opacity) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  StretchBlt(
+  StretchBlt(exception_state, 
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_bitmap, src_rect, opacity);
 }
 
-void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
+void Bitmap::StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
                         RefPtr<Bitmap> src_bitmap,
                         RefPtr<Rect> src_rect,
                         int32_t opacity) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
   if (src_bitmap.get() != this) {
     BitmapDraw draw;
@@ -327,11 +331,12 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
   }
 }
 
-void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
+void Bitmap::MaskBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
                      RefPtr<Bitmap> src_bitmap,
                      RefPtr<Rect> src_rect,
                      RefPtr<Bitmap> mask) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
   if (src_bitmap.get() != this && mask.get() != this) {
     BitmapDraw draw;
@@ -346,31 +351,34 @@ void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
   }
 }
 
-void Bitmap::FillRect(int32_t x,
+void Bitmap::FillRect(URGE_EXCEPT, int32_t x,
                       int32_t y,
                       int32_t width,
                       int32_t height,
                       RefPtr<Color> color) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  GradientFillRect(x, y, width, height, color, color);
+  GradientFillRect(exception_state, x, y, width, height, color, color);
 }
 
-void Bitmap::FillRect(RefPtr<Rect> rect, RefPtr<Color> color) {
-  Disposable::Guard();
+void Bitmap::FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  FillRect(rect->data.x, rect->data.y, rect->data.width, rect->data.height,
+  FillRect(exception_state, rect->data.x, rect->data.y, rect->data.width, rect->data.height,
            color);
 }
 
-void Bitmap::GradientFillRect(int32_t x,
+void Bitmap::GradientFillRect(URGE_EXCEPT, int32_t x,
                               int32_t y,
                               int32_t width,
                               int32_t height,
                               RefPtr<Color> color1,
                               RefPtr<Color> color2,
                               bool vertical) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
   const glm::vec4 color1_norm = PremultiplyColor(color1->data);
   const glm::vec4 color2_norm = PremultiplyColor(color2->data);
@@ -387,36 +395,41 @@ void Bitmap::GradientFillRect(int32_t x,
   BitmapQueue::Get().Push(std::move(draw));
 }
 
-void Bitmap::GradientFillRect(RefPtr<Rect> rect,
+void Bitmap::GradientFillRect(URGE_EXCEPT, RefPtr<Rect> rect,
                               RefPtr<Color> color1,
                               RefPtr<Color> color2,
                               bool vertical) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  GradientFillRect(rect->data.x, rect->data.y, rect->data.width,
+  GradientFillRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
                    rect->data.height, color1, color2, vertical);
 }
 
-void Bitmap::Clear() {
-  Disposable::Guard();
+void Bitmap::Clear(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  ClearRect(0, 0, size_.x, size_.y);
+  ClearRect(exception_state, 0, 0, size_.x, size_.y);
 }
 
-void Bitmap::ClearRect(int32_t x, int32_t y, int32_t width, int32_t height) {
-  Disposable::Guard();
+void Bitmap::ClearRect(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  FillRect(x, y, width, height, MakeRefCounted<Color>());
+  FillRect(exception_state, x, y, width, height, MakeRefCounted<Color>());
 }
 
-void Bitmap::ClearRect(RefPtr<Rect> rect) {
-  Disposable::Guard();
+void Bitmap::ClearRect(URGE_EXCEPT, RefPtr<Rect> rect) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  ClearRect(rect->data.x, rect->data.y, rect->data.width, rect->data.height);
+  ClearRect(exception_state, rect->data.x, rect->data.y, rect->data.width, rect->data.height);
 }
 
-RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
-  Disposable::Guard();
+RefPtr<Color> Bitmap::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   if (x < 0 || y < 0 || x >= size_.x || y >= size_.y)
     return MakeRefCounted<Color>();
@@ -430,29 +443,33 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
   return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
 }
 
-void Bitmap::SetPixel(int32_t x, int32_t y, RefPtr<Color> color) {
-  GradientFillRect(x, y, 1, 1, color, color);
+void Bitmap::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color) {
+  GradientFillRect(exception_state, x, y, 1, 1, color, color);
 }
 
-void Bitmap::HueChange(int32_t hue) {
-  Disposable::Guard();
+void Bitmap::HueChange(URGE_EXCEPT, int32_t hue) {
+  if (!Disposable::Guard(exception_state))
+    return;
 }
 
-void Bitmap::Blur() {
-  Disposable::Guard();
+void Bitmap::Blur(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return;
 }
 
-void Bitmap::RadialBlur(int32_t angle, int32_t division) {
-  Disposable::Guard();
+void Bitmap::RadialBlur(URGE_EXCEPT, int32_t angle, int32_t division) {
+  if (!Disposable::Guard(exception_state))
+    return;
 }
 
-void Bitmap::DrawText(int32_t x,
+void Bitmap::DrawText(URGE_EXCEPT, int32_t x,
                       int32_t y,
                       int32_t width,
                       int32_t height,
                       std::string str,
                       int32_t align) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
   if (!font_ || str.empty())
     return;
@@ -488,15 +505,17 @@ void Bitmap::DrawText(int32_t x,
   BitmapQueue::Get().Push(std::move(draw));
 }
 
-void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
-  Disposable::Guard();
+void Bitmap::DrawText(URGE_EXCEPT, RefPtr<Rect> rect, std::string str, int32_t align) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  DrawText(rect->data.x, rect->data.y, rect->data.width, rect->data.height, str,
-           align);
+  DrawText(exception_state, rect->data.x, rect->data.y, rect->data.width,
+           rect->data.height, str, align);
 }
 
-RefPtr<Rect> Bitmap::TextSize(std::string str) {
-  Disposable::Guard();
+RefPtr<Rect> Bitmap::TextSize(URGE_EXCEPT, std::string str) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   if (!font_)
     return MakeRefCounted<Rect>();
@@ -508,8 +527,9 @@ RefPtr<Rect> Bitmap::TextSize(std::string str) {
   return MakeRefCounted<Rect>(0, 0, width, height);
 }
 
-RefPtr<Image> Bitmap::ToImage() {
-  Disposable::Guard();
+RefPtr<Image> Bitmap::ToImage(URGE_EXCEPT) {
+  if (!Disposable::Guard(exception_state))
+    return {};
 
   auto* data = SDL_CreateSurface(size_.x, size_.y, kInternalPixelFormat);
   AcquireHandle();
@@ -529,14 +549,15 @@ RefPtr<Image> Bitmap::ToImage() {
   return MakeRefCounted<Image>(data);
 }
 
-void Bitmap::UpdateWithImage(RefPtr<Image> image) {
-  Disposable::Guard();
+void Bitmap::UpdateWithImage(URGE_EXCEPT, RefPtr<Image> image) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
   auto* data = image->image();
-  if (data->w != size_.x || data->h != size_.y)
-    throw Exception(Exception::kRGSSError,
-                    "image data size mismatch bitmap size.");
-
+  if (data->w != size_.x || data->h != size_.y) {
+    exception_state.Throw(ExceptionState::kRGSSError, "image data size mismatch bitmap size.");
+    return;
+  }
   AcquireHandle();
 
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(data->pitch) *
@@ -560,13 +581,14 @@ void Bitmap::UpdateWithImage(RefPtr<Image> image) {
                        &buffer_layout, &target_size);
 }
 
-void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
-  Disposable::Guard();
+void Bitmap::UpdateWithPixels(URGE_EXCEPT, const void* pixels, uint32_t bytes_per_row) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
-  if (!pixels || bytes_per_row < static_cast<uint32_t>(size_.x) * 4)
-    throw Exception(Exception::kRGSSError,
-                    "invalid pixel data for the bitmap.");
-
+  if (!pixels || bytes_per_row < static_cast<uint32_t>(size_.x) * 4) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid pixel data for the bitmap.");
+    return;
+  }
   AcquireHandle();
 
   wgpu::TexelCopyTextureInfo destination;
@@ -585,9 +607,9 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
                        &buffer_layout, &target_size);
 }
 
-RefPtr<Bitmap> Bitmap::FromImage(RefPtr<Image> image) {
+RefPtr<Bitmap> Bitmap::FromImage(URGE_EXCEPT, RefPtr<Image> image) {
   auto result = MakeRefCounted<Bitmap>(image->Width(), image->Height());
-  result->UpdateWithImage(image);
+  result->UpdateWithImage(exception_state, image);
   return result;
 }
 
@@ -659,7 +681,13 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
 }
 
 void Bitmap::CreateResources(const glm::ivec2& size) {
-  size_ = size;
+  // The GPU has no 0- or negative-sized texture, and handing one to wgpu is a
+  // device panic rather than an error.  The request is clamped and logged: a
+  // script that asked for nonsense gets a 1x1 bitmap and a line to read.
+  size_ = glm::ivec2(std::max(size.x, 1), std::max(size.y, 1));
+  if (size_.x != size.x || size_.y != size.y)
+    LOGGER_ERROR("[Bitmap] {}x{} is not a valid size; using {}x{}", size.x,
+                 size.y, size_.x, size_.y);
 
   wgpu::TextureDescriptor texture_desc;
   texture_desc.usage = wgpu::TextureUsage::RenderAttachment |

@@ -29,6 +29,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "core/common/definition.h"
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/object.h"
@@ -52,18 +53,18 @@ class UniformBlockPool {
     uint32_t offset = 0;
   };
 
-  UniformBlockPool(wgpu::BindGroupLayout layout,
+  UniformBlockPool(URGE_EXCEPT, wgpu::BindGroupLayout layout,
                    uint32_t element_size,
                    std::string_view name = {});
   ~UniformBlockPool();
 
   void BeginFrame();
-  Slot Acquire(const void* data, uint32_t size);
+  Slot Acquire(URGE_EXCEPT, const void* data, uint32_t size);
   template <typename Ty>
-  Slot Acquire(const Ty& data) {
+  Slot Acquire(URGE_EXCEPT, const Ty& data) {
     static_assert(std::is_trivially_copyable_v<Ty>,
                   "a slot only holds plain data");
-    return Acquire(&data, sizeof(Ty));
+    return Acquire(exception_state, &data, sizeof(Ty));
   }
 
   void Flush();
@@ -77,7 +78,7 @@ class UniformBlockPool {
   const Chunk& chunk(uint32_t index) const { return chunks_[index]; }
 
  private:
-  void CreateChunk();
+  void CreateChunk(URGE_EXCEPT);
 
   wgpu::BindGroupLayout layout_;
   std::string name_;
@@ -92,7 +93,7 @@ class UniformBlockPool {
 
 class UniformManager : public Singleton<UniformManager> {
  public:
-  UniformManager();
+  UniformManager(URGE_EXCEPT);
   ~UniformManager();
 
   void BeginFrame();

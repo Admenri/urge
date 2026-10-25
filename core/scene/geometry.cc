@@ -105,41 +105,47 @@ Geometry::~Geometry() {
   Disposable::Dispose();
 }
 
-void Geometry::SetPosition(int32_t triangle,
+void Geometry::SetPosition(URGE_EXCEPT, int32_t triangle,
                            int32_t point,
                            RefPtr<Vector3> position) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
   if (triangle < 0 || triangle >= static_cast<int32_t>(data_.size()) ||
-      point < 0 || point >= 3)
-    throw Exception(Exception::kRGSSError, "invalid range");
-
+      point < 0 || point >= 3) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid range");
+    return;
+  }
 
   auto& v = data_[triangle];
   v.vertex[point].position = glm::vec4(position->data, 1.0f);
 }
 
-void Geometry::SetTexcoord(int32_t triangle,
+void Geometry::SetTexcoord(URGE_EXCEPT, int32_t triangle,
                            int32_t point,
                            RefPtr<Vector2> texcoord) {
-  Disposable::Guard();
+  if (!Disposable::Guard(exception_state))
+    return;
 
   if (triangle < 0 || triangle >= static_cast<int32_t>(data_.size()) ||
-      point < 0 || point >= 3)
-    throw Exception(Exception::kRGSSError, "invalid range");
-
+      point < 0 || point >= 3) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid range");
+    return;
+  }
 
   auto& v = data_[triangle];
   v.vertex[point].texcoord = texcoord->data;
 }
 
-void Geometry::SetColor(int32_t triangle, int32_t point, RefPtr<Color> color) {
-  Disposable::Guard();
+void Geometry::SetColor(URGE_EXCEPT, int32_t triangle, int32_t point, RefPtr<Color> color) {
+  if (!Disposable::Guard(exception_state))
+    return;
 
   if (triangle < 0 || triangle >= static_cast<int32_t>(data_.size()) ||
-      point < 0 || point >= 3)
-    throw Exception(Exception::kRGSSError, "invalid range");
-
+      point < 0 || point >= 3) {
+    exception_state.Throw(ExceptionState::kRGSSError, "invalid range");
+    return;
+  }
 
   const glm::vec4 normalized = color->Normalize();
   const float alpha = normalized.a;
@@ -159,10 +165,13 @@ ATTR_DEF(Geometry, RefPtr<Viewport>, Viewport) {
   }
 }
 
-ATTR_DEF(Geometry, int32_t, Capacity) {
+ATTR_EXC_DEF(Geometry, int32_t, Capacity) {
   if (value.has_value()) {
-    if (*value < 0)
-      throw Exception(Exception::kRGSSError, "invalid capacity value.");
+    if (*value < 0) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "invalid capacity value.");
+      return std::nullopt;
+    }
 
     data_.resize(*value);
     return std::nullopt;
@@ -218,7 +227,10 @@ bool Geometry::Prepare(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
   ObjectData object_data;
   object_data.model_mat = world_transform();
-  object_slot_ = uniforms.object_uniforms().Acquire(object_data);
+  // The pool answers an invalid chunk when it refuses; the draw path has
+  // no state of its own to report into.
+  ExceptionState acquire_state;
+  object_slot_ = uniforms.object_uniforms().Acquire(acquire_state, object_data);
 
   DefaultTexture::Get();
 
@@ -226,15 +238,18 @@ bool Geometry::Prepare(DrawParam param) {
 }
 
 bool Geometry::DoDraw(DrawParam param) {
+  // The draw path has no state of its own: the effect answers a null
+  // pipeline, which leaves this object undrawn.
+  ExceptionState effect_state;
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
       uniforms.object_uniforms().chunk(object_slot_.chunk);
 
   if (effect_) {
-    param->pass.SetPipeline(effect_->AcquirePipeline());
+    param->pass.SetPipeline(effect_->AcquirePipeline(effect_state));
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
-    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(), 0, nullptr);
+    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0, nullptr);
     param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
                                 WGPU_WHOLE_SIZE);
     param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);

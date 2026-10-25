@@ -152,7 +152,10 @@ int32_t Mouse::ScrollY() {
   return static_cast<int32_t>(std::lround(scroll_delta_.y));
 }
 
-void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
+void Mouse::SetCursor(URGE_EXCEPT,
+                      RefPtr<Bitmap> image,
+                      int32_t hot_x,
+                      int32_t hot_y) {
   if (!image) {
     SDL_SetCursor(SDL_GetDefaultCursor());
     if (cursor_) {
@@ -162,7 +165,7 @@ void Mouse::SetCursor(RefPtr<Bitmap> image, int32_t hot_x, int32_t hot_y) {
     return;
   }
 
-  RefPtr<Image> surface = image->ToImage();
+  RefPtr<Image> surface = image->ToImage(exception_state);
   if (!surface)
     return;
 
@@ -251,7 +254,7 @@ ATTR_DEF(Mouse, float, SpeedScale) {
   return speed_scale_;
 }
 
-void Mouse::ProcessEvents(SDL_Event* event) {
+void Mouse::ProcessEvents(URGE_EXCEPT, SDL_Event* event) {
   switch (event->type) {
     case SDL_EVENT_MOUSE_MOTION: {
       const SDL_MouseMotionEvent& motion = event->motion;

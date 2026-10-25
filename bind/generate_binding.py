@@ -888,62 +888,86 @@ class Dispatch:
             return [self.covered[self.arities[0]]["params"]]
         return [self.covered[k]["params"][:k] for k in self.arities]
 
+    def variants_with_exception(self) -> list[tuple[list[dict], bool]]:
+        """The arities plus whether each one's declaration carries the state.
+
+        Overloads of one name may disagree -- `Bitmap(filename)` reports, the
+        `Bitmap(width, height)` that follows it cannot -- so the flag travels
+        with the variant instead of with the name.
+        """
+        if self.simple:
+            only = self.covered[self.arities[0]]
+            return [(only["params"], only.get("has_exception", False))]
+        return [(self.covered[k]["params"][:k],
+                 self.covered[k].get("has_exception", False))
+                for k in self.arities]
+
 
 def emit_framework(
     ruby_name: str,
     dispatch: Dispatch,
     call_of,
     return_type: str,
+    has_exception: bool = False,
     indent: str = "  ",
 ) -> list[str]:
-    """Emit the body of a binding, in three phases.
-
-    `call_of(args)` returns the C++ call expression; the framework wraps it in
-    the store/convert pair the return type needs.
+    """Emit the body of a binding.
 
     Phase 1 (Ruby -> C) validates and parses into plain data and may raise.
-    Phase 2 (`CPP_BEGIN` .. `CPP_END`) is the engine call: the only `try`/`catch`
-    in the glue, and the only place an owning object may live.  Phase 3
-    (C++ -> Ruby) converts the slot back and may raise again.
+    The engine call runs in its own scope, which is the only place an owning
+    temporary may live.  Phase 3 (C++ -> Ruby) converts the slot back and may
+    raise again.
 
-    Both phases 1 and 3 run in a frame that owns nothing, which is what lets
-    them raise; see the block comment on the bridge in cruby_utils.h for the
-    measurements behind that rule.
+    `has_exception` is the declaration's `URGE_EXCEPT` marker: when it is set
+    the call is handed a state of its own and `RaiseException` turns whatever
+    the engine recorded into a Ruby exception.  Without it the call cannot
+    fail and no state exists at all.
+
+    The frame holds bare data only, which is what lets both phases raise; see
+    the block comment on `ExceptionState` in core/common/exception.h.
     """
     slot = return_slot(return_type)
     lines: list[str] = []
 
-    def emit_arity(params, nested, keyword, argc_check):
+    def emit_arity(params, nested, keyword, argc_check, has_exception):
         plan = ParamPlan(params)
+        if has_exception:
+            lines.append(nested + "urge::ExceptionState exception_state;")
         if argc_check is not None:
             lines.append(nested + "CheckArgc(argc, %d);" % argc_check)
         lines.extend(nested + d for d in plan.declarations)
         lines.extend(plan.parse_args_lines(nested))
         lines.extend(nested + c for c in plan.checks)
-        if plan.declarations or plan.format:
+        if plan.declarations or plan.format or has_exception:
             lines.append("")
         lines.extend(nested + d for d in slot)
         if slot:
             lines.append("")
-        lines.append(nested + "CPP_BEGIN {")
-        lines.extend(emit_store(return_type, call_of(plan.args), nested + "  "))
-        lines.append(nested + "} CPP_END;")
+        args = list(plan.args)
+        if has_exception:
+            args.insert(0, "exception_state")
+        lines.append(nested + "{")
+        lines.extend(emit_store(return_type, call_of(args), nested + "  "))
+        lines.append(nested + "}")
+        if has_exception:
+            lines.append(nested + "RaiseException(exception_state);")
         lines.append("")
         lines.extend(emit_convert(return_type, nested))
 
+    variants = dispatch.variants_with_exception()
     if dispatch.simple:
-        params = dispatch.variants()[0]
-        emit_arity(params, indent, None, len(params))
+        params, has_exception = variants[0]
+        emit_arity(params, indent, None, len(params), has_exception)
     else:
         nested = indent + "  "
-        for index, params in enumerate(dispatch.variants()):
+        for index, (params, has_exception) in enumerate(variants):
             keyword = "if" if index == 0 else "} else if"
             lines.append("%s%s (argc == %d) {" % (indent, keyword, len(params)))
             lines.append(
                 "%s// %s(%s)"
                 % (nested, ruby_name, ", ".join(p["name"] for p in params))
             )
-            emit_arity(params, nested, keyword, None)
+            emit_arity(params, nested, keyword, None, has_exception)
         lines.append("%s} else {" % indent)
         # Several arities are valid, so the message cannot name one expected
         # count.
@@ -957,48 +981,57 @@ def emit_initialize(entry: dict) -> list[str]:
     dispatch = Dispatch(entry["constructors"])
     lines = ["RB_FUNC(%s_initialize) {" % name]
 
-    def emit_arity(params, nested):
+    def emit_arity(params, nested, has_exception):
         plan = ParamPlan(params)
+        if has_exception:
+            lines.append(nested + "urge::ExceptionState exception_state;")
         lines.extend(nested + d for d in plan.declarations)
         lines.extend(plan.parse_args_lines(nested))
         lines.extend(nested + c for c in plan.checks)
         lines.append("")
         lines.append(nested + "urge::%s* result = nullptr;" % name)
         lines.append("")
-        lines.append(nested + "CPP_BEGIN {")
+        args = list(plan.args)
+        if has_exception:
+            args.insert(0, "exception_state")
+        lines.append(nested + "{")
         inner = nested + "  "
-        # `MakeRefCounted` answers a `RefPtr` that dies with phase 2, so the
-        # slot takes its own reference; phase 3 hands that one to the wrapper.
+        # `MakeRefCounted` answers a `RefPtr` that dies with the scope, so the
+        # slot takes its own reference; the wrapper is handed that one.
         lines.extend(
             emit_call(
                 "urge::RefPtr<urge::%s> value = "
                 "urge::MakeRefCounted<urge::%s>(%s)"
-                % (name, name, ", ".join(plan.args)),
+                % (name, name, ", ".join(args)),
                 inner,
             )
         )
         lines.append(inner + "result = value.get();")
         lines.append(inner + "if (result)")
         lines.append(inner + "  result->AddRef();")
-        lines.append(nested + "} CPP_END;")
+        lines.append(nested + "}")
+        if has_exception:
+            lines.append(nested + "RaiseException(exception_state);")
         lines.append("")
         lines.append(nested + "VALUE object = SetupSelfData(self, result);")
         lines.append(nested + "if (result)")
         lines.append(nested + "  result->Release();")
         lines.append(nested + "return object;")
 
+    variants = dispatch.variants_with_exception()
     if dispatch.simple:
-        emit_arity(dispatch.variants()[0], "  ")
+        params, has_exception = variants[0]
+        emit_arity(params, "  ", has_exception)
     else:
         nested = "    "
-        for index, params in enumerate(dispatch.variants()):
+        for index, (params, has_exception) in enumerate(variants):
             keyword = "if" if index == 0 else "} else if"
             lines.append("  %s (argc == %d) {" % (keyword, len(params)))
             lines.append(
                 "%s// initialize(%s)"
                 % (nested, ", ".join(p["name"] for p in params))
             )
-            emit_arity(params, nested)
+            emit_arity(params, nested, has_exception)
         lines.append("  } else {")
         lines.append("    ArgcError(argc);")
         lines.append("  }")
@@ -1008,30 +1041,47 @@ def emit_initialize(entry: dict) -> list[str]:
 
 def emit_initialize_copy(entry: dict) -> list[str]:
     name = entry["cpp_name"]
-    return [
+    copy = entry["initialize_copy"]
+    has_exception = copy.get("has_exception", False)
+    ctor_args = "exception_state, other_obj" if has_exception else "other_obj"
+    lines = [
         "RB_FUNC(%s_initialize_copy) {" % name,
-        "  VALUE other_val = Qnil;",
-        "  CheckArgc(argc, 1);",
-        '  ParseArgs(argc, argv, "o", &other_val);',
-        "  urge::%s* other_obj = CheckObject<urge::%s>(other_val, k%sDataType);"
-        % (name, name, name),
-        "",
-        "  urge::%s* result = nullptr;" % name,
-        "",
-        "  CPP_BEGIN {",
-        "    urge::RefPtr<urge::%s> value = "
-        "urge::MakeRefCounted<urge::%s>(other_obj);" % (name, name),
-        "    result = value.get();",
-        "    if (result)",
-        "      result->AddRef();",
-        "  } CPP_END;",
-        "",
-        "  VALUE object = SetupSelfData(self, result);",
-        "  if (result)",
-        "    result->Release();",
-        "  return object;",
-        "}",
     ]
+    if has_exception:
+        lines.append("  urge::ExceptionState exception_state;")
+    lines.extend(
+        [
+            "  VALUE other_val = Qnil;",
+            "  CheckArgc(argc, 1);",
+            '  ParseArgs(argc, argv, "o", &other_val);',
+            "  urge::%s* other_obj = CheckObject<urge::%s>(other_val, k%sDataType);"
+            % (name, name, name),
+            "",
+            "  urge::%s* result = nullptr;" % name,
+            "",
+            "  {",
+            "    urge::RefPtr<urge::%s> value = "
+            "urge::MakeRefCounted<urge::%s>(%s);"
+            % (name, name, ctor_args),
+            "    result = value.get();",
+            "    if (result)",
+            "      result->AddRef();",
+            "  }",
+        ]
+    )
+    if has_exception:
+        lines.append("  RaiseException(exception_state);")
+    lines.extend(
+        [
+            "",
+            "  VALUE object = SetupSelfData(self, result);",
+            "  if (result)",
+            "    result->Release();",
+            "  return object;",
+            "}",
+        ]
+    )
+    return lines
 
 
 def emit_marshal(entry: dict) -> list[str]:
@@ -1047,10 +1097,10 @@ def emit_marshal(entry: dict) -> list[str]:
         "",
         "  std::string* result = nullptr;",
         "",
-        "  CPP_BEGIN {",
+        "  {",
         "    result = new std::string(urge::%s::MarshalDump("
         "urge::RefPtr<urge::%s>(self_obj)));" % (name, name),
-        "  } CPP_END;",
+        "  }",
         "",
     ]
     lines.extend(emit_convert("std::string", "  "))
@@ -1066,16 +1116,18 @@ def emit_marshal(entry: dict) -> list[str]:
             "  size_t data_size;",
             "  CheckString(data_val, &data_data, &data_size);",
             "",
+            "  urge::ExceptionState exception_state;",
             "  urge::%s* result = nullptr;" % name,
             "",
-            "  CPP_BEGIN {",
+            "  {",
             "    urge::RefPtr<urge::%s> value ="
-            " urge::%s::MarshalLoad(std::string(data_data, data_size));"
-            % (name, name),
+            " urge::%s::MarshalLoad(exception_state,"
+            " std::string(data_data, data_size));" % (name, name),
             "    result = value.get();",
             "    if (result)",
             "      result->AddRef();",
-            "  } CPP_END;",
+            "  }",
+            "  RaiseException(exception_state);",
             "",
             "  VALUE object = SetupSelfData(rb_obj_alloc(self), result);",
             "  if (result)",
@@ -1110,9 +1162,9 @@ def emit_equal(entry: dict) -> list[str]:
         "",
         "  bool result = false;",
         "",
-        "  CPP_BEGIN {",
+        "  {",
         "    result = *self_obj == *other_obj;",
-        "  } CPP_END;",
+        "  }",
         "",
         "  return result ? Qtrue : Qfalse;",
         "}",
@@ -1138,7 +1190,8 @@ def emit_method(entry: dict, group: list[dict], is_static: bool) -> list[str]:
         lines.append("  auto* self_obj = GetSelfData<urge::%s>(self);" % name)
         lines.append("")
     lines.extend(
-        emit_framework(head["ruby_name"], dispatch, call_of, return_type)
+        emit_framework(head["ruby_name"], dispatch, call_of, return_type,
+                       head.get("has_exception", False))
     )
     lines.append("}")
     return lines
@@ -1148,17 +1201,27 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
     cpp_type = attr["cpp_type"]
     name = attr["cpp_name"]
     owner = entry["cpp_name"]
+    has_exception = attr.get("has_exception", False)
     inner = refptr_inner(cpp_type)
     if inner is not None:
         # The last argument names the phase-1 check, which is where the null
         # contract of `ATTR(RefPtr<T>, ...)` vs `ATTR(MaybePtr<T>, ...)` lands.
         check = "CheckMaybeObject" if refptr_is_maybe(cpp_type) else "CheckObject"
         if static:
+            if has_exception:
+                raise ValueError("no static ATTR_EXC macro yet: %s.%s" %
+                                 (owner, name))
             return (
                 "BINDING_CLASS_ATTR_OBJECT(%s, urge::%s, %s, urge::%s, "
                 "k%sDataType, %s);"
                 % (owner, owner, name, inner, inner, check)
             )
+        if has_exception:
+            # An `ATTR_EXC` accessor takes the state itself; the macro family
+            # that carries it is the `_REF` one (no marshal shortcut is needed
+            # for a value the engine may fail to produce).
+            return "BINDING_ATTR_OBJECT_REF_EXC(%s, urge::%s, %s, urge::%s, "                    "k%sDataType, %s);" % (
+                       owner, owner, name, inner, inner, check)
         macro = "BINDING_ATTR_OBJECT" if inner in marshalable else "BINDING_ATTR_OBJECT_REF"
         return "%s(%s, urge::%s, %s, urge::%s, k%sDataType, %s);" % (
             macro, owner, owner, name, inner, inner, check,
@@ -1179,6 +1242,12 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
         suffix = "BOOL"
     else:
         raise ValueError("no attribute macro for %r" % cpp_type)
+    if has_exception:
+        if static:
+            raise ValueError("no static ATTR_EXC macro yet: %s.%s" %
+                             (owner, name))
+        return "BINDING_ATTR_%s_EXC(%s, urge::%s, %s);" % (
+            suffix, owner, owner, name)
     return "%s_%s(%s, urge::%s, %s);" % (prefix, suffix, owner, owner, name)
 
 
@@ -1333,7 +1402,8 @@ def emit_module_method(klass: str, group: list[dict]) -> list[str]:
         return "%s.%s(%s)" % (receiver, head["cpp_name"], ", ".join(args))
 
     return ["RB_FUNC(%s) {" % symbol] + emit_framework(
-        head["ruby_name"], dispatch, call_of, return_type
+        head["ruby_name"], dispatch, call_of, return_type,
+        head.get("has_exception", False)
     ) + ["}"]
 
 
@@ -1351,26 +1421,42 @@ def emit_module_attribute(klass: str, fn: dict) -> list[str]:
 
     if fn.get("setter"):
         plan = ParamPlan([{"type": cpp_type, "name": "value"}])
-        lines = ["RB_FUNC(%sEqual) {" % symbol, "  CheckArgc(argc, 1);"]
+        has_exception = fn.get("has_exception", False)
+        lines = ["RB_FUNC(%sEqual) {" % symbol]
+        if has_exception:
+            lines.append("  urge::ExceptionState exception_state;")
+        lines.append("  CheckArgc(argc, 1);")
         lines.extend("  " + d for d in plan.declarations)
         lines.extend(plan.parse_args_lines("  "))
         lines.extend("  " + c for c in plan.checks)
         lines.append("")
-        lines.append("  CPP_BEGIN {")
-        lines.append("    %s(%s);" % (getter, plan.args[0]))
-        lines.append("  } CPP_END;")
+        lines.append("  {")
+        lines.append("    %s(%s);" % (getter, ", ".join(
+            (["exception_state"] if has_exception else []) + plan.args)))
+        lines.append("  }")
+        if has_exception:
+            lines.append("  RaiseException(exception_state);")
         lines.append("")
         lines.append("  return Qnil;")
         lines.append("}")
         return lines
 
-    lines = ["RB_FUNC(%s) {" % symbol, "  CheckArgc(argc, 0);", ""]
+    has_exception = fn.get("has_exception", False)
+    lines = ["RB_FUNC(%s) {" % symbol]
+    if has_exception:
+        lines.append("  urge::ExceptionState exception_state;")
+    lines.extend(["  CheckArgc(argc, 0);", ""])
     lines.extend("  " + d for d in return_slot(cpp_type))
     if return_slot(cpp_type):
         lines.append("")
-    lines.append("  CPP_BEGIN {")
-    lines.extend(emit_store(cpp_type, "(*%s())" % getter, "    "))
-    lines.append("  } CPP_END;")
+    lines.append("  {")
+    lines.extend(emit_store(
+        cpp_type,
+        "(*%s(%s))" % (getter, "exception_state" if has_exception else ""),
+        "    "))
+    lines.append("  }")
+    if has_exception:
+        lines.append("  RaiseException(exception_state);")
     lines.append("")
     lines.extend(emit_convert(cpp_type, "  "))
     lines.append("}")

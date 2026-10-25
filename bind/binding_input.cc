@@ -70,9 +70,9 @@ RB_FUNC(Input_PressedManual) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Pressed(std::string(key, key_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -89,9 +89,9 @@ RB_FUNC(Input_TriggeredManual) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Triggered(std::string(key, key_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -108,9 +108,9 @@ RB_FUNC(Input_RepeatedManual) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Repeated(std::string(key, key_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -123,9 +123,9 @@ RB_FUNC(Input_RepeatedManual) {
 
 RB_FUNC(Input_Update) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Input::Get().Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -140,9 +140,9 @@ RB_FUNC(Input_Pressed) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Pressed(std::string(sym_data, sym_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -157,9 +157,9 @@ RB_FUNC(Input_Triggered) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Triggered(std::string(sym_data, sym_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -174,9 +174,9 @@ RB_FUNC(Input_Repeated) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Repeated(std::string(sym_data, sym_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -185,9 +185,9 @@ RB_FUNC(Input_Dir4) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Dir4();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -196,9 +196,9 @@ RB_FUNC(Input_Dir8) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().Dir8();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -210,9 +210,9 @@ RB_FUNC(Input_KeyPressed) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().KeyPressed(keycode);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -224,9 +224,9 @@ RB_FUNC(Input_KeyTriggered) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().KeyTriggered(keycode);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -238,9 +238,9 @@ RB_FUNC(Input_KeyRepeated) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Input::Get().KeyRepeated(keycode);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -252,9 +252,9 @@ RB_FUNC(Input_GetKeyName) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(urge::Input::Get().GetKeyName(keycode));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),

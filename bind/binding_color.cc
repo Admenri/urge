@@ -32,12 +32,12 @@ RB_FUNC(Color_initialize) {
 
     urge::Color* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -50,13 +50,13 @@ RB_FUNC(Color_initialize) {
 
     urge::Color* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>(
           static_cast<float>(r), static_cast<float>(g), static_cast<float>(b));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -69,14 +69,14 @@ RB_FUNC(Color_initialize) {
 
     urge::Color* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>(
           static_cast<float>(r), static_cast<float>(g), static_cast<float>(b),
           static_cast<float>(a));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -95,12 +95,12 @@ RB_FUNC(Color_initialize_copy) {
 
   urge::Color* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -113,9 +113,9 @@ RB_FUNC(Color__dump) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(urge::Color::MarshalDump(urge::RefPtr<urge::Color>(self_obj)));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -132,14 +132,16 @@ RB_FUNC(Color__load) {
   size_t data_size;
   CheckString(data_val, &data_data, &data_size);
 
+  urge::ExceptionState exception_state;
   urge::Color* result = nullptr;
 
-  CPP_BEGIN {
-    urge::RefPtr<urge::Color> value = urge::Color::MarshalLoad(std::string(data_data, data_size));
+  {
+    urge::RefPtr<urge::Color> value = urge::Color::MarshalLoad(exception_state, std::string(data_data, data_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(rb_obj_alloc(self), result);
   if (result)
@@ -160,9 +162,9 @@ RB_FUNC(Color__equal) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = *self_obj == *other_obj;
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -177,9 +179,9 @@ RB_FUNC(Color_Set) {
     ParseArgs(argc, argv, "o", &color_val);
     color = CheckObject<urge::Color>(color_val, kColorDataType);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(color);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 3) {
@@ -187,10 +189,10 @@ RB_FUNC(Color_Set) {
     double r, g, b;
     ParseArgs(argc, argv, "fff", &r, &g, &b);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(static_cast<float>(r), static_cast<float>(g),
           static_cast<float>(b));
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -198,10 +200,10 @@ RB_FUNC(Color_Set) {
     double r, g, b, a;
     ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(static_cast<float>(r), static_cast<float>(g),
           static_cast<float>(b), static_cast<float>(a));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

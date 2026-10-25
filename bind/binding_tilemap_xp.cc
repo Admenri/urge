@@ -43,12 +43,12 @@ RB_FUNC(TilemapAutotile_Get) {
 
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = parent->GetAutotile(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = WrapObject(result, kBitmapDataType);
   if (result)
@@ -65,9 +65,9 @@ RB_FUNC(TilemapAutotile_Set) {
   ParseArgs(argc, argv, "io", &index, &bitmap_val);
   urge::Bitmap* bitmap = CheckObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     parent->SetAutotile(index, bitmap);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -90,12 +90,12 @@ RB_FUNC(TilemapXP_initialize) {
 
     urge::TilemapXP* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -110,13 +110,13 @@ RB_FUNC(TilemapXP_initialize) {
 
     urge::TilemapXP* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>(
           viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -132,13 +132,13 @@ RB_FUNC(TilemapXP_initialize) {
 
     urge::TilemapXP* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>(
           viewport, tilesize);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -153,9 +153,9 @@ RB_FUNC(TilemapXP_Update) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -169,9 +169,9 @@ RB_FUNC(TilemapXP_SetTileset) {
   ParseArgs(argc, argv, "o", &bitmap_val);
   bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTileset(bitmap);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -182,12 +182,12 @@ RB_FUNC(TilemapXP_GetTileset) {
   CheckArgc(argc, 0);
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = self_obj->GetTileset();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kBitmapDataType);
   if (result)
@@ -205,9 +205,9 @@ RB_FUNC(TilemapXP_SetAutotile) {
   ParseArgs(argc, argv, "io", &index, &bitmap_val);
   bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetAutotile(index, bitmap);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -221,12 +221,12 @@ RB_FUNC(TilemapXP_GetAutotile) {
 
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = self_obj->GetAutotile(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kBitmapDataType);
   if (result)

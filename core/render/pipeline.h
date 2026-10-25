@@ -29,6 +29,7 @@
 #include <string_view>
 #include <vector>
 
+#include "core/common/definition.h"
 #include "core/common/common.h"
 #include "core/common/object.h"
 #include "core/render/device.h"
@@ -63,7 +64,8 @@ wgpu::DepthStencilState* GetDepthStencilState();
 
 wgpu::DepthStencilState* GetDepthStencilTestState();
 
-std::optional<wgpu::BlendState> ParseBlendState(std::string_view states);
+std::optional<wgpu::BlendState> ParseBlendState(URGE_EXCEPT,
+                                                std::string_view states);
 
 class TextureBase : public Pipeline {
  public:

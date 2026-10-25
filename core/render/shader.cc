@@ -30,7 +30,7 @@
 #include <variant>
 #include <vector>
 
-#include "core/common/exception.h"
+#include "core/common/logger.h"
 #include "core/render/device.h"
 #include "core/render/pipeline.h"
 
@@ -38,8 +38,11 @@ namespace urge {
 
 namespace {
 
-[[noreturn]] void Fail(std::string_view what, const std::string& detail) {
-  throw Exception(Exception::kGPUError, "shader {} failed: {}", what, detail);
+// The shader layer has no state to report into -- it is reached from the
+// effect and material code, which do -- so a rejected object leaves a line in
+// the log and the null handle it already answered with.
+void Fail(std::string_view what, const std::string& detail) {
+  LOGGER_ERROR("[Shader] {} failed: {}", what, detail);
 }
 
 wgpu::ShaderModule CreateModule(std::string_view wgsl) {

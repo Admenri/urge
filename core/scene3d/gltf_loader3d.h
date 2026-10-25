@@ -50,7 +50,7 @@ URGE_BINDING()
 class GLTFModel3D : public Object {
  public:
   URGE_BINDING()
-  explicit GLTFModel3D(std::string path);
+  explicit GLTFModel3D(URGE_EXCEPT, std::string path);
   ~GLTFModel3D() override;
 
   URGE_BINDING(Name : "root")
@@ -77,17 +77,17 @@ class GLTFModel3D : public Object {
   URGE_BINDING()
   void Fit(float size);
   URGE_BINDING(Name : "unlit")
-  ATTR(bool, Unlit) {
+  ATTR_EXC(bool, Unlit) {
     if (value.has_value()) {
       if (*value != unlit_) {
         unlit_ = *value;
-        RebuildMaterials();
+        RebuildMaterials(exception_state);
       }
     }
     return unlit_;
   }
   URGE_BINDING()
-  void SetMaterial(int32_t index, MaybePtr<Material3D> material);
+  void SetMaterial(URGE_EXCEPT, int32_t index, MaybePtr<Material3D> material);
   URGE_BINDING()
   RefPtr<Material3D> GetMaterial(int32_t index) const;
 
@@ -97,8 +97,8 @@ class GLTFModel3D : public Object {
   const std::vector<RefPtr<Mesh3D>>& meshes() const { return meshes_; }
 
  private:
-  void Load(std::string path);
-  void RebuildMaterials();
+  void Load(URGE_EXCEPT, std::string path);
+  void RebuildMaterials(URGE_EXCEPT);
 
   RefPtr<Node3D> root_;
   std::vector<RefPtr<Material3D>> materials_;

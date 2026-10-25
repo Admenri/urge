@@ -39,24 +39,24 @@ URGE_BINDING()
 class Animation : public Disposable {
  public:
   URGE_BINDING()
-  Animation(std::string filename);
+  Animation(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
   ~Animation() override;
 
   URGE_BINDING()
-  int32_t Width();
+  int32_t Width(URGE_EXCEPT);
   URGE_BINDING()
-  int32_t Height();
+  int32_t Height(URGE_EXCEPT);
   URGE_BINDING()
-  int32_t Count();
+  int32_t Count(URGE_EXCEPT);
 
   URGE_BINDING()
-  int32_t Delay(int32_t index);
+  int32_t Delay(URGE_EXCEPT, int32_t index);
   URGE_BINDING()
-  std::vector<int32_t> Delays();
+  std::vector<int32_t> Delays(URGE_EXCEPT);
 
   URGE_BINDING()
-  RefPtr<Image> Frame(int32_t index);
+  RefPtr<Image> Frame(URGE_EXCEPT, int32_t index);
 
  private:
   void DisposeObject() override;

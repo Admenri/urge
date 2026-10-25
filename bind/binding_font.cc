@@ -35,12 +35,12 @@ RB_FUNC(Font_initialize) {
 
     urge::Font* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -54,13 +54,13 @@ RB_FUNC(Font_initialize) {
 
     urge::Font* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(
           TakeVectorOf<std::string>(names_val));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -75,13 +75,13 @@ RB_FUNC(Font_initialize) {
 
     urge::Font* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(
           TakeVectorOf<std::string>(names_val), size);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -100,12 +100,12 @@ RB_FUNC(Font_initialize_copy) {
 
   urge::Font* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -123,9 +123,9 @@ RB_FUNC(Font_Existed) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = urge::Font::Existed(std::string(name_data, name_size));
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }

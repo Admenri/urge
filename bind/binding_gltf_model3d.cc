@@ -37,6 +37,7 @@ namespace binding {
 RB_DEF_TYPE(GLTFModel3D);
 
 RB_FUNC(GLTFModel3D_initialize) {
+  urge::ExceptionState exception_state;
   VALUE path_val;
   const char* path_data;
   size_t path_size;
@@ -45,13 +46,14 @@ RB_FUNC(GLTFModel3D_initialize) {
 
   urge::GLTFModel3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GLTFModel3D> value = urge::MakeRefCounted<urge::GLTFModel3D>(
-        std::string(path_data, path_size));
+        exception_state, std::string(path_data, path_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -65,12 +67,12 @@ RB_FUNC(GLTFModel3D_GetRoot) {
   CheckArgc(argc, 0);
   urge::Node3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node3D> value = self_obj->GetRoot();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kNode3DDataType);
   if (result)
@@ -84,9 +86,9 @@ RB_FUNC(GLTFModel3D_MaterialCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->MaterialCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -97,9 +99,9 @@ RB_FUNC(GLTFModel3D_MeshCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->MeshCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -110,9 +112,9 @@ RB_FUNC(GLTFModel3D_ImageCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->ImageCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -123,9 +125,9 @@ RB_FUNC(GLTFModel3D_NodeCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->NodeCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -136,9 +138,9 @@ RB_FUNC(GLTFModel3D_BoundsCenter) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->BoundsCenter());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -151,9 +153,9 @@ RB_FUNC(GLTFModel3D_BoundsSize) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->BoundsSize());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -166,9 +168,9 @@ RB_FUNC(GLTFModel3D_BoundsRadius) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->BoundsRadius();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -180,9 +182,9 @@ RB_FUNC(GLTFModel3D_Fit) {
   double size;
   ParseArgs(argc, argv, "f", &size);
 
-  CPP_BEGIN {
+  {
     self_obj->Fit(static_cast<float>(size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -190,6 +192,7 @@ RB_FUNC(GLTFModel3D_Fit) {
 RB_FUNC(GLTFModel3D_SetMaterial) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   int index;
   VALUE material_val;
@@ -197,9 +200,10 @@ RB_FUNC(GLTFModel3D_SetMaterial) {
   ParseArgs(argc, argv, "io", &index, &material_val);
   material = CheckMaybeObject<urge::Material3D>(material_val, kMaterial3DDataType);
 
-  CPP_BEGIN {
-    self_obj->SetMaterial(index, material);
-  } CPP_END;
+  {
+    self_obj->SetMaterial(exception_state, index, material);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -213,12 +217,12 @@ RB_FUNC(GLTFModel3D_GetMaterial) {
 
   urge::Material3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Material3D> value = self_obj->GetMaterial(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kMaterial3DDataType);
   if (result)
@@ -227,7 +231,7 @@ RB_FUNC(GLTFModel3D_GetMaterial) {
 }
 
 // Attribute: unlit (bool)
-BINDING_ATTR_BOOL(GLTFModel3D, urge::GLTFModel3D, Unlit);
+BINDING_ATTR_BOOL_EXC(GLTFModel3D, urge::GLTFModel3D, Unlit);
 
 void InitGLTFModel3DBindingAppend(VALUE klass);
 

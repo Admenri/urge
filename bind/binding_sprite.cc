@@ -44,12 +44,12 @@ RB_FUNC(Sprite_initialize) {
 
     urge::Sprite* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Sprite> value = urge::MakeRefCounted<urge::Sprite>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -64,13 +64,13 @@ RB_FUNC(Sprite_initialize) {
 
     urge::Sprite* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Sprite> value = urge::MakeRefCounted<urge::Sprite>(
           viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -84,6 +84,7 @@ RB_FUNC(Sprite_initialize) {
 RB_FUNC(Sprite_Flash) {
   auto* self_obj = GetSelfData<urge::Sprite>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE color_val;
   urge::Color* color;
@@ -91,9 +92,10 @@ RB_FUNC(Sprite_Flash) {
   ParseArgs(argc, argv, "oi", &color_val, &duration);
   color = CheckMaybeObject<urge::Color>(color_val, kColorDataType);
 
-  CPP_BEGIN {
-    self_obj->Flash(color, duration);
-  } CPP_END;
+  {
+    self_obj->Flash(exception_state, color, duration);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -101,10 +103,13 @@ RB_FUNC(Sprite_Flash) {
 RB_FUNC(Sprite_Update) {
   auto* self_obj = GetSelfData<urge::Sprite>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
-  CPP_BEGIN {
-    self_obj->Update();
-  } CPP_END;
+
+  {
+    self_obj->Update(exception_state);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -115,9 +120,9 @@ RB_FUNC(Sprite_Width) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Width();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -128,9 +133,9 @@ RB_FUNC(Sprite_Height) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Height();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

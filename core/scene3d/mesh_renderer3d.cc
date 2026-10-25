@@ -54,10 +54,11 @@ ATTR_DEF(MeshRenderer3D, RefPtr<Mesh3D>, Mesh) {
   return mesh_;
 }
 
-void MeshRenderer3D::SetMaterial(int32_t slot, RefPtr<Material3D> material) {
-  if (slot < 0)
-    throw Exception(Exception::kRGSSError,
-                    "mesh renderer 3d: a material slot cannot be negative.");
+void MeshRenderer3D::SetMaterial(URGE_EXCEPT, int32_t slot, RefPtr<Material3D> material) {
+  if (slot < 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh renderer 3d: a material slot cannot be negative.");
+    return;
+  }
   if (material)
     materials_[slot] = std::move(material);
   else
@@ -91,12 +92,12 @@ void MeshRenderer3D::UpdateBounds() {
   world_radius_ = mesh_->bounds_radius() * MaxAxisScale(world);
 }
 
-void MeshRenderer3D::SetInstanceMatrices(std::vector<float> data) {
-  if (data.size() % 16 != 0)
-    throw Exception(Exception::kRGSSError,
-                    "mesh renderer 3d: instance matrices are sixteen floats "
+void MeshRenderer3D::SetInstanceMatrices(URGE_EXCEPT, std::vector<float> data) {
+  if (data.size() % 16 != 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh renderer 3d: instance matrices are sixteen floats "
                     "per instance.");
-
+    return;
+  }
   instance_matrices_ = std::move(data);
   instance_count_ = static_cast<int32_t>(instance_matrices_.size() / 16);
 
@@ -109,11 +110,11 @@ void MeshRenderer3D::SetInstanceMatrices(std::vector<float> data) {
   descriptor.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
   descriptor.size = instance_matrices_.size() * sizeof(float);
   instance_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
-  if (!instance_buffer_)
-    throw Exception(Exception::kGPUError,
-                    "mesh renderer 3d: the device rejected the instance "
+  if (!instance_buffer_) {
+    exception_state.Throw(ExceptionState::kGPUError, "mesh renderer 3d: the device rejected the instance "
                     "buffer.");
-
+    return;
+  }
   GPUDevice::Get().queue().WriteBuffer(
       instance_buffer_, 0, instance_matrices_.data(), descriptor.size);
 }

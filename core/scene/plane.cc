@@ -168,7 +168,10 @@ bool Plane::Prepare(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
 
   const ObjectData object_data = {world_transform()};
-  object_slot_ = uniforms.object_uniforms().Acquire(object_data);
+  // The pool answers an invalid chunk when it refuses; the draw path has
+  // no state of its own to report into.
+  ExceptionState acquire_state;
+  object_slot_ = uniforms.object_uniforms().Acquire(acquire_state, object_data);
 
   PlaneBase::PlaneParam plane_param = {};
   plane_param.blend_color = color_->Normalize();

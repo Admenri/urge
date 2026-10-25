@@ -44,7 +44,7 @@ class VideoPlayer {
   VideoPlayer(const VideoPlayer&) = delete;
   VideoPlayer& operator=(const VideoPlayer&) = delete;
 
-  bool Open(const std::string& filename);
+  bool Open(URGE_EXCEPT, const std::string& filename);
   void Close();
 
   void Play();

@@ -31,11 +31,11 @@ RB_FUNC(Fetch_Body) {
   const char* body = nullptr;
   size_t size = 0;
 
-  CPP_BEGIN {
+  {
     const std::string& payload = self_obj->body();
     body = payload.data();
     size = payload.size();
-  } CPP_END;
+  }
 
   return rb_enc_str_new(body, static_cast<long>(size),
                         rb_ascii8bit_encoding());
@@ -63,13 +63,13 @@ RB_FUNC(Fetch_initialize) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
           std::string(url_data, url_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -87,14 +87,14 @@ RB_FUNC(Fetch_initialize) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
           std::string(url_data, url_size),
           std::string(method_data, method_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -114,7 +114,7 @@ RB_FUNC(Fetch_initialize) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
           std::string(url_data, url_size),
           std::string(method_data, method_size),
@@ -122,7 +122,7 @@ RB_FUNC(Fetch_initialize) {
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -144,7 +144,7 @@ RB_FUNC(Fetch_initialize) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
           std::string(url_data, url_size),
           std::string(method_data, method_size),
@@ -153,7 +153,7 @@ RB_FUNC(Fetch_initialize) {
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -168,9 +168,9 @@ RB_FUNC(Fetch_Start) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Start();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -179,9 +179,9 @@ RB_FUNC(Fetch_Abort) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Abort();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -192,9 +192,9 @@ RB_FUNC(Fetch_IsDone) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsDone();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -205,9 +205,9 @@ RB_FUNC(Fetch_IsSuccess) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsSuccess();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -218,9 +218,9 @@ RB_FUNC(Fetch_GetStatus) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetStatus();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -231,9 +231,9 @@ RB_FUNC(Fetch_GetStatusText) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetStatusText());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -248,9 +248,9 @@ RB_FUNC(Fetch_GetText) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetText());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -265,9 +265,9 @@ RB_FUNC(Fetch_GetError) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetError());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -282,9 +282,9 @@ RB_FUNC(Fetch_GetProgress) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetProgress();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -301,10 +301,10 @@ RB_FUNC(Fetch_GetHeader) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(
         self_obj->GetHeader(std::string(name_data, name_size)));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -319,9 +319,9 @@ RB_FUNC(Fetch_GetHeaders) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->GetHeaders());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;

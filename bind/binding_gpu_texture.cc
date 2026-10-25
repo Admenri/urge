@@ -41,9 +41,9 @@ RB_FUNC(GPUTexture_Width) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Width();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -54,9 +54,9 @@ RB_FUNC(GPUTexture_Height) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Height();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -67,9 +67,9 @@ RB_FUNC(GPUTexture_DepthOrArrayLayers) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->DepthOrArrayLayers();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -80,9 +80,9 @@ RB_FUNC(GPUTexture_MipLevelCount) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->MipLevelCount();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -93,9 +93,9 @@ RB_FUNC(GPUTexture_SampleCount) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->SampleCount();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -106,9 +106,9 @@ RB_FUNC(GPUTexture_Dimension) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Dimension();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -119,9 +119,9 @@ RB_FUNC(GPUTexture_Format) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Format();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -132,9 +132,9 @@ RB_FUNC(GPUTexture_Usage) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Usage();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -146,12 +146,12 @@ RB_FUNC(GPUTexture_CreateView) {
     // create_view()
     urge::GPUTextureView* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::GPUTextureView> value = self_obj->CreateView();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE value = WrapObject(result, kGPUTextureViewDataType);
     if (result)
@@ -166,13 +166,13 @@ RB_FUNC(GPUTexture_CreateView) {
 
     urge::GPUTextureView* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::GPUTextureView> value = self_obj->CreateView(
           descriptor);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE value = WrapObject(result, kGPUTextureViewDataType);
     if (result)
@@ -187,9 +187,9 @@ RB_FUNC(GPUTexture_Destroy) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Destroy();
-  } CPP_END;
+  }
 
   return Qnil;
 }

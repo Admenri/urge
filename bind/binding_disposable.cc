@@ -32,9 +32,9 @@ RB_FUNC(Disposable_IsDisposed) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsDisposed();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -43,9 +43,9 @@ RB_FUNC(Disposable_Dispose) {
   auto* self_obj = GetSelfData<urge::Disposable>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Dispose();
-  } CPP_END;
+  }
 
   return Qnil;
 }

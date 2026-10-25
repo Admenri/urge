@@ -39,12 +39,12 @@ RB_FUNC(Node3D_initialize) {
 
   urge::Node3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node3D> value = urge::MakeRefCounted<urge::Node3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -58,12 +58,12 @@ RB_FUNC(Node3D_GetParent) {
   CheckArgc(argc, 0);
   urge::Node3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node3D> value = self_obj->GetParent();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kNode3DDataType);
   if (result)
@@ -80,9 +80,9 @@ RB_FUNC(Node3D_SetParent) {
   ParseArgs(argc, argv, "o", &value_val);
   value = CheckMaybeObject<urge::Node3D>(value_val, kNode3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetParent(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -96,9 +96,9 @@ RB_FUNC(Node3D_AddChild) {
   ParseArgs(argc, argv, "o", &child_val);
   child = CheckMaybeObject<urge::Node3D>(child_val, kNode3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->AddChild(child);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -112,9 +112,9 @@ RB_FUNC(Node3D_RemoveChild) {
   ParseArgs(argc, argv, "o", &child_val);
   child = CheckMaybeObject<urge::Node3D>(child_val, kNode3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->RemoveChild(child);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -125,9 +125,9 @@ RB_FUNC(Node3D_ChildCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->ChildCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -141,12 +141,12 @@ RB_FUNC(Node3D_ChildAt) {
 
   urge::Node3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Node3D> value = self_obj->ChildAt(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kNode3DDataType);
   if (result)
@@ -160,9 +160,9 @@ RB_FUNC(Node3D_GetWorldMatrix) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->GetWorldMatrix());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;

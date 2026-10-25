@@ -26,10 +26,10 @@
 
 namespace urge {
 
-ForwardPipeline3D::ForwardPipeline3D() {
+ForwardPipeline3D::ForwardPipeline3D(URGE_EXCEPT) {
   Attr_ShadowSize(1024);
 
-  shadow_pass_ = AddPass("shadow");
+  shadow_pass_ = AddPass(exception_state, "shadow");
   shadow_pass_->Attr_DepthOnly(true);
   shadow_pass_->Attr_Cascades(4);
   shadow_pass_->SetColors({"shadow"});
@@ -38,13 +38,13 @@ ForwardPipeline3D::ForwardPipeline3D() {
   shadow_pass_->Attr_QueueMax(4000);
   shadow_pass_->Attr_Layers(0xFFFFFFFFu);
 
-  opaque_pass_ = AddPass("opaque");
+  opaque_pass_ = AddPass(exception_state, "opaque");
   opaque_pass_->SetTags({"opaque"});
   opaque_pass_->Attr_ClearFlags(3u);
   opaque_pass_->Attr_QueueMin(0);
   opaque_pass_->Attr_QueueMax(queue_split_ - 1);
 
-  transparent_back_pass_ = AddPass("transparent_back");
+  transparent_back_pass_ = AddPass(exception_state, "transparent_back");
   transparent_back_pass_->SetTags({"transparent"});
   transparent_back_pass_->Attr_ClearFlags(0u);
   transparent_back_pass_->Attr_QueueMin(queue_split_);
@@ -52,7 +52,7 @@ ForwardPipeline3D::ForwardPipeline3D() {
   transparent_back_pass_->Attr_SortBackToFront(true);
   transparent_back_pass_->Attr_CullOverride(2);
 
-  transparent_pass_ = AddPass("transparent");
+  transparent_pass_ = AddPass(exception_state, "transparent");
   transparent_pass_->SetTags({"transparent"});
   transparent_pass_->Attr_ClearFlags(0u);
   transparent_pass_->Attr_QueueMin(queue_split_);

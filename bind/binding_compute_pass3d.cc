@@ -37,6 +37,7 @@ namespace binding {
 RB_DEF_TYPE(ComputePass3D);
 
 RB_FUNC(ComputePass3D_initialize) {
+  urge::ExceptionState exception_state;
   VALUE wgsl_val, entry_val;
   const char* wgsl_data;
   size_t wgsl_size, entry_size;
@@ -47,13 +48,15 @@ RB_FUNC(ComputePass3D_initialize) {
 
   urge::ComputePass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::ComputePass3D> value = urge::MakeRefCounted<urge::ComputePass3D>(
-        std::string(wgsl_data, wgsl_size), std::string(entry_data, entry_size));
+        exception_state, std::string(wgsl_data, wgsl_size),
+        std::string(entry_data, entry_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -72,10 +75,10 @@ RB_FUNC(ComputePass3D_SetUniform) {
   CheckString(name_val, &name_data, &name_size);
   CheckVectorOf<float>(values_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetUniform(std::string(name_data, name_size),
         TakeVectorOf<float>(values_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -91,10 +94,10 @@ RB_FUNC(ComputePass3D_SetBuffer) {
   CheckString(name_val, &name_data, &name_size);
   CheckVectorOf<float>(values_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetBuffer(std::string(name_data, name_size),
         TakeVectorOf<float>(values_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -111,9 +114,9 @@ RB_FUNC(ComputePass3D_SetTexture) {
   CheckString(name_val, &name_data, &name_size);
   texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTexture(std::string(name_data, name_size), texture);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -131,9 +134,9 @@ RB_FUNC(ComputePass3D_SetTarget) {
   CheckString(name_val, &name_data, &name_size);
   target = CheckObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTarget(std::string(name_data, name_size), target, index);
-  } CPP_END;
+  }
 
   return Qnil;
 }

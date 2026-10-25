@@ -103,15 +103,16 @@ std::vector<uint8_t> ReadWholeFile(const std::string& filename) {
   std::vector<uint8_t> bytes;
 
   SDL_IOStream* stream = nullptr;
-  try {
-    IOService::Get().OpenRead(
-        filename, [&stream](SDL_IOStream* opened, const std::string&) {
-          stream = opened;
-          return true;
-        });
-  } catch (const Exception& error) {
+  ExceptionState exception_state;
+  IOService::Get().OpenRead(
+      exception_state, filename,
+      [&stream](SDL_IOStream* opened, const std::string&) {
+        stream = opened;
+        return true;
+      });
+  if (exception_state.HadException()) {
     LOGGER_WARN("audio '{}' could not be opened: {}", filename,
-                error.message());
+                exception_state.message());
     return bytes;
   }
 

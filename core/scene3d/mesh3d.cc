@@ -58,12 +58,12 @@ ATTR_DEF(Mesh3D, RefPtr<Skeleton3D>, Skeleton) {
   }
 }
 
-void Mesh3D::SetVertices(std::vector<float> data) {
-  if (data.size() % kFloatsPerVertex != 0)
-    throw Exception(Exception::kRGSSError,
-                    "mesh3d: vertices are eight floats per vertex "
+void Mesh3D::SetVertices(URGE_EXCEPT, std::vector<float> data) {
+  if (data.size() % kFloatsPerVertex != 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: vertices are eight floats per vertex "
                     "(position, normal, texcoord).");
-
+    return;
+  }
   vertex_bytes_.resize(data.size() * sizeof(float));
   if (!data.empty())
     std::memcpy(vertex_bytes_.data(), data.data(), vertex_bytes_.size());
@@ -74,23 +74,23 @@ void Mesh3D::SetVertices(std::vector<float> data) {
   groups_.clear();
 
   UpdateBounds();
-  Upload();
+  Upload(exception_state);
 }
 
-void Mesh3D::SetSkinnedVertices(std::vector<float> data,
+void Mesh3D::SetSkinnedVertices(URGE_EXCEPT, std::vector<float> data,
                                 std::vector<uint32_t> joints,
                                 std::vector<float> weights) {
-  if (data.size() % kFloatsPerVertex != 0)
-    throw Exception(Exception::kRGSSError,
-                    "mesh3d: vertices are eight floats per vertex "
+  if (data.size() % kFloatsPerVertex != 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: vertices are eight floats per vertex "
                     "(position, normal, texcoord).");
-
+    return;
+  }
   const size_t count = data.size() / kFloatsPerVertex;
-  if (joints.size() != count * 4 || weights.size() != count * 4)
-    throw Exception(Exception::kRGSSError,
-                    "mesh3d: skinned vertices need four joint indices and four "
+  if (joints.size() != count * 4 || weights.size() != count * 4) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: skinned vertices need four joint indices and four "
                     "weights per vertex.");
-
+    return;
+  }
   vertex_bytes_.resize(count * kSkinnedStride);
   for (size_t i = 0; i < count; ++i) {
     uint8_t* target = vertex_bytes_.data() + i * kSkinnedStride;
@@ -107,10 +107,10 @@ void Mesh3D::SetSkinnedVertices(std::vector<float> data,
   groups_.clear();
 
   UpdateBounds();
-  Upload();
+  Upload(exception_state);
 }
 
-void Mesh3D::SetIndices(std::vector<uint32_t> data) {
+void Mesh3D::SetIndices(URGE_EXCEPT, std::vector<uint32_t> data) {
   indices_ = std::move(data);
   index_count_ = static_cast<int32_t>(indices_.size());
 
@@ -123,22 +123,23 @@ void Mesh3D::SetIndices(std::vector<uint32_t> data) {
     submeshes_.push_back(submesh);
   }
 
-  Upload();
+  Upload(exception_state);
 }
 
-void Mesh3D::AddSubmesh(int32_t index_offset,
+void Mesh3D::AddSubmesh(URGE_EXCEPT, int32_t index_offset,
                         int32_t index_count,
                         int32_t mat_slot) {
-  if (index_offset < 0 || index_count <= 0)
-    throw Exception(Exception::kRGSSError,
-                    "mesh3d: a submesh needs a non-negative offset and a "
+  if (index_offset < 0 || index_count <= 0) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: a submesh needs a non-negative offset and a "
                     "positive index count.");
-  if (index_offset + index_count > index_count_)
-    throw Exception(Exception::kRGSSError,
-                    "mesh3d: the submesh range [{}, {}) is outside the index "
+    return;
+  }
+  if (index_offset + index_count > index_count_) {
+    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: the submesh range [{}, {}) is outside the index "
                     "buffer ({} indices).",
                     index_offset, index_offset + index_count, index_count_);
-
+    return;
+  }
   SubMesh3D submesh;
   submesh.index_offset = static_cast<uint32_t>(index_offset);
   submesh.index_count = static_cast<uint32_t>(index_count);
@@ -210,15 +211,16 @@ void Mesh3D::UpdateBounds() {
   }
 }
 
-void Mesh3D::Upload() {
+void Mesh3D::Upload(URGE_EXCEPT) {
   if (!vertex_bytes_.empty()) {
     wgpu::BufferDescriptor descriptor;
     descriptor.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
     descriptor.size = vertex_bytes_.size();
     vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
-    if (!vertex_buffer_)
-      throw Exception(Exception::kGPUError,
-                      "mesh3d: the device rejected the vertex buffer.");
+    if (!vertex_buffer_) {
+      exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the vertex buffer.");
+      return;
+    }
     GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0,
                                          vertex_bytes_.data(), descriptor.size);
   }
@@ -228,15 +230,16 @@ void Mesh3D::Upload() {
     descriptor.usage = wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst;
     descriptor.size = indices_.size() * sizeof(uint32_t);
     index_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
-    if (!index_buffer_)
-      throw Exception(Exception::kGPUError,
-                      "mesh3d: the device rejected the index buffer.");
+    if (!index_buffer_) {
+      exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the index buffer.");
+      return;
+    }
     GPUDevice::Get().queue().WriteBuffer(index_buffer_, 0, indices_.data(),
                                          descriptor.size);
   }
 }
 
-wgpu::Buffer Mesh3D::AcquireJointBuffer(uint64_t frame_token) {
+wgpu::Buffer Mesh3D::AcquireJointBuffer(URGE_EXCEPT, uint64_t frame_token) {
   if (!skeleton_ || skeleton_->BoneCount() == 0)
     return nullptr;
 
@@ -252,9 +255,10 @@ wgpu::Buffer Mesh3D::AcquireJointBuffer(uint64_t frame_token) {
     descriptor.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
     descriptor.size = std::max<size_t>(bytes, sizeof(glm::mat4));
     joint_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
-    if (!joint_buffer_)
-      throw Exception(Exception::kGPUError,
-                      "mesh3d: the device rejected the joint buffer.");
+    if (!joint_buffer_) {
+      exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the joint buffer.");
+      return {};
+    }
     joint_bytes_ = descriptor.size;
     recreated = true;
   }
@@ -268,7 +272,7 @@ wgpu::Buffer Mesh3D::AcquireJointBuffer(uint64_t frame_token) {
   return joint_buffer_;
 }
 
-wgpu::BindGroup Mesh3D::AcquireGroup(uint32_t chunk_index,
+wgpu::BindGroup Mesh3D::AcquireGroup(URGE_EXCEPT, uint32_t chunk_index,
                                      wgpu::Buffer mesh_buffer,
                                      wgpu::Buffer joints) {
   if (!joints)
@@ -299,10 +303,10 @@ wgpu::BindGroup Mesh3D::AcquireGroup(uint32_t chunk_index,
   cache.mesh_buffer = mesh_buffer;
   cache.joints = joints;
   cache.group = GPUDevice::Get().device().CreateBindGroup(&descriptor);
-  if (!cache.group)
-    throw Exception(Exception::kGPUError,
-                    "mesh3d: the device rejected the mesh group.");
-
+  if (!cache.group) {
+    exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the mesh group.");
+    return {};
+  }
   groups_[chunk_index] = std::move(cache);
   return groups_[chunk_index].group;
 }

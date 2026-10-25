@@ -54,7 +54,7 @@ struct PipelineTargetState3D {
 URGE_BINDING()
 class MaterialPass3D : public Object {
  public:
-  MaterialPass3D(std::string tag, std::string vs_wgsl, std::string fs_wgsl);
+  MaterialPass3D(URGE_EXCEPT, std::string tag, std::string vs_wgsl, std::string fs_wgsl);
   ~MaterialPass3D() override;
 
   URGE_BINDING(Name : "tag")
@@ -400,19 +400,21 @@ class MaterialPass3D : public Object {
   URGE_BINDING(Name : "params")
   std::vector<float> GetParams() const { return GetUniformSlot(0); }
   URGE_BINDING(Name : "params=")
-  void SetParams(std::vector<float> value) { SetUniformSlot(0, value); }
+  void SetParams(URGE_EXCEPT, std::vector<float> value) {
+    SetUniformSlot(exception_state, 0, value);
+  }
 
   URGE_BINDING(Name : "texture")
-  ATTR(MaybePtr<Bitmap>, Texture) {
+  ATTR_EXC(MaybePtr<Bitmap>, Texture) {
     if (value.has_value()) {
-      SetTextureSlot(0, *value);
+      SetTextureSlot(exception_state, 0, *value);
       return std::nullopt;
     }
     return GetTextureSlot(0);
   }
 
   URGE_BINDING()
-  void SetTextureSlot(int32_t slot, MaybePtr<Bitmap> texture);
+  void SetTextureSlot(URGE_EXCEPT, int32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
   RefPtr<Bitmap> GetTextureSlot(int32_t slot) const;
   URGE_BINDING(Name : "texture_slot_count")
@@ -427,7 +429,7 @@ class MaterialPass3D : public Object {
   RefPtr<Bitmap> GetTexture(std::string name) const;
 
   URGE_BINDING()
-  void SetUniformSlot(int32_t slot, std::vector<float> values);
+  void SetUniformSlot(URGE_EXCEPT, int32_t slot, std::vector<float> values);
   URGE_BINDING()
   std::vector<float> GetUniformSlot(int32_t slot) const;
   URGE_BINDING()
@@ -442,10 +444,10 @@ class MaterialPass3D : public Object {
   URGE_BINDING()
   std::vector<std::string> SlotNames() const;
 
-  wgpu::RenderPipeline AcquirePipeline(const PipelineTargetState3D& target);
+  wgpu::RenderPipeline AcquirePipeline(URGE_EXCEPT, const PipelineTargetState3D& target);
   wgpu::RenderPipeline AcquireDepthOnlyPipeline(
       const PipelineTargetState3D& target);
-  wgpu::BindGroup AcquireBindGroup();
+  wgpu::BindGroup AcquireBindGroup(URGE_EXCEPT);
   bool HasGroup(uint32_t group) const;
   const std::string& tag() const { return tag_; }
   int32_t tag_id() const { return tag_id_; }
@@ -477,9 +479,9 @@ class MaterialPass3D : public Object {
     uint64_t size = 0;
   };
 
-  void CollectSlots();
-  void RebuildBindGroup();
-  void EnsureBuilder();
+  void CollectSlots(URGE_EXCEPT);
+  void RebuildBindGroup(URGE_EXCEPT);
+  void EnsureBuilder(URGE_EXCEPT);
   void EnsureShadowBuilder();
   wgpu::DepthStencilState MakeDepthState(wgpu::TextureFormat format) const;
   std::vector<std::vector<VertexAttribute>> VertexLayout() const;
@@ -549,11 +551,13 @@ class Material3D : public Object {
   ~Material3D() override;
 
   URGE_BINDING()
-  RefPtr<MaterialPass3D> AddPass(std::string tag,
+  RefPtr<MaterialPass3D> AddPass(URGE_EXCEPT, std::string tag,
                                  std::string vs_wgsl,
                                  std::string fs_wgsl);
   URGE_BINDING()
-  RefPtr<MaterialPass3D> AddShadowPass(std::string tag, std::string vs_wgsl);
+  RefPtr<MaterialPass3D> AddShadowPass(URGE_EXCEPT,
+                                       std::string tag,
+                                       std::string vs_wgsl);
   URGE_BINDING()
   RefPtr<MaterialPass3D> GetPass(std::string tag);
   URGE_BINDING()

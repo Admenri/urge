@@ -43,12 +43,12 @@ RB_FUNC(TilemapBitmaps_Get) {
 
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = parent->GetBitmap(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = WrapObject(result, kBitmapDataType);
   if (result)
@@ -65,9 +65,9 @@ RB_FUNC(TilemapBitmaps_Set) {
   ParseArgs(argc, argv, "io", &index, &bitmap_val);
   urge::Bitmap* bitmap = CheckObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     parent->SetBitmap(index, bitmap);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -87,15 +87,18 @@ RB_DEF_TYPE_INHERIT(TilemapVX, Node);
 RB_FUNC(TilemapVX_initialize) {
   if (argc == 0) {
     // initialize()
+    urge::ExceptionState exception_state;
 
     urge::TilemapVX* result = nullptr;
 
-    CPP_BEGIN {
-      urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>();
+    {
+      urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
+          exception_state);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -103,6 +106,7 @@ RB_FUNC(TilemapVX_initialize) {
     return object;
   } else if (argc == 1) {
     // initialize(viewport)
+    urge::ExceptionState exception_state;
     VALUE viewport_val;
     urge::Viewport* viewport;
     ParseArgs(argc, argv, "o", &viewport_val);
@@ -110,13 +114,14 @@ RB_FUNC(TilemapVX_initialize) {
 
     urge::TilemapVX* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
-          viewport);
+          exception_state, viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -124,6 +129,7 @@ RB_FUNC(TilemapVX_initialize) {
     return object;
   } else if (argc == 2) {
     // initialize(viewport, tilesize)
+    urge::ExceptionState exception_state;
     VALUE viewport_val;
     urge::Viewport* viewport;
     int tilesize;
@@ -132,13 +138,14 @@ RB_FUNC(TilemapVX_initialize) {
 
     urge::TilemapVX* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
-          viewport, tilesize);
+          exception_state, viewport, tilesize);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -153,9 +160,9 @@ RB_FUNC(TilemapVX_Update) {
   auto* self_obj = GetSelfData<urge::TilemapVX>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -170,9 +177,9 @@ RB_FUNC(TilemapVX_SetBitmap) {
   ParseArgs(argc, argv, "io", &index, &bitmap_val);
   bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetBitmap(index, bitmap);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -186,12 +193,12 @@ RB_FUNC(TilemapVX_GetBitmap) {
 
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = self_obj->GetBitmap(index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kBitmapDataType);
   if (result)

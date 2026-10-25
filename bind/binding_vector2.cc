@@ -32,12 +32,12 @@ RB_FUNC(Vector2_initialize) {
 
     urge::Vector2* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Vector2> value = urge::MakeRefCounted<urge::Vector2>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -50,13 +50,13 @@ RB_FUNC(Vector2_initialize) {
 
     urge::Vector2* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Vector2> value = urge::MakeRefCounted<urge::Vector2>(
           static_cast<float>(v));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -69,13 +69,13 @@ RB_FUNC(Vector2_initialize) {
 
     urge::Vector2* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Vector2> value = urge::MakeRefCounted<urge::Vector2>(
           static_cast<float>(xv), static_cast<float>(yv));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -94,12 +94,12 @@ RB_FUNC(Vector2_initialize_copy) {
 
   urge::Vector2* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Vector2> value = urge::MakeRefCounted<urge::Vector2>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -117,9 +117,9 @@ RB_FUNC(Vector2_Set) {
     ParseArgs(argc, argv, "o", &v_val);
     v = CheckObject<urge::Vector2>(v_val, kVector2DataType);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(v);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -127,9 +127,9 @@ RB_FUNC(Vector2_Set) {
     double xv, yv;
     ParseArgs(argc, argv, "ff", &xv, &yv);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(static_cast<float>(xv), static_cast<float>(yv));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

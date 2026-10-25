@@ -32,12 +32,12 @@ RB_FUNC(Vector4_initialize) {
 
     urge::Vector4* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -50,13 +50,13 @@ RB_FUNC(Vector4_initialize) {
 
     urge::Vector4* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(
           static_cast<float>(v));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -69,14 +69,14 @@ RB_FUNC(Vector4_initialize) {
 
     urge::Vector4* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(
           static_cast<float>(xv), static_cast<float>(yv),
           static_cast<float>(zv), static_cast<float>(wv));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -95,12 +95,12 @@ RB_FUNC(Vector4_initialize_copy) {
 
   urge::Vector4* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -118,9 +118,9 @@ RB_FUNC(Vector4_Set) {
     ParseArgs(argc, argv, "o", &v_val);
     v = CheckObject<urge::Vector4>(v_val, kVector4DataType);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(v);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 4) {
@@ -128,10 +128,10 @@ RB_FUNC(Vector4_Set) {
     double xv, yv, zv, wv;
     ParseArgs(argc, argv, "ffff", &xv, &yv, &zv, &wv);
 
-    CPP_BEGIN {
+    {
       self_obj->Set(static_cast<float>(xv), static_cast<float>(yv),
           static_cast<float>(zv), static_cast<float>(wv));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {

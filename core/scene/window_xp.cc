@@ -73,8 +73,11 @@ bool WindowXPAbove::Prepare(DrawParam param) {
                                static_cast<float>(parent_->y_), 0.0f));
 
   const ObjectData object_data = {transform};
+  // The pool answers an invalid chunk when it refuses; the draw path has no
+  // state of its own to report into.
+  ExceptionState acquire_state;
   parent_->above_object_slot_ =
-      UniformManager::Get().object_uniforms().Acquire(object_data);
+      UniformManager::Get().object_uniforms().Acquire(acquire_state, object_data);
   if (parent_->above_object_slot_.chunk == UniformBlockPool::kInvalidChunk)
     return false;
 
@@ -396,7 +399,10 @@ bool WindowXP::Prepare(DrawParam param) {
                                                 static_cast<float>(y_), 0.0f));
 
   const ObjectData object_data = {transform};
-  object_slot_ = UniformManager::Get().object_uniforms().Acquire(object_data);
+  // The pool answers an invalid chunk when it refuses; the draw path has
+  // no state of its own to report into.
+  ExceptionState acquire_state;
+  object_slot_ = UniformManager::Get().object_uniforms().Acquire(acquire_state, object_data);
   if (object_slot_.chunk == UniformBlockPool::kInvalidChunk)
     return false;
 

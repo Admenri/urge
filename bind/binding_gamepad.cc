@@ -35,10 +35,10 @@ RB_FUNC(Gamepad_available_devices) {
 
   std::vector<urge::Gamepad::DeviceInfo>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<urge::Gamepad::DeviceInfo>(
         urge::Gamepad::GetAvailableDevices());
-  } CPP_END;
+  }
 
   VALUE devices = rb_ary_new();
   for (const auto& device : *result) {
@@ -64,18 +64,20 @@ RB_FUNC(Gamepad_available_devices) {
 RB_DEF_TYPE(Gamepad);
 
 RB_FUNC(Gamepad_initialize) {
+  urge::ExceptionState exception_state;
   int device_id;
   ParseArgs(argc, argv, "i", &device_id);
 
   urge::Gamepad* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Gamepad> value = urge::MakeRefCounted<urge::Gamepad>(
-        device_id);
+        exception_state, device_id);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -87,9 +89,9 @@ RB_FUNC(Gamepad_Update) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -100,9 +102,9 @@ RB_FUNC(Gamepad_Connect) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Connect();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -113,9 +115,9 @@ RB_FUNC(Gamepad_GetDeviceID) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetDeviceID();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -126,9 +128,9 @@ RB_FUNC(Gamepad_GetConnectState) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetConnectState();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -142,9 +144,9 @@ RB_FUNC(Gamepad_GetAxisValue) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetAxisValue(axis);
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -158,9 +160,9 @@ RB_FUNC(Gamepad_IsButtonPressed) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsButtonPressed(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -174,9 +176,9 @@ RB_FUNC(Gamepad_IsButtonTriggered) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsButtonTriggered(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -190,9 +192,9 @@ RB_FUNC(Gamepad_IsButtonRepeated) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->IsButtonRepeated(button);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -203,9 +205,9 @@ RB_FUNC(Gamepad_GetPressedButtons) {
   CheckArgc(argc, 0);
   std::vector<int32_t>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<int32_t>(self_obj->GetPressedButtons());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<int32_t>(*result);
   delete result;
@@ -222,10 +224,10 @@ RB_FUNC(Gamepad_Rumble) {
 
     bool result = false;
 
-    CPP_BEGIN {
+    {
       result = self_obj->Rumble(static_cast<float>(low),
           static_cast<float>(high));
-    } CPP_END;
+    }
 
     return result ? Qtrue : Qfalse;
   } else if (argc == 3) {
@@ -236,10 +238,10 @@ RB_FUNC(Gamepad_Rumble) {
 
     bool result = false;
 
-    CPP_BEGIN {
+    {
       result = self_obj->Rumble(static_cast<float>(low),
           static_cast<float>(high), duration);
-    } CPP_END;
+    }
 
     return result ? Qtrue : Qfalse;
   } else {

@@ -37,9 +37,20 @@ class Disposable : public Object {
   void Dispose() { ReleaseSelf(); }
 
  public:
-  void Guard() {
+  //! Whether this object may still be used, recording the failure when not.
+  /*!
+      The binding calls a method on a disposed object often enough that the
+      check is one line at the top of every one of them:
+
+      ```cpp
+      if (!Disposable::Guard(exception_state))
+        return;
+      ```
+  */
+  bool Guard(URGE_EXCEPT) {
     if (disposed_)
-      throw Exception(Exception::kRGSSError, "disposed object");
+      exception_state.Throw(ExceptionState::kRGSSError, "disposed object");
+    return !exception_state.HadException();
   }
 
   template <typename Ty>

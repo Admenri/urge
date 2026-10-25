@@ -96,24 +96,25 @@ void World3D::DisposeObject() {
   scene_.reset();
 }
 
-RefPtr<RenderGraph3D> World3D::ActiveGraph() {
+RefPtr<RenderGraph3D> World3D::ActiveGraph(URGE_EXCEPT) {
   if (graph_)
     return graph_;
   if (!default_graph_)
-    default_graph_ = MakeRefCounted<ForwardPipeline3D>();
+    default_graph_ = MakeRefCounted<ForwardPipeline3D>(exception_state);
   return default_graph_;
 }
 
-void World3D::EnsureTarget() {
+void World3D::EnsureTarget(URGE_EXCEPT) {
   if (target_ && target_->Width() == width_ && target_->Height() == height_)
     return;
 
-  target_ = MakeRefCounted<RenderTarget3D>(width_, height_, format_,
+  target_ = MakeRefCounted<RenderTarget3D>(exception_state, width_, height_,
+                                  format_,
                                            "depth32float", 1);
   texture_group_ = nullptr;
 }
 
-void World3D::EnsureQuadPipeline() {
+void World3D::EnsureQuadPipeline(URGE_EXCEPT) {
   if (quad_pipeline_)
     return;
 
@@ -170,10 +171,10 @@ void World3D::EnsureQuadPipeline() {
   desc.fragment = &fragment;
 
   quad_pipeline_ = device.CreateRenderPipeline(&desc);
-  if (!quad_pipeline_)
-    throw Exception(Exception::kGPUError,
-                    "world3d: the device rejected the blit pipeline.");
-
+  if (!quad_pipeline_) {
+    exception_state.Throw(ExceptionState::kGPUError, "world3d: the device rejected the blit pipeline.");
+    return;
+  }
   wgpu::BufferDescriptor uniform_desc;
   uniform_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
   uniform_desc.size = 32;
@@ -200,14 +201,15 @@ void World3D::EnsureQuadPipeline() {
   sampler_ = device.CreateSampler(&sampler_desc);
 }
 
-void World3D::UpdateQuad(glm::ivec2 target_size) {
+void World3D::UpdateQuad(URGE_EXCEPT, glm::ivec2 target_size) {
   if (quad_uniform_ == nullptr)
     return;
 
   struct QuadData {
     glm::vec4 rect;
     glm::vec4 target;
-  } data;
+  }
+  data;
 
   data.rect =
       glm::vec4(static_cast<float>(x_), static_cast<float>(y_),
@@ -230,29 +232,33 @@ void World3D::UpdateQuad(glm::ivec2 target_size) {
     desc.entryCount = 2;
     desc.entries = entries;
     texture_group_ = GPUDevice::Get().device().CreateBindGroup(&desc);
-    if (!texture_group_)
-      throw Exception(Exception::kGPUError,
-                      "world3d: the device rejected the texture group.");
-  }
+    if (!texture_group_) {
+      exception_state.Throw(ExceptionState::kGPUError, "world3d: the device rejected the texture group.");
+      return;
+    }  }
 }
 
-void World3D::RenderScene(DrawParam param) {
-  EnsureTarget();
+void World3D::RenderScene(URGE_EXCEPT, DrawParam param) {
+  EnsureTarget(exception_state);
   if (!target_)
     return;
 
-  RefPtr<RenderGraph3D> graph = ActiveGraph();
+  RefPtr<RenderGraph3D> graph = ActiveGraph(exception_state);
   if (!graph)
     return;
 
   if (!context_)
-    context_ = MakeRefCounted<RenderContext3D>(param->command, target_);
+    context_ = MakeRefCounted<RenderContext3D>(exception_state, param->command,
+                                          target_);
   else
     context_->BeginFrame(param->command, target_);
 
   context_->Collect(scene_.get(), camera_.get());
   context_->Flush();
-  graph->Execute(context_.get());
+  // The draw path has no state of its own to report into: a frame that
+  // cannot be built leaves a log line and the last good texture.
+  ExceptionState frame_state;
+  graph->Execute(frame_state, context_.get());
 }
 
 bool World3D::Prepare(DrawParam param) {
@@ -261,9 +267,12 @@ bool World3D::Prepare(DrawParam param) {
   if (width_ <= 0 || height_ <= 0)
     return false;
 
-  EnsureQuadPipeline();
-  RenderScene(param);
-  UpdateQuad(param->target->size());
+  // The draw path has no state to report into: a frame that cannot be built
+  // leaves a log line and the previous texture.
+  ExceptionState frame_state;
+  EnsureQuadPipeline(frame_state);
+  RenderScene(frame_state, param);
+  UpdateQuad(frame_state, param->target->size());
 
   return texture_group_ != nullptr;
 }

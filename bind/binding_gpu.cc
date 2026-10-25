@@ -56,12 +56,12 @@ RB_FUNC(GPU_queue) {
   CheckArgc(argc, 0);
   urge::GPUQueue* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUQueue> value = urge::GPU::Get().queue();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUQueueDataType);
   if (result)
@@ -78,13 +78,13 @@ RB_FUNC(GPU_CreateBuffer) {
 
   urge::GPUBuffer* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBuffer> value = urge::GPU::Get(
         ).CreateBuffer(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUBufferDataType);
   if (result)
@@ -101,13 +101,13 @@ RB_FUNC(GPU_CreateTexture) {
 
   urge::GPUTexture* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUTexture> value = urge::GPU::Get(
         ).CreateTexture(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUTextureDataType);
   if (result)
@@ -124,13 +124,13 @@ RB_FUNC(GPU_CreateSampler) {
 
   urge::GPUSampler* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUSampler> value = urge::GPU::Get(
         ).CreateSampler(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUSamplerDataType);
   if (result)
@@ -147,13 +147,13 @@ RB_FUNC(GPU_CreateShaderModule) {
 
   urge::GPUShaderModule* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUShaderModule> value = urge::GPU::Get(
         ).CreateShaderModule(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUShaderModuleDataType);
   if (result)
@@ -170,13 +170,13 @@ RB_FUNC(GPU_CreateBindGroupLayout) {
 
   urge::GPUBindGroupLayout* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBindGroupLayout> value = urge::GPU::Get(
         ).CreateBindGroupLayout(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUBindGroupLayoutDataType);
   if (result)
@@ -193,13 +193,13 @@ RB_FUNC(GPU_CreatePipelineLayout) {
 
   urge::GPUPipelineLayout* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUPipelineLayout> value = urge::GPU::Get(
         ).CreatePipelineLayout(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUPipelineLayoutDataType);
   if (result)
@@ -216,13 +216,13 @@ RB_FUNC(GPU_CreateBindGroup) {
 
   urge::GPUBindGroup* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBindGroup> value = urge::GPU::Get(
         ).CreateBindGroup(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUBindGroupDataType);
   if (result)
@@ -239,13 +239,13 @@ RB_FUNC(GPU_CreateRenderPipeline) {
 
   urge::GPURenderPipeline* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPURenderPipeline> value = urge::GPU::Get(
         ).CreateRenderPipeline(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPURenderPipelineDataType);
   if (result)
@@ -262,13 +262,13 @@ RB_FUNC(GPU_CreateComputePipeline) {
 
   urge::GPUComputePipeline* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUComputePipeline> value = urge::GPU::Get(
         ).CreateComputePipeline(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUComputePipelineDataType);
   if (result)
@@ -285,13 +285,13 @@ RB_FUNC(GPU_CreateQuerySet) {
 
   urge::GPUQuerySet* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUQuerySet> value = urge::GPU::Get(
         ).CreateQuerySet(descriptor);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUQuerySetDataType);
   if (result)
@@ -303,13 +303,13 @@ RB_FUNC(GPU_CreateCommandEncoder) {
   CheckArgc(argc, 0);
   urge::GPUCommandEncoder* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUCommandEncoder> value = urge::GPU::Get(
         ).CreateCommandEncoder();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPUCommandEncoderDataType);
   if (result)

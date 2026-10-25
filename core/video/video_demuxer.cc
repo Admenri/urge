@@ -293,15 +293,15 @@ VideoDemuxer::VideoDemuxer() = default;
 
 VideoDemuxer::~VideoDemuxer() = default;
 
-bool VideoDemuxer::Open(const std::string& filename) {
+bool VideoDemuxer::Open(URGE_EXCEPT, const std::string& filename) {
   Close();
 
   SDL_IOStream* stream = nullptr;
-  try {
-    stream = IOService::Get().OpenReadRaw(filename);
-  } catch (const Exception& error) {
+  ExceptionState open_state;
+  stream = IOService::Get().OpenReadRaw(open_state, filename);
+  if (open_state.HadException()) {
     LOGGER_ERROR("the video '{}' could not be opened: {}", filename,
-                 error.message());
+                 open_state.message());
     return false;
   }
 

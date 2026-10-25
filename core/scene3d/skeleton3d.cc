@@ -33,14 +33,14 @@ Skeleton3D::Skeleton3D() = default;
 
 Skeleton3D::~Skeleton3D() = default;
 
-void Skeleton3D::SetBones(std::vector<int32_t> parents,
+void Skeleton3D::SetBones(URGE_EXCEPT, std::vector<int32_t> parents,
                           std::vector<float> inverse_bind) {
   const size_t count = parents.size();
-  if (inverse_bind.size() != count * 16)
-    throw Exception(Exception::kRGSSError,
-                    "skeleton3d: inverse bind matrices are sixteen floats per "
+  if (inverse_bind.size() != count * 16) {
+    exception_state.Throw(ExceptionState::kRGSSError, "skeleton3d: inverse bind matrices are sixteen floats per "
                     "bone.");
-
+    return;
+  }
   std::vector<RefPtr<Node3D>> bones;
   bones.reserve(count);
   for (size_t i = 0; i < count; ++i)
@@ -50,15 +50,16 @@ void Skeleton3D::SetBones(std::vector<int32_t> parents,
     const int32_t parent = parents[i];
     if (parent < 0)
       continue;
-    if (parent >= static_cast<int32_t>(count))
-      throw Exception(Exception::kRGSSError,
-                      "skeleton3d: bone {} points at the missing parent {}.",
+    if (parent >= static_cast<int32_t>(count)) {
+      exception_state.Throw(ExceptionState::kRGSSError, "skeleton3d: bone {} points at the missing parent {}.",
                       static_cast<int32_t>(i), parent);
-    if (parent == static_cast<int32_t>(i))
-      throw Exception(Exception::kRGSSError,
-                      "skeleton3d: bone {} cannot parent itself.",
+      return;
+    }
+    if (parent == static_cast<int32_t>(i)) {
+      exception_state.Throw(ExceptionState::kRGSSError, "skeleton3d: bone {} cannot parent itself.",
                       static_cast<int32_t>(i));
-
+      return;
+    }
     bones[i]->SetParent(bones[parent]);
   }
 

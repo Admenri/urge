@@ -37,6 +37,7 @@ RB_DEF_TYPE(Effect);
 RB_FUNC(Effect_initialize) {
   if (argc == 2) {
     // initialize(vs_wgsl, fs_wgsl)
+    urge::ExceptionState exception_state;
     VALUE vs_wgsl_val, fs_wgsl_val;
     const char* vs_wgsl_data;
     size_t vs_wgsl_size, fs_wgsl_size;
@@ -47,14 +48,15 @@ RB_FUNC(Effect_initialize) {
 
     urge::Effect* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
-          std::string(vs_wgsl_data, vs_wgsl_size),
+          exception_state, std::string(vs_wgsl_data, vs_wgsl_size),
           std::string(fs_wgsl_data, fs_wgsl_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -62,6 +64,7 @@ RB_FUNC(Effect_initialize) {
     return object;
   } else if (argc == 3) {
     // initialize(vs_wgsl, fs_wgsl, blend_states)
+    urge::ExceptionState exception_state;
     VALUE vs_wgsl_val, fs_wgsl_val, blend_states_val;
     const char* vs_wgsl_data;
     size_t vs_wgsl_size, fs_wgsl_size, blend_states_size;
@@ -74,15 +77,16 @@ RB_FUNC(Effect_initialize) {
 
     urge::Effect* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
-          std::string(vs_wgsl_data, vs_wgsl_size),
+          exception_state, std::string(vs_wgsl_data, vs_wgsl_size),
           std::string(fs_wgsl_data, fs_wgsl_size),
           std::string(blend_states_data, blend_states_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -94,6 +98,7 @@ RB_FUNC(Effect_initialize) {
 }
 
 RB_FUNC(Effect_initialize_copy) {
+  urge::ExceptionState exception_state;
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
@@ -101,12 +106,13 @@ RB_FUNC(Effect_initialize_copy) {
 
   urge::Effect* result = nullptr;
 
-  CPP_BEGIN {
-    urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(other_obj);
+  {
+    urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(exception_state, other_obj);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -117,15 +123,17 @@ RB_FUNC(Effect_initialize_copy) {
 RB_FUNC(Effect_SetFloat) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   uint32_t slot;
   VALUE data_val;
   ParseArgs(argc, argv, "uo", &slot, &data_val);
   CheckVectorOf<float>(data_val);
 
-  CPP_BEGIN {
-    self_obj->SetFloat(slot, TakeVectorOf<float>(data_val));
-  } CPP_END;
+  {
+    self_obj->SetFloat(exception_state, slot, TakeVectorOf<float>(data_val));
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -133,15 +141,17 @@ RB_FUNC(Effect_SetFloat) {
 RB_FUNC(Effect_SetInt) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   uint32_t slot;
   VALUE data_val;
   ParseArgs(argc, argv, "uo", &slot, &data_val);
   CheckVectorOf<int32_t>(data_val);
 
-  CPP_BEGIN {
-    self_obj->SetInt(slot, TakeVectorOf<int32_t>(data_val));
-  } CPP_END;
+  {
+    self_obj->SetInt(exception_state, slot, TakeVectorOf<int32_t>(data_val));
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -156,9 +166,9 @@ RB_FUNC(Effect_SetTexture) {
   ParseArgs(argc, argv, "uo", &slot, &texture_val);
   texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTexture(slot, texture);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -173,9 +183,9 @@ RB_FUNC(Effect_SetSampler) {
   ParseArgs(argc, argv, "uo", &slot, &texture_val);
   texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetSampler(slot, texture);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -183,6 +193,7 @@ RB_FUNC(Effect_SetSampler) {
 RB_FUNC(Effect_SetBlock) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   uint32_t slot;
   VALUE uniform_block_val;
@@ -191,10 +202,11 @@ RB_FUNC(Effect_SetBlock) {
   ParseArgs(argc, argv, "uo", &slot, &uniform_block_val);
   CheckString(uniform_block_val, &uniform_block_data, &uniform_block_size);
 
-  CPP_BEGIN {
-    self_obj->SetBlock(slot,
+  {
+    self_obj->SetBlock(exception_state, slot,
         std::string(uniform_block_data, uniform_block_size));
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }

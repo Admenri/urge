@@ -40,12 +40,12 @@ RB_FUNC(WindowXP_initialize) {
 
     urge::WindowXP* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>();
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -60,13 +60,13 @@ RB_FUNC(WindowXP_initialize) {
 
     urge::WindowXP* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>(
           viewport);
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -81,9 +81,9 @@ RB_FUNC(WindowXP_Update) {
   auto* self_obj = GetSelfData<urge::WindowXP>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }

@@ -44,9 +44,9 @@ class Viewport : public Node {
   ~Viewport() override;
 
   URGE_BINDING()
-  void Flash(MaybePtr<Color> color, int32_t duration);
+  void Flash(URGE_EXCEPT, MaybePtr<Color> color, int32_t duration);
   URGE_BINDING()
-  void Update();
+  void Update(URGE_EXCEPT);
 
   URGE_BINDING()
   ATTR(RefPtr<Rect>, Rect);

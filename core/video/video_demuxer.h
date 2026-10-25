@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 
+#include "core/common/definition.h"
+
 namespace urge {
 
 struct VideoPacket {
@@ -61,7 +63,7 @@ class VideoDemuxer {
   VideoDemuxer(const VideoDemuxer&) = delete;
   VideoDemuxer& operator=(const VideoDemuxer&) = delete;
 
-  bool Open(const std::string& filename);
+  bool Open(URGE_EXCEPT, const std::string& filename);
   void Close();
 
   const VideoTrackInfo& info() const { return info_; }

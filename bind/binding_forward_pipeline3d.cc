@@ -34,15 +34,18 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(ForwardPipeline3D, RenderGraph3D);
 
 RB_FUNC(ForwardPipeline3D_initialize) {
+  urge::ExceptionState exception_state;
 
   urge::ForwardPipeline3D* result = nullptr;
 
-  CPP_BEGIN {
-    urge::RefPtr<urge::ForwardPipeline3D> value = urge::MakeRefCounted<urge::ForwardPipeline3D>();
+  {
+    urge::RefPtr<urge::ForwardPipeline3D> value = urge::MakeRefCounted<urge::ForwardPipeline3D>(
+        exception_state);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -57,9 +60,9 @@ RB_FUNC(ForwardPipeline3D_SetCascades) {
   int count;
   ParseArgs(argc, argv, "i", &count);
 
-  CPP_BEGIN {
+  {
     self_obj->SetCascades(count);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -71,9 +74,9 @@ RB_FUNC(ForwardPipeline3D_SetShadowDistance) {
   double distance;
   ParseArgs(argc, argv, "f", &distance);
 
-  CPP_BEGIN {
+  {
     self_obj->SetShadowDistance(static_cast<float>(distance));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -85,9 +88,9 @@ RB_FUNC(ForwardPipeline3D_SetSplitLambda) {
   double lambda;
   ParseArgs(argc, argv, "f", &lambda);
 
-  CPP_BEGIN {
+  {
     self_obj->SetSplitLambda(static_cast<float>(lambda));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -99,9 +102,9 @@ RB_FUNC(ForwardPipeline3D_SetCascadeFade) {
   double fade;
   ParseArgs(argc, argv, "f", &fade);
 
-  CPP_BEGIN {
+  {
     self_obj->SetCascadeFade(static_cast<float>(fade));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -113,9 +116,9 @@ RB_FUNC(ForwardPipeline3D_SetShadowEnabled) {
   bool enabled;
   ParseArgs(argc, argv, "b", &enabled);
 
-  CPP_BEGIN {
+  {
     self_obj->SetShadowEnabled(enabled);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -127,9 +130,9 @@ RB_FUNC(ForwardPipeline3D_SetQueueSplit) {
   int queue;
   ParseArgs(argc, argv, "i", &queue);
 
-  CPP_BEGIN {
+  {
     self_obj->SetQueueSplit(queue);
-  } CPP_END;
+  }
 
   return Qnil;
 }

@@ -32,6 +32,7 @@ namespace binding {
 RB_DEF_TYPE(RenderTarget3D);
 
 RB_FUNC(RenderTarget3D_initialize) {
+  urge::ExceptionState exception_state;
   int width, height, samples;
   VALUE color_format_val, depth_format_val;
   const char* color_format_data;
@@ -44,14 +45,16 @@ RB_FUNC(RenderTarget3D_initialize) {
 
   urge::RenderTarget3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderTarget3D> value = urge::MakeRefCounted<urge::RenderTarget3D>(
-        width, height, std::string(color_format_data, color_format_size),
+        exception_state, width, height,
+        std::string(color_format_data, color_format_size),
         std::string(depth_format_data, depth_format_size), samples);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -65,9 +68,9 @@ RB_FUNC(RenderTarget3D_Width) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Width();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -78,9 +81,9 @@ RB_FUNC(RenderTarget3D_Height) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Height();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -91,9 +94,9 @@ RB_FUNC(RenderTarget3D_HasColor) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->HasColor();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -104,9 +107,9 @@ RB_FUNC(RenderTarget3D_LayerCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->LayerCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -117,9 +120,9 @@ RB_FUNC(RenderTarget3D_ColorCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->ColorCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -130,9 +133,9 @@ RB_FUNC(RenderTarget3D_SampleCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->SampleCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -143,9 +146,9 @@ RB_FUNC(RenderTarget3D_HasDepth) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->HasDepth();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -156,9 +159,9 @@ RB_FUNC(RenderTarget3D_HasStencil) {
   CheckArgc(argc, 0);
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->HasStencil();
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -169,9 +172,9 @@ RB_FUNC(RenderTarget3D_ColorFormats) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->ColorFormats());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -184,9 +187,9 @@ RB_FUNC(RenderTarget3D_DepthFormat) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->DepthFormat());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),

@@ -28,6 +28,7 @@
 #include <tuple>
 #include <vector>
 
+#include "core/common/definition.h"
 #include "SDL3/SDL_surface.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
@@ -38,10 +39,10 @@ namespace urge {
 
 class FontContext : public Singleton<FontContext> {
  public:
-  FontContext();
+  FontContext(URGE_EXCEPT);
   ~FontContext();
 
-  FontContext(const FontContext&) = delete;
+  FontContext(URGE_EXCEPT, const FontContext&) = delete;
   FontContext& operator=(const FontContext&) = delete;
 
   struct FontData {
@@ -71,7 +72,7 @@ class FontContext : public Singleton<FontContext> {
     bool failed = false;
   };
 
-  void LoadFontDirectory(const std::string& directory);
+  void LoadFontDirectory(URGE_EXCEPT, const std::string& directory);
 
   void LoadSystemFonts();
 

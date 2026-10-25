@@ -34,7 +34,7 @@ URGE_BINDING()
 class ForwardPipeline3D : public RenderGraph3D {
  public:
   URGE_BINDING()
-  ForwardPipeline3D();
+  ForwardPipeline3D(URGE_EXCEPT);
   ~ForwardPipeline3D() override;
 
   URGE_BINDING()

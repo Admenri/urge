@@ -29,14 +29,14 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Network  (core/network/network.h:186-204)
+// Network  (core/network/network.h:186-206)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Network_Update) {
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     urge::Network::Get().Update();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -44,6 +44,7 @@ RB_FUNC(Network_Update) {
 RB_FUNC(Network_OpenWebSocket) {
   if (argc == 1) {
     // websocket(url)
+    urge::ExceptionState exception_state;
     VALUE url_val;
     const char* url_data;
     size_t url_size;
@@ -52,13 +53,14 @@ RB_FUNC(Network_OpenWebSocket) {
 
     urge::WebSocket* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WebSocket> value = urge::Network::Get(
-          ).OpenWebSocket(std::string(url_data, url_size));
+          ).OpenWebSocket(exception_state, std::string(url_data, url_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE value = WrapObject(result, kWebSocketDataType);
     if (result)
@@ -66,6 +68,7 @@ RB_FUNC(Network_OpenWebSocket) {
     return value;
   } else if (argc == 2) {
     // websocket(url, protocols)
+    urge::ExceptionState exception_state;
     VALUE url_val, protocols_val;
     const char* url_data;
     size_t url_size;
@@ -75,14 +78,15 @@ RB_FUNC(Network_OpenWebSocket) {
 
     urge::WebSocket* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WebSocket> value = urge::Network::Get(
-          ).OpenWebSocket(std::string(url_data, url_size),
+          ).OpenWebSocket(exception_state, std::string(url_data, url_size),
           TakeVectorOf<std::string>(protocols_val));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE value = WrapObject(result, kWebSocketDataType);
     if (result)
@@ -96,6 +100,7 @@ RB_FUNC(Network_OpenWebSocket) {
 RB_FUNC(Network_OpenFetch) {
   if (argc == 1) {
     // fetch(url)
+    urge::ExceptionState exception_state;
     VALUE url_val;
     const char* url_data;
     size_t url_size;
@@ -104,13 +109,14 @@ RB_FUNC(Network_OpenFetch) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(std::string(url_data, url_size));
+          ).OpenFetch(exception_state, std::string(url_data, url_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE value = WrapObject(result, kFetchDataType);
     if (result)
@@ -118,6 +124,7 @@ RB_FUNC(Network_OpenFetch) {
     return value;
   } else if (argc == 2) {
     // fetch(url, method)
+    urge::ExceptionState exception_state;
     VALUE url_val, method_val;
     const char* url_data;
     size_t url_size, method_size;
@@ -128,14 +135,15 @@ RB_FUNC(Network_OpenFetch) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(std::string(url_data, url_size),
+          ).OpenFetch(exception_state, std::string(url_data, url_size),
           std::string(method_data, method_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE value = WrapObject(result, kFetchDataType);
     if (result)
@@ -143,6 +151,7 @@ RB_FUNC(Network_OpenFetch) {
     return value;
   } else if (argc == 3) {
     // fetch(url, method, body)
+    urge::ExceptionState exception_state;
     VALUE url_val, method_val, body_val;
     const char* url_data;
     size_t url_size, method_size, body_size;
@@ -155,15 +164,16 @@ RB_FUNC(Network_OpenFetch) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(std::string(url_data, url_size),
+          ).OpenFetch(exception_state, std::string(url_data, url_size),
           std::string(method_data, method_size),
           std::string(body_data, body_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE value = WrapObject(result, kFetchDataType);
     if (result)
@@ -171,6 +181,7 @@ RB_FUNC(Network_OpenFetch) {
     return value;
   } else if (argc == 4) {
     // fetch(url, method, body, headers)
+    urge::ExceptionState exception_state;
     VALUE url_val, method_val, body_val, headers_val;
     const char* url_data;
     size_t url_size, method_size, body_size;
@@ -185,16 +196,17 @@ RB_FUNC(Network_OpenFetch) {
 
     urge::Fetch* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(std::string(url_data, url_size),
+          ).OpenFetch(exception_state, std::string(url_data, url_size),
           std::string(method_data, method_size),
           std::string(body_data, body_size),
           TakeVectorOf<std::string>(headers_val));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
+    RaiseException(exception_state);
 
     VALUE value = WrapObject(result, kFetchDataType);
     if (result)
@@ -210,9 +222,9 @@ RB_FUNC(Network_Timeout) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Network::Get().Attr_Timeout());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -222,9 +234,9 @@ RB_FUNC(Network_TimeoutEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Network::Get().Attr_Timeout(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -234,9 +246,9 @@ RB_FUNC(Network_MaxEvents) {
 
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = (*urge::Network::Get().Attr_MaxEvents());
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -246,9 +258,9 @@ RB_FUNC(Network_MaxEventsEqual) {
   int value;
   ParseArgs(argc, argv, "i", &value);
 
-  CPP_BEGIN {
+  {
     urge::Network::Get().Attr_MaxEvents(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }

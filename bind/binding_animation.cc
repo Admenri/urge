@@ -36,6 +36,7 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Animation, Disposable);
 
 RB_FUNC(Animation_initialize) {
+  urge::ExceptionState exception_state;
   VALUE filename_val;
   const char* filename_data;
   size_t filename_size;
@@ -44,13 +45,14 @@ RB_FUNC(Animation_initialize) {
 
   urge::Animation* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Animation> value = urge::MakeRefCounted<urge::Animation>(
-        std::string(filename_data, filename_size));
+        exception_state, std::string(filename_data, filename_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -61,12 +63,15 @@ RB_FUNC(Animation_initialize) {
 RB_FUNC(Animation_Width) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
+
   int32_t result = 0;
 
-  CPP_BEGIN {
-    result = self_obj->Width();
-  } CPP_END;
+  {
+    result = self_obj->Width(exception_state);
+  }
+  RaiseException(exception_state);
 
   return LONG2NUM(result);
 }
@@ -74,12 +79,15 @@ RB_FUNC(Animation_Width) {
 RB_FUNC(Animation_Height) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
+
   int32_t result = 0;
 
-  CPP_BEGIN {
-    result = self_obj->Height();
-  } CPP_END;
+  {
+    result = self_obj->Height(exception_state);
+  }
+  RaiseException(exception_state);
 
   return LONG2NUM(result);
 }
@@ -87,12 +95,15 @@ RB_FUNC(Animation_Height) {
 RB_FUNC(Animation_Count) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
+
   int32_t result = 0;
 
-  CPP_BEGIN {
-    result = self_obj->Count();
-  } CPP_END;
+  {
+    result = self_obj->Count(exception_state);
+  }
+  RaiseException(exception_state);
 
   return LONG2NUM(result);
 }
@@ -100,15 +111,17 @@ RB_FUNC(Animation_Count) {
 RB_FUNC(Animation_Delay) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   int index;
   ParseArgs(argc, argv, "i", &index);
 
   int32_t result = 0;
 
-  CPP_BEGIN {
-    result = self_obj->Delay(index);
-  } CPP_END;
+  {
+    result = self_obj->Delay(exception_state, index);
+  }
+  RaiseException(exception_state);
 
   return LONG2NUM(result);
 }
@@ -116,12 +129,15 @@ RB_FUNC(Animation_Delay) {
 RB_FUNC(Animation_Delays) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
+
   std::vector<int32_t>* result = nullptr;
 
-  CPP_BEGIN {
-    result = new std::vector<int32_t>(self_obj->Delays());
-  } CPP_END;
+  {
+    result = new std::vector<int32_t>(self_obj->Delays(exception_state));
+  }
+  RaiseException(exception_state);
 
   VALUE value = WrapVectorOf<int32_t>(*result);
   delete result;
@@ -131,18 +147,20 @@ RB_FUNC(Animation_Delays) {
 RB_FUNC(Animation_Frame) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   int index;
   ParseArgs(argc, argv, "i", &index);
 
   urge::Image* result = nullptr;
 
-  CPP_BEGIN {
-    urge::RefPtr<urge::Image> value = self_obj->Frame(index);
+  {
+    urge::RefPtr<urge::Image> value = self_obj->Frame(exception_state, index);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE value = WrapObject(result, kImageDataType);
   if (result)

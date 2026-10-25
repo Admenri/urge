@@ -55,13 +55,13 @@ RB_FUNC(WebSocket_initialize) {
 
     urge::WebSocket* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WebSocket> value = urge::MakeRefCounted<urge::WebSocket>(
           std::string(url_data, url_size));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -78,14 +78,14 @@ RB_FUNC(WebSocket_initialize) {
 
     urge::WebSocket* result = nullptr;
 
-    CPP_BEGIN {
+    {
       urge::RefPtr<urge::WebSocket> value = urge::MakeRefCounted<urge::WebSocket>(
           std::string(url_data, url_size),
           TakeVectorOf<std::string>(protocols_val));
       result = value.get();
       if (result)
         result->AddRef();
-    } CPP_END;
+    }
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -102,9 +102,9 @@ RB_FUNC(WebSocket_GetUrl) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetUrl());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -119,9 +119,9 @@ RB_FUNC(WebSocket_GetReadyState) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetReadyState();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -132,9 +132,9 @@ RB_FUNC(WebSocket_GetError) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetError());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -149,9 +149,9 @@ RB_FUNC(WebSocket_GetDropped) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetDropped();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -166,9 +166,9 @@ RB_FUNC(WebSocket_SendText) {
   ParseArgs(argc, argv, "o", &data_val);
   CheckString(data_val, &data_data, &data_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SendText(std::string(data_data, data_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -183,9 +183,9 @@ RB_FUNC(WebSocket_SendBinary) {
   ParseArgs(argc, argv, "o", &data_val);
   CheckString(data_val, &data_data, &data_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SendBinary(std::string(data_data, data_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -195,9 +195,9 @@ RB_FUNC(WebSocket_SendPing) {
 
   if (argc == 0) {
     // send_ping()
-    CPP_BEGIN {
+    {
       self_obj->SendPing();
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 1) {
@@ -208,9 +208,9 @@ RB_FUNC(WebSocket_SendPing) {
     ParseArgs(argc, argv, "o", &data_val);
     CheckString(data_val, &data_data, &data_size);
 
-    CPP_BEGIN {
+    {
       self_obj->SendPing(std::string(data_data, data_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -223,9 +223,9 @@ RB_FUNC(WebSocket_Close) {
 
   if (argc == 0) {
     // close()
-    CPP_BEGIN {
+    {
       self_obj->Close();
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 1) {
@@ -233,9 +233,9 @@ RB_FUNC(WebSocket_Close) {
     int code;
     ParseArgs(argc, argv, "i", &code);
 
-    CPP_BEGIN {
+    {
       self_obj->Close(code);
-    } CPP_END;
+    }
 
     return Qnil;
   } else if (argc == 2) {
@@ -247,9 +247,9 @@ RB_FUNC(WebSocket_Close) {
     ParseArgs(argc, argv, "io", &code, &reason_val);
     CheckString(reason_val, &reason_data, &reason_size);
 
-    CPP_BEGIN {
+    {
       self_obj->Close(code, std::string(reason_data, reason_size));
-    } CPP_END;
+    }
 
     return Qnil;
   } else {
@@ -263,12 +263,12 @@ RB_FUNC(WebSocket_NextEvent) {
   CheckArgc(argc, 0);
   urge::NetworkEvent* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::NetworkEvent> value = self_obj->NextEvent();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kNetworkEventDataType);
   if (result)
@@ -282,9 +282,9 @@ RB_FUNC(WebSocket_GetPending) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetPending();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

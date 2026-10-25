@@ -339,13 +339,13 @@ bool TilemapVXAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-TilemapVX::TilemapVX(RefPtr<Viewport> viewport, int32_t tilesize)
+TilemapVX::TilemapVX(URGE_EXCEPT, RefPtr<Viewport> viewport, int32_t tilesize)
     : Node(viewport, ZValue()),
       rgss3_style_(Config::Get().vxa()),
       above_(MakeRefCounted<TilemapVXAbove>(this, viewport)),
       tilesize_(tilesize) {
   Node::SetupTrait(this);
-  CreateShadowSet();
+  CreateShadowSet(exception_state);
 }
 
 TilemapVX::~TilemapVX() {
@@ -472,7 +472,10 @@ bool TilemapVX::Prepare(DrawParam param) {
   if (map_layer_.valid || above_layer_.valid) {
     UniformManager& uniforms = UniformManager::Get();
     const ObjectData object_data = {world_transform()};
-    object_slot_ = uniforms.object_uniforms().Acquire(object_data);
+    // The pool answers an invalid chunk when it refuses; the draw path has
+    // no state of its own to report into.
+    ExceptionState acquire_state;
+    object_slot_ = uniforms.object_uniforms().Acquire(acquire_state, object_data);
   }
 
   return true;
@@ -483,7 +486,7 @@ bool TilemapVX::DoDraw(DrawParam param) {
   return false;
 }
 
-void TilemapVX::CreateShadowSet() {
+void TilemapVX::CreateShadowSet(URGE_EXCEPT) {
   shadow_texture_ = MakeRefCounted<Bitmap>(16 * tilesize_, tilesize_);
 
   const int32_t half = tilesize_ / 2;
@@ -493,13 +496,13 @@ void TilemapVX::CreateShadowSet() {
     const int32_t offset = i * tilesize_;
 
     if (i & 0x1)
-      shadow_texture_->FillRect(offset, 0, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset, 0, half, half, tint);
     if (i & 0x2)
-      shadow_texture_->FillRect(offset + half, 0, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset + half, 0, half, half, tint);
     if (i & 0x4)
-      shadow_texture_->FillRect(offset, half, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset, half, half, half, tint);
     if (i & 0x8)
-      shadow_texture_->FillRect(offset + half, half, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset + half, half, half, half, tint);
   }
 }
 

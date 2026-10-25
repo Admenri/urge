@@ -49,13 +49,13 @@ RB_FUNC(World3D_initialize) {
 
   urge::World3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::World3D> value = urge::MakeRefCounted<urge::World3D>(x,
         y, width, height);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -69,9 +69,9 @@ RB_FUNC(World3D_GetFormat) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetFormat());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -90,9 +90,9 @@ RB_FUNC(World3D_SetFormat) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetFormat(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -103,12 +103,12 @@ RB_FUNC(World3D_GetTarget) {
   CheckArgc(argc, 0);
   urge::RenderTarget3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderTarget3D> value = self_obj->GetTarget();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kRenderTarget3DDataType);
   if (result)
@@ -122,12 +122,12 @@ RB_FUNC(World3D_GetContext) {
   CheckArgc(argc, 0);
   urge::RenderContext3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderContext3D> value = self_obj->GetContext();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kRenderContext3DDataType);
   if (result)

@@ -81,25 +81,25 @@ class ScreenRootNode : public Node {
 URGE_BINDING()
 class Graphics : public Singleton<Graphics> {
  public:
-  Graphics();
+  Graphics(URGE_EXCEPT);
   ~Graphics();
 
   URGE_BINDING()
-  void Update();
+  void Update(URGE_EXCEPT);
   URGE_BINDING()
-  void Wait(int32_t duration);
+  void Wait(URGE_EXCEPT, int32_t duration);
   URGE_BINDING()
-  void Fadein(int32_t duration);
+  void Fadein(URGE_EXCEPT, int32_t duration);
   URGE_BINDING()
-  void Fadeout(int32_t duration);
+  void Fadeout(URGE_EXCEPT, int32_t duration);
   URGE_BINDING()
-  void Freeze();
+  void Freeze(URGE_EXCEPT);
   URGE_BINDING()
-  void Transition(int32_t duration = 10,
+  void Transition(URGE_EXCEPT, int32_t duration = 10,
                   std::string filename = {},
                   int32_t vague = 40);
   URGE_BINDING()
-  void TransitionBitmap(int32_t duration = 10,
+  void TransitionBitmap(URGE_EXCEPT, int32_t duration = 10,
                         MaybePtr<Bitmap> bitmap = {},
                         int32_t vague = 40);
   URGE_BINDING()
@@ -113,7 +113,7 @@ class Graphics : public Singleton<Graphics> {
   URGE_BINDING()
   void ResizeScreen(int32_t width, int32_t height);
   URGE_BINDING()
-  void PlayMovie(std::string filename);
+  void PlayMovie(URGE_EXCEPT, std::string filename);
 
   URGE_BINDING()
   ATTR(int32_t, FrameRate);
@@ -148,8 +148,8 @@ class Graphics : public Singleton<Graphics> {
  private:
   friend class ScreenRootNode;
 
-  void ProcessEvents();
-  void PresentInternal();
+  void ProcessEvents(URGE_EXCEPT);
+  void PresentInternal(URGE_EXCEPT);
 
   FrameCallback frame_callback_ = nullptr;
 

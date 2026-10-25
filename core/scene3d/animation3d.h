@@ -52,14 +52,14 @@ class Animation3D : public Object {
   ~Animation3D() override;
 
   URGE_BINDING()
-  void AddTrack(int32_t bone,
+  void AddTrack(URGE_EXCEPT, int32_t bone,
                 int32_t path,
                 std::vector<float> times,
                 std::vector<float> values,
                 int32_t interpolation);
 
   URGE_BINDING()
-  void AddEvent(float time, std::string name);
+  void AddEvent(URGE_EXCEPT, float time, std::string name);
   URGE_BINDING()
   int32_t EventCount() const { return static_cast<int32_t>(events_.size()); }
   URGE_BINDING()
@@ -98,9 +98,10 @@ class Animation3D : public Object {
   URGE_BINDING()
   void Apply(RefPtr<Skeleton3D> skeleton, float time);
   URGE_BINDING()
-  void Blend(RefPtr<Skeleton3D> skeleton, float time, float weight);
+  void Blend(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float time, float weight);
   URGE_BINDING()
-  void BlendMasked(RefPtr<Skeleton3D> skeleton,
+  void BlendMasked(URGE_EXCEPT,
+                   RefPtr<Skeleton3D> skeleton,
                    float time,
                    float weight,
                    MaybePtr<BoneMask3D> mask);

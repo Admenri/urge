@@ -40,12 +40,12 @@ RB_FUNC(Scene3D_initialize) {
 
   urge::Scene3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Scene3D> value = urge::MakeRefCounted<urge::Scene3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -62,9 +62,9 @@ RB_FUNC(Scene3D_Add) {
   ParseArgs(argc, argv, "o", &node_val);
   node = CheckMaybeObject<urge::Node3D>(node_val, kNode3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->Add(node);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -75,9 +75,9 @@ RB_FUNC(Scene3D_NodeCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->NodeCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

@@ -37,12 +37,12 @@ RB_FUNC(GPUBufferDescriptor_initialize) {
 
   urge::GPUBufferDescriptor* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUBufferDescriptor> value = urge::MakeRefCounted<urge::GPUBufferDescriptor>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -56,9 +56,9 @@ RB_FUNC(GPUBufferDescriptor_GetLabel) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetLabel());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -77,9 +77,9 @@ RB_FUNC(GPUBufferDescriptor_SetLabel) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetLabel(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -90,9 +90,9 @@ RB_FUNC(GPUBufferDescriptor_GetSize) {
   CheckArgc(argc, 0);
   uint64_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetSize();
-  } CPP_END;
+  }
 
   return ULL2NUM(result);
 }
@@ -104,9 +104,9 @@ RB_FUNC(GPUBufferDescriptor_SetSize) {
   uint64_t value;
   ParseArgs(argc, argv, "p", &value);
 
-  CPP_BEGIN {
+  {
     self_obj->SetSize(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }

@@ -39,9 +39,9 @@ RB_FUNC(GPUBuffer_GetSize) {
   CheckArgc(argc, 0);
   uint64_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->GetSize();
-  } CPP_END;
+  }
 
   return ULL2NUM(result);
 }
@@ -56,9 +56,9 @@ RB_FUNC(GPUBuffer_MapAsync) {
 
   bool result = false;
 
-  CPP_BEGIN {
+  {
     result = self_obj->MapAsync(mode, offset, size);
-  } CPP_END;
+  }
 
   return result ? Qtrue : Qfalse;
 }
@@ -67,9 +67,9 @@ RB_FUNC(GPUBuffer_Unmap) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Unmap();
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -83,9 +83,9 @@ RB_FUNC(GPUBuffer_Read) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->Read(offset, size));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -105,9 +105,9 @@ RB_FUNC(GPUBuffer_Write) {
   ParseArgs(argc, argv, "po", &offset, &data_val);
   CheckString(data_val, &data_data, &data_size);
 
-  CPP_BEGIN {
+  {
     self_obj->Write(offset, std::string(data_data, data_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -116,9 +116,9 @@ RB_FUNC(GPUBuffer_Destroy) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Destroy();
-  } CPP_END;
+  }
 
   return Qnil;
 }

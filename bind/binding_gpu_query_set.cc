@@ -39,9 +39,9 @@ RB_FUNC(GPUQuerySet_Type) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Type();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -52,9 +52,9 @@ RB_FUNC(GPUQuerySet_Count) {
   CheckArgc(argc, 0);
   uint32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Count();
-  } CPP_END;
+  }
 
   return ULONG2NUM(result);
 }
@@ -63,9 +63,9 @@ RB_FUNC(GPUQuerySet_Destroy) {
   auto* self_obj = GetSelfData<urge::GPUQuerySet>(self);
 
   CheckArgc(argc, 0);
-  CPP_BEGIN {
+  {
     self_obj->Destroy();
-  } CPP_END;
+  }
 
   return Qnil;
 }

@@ -42,12 +42,12 @@ RB_FUNC(AnimationLayer3D_GetAnimation) {
   CheckArgc(argc, 0);
   urge::Animation3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Animation3D> value = self_obj->GetAnimation();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kAnimation3DDataType);
   if (result)

@@ -41,12 +41,12 @@ RB_FUNC(MeshRenderer3D_initialize) {
 
   urge::MeshRenderer3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::MeshRenderer3D> value = urge::MakeRefCounted<urge::MeshRenderer3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -57,6 +57,7 @@ RB_FUNC(MeshRenderer3D_initialize) {
 RB_FUNC(MeshRenderer3D_SetMaterial) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   int slot;
   VALUE material_val;
@@ -64,9 +65,10 @@ RB_FUNC(MeshRenderer3D_SetMaterial) {
   ParseArgs(argc, argv, "io", &slot, &material_val);
   material = CheckMaybeObject<urge::Material3D>(material_val, kMaterial3DDataType);
 
-  CPP_BEGIN {
-    self_obj->SetMaterial(slot, material);
-  } CPP_END;
+  {
+    self_obj->SetMaterial(exception_state, slot, material);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -80,12 +82,12 @@ RB_FUNC(MeshRenderer3D_GetMaterial) {
 
   urge::Material3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Material3D> value = self_obj->GetMaterial(slot);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kMaterial3DDataType);
   if (result)
@@ -99,9 +101,9 @@ RB_FUNC(MeshRenderer3D_MaterialCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->MaterialCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -112,9 +114,9 @@ RB_FUNC(MeshRenderer3D_BoundsCenter) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->BoundsCenter());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -127,9 +129,9 @@ RB_FUNC(MeshRenderer3D_BoundsRadius) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->BoundsRadius());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -139,14 +141,17 @@ RB_FUNC(MeshRenderer3D_BoundsRadius) {
 RB_FUNC(MeshRenderer3D_SetInstanceMatrices) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE data_val;
   ParseArgs(argc, argv, "o", &data_val);
   CheckVectorOf<float>(data_val);
 
-  CPP_BEGIN {
-    self_obj->SetInstanceMatrices(TakeVectorOf<float>(data_val));
-  } CPP_END;
+  {
+    self_obj->SetInstanceMatrices(exception_state,
+        TakeVectorOf<float>(data_val));
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -157,9 +162,9 @@ RB_FUNC(MeshRenderer3D_InstanceCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->InstanceCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

@@ -37,12 +37,12 @@ RB_FUNC(OrthographicCamera_initialize) {
 
   urge::OrthographicCamera* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::OrthographicCamera> value = urge::MakeRefCounted<urge::OrthographicCamera>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)

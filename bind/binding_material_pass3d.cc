@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// MaterialPass3D  (core/scene3d/material3d.h:55-442)
+// MaterialPass3D  (core/scene3d/material3d.h:55-444)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(MaterialPass3D);
@@ -40,9 +40,9 @@ RB_FUNC(MaterialPass3D_GetTag) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetTag());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -57,9 +57,9 @@ RB_FUNC(MaterialPass3D_GetVertexEntry) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetVertexEntry());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -78,9 +78,9 @@ RB_FUNC(MaterialPass3D_SetVertexEntry) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetVertexEntry(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -91,9 +91,9 @@ RB_FUNC(MaterialPass3D_GetFragmentEntry) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetFragmentEntry());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -112,9 +112,9 @@ RB_FUNC(MaterialPass3D_SetFragmentEntry) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetFragmentEntry(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -125,9 +125,9 @@ RB_FUNC(MaterialPass3D_GetBlend) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetBlend());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -146,9 +146,9 @@ RB_FUNC(MaterialPass3D_SetBlend) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckString(value_val, &value_data, &value_size);
 
-  CPP_BEGIN {
+  {
     self_obj->SetBlend(std::string(value_data, value_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -159,9 +159,9 @@ RB_FUNC(MaterialPass3D_GetParams) {
   CheckArgc(argc, 0);
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->GetParams());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -171,14 +171,16 @@ RB_FUNC(MaterialPass3D_GetParams) {
 RB_FUNC(MaterialPass3D_SetParams) {
   auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE value_val;
   ParseArgs(argc, argv, "o", &value_val);
   CheckVectorOf<float>(value_val);
 
-  CPP_BEGIN {
-    self_obj->SetParams(TakeVectorOf<float>(value_val));
-  } CPP_END;
+  {
+    self_obj->SetParams(exception_state, TakeVectorOf<float>(value_val));
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -186,6 +188,7 @@ RB_FUNC(MaterialPass3D_SetParams) {
 RB_FUNC(MaterialPass3D_SetTextureSlot) {
   auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   int slot;
   VALUE texture_val;
@@ -193,9 +196,10 @@ RB_FUNC(MaterialPass3D_SetTextureSlot) {
   ParseArgs(argc, argv, "io", &slot, &texture_val);
   texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-  CPP_BEGIN {
-    self_obj->SetTextureSlot(slot, texture);
-  } CPP_END;
+  {
+    self_obj->SetTextureSlot(exception_state, slot, texture);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -209,12 +213,12 @@ RB_FUNC(MaterialPass3D_GetTextureSlot) {
 
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = self_obj->GetTextureSlot(slot);
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kBitmapDataType);
   if (result)
@@ -228,9 +232,9 @@ RB_FUNC(MaterialPass3D_TextureSlotCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->TextureSlotCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -247,9 +251,9 @@ RB_FUNC(MaterialPass3D_SetTexture) {
   CheckString(name_val, &name_data, &name_size);
   texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTexture(std::string(name_data, name_size), texture);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -266,13 +270,13 @@ RB_FUNC(MaterialPass3D_GetTexture) {
 
   urge::Bitmap* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Bitmap> value = self_obj->GetTexture(
         std::string(name_data, name_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kBitmapDataType);
   if (result)
@@ -283,15 +287,18 @@ RB_FUNC(MaterialPass3D_GetTexture) {
 RB_FUNC(MaterialPass3D_SetUniformSlot) {
   auto* self_obj = GetSelfData<urge::MaterialPass3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   int slot;
   VALUE values_val;
   ParseArgs(argc, argv, "io", &slot, &values_val);
   CheckVectorOf<float>(values_val);
 
-  CPP_BEGIN {
-    self_obj->SetUniformSlot(slot, TakeVectorOf<float>(values_val));
-  } CPP_END;
+  {
+    self_obj->SetUniformSlot(exception_state, slot,
+        TakeVectorOf<float>(values_val));
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -305,9 +312,9 @@ RB_FUNC(MaterialPass3D_GetUniformSlot) {
 
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(self_obj->GetUniformSlot(slot));
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -325,10 +332,10 @@ RB_FUNC(MaterialPass3D_SetUniform) {
   CheckString(name_val, &name_data, &name_size);
   CheckVectorOf<float>(values_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetUniform(std::string(name_data, name_size),
         TakeVectorOf<float>(values_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -345,10 +352,10 @@ RB_FUNC(MaterialPass3D_GetUniform) {
 
   std::vector<float>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<float>(
         self_obj->GetUniform(std::string(name_data, name_size)));
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<float>(*result);
   delete result;
@@ -361,9 +368,9 @@ RB_FUNC(MaterialPass3D_UniformSlotCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->UniformSlotCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -374,9 +381,9 @@ RB_FUNC(MaterialPass3D_SlotNames) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->SlotNames());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -471,12 +478,12 @@ BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, ColorWriteMask);
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, AlphaToCoverage);
 
 // Attribute: texture (MaybePtr<Bitmap>)
-BINDING_ATTR_OBJECT_REF(MaterialPass3D,
-                        urge::MaterialPass3D,
-                        Texture,
-                        urge::Bitmap,
-                        kBitmapDataType,
-                        CheckMaybeObject);
+BINDING_ATTR_OBJECT_REF_EXC(MaterialPass3D,
+                            urge::MaterialPass3D,
+                            Texture,
+                            urge::Bitmap,
+                            kBitmapDataType,
+                            CheckMaybeObject);
 
 void InitMaterialPass3DBindingAppend(VALUE klass);
 

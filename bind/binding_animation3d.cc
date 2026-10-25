@@ -40,12 +40,12 @@ RB_FUNC(Animation3D_initialize) {
 
   urge::Animation3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Animation3D> value = urge::MakeRefCounted<urge::Animation3D>();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE object = SetupSelfData(self, result);
   if (result)
@@ -56,6 +56,7 @@ RB_FUNC(Animation3D_initialize) {
 RB_FUNC(Animation3D_AddTrack) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 5);
   int bone, path, interpolation;
   VALUE times_val, values_val;
@@ -64,10 +65,12 @@ RB_FUNC(Animation3D_AddTrack) {
   CheckVectorOf<float>(times_val);
   CheckVectorOf<float>(values_val);
 
-  CPP_BEGIN {
-    self_obj->AddTrack(bone, path, TakeVectorOf<float>(times_val),
-        TakeVectorOf<float>(values_val), interpolation);
-  } CPP_END;
+  {
+    self_obj->AddTrack(exception_state, bone, path,
+        TakeVectorOf<float>(times_val), TakeVectorOf<float>(values_val),
+        interpolation);
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -75,6 +78,7 @@ RB_FUNC(Animation3D_AddTrack) {
 RB_FUNC(Animation3D_AddEvent) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   double time;
   VALUE name_val;
@@ -83,10 +87,11 @@ RB_FUNC(Animation3D_AddEvent) {
   ParseArgs(argc, argv, "fo", &time, &name_val);
   CheckString(name_val, &name_data, &name_size);
 
-  CPP_BEGIN {
-    self_obj->AddEvent(static_cast<float>(time),
+  {
+    self_obj->AddEvent(exception_state, static_cast<float>(time),
         std::string(name_data, name_size));
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -97,9 +102,9 @@ RB_FUNC(Animation3D_EventCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->EventCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -113,9 +118,9 @@ RB_FUNC(Animation3D_EventName) {
 
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->EventName(index));
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -133,9 +138,9 @@ RB_FUNC(Animation3D_EventTime) {
 
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->EventTime(index);
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -146,9 +151,9 @@ RB_FUNC(Animation3D_Duration) {
   CheckArgc(argc, 0);
   double result = 0.0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Duration();
-  } CPP_END;
+  }
 
   return rb_float_new(result);
 }
@@ -159,9 +164,9 @@ RB_FUNC(Animation3D_TrackCount) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->TrackCount();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -176,9 +181,9 @@ RB_FUNC(Animation3D_Apply) {
   ParseArgs(argc, argv, "of", &skeleton_val, &time);
   skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->Apply(skeleton, static_cast<float>(time));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -186,6 +191,7 @@ RB_FUNC(Animation3D_Apply) {
 RB_FUNC(Animation3D_Blend) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE skeleton_val;
   urge::Skeleton3D* skeleton;
@@ -193,10 +199,11 @@ RB_FUNC(Animation3D_Blend) {
   ParseArgs(argc, argv, "off", &skeleton_val, &time, &weight);
   skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
 
-  CPP_BEGIN {
-    self_obj->Blend(skeleton, static_cast<float>(time),
+  {
+    self_obj->Blend(exception_state, skeleton, static_cast<float>(time),
         static_cast<float>(weight));
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -204,6 +211,7 @@ RB_FUNC(Animation3D_Blend) {
 RB_FUNC(Animation3D_BlendMasked) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 4);
   VALUE skeleton_val, mask_val;
   urge::Skeleton3D* skeleton;
@@ -213,10 +221,11 @@ RB_FUNC(Animation3D_BlendMasked) {
   skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
   mask = CheckMaybeObject<urge::BoneMask3D>(mask_val, kBoneMask3DDataType);
 
-  CPP_BEGIN {
-    self_obj->BlendMasked(skeleton, static_cast<float>(time),
+  {
+    self_obj->BlendMasked(exception_state, skeleton, static_cast<float>(time),
         static_cast<float>(weight), mask);
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   return Qnil;
 }

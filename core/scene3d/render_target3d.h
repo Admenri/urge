@@ -53,17 +53,17 @@ URGE_BINDING()
 class RenderTarget3D : public Object {
  public:
   URGE_BINDING()
-  RenderTarget3D(int32_t width,
+  RenderTarget3D(URGE_EXCEPT, int32_t width,
                  int32_t height,
                  std::string color_format,
                  std::string depth_format,
                  int32_t samples);
-  RenderTarget3D(int32_t width, int32_t height, bool with_color);
-  RenderTarget3D(int32_t width,
+  RenderTarget3D(URGE_EXCEPT, int32_t width, int32_t height, bool with_color);
+  RenderTarget3D(URGE_EXCEPT, int32_t width,
                  int32_t height,
                  bool with_color,
                  int32_t layers);
-  explicit RenderTarget3D(const RenderTargetDesc3D& desc);
+  explicit RenderTarget3D(URGE_EXCEPT, const RenderTargetDesc3D& desc);
   ~RenderTarget3D() override;
 
   URGE_BINDING()
@@ -114,7 +114,7 @@ class RenderTarget3D : public Object {
   uint32_t samples() const { return samples_; }
 
  private:
-  void CreateResources(const RenderTargetDesc3D& desc);
+  void CreateResources(URGE_EXCEPT, const RenderTargetDesc3D& desc);
 
   glm::ivec2 size_ = glm::ivec2(1);
   int32_t layers_ = 1;

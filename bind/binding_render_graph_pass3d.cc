@@ -52,9 +52,9 @@ RB_FUNC(RenderGraphPass3D_GetName) {
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::string(self_obj->GetName());
-  } CPP_END;
+  }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
@@ -69,9 +69,9 @@ RB_FUNC(RenderGraphPass3D_GetColors) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->GetColors());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -86,9 +86,9 @@ RB_FUNC(RenderGraphPass3D_SetColors) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckVectorOf<std::string>(value_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetColors(TakeVectorOf<std::string>(value_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -99,12 +99,12 @@ RB_FUNC(RenderGraphPass3D_GetClearColor) {
   CheckArgc(argc, 0);
   urge::Color* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::Color> value = self_obj->GetClearColor();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kColorDataType);
   if (result)
@@ -121,9 +121,9 @@ RB_FUNC(RenderGraphPass3D_SetClearColor) {
   ParseArgs(argc, argv, "o", &value_val);
   value = CheckMaybeObject<urge::Color>(value_val, kColorDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetClearColor(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -134,9 +134,9 @@ RB_FUNC(RenderGraphPass3D_GetTags) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->GetTags());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -151,9 +151,9 @@ RB_FUNC(RenderGraphPass3D_SetTags) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckVectorOf<std::string>(value_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTags(TakeVectorOf<std::string>(value_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -164,9 +164,9 @@ RB_FUNC(RenderGraphPass3D_GetTagIds) {
   CheckArgc(argc, 0);
   std::vector<int32_t>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<int32_t>(self_obj->GetTagIds());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<int32_t>(*result);
   delete result;
@@ -181,9 +181,9 @@ RB_FUNC(RenderGraphPass3D_SetTagIds) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckVectorOf<int32_t>(value_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetTagIds(TakeVectorOf<int32_t>(value_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -200,10 +200,10 @@ RB_FUNC(RenderGraphPass3D_BindTexture) {
   CheckString(slot_val, &slot_data, &slot_size);
   CheckString(texture_val, &texture_data, &texture_size);
 
-  CPP_BEGIN {
+  {
     self_obj->BindTexture(std::string(slot_data, slot_size),
         std::string(texture_data, texture_size));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -214,9 +214,9 @@ RB_FUNC(RenderGraphPass3D_GetBindings) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->GetBindings());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -229,9 +229,9 @@ RB_FUNC(RenderGraphPass3D_GetReads) {
   CheckArgc(argc, 0);
   std::vector<std::string>* result = nullptr;
 
-  CPP_BEGIN {
+  {
     result = new std::vector<std::string>(self_obj->GetReads());
-  } CPP_END;
+  }
 
   VALUE value = WrapVectorOf<std::string>(*result);
   delete result;
@@ -246,9 +246,9 @@ RB_FUNC(RenderGraphPass3D_SetReads) {
   ParseArgs(argc, argv, "o", &value_val);
   CheckVectorOf<std::string>(value_val);
 
-  CPP_BEGIN {
+  {
     self_obj->SetReads(TakeVectorOf<std::string>(value_val));
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -259,12 +259,12 @@ RB_FUNC(RenderGraphPass3D_GetMaterial) {
   CheckArgc(argc, 0);
   urge::MaterialPass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::MaterialPass3D> value = self_obj->GetMaterial();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kMaterialPass3DDataType);
   if (result)
@@ -281,9 +281,9 @@ RB_FUNC(RenderGraphPass3D_SetMaterial) {
   ParseArgs(argc, argv, "o", &value_val);
   value = CheckMaybeObject<urge::MaterialPass3D>(value_val, kMaterialPass3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetMaterial(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -294,12 +294,12 @@ RB_FUNC(RenderGraphPass3D_GetCompute) {
   CheckArgc(argc, 0);
   urge::ComputePass3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::ComputePass3D> value = self_obj->GetCompute();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kComputePass3DDataType);
   if (result)
@@ -316,9 +316,9 @@ RB_FUNC(RenderGraphPass3D_SetCompute) {
   ParseArgs(argc, argv, "o", &value_val);
   value = CheckMaybeObject<urge::ComputePass3D>(value_val, kComputePass3DDataType);
 
-  CPP_BEGIN {
+  {
     self_obj->SetCompute(value);
-  } CPP_END;
+  }
 
   return Qnil;
 }
@@ -326,6 +326,7 @@ RB_FUNC(RenderGraphPass3D_SetCompute) {
 RB_FUNC(RenderGraphPass3D_GetTexture) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE name_val;
   const char* name_data;
@@ -335,13 +336,14 @@ RB_FUNC(RenderGraphPass3D_GetTexture) {
 
   urge::GPUTextureView* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPUTextureView> value = self_obj->GetTexture(
-        std::string(name_data, name_size));
+        exception_state, std::string(name_data, name_size));
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
+  RaiseException(exception_state);
 
   VALUE value = WrapObject(result, kGPUTextureViewDataType);
   if (result)
@@ -355,12 +357,12 @@ RB_FUNC(RenderGraphPass3D_GetPass) {
   CheckArgc(argc, 0);
   urge::GPURenderPassEncoder* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::GPURenderPassEncoder> value = self_obj->GetPass();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kGPURenderPassEncoderDataType);
   if (result)
@@ -374,12 +376,12 @@ RB_FUNC(RenderGraphPass3D_GetContext) {
   CheckArgc(argc, 0);
   urge::RenderContext3D* result = nullptr;
 
-  CPP_BEGIN {
+  {
     urge::RefPtr<urge::RenderContext3D> value = self_obj->GetContext();
     result = value.get();
     if (result)
       result->AddRef();
-  } CPP_END;
+  }
 
   VALUE value = WrapObject(result, kRenderContext3DDataType);
   if (result)
@@ -393,9 +395,9 @@ RB_FUNC(RenderGraphPass3D_Width) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Width();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }
@@ -406,9 +408,9 @@ RB_FUNC(RenderGraphPass3D_Height) {
   CheckArgc(argc, 0);
   int32_t result = 0;
 
-  CPP_BEGIN {
+  {
     result = self_obj->Height();
-  } CPP_END;
+  }
 
   return LONG2NUM(result);
 }

@@ -61,25 +61,25 @@ float FramesToMilliseconds(ma_uint32 rate, ma_uint64 frames) {
 
 }
 
-AudioStream::AudioStream(std::string filename) {
+AudioStream::AudioStream(URGE_EXCEPT, std::string filename) {
   auto* service = Audio::Get().service();
   auto clip = std::make_unique<AudioClip>();
-  if (!clip->Open(service->engine(), service->bus(AudioBus::kSE), filename))
-    throw Exception(Exception::kRGSSError,
-                    "the audio file could not be opened: {}", filename);
-
+  if (!clip->Open(service->engine(), service->bus(AudioBus::kSE), filename)) {
+    exception_state.Throw(ExceptionState::kRGSSError, "the audio file could not be opened: {}", filename);
+    return;
+  }
   clip_ = std::move(clip);
   ApplyState();
 }
 
-AudioStream::AudioStream(std::vector<uint8_t> data, float length) {
+AudioStream::AudioStream(URGE_EXCEPT, std::vector<uint8_t> data, float length) {
   auto* service = Audio::Get().service();
   auto clip = std::make_unique<AudioClip>();
   if (!clip->OpenMemory(service->engine(), service->bus(AudioBus::kSE),
-                        std::move(data)))
-    throw Exception(Exception::kRGSSError,
-                    "the audio track could not be opened.");
-
+                        std::move(data))) {
+    exception_state.Throw(ExceptionState::kRGSSError, "the audio track could not be opened.");
+    return;
+  }
   clip_ = std::move(clip);
   length_ = length > 0.0f ? length : -1.0f;
   ApplyState();
