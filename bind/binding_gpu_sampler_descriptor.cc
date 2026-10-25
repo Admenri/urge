@@ -34,40 +34,53 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(GPUSamplerDescriptor, GPUObject);
 
 RB_FUNC(GPUSamplerDescriptor_initialize) {
-  urge::RefPtr<urge::GPUSamplerDescriptor> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::GPUSamplerDescriptor>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::GPUSamplerDescriptor* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUSamplerDescriptor> value = urge::MakeRefCounted<urge::GPUSamplerDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUSamplerDescriptor_GetLabel) {
   auto* self_obj = GetSelfData<urge::GPUSamplerDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetLabel();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetLabel());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUSamplerDescriptor_SetLabel) {
   auto* self_obj = GetSelfData<urge::GPUSamplerDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  const char* value_data;
+  size_t value_size;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckString(value_val, &value_data, &value_size);
 
-    self_obj->SetLabel(value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetLabel(std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 

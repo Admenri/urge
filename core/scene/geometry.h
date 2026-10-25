@@ -39,7 +39,7 @@ URGE_BINDING()
 class Geometry : public Node {
  public:
   URGE_BINDING()
-  Geometry(RefPtr<Viewport> viewport = nullptr);
+  Geometry(MaybePtr<Viewport> viewport = nullptr);
   URGE_BINDING()
   ~Geometry() override;
 
@@ -51,15 +51,15 @@ class Geometry : public Node {
   void SetColor(int32_t triangle, int32_t point, RefPtr<Color> color);
 
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
   ATTR(int32_t, Capacity);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Bitmap);
+  ATTR(MaybePtr<Bitmap>, Bitmap);
   URGE_BINDING()
   ATTR(int32_t, BlendType);
   URGE_BINDING()
-  ATTR(RefPtr<Effect>, Effect);
+  ATTR(MaybePtr<Effect>, Effect);
 
  private:
   void DisposeObject() override;

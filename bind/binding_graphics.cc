@@ -28,293 +28,377 @@ namespace binding {
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Graphics::Get().Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Wait) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int duration;
-    ParseArgs(argc, argv, "i", &duration);
+  CheckArgc(argc, 1);
+  int duration;
+  ParseArgs(argc, argv, "i", &duration);
 
+  CPP_BEGIN {
     urge::Graphics::Get().Wait(duration);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Fadein) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int duration;
-    ParseArgs(argc, argv, "i", &duration);
+  CheckArgc(argc, 1);
+  int duration;
+  ParseArgs(argc, argv, "i", &duration);
 
+  CPP_BEGIN {
     urge::Graphics::Get().Fadein(duration);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Fadeout) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int duration;
-    ParseArgs(argc, argv, "i", &duration);
+  CheckArgc(argc, 1);
+  int duration;
+  ParseArgs(argc, argv, "i", &duration);
 
+  CPP_BEGIN {
     urge::Graphics::Get().Fadeout(duration);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Freeze) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Graphics::Get().Freeze();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Transition) {
-  EXC_BEGIN {
-    if (argc == 0) {
-      // transition()
+  if (argc == 0) {
+    // transition()
+    CPP_BEGIN {
       urge::Graphics::Get().Transition();
-    } else if (argc == 1) {
-      // transition(duration)
-      int duration;
-      ParseArgs(argc, argv, "i", &duration);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 1) {
+    // transition(duration)
+    int duration;
+    ParseArgs(argc, argv, "i", &duration);
+
+    CPP_BEGIN {
       urge::Graphics::Get().Transition(duration);
-    } else if (argc == 2) {
-      // transition(duration, filename)
-      int duration;
-      std::string filename;
-      ParseArgs(argc, argv, "is", &duration, &filename);
-      urge::Graphics::Get().Transition(duration, filename);
-    } else if (argc == 3) {
-      // transition(duration, filename, vague)
-      int duration, vague;
-      std::string filename;
-      ParseArgs(argc, argv, "isi", &duration, &filename, &vague);
-      urge::Graphics::Get().Transition(duration, filename, vague);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // transition(duration, filename)
+    int duration;
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "io", &duration, &filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Graphics::Get().Transition(duration,
+          std::string(filename_data, filename_size));
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // transition(duration, filename, vague)
+    int duration, vague;
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "ioi", &duration, &filename_val, &vague);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Graphics::Get().Transition(duration,
+          std::string(filename_data, filename_size), vague);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Graphics_TransitionBitmap) {
-  EXC_BEGIN {
-    if (argc == 0) {
-      // transition_bitmap()
+  if (argc == 0) {
+    // transition_bitmap()
+    CPP_BEGIN {
       urge::Graphics::Get().TransitionBitmap();
-    } else if (argc == 1) {
-      // transition_bitmap(duration)
-      int duration;
-      ParseArgs(argc, argv, "i", &duration);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 1) {
+    // transition_bitmap(duration)
+    int duration;
+    ParseArgs(argc, argv, "i", &duration);
+
+    CPP_BEGIN {
       urge::Graphics::Get().TransitionBitmap(duration);
-    } else if (argc == 2) {
-      // transition_bitmap(duration, bitmap)
-      int duration;
-      VALUE bitmap_val;
-      ParseArgs(argc, argv, "io", &duration, &bitmap_val);
-      urge::Graphics::Get().TransitionBitmap(duration,
-          GetObject<urge::Bitmap>(bitmap_val, kBitmapDataType));
-    } else if (argc == 3) {
-      // transition_bitmap(duration, bitmap, vague)
-      int duration, vague;
-      VALUE bitmap_val;
-      ParseArgs(argc, argv, "ioi", &duration, &bitmap_val, &vague);
-      urge::Graphics::Get().TransitionBitmap(duration,
-          GetObject<urge::Bitmap>(bitmap_val, kBitmapDataType), vague);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // transition_bitmap(duration, bitmap)
+    int duration;
+    VALUE bitmap_val;
+    urge::Bitmap* bitmap;
+    ParseArgs(argc, argv, "io", &duration, &bitmap_val);
+    bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
+
+    CPP_BEGIN {
+      urge::Graphics::Get().TransitionBitmap(duration, bitmap);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // transition_bitmap(duration, bitmap, vague)
+    int duration, vague;
+    VALUE bitmap_val;
+    urge::Bitmap* bitmap;
+    ParseArgs(argc, argv, "ioi", &duration, &bitmap_val, &vague);
+    bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
+
+    CPP_BEGIN {
+      urge::Graphics::Get().TransitionBitmap(duration, bitmap, vague);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Graphics_SnapToBitmap) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = urge::Graphics::Get().SnapToBitmap();
-    return WrapObject(result.get(), kBitmapDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::Bitmap* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Bitmap> value = urge::Graphics::Get().SnapToBitmap();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kBitmapDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Graphics_FrameReset) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Graphics::Get().FrameReset();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Width) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(urge::Graphics::Get().Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = urge::Graphics::Get().Width();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Graphics_Height) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(urge::Graphics::Get().Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = urge::Graphics::Get().Height();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Graphics_ResizeScreen) {
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int width, height;
-    ParseArgs(argc, argv, "ii", &width, &height);
+  CheckArgc(argc, 2);
+  int width, height;
+  ParseArgs(argc, argv, "ii", &width, &height);
 
+  CPP_BEGIN {
     urge::Graphics::Get().ResizeScreen(width, height);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_PlayMovie) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string filename;
-    ParseArgs(argc, argv, "s", &filename);
+  CheckArgc(argc, 1);
+  VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
+  ParseArgs(argc, argv, "o", &filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-    urge::Graphics::Get().PlayMovie(filename);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    urge::Graphics::Get().PlayMovie(std::string(filename_data, filename_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_FrameRate) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Graphics::Get().Attr_FrameRate()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Graphics::Get().Attr_FrameRate());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Graphics_FrameRateEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Graphics::Get().Attr_FrameRate(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_FrameCount) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Graphics::Get().Attr_FrameCount()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Graphics::Get().Attr_FrameCount());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Graphics_FrameCountEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Graphics::Get().Attr_FrameCount(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Brightness) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Graphics::Get().Attr_Brightness()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Graphics::Get().Attr_Brightness());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Graphics_BrightnessEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Graphics::Get().Attr_Brightness(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_FrameSkip) {
-  EXC_BEGIN {
-    return (*urge::Graphics::Get().Attr_FrameSkip()) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  bool result = false;
+
+  CPP_BEGIN {
+    result = (*urge::Graphics::Get().Attr_FrameSkip());
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Graphics_FrameSkipEqual) {
-  bool value = {};
+  CheckArgc(argc, 1);
+  bool value;
+  ParseArgs(argc, argv, "b", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "b", &value);
-    urge::Graphics::Get().Attr_FrameSkip(value != 0);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    urge::Graphics::Get().Attr_FrameSkip(value);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_Fullscreen) {
-  EXC_BEGIN {
-    return (*urge::Graphics::Get().Attr_Fullscreen()) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  bool result = false;
+
+  CPP_BEGIN {
+    result = (*urge::Graphics::Get().Attr_Fullscreen());
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Graphics_FullscreenEqual) {
-  bool value = {};
+  CheckArgc(argc, 1);
+  bool value;
+  ParseArgs(argc, argv, "b", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "b", &value);
-    urge::Graphics::Get().Attr_Fullscreen(value != 0);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    urge::Graphics::Get().Attr_Fullscreen(value);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Graphics_VSync) {
-  EXC_BEGIN {
-    return (*urge::Graphics::Get().Attr_VSync()) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  bool result = false;
+
+  CPP_BEGIN {
+    result = (*urge::Graphics::Get().Attr_VSync());
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Graphics_VSyncEqual) {
-  bool value = {};
+  CheckArgc(argc, 1);
+  bool value;
+  ParseArgs(argc, argv, "b", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "b", &value);
-    urge::Graphics::Get().Attr_VSync(value != 0);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    urge::Graphics::Get().Attr_VSync(value);
+  } CPP_END;
+
   return Qnil;
 }
 

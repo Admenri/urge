@@ -37,87 +37,116 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Camera3D, Node3D);
 
 RB_FUNC(Camera3D_initialize) {
-  urge::RefPtr<urge::Camera3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Camera3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Camera3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Camera3D> value = urge::MakeRefCounted<urge::Camera3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Camera3D_GetTarget) {
   auto* self_obj = GetSelfData<urge::Camera3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetTarget();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetTarget());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Camera3D_SetTarget) {
   auto* self_obj = GetSelfData<urge::Camera3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  const char* value_data;
+  size_t value_size;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckString(value_val, &value_data, &value_size);
 
-    self_obj->SetTarget(value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTarget(std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Camera3D_ShadowSplits) {
   auto* self_obj = GetSelfData<urge::Camera3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    int count;
-    double lambda, max_distance;
-    ParseArgs(argc, argv, "iff", &count, &lambda, &max_distance);
+  CheckArgc(argc, 3);
+  int count;
+  double lambda, max_distance;
+  ParseArgs(argc, argv, "iff", &count, &lambda, &max_distance);
 
-    return WrapVectorOf<float>(self_obj->ShadowSplits(count, static_cast<float>(lambda), static_cast<float>(max_distance)));
-  }
-  EXC_END;
-  return Qnil;
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(
+        self_obj->ShadowSplits(count, static_cast<float>(lambda), static_cast<float>(max_distance)));
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Camera3D_ShadowCascades) {
   auto* self_obj = GetSelfData<urge::Camera3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 7);
-    VALUE light_direction_val;
-    int count, width, height, shadow_size;
-    double lambda, max_distance;
-    ParseArgs(argc, argv, "oifiifi", &light_direction_val, &count, &lambda,
-        &width, &height, &max_distance, &shadow_size);
+  CheckArgc(argc, 7);
+  VALUE light_direction_val;
+  urge::Vector3* light_direction;
+  int count, width, height, shadow_size;
+  double lambda, max_distance;
+  ParseArgs(argc, argv, "oifiifi", &light_direction_val, &count, &lambda,
+      &width, &height, &max_distance, &shadow_size);
+  light_direction = CheckMaybeObject<urge::Vector3>(light_direction_val, kVector3DataType);
 
-    return WrapVectorOf<float>(self_obj->ShadowCascades(GetObject<urge::Vector3>(light_direction_val, kVector3DataType), count, static_cast<float>(lambda), width, height, static_cast<float>(max_distance), shadow_size));
-  }
-  EXC_END;
-  return Qnil;
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(
+        self_obj->ShadowCascades(light_direction, count, static_cast<float>(lambda), width, height, static_cast<float>(max_distance), shadow_size));
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Camera3D_ViewProjection) {
   auto* self_obj = GetSelfData<urge::Camera3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int width, height;
-    ParseArgs(argc, argv, "ii", &width, &height);
+  CheckArgc(argc, 2);
+  int width, height;
+  ParseArgs(argc, argv, "ii", &width, &height);
 
-    return WrapVectorOf<float>(self_obj->ViewProjection(width, height));
-  }
-  EXC_END;
-  return Qnil;
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->ViewProjection(width, height));
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 // Attribute: fov (float)
@@ -141,12 +170,13 @@ BINDING_ATTR_INT(Camera3D, urge::Camera3D, CullingMask);
 // Attribute: clear_flags (uint32_t)
 BINDING_ATTR_INT(Camera3D, urge::Camera3D, ClearFlags);
 
-// Attribute: clear_color (RefPtr<Color>)
+// Attribute: clear_color (MaybePtr<Color>)
 BINDING_ATTR_OBJECT(Camera3D,
                     urge::Camera3D,
                     ClearColor,
                     urge::Color,
-                    kColorDataType);
+                    kColorDataType,
+                    CheckMaybeObject);
 
 // Attribute: priority (int32_t)
 BINDING_ATTR_INT(Camera3D, urge::Camera3D, Priority);

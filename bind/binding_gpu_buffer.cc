@@ -36,80 +36,90 @@ RB_DEF_TYPE_INHERIT(GPUBuffer, GPUObject);
 RB_FUNC(GPUBuffer_GetSize) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULL2NUM(self_obj->GetSize());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint64_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetSize();
+  } CPP_END;
+
+  return ULL2NUM(result);
 }
 
 RB_FUNC(GPUBuffer_MapAsync) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    uint32_t mode;
-    uint64_t offset, size;
-    ParseArgs(argc, argv, "upp", &mode, &offset, &size);
+  CheckArgc(argc, 3);
+  uint32_t mode;
+  uint64_t offset, size;
+  ParseArgs(argc, argv, "upp", &mode, &offset, &size);
 
-    return self_obj->MapAsync(mode, offset, size) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->MapAsync(mode, offset, size);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(GPUBuffer_Unmap) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Unmap();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUBuffer_Read) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint64_t offset, size;
-    ParseArgs(argc, argv, "pp", &offset, &size);
+  CheckArgc(argc, 2);
+  uint64_t offset, size;
+  ParseArgs(argc, argv, "pp", &offset, &size);
 
-    std::string result = self_obj->Read(offset, size);
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->Read(offset, size));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUBuffer_Write) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint64_t offset;
-    std::string data;
-    ParseArgs(argc, argv, "ps", &offset, &data);
+  CheckArgc(argc, 2);
+  uint64_t offset;
+  VALUE data_val;
+  const char* data_data;
+  size_t data_size;
+  ParseArgs(argc, argv, "po", &offset, &data_val);
+  CheckString(data_val, &data_data, &data_size);
 
-    self_obj->Write(offset, data);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Write(offset, std::string(data_data, data_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUBuffer_Destroy) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Destroy();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

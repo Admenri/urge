@@ -417,7 +417,7 @@ class GPUBindGroupDescriptor : public GPUObject {
   void SetLabel(std::string value) { label = value; }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUBindGroupLayout>, Layout) {
+  ATTR(MaybePtr<GPUBindGroupLayout>, Layout) {
     if (value)
       layout = *value;
     return layout;
@@ -453,14 +453,14 @@ class GPUComputePipelineDescriptor : public GPUObject {
   void SetLabel(std::string value) { label = value; }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUPipelineLayout>, Layout) {
+  ATTR(MaybePtr<GPUPipelineLayout>, Layout) {
     if (value)
       layout = *value;
     return layout;
   }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUShaderModule>, Module) {
+  ATTR(MaybePtr<GPUShaderModule>, Module) {
     if (value)
       module = *value;
     return module;
@@ -502,14 +502,14 @@ class GPURenderPipelineDescriptor : public GPUObject {
   void SetLabel(std::string value) { label = value; }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUPipelineLayout>, Layout) {
+  ATTR(MaybePtr<GPUPipelineLayout>, Layout) {
     if (value)
       layout = *value;
     return layout;
   }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUShaderModule>, VertexModule) {
+  ATTR(MaybePtr<GPUShaderModule>, VertexModule) {
     if (value)
       vertex_module = *value;
     return vertex_module;
@@ -521,7 +521,7 @@ class GPURenderPipelineDescriptor : public GPUObject {
   void SetVertexEntryPoint(std::string value) { vertex_entry_point = value; }
 
   URGE_BINDING()
-  ATTR(RefPtr<GPUShaderModule>, FragmentModule) {
+  ATTR(MaybePtr<GPUShaderModule>, FragmentModule) {
     if (value)
       fragment_module = *value;
     return fragment_module;
@@ -648,10 +648,10 @@ class GPURenderPassDescriptor : public GPUObject {
                           float clear_a = 1.f);
 
   URGE_BINDING()
-  void SetColorResolve(RefPtr<GPUTextureView> resolve);
+  void SetColorResolve(MaybePtr<GPUTextureView> resolve);
 
   URGE_BINDING()
-  void SetDepthStencilAttachment(RefPtr<GPUTextureView> view,
+  void SetDepthStencilAttachment(MaybePtr<GPUTextureView> view,
                                  uint32_t depth_load_op,
                                  uint32_t depth_store_op,
                                  float depth_clear_value = 1.f,
@@ -662,7 +662,7 @@ class GPURenderPassDescriptor : public GPUObject {
                                  bool stencil_read_only = false);
 
   URGE_BINDING()
-  void SetOcclusionQuerySet(RefPtr<GPUQuerySet> query_set);
+  void SetOcclusionQuerySet(MaybePtr<GPUQuerySet> query_set);
 
  public:
   std::string label;
@@ -785,7 +785,7 @@ class GPUTexture : public GPUObject {
 
   URGE_BINDING()
   RefPtr<GPUTextureView> CreateView(
-      RefPtr<GPUTextureViewDescriptor> descriptor = nullptr);
+      MaybePtr<GPUTextureViewDescriptor> descriptor = nullptr);
   URGE_BINDING()
   void Destroy() { texture_.Destroy(); }
 
@@ -929,7 +929,7 @@ class GPUCommandEncoder : public GPUObject {
       RefPtr<GPURenderPassDescriptor> descriptor);
   URGE_BINDING()
   RefPtr<GPUComputePassEncoder> BeginComputePass(
-      RefPtr<GPUComputePassDescriptor> descriptor = nullptr);
+      MaybePtr<GPUComputePassDescriptor> descriptor = nullptr);
   URGE_BINDING()
   void CopyBufferToBuffer(RefPtr<GPUBuffer> source,
                           uint64_t source_offset,

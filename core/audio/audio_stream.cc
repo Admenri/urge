@@ -63,9 +63,6 @@ float FramesToMilliseconds(ma_uint32 rate, ma_uint64 frames) {
 
 AudioStream::AudioStream(std::string filename) {
   auto* service = Audio::Get().service();
-  if (!service)
-    throw Exception(Exception::kRGSSError, "the audio service is unavailable.");
-
   auto clip = std::make_unique<AudioClip>();
   if (!clip->Open(service->engine(), service->bus(AudioBus::kSE), filename))
     throw Exception(Exception::kRGSSError,
@@ -77,9 +74,6 @@ AudioStream::AudioStream(std::string filename) {
 
 AudioStream::AudioStream(std::vector<uint8_t> data, float length) {
   auto* service = Audio::Get().service();
-  if (!service)
-    throw Exception(Exception::kRGSSError, "the audio service is unavailable.");
-
   auto clip = std::make_unique<AudioClip>();
   if (!clip->OpenMemory(service->engine(), service->bus(AudioBus::kSE),
                         std::move(data)))

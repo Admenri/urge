@@ -34,123 +34,193 @@ namespace binding {
 RB_DEF_TYPE(Material3D);
 
 RB_FUNC(Material3D_initialize) {
-  urge::RefPtr<urge::Material3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Material3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Material3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Material3D> value = urge::MakeRefCounted<urge::Material3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Material3D_AddPass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    std::string tag, vs_wgsl, fs_wgsl;
-    ParseArgs(argc, argv, "sss", &tag, &vs_wgsl, &fs_wgsl);
+  CheckArgc(argc, 3);
+  VALUE tag_val, vs_wgsl_val, fs_wgsl_val;
+  const char* tag_data;
+  size_t tag_size, vs_wgsl_size, fs_wgsl_size;
+  const char* vs_wgsl_data;
+  const char* fs_wgsl_data;
+  ParseArgs(argc, argv, "ooo", &tag_val, &vs_wgsl_val, &fs_wgsl_val);
+  CheckString(tag_val, &tag_data, &tag_size);
+  CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
+  CheckString(fs_wgsl_val, &fs_wgsl_data, &fs_wgsl_size);
 
-    auto result = self_obj->AddPass(tag, vs_wgsl, fs_wgsl);
-    return WrapObject(result.get(), kMaterialPass3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::MaterialPass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->AddPass(
+        std::string(tag_data, tag_size),
+        std::string(vs_wgsl_data, vs_wgsl_size),
+        std::string(fs_wgsl_data, fs_wgsl_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Material3D_AddShadowPass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string tag, vs_wgsl;
-    ParseArgs(argc, argv, "ss", &tag, &vs_wgsl);
+  CheckArgc(argc, 2);
+  VALUE tag_val, vs_wgsl_val;
+  const char* tag_data;
+  size_t tag_size, vs_wgsl_size;
+  const char* vs_wgsl_data;
+  ParseArgs(argc, argv, "oo", &tag_val, &vs_wgsl_val);
+  CheckString(tag_val, &tag_data, &tag_size);
+  CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
 
-    auto result = self_obj->AddShadowPass(tag, vs_wgsl);
-    return WrapObject(result.get(), kMaterialPass3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::MaterialPass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->AddShadowPass(
+        std::string(tag_data, tag_size),
+        std::string(vs_wgsl_data, vs_wgsl_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Material3D_GetPass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string tag;
-    ParseArgs(argc, argv, "s", &tag);
+  CheckArgc(argc, 1);
+  VALUE tag_val;
+  const char* tag_data;
+  size_t tag_size;
+  ParseArgs(argc, argv, "o", &tag_val);
+  CheckString(tag_val, &tag_data, &tag_size);
 
-    auto result = self_obj->GetPass(tag);
-    return WrapObject(result.get(), kMaterialPass3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::MaterialPass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->GetPass(
+        std::string(tag_data, tag_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Material3D_HasPass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string tag;
-    ParseArgs(argc, argv, "s", &tag);
+  CheckArgc(argc, 1);
+  VALUE tag_val;
+  const char* tag_data;
+  size_t tag_size;
+  ParseArgs(argc, argv, "o", &tag_val);
+  CheckString(tag_val, &tag_data, &tag_size);
 
-    return self_obj->HasPass(tag) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->HasPass(std::string(tag_data, tag_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Material3D_RemovePass) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string tag;
-    ParseArgs(argc, argv, "s", &tag);
+  CheckArgc(argc, 1);
+  VALUE tag_val;
+  const char* tag_data;
+  size_t tag_size;
+  ParseArgs(argc, argv, "o", &tag_val);
+  CheckString(tag_val, &tag_data, &tag_size);
 
-    self_obj->RemovePass(tag);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->RemovePass(std::string(tag_data, tag_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Material3D_PassCount) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->PassCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->PassCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Material3D_Tags) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->Tags());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->Tags());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Material3D_PassAt) {
   auto* self_obj = GetSelfData<urge::Material3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    auto result = self_obj->PassAt(index);
-    return WrapObject(result.get(), kMaterialPass3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::MaterialPass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->PassAt(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitMaterial3DBindingAppend(VALUE klass);

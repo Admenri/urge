@@ -103,7 +103,7 @@ class Animation3D : public Object {
   void BlendMasked(RefPtr<Skeleton3D> skeleton,
                    float time,
                    float weight,
-                   RefPtr<BoneMask3D> mask);
+                   MaybePtr<BoneMask3D> mask);
 
   bool loop() const { return loop_; }
   float speed() const { return speed_; }

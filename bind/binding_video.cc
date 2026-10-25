@@ -27,16 +27,17 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// `Video#player_info` answers a Ruby Hash, and the generator has no `std::map`
-// codec, so both the body and its registration are hand written here.  The C++
-// accessor deliberately carries no `URGE_BINDING()` marker: the IR cannot
-// describe a Hash, and a declaration it has to skip would only show up as an
-// `unsupported` entry.
+// `PlayerInfo()` answers a `std::string` map, so the whole thing is built into
+// the Ruby hash inside phase 2 -- the hash is a VALUE, so nothing owning has to
+// cross the boundary.
 RB_FUNC(Video_PlayerInfo) {
   auto* self_obj = GetSelfData<urge::Video>(self);
+  CheckArgc(argc, 0);
 
-  EXC_BEGIN {
-    VALUE hash = rb_hash_new();
+  VALUE result = Qnil;
+
+  CPP_BEGIN {
+    result = rb_hash_new();
     for (const auto& entry : self_obj->PlayerInfo()) {
       VALUE key = rb_enc_str_new(entry.first.data(),
                                  static_cast<long>(entry.first.size()),
@@ -44,14 +45,12 @@ RB_FUNC(Video_PlayerInfo) {
       VALUE value = rb_enc_str_new(entry.second.data(),
                                    static_cast<long>(entry.second.size()),
                                    rb_utf8_encoding());
-      rb_hash_aset(hash, key, value);
+      rb_hash_aset(result, key, value);
     }
-    return hash;
-  }
-  EXC_END;
-  return Qnil;
-}
+  } CPP_END;
 
+  return result;
+}
 void DefineVideoPlayerInfo(VALUE klass) {
   DefineMethod(klass, "player_info", Video_PlayerInfo);
 }
@@ -65,143 +64,170 @@ void DefineVideoPlayerInfo(VALUE klass) {
 RB_DEF_TYPE(Video);
 
 RB_FUNC(Video_initialize) {
-  urge::RefPtr<urge::Video> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string filename;
-    ParseArgs(argc, argv, "s", &filename);
+  VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
+  ParseArgs(argc, argv, "o", &filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-    obj = urge::MakeRefCounted<urge::Video>(filename);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::Video* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Video> value = urge::MakeRefCounted<urge::Video>(
+        std::string(filename_data, filename_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Video_Play) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Play();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Video_Pause) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Pause();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Video_Stop) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Stop();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Video_End) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->End() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->End();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Video_IsPlaying) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->IsPlaying() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsPlaying();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Video_Seek) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double pos;
-    ParseArgs(argc, argv, "f", &pos);
+  CheckArgc(argc, 1);
+  double pos;
+  ParseArgs(argc, argv, "f", &pos);
 
+  CPP_BEGIN {
     self_obj->Seek(static_cast<float>(pos));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Video_Tell) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->Tell());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->Tell();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Video_Duration) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->Duration());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->Duration();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Video_GetAudioStream) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetAudioStream();
-    return WrapObject(result.get(), kAudioStreamDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::AudioStream* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::AudioStream> value = self_obj->GetAudioStream();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kAudioStreamDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Video_Update) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Video_Render) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE target_val;
-    ParseArgs(argc, argv, "o", &target_val);
+  CheckArgc(argc, 1);
+  VALUE target_val;
+  urge::Bitmap* target;
+  ParseArgs(argc, argv, "o", &target_val);
+  target = CheckObject<urge::Bitmap>(target_val, kBitmapDataType);
 
-    self_obj->Render(GetObject<urge::Bitmap>(target_val, kBitmapDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Render(target);
+  } CPP_END;
+
   return Qnil;
 }
 

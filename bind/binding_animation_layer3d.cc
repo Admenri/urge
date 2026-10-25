@@ -39,13 +39,20 @@ RB_DEF_TYPE(AnimationLayer3D);
 RB_FUNC(AnimationLayer3D_GetAnimation) {
   auto* self_obj = GetSelfData<urge::AnimationLayer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetAnimation();
-    return WrapObject(result.get(), kAnimation3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::Animation3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Animation3D> value = self_obj->GetAnimation();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kAnimation3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 // Attribute: weight (float)
@@ -60,12 +67,13 @@ BINDING_ATTR_BOOL(AnimationLayer3D, urge::AnimationLayer3D, Playing);
 // Attribute: time (float)
 BINDING_ATTR_FLOAT(AnimationLayer3D, urge::AnimationLayer3D, Time);
 
-// Attribute: mask (RefPtr<BoneMask3D>)
+// Attribute: mask (MaybePtr<BoneMask3D>)
 BINDING_ATTR_OBJECT_REF(AnimationLayer3D,
                         urge::AnimationLayer3D,
                         Mask,
                         urge::BoneMask3D,
-                        kBoneMask3DDataType);
+                        kBoneMask3DDataType,
+                        CheckMaybeObject);
 
 void InitAnimationLayer3DBindingAppend(VALUE klass);
 

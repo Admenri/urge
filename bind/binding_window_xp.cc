@@ -35,59 +35,85 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(WindowXP, Node);
 
 RB_FUNC(WindowXP_initialize) {
-  urge::RefPtr<urge::WindowXP> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::WindowXP>();
-    } else if (argc == 1) {
-      // initialize(viewport)
-      VALUE viewport_val;
-      ParseArgs(argc, argv, "o", &viewport_val);
-      obj = urge::MakeRefCounted<urge::WindowXP>(
-          GetObject<urge::Viewport>(viewport_val, kViewportDataType));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::WindowXP* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(viewport)
+    VALUE viewport_val;
+    urge::Viewport* viewport;
+    ParseArgs(argc, argv, "o", &viewport_val);
+    viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
+
+    urge::WindowXP* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>(
+          viewport);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(WindowXP_Update) {
   auto* self_obj = GetSelfData<urge::WindowXP>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 // Attribute: visible (bool)
 BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Visible);
 
-// Attribute: viewport (RefPtr<Viewport>)
+// Attribute: viewport (MaybePtr<Viewport>)
 BINDING_ATTR_OBJECT_REF(WindowXP,
                         urge::WindowXP,
                         Viewport,
                         urge::Viewport,
-                        kViewportDataType);
+                        kViewportDataType,
+                        CheckMaybeObject);
 
-// Attribute: windowskin (RefPtr<Bitmap>)
+// Attribute: windowskin (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(WindowXP,
                         urge::WindowXP,
                         Windowskin,
                         urge::Bitmap,
-                        kBitmapDataType);
+                        kBitmapDataType,
+                        CheckMaybeObject);
 
-// Attribute: contents (RefPtr<Bitmap>)
+// Attribute: contents (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(WindowXP,
                         urge::WindowXP,
                         Contents,
                         urge::Bitmap,
-                        kBitmapDataType);
+                        kBitmapDataType,
+                        CheckMaybeObject);
 
 // Attribute: stretch (bool)
 BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Stretch);
@@ -97,7 +123,8 @@ BINDING_ATTR_OBJECT(WindowXP,
                     urge::WindowXP,
                     CursorRect,
                     urge::Rect,
-                    kRectDataType);
+                    kRectDataType,
+                    CheckObject);
 
 // Attribute: active (bool)
 BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Active);

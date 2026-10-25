@@ -32,46 +32,61 @@ namespace binding {
 RB_DEF_TYPE(RenderQueue3D);
 
 RB_FUNC(RenderQueue3D_initialize) {
-  urge::RefPtr<urge::RenderQueue3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::RenderQueue3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::RenderQueue3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::RenderQueue3D> value = urge::MakeRefCounted<urge::RenderQueue3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(RenderQueue3D_Count) {
   auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Count());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Count();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderQueue3D_LightCount) {
   auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->LightCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->LightCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderQueue3D_Tags) {
   auto* self_obj = GetSelfData<urge::RenderQueue3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->Tags());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->Tags());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 void InitRenderQueue3DBindingAppend(VALUE klass);

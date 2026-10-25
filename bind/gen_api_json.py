@@ -181,7 +181,12 @@ SCALAR_TYPE_FORMAT = {
     "char*": "z",
 }
 
-REFPTR_RE = re.compile(r"^RefPtr<\s*(?P<inner>[\w:]+)\s*>$")
+# `RefPtr<T>` and its alias `MaybePtr<T>` (core/common/definition.h) are the
+# same C++ type and differ only in the null contract they declare to the glue:
+# a `RefPtr<T>` parameter is required and `nil` is rejected, a `MaybePtr<T>`
+# one reads `nil` as `nullptr`.  The spelling is carried into the IR unchanged,
+# so the generated code and the API reference both say which one was meant.
+REFPTR_RE = re.compile(r"^(?P<kind>RefPtr|MaybePtr)<\s*(?P<inner>[\w:]+)\s*>$")
 VECTOR_RE = re.compile(r"^std::vector<\s*(?P<inner>.+?)\s*>$")
 
 # `std::vector<T>` crosses the boundary as a Ruby Array, so whether one is

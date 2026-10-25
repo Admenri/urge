@@ -22,41 +22,37 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-namespace {
-
-/* Device names and paths are UTF-8 on every platform SDL runs on; tagging them
-   here keeps a Chinese controller name readable from the script. */
+// `DeviceInfo` carries `std::string` members, so the Ruby hash is built in
+// phase 3 from the vector phase 2 produced -- the vector itself cannot live in
+// the frame that raises.
 VALUE GamepadText(const std::string& text) {
   return rb_enc_str_new(text.data(), static_cast<long>(text.size()),
                         rb_utf8_encoding());
 }
 
-}  // namespace
-
-/* `Gamepad.available_devices` -- the IR can describe a `std::vector<Struct>`
-   no better than "not bindable", so the array of Hashes is built by hand,
-   the same way the reference binding does it. */
 RB_FUNC(Gamepad_available_devices) {
-  std::vector<urge::Gamepad::DeviceInfo> devices;
+  CheckArgc(argc, 0);
 
-  EXC_BEGIN {
-    devices = urge::Gamepad::GetAvailableDevices();
-  }
-  EXC_END;
+  std::vector<urge::Gamepad::DeviceInfo>* result = nullptr;
 
-  VALUE result = rb_ary_new();
+  CPP_BEGIN {
+    result = new std::vector<urge::Gamepad::DeviceInfo>(
+        urge::Gamepad::GetAvailableDevices());
+  } CPP_END;
 
-  for (const auto& device : devices) {
+  VALUE devices = rb_ary_new();
+  for (const auto& device : *result) {
     VALUE info = rb_hash_new();
     rb_hash_aset(info, rb_str_new2("id"), INT2NUM(device.id));
     rb_hash_aset(info, rb_str_new2("name"), GamepadText(device.name));
     rb_hash_aset(info, rb_str_new2("path"), GamepadText(device.path));
     rb_hash_aset(info, rb_str_new2("player"), INT2NUM(device.player_index));
     rb_hash_aset(info, rb_str_new2("guid"), GamepadText(device.guid));
-    rb_ary_push(result, info);
+    rb_ary_push(devices, info);
   }
+  delete result;
 
-  return result;
+  return devices;
 }
 // --- HANDWRITTEN END ---
 
@@ -68,150 +64,187 @@ RB_FUNC(Gamepad_available_devices) {
 RB_DEF_TYPE(Gamepad);
 
 RB_FUNC(Gamepad_initialize) {
-  urge::RefPtr<urge::Gamepad> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int device_id;
-    ParseArgs(argc, argv, "i", &device_id);
+  int device_id;
+  ParseArgs(argc, argv, "i", &device_id);
 
-    obj = urge::MakeRefCounted<urge::Gamepad>(device_id);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::Gamepad* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Gamepad> value = urge::MakeRefCounted<urge::Gamepad>(
+        device_id);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Gamepad_Update) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Gamepad_Connect) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->Connect() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->Connect();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Gamepad_GetDeviceID) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetDeviceID());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetDeviceID();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Gamepad_GetConnectState) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetConnectState());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetConnectState();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Gamepad_GetAxisValue) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int axis;
-    ParseArgs(argc, argv, "i", &axis);
+  CheckArgc(argc, 1);
+  int axis;
+  ParseArgs(argc, argv, "i", &axis);
 
-    return LONG2NUM(self_obj->GetAxisValue(axis));
-  }
-  EXC_END;
-  return Qnil;
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetAxisValue(axis);
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Gamepad_IsButtonPressed) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int button;
-    ParseArgs(argc, argv, "i", &button);
+  CheckArgc(argc, 1);
+  int button;
+  ParseArgs(argc, argv, "i", &button);
 
-    return self_obj->IsButtonPressed(button) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsButtonPressed(button);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Gamepad_IsButtonTriggered) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int button;
-    ParseArgs(argc, argv, "i", &button);
+  CheckArgc(argc, 1);
+  int button;
+  ParseArgs(argc, argv, "i", &button);
 
-    return self_obj->IsButtonTriggered(button) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsButtonTriggered(button);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Gamepad_IsButtonRepeated) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int button;
-    ParseArgs(argc, argv, "i", &button);
+  CheckArgc(argc, 1);
+  int button;
+  ParseArgs(argc, argv, "i", &button);
 
-    return self_obj->IsButtonRepeated(button) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsButtonRepeated(button);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Gamepad_GetPressedButtons) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<int32_t>(self_obj->GetPressedButtons());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<int32_t>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<int32_t>(self_obj->GetPressedButtons());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<int32_t>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Gamepad_Rumble) {
   auto* self_obj = GetSelfData<urge::Gamepad>(self);
 
-  EXC_BEGIN {
-    if (argc == 2) {
-      // rumble(low, high)
-      double low, high;
-      ParseArgs(argc, argv, "ff", &low, &high);
-      return self_obj->Rumble(static_cast<float>(low), static_cast<float>(high)) ? Qtrue : Qfalse;
-    } else if (argc == 3) {
-      // rumble(low, high, duration)
-      double low, high;
-      int duration;
-      ParseArgs(argc, argv, "ffi", &low, &high, &duration);
-      return self_obj->Rumble(static_cast<float>(low), static_cast<float>(high), duration) ? Qtrue : Qfalse;
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 2) {
+    // rumble(low, high)
+    double low, high;
+    ParseArgs(argc, argv, "ff", &low, &high);
+
+    bool result = false;
+
+    CPP_BEGIN {
+      result = self_obj->Rumble(static_cast<float>(low),
+          static_cast<float>(high));
+    } CPP_END;
+
+    return result ? Qtrue : Qfalse;
+  } else if (argc == 3) {
+    // rumble(low, high, duration)
+    double low, high;
+    int duration;
+    ParseArgs(argc, argv, "ffi", &low, &high, &duration);
+
+    bool result = false;
+
+    CPP_BEGIN {
+      result = self_obj->Rumble(static_cast<float>(low),
+          static_cast<float>(high), duration);
+    } CPP_END;
+
+    return result ? Qtrue : Qfalse;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 // Attribute: player_index (int32_t)

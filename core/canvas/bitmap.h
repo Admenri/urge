@@ -105,8 +105,6 @@ class Bitmap : public Disposable {
   URGE_BINDING()
   RefPtr<Color> GetPixel(int32_t x, int32_t y);
   URGE_BINDING()
-  void SavePpm(std::string filename);
-  URGE_BINDING()
   void SetPixel(int32_t x, int32_t y, RefPtr<Color> color);
   URGE_BINDING()
   void HueChange(int32_t hue);

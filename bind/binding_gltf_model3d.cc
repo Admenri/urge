@@ -37,150 +37,193 @@ namespace binding {
 RB_DEF_TYPE(GLTFModel3D);
 
 RB_FUNC(GLTFModel3D_initialize) {
-  urge::RefPtr<urge::GLTFModel3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string path;
-    ParseArgs(argc, argv, "s", &path);
+  VALUE path_val;
+  const char* path_data;
+  size_t path_size;
+  ParseArgs(argc, argv, "o", &path_val);
+  CheckString(path_val, &path_data, &path_size);
 
-    obj = urge::MakeRefCounted<urge::GLTFModel3D>(path);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::GLTFModel3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GLTFModel3D> value = urge::MakeRefCounted<urge::GLTFModel3D>(
+        std::string(path_data, path_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GLTFModel3D_GetRoot) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetRoot();
-    return WrapObject(result.get(), kNode3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::Node3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Node3D> value = self_obj->GetRoot();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kNode3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GLTFModel3D_MaterialCount) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->MaterialCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->MaterialCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(GLTFModel3D_MeshCount) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->MeshCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->MeshCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(GLTFModel3D_ImageCount) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->ImageCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->ImageCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(GLTFModel3D_NodeCount) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->NodeCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->NodeCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(GLTFModel3D_BoundsCenter) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsCenter());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsCenter());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(GLTFModel3D_BoundsSize) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsSize());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsSize());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(GLTFModel3D_BoundsRadius) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->BoundsRadius());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->BoundsRadius();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(GLTFModel3D_Fit) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double size;
-    ParseArgs(argc, argv, "f", &size);
+  CheckArgc(argc, 1);
+  double size;
+  ParseArgs(argc, argv, "f", &size);
 
+  CPP_BEGIN {
     self_obj->Fit(static_cast<float>(size));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GLTFModel3D_SetMaterial) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int index;
-    VALUE material_val;
-    ParseArgs(argc, argv, "io", &index, &material_val);
+  CheckArgc(argc, 2);
+  int index;
+  VALUE material_val;
+  urge::Material3D* material;
+  ParseArgs(argc, argv, "io", &index, &material_val);
+  material = CheckMaybeObject<urge::Material3D>(material_val, kMaterial3DDataType);
 
-    self_obj->SetMaterial(index,
-        GetObject<urge::Material3D>(material_val, kMaterial3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetMaterial(index, material);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GLTFModel3D_GetMaterial) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    auto result = self_obj->GetMaterial(index);
-    return WrapObject(result.get(), kMaterial3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Material3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Material3D> value = self_obj->GetMaterial(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterial3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 // Attribute: unlit (bool)

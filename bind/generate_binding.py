@@ -150,6 +150,20 @@ def vector_codec(cpp_type: str) -> Optional[str]:
 #   type -> (ParseArgs format character, local C++ type, call expression)
 # `{n}` is the local variable name.  A type missing from this table marks the
 # declaration as internal; gen_api_json.py already dropped those.
+# Local storage for every C++ parameter type the glue understands:
+#   type -> (ParseArgs format character, local C++ type, call expression)
+# A type missing from this table marks the declaration as internal;
+# gen_api_json.py already dropped those.
+#
+# Everything here is plain data, and that is not a style choice.  The frame that
+# parses arguments is the frame that raises, and a frame owning anything with a
+# destructor gets a landing pad -- which is what turns `rb_raise` into a trap on
+# the web (probe A in build/web-test/frame_shape_probe.rb).  The three types
+# that would break it are handled separately in `param_plan`:
+#
+#   std::string      -> `const char*` + `size_t`, rebuilt in phase 2
+#   RefPtr<T>        -> `T*`, re-wrapped by the call itself
+#   std::vector<T>   -> the VALUE, validated here, converted in phase 2
 SCALAR_PARAMS = {
     "int8_t": ("i", "int", "static_cast<int8_t>({n})"),
     "int16_t": ("i", "int", "static_cast<int16_t>({n})"),
@@ -164,7 +178,6 @@ SCALAR_PARAMS = {
     "float": ("f", "double", "static_cast<float>({n})"),
     "double": ("f", "double", "{n}"),
     "bool": ("b", "bool", "{n}"),
-    "std::string": ("s", "std::string", "{n}"),
     "const char*": ("z", "const char*", "{n}"),
     "char*": ("z", "const char*", "{n}"),
 }
@@ -175,10 +188,10 @@ for _element, _canonical in VECTOR_ELEMENTS.items():
     SCALAR_PARAMS["std::vector<%s>" % _element] = (
         "o",
         "VALUE",
-        "GetVectorOf<%s>({n})" % _canonical,
+        "TakeVectorOf<%s>({n})" % _canonical,
     )
 
-# C++ integral return type -> Ruby number constructor.
+
 INT_RETURNS = {
     "int8_t": "INT2NUM",
     "int16_t": "INT2NUM",
@@ -193,7 +206,12 @@ INT_RETURNS = {
     "uint64_t": "ULL2NUM",
 }
 
-REFPTR_RE = re.compile(r"^RefPtr<\s*(?P<inner>[\w:]+)\s*>$")
+# `RefPtr<T>` and its alias `MaybePtr<T>` (core/common/definition.h) are one
+# C++ type with two null contracts.  `RefPtr<T>` is required, so `nil` is
+# rejected in phase 1 and the engine never sees a null pointer for it;
+# `MaybePtr<T>` reads `nil` as `nullptr`.  Which one a parameter was written
+# with is the only thing that decides, see `param_plan` / `attr_macro`.
+REFPTR_RE = re.compile(r"^(?P<kind>RefPtr|MaybePtr)<\s*(?P<inner>[\w:]+)\s*>$")
 
 # ---------------------------------------------------------------------------
 # Override table
@@ -470,6 +488,12 @@ def refptr_inner(cpp_type: str) -> Optional[str]:
     return m.group("inner") if m else None
 
 
+def refptr_is_maybe(cpp_type: str) -> bool:
+    """Whether an object argument is written `MaybePtr`, i.e. accepts `nil`."""
+    m = REFPTR_RE.match(cpp_type.strip())
+    return bool(m) and m.group("kind") == "MaybePtr"
+
+
 def split_top_level(text: str, sep: str = ",") -> list[str]:
     parts: list[str] = []
     depth = 0
@@ -617,93 +641,202 @@ def exported_parent(model: Model, entry: dict) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 
+def param_plan(cpp_type: str, name: str):
+    """Everything one argument costs: `(format, decls, parse targets, checks, arg)`.
+
+    `decls` is a list of `(type, name)` pairs -- plain data only -- and `checks`
+    are the statements that validate the parsed VALUE and fill in the raw form.
+    `arg` is what goes into the C++ call; it is evaluated inside phase 2, which
+    is where an owning temporary is allowed to live.
+    """
+    inner = refptr_inner(cpp_type)
+    if inner is not None:
+        # `MaybePtr<T>` is the parameter saying `nil` is a value; anything else
+        # is required, and `CheckObject` raises `TypeError` for `nil` -- the
+        # same answer `rb_check_typeddata` gives any other wrong type.  That is
+        # what lets the engine drop its own null checks.
+        check = "CheckMaybeObject" if refptr_is_maybe(cpp_type) else "CheckObject"
+        return (
+            "o",
+            [("VALUE", name + "_val"), ("urge::%s*" % inner, name)],
+            [name + "_val"],
+            ["%s = %s<urge::%s>(%s_val, k%sDataType);"
+             % (name, check, inner, name, inner)],
+            name,
+        )
+    element = vector_codec(cpp_type)
+    if element is not None:
+        return (
+            "o",
+            [("VALUE", name + "_val")],
+            [name + "_val"],
+            ["CheckVectorOf<%s>(%s_val);" % (element, name)],
+            "TakeVectorOf<%s>(%s_val)" % (element, name),
+        )
+    if cpp_type == "std::string":
+        return (
+            "o",
+            [
+                ("VALUE", name + "_val"),
+                ("const char*", name + "_data"),
+                ("size_t", name + "_size"),
+            ],
+            [name + "_val"],
+            ["CheckString(%s_val, &%s_data, &%s_size);" % (name, name, name)],
+            "std::string(%s_data, %s_size)" % (name, name),
+        )
+    fmt, local_type, template = SCALAR_PARAMS[cpp_type]
+    return (fmt, [(local_type, name)], [name], [], template.format(n=name))
+
+
 class ParamPlan:
-    """Everything the glue needs for one argument list."""
+    """Everything phase 1 needs for one argument list."""
 
     def __init__(self, params: list[dict]):
         self.params = params
         self.declarations: list[str] = []
         self.format = ""
         self.args: list[str] = []
-        groups: list[tuple[str, list[str]]] = []
+        self.checks: list[str] = []
+        self.parse_targets: list[str] = []
+        # Grouped so that `int x, y;` stays one line.  A pointer type is never
+        # grouped: `urge::Rect* a, b;` would declare `b` as a `urge::Rect`.
+        groups: list[tuple[str, str, list[str]]] = []
         for p in params:
-            cpp_type = p["type"]
-            name = p["name"]
-            inner = refptr_inner(cpp_type)
-            if inner is not None:
-                local_kind = "VALUE"
-                local = name + "_val"
-                self.format += "o"
-                self.args.append(
-                    "GetObject<urge::%s>(%s, k%sDataType)" % (inner, local, inner)
-                )
-            else:
-                fmt, local_kind, template = SCALAR_PARAMS[cpp_type]
-                local = name + "_val" if local_kind == "VALUE" else name
-                self.format += fmt
-                self.args.append(template.format(n=local))
-            for kind, names in groups:
-                if kind == local_kind:
-                    names.append(local)
-                    break
-            else:
-                groups.append((local_kind, [local]))
-        for kind, names in groups:
-            self.declarations.append("%s %s;" % (kind, ", ".join(names)))
-        self.locals = {
-            p["name"]: (p["name"] + "_val" if self._kind(p["type"]) == "VALUE" else p["name"])
-            for p in params
-        }
-
-    @staticmethod
-    def _kind(cpp_type: str) -> str:
-        inner = refptr_inner(cpp_type)
-        if inner is not None:
-            return "VALUE"
-        return SCALAR_PARAMS[cpp_type][1]
+            fmt, decls, targets, checks, arg = param_plan(p["type"], p["name"])
+            self.format += fmt
+            self.parse_targets.extend(targets)
+            self.checks.extend(checks)
+            self.args.append(arg)
+            for type_name, local in decls:
+                key = type_name if not type_name.endswith("*") else type_name + local
+                for known, _, names in groups:
+                    if known == key:
+                        names.append(local)
+                        break
+                else:
+                    groups.append((key, type_name, [local]))
+        for _, type_name, names in groups:
+            self.declarations.append("%s %s;" % (type_name, ", ".join(names)))
 
     def parse_args_lines(self, indent: str) -> list[str]:
         if not self.format:
             return []
-        pointers = ", ".join("&" + self.locals[p["name"]] for p in self.params)
+        pointers = ", ".join("&" + name for name in self.parse_targets)
         return emit_call(
             'ParseArgs(argc, argv, "%s", %s)' % (self.format, pointers), indent
         )
 
 
-def emit_return(cpp_type: str, call: str, indent: str) -> list[str]:
-    """`return <call>` converted from C++ to Ruby (or the bare call for void)."""
+def return_slot(cpp_type: str) -> list[str]:
+    """The declarations phase 1 must carry for phase 3 to convert the result.
+
+    Owning results are boxed: a `std::string` or a `std::vector` cannot live in
+    the phase-1/phase-3 frame, because that frame has to stay destructor free,
+    and it has to survive phase 2's scope.  The box is deleted in phase 3; it
+    leaks only if the Ruby conversion raises, which is NoMemoryError.
+    """
+    if cpp_type == "void":
+        return []
+    if cpp_type == "bool":
+        return ["bool result = false;"]
+    if cpp_type in INT_RETURNS:
+        return ["%s result = 0;" % INT_RETURNS_SLOT[cpp_type]]
+    if cpp_type in ("float", "double"):
+        return ["double result = 0.0;"]
+    if cpp_type == "std::string":
+        return ["std::string* result = nullptr;"]
+    if cpp_type in ("const char*", "char*"):
+        return ["const char* result = nullptr;"]
+    element = vector_codec(cpp_type)
+    if element is not None:
+        return ["std::vector<%s>* result = nullptr;" % element]
+    inner = refptr_inner(cpp_type)
+    if inner is not None:
+        return ["urge::%s* result = nullptr;" % inner]
+    raise ValueError("no result slot for %r" % cpp_type)
+
+
+# The C++ type a scalar result is carried in, which is not the same as the
+# function's declared return type for the narrow integers.
+INT_RETURNS_SLOT = {
+    "int8_t": "int32_t",
+    "int16_t": "int32_t",
+    "int32_t": "int32_t",
+    "int": "int32_t",
+    "uint8_t": "uint32_t",
+    "uint16_t": "uint32_t",
+    "uint32_t": "uint32_t",
+    "unsigned int": "uint32_t",
+    "int64_t": "int64_t",
+    "uint64_t": "uint64_t",
+}
+
+
+def emit_store(cpp_type: str, call: str, indent: str) -> list[str]:
+    """Phase 2: run the call and park its result in the slot."""
     if cpp_type == "void":
         return emit_call(call, indent)
-    if cpp_type == "bool":
-        return [indent + "return %s ? Qtrue : Qfalse;" % call]
-    if cpp_type in INT_RETURNS:
-        return [indent + "return %s(%s);" % (INT_RETURNS[cpp_type], call)]
-    if cpp_type in ("float", "double"):
-        return [indent + "return rb_float_new(%s);" % call]
     if cpp_type == "std::string":
-        return emit_call("std::string result = %s" % call, indent) + [
-            indent + "return rb_enc_str_new(result.data(),",
-            indent + "                     static_cast<long>(result.size()),",
-            indent + "                     rb_utf8_encoding());",
+        return emit_call("result = new std::string(%s)" % call, indent)
+    element = vector_codec(cpp_type)
+    if element is not None:
+        return emit_call("result = new std::vector<%s>(%s)" % (element, call), indent)
+    inner = refptr_inner(cpp_type)
+    if inner is not None:
+        # The `RefPtr` temporary dies with phase 2, so the slot takes its own
+        # reference; phase 3 releases it once the Ruby object owns one too.
+        return (
+            emit_call("urge::RefPtr<urge::%s> value = %s" % (inner, call), indent)
+            + [indent + "result = value.get();"]
+            + [indent + "if (result)"]
+            + [indent + "  result->AddRef();"]
+        )
+    return emit_call("result = %s" % call, indent)
+
+
+def emit_convert(cpp_type: str, indent: str) -> list[str]:
+    """Phase 3: turn the slot into a Ruby value (or a bare `nil`)."""
+    if cpp_type == "void":
+        return [indent + "return Qnil;"]
+    if cpp_type == "bool":
+        return [indent + "return result ? Qtrue : Qfalse;"]
+    if cpp_type in INT_RETURNS:
+        return [indent + "return %s(result);" % INT_RETURNS[cpp_type]]
+    if cpp_type in ("float", "double"):
+        return [indent + "return rb_float_new(result);"]
+    if cpp_type == "std::string":
+        return [
+            indent + "VALUE value = rb_enc_str_new(",
+            indent + "    result->data(), static_cast<long>(result->size()),",
+            indent + "    rb_utf8_encoding());",
+            indent + "delete result;",
+            indent + "return value;",
         ]
     element = vector_codec(cpp_type)
     if element is not None:
-        return [indent + "return WrapVectorOf<%s>(%s);" % (element, call)]
+        return [
+            indent + "VALUE value = WrapVectorOf<%s>(*result);" % element,
+            indent + "delete result;",
+            indent + "return value;",
+        ]
     inner = refptr_inner(cpp_type)
     if inner is not None:
         return [
-            indent + "auto result = %s;" % call,
-            indent + "return WrapObject(result.get(), k%sDataType);" % inner,
+            indent + "VALUE value = WrapObject(result, k%sDataType);" % inner,
+            indent + "if (result)",
+            indent + "  result->Release();",
+            indent + "return value;",
         ]
     if cpp_type in ("const char*", "char*"):
         # rubies this old have no rb_utf8_str_new_cstr, and the pointer may be
         # null, so measure it instead of relying on a NUL-terminated wrapper.
         return [
-            indent + "const char* result = %s;" % call,
-            indent + "return result ? rb_enc_str_new(result, static_cast<long>(std::strlen(result)),",
-            indent + "                                       rb_utf8_encoding())",
-            indent + "               : Qnil;",
+            indent + "return result",
+            indent + "           ? rb_enc_str_new(result,",
+            indent + "                            static_cast<long>(std::strlen(result)),",
+            indent + "                            rb_utf8_encoding())",
+            indent + "           : Qnil;",
         ]
     raise ValueError("no return conversion for %r" % cpp_type)
 
@@ -759,122 +892,199 @@ class Dispatch:
 def emit_framework(
     ruby_name: str,
     dispatch: Dispatch,
-    invoke,
-    tail: str,
+    call_of,
+    return_type: str,
     indent: str = "  ",
 ) -> list[str]:
-    """Emit the body of a glue function.
+    """Emit the body of a binding, in three phases.
 
-    `invoke(args, indent)` returns the statements performing the call and the
-    value conversion; `tail` is what the function answers when nothing raised.
+    `call_of(args)` returns the C++ call expression; the framework wraps it in
+    the store/convert pair the return type needs.
 
-    Every body is wrapped in `EXC_BEGIN`/`EXC_END`, even the one-arity ones: an
-    `urge::Exception` thrown anywhere below the call (a GPU failure, a missing
-    file, a disposed object) has to become a Ruby exception, and an exception
-    escaping a C function of the VM is undefined behaviour.
+    Phase 1 (Ruby -> C) validates and parses into plain data and may raise.
+    Phase 2 (`CPP_BEGIN` .. `CPP_END`) is the engine call: the only `try`/`catch`
+    in the glue, and the only place an owning object may live.  Phase 3
+    (C++ -> Ruby) converts the slot back and may raise again.
+
+    Both phases 1 and 3 run in a frame that owns nothing, which is what lets
+    them raise; see the block comment on the bridge in cruby_utils.h for the
+    measurements behind that rule.
     """
-    lines: list[str] = [indent + "EXC_BEGIN {"]
-    inner = indent + "  "
-    if dispatch.simple:
-        params = dispatch.variants()[0]
+    slot = return_slot(return_type)
+    lines: list[str] = []
+
+    def emit_arity(params, nested, keyword, argc_check):
         plan = ParamPlan(params)
-        lines.append(inner + "CheckArgc(argc, %d);" % len(params))
-        lines.extend(inner + d for d in plan.declarations)
-        lines.extend(plan.parse_args_lines(inner))
+        if argc_check is not None:
+            lines.append(nested + "CheckArgc(argc, %d);" % argc_check)
+        lines.extend(nested + d for d in plan.declarations)
+        lines.extend(plan.parse_args_lines(nested))
+        lines.extend(nested + c for c in plan.checks)
         if plan.declarations or plan.format:
             lines.append("")
-        lines.extend(invoke(plan.args, inner))
+        lines.extend(nested + d for d in slot)
+        if slot:
+            lines.append("")
+        lines.append(nested + "CPP_BEGIN {")
+        lines.extend(emit_store(return_type, call_of(plan.args), nested + "  "))
+        lines.append(nested + "} CPP_END;")
+        lines.append("")
+        lines.extend(emit_convert(return_type, nested))
+
+    if dispatch.simple:
+        params = dispatch.variants()[0]
+        emit_arity(params, indent, None, len(params))
     else:
-        branch = inner
-        nested = inner + "  "
+        nested = indent + "  "
         for index, params in enumerate(dispatch.variants()):
             keyword = "if" if index == 0 else "} else if"
-            lines.append("%s%s (argc == %d) {" % (branch, keyword, len(params)))
+            lines.append("%s%s (argc == %d) {" % (indent, keyword, len(params)))
             lines.append(
                 "%s// %s(%s)"
                 % (nested, ruby_name, ", ".join(p["name"] for p in params))
             )
-            plan = ParamPlan(params)
-            lines.extend(nested + d for d in plan.declarations)
-            lines.extend(plan.parse_args_lines(nested))
-            lines.extend(invoke(plan.args, nested))
-        lines.append("%s} else {" % branch)
-        lines.append(
-            '%srb_raise(rb_eArgError, "%s", "wrong number of arguments");'
-            % (nested, "%s")
-        )
-        lines.append("%s}" % branch)
-    lines.append(indent + "}")
-    lines.append(indent + "EXC_END;")
-    lines.append(indent + tail)
+            emit_arity(params, nested, keyword, None)
+        lines.append("%s} else {" % indent)
+        # Several arities are valid, so the message cannot name one expected
+        # count.
+        lines.append("%s  ArgcError(argc);" % indent)
+        lines.append("%s}" % indent)
     return lines
-
-
-# ---------------------------------------------------------------------------
-# Class emission
-# ---------------------------------------------------------------------------
 
 
 def emit_initialize(entry: dict) -> list[str]:
     name = entry["cpp_name"]
     dispatch = Dispatch(entry["constructors"])
-    lines = ["  urge::RefPtr<urge::%s> obj = nullptr;" % name]
+    lines = ["RB_FUNC(%s_initialize) {" % name]
 
-    def invoke(args: list[str], indent: str) -> list[str]:
-        call = "obj = urge::MakeRefCounted<urge::%s>(%s)" % (name, ", ".join(args))
-        return emit_call(call, indent)
+    def emit_arity(params, nested):
+        plan = ParamPlan(params)
+        lines.extend(nested + d for d in plan.declarations)
+        lines.extend(plan.parse_args_lines(nested))
+        lines.extend(nested + c for c in plan.checks)
+        lines.append("")
+        lines.append(nested + "urge::%s* result = nullptr;" % name)
+        lines.append("")
+        lines.append(nested + "CPP_BEGIN {")
+        inner = nested + "  "
+        # `MakeRefCounted` answers a `RefPtr` that dies with phase 2, so the
+        # slot takes its own reference; phase 3 hands that one to the wrapper.
+        lines.extend(
+            emit_call(
+                "urge::RefPtr<urge::%s> value = "
+                "urge::MakeRefCounted<urge::%s>(%s)"
+                % (name, name, ", ".join(plan.args)),
+                inner,
+            )
+        )
+        lines.append(inner + "result = value.get();")
+        lines.append(inner + "if (result)")
+        lines.append(inner + "  result->AddRef();")
+        lines.append(nested + "} CPP_END;")
+        lines.append("")
+        lines.append(nested + "VALUE object = SetupSelfData(self, result);")
+        lines.append(nested + "if (result)")
+        lines.append(nested + "  result->Release();")
+        lines.append(nested + "return object;")
 
-    lines.extend(emit_framework("initialize", dispatch, invoke, "return SetupSelfData(self, obj.get());"))
-    return ["RB_FUNC(%s_initialize) {" % name] + lines + ["}"]
+    if dispatch.simple:
+        emit_arity(dispatch.variants()[0], "  ")
+    else:
+        nested = "    "
+        for index, params in enumerate(dispatch.variants()):
+            keyword = "if" if index == 0 else "} else if"
+            lines.append("  %s (argc == %d) {" % (keyword, len(params)))
+            lines.append(
+                "%s// initialize(%s)"
+                % (nested, ", ".join(p["name"] for p in params))
+            )
+            emit_arity(params, nested)
+        lines.append("  } else {")
+        lines.append("    ArgcError(argc);")
+        lines.append("  }")
+    lines.append("}")
+    return lines
 
 
 def emit_initialize_copy(entry: dict) -> list[str]:
     name = entry["cpp_name"]
     return [
         "RB_FUNC(%s_initialize_copy) {" % name,
-        "  VALUE other;",
-        '  ParseArgs(argc, argv, "o", &other);',
+        "  VALUE other_val = Qnil;",
+        "  CheckArgc(argc, 1);",
+        '  ParseArgs(argc, argv, "o", &other_val);',
+        "  urge::%s* other_obj = CheckObject<urge::%s>(other_val, k%sDataType);"
+        % (name, name, name),
         "",
-        "  urge::RefPtr<urge::%s> obj = nullptr;" % name,
-        "  EXC_BEGIN {",
-        "    auto other_obj = GetObject<urge::%s>(other, k%sDataType);" % (name, name),
-        "    obj = urge::MakeRefCounted<urge::%s>(other_obj);" % name,
-        "  }",
-        "  EXC_END;",
+        "  urge::%s* result = nullptr;" % name,
         "",
-        "  return SetupSelfData(self, obj.get());",
+        "  CPP_BEGIN {",
+        "    urge::RefPtr<urge::%s> value = "
+        "urge::MakeRefCounted<urge::%s>(other_obj);" % (name, name),
+        "    result = value.get();",
+        "    if (result)",
+        "      result->AddRef();",
+        "  } CPP_END;",
+        "",
+        "  VALUE object = SetupSelfData(self, result);",
+        "  if (result)",
+        "    result->Release();",
+        "  return object;",
         "}",
     ]
 
 
 def emit_marshal(entry: dict) -> list[str]:
     name = entry["cpp_name"]
-    return [
+    # `_dump` is called with the depth argument, so it takes one and ignores it;
+    # `_load` takes exactly the string.
+    # `_dump` takes the depth argument and ignores it, so it cannot go through
+    # `emit_framework`: that would emit a `CheckArgc(argc, 0)` and reject every
+    # real call from Marshal.
+    lines = [
         "RB_FUNC(%s__dump) {" % name,
         "  auto* self_obj = GetSelfData<urge::%s>(self);" % name,
         "",
-        "  EXC_BEGIN {",
-        "    std::string result =",
-        "        urge::%s::MarshalDump(urge::RefPtr<urge::%s>(self_obj));" % (name, name),
-        "    return rb_str_new(result.data(), static_cast<long>(result.size()));",
-        "  }",
-        "  EXC_END;",
-        "  return Qnil;",
-        "}",
+        "  std::string* result = nullptr;",
         "",
-        "RB_FUNC(%s__load) {" % name,
-        "  std::string data;",
-        '  ParseArgs(argc, argv, "s", &data);',
+        "  CPP_BEGIN {",
+        "    result = new std::string(urge::%s::MarshalDump("
+        "urge::RefPtr<urge::%s>(self_obj)));" % (name, name),
+        "  } CPP_END;",
         "",
-        "  EXC_BEGIN {",
-        "    VALUE obj = rb_obj_alloc(self);",
-        "    auto ptr = urge::%s::MarshalLoad(data);" % name,
-        "    return SetupSelfData(obj, ptr.get());",
-        "  }",
-        "  EXC_END;",
-        "  return Qnil;",
-        "}",
     ]
+    lines.extend(emit_convert("std::string", "  "))
+    lines.append("}")
+    lines.append("")
+    lines.extend(
+        [
+            "RB_FUNC(%s__load) {" % name,
+            "  VALUE data_val = Qnil;",
+            "  CheckArgc(argc, 1);",
+            '  ParseArgs(argc, argv, "o", &data_val);',
+            "  const char* data_data;",
+            "  size_t data_size;",
+            "  CheckString(data_val, &data_data, &data_size);",
+            "",
+            "  urge::%s* result = nullptr;" % name,
+            "",
+            "  CPP_BEGIN {",
+            "    urge::RefPtr<urge::%s> value ="
+            " urge::%s::MarshalLoad(std::string(data_data, data_size));"
+            % (name, name),
+            "    result = value.get();",
+            "    if (result)",
+            "      result->AddRef();",
+            "  } CPP_END;",
+            "",
+            "  VALUE object = SetupSelfData(rb_obj_alloc(self), result);",
+            "  if (result)",
+            "    result->Release();",
+            "  return object;",
+            "}",
+        ]
+    )
+    return lines
 
 
 def emit_equal(entry: dict) -> list[str]:
@@ -890,18 +1100,21 @@ def emit_equal(entry: dict) -> list[str]:
         "// Value equality: ==, eql?, === (KLASS_EQUAL)",
         "RB_FUNC(%s__equal) {" % name,
         "  auto* self_obj = GetSelfData<urge::%s>(self);" % name,
-        "  VALUE other = Qnil;",
-        '  ParseArgs(argc, argv, "o", &other);',
+        "  VALUE other_val = Qnil;",
+        "  CheckArgc(argc, 1);",
+        '  ParseArgs(argc, argv, "o", &other_val);',
         "",
-        "  if (!rb_typeddata_is_kind_of(other, &k%sDataType))" % name,
+        "  if (!rb_typeddata_is_kind_of(other_val, &k%sDataType))" % name,
         "    return Qfalse;",
+        "  auto* other_obj = GetSelfData<urge::%s>(other_val);" % name,
         "",
-        "  auto* other_obj = GetSelfData<urge::%s>(other);" % name,
-        "  EXC_BEGIN {",
-        "    return *self_obj == *other_obj ? Qtrue : Qfalse;",
-        "  }",
-        "  EXC_END;",
-        "  return Qfalse;",
+        "  bool result = false;",
+        "",
+        "  CPP_BEGIN {",
+        "    result = *self_obj == *other_obj;",
+        "  } CPP_END;",
+        "",
+        "  return result ? Qtrue : Qfalse;",
         "}",
     ]
 
@@ -917,14 +1130,16 @@ def emit_method(entry: dict, group: list[dict], is_static: bool) -> list[str]:
         receiver = "self_obj->%s" % head["cpp_name"]
     return_type = head["return"]["cpp_type"]
 
-    def invoke(args: list[str], indent: str) -> list[str]:
-        return emit_return(return_type, "%s(%s)" % (receiver, ", ".join(args)), indent)
+    def call_of(args):
+        return "%s(%s)" % (receiver, ", ".join(args))
 
     lines = ["RB_FUNC(%s) {" % symbol]
     if not is_static:
         lines.append("  auto* self_obj = GetSelfData<urge::%s>(self);" % name)
         lines.append("")
-    lines.extend(emit_framework(head["ruby_name"], dispatch, invoke, "return Qnil;"))
+    lines.extend(
+        emit_framework(head["ruby_name"], dispatch, call_of, return_type)
+    )
     lines.append("}")
     return lines
 
@@ -935,13 +1150,18 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
     owner = entry["cpp_name"]
     inner = refptr_inner(cpp_type)
     if inner is not None:
+        # The last argument names the phase-1 check, which is where the null
+        # contract of `ATTR(RefPtr<T>, ...)` vs `ATTR(MaybePtr<T>, ...)` lands.
+        check = "CheckMaybeObject" if refptr_is_maybe(cpp_type) else "CheckObject"
         if static:
-            return "BINDING_CLASS_ATTR_OBJECT(%s, urge::%s, %s, urge::%s, k%sDataType);" % (
-                owner, owner, name, inner, inner,
+            return (
+                "BINDING_CLASS_ATTR_OBJECT(%s, urge::%s, %s, urge::%s, "
+                "k%sDataType, %s);"
+                % (owner, owner, name, inner, inner, check)
             )
         macro = "BINDING_ATTR_OBJECT" if inner in marshalable else "BINDING_ATTR_OBJECT_REF"
-        return "%s(%s, urge::%s, %s, urge::%s, k%sDataType);" % (
-            macro, owner, owner, name, inner, inner,
+        return "%s(%s, urge::%s, %s, urge::%s, k%sDataType, %s);" % (
+            macro, owner, owner, name, inner, inner, check,
         )
     prefix = "BINDING_CLASS_ATTR" if static else "BINDING_ATTR"
     # A vector attribute names its element as a fourth argument, so it does not
@@ -1109,13 +1329,11 @@ def emit_module_method(klass: str, group: list[dict]) -> list[str]:
     receiver = "urge::%s::Get()" % klass
     return_type = head["return"]["cpp_type"]
 
-    def invoke(args: list[str], indent: str) -> list[str]:
-        return emit_return(
-            return_type, "%s.%s(%s)" % (receiver, head["cpp_name"], ", ".join(args)), indent
-        )
+    def call_of(args):
+        return "%s.%s(%s)" % (receiver, head["cpp_name"], ", ".join(args))
 
     return ["RB_FUNC(%s) {" % symbol] + emit_framework(
-        head["ruby_name"], dispatch, invoke, "return Qnil;"
+        head["ruby_name"], dispatch, call_of, return_type
     ) + ["}"]
 
 
@@ -1124,47 +1342,39 @@ def emit_module_attribute(klass: str, fn: dict) -> list[str]:
 
     The IR splits a read/write pair into two entries because the setter's own
     return type is `void`; the getter below is the entry without `setter`.
+    `Attr_X()` answers `std::optional<ty>`, so the call expression dereferences
+    it the same way the instance attribute macros do.
     """
-    # Every entry carries the value type of the attribute, which is what the
-    # conversion has to be chosen from (see the instance attribute macros).
     cpp_type = fn["attr_value_type"]
     getter = "urge::%s::Get().Attr_%s" % (klass, fn["cpp_name"])
     symbol = "%s_%s" % (klass, fn["cpp_name"])
+
     if fn.get("setter"):
-        inner = refptr_inner(cpp_type)
-        element = vector_codec(cpp_type)
-        if inner is not None:
-            local, fmt, arg = "value", "o", "GetObject<urge::%s>(value, k%sDataType)" % (inner, inner)
-        elif element is not None:
-            local, fmt, arg = "value", "o", "GetVectorOf<%s>(value)" % element
-        elif cpp_type in INT_RETURNS:
-            local, fmt, arg = "value", "i", "value"
-        elif cpp_type in ("float", "double"):
-            local, fmt, arg = "value", "f", "static_cast<float>(value)"
-        elif cpp_type == "bool":
-            local, fmt, arg = "value", "b", "value != 0"
-        else:
-            raise ValueError("unsupported module attribute type %r" % cpp_type)
-        local_type = "VALUE" if fmt == "o" else SCALAR_PARAMS[cpp_type][1]
-        initial = "Qnil" if fmt == "o" else "{}"
-        return [
-            "RB_FUNC(%sEqual) {" % symbol,
-            "  %s %s = %s;" % (local_type, local, initial),
-            "",
-            "  EXC_BEGIN {",
-            '    ParseArgs(argc, argv, "%s", &%s);' % (fmt, local),
-            "    %s(%s);" % (getter, arg),
-            "  }",
-            "  EXC_END;",
-            "  return Qnil;",
-            "}",
-        ]
-    # `Attr_X()` answers `std::optional<ty>`; the getter always fills it in, the
-    # same way the instance macros dereference it. A `RefPtr` attribute
-    # dereferences twice: the optional, then the smart pointer.
-    return ["RB_FUNC(%s) {" % symbol, "  EXC_BEGIN {"] + emit_return(
-        cpp_type, "(*%s())" % getter, "    "
-    ) + ["  }", "  EXC_END;", "  return Qnil;", "}"]
+        plan = ParamPlan([{"type": cpp_type, "name": "value"}])
+        lines = ["RB_FUNC(%sEqual) {" % symbol, "  CheckArgc(argc, 1);"]
+        lines.extend("  " + d for d in plan.declarations)
+        lines.extend(plan.parse_args_lines("  "))
+        lines.extend("  " + c for c in plan.checks)
+        lines.append("")
+        lines.append("  CPP_BEGIN {")
+        lines.append("    %s(%s);" % (getter, plan.args[0]))
+        lines.append("  } CPP_END;")
+        lines.append("")
+        lines.append("  return Qnil;")
+        lines.append("}")
+        return lines
+
+    lines = ["RB_FUNC(%s) {" % symbol, "  CheckArgc(argc, 0);", ""]
+    lines.extend("  " + d for d in return_slot(cpp_type))
+    if return_slot(cpp_type):
+        lines.append("")
+    lines.append("  CPP_BEGIN {")
+    lines.extend(emit_store(cpp_type, "(*%s())" % getter, "    "))
+    lines.append("  } CPP_END;")
+    lines.append("")
+    lines.extend(emit_convert(cpp_type, "  "))
+    lines.append("}")
+    return lines
 
 
 def emit_module(entry: dict) -> list[str]:

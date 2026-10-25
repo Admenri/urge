@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-24T08:59:23Z",
+    "generated_at": "2026-10-25T13:06:32Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -1814,7 +1814,7 @@
             },
             {
               "name": "bitmap",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": "{}"
             },
             {
@@ -2490,7 +2490,7 @@
           "params": [
             {
               "name": "image",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             },
             {
@@ -4002,7 +4002,7 @@
           "name": "layout",
           "setter": "layout=",
           "cpp_name": "Layout",
-          "cpp_type": "RefPtr<GPUBindGroupLayout>",
+          "cpp_type": "MaybePtr<GPUBindGroupLayout>",
           "ruby_type": "GPUBindGroupLayout",
           "static": false,
           "override": false,
@@ -4101,7 +4101,7 @@
           "name": "layout",
           "setter": "layout=",
           "cpp_name": "Layout",
-          "cpp_type": "RefPtr<GPUPipelineLayout>",
+          "cpp_type": "MaybePtr<GPUPipelineLayout>",
           "ruby_type": "GPUPipelineLayout",
           "static": false,
           "override": false,
@@ -4112,7 +4112,7 @@
           "name": "module",
           "setter": "module=",
           "cpp_name": "Module",
-          "cpp_type": "RefPtr<GPUShaderModule>",
+          "cpp_type": "MaybePtr<GPUShaderModule>",
           "ruby_type": "GPUShaderModule",
           "static": false,
           "override": false,
@@ -4554,7 +4554,7 @@
           "name": "layout",
           "setter": "layout=",
           "cpp_name": "Layout",
-          "cpp_type": "RefPtr<GPUPipelineLayout>",
+          "cpp_type": "MaybePtr<GPUPipelineLayout>",
           "ruby_type": "GPUPipelineLayout",
           "static": false,
           "override": false,
@@ -4565,7 +4565,7 @@
           "name": "vertex_module",
           "setter": "vertex_module=",
           "cpp_name": "VertexModule",
-          "cpp_type": "RefPtr<GPUShaderModule>",
+          "cpp_type": "MaybePtr<GPUShaderModule>",
           "ruby_type": "GPUShaderModule",
           "static": false,
           "override": false,
@@ -4576,7 +4576,7 @@
           "name": "fragment_module",
           "setter": "fragment_module=",
           "cpp_name": "FragmentModule",
-          "cpp_type": "RefPtr<GPUShaderModule>",
+          "cpp_type": "MaybePtr<GPUShaderModule>",
           "ruby_type": "GPUShaderModule",
           "static": false,
           "override": false,
@@ -4709,7 +4709,7 @@
           "params": [
             {
               "name": "resolve",
-              "type": "RefPtr<GPUTextureView>",
+              "type": "MaybePtr<GPUTextureView>",
               "default": null
             }
           ],
@@ -4726,7 +4726,7 @@
           "params": [
             {
               "name": "view",
-              "type": "RefPtr<GPUTextureView>",
+              "type": "MaybePtr<GPUTextureView>",
               "default": null
             },
             {
@@ -4783,7 +4783,7 @@
           "params": [
             {
               "name": "query_set",
-              "type": "RefPtr<GPUQuerySet>",
+              "type": "MaybePtr<GPUQuerySet>",
               "default": null
             }
           ],
@@ -5208,7 +5208,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "RefPtr<GPUTextureViewDescriptor>",
+              "type": "MaybePtr<GPUTextureViewDescriptor>",
               "default": "nullptr"
             }
           ],
@@ -5599,7 +5599,7 @@
           "params": [
             {
               "name": "descriptor",
-              "type": "RefPtr<GPUComputePassDescriptor>",
+              "type": "MaybePtr<GPUComputePassDescriptor>",
               "default": "nullptr"
             }
           ],
@@ -6695,7 +6695,7 @@
             },
             {
               "name": "clear",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": "nullptr"
             }
           ],
@@ -6730,7 +6730,7 @@
           "name": "parent",
           "setter": "parent=",
           "cpp_name": "Parent",
-          "cpp_type": "RefPtr<Node>",
+          "cpp_type": "MaybePtr<Node>",
           "ruby_type": "Node",
           "static": false,
           "override": true,
@@ -6741,7 +6741,7 @@
           "name": "position",
           "setter": "position=",
           "cpp_name": "Position",
-          "cpp_type": "RefPtr<Vector3>",
+          "cpp_type": "MaybePtr<Vector3>",
           "ruby_type": "Vector3",
           "static": false,
           "override": true,
@@ -6752,7 +6752,7 @@
           "name": "quaternion",
           "setter": "quaternion=",
           "cpp_name": "Quaternion",
-          "cpp_type": "RefPtr<Vector4>",
+          "cpp_type": "MaybePtr<Vector4>",
           "ruby_type": "Vector4",
           "static": false,
           "override": true,
@@ -6763,7 +6763,7 @@
           "name": "scale",
           "setter": "scale=",
           "cpp_name": "Scale",
-          "cpp_type": "RefPtr<Vector3>",
+          "cpp_type": "MaybePtr<Vector3>",
           "ruby_type": "Vector3",
           "static": false,
           "override": true,
@@ -6774,7 +6774,7 @@
           "name": "camera",
           "setter": "camera=",
           "cpp_name": "Camera",
-          "cpp_type": "RefPtr<Camera>",
+          "cpp_type": "MaybePtr<Camera>",
           "ruby_type": "Camera",
           "static": false,
           "override": false,
@@ -6832,7 +6832,7 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<Node3D>",
+              "type": "MaybePtr<Node3D>",
               "default": null
             }
           ],
@@ -6849,7 +6849,7 @@
           "params": [
             {
               "name": "child",
-              "type": "RefPtr<Node3D>",
+              "type": "MaybePtr<Node3D>",
               "default": null
             }
           ],
@@ -6866,7 +6866,7 @@
           "params": [
             {
               "name": "child",
-              "type": "RefPtr<Node3D>",
+              "type": "MaybePtr<Node3D>",
               "default": null
             }
           ],
@@ -6918,7 +6918,7 @@
           "name": "position",
           "setter": "position=",
           "cpp_name": "Position",
-          "cpp_type": "RefPtr<Vector3>",
+          "cpp_type": "MaybePtr<Vector3>",
           "ruby_type": "Vector3",
           "static": false,
           "override": false,
@@ -6929,7 +6929,7 @@
           "name": "rotation",
           "setter": "rotation=",
           "cpp_name": "Rotation",
-          "cpp_type": "RefPtr<Vector4>",
+          "cpp_type": "MaybePtr<Vector4>",
           "ruby_type": "Vector4",
           "static": false,
           "override": false,
@@ -6940,7 +6940,7 @@
           "name": "scale",
           "setter": "scale=",
           "cpp_name": "Scale",
-          "cpp_type": "RefPtr<Vector3>",
+          "cpp_type": "MaybePtr<Vector3>",
           "ruby_type": "Vector3",
           "static": false,
           "override": false,
@@ -7064,7 +7064,7 @@
           "params": [
             {
               "name": "light_direction",
-              "type": "RefPtr<Vector3>",
+              "type": "MaybePtr<Vector3>",
               "default": null
             },
             {
@@ -7206,7 +7206,7 @@
           "name": "clear_color",
           "setter": "clear_color=",
           "cpp_name": "ClearColor",
-          "cpp_type": "RefPtr<Color>",
+          "cpp_type": "MaybePtr<Color>",
           "ruby_type": "Color",
           "static": false,
           "override": false,
@@ -7270,7 +7270,7 @@
           "name": "color",
           "setter": "color=",
           "cpp_name": "Color",
-          "cpp_type": "RefPtr<Color>",
+          "cpp_type": "MaybePtr<Color>",
           "ruby_type": "Color",
           "static": false,
           "override": false,
@@ -7350,7 +7350,7 @@
           "params": [
             {
               "name": "node",
-              "type": "RefPtr<Node3D>",
+              "type": "MaybePtr<Node3D>",
               "default": null
             }
           ],
@@ -7374,7 +7374,7 @@
           "name": "ambient",
           "setter": "ambient=",
           "cpp_name": "Ambient",
-          "cpp_type": "RefPtr<Color>",
+          "cpp_type": "MaybePtr<Color>",
           "ruby_type": "Color",
           "static": false,
           "override": false,
@@ -7432,7 +7432,7 @@
             },
             {
               "name": "material",
-              "type": "RefPtr<Material3D>",
+              "type": "MaybePtr<Material3D>",
               "default": null
             }
           ],
@@ -7523,7 +7523,7 @@
           "name": "mesh",
           "setter": "mesh=",
           "cpp_name": "Mesh",
-          "cpp_type": "RefPtr<Mesh3D>",
+          "cpp_type": "MaybePtr<Mesh3D>",
           "ruby_type": "Mesh3D",
           "static": false,
           "override": false,
@@ -8061,7 +8061,7 @@
             },
             {
               "name": "mask",
-              "type": "RefPtr<BoneMask3D>",
+              "type": "MaybePtr<BoneMask3D>",
               "default": null
             }
           ],
@@ -8178,7 +8178,7 @@
           "name": "mask",
           "setter": "mask=",
           "cpp_name": "Mask",
-          "cpp_type": "RefPtr<BoneMask3D>",
+          "cpp_type": "MaybePtr<BoneMask3D>",
           "ruby_type": "BoneMask3D",
           "static": false,
           "override": false,
@@ -8247,7 +8247,7 @@
           "params": [
             {
               "name": "layer",
-              "type": "RefPtr<AnimationLayer3D>",
+              "type": "MaybePtr<AnimationLayer3D>",
               "default": null
             }
           ],
@@ -8796,7 +8796,7 @@
           "name": "skeleton",
           "setter": "skeleton=",
           "cpp_name": "Skeleton",
-          "cpp_type": "RefPtr<Skeleton3D>",
+          "cpp_type": "MaybePtr<Skeleton3D>",
           "ruby_type": "Skeleton3D",
           "static": false,
           "override": false,
@@ -8959,7 +8959,7 @@
             },
             {
               "name": "material",
-              "type": "RefPtr<Material3D>",
+              "type": "MaybePtr<Material3D>",
               "default": null
             }
           ],
@@ -9159,7 +9159,7 @@
             },
             {
               "name": "texture",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -9209,7 +9209,7 @@
             },
             {
               "name": "texture",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -9658,7 +9658,7 @@
           "name": "texture",
           "setter": "texture=",
           "cpp_name": "Texture",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -10102,7 +10102,7 @@
             },
             {
               "name": "texture",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -10314,7 +10314,7 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": null
             }
           ],
@@ -10331,7 +10331,7 @@
           "params": [
             {
               "name": "camera",
-              "type": "RefPtr<Camera3D>",
+              "type": "MaybePtr<Camera3D>",
               "default": null
             }
           ],
@@ -10353,7 +10353,7 @@
             },
             {
               "name": "clear",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": "nullptr"
             },
             {
@@ -10515,7 +10515,7 @@
           "params": [
             {
               "name": "buffer",
-              "type": "RefPtr<GPUBuffer>",
+              "type": "MaybePtr<GPUBuffer>",
               "default": null
             },
             {
@@ -10619,7 +10619,7 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": null
             }
           ],
@@ -10764,7 +10764,7 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<MaterialPass3D>",
+              "type": "MaybePtr<MaterialPass3D>",
               "default": null
             }
           ],
@@ -10792,7 +10792,7 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<ComputePass3D>",
+              "type": "MaybePtr<ComputePass3D>",
               "default": null
             }
           ],
@@ -10932,7 +10932,7 @@
           "name": "camera",
           "setter": "camera=",
           "cpp_name": "Camera",
-          "cpp_type": "RefPtr<Camera3D>",
+          "cpp_type": "MaybePtr<Camera3D>",
           "ruby_type": "Camera3D",
           "static": false,
           "override": false,
@@ -10987,7 +10987,7 @@
           "name": "shadow_light",
           "setter": "shadow_light=",
           "cpp_name": "ShadowLight",
-          "cpp_type": "RefPtr<Light3D>",
+          "cpp_type": "MaybePtr<Light3D>",
           "ruby_type": "Light3D",
           "static": false,
           "override": false,
@@ -10998,7 +10998,7 @@
           "name": "point_shadow_light",
           "setter": "point_shadow_light=",
           "cpp_name": "PointShadowLight",
-          "cpp_type": "RefPtr<Light3D>",
+          "cpp_type": "MaybePtr<Light3D>",
           "ruby_type": "Light3D",
           "static": false,
           "override": false,
@@ -11278,7 +11278,7 @@
           "params": [
             {
               "name": "value",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": null
             }
           ],
@@ -11302,7 +11302,7 @@
           "name": "camera",
           "setter": "camera=",
           "cpp_name": "Camera",
-          "cpp_type": "RefPtr<Camera3D>",
+          "cpp_type": "MaybePtr<Camera3D>",
           "ruby_type": "Camera3D",
           "static": false,
           "override": false,
@@ -11593,7 +11593,7 @@
           "name": "scene",
           "setter": "scene=",
           "cpp_name": "Scene",
-          "cpp_type": "RefPtr<Node3D>",
+          "cpp_type": "MaybePtr<Node3D>",
           "ruby_type": "Node3D",
           "static": false,
           "override": false,
@@ -11604,7 +11604,7 @@
           "name": "camera",
           "setter": "camera=",
           "cpp_name": "Camera",
-          "cpp_type": "RefPtr<Camera3D>",
+          "cpp_type": "MaybePtr<Camera3D>",
           "ruby_type": "Camera3D",
           "static": false,
           "override": false,
@@ -11615,7 +11615,7 @@
           "name": "graph",
           "setter": "graph=",
           "cpp_name": "Graph",
-          "cpp_type": "RefPtr<RenderGraph3D>",
+          "cpp_type": "MaybePtr<RenderGraph3D>",
           "ruby_type": "RenderGraph3D",
           "static": false,
           "override": false,
@@ -11649,7 +11649,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             }
           ],
@@ -11745,7 +11745,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -11767,7 +11767,7 @@
           "name": "bitmap",
           "setter": "bitmap=",
           "cpp_name": "Bitmap",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -11789,7 +11789,7 @@
           "name": "effect",
           "setter": "effect=",
           "cpp_name": "Effect",
-          "cpp_type": "RefPtr<Effect>",
+          "cpp_type": "MaybePtr<Effect>",
           "ruby_type": "Effect",
           "static": false,
           "override": false,
@@ -12187,7 +12187,7 @@
               "default": null
             }
           ],
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "params": [
@@ -12202,7 +12202,7 @@
               "default": null
             }
           ],
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         }
       ],
       "initialize_copy": {
@@ -12213,7 +12213,7 @@
             "default": null
           }
         ],
-        "export": "core/canvas/bitmap.h:43-144"
+        "export": "core/canvas/bitmap.h:43-142"
       },
       "instance_methods": [
         {
@@ -12225,7 +12225,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "height",
@@ -12236,7 +12236,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "rect",
@@ -12247,7 +12247,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "blt",
@@ -12284,7 +12284,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "stretch_blt",
@@ -12316,7 +12316,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "mask_blt",
@@ -12348,7 +12348,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "fill_rect",
@@ -12385,7 +12385,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "fill_rect",
@@ -12407,7 +12407,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -12454,7 +12454,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -12486,7 +12486,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "clear",
@@ -12497,7 +12497,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "clear_rect",
@@ -12529,7 +12529,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "clear_rect",
@@ -12546,7 +12546,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "get_pixel",
@@ -12568,24 +12568,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
-        },
-        {
-          "ruby_name": "save_ppm",
-          "cpp_name": "SavePpm",
-          "return": {
-            "cpp_type": "void",
-            "ruby_type": "nil"
-          },
-          "params": [
-            {
-              "name": "filename",
-              "type": "std::string",
-              "default": null
-            }
-          ],
-          "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "set_pixel",
@@ -12612,7 +12595,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "hue_change",
@@ -12629,7 +12612,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "blur",
@@ -12640,7 +12623,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "radial_blur",
@@ -12662,7 +12645,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "draw_text",
@@ -12704,7 +12687,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "draw_text",
@@ -12731,7 +12714,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "text_size",
@@ -12748,7 +12731,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "texture_view",
@@ -12759,7 +12742,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "texture",
@@ -12770,7 +12753,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "depth_stencil_view",
@@ -12781,7 +12764,7 @@
           },
           "params": [],
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "to_image",
@@ -12792,7 +12775,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         },
         {
           "ruby_name": "update_with_image",
@@ -12809,7 +12792,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         }
       ],
       "attributes": [
@@ -12822,7 +12805,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         }
       ],
       "data_attributes": [],
@@ -12842,7 +12825,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-144"
+          "export": "core/canvas/bitmap.h:43-142"
         }
       ],
       "class_attributes": [],
@@ -12854,7 +12837,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/bitmap.h:43-144",
+      "export": "core/canvas/bitmap.h:43-142",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/canvas/bitmap.h",
@@ -12888,11 +12871,11 @@
               "default": "255.f"
             }
           ],
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         }
       ],
       "initialize_copy": {
@@ -12903,7 +12886,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:128-187"
+        "export": "core/common/utility.h:124-177"
       },
       "instance_methods": [
         {
@@ -12936,7 +12919,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         },
         {
           "ruby_name": "set",
@@ -12953,7 +12936,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         }
       ],
       "attributes": [
@@ -12966,7 +12949,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         },
         {
           "name": "green",
@@ -12977,7 +12960,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         },
         {
           "name": "blue",
@@ -12988,7 +12971,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         },
         {
           "name": "alpha",
@@ -12999,7 +12982,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:128-187"
+          "export": "core/common/utility.h:124-177"
         }
       ],
       "data_attributes": [],
@@ -13013,7 +12996,7 @@
       "equal": true,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:128-187",
+      "export": "core/common/utility.h:124-177",
       "cpp_name": "Color",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -13878,7 +13861,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             }
           ],
@@ -13892,7 +13875,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -13903,7 +13886,7 @@
           "name": "bitmap",
           "setter": "bitmap=",
           "cpp_name": "Bitmap",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -14044,11 +14027,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         }
       ],
       "initialize_copy": {
@@ -14059,7 +14042,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:45-113"
+        "export": "core/common/utility.h:45-109"
       },
       "instance_methods": [
         {
@@ -14092,7 +14075,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         },
         {
           "ruby_name": "set",
@@ -14109,7 +14092,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         },
         {
           "ruby_name": "empty",
@@ -14120,7 +14103,7 @@
           },
           "params": [],
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         }
       ],
       "attributes": [
@@ -14133,7 +14116,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         },
         {
           "name": "y",
@@ -14144,7 +14127,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         },
         {
           "name": "width",
@@ -14155,7 +14138,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         },
         {
           "name": "height",
@@ -14166,7 +14149,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:45-113"
+          "export": "core/common/utility.h:45-109"
         }
       ],
       "data_attributes": [],
@@ -14180,7 +14163,7 @@
       "equal": true,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:45-113",
+      "export": "core/common/utility.h:45-109",
       "cpp_name": "Rect",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -14195,7 +14178,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             }
           ],
@@ -14214,7 +14197,7 @@
           "params": [
             {
               "name": "color",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": null
             },
             {
@@ -14265,7 +14248,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -14276,7 +14259,7 @@
           "name": "bitmap",
           "setter": "bitmap=",
           "cpp_name": "Bitmap",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -14496,7 +14479,7 @@
           "name": "effect",
           "setter": "effect=",
           "cpp_name": "Effect",
-          "cpp_type": "RefPtr<Effect>",
+          "cpp_type": "MaybePtr<Effect>",
           "ruby_type": "Effect",
           "static": false,
           "override": false,
@@ -14715,11 +14698,11 @@
               "default": "0.f"
             }
           ],
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         }
       ],
       "initialize_copy": {
@@ -14730,7 +14713,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:207-258"
+        "export": "core/common/utility.h:197-242"
       },
       "instance_methods": [
         {
@@ -14763,7 +14746,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         },
         {
           "ruby_name": "set",
@@ -14780,7 +14763,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         }
       ],
       "attributes": [
@@ -14793,7 +14776,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         },
         {
           "name": "green",
@@ -14804,7 +14787,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         },
         {
           "name": "blue",
@@ -14815,7 +14798,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         },
         {
           "name": "gray",
@@ -14826,7 +14809,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:207-258"
+          "export": "core/common/utility.h:197-242"
         }
       ],
       "data_attributes": [],
@@ -14840,7 +14823,7 @@
       "equal": true,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:207-258",
+      "export": "core/common/utility.h:197-242",
       "cpp_name": "Tone",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -14864,7 +14847,7 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         },
         {
           "params": [
@@ -14874,11 +14857,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         }
       ],
       "initialize_copy": {
@@ -14889,7 +14872,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:278-310"
+        "export": "core/common/utility.h:262-288"
       },
       "instance_methods": [
         {
@@ -14912,7 +14895,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         },
         {
           "ruby_name": "set",
@@ -14929,7 +14912,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         }
       ],
       "attributes": [
@@ -14942,7 +14925,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         },
         {
           "name": "y",
@@ -14953,7 +14936,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:278-310"
+          "export": "core/common/utility.h:262-288"
         }
       ],
       "data_attributes": [],
@@ -14967,7 +14950,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:278-310",
+      "export": "core/common/utility.h:262-288",
       "cpp_name": "Vector2",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -14996,7 +14979,7 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         },
         {
           "params": [
@@ -15006,11 +14989,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         }
       ],
       "initialize_copy": {
@@ -15021,7 +15004,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:321-360"
+        "export": "core/common/utility.h:299-332"
       },
       "instance_methods": [
         {
@@ -15049,7 +15032,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         },
         {
           "ruby_name": "set",
@@ -15066,7 +15049,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         }
       ],
       "attributes": [
@@ -15079,7 +15062,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         },
         {
           "name": "y",
@@ -15090,7 +15073,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         },
         {
           "name": "z",
@@ -15101,7 +15084,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:321-360"
+          "export": "core/common/utility.h:299-332"
         }
       ],
       "data_attributes": [],
@@ -15115,7 +15098,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:321-360",
+      "export": "core/common/utility.h:299-332",
       "cpp_name": "Vector3",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -15149,7 +15132,7 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         },
         {
           "params": [
@@ -15159,11 +15142,11 @@
               "default": null
             }
           ],
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         },
         {
           "params": [],
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         }
       ],
       "initialize_copy": {
@@ -15174,7 +15157,7 @@
             "default": null
           }
         ],
-        "export": "core/common/utility.h:371-419"
+        "export": "core/common/utility.h:343-385"
       },
       "instance_methods": [
         {
@@ -15207,7 +15190,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         },
         {
           "ruby_name": "set",
@@ -15224,7 +15207,7 @@
             }
           ],
           "header_annotation": false,
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         }
       ],
       "attributes": [
@@ -15237,7 +15220,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         },
         {
           "name": "y",
@@ -15248,7 +15231,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         },
         {
           "name": "z",
@@ -15259,7 +15242,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         },
         {
           "name": "w",
@@ -15270,7 +15253,7 @@
           "static": false,
           "override": false,
           "header_annotation": false,
-          "export": "core/common/utility.h:371-419"
+          "export": "core/common/utility.h:343-385"
         }
       ],
       "data_attributes": [],
@@ -15284,7 +15267,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/common/utility.h:371-419",
+      "export": "core/common/utility.h:343-385",
       "cpp_name": "Vector4",
       "cpp_parent": "Object",
       "header": "core/common/utility.h",
@@ -15299,7 +15282,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             },
             {
@@ -15339,7 +15322,7 @@
             },
             {
               "name": "bitmap",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -15369,7 +15352,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -15402,7 +15385,7 @@
           "name": "map_data",
           "setter": "map_data=",
           "cpp_name": "MapData",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15413,7 +15396,7 @@
           "name": "flash_data",
           "setter": "flash_data=",
           "cpp_name": "FlashData",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15424,7 +15407,7 @@
           "name": "flags",
           "setter": "flags=",
           "cpp_name": "Flags",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15435,7 +15418,7 @@
           "name": "passages",
           "setter": "passages=",
           "cpp_name": "Passages",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15491,7 +15474,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             },
             {
@@ -15526,7 +15509,7 @@
           "params": [
             {
               "name": "bitmap",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -15559,7 +15542,7 @@
             },
             {
               "name": "bitmap",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -15589,7 +15572,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -15622,7 +15605,7 @@
           "name": "map_data",
           "setter": "map_data=",
           "cpp_name": "MapData",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15633,7 +15616,7 @@
           "name": "flash_data",
           "setter": "flash_data=",
           "cpp_name": "FlashData",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15644,7 +15627,7 @@
           "name": "priorities",
           "setter": "priorities=",
           "cpp_name": "Priorities",
-          "cpp_type": "RefPtr<Table>",
+          "cpp_type": "MaybePtr<Table>",
           "ruby_type": "Table",
           "static": false,
           "override": false,
@@ -15748,7 +15731,7 @@
           "params": [
             {
               "name": "color",
-              "type": "RefPtr<Color>",
+              "type": "MaybePtr<Color>",
               "default": null
             },
             {
@@ -15832,7 +15815,7 @@
           "name": "effect",
           "setter": "effect=",
           "cpp_name": "Effect",
-          "cpp_type": "RefPtr<Effect>",
+          "cpp_type": "MaybePtr<Effect>",
           "ruby_type": "Effect",
           "static": false,
           "override": false,
@@ -15891,7 +15874,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             }
           ],
@@ -15971,7 +15954,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -15982,7 +15965,7 @@
           "name": "windowskin",
           "setter": "windowskin=",
           "cpp_name": "Windowskin",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -15993,7 +15976,7 @@
           "name": "contents",
           "setter": "contents=",
           "cpp_name": "Contents",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -16214,7 +16197,7 @@
           "params": [
             {
               "name": "viewport",
-              "type": "RefPtr<Viewport>",
+              "type": "MaybePtr<Viewport>",
               "default": "nullptr"
             }
           ],
@@ -16251,7 +16234,7 @@
           "name": "viewport",
           "setter": "viewport=",
           "cpp_name": "Viewport",
-          "cpp_type": "RefPtr<Viewport>",
+          "cpp_type": "MaybePtr<Viewport>",
           "ruby_type": "Viewport",
           "static": false,
           "override": false,
@@ -16262,7 +16245,7 @@
           "name": "windowskin",
           "setter": "windowskin=",
           "cpp_name": "Windowskin",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -16273,7 +16256,7 @@
           "name": "contents",
           "setter": "contents=",
           "cpp_name": "Contents",
-          "cpp_type": "RefPtr<Bitmap>",
+          "cpp_type": "MaybePtr<Bitmap>",
           "ruby_type": "Bitmap",
           "static": false,
           "override": false,
@@ -16548,7 +16531,7 @@
             },
             {
               "name": "texture",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -16570,7 +16553,7 @@
             },
             {
               "name": "texture",
-              "type": "RefPtr<Bitmap>",
+              "type": "MaybePtr<Bitmap>",
               "default": null
             }
           ],
@@ -17473,7 +17456,7 @@
           "name": "position",
           "setter": "position=",
           "cpp_name": "Position",
-          "cpp_type": "RefPtr<Vector3>",
+          "cpp_type": "MaybePtr<Vector3>",
           "ruby_type": "Vector3",
           "static": false,
           "override": false,
@@ -17484,7 +17467,7 @@
           "name": "quaternion",
           "setter": "quaternion=",
           "cpp_name": "Quaternion",
-          "cpp_type": "RefPtr<Vector4>",
+          "cpp_type": "MaybePtr<Vector4>",
           "ruby_type": "Vector4",
           "static": false,
           "override": false,
@@ -17495,7 +17478,7 @@
           "name": "scale",
           "setter": "scale=",
           "cpp_name": "Scale",
-          "cpp_type": "RefPtr<Vector3>",
+          "cpp_type": "MaybePtr<Vector3>",
           "ruby_type": "Vector3",
           "static": false,
           "override": false,

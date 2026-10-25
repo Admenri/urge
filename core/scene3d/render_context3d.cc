@@ -393,8 +393,6 @@ void RenderContext3D::BeginPassEx(RefPtr<RenderTarget3D> target,
                                   bool clear_depth,
                                   bool clear_stencil,
                                   int32_t layer) {
-  if (!target)
-    throw Exception(Exception::kRGSSError, "render pass needs a target.");
   if (!encoder_)
     throw Exception(Exception::kRGSSError, "render context has no encoder.");
 

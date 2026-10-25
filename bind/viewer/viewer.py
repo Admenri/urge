@@ -145,7 +145,7 @@ def ruby_default(param: dict) -> str | None:
             return "[]"
         if "string" in cpp_type:
             return '""'
-        if cpp_type.startswith("RefPtr"):
+        if cpp_type.startswith(("RefPtr", "MaybePtr")):
             return "nil"
         return "{}"
     if default in ("std::string()", "std::string{}"):

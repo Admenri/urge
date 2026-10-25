@@ -35,14 +35,14 @@ URGE_BINDING()
 class Plane : public Node {
  public:
   URGE_BINDING()
-  Plane(RefPtr<Viewport> viewport = nullptr);
+  Plane(MaybePtr<Viewport> viewport = nullptr);
   URGE_BINDING()
   ~Plane() override;
 
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Bitmap);
+  ATTR(MaybePtr<Bitmap>, Bitmap);
   URGE_BINDING()
   ATTR(int32_t, OX);
   URGE_BINDING()

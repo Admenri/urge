@@ -36,33 +36,37 @@ RB_DEF_TYPE_INHERIT(GPUQuerySet, GPUObject);
 RB_FUNC(GPUQuerySet_Type) {
   auto* self_obj = GetSelfData<urge::GPUQuerySet>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Type());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Type();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUQuerySet_Count) {
   auto* self_obj = GetSelfData<urge::GPUQuerySet>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Count());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Count();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUQuerySet_Destroy) {
   auto* self_obj = GetSelfData<urge::GPUQuerySet>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Destroy();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

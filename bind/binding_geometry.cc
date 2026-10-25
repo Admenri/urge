@@ -44,99 +44,128 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Geometry, Node);
 
 RB_FUNC(Geometry_initialize) {
-  urge::RefPtr<urge::Geometry> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Geometry>();
-    } else if (argc == 1) {
-      // initialize(viewport)
-      VALUE viewport_val;
-      ParseArgs(argc, argv, "o", &viewport_val);
-      obj = urge::MakeRefCounted<urge::Geometry>(
-          GetObject<urge::Viewport>(viewport_val, kViewportDataType));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Geometry* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Geometry> value = urge::MakeRefCounted<urge::Geometry>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(viewport)
+    VALUE viewport_val;
+    urge::Viewport* viewport;
+    ParseArgs(argc, argv, "o", &viewport_val);
+    viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
+
+    urge::Geometry* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Geometry> value = urge::MakeRefCounted<urge::Geometry>(
+          viewport);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Geometry_SetPosition) {
   auto* self_obj = GetSelfData<urge::Geometry>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    int triangle, point;
-    VALUE position_val;
-    ParseArgs(argc, argv, "iio", &triangle, &point, &position_val);
+  CheckArgc(argc, 3);
+  int triangle, point;
+  VALUE position_val;
+  urge::Vector3* position;
+  ParseArgs(argc, argv, "iio", &triangle, &point, &position_val);
+  position = CheckObject<urge::Vector3>(position_val, kVector3DataType);
 
-    self_obj->SetPosition(triangle, point,
-        GetObject<urge::Vector3>(position_val, kVector3DataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetPosition(triangle, point, position);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Geometry_SetTexcoord) {
   auto* self_obj = GetSelfData<urge::Geometry>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    int triangle, point;
-    VALUE texcoord_val;
-    ParseArgs(argc, argv, "iio", &triangle, &point, &texcoord_val);
+  CheckArgc(argc, 3);
+  int triangle, point;
+  VALUE texcoord_val;
+  urge::Vector2* texcoord;
+  ParseArgs(argc, argv, "iio", &triangle, &point, &texcoord_val);
+  texcoord = CheckObject<urge::Vector2>(texcoord_val, kVector2DataType);
 
-    self_obj->SetTexcoord(triangle, point,
-        GetObject<urge::Vector2>(texcoord_val, kVector2DataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTexcoord(triangle, point, texcoord);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Geometry_SetColor) {
   auto* self_obj = GetSelfData<urge::Geometry>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    int triangle, point;
-    VALUE color_val;
-    ParseArgs(argc, argv, "iio", &triangle, &point, &color_val);
+  CheckArgc(argc, 3);
+  int triangle, point;
+  VALUE color_val;
+  urge::Color* color;
+  ParseArgs(argc, argv, "iio", &triangle, &point, &color_val);
+  color = CheckObject<urge::Color>(color_val, kColorDataType);
 
-    self_obj->SetColor(triangle, point,
-        GetObject<urge::Color>(color_val, kColorDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetColor(triangle, point, color);
+  } CPP_END;
+
   return Qnil;
 }
 
-// Attribute: viewport (RefPtr<Viewport>)
+// Attribute: viewport (MaybePtr<Viewport>)
 BINDING_ATTR_OBJECT_REF(Geometry,
                         urge::Geometry,
                         Viewport,
                         urge::Viewport,
-                        kViewportDataType);
+                        kViewportDataType,
+                        CheckMaybeObject);
 
 // Attribute: capacity (int32_t)
 BINDING_ATTR_INT(Geometry, urge::Geometry, Capacity);
 
-// Attribute: bitmap (RefPtr<Bitmap>)
+// Attribute: bitmap (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(Geometry,
                         urge::Geometry,
                         Bitmap,
                         urge::Bitmap,
-                        kBitmapDataType);
+                        kBitmapDataType,
+                        CheckMaybeObject);
 
 // Attribute: blend_type (int32_t)
 BINDING_ATTR_INT(Geometry, urge::Geometry, BlendType);
 
-// Attribute: effect (RefPtr<Effect>)
+// Attribute: effect (MaybePtr<Effect>)
 BINDING_ATTR_OBJECT_REF(Geometry,
                         urge::Geometry,
                         Effect,
                         urge::Effect,
-                        kEffectDataType);
+                        kEffectDataType,
+                        CheckMaybeObject);
 
 void InitGeometryBindingAppend(VALUE klass);
 

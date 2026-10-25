@@ -39,76 +39,99 @@ RB_DEF_TYPE_INHERIT(GPUQueue, GPUObject);
 RB_FUNC(GPUQueue_Submit) {
   auto* self_obj = GetSelfData<urge::GPUQueue>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE command_buffer_val;
-    ParseArgs(argc, argv, "o", &command_buffer_val);
+  CheckArgc(argc, 1);
+  VALUE command_buffer_val;
+  urge::GPUCommandBuffer* command_buffer;
+  ParseArgs(argc, argv, "o", &command_buffer_val);
+  command_buffer = CheckObject<urge::GPUCommandBuffer>(command_buffer_val, kGPUCommandBufferDataType);
 
-    self_obj->Submit(
-        GetObject<urge::GPUCommandBuffer>(command_buffer_val, kGPUCommandBufferDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Submit(command_buffer);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUQueue_WriteBuffer) {
   auto* self_obj = GetSelfData<urge::GPUQueue>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    VALUE buffer_val;
-    uint64_t offset;
-    std::string data;
-    ParseArgs(argc, argv, "ops", &buffer_val, &offset, &data);
+  CheckArgc(argc, 3);
+  VALUE buffer_val, data_val;
+  urge::GPUBuffer* buffer;
+  uint64_t offset;
+  const char* data_data;
+  size_t data_size;
+  ParseArgs(argc, argv, "opo", &buffer_val, &offset, &data_val);
+  buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
+  CheckString(data_val, &data_data, &data_size);
 
-    self_obj->WriteBuffer(
-        GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset,
-        data);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->WriteBuffer(buffer, offset, std::string(data_data, data_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUQueue_WriteTexture) {
   auto* self_obj = GetSelfData<urge::GPUQueue>(self);
 
-  EXC_BEGIN {
-    if (argc == 7) {
-      // write_texture(texture, mip_level, x, y, width, height, data)
-      VALUE texture_val;
-      uint32_t mip_level, x, y, width, height;
-      std::string data;
-      ParseArgs(argc, argv, "ouuuuus", &texture_val, &mip_level, &x, &y, &width,
-          &height, &data);
-      self_obj->WriteTexture(
-          GetObject<urge::GPUTexture>(texture_val, kGPUTextureDataType),
-          mip_level, x, y, width, height, data);
-    } else if (argc == 8) {
-      // write_texture(texture, mip_level, x, y, width, height, data, bytes_per_row)
-      VALUE texture_val;
-      uint32_t mip_level, x, y, width, height, bytes_per_row;
-      std::string data;
-      ParseArgs(argc, argv, "ouuuuusu", &texture_val, &mip_level, &x, &y,
-          &width, &height, &data, &bytes_per_row);
-      self_obj->WriteTexture(
-          GetObject<urge::GPUTexture>(texture_val, kGPUTextureDataType),
-          mip_level, x, y, width, height, data, bytes_per_row);
-    } else if (argc == 9) {
-      // write_texture(texture, mip_level, x, y, width, height, data, bytes_per_row, rows_per_image)
-      VALUE texture_val;
-      uint32_t mip_level, x, y, width, height, bytes_per_row, rows_per_image;
-      std::string data;
-      ParseArgs(argc, argv, "ouuuuusuu", &texture_val, &mip_level, &x, &y,
-          &width, &height, &data, &bytes_per_row, &rows_per_image);
-      self_obj->WriteTexture(
-          GetObject<urge::GPUTexture>(texture_val, kGPUTextureDataType),
-          mip_level, x, y, width, height, data, bytes_per_row, rows_per_image);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 7) {
+    // write_texture(texture, mip_level, x, y, width, height, data)
+    VALUE texture_val, data_val;
+    urge::GPUTexture* texture;
+    uint32_t mip_level, x, y, width, height;
+    const char* data_data;
+    size_t data_size;
+    ParseArgs(argc, argv, "ouuuuuo", &texture_val, &mip_level, &x, &y, &width,
+        &height, &data_val);
+    texture = CheckObject<urge::GPUTexture>(texture_val, kGPUTextureDataType);
+    CheckString(data_val, &data_data, &data_size);
+
+    CPP_BEGIN {
+      self_obj->WriteTexture(texture, mip_level, x, y, width, height,
+          std::string(data_data, data_size));
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 8) {
+    // write_texture(texture, mip_level, x, y, width, height, data, bytes_per_row)
+    VALUE texture_val, data_val;
+    urge::GPUTexture* texture;
+    uint32_t mip_level, x, y, width, height, bytes_per_row;
+    const char* data_data;
+    size_t data_size;
+    ParseArgs(argc, argv, "ouuuuuou", &texture_val, &mip_level, &x, &y, &width,
+        &height, &data_val, &bytes_per_row);
+    texture = CheckObject<urge::GPUTexture>(texture_val, kGPUTextureDataType);
+    CheckString(data_val, &data_data, &data_size);
+
+    CPP_BEGIN {
+      self_obj->WriteTexture(texture, mip_level, x, y, width, height,
+          std::string(data_data, data_size), bytes_per_row);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 9) {
+    // write_texture(texture, mip_level, x, y, width, height, data, bytes_per_row, rows_per_image)
+    VALUE texture_val, data_val;
+    urge::GPUTexture* texture;
+    uint32_t mip_level, x, y, width, height, bytes_per_row, rows_per_image;
+    const char* data_data;
+    size_t data_size;
+    ParseArgs(argc, argv, "ouuuuuouu", &texture_val, &mip_level, &x, &y, &width,
+        &height, &data_val, &bytes_per_row, &rows_per_image);
+    texture = CheckObject<urge::GPUTexture>(texture_val, kGPUTextureDataType);
+    CheckString(data_val, &data_data, &data_size);
+
+    CPP_BEGIN {
+      self_obj->WriteTexture(texture, mip_level, x, y, width, height,
+          std::string(data_data, data_size), bytes_per_row, rows_per_image);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 void InitGPUQueueBindingAppend(VALUE klass);

@@ -37,79 +37,104 @@ namespace binding {
 RB_DEF_TYPE(ComputePass3D);
 
 RB_FUNC(ComputePass3D_initialize) {
-  urge::RefPtr<urge::ComputePass3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string wgsl, entry;
-    ParseArgs(argc, argv, "ss", &wgsl, &entry);
+  VALUE wgsl_val, entry_val;
+  const char* wgsl_data;
+  size_t wgsl_size, entry_size;
+  const char* entry_data;
+  ParseArgs(argc, argv, "oo", &wgsl_val, &entry_val);
+  CheckString(wgsl_val, &wgsl_data, &wgsl_size);
+  CheckString(entry_val, &entry_data, &entry_size);
 
-    obj = urge::MakeRefCounted<urge::ComputePass3D>(wgsl, entry);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::ComputePass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::ComputePass3D> value = urge::MakeRefCounted<urge::ComputePass3D>(
+        std::string(wgsl_data, wgsl_size), std::string(entry_data, entry_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(ComputePass3D_SetUniform) {
   auto* self_obj = GetSelfData<urge::ComputePass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string name;
-    VALUE values_val;
-    ParseArgs(argc, argv, "so", &name, &values_val);
+  CheckArgc(argc, 2);
+  VALUE name_val, values_val;
+  const char* name_data;
+  size_t name_size;
+  ParseArgs(argc, argv, "oo", &name_val, &values_val);
+  CheckString(name_val, &name_data, &name_size);
+  CheckVectorOf<float>(values_val);
 
-    self_obj->SetUniform(name, GetVectorOf<float>(values_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetUniform(std::string(name_data, name_size),
+        TakeVectorOf<float>(values_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ComputePass3D_SetBuffer) {
   auto* self_obj = GetSelfData<urge::ComputePass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string name;
-    VALUE values_val;
-    ParseArgs(argc, argv, "so", &name, &values_val);
+  CheckArgc(argc, 2);
+  VALUE name_val, values_val;
+  const char* name_data;
+  size_t name_size;
+  ParseArgs(argc, argv, "oo", &name_val, &values_val);
+  CheckString(name_val, &name_data, &name_size);
+  CheckVectorOf<float>(values_val);
 
-    self_obj->SetBuffer(name, GetVectorOf<float>(values_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetBuffer(std::string(name_data, name_size),
+        TakeVectorOf<float>(values_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ComputePass3D_SetTexture) {
   auto* self_obj = GetSelfData<urge::ComputePass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string name;
-    VALUE texture_val;
-    ParseArgs(argc, argv, "so", &name, &texture_val);
+  CheckArgc(argc, 2);
+  VALUE name_val, texture_val;
+  const char* name_data;
+  size_t name_size;
+  urge::Bitmap* texture;
+  ParseArgs(argc, argv, "oo", &name_val, &texture_val);
+  CheckString(name_val, &name_data, &name_size);
+  texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-    self_obj->SetTexture(name,
-        GetObject<urge::Bitmap>(texture_val, kBitmapDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTexture(std::string(name_data, name_size), texture);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ComputePass3D_SetTarget) {
   auto* self_obj = GetSelfData<urge::ComputePass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    std::string name;
-    VALUE target_val;
-    int index;
-    ParseArgs(argc, argv, "soi", &name, &target_val, &index);
+  CheckArgc(argc, 3);
+  VALUE name_val, target_val;
+  const char* name_data;
+  size_t name_size;
+  urge::RenderTarget3D* target;
+  int index;
+  ParseArgs(argc, argv, "ooi", &name_val, &target_val, &index);
+  CheckString(name_val, &name_data, &name_size);
+  target = CheckObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType);
 
-    self_obj->SetTarget(name,
-        GetObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType),
-        index);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTarget(std::string(name_data, name_size), target, index);
+  } CPP_END;
+
   return Qnil;
 }
 

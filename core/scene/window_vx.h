@@ -38,7 +38,7 @@ class WindowVX : public Node {
   URGE_BINDING()
   WindowVX(int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING()
-  WindowVX(RefPtr<Viewport> viewport = nullptr);
+  WindowVX(MaybePtr<Viewport> viewport = nullptr);
   URGE_BINDING()
   ~WindowVX() override;
 
@@ -52,11 +52,11 @@ class WindowVX : public Node {
   bool Closed();
 
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Windowskin);
+  ATTR(MaybePtr<Bitmap>, Windowskin);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Contents);
+  ATTR(MaybePtr<Bitmap>, Contents);
   URGE_BINDING()
   ATTR(RefPtr<Rect>, CursorRect);
   URGE_BINDING()

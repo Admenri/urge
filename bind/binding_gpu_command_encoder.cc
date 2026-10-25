@@ -44,259 +44,334 @@ RB_DEF_TYPE_INHERIT(GPUCommandEncoder, GPUObject);
 RB_FUNC(GPUCommandEncoder_BeginRenderPass) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPURenderPassDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPURenderPassDescriptor>(descriptor_val, kGPURenderPassDescriptorDataType);
 
-    auto result = self_obj->BeginRenderPass(GetObject<urge::GPURenderPassDescriptor>(descriptor_val, kGPURenderPassDescriptorDataType));
-    return WrapObject(result.get(), kGPURenderPassEncoderDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPURenderPassEncoder* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPURenderPassEncoder> value = self_obj->BeginRenderPass(
+        descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPURenderPassEncoderDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPUCommandEncoder_BeginComputePass) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 0) {
-      // begin_compute_pass()
-      auto result = self_obj->BeginComputePass();
-      return WrapObject(result.get(), kGPUComputePassEncoderDataType);
-    } else if (argc == 1) {
-      // begin_compute_pass(descriptor)
-      VALUE descriptor_val;
-      ParseArgs(argc, argv, "o", &descriptor_val);
-      auto result = self_obj->BeginComputePass(GetObject<urge::GPUComputePassDescriptor>(descriptor_val, kGPUComputePassDescriptorDataType));
-      return WrapObject(result.get(), kGPUComputePassEncoderDataType);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // begin_compute_pass()
+    urge::GPUComputePassEncoder* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::GPUComputePassEncoder> value = self_obj->BeginComputePass();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kGPUComputePassEncoderDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else if (argc == 1) {
+    // begin_compute_pass(descriptor)
+    VALUE descriptor_val;
+    urge::GPUComputePassDescriptor* descriptor;
+    ParseArgs(argc, argv, "o", &descriptor_val);
+    descriptor = CheckMaybeObject<urge::GPUComputePassDescriptor>(descriptor_val, kGPUComputePassDescriptorDataType);
+
+    urge::GPUComputePassEncoder* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::GPUComputePassEncoder> value = self_obj->BeginComputePass(
+          descriptor);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kGPUComputePassEncoderDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_CopyBufferToBuffer) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 5);
-    VALUE source_val, destination_val;
-    uint64_t source_offset, destination_offset, size;
-    ParseArgs(argc, argv, "opopp", &source_val, &source_offset,
-        &destination_val, &destination_offset, &size);
+  CheckArgc(argc, 5);
+  VALUE source_val, destination_val;
+  urge::GPUBuffer* source;
+  uint64_t source_offset, destination_offset, size;
+  urge::GPUBuffer* destination;
+  ParseArgs(argc, argv, "opopp", &source_val, &source_offset, &destination_val,
+      &destination_offset, &size);
+  source = CheckObject<urge::GPUBuffer>(source_val, kGPUBufferDataType);
+  destination = CheckObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType);
 
-    self_obj->CopyBufferToBuffer(
-        GetObject<urge::GPUBuffer>(source_val, kGPUBufferDataType),
-        source_offset,
-        GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
+  CPP_BEGIN {
+    self_obj->CopyBufferToBuffer(source, source_offset, destination,
         destination_offset, size);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_CopyBufferToTexture) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 9) {
-      // copy_buffer_to_texture(source, bytes_per_row, rows_per_image, destination, destination_mip_level, destination_x, destination_y, width, height)
-      VALUE source_val, destination_val;
-      uint32_t bytes_per_row, rows_per_image, destination_mip_level, destination_x, destination_y, width, height;
-      ParseArgs(argc, argv, "ouuouuuuu", &source_val, &bytes_per_row,
-          &rows_per_image, &destination_val, &destination_mip_level,
-          &destination_x, &destination_y, &width, &height);
-      self_obj->CopyBufferToTexture(
-          GetObject<urge::GPUBuffer>(source_val, kGPUBufferDataType),
-          bytes_per_row, rows_per_image,
-          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
-          destination_mip_level, destination_x, destination_y, width, height);
-    } else if (argc == 10) {
-      // copy_buffer_to_texture(source, bytes_per_row, rows_per_image, destination, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers)
-      VALUE source_val, destination_val;
-      uint32_t bytes_per_row, rows_per_image, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers;
-      ParseArgs(argc, argv, "ouuouuuuuu", &source_val, &bytes_per_row,
-          &rows_per_image, &destination_val, &destination_mip_level,
-          &destination_x, &destination_y, &width, &height,
-          &depth_or_array_layers);
-      self_obj->CopyBufferToTexture(
-          GetObject<urge::GPUBuffer>(source_val, kGPUBufferDataType),
-          bytes_per_row, rows_per_image,
-          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
-          destination_mip_level, destination_x, destination_y, width, height,
-          depth_or_array_layers);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 9) {
+    // copy_buffer_to_texture(source, bytes_per_row, rows_per_image, destination, destination_mip_level, destination_x, destination_y, width, height)
+    VALUE source_val, destination_val;
+    urge::GPUBuffer* source;
+    uint32_t bytes_per_row, rows_per_image, destination_mip_level, destination_x, destination_y, width, height;
+    urge::GPUTexture* destination;
+    ParseArgs(argc, argv, "ouuouuuuu", &source_val, &bytes_per_row,
+        &rows_per_image, &destination_val, &destination_mip_level,
+        &destination_x, &destination_y, &width, &height);
+    source = CheckObject<urge::GPUBuffer>(source_val, kGPUBufferDataType);
+    destination = CheckObject<urge::GPUTexture>(destination_val, kGPUTextureDataType);
+
+    CPP_BEGIN {
+      self_obj->CopyBufferToTexture(source, bytes_per_row, rows_per_image,
+          destination, destination_mip_level, destination_x, destination_y,
+          width, height);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 10) {
+    // copy_buffer_to_texture(source, bytes_per_row, rows_per_image, destination, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers)
+    VALUE source_val, destination_val;
+    urge::GPUBuffer* source;
+    uint32_t bytes_per_row, rows_per_image, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers;
+    urge::GPUTexture* destination;
+    ParseArgs(argc, argv, "ouuouuuuuu", &source_val, &bytes_per_row,
+        &rows_per_image, &destination_val, &destination_mip_level,
+        &destination_x, &destination_y, &width, &height,
+        &depth_or_array_layers);
+    source = CheckObject<urge::GPUBuffer>(source_val, kGPUBufferDataType);
+    destination = CheckObject<urge::GPUTexture>(destination_val, kGPUTextureDataType);
+
+    CPP_BEGIN {
+      self_obj->CopyBufferToTexture(source, bytes_per_row, rows_per_image,
+          destination, destination_mip_level, destination_x, destination_y,
+          width, height, depth_or_array_layers);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_CopyTextureToBuffer) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 9) {
-      // copy_texture_to_buffer(source, source_mip_level, source_x, source_y, destination, bytes_per_row, rows_per_image, width, height)
-      VALUE source_val, destination_val;
-      uint32_t source_mip_level, source_x, source_y, bytes_per_row, rows_per_image, width, height;
-      ParseArgs(argc, argv, "ouuuouuuu", &source_val, &source_mip_level,
-          &source_x, &source_y, &destination_val, &bytes_per_row,
-          &rows_per_image, &width, &height);
-      self_obj->CopyTextureToBuffer(
-          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
-          source_mip_level, source_x, source_y,
-          GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
-          bytes_per_row, rows_per_image, width, height);
-    } else if (argc == 10) {
-      // copy_texture_to_buffer(source, source_mip_level, source_x, source_y, destination, bytes_per_row, rows_per_image, width, height, depth_or_array_layers)
-      VALUE source_val, destination_val;
-      uint32_t source_mip_level, source_x, source_y, bytes_per_row, rows_per_image, width, height, depth_or_array_layers;
-      ParseArgs(argc, argv, "ouuuouuuuu", &source_val, &source_mip_level,
-          &source_x, &source_y, &destination_val, &bytes_per_row,
-          &rows_per_image, &width, &height, &depth_or_array_layers);
-      self_obj->CopyTextureToBuffer(
-          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
-          source_mip_level, source_x, source_y,
-          GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
-          bytes_per_row, rows_per_image, width, height, depth_or_array_layers);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 9) {
+    // copy_texture_to_buffer(source, source_mip_level, source_x, source_y, destination, bytes_per_row, rows_per_image, width, height)
+    VALUE source_val, destination_val;
+    urge::GPUTexture* source;
+    uint32_t source_mip_level, source_x, source_y, bytes_per_row, rows_per_image, width, height;
+    urge::GPUBuffer* destination;
+    ParseArgs(argc, argv, "ouuuouuuu", &source_val, &source_mip_level,
+        &source_x, &source_y, &destination_val, &bytes_per_row, &rows_per_image,
+        &width, &height);
+    source = CheckObject<urge::GPUTexture>(source_val, kGPUTextureDataType);
+    destination = CheckObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->CopyTextureToBuffer(source, source_mip_level, source_x,
+          source_y, destination, bytes_per_row, rows_per_image, width, height);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 10) {
+    // copy_texture_to_buffer(source, source_mip_level, source_x, source_y, destination, bytes_per_row, rows_per_image, width, height, depth_or_array_layers)
+    VALUE source_val, destination_val;
+    urge::GPUTexture* source;
+    uint32_t source_mip_level, source_x, source_y, bytes_per_row, rows_per_image, width, height, depth_or_array_layers;
+    urge::GPUBuffer* destination;
+    ParseArgs(argc, argv, "ouuuouuuuu", &source_val, &source_mip_level,
+        &source_x, &source_y, &destination_val, &bytes_per_row, &rows_per_image,
+        &width, &height, &depth_or_array_layers);
+    source = CheckObject<urge::GPUTexture>(source_val, kGPUTextureDataType);
+    destination = CheckObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->CopyTextureToBuffer(source, source_mip_level, source_x,
+          source_y, destination, bytes_per_row, rows_per_image, width, height,
+          depth_or_array_layers);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_CopyTextureToTexture) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 10) {
-      // copy_texture_to_texture(source, source_mip_level, source_x, source_y, destination, destination_mip_level, destination_x, destination_y, width, height)
-      VALUE source_val, destination_val;
-      uint32_t source_mip_level, source_x, source_y, destination_mip_level, destination_x, destination_y, width, height;
-      ParseArgs(argc, argv, "ouuuouuuuu", &source_val, &source_mip_level,
-          &source_x, &source_y, &destination_val, &destination_mip_level,
-          &destination_x, &destination_y, &width, &height);
-      self_obj->CopyTextureToTexture(
-          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
-          source_mip_level, source_x, source_y,
-          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
-          destination_mip_level, destination_x, destination_y, width, height);
-    } else if (argc == 11) {
-      // copy_texture_to_texture(source, source_mip_level, source_x, source_y, destination, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers)
-      VALUE source_val, destination_val;
-      uint32_t source_mip_level, source_x, source_y, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers;
-      ParseArgs(argc, argv, "ouuuouuuuuu", &source_val, &source_mip_level,
-          &source_x, &source_y, &destination_val, &destination_mip_level,
-          &destination_x, &destination_y, &width, &height,
-          &depth_or_array_layers);
-      self_obj->CopyTextureToTexture(
-          GetObject<urge::GPUTexture>(source_val, kGPUTextureDataType),
-          source_mip_level, source_x, source_y,
-          GetObject<urge::GPUTexture>(destination_val, kGPUTextureDataType),
-          destination_mip_level, destination_x, destination_y, width, height,
-          depth_or_array_layers);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 10) {
+    // copy_texture_to_texture(source, source_mip_level, source_x, source_y, destination, destination_mip_level, destination_x, destination_y, width, height)
+    VALUE source_val, destination_val;
+    urge::GPUTexture* source;
+    uint32_t source_mip_level, source_x, source_y, destination_mip_level, destination_x, destination_y, width, height;
+    urge::GPUTexture* destination;
+    ParseArgs(argc, argv, "ouuuouuuuu", &source_val, &source_mip_level,
+        &source_x, &source_y, &destination_val, &destination_mip_level,
+        &destination_x, &destination_y, &width, &height);
+    source = CheckObject<urge::GPUTexture>(source_val, kGPUTextureDataType);
+    destination = CheckObject<urge::GPUTexture>(destination_val, kGPUTextureDataType);
+
+    CPP_BEGIN {
+      self_obj->CopyTextureToTexture(source, source_mip_level, source_x,
+          source_y, destination, destination_mip_level, destination_x,
+          destination_y, width, height);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 11) {
+    // copy_texture_to_texture(source, source_mip_level, source_x, source_y, destination, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers)
+    VALUE source_val, destination_val;
+    urge::GPUTexture* source;
+    uint32_t source_mip_level, source_x, source_y, destination_mip_level, destination_x, destination_y, width, height, depth_or_array_layers;
+    urge::GPUTexture* destination;
+    ParseArgs(argc, argv, "ouuuouuuuuu", &source_val, &source_mip_level,
+        &source_x, &source_y, &destination_val, &destination_mip_level,
+        &destination_x, &destination_y, &width, &height,
+        &depth_or_array_layers);
+    source = CheckObject<urge::GPUTexture>(source_val, kGPUTextureDataType);
+    destination = CheckObject<urge::GPUTexture>(destination_val, kGPUTextureDataType);
+
+    CPP_BEGIN {
+      self_obj->CopyTextureToTexture(source, source_mip_level, source_x,
+          source_y, destination, destination_mip_level, destination_x,
+          destination_y, width, height, depth_or_array_layers);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_ResolveQuerySet) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 5);
-    VALUE query_set_val, destination_val;
-    uint32_t first_query, query_count;
-    uint64_t destination_offset;
-    ParseArgs(argc, argv, "ouuop", &query_set_val, &first_query, &query_count,
-        &destination_val, &destination_offset);
+  CheckArgc(argc, 5);
+  VALUE query_set_val, destination_val;
+  urge::GPUQuerySet* query_set;
+  uint32_t first_query, query_count;
+  urge::GPUBuffer* destination;
+  uint64_t destination_offset;
+  ParseArgs(argc, argv, "ouuop", &query_set_val, &first_query, &query_count,
+      &destination_val, &destination_offset);
+  query_set = CheckObject<urge::GPUQuerySet>(query_set_val, kGPUQuerySetDataType);
+  destination = CheckObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType);
 
-    self_obj->ResolveQuerySet(
-        GetObject<urge::GPUQuerySet>(query_set_val, kGPUQuerySetDataType),
-        first_query, query_count,
-        GetObject<urge::GPUBuffer>(destination_val, kGPUBufferDataType),
+  CPP_BEGIN {
+    self_obj->ResolveQuerySet(query_set, first_query, query_count, destination,
         destination_offset);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_ClearBuffer) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    VALUE buffer_val;
-    uint64_t offset, size;
-    ParseArgs(argc, argv, "opp", &buffer_val, &offset, &size);
+  CheckArgc(argc, 3);
+  VALUE buffer_val;
+  urge::GPUBuffer* buffer;
+  uint64_t offset, size;
+  ParseArgs(argc, argv, "opp", &buffer_val, &offset, &size);
+  buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
 
-    self_obj->ClearBuffer(
-        GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset,
-        size);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->ClearBuffer(buffer, offset, size);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_InsertDebugMarker) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string marker_label;
-    ParseArgs(argc, argv, "s", &marker_label);
+  CheckArgc(argc, 1);
+  VALUE marker_label_val;
+  const char* marker_label_data;
+  size_t marker_label_size;
+  ParseArgs(argc, argv, "o", &marker_label_val);
+  CheckString(marker_label_val, &marker_label_data, &marker_label_size);
 
-    self_obj->InsertDebugMarker(marker_label);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->InsertDebugMarker(
+        std::string(marker_label_data, marker_label_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_PushDebugGroup) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string group_label;
-    ParseArgs(argc, argv, "s", &group_label);
+  CheckArgc(argc, 1);
+  VALUE group_label_val;
+  const char* group_label_data;
+  size_t group_label_size;
+  ParseArgs(argc, argv, "o", &group_label_val);
+  CheckString(group_label_val, &group_label_data, &group_label_size);
 
-    self_obj->PushDebugGroup(group_label);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->PushDebugGroup(std::string(group_label_data, group_label_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_PopDebugGroup) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->PopDebugGroup();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUCommandEncoder_Finish) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->Finish();
-    return WrapObject(result.get(), kGPUCommandBufferDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::GPUCommandBuffer* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUCommandBuffer> value = self_obj->Finish();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUCommandBufferDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitGPUCommandEncoderBindingAppend(VALUE klass);

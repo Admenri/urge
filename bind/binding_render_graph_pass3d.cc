@@ -49,281 +49,368 @@ RB_DEF_TYPE(RenderGraphPass3D);
 RB_FUNC(RenderGraphPass3D_GetName) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetName();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetName());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_GetColors) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->GetColors());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->GetColors());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetColors) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckVectorOf<std::string>(value_val);
 
-    self_obj->SetColors(GetVectorOf<std::string>(value_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetColors(TakeVectorOf<std::string>(value_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetClearColor) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetClearColor();
-    return WrapObject(result.get(), kColorDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::Color* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Color> value = self_obj->GetClearColor();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kColorDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetClearColor) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  urge::Color* value;
+  ParseArgs(argc, argv, "o", &value_val);
+  value = CheckMaybeObject<urge::Color>(value_val, kColorDataType);
 
-    self_obj->SetClearColor(GetObject<urge::Color>(value_val, kColorDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetClearColor(value);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetTags) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->GetTags());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->GetTags());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetTags) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckVectorOf<std::string>(value_val);
 
-    self_obj->SetTags(GetVectorOf<std::string>(value_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTags(TakeVectorOf<std::string>(value_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetTagIds) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<int32_t>(self_obj->GetTagIds());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<int32_t>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<int32_t>(self_obj->GetTagIds());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<int32_t>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetTagIds) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckVectorOf<int32_t>(value_val);
 
-    self_obj->SetTagIds(GetVectorOf<int32_t>(value_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTagIds(TakeVectorOf<int32_t>(value_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_BindTexture) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    std::string slot, texture;
-    ParseArgs(argc, argv, "ss", &slot, &texture);
+  CheckArgc(argc, 2);
+  VALUE slot_val, texture_val;
+  const char* slot_data;
+  size_t slot_size, texture_size;
+  const char* texture_data;
+  ParseArgs(argc, argv, "oo", &slot_val, &texture_val);
+  CheckString(slot_val, &slot_data, &slot_size);
+  CheckString(texture_val, &texture_data, &texture_size);
 
-    self_obj->BindTexture(slot, texture);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->BindTexture(std::string(slot_data, slot_size),
+        std::string(texture_data, texture_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetBindings) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->GetBindings());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->GetBindings());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_GetReads) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->GetReads());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->GetReads());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetReads) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckVectorOf<std::string>(value_val);
 
-    self_obj->SetReads(GetVectorOf<std::string>(value_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetReads(TakeVectorOf<std::string>(value_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetMaterial) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetMaterial();
-    return WrapObject(result.get(), kMaterialPass3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::MaterialPass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->GetMaterial();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetMaterial) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  urge::MaterialPass3D* value;
+  ParseArgs(argc, argv, "o", &value_val);
+  value = CheckMaybeObject<urge::MaterialPass3D>(value_val, kMaterialPass3DDataType);
 
-    self_obj->SetMaterial(
-        GetObject<urge::MaterialPass3D>(value_val, kMaterialPass3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetMaterial(value);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetCompute) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetCompute();
-    return WrapObject(result.get(), kComputePass3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::ComputePass3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::ComputePass3D> value = self_obj->GetCompute();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kComputePass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_SetCompute) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  urge::ComputePass3D* value;
+  ParseArgs(argc, argv, "o", &value_val);
+  value = CheckMaybeObject<urge::ComputePass3D>(value_val, kComputePass3DDataType);
 
-    self_obj->SetCompute(
-        GetObject<urge::ComputePass3D>(value_val, kComputePass3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetCompute(value);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(RenderGraphPass3D_GetTexture) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string name;
-    ParseArgs(argc, argv, "s", &name);
+  CheckArgc(argc, 1);
+  VALUE name_val;
+  const char* name_data;
+  size_t name_size;
+  ParseArgs(argc, argv, "o", &name_val);
+  CheckString(name_val, &name_data, &name_size);
 
-    auto result = self_obj->GetTexture(name);
-    return WrapObject(result.get(), kGPUTextureViewDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUTextureView* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUTextureView> value = self_obj->GetTexture(
+        std::string(name_data, name_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUTextureViewDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_GetPass) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetPass();
-    return WrapObject(result.get(), kGPURenderPassEncoderDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::GPURenderPassEncoder* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPURenderPassEncoder> value = self_obj->GetPass();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPURenderPassEncoderDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_GetContext) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetContext();
-    return WrapObject(result.get(), kRenderContext3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::RenderContext3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::RenderContext3D> value = self_obj->GetContext();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kRenderContext3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(RenderGraphPass3D_Width) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Width();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderGraphPass3D_Height) {
   auto* self_obj = GetSelfData<urge::RenderGraphPass3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Height();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 // Attribute: enabled (bool)
@@ -344,12 +431,13 @@ BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, SortBackToFront);
 // Attribute: depth_only (bool)
 BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, DepthOnly);
 
-// Attribute: camera (RefPtr<Camera3D>)
+// Attribute: camera (MaybePtr<Camera3D>)
 BINDING_ATTR_OBJECT_REF(RenderGraphPass3D,
                         urge::RenderGraphPass3D,
                         Camera,
                         urge::Camera3D,
-                        kCamera3DDataType);
+                        kCamera3DDataType,
+                        CheckMaybeObject);
 
 // Attribute: layers (uint32_t)
 BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Layers);
@@ -363,19 +451,21 @@ BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, QueueMax);
 // Attribute: cascades (int32_t)
 BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Cascades);
 
-// Attribute: shadow_light (RefPtr<Light3D>)
+// Attribute: shadow_light (MaybePtr<Light3D>)
 BINDING_ATTR_OBJECT_REF(RenderGraphPass3D,
                         urge::RenderGraphPass3D,
                         ShadowLight,
                         urge::Light3D,
-                        kLight3DDataType);
+                        kLight3DDataType,
+                        CheckMaybeObject);
 
-// Attribute: point_shadow_light (RefPtr<Light3D>)
+// Attribute: point_shadow_light (MaybePtr<Light3D>)
 BINDING_ATTR_OBJECT_REF(RenderGraphPass3D,
                         urge::RenderGraphPass3D,
                         PointShadowLight,
                         urge::Light3D,
-                        kLight3DDataType);
+                        kLight3DDataType,
+                        CheckMaybeObject);
 
 // Attribute: cascade_fade (float)
 BINDING_ATTR_FLOAT(RenderGraphPass3D, urge::RenderGraphPass3D, CascadeFade);

@@ -30,56 +30,104 @@ namespace binding {
 RB_DEF_TYPE(Font);
 
 RB_FUNC(Font_initialize) {
-  urge::RefPtr<urge::Font> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Font>();
-    } else if (argc == 1) {
-      // initialize(names)
-      VALUE names_val;
-      ParseArgs(argc, argv, "o", &names_val);
-      obj = urge::MakeRefCounted<urge::Font>(
-          GetVectorOf<std::string>(names_val));
-    } else if (argc == 2) {
-      // initialize(names, size)
-      VALUE names_val;
-      int size;
-      ParseArgs(argc, argv, "oi", &names_val, &size);
-      obj = urge::MakeRefCounted<urge::Font>(
-          GetVectorOf<std::string>(names_val), size);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Font* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(names)
+    VALUE names_val;
+    ParseArgs(argc, argv, "o", &names_val);
+    CheckVectorOf<std::string>(names_val);
+
+    urge::Font* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(
+          TakeVectorOf<std::string>(names_val));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 2) {
+    // initialize(names, size)
+    VALUE names_val;
+    int size;
+    ParseArgs(argc, argv, "oi", &names_val, &size);
+    CheckVectorOf<std::string>(names_val);
+
+    urge::Font* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(
+          TakeVectorOf<std::string>(names_val), size);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Font_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Font* other_obj = CheckObject<urge::Font>(other_val, kFontDataType);
 
-  urge::RefPtr<urge::Font> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Font>(other, kFontDataType);
-    obj = urge::MakeRefCounted<urge::Font>(other_obj);
-  }
-  EXC_END;
+  urge::Font* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Font_Existed) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string name;
-    ParseArgs(argc, argv, "s", &name);
+  CheckArgc(argc, 1);
+  VALUE name_val;
+  const char* name_data;
+  size_t name_size;
+  ParseArgs(argc, argv, "o", &name_val);
+  CheckString(name_val, &name_data, &name_size);
 
-    return urge::Font::Existed(name) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Font::Existed(std::string(name_data, name_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 // Attribute: name (std::vector<std::string>)
@@ -104,17 +152,28 @@ BINDING_ATTR_BOOL(Font, urge::Font, Shadow);
 BINDING_ATTR_BOOL(Font, urge::Font, Solid);
 
 // Attribute: color (RefPtr<Color>)
-BINDING_ATTR_OBJECT(Font, urge::Font, Color, urge::Color, kColorDataType);
+BINDING_ATTR_OBJECT(Font,
+                    urge::Font,
+                    Color,
+                    urge::Color,
+                    kColorDataType,
+                    CheckObject);
 
 // Attribute: out_color (RefPtr<Color>)
-BINDING_ATTR_OBJECT(Font, urge::Font, OutColor, urge::Color, kColorDataType);
+BINDING_ATTR_OBJECT(Font,
+                    urge::Font,
+                    OutColor,
+                    urge::Color,
+                    kColorDataType,
+                    CheckObject);
 
 // Attribute: gradient_color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Font,
                     urge::Font,
                     GradientColor,
                     urge::Color,
-                    kColorDataType);
+                    kColorDataType,
+                    CheckObject);
 
 // Class attribute: default_name (std::vector<std::string>)
 BINDING_CLASS_ATTR_VECTOR(Font, urge::Font, DefaultName, std::string);
@@ -142,21 +201,24 @@ BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultColor,
                           urge::Color,
-                          kColorDataType);
+                          kColorDataType,
+                          CheckObject);
 
 // Class attribute: default_out_color (RefPtr<Color>)
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultOutColor,
                           urge::Color,
-                          kColorDataType);
+                          kColorDataType,
+                          CheckObject);
 
 // Class attribute: default_gradient_color (RefPtr<Color>)
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultGradientColor,
                           urge::Color,
-                          kColorDataType);
+                          kColorDataType,
+                          CheckObject);
 
 void InitFontBindingAppend(VALUE klass);
 

@@ -37,160 +37,187 @@ namespace binding {
 RB_DEF_TYPE(Animation3D);
 
 RB_FUNC(Animation3D_initialize) {
-  urge::RefPtr<urge::Animation3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Animation3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Animation3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Animation3D> value = urge::MakeRefCounted<urge::Animation3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Animation3D_AddTrack) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 5);
-    int bone, path, interpolation;
-    VALUE times_val, values_val;
-    ParseArgs(argc, argv, "iiooi", &bone, &path, &times_val, &values_val,
-        &interpolation);
+  CheckArgc(argc, 5);
+  int bone, path, interpolation;
+  VALUE times_val, values_val;
+  ParseArgs(argc, argv, "iiooi", &bone, &path, &times_val, &values_val,
+      &interpolation);
+  CheckVectorOf<float>(times_val);
+  CheckVectorOf<float>(values_val);
 
-    self_obj->AddTrack(bone, path, GetVectorOf<float>(times_val),
-        GetVectorOf<float>(values_val), interpolation);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddTrack(bone, path, TakeVectorOf<float>(times_val),
+        TakeVectorOf<float>(values_val), interpolation);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Animation3D_AddEvent) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    double time;
-    std::string name;
-    ParseArgs(argc, argv, "fs", &time, &name);
+  CheckArgc(argc, 2);
+  double time;
+  VALUE name_val;
+  const char* name_data;
+  size_t name_size;
+  ParseArgs(argc, argv, "fo", &time, &name_val);
+  CheckString(name_val, &name_data, &name_size);
 
-    self_obj->AddEvent(static_cast<float>(time), name);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddEvent(static_cast<float>(time),
+        std::string(name_data, name_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Animation3D_EventCount) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->EventCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->EventCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Animation3D_EventName) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    std::string result = self_obj->EventName(index);
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->EventName(index));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Animation3D_EventTime) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    return rb_float_new(self_obj->EventTime(index));
-  }
-  EXC_END;
-  return Qnil;
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->EventTime(index);
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Animation3D_Duration) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->Duration());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->Duration();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Animation3D_TrackCount) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->TrackCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->TrackCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Animation3D_Apply) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    VALUE skeleton_val;
-    double time;
-    ParseArgs(argc, argv, "of", &skeleton_val, &time);
+  CheckArgc(argc, 2);
+  VALUE skeleton_val;
+  urge::Skeleton3D* skeleton;
+  double time;
+  ParseArgs(argc, argv, "of", &skeleton_val, &time);
+  skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
 
-    self_obj->Apply(
-        GetObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType),
-        static_cast<float>(time));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Apply(skeleton, static_cast<float>(time));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Animation3D_Blend) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    VALUE skeleton_val;
-    double time, weight;
-    ParseArgs(argc, argv, "off", &skeleton_val, &time, &weight);
+  CheckArgc(argc, 3);
+  VALUE skeleton_val;
+  urge::Skeleton3D* skeleton;
+  double time, weight;
+  ParseArgs(argc, argv, "off", &skeleton_val, &time, &weight);
+  skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
 
-    self_obj->Blend(
-        GetObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType),
-        static_cast<float>(time), static_cast<float>(weight));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Blend(skeleton, static_cast<float>(time),
+        static_cast<float>(weight));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Animation3D_BlendMasked) {
   auto* self_obj = GetSelfData<urge::Animation3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 4);
-    VALUE skeleton_val, mask_val;
-    double time, weight;
-    ParseArgs(argc, argv, "offo", &skeleton_val, &time, &weight, &mask_val);
+  CheckArgc(argc, 4);
+  VALUE skeleton_val, mask_val;
+  urge::Skeleton3D* skeleton;
+  double time, weight;
+  urge::BoneMask3D* mask;
+  ParseArgs(argc, argv, "offo", &skeleton_val, &time, &weight, &mask_val);
+  skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
+  mask = CheckMaybeObject<urge::BoneMask3D>(mask_val, kBoneMask3DDataType);
 
-    self_obj->BlendMasked(
-        GetObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType),
-        static_cast<float>(time), static_cast<float>(weight),
-        GetObject<urge::BoneMask3D>(mask_val, kBoneMask3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->BlendMasked(skeleton, static_cast<float>(time),
+        static_cast<float>(weight), mask);
+  } CPP_END;
+
   return Qnil;
 }
 

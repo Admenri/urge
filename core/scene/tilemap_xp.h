@@ -59,7 +59,7 @@ URGE_BINDING()
 class TilemapXP : public Node {
  public:
   URGE_BINDING()
-  TilemapXP(RefPtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
+  TilemapXP(MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
   URGE_BINDING()
   ~TilemapXP() override;
 
@@ -67,27 +67,27 @@ class TilemapXP : public Node {
   void Update();
 
   URGE_BINDING(Name : "tileset=")
-  void SetTileset(RefPtr<Bitmap> bitmap);
+  void SetTileset(MaybePtr<Bitmap> bitmap);
   URGE_BINDING(Name : "tileset")
   RefPtr<Bitmap> GetTileset();
 
   URGE_BINDING()
-  void SetAutotile(int32_t index, RefPtr<Bitmap> bitmap);
+  void SetAutotile(int32_t index, MaybePtr<Bitmap> bitmap);
   URGE_BINDING()
   RefPtr<Bitmap> GetAutotile(int32_t index);
 
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
   ATTR(bool, Visible) override;
   URGE_BINDING()
   ATTR(int32_t, Z) override;
   URGE_BINDING()
-  ATTR(RefPtr<Table>, MapData);
+  ATTR(MaybePtr<Table>, MapData);
   URGE_BINDING()
-  ATTR(RefPtr<Table>, FlashData);
+  ATTR(MaybePtr<Table>, FlashData);
   URGE_BINDING()
-  ATTR(RefPtr<Table>, Priorities);
+  ATTR(MaybePtr<Table>, Priorities);
   URGE_BINDING()
   ATTR(int32_t, OX);
   URGE_BINDING()

@@ -32,35 +32,43 @@ VALUE AllocateAutotileProxy(VALUE parent, const char* klass_name) {
   return obj;
 }
 
+// `TilemapAutotileArray` is a Ruby-side proxy around the tilemap table: it holds the owning
+// Tilemap in `@parent` and answers `[]` / `[]=` through the two accessors below.
 RB_FUNC(TilemapAutotile_Get) {
-  auto parent = GetObject<urge::TilemapXP>(rb_iv_get(self, "@parent"),
-                                           kTilemapXPDataType);
-  int index;
+  VALUE parent_val = rb_iv_get(self, "@parent");
+  urge::TilemapXP* parent =
+      CheckObject<urge::TilemapXP>(parent_val, kTilemapXPDataType);
+  int index = 0;
   ParseArgs(argc, argv, "i", &index);
 
-  EXC_BEGIN {
-    auto result = parent->GetAutotile(index);
+  urge::Bitmap* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Bitmap> value = parent->GetAutotile(index);
+    result = value.get();
     if (result)
-      return WrapObject(result.get(), kBitmapDataType);
-    return Qnil;
-  }
-  EXC_END;
-  return Qnil;
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = WrapObject(result, kBitmapDataType);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(TilemapAutotile_Set) {
-  auto parent = GetObject<urge::TilemapXP>(rb_iv_get(self, "@parent"),
-                                           kTilemapXPDataType);
-  int index;
-  VALUE bitmap_val;
+  VALUE parent_val = rb_iv_get(self, "@parent");
+  urge::TilemapXP* parent =
+      CheckObject<urge::TilemapXP>(parent_val, kTilemapXPDataType);
+  int index = 0;
+  VALUE bitmap_val = Qnil;
   ParseArgs(argc, argv, "io", &index, &bitmap_val);
+  urge::Bitmap* bitmap = CheckObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-  auto bitmap = GetObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
-
-  EXC_BEGIN {
+  CPP_BEGIN {
     parent->SetAutotile(index, bitmap);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
@@ -77,106 +85,162 @@ RB_FUNC(TilemapXP_Autotiles) {
 RB_DEF_TYPE_INHERIT(TilemapXP, Node);
 
 RB_FUNC(TilemapXP_initialize) {
-  urge::RefPtr<urge::TilemapXP> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::TilemapXP>();
-    } else if (argc == 1) {
-      // initialize(viewport)
-      VALUE viewport_val;
-      ParseArgs(argc, argv, "o", &viewport_val);
-      obj = urge::MakeRefCounted<urge::TilemapXP>(
-          GetObject<urge::Viewport>(viewport_val, kViewportDataType));
-    } else if (argc == 2) {
-      // initialize(viewport, tilesize)
-      VALUE viewport_val;
-      int tilesize;
-      ParseArgs(argc, argv, "oi", &viewport_val, &tilesize);
-      obj = urge::MakeRefCounted<urge::TilemapXP>(
-          GetObject<urge::Viewport>(viewport_val, kViewportDataType), tilesize);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::TilemapXP* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(viewport)
+    VALUE viewport_val;
+    urge::Viewport* viewport;
+    ParseArgs(argc, argv, "o", &viewport_val);
+    viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
+
+    urge::TilemapXP* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>(
+          viewport);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 2) {
+    // initialize(viewport, tilesize)
+    VALUE viewport_val;
+    urge::Viewport* viewport;
+    int tilesize;
+    ParseArgs(argc, argv, "oi", &viewport_val, &tilesize);
+    viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
+
+    urge::TilemapXP* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>(
+          viewport, tilesize);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(TilemapXP_Update) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(TilemapXP_SetTileset) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE bitmap_val;
-    ParseArgs(argc, argv, "o", &bitmap_val);
+  CheckArgc(argc, 1);
+  VALUE bitmap_val;
+  urge::Bitmap* bitmap;
+  ParseArgs(argc, argv, "o", &bitmap_val);
+  bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-    self_obj->SetTileset(GetObject<urge::Bitmap>(bitmap_val, kBitmapDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTileset(bitmap);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(TilemapXP_GetTileset) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetTileset();
-    return WrapObject(result.get(), kBitmapDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::Bitmap* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Bitmap> value = self_obj->GetTileset();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kBitmapDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(TilemapXP_SetAutotile) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int index;
-    VALUE bitmap_val;
-    ParseArgs(argc, argv, "io", &index, &bitmap_val);
+  CheckArgc(argc, 2);
+  int index;
+  VALUE bitmap_val;
+  urge::Bitmap* bitmap;
+  ParseArgs(argc, argv, "io", &index, &bitmap_val);
+  bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
 
-    self_obj->SetAutotile(index,
-        GetObject<urge::Bitmap>(bitmap_val, kBitmapDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetAutotile(index, bitmap);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(TilemapXP_GetAutotile) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    auto result = self_obj->GetAutotile(index);
-    return WrapObject(result.get(), kBitmapDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Bitmap* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Bitmap> value = self_obj->GetAutotile(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kBitmapDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
-// Attribute: viewport (RefPtr<Viewport>)
+// Attribute: viewport (MaybePtr<Viewport>)
 BINDING_ATTR_OBJECT_REF(TilemapXP,
                         urge::TilemapXP,
                         Viewport,
                         urge::Viewport,
-                        kViewportDataType);
+                        kViewportDataType,
+                        CheckMaybeObject);
 
 // Attribute: visible (bool)
 BINDING_ATTR_BOOL(TilemapXP, urge::TilemapXP, Visible);
@@ -184,26 +248,29 @@ BINDING_ATTR_BOOL(TilemapXP, urge::TilemapXP, Visible);
 // Attribute: z (int32_t)
 BINDING_ATTR_INT(TilemapXP, urge::TilemapXP, Z);
 
-// Attribute: map_data (RefPtr<Table>)
+// Attribute: map_data (MaybePtr<Table>)
 BINDING_ATTR_OBJECT(TilemapXP,
                     urge::TilemapXP,
                     MapData,
                     urge::Table,
-                    kTableDataType);
+                    kTableDataType,
+                    CheckMaybeObject);
 
-// Attribute: flash_data (RefPtr<Table>)
+// Attribute: flash_data (MaybePtr<Table>)
 BINDING_ATTR_OBJECT(TilemapXP,
                     urge::TilemapXP,
                     FlashData,
                     urge::Table,
-                    kTableDataType);
+                    kTableDataType,
+                    CheckMaybeObject);
 
-// Attribute: priorities (RefPtr<Table>)
+// Attribute: priorities (MaybePtr<Table>)
 BINDING_ATTR_OBJECT(TilemapXP,
                     urge::TilemapXP,
                     Priorities,
                     urge::Table,
-                    kTableDataType);
+                    kTableDataType,
+                    CheckMaybeObject);
 
 // Attribute: ox (int32_t)
 BINDING_ATTR_INT(TilemapXP, urge::TilemapXP, OX);

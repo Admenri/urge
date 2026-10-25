@@ -36,84 +36,105 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(GPUComputePipelineDescriptor, GPUObject);
 
 RB_FUNC(GPUComputePipelineDescriptor_initialize) {
-  urge::RefPtr<urge::GPUComputePipelineDescriptor> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::GPUComputePipelineDescriptor>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::GPUComputePipelineDescriptor* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUComputePipelineDescriptor> value = urge::MakeRefCounted<urge::GPUComputePipelineDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_GetLabel) {
   auto* self_obj = GetSelfData<urge::GPUComputePipelineDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetLabel();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetLabel());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_SetLabel) {
   auto* self_obj = GetSelfData<urge::GPUComputePipelineDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  const char* value_data;
+  size_t value_size;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckString(value_val, &value_data, &value_size);
 
-    self_obj->SetLabel(value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetLabel(std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_GetEntryPoint) {
   auto* self_obj = GetSelfData<urge::GPUComputePipelineDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetEntryPoint();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetEntryPoint());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_SetEntryPoint) {
   auto* self_obj = GetSelfData<urge::GPUComputePipelineDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  const char* value_data;
+  size_t value_size;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckString(value_val, &value_data, &value_size);
 
-    self_obj->SetEntryPoint(value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetEntryPoint(std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 
-// Attribute: layout (RefPtr<GPUPipelineLayout>)
+// Attribute: layout (MaybePtr<GPUPipelineLayout>)
 BINDING_ATTR_OBJECT_REF(GPUComputePipelineDescriptor,
                         urge::GPUComputePipelineDescriptor,
                         Layout,
                         urge::GPUPipelineLayout,
-                        kGPUPipelineLayoutDataType);
+                        kGPUPipelineLayoutDataType,
+                        CheckMaybeObject);
 
-// Attribute: module (RefPtr<GPUShaderModule>)
+// Attribute: module (MaybePtr<GPUShaderModule>)
 BINDING_ATTR_OBJECT_REF(GPUComputePipelineDescriptor,
                         urge::GPUComputePipelineDescriptor,
                         Module,
                         urge::GPUShaderModule,
-                        kGPUShaderModuleDataType);
+                        kGPUShaderModuleDataType,
+                        CheckMaybeObject);
 
 void InitGPUComputePipelineDescriptorBindingAppend(VALUE klass);
 

@@ -18,8 +18,8 @@ namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
 // RGSS key constants (`Input::DOWN`, `Input::A`, ...).  They come from the
-// table in core/input/input.h rather than from a declaration in the export block,
-// so they cannot be generated.
+// table in core/input/input.h rather than from a declaration in the export
+// block, so they cannot be generated.
 void DefineInputKeyConstants(VALUE mod) {
   for (const auto& binding : urge::kKeyboardBindings) {
     ID key =
@@ -28,19 +28,30 @@ void DefineInputKeyConstants(VALUE mod) {
   }
 }
 
-std::string GetKeyBinding(VALUE value) {
+/* Resolves the argument of a query method to the key name, as raw bytes.  The
+   storage is either the static binding table or Ruby's symbol table, both of
+   which outlive the call, so phase 1 can carry a pointer instead of a
+   `std::string` -- which would put a destructor in the frame that raises. */
+void GetKeyBinding(VALUE value, const char** name, size_t* size) {
+  *name = nullptr;
+  *size = 0;
+
   if (SYMBOL_P(value) || RB_TYPE_P(value, T_STRING)) {
-    ID sym = rb_to_id(value);
-    return rb_id2name(sym);
-  } else if (FIXNUM_P(value)) {
+    const char* text = rb_id2name(rb_to_id(value));
+    *name = text;
+    *size = std::strlen(text);
+    return;
+  }
+  if (FIXNUM_P(value)) {
     auto key_id = NUM2LONG(value);
     for (size_t i = 0; i < std::size(urge::kKeyboardBindings); ++i) {
-      if (urge::kKeyboardBindings[i].key_id == key_id)
-        return urge::kKeyboardBindings[i].name;
+      if (urge::kKeyboardBindings[i].key_id == key_id) {
+        *name = urge::kKeyboardBindings[i].name.data();
+        *size = urge::kKeyboardBindings[i].name.size();
+        return;
+      }
     }
   }
-
-  return {};
 }
 
 /* The three query methods take a Symbol, a String or the numeric id of a key,
@@ -48,42 +59,60 @@ std::string GetKeyBinding(VALUE value) {
    generated versions are therefore overridden in the HANDWRITTEN INIT block
    below, which registers the Manual variants under the Ruby names. */
 RB_FUNC(Input_PressedManual) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE sym;
-    ParseArgs(argc, argv, "o", &sym);
-    std::string key = GetKeyBinding(sym);
+  CheckArgc(argc, 1);
+  VALUE sym = Qnil;
+  ParseArgs(argc, argv, "o", &sym);
+  const char* key = nullptr;
+  size_t key_size = 0;
+  GetKeyBinding(sym, &key, &key_size);
+  if (!key)
+    return Qfalse;
 
-    return urge::Input::Get().Pressed(key) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Pressed(std::string(key, key_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_TriggeredManual) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE sym;
-    ParseArgs(argc, argv, "o", &sym);
-    std::string key = GetKeyBinding(sym);
+  CheckArgc(argc, 1);
+  VALUE sym = Qnil;
+  ParseArgs(argc, argv, "o", &sym);
+  const char* key = nullptr;
+  size_t key_size = 0;
+  GetKeyBinding(sym, &key, &key_size);
+  if (!key)
+    return Qfalse;
 
-    return urge::Input::Get().Triggered(key) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Triggered(std::string(key, key_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_RepeatedManual) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE sym;
-    ParseArgs(argc, argv, "o", &sym);
-    std::string key = GetKeyBinding(sym);
+  CheckArgc(argc, 1);
+  VALUE sym = Qnil;
+  ParseArgs(argc, argv, "o", &sym);
+  const char* key = nullptr;
+  size_t key_size = 0;
+  GetKeyBinding(sym, &key, &key_size);
+  if (!key)
+    return Qfalse;
 
-    return urge::Input::Get().Repeated(key) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Repeated(std::string(key, key_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 // --- HANDWRITTEN END ---
 
@@ -93,117 +122,145 @@ RB_FUNC(Input_RepeatedManual) {
 // -------------------------------------------------------------------------
 
 RB_FUNC(Input_Update) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Input::Get().Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Input_Pressed) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string sym;
-    ParseArgs(argc, argv, "s", &sym);
+  CheckArgc(argc, 1);
+  VALUE sym_val;
+  const char* sym_data;
+  size_t sym_size;
+  ParseArgs(argc, argv, "o", &sym_val);
+  CheckString(sym_val, &sym_data, &sym_size);
 
-    return urge::Input::Get().Pressed(sym) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Pressed(std::string(sym_data, sym_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_Triggered) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string sym;
-    ParseArgs(argc, argv, "s", &sym);
+  CheckArgc(argc, 1);
+  VALUE sym_val;
+  const char* sym_data;
+  size_t sym_size;
+  ParseArgs(argc, argv, "o", &sym_val);
+  CheckString(sym_val, &sym_data, &sym_size);
 
-    return urge::Input::Get().Triggered(sym) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Triggered(std::string(sym_data, sym_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_Repeated) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string sym;
-    ParseArgs(argc, argv, "s", &sym);
+  CheckArgc(argc, 1);
+  VALUE sym_val;
+  const char* sym_data;
+  size_t sym_size;
+  ParseArgs(argc, argv, "o", &sym_val);
+  CheckString(sym_val, &sym_data, &sym_size);
 
-    return urge::Input::Get().Repeated(sym) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Repeated(std::string(sym_data, sym_size));
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_Dir4) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(urge::Input::Get().Dir4());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Dir4();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Input_Dir8) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(urge::Input::Get().Dir8());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().Dir8();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Input_KeyPressed) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int keycode;
-    ParseArgs(argc, argv, "i", &keycode);
+  CheckArgc(argc, 1);
+  int keycode;
+  ParseArgs(argc, argv, "i", &keycode);
 
-    return urge::Input::Get().KeyPressed(keycode) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().KeyPressed(keycode);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_KeyTriggered) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int keycode;
-    ParseArgs(argc, argv, "i", &keycode);
+  CheckArgc(argc, 1);
+  int keycode;
+  ParseArgs(argc, argv, "i", &keycode);
 
-    return urge::Input::Get().KeyTriggered(keycode) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().KeyTriggered(keycode);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_KeyRepeated) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int keycode;
-    ParseArgs(argc, argv, "i", &keycode);
+  CheckArgc(argc, 1);
+  int keycode;
+  ParseArgs(argc, argv, "i", &keycode);
 
-    return urge::Input::Get().KeyRepeated(keycode) ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = urge::Input::Get().KeyRepeated(keycode);
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Input_GetKeyName) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int keycode;
-    ParseArgs(argc, argv, "i", &keycode);
+  CheckArgc(argc, 1);
+  int keycode;
+  ParseArgs(argc, argv, "i", &keycode);
 
-    std::string result = urge::Input::Get().GetKeyName(keycode);
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(urge::Input::Get().GetKeyName(keycode));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 void InitInputBindingAppend(VALUE mod);

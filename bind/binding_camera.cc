@@ -36,49 +36,63 @@ namespace binding {
 RB_DEF_TYPE(Camera);
 
 RB_FUNC(Camera_initialize) {
-  urge::RefPtr<urge::Camera> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Camera>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Camera* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Camera> value = urge::MakeRefCounted<urge::Camera>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Camera_ViewProjection) {
   auto* self_obj = GetSelfData<urge::Camera>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int width, height;
-    ParseArgs(argc, argv, "ii", &width, &height);
+  CheckArgc(argc, 2);
+  int width, height;
+  ParseArgs(argc, argv, "ii", &width, &height);
 
-    return WrapVectorOf<float>(self_obj->ViewProjection(width, height));
-  }
-  EXC_END;
-  return Qnil;
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->ViewProjection(width, height));
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
-// Attribute: position (RefPtr<Vector3>)
+// Attribute: position (MaybePtr<Vector3>)
 BINDING_ATTR_OBJECT_REF(Camera,
                         urge::Camera,
                         Position,
                         urge::Vector3,
-                        kVector3DataType);
+                        kVector3DataType,
+                        CheckMaybeObject);
 
-// Attribute: quaternion (RefPtr<Vector4>)
+// Attribute: quaternion (MaybePtr<Vector4>)
 BINDING_ATTR_OBJECT_REF(Camera,
                         urge::Camera,
                         Quaternion,
                         urge::Vector4,
-                        kVector4DataType);
+                        kVector4DataType,
+                        CheckMaybeObject);
 
-// Attribute: scale (RefPtr<Vector3>)
+// Attribute: scale (MaybePtr<Vector3>)
 BINDING_ATTR_OBJECT_REF(Camera,
                         urge::Camera,
                         Scale,
                         urge::Vector3,
-                        kVector3DataType);
+                        kVector3DataType,
+                        CheckMaybeObject);
 
 void InitCameraBindingAppend(VALUE klass);
 

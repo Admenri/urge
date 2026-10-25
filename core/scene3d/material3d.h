@@ -403,7 +403,7 @@ class MaterialPass3D : public Object {
   void SetParams(std::vector<float> value) { SetUniformSlot(0, value); }
 
   URGE_BINDING(Name : "texture")
-  ATTR(RefPtr<Bitmap>, Texture) {
+  ATTR(MaybePtr<Bitmap>, Texture) {
     if (value.has_value()) {
       SetTextureSlot(0, *value);
       return std::nullopt;
@@ -412,7 +412,7 @@ class MaterialPass3D : public Object {
   }
 
   URGE_BINDING()
-  void SetTextureSlot(int32_t slot, RefPtr<Bitmap> texture);
+  void SetTextureSlot(int32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
   RefPtr<Bitmap> GetTextureSlot(int32_t slot) const;
   URGE_BINDING(Name : "texture_slot_count")
@@ -421,7 +421,7 @@ class MaterialPass3D : public Object {
   }
 
   URGE_BINDING()
-  void SetTexture(std::string name, RefPtr<Bitmap> texture);
+  void SetTexture(std::string name, MaybePtr<Bitmap> texture);
   void SetTextureView(std::string name, RefPtr<GPUTextureView> view);
   URGE_BINDING()
   RefPtr<Bitmap> GetTexture(std::string name) const;

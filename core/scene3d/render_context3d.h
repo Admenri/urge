@@ -67,10 +67,10 @@ class RenderContext3D : public Object {
   URGE_BINDING(Name : "ambient")
   RefPtr<Color> GetAmbient() const { return ambient_; }
   URGE_BINDING(Name : "ambient=")
-  void SetAmbient(RefPtr<Color> value);
+  void SetAmbient(MaybePtr<Color> value);
 
   URGE_BINDING()
-  void SetViewProjection(RefPtr<Camera3D> camera);
+  void SetViewProjection(MaybePtr<Camera3D> camera);
   void SetViewOverride(const glm::mat4& view_proj);
 
   void SetShadow(RefPtr<RenderTarget3D> target, const glm::mat4& view_proj);
@@ -87,7 +87,7 @@ class RenderContext3D : public Object {
 
   URGE_BINDING()
   void BeginPass(RefPtr<RenderTarget3D> target,
-                 RefPtr<Color> clear = nullptr,
+                 MaybePtr<Color> clear = nullptr,
                  bool clear_depth = true);
   URGE_BINDING()
   void BeginPassEx(RefPtr<RenderTarget3D> target,
@@ -120,7 +120,7 @@ class RenderContext3D : public Object {
   URGE_BINDING()
   void SetScissorRect(int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING()
-  void DrawIndexedIndirect(RefPtr<GPUBuffer> buffer, int32_t offset);
+  void DrawIndexedIndirect(MaybePtr<GPUBuffer> buffer, int32_t offset);
 
   wgpu::CommandEncoder encoder() const { return encoder_; }
   wgpu::RenderPassEncoder pass() const { return pass_; }

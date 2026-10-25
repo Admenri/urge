@@ -25,320 +25,453 @@ namespace binding {
 // -------------------------------------------------------------------------
 
 RB_FUNC(Audio_SetupMIDI) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Audio::Get().SetupMIDI();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGMPlay) {
-  EXC_BEGIN {
-    if (argc == 1) {
-      // bgm_play(filename)
-      std::string filename;
-      ParseArgs(argc, argv, "s", &filename);
-      urge::Audio::Get().BGMPlay(filename);
-    } else if (argc == 2) {
-      // bgm_play(filename, volume)
-      std::string filename;
-      int volume;
-      ParseArgs(argc, argv, "si", &filename, &volume);
-      urge::Audio::Get().BGMPlay(filename, volume);
-    } else if (argc == 3) {
-      // bgm_play(filename, volume, pitch)
-      std::string filename;
-      int volume, pitch;
-      ParseArgs(argc, argv, "sii", &filename, &volume, &pitch);
-      urge::Audio::Get().BGMPlay(filename, volume, pitch);
-    } else if (argc == 4) {
-      // bgm_play(filename, volume, pitch, pos)
-      std::string filename;
-      int volume, pitch;
-      double pos;
-      ParseArgs(argc, argv, "siif", &filename, &volume, &pitch, &pos);
-      urge::Audio::Get().BGMPlay(filename, volume, pitch,
-          static_cast<float>(pos));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // bgm_play(filename)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "o", &filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size));
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // bgm_play(filename, volume)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume;
+    ParseArgs(argc, argv, "oi", &filename_val, &volume);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
+          volume);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // bgm_play(filename, volume, pitch)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume, pitch;
+    ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
+          volume, pitch);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // bgm_play(filename, volume, pitch, pos)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume, pitch;
+    double pos;
+    ParseArgs(argc, argv, "oiif", &filename_val, &volume, &pitch, &pos);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
+          volume, pitch, static_cast<float>(pos));
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Audio_BGMStop) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Audio::Get().BGMStop();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGMFade) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int time;
-    ParseArgs(argc, argv, "i", &time);
+  CheckArgc(argc, 1);
+  int time;
+  ParseArgs(argc, argv, "i", &time);
 
+  CPP_BEGIN {
     urge::Audio::Get().BGMFade(time);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGMPos) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(urge::Audio::Get().BGMPos());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = urge::Audio::Get().BGMPos();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Audio_BGSPlay) {
-  EXC_BEGIN {
-    if (argc == 1) {
-      // bgs_play(filename)
-      std::string filename;
-      ParseArgs(argc, argv, "s", &filename);
-      urge::Audio::Get().BGSPlay(filename);
-    } else if (argc == 2) {
-      // bgs_play(filename, volume)
-      std::string filename;
-      int volume;
-      ParseArgs(argc, argv, "si", &filename, &volume);
-      urge::Audio::Get().BGSPlay(filename, volume);
-    } else if (argc == 3) {
-      // bgs_play(filename, volume, pitch)
-      std::string filename;
-      int volume, pitch;
-      ParseArgs(argc, argv, "sii", &filename, &volume, &pitch);
-      urge::Audio::Get().BGSPlay(filename, volume, pitch);
-    } else if (argc == 4) {
-      // bgs_play(filename, volume, pitch, pos)
-      std::string filename;
-      int volume, pitch;
-      double pos;
-      ParseArgs(argc, argv, "siif", &filename, &volume, &pitch, &pos);
-      urge::Audio::Get().BGSPlay(filename, volume, pitch,
-          static_cast<float>(pos));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // bgs_play(filename)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "o", &filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size));
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // bgs_play(filename, volume)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume;
+    ParseArgs(argc, argv, "oi", &filename_val, &volume);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
+          volume);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // bgs_play(filename, volume, pitch)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume, pitch;
+    ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
+          volume, pitch);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // bgs_play(filename, volume, pitch, pos)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume, pitch;
+    double pos;
+    ParseArgs(argc, argv, "oiif", &filename_val, &volume, &pitch, &pos);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
+          volume, pitch, static_cast<float>(pos));
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Audio_BGSStop) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Audio::Get().BGSStop();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGSFade) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int time;
-    ParseArgs(argc, argv, "i", &time);
+  CheckArgc(argc, 1);
+  int time;
+  ParseArgs(argc, argv, "i", &time);
 
+  CPP_BEGIN {
     urge::Audio::Get().BGSFade(time);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGSPos) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(urge::Audio::Get().BGSPos());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = urge::Audio::Get().BGSPos();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Audio_MEPlay) {
-  EXC_BEGIN {
-    if (argc == 1) {
-      // me_play(filename)
-      std::string filename;
-      ParseArgs(argc, argv, "s", &filename);
-      urge::Audio::Get().MEPlay(filename);
-    } else if (argc == 2) {
-      // me_play(filename, volume)
-      std::string filename;
-      int volume;
-      ParseArgs(argc, argv, "si", &filename, &volume);
-      urge::Audio::Get().MEPlay(filename, volume);
-    } else if (argc == 3) {
-      // me_play(filename, volume, pitch)
-      std::string filename;
-      int volume, pitch;
-      ParseArgs(argc, argv, "sii", &filename, &volume, &pitch);
-      urge::Audio::Get().MEPlay(filename, volume, pitch);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // me_play(filename)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "o", &filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().MEPlay(std::string(filename_data, filename_size));
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // me_play(filename, volume)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume;
+    ParseArgs(argc, argv, "oi", &filename_val, &volume);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().MEPlay(std::string(filename_data, filename_size),
+          volume);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // me_play(filename, volume, pitch)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume, pitch;
+    ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().MEPlay(std::string(filename_data, filename_size),
+          volume, pitch);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Audio_MEStop) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Audio::Get().MEStop();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_MEFade) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int time;
-    ParseArgs(argc, argv, "i", &time);
+  CheckArgc(argc, 1);
+  int time;
+  ParseArgs(argc, argv, "i", &time);
 
+  CPP_BEGIN {
     urge::Audio::Get().MEFade(time);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_SEPlay) {
-  EXC_BEGIN {
-    if (argc == 1) {
-      // se_play(filename)
-      std::string filename;
-      ParseArgs(argc, argv, "s", &filename);
-      urge::Audio::Get().SEPlay(filename);
-    } else if (argc == 2) {
-      // se_play(filename, volume)
-      std::string filename;
-      int volume;
-      ParseArgs(argc, argv, "si", &filename, &volume);
-      urge::Audio::Get().SEPlay(filename, volume);
-    } else if (argc == 3) {
-      // se_play(filename, volume, pitch)
-      std::string filename;
-      int volume, pitch;
-      ParseArgs(argc, argv, "sii", &filename, &volume, &pitch);
-      urge::Audio::Get().SEPlay(filename, volume, pitch);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // se_play(filename)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "o", &filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().SEPlay(std::string(filename_data, filename_size));
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // se_play(filename, volume)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume;
+    ParseArgs(argc, argv, "oi", &filename_val, &volume);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().SEPlay(std::string(filename_data, filename_size),
+          volume);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // se_play(filename, volume, pitch)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    int volume, pitch;
+    ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    CPP_BEGIN {
+      urge::Audio::Get().SEPlay(std::string(filename_data, filename_size),
+          volume, pitch);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Audio_SEStop) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Audio::Get().SEStop();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_MasterVolume) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Audio::Get().Attr_MasterVolume()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Audio::Get().Attr_MasterVolume());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Audio_MasterVolumeEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Audio::Get().Attr_MasterVolume(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGMVolume) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Audio::Get().Attr_BGMVolume()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Audio::Get().Attr_BGMVolume());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Audio_BGMVolumeEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Audio::Get().Attr_BGMVolume(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_BGSVolume) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Audio::Get().Attr_BGSVolume()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Audio::Get().Attr_BGSVolume());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Audio_BGSVolumeEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Audio::Get().Attr_BGSVolume(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_MEVolume) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Audio::Get().Attr_MEVolume()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Audio::Get().Attr_MEVolume());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Audio_MEVolumeEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Audio::Get().Attr_MEVolume(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Audio_SEVolume) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Audio::Get().Attr_SEVolume()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Audio::Get().Attr_SEVolume());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Audio_SEVolumeEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Audio::Get().Attr_SEVolume(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

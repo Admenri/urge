@@ -21,116 +21,170 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Rect  (core/common/utility.h:45-113)
+// Rect  (core/common/utility.h:45-109)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Rect);
 
 RB_FUNC(Rect_initialize) {
-  urge::RefPtr<urge::Rect> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Rect>();
-    } else if (argc == 4) {
-      // initialize(xv, yv, wv, hv)
-      int xv, yv, wv, hv;
-      ParseArgs(argc, argv, "iiii", &xv, &yv, &wv, &hv);
-      obj = urge::MakeRefCounted<urge::Rect>(xv, yv, wv, hv);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Rect* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 4) {
+    // initialize(xv, yv, wv, hv)
+    int xv, yv, wv, hv;
+    ParseArgs(argc, argv, "iiii", &xv, &yv, &wv, &hv);
+
+    urge::Rect* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>(xv, yv,
+          wv, hv);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Rect_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Rect* other_obj = CheckObject<urge::Rect>(other_val, kRectDataType);
 
-  urge::RefPtr<urge::Rect> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Rect>(other, kRectDataType);
-    obj = urge::MakeRefCounted<urge::Rect>(other_obj);
-  }
-  EXC_END;
+  urge::Rect* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Rect__dump) {
   auto* self_obj = GetSelfData<urge::Rect>(self);
 
-  EXC_BEGIN {
-    std::string result =
-        urge::Rect::MarshalDump(urge::RefPtr<urge::Rect>(self_obj));
-    return rb_str_new(result.data(), static_cast<long>(result.size()));
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(urge::Rect::MarshalDump(urge::RefPtr<urge::Rect>(self_obj)));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Rect__load) {
-  std::string data;
-  ParseArgs(argc, argv, "s", &data);
+  VALUE data_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &data_val);
+  const char* data_data;
+  size_t data_size;
+  CheckString(data_val, &data_data, &data_size);
 
-  EXC_BEGIN {
-    VALUE obj = rb_obj_alloc(self);
-    auto ptr = urge::Rect::MarshalLoad(data);
-    return SetupSelfData(obj, ptr.get());
-  }
-  EXC_END;
-  return Qnil;
+  urge::Rect* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Rect> value = urge::Rect::MarshalLoad(std::string(data_data, data_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(rb_obj_alloc(self), result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Value equality: ==, eql?, === (KLASS_EQUAL)
 RB_FUNC(Rect__equal) {
   auto* self_obj = GetSelfData<urge::Rect>(self);
-  VALUE other = Qnil;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
 
-  if (!rb_typeddata_is_kind_of(other, &kRectDataType))
+  if (!rb_typeddata_is_kind_of(other_val, &kRectDataType))
     return Qfalse;
+  auto* other_obj = GetSelfData<urge::Rect>(other_val);
 
-  auto* other_obj = GetSelfData<urge::Rect>(other);
-  EXC_BEGIN {
-    return *self_obj == *other_obj ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qfalse;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = *self_obj == *other_obj;
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Rect_Set) {
   auto* self_obj = GetSelfData<urge::Rect>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // set(rect)
-      VALUE rect_val;
-      ParseArgs(argc, argv, "o", &rect_val);
-      self_obj->Set(GetObject<urge::Rect>(rect_val, kRectDataType));
-    } else if (argc == 4) {
-      // set(xv, yv, wv, hv)
-      int xv, yv, wv, hv;
-      ParseArgs(argc, argv, "iiii", &xv, &yv, &wv, &hv);
+  if (argc == 1) {
+    // set(rect)
+    VALUE rect_val;
+    urge::Rect* rect;
+    ParseArgs(argc, argv, "o", &rect_val);
+    rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
+
+    CPP_BEGIN {
+      self_obj->Set(rect);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // set(xv, yv, wv, hv)
+    int xv, yv, wv, hv;
+    ParseArgs(argc, argv, "iiii", &xv, &yv, &wv, &hv);
+
+    CPP_BEGIN {
       self_obj->Set(xv, yv, wv, hv);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Rect_Empty) {
   auto* self_obj = GetSelfData<urge::Rect>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Empty();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

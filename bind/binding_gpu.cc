@@ -53,153 +53,268 @@ namespace binding {
 // -------------------------------------------------------------------------
 
 RB_FUNC(GPU_queue) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = urge::GPU::Get().queue();
-    return WrapObject(result.get(), kGPUQueueDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::GPUQueue* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUQueue> value = urge::GPU::Get().queue();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUQueueDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateBuffer) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUBufferDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUBufferDescriptor>(descriptor_val, kGPUBufferDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateBuffer(GetObject<urge::GPUBufferDescriptor>(descriptor_val, kGPUBufferDescriptorDataType));
-    return WrapObject(result.get(), kGPUBufferDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUBuffer* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUBuffer> value = urge::GPU::Get(
+        ).CreateBuffer(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUBufferDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateTexture) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUTextureDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUTextureDescriptor>(descriptor_val, kGPUTextureDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateTexture(GetObject<urge::GPUTextureDescriptor>(descriptor_val, kGPUTextureDescriptorDataType));
-    return WrapObject(result.get(), kGPUTextureDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUTexture* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUTexture> value = urge::GPU::Get(
+        ).CreateTexture(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUTextureDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateSampler) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUSamplerDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUSamplerDescriptor>(descriptor_val, kGPUSamplerDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateSampler(GetObject<urge::GPUSamplerDescriptor>(descriptor_val, kGPUSamplerDescriptorDataType));
-    return WrapObject(result.get(), kGPUSamplerDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUSampler* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUSampler> value = urge::GPU::Get(
+        ).CreateSampler(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUSamplerDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateShaderModule) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUShaderModuleDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUShaderModuleDescriptor>(descriptor_val, kGPUShaderModuleDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateShaderModule(GetObject<urge::GPUShaderModuleDescriptor>(descriptor_val, kGPUShaderModuleDescriptorDataType));
-    return WrapObject(result.get(), kGPUShaderModuleDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUShaderModule* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUShaderModule> value = urge::GPU::Get(
+        ).CreateShaderModule(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUShaderModuleDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateBindGroupLayout) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUBindGroupLayoutDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUBindGroupLayoutDescriptor>(descriptor_val, kGPUBindGroupLayoutDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateBindGroupLayout(GetObject<urge::GPUBindGroupLayoutDescriptor>(descriptor_val, kGPUBindGroupLayoutDescriptorDataType));
-    return WrapObject(result.get(), kGPUBindGroupLayoutDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUBindGroupLayout* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUBindGroupLayout> value = urge::GPU::Get(
+        ).CreateBindGroupLayout(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUBindGroupLayoutDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreatePipelineLayout) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUPipelineLayoutDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUPipelineLayoutDescriptor>(descriptor_val, kGPUPipelineLayoutDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreatePipelineLayout(GetObject<urge::GPUPipelineLayoutDescriptor>(descriptor_val, kGPUPipelineLayoutDescriptorDataType));
-    return WrapObject(result.get(), kGPUPipelineLayoutDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUPipelineLayout* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUPipelineLayout> value = urge::GPU::Get(
+        ).CreatePipelineLayout(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUPipelineLayoutDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateBindGroup) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUBindGroupDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUBindGroupDescriptor>(descriptor_val, kGPUBindGroupDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateBindGroup(GetObject<urge::GPUBindGroupDescriptor>(descriptor_val, kGPUBindGroupDescriptorDataType));
-    return WrapObject(result.get(), kGPUBindGroupDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUBindGroup* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUBindGroup> value = urge::GPU::Get(
+        ).CreateBindGroup(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUBindGroupDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateRenderPipeline) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPURenderPipelineDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPURenderPipelineDescriptor>(descriptor_val, kGPURenderPipelineDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateRenderPipeline(GetObject<urge::GPURenderPipelineDescriptor>(descriptor_val, kGPURenderPipelineDescriptorDataType));
-    return WrapObject(result.get(), kGPURenderPipelineDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPURenderPipeline* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPURenderPipeline> value = urge::GPU::Get(
+        ).CreateRenderPipeline(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPURenderPipelineDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateComputePipeline) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUComputePipelineDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUComputePipelineDescriptor>(descriptor_val, kGPUComputePipelineDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateComputePipeline(GetObject<urge::GPUComputePipelineDescriptor>(descriptor_val, kGPUComputePipelineDescriptorDataType));
-    return WrapObject(result.get(), kGPUComputePipelineDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUComputePipeline* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUComputePipeline> value = urge::GPU::Get(
+        ).CreateComputePipeline(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUComputePipelineDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateQuerySet) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE descriptor_val;
-    ParseArgs(argc, argv, "o", &descriptor_val);
+  CheckArgc(argc, 1);
+  VALUE descriptor_val;
+  urge::GPUQuerySetDescriptor* descriptor;
+  ParseArgs(argc, argv, "o", &descriptor_val);
+  descriptor = CheckObject<urge::GPUQuerySetDescriptor>(descriptor_val, kGPUQuerySetDescriptorDataType);
 
-    auto result = urge::GPU::Get().CreateQuerySet(GetObject<urge::GPUQuerySetDescriptor>(descriptor_val, kGPUQuerySetDescriptorDataType));
-    return WrapObject(result.get(), kGPUQuerySetDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUQuerySet* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUQuerySet> value = urge::GPU::Get(
+        ).CreateQuerySet(descriptor);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUQuerySetDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(GPU_CreateCommandEncoder) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = urge::GPU::Get().CreateCommandEncoder();
-    return WrapObject(result.get(), kGPUCommandEncoderDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::GPUCommandEncoder* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUCommandEncoder> value = urge::GPU::Get(
+        ).CreateCommandEncoder();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUCommandEncoderDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitGPUBindingAppend(VALUE mod);

@@ -33,107 +33,223 @@ namespace binding {
 // -------------------------------------------------------------------------
 
 RB_FUNC(Network_Update) {
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     urge::Network::Get().Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Network_OpenWebSocket) {
-  EXC_BEGIN {
-    if (argc == 1) {
-      // websocket(url)
-      std::string url;
-      ParseArgs(argc, argv, "s", &url);
-      auto result = urge::Network::Get().OpenWebSocket(url);
-      return WrapObject(result.get(), kWebSocketDataType);
-    } else if (argc == 2) {
-      // websocket(url, protocols)
-      std::string url;
-      VALUE protocols_val;
-      ParseArgs(argc, argv, "so", &url, &protocols_val);
-      auto result = urge::Network::Get().OpenWebSocket(url, GetVectorOf<std::string>(protocols_val));
-      return WrapObject(result.get(), kWebSocketDataType);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // websocket(url)
+    VALUE url_val;
+    const char* url_data;
+    size_t url_size;
+    ParseArgs(argc, argv, "o", &url_val);
+    CheckString(url_val, &url_data, &url_size);
+
+    urge::WebSocket* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::WebSocket> value = urge::Network::Get(
+          ).OpenWebSocket(std::string(url_data, url_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kWebSocketDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else if (argc == 2) {
+    // websocket(url, protocols)
+    VALUE url_val, protocols_val;
+    const char* url_data;
+    size_t url_size;
+    ParseArgs(argc, argv, "oo", &url_val, &protocols_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckVectorOf<std::string>(protocols_val);
+
+    urge::WebSocket* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::WebSocket> value = urge::Network::Get(
+          ).OpenWebSocket(std::string(url_data, url_size),
+          TakeVectorOf<std::string>(protocols_val));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kWebSocketDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Network_OpenFetch) {
-  EXC_BEGIN {
-    if (argc == 1) {
-      // fetch(url)
-      std::string url;
-      ParseArgs(argc, argv, "s", &url);
-      auto result = urge::Network::Get().OpenFetch(url);
-      return WrapObject(result.get(), kFetchDataType);
-    } else if (argc == 2) {
-      // fetch(url, method)
-      std::string url, method;
-      ParseArgs(argc, argv, "ss", &url, &method);
-      auto result = urge::Network::Get().OpenFetch(url, method);
-      return WrapObject(result.get(), kFetchDataType);
-    } else if (argc == 3) {
-      // fetch(url, method, body)
-      std::string url, method, body;
-      ParseArgs(argc, argv, "sss", &url, &method, &body);
-      auto result = urge::Network::Get().OpenFetch(url, method, body);
-      return WrapObject(result.get(), kFetchDataType);
-    } else if (argc == 4) {
-      // fetch(url, method, body, headers)
-      std::string url, method, body;
-      VALUE headers_val;
-      ParseArgs(argc, argv, "ssso", &url, &method, &body, &headers_val);
-      auto result = urge::Network::Get().OpenFetch(url, method, body, GetVectorOf<std::string>(headers_val));
-      return WrapObject(result.get(), kFetchDataType);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // fetch(url)
+    VALUE url_val;
+    const char* url_data;
+    size_t url_size;
+    ParseArgs(argc, argv, "o", &url_val);
+    CheckString(url_val, &url_data, &url_size);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
+          ).OpenFetch(std::string(url_data, url_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kFetchDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else if (argc == 2) {
+    // fetch(url, method)
+    VALUE url_val, method_val;
+    const char* url_data;
+    size_t url_size, method_size;
+    const char* method_data;
+    ParseArgs(argc, argv, "oo", &url_val, &method_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
+          ).OpenFetch(std::string(url_data, url_size),
+          std::string(method_data, method_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kFetchDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else if (argc == 3) {
+    // fetch(url, method, body)
+    VALUE url_val, method_val, body_val;
+    const char* url_data;
+    size_t url_size, method_size, body_size;
+    const char* method_data;
+    const char* body_data;
+    ParseArgs(argc, argv, "ooo", &url_val, &method_val, &body_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+    CheckString(body_val, &body_data, &body_size);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
+          ).OpenFetch(std::string(url_data, url_size),
+          std::string(method_data, method_size),
+          std::string(body_data, body_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kFetchDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else if (argc == 4) {
+    // fetch(url, method, body, headers)
+    VALUE url_val, method_val, body_val, headers_val;
+    const char* url_data;
+    size_t url_size, method_size, body_size;
+    const char* method_data;
+    const char* body_data;
+    ParseArgs(argc, argv, "oooo", &url_val, &method_val, &body_val,
+        &headers_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+    CheckString(body_val, &body_data, &body_size);
+    CheckVectorOf<std::string>(headers_val);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
+          ).OpenFetch(std::string(url_data, url_size),
+          std::string(method_data, method_size),
+          std::string(body_data, body_size),
+          TakeVectorOf<std::string>(headers_val));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kFetchDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Network_Timeout) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Network::Get().Attr_Timeout()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Network::Get().Attr_Timeout());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Network_TimeoutEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Network::Get().Attr_Timeout(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Network_MaxEvents) {
-  EXC_BEGIN {
-    return LONG2NUM((*urge::Network::Get().Attr_MaxEvents()));
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = (*urge::Network::Get().Attr_MaxEvents());
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Network_MaxEventsEqual) {
-  int value = {};
+  CheckArgc(argc, 1);
+  int value;
+  ParseArgs(argc, argv, "i", &value);
 
-  EXC_BEGIN {
-    ParseArgs(argc, argv, "i", &value);
+  CPP_BEGIN {
     urge::Network::Get().Attr_MaxEvents(value);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

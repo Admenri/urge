@@ -36,38 +36,63 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Plane, Node);
 
 RB_FUNC(Plane_initialize) {
-  urge::RefPtr<urge::Plane> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Plane>();
-    } else if (argc == 1) {
-      // initialize(viewport)
-      VALUE viewport_val;
-      ParseArgs(argc, argv, "o", &viewport_val);
-      obj = urge::MakeRefCounted<urge::Plane>(
-          GetObject<urge::Viewport>(viewport_val, kViewportDataType));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Plane* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Plane> value = urge::MakeRefCounted<urge::Plane>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(viewport)
+    VALUE viewport_val;
+    urge::Viewport* viewport;
+    ParseArgs(argc, argv, "o", &viewport_val);
+    viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
+
+    urge::Plane* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Plane> value = urge::MakeRefCounted<urge::Plane>(
+          viewport);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
-// Attribute: viewport (RefPtr<Viewport>)
+// Attribute: viewport (MaybePtr<Viewport>)
 BINDING_ATTR_OBJECT_REF(Plane,
                         urge::Plane,
                         Viewport,
                         urge::Viewport,
-                        kViewportDataType);
+                        kViewportDataType,
+                        CheckMaybeObject);
 
-// Attribute: bitmap (RefPtr<Bitmap>)
+// Attribute: bitmap (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(Plane,
                         urge::Plane,
                         Bitmap,
                         urge::Bitmap,
-                        kBitmapDataType);
+                        kBitmapDataType,
+                        CheckMaybeObject);
 
 // Attribute: ox (int32_t)
 BINDING_ATTR_INT(Plane, urge::Plane, OX);
@@ -88,10 +113,20 @@ BINDING_ATTR_INT(Plane, urge::Plane, Opacity);
 BINDING_ATTR_INT(Plane, urge::Plane, BlendType);
 
 // Attribute: color (RefPtr<Color>)
-BINDING_ATTR_OBJECT(Plane, urge::Plane, Color, urge::Color, kColorDataType);
+BINDING_ATTR_OBJECT(Plane,
+                    urge::Plane,
+                    Color,
+                    urge::Color,
+                    kColorDataType,
+                    CheckObject);
 
 // Attribute: tone (RefPtr<Tone>)
-BINDING_ATTR_OBJECT(Plane, urge::Plane, Tone, urge::Tone, kToneDataType);
+BINDING_ATTR_OBJECT(Plane,
+                    urge::Plane,
+                    Tone,
+                    urge::Tone,
+                    kToneDataType,
+                    CheckObject);
 
 void InitPlaneBindingAppend(VALUE klass);
 

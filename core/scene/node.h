@@ -44,24 +44,24 @@ class Node : public Disposable {
   ~Node() override;
 
   URGE_BINDING()
-  void Render(RefPtr<Bitmap> target, RefPtr<Color> clear = nullptr);
+  void Render(RefPtr<Bitmap> target, MaybePtr<Color> clear = nullptr);
 
   URGE_BINDING()
   virtual ATTR(int32_t, Z);
   URGE_BINDING()
   virtual ATTR(bool, Visible);
   URGE_BINDING()
-  virtual ATTR(RefPtr<Node>, Parent);
+  virtual ATTR(MaybePtr<Node>, Parent);
 
   URGE_BINDING()
-  virtual ATTR(RefPtr<Vector3>, Position);
+  virtual ATTR(MaybePtr<Vector3>, Position);
   URGE_BINDING()
-  virtual ATTR(RefPtr<Vector4>, Quaternion);
+  virtual ATTR(MaybePtr<Vector4>, Quaternion);
   URGE_BINDING()
-  virtual ATTR(RefPtr<Vector3>, Scale);
+  virtual ATTR(MaybePtr<Vector3>, Scale);
 
   URGE_BINDING()
-  ATTR(RefPtr<Camera>, Camera);
+  ATTR(MaybePtr<Camera>, Camera);
 
  protected:
   virtual bool Prepare(DrawParam param) { return false; }

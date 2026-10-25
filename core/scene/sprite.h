@@ -35,12 +35,12 @@ URGE_BINDING()
 class Sprite : public Node {
  public:
   URGE_BINDING()
-  Sprite(RefPtr<Viewport> viewport = nullptr);
+  Sprite(MaybePtr<Viewport> viewport = nullptr);
   URGE_BINDING()
   ~Sprite() override;
 
   URGE_BINDING()
-  void Flash(RefPtr<Color> color, int32_t duration);
+  void Flash(MaybePtr<Color> color, int32_t duration);
   URGE_BINDING()
   void Update();
 
@@ -50,9 +50,9 @@ class Sprite : public Node {
   int32_t Height();
 
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Bitmap);
+  ATTR(MaybePtr<Bitmap>, Bitmap);
   URGE_BINDING()
   ATTR(RefPtr<Rect>, SrcRect);
   URGE_BINDING()
@@ -92,7 +92,7 @@ class Sprite : public Node {
   URGE_BINDING()
   ATTR(RefPtr<Tone>, Tone);
   URGE_BINDING()
-  ATTR(RefPtr<Effect>, Effect);
+  ATTR(MaybePtr<Effect>, Effect);
 
  private:
   void DisposeObject() override;

@@ -30,40 +30,74 @@ namespace binding {
 // -------------------------------------------------------------------------
 
 RB_FUNC(Config_GetValue) {
-  EXC_BEGIN {
-    if (argc == 2) {
-      // get_value(section, key)
-      std::string section, key;
-      ParseArgs(argc, argv, "ss", &section, &key);
-      std::string result = urge::Config::Get().GetValue(section, key);
-      return rb_enc_str_new(result.data(),
-                           static_cast<long>(result.size()),
-                           rb_utf8_encoding());
-    } else if (argc == 3) {
-      // get_value(section, key, defval)
-      std::string section, key, defval;
-      ParseArgs(argc, argv, "sss", &section, &key, &defval);
-      std::string result = urge::Config::Get().GetValue(section, key, defval);
-      return rb_enc_str_new(result.data(),
-                           static_cast<long>(result.size()),
-                           rb_utf8_encoding());
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 2) {
+    // get_value(section, key)
+    VALUE section_val, key_val;
+    const char* section_data;
+    size_t section_size, key_size;
+    const char* key_data;
+    ParseArgs(argc, argv, "oo", &section_val, &key_val);
+    CheckString(section_val, &section_data, &section_size);
+    CheckString(key_val, &key_data, &key_size);
+
+    std::string* result = nullptr;
+
+    CPP_BEGIN {
+      result = new std::string(
+          urge::Config::Get().GetValue(std::string(section_data, section_size), std::string(key_data, key_size)));
+    } CPP_END;
+
+    VALUE value = rb_enc_str_new(
+        result->data(), static_cast<long>(result->size()),
+        rb_utf8_encoding());
+    delete result;
+    return value;
+  } else if (argc == 3) {
+    // get_value(section, key, defval)
+    VALUE section_val, key_val, defval_val;
+    const char* section_data;
+    size_t section_size, key_size, defval_size;
+    const char* key_data;
+    const char* defval_data;
+    ParseArgs(argc, argv, "ooo", &section_val, &key_val, &defval_val);
+    CheckString(section_val, &section_data, &section_size);
+    CheckString(key_val, &key_data, &key_size);
+    CheckString(defval_val, &defval_data, &defval_size);
+
+    std::string* result = nullptr;
+
+    CPP_BEGIN {
+      result = new std::string(
+          urge::Config::Get().GetValue(std::string(section_data, section_size), std::string(key_data, key_size), std::string(defval_data, defval_size)));
+    } CPP_END;
+
+    VALUE value = rb_enc_str_new(
+        result->data(), static_cast<long>(result->size()),
+        rb_utf8_encoding());
+    delete result;
+    return value;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Config_SetValue) {
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    std::string section, key, value;
-    ParseArgs(argc, argv, "sss", &section, &key, &value);
+  CheckArgc(argc, 3);
+  VALUE section_val, key_val, value_val;
+  const char* section_data;
+  size_t section_size, key_size, value_size;
+  const char* key_data;
+  const char* value_data;
+  ParseArgs(argc, argv, "ooo", &section_val, &key_val, &value_val);
+  CheckString(section_val, &section_data, &section_size);
+  CheckString(key_val, &key_data, &key_size);
+  CheckString(value_val, &value_data, &value_size);
 
-    urge::Config::Get().SetValue(section, key, value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    urge::Config::Get().SetValue(std::string(section_data, section_size),
+        std::string(key_data, key_size), std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 

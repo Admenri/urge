@@ -39,90 +39,125 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Sprite, Node);
 
 RB_FUNC(Sprite_initialize) {
-  urge::RefPtr<urge::Sprite> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Sprite>();
-    } else if (argc == 1) {
-      // initialize(viewport)
-      VALUE viewport_val;
-      ParseArgs(argc, argv, "o", &viewport_val);
-      obj = urge::MakeRefCounted<urge::Sprite>(
-          GetObject<urge::Viewport>(viewport_val, kViewportDataType));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Sprite* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Sprite> value = urge::MakeRefCounted<urge::Sprite>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(viewport)
+    VALUE viewport_val;
+    urge::Viewport* viewport;
+    ParseArgs(argc, argv, "o", &viewport_val);
+    viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
+
+    urge::Sprite* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Sprite> value = urge::MakeRefCounted<urge::Sprite>(
+          viewport);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Sprite_Flash) {
   auto* self_obj = GetSelfData<urge::Sprite>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    VALUE color_val;
-    int duration;
-    ParseArgs(argc, argv, "oi", &color_val, &duration);
+  CheckArgc(argc, 2);
+  VALUE color_val;
+  urge::Color* color;
+  int duration;
+  ParseArgs(argc, argv, "oi", &color_val, &duration);
+  color = CheckMaybeObject<urge::Color>(color_val, kColorDataType);
 
-    self_obj->Flash(GetObject<urge::Color>(color_val, kColorDataType),
-        duration);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Flash(color, duration);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Sprite_Update) {
   auto* self_obj = GetSelfData<urge::Sprite>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Sprite_Width) {
   auto* self_obj = GetSelfData<urge::Sprite>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Width();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Sprite_Height) {
   auto* self_obj = GetSelfData<urge::Sprite>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Height();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
-// Attribute: viewport (RefPtr<Viewport>)
+// Attribute: viewport (MaybePtr<Viewport>)
 BINDING_ATTR_OBJECT_REF(Sprite,
                         urge::Sprite,
                         Viewport,
                         urge::Viewport,
-                        kViewportDataType);
+                        kViewportDataType,
+                        CheckMaybeObject);
 
-// Attribute: bitmap (RefPtr<Bitmap>)
+// Attribute: bitmap (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(Sprite,
                         urge::Sprite,
                         Bitmap,
                         urge::Bitmap,
-                        kBitmapDataType);
+                        kBitmapDataType,
+                        CheckMaybeObject);
 
 // Attribute: src_rect (RefPtr<Rect>)
-BINDING_ATTR_OBJECT(Sprite, urge::Sprite, SrcRect, urge::Rect, kRectDataType);
+BINDING_ATTR_OBJECT(Sprite,
+                    urge::Sprite,
+                    SrcRect,
+                    urge::Rect,
+                    kRectDataType,
+                    CheckObject);
 
 // Attribute: x (int32_t)
 BINDING_ATTR_INT(Sprite, urge::Sprite, X);
@@ -173,17 +208,28 @@ BINDING_ATTR_INT(Sprite, urge::Sprite, Opacity);
 BINDING_ATTR_INT(Sprite, urge::Sprite, BlendType);
 
 // Attribute: color (RefPtr<Color>)
-BINDING_ATTR_OBJECT(Sprite, urge::Sprite, Color, urge::Color, kColorDataType);
+BINDING_ATTR_OBJECT(Sprite,
+                    urge::Sprite,
+                    Color,
+                    urge::Color,
+                    kColorDataType,
+                    CheckObject);
 
 // Attribute: tone (RefPtr<Tone>)
-BINDING_ATTR_OBJECT(Sprite, urge::Sprite, Tone, urge::Tone, kToneDataType);
+BINDING_ATTR_OBJECT(Sprite,
+                    urge::Sprite,
+                    Tone,
+                    urge::Tone,
+                    kToneDataType,
+                    CheckObject);
 
-// Attribute: effect (RefPtr<Effect>)
+// Attribute: effect (MaybePtr<Effect>)
 BINDING_ATTR_OBJECT_REF(Sprite,
                         urge::Sprite,
                         Effect,
                         urge::Effect,
-                        kEffectDataType);
+                        kEffectDataType,
+                        CheckMaybeObject);
 
 void InitSpriteBindingAppend(VALUE klass);
 

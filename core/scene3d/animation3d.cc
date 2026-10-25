@@ -119,10 +119,6 @@ float Animation3D::EventTime(int32_t index) const {
 }
 
 void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
-  if (!skeleton)
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: a skeleton is needed.");
-
   if (skeleton->pose_open()) {
     Sample(skeleton.get(), time, 1.0f, nullptr);
     return;
@@ -134,9 +130,6 @@ void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
 }
 
 void Animation3D::Blend(RefPtr<Skeleton3D> skeleton, float time, float weight) {
-  if (!skeleton)
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: a skeleton is needed.");
   if (!skeleton->pose_open())
     throw Exception(Exception::kRGSSError,
                     "animation3d: call skeleton.begin_pose before blend.");
@@ -148,9 +141,6 @@ void Animation3D::BlendMasked(RefPtr<Skeleton3D> skeleton,
                               float time,
                               float weight,
                               RefPtr<BoneMask3D> mask) {
-  if (!skeleton)
-    throw Exception(Exception::kRGSSError,
-                    "animation3d: a skeleton is needed.");
   if (!skeleton->pose_open())
     throw Exception(
         Exception::kRGSSError,

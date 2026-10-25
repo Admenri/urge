@@ -34,13 +34,20 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(OrthographicCamera, Camera);
 
 RB_FUNC(OrthographicCamera_initialize) {
-  urge::RefPtr<urge::OrthographicCamera> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::OrthographicCamera>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::OrthographicCamera* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::OrthographicCamera> value = urge::MakeRefCounted<urge::OrthographicCamera>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Attribute: size (float)

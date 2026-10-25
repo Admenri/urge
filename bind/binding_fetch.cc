@@ -22,16 +22,24 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// `Fetch#body` answers ASCII-8BIT bytes, for the same reason as
-// `NetworkEvent#data`.
+// Same shape as NetworkEvent#data: the body belongs to the Fetch object, so
+// phase 2 only reads a pointer and a length out of it.
 RB_FUNC(Fetch_Body) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
+  CheckArgc(argc, 0);
 
-  const std::string& body = self_obj->body();
-  return rb_enc_str_new(body.data(), static_cast<long>(body.size()),
+  const char* body = nullptr;
+  size_t size = 0;
+
+  CPP_BEGIN {
+    const std::string& payload = self_obj->body();
+    body = payload.data();
+    size = payload.size();
+  } CPP_END;
+
+  return rb_enc_str_new(body, static_cast<long>(size),
                         rb_ascii8bit_encoding());
 }
-
 void DefineFetchBody(VALUE klass) {
   DefineMethod(klass, "body", Fetch_Body);
 }
@@ -45,172 +53,279 @@ void DefineFetchBody(VALUE klass) {
 RB_DEF_TYPE(Fetch);
 
 RB_FUNC(Fetch_initialize) {
-  urge::RefPtr<urge::Fetch> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 1) {
-      // initialize(url)
-      std::string url;
-      ParseArgs(argc, argv, "s", &url);
-      obj = urge::MakeRefCounted<urge::Fetch>(url);
-    } else if (argc == 2) {
-      // initialize(url, method)
-      std::string url, method;
-      ParseArgs(argc, argv, "ss", &url, &method);
-      obj = urge::MakeRefCounted<urge::Fetch>(url, method);
-    } else if (argc == 3) {
-      // initialize(url, method, body)
-      std::string url, method, body;
-      ParseArgs(argc, argv, "sss", &url, &method, &body);
-      obj = urge::MakeRefCounted<urge::Fetch>(url, method, body);
-    } else if (argc == 4) {
-      // initialize(url, method, body, headers)
-      std::string url, method, body;
-      VALUE headers_val;
-      ParseArgs(argc, argv, "ssso", &url, &method, &body, &headers_val);
-      obj = urge::MakeRefCounted<urge::Fetch>(url, method, body,
-          GetVectorOf<std::string>(headers_val));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // initialize(url)
+    VALUE url_val;
+    const char* url_data;
+    size_t url_size;
+    ParseArgs(argc, argv, "o", &url_val);
+    CheckString(url_val, &url_data, &url_size);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 2) {
+    // initialize(url, method)
+    VALUE url_val, method_val;
+    const char* url_data;
+    size_t url_size, method_size;
+    const char* method_data;
+    ParseArgs(argc, argv, "oo", &url_val, &method_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size),
+          std::string(method_data, method_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 3) {
+    // initialize(url, method, body)
+    VALUE url_val, method_val, body_val;
+    const char* url_data;
+    size_t url_size, method_size, body_size;
+    const char* method_data;
+    const char* body_data;
+    ParseArgs(argc, argv, "ooo", &url_val, &method_val, &body_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+    CheckString(body_val, &body_data, &body_size);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size),
+          std::string(method_data, method_size),
+          std::string(body_data, body_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 4) {
+    // initialize(url, method, body, headers)
+    VALUE url_val, method_val, body_val, headers_val;
+    const char* url_data;
+    size_t url_size, method_size, body_size;
+    const char* method_data;
+    const char* body_data;
+    ParseArgs(argc, argv, "oooo", &url_val, &method_val, &body_val,
+        &headers_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+    CheckString(body_val, &body_data, &body_size);
+    CheckVectorOf<std::string>(headers_val);
+
+    urge::Fetch* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size),
+          std::string(method_data, method_size),
+          std::string(body_data, body_size),
+          TakeVectorOf<std::string>(headers_val));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Fetch_Start) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Start();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Fetch_Abort) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Abort();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Fetch_IsDone) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->IsDone() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsDone();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Fetch_IsSuccess) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->IsSuccess() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsSuccess();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Fetch_GetStatus) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetStatus());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetStatus();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Fetch_GetStatusText) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetStatusText();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetStatusText());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetText) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetText();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetText());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetError) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetError();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetError());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetProgress) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->GetProgress());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->GetProgress();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(Fetch_GetHeader) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string name;
-    ParseArgs(argc, argv, "s", &name);
+  CheckArgc(argc, 1);
+  VALUE name_val;
+  const char* name_data;
+  size_t name_size;
+  ParseArgs(argc, argv, "o", &name_val);
+  CheckString(name_val, &name_data, &name_size);
 
-    std::string result = self_obj->GetHeader(name);
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(
+        self_obj->GetHeader(std::string(name_data, name_size)));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetHeaders) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->GetHeaders());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->GetHeaders());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 void InitFetchBindingAppend(VALUE klass);

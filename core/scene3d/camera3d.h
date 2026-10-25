@@ -93,7 +93,7 @@ class Camera3D : public Node3D {
   }
 
   URGE_BINDING(Name : "clear_color")
-  ATTR(RefPtr<Color>, ClearColor) {
+  ATTR(MaybePtr<Color>, ClearColor) {
     if (value.has_value()) {
       if (*value)
         clear_color_ = *value;
@@ -134,7 +134,7 @@ class Camera3D : public Node3D {
                                   float lambda,
                                   float max_distance);
   URGE_BINDING()
-  std::vector<float> ShadowCascades(RefPtr<Vector3> light_direction,
+  std::vector<float> ShadowCascades(MaybePtr<Vector3> light_direction,
                                     int32_t count,
                                     float lambda,
                                     int32_t width,

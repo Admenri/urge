@@ -157,25 +157,34 @@ RB_FUNC(rgss_stop) {
 // `RGSSLoadData` itself is left bare: the constructor calls it for the game's
 // own scripts, where a failure is fatal and must still reach the host.
 RB_FUNC(load_data) {
-  const char* filename;
+  const char* filename = nullptr;
   ParseArgs(argc, argv, "z", &filename);
-  EXC_BEGIN {
-    return RGSSLoadData(filename);
-  }
-  EXC_END;
-  return Qnil;
+
+  VALUE result = Qnil;
+
+  CPP_BEGIN {
+    result = RGSSLoadData(filename);
+  } CPP_END;
+
+  return result;
 }
 
 RB_FUNC(save_data) {
-  VALUE data;
-  const char* filename;
+  VALUE data = Qnil;
+  const char* filename = nullptr;
   ParseArgs(argc, argv, "oz", &data, &filename);
-  EXC_BEGIN {
+
+  // The marshal dump is a Ruby -> C step, so it belongs in phase 1 where a
+  // raise is still legal; phase 2 only writes bytes out.
+  VALUE dumped = rb_marshal_dump(data, Qnil);
+  const char* bytes = RSTRING_PTR(dumped);
+  long length = RSTRING_LEN(dumped);
+
+  CPP_BEGIN {
     auto stream = urge::IOService::Get().OpenWrite(filename);
-    VALUE dumped = rb_marshal_dump(data, Qnil);
-    SDL_SaveFile_IO(stream, RSTRING_PTR(dumped), RSTRING_LEN(dumped), true);
-  }
-  EXC_END;
+    SDL_SaveFile_IO(stream, bytes, length, true);
+  } CPP_END;
+
   return Qnil;
 }
 

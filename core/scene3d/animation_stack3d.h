@@ -74,7 +74,7 @@ class AnimationLayer3D : public Object {
   }
 
   URGE_BINDING(Name : "mask")
-  ATTR(RefPtr<BoneMask3D>, Mask) {
+  ATTR(MaybePtr<BoneMask3D>, Mask) {
     if (value.has_value())
       mask_ = *value;
     return mask_;
@@ -107,7 +107,7 @@ class AnimationStack3D : public Object {
   RefPtr<AnimationLayer3D> AddLayer(RefPtr<Animation3D> animation,
                                     float weight);
   URGE_BINDING()
-  void RemoveLayer(RefPtr<AnimationLayer3D> layer);
+  void RemoveLayer(MaybePtr<AnimationLayer3D> layer);
   URGE_BINDING()
   void ClearLayers();
   URGE_BINDING()

@@ -38,120 +38,153 @@ namespace binding {
 RB_DEF_TYPE(AnimationStack3D);
 
 RB_FUNC(AnimationStack3D_initialize) {
-  urge::RefPtr<urge::AnimationStack3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::AnimationStack3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::AnimationStack3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::AnimationStack3D> value = urge::MakeRefCounted<urge::AnimationStack3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(AnimationStack3D_AddLayer) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    VALUE animation_val;
-    double weight;
-    ParseArgs(argc, argv, "of", &animation_val, &weight);
+  CheckArgc(argc, 2);
+  VALUE animation_val;
+  urge::Animation3D* animation;
+  double weight;
+  ParseArgs(argc, argv, "of", &animation_val, &weight);
+  animation = CheckObject<urge::Animation3D>(animation_val, kAnimation3DDataType);
 
-    auto result = self_obj->AddLayer(GetObject<urge::Animation3D>(animation_val, kAnimation3DDataType), static_cast<float>(weight));
-    return WrapObject(result.get(), kAnimationLayer3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::AnimationLayer3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::AnimationLayer3D> value = self_obj->AddLayer(animation,
+        static_cast<float>(weight));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kAnimationLayer3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(AnimationStack3D_RemoveLayer) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE layer_val;
-    ParseArgs(argc, argv, "o", &layer_val);
+  CheckArgc(argc, 1);
+  VALUE layer_val;
+  urge::AnimationLayer3D* layer;
+  ParseArgs(argc, argv, "o", &layer_val);
+  layer = CheckMaybeObject<urge::AnimationLayer3D>(layer_val, kAnimationLayer3DDataType);
 
-    self_obj->RemoveLayer(
-        GetObject<urge::AnimationLayer3D>(layer_val, kAnimationLayer3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->RemoveLayer(layer);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AnimationStack3D_ClearLayers) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->ClearLayers();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AnimationStack3D_LayerCount) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->LayerCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->LayerCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(AnimationStack3D_LayerAt) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    auto result = self_obj->LayerAt(index);
-    return WrapObject(result.get(), kAnimationLayer3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::AnimationLayer3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::AnimationLayer3D> value = self_obj->LayerAt(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kAnimationLayer3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(AnimationStack3D_Update) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    VALUE skeleton_val;
-    double delta;
-    ParseArgs(argc, argv, "of", &skeleton_val, &delta);
+  CheckArgc(argc, 2);
+  VALUE skeleton_val;
+  urge::Skeleton3D* skeleton;
+  double delta;
+  ParseArgs(argc, argv, "of", &skeleton_val, &delta);
+  skeleton = CheckObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType);
 
-    self_obj->Update(
-        GetObject<urge::Skeleton3D>(skeleton_val, kSkeleton3DDataType),
-        static_cast<float>(delta));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Update(skeleton, static_cast<float>(delta));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AnimationStack3D_TakeEvents) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->TakeEvents());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->TakeEvents());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(AnimationStack3D_EventCount) {
   auto* self_obj = GetSelfData<urge::AnimationStack3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->EventCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->EventCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 void InitAnimationStack3DBindingAppend(VALUE klass);

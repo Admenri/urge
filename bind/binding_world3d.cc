@@ -44,68 +44,95 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(World3D, Node);
 
 RB_FUNC(World3D_initialize) {
-  urge::RefPtr<urge::World3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 4);
-    int x, y, width, height;
-    ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
+  int x, y, width, height;
+  ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
-    obj = urge::MakeRefCounted<urge::World3D>(x, y, width, height);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::World3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::World3D> value = urge::MakeRefCounted<urge::World3D>(x,
+        y, width, height);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(World3D_GetFormat) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetFormat();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetFormat());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(World3D_SetFormat) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  const char* value_data;
+  size_t value_size;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckString(value_val, &value_data, &value_size);
 
-    self_obj->SetFormat(value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetFormat(std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(World3D_GetTarget) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetTarget();
-    return WrapObject(result.get(), kRenderTarget3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::RenderTarget3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::RenderTarget3D> value = self_obj->GetTarget();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kRenderTarget3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(World3D_GetContext) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetContext();
-    return WrapObject(result.get(), kRenderContext3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::RenderContext3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::RenderContext3D> value = self_obj->GetContext();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kRenderContext3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 // Attribute: x (int32_t)
@@ -120,26 +147,29 @@ BINDING_ATTR_INT(World3D, urge::World3D, Width);
 // Attribute: height (int32_t)
 BINDING_ATTR_INT(World3D, urge::World3D, Height);
 
-// Attribute: scene (RefPtr<Node3D>)
+// Attribute: scene (MaybePtr<Node3D>)
 BINDING_ATTR_OBJECT_REF(World3D,
                         urge::World3D,
                         Scene,
                         urge::Node3D,
-                        kNode3DDataType);
+                        kNode3DDataType,
+                        CheckMaybeObject);
 
-// Attribute: camera (RefPtr<Camera3D>)
+// Attribute: camera (MaybePtr<Camera3D>)
 BINDING_ATTR_OBJECT_REF(World3D,
                         urge::World3D,
                         Camera,
                         urge::Camera3D,
-                        kCamera3DDataType);
+                        kCamera3DDataType,
+                        CheckMaybeObject);
 
-// Attribute: graph (RefPtr<RenderGraph3D>)
+// Attribute: graph (MaybePtr<RenderGraph3D>)
 BINDING_ATTR_OBJECT_REF(World3D,
                         urge::World3D,
                         Graph,
                         urge::RenderGraph3D,
-                        kRenderGraph3DDataType);
+                        kRenderGraph3DDataType,
+                        CheckMaybeObject);
 
 void InitWorld3DBindingAppend(VALUE klass);
 

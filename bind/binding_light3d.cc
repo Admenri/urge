@@ -36,20 +36,32 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Light3D, Node3D);
 
 RB_FUNC(Light3D_initialize) {
-  urge::RefPtr<urge::Light3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Light3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Light3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Light3D> value = urge::MakeRefCounted<urge::Light3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Attribute: type (uint32_t)
 BINDING_ATTR_INT(Light3D, urge::Light3D, Type);
 
-// Attribute: color (RefPtr<Color>)
-BINDING_ATTR_OBJECT(Light3D, urge::Light3D, Color, urge::Color, kColorDataType);
+// Attribute: color (MaybePtr<Color>)
+BINDING_ATTR_OBJECT(Light3D,
+                    urge::Light3D,
+                    Color,
+                    urge::Color,
+                    kColorDataType,
+                    CheckMaybeObject);
 
 // Attribute: intensity (float)
 BINDING_ATTR_FLOAT(Light3D, urge::Light3D, Intensity);

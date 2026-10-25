@@ -34,96 +34,103 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(ForwardPipeline3D, RenderGraph3D);
 
 RB_FUNC(ForwardPipeline3D_initialize) {
-  urge::RefPtr<urge::ForwardPipeline3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::ForwardPipeline3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::ForwardPipeline3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::ForwardPipeline3D> value = urge::MakeRefCounted<urge::ForwardPipeline3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(ForwardPipeline3D_SetCascades) {
   auto* self_obj = GetSelfData<urge::ForwardPipeline3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int count;
-    ParseArgs(argc, argv, "i", &count);
+  CheckArgc(argc, 1);
+  int count;
+  ParseArgs(argc, argv, "i", &count);
 
+  CPP_BEGIN {
     self_obj->SetCascades(count);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ForwardPipeline3D_SetShadowDistance) {
   auto* self_obj = GetSelfData<urge::ForwardPipeline3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double distance;
-    ParseArgs(argc, argv, "f", &distance);
+  CheckArgc(argc, 1);
+  double distance;
+  ParseArgs(argc, argv, "f", &distance);
 
+  CPP_BEGIN {
     self_obj->SetShadowDistance(static_cast<float>(distance));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ForwardPipeline3D_SetSplitLambda) {
   auto* self_obj = GetSelfData<urge::ForwardPipeline3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double lambda;
-    ParseArgs(argc, argv, "f", &lambda);
+  CheckArgc(argc, 1);
+  double lambda;
+  ParseArgs(argc, argv, "f", &lambda);
 
+  CPP_BEGIN {
     self_obj->SetSplitLambda(static_cast<float>(lambda));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ForwardPipeline3D_SetCascadeFade) {
   auto* self_obj = GetSelfData<urge::ForwardPipeline3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double fade;
-    ParseArgs(argc, argv, "f", &fade);
+  CheckArgc(argc, 1);
+  double fade;
+  ParseArgs(argc, argv, "f", &fade);
 
+  CPP_BEGIN {
     self_obj->SetCascadeFade(static_cast<float>(fade));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ForwardPipeline3D_SetShadowEnabled) {
   auto* self_obj = GetSelfData<urge::ForwardPipeline3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    bool enabled;
-    ParseArgs(argc, argv, "b", &enabled);
+  CheckArgc(argc, 1);
+  bool enabled;
+  ParseArgs(argc, argv, "b", &enabled);
 
+  CPP_BEGIN {
     self_obj->SetShadowEnabled(enabled);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(ForwardPipeline3D_SetQueueSplit) {
   auto* self_obj = GetSelfData<urge::ForwardPipeline3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int queue;
-    ParseArgs(argc, argv, "i", &queue);
+  CheckArgc(argc, 1);
+  int queue;
+  ParseArgs(argc, argv, "i", &queue);
 
+  CPP_BEGIN {
     self_obj->SetQueueSplit(queue);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

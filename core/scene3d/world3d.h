@@ -86,7 +86,7 @@ class World3D : public Node {
   }
 
   URGE_BINDING(Name : "scene")
-  ATTR(RefPtr<Node3D>, Scene) {
+  ATTR(MaybePtr<Node3D>, Scene) {
     if (value.has_value()) {
       scene_ = *value;
       return std::nullopt;
@@ -95,7 +95,7 @@ class World3D : public Node {
   }
 
   URGE_BINDING(Name : "camera")
-  ATTR(RefPtr<Camera3D>, Camera) {
+  ATTR(MaybePtr<Camera3D>, Camera) {
     if (value.has_value()) {
       camera_ = *value;
       return std::nullopt;
@@ -104,7 +104,7 @@ class World3D : public Node {
   }
 
   URGE_BINDING(Name : "graph")
-  ATTR(RefPtr<RenderGraph3D>, Graph) {
+  ATTR(MaybePtr<RenderGraph3D>, Graph) {
     if (value.has_value()) {
       graph_ = *value;
       return std::nullopt;

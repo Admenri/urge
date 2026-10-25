@@ -38,108 +38,128 @@ RB_DEF_TYPE_INHERIT(GPUComputePassEncoder, GPUObject);
 RB_FUNC(GPUComputePassEncoder_SetPipeline) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE pipeline_val;
-    ParseArgs(argc, argv, "o", &pipeline_val);
+  CheckArgc(argc, 1);
+  VALUE pipeline_val;
+  urge::GPUComputePipeline* pipeline;
+  ParseArgs(argc, argv, "o", &pipeline_val);
+  pipeline = CheckObject<urge::GPUComputePipeline>(pipeline_val, kGPUComputePipelineDataType);
 
-    self_obj->SetPipeline(
-        GetObject<urge::GPUComputePipeline>(pipeline_val, kGPUComputePipelineDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetPipeline(pipeline);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUComputePassEncoder_SetBindGroup) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t index;
-    VALUE group_val;
-    ParseArgs(argc, argv, "uo", &index, &group_val);
+  CheckArgc(argc, 2);
+  uint32_t index;
+  VALUE group_val;
+  urge::GPUBindGroup* group;
+  ParseArgs(argc, argv, "uo", &index, &group_val);
+  group = CheckObject<urge::GPUBindGroup>(group_val, kGPUBindGroupDataType);
 
-    self_obj->SetBindGroup(index,
-        GetObject<urge::GPUBindGroup>(group_val, kGPUBindGroupDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetBindGroup(index, group);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUComputePassEncoder_DispatchWorkgroups) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // dispatch_workgroups(x)
-      uint32_t x;
-      ParseArgs(argc, argv, "u", &x);
+  if (argc == 1) {
+    // dispatch_workgroups(x)
+    uint32_t x;
+    ParseArgs(argc, argv, "u", &x);
+
+    CPP_BEGIN {
       self_obj->DispatchWorkgroups(x);
-    } else if (argc == 2) {
-      // dispatch_workgroups(x, y)
-      uint32_t x, y;
-      ParseArgs(argc, argv, "uu", &x, &y);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // dispatch_workgroups(x, y)
+    uint32_t x, y;
+    ParseArgs(argc, argv, "uu", &x, &y);
+
+    CPP_BEGIN {
       self_obj->DispatchWorkgroups(x, y);
-    } else if (argc == 3) {
-      // dispatch_workgroups(x, y, z)
-      uint32_t x, y, z;
-      ParseArgs(argc, argv, "uuu", &x, &y, &z);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // dispatch_workgroups(x, y, z)
+    uint32_t x, y, z;
+    ParseArgs(argc, argv, "uuu", &x, &y, &z);
+
+    CPP_BEGIN {
       self_obj->DispatchWorkgroups(x, y, z);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPUComputePassEncoder_InsertDebugMarker) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string marker_label;
-    ParseArgs(argc, argv, "s", &marker_label);
+  CheckArgc(argc, 1);
+  VALUE marker_label_val;
+  const char* marker_label_data;
+  size_t marker_label_size;
+  ParseArgs(argc, argv, "o", &marker_label_val);
+  CheckString(marker_label_val, &marker_label_data, &marker_label_size);
 
-    self_obj->InsertDebugMarker(marker_label);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->InsertDebugMarker(
+        std::string(marker_label_data, marker_label_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUComputePassEncoder_PushDebugGroup) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string group_label;
-    ParseArgs(argc, argv, "s", &group_label);
+  CheckArgc(argc, 1);
+  VALUE group_label_val;
+  const char* group_label_data;
+  size_t group_label_size;
+  ParseArgs(argc, argv, "o", &group_label_val);
+  CheckString(group_label_val, &group_label_data, &group_label_size);
 
-    self_obj->PushDebugGroup(group_label);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->PushDebugGroup(std::string(group_label_data, group_label_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUComputePassEncoder_PopDebugGroup) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->PopDebugGroup();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUComputePassEncoder_End) {
   auto* self_obj = GetSelfData<urge::GPUComputePassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->End();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

@@ -114,8 +114,6 @@ void Geometry::SetPosition(int32_t triangle,
       point < 0 || point >= 3)
     throw Exception(Exception::kRGSSError, "invalid range");
 
-  if (!position)
-    throw Exception(Exception::kRGSSError, "invalid data.");
 
   auto& v = data_[triangle];
   v.vertex[point].position = glm::vec4(position->data, 1.0f);
@@ -130,8 +128,6 @@ void Geometry::SetTexcoord(int32_t triangle,
       point < 0 || point >= 3)
     throw Exception(Exception::kRGSSError, "invalid range");
 
-  if (!texcoord)
-    throw Exception(Exception::kRGSSError, "invalid data.");
 
   auto& v = data_[triangle];
   v.vertex[point].texcoord = texcoord->data;
@@ -144,8 +140,6 @@ void Geometry::SetColor(int32_t triangle, int32_t point, RefPtr<Color> color) {
       point < 0 || point >= 3)
     throw Exception(Exception::kRGSSError, "invalid range");
 
-  if (!color)
-    throw Exception(Exception::kRGSSError, "invalid data.");
 
   const glm::vec4 normalized = color->Normalize();
   const float alpha = normalized.a;

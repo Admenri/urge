@@ -39,10 +39,6 @@ Animation::Animation(std::string filename) {
         animation_ = IMG_LoadAnimationTyped_IO(stream, true, ext.c_str());
         return !!animation_;
       });
-
-  if (!animation_)
-    throw Exception(Exception::kRGSSError, "failed to load animation: {}",
-                    filename);
 }
 
 Animation::~Animation() {
@@ -71,8 +67,7 @@ int32_t Animation::Delay(int32_t index) {
   Disposable::Guard();
 
   if (index < 0 || index >= animation_->count)
-    throw Exception(Exception::kRGSSError, "frame index out of range: {}",
-                    index);
+    return -1;
 
   return animation_->delays[index];
 }
@@ -88,14 +83,10 @@ RefPtr<Image> Animation::Frame(int32_t index) {
   Disposable::Guard();
 
   if (index < 0 || index >= animation_->count)
-    throw Exception(Exception::kRGSSError, "frame index out of range: {}",
-                    index);
+    return nullptr;
 
   auto* frame =
       SDL_ConvertSurface(animation_->frames[index], kInternalPixelFormat);
-  if (!frame)
-    throw Exception(Exception::kRGSSError, SDL_GetError());
-
   return MakeRefCounted<Image>(frame);
 }
 

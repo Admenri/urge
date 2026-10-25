@@ -34,13 +34,20 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(PerspectiveCamera, Camera);
 
 RB_FUNC(PerspectiveCamera_initialize) {
-  urge::RefPtr<urge::PerspectiveCamera> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::PerspectiveCamera>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::PerspectiveCamera* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::PerspectiveCamera> value = urge::MakeRefCounted<urge::PerspectiveCamera>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Attribute: fov (float)

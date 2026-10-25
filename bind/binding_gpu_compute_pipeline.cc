@@ -37,16 +37,24 @@ RB_DEF_TYPE_INHERIT(GPUComputePipeline, GPUObject);
 RB_FUNC(GPUComputePipeline_GetBindGroupLayout) {
   auto* self_obj = GetSelfData<urge::GPUComputePipeline>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    uint32_t group_index;
-    ParseArgs(argc, argv, "u", &group_index);
+  CheckArgc(argc, 1);
+  uint32_t group_index;
+  ParseArgs(argc, argv, "u", &group_index);
 
-    auto result = self_obj->GetBindGroupLayout(group_index);
-    return WrapObject(result.get(), kGPUBindGroupLayoutDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::GPUBindGroupLayout* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUBindGroupLayout> value = self_obj->GetBindGroupLayout(
+        group_index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kGPUBindGroupLayoutDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitGPUComputePipelineBindingAppend(VALUE klass);

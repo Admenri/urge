@@ -143,6 +143,23 @@ GPUDevice::GPUDevice(SDL_Window* window, std::string backend) {
   instance_desc.nextInChain =
       reinterpret_cast<wgpu::ChainedStruct*>(&instance_extras.chain);
 #endif
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+  /* `wgpuInstanceWaitAny` returns immediately in the browser unless the
+     instance was created with the timed-wait feature, and a read-back that
+     returns immediately never runs its mapping callback -- `Bitmap#get_pixel`
+     then fails with "the mapping callback was never invoked".  The limit has to
+     be non-zero for the feature to be granted. */
+  static constexpr wgpu::InstanceFeatureName kTimedWaitAny =
+      wgpu::InstanceFeatureName::TimedWaitAny;
+  static const wgpu::InstanceLimits kInstanceLimits = [] {
+    wgpu::InstanceLimits limits = {};
+    limits.timedWaitAnyMaxCount = 8;
+    return limits;
+  }();
+  instance_desc.requiredFeatureCount = 1;
+  instance_desc.requiredFeatures = &kTimedWaitAny;
+  instance_desc.requiredLimits = &kInstanceLimits;
+#endif
   instance_ = wgpu::CreateInstance(&instance_desc);
 
   if (window != nullptr) {

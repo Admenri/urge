@@ -10,6 +10,13 @@ namespace binding {
 VALUE g_reset_exception = Qnil;
 VALUE g_rgss_exception = Qnil;
 
+// Defined here rather than inline in the header so that every binding raises
+// the "several arities" argument error from one frame: no locals, no exception
+// region, nothing to destroy.
+void ArgcError(int argc) {
+  rb_raise(rb_eArgError, "wrong number of arguments (given %d)", argc);
+}
+
 // Returns true if every byte of `str` forms a valid UTF-8 sequence. Used to
 // decide whether an untagged (ASCII-8BIT) string is really text that should be
 // re-tagged as UTF-8, as opposed to binary data that must be left alone.
@@ -117,12 +124,15 @@ int ParseArgs(int argc, VALUE* argv, const char* fmt, ...) {
   va_list args_iter;
   bool is_arg_optional = false;
   int count = 0;
-  std::string format(fmt);
-  auto ch = format.begin();
+  // Walked as a plain C string on purpose: this function raises, and a
+  // `std::string` alive in its frame would give the frame a destructor -- which
+  // on the web means a landing pad, and a landing pad is what turns a raise
+  // into a trap (probe A in build/web-test/frame_shape_probe.rb).
+  const char* ch = fmt;
 
   va_start(args_iter, fmt);
 
-  while (ch != format.end()) {
+  while (*ch) {
     if (*ch != '|' && argc <= count) {
       if (!is_arg_optional)
         rb_raise(rb_eArgError, "wrong number of arguments");

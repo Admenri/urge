@@ -35,230 +35,273 @@ namespace binding {
 RB_DEF_TYPE(Mesh3D);
 
 RB_FUNC(Mesh3D_initialize) {
-  urge::RefPtr<urge::Mesh3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Mesh3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Mesh3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Mesh3D> value = urge::MakeRefCounted<urge::Mesh3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Mesh3D_SetVertices) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE data_val;
-    ParseArgs(argc, argv, "o", &data_val);
+  CheckArgc(argc, 1);
+  VALUE data_val;
+  ParseArgs(argc, argv, "o", &data_val);
+  CheckVectorOf<float>(data_val);
 
-    self_obj->SetVertices(GetVectorOf<float>(data_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetVertices(TakeVectorOf<float>(data_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Mesh3D_SetSkinnedVertices) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    VALUE data_val, joints_val, weights_val;
-    ParseArgs(argc, argv, "ooo", &data_val, &joints_val, &weights_val);
+  CheckArgc(argc, 3);
+  VALUE data_val, joints_val, weights_val;
+  ParseArgs(argc, argv, "ooo", &data_val, &joints_val, &weights_val);
+  CheckVectorOf<float>(data_val);
+  CheckVectorOf<uint32_t>(joints_val);
+  CheckVectorOf<float>(weights_val);
 
-    self_obj->SetSkinnedVertices(GetVectorOf<float>(data_val),
-        GetVectorOf<uint32_t>(joints_val), GetVectorOf<float>(weights_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetSkinnedVertices(TakeVectorOf<float>(data_val),
+        TakeVectorOf<uint32_t>(joints_val), TakeVectorOf<float>(weights_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Mesh3D_SetIndices) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE data_val;
-    ParseArgs(argc, argv, "o", &data_val);
+  CheckArgc(argc, 1);
+  VALUE data_val;
+  ParseArgs(argc, argv, "o", &data_val);
+  CheckVectorOf<uint32_t>(data_val);
 
-    self_obj->SetIndices(GetVectorOf<uint32_t>(data_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetIndices(TakeVectorOf<uint32_t>(data_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Mesh3D_AddSubmesh) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    int index_offset, index_count, mat_slot;
-    ParseArgs(argc, argv, "iii", &index_offset, &index_count, &mat_slot);
+  CheckArgc(argc, 3);
+  int index_offset, index_count, mat_slot;
+  ParseArgs(argc, argv, "iii", &index_offset, &index_count, &mat_slot);
 
+  CPP_BEGIN {
     self_obj->AddSubmesh(index_offset, index_count, mat_slot);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Mesh3D_ClearSubmeshes) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->ClearSubmeshes();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Mesh3D_SubmeshCount) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->SubmeshCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->SubmeshCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_SubmeshIndexOffset) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    return LONG2NUM(self_obj->SubmeshIndexOffset(index));
-  }
-  EXC_END;
-  return Qnil;
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->SubmeshIndexOffset(index);
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_SubmeshIndexCount) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    return LONG2NUM(self_obj->SubmeshIndexCount(index));
-  }
-  EXC_END;
-  return Qnil;
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->SubmeshIndexCount(index);
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_SubmeshMatSlot) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    return LONG2NUM(self_obj->SubmeshMatSlot(index));
-  }
-  EXC_END;
-  return Qnil;
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->SubmeshMatSlot(index);
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_VertexCount) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->VertexCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->VertexCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_IndexCount) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->IndexCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->IndexCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_BoneCount) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->BoneCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->BoneCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Mesh3D_Skinned) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->Skinned() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->Skinned();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Mesh3D_BoundsCenter) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsCenter());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsCenter());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Mesh3D_BoundsMin) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsMin());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsMin());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Mesh3D_BoundsMax) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsMax());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsMax());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Mesh3D_BoundsRadius) {
   auto* self_obj = GetSelfData<urge::Mesh3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->BoundsRadius());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->BoundsRadius();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
-// Attribute: skeleton (RefPtr<Skeleton3D>)
+// Attribute: skeleton (MaybePtr<Skeleton3D>)
 BINDING_ATTR_OBJECT_REF(Mesh3D,
                         urge::Mesh3D,
                         Skeleton,
                         urge::Skeleton3D,
-                        kSkeleton3DDataType);
+                        kSkeleton3DDataType,
+                        CheckMaybeObject);
 
 void InitMesh3DBindingAppend(VALUE klass);
 

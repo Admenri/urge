@@ -70,10 +70,6 @@ RefPtr<AnimationLayer3D> AnimationStack3D::LayerAt(int32_t index) const {
 }
 
 void AnimationStack3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
-  if (!skeleton)
-    throw Exception(Exception::kRGSSError,
-                    "animation stack 3d: a skeleton is needed.");
-
   skeleton->BeginPose();
 
   for (const RefPtr<AnimationLayer3D>& layer : layers_) {

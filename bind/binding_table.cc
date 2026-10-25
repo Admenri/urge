@@ -21,66 +21,71 @@ namespace binding {
 // (x[, y[, z]]) order with the value last, while `Table::Get` / `Table::Set`
 // take the value first, so the arguments have to be reordered.  Out of range
 // reads answer nil and out of range writes are ignored.
+//
+// The three phases are separated by hand here for the same reason the generator
+// does it: the frame that raises must own nothing, and the frame that runs the
+// engine call is the only one allowed to hold a `try`.
 RB_FUNC(Table_Get) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // [](x)
-      int x;
-      ParseArgs(argc, argv, "i", &x);
-      if (x < 0 || x >= self_obj->Xsize())
-        return Qnil;
-      return INT2NUM(self_obj->Get(x));
-    } else if (argc == 2) {
-      // [](x, y)
-      int x, y;
-      ParseArgs(argc, argv, "ii", &x, &y);
-      if (x < 0 || x >= self_obj->Xsize() || y < 0 || y >= self_obj->Ysize())
-        return Qnil;
-      return INT2NUM(self_obj->Get(x, y));
-    } else if (argc == 3) {
-      // [](x, y, z)
-      int x, y, z;
-      ParseArgs(argc, argv, "iii", &x, &y, &z);
-      if (x < 0 || x >= self_obj->Xsize() || y < 0 || y >= self_obj->Ysize() ||
-          z < 0 || z >= self_obj->Zsize())
-        return Qnil;
-      return INT2NUM(self_obj->Get(x, y, z));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  int x = 0, y = 0, z = 0;
+  if (argc == 1) {
+    // [](x)
+    ParseArgs(argc, argv, "i", &x);
+  } else if (argc == 2) {
+    // [](x, y)
+    ParseArgs(argc, argv, "ii", &x, &y);
+  } else if (argc == 3) {
+    // [](x, y, z)
+    ParseArgs(argc, argv, "iii", &x, &y, &z);
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
+
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    if (x < 0 || x >= self_obj->Xsize()) {
+      result = 0;
+    } else if (argc == 1) {
+      result = self_obj->Get(x);
+    } else if (y < 0 || y >= self_obj->Ysize()) {
+      result = 0;
+    } else if (argc == 2) {
+      result = self_obj->Get(x, y);
+    } else if (z < 0 || z >= self_obj->Zsize()) {
+      result = 0;
+    } else {
+      result = self_obj->Get(x, y, z);
+    }
+  } CPP_END;
+
+  return INT2NUM(result);
 }
 
 RB_FUNC(Table_Set) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
   int x = 0, y = 0, z = 0, value = 0;
-  EXC_BEGIN {
-    if (argc == 2) {
-      // []=(x, value)
-      ParseArgs(argc, argv, "ii", &x, &value);
-    } else if (argc == 3) {
-      // []=(x, y, value)
-      ParseArgs(argc, argv, "iii", &x, &y, &value);
-    } else if (argc == 4) {
-      // []=(x, y, z, value)
-      ParseArgs(argc, argv, "iiii", &x, &y, &z, &value);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
-
-    if (x < 0 || x >= self_obj->Xsize() || y < 0 || y >= self_obj->Ysize() ||
-        z < 0 || z >= self_obj->Zsize()) {
-      return Qnil;
-    }
-
-    self_obj->Set(static_cast<int16_t>(value), x, y, z);
+  if (argc == 2) {
+    // []=(x, value)
+    ParseArgs(argc, argv, "ii", &x, &value);
+  } else if (argc == 3) {
+    // []=(x, y, value)
+    ParseArgs(argc, argv, "iii", &x, &y, &value);
+  } else if (argc == 4) {
+    // []=(x, y, z, value)
+    ParseArgs(argc, argv, "iiii", &x, &y, &z, &value);
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
+
+  CPP_BEGIN {
+    if (x >= 0 && x < self_obj->Xsize() && y >= 0 && y < self_obj->Ysize() &&
+        z >= 0 && z < self_obj->Zsize())
+      self_obj->Set(static_cast<int16_t>(value), x, y, z);
+  } CPP_END;
+
   return Qnil;
 }
 // --- HANDWRITTEN END ---
@@ -93,128 +98,203 @@ RB_FUNC(Table_Set) {
 RB_DEF_TYPE(Table);
 
 RB_FUNC(Table_initialize) {
-  urge::RefPtr<urge::Table> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 1) {
-      // initialize(xsize)
-      int xsize;
-      ParseArgs(argc, argv, "i", &xsize);
-      obj = urge::MakeRefCounted<urge::Table>(xsize);
-    } else if (argc == 2) {
-      // initialize(xsize, ysize)
-      int xsize, ysize;
-      ParseArgs(argc, argv, "ii", &xsize, &ysize);
-      obj = urge::MakeRefCounted<urge::Table>(xsize, ysize);
-    } else if (argc == 3) {
-      // initialize(xsize, ysize, zsize)
-      int xsize, ysize, zsize;
-      ParseArgs(argc, argv, "iii", &xsize, &ysize, &zsize);
-      obj = urge::MakeRefCounted<urge::Table>(xsize, ysize, zsize);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // initialize(xsize)
+    int xsize;
+    ParseArgs(argc, argv, "i", &xsize);
+
+    urge::Table* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(
+          xsize);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 2) {
+    // initialize(xsize, ysize)
+    int xsize, ysize;
+    ParseArgs(argc, argv, "ii", &xsize, &ysize);
+
+    urge::Table* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(xsize,
+          ysize);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 3) {
+    // initialize(xsize, ysize, zsize)
+    int xsize, ysize, zsize;
+    ParseArgs(argc, argv, "iii", &xsize, &ysize, &zsize);
+
+    urge::Table* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(xsize,
+          ysize, zsize);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Table_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Table* other_obj = CheckObject<urge::Table>(other_val, kTableDataType);
 
-  urge::RefPtr<urge::Table> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Table>(other, kTableDataType);
-    obj = urge::MakeRefCounted<urge::Table>(other_obj);
-  }
-  EXC_END;
+  urge::Table* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Table__dump) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    std::string result =
-        urge::Table::MarshalDump(urge::RefPtr<urge::Table>(self_obj));
-    return rb_str_new(result.data(), static_cast<long>(result.size()));
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(urge::Table::MarshalDump(urge::RefPtr<urge::Table>(self_obj)));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Table__load) {
-  std::string data;
-  ParseArgs(argc, argv, "s", &data);
+  VALUE data_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &data_val);
+  const char* data_data;
+  size_t data_size;
+  CheckString(data_val, &data_data, &data_size);
 
-  EXC_BEGIN {
-    VALUE obj = rb_obj_alloc(self);
-    auto ptr = urge::Table::MarshalLoad(data);
-    return SetupSelfData(obj, ptr.get());
-  }
-  EXC_END;
-  return Qnil;
+  urge::Table* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Table> value = urge::Table::MarshalLoad(std::string(data_data, data_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(rb_obj_alloc(self), result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Table_Resize) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // resize(xsize)
-      int xsize;
-      ParseArgs(argc, argv, "i", &xsize);
+  if (argc == 1) {
+    // resize(xsize)
+    int xsize;
+    ParseArgs(argc, argv, "i", &xsize);
+
+    CPP_BEGIN {
       self_obj->Resize(xsize);
-    } else if (argc == 2) {
-      // resize(xsize, ysize)
-      int xsize, ysize;
-      ParseArgs(argc, argv, "ii", &xsize, &ysize);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // resize(xsize, ysize)
+    int xsize, ysize;
+    ParseArgs(argc, argv, "ii", &xsize, &ysize);
+
+    CPP_BEGIN {
       self_obj->Resize(xsize, ysize);
-    } else if (argc == 3) {
-      // resize(xsize, ysize, zsize)
-      int xsize, ysize, zsize;
-      ParseArgs(argc, argv, "iii", &xsize, &ysize, &zsize);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // resize(xsize, ysize, zsize)
+    int xsize, ysize, zsize;
+    ParseArgs(argc, argv, "iii", &xsize, &ysize, &zsize);
+
+    CPP_BEGIN {
       self_obj->Resize(xsize, ysize, zsize);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Table_Xsize) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Xsize());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Xsize();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Table_Ysize) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Ysize());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Ysize();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Table_Zsize) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Zsize());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Zsize();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 void InitTableBindingAppend(VALUE klass);

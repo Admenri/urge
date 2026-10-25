@@ -37,50 +37,75 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Node, Disposable);
 
 RB_FUNC(Node_initialize) {
-  urge::RefPtr<urge::Node> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Node>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Node* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Node_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Node* other_obj = CheckObject<urge::Node>(other_val, kNodeDataType);
 
-  urge::RefPtr<urge::Node> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Node>(other, kNodeDataType);
-    obj = urge::MakeRefCounted<urge::Node>(other_obj);
-  }
-  EXC_END;
+  urge::Node* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Node_Render) {
   auto* self_obj = GetSelfData<urge::Node>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // render(target)
-      VALUE target_val;
-      ParseArgs(argc, argv, "o", &target_val);
-      self_obj->Render(GetObject<urge::Bitmap>(target_val, kBitmapDataType));
-    } else if (argc == 2) {
-      // render(target, clear)
-      VALUE target_val, clear_val;
-      ParseArgs(argc, argv, "oo", &target_val, &clear_val);
-      self_obj->Render(GetObject<urge::Bitmap>(target_val, kBitmapDataType),
-          GetObject<urge::Color>(clear_val, kColorDataType));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // render(target)
+    VALUE target_val;
+    urge::Bitmap* target;
+    ParseArgs(argc, argv, "o", &target_val);
+    target = CheckObject<urge::Bitmap>(target_val, kBitmapDataType);
+
+    CPP_BEGIN {
+      self_obj->Render(target);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // render(target, clear)
+    VALUE target_val, clear_val;
+    urge::Bitmap* target;
+    urge::Color* clear;
+    ParseArgs(argc, argv, "oo", &target_val, &clear_val);
+    target = CheckObject<urge::Bitmap>(target_val, kBitmapDataType);
+    clear = CheckMaybeObject<urge::Color>(clear_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->Render(target, clear);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 // Attribute: z (int32_t)
@@ -89,36 +114,45 @@ BINDING_ATTR_INT(Node, urge::Node, Z);
 // Attribute: visible (bool)
 BINDING_ATTR_BOOL(Node, urge::Node, Visible);
 
-// Attribute: parent (RefPtr<Node>)
-BINDING_ATTR_OBJECT_REF(Node, urge::Node, Parent, urge::Node, kNodeDataType);
+// Attribute: parent (MaybePtr<Node>)
+BINDING_ATTR_OBJECT_REF(Node,
+                        urge::Node,
+                        Parent,
+                        urge::Node,
+                        kNodeDataType,
+                        CheckMaybeObject);
 
-// Attribute: position (RefPtr<Vector3>)
+// Attribute: position (MaybePtr<Vector3>)
 BINDING_ATTR_OBJECT_REF(Node,
                         urge::Node,
                         Position,
                         urge::Vector3,
-                        kVector3DataType);
+                        kVector3DataType,
+                        CheckMaybeObject);
 
-// Attribute: quaternion (RefPtr<Vector4>)
+// Attribute: quaternion (MaybePtr<Vector4>)
 BINDING_ATTR_OBJECT_REF(Node,
                         urge::Node,
                         Quaternion,
                         urge::Vector4,
-                        kVector4DataType);
+                        kVector4DataType,
+                        CheckMaybeObject);
 
-// Attribute: scale (RefPtr<Vector3>)
+// Attribute: scale (MaybePtr<Vector3>)
 BINDING_ATTR_OBJECT_REF(Node,
                         urge::Node,
                         Scale,
                         urge::Vector3,
-                        kVector3DataType);
+                        kVector3DataType,
+                        CheckMaybeObject);
 
-// Attribute: camera (RefPtr<Camera>)
+// Attribute: camera (MaybePtr<Camera>)
 BINDING_ATTR_OBJECT_REF(Node,
                         urge::Node,
                         Camera,
                         urge::Camera,
-                        kCameraDataType);
+                        kCameraDataType,
+                        CheckMaybeObject);
 
 void InitNodeBindingAppend(VALUE klass);
 

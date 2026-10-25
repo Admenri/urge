@@ -42,11 +42,11 @@ class Camera : public Object {
   ~Camera() override;
 
   URGE_BINDING()
-  ATTR(RefPtr<Vector3>, Position);
+  ATTR(MaybePtr<Vector3>, Position);
   URGE_BINDING()
-  ATTR(RefPtr<Vector4>, Quaternion);
+  ATTR(MaybePtr<Vector4>, Quaternion);
   URGE_BINDING()
-  ATTR(RefPtr<Vector3>, Scale);
+  ATTR(MaybePtr<Vector3>, Scale);
 
   glm::mat4 transform() const;
   glm::mat4 view() const;

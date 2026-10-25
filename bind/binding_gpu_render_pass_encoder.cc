@@ -39,342 +39,427 @@ RB_DEF_TYPE_INHERIT(GPURenderPassEncoder, GPUObject);
 RB_FUNC(GPURenderPassEncoder_SetPipeline) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE pipeline_val;
-    ParseArgs(argc, argv, "o", &pipeline_val);
+  CheckArgc(argc, 1);
+  VALUE pipeline_val;
+  urge::GPURenderPipeline* pipeline;
+  ParseArgs(argc, argv, "o", &pipeline_val);
+  pipeline = CheckObject<urge::GPURenderPipeline>(pipeline_val, kGPURenderPipelineDataType);
 
-    self_obj->SetPipeline(
-        GetObject<urge::GPURenderPipeline>(pipeline_val, kGPURenderPipelineDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetPipeline(pipeline);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetBindGroup) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t index;
-    VALUE group_val;
-    ParseArgs(argc, argv, "uo", &index, &group_val);
+  CheckArgc(argc, 2);
+  uint32_t index;
+  VALUE group_val;
+  urge::GPUBindGroup* group;
+  ParseArgs(argc, argv, "uo", &index, &group_val);
+  group = CheckObject<urge::GPUBindGroup>(group_val, kGPUBindGroupDataType);
 
-    self_obj->SetBindGroup(index,
-        GetObject<urge::GPUBindGroup>(group_val, kGPUBindGroupDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetBindGroup(index, group);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetVertexBuffer) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 2) {
-      // set_vertex_buffer(slot, buffer)
-      uint32_t slot;
-      VALUE buffer_val;
-      ParseArgs(argc, argv, "uo", &slot, &buffer_val);
-      self_obj->SetVertexBuffer(slot,
-          GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType));
-    } else if (argc == 3) {
-      // set_vertex_buffer(slot, buffer, offset)
-      uint32_t slot;
-      VALUE buffer_val;
-      uint64_t offset;
-      ParseArgs(argc, argv, "uop", &slot, &buffer_val, &offset);
-      self_obj->SetVertexBuffer(slot,
-          GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 2) {
+    // set_vertex_buffer(slot, buffer)
+    uint32_t slot;
+    VALUE buffer_val;
+    urge::GPUBuffer* buffer;
+    ParseArgs(argc, argv, "uo", &slot, &buffer_val);
+    buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->SetVertexBuffer(slot, buffer);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // set_vertex_buffer(slot, buffer, offset)
+    uint32_t slot;
+    VALUE buffer_val;
+    urge::GPUBuffer* buffer;
+    uint64_t offset;
+    ParseArgs(argc, argv, "uop", &slot, &buffer_val, &offset);
+    buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->SetVertexBuffer(slot, buffer, offset);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetIndexBuffer) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 2) {
-      // set_index_buffer(buffer, format)
-      VALUE buffer_val;
-      uint32_t format;
-      ParseArgs(argc, argv, "ou", &buffer_val, &format);
-      self_obj->SetIndexBuffer(
-          GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), format);
-    } else if (argc == 3) {
-      // set_index_buffer(buffer, format, offset)
-      VALUE buffer_val;
-      uint32_t format;
-      uint64_t offset;
-      ParseArgs(argc, argv, "oup", &buffer_val, &format, &offset);
-      self_obj->SetIndexBuffer(
-          GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), format,
-          offset);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 2) {
+    // set_index_buffer(buffer, format)
+    VALUE buffer_val;
+    urge::GPUBuffer* buffer;
+    uint32_t format;
+    ParseArgs(argc, argv, "ou", &buffer_val, &format);
+    buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->SetIndexBuffer(buffer, format);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // set_index_buffer(buffer, format, offset)
+    VALUE buffer_val;
+    urge::GPUBuffer* buffer;
+    uint32_t format;
+    uint64_t offset;
+    ParseArgs(argc, argv, "oup", &buffer_val, &format, &offset);
+    buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->SetIndexBuffer(buffer, format, offset);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_Draw) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // draw(vertex_count)
-      uint32_t vertex_count;
-      ParseArgs(argc, argv, "u", &vertex_count);
+  if (argc == 1) {
+    // draw(vertex_count)
+    uint32_t vertex_count;
+    ParseArgs(argc, argv, "u", &vertex_count);
+
+    CPP_BEGIN {
       self_obj->Draw(vertex_count);
-    } else if (argc == 2) {
-      // draw(vertex_count, instance_count)
-      uint32_t vertex_count, instance_count;
-      ParseArgs(argc, argv, "uu", &vertex_count, &instance_count);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // draw(vertex_count, instance_count)
+    uint32_t vertex_count, instance_count;
+    ParseArgs(argc, argv, "uu", &vertex_count, &instance_count);
+
+    CPP_BEGIN {
       self_obj->Draw(vertex_count, instance_count);
-    } else if (argc == 3) {
-      // draw(vertex_count, instance_count, first_vertex)
-      uint32_t vertex_count, instance_count, first_vertex;
-      ParseArgs(argc, argv, "uuu", &vertex_count, &instance_count,
-          &first_vertex);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // draw(vertex_count, instance_count, first_vertex)
+    uint32_t vertex_count, instance_count, first_vertex;
+    ParseArgs(argc, argv, "uuu", &vertex_count, &instance_count, &first_vertex);
+
+    CPP_BEGIN {
       self_obj->Draw(vertex_count, instance_count, first_vertex);
-    } else if (argc == 4) {
-      // draw(vertex_count, instance_count, first_vertex, first_instance)
-      uint32_t vertex_count, instance_count, first_vertex, first_instance;
-      ParseArgs(argc, argv, "uuuu", &vertex_count, &instance_count,
-          &first_vertex, &first_instance);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // draw(vertex_count, instance_count, first_vertex, first_instance)
+    uint32_t vertex_count, instance_count, first_vertex, first_instance;
+    ParseArgs(argc, argv, "uuuu", &vertex_count, &instance_count, &first_vertex,
+        &first_instance);
+
+    CPP_BEGIN {
       self_obj->Draw(vertex_count, instance_count, first_vertex,
           first_instance);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_DrawIndexed) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // draw_indexed(index_count)
-      uint32_t index_count;
-      ParseArgs(argc, argv, "u", &index_count);
+  if (argc == 1) {
+    // draw_indexed(index_count)
+    uint32_t index_count;
+    ParseArgs(argc, argv, "u", &index_count);
+
+    CPP_BEGIN {
       self_obj->DrawIndexed(index_count);
-    } else if (argc == 2) {
-      // draw_indexed(index_count, instance_count)
-      uint32_t index_count, instance_count;
-      ParseArgs(argc, argv, "uu", &index_count, &instance_count);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // draw_indexed(index_count, instance_count)
+    uint32_t index_count, instance_count;
+    ParseArgs(argc, argv, "uu", &index_count, &instance_count);
+
+    CPP_BEGIN {
       self_obj->DrawIndexed(index_count, instance_count);
-    } else if (argc == 3) {
-      // draw_indexed(index_count, instance_count, first_index)
-      uint32_t index_count, instance_count, first_index;
-      ParseArgs(argc, argv, "uuu", &index_count, &instance_count, &first_index);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // draw_indexed(index_count, instance_count, first_index)
+    uint32_t index_count, instance_count, first_index;
+    ParseArgs(argc, argv, "uuu", &index_count, &instance_count, &first_index);
+
+    CPP_BEGIN {
       self_obj->DrawIndexed(index_count, instance_count, first_index);
-    } else if (argc == 4) {
-      // draw_indexed(index_count, instance_count, first_index, base_vertex)
-      uint32_t index_count, instance_count, first_index;
-      int base_vertex;
-      ParseArgs(argc, argv, "uuui", &index_count, &instance_count, &first_index,
-          &base_vertex);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // draw_indexed(index_count, instance_count, first_index, base_vertex)
+    uint32_t index_count, instance_count, first_index;
+    int base_vertex;
+    ParseArgs(argc, argv, "uuui", &index_count, &instance_count, &first_index,
+        &base_vertex);
+
+    CPP_BEGIN {
       self_obj->DrawIndexed(index_count, instance_count, first_index,
           base_vertex);
-    } else if (argc == 5) {
-      // draw_indexed(index_count, instance_count, first_index, base_vertex, first_instance)
-      uint32_t index_count, instance_count, first_index, first_instance;
-      int base_vertex;
-      ParseArgs(argc, argv, "uuuiu", &index_count, &instance_count,
-          &first_index, &base_vertex, &first_instance);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 5) {
+    // draw_indexed(index_count, instance_count, first_index, base_vertex, first_instance)
+    uint32_t index_count, instance_count, first_index, first_instance;
+    int base_vertex;
+    ParseArgs(argc, argv, "uuuiu", &index_count, &instance_count, &first_index,
+        &base_vertex, &first_instance);
+
+    CPP_BEGIN {
       self_obj->DrawIndexed(index_count, instance_count, first_index,
           base_vertex, first_instance);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_DrawIndirect) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // draw_indirect(indirect_buffer)
-      VALUE indirect_buffer_val;
-      ParseArgs(argc, argv, "o", &indirect_buffer_val);
-      self_obj->DrawIndirect(
-          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType));
-    } else if (argc == 2) {
-      // draw_indirect(indirect_buffer, indirect_offset)
-      VALUE indirect_buffer_val;
-      uint64_t indirect_offset;
-      ParseArgs(argc, argv, "op", &indirect_buffer_val, &indirect_offset);
-      self_obj->DrawIndirect(
-          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType),
-          indirect_offset);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // draw_indirect(indirect_buffer)
+    VALUE indirect_buffer_val;
+    urge::GPUBuffer* indirect_buffer;
+    ParseArgs(argc, argv, "o", &indirect_buffer_val);
+    indirect_buffer = CheckObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->DrawIndirect(indirect_buffer);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // draw_indirect(indirect_buffer, indirect_offset)
+    VALUE indirect_buffer_val;
+    urge::GPUBuffer* indirect_buffer;
+    uint64_t indirect_offset;
+    ParseArgs(argc, argv, "op", &indirect_buffer_val, &indirect_offset);
+    indirect_buffer = CheckObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->DrawIndirect(indirect_buffer, indirect_offset);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_DrawIndexedIndirect) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // draw_indexed_indirect(indirect_buffer)
-      VALUE indirect_buffer_val;
-      ParseArgs(argc, argv, "o", &indirect_buffer_val);
-      self_obj->DrawIndexedIndirect(
-          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType));
-    } else if (argc == 2) {
-      // draw_indexed_indirect(indirect_buffer, indirect_offset)
-      VALUE indirect_buffer_val;
-      uint64_t indirect_offset;
-      ParseArgs(argc, argv, "op", &indirect_buffer_val, &indirect_offset);
-      self_obj->DrawIndexedIndirect(
-          GetObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType),
-          indirect_offset);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // draw_indexed_indirect(indirect_buffer)
+    VALUE indirect_buffer_val;
+    urge::GPUBuffer* indirect_buffer;
+    ParseArgs(argc, argv, "o", &indirect_buffer_val);
+    indirect_buffer = CheckObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->DrawIndexedIndirect(indirect_buffer);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // draw_indexed_indirect(indirect_buffer, indirect_offset)
+    VALUE indirect_buffer_val;
+    urge::GPUBuffer* indirect_buffer;
+    uint64_t indirect_offset;
+    ParseArgs(argc, argv, "op", &indirect_buffer_val, &indirect_offset);
+    indirect_buffer = CheckObject<urge::GPUBuffer>(indirect_buffer_val, kGPUBufferDataType);
+
+    CPP_BEGIN {
+      self_obj->DrawIndexedIndirect(indirect_buffer, indirect_offset);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetViewport) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    if (argc == 4) {
-      // set_viewport(x, y, width, height)
-      double x, y, width, height;
-      ParseArgs(argc, argv, "ffff", &x, &y, &width, &height);
+  if (argc == 4) {
+    // set_viewport(x, y, width, height)
+    double x, y, width, height;
+    ParseArgs(argc, argv, "ffff", &x, &y, &width, &height);
+
+    CPP_BEGIN {
       self_obj->SetViewport(static_cast<float>(x), static_cast<float>(y),
           static_cast<float>(width), static_cast<float>(height));
-    } else if (argc == 5) {
-      // set_viewport(x, y, width, height, min_depth)
-      double x, y, width, height, min_depth;
-      ParseArgs(argc, argv, "fffff", &x, &y, &width, &height, &min_depth);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 5) {
+    // set_viewport(x, y, width, height, min_depth)
+    double x, y, width, height, min_depth;
+    ParseArgs(argc, argv, "fffff", &x, &y, &width, &height, &min_depth);
+
+    CPP_BEGIN {
       self_obj->SetViewport(static_cast<float>(x), static_cast<float>(y),
           static_cast<float>(width), static_cast<float>(height),
           static_cast<float>(min_depth));
-    } else if (argc == 6) {
-      // set_viewport(x, y, width, height, min_depth, max_depth)
-      double x, y, width, height, min_depth, max_depth;
-      ParseArgs(argc, argv, "ffffff", &x, &y, &width, &height, &min_depth,
-          &max_depth);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 6) {
+    // set_viewport(x, y, width, height, min_depth, max_depth)
+    double x, y, width, height, min_depth, max_depth;
+    ParseArgs(argc, argv, "ffffff", &x, &y, &width, &height, &min_depth,
+        &max_depth);
+
+    CPP_BEGIN {
       self_obj->SetViewport(static_cast<float>(x), static_cast<float>(y),
           static_cast<float>(width), static_cast<float>(height),
           static_cast<float>(min_depth), static_cast<float>(max_depth));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetScissorRect) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 4);
-    uint32_t x, y, width, height;
-    ParseArgs(argc, argv, "uuuu", &x, &y, &width, &height);
+  CheckArgc(argc, 4);
+  uint32_t x, y, width, height;
+  ParseArgs(argc, argv, "uuuu", &x, &y, &width, &height);
 
+  CPP_BEGIN {
     self_obj->SetScissorRect(x, y, width, height);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetStencilReference) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    uint32_t reference;
-    ParseArgs(argc, argv, "u", &reference);
+  CheckArgc(argc, 1);
+  uint32_t reference;
+  ParseArgs(argc, argv, "u", &reference);
 
+  CPP_BEGIN {
     self_obj->SetStencilReference(reference);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_SetBlendConstant) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 4);
-    double r, g, b, a;
-    ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
+  CheckArgc(argc, 4);
+  double r, g, b, a;
+  ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
 
+  CPP_BEGIN {
     self_obj->SetBlendConstant(static_cast<float>(r), static_cast<float>(g),
         static_cast<float>(b), static_cast<float>(a));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_InsertDebugMarker) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string marker_label;
-    ParseArgs(argc, argv, "s", &marker_label);
+  CheckArgc(argc, 1);
+  VALUE marker_label_val;
+  const char* marker_label_data;
+  size_t marker_label_size;
+  ParseArgs(argc, argv, "o", &marker_label_val);
+  CheckString(marker_label_val, &marker_label_data, &marker_label_size);
 
-    self_obj->InsertDebugMarker(marker_label);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->InsertDebugMarker(
+        std::string(marker_label_data, marker_label_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_PushDebugGroup) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string group_label;
-    ParseArgs(argc, argv, "s", &group_label);
+  CheckArgc(argc, 1);
+  VALUE group_label_val;
+  const char* group_label_data;
+  size_t group_label_size;
+  ParseArgs(argc, argv, "o", &group_label_val);
+  CheckString(group_label_val, &group_label_data, &group_label_size);
 
-    self_obj->PushDebugGroup(group_label);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->PushDebugGroup(std::string(group_label_data, group_label_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_PopDebugGroup) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->PopDebugGroup();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPURenderPassEncoder_End) {
   auto* self_obj = GetSelfData<urge::GPURenderPassEncoder>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->End();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

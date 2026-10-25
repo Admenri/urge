@@ -36,126 +36,162 @@ namespace binding {
 RB_DEF_TYPE(Node3D);
 
 RB_FUNC(Node3D_initialize) {
-  urge::RefPtr<urge::Node3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Node3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Node3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Node3D> value = urge::MakeRefCounted<urge::Node3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Node3D_GetParent) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->GetParent();
-    return WrapObject(result.get(), kNode3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::Node3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Node3D> value = self_obj->GetParent();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kNode3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Node3D_SetParent) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE value_val;
-    ParseArgs(argc, argv, "o", &value_val);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  urge::Node3D* value;
+  ParseArgs(argc, argv, "o", &value_val);
+  value = CheckMaybeObject<urge::Node3D>(value_val, kNode3DDataType);
 
-    self_obj->SetParent(GetObject<urge::Node3D>(value_val, kNode3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetParent(value);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Node3D_AddChild) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE child_val;
-    ParseArgs(argc, argv, "o", &child_val);
+  CheckArgc(argc, 1);
+  VALUE child_val;
+  urge::Node3D* child;
+  ParseArgs(argc, argv, "o", &child_val);
+  child = CheckMaybeObject<urge::Node3D>(child_val, kNode3DDataType);
 
-    self_obj->AddChild(GetObject<urge::Node3D>(child_val, kNode3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddChild(child);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Node3D_RemoveChild) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE child_val;
-    ParseArgs(argc, argv, "o", &child_val);
+  CheckArgc(argc, 1);
+  VALUE child_val;
+  urge::Node3D* child;
+  ParseArgs(argc, argv, "o", &child_val);
+  child = CheckMaybeObject<urge::Node3D>(child_val, kNode3DDataType);
 
-    self_obj->RemoveChild(GetObject<urge::Node3D>(child_val, kNode3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->RemoveChild(child);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Node3D_ChildCount) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->ChildCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->ChildCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Node3D_ChildAt) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    auto result = self_obj->ChildAt(index);
-    return WrapObject(result.get(), kNode3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Node3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Node3D> value = self_obj->ChildAt(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kNode3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Node3D_GetWorldMatrix) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->GetWorldMatrix());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->GetWorldMatrix());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
-// Attribute: position (RefPtr<Vector3>)
+// Attribute: position (MaybePtr<Vector3>)
 BINDING_ATTR_OBJECT_REF(Node3D,
                         urge::Node3D,
                         Position,
                         urge::Vector3,
-                        kVector3DataType);
+                        kVector3DataType,
+                        CheckMaybeObject);
 
-// Attribute: rotation (RefPtr<Vector4>)
+// Attribute: rotation (MaybePtr<Vector4>)
 BINDING_ATTR_OBJECT_REF(Node3D,
                         urge::Node3D,
                         Rotation,
                         urge::Vector4,
-                        kVector4DataType);
+                        kVector4DataType,
+                        CheckMaybeObject);
 
-// Attribute: scale (RefPtr<Vector3>)
+// Attribute: scale (MaybePtr<Vector3>)
 BINDING_ATTR_OBJECT_REF(Node3D,
                         urge::Node3D,
                         Scale,
                         urge::Vector3,
-                        kVector3DataType);
+                        kVector3DataType,
+                        CheckMaybeObject);
 
 // Attribute: visible (bool)
 BINDING_ATTR_BOOL(Node3D, urge::Node3D, Visible);

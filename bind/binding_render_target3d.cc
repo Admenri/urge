@@ -32,132 +32,167 @@ namespace binding {
 RB_DEF_TYPE(RenderTarget3D);
 
 RB_FUNC(RenderTarget3D_initialize) {
-  urge::RefPtr<urge::RenderTarget3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 5);
-    int width, height, samples;
-    std::string color_format, depth_format;
-    ParseArgs(argc, argv, "iissi", &width, &height, &color_format,
-        &depth_format, &samples);
+  int width, height, samples;
+  VALUE color_format_val, depth_format_val;
+  const char* color_format_data;
+  size_t color_format_size, depth_format_size;
+  const char* depth_format_data;
+  ParseArgs(argc, argv, "iiooi", &width, &height, &color_format_val,
+      &depth_format_val, &samples);
+  CheckString(color_format_val, &color_format_data, &color_format_size);
+  CheckString(depth_format_val, &depth_format_data, &depth_format_size);
 
-    obj = urge::MakeRefCounted<urge::RenderTarget3D>(width, height,
-        color_format, depth_format, samples);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::RenderTarget3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::RenderTarget3D> value = urge::MakeRefCounted<urge::RenderTarget3D>(
+        width, height, std::string(color_format_data, color_format_size),
+        std::string(depth_format_data, depth_format_size), samples);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(RenderTarget3D_Width) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Width();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderTarget3D_Height) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Height();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderTarget3D_HasColor) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->HasColor() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->HasColor();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(RenderTarget3D_LayerCount) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->LayerCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->LayerCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderTarget3D_ColorCount) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->ColorCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->ColorCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderTarget3D_SampleCount) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->SampleCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->SampleCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(RenderTarget3D_HasDepth) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->HasDepth() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->HasDepth();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(RenderTarget3D_HasStencil) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->HasStencil() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->HasStencil();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(RenderTarget3D_ColorFormats) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<std::string>(self_obj->ColorFormats());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<std::string>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<std::string>(self_obj->ColorFormats());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(RenderTarget3D_DepthFormat) {
   auto* self_obj = GetSelfData<urge::RenderTarget3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->DepthFormat();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->DepthFormat());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 void InitRenderTarget3DBindingAppend(VALUE klass);

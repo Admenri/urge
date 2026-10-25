@@ -27,6 +27,28 @@
 
 #include "core/common/refptr.h"
 
+namespace urge {
+
+//! A `RefPtr` parameter that also accepts `nil`.
+/*!
+    The two spellings are the same type; the difference is what the binding
+    generator is told to do with `nil` at the call boundary.
+
+    A plain `RefPtr<T>` parameter is *required*: the generated glue rejects
+    `nil` with `TypeError` before the engine is called, so the engine never
+    receives a null pointer there and must not test for one.  `MaybePtr<T>`
+    marks the parameters where `nil` is a meaningful argument -- an absent
+    viewport, a cleared texture slot, "no shadow light" -- and the glue passes
+    it through as `nullptr`.
+
+    Writing `MaybePtr` is therefore a promise the implementation has to keep:
+    it is the parameter's null contract, checked by `bind/gen_api_json.py`.
+*/
+template <typename T>
+using MaybePtr = RefPtr<T>;
+
+}  // namespace urge
+
 #define URGE_BINDING(...)
 
 #define ATTR(ty, name) \

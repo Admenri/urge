@@ -100,7 +100,7 @@ class Graphics : public Singleton<Graphics> {
                   int32_t vague = 40);
   URGE_BINDING()
   void TransitionBitmap(int32_t duration = 10,
-                        RefPtr<Bitmap> bitmap = {},
+                        MaybePtr<Bitmap> bitmap = {},
                         int32_t vague = 40);
   URGE_BINDING()
   RefPtr<Bitmap> SnapToBitmap();

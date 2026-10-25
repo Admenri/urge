@@ -250,6 +250,32 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 当前规模：21 个类 + 4 个模块；无跳过项（未被 `URGE_BINDING()` 标记的内部构造不再进入
 IR，例如 `Node()`、`Image(SDL_Surface*)`、`Vector2/3/4(glm::vec*)`）。
 
+## 可空参数（`RefPtr<T>` 与 `MaybePtr<T>`）
+
+`core/common/definition.h` 里 `MaybePtr<T>` 就是 `RefPtr<T>` 的别名，**类型相同、契约不同**：
+它只用于告诉生成器这个参数接不接受 `nil`。
+
+| 头文件写法 | Ruby 侧传 `nil` | 生成物 |
+| --- | --- | --- |
+| `RefPtr<T>` | `TypeError: wrong argument type nil (expected T)` | `CheckObject<urge::T>(...)` |
+| `MaybePtr<T>` | 通过，C++ 收到 `nullptr` | `CheckMaybeObject<urge::T>(...)` |
+
+**默认是必填。** 于是「参数不能为空」这条契约从 `core/` 的 `throw` 搬到了边界上：
+`RefPtr<T>` 参数在引擎里**不需要**再判空，对应的 `if (!x) throw ...` 一律删除；只有真正
+接受 `nil` 的参数才写 `MaybePtr`，引擎自己继续处理空指针。
+
+判据就是原来的 `throw`：有 `if (!x) throw` 的参数 = 必填（保留 `RefPtr`，删 `throw`）；
+没有的 = 可空（改 `MaybePtr`）。例外按「会崩」判，即使没有 `throw` 也算必填：
+`Bitmap::UpdateWithImage`、`Node::Render`、`ComputePass3D::SetTarget`、
+`AnimationStack3D::AddLayer`、`Viewport(RefPtr<Rect>)`——它们直接解引用参数。
+
+`ATTR` 同理：`ATTR(RefPtr<T>, X)` 的 setter 拒绝 `nil`，`ATTR(MaybePtr<T>, X)` 允许。
+宏因此多一个末位参数（`CheckObject` / `CheckMaybeObject`），见 `cruby_utils.h` 的
+`BINDING_ATTR_OBJECT*`。
+
+错误类别刻意用 `TypeError` 而不是 `RGSSError`：`rb_check_typeddata` 对任何别的错误类型
+本来就是这个答案，`nil` 只是又一个「类型不对」的值。
+
 ## 数据类型与分配器（重要）
 
 `RB_DEF_TYPE(Klass)` 生成 `kKlassDataType`（`RB_DATATYPE(Klass, #Klass, ReleaseDataType<urge::Klass>)`），
@@ -357,11 +383,78 @@ SDK `um/`、`shared/` 下的 `#define` 取交集。已知可达的冲突只有�
 固定数量参数用 `CheckArgc(argc, N)`：引擎侧方法都以 `-1` 注册（`DefineMethod` 固定传
 `-1`），多传参数不会由 VM 报错，必须自己检查。
 
-### 异常桥接
+### 异常桥接：Ruby → C++ → Ruby 三段
 
-**每个函数体都包在 `EXC_BEGIN`/`EXC_END` 里**，包括只有一个形态的方法。`urge::Exception`
-在引擎任意深度抛出（GPU 失败、文件缺失、对象已 dispose），正常化为 Ruby 异常是唯一
-安全的做法——让 C++ 异常穿过 VM 的 C 函数是未定义行为。
+每个绑定函数都是一条三段流水线，段与段之间用 `CPP_BEGIN`/`CPP_END` 分开：
+
+```cpp
+RB_FUNC(Bitmap_Width) {
+  auto* self_obj = GetSelfData<urge::Bitmap>(self);  // 阶段 1：Ruby → C
+  CheckArgc(argc, 0);                               //   只有裸数据，可以 raise
+
+  int32_t result = 0;                               //   结果槽，也是裸数据
+
+  CPP_BEGIN {                                       // 阶段 2：纯 C++
+    result = self_obj->Width();                     //   不碰任何会 raise 的 API
+  } CPP_END;                                        //   唯一的 try/catch
+
+  return LONG2NUM(result);                          // 阶段 3：C++ → Ruby
+}
+```
+
+为什么分在这三个位置，全部用 `build/web-test/frame_shape_probe.rb` 在 web 构建上实测过：
+
+| 探针 | 帧形态 | 结果 |
+| --- | --- | --- |
+| A | 完全没有 try/catch，`std::string` 存活时 raise | **trap** |
+| B | try 已结束，`std::string` 存活时 raise | **trap** |
+| C | raise 在 try 区域内 | **trap** |
+| D | 帧内有 try，**无析构局部**，raise 在 try 之后 | 通过 |
+| E | 帧内有 try，无析构局部，raise 在 try **之前** | 通过 |
+| F | 完整三段式 | 通过 |
+
+A 和 B 说明这条规则和 try/catch 无关：**帧里只要有待析构的局部，raise 就 trap** ——
+编译器要为那个析构生成 landing pad，`rb_raise` 的 longjmp 被派发进去。所以阶段 1 和
+阶段 3 只能持有裸数据，由此得出参数与返回值的裸化规则：
+
+| C++ 类型 | 阶段 1/3 持有 | 阶段 2 还原 |
+| --- | --- | --- |
+| `std::string` | `const char*` + `size_t`（`CheckString`） | `std::string(data, size)` |
+| `RefPtr<T>` | `T*`（`CheckObject`），返回值额外持一个守卫引用 | `RefPtr<T>(ptr)` 隐式 AddRef |
+| `std::vector<T>` | 原始 `VALUE`（`CheckVectorOf` 先验一遍） | `TakeVectorOf<T>(value)` |
+| 标量 / `void` / `const char*` | 同名标量 | 直接传 |
+
+D/E/F 说明 raise 可以在这个帧里 try 的前后，所以**三段同处一个函数就够了**，不需要拆成
+两个函数。阶段 2 反而可以持有任意 C++ 对象：它在真正的 EH 区里，析构正常跑。
+
+一句话契约：**阶段 2 里不允许出现任何会 raise 或 longjmp 的调用**。
+
+#### 拥有型返回值怎么过界
+
+`std::string`、`std::vector<T>` 不能待在阶段 1/3 的帧里，又必须活过阶段 2 的作用域，
+所以在阶段 2 里装箱（`new`），阶段 3 用完 `delete`：
+
+```cpp
+  std::string* result = nullptr;
+  CPP_BEGIN {
+    result = new std::string(self_obj->Name());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(result->data(), static_cast<long>(result->size()),
+                               rb_utf8_encoding());
+  delete result;                    // 转换 raise 时泄漏，只可能是 NoMemoryError
+  return value;
+```
+
+`RefPtr<T>` 不需要箱子：槽里放 `T*`，阶段 2 末尾 `AddRef` 一次当守卫引用，阶段 3 在
+`WrapObject` 之后 `Release` 掉它。
+
+#### 遗留的 `EXC_BEGIN`/`EXC_END`
+
+`EXC_END` 在 catch 体里直接 raise，正是探针 C 的形态。现在只剩 `binding_win32api.cc`
+用它（不上 Emscripten），生成代码与 `cruby_main.cc` 都已改成三段式。
+
+`urge::Exception` 的映射表不变：
 
 | `urge::Exception::Type` | Ruby 异常 |
 | --- | --- |

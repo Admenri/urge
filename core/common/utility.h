@@ -66,12 +66,8 @@ class Rect : public Object {
 
   URGE_BINDING()
   void Set(RefPtr<Rect> rect) {
-    if (rect) {
-      data = rect->data;
-      slot.ValueNotify();
-    } else {
-      throw Exception(Exception::kRGSSError, "cannot set null to rect.");
-    }
+    data = rect->data;
+    slot.ValueNotify();
   }
 
   URGE_BINDING()
@@ -155,13 +151,7 @@ class Color : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Color> color) {
-    if (color) {
-      data = color->data;
-    } else {
-      throw Exception(Exception::kRGSSError, "cannot set null to color.");
-    }
-  }
+  void Set(RefPtr<Color> color) { data = color->data; }
 
   URGE_BINDING()
   ATTR(float, Red) {
@@ -226,13 +216,7 @@ class Tone : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Tone> tone) {
-    if (tone) {
-      data = tone->data;
-    } else {
-      throw Exception(Exception::kRGSSError, "cannot set null to tone.");
-    }
-  }
+  void Set(RefPtr<Tone> tone) { data = tone->data; }
 
   URGE_BINDING()
   ATTR(float, Red) {
@@ -292,13 +276,7 @@ class Vector2 : public Object {
   void Set(float xv, float yv) { data = glm::vec2(xv, yv); }
 
   URGE_BINDING()
-  void Set(RefPtr<Vector2> v) {
-    if (v) {
-      data = v->data;
-    } else {
-      throw Exception(Exception::kRGSSError, "cannot set null to vector.");
-    }
-  }
+  void Set(RefPtr<Vector2> v) { data = v->data; }
 
   URGE_BINDING()
   ATTR(float, X) {
@@ -335,13 +313,7 @@ class Vector3 : public Object {
   void Set(float xv, float yv, float zv) { data = glm::vec3(xv, yv, zv); }
 
   URGE_BINDING()
-  void Set(RefPtr<Vector3> v) {
-    if (v) {
-      data = v->data;
-    } else {
-      throw Exception(Exception::kRGSSError, "cannot set null to vector.");
-    }
-  }
+  void Set(RefPtr<Vector3> v) { data = v->data; }
 
   URGE_BINDING()
   ATTR(float, X) {
@@ -387,13 +359,7 @@ class Vector4 : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Vector4> v) {
-    if (v) {
-      data = v->data;
-    } else {
-      throw Exception(Exception::kRGSSError, "cannot set null to vector.");
-    }
-  }
+  void Set(RefPtr<Vector4> v) { data = v->data; }
 
   URGE_BINDING()
   ATTR(float, X) {

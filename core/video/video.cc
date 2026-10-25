@@ -171,9 +171,6 @@ void Video::Update() {
 }
 
 void Video::Render(RefPtr<Bitmap> target) {
-  if (!target)
-    throw Exception(Exception::kRGSSError, "invalid video render target.");
-
   const std::vector<uint8_t>* source = player_.rgba();
   if (!source || source->empty())
     return;

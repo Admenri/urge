@@ -37,46 +37,58 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Scene3D, Node3D);
 
 RB_FUNC(Scene3D_initialize) {
-  urge::RefPtr<urge::Scene3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::Scene3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::Scene3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Scene3D> value = urge::MakeRefCounted<urge::Scene3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Scene3D_Add) {
   auto* self_obj = GetSelfData<urge::Scene3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE node_val;
-    ParseArgs(argc, argv, "o", &node_val);
+  CheckArgc(argc, 1);
+  VALUE node_val;
+  urge::Node3D* node;
+  ParseArgs(argc, argv, "o", &node_val);
+  node = CheckMaybeObject<urge::Node3D>(node_val, kNode3DDataType);
 
-    self_obj->Add(GetObject<urge::Node3D>(node_val, kNode3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Add(node);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Scene3D_NodeCount) {
   auto* self_obj = GetSelfData<urge::Scene3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->NodeCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->NodeCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
-// Attribute: ambient (RefPtr<Color>)
+// Attribute: ambient (MaybePtr<Color>)
 BINDING_ATTR_OBJECT(Scene3D,
                     urge::Scene3D,
                     Ambient,
                     urge::Color,
-                    kColorDataType);
+                    kColorDataType,
+                    CheckMaybeObject);
 
 void InitScene3DBindingAppend(VALUE klass);
 

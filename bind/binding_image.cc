@@ -37,292 +37,426 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Image, Disposable);
 
 RB_FUNC(Image_initialize) {
-  urge::RefPtr<urge::Image> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 1) {
-      // initialize(filename)
-      std::string filename;
-      ParseArgs(argc, argv, "s", &filename);
-      obj = urge::MakeRefCounted<urge::Image>(filename);
-    } else if (argc == 2) {
-      // initialize(width, height)
-      int width, height;
-      ParseArgs(argc, argv, "ii", &width, &height);
-      obj = urge::MakeRefCounted<urge::Image>(width, height);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // initialize(filename)
+    VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
+    ParseArgs(argc, argv, "o", &filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
+
+    urge::Image* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(
+          std::string(filename_data, filename_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 2) {
+    // initialize(width, height)
+    int width, height;
+    ParseArgs(argc, argv, "ii", &width, &height);
+
+    urge::Image* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(width,
+          height);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Image_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Image* other_obj = CheckObject<urge::Image>(other_val, kImageDataType);
 
-  urge::RefPtr<urge::Image> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Image>(other, kImageDataType);
-    obj = urge::MakeRefCounted<urge::Image>(other_obj);
-  }
-  EXC_END;
+  urge::Image* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Image_Width) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Width();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Image_Height) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Height();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Image_GetPixel) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int x, y;
-    ParseArgs(argc, argv, "ii", &x, &y);
+  CheckArgc(argc, 2);
+  int x, y;
+  ParseArgs(argc, argv, "ii", &x, &y);
 
-    auto result = self_obj->GetPixel(x, y);
-    return WrapObject(result.get(), kColorDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Color* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Color> value = self_obj->GetPixel(x, y);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kColorDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Image_SetPixel) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 3);
-    int x, y;
-    VALUE color_val;
-    ParseArgs(argc, argv, "iio", &x, &y, &color_val);
+  CheckArgc(argc, 3);
+  int x, y;
+  VALUE color_val;
+  urge::Color* color;
+  ParseArgs(argc, argv, "iio", &x, &y, &color_val);
+  color = CheckObject<urge::Color>(color_val, kColorDataType);
 
-    self_obj->SetPixel(x, y, GetObject<urge::Color>(color_val, kColorDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetPixel(x, y, color);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Image_FillRect) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    if (argc == 2) {
-      // fill_rect(rect, color)
-      VALUE rect_val, color_val;
-      ParseArgs(argc, argv, "oo", &rect_val, &color_val);
-      self_obj->FillRect(GetObject<urge::Rect>(rect_val, kRectDataType),
-          GetObject<urge::Color>(color_val, kColorDataType));
-    } else if (argc == 5) {
-      // fill_rect(x, y, width, height, color)
-      int x, y, width, height;
-      VALUE color_val;
-      ParseArgs(argc, argv, "iiiio", &x, &y, &width, &height, &color_val);
-      self_obj->FillRect(x, y, width, height,
-          GetObject<urge::Color>(color_val, kColorDataType));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 2) {
+    // fill_rect(rect, color)
+    VALUE rect_val, color_val;
+    urge::Rect* rect;
+    urge::Color* color;
+    ParseArgs(argc, argv, "oo", &rect_val, &color_val);
+    rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
+    color = CheckObject<urge::Color>(color_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->FillRect(rect, color);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 5) {
+    // fill_rect(x, y, width, height, color)
+    int x, y, width, height;
+    VALUE color_val;
+    urge::Color* color;
+    ParseArgs(argc, argv, "iiiio", &x, &y, &width, &height, &color_val);
+    color = CheckObject<urge::Color>(color_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->FillRect(x, y, width, height, color);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Image_Blt) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    if (argc == 4) {
-      // blt(x, y, src_image, src_rect)
-      int x, y;
-      VALUE src_image_val, src_rect_val;
-      ParseArgs(argc, argv, "iioo", &x, &y, &src_image_val, &src_rect_val);
-      self_obj->Blt(x, y, GetObject<urge::Image>(src_image_val, kImageDataType),
-          GetObject<urge::Rect>(src_rect_val, kRectDataType));
-    } else if (argc == 5) {
-      // blt(x, y, src_image, src_rect, opacity)
-      int x, y, opacity;
-      VALUE src_image_val, src_rect_val;
-      ParseArgs(argc, argv, "iiooi", &x, &y, &src_image_val, &src_rect_val,
-          &opacity);
-      self_obj->Blt(x, y, GetObject<urge::Image>(src_image_val, kImageDataType),
-          GetObject<urge::Rect>(src_rect_val, kRectDataType), opacity);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 4) {
+    // blt(x, y, src_image, src_rect)
+    int x, y;
+    VALUE src_image_val, src_rect_val;
+    urge::Image* src_image;
+    urge::Rect* src_rect;
+    ParseArgs(argc, argv, "iioo", &x, &y, &src_image_val, &src_rect_val);
+    src_image = CheckObject<urge::Image>(src_image_val, kImageDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+
+    CPP_BEGIN {
+      self_obj->Blt(x, y, src_image, src_rect);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 5) {
+    // blt(x, y, src_image, src_rect, opacity)
+    int x, y, opacity;
+    VALUE src_image_val, src_rect_val;
+    urge::Image* src_image;
+    urge::Rect* src_rect;
+    ParseArgs(argc, argv, "iiooi", &x, &y, &src_image_val, &src_rect_val,
+        &opacity);
+    src_image = CheckObject<urge::Image>(src_image_val, kImageDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+
+    CPP_BEGIN {
+      self_obj->Blt(x, y, src_image, src_rect, opacity);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Image_StretchBlt) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    if (argc == 3) {
-      // stretch_blt(dst_rect, src_image, src_rect)
-      VALUE dst_rect_val, src_image_val, src_rect_val;
-      ParseArgs(argc, argv, "ooo", &dst_rect_val, &src_image_val,
-          &src_rect_val);
-      self_obj->StretchBlt(GetObject<urge::Rect>(dst_rect_val, kRectDataType),
-          GetObject<urge::Image>(src_image_val, kImageDataType),
-          GetObject<urge::Rect>(src_rect_val, kRectDataType));
-    } else if (argc == 4) {
-      // stretch_blt(dst_rect, src_image, src_rect, opacity)
-      VALUE dst_rect_val, src_image_val, src_rect_val;
-      int opacity;
-      ParseArgs(argc, argv, "oooi", &dst_rect_val, &src_image_val,
-          &src_rect_val, &opacity);
-      self_obj->StretchBlt(GetObject<urge::Rect>(dst_rect_val, kRectDataType),
-          GetObject<urge::Image>(src_image_val, kImageDataType),
-          GetObject<urge::Rect>(src_rect_val, kRectDataType), opacity);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 3) {
+    // stretch_blt(dst_rect, src_image, src_rect)
+    VALUE dst_rect_val, src_image_val, src_rect_val;
+    urge::Rect* dst_rect;
+    urge::Image* src_image;
+    urge::Rect* src_rect;
+    ParseArgs(argc, argv, "ooo", &dst_rect_val, &src_image_val, &src_rect_val);
+    dst_rect = CheckObject<urge::Rect>(dst_rect_val, kRectDataType);
+    src_image = CheckObject<urge::Image>(src_image_val, kImageDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+
+    CPP_BEGIN {
+      self_obj->StretchBlt(dst_rect, src_image, src_rect);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // stretch_blt(dst_rect, src_image, src_rect, opacity)
+    VALUE dst_rect_val, src_image_val, src_rect_val;
+    urge::Rect* dst_rect;
+    urge::Image* src_image;
+    urge::Rect* src_rect;
+    int opacity;
+    ParseArgs(argc, argv, "oooi", &dst_rect_val, &src_image_val, &src_rect_val,
+        &opacity);
+    dst_rect = CheckObject<urge::Rect>(dst_rect_val, kRectDataType);
+    src_image = CheckObject<urge::Image>(src_image_val, kImageDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+
+    CPP_BEGIN {
+      self_obj->StretchBlt(dst_rect, src_image, src_rect, opacity);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Image_GradientFillRect) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    if (argc == 3) {
-      // gradient_fill_rect(rect, color1, color2)
-      VALUE rect_val, color1_val, color2_val;
-      ParseArgs(argc, argv, "ooo", &rect_val, &color1_val, &color2_val);
-      self_obj->GradientFillRect(GetObject<urge::Rect>(rect_val, kRectDataType),
-          GetObject<urge::Color>(color1_val, kColorDataType),
-          GetObject<urge::Color>(color2_val, kColorDataType));
-    } else if (argc == 4) {
-      // gradient_fill_rect(rect, color1, color2, vertical)
-      VALUE rect_val, color1_val, color2_val;
-      bool vertical;
-      ParseArgs(argc, argv, "ooob", &rect_val, &color1_val, &color2_val,
-          &vertical);
-      self_obj->GradientFillRect(GetObject<urge::Rect>(rect_val, kRectDataType),
-          GetObject<urge::Color>(color1_val, kColorDataType),
-          GetObject<urge::Color>(color2_val, kColorDataType), vertical);
-    } else if (argc == 6) {
-      // gradient_fill_rect(x, y, width, height, color1, color2)
-      int x, y, width, height;
-      VALUE color1_val, color2_val;
-      ParseArgs(argc, argv, "iiiioo", &x, &y, &width, &height, &color1_val,
-          &color2_val);
-      self_obj->GradientFillRect(x, y, width, height,
-          GetObject<urge::Color>(color1_val, kColorDataType),
-          GetObject<urge::Color>(color2_val, kColorDataType));
-    } else if (argc == 7) {
-      // gradient_fill_rect(x, y, width, height, color1, color2, vertical)
-      int x, y, width, height;
-      VALUE color1_val, color2_val;
-      bool vertical;
-      ParseArgs(argc, argv, "iiiioob", &x, &y, &width, &height, &color1_val,
-          &color2_val, &vertical);
-      self_obj->GradientFillRect(x, y, width, height,
-          GetObject<urge::Color>(color1_val, kColorDataType),
-          GetObject<urge::Color>(color2_val, kColorDataType), vertical);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 3) {
+    // gradient_fill_rect(rect, color1, color2)
+    VALUE rect_val, color1_val, color2_val;
+    urge::Rect* rect;
+    urge::Color* color1;
+    urge::Color* color2;
+    ParseArgs(argc, argv, "ooo", &rect_val, &color1_val, &color2_val);
+    rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
+    color1 = CheckObject<urge::Color>(color1_val, kColorDataType);
+    color2 = CheckObject<urge::Color>(color2_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->GradientFillRect(rect, color1, color2);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // gradient_fill_rect(rect, color1, color2, vertical)
+    VALUE rect_val, color1_val, color2_val;
+    urge::Rect* rect;
+    urge::Color* color1;
+    urge::Color* color2;
+    bool vertical;
+    ParseArgs(argc, argv, "ooob", &rect_val, &color1_val, &color2_val,
+        &vertical);
+    rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
+    color1 = CheckObject<urge::Color>(color1_val, kColorDataType);
+    color2 = CheckObject<urge::Color>(color2_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->GradientFillRect(rect, color1, color2, vertical);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 6) {
+    // gradient_fill_rect(x, y, width, height, color1, color2)
+    int x, y, width, height;
+    VALUE color1_val, color2_val;
+    urge::Color* color1;
+    urge::Color* color2;
+    ParseArgs(argc, argv, "iiiioo", &x, &y, &width, &height, &color1_val,
+        &color2_val);
+    color1 = CheckObject<urge::Color>(color1_val, kColorDataType);
+    color2 = CheckObject<urge::Color>(color2_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->GradientFillRect(x, y, width, height, color1, color2);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 7) {
+    // gradient_fill_rect(x, y, width, height, color1, color2, vertical)
+    int x, y, width, height;
+    VALUE color1_val, color2_val;
+    urge::Color* color1;
+    urge::Color* color2;
+    bool vertical;
+    ParseArgs(argc, argv, "iiiioob", &x, &y, &width, &height, &color1_val,
+        &color2_val, &vertical);
+    color1 = CheckObject<urge::Color>(color1_val, kColorDataType);
+    color2 = CheckObject<urge::Color>(color2_val, kColorDataType);
+
+    CPP_BEGIN {
+      self_obj->GradientFillRect(x, y, width, height, color1, color2, vertical);
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Image_Clear) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Clear();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Image_ClearRect) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // clear_rect(rect)
-      VALUE rect_val;
-      ParseArgs(argc, argv, "o", &rect_val);
-      self_obj->ClearRect(GetObject<urge::Rect>(rect_val, kRectDataType));
-    } else if (argc == 4) {
-      // clear_rect(x, y, width, height)
-      int x, y, width, height;
-      ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
+  if (argc == 1) {
+    // clear_rect(rect)
+    VALUE rect_val;
+    urge::Rect* rect;
+    ParseArgs(argc, argv, "o", &rect_val);
+    rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
+
+    CPP_BEGIN {
+      self_obj->ClearRect(rect);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // clear_rect(x, y, width, height)
+    int x, y, width, height;
+    ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
+
+    CPP_BEGIN {
       self_obj->ClearRect(x, y, width, height);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(Image_ToDump) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->ToDump();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->ToDump());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Image_SaveFile) {
   auto* self_obj = GetSelfData<urge::Image>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string filename;
-    ParseArgs(argc, argv, "s", &filename);
+  CheckArgc(argc, 1);
+  VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
+  ParseArgs(argc, argv, "o", &filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-    self_obj->SaveFile(filename);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SaveFile(std::string(filename_data, filename_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Image_FromDump) {
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string data;
-    ParseArgs(argc, argv, "s", &data);
+  CheckArgc(argc, 1);
+  VALUE data_val;
+  const char* data_data;
+  size_t data_size;
+  ParseArgs(argc, argv, "o", &data_val);
+  CheckString(data_val, &data_data, &data_size);
 
-    auto result = urge::Image::FromDump(data);
-    return WrapObject(result.get(), kImageDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Image* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Image> value = urge::Image::FromDump(
+        std::string(data_data, data_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kImageDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitImageBindingAppend(VALUE klass);

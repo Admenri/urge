@@ -42,9 +42,6 @@ void AnimationStateMachine3D::AddState(std::string name,
     throw Exception(Exception::kRGSSError,
                     "state machine 3d: a state needs a "
                     "name.");
-  if (!animation)
-    throw Exception(Exception::kRGSSError,
-                    "state machine 3d: a state needs an animation.");
   if (FindState(name) >= 0)
     throw Exception(Exception::kRGSSError,
                     "state machine 3d: the state '{}' already exists.", name);
@@ -134,9 +131,6 @@ bool AnimationStateMachine3D::Play(std::string name) {
 }
 
 void AnimationStateMachine3D::Update(RefPtr<Skeleton3D> skeleton, float delta) {
-  if (!skeleton)
-    throw Exception(Exception::kRGSSError,
-                    "state machine 3d: a skeleton is needed.");
   if (current_index_ < 0)
     return;
 

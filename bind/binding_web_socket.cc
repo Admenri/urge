@@ -45,173 +45,248 @@ void DefineWebSocketConstants(VALUE klass) {
 RB_DEF_TYPE(WebSocket);
 
 RB_FUNC(WebSocket_initialize) {
-  urge::RefPtr<urge::WebSocket> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 1) {
-      // initialize(url)
-      std::string url;
-      ParseArgs(argc, argv, "s", &url);
-      obj = urge::MakeRefCounted<urge::WebSocket>(url);
-    } else if (argc == 2) {
-      // initialize(url, protocols)
-      std::string url;
-      VALUE protocols_val;
-      ParseArgs(argc, argv, "so", &url, &protocols_val);
-      obj = urge::MakeRefCounted<urge::WebSocket>(url,
-          GetVectorOf<std::string>(protocols_val));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 1) {
+    // initialize(url)
+    VALUE url_val;
+    const char* url_data;
+    size_t url_size;
+    ParseArgs(argc, argv, "o", &url_val);
+    CheckString(url_val, &url_data, &url_size);
+
+    urge::WebSocket* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::WebSocket> value = urge::MakeRefCounted<urge::WebSocket>(
+          std::string(url_data, url_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 2) {
+    // initialize(url, protocols)
+    VALUE url_val, protocols_val;
+    const char* url_data;
+    size_t url_size;
+    ParseArgs(argc, argv, "oo", &url_val, &protocols_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckVectorOf<std::string>(protocols_val);
+
+    urge::WebSocket* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::WebSocket> value = urge::MakeRefCounted<urge::WebSocket>(
+          std::string(url_data, url_size),
+          TakeVectorOf<std::string>(protocols_val));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(WebSocket_GetUrl) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetUrl();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetUrl());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(WebSocket_GetReadyState) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetReadyState());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetReadyState();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(WebSocket_GetError) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetError();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetError());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(WebSocket_GetDropped) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetDropped());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetDropped();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(WebSocket_SendText) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string data;
-    ParseArgs(argc, argv, "s", &data);
+  CheckArgc(argc, 1);
+  VALUE data_val;
+  const char* data_data;
+  size_t data_size;
+  ParseArgs(argc, argv, "o", &data_val);
+  CheckString(data_val, &data_data, &data_size);
 
-    self_obj->SendText(data);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SendText(std::string(data_data, data_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(WebSocket_SendBinary) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string data;
-    ParseArgs(argc, argv, "s", &data);
+  CheckArgc(argc, 1);
+  VALUE data_val;
+  const char* data_data;
+  size_t data_size;
+  ParseArgs(argc, argv, "o", &data_val);
+  CheckString(data_val, &data_data, &data_size);
 
-    self_obj->SendBinary(data);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SendBinary(std::string(data_data, data_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(WebSocket_SendPing) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    if (argc == 0) {
-      // send_ping()
+  if (argc == 0) {
+    // send_ping()
+    CPP_BEGIN {
       self_obj->SendPing();
-    } else if (argc == 1) {
-      // send_ping(data)
-      std::string data;
-      ParseArgs(argc, argv, "s", &data);
-      self_obj->SendPing(data);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 1) {
+    // send_ping(data)
+    VALUE data_val;
+    const char* data_data;
+    size_t data_size;
+    ParseArgs(argc, argv, "o", &data_val);
+    CheckString(data_val, &data_data, &data_size);
+
+    CPP_BEGIN {
+      self_obj->SendPing(std::string(data_data, data_size));
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(WebSocket_Close) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    if (argc == 0) {
-      // close()
+  if (argc == 0) {
+    // close()
+    CPP_BEGIN {
       self_obj->Close();
-    } else if (argc == 1) {
-      // close(code)
-      int code;
-      ParseArgs(argc, argv, "i", &code);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 1) {
+    // close(code)
+    int code;
+    ParseArgs(argc, argv, "i", &code);
+
+    CPP_BEGIN {
       self_obj->Close(code);
-    } else if (argc == 2) {
-      // close(code, reason)
-      int code;
-      std::string reason;
-      ParseArgs(argc, argv, "is", &code, &reason);
-      self_obj->Close(code, reason);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 2) {
+    // close(code, reason)
+    int code;
+    VALUE reason_val;
+    const char* reason_data;
+    size_t reason_size;
+    ParseArgs(argc, argv, "io", &code, &reason_val);
+    CheckString(reason_val, &reason_data, &reason_size);
+
+    CPP_BEGIN {
+      self_obj->Close(code, std::string(reason_data, reason_size));
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(WebSocket_NextEvent) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    auto result = self_obj->NextEvent();
-    return WrapObject(result.get(), kNetworkEventDataType);
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  urge::NetworkEvent* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::NetworkEvent> value = self_obj->NextEvent();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kNetworkEventDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(WebSocket_GetPending) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetPending());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetPending();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 void InitWebSocketBindingAppend(VALUE klass);

@@ -38,121 +38,159 @@ RB_DEF_TYPE_INHERIT(GPUTexture, GPUObject);
 RB_FUNC(GPUTexture_Width) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Width();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_Height) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Height();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_DepthOrArrayLayers) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->DepthOrArrayLayers());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->DepthOrArrayLayers();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_MipLevelCount) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->MipLevelCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->MipLevelCount();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_SampleCount) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->SampleCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->SampleCount();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_Dimension) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Dimension());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Dimension();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_Format) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Format());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Format();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_Usage) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return ULONG2NUM(self_obj->Usage());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  uint32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Usage();
+  } CPP_END;
+
+  return ULONG2NUM(result);
 }
 
 RB_FUNC(GPUTexture_CreateView) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    if (argc == 0) {
-      // create_view()
-      auto result = self_obj->CreateView();
-      return WrapObject(result.get(), kGPUTextureViewDataType);
-    } else if (argc == 1) {
-      // create_view(descriptor)
-      VALUE descriptor_val;
-      ParseArgs(argc, argv, "o", &descriptor_val);
-      auto result = self_obj->CreateView(GetObject<urge::GPUTextureViewDescriptor>(descriptor_val, kGPUTextureViewDescriptorDataType));
-      return WrapObject(result.get(), kGPUTextureViewDataType);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // create_view()
+    urge::GPUTextureView* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::GPUTextureView> value = self_obj->CreateView();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kGPUTextureViewDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else if (argc == 1) {
+    // create_view(descriptor)
+    VALUE descriptor_val;
+    urge::GPUTextureViewDescriptor* descriptor;
+    ParseArgs(argc, argv, "o", &descriptor_val);
+    descriptor = CheckMaybeObject<urge::GPUTextureViewDescriptor>(descriptor_val, kGPUTextureViewDescriptorDataType);
+
+    urge::GPUTextureView* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::GPUTextureView> value = self_obj->CreateView(
+          descriptor);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE value = WrapObject(result, kGPUTextureViewDataType);
+    if (result)
+      result->Release();
+    return value;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 RB_FUNC(GPUTexture_Destroy) {
   auto* self_obj = GetSelfData<urge::GPUTexture>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Destroy();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

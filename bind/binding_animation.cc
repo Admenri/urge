@@ -36,89 +36,118 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Animation, Disposable);
 
 RB_FUNC(Animation_initialize) {
-  urge::RefPtr<urge::Animation> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string filename;
-    ParseArgs(argc, argv, "s", &filename);
+  VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
+  ParseArgs(argc, argv, "o", &filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-    obj = urge::MakeRefCounted<urge::Animation>(filename);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::Animation* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Animation> value = urge::MakeRefCounted<urge::Animation>(
+        std::string(filename_data, filename_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Animation_Width) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Width());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Width();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Animation_Height) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Height());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Height();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Animation_Count) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Count());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Count();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Animation_Delay) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    return LONG2NUM(self_obj->Delay(index));
-  }
-  EXC_END;
-  return Qnil;
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Delay(index);
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(Animation_Delays) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<int32_t>(self_obj->Delays());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<int32_t>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<int32_t>(self_obj->Delays());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<int32_t>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Animation_Frame) {
   auto* self_obj = GetSelfData<urge::Animation>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    auto result = self_obj->Frame(index);
-    return WrapObject(result.get(), kImageDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Image* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Image> value = self_obj->Frame(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kImageDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitAnimationBindingAppend(VALUE klass);

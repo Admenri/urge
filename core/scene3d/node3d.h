@@ -41,7 +41,7 @@ class Node3D : public Object {
   ~Node3D() override;
 
   URGE_BINDING()
-  ATTR(RefPtr<Vector3>, Position) {
+  ATTR(MaybePtr<Vector3>, Position) {
     if (value.has_value()) {
       if (*value)
         position_ = *value;
@@ -51,7 +51,7 @@ class Node3D : public Object {
   }
 
   URGE_BINDING()
-  ATTR(RefPtr<Vector4>, Rotation) {
+  ATTR(MaybePtr<Vector4>, Rotation) {
     if (value.has_value()) {
       if (*value)
         rotation_ = *value;
@@ -61,7 +61,7 @@ class Node3D : public Object {
   }
 
   URGE_BINDING()
-  ATTR(RefPtr<Vector3>, Scale) {
+  ATTR(MaybePtr<Vector3>, Scale) {
     if (value.has_value()) {
       if (*value)
         scale_ = *value;
@@ -87,12 +87,12 @@ class Node3D : public Object {
   URGE_BINDING(Name : "parent")
   RefPtr<Node3D> GetParent() const { return parent_; }
   URGE_BINDING(Name : "parent=")
-  void SetParent(RefPtr<Node3D> value);
+  void SetParent(MaybePtr<Node3D> value);
 
   URGE_BINDING()
-  void AddChild(RefPtr<Node3D> child);
+  void AddChild(MaybePtr<Node3D> child);
   URGE_BINDING()
-  void RemoveChild(RefPtr<Node3D> child);
+  void RemoveChild(MaybePtr<Node3D> child);
   URGE_BINDING()
   int32_t ChildCount() const { return static_cast<int32_t>(children_.size()); }
   URGE_BINDING()

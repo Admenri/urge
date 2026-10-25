@@ -47,7 +47,7 @@ class Light3D : public Node3D {
   }
 
   URGE_BINDING()
-  ATTR(RefPtr<Color>, Color) {
+  ATTR(MaybePtr<Color>, Color) {
     if (value.has_value()) {
       if (*value)
         color_ = *value;

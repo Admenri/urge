@@ -29,22 +29,24 @@ RB_DEF_TYPE(Disposable);
 RB_FUNC(Disposable_IsDisposed) {
   auto* self_obj = GetSelfData<urge::Disposable>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->IsDisposed() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsDisposed();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Disposable_Dispose) {
   auto* self_obj = GetSelfData<urge::Disposable>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Dispose();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

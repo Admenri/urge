@@ -38,115 +38,132 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(GPUBindGroupDescriptor, GPUObject);
 
 RB_FUNC(GPUBindGroupDescriptor_initialize) {
-  urge::RefPtr<urge::GPUBindGroupDescriptor> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::GPUBindGroupDescriptor>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::GPUBindGroupDescriptor* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::GPUBindGroupDescriptor> value = urge::MakeRefCounted<urge::GPUBindGroupDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_GetLabel) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetLabel();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetLabel());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_SetLabel) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string value;
-    ParseArgs(argc, argv, "s", &value);
+  CheckArgc(argc, 1);
+  VALUE value_val;
+  const char* value_data;
+  size_t value_size;
+  ParseArgs(argc, argv, "o", &value_val);
+  CheckString(value_val, &value_data, &value_size);
 
-    self_obj->SetLabel(value);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetLabel(std::string(value_data, value_size));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_AddBuffer) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t binding;
-    VALUE buffer_val;
-    ParseArgs(argc, argv, "uo", &binding, &buffer_val);
+  CheckArgc(argc, 2);
+  uint32_t binding;
+  VALUE buffer_val;
+  urge::GPUBuffer* buffer;
+  ParseArgs(argc, argv, "uo", &binding, &buffer_val);
+  buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
 
-    self_obj->AddBuffer(binding,
-        GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddBuffer(binding, buffer);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_AddBufferRange) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 4);
-    uint32_t binding;
-    VALUE buffer_val;
-    uint64_t offset, size;
-    ParseArgs(argc, argv, "uopp", &binding, &buffer_val, &offset, &size);
+  CheckArgc(argc, 4);
+  uint32_t binding;
+  VALUE buffer_val;
+  urge::GPUBuffer* buffer;
+  uint64_t offset, size;
+  ParseArgs(argc, argv, "uopp", &binding, &buffer_val, &offset, &size);
+  buffer = CheckObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType);
 
-    self_obj->AddBufferRange(binding,
-        GetObject<urge::GPUBuffer>(buffer_val, kGPUBufferDataType), offset,
-        size);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddBufferRange(binding, buffer, offset, size);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_AddTexture) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t binding;
-    VALUE view_val;
-    ParseArgs(argc, argv, "uo", &binding, &view_val);
+  CheckArgc(argc, 2);
+  uint32_t binding;
+  VALUE view_val;
+  urge::GPUTextureView* view;
+  ParseArgs(argc, argv, "uo", &binding, &view_val);
+  view = CheckObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType);
 
-    self_obj->AddTexture(binding,
-        GetObject<urge::GPUTextureView>(view_val, kGPUTextureViewDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddTexture(binding, view);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_AddSampler) {
   auto* self_obj = GetSelfData<urge::GPUBindGroupDescriptor>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t binding;
-    VALUE sampler_val;
-    ParseArgs(argc, argv, "uo", &binding, &sampler_val);
+  CheckArgc(argc, 2);
+  uint32_t binding;
+  VALUE sampler_val;
+  urge::GPUSampler* sampler;
+  ParseArgs(argc, argv, "uo", &binding, &sampler_val);
+  sampler = CheckObject<urge::GPUSampler>(sampler_val, kGPUSamplerDataType);
 
-    self_obj->AddSampler(binding,
-        GetObject<urge::GPUSampler>(sampler_val, kGPUSamplerDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->AddSampler(binding, sampler);
+  } CPP_END;
+
   return Qnil;
 }
 
-// Attribute: layout (RefPtr<GPUBindGroupLayout>)
+// Attribute: layout (MaybePtr<GPUBindGroupLayout>)
 BINDING_ATTR_OBJECT_REF(GPUBindGroupDescriptor,
                         urge::GPUBindGroupDescriptor,
                         Layout,
                         urge::GPUBindGroupLayout,
-                        kGPUBindGroupLayoutDataType);
+                        kGPUBindGroupLayoutDataType,
+                        CheckMaybeObject);
 
 void InitGPUBindGroupDescriptorBindingAppend(VALUE klass);
 

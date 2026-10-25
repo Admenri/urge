@@ -61,17 +61,10 @@ Image::Image(std::string filename) {
         return !!image_;
       });
 
-  if (!image_)
-    throw Exception(Exception::kRGSSError, "failed to load image: {}",
-                    filename);
-
   if (image_->format != kInternalPixelFormat) {
     auto* converted_image = SDL_ConvertSurface(image_, kInternalPixelFormat);
     SDL_DestroySurface(image_);
     image_ = converted_image;
-
-    if (!image_)
-      throw Exception(Exception::kRGSSError, SDL_GetError());
   }
 }
 
@@ -112,9 +105,6 @@ RefPtr<Color> Image::GetPixel(int32_t x, int32_t y) {
 void Image::SetPixel(int32_t x, int32_t y, RefPtr<Color> color) {
   Disposable::Guard();
 
-  if (!color)
-    throw Exception(Exception::kRGSSError, "invalid color.");
-
   const auto* pixel_detail = SDL_GetPixelFormatDetails(image_->format);
   const int32_t bpp = pixel_detail->bytes_per_pixel;
   uint8_t* pixel =
@@ -132,19 +122,12 @@ void Image::FillRect(int32_t x,
                      RefPtr<Color> color) {
   Disposable::Guard();
 
-  if (!color)
-    throw Exception(Exception::kRGSSError, "invalid color value.");
-
   SDL_Rect rect = {x, y, width, height};
-  if (!SDL_FillSurfaceRect(image_, &rect, MapColor(image_, color)))
-    throw Exception(Exception::kRGSSError, SDL_GetError());
+  SDL_FillSurfaceRect(image_, &rect, MapColor(image_, color));
 }
 
 void Image::FillRect(RefPtr<Rect> rect, RefPtr<Color> color) {
   Disposable::Guard();
-
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
 
   FillRect(rect->data.x, rect->data.y, rect->data.width, rect->data.height,
            color);
@@ -157,9 +140,6 @@ void Image::Blt(int32_t x,
                 int32_t opacity) {
   Disposable::Guard();
 
-  if (!src_rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
-
   StretchBlt(
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_image, src_rect, opacity);
@@ -170,9 +150,6 @@ void Image::StretchBlt(RefPtr<Rect> dst_rect,
                        RefPtr<Rect> src_rect,
                        int32_t opacity) {
   Disposable::Guard();
-
-  if (!dst_rect || !src_image || !src_rect)
-    throw Exception(Exception::kRGSSError, "invalid rect or image value.");
 
   SDL_Surface* source = src_image->image();
   SDL_Rect source_rect = {src_rect->data.x, src_rect->data.y,
@@ -191,16 +168,14 @@ void Image::StretchBlt(RefPtr<Rect> dst_rect,
 
   const bool scaled =
       target_rect.w != source_rect.w || target_rect.h != source_rect.h;
-  const bool result =
-      scaled ? SDL_BlitSurfaceScaled(source, &source_rect, image_, &target_rect,
-                                     SDL_SCALEMODE_NEAREST)
-             : SDL_BlitSurface(source, &source_rect, image_, &target_rect);
+  if (scaled)
+    SDL_BlitSurfaceScaled(source, &source_rect, image_, &target_rect,
+                          SDL_SCALEMODE_NEAREST);
+  else
+    SDL_BlitSurface(source, &source_rect, image_, &target_rect);
 
   SDL_SetSurfaceAlphaMod(source, previous_alpha);
   SDL_SetSurfaceBlendMode(source, previous_blend);
-
-  if (!result)
-    throw Exception(Exception::kRGSSError, SDL_GetError());
 }
 
 void Image::GradientFillRect(int32_t x,
@@ -211,9 +186,6 @@ void Image::GradientFillRect(int32_t x,
                              RefPtr<Color> color2,
                              bool vertical) {
   Disposable::Guard();
-
-  if (!color1 || !color2)
-    throw Exception(Exception::kRGSSError, "invalid color value.");
 
   const int32_t steps = vertical ? height : width;
   if (steps <= 0)
@@ -238,8 +210,7 @@ void Image::GradientFillRect(int32_t x,
 
     SDL_Rect line =
         vertical ? SDL_Rect{x, y + i, width, 1} : SDL_Rect{x + i, y, 1, height};
-    if (!SDL_FillSurfaceRect(image_, &line, color))
-      throw Exception(Exception::kRGSSError, SDL_GetError());
+    SDL_FillSurfaceRect(image_, &line, color);
   }
 }
 
@@ -248,9 +219,6 @@ void Image::GradientFillRect(RefPtr<Rect> rect,
                              RefPtr<Color> color2,
                              bool vertical) {
   Disposable::Guard();
-
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
 
   GradientFillRect(rect->data.x, rect->data.y, rect->data.width,
                    rect->data.height, color1, color2, vertical);
@@ -271,28 +239,19 @@ void Image::ClearRect(int32_t x, int32_t y, int32_t width, int32_t height) {
 void Image::ClearRect(RefPtr<Rect> rect) {
   Disposable::Guard();
 
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
-
   ClearRect(rect->data.x, rect->data.y, rect->data.width, rect->data.height);
 }
 
 RefPtr<Image> Image::FromDump(std::string data) {
   auto* stream = SDL_IOFromConstMem(data.data(), data.size());
-  if (!stream)
-    throw Exception(Exception::kRGSSError, SDL_GetError());
-
   auto* image = IMG_LoadTyped_IO(stream, true, "PNG");
+
   if (!image)
     throw Exception(Exception::kRGSSError, SDL_GetError());
 
   if (image->format != kInternalPixelFormat) {
     auto* converted_image = SDL_ConvertSurface(image, kInternalPixelFormat);
     SDL_DestroySurface(image);
-
-    if (!converted_image)
-      throw Exception(Exception::kRGSSError, SDL_GetError());
-
     image = converted_image;
   }
 
@@ -303,13 +262,7 @@ std::string Image::ToDump() {
   Disposable::Guard();
 
   auto* stream = SDL_IOFromDynamicMem();
-  if (!stream)
-    throw Exception(Exception::kRGSSError, SDL_GetError());
-
-  if (!IMG_SavePNG_IO(image_, stream, false)) {
-    SDL_CloseIO(stream);
-    throw Exception(Exception::kRGSSError, SDL_GetError());
-  }
+  IMG_SavePNG_IO(image_, stream, false);
 
   std::string data(static_cast<size_t>(SDL_GetIOSize(stream)), '\0');
   SDL_SeekIO(stream, 0, SDL_IO_SEEK_SET);
@@ -323,8 +276,7 @@ void Image::SaveFile(std::string filename) {
   Disposable::Guard();
 
   auto* stream = IOService::Get().OpenWrite(filename);
-  if (!IMG_SavePNG_IO(image_, stream, true))
-    throw Exception(Exception::kRGSSError, SDL_GetError());
+  IMG_SavePNG_IO(image_, stream, true);
 }
 
 void Image::DisposeObject() {

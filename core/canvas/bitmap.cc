@@ -195,28 +195,10 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 
   auto future =
       staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
-
   gpu.WaitAny(future);
-
-  if (mapping.status != WGPUMapAsyncStatus_Success) {
-    throw Exception(Exception::kRGSSError,
-                    "failed to map the staging buffer of a texture read back, "
-                    "{}: {}.",
-                    DescribeMapStatus(mapping),
-                    mapping.error.empty()
-                        ? std::string_view("the backend gave no reason")
-                        : std::string_view(mapping.error));
-  }
 
   const auto* mapped_range = static_cast<const std::uint8_t*>(
       staging.GetConstMappedRange(0, byte_size));
-  if (!mapped_range) {
-    throw Exception(Exception::kRGSSError,
-                    "the staging buffer of a texture read back is mapped but "
-                    "does not expose a range of {} bytes.",
-                    byte_size);
-  }
-
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(pixel_pitch) *
                                    height);
   for (int32_t row = 0; row < height; ++row)
@@ -321,9 +303,6 @@ void Bitmap::Blt(int32_t x,
                  int32_t opacity) {
   Disposable::Guard();
 
-  if (!src_rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
-
   StretchBlt(
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_bitmap, src_rect, opacity);
@@ -335,22 +314,17 @@ void Bitmap::StretchBlt(RefPtr<Rect> dst_rect,
                         int32_t opacity) {
   Disposable::Guard();
 
-  if (!dst_rect || !src_bitmap || !src_rect)
-    throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
+  if (src_bitmap.get() != this) {
+    BitmapDraw draw;
+    draw.target = this;
+    draw.source = src_bitmap;
+    draw.rect = RectF(dst_rect->data);
+    draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
+    draw.colors[0] = draw.colors[1] = draw.colors[2] = draw.colors[3] =
+        glm::vec4(opacity / 255.0f);
 
-  if (src_bitmap.get() == this)
-    throw Exception(Exception::kRGSSError,
-                    "bitmap: a blit cannot read the bitmap it draws into.");
-
-  BitmapDraw draw;
-  draw.target = this;
-  draw.source = src_bitmap;
-  draw.rect = RectF(dst_rect->data);
-  draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
-  draw.colors[0] = draw.colors[1] = draw.colors[2] = draw.colors[3] =
-      glm::vec4(opacity / 255.0f);
-
-  BitmapQueue::Get().Push(std::move(draw));
+    BitmapQueue::Get().Push(std::move(draw));
+  }
 }
 
 void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
@@ -359,23 +333,17 @@ void Bitmap::MaskBlt(RefPtr<Rect> dst_rect,
                      RefPtr<Bitmap> mask) {
   Disposable::Guard();
 
-  if (!dst_rect || !src_bitmap || !src_rect || !mask)
-    throw Exception(Exception::kRGSSError, "invalid rect or bitmap value.");
+  if (src_bitmap.get() != this && mask.get() != this) {
+    BitmapDraw draw;
+    draw.kind = BitmapDraw::Kind::kTextureMask;
+    draw.target = this;
+    draw.source = src_bitmap;
+    draw.mask = mask;
+    draw.rect = RectF(dst_rect->data);
+    draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
 
-  if (src_bitmap.get() == this || mask.get() == this)
-    throw Exception(
-        Exception::kRGSSError,
-        "bitmap: a mask blit cannot read the bitmap it draws into.");
-
-  BitmapDraw draw;
-  draw.kind = BitmapDraw::Kind::kTextureMask;
-  draw.target = this;
-  draw.source = src_bitmap;
-  draw.mask = mask;
-  draw.rect = RectF(dst_rect->data);
-  draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
-
-  BitmapQueue::Get().Push(std::move(draw));
+    BitmapQueue::Get().Push(std::move(draw));
+  }
 }
 
 void Bitmap::FillRect(int32_t x,
@@ -385,17 +353,11 @@ void Bitmap::FillRect(int32_t x,
                       RefPtr<Color> color) {
   Disposable::Guard();
 
-  if (!color)
-    throw Exception(Exception::kRGSSError, "invalid color value.");
-
   GradientFillRect(x, y, width, height, color, color);
 }
 
 void Bitmap::FillRect(RefPtr<Rect> rect, RefPtr<Color> color) {
   Disposable::Guard();
-
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
 
   FillRect(rect->data.x, rect->data.y, rect->data.width, rect->data.height,
            color);
@@ -409,9 +371,6 @@ void Bitmap::GradientFillRect(int32_t x,
                               RefPtr<Color> color2,
                               bool vertical) {
   Disposable::Guard();
-
-  if (!color1 || !color2)
-    throw Exception(Exception::kRGSSError, "invalid color value.");
 
   const glm::vec4 color1_norm = PremultiplyColor(color1->data);
   const glm::vec4 color2_norm = PremultiplyColor(color2->data);
@@ -434,9 +393,6 @@ void Bitmap::GradientFillRect(RefPtr<Rect> rect,
                               bool vertical) {
   Disposable::Guard();
 
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
-
   GradientFillRect(rect->data.x, rect->data.y, rect->data.width,
                    rect->data.height, color1, color2, vertical);
 }
@@ -456,9 +412,6 @@ void Bitmap::ClearRect(int32_t x, int32_t y, int32_t width, int32_t height) {
 void Bitmap::ClearRect(RefPtr<Rect> rect) {
   Disposable::Guard();
 
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
-
   ClearRect(rect->data.x, rect->data.y, rect->data.width, rect->data.height);
 }
 
@@ -475,36 +428,6 @@ RefPtr<Color> Bitmap::GetPixel(int32_t x, int32_t y) {
 
   const glm::vec4 color = UnpremultiplyColor(pixels.data());
   return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
-}
-
-void Bitmap::SavePpm(std::string filename) {
-  Disposable::Guard();
-  AcquireHandle();
-
-  const std::vector<std::uint8_t> pixels =
-      ReadTextureRegion(texture_, 0, 0, size_.x, size_.y);
-  if (pixels.empty())
-    throw Exception(Exception::kRGSSError,
-                    "bitmap: the read back of '{}' is empty.", filename);
-
-  std::ofstream out(filename, std::ios::binary);
-  if (!out)
-    throw Exception(Exception::kRGSSError, "bitmap: cannot write '{}'.",
-                    filename);
-
-  out << "P6\n" << size_.x << " " << size_.y << "\n255\n";
-
-  std::vector<char> row(static_cast<std::size_t>(size_.x) * 3);
-  for (int32_t y = 0; y < size_.y; ++y) {
-    for (int32_t x = 0; x < size_.x; ++x) {
-      const std::uint8_t* source =
-          pixels.data() + (static_cast<std::size_t>(y) * size_.x + x) * 4;
-      row[static_cast<std::size_t>(x) * 3 + 0] = static_cast<char>(source[0]);
-      row[static_cast<std::size_t>(x) * 3 + 1] = static_cast<char>(source[1]);
-      row[static_cast<std::size_t>(x) * 3 + 2] = static_cast<char>(source[2]);
-    }
-    out.write(row.data(), static_cast<std::streamsize>(row.size()));
-  }
 }
 
 void Bitmap::SetPixel(int32_t x, int32_t y, RefPtr<Color> color) {
@@ -568,9 +491,6 @@ void Bitmap::DrawText(int32_t x,
 void Bitmap::DrawText(RefPtr<Rect> rect, std::string str, int32_t align) {
   Disposable::Guard();
 
-  if (!rect)
-    throw Exception(Exception::kRGSSError, "invalid rect value.");
-
   DrawText(rect->data.x, rect->data.y, rect->data.width, rect->data.height, str,
            align);
 }
@@ -592,9 +512,6 @@ RefPtr<Image> Bitmap::ToImage() {
   Disposable::Guard();
 
   auto* data = SDL_CreateSurface(size_.x, size_.y, kInternalPixelFormat);
-  if (!data)
-    throw Exception(Exception::kRGSSError, SDL_GetError());
-
   AcquireHandle();
 
   const std::vector<std::uint8_t> pixels =
@@ -669,9 +586,6 @@ void Bitmap::UpdateWithPixels(const void* pixels, uint32_t bytes_per_row) {
 }
 
 RefPtr<Bitmap> Bitmap::FromImage(RefPtr<Image> image) {
-  if (!image)
-    throw Exception(Exception::kRGSSError, "invalid image value.");
-
   auto result = MakeRefCounted<Bitmap>(image->Width(), image->Height());
   result->UpdateWithImage(image);
   return result;

@@ -35,114 +35,167 @@ namespace binding {
 RB_DEF_TYPE(Effect);
 
 RB_FUNC(Effect_initialize) {
-  urge::RefPtr<urge::Effect> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 2) {
-      // initialize(vs_wgsl, fs_wgsl)
-      std::string vs_wgsl, fs_wgsl;
-      ParseArgs(argc, argv, "ss", &vs_wgsl, &fs_wgsl);
-      obj = urge::MakeRefCounted<urge::Effect>(vs_wgsl, fs_wgsl);
-    } else if (argc == 3) {
-      // initialize(vs_wgsl, fs_wgsl, blend_states)
-      std::string vs_wgsl, fs_wgsl, blend_states;
-      ParseArgs(argc, argv, "sss", &vs_wgsl, &fs_wgsl, &blend_states);
-      obj = urge::MakeRefCounted<urge::Effect>(vs_wgsl, fs_wgsl, blend_states);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 2) {
+    // initialize(vs_wgsl, fs_wgsl)
+    VALUE vs_wgsl_val, fs_wgsl_val;
+    const char* vs_wgsl_data;
+    size_t vs_wgsl_size, fs_wgsl_size;
+    const char* fs_wgsl_data;
+    ParseArgs(argc, argv, "oo", &vs_wgsl_val, &fs_wgsl_val);
+    CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
+    CheckString(fs_wgsl_val, &fs_wgsl_data, &fs_wgsl_size);
+
+    urge::Effect* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
+          std::string(vs_wgsl_data, vs_wgsl_size),
+          std::string(fs_wgsl_data, fs_wgsl_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 3) {
+    // initialize(vs_wgsl, fs_wgsl, blend_states)
+    VALUE vs_wgsl_val, fs_wgsl_val, blend_states_val;
+    const char* vs_wgsl_data;
+    size_t vs_wgsl_size, fs_wgsl_size, blend_states_size;
+    const char* fs_wgsl_data;
+    const char* blend_states_data;
+    ParseArgs(argc, argv, "ooo", &vs_wgsl_val, &fs_wgsl_val, &blend_states_val);
+    CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
+    CheckString(fs_wgsl_val, &fs_wgsl_data, &fs_wgsl_size);
+    CheckString(blend_states_val, &blend_states_data, &blend_states_size);
+
+    urge::Effect* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
+          std::string(vs_wgsl_data, vs_wgsl_size),
+          std::string(fs_wgsl_data, fs_wgsl_size),
+          std::string(blend_states_data, blend_states_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Effect_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Effect* other_obj = CheckObject<urge::Effect>(other_val, kEffectDataType);
 
-  urge::RefPtr<urge::Effect> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Effect>(other, kEffectDataType);
-    obj = urge::MakeRefCounted<urge::Effect>(other_obj);
-  }
-  EXC_END;
+  urge::Effect* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Effect_SetFloat) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t slot;
-    VALUE data_val;
-    ParseArgs(argc, argv, "uo", &slot, &data_val);
+  CheckArgc(argc, 2);
+  uint32_t slot;
+  VALUE data_val;
+  ParseArgs(argc, argv, "uo", &slot, &data_val);
+  CheckVectorOf<float>(data_val);
 
-    self_obj->SetFloat(slot, GetVectorOf<float>(data_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetFloat(slot, TakeVectorOf<float>(data_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Effect_SetInt) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t slot;
-    VALUE data_val;
-    ParseArgs(argc, argv, "uo", &slot, &data_val);
+  CheckArgc(argc, 2);
+  uint32_t slot;
+  VALUE data_val;
+  ParseArgs(argc, argv, "uo", &slot, &data_val);
+  CheckVectorOf<int32_t>(data_val);
 
-    self_obj->SetInt(slot, GetVectorOf<int32_t>(data_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetInt(slot, TakeVectorOf<int32_t>(data_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Effect_SetTexture) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t slot;
-    VALUE texture_val;
-    ParseArgs(argc, argv, "uo", &slot, &texture_val);
+  CheckArgc(argc, 2);
+  uint32_t slot;
+  VALUE texture_val;
+  urge::Bitmap* texture;
+  ParseArgs(argc, argv, "uo", &slot, &texture_val);
+  texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-    self_obj->SetTexture(slot,
-        GetObject<urge::Bitmap>(texture_val, kBitmapDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetTexture(slot, texture);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Effect_SetSampler) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t slot;
-    VALUE texture_val;
-    ParseArgs(argc, argv, "uo", &slot, &texture_val);
+  CheckArgc(argc, 2);
+  uint32_t slot;
+  VALUE texture_val;
+  urge::Bitmap* texture;
+  ParseArgs(argc, argv, "uo", &slot, &texture_val);
+  texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
-    self_obj->SetSampler(slot,
-        GetObject<urge::Bitmap>(texture_val, kBitmapDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetSampler(slot, texture);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Effect_SetBlock) {
   auto* self_obj = GetSelfData<urge::Effect>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    uint32_t slot;
-    std::string uniform_block;
-    ParseArgs(argc, argv, "us", &slot, &uniform_block);
+  CheckArgc(argc, 2);
+  uint32_t slot;
+  VALUE uniform_block_val;
+  const char* uniform_block_data;
+  size_t uniform_block_size;
+  ParseArgs(argc, argv, "uo", &slot, &uniform_block_val);
+  CheckString(uniform_block_val, &uniform_block_data, &uniform_block_size);
 
-    self_obj->SetBlock(slot, uniform_block);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetBlock(slot,
+        std::string(uniform_block_data, uniform_block_size));
+  } CPP_END;
+
   return Qnil;
 }
 

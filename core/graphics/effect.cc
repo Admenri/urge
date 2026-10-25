@@ -113,10 +113,6 @@ Effect::Effect(std::string vs_wgsl,
 }
 
 Effect::Effect(RefPtr<Effect> other) {
-  if (!other)
-    throw Exception(Exception::kRGSSError,
-                    "effect: cannot copy a null effect.");
-
   holder_ = other->holder_;
   resources_ = other->resources_;
   vs_wgsl_ = other->vs_wgsl_;
@@ -186,11 +182,6 @@ void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
 void Effect::CreateInternal(std::string vs_wgsl,
                             std::string fs_wgsl,
                             std::string blend_states) {
-  if (vs_wgsl.empty() || fs_wgsl.empty())
-    throw Exception(Exception::kRGSSError,
-                    "effect: the vertex and the fragment stage both need a "
-                    "source.");
-
   vs_wgsl_ = std::move(vs_wgsl);
   fs_wgsl_ = std::move(fs_wgsl);
   blend_states_ = std::move(blend_states);

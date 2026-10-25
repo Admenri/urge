@@ -21,72 +21,122 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Vector4  (core/common/utility.h:371-419)
+// Vector4  (core/common/utility.h:343-385)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Vector4);
 
 RB_FUNC(Vector4_initialize) {
-  urge::RefPtr<urge::Vector4> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Vector4>();
-    } else if (argc == 1) {
-      // initialize(v)
-      double v;
-      ParseArgs(argc, argv, "f", &v);
-      obj = urge::MakeRefCounted<urge::Vector4>(static_cast<float>(v));
-    } else if (argc == 4) {
-      // initialize(xv, yv, zv, wv)
-      double xv, yv, zv, wv;
-      ParseArgs(argc, argv, "ffff", &xv, &yv, &zv, &wv);
-      obj = urge::MakeRefCounted<urge::Vector4>(static_cast<float>(xv),
-          static_cast<float>(yv), static_cast<float>(zv),
-          static_cast<float>(wv));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Vector4* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(v)
+    double v;
+    ParseArgs(argc, argv, "f", &v);
+
+    urge::Vector4* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(
+          static_cast<float>(v));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 4) {
+    // initialize(xv, yv, zv, wv)
+    double xv, yv, zv, wv;
+    ParseArgs(argc, argv, "ffff", &xv, &yv, &zv, &wv);
+
+    urge::Vector4* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(
+          static_cast<float>(xv), static_cast<float>(yv),
+          static_cast<float>(zv), static_cast<float>(wv));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Vector4_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Vector4* other_obj = CheckObject<urge::Vector4>(other_val, kVector4DataType);
 
-  urge::RefPtr<urge::Vector4> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Vector4>(other, kVector4DataType);
-    obj = urge::MakeRefCounted<urge::Vector4>(other_obj);
-  }
-  EXC_END;
+  urge::Vector4* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Vector4_Set) {
   auto* self_obj = GetSelfData<urge::Vector4>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // set(v)
-      VALUE v_val;
-      ParseArgs(argc, argv, "o", &v_val);
-      self_obj->Set(GetObject<urge::Vector4>(v_val, kVector4DataType));
-    } else if (argc == 4) {
-      // set(xv, yv, zv, wv)
-      double xv, yv, zv, wv;
-      ParseArgs(argc, argv, "ffff", &xv, &yv, &zv, &wv);
+  if (argc == 1) {
+    // set(v)
+    VALUE v_val;
+    urge::Vector4* v;
+    ParseArgs(argc, argv, "o", &v_val);
+    v = CheckObject<urge::Vector4>(v_val, kVector4DataType);
+
+    CPP_BEGIN {
+      self_obj->Set(v);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // set(xv, yv, zv, wv)
+    double xv, yv, zv, wv;
+    ParseArgs(argc, argv, "ffff", &xv, &yv, &zv, &wv);
+
+    CPP_BEGIN {
       self_obj->Set(static_cast<float>(xv), static_cast<float>(yv),
           static_cast<float>(zv), static_cast<float>(wv));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 // Attribute: x (float)

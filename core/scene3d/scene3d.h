@@ -41,7 +41,7 @@ class Scene3D : public Node3D {
   ~Scene3D() override;
 
   URGE_BINDING(Name : "ambient")
-  ATTR(RefPtr<Color>, Ambient) {
+  ATTR(MaybePtr<Color>, Ambient) {
     if (value.has_value()) {
       if (*value)
         ambient_ = *value;
@@ -51,7 +51,7 @@ class Scene3D : public Node3D {
   }
 
   URGE_BINDING()
-  void Add(RefPtr<Node3D> node);
+  void Add(MaybePtr<Node3D> node);
   URGE_BINDING()
   std::vector<RefPtr<Camera3D>> Cameras();
   URGE_BINDING()

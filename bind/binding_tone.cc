@@ -21,120 +21,192 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Tone  (core/common/utility.h:207-258)
+// Tone  (core/common/utility.h:197-242)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Tone);
 
 RB_FUNC(Tone_initialize) {
-  urge::RefPtr<urge::Tone> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Tone>();
-    } else if (argc == 3) {
-      // initialize(r, g, b)
-      double r, g, b;
-      ParseArgs(argc, argv, "fff", &r, &g, &b);
-      obj = urge::MakeRefCounted<urge::Tone>(static_cast<float>(r),
-          static_cast<float>(g), static_cast<float>(b));
-    } else if (argc == 4) {
-      // initialize(r, g, b, a)
-      double r, g, b, a;
-      ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
-      obj = urge::MakeRefCounted<urge::Tone>(static_cast<float>(r),
-          static_cast<float>(g), static_cast<float>(b), static_cast<float>(a));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Tone* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Tone> value = urge::MakeRefCounted<urge::Tone>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 3) {
+    // initialize(r, g, b)
+    double r, g, b;
+    ParseArgs(argc, argv, "fff", &r, &g, &b);
+
+    urge::Tone* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Tone> value = urge::MakeRefCounted<urge::Tone>(
+          static_cast<float>(r), static_cast<float>(g), static_cast<float>(b));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 4) {
+    // initialize(r, g, b, a)
+    double r, g, b, a;
+    ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
+
+    urge::Tone* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Tone> value = urge::MakeRefCounted<urge::Tone>(
+          static_cast<float>(r), static_cast<float>(g), static_cast<float>(b),
+          static_cast<float>(a));
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Tone_initialize_copy) {
-  VALUE other;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Tone* other_obj = CheckObject<urge::Tone>(other_val, kToneDataType);
 
-  urge::RefPtr<urge::Tone> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Tone>(other, kToneDataType);
-    obj = urge::MakeRefCounted<urge::Tone>(other_obj);
-  }
-  EXC_END;
+  urge::Tone* result = nullptr;
 
-  return SetupSelfData(self, obj.get());
+  CPP_BEGIN {
+    urge::RefPtr<urge::Tone> value = urge::MakeRefCounted<urge::Tone>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Tone__dump) {
   auto* self_obj = GetSelfData<urge::Tone>(self);
 
-  EXC_BEGIN {
-    std::string result =
-        urge::Tone::MarshalDump(urge::RefPtr<urge::Tone>(self_obj));
-    return rb_str_new(result.data(), static_cast<long>(result.size()));
-  }
-  EXC_END;
-  return Qnil;
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(urge::Tone::MarshalDump(urge::RefPtr<urge::Tone>(self_obj)));
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Tone__load) {
-  std::string data;
-  ParseArgs(argc, argv, "s", &data);
+  VALUE data_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &data_val);
+  const char* data_data;
+  size_t data_size;
+  CheckString(data_val, &data_data, &data_size);
 
-  EXC_BEGIN {
-    VALUE obj = rb_obj_alloc(self);
-    auto ptr = urge::Tone::MarshalLoad(data);
-    return SetupSelfData(obj, ptr.get());
-  }
-  EXC_END;
-  return Qnil;
+  urge::Tone* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Tone> value = urge::Tone::MarshalLoad(std::string(data_data, data_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(rb_obj_alloc(self), result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Value equality: ==, eql?, === (KLASS_EQUAL)
 RB_FUNC(Tone__equal) {
   auto* self_obj = GetSelfData<urge::Tone>(self);
-  VALUE other = Qnil;
-  ParseArgs(argc, argv, "o", &other);
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
 
-  if (!rb_typeddata_is_kind_of(other, &kToneDataType))
+  if (!rb_typeddata_is_kind_of(other_val, &kToneDataType))
     return Qfalse;
+  auto* other_obj = GetSelfData<urge::Tone>(other_val);
 
-  auto* other_obj = GetSelfData<urge::Tone>(other);
-  EXC_BEGIN {
-    return *self_obj == *other_obj ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qfalse;
+  bool result = false;
+
+  CPP_BEGIN {
+    result = *self_obj == *other_obj;
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(Tone_Set) {
   auto* self_obj = GetSelfData<urge::Tone>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // set(tone)
-      VALUE tone_val;
-      ParseArgs(argc, argv, "o", &tone_val);
-      self_obj->Set(GetObject<urge::Tone>(tone_val, kToneDataType));
-    } else if (argc == 3) {
-      // set(r, g, b)
-      double r, g, b;
-      ParseArgs(argc, argv, "fff", &r, &g, &b);
+  if (argc == 1) {
+    // set(tone)
+    VALUE tone_val;
+    urge::Tone* tone;
+    ParseArgs(argc, argv, "o", &tone_val);
+    tone = CheckObject<urge::Tone>(tone_val, kToneDataType);
+
+    CPP_BEGIN {
+      self_obj->Set(tone);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 3) {
+    // set(r, g, b)
+    double r, g, b;
+    ParseArgs(argc, argv, "fff", &r, &g, &b);
+
+    CPP_BEGIN {
       self_obj->Set(static_cast<float>(r), static_cast<float>(g),
           static_cast<float>(b));
-    } else if (argc == 4) {
-      // set(r, g, b, a)
-      double r, g, b, a;
-      ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
+    } CPP_END;
+
+    return Qnil;
+  } else if (argc == 4) {
+    // set(r, g, b, a)
+    double r, g, b, a;
+    ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
+
+    CPP_BEGIN {
       self_obj->Set(static_cast<float>(r), static_cast<float>(g),
           static_cast<float>(b), static_cast<float>(a));
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+    } CPP_END;
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return Qnil;
 }
 
 // Attribute: red (float)

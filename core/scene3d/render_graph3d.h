@@ -59,7 +59,7 @@ class ComputePass3D : public Object {
   URGE_BINDING()
   void SetBuffer(std::string name, std::vector<float> values);
   URGE_BINDING()
-  void SetTexture(std::string name, RefPtr<Bitmap> texture);
+  void SetTexture(std::string name, MaybePtr<Bitmap> texture);
   URGE_BINDING()
   void SetTarget(std::string name,
                  RefPtr<RenderTarget3D> target,
@@ -147,7 +147,7 @@ class RenderGraphPass3D : public Object {
   URGE_BINDING(Name : "clear_color")
   RefPtr<Color> GetClearColor() const { return clear_color_; }
   URGE_BINDING(Name : "clear_color=")
-  void SetClearColor(RefPtr<Color> value) { clear_color_ = std::move(value); }
+  void SetClearColor(MaybePtr<Color> value) { clear_color_ = std::move(value); }
 
   URGE_BINDING(Name : "clear_flags")
   ATTR(uint32_t, ClearFlags) {
@@ -178,7 +178,7 @@ class RenderGraphPass3D : public Object {
   }
 
   URGE_BINDING(Name : "camera")
-  ATTR(RefPtr<Camera3D>, Camera) {
+  ATTR(MaybePtr<Camera3D>, Camera) {
     if (value.has_value())
       camera_ = *value;
     return camera_;
@@ -228,14 +228,14 @@ class RenderGraphPass3D : public Object {
   URGE_BINDING(Name : "material")
   RefPtr<MaterialPass3D> GetMaterial() const { return material_; }
   URGE_BINDING(Name : "material=")
-  void SetMaterial(RefPtr<MaterialPass3D> value) {
+  void SetMaterial(MaybePtr<MaterialPass3D> value) {
     material_ = std::move(value);
   }
 
   URGE_BINDING(Name : "compute")
   RefPtr<ComputePass3D> GetCompute() const { return compute_; }
   URGE_BINDING(Name : "compute=")
-  void SetCompute(RefPtr<ComputePass3D> value) { compute_ = std::move(value); }
+  void SetCompute(MaybePtr<ComputePass3D> value) { compute_ = std::move(value); }
 
   URGE_BINDING(Name : "cascades")
   ATTR(int32_t, Cascades) {
@@ -245,14 +245,14 @@ class RenderGraphPass3D : public Object {
   }
 
   URGE_BINDING(Name : "shadow_light")
-  ATTR(RefPtr<Light3D>, ShadowLight) {
+  ATTR(MaybePtr<Light3D>, ShadowLight) {
     if (value.has_value())
       shadow_light_ = *value;
     return shadow_light_;
   }
 
   URGE_BINDING(Name : "point_shadow_light")
-  ATTR(RefPtr<Light3D>, PointShadowLight) {
+  ATTR(MaybePtr<Light3D>, PointShadowLight) {
     if (value.has_value())
       point_shadow_light_ = *value;
     return point_shadow_light_;
@@ -387,7 +387,7 @@ class RenderGraph3D : public Object {
   URGE_BINDING(Name : "ambient")
   RefPtr<Color> GetAmbient() const { return ambient_; }
   URGE_BINDING(Name : "ambient=")
-  void SetAmbient(RefPtr<Color> value) { ambient_ = std::move(value); }
+  void SetAmbient(MaybePtr<Color> value) { ambient_ = std::move(value); }
 
   URGE_BINDING(Name : "shadow_size")
   ATTR(int32_t, ShadowSize) {
@@ -402,7 +402,7 @@ class RenderGraph3D : public Object {
   }
 
   URGE_BINDING(Name : "camera")
-  ATTR(RefPtr<Camera3D>, Camera) {
+  ATTR(MaybePtr<Camera3D>, Camera) {
     if (value.has_value())
       camera_ = *value;
     return camera_;

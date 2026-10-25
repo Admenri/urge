@@ -56,7 +56,7 @@ URGE_BINDING()
 class TilemapVX : public Node {
  public:
   URGE_BINDING()
-  TilemapVX(RefPtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
+  TilemapVX(MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
   URGE_BINDING()
   ~TilemapVX() override;
 
@@ -64,24 +64,24 @@ class TilemapVX : public Node {
   void Update();
 
   URGE_BINDING()
-  void SetBitmap(int32_t index, RefPtr<Bitmap> bitmap);
+  void SetBitmap(int32_t index, MaybePtr<Bitmap> bitmap);
   URGE_BINDING()
   RefPtr<Bitmap> GetBitmap(int32_t index);
 
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
   ATTR(bool, Visible) override;
   URGE_BINDING()
   ATTR(int32_t, Z) override;
   URGE_BINDING()
-  ATTR(RefPtr<Table>, MapData);
+  ATTR(MaybePtr<Table>, MapData);
   URGE_BINDING()
-  ATTR(RefPtr<Table>, FlashData);
+  ATTR(MaybePtr<Table>, FlashData);
   URGE_BINDING()
-  ATTR(RefPtr<Table>, Flags);
+  ATTR(MaybePtr<Table>, Flags);
   URGE_BINDING()
-  ATTR(RefPtr<Table>, Passages);
+  ATTR(MaybePtr<Table>, Passages);
   URGE_BINDING()
   ATTR(int32_t, OX);
   URGE_BINDING()

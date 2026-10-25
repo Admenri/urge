@@ -32,123 +32,141 @@ namespace binding {
 RB_DEF_TYPE(AudioStream);
 
 RB_FUNC(AudioStream_initialize) {
-  urge::RefPtr<urge::AudioStream> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    std::string filename;
-    ParseArgs(argc, argv, "s", &filename);
+  VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
+  ParseArgs(argc, argv, "o", &filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-    obj = urge::MakeRefCounted<urge::AudioStream>(filename);
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+  urge::AudioStream* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::AudioStream> value = urge::MakeRefCounted<urge::AudioStream>(
+        std::string(filename_data, filename_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(AudioStream_Start) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Start();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AudioStream_Stop) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Stop();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AudioStream_Seek) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double pos;
-    ParseArgs(argc, argv, "f", &pos);
+  CheckArgc(argc, 1);
+  double pos;
+  ParseArgs(argc, argv, "f", &pos);
 
+  CPP_BEGIN {
     self_obj->Seek(static_cast<float>(pos));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AudioStream_Cursor) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->Cursor());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->Cursor();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(AudioStream_Length) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return rb_float_new(self_obj->Length());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->Length();
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(AudioStream_IsPlaying) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->IsPlaying() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsPlaying();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(AudioStream_IsEnd) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return self_obj->IsEnd() ? Qtrue : Qfalse;
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  bool result = false;
+
+  CPP_BEGIN {
+    result = self_obj->IsEnd();
+  } CPP_END;
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(AudioStream_SetStartTime) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double pos;
-    ParseArgs(argc, argv, "f", &pos);
+  CheckArgc(argc, 1);
+  double pos;
+  ParseArgs(argc, argv, "f", &pos);
 
+  CPP_BEGIN {
     self_obj->SetStartTime(static_cast<float>(pos));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(AudioStream_SetStopTime) {
   auto* self_obj = GetSelfData<urge::AudioStream>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double pos;
-    ParseArgs(argc, argv, "f", &pos);
+  CheckArgc(argc, 1);
+  double pos;
+  ParseArgs(argc, argv, "f", &pos);
 
+  CPP_BEGIN {
     self_obj->SetStopTime(static_cast<float>(pos));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 

@@ -44,7 +44,7 @@ class Viewport : public Node {
   ~Viewport() override;
 
   URGE_BINDING()
-  void Flash(RefPtr<Color> color, int32_t duration);
+  void Flash(MaybePtr<Color> color, int32_t duration);
   URGE_BINDING()
   void Update();
 
@@ -59,7 +59,7 @@ class Viewport : public Node {
   URGE_BINDING()
   ATTR(RefPtr<Tone>, Tone);
   URGE_BINDING()
-  ATTR(RefPtr<Effect>, Effect);
+  ATTR(MaybePtr<Effect>, Effect);
 
  protected:
   void DisposeObject() override;

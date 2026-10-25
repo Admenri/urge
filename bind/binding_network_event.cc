@@ -22,17 +22,24 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// `NetworkEvent#data` answers a Ruby String tagged ASCII-8BIT: the payload is
-// raw bytes and the generated `s` codec would tag it UTF-8.  The C++ accessor
-// therefore carries no `URGE_BINDING()` marker.
+// `data()` answers a `const std::string&` the object owns, so phase 2 can hand
+// back a pointer and a length without copying or owning anything.
 RB_FUNC(NetworkEvent_Data) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
+  CheckArgc(argc, 0);
 
-  const std::string& data = self_obj->data();
-  return rb_enc_str_new(data.data(), static_cast<long>(data.size()),
+  const char* data = nullptr;
+  size_t size = 0;
+
+  CPP_BEGIN {
+    const std::string& payload = self_obj->data();
+    data = payload.data();
+    size = payload.size();
+  } CPP_END;
+
+  return rb_enc_str_new(data, static_cast<long>(size),
                         rb_ascii8bit_encoding());
 }
-
 // The `Type` enum is registered by hand because the IR describes methods, not
 // constants.
 void DefineNetworkEventConstants(VALUE klass) {
@@ -55,77 +62,97 @@ void DefineNetworkEventConstants(VALUE klass) {
 RB_DEF_TYPE(NetworkEvent);
 
 RB_FUNC(NetworkEvent_initialize) {
-  urge::RefPtr<urge::NetworkEvent> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::NetworkEvent>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::NetworkEvent* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::NetworkEvent> value = urge::MakeRefCounted<urge::NetworkEvent>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(NetworkEvent_GetType) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetType());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetType();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(NetworkEvent_GetText) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetText();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetText());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(NetworkEvent_GetCode) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->GetCode());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->GetCode();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(NetworkEvent_GetReason) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetReason();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetReason());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(NetworkEvent_GetErrorMessage) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    std::string result = self_obj->GetErrorMessage();
-    return rb_enc_str_new(result.data(),
-                         static_cast<long>(result.size()),
-                         rb_utf8_encoding());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::string* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::string(self_obj->GetErrorMessage());
+  } CPP_END;
+
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 void InitNetworkEventBindingAppend(VALUE klass);

@@ -87,7 +87,7 @@ class GLTFModel3D : public Object {
     return unlit_;
   }
   URGE_BINDING()
-  void SetMaterial(int32_t index, RefPtr<Material3D> material);
+  void SetMaterial(int32_t index, MaybePtr<Material3D> material);
   URGE_BINDING()
   RefPtr<Material3D> GetMaterial(int32_t index) const;
 

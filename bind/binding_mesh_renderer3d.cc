@@ -38,110 +38,139 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(MeshRenderer3D, Node3D);
 
 RB_FUNC(MeshRenderer3D_initialize) {
-  urge::RefPtr<urge::MeshRenderer3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::MeshRenderer3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::MeshRenderer3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::MeshRenderer3D> value = urge::MakeRefCounted<urge::MeshRenderer3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(MeshRenderer3D_SetMaterial) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int slot;
-    VALUE material_val;
-    ParseArgs(argc, argv, "io", &slot, &material_val);
+  CheckArgc(argc, 2);
+  int slot;
+  VALUE material_val;
+  urge::Material3D* material;
+  ParseArgs(argc, argv, "io", &slot, &material_val);
+  material = CheckMaybeObject<urge::Material3D>(material_val, kMaterial3DDataType);
 
-    self_obj->SetMaterial(slot,
-        GetObject<urge::Material3D>(material_val, kMaterial3DDataType));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetMaterial(slot, material);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(MeshRenderer3D_GetMaterial) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int slot;
-    ParseArgs(argc, argv, "i", &slot);
+  CheckArgc(argc, 1);
+  int slot;
+  ParseArgs(argc, argv, "i", &slot);
 
-    auto result = self_obj->GetMaterial(slot);
-    return WrapObject(result.get(), kMaterial3DDataType);
-  }
-  EXC_END;
-  return Qnil;
+  urge::Material3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::Material3D> value = self_obj->GetMaterial(slot);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE value = WrapObject(result, kMaterial3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(MeshRenderer3D_MaterialCount) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->MaterialCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->MaterialCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 RB_FUNC(MeshRenderer3D_BoundsCenter) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsCenter());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsCenter());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(MeshRenderer3D_BoundsRadius) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return WrapVectorOf<float>(self_obj->BoundsRadius());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  std::vector<float>* result = nullptr;
+
+  CPP_BEGIN {
+    result = new std::vector<float>(self_obj->BoundsRadius());
+  } CPP_END;
+
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(MeshRenderer3D_SetInstanceMatrices) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    VALUE data_val;
-    ParseArgs(argc, argv, "o", &data_val);
+  CheckArgc(argc, 1);
+  VALUE data_val;
+  ParseArgs(argc, argv, "o", &data_val);
+  CheckVectorOf<float>(data_val);
 
-    self_obj->SetInstanceMatrices(GetVectorOf<float>(data_val));
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->SetInstanceMatrices(TakeVectorOf<float>(data_val));
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(MeshRenderer3D_InstanceCount) {
   auto* self_obj = GetSelfData<urge::MeshRenderer3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->InstanceCount());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->InstanceCount();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
-// Attribute: mesh (RefPtr<Mesh3D>)
+// Attribute: mesh (MaybePtr<Mesh3D>)
 BINDING_ATTR_OBJECT_REF(MeshRenderer3D,
                         urge::MeshRenderer3D,
                         Mesh,
                         urge::Mesh3D,
-                        kMesh3DDataType);
+                        kMesh3DDataType,
+                        CheckMaybeObject);
 
 // Attribute: cast_shadow (bool)
 BINDING_ATTR_BOOL(MeshRenderer3D, urge::MeshRenderer3D, CastShadow);

@@ -45,10 +45,10 @@ class MeshRenderer3D : public Node3D {
   ~MeshRenderer3D() override;
 
   URGE_BINDING(Name : "mesh")
-  ATTR(RefPtr<Mesh3D>, Mesh);
+  ATTR(MaybePtr<Mesh3D>, Mesh);
 
   URGE_BINDING()
-  void SetMaterial(int32_t slot, RefPtr<Material3D> material);
+  void SetMaterial(int32_t slot, MaybePtr<Material3D> material);
   URGE_BINDING()
   RefPtr<Material3D> GetMaterial(int32_t slot) const;
   URGE_BINDING(Name : "material_count")

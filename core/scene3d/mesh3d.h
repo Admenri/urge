@@ -74,7 +74,7 @@ class Mesh3D : public Object {
   int32_t SubmeshMatSlot(int32_t index) const;
 
   URGE_BINDING()
-  ATTR(RefPtr<Skeleton3D>, Skeleton);
+  ATTR(MaybePtr<Skeleton3D>, Skeleton);
 
   URGE_BINDING()
   int32_t VertexCount() const { return vertex_count_; }

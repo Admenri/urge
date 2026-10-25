@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include "core/common/exception.h"
+#include "core/common/logger.h"
 
 namespace urge {
 
@@ -123,8 +123,6 @@ void GPUBindGroupLayoutDescriptor::AddSampler(uint32_t binding,
 
 void GPUPipelineLayoutDescriptor::AddBindGroupLayout(
     RefPtr<GPUBindGroupLayout> layout) {
-  if (!layout)
-    throw Exception(Exception::kGPUError, "nil bind group layout");
   layouts.push_back(layout->handle());
 }
 
@@ -137,8 +135,6 @@ void GPUBindGroupDescriptor::AddBufferRange(uint32_t binding,
                                             RefPtr<GPUBuffer> buffer,
                                             uint64_t offset,
                                             uint64_t size) {
-  if (!buffer)
-    throw Exception(Exception::kGPUError, "nil bind group buffer");
   wgpu::BindGroupEntry entry = {};
   entry.binding = binding;
   entry.buffer = buffer->handle();
@@ -149,8 +145,6 @@ void GPUBindGroupDescriptor::AddBufferRange(uint32_t binding,
 
 void GPUBindGroupDescriptor::AddTexture(uint32_t binding,
                                         RefPtr<GPUTextureView> view) {
-  if (!view)
-    throw Exception(Exception::kGPUError, "nil bind group texture");
   wgpu::BindGroupEntry entry = {};
   entry.binding = binding;
   entry.textureView = view->handle();
@@ -159,8 +153,6 @@ void GPUBindGroupDescriptor::AddTexture(uint32_t binding,
 
 void GPUBindGroupDescriptor::AddSampler(uint32_t binding,
                                         RefPtr<GPUSampler> sampler) {
-  if (!sampler)
-    throw Exception(Exception::kGPUError, "nil bind group sampler");
   wgpu::BindGroupEntry entry = {};
   entry.binding = binding;
   entry.sampler = sampler->handle();
@@ -309,8 +301,6 @@ void GPURenderPassDescriptor::AddColorAttachment(RefPtr<GPUTextureView> view,
                                                  float g,
                                                  float b,
                                                  float a) {
-  if (!view)
-    throw Exception(Exception::kGPUError, "nil render pass color view");
   ColorAttachment attachment;
   attachment.view = view;
   attachment.load_op = attachment_load_op;
@@ -323,9 +313,10 @@ void GPURenderPassDescriptor::AddColorAttachment(RefPtr<GPUTextureView> view,
 }
 
 void GPURenderPassDescriptor::SetColorResolve(RefPtr<GPUTextureView> resolve) {
-  if (color_attachments.empty())
-    throw Exception(Exception::kGPUError,
-                    "resolve target needs a color attachment");
+  if (color_attachments.empty()) {
+    LOGGER_ERROR("[GPU] set_color_resolve: add a color attachment first");
+    return;
+  }
   color_attachments.back().resolve = resolve;
 }
 
@@ -371,8 +362,11 @@ bool GPUBuffer::MapAsync(uint32_t mode, uint64_t offset, uint64_t size) {
 }
 
 std::string GPUBuffer::Read(uint64_t offset, uint64_t size) {
-  if (!MapAsync(static_cast<uint32_t>(wgpu::MapMode::Read), offset, size))
-    throw Exception(Exception::kGPUError, "failed to map buffer for read");
+  if (!MapAsync(static_cast<uint32_t>(wgpu::MapMode::Read), offset, size)) {
+    LOGGER_ERROR("[GPU] buffer read: mapping {} bytes at {} failed", size,
+                 offset);
+    return {};
+  }
   std::string result;
   const void* data = buffer_.GetConstMappedRange(offset, size);
   if (data)
@@ -383,8 +377,11 @@ std::string GPUBuffer::Read(uint64_t offset, uint64_t size) {
 
 void GPUBuffer::Write(uint64_t offset, std::string data) {
   if (!MapAsync(static_cast<uint32_t>(wgpu::MapMode::Write), offset,
-                static_cast<uint64_t>(data.size())))
-    throw Exception(Exception::kGPUError, "failed to map buffer for write");
+                static_cast<uint64_t>(data.size()))) {
+    LOGGER_ERROR("[GPU] buffer write: mapping {} bytes at {} failed",
+                 data.size(), offset);
+    return;
+  }
   buffer_.WriteMappedRange(offset, data.data(), data.size());
   buffer_.Unmap();
 }
@@ -404,8 +401,6 @@ RefPtr<GPUTextureView> GPUTexture::CreateView(
     desc.aspect = static_cast<wgpu::TextureAspect>(descriptor->aspect);
   }
   wgpu::TextureView view = texture_.CreateView(&desc);
-  if (!view)
-    throw Exception(Exception::kGPUError, "failed to create texture view");
   return MakeRefCounted<GPUTextureView>(view);
 }
 
@@ -423,14 +418,9 @@ RefPtr<GPUBindGroupLayout> GPUComputePipeline::GetBindGroupLayout(
 
 RefPtr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
     RefPtr<GPURenderPassDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil render pass descriptor");
-
   std::vector<wgpu::RenderPassColorAttachment> attachments;
   attachments.reserve(descriptor->color_attachments.size());
   for (const auto& source : descriptor->color_attachments) {
-    if (!source.view)
-      throw Exception(Exception::kGPUError, "nil render pass color view");
     wgpu::RenderPassColorAttachment attachment;
     attachment.view = source.view->handle();
     attachment.resolveTarget =
@@ -444,8 +434,10 @@ RefPtr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
     attachments.push_back(attachment);
   }
 
-  if (attachments.empty())
-    throw Exception(Exception::kGPUError, "missing render pass color view");
+  if (attachments.empty() && !descriptor->depth_view) {
+    LOGGER_ERROR("[GPU] begin_render_pass: the descriptor has no attachment");
+    return nullptr;
+  }
 
   wgpu::RenderPassDepthStencilAttachment depth_stencil;
   if (descriptor->depth_view) {
@@ -475,8 +467,6 @@ RefPtr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
                                : nullptr;
 
   wgpu::RenderPassEncoder encoder = encoder_.BeginRenderPass(&desc);
-  if (!encoder)
-    throw Exception(Exception::kGPUError, "failed to begin render pass");
   return MakeRefCounted<GPURenderPassEncoder>(encoder);
 }
 
@@ -486,8 +476,6 @@ RefPtr<GPUComputePassEncoder> GPUCommandEncoder::BeginComputePass(
   if (descriptor)
     desc.label = View(descriptor->label);
   wgpu::ComputePassEncoder encoder = encoder_.BeginComputePass(&desc);
-  if (!encoder)
-    throw Exception(Exception::kGPUError, "failed to begin compute pass");
   return MakeRefCounted<GPUComputePassEncoder>(encoder);
 }
 
@@ -496,8 +484,6 @@ void GPUCommandEncoder::CopyBufferToBuffer(RefPtr<GPUBuffer> source,
                                            RefPtr<GPUBuffer> destination,
                                            uint64_t destination_offset,
                                            uint64_t size) {
-  if (!source || !destination)
-    throw Exception(Exception::kGPUError, "missing copy buffer");
   encoder_.CopyBufferToBuffer(source->handle(), source_offset,
                               destination->handle(), destination_offset, size);
 }
@@ -512,9 +498,6 @@ void GPUCommandEncoder::CopyBufferToTexture(RefPtr<GPUBuffer> source,
                                             uint32_t width,
                                             uint32_t height,
                                             uint32_t depth_or_array_layers) {
-  if (!source || !destination)
-    throw Exception(Exception::kGPUError, "missing copy resource");
-
   wgpu::TexelCopyBufferInfo source_info;
   source_info.buffer = source->handle();
   source_info.layout.offset = 0;
@@ -542,9 +525,6 @@ void GPUCommandEncoder::CopyTextureToBuffer(RefPtr<GPUTexture> source,
                                             uint32_t width,
                                             uint32_t height,
                                             uint32_t depth_or_array_layers) {
-  if (!source || !destination)
-    throw Exception(Exception::kGPUError, "missing copy resource");
-
   const wgpu::TexelCopyTextureInfo source_info =
       CopyTextureInfo(source, source_mip_level, source_x, source_y);
 
@@ -573,10 +553,11 @@ void GPUCommandEncoder::CopyTextureToTexture(RefPtr<GPUTexture> source,
                                              uint32_t width,
                                              uint32_t height,
                                              uint32_t depth_or_array_layers) {
-  if (!source || !destination)
-    throw Exception(Exception::kGPUError, "missing copy texture");
-  if (source->handle().Get() == destination->handle().Get())
-    throw Exception(Exception::kGPUError, "cannot copy a texture onto itself");
+  if (source->handle().Get() == destination->handle().Get()) {
+    LOGGER_ERROR(
+        "[GPU] copy_texture_to_texture: source and destination are the same");
+    return;
+  }
 
   const wgpu::TexelCopyTextureInfo source_info =
       CopyTextureInfo(source, source_mip_level, source_x, source_y);
@@ -596,8 +577,6 @@ void GPUCommandEncoder::ResolveQuerySet(RefPtr<GPUQuerySet> query_set,
                                         uint32_t query_count,
                                         RefPtr<GPUBuffer> destination,
                                         uint64_t destination_offset) {
-  if (!query_set || !destination)
-    throw Exception(Exception::kGPUError, "missing query resolve resource");
   encoder_.ResolveQuerySet(query_set->handle(), first_query, query_count,
                            destination->handle(), destination_offset);
 }
@@ -605,8 +584,6 @@ void GPUCommandEncoder::ResolveQuerySet(RefPtr<GPUQuerySet> query_set,
 void GPUCommandEncoder::ClearBuffer(RefPtr<GPUBuffer> buffer,
                                     uint64_t offset,
                                     uint64_t size) {
-  if (!buffer)
-    throw Exception(Exception::kGPUError, "missing clear buffer");
   encoder_.ClearBuffer(buffer->handle(), offset, size);
 }
 
@@ -625,37 +602,27 @@ void GPUCommandEncoder::PopDebugGroup() {
 RefPtr<GPUCommandBuffer> GPUCommandEncoder::Finish() {
   wgpu::CommandBufferDescriptor desc;
   wgpu::CommandBuffer command_buffer = encoder_.Finish(&desc);
-  if (!command_buffer)
-    throw Exception(Exception::kGPUError, "failed to finish command encoder");
   return MakeRefCounted<GPUCommandBuffer>(command_buffer);
 }
 
 void GPURenderPassEncoder::SetPipeline(RefPtr<GPURenderPipeline> pipeline) {
-  if (!pipeline)
-    throw Exception(Exception::kGPUError, "missing render pipeline");
   encoder_.SetPipeline(pipeline->handle());
 }
 
 void GPURenderPassEncoder::SetBindGroup(uint32_t index,
                                         RefPtr<GPUBindGroup> group) {
-  if (!group)
-    throw Exception(Exception::kGPUError, "missing bind group");
   encoder_.SetBindGroup(index, group->handle(), 0, nullptr);
 }
 
 void GPURenderPassEncoder::SetVertexBuffer(uint32_t slot,
                                            RefPtr<GPUBuffer> buffer,
                                            uint64_t offset) {
-  if (!buffer)
-    throw Exception(Exception::kGPUError, "missing vertex buffer");
   encoder_.SetVertexBuffer(slot, buffer->handle(), offset, WGPU_WHOLE_SIZE);
 }
 
 void GPURenderPassEncoder::SetIndexBuffer(RefPtr<GPUBuffer> buffer,
                                           uint32_t format,
                                           uint64_t offset) {
-  if (!buffer)
-    throw Exception(Exception::kGPUError, "missing index buffer");
   encoder_.SetIndexBuffer(buffer->handle(),
                           static_cast<wgpu::IndexFormat>(format), offset,
                           WGPU_WHOLE_SIZE);
@@ -679,16 +646,12 @@ void GPURenderPassEncoder::DrawIndexed(uint32_t index_count,
 
 void GPURenderPassEncoder::DrawIndirect(RefPtr<GPUBuffer> indirect_buffer,
                                         uint64_t indirect_offset) {
-  if (!indirect_buffer)
-    throw Exception(Exception::kGPUError, "missing indirect buffer");
   encoder_.DrawIndirect(indirect_buffer->handle(), indirect_offset);
 }
 
 void GPURenderPassEncoder::DrawIndexedIndirect(
     RefPtr<GPUBuffer> indirect_buffer,
     uint64_t indirect_offset) {
-  if (!indirect_buffer)
-    throw Exception(Exception::kGPUError, "missing indirect buffer");
   encoder_.DrawIndexedIndirect(indirect_buffer->handle(), indirect_offset);
 }
 
@@ -737,15 +700,11 @@ void GPURenderPassEncoder::PopDebugGroup() {
 }
 
 void GPUComputePassEncoder::SetPipeline(RefPtr<GPUComputePipeline> pipeline) {
-  if (!pipeline)
-    throw Exception(Exception::kGPUError, "missing compute pipeline");
   encoder_.SetPipeline(pipeline->handle());
 }
 
 void GPUComputePassEncoder::SetBindGroup(uint32_t index,
                                          RefPtr<GPUBindGroup> group) {
-  if (!group)
-    throw Exception(Exception::kGPUError, "missing bind group");
   encoder_.SetBindGroup(index, group->handle(), 0, nullptr);
 }
 
@@ -768,8 +727,6 @@ void GPUComputePassEncoder::PopDebugGroup() {
 }
 
 void GPUQueue::Submit(RefPtr<GPUCommandBuffer> command_buffer) {
-  if (!command_buffer)
-    throw Exception(Exception::kGPUError, "missing command buffer");
   wgpu::CommandBuffer commands[] = {command_buffer->handle()};
   queue_.Submit(1, commands);
 }
@@ -777,8 +734,6 @@ void GPUQueue::Submit(RefPtr<GPUCommandBuffer> command_buffer) {
 void GPUQueue::WriteBuffer(RefPtr<GPUBuffer> buffer,
                            uint64_t offset,
                            std::string data) {
-  if (!buffer)
-    throw Exception(Exception::kGPUError, "missing write buffer");
   queue_.WriteBuffer(buffer->handle(), offset, data.data(), data.size());
 }
 
@@ -791,9 +746,6 @@ void GPUQueue::WriteTexture(RefPtr<GPUTexture> texture,
                             std::string data,
                             uint32_t bytes_per_row,
                             uint32_t rows_per_image) {
-  if (!texture)
-    throw Exception(Exception::kGPUError, "missing write texture");
-
   const wgpu::TexelCopyTextureInfo destination =
       CopyTextureInfo(texture, mip_level, x, y);
 
@@ -816,22 +768,16 @@ RefPtr<GPUQueue> GPU::queue() {
 }
 
 RefPtr<GPUBuffer> GPU::CreateBuffer(RefPtr<GPUBufferDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil buffer descriptor");
   wgpu::BufferDescriptor desc;
   desc.label = View(descriptor->label);
   desc.size = descriptor->size;
   desc.usage = static_cast<wgpu::BufferUsage>(descriptor->usage);
   desc.mappedAtCreation = descriptor->mapped_at_creation;
   wgpu::Buffer buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-  if (!buffer)
-    throw Exception(Exception::kGPUError, "failed to create buffer");
   return MakeRefCounted<GPUBuffer>(buffer);
 }
 
 RefPtr<GPUTexture> GPU::CreateTexture(RefPtr<GPUTextureDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil texture descriptor");
   wgpu::TextureDescriptor desc;
   desc.label = View(descriptor->label);
   desc.usage = static_cast<wgpu::TextureUsage>(descriptor->usage);
@@ -843,14 +789,10 @@ RefPtr<GPUTexture> GPU::CreateTexture(RefPtr<GPUTextureDescriptor> descriptor) {
   desc.mipLevelCount = descriptor->mip_level_count;
   desc.sampleCount = descriptor->sample_count;
   wgpu::Texture texture = GPUDevice::Get().device().CreateTexture(&desc);
-  if (!texture)
-    throw Exception(Exception::kGPUError, "failed to create texture");
   return MakeRefCounted<GPUTexture>(texture);
 }
 
 RefPtr<GPUSampler> GPU::CreateSampler(RefPtr<GPUSamplerDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil sampler descriptor");
   wgpu::SamplerDescriptor desc;
   desc.label = View(descriptor->label);
   desc.addressModeU =
@@ -868,18 +810,15 @@ RefPtr<GPUSampler> GPU::CreateSampler(RefPtr<GPUSamplerDescriptor> descriptor) {
   desc.compare = static_cast<wgpu::CompareFunction>(descriptor->compare);
   desc.maxAnisotropy = static_cast<uint16_t>(descriptor->max_anisotropy);
   wgpu::Sampler sampler = GPUDevice::Get().device().CreateSampler(&desc);
-  if (!sampler)
-    throw Exception(Exception::kGPUError, "failed to create sampler");
   return MakeRefCounted<GPUSampler>(sampler);
 }
 
 RefPtr<GPUShaderModule> GPU::CreateShaderModule(
     RefPtr<GPUShaderModuleDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil shader module descriptor");
-  if (descriptor->code.empty())
-    throw Exception(Exception::kGPUError,
-                    "shader module descriptor has no WGSL source");
+  if (descriptor->code.empty()) {
+    LOGGER_ERROR("[GPU] create_shader_module: the descriptor has no source");
+    return nullptr;
+  }
   wgpu::ShaderSourceWGSL source;
   source.code = View(descriptor->code);
   wgpu::ShaderModuleDescriptor desc;
@@ -887,15 +826,11 @@ RefPtr<GPUShaderModule> GPU::CreateShaderModule(
   desc.nextInChain = &source;
   wgpu::ShaderModule module =
       GPUDevice::Get().device().CreateShaderModule(&desc);
-  if (!module)
-    throw Exception(Exception::kGPUError, "failed to create shader module");
   return MakeRefCounted<GPUShaderModule>(module);
 }
 
 RefPtr<GPUBindGroupLayout> GPU::CreateBindGroupLayout(
     RefPtr<GPUBindGroupLayoutDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil bind group layout descriptor");
   wgpu::BindGroupLayoutDescriptor desc;
   desc.label = View(descriptor->label);
   desc.entryCount = descriptor->entries.size();
@@ -903,15 +838,11 @@ RefPtr<GPUBindGroupLayout> GPU::CreateBindGroupLayout(
       descriptor->entries.empty() ? nullptr : descriptor->entries.data();
   wgpu::BindGroupLayout layout =
       GPUDevice::Get().device().CreateBindGroupLayout(&desc);
-  if (!layout)
-    throw Exception(Exception::kGPUError, "failed to create bind group layout");
   return MakeRefCounted<GPUBindGroupLayout>(layout);
 }
 
 RefPtr<GPUPipelineLayout> GPU::CreatePipelineLayout(
     RefPtr<GPUPipelineLayoutDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil pipeline layout descriptor");
   wgpu::PipelineLayoutDescriptor desc;
   desc.label = View(descriptor->label);
   desc.bindGroupLayoutCount = descriptor->layouts.size();
@@ -920,15 +851,15 @@ RefPtr<GPUPipelineLayout> GPU::CreatePipelineLayout(
   desc.immediateSize = descriptor->immediate_size;
   wgpu::PipelineLayout layout =
       GPUDevice::Get().device().CreatePipelineLayout(&desc);
-  if (!layout)
-    throw Exception(Exception::kGPUError, "failed to create pipeline layout");
   return MakeRefCounted<GPUPipelineLayout>(layout);
 }
 
 RefPtr<GPUBindGroup> GPU::CreateBindGroup(
     RefPtr<GPUBindGroupDescriptor> descriptor) {
-  if (!descriptor || !descriptor->layout)
-    throw Exception(Exception::kGPUError, "missing bind group layout");
+  if (!descriptor->layout) {
+    LOGGER_ERROR("[GPU] create_bind_group: the descriptor has no layout");
+    return nullptr;
+  }
   wgpu::BindGroupDescriptor desc;
   desc.label = View(descriptor->label);
   desc.layout = descriptor->layout->handle();
@@ -936,15 +867,17 @@ RefPtr<GPUBindGroup> GPU::CreateBindGroup(
   desc.entries =
       descriptor->entries.empty() ? nullptr : descriptor->entries.data();
   wgpu::BindGroup group = GPUDevice::Get().device().CreateBindGroup(&desc);
-  if (!group)
-    throw Exception(Exception::kGPUError, "failed to create bind group");
   return MakeRefCounted<GPUBindGroup>(group);
 }
 
 RefPtr<GPURenderPipeline> GPU::CreateRenderPipeline(
     RefPtr<GPURenderPipelineDescriptor> descriptor) {
-  if (!descriptor || !descriptor->layout || !descriptor->vertex_module)
-    throw Exception(Exception::kGPUError, "incomplete render pipeline");
+  if (!descriptor->layout || !descriptor->vertex_module) {
+    LOGGER_ERROR(
+        "[GPU] create_render_pipeline: the descriptor needs a layout and a "
+        "vertex module");
+    return nullptr;
+  }
 
   wgpu::RenderPipelineDescriptor desc;
   desc.label = View(descriptor->label);
@@ -990,15 +923,14 @@ RefPtr<GPURenderPipeline> GPU::CreateRenderPipeline(
     targets.push_back(target);
   }
 
-  if (targets.empty() && descriptor->fragment_module)
-    throw Exception(Exception::kGPUError,
-                    "a fragment stage needs at least one color target");
-
   wgpu::FragmentState fragment;
   if (descriptor->fragment_module) {
-    if (targets.empty())
-      throw Exception(Exception::kGPUError,
-                      "a fragment stage needs at least one color target");
+    if (targets.empty()) {
+      LOGGER_ERROR(
+          "[GPU] create_render_pipeline: a fragment stage needs a color "
+          "target");
+      return nullptr;
+    }
     fragment.module = descriptor->fragment_module->handle();
     fragment.entryPoint = View(descriptor->fragment_entry_point);
     fragment.targetCount = targets.size();
@@ -1014,15 +946,17 @@ RefPtr<GPURenderPipeline> GPU::CreateRenderPipeline(
 
   wgpu::RenderPipeline pipeline =
       GPUDevice::Get().device().CreateRenderPipeline(&desc);
-  if (!pipeline)
-    throw Exception(Exception::kGPUError, "failed to create render pipeline");
   return MakeRefCounted<GPURenderPipeline>(pipeline);
 }
 
 RefPtr<GPUComputePipeline> GPU::CreateComputePipeline(
     RefPtr<GPUComputePipelineDescriptor> descriptor) {
-  if (!descriptor || !descriptor->layout || !descriptor->module)
-    throw Exception(Exception::kGPUError, "incomplete compute pipeline");
+  if (!descriptor->layout || !descriptor->module) {
+    LOGGER_ERROR(
+        "[GPU] create_compute_pipeline: the descriptor needs a layout and a "
+        "module");
+    return nullptr;
+  }
   wgpu::ComputePipelineDescriptor desc;
   desc.label = View(descriptor->label);
   desc.layout = descriptor->layout->handle();
@@ -1030,22 +964,16 @@ RefPtr<GPUComputePipeline> GPU::CreateComputePipeline(
   desc.compute.entryPoint = View(descriptor->entry_point);
   wgpu::ComputePipeline pipeline =
       GPUDevice::Get().device().CreateComputePipeline(&desc);
-  if (!pipeline)
-    throw Exception(Exception::kGPUError, "failed to create compute pipeline");
   return MakeRefCounted<GPUComputePipeline>(pipeline);
 }
 
 RefPtr<GPUQuerySet> GPU::CreateQuerySet(
     RefPtr<GPUQuerySetDescriptor> descriptor) {
-  if (!descriptor)
-    throw Exception(Exception::kGPUError, "nil query set descriptor");
   wgpu::QuerySetDescriptor desc;
   desc.label = View(descriptor->label);
   desc.type = static_cast<wgpu::QueryType>(descriptor->type);
   desc.count = descriptor->count;
   wgpu::QuerySet query_set = GPUDevice::Get().device().CreateQuerySet(&desc);
-  if (!query_set)
-    throw Exception(Exception::kGPUError, "failed to create query set");
   return MakeRefCounted<GPUQuerySet>(query_set);
 }
 
@@ -1053,8 +981,6 @@ RefPtr<GPUCommandEncoder> GPU::CreateCommandEncoder() {
   wgpu::CommandEncoderDescriptor desc;
   wgpu::CommandEncoder encoder =
       GPUDevice::Get().device().CreateCommandEncoder(&desc);
-  if (!encoder)
-    throw Exception(Exception::kGPUError, "failed to create command encoder");
   return MakeRefCounted<GPUCommandEncoder>(encoder);
 }
 

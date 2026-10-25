@@ -32,81 +32,92 @@ namespace binding {
 RB_DEF_TYPE(BoneMask3D);
 
 RB_FUNC(BoneMask3D_initialize) {
-  urge::RefPtr<urge::BoneMask3D> obj = nullptr;
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    obj = urge::MakeRefCounted<urge::BoneMask3D>();
-  }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
+
+  urge::BoneMask3D* result = nullptr;
+
+  CPP_BEGIN {
+    urge::RefPtr<urge::BoneMask3D> value = urge::MakeRefCounted<urge::BoneMask3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  } CPP_END;
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(BoneMask3D_Resize) {
   auto* self_obj = GetSelfData<urge::BoneMask3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int count;
-    ParseArgs(argc, argv, "i", &count);
+  CheckArgc(argc, 1);
+  int count;
+  ParseArgs(argc, argv, "i", &count);
 
+  CPP_BEGIN {
     self_obj->Resize(count);
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(BoneMask3D_Fill) {
   auto* self_obj = GetSelfData<urge::BoneMask3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    double weight;
-    ParseArgs(argc, argv, "f", &weight);
+  CheckArgc(argc, 1);
+  double weight;
+  ParseArgs(argc, argv, "f", &weight);
 
+  CPP_BEGIN {
     self_obj->Fill(static_cast<float>(weight));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(BoneMask3D_Set) {
   auto* self_obj = GetSelfData<urge::BoneMask3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    int index;
-    double weight;
-    ParseArgs(argc, argv, "if", &index, &weight);
+  CheckArgc(argc, 2);
+  int index;
+  double weight;
+  ParseArgs(argc, argv, "if", &index, &weight);
 
+  CPP_BEGIN {
     self_obj->Set(index, static_cast<float>(weight));
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(BoneMask3D_Get) {
   auto* self_obj = GetSelfData<urge::BoneMask3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 1);
-    int index;
-    ParseArgs(argc, argv, "i", &index);
+  CheckArgc(argc, 1);
+  int index;
+  ParseArgs(argc, argv, "i", &index);
 
-    return rb_float_new(self_obj->Get(index));
-  }
-  EXC_END;
-  return Qnil;
+  double result = 0.0;
+
+  CPP_BEGIN {
+    result = self_obj->Get(index);
+  } CPP_END;
+
+  return rb_float_new(result);
 }
 
 RB_FUNC(BoneMask3D_Count) {
   auto* self_obj = GetSelfData<urge::BoneMask3D>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
-    return LONG2NUM(self_obj->Count());
-  }
-  EXC_END;
-  return Qnil;
+  CheckArgc(argc, 0);
+  int32_t result = 0;
+
+  CPP_BEGIN {
+    result = self_obj->Count();
+  } CPP_END;
+
+  return LONG2NUM(result);
 }
 
 void InitBoneMask3DBindingAppend(VALUE klass);

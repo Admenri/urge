@@ -49,7 +49,7 @@ URGE_BINDING()
 class WindowXP : public Node {
  public:
   URGE_BINDING()
-  WindowXP(RefPtr<Viewport> viewport = nullptr);
+  WindowXP(MaybePtr<Viewport> viewport = nullptr);
   URGE_BINDING()
   ~WindowXP() override;
 
@@ -59,11 +59,11 @@ class WindowXP : public Node {
   URGE_BINDING()
   ATTR(bool, Visible) override;
   URGE_BINDING()
-  ATTR(RefPtr<Viewport>, Viewport);
+  ATTR(MaybePtr<Viewport>, Viewport);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Windowskin);
+  ATTR(MaybePtr<Bitmap>, Windowskin);
   URGE_BINDING()
-  ATTR(RefPtr<Bitmap>, Contents);
+  ATTR(MaybePtr<Bitmap>, Contents);
   URGE_BINDING()
   ATTR(bool, Stretch);
   URGE_BINDING()

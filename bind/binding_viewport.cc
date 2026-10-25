@@ -35,59 +35,102 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Viewport, Node);
 
 RB_FUNC(Viewport_initialize) {
-  urge::RefPtr<urge::Viewport> obj = nullptr;
-  EXC_BEGIN {
-    if (argc == 0) {
-      // initialize()
-      obj = urge::MakeRefCounted<urge::Viewport>();
-    } else if (argc == 1) {
-      // initialize(rect)
-      VALUE rect_val;
-      ParseArgs(argc, argv, "o", &rect_val);
-      obj = urge::MakeRefCounted<urge::Viewport>(
-          GetObject<urge::Rect>(rect_val, kRectDataType));
-    } else if (argc == 4) {
-      // initialize(x, y, width, height)
-      int x, y, width, height;
-      ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
-      obj = urge::MakeRefCounted<urge::Viewport>(x, y, width, height);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
+  if (argc == 0) {
+    // initialize()
+
+    urge::Viewport* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>();
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 1) {
+    // initialize(rect)
+    VALUE rect_val;
+    urge::Rect* rect;
+    ParseArgs(argc, argv, "o", &rect_val);
+    rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
+
+    urge::Viewport* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>(
+          rect);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else if (argc == 4) {
+    // initialize(x, y, width, height)
+    int x, y, width, height;
+    ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
+
+    urge::Viewport* result = nullptr;
+
+    CPP_BEGIN {
+      urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>(
+          x, y, width, height);
+      result = value.get();
+      if (result)
+        result->AddRef();
+    } CPP_END;
+
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
-  return SetupSelfData(self, obj.get());
 }
 
 RB_FUNC(Viewport_Flash) {
   auto* self_obj = GetSelfData<urge::Viewport>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 2);
-    VALUE color_val;
-    int duration;
-    ParseArgs(argc, argv, "oi", &color_val, &duration);
+  CheckArgc(argc, 2);
+  VALUE color_val;
+  urge::Color* color;
+  int duration;
+  ParseArgs(argc, argv, "oi", &color_val, &duration);
+  color = CheckMaybeObject<urge::Color>(color_val, kColorDataType);
 
-    self_obj->Flash(GetObject<urge::Color>(color_val, kColorDataType),
-        duration);
-  }
-  EXC_END;
+  CPP_BEGIN {
+    self_obj->Flash(color, duration);
+  } CPP_END;
+
   return Qnil;
 }
 
 RB_FUNC(Viewport_Update) {
   auto* self_obj = GetSelfData<urge::Viewport>(self);
 
-  EXC_BEGIN {
-    CheckArgc(argc, 0);
+  CheckArgc(argc, 0);
+  CPP_BEGIN {
     self_obj->Update();
-  }
-  EXC_END;
+  } CPP_END;
+
   return Qnil;
 }
 
 // Attribute: rect (RefPtr<Rect>)
-BINDING_ATTR_OBJECT(Viewport, urge::Viewport, Rect, urge::Rect, kRectDataType);
+BINDING_ATTR_OBJECT(Viewport,
+                    urge::Viewport,
+                    Rect,
+                    urge::Rect,
+                    kRectDataType,
+                    CheckObject);
 
 // Attribute: ox (int32_t)
 BINDING_ATTR_INT(Viewport, urge::Viewport, OX);
@@ -100,17 +143,24 @@ BINDING_ATTR_OBJECT(Viewport,
                     urge::Viewport,
                     Color,
                     urge::Color,
-                    kColorDataType);
+                    kColorDataType,
+                    CheckObject);
 
 // Attribute: tone (RefPtr<Tone>)
-BINDING_ATTR_OBJECT(Viewport, urge::Viewport, Tone, urge::Tone, kToneDataType);
+BINDING_ATTR_OBJECT(Viewport,
+                    urge::Viewport,
+                    Tone,
+                    urge::Tone,
+                    kToneDataType,
+                    CheckObject);
 
-// Attribute: effect (RefPtr<Effect>)
+// Attribute: effect (MaybePtr<Effect>)
 BINDING_ATTR_OBJECT_REF(Viewport,
                         urge::Viewport,
                         Effect,
                         urge::Effect,
-                        kEffectDataType);
+                        kEffectDataType,
+                        CheckMaybeObject);
 
 void InitViewportBindingAppend(VALUE klass);
 

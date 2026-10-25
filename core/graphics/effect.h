@@ -52,9 +52,9 @@ class Effect : public Object {
   URGE_BINDING()
   void SetInt(uint32_t slot, std::vector<int32_t> data);
   URGE_BINDING()
-  void SetTexture(uint32_t slot, RefPtr<Bitmap> texture);
+  void SetTexture(uint32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
-  void SetSampler(uint32_t slot, RefPtr<Bitmap> texture);
+  void SetSampler(uint32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
   void SetBlock(uint32_t slot, std::string uniform_block);
 
