@@ -61,6 +61,10 @@ Image::Image(URGE_EXCEPT, std::string filename) {
         return !!image_;
       });
 
+  // Same as Bitmap: stop where the failure happened, the object stays empty.
+  if (exception_state.HadException() || !image_)
+    return;
+
   if (image_->format != kInternalPixelFormat) {
     auto* converted_image = SDL_ConvertSurface(image_, kInternalPixelFormat);
     SDL_DestroySurface(image_);

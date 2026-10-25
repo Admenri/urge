@@ -223,6 +223,12 @@ Bitmap::Bitmap(URGE_EXCEPT, std::string filename) : font_(MakeRefCounted<Font>()
         return !!image;
       });
 
+  // A constructor cannot report a failure by not being one, so the body stops
+  // at the first one and `New`'s caller (the binding) turns the state into a
+  // Ruby exception.  Everything past this point needs `image`.
+  if (exception_state.HadException() || !image)
+    return;
+
   if (image->format != kInternalPixelFormat) {
     auto* converted_image = SDL_ConvertSurface(image, kInternalPixelFormat);
     SDL_DestroySurface(image);
