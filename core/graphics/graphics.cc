@@ -30,6 +30,7 @@
 #include <string>
 
 #include "SDL3/SDL_events.h"
+#include "SDL3/SDL_hints.h"
 #include "SDL3/SDL_timer.h"
 
 #include "core/audio/audio.h"
@@ -52,26 +53,11 @@
 
 #include <cmath>
 
-#if defined(OS_EMSCRIPTEN)
-#include <emscripten.h>
-
-/* A WebGPU surface can only be presented from inside an animation frame
-   callback -- emdawnwebgpu aborts otherwise ("wgpuSurfacePresent is
-   unsupported (use requestAnimationFrame via html5.h instead)").  This is the
-   wait that puts the frame back inside one, and it doubles as the frame pacer:
-   the browser's refresh is the clock, so nothing else has to sleep. */
-EM_JS(void, urge_wait_animation_frame, (void), {
-  Asyncify.handleSleep((wake_up) => requestAnimationFrame(() => wake_up()));
-});
-#endif
-
 namespace urge {
 
 namespace {
 
-constexpr int32_t kMinFrameRate = 30;
 constexpr int32_t kMaxFrameRate = 240;
-constexpr int64_t kMaxFrameLag = 3;
 
 uint64_t NowNS() {
   return SDL_GetTicksNS();
@@ -96,101 +82,28 @@ wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
   return wgpu::PresentMode::Fifo;
 }
 
-}
+/* Tells the host's loop how fast the game wants to be ticked.
 
-FPSLimiter::FPSLimiter(int frame_rate)
-    : disabled_(false),
-      last_tick_count_(SDL_GetPerformanceCounter()),
-      tick_freq_(SDL_GetPerformanceFrequency()),
-      tick_freq_ns_((double)tick_freq_ / 1e9),
-      skip_last_(last_tick_count_),
-      skip_ideal_diff_(0),
-      skip_reset_flag_(false) {
-  SetFrameRate(frame_rate);
-}
+   On the desktop SDL calls `SDL_AppIterate` as fast as it can, so the host has
+   no clock of its own and the hint is what gives it one.  On the web the host
+   already has the best clock there is -- the display's refresh -- and the hint
+   must not be set: SDL answers it by switching the module off
+   `requestAnimationFrame` and onto a timer, and a WebGPU canvas can only be
+   presented from inside an animation frame.
 
-void FPSLimiter::SetDisabled(bool disable) {
-  disabled_ = disable;
-  if (!disabled_)
-    Synchronize();
-}
-
-void FPSLimiter::SetFrameRate(int frame_rate) {
-  ticks_per_frame_ = tick_freq_ / frame_rate;
-}
-
-void FPSLimiter::Delay() {
-#if defined(OS_EMSCRIPTEN)
-  /* Nothing to wait for here: WaitAnimationFrame() has already paced the frame,
-     and it has to be the one doing it -- a surface present outside an animation
-     frame callback is refused by the browser. */
-  return;
+   The point of setting it at all is that the frame loop then needs no platform
+   branch: both hosts tick, and the loop decides how much game time belongs in
+   a tick.  See bind/cruby_main.cc. */
+void SyncHostTickRate(int32_t frame_rate) {
+#if !defined(OS_EMSCRIPTEN)
+  const std::string rate = std::to_string(std::max(frame_rate, 1));
+  SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, rate.c_str());
 #else
-  if (disabled_)
-    return;
-
-  {
-    int64_t frame_delta = SDL_GetPerformanceCounter() - last_tick_count_;
-    int64_t delay_tick = ticks_per_frame_ - frame_delta;
-
-    delay_tick -= skip_ideal_diff_;
-    delay_tick = std::max<int64_t>(0, delay_tick);
-
-    SDL_DelayNS(delay_tick / tick_freq_ns_);
-
-    last_tick_count_ = SDL_GetPerformanceCounter();
-  }
-
-  {
-    uint64_t skip_now = last_tick_count_;
-    int64_t frame_diff = skip_now - skip_last_;
-    skip_last_ = skip_now;
-
-    skip_ideal_diff_ += frame_diff - ticks_per_frame_;
-    skip_ideal_diff_ =
-        std::clamp(skip_ideal_diff_, -ticks_per_frame_ * kMaxFrameLag,
-                   ticks_per_frame_ * kMaxFrameLag);
-
-    if (skip_reset_flag_)
-      skip_ideal_diff_ = 0;
-    skip_reset_flag_ = false;
-  }
+  (void)frame_rate;
 #endif
 }
 
-#if defined(OS_EMSCRIPTEN)
-void FPSLimiter::WaitAnimationFrame() {
-  /* One animation frame is the minimum -- the present that follows has to be
-     inside one -- and a frame rate below the display's is honoured by waiting
-     for more than one. */
-  do {
-    urge_wait_animation_frame();
-  } while (!disabled_ &&
-           SDL_GetPerformanceCounter() - last_tick_count_ < ticks_per_frame_);
-
-  last_tick_count_ = SDL_GetPerformanceCounter();
-  skip_last_ = last_tick_count_;
-  skip_ideal_diff_ = 0;
-}
-#endif
-
-bool FPSLimiter::RequireFrameSkip() {
-  if (disabled_)
-    return false;
-  return skip_ideal_diff_ > ticks_per_frame_;
-}
-
-void FPSLimiter::Reset() {
-  if (!disabled_)
-    skip_reset_flag_ = true;
-}
-
-void FPSLimiter::Synchronize() {
-  last_tick_count_ = SDL_GetPerformanceCounter();
-  skip_last_ = last_tick_count_;
-  skip_ideal_diff_ = 0;
-  skip_reset_flag_ = false;
-}
+}  // namespace
 
 ScreenRootNode::ScreenRootNode() : Node() {}
 
@@ -222,11 +135,13 @@ void ScreenRootNode::PostDraw(DrawParam param) {
 }
 
 Graphics::Graphics(URGE_EXCEPT)
-    : frame_rate_(Config::Get().xp() ? 40 : 60), limiter_(frame_rate_) {
+    : frame_rate_(Config::Get().xp() ? 40 : 60) {
   auto& config = Config::Get();
 
   vsync_ = config.display.vsync;
   frame_skip_ = config.display.frame_skip;
+
+  SyncHostTickRate(frame_rate_);
 
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
@@ -284,13 +199,6 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Update(URGE_EXCEPT) {
-#if defined(OS_EMSCRIPTEN)
-  /* The frame begins by waiting for an animation frame: the surface present at
-     the end of it is only accepted from inside one.  Waiting before
-     `frame_begin` also keeps the idle time out of the frame's accounting. */
-  limiter_.WaitAnimationFrame();
-#endif
-
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
 
   RenderStats& stats = GetRenderStats();
@@ -314,36 +222,36 @@ void Graphics::Update(URGE_EXCEPT) {
   Input::Get().Update();
   Mouse::Get().Update();
 
-  if (!frame_started_) {
-    frame_started_ = true;
-    limiter_.Synchronize();
-  }
-
-  const bool skip_frame = frame_skip_ && limiter_.RequireFrameSkip();
-
   const uint64_t render_begin = SDL_GetPerformanceCounter();
-  if (!skip_frame) {
-    if (!frozen_)
-      root_->Render(screen_, Color::Black());
-
-    ++frame_count_;
-  }
+  if (!frozen_)
+    root_->Render(screen_, Color::Black());
+  ++frame_count_;
   render_cost_ms_ = static_cast<float>(
       TicksToMilliseconds(SDL_GetPerformanceCounter() - render_begin));
 
-  if (skip_frame)
-    limiter_.Reset();
-
   PresentInternal(exception_state);
 
-  /* The limiter's own wait is measured apart from the engine's work: it is the
-     frame's idle time, and reporting it as part of `Graphics.update` would
-     hide how much of the frame the engine actually costs. */
-  const uint64_t delay_begin = SDL_GetPerformanceCounter();
-  limiter_.Delay();
-  const double delay_ms =
-      TicksToMilliseconds(SDL_GetPerformanceCounter() - delay_begin);
+  /* The between-frames hook runs inside the frame, before the pacer: whatever
+     it costs is the frame's own work, which the pacer can then absorb, rather
+     than time the next frame inherits.  On the web this is the garbage
+     collection, and it is the only thing installed here. */
+  if (frame_callback_)
+    frame_callback_();
 
+  /* The pacer runs at the very end, after the frame is complete: what it does
+     -- sleep, hand the thread to a browser animation frame, or nothing at all
+     -- is the host's business, and doing it here means the next call to
+     `Update` starts a frame instead of finishing the previous one. */
+  const uint64_t pace_begin = SDL_GetPerformanceCounter();
+  if (present_callback_)
+    present_callback_();
+  const double delay_ms =
+      TicksToMilliseconds(SDL_GetPerformanceCounter() - pace_begin);
+
+  /* Read after the pacer returns.  The wait belongs to no frame: measuring the
+     next frame's script share from the moment this one ended would count the
+     idle time as script time, and the F2 panel would report the display's
+     refresh rate as the game's own cost. */
   last_update_end_tick_ = SDL_GetPerformanceCounter();
 
   const double update_span =
@@ -368,10 +276,8 @@ void Graphics::Update(URGE_EXCEPT) {
       timings.phase(FramePhase::kBitmap) + timings.phase(FramePhase::kPresent);
   timings.set_phase(FramePhase::kOther, timings.total_ms - measured);
 
-  if (!skip_frame) {
-    stats.frame_history.Push(timings.total_ms);
-    stats.timing_history.Push(timings);
-  }
+  stats.frame_history.Push(timings.total_ms);
+  stats.timing_history.Push(timings);
 
   stats.EndFrame();
 
@@ -390,9 +296,6 @@ void Graphics::Update(URGE_EXCEPT) {
         timings.phase(FramePhase::kPresent), timings.phase(FramePhase::kOther),
         timings.total_ms);
   }
-
-  if (frame_callback_)
-    frame_callback_();
 }
 
 void Graphics::Wait(URGE_EXCEPT, int32_t duration) {
@@ -512,7 +415,7 @@ RefPtr<Bitmap> Graphics::SnapToBitmap() {
 }
 
 void Graphics::FrameReset() {
-  limiter_.Reset();
+  RequestFrameReset();
 }
 
 int32_t Graphics::Width() {
@@ -540,8 +443,13 @@ void Graphics::PlayMovie(URGE_EXCEPT, std::string filename) {
 
 ATTR_DEF(Graphics, int32_t, FrameRate) {
   if (value.has_value()) {
-    frame_rate_ = std::max(*value, 0);
-    limiter_.SetFrameRate(frame_rate_);
+    /* Zero would make the pacer divide by it; anything above the ceiling is a
+       script asking for a rate no display can honour. */
+    frame_rate_ = std::clamp(*value, 1, kMaxFrameRate);
+    /* The host ticks at the rate the game asks for, so a rate change has to
+       reach it or the game would be capped at the old one. */
+    SyncHostTickRate(frame_rate_);
+    RequestFrameReset();
     return std::nullopt;
   } else {
     return frame_rate_;
@@ -569,8 +477,7 @@ ATTR_DEF(Graphics, int32_t, Brightness) {
 ATTR_DEF(Graphics, bool, FrameSkip) {
   if (value.has_value()) {
     frame_skip_ = *value;
-
-    limiter_.Reset();
+    RequestFrameReset();
     return std::nullopt;
   } else {
     return frame_skip_;
@@ -601,11 +508,15 @@ ATTR_DEF(Graphics, bool, VSync) {
   }
 }
 
+void Graphics::PushEvent(const SDL_Event& event) {
+  pending_events_.push_back(event);
+}
+
 void Graphics::ProcessEvents(URGE_EXCEPT) {
   auto& imgui = ImGuiManager::Get();
 
-  SDL_Event event = {};
-  while (SDL_PollEvent(&event)) {
+  bool quit = false;
+  for (SDL_Event& event : pending_events_) {
     imgui.ProcessEvent(event);
 
     Input::Get().ProcessGamepadEvents(&event);
@@ -615,15 +526,22 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
       Mouse::Get().ProcessEvents(exception_state, &event);
     }
 
-    if (event.type == SDL_EVENT_QUIT) {
-      exception_state.Throw(ExceptionState::kExitError, {});
-      return;
-    }
-    if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
+    if (event.type == SDL_EVENT_QUIT)
+      quit = true;
+    else if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
       present_.configured = false;
   }
+  pending_events_.clear();
 
   Input::Get().SetBlocked(imgui.WantsGameInputBlocked());
+
+  /* The window was closed.  It is reported as the exit the script already
+     knows -- `Graphics.update` raising the same way `exit` does -- so `ensure`
+     blocks still run, rather than the loop being torn down underneath them.
+     Checked after the whole batch, because the events that came with the quit
+     still belong to this frame. */
+  if (quit)
+    exception_state.Throw(ExceptionState::kExitError, {});
 }
 
 void Graphics::PresentInternal(URGE_EXCEPT) {
@@ -739,8 +657,9 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   /* The canvas is presented when the animation frame callback returns, so there
      is nothing to hand over here -- and emdawnwebgpu does not implement
      wgpuSurfacePresent at all ("TODO: This could probably be emulated with
-     ASYNCIFY"), it aborts.  That is why the frame begins by waiting for an
-     animation frame: the end of this callback is the present. */
+     ASYNCIFY"), it aborts.  The pacer installed on `Graphics` is what puts the
+     frame back inside a callback: it yields at the end of `Update`, the
+     callback returns, and the browser presents what was submitted above. */
 #else
   surface.Present();
 #endif

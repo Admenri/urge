@@ -20,18 +20,19 @@ endif()
 # ---------------------------------------------------------------------------
 # The web build.
 #
-# `main()` is an ordinary blocking function here: the game's frame loop lives in
-# Ruby (`loop { Graphics.update }`), so it cannot be turned inside out into
-# `emscripten_set_main_loop` callbacks.  Instead each frame ends with an
-# `emscripten_sleep(0)`, which Asyncify turns into "unwind the whole C stack,
-# let the browser paint and handle input, then rewind and continue" -- the loop
-# keeps its shape and the page stays responsive.  The same Asyncify pass is what
-# makes CRuby's fibers work (see third_party/ruby/wasm/README.md), so the
-# instrumentation is there anyway.
+# The frame loop is SDL's callback loop here, exactly as it is on the desktop:
+# `SDL_AppIterate` is called once per animation frame, and the frame runs on a
+# Ruby Fiber that hands the thread back to it at the end.  Nothing waits for an
+# animation frame -- the tick already is one -- so the module never suspends
+# itself to go looking for the next one.
 #
-# `ASYNCIFY_STACK_SIZE` is the buffer the unwound frames are saved into.  The
-# whole stack is saved on every frame, and the Ruby VM's own frames are wide, so
-# the 4 KiB default is far too small.
+# Asyncify is still linked, for two things that genuinely have to suspend: the
+# asset bridge, which blocks the engine on a download, and the interpreter's
+# conservative collector, which finds the objects a C frame holds through
+# `emscripten_scan_stack` / `emscripten_scan_registers` -- both of them
+# Asyncify operations.  `ASYNCIFY_STACK_SIZE` is the buffer the unwound frames
+# are saved into, and the Ruby VM's own frames are wide, so the 4 KiB default is
+# far too small.
 #
 # The game is not packed into the module.  A game is tens or hundreds of
 # megabytes and `--preload-file` would make the page wait for all of it before
@@ -64,9 +65,9 @@ if(EMSCRIPTEN)
     "-sASYNCIFY_STACK_SIZE=4194304"
     # The asset bridge blocks the engine on a download; Asyncify has to know the
     # import can sleep, or the wait would be a busy loop that never yields.
-    # The animation frame wait is the same kind of import: it is what puts the
-    # frame inside a requestAnimationFrame callback so the surface can present.
-    "-sASYNCIFY_IMPORTS=emjs_load_file_async,urge_wait_animation_frame"
+    # Nothing else here sleeps any more: the frame no longer goes looking for an
+    # animation frame, because the host's tick already is one.
+    "-sASYNCIFY_IMPORTS=emjs_load_file_async"
     "-sSTACK_SIZE=16777216"
     "-sALLOW_MEMORY_GROWTH=1"
     "-sINITIAL_MEMORY=67108864"

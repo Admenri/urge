@@ -24,16 +24,24 @@
 
 #include "bind/binding_init.h"
 #include "bind/cruby_utils.h"
+#include "bind/script_loop.h"
 #include "core/system/config.h"
 #include "core/system/filesystem.h"
 #include "core/graphics/graphics.h"
-#include "core/common/logger.h"
 
 #include "bind/rpg_rgss1.h"
 #include "bind/rpg_rgss2.h"
 #include "bind/rpg_rgss3.h"
 
 #include "zlib.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <string>
+
+#include "SDL3/SDL_events.h"
+#include "SDL3/SDL_timer.h"
 
 // `ruby_init()` only runs the C initialisers (`rb_call_inits`).  Two further
 // steps of the normal start-up path live in `ruby_process_options()`, which the
@@ -214,14 +222,176 @@ VALUE EvalString(VALUE string, VALUE filename, int32_t* state) {
     VALUE filename;
   };
 
+  /* `Kernel#eval` refuses to run when there is no Ruby-level frame beneath it
+     -- "Can't eval on top of Fiber or Thread" -- and the loop's fiber entry is
+     a C function, so calling `eval` directly from here would fail on the
+     fiber.  `__urge_eval_script` is one Ruby frame in between, defined at the
+     top level so that its cref is `Object`: `class Game_Map` in a script still
+     defines a top-level class, exactly as it did when the scripts were
+     evaluated from `main`. */
   auto evaluate = [](VALUE parameter) -> VALUE {
     EvaluteContext* context = reinterpret_cast<EvaluteContext*>(parameter);
-    VALUE argv[] = {context->string, Qnil, context->filename};
-    return rb_funcall2(Qnil, rb_intern("eval"), std::size(argv), argv);
+    VALUE argv[] = {context->string, context->filename};
+    return rb_funcall2(Qnil, rb_intern("__urge_eval_script"), std::size(argv),
+                       argv);
   };
 
   EvaluteContext context = {string, filename};
   return rb_protect(evaluate, reinterpret_cast<VALUE>(&context), state);
+}
+
+}  // namespace
+
+namespace {
+
+/* ==========================================================================
+   The frame loop.
+
+   `Graphics` no longer paces itself.  A frame is one frame of work, and it
+   ends by calling the pacer installed on `Graphics`, which returns only when
+   the next frame may begin.  The loop itself belongs to the host -- SDL's
+   callback main loop, one `SDL_AppIterate` per tick -- and there is nothing
+   platform-specific left in it:
+
+     * a tick is one animation frame on the web, and one pass of a loop SDL
+       paces at the game's own frame rate on the desktop.  The host provides the
+       clock either way; the engine only says how much game time belongs in a
+       tick;
+
+     * a tick may run zero frames or several.  That is the only way to pace a
+       40 fps game on a 60 Hz display -- one present per tick cannot express it
+       -- and it is also how a frame that overran catches up instead of halving
+       the frame rate;
+
+   From the script's side it is one loop: `loop { Graphics.update }` runs to
+   completion, and nothing in the engine knows which host is ticking it.
+   ========================================================================== */
+
+/* One engine per process, and a pacer installed as a plain function pointer
+   has no `this` to reach a member through -- hence a file-static. */
+struct LoopState {
+  /* What the loop's stack should do the next time it is resumed.  The host
+     drives it: start the game, or shut the interpreter down. */
+  enum class Command { kNone, kRun, kCleanup };
+  Command command = Command::kNone;
+
+  /* Where the loop's stack is in its life. */
+  bool initialized = false;
+  bool finished = false;
+  bool cleaned_up = false;
+
+  /* Set on the loop's stack, where the exception object is still alive: the
+     message is built there so that nothing VALUE-shaped has to outlive it. */
+  bool failed = false;
+  bool exited = false;
+  std::string message;
+
+  /* Pacer.  `smooth` is the smoothed ratio of one host tick to one game frame;
+     `elapsed` carries the fraction until a whole frame is due. */
+  double smooth = 1.0;
+  double elapsed = 0.0;
+  uint64_t last_tick = 0;
+};
+
+LoopState g_loop;
+
+/* The exception state of the constructor, for the initialisation that runs on
+   the loop's stack while the constructor is still on the host's. */
+urge::ExceptionState* g_init_exception = nullptr;
+
+/* How many engine frames are due now, when the last display tick was
+   `delta_rate` frame periods long.
+
+   165 Hz against a 60 fps game is the case this exists for: the tick is
+   0.36 of a frame, so no single tick is ever worth a frame, and only carrying
+   the remainder across ticks gets the average to 60.  Rounding instead would
+   give 0 forever and stall the game. */
+int32_t FramesDue(double delta_rate) {
+  /* Smoothed, so one late tick does not make the loop run a burst and one
+     early tick does not make it stall. */
+  g_loop.smooth = g_loop.smooth * 0.8 + std::min(delta_rate, 2.0) * 0.2;
+
+  if (g_loop.smooth >= 0.9) {
+    /* The display is at or below the game's rate: one frame per tick, and the
+       fraction left over is dropped rather than carried -- there is nowhere to
+       put a second frame. */
+    g_loop.elapsed = 0.0;
+    return static_cast<int32_t>(std::lround(g_loop.smooth));
+  }
+
+  g_loop.elapsed += delta_rate;
+  if (g_loop.elapsed >= 1.0) {
+    g_loop.elapsed -= 1.0;
+    return 1;
+  }
+
+  return 0;
+}
+
+/* The frame pacer: hand the thread back to the host's loop, and return when it
+   ticks again.
+
+   This is the whole contract between the game and the host.  A frame is one
+   frame of work and it ends here; what the script does between two calls to
+   `Graphics.update` -- loop, recurse, spawn Fibers of its own -- is the
+   script's business and the engine takes no interest in it.  All that matters
+   is that the frame got here, because getting here is what returns the thread
+   to `SDL_AppIterate`: SDL presents the frame after that call returns on the
+   web, dispatches its events between ticks on both, and decides whether to keep
+   looping.  A script that never reaches a `Present` simply stops the loop being
+   ticked, which is the same thing as saying it stopped running the game.
+
+   The switch is a plain context switch on the coroutine backend, not a Ruby
+   Fiber, so it lands on the host no matter what the script has done with the
+   interpreter's own fibers.  See bind/script_loop.h. */
+void PresentPacer() {
+  script_loop::YieldToHost();
+}
+
+/* The scripts, evaluated on the loop's stack.  A script error is caught here
+   rather than left to propagate: it would otherwise longjmp out of the loop
+   with the exception in hand, through C++ frames on the host's stack that are
+   not prepared for it. */
+VALUE EvaluateScripts(VALUE scripts) {
+  for (long i = 0; i < RARRAY_LEN(scripts); ++i) {
+    VALUE script = rb_ary_entry(scripts, i);
+    if (!RB_TYPE_P(script, T_ARRAY) || RARRAY_LEN(script) < 3)
+      continue;
+
+    int state = 0;
+    EvalString(rb_ary_entry(script, 2), rb_ary_entry(script, 1), &state);
+    if (state) {
+      VALUE exception = rb_errinfo();
+      g_loop.failed = true;
+      g_loop.exited = rb_obj_class(exception) == rb_eSystemExit;
+      g_loop.message = RubyExceptionMessage(exception);
+      rb_set_errinfo(Qnil);
+      break;
+    }
+  }
+
+  return Qnil;
+}
+
+/* Runs the script list and records how it ended.  `rb_protect` is what keeps a
+   script error from longjmp-ing out of the loop. */
+void RunScripts() {
+  VALUE scripts = rb_gv_get("$RGSS_SCRIPTS");
+  if (!RB_TYPE_P(scripts, T_ARRAY)) {
+    g_loop.failed = true;
+    g_loop.message = "invalid scripts file.";
+    return;
+  }
+
+  int state = 0;
+  rb_protect(EvaluateScripts, scripts, &state);
+  if (state && !g_loop.failed) {
+    VALUE exception = rb_errinfo();
+    g_loop.failed = true;
+    g_loop.exited = rb_obj_class(exception) == rb_eSystemExit;
+    g_loop.message = RubyExceptionMessage(exception);
+    rb_set_errinfo(Qnil);
+  }
 }
 
 }  // namespace
@@ -248,12 +418,30 @@ void CollectGarbage() {
 }
 #endif
 
-BindingMain::BindingMain(urge::ExceptionState& exception_state) {
+/* Brings the interpreter up on the loop's stack: the VM, the bindings, the RPG
+   database, and the game's scripts, in that order.  Nothing is evaluated here
+   -- see RunOnLoopStack. */
+void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   auto& config = urge::Config::Get();
 
   int argc = 0;
   char** argv = 0;
   ruby_sysinit(&argc, &argv);
+
+#if defined(OS_EMSCRIPTEN)
+  /* Scripts still get the interpreter's Fibers, and on the web a fiber switch
+     *is* an Asyncify unwind: the fiber's C stack is spilled into the other half
+     of the same allocation (coroutine/emscripten/Context.h splits it down the
+     middle).  The default is 256 KiB, which leaves 128 KiB of each -- thin for
+     a script that runs a frame from inside a Fiber of its own.
+
+     4 MiB gives 2 MiB of each, and the pool it feeds is 8 stacks on wasm
+     (`COROUTINE_LIMITED_ADDRESS_SPACE`), so the cost is bounded at ~33 MiB.
+     The desktop keeps the interpreter's default: there is no spill there, and
+     the pool is 32 stacks.  The engine's own loop stack is separate and has
+     nothing to do with this; see bind/script_loop.h. */
+  setenv("RUBY_FIBER_MACHINE_STACK_SIZE", "4194304", 1);
+#endif
 
   RUBY_INIT_STACK;
   ruby_init();
@@ -273,7 +461,15 @@ BindingMain::BindingMain(urge::ExceptionState& exception_state) {
      is switched off here, and `CollectGarbage` runs a full collection from the
      frame callback, at the point where the script has returned from
      `Graphics.update` and everything alive is reachable from the interpreter's
-     own stacks and globals.  See Graphics::SetFrameCallback. */
+     own stacks and globals.  See Graphics::SetFrameCallback.
+
+     That callback now runs on the loop's fiber rather than on the module's own
+     stack, which is fine and needs no patch to the interpreter:
+     `emscripten_scan_stack` scans from the current stack pointer up to
+     `emscripten_stack_get_base()`, and `emscripten_fiber_swap` calls
+     `emscripten_stack_set_limits` on every switch -- so the range it reports is
+     the fiber's own, not the heap between the fiber and the top of the module
+     stack. */
   rb_gc_disable();
   urge::Graphics::Get().SetFrameCallback(&CollectGarbage);
 #endif
@@ -295,6 +491,21 @@ BindingMain::BindingMain(urge::ExceptionState& exception_state) {
   DefineModuleFunction(rb_mKernel, "rgss_stop", rgss_stop);
   DefineModuleFunction(rb_mKernel, "load_data", load_data);
   DefineModuleFunction(rb_mKernel, "save_data", save_data);
+
+  /* The one Ruby-level frame `Kernel#eval` needs under it, for scripts that are
+     evaluated on the loop's fiber rather than from `main`; see EvalString.  It
+     is defined at the top level on purpose -- that is what makes its cref
+     `Object`, so the scripts keep defining top-level classes. */
+  rb_eval_string_protect(
+      "def __urge_eval_script(source, filename)\n"
+      "  eval(source, nil, filename)\n"
+      "end\n",
+      &error_state_);
+  if (error_state_) {
+    exception_state.Throw(urge::ExceptionState::kRGSSError,
+                          "failed to define the script evaluator.");
+    return;
+  }
 
   InitBindings();
 
@@ -380,29 +591,145 @@ BindingMain::BindingMain(urge::ExceptionState& exception_state) {
   // RGSS behavior?
   rb_gv_set("$RGSS_SCRIPTS", scripts);
 
-  // Execute
-  for (long i = 0; i < RARRAY_LEN(scripts); ++i) {
-    VALUE script = rb_ary_entry(scripts, i);
-    if (!RB_TYPE_P(script, T_ARRAY) || RARRAY_LEN(script) < 3)
-      continue;
+  /* The scripts are not evaluated here.  They are the game, and the game is
+     what `LoopEntry` runs after the host starts ticking.  The array stays alive
+     through `$RGSS_SCRIPTS`, which the collector marks, so nothing
+     VALUE-shaped has to be kept in a C++ member for the loop to find it. */
+}
 
-    VALUE filename = rb_ary_entry(script, 1);
-    VALUE source = rb_ary_entry(script, 2);
-    EvalString(source, filename, &error_state_);
-    if (error_state_)
-      break;
+/* The body of the loop's stack.  The interpreter is created here, the game runs
+   here, and the interpreter is shut down here -- all on the same stack, because
+   the interpreter records the machine stack it was initialised on and every
+   stack-overflow check and collector scan is measured against it.
+
+   Control alternates with the host: each `YieldToHost` returns the thread to
+   whoever called `IterateMainLoop`, and the next call resumes right here. */
+void BindingMain::RunOnLoopStack() {
+  InitializeInterpreter(*g_init_exception);
+  g_init_exception = nullptr;
+  g_loop.initialized = true;
+  script_loop::YieldToHost();
+
+  if (g_loop.command == LoopState::Command::kRun) {
+    g_loop.command = LoopState::Command::kNone;
+    RunScripts();
+    g_loop.finished = true;
+    script_loop::YieldToHost();
   }
 
-  if (error_state_) {
-    VALUE exc = rb_errinfo();
-    if (rb_obj_class(exc) != rb_eSystemExit)
-      exception_state.Throw(urge::ExceptionState::kRGSSError,
-                            RubyExceptionMessage(exc));
+  /* The host is done with the game.  Tearing the interpreter down has to happen
+     on this stack too, for the same reason it was built here. */
+  if (g_loop.command == LoopState::Command::kCleanup) {
+    g_loop.command = LoopState::Command::kNone;
+    ruby_cleanup(error_state_);
+    g_loop.cleaned_up = true;
+    script_loop::YieldToHost();
+  }
+}
+
+/* Entry point of the loop's stack; see script_loop.h. */
+void BindingMain::LoopEntry(void* arg) {
+  static_cast<BindingMain*>(arg)->RunOnLoopStack();
+}
+
+BindingMain::BindingMain(urge::ExceptionState& exception_state) {
+  if (!script_loop::Start(&BindingMain::LoopEntry, this)) {
+    exception_state.Throw(urge::ExceptionState::kRGSSError,
+                          "failed to allocate the script stack.");
+    return;
+  }
+
+  /* The initialisation runs on the loop's stack and comes back here when it is
+     done -- or when it has failed, which it reports through the state the
+     constructor was given. */
+  g_init_exception = &exception_state;
+  script_loop::Resume();
+  g_init_exception = nullptr;
+
+  if (!exception_state.HadException()) {
+    /* The first tick is what starts the game, and the pacer is what every frame
+       calls, so both are in place before the host gets control. */
+    g_loop.command = LoopState::Command::kRun;
+    g_loop.last_tick = SDL_GetPerformanceCounter();
+    urge::Graphics::Get().SetPresentCallback(&PresentPacer);
   }
 }
 
 BindingMain::~BindingMain() {
-  ruby_cleanup(error_state_);
+  /* Nothing may call into the loop once the interpreter is gone: a stray
+     `Graphics.update` during shutdown would find a pacer pointing at a stack
+     that no longer exists. */
+  if (auto* graphics = urge::Graphics::TryGet())
+    graphics->SetPresentCallback(nullptr);
+
+  if (!script_loop::Started())
+    return;
+
+  /* Shut the interpreter down where it was built.  A game still in flight is
+     not resumed -- that would run it rather than end it -- so it is left to the
+     process, which is about to go away anyway. */
+  if (!g_loop.initialized || g_loop.finished) {
+    g_loop.command = LoopState::Command::kCleanup;
+    while (!g_loop.cleaned_up)
+      script_loop::Resume();
+  }
+
+  script_loop::Finish();
+}
+
+namespace {
+
+/* How the loop ended, once it has.  `exit` and a closed window are not
+   failures: the first is the script saying it is done, the second is the
+   player. */
+BindingMain::Tick OutcomeOfFinishedLoop() {
+  if (g_loop.failed && !g_loop.exited)
+    return BindingMain::Tick::kFailed;
+  return BindingMain::Tick::kFinished;
+}
+
+}  // namespace
+
+BindingMain::Tick BindingMain::IterateMainLoop() {
+  if (g_loop.finished)
+    return OutcomeOfFinishedLoop();
+
+  const uint64_t now = SDL_GetPerformanceCounter();
+  const double freq = static_cast<double>(SDL_GetPerformanceFrequency());
+  const double delta = static_cast<double>(now - g_loop.last_tick) / freq;
+  g_loop.last_tick = now;
+
+  const int32_t rate = std::max(urge::Graphics::Get().frame_rate(), 1);
+  const double period = 1.0 / static_cast<double>(rate);
+
+  if (urge::Graphics::Get().ConsumeFrameReset() || delta > period * 2) {
+    /* A tick that was paused -- the tab was hidden, the window was dragged,
+       the machine was suspended -- is not a tick that fell behind.  Catching up
+       on it would run a burst of updates the game never asked for. */
+    g_loop.smooth = 1.0;
+    g_loop.elapsed = 0.0;
+  }
+
+  int32_t repeat = FramesDue(delta / period);
+
+  /* `Graphics.frame_skip = false` is a script saying it would rather slow
+     down than jump: at most one frame per tick, however far behind. */
+  if (!urge::Graphics::Get().frame_skip() && repeat > 1)
+    repeat = 1;
+
+  for (int32_t i = 0; i < repeat && !g_loop.finished; ++i)
+    script_loop::Resume();
+
+  /* The last resume may have been the one that ran the script to its end,
+     which is the quit signal. */
+  if (g_loop.finished)
+    return OutcomeOfFinishedLoop();
+
+  return Tick::kContinue;
+}
+
+const std::string& BindingMain::ErrorMessage() const {
+  return g_loop.message;
 }
 
 }  // namespace binding

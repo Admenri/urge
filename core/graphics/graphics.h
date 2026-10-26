@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <vector>
+
+#include "SDL3/SDL_events.h"
 #include "SDL3/SDL_video.h"
 
 #include "core/canvas/bitmap.h"
@@ -32,39 +35,6 @@
 #include "core/scene/node.h"
 
 namespace urge {
-
-class FPSLimiter {
- public:
-  FPSLimiter(int frame_rate);
-
-  FPSLimiter(const FPSLimiter&) = delete;
-  FPSLimiter& operator=(const FPSLimiter&) = delete;
-
-  void SetDisabled(bool disable);
-  bool IsDisabled() const { return disabled_; }
-
-  void SetFrameRate(int frame_rate);
-  void Delay();
-#if defined(OS_EMSCRIPTEN)
-  /* Waits for the browser to be ready for the next frame.  It replaces the
-     timed wait above on the web, where a surface can only be presented from
-     inside an animation frame callback. */
-  void WaitAnimationFrame();
-#endif
-  bool RequireFrameSkip();
-  void Reset();
-  void Synchronize();
-
- private:
-  bool disabled_;
-  uint64_t last_tick_count_;
-  int64_t ticks_per_frame_;
-  const uint64_t tick_freq_;
-  const double tick_freq_ns_;
-  uint64_t skip_last_;
-  int64_t skip_ideal_diff_;
-  bool skip_reset_flag_;
-};
 
 class ScreenRootNode : public Node {
  public:
@@ -145,6 +115,41 @@ class Graphics : public Singleton<Graphics> {
   using FrameCallback = void (*)();
   void SetFrameCallback(FrameCallback callback) { frame_callback_ = callback; }
 
+  /* The frame pacer.  Called after the present of every frame has been
+     submitted, and expected to return only when the next frame may begin.
+
+     `Graphics.update` is one frame of work and nothing else: it does not
+     sleep, does not skip, and does not know what a display is.  How long a
+     frame takes is entirely the host's business, which is what lets the same
+     script run under a browser animation frame, under a desktop sleep, or
+     under a fixed-step harness with no change here.  The loop that installs
+     this lives in bind/cruby_main.cc. */
+  using FramePresentCallback = void (*)();
+  FramePresentCallback PresentCallback() const { return present_callback_; }
+  void SetPresentCallback(FramePresentCallback callback) {
+    present_callback_ = callback;
+  }
+
+  /* Asks the pacer to restart its clock, for a frame that should not count
+     against the next one -- `Graphics.frame_reset` after a transition. */
+  void RequestFrameReset() { frame_reset_requested_ = true; }
+  bool ConsumeFrameReset() {
+    const bool requested = frame_reset_requested_;
+    frame_reset_requested_ = false;
+    return requested;
+  }
+
+  /* The host's event feed.  With SDL's callback main loop the engine is no
+     longer the one polling: SDL drains its queue and hands events over one at a
+     time, so `SDL_PollEvent` inside the frame would find nothing left.  The
+     host pushes what it was given and the frame's event pass reads that
+     instead. */
+  void PushEvent(const SDL_Event& event);
+
+  /* Read by the pacer, which owns the timing the engine no longer does. */
+  int32_t frame_rate() const { return frame_rate_; }
+  bool frame_skip() const { return frame_skip_; }
+
  private:
   friend class ScreenRootNode;
 
@@ -152,6 +157,10 @@ class Graphics : public Singleton<Graphics> {
   void PresentInternal(URGE_EXCEPT);
 
   FrameCallback frame_callback_ = nullptr;
+  FramePresentCallback present_callback_ = nullptr;
+  bool frame_reset_requested_ = false;
+
+  std::vector<SDL_Event> pending_events_;
 
   SDL_Window* window_ = nullptr;
   RefPtr<ScreenRootNode> root_;
@@ -163,15 +172,12 @@ class Graphics : public Singleton<Graphics> {
   int32_t brightness_ = 255;
   bool frame_skip_ = true;
   bool vsync_ = true;
-  bool frame_started_ = false;
 
   uint64_t last_update_end_tick_ = 0;
   float render_cost_ms_ = 0.0f;
   float logic_cost_ms_ = 0.0f;
   float other_cost_ms_ = 0.0f;
   double present_cost_ms_ = 0.0;
-
-  FPSLimiter limiter_;
 
   PrimitiveEmitter quad_emitter_;
 
