@@ -40,10 +40,12 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 #include "SDL3/SDL_iostream.h"
 #include "SDL3/SDL_main.h"
@@ -186,6 +188,26 @@ bool Initialize(AppState& state,
     state.app = state.app.substr(0, extension_sep);
   state.ini = state.app + ".ini";
 
+#if !defined(OS_EMSCRIPTEN)
+  /* The game's directory becomes the process's working directory, and is made
+     absolute before anything uses it.
+
+     RGSS expects the two to be the same, and so does every way a file gets
+     opened: the interpreter's own `File` resolves relative names against the
+     working directory, PhysicsFS resolves the load path against it, and the
+     write directory is set to the game's directory.  Started from a shortcut
+     or a shell that is somewhere else, those three would point at two
+     different places -- a save written by `save_data` would be invisible to
+     `File.exist?`, and unreadable by `load_data` itself, because the file went
+     to the write directory while the search path stayed where the shell was. */
+  {
+    std::error_code error;
+    std::filesystem::current_path(state.base_dir, error);
+    if (!error)
+      state.base_dir = std::filesystem::current_path(error).generic_string();
+  }
+#endif
+
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
   TTF_Init();
 
@@ -205,16 +227,13 @@ bool Initialize(AppState& state,
   if (exception_state.HadException())
     return false;
   urge::IOService::Reset(io);
-#if defined(OS_EMSCRIPTEN)
-  /* The preloaded game is the root of the module's in-memory filesystem, so
-     both paths are absolute: a relative one would be resolved against a
-     working directory the browser does not really have. */
+  /* One directory is both where the game is read from and where it writes:
+     `state.base_dir` is absolute by now, and on the web it is the root of the
+     module's in-memory filesystem, because that is where the preloaded game
+     lands.  Naming it twice rather than using "." is what keeps the search
+     path and the write directory from drifting apart. */
   io->SetWritePath(state.base_dir);
   io->AddLoadPath(state.base_dir, "/");
-#else
-  io->SetWritePath(state.base_dir);
-  io->AddLoadPath(".", "/");
-#endif
 
   /* A shipped game carries its resources in `<name>.acs`, named after the
      executable exactly the way the ini above is: `Game.exe` reads `Game.acs`.
