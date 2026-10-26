@@ -534,7 +534,8 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
 }
 
 void Graphics::PlayMovie(URGE_EXCEPT, std::string filename) {
-  exception_state.Throw(ExceptionState::kRGSSError, "unimplement video playback.");
+  exception_state.Throw(ExceptionState::kRGSSError,
+                        "unimplement video playback.");
   return;}
 
 ATTR_DEF(Graphics, int32_t, FrameRate) {
@@ -698,7 +699,8 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
           1000.0 / SDL_GetPerformanceFrequency();
       return;
     case wgpu::SurfaceGetCurrentTextureStatus::Error:
-      exception_state.Throw(ExceptionState::kRGSSError, "failed to acquire surface texture.");
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "failed to acquire surface texture.");
       return;      break;
   }
 
@@ -734,11 +736,11 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   GPUDevice::Get().queue().Submit(1, &command);
 
 #if defined(OS_EMSCRIPTEN)
-                                                                                
-                                                                        
-                                                                           
-                                                                           
-                                                                 
+  /* The canvas is presented when the animation frame callback returns, so there
+     is nothing to hand over here -- and emdawnwebgpu does not implement
+     wgpuSurfacePresent at all ("TODO: This could probably be emulated with
+     ASYNCIFY"), it aborts.  That is why the frame begins by waiting for an
+     animation frame: the end of this callback is the present. */
 #else
   surface.Present();
 #endif

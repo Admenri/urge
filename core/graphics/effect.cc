@@ -270,7 +270,8 @@ void Effect::SetBufferBytes(URGE_EXCEPT, uint32_t slot, const void* data, uint32
 void Effect::RebuildBindGroup(URGE_EXCEPT) {
   const wgpu::BindGroupLayout layout = holder_->pipeline.GetBindGroupLayout(2);
   if (layout == nullptr) {
-    exception_state.Throw(ExceptionState::kGPUError, "effect: the pipeline carries no custom bind group.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "effect: the pipeline carries no custom bind group.");
     return;
   }
   std::vector<wgpu::BindGroupEntry> entries;
@@ -310,7 +311,8 @@ void Effect::RebuildBindGroup(URGE_EXCEPT) {
 
   binding_ = GPUDevice::Get().device().CreateBindGroup(&group_desc);
   if (binding_ == nullptr) {
-    exception_state.Throw(ExceptionState::kGPUError, "effect: the device rejected the custom bind group.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "effect: the device rejected the custom bind group.");
     return;
   }
   binding_dirty_ = false;

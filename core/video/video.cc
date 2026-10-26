@@ -283,10 +283,12 @@ void Video::Stop() {
 
 bool Video::End() {
   VideoUnavailable();
+  return true;
 }
 
 bool Video::IsPlaying() {
   VideoUnavailable();
+  return false;
 }
 
 void Video::Seek(float) {
@@ -295,26 +297,33 @@ void Video::Seek(float) {
 
 float Video::Tell() {
   VideoUnavailable();
+  return 0.0f;
 }
 
 float Video::Duration() {
   VideoUnavailable();
+  return 0.0f;
 }
 
 RefPtr<AudioStream> Video::GetAudioStream() {
   VideoUnavailable();
+  return nullptr;
 }
 
 std::map<std::string, std::string> Video::PlayerInfo() {
   VideoUnavailable();
+  return {};
 }
 
 void Video::Update() {
   VideoUnavailable();
 }
 
-void Video::Render(RefPtr<Bitmap>) {
-  VideoUnavailable();
+void Video::Render(URGE_EXCEPT, RefPtr<Bitmap>) {
+  // `Video.new` already failed, so no script can be holding one of these; the
+  // state is here because the declaration carries it, and a call that somehow
+  // arrives answers the same failure.
+  VideoUnavailable(exception_state);
 }
 
 #endif

@@ -217,7 +217,7 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 Bitmap::Bitmap(URGE_EXCEPT, std::string filename) : font_(MakeRefCounted<Font>()) {
   SDL_Surface* image = nullptr;
 
-  IOService::Get().OpenRead(exception_state, 
+  IOService::Get().OpenRead(exception_state,
       filename, [&](SDL_IOStream* stream, const std::string& ext) {
         image = IMG_LoadTyped_IO(stream, true, ext.c_str());
         return !!image;
@@ -312,7 +312,7 @@ void Bitmap::Blt(URGE_EXCEPT, int32_t x,
   if (!Disposable::Guard(exception_state))
     return;
 
-  StretchBlt(exception_state, 
+  StretchBlt(exception_state,
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_bitmap, src_rect, opacity);
 }
@@ -561,7 +561,8 @@ void Bitmap::UpdateWithImage(URGE_EXCEPT, RefPtr<Image> image) {
 
   auto* data = image->image();
   if (data->w != size_.x || data->h != size_.y) {
-    exception_state.Throw(ExceptionState::kRGSSError, "image data size mismatch bitmap size.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "image data size mismatch bitmap size.");
     return;
   }
   AcquireHandle();
@@ -592,7 +593,8 @@ void Bitmap::UpdateWithPixels(URGE_EXCEPT, const void* pixels, uint32_t bytes_pe
     return;
 
   if (!pixels || bytes_per_row < static_cast<uint32_t>(size_.x) * 4) {
-    exception_state.Throw(ExceptionState::kRGSSError, "invalid pixel data for the bitmap.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "invalid pixel data for the bitmap.");
     return;
   }
   AcquireHandle();

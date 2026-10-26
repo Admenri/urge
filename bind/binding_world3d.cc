@@ -38,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// World3D  (core/scene3d/world3d.h:42-117)
+// World3D  (core/scene3d/world3d.h:42-116)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(World3D, Node);

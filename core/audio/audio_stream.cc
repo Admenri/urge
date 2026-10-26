@@ -65,7 +65,8 @@ AudioStream::AudioStream(URGE_EXCEPT, std::string filename) {
   auto* service = Audio::Get().service();
   auto clip = std::make_unique<AudioClip>();
   if (!clip->Open(service->engine(), service->bus(AudioBus::kSE), filename)) {
-    exception_state.Throw(ExceptionState::kRGSSError, "the audio file could not be opened: {}", filename);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "the audio file could not be opened: {}", filename);
     return;
   }
   clip_ = std::move(clip);
@@ -77,7 +78,8 @@ AudioStream::AudioStream(URGE_EXCEPT, std::vector<uint8_t> data, float length) {
   auto clip = std::make_unique<AudioClip>();
   if (!clip->OpenMemory(service->engine(), service->bus(AudioBus::kSE),
                         std::move(data))) {
-    exception_state.Throw(ExceptionState::kRGSSError, "the audio track could not be opened.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "the audio track could not be opened.");
     return;
   }
   clip_ = std::move(clip);

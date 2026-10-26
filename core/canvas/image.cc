@@ -55,7 +55,7 @@ Image::Image(int32_t width, int32_t height) {
 }
 
 Image::Image(URGE_EXCEPT, std::string filename) {
-  IOService::Get().OpenRead(exception_state, 
+  IOService::Get().OpenRead(exception_state,
       filename, [&](SDL_IOStream* stream, const std::string& ext) {
         image_ = IMG_LoadTyped_IO(stream, true, ext.c_str());
         return !!image_;
@@ -149,7 +149,7 @@ void Image::Blt(URGE_EXCEPT, int32_t x,
   if (!Disposable::Guard(exception_state))
     return;
 
-  StretchBlt(exception_state, 
+  StretchBlt(exception_state,
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_image, src_rect, opacity);
 }

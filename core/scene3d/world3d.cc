@@ -172,7 +172,8 @@ void World3D::EnsureQuadPipeline(URGE_EXCEPT) {
 
   quad_pipeline_ = device.CreateRenderPipeline(&desc);
   if (!quad_pipeline_) {
-    exception_state.Throw(ExceptionState::kGPUError, "world3d: the device rejected the blit pipeline.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "world3d: the device rejected the blit pipeline.");
     return;
   }
   wgpu::BufferDescriptor uniform_desc;
@@ -233,9 +234,11 @@ void World3D::UpdateQuad(URGE_EXCEPT, glm::ivec2 target_size) {
     desc.entries = entries;
     texture_group_ = GPUDevice::Get().device().CreateBindGroup(&desc);
     if (!texture_group_) {
-      exception_state.Throw(ExceptionState::kGPUError, "world3d: the device rejected the texture group.");
+      exception_state.Throw(ExceptionState::kGPUError,
+                            "world3d: the device rejected the texture group.");
       return;
-    }  }
+    }
+  }
 }
 
 void World3D::RenderScene(URGE_EXCEPT, DrawParam param) {

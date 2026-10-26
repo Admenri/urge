@@ -54,7 +54,8 @@ glm::vec3 LightDirection(const Light3D* light) {
 ComputePass3D::ComputePass3D(URGE_EXCEPT, std::string wgsl, std::string entry)
     : wgsl_(std::move(wgsl)), entry_(std::move(entry)) {
   if (wgsl_.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "compute pass 3d: a compute pass needs a source.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "compute pass 3d: a compute pass needs a source.");
     return;
   }
   if (entry_.empty())
@@ -121,7 +122,8 @@ void ComputePass3D::EnsurePipeline(URGE_EXCEPT) {
   const wgpu::ShaderModule module =
       GPUDevice::Get().device().CreateShaderModule(&module_desc);
   if (!module) {
-    exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected the WGSL.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "compute pass 3d: the device rejected the WGSL.");
     return;
   }
   wgpu::ComputePipelineDescriptor desc;
@@ -130,9 +132,11 @@ void ComputePass3D::EnsurePipeline(URGE_EXCEPT) {
   desc.compute.entryPoint = wgpu::StringView(entry_);
   pipeline_ = GPUDevice::Get().device().CreateComputePipeline(&desc);
   if (!pipeline_) {
-    exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected the pipeline.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "compute pass 3d: the device rejected the pipeline.");
     return;
-  }}
+  }
+}
 
 void ComputePass3D::RebuildBindGroup(URGE_EXCEPT) {
   EnsurePipeline(exception_state);
@@ -157,7 +161,8 @@ void ComputePass3D::RebuildBindGroup(URGE_EXCEPT) {
             exception_state.Throw(ExceptionState::kGPUError, "compute pass 3d: the device rejected a uniform "
                             "buffer.");
             return;
-          }        }
+          }
+        }
 
         std::vector<float> data(static_cast<size_t>(size / 4), 0.0f);
         const auto found = uniform_map_.find(slot.name);
@@ -321,14 +326,16 @@ RenderGraph3D::~RenderGraph3D() = default;
 
 RefPtr<RenderGraphPass3D> RenderGraph3D::AddPass(URGE_EXCEPT, std::string name) {
   if (name.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: a pass needs a name.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render graph 3d: a pass needs a name.");
     return {};
   }
   for (const RefPtr<RenderGraphPass3D>& pass : passes_) {
     if (pass->GetName() == name) {
       exception_state.Throw(ExceptionState::kRGSSError, "render graph 3d: the pass '{}' already exists.", name);
       return {};
-    }  }
+    }
+  }
 
   auto pass = MakeRefCounted<RenderGraphPass3D>(std::move(name));
   pass->SetOwner(this);

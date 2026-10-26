@@ -358,9 +358,11 @@ void IOService::OpenRead(URGE_EXCEPT, const std::string& file_path, OpenCallback
     return;
   }
   if (data.match_count <= 0) {
-    exception_state.Throw(ExceptionState::kIOError, "No file match: {}", file_path);
+    exception_state.Throw(ExceptionState::kIOError,
+                          "No file match: {}", file_path);
     return;
-  }}
+  }
+}
 
 SDL_IOStream* IOService::OpenReadRaw(URGE_EXCEPT, const std::string& filename) {
 #if defined(OS_EMSCRIPTEN)

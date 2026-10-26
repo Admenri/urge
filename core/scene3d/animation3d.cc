@@ -55,12 +55,14 @@ void Animation3D::AddTrack(URGE_EXCEPT, int32_t bone,
                            std::vector<float> values,
                            int32_t interpolation) {
   if (path != kTranslation && path != kRotation && path != kScale) {
-    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: unknown channel path {}.", path);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "animation3d: unknown channel path {}.", path);
     return;
   }
   const int32_t stride = path == kRotation ? 4 : 3;
   if (times.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: a track needs at least one key.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "animation3d: a track needs at least one key.");
     return;
   }
   if (values.size() != times.size() * static_cast<size_t>(stride)) {
@@ -82,7 +84,8 @@ void Animation3D::AddTrack(URGE_EXCEPT, int32_t bone,
 
 void Animation3D::AddEvent(URGE_EXCEPT, float time, std::string name) {
   if (name.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: an event needs a name.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "animation3d: an event needs a name.");
     return;
   }
   Event event;

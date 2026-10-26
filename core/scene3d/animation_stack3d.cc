@@ -34,9 +34,11 @@ namespace urge {
 AnimationLayer3D::AnimationLayer3D(URGE_EXCEPT, RefPtr<Animation3D> animation, float weight)
     : animation_(std::move(animation)), weight_(std::max(0.0f, weight)) {
   if (!animation_) {
-    exception_state.Throw(ExceptionState::kRGSSError, "animation layer 3d: an animation is needed.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "animation layer 3d: an animation is needed.");
     return;
-  }}
+  }
+}
 
 AnimationLayer3D::~AnimationLayer3D() = default;
 

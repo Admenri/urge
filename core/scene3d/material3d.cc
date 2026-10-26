@@ -174,9 +174,11 @@ MaterialPass3D::MaterialPass3D(URGE_EXCEPT, std::string tag,
       vs_wgsl_(ComposeShader3D(vs_wgsl)),
       fs_wgsl_(fs_wgsl.empty() ? std::string() : ComposeShader3D(fs_wgsl)) {
   if (vs_wgsl_.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "material3d: a pass needs a vertex source.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "material3d: a pass needs a vertex source.");
     return;
-  }}
+  }
+}
 
 MaterialPass3D::~MaterialPass3D() = default;
 
@@ -462,7 +464,7 @@ wgpu::DepthStencilState MaterialPass3D::MakeDepthState(
   return state;
 }
 
-wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(URGE_EXCEPT, 
+wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(URGE_EXCEPT,
     const PipelineTargetState3D& target) {
   if (state_dirty_) {
     pipelines_.clear();
@@ -664,14 +666,16 @@ RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT, std::string tag,
                                            std::string vs_wgsl,
                                            std::string fs_wgsl) {
   if (tag.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "material3d: a pass needs a tag.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "material3d: a pass needs a tag.");
     return {};
   }
   for (const RefPtr<MaterialPass3D>& pass : passes_) {
     if (pass->tag() == tag) {
       exception_state.Throw(ExceptionState::kRGSSError, "material3d: the pass tag '{}' is already used.", tag);
       return {};
-    }  }
+    }
+  }
 
   auto pass = MakeRefCounted<MaterialPass3D>(exception_state, std::move(tag),
                                             std::move(vs_wgsl),

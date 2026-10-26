@@ -195,7 +195,8 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT, const RenderTargetDesc3D& desc
       exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the depth cube "
                       "view.");
       return;
-    }  }
+    }
+  }
 
   layer_views_.resize(layers_);
   for (int32_t layer = 0; layer < layers_; ++layer) {
@@ -208,7 +209,8 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT, const RenderTargetDesc3D& desc
       exception_state.Throw(ExceptionState::kGPUError, "render target 3d: the device rejected the depth layer "
                       "view.");
       return;
-    }  }
+    }
+  }
 }
 
 bool RenderTarget3D::HasStencil() const {

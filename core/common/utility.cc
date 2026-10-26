@@ -33,7 +33,8 @@ MARSHAL_DUMP_DEF(Rect) {
 MARSHAL_LOAD_DEF(Rect) {
   const size_t size = data.size();
   if (size < sizeof(int32_t) * 4) {
-    exception_state.Throw(ExceptionState::kRGSSError, "invalid data length ({})", size);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "invalid data length ({})", size);
     return nullptr;
   }
 
@@ -60,7 +61,8 @@ MARSHAL_DUMP_DEF(Color) {
 MARSHAL_LOAD_DEF(Color) {
   const size_t size = data.size();
   if (size < sizeof(double) * 4) {
-    exception_state.Throw(ExceptionState::kRGSSError, "invalid data length ({})", size);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "invalid data length ({})", size);
     return nullptr;
   }
 
@@ -93,7 +95,8 @@ MARSHAL_DUMP_DEF(Tone) {
 MARSHAL_LOAD_DEF(Tone) {
   const size_t size = data.size();
   if (size < sizeof(double) * 4) {
-    exception_state.Throw(ExceptionState::kRGSSError, "invalid data length ({})", size);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "invalid data length ({})", size);
     return nullptr;
   }
 

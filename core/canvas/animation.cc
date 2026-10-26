@@ -34,7 +34,7 @@ namespace urge {
 static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 Animation::Animation(URGE_EXCEPT, std::string filename) {
-  IOService::Get().OpenRead(exception_state, 
+  IOService::Get().OpenRead(exception_state,
       filename, [&](SDL_IOStream* stream, const std::string& ext) {
         animation_ = IMG_LoadAnimationTyped_IO(stream, true, ext.c_str());
         return !!animation_;

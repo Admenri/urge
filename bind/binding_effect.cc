@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Effect  (core/graphics/effect.h:39-58)
+// Effect  (core/graphics/effect.h:39-57)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Effect);

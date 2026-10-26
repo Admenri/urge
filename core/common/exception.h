@@ -53,10 +53,12 @@ namespace urge {
       `rb_raise` is dispatched into it, which traps.  `ExceptionState` is a
       plain buffer plus two scalars, so a binding may declare one on its stack
       and raise after the last call without any cleanup in between.
-    * **No heap.**  `Throw` formats straight into `message_` with
-      `std::vformat_to_n`; the fixed 512 bytes are the whole storage.  A
-      failure inside the allocator is therefore not something this type can
-      hit, and `Throw` never allocates.
+    * **No storage of its own on the heap.**  The fixed 512 bytes are the
+      whole of it, so the state itself can live in a frame that owns nothing.
+      Formatting is the one exception, and only on the failure path: the
+      library's type erased formatter is `std::vformat`, which answers a
+      `std::string`, and that temporary is destroyed before `Throw` returns --
+      long before the caller raises.
 
     Only the first `Throw` counts: a function that reports its own failure and
     then lets a deeper call report another keeps the first, which is the one

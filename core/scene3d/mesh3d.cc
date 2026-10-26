@@ -218,7 +218,8 @@ void Mesh3D::Upload(URGE_EXCEPT) {
     descriptor.size = vertex_bytes_.size();
     vertex_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
     if (!vertex_buffer_) {
-      exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the vertex buffer.");
+      exception_state.Throw(ExceptionState::kGPUError,
+                            "mesh3d: the device rejected the vertex buffer.");
       return;
     }
     GPUDevice::Get().queue().WriteBuffer(vertex_buffer_, 0,
@@ -231,7 +232,8 @@ void Mesh3D::Upload(URGE_EXCEPT) {
     descriptor.size = indices_.size() * sizeof(uint32_t);
     index_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
     if (!index_buffer_) {
-      exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the index buffer.");
+      exception_state.Throw(ExceptionState::kGPUError,
+                            "mesh3d: the device rejected the index buffer.");
       return;
     }
     GPUDevice::Get().queue().WriteBuffer(index_buffer_, 0, indices_.data(),
@@ -256,7 +258,8 @@ wgpu::Buffer Mesh3D::AcquireJointBuffer(URGE_EXCEPT, uint64_t frame_token) {
     descriptor.size = std::max<size_t>(bytes, sizeof(glm::mat4));
     joint_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
     if (!joint_buffer_) {
-      exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the joint buffer.");
+      exception_state.Throw(ExceptionState::kGPUError,
+                            "mesh3d: the device rejected the joint buffer.");
       return {};
     }
     joint_bytes_ = descriptor.size;
@@ -304,7 +307,8 @@ wgpu::BindGroup Mesh3D::AcquireGroup(URGE_EXCEPT, uint32_t chunk_index,
   cache.joints = joints;
   cache.group = GPUDevice::Get().device().CreateBindGroup(&descriptor);
   if (!cache.group) {
-    exception_state.Throw(ExceptionState::kGPUError, "mesh3d: the device rejected the mesh group.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "mesh3d: the device rejected the mesh group.");
     return {};
   }
   groups_[chunk_index] = std::move(cache);

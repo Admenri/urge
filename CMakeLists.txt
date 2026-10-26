@@ -151,7 +151,9 @@ endif()
 #
 # Clang (the Emscripten build) spells the same thing `-fno-exceptions`; the
 # `-fexceptions` this used to need existed for the try/catch bridge in the
-# glue, which is gone.
+# glue, which is gone.  libc++ reads the flag itself -- `__has_feature(
+# cxx_exceptions)` is what it branches on -- so no define is needed there;
+# `_HAS_EXCEPTIONS` is the MSVC STL's spelling of the same switch.
 #
 # third_party is upstream code: it keeps its own settings, and none of it is
 # C++ that throws on the paths this engine takes.
@@ -163,6 +165,5 @@ if(MSVC)
 else()
   foreach(target urge-core urge-binding Game)
     target_compile_options(${target} PRIVATE -fno-exceptions)
-    target_compile_definitions(${target} PRIVATE _HAS_EXCEPTIONS=0)
   endforeach()
 endif()

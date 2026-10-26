@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-25T14:44:39Z",
+    "generated_at": "2026-10-26T06:24:02Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -2776,7 +2776,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/network/network.h:186-206",
+      "export": "core/network/network.h:183-203",
       "cpp_name": "Network",
       "cpp_parent": "Singleton",
       "header": "core/network/network.h",
@@ -2794,7 +2794,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         },
         {
           "ruby_name": "websocket",
@@ -2817,7 +2817,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         },
         {
           "ruby_name": "fetch",
@@ -2850,7 +2850,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         },
         {
           "ruby_name": "timeout",
@@ -2863,7 +2863,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         },
         {
           "ruby_name": "timeout=",
@@ -2883,7 +2883,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         },
         {
           "ruby_name": "max_events",
@@ -2896,7 +2896,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         },
         {
           "ruby_name": "max_events=",
@@ -2916,7 +2916,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:186-206"
+          "export": "core/network/network.h:183-203"
         }
       ]
     }
@@ -6910,7 +6910,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         }
       ],
       "initialize_copy": {
@@ -6922,7 +6922,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/scene/node.h:35-63"
+        "export": "core/scene/node.h:35-62"
       },
       "instance_methods": [
         {
@@ -6946,7 +6946,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         }
       ],
       "attributes": [
@@ -6960,7 +6960,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         },
         {
           "name": "visible",
@@ -6972,7 +6972,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         },
         {
           "name": "parent",
@@ -6984,7 +6984,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         },
         {
           "name": "position",
@@ -6996,7 +6996,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         },
         {
           "name": "quaternion",
@@ -7008,7 +7008,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         },
         {
           "name": "scale",
@@ -7020,7 +7020,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         },
         {
           "name": "camera",
@@ -7032,7 +7032,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/node.h:35-63"
+          "export": "core/scene/node.h:35-62"
         }
       ],
       "data_attributes": [],
@@ -7046,7 +7046,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/node.h:35-63",
+      "export": "core/scene/node.h:35-62",
       "cpp_name": "Node",
       "cpp_parent": "Disposable",
       "header": "core/scene/node.h",
@@ -12034,7 +12034,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         }
       ],
       "initialize_copy": null,
@@ -12049,7 +12049,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "ruby_name": "format=",
@@ -12067,7 +12067,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "ruby_name": "target",
@@ -12079,7 +12079,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "ruby_name": "context",
@@ -12091,7 +12091,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         }
       ],
       "attributes": [
@@ -12105,7 +12105,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "name": "y",
@@ -12117,7 +12117,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "name": "width",
@@ -12129,7 +12129,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "name": "height",
@@ -12141,7 +12141,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "name": "scene",
@@ -12153,7 +12153,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "name": "camera",
@@ -12165,7 +12165,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         },
         {
           "name": "graph",
@@ -12177,7 +12177,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/world3d.h:42-117"
+          "export": "core/scene3d/world3d.h:42-116"
         }
       ],
       "data_attributes": [],
@@ -12191,7 +12191,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/world3d.h:42-117",
+      "export": "core/scene3d/world3d.h:42-116",
       "cpp_name": "World3D",
       "cpp_parent": "Node",
       "header": "core/scene3d/world3d.h",
@@ -12211,7 +12211,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         }
       ],
       "initialize_copy": null,
@@ -12242,7 +12242,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         },
         {
           "ruby_name": "set_texcoord",
@@ -12270,7 +12270,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         },
         {
           "ruby_name": "set_color",
@@ -12298,7 +12298,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         }
       ],
       "attributes": [
@@ -12312,7 +12312,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         },
         {
           "name": "capacity",
@@ -12324,7 +12324,7 @@
           "override": false,
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         },
         {
           "name": "bitmap",
@@ -12336,7 +12336,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         },
         {
           "name": "blend_type",
@@ -12348,7 +12348,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         },
         {
           "name": "effect",
@@ -12360,7 +12360,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/geometry.h:39-61"
+          "export": "core/scene/geometry.h:39-60"
         }
       ],
       "data_attributes": [],
@@ -12374,7 +12374,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/geometry.h:39-61",
+      "export": "core/scene/geometry.h:39-60",
       "cpp_name": "Geometry",
       "cpp_parent": "Node",
       "header": "core/scene/geometry.h",
@@ -12394,7 +12394,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         }
       ],
       "initialize_copy": null,
@@ -12409,7 +12409,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "connect",
@@ -12421,7 +12421,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "device_id",
@@ -12433,7 +12433,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "connect_state",
@@ -12445,7 +12445,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "get_axis_value",
@@ -12463,7 +12463,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "button_press?",
@@ -12481,7 +12481,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "button_trigger?",
@@ -12499,7 +12499,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "button_repeat?",
@@ -12517,7 +12517,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "pressed_buttons",
@@ -12529,7 +12529,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         },
         {
           "ruby_name": "rumble",
@@ -12557,7 +12557,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         }
       ],
       "attributes": [
@@ -12571,7 +12571,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/gamepad.h:118-205"
+          "export": "core/input/gamepad.h:118-204"
         }
       ],
       "data_attributes": [],
@@ -12746,7 +12746,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/input/gamepad.h:118-205",
+      "export": "core/input/gamepad.h:118-204",
       "cpp_name": "Gamepad",
       "cpp_parent": "Object",
       "header": "core/input/gamepad.h",
@@ -12766,7 +12766,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "params": [
@@ -12782,7 +12782,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         }
       ],
       "initialize_copy": {
@@ -12794,7 +12794,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/canvas/bitmap.h:43-142"
+        "export": "core/canvas/bitmap.h:43-141"
       },
       "instance_methods": [
         {
@@ -12807,7 +12807,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "height",
@@ -12819,7 +12819,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "rect",
@@ -12831,7 +12831,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "blt",
@@ -12869,7 +12869,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "stretch_blt",
@@ -12902,7 +12902,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "mask_blt",
@@ -12935,7 +12935,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "fill_rect",
@@ -12973,7 +12973,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "fill_rect",
@@ -12996,7 +12996,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -13044,7 +13044,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -13077,7 +13077,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "clear",
@@ -13089,7 +13089,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "clear_rect",
@@ -13122,7 +13122,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "clear_rect",
@@ -13140,7 +13140,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "get_pixel",
@@ -13163,7 +13163,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "set_pixel",
@@ -13191,7 +13191,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "hue_change",
@@ -13209,7 +13209,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "blur",
@@ -13221,7 +13221,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "radial_blur",
@@ -13244,7 +13244,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "draw_text",
@@ -13287,7 +13287,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "draw_text",
@@ -13315,7 +13315,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "text_size",
@@ -13333,7 +13333,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "texture_view",
@@ -13345,7 +13345,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "texture",
@@ -13357,7 +13357,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "depth_stencil_view",
@@ -13369,7 +13369,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "to_image",
@@ -13381,7 +13381,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         },
         {
           "ruby_name": "update_with_image",
@@ -13399,7 +13399,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         }
       ],
       "attributes": [
@@ -13413,7 +13413,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         }
       ],
       "data_attributes": [],
@@ -13434,7 +13434,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-142"
+          "export": "core/canvas/bitmap.h:43-141"
         }
       ],
       "class_attributes": [],
@@ -13446,7 +13446,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/bitmap.h:43-142",
+      "export": "core/canvas/bitmap.h:43-141",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/canvas/bitmap.h",
@@ -13639,7 +13639,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         }
       ],
       "initialize_copy": {
@@ -13651,7 +13651,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/font/font.h:40-91"
+        "export": "core/font/font.h:40-90"
       },
       "instance_methods": [],
       "attributes": [
@@ -13665,7 +13665,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "size",
@@ -13677,7 +13677,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "bold",
@@ -13689,7 +13689,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "italic",
@@ -13701,7 +13701,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "outline",
@@ -13713,7 +13713,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "shadow",
@@ -13725,7 +13725,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "solid",
@@ -13737,7 +13737,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "color",
@@ -13749,7 +13749,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "out_color",
@@ -13761,7 +13761,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "gradient_color",
@@ -13773,7 +13773,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         }
       ],
       "data_attributes": [],
@@ -13794,7 +13794,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         }
       ],
       "class_attributes": [
@@ -13808,7 +13808,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_size",
@@ -13820,7 +13820,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_bold",
@@ -13832,7 +13832,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_italic",
@@ -13844,7 +13844,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_outline",
@@ -13856,7 +13856,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_shadow",
@@ -13868,7 +13868,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_solid",
@@ -13880,7 +13880,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_color",
@@ -13892,7 +13892,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_out_color",
@@ -13904,7 +13904,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         },
         {
           "name": "default_gradient_color",
@@ -13916,7 +13916,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-91"
+          "export": "core/font/font.h:40-90"
         }
       ],
       "constants": [],
@@ -13927,7 +13927,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/font/font.h:40-91",
+      "export": "core/font/font.h:40-90",
       "cpp_name": "Font",
       "cpp_parent": "Object",
       "header": "core/font/font.h",
@@ -13952,7 +13952,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "params": [
@@ -13963,7 +13963,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         }
       ],
       "initialize_copy": {
@@ -13975,7 +13975,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/canvas/image.h:35-105"
+        "export": "core/canvas/image.h:35-104"
       },
       "instance_methods": [
         {
@@ -13988,7 +13988,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "height",
@@ -14000,7 +14000,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "get_pixel",
@@ -14023,7 +14023,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "set_pixel",
@@ -14051,7 +14051,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "fill_rect",
@@ -14089,7 +14089,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "fill_rect",
@@ -14112,7 +14112,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "blt",
@@ -14150,7 +14150,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "stretch_blt",
@@ -14183,7 +14183,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -14231,7 +14231,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -14264,7 +14264,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "clear",
@@ -14276,7 +14276,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "clear_rect",
@@ -14309,7 +14309,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "clear_rect",
@@ -14327,7 +14327,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "to_dump",
@@ -14339,7 +14339,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         },
         {
           "ruby_name": "save_file",
@@ -14357,7 +14357,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         }
       ],
       "attributes": [],
@@ -14379,7 +14379,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/image.h:35-105"
+          "export": "core/canvas/image.h:35-104"
         }
       ],
       "class_attributes": [],
@@ -14391,7 +14391,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/image.h:35-105",
+      "export": "core/canvas/image.h:35-104",
       "cpp_name": "Image",
       "cpp_parent": "Disposable",
       "header": "core/canvas/image.h",
@@ -14411,7 +14411,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         }
       ],
       "initialize_copy": null,
@@ -14426,7 +14426,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         },
         {
           "ruby_name": "height",
@@ -14438,7 +14438,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         },
         {
           "ruby_name": "count",
@@ -14450,7 +14450,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         },
         {
           "ruby_name": "delay",
@@ -14468,7 +14468,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         },
         {
           "ruby_name": "delays",
@@ -14480,7 +14480,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         },
         {
           "ruby_name": "frame",
@@ -14498,7 +14498,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/animation.h:39-58"
+          "export": "core/canvas/animation.h:39-57"
         }
       ],
       "attributes": [],
@@ -14513,7 +14513,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/animation.h:39-58",
+      "export": "core/canvas/animation.h:39-57",
       "cpp_name": "Animation",
       "cpp_parent": "Disposable",
       "header": "core/canvas/animation.h",
@@ -14533,7 +14533,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         }
       ],
       "initialize_copy": null,
@@ -14549,7 +14549,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "bitmap",
@@ -14561,7 +14561,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "ox",
@@ -14573,7 +14573,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "oy",
@@ -14585,7 +14585,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "zoom_x",
@@ -14597,7 +14597,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "zoom_y",
@@ -14609,7 +14609,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "opacity",
@@ -14621,7 +14621,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "blend_type",
@@ -14633,7 +14633,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "color",
@@ -14645,7 +14645,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         },
         {
           "name": "tone",
@@ -14657,7 +14657,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/plane.h:35-60"
+          "export": "core/scene/plane.h:35-59"
         }
       ],
       "data_attributes": [],
@@ -14671,7 +14671,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/plane.h:35-60",
+      "export": "core/scene/plane.h:35-59",
       "cpp_name": "Plane",
       "cpp_parent": "Node",
       "header": "core/scene/plane.h",
@@ -14871,7 +14871,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         }
       ],
       "initialize_copy": null,
@@ -14897,7 +14897,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "ruby_name": "update",
@@ -14909,7 +14909,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "ruby_name": "width",
@@ -14921,7 +14921,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "ruby_name": "height",
@@ -14933,7 +14933,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         }
       ],
       "attributes": [
@@ -14947,7 +14947,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "bitmap",
@@ -14959,7 +14959,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "src_rect",
@@ -14971,7 +14971,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "x",
@@ -14983,7 +14983,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "y",
@@ -14995,7 +14995,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "ox",
@@ -15007,7 +15007,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "oy",
@@ -15019,7 +15019,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "zoom_x",
@@ -15031,7 +15031,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "zoom_y",
@@ -15043,7 +15043,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "angle",
@@ -15055,7 +15055,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "wave_amp",
@@ -15067,7 +15067,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "wave_length",
@@ -15079,7 +15079,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "wave_speed",
@@ -15091,7 +15091,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "wave_phase",
@@ -15103,7 +15103,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "mirror",
@@ -15115,7 +15115,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "bush_depth",
@@ -15127,7 +15127,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "bush_opacity",
@@ -15139,7 +15139,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "opacity",
@@ -15151,7 +15151,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "blend_type",
@@ -15163,7 +15163,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "color",
@@ -15175,7 +15175,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "tone",
@@ -15187,7 +15187,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         },
         {
           "name": "effect",
@@ -15199,7 +15199,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/sprite.h:35-94"
+          "export": "core/scene/sprite.h:35-93"
         }
       ],
       "data_attributes": [],
@@ -15213,7 +15213,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/sprite.h:35-94",
+      "export": "core/scene/sprite.h:35-93",
       "cpp_name": "Sprite",
       "cpp_parent": "Node",
       "header": "core/scene/sprite.h",
@@ -16051,7 +16051,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         }
       ],
       "initialize_copy": null,
@@ -16066,7 +16066,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "ruby_name": "set_bitmap",
@@ -16089,7 +16089,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "ruby_name": "get_bitmap",
@@ -16107,7 +16107,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         }
       ],
       "attributes": [
@@ -16121,7 +16121,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "visible",
@@ -16133,7 +16133,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "z",
@@ -16145,7 +16145,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "map_data",
@@ -16157,7 +16157,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "flash_data",
@@ -16169,7 +16169,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "flags",
@@ -16181,7 +16181,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "passages",
@@ -16193,7 +16193,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "ox",
@@ -16205,7 +16205,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         },
         {
           "name": "oy",
@@ -16217,7 +16217,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_vx.h:56-87"
+          "export": "core/scene/tilemap_vx.h:56-86"
         }
       ],
       "data_attributes": [],
@@ -16231,7 +16231,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/tilemap_vx.h:56-87",
+      "export": "core/scene/tilemap_vx.h:56-86",
       "cpp_name": "TilemapVX",
       "cpp_parent": "Node",
       "header": "core/scene/tilemap_vx.h",
@@ -16256,7 +16256,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         }
       ],
       "initialize_copy": null,
@@ -16271,7 +16271,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "ruby_name": "tileset=",
@@ -16289,7 +16289,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "ruby_name": "tileset",
@@ -16301,7 +16301,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "ruby_name": "set_autotile",
@@ -16324,7 +16324,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "ruby_name": "get_autotile",
@@ -16342,7 +16342,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         }
       ],
       "attributes": [
@@ -16356,7 +16356,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "visible",
@@ -16368,7 +16368,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "z",
@@ -16380,7 +16380,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "map_data",
@@ -16392,7 +16392,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "flash_data",
@@ -16404,7 +16404,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "priorities",
@@ -16416,7 +16416,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "ox",
@@ -16428,7 +16428,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         },
         {
           "name": "oy",
@@ -16440,7 +16440,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/tilemap_xp.h:59-93"
+          "export": "core/scene/tilemap_xp.h:59-92"
         }
       ],
       "data_attributes": [],
@@ -16454,7 +16454,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/tilemap_xp.h:59-93",
+      "export": "core/scene/tilemap_xp.h:59-92",
       "cpp_name": "TilemapXP",
       "cpp_parent": "Node",
       "header": "core/scene/tilemap_xp.h",
@@ -16489,7 +16489,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "params": [
@@ -16500,12 +16500,12 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         }
       ],
       "initialize_copy": null,
@@ -16531,7 +16531,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "ruby_name": "update",
@@ -16543,7 +16543,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         }
       ],
       "attributes": [
@@ -16557,7 +16557,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "name": "ox",
@@ -16569,7 +16569,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "name": "oy",
@@ -16581,7 +16581,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "name": "color",
@@ -16593,7 +16593,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "name": "tone",
@@ -16605,7 +16605,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         },
         {
           "name": "effect",
@@ -16617,7 +16617,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/viewport.h:35-61"
+          "export": "core/scene/viewport.h:35-60"
         }
       ],
       "data_attributes": [],
@@ -16631,7 +16631,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/viewport.h:35-61",
+      "export": "core/scene/viewport.h:35-60",
       "cpp_name": "Viewport",
       "cpp_parent": "Node",
       "header": "core/scene/viewport.h",
@@ -16666,7 +16666,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "params": [
@@ -16677,7 +16677,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         }
       ],
       "initialize_copy": null,
@@ -16692,7 +16692,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "ruby_name": "move",
@@ -16725,7 +16725,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "ruby_name": "open?",
@@ -16737,7 +16737,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "ruby_name": "close?",
@@ -16749,7 +16749,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         }
       ],
       "attributes": [
@@ -16763,7 +16763,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "windowskin",
@@ -16775,7 +16775,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "contents",
@@ -16787,7 +16787,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "cursor_rect",
@@ -16799,7 +16799,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "active",
@@ -16811,7 +16811,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "arrows_visible",
@@ -16823,7 +16823,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "pause",
@@ -16835,7 +16835,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "x",
@@ -16847,7 +16847,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "y",
@@ -16859,7 +16859,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "width",
@@ -16871,7 +16871,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "height",
@@ -16883,7 +16883,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "ox",
@@ -16895,7 +16895,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "oy",
@@ -16907,7 +16907,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "padding",
@@ -16919,7 +16919,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "padding_bottom",
@@ -16931,7 +16931,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "opacity",
@@ -16943,7 +16943,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "back_opacity",
@@ -16955,7 +16955,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "contents_opacity",
@@ -16967,7 +16967,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "openness",
@@ -16979,7 +16979,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         },
         {
           "name": "tone",
@@ -16991,7 +16991,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_vx.h:36-92"
+          "export": "core/scene/window_vx.h:36-91"
         }
       ],
       "data_attributes": [],
@@ -17005,7 +17005,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/window_vx.h:36-92",
+      "export": "core/scene/window_vx.h:36-91",
       "cpp_name": "WindowVX",
       "cpp_parent": "Node",
       "header": "core/scene/window_vx.h",
@@ -17025,7 +17025,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         }
       ],
       "initialize_copy": null,
@@ -17040,7 +17040,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         }
       ],
       "attributes": [
@@ -17054,7 +17054,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "viewport",
@@ -17066,7 +17066,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "windowskin",
@@ -17078,7 +17078,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "contents",
@@ -17090,7 +17090,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "stretch",
@@ -17102,7 +17102,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "cursor_rect",
@@ -17114,7 +17114,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "active",
@@ -17126,7 +17126,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "pause",
@@ -17138,7 +17138,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "x",
@@ -17150,7 +17150,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "y",
@@ -17162,7 +17162,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "width",
@@ -17174,7 +17174,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "height",
@@ -17186,7 +17186,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "ox",
@@ -17198,7 +17198,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "oy",
@@ -17210,7 +17210,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "opacity",
@@ -17222,7 +17222,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "back_opacity",
@@ -17234,7 +17234,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "contents_opacity",
@@ -17246,7 +17246,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         },
         {
           "name": "z",
@@ -17258,7 +17258,7 @@
           "override": true,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene/window_xp.h:49-93"
+          "export": "core/scene/window_xp.h:49-92"
         }
       ],
       "data_attributes": [],
@@ -17272,7 +17272,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene/window_xp.h:49-93",
+      "export": "core/scene/window_xp.h:49-92",
       "cpp_name": "WindowXP",
       "cpp_parent": "Node",
       "header": "core/scene/window_xp.h",
@@ -17302,7 +17302,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/graphics/effect.h:39-58"
+          "export": "core/graphics/effect.h:39-57"
         }
       ],
       "initialize_copy": {
@@ -17314,7 +17314,7 @@
           }
         ],
         "has_exception": true,
-        "export": "core/graphics/effect.h:39-58"
+        "export": "core/graphics/effect.h:39-57"
       },
       "instance_methods": [
         {
@@ -17338,7 +17338,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/effect.h:39-58"
+          "export": "core/graphics/effect.h:39-57"
         },
         {
           "ruby_name": "set_int",
@@ -17361,7 +17361,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/effect.h:39-58"
+          "export": "core/graphics/effect.h:39-57"
         },
         {
           "ruby_name": "set_texture",
@@ -17384,7 +17384,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/effect.h:39-58"
+          "export": "core/graphics/effect.h:39-57"
         },
         {
           "ruby_name": "set_sampler",
@@ -17407,7 +17407,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/effect.h:39-58"
+          "export": "core/graphics/effect.h:39-57"
         },
         {
           "ruby_name": "set_block",
@@ -17430,7 +17430,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/effect.h:39-58"
+          "export": "core/graphics/effect.h:39-57"
         }
       ],
       "attributes": [],
@@ -17445,7 +17445,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/effect.h:39-58",
+      "export": "core/graphics/effect.h:39-57",
       "cpp_name": "Effect",
       "cpp_parent": "Object",
       "header": "core/graphics/effect.h",
@@ -17465,7 +17465,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         }
       ],
       "initialize_copy": null,
@@ -17480,7 +17480,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "stop",
@@ -17492,7 +17492,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "seek",
@@ -17510,7 +17510,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "cursor",
@@ -17522,7 +17522,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "length",
@@ -17534,7 +17534,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "playing?",
@@ -17546,7 +17546,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "end?",
@@ -17558,7 +17558,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "set_start_time",
@@ -17576,7 +17576,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "ruby_name": "set_stop_time",
@@ -17594,7 +17594,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         }
       ],
       "attributes": [
@@ -17608,7 +17608,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "name": "pan",
@@ -17620,7 +17620,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "name": "pitch",
@@ -17632,7 +17632,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         },
         {
           "name": "loop",
@@ -17644,7 +17644,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/audio/audio_stream.h:38-71"
+          "export": "core/audio/audio_stream.h:38-70"
         }
       ],
       "data_attributes": [],
@@ -17658,7 +17658,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/audio/audio_stream.h:38-71",
+      "export": "core/audio/audio_stream.h:38-70",
       "cpp_name": "AudioStream",
       "cpp_parent": "Object",
       "header": "core/audio/audio_stream.h",
@@ -17678,7 +17678,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         }
       ],
       "initialize_copy": null,
@@ -17693,7 +17693,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "pause",
@@ -17705,7 +17705,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "stop",
@@ -17717,7 +17717,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "end?",
@@ -17729,7 +17729,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "playing?",
@@ -17741,7 +17741,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "seek",
@@ -17759,7 +17759,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "tell",
@@ -17771,7 +17771,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "duration",
@@ -17783,7 +17783,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "audio_stream",
@@ -17795,7 +17795,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "update",
@@ -17807,7 +17807,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         },
         {
           "ruby_name": "render",
@@ -17825,7 +17825,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/video/video.h:42-75"
+          "export": "core/video/video.h:42-74"
         }
       ],
       "attributes": [],
@@ -17840,7 +17840,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/video/video.h:42-75",
+      "export": "core/video/video.h:42-74",
       "cpp_name": "Video",
       "cpp_parent": "Object",
       "header": "core/video/video.h",
@@ -17854,7 +17854,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-63"
         }
       ],
       "initialize_copy": null,
@@ -17869,7 +17869,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-63"
         },
         {
           "ruby_name": "text",
@@ -17881,7 +17881,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-63"
         },
         {
           "ruby_name": "code",
@@ -17893,7 +17893,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-63"
         },
         {
           "ruby_name": "reason",
@@ -17905,7 +17905,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-63"
         },
         {
           "ruby_name": "message",
@@ -17917,7 +17917,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-63"
         }
       ],
       "attributes": [],
@@ -17932,7 +17932,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:41-64",
+      "export": "core/network/network.h:41-63",
       "cpp_name": "NetworkEvent",
       "cpp_parent": "Object",
       "header": "core/network/network.h",
@@ -17957,7 +17957,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         }
       ],
       "initialize_copy": null,
@@ -17972,7 +17972,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "ready_state",
@@ -17984,7 +17984,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "error",
@@ -17996,7 +17996,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "dropped",
@@ -18008,7 +18008,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "send_text",
@@ -18026,7 +18026,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "send_binary",
@@ -18044,7 +18044,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "send_ping",
@@ -18062,7 +18062,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "close",
@@ -18085,7 +18085,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "next_event",
@@ -18097,7 +18097,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         },
         {
           "ruby_name": "pending",
@@ -18109,7 +18109,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:77-110"
         }
       ],
       "attributes": [],
@@ -18124,7 +18124,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:78-112",
+      "export": "core/network/network.h:77-110",
       "cpp_name": "WebSocket",
       "cpp_parent": "Object",
       "header": "core/network/network.h",
@@ -18159,7 +18159,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         }
       ],
       "initialize_copy": null,
@@ -18174,7 +18174,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "abort",
@@ -18186,7 +18186,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "done?",
@@ -18198,7 +18198,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "success?",
@@ -18210,7 +18210,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "status",
@@ -18222,7 +18222,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "status_text",
@@ -18234,7 +18234,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "text",
@@ -18246,7 +18246,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "error",
@@ -18258,7 +18258,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "progress",
@@ -18270,7 +18270,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "header",
@@ -18288,7 +18288,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         },
         {
           "ruby_name": "headers",
@@ -18300,7 +18300,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-161"
+          "export": "core/network/network.h:126-158"
         }
       ],
       "attributes": [],
@@ -18315,7 +18315,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:128-161",
+      "export": "core/network/network.h:126-158",
       "cpp_name": "Fetch",
       "cpp_parent": "Object",
       "header": "core/network/network.h",

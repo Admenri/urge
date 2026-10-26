@@ -67,7 +67,7 @@ RenderContext3D::RenderContext3D(URGE_EXCEPT,
     : encoder_(encoder),
       target_(std::move(target)),
       ambient_(MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f)) {
-  mesh_pool_ = std::make_unique<UniformBlockPool>(exception_state, 
+  mesh_pool_ = std::make_unique<UniformBlockPool>(exception_state,
       AcquireMeshUniformLayout(), static_cast<uint32_t>(sizeof(MeshData)),
       "mesh3d");
   view_stride_ = ViewStride();
@@ -310,7 +310,8 @@ void RenderContext3D::UploadShadowView(URGE_EXCEPT, int32_t slot) {
     exception_state.Throw(ExceptionState::kGPUError, "render context 3d: the device rejected the shadow view "
                     "group.");
     return;
-  }}
+  }
+}
 
 void RenderContext3D::UpdateGlobals(URGE_EXCEPT, int32_t slot) {
   if (slot < 0 || slot >= kMaxViewSlots)
@@ -345,7 +346,8 @@ void RenderContext3D::UpdateGlobals(URGE_EXCEPT, int32_t slot) {
       exception_state.Throw(ExceptionState::kGPUError, "render context 3d: the device rejected the globals "
                       "group.");
       return;
-    }  }
+    }
+  }
 
   static double last_seconds = 0.0;
   static uint64_t frame_index = 0;
@@ -398,7 +400,8 @@ void RenderContext3D::BeginPassEx(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
                                   bool clear_stencil,
                                   int32_t layer) {
   if (!encoder_) {
-    exception_state.Throw(ExceptionState::kRGSSError, "render context has no encoder.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render context has no encoder.");
     return;
   }
   if (pass_) {
@@ -467,13 +470,15 @@ void RenderContext3D::DrawIndexedIndirect(RefPtr<GPUBuffer> buffer,
 
 void RenderContext3D::Draw(URGE_EXCEPT, const RenderQueue3D::Item& item) {
   if (!pass_) {
-    exception_state.Throw(ExceptionState::kRGSSError, "no render pass is open, call begin_pass first.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "no render pass is open, call begin_pass first.");
     return;
   }
   if (!item.mesh || !item.pass)
     return;
   if (item.slot.chunk == UniformBlockPool::kInvalidChunk) {
-    exception_state.Throw(ExceptionState::kGPUError, "the mesh has no mesh uniform slot.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the mesh has no mesh uniform slot.");
     return;
   }
   const bool shadow_mode = shadow_pass_mode_ || item.pass->depth_only();

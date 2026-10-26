@@ -86,7 +86,8 @@ MARSHAL_LOAD_DEF(Table) {
 
   RefPtr<Table> obj = MakeRefCounted<Table>(xsize, ysize, zsize);
   if (data_size != obj->xsize_ * obj->ysize_ * obj->zsize_) {
-    exception_state.Throw(ExceptionState::kRGSSError, "invalid table serialize data");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "invalid table serialize data");
     return nullptr;
   }
 

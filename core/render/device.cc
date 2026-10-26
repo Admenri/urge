@@ -222,16 +222,19 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
     adapter_request.compatibleSurface = surface_;
   instance_.RequestAdapter(&adapter_request, adapter_callback);
 
-                                                                            
-                                                                               
-                                                                         
-                                                                           
-                                                                             
-                                                             
+  /* A backend may complete the request before returning from RequestAdapter
+     (the GLES one does, on Emscripten and on the desktop) -- but it is allowed
+     not to, and there is no event loop running yet to deliver a deferred
+     callback.  Pumping the instance once here makes the two cases look the
+     same to the rest of this function.  The browser is the other extreme: it
+     always answers later, so there the wait has to yield. */
 #if defined(OS_EMSCRIPTEN)
-  if (!WaitForGpuObject(instance_, [this] { return adapter_ != nullptr; }))
-    exception_state.Throw(ExceptionState::kGPUError, "the browser provided no WebGPU adapter");
-    return;#else
+  if (!WaitForGpuObject(instance_, [this] { return adapter_ != nullptr; })) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the browser provided no WebGPU adapter");
+    return;
+  }
+#else
   if (!adapter_)
     instance_.ProcessEvents();
 #endif
@@ -250,9 +253,12 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   adapter_.RequestDevice(&device_desc, device_callback);
 
 #if defined(OS_EMSCRIPTEN)
-  if (!WaitForGpuObject(instance_, [this] { return device_ != nullptr; }))
-    exception_state.Throw(ExceptionState::kGPUError, "the browser provided no WebGPU device");
-    return;#else
+  if (!WaitForGpuObject(instance_, [this] { return device_ != nullptr; })) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the browser provided no WebGPU device");
+    return;
+  }
+#else
   if (!device_)
     instance_.ProcessEvents();
 #endif

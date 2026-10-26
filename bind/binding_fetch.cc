@@ -47,7 +47,7 @@ void DefineFetchBody(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Fetch  (core/network/network.h:128-161)
+// Fetch  (core/network/network.h:126-158)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Fetch);

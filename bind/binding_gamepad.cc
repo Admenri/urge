@@ -58,7 +58,7 @@ RB_FUNC(Gamepad_available_devices) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Gamepad  (core/input/gamepad.h:118-205)
+// Gamepad  (core/input/gamepad.h:118-204)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Gamepad);
