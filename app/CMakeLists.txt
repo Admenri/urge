@@ -79,6 +79,15 @@ if(EMSCRIPTEN)
     # and still works, see the Emscripten block in the top level CMakeLists.
     "--shell-file=${CMAKE_CURRENT_SOURCE_DIR}/urge_index.html")
 
+  # The shell page and the runtime glue are inputs to the link, not sources, so
+  # nothing would notice them changing: `--shell-file` is an argument of the
+  # link command and ninja does not read inside it.  `LINK_DEPENDS` is the
+  # CMake way of saying "relink when this file changes", and the glue needs it
+  # too because it is only copied by the POST_BUILD step below.
+  set_property(TARGET Game APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/urge_index.html"
+    "${CMAKE_CURRENT_SOURCE_DIR}/urge-helper.js")
+
   add_custom_command(TARGET Game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/urge-helper.js"
