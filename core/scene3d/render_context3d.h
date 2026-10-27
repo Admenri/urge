@@ -88,11 +88,13 @@ class RenderContext3D : public Object {
                       float range);
 
   URGE_BINDING()
-  void BeginPass(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
+  void BeginPass(URGE_EXCEPT,
+                 RefPtr<RenderTarget3D> target,
                  MaybePtr<Color> clear = nullptr,
                  bool clear_depth = true);
   URGE_BINDING()
-  void BeginPassEx(URGE_EXCEPT, RefPtr<RenderTarget3D> target,
+  void BeginPassEx(URGE_EXCEPT,
+                   RefPtr<RenderTarget3D> target,
                    std::vector<RefPtr<Color>> clears,
                    bool clear_depth,
                    bool clear_stencil,
@@ -103,7 +105,8 @@ class RenderContext3D : public Object {
   RefPtr<GPURenderPassEncoder> GetPass();
 
   URGE_BINDING()
-  int32_t DrawFilter(URGE_EXCEPT, std::vector<std::string> tags,
+  int32_t DrawFilter(URGE_EXCEPT,
+                     std::vector<std::string> tags,
                      std::vector<int32_t> tag_ids,
                      int32_t queue_min,
                      int32_t queue_max,

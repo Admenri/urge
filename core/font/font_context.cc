@@ -277,8 +277,9 @@ bool ReadFileFamilyNames(const std::string& path,
 FontContext::FontContext(URGE_EXCEPT) {
   if (!TTF_Init()) {
     exception_state.Throw(ExceptionState::kRGSSError, "TTF_Init failed: {}",
-                    SDL_GetError());
-    return;  }
+                          SDL_GetError());
+    return;
+  }
 
 #if defined(_WIN32)
   for (const char* face : kWindowsDefaultFaces)
@@ -360,14 +361,6 @@ TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
   }
 
   return nullptr;
-}
-
-std::vector<std::string> FontContext::ResolveName(
-    const std::string& name) const {
-  if (name.empty())
-    return default_name_;
-
-  return {name};
 }
 
 const FontContext::FontData* FontContext::FindFont(const std::string& name) {
@@ -468,9 +461,6 @@ void FontContext::LoadFontDirectory(URGE_EXCEPT, const std::string& directory) {
 
     const std::string path = directory + file;
     SDL_IOStream* stream = nullptr;
-    // A font that cannot be read is skipped, not reported: the directory holds
-    // whatever the user dropped in it, and one bad file must not fail the
-    // whole context.  Hence a state of its own, thrown away per file.
     ExceptionState open_state;
     stream = IOService::Get().OpenReadRaw(open_state, path);
     if (open_state.HadException())

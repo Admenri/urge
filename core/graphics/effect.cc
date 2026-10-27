@@ -105,7 +105,8 @@ class EffectDefaults {
 
 }
 
-Effect::Effect(URGE_EXCEPT, std::string vs_wgsl,
+Effect::Effect(URGE_EXCEPT,
+               std::string vs_wgsl,
                std::string fs_wgsl,
                std::string blend_states) {
   CreateInternal(exception_state, std::move(vs_wgsl), std::move(fs_wgsl),
@@ -179,7 +180,8 @@ void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
   stage(1, SlotKind::kSampler);
 }
 
-void Effect::CreateInternal(URGE_EXCEPT, std::string vs_wgsl,
+void Effect::CreateInternal(URGE_EXCEPT,
+                            std::string vs_wgsl,
                             std::string fs_wgsl,
                             std::string blend_states) {
   vs_wgsl_ = std::move(vs_wgsl);
@@ -219,7 +221,8 @@ void Effect::RebuildPipeline(URGE_EXCEPT) {
     groups.push_back({index, std::move(entries)});
   }
 
-  const std::optional<wgpu::BlendState> blend = ParseBlendState(exception_state, blend_states_);
+  const std::optional<wgpu::BlendState> blend =
+      ParseBlendState(exception_state, blend_states_);
 
   const ShaderSource vertex{vs_wgsl_, kVertexEntry, groups};
   const ShaderSource fragment{fs_wgsl_, kFragmentEntry, {}};
@@ -243,7 +246,10 @@ void Effect::RebuildPipeline(URGE_EXCEPT) {
   LOGGER_DEBUG("effect: pipeline built from the reflected layout");
 }
 
-void Effect::SetBufferBytes(URGE_EXCEPT, uint32_t slot, const void* data, uint32_t size) {
+void Effect::SetBufferBytes(URGE_EXCEPT,
+                            uint32_t slot,
+                            const void* data,
+                            uint32_t size) {
   const uint64_t buffer_size = AlignUniformSize(std::max<uint64_t>(size, 16));
 
   wgpu::BufferDescriptor desc;
@@ -251,8 +257,9 @@ void Effect::SetBufferBytes(URGE_EXCEPT, uint32_t slot, const void* data, uint32
   desc.size = buffer_size;
   wgpu::Buffer buffer = GPUDevice::Get().device().CreateBuffer(&desc);
   if (buffer == nullptr) {
-    exception_state.Throw(ExceptionState::kGPUError, "effect: the device rejected a {} byte uniform buffer.",
-                    buffer_size);
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "effect: the device rejected a {} byte uniform buffer.", buffer_size);
     return;
   }
   std::vector<std::uint8_t> staging(static_cast<std::size_t>(buffer_size), 0);

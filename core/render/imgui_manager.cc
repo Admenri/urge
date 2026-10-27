@@ -603,11 +603,6 @@ const ImVec4 kGood(0.42f, 0.85f, 0.45f, 1.0f);
 const ImVec4 kWarn(0.95f, 0.78f, 0.28f, 1.0f);
 const ImVec4 kBad(0.94f, 0.42f, 0.40f, 1.0f);
 
-/* A ring of the frame's phases, drawn as a filled circle with the total in the
-   middle.  The wedges are plain sectors -- convex, so the draw list can fill
-   them directly -- and the hole is painted over them in the window colour,
-   which keeps the result a donut without any of the triangulation a real
-   annulus would need. */
 void DrawPhaseDonut(const FrameTimings& timings, float radius) {
   ImDrawList* draw = ImGui::GetWindowDrawList();
   const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -674,10 +669,6 @@ void DrawPhaseDonut(const FrameTimings& timings, float radius) {
   ImGui::Dummy(ImVec2(radius * 2.0f, radius * 2.0f));
 }
 
-/* The legend is drawn by hand rather than with a table: the numbers have to sit
-   against the window's right edge whatever the width is, and a table lays
-   itself out against a width it only learns after the fact -- on a narrow
-   window it simply spills past the border. */
 void DrawPhaseLegend(const FrameTimings& timings, float width) {
   ImDrawList* draw = ImGui::GetWindowDrawList();
   const ImGuiStyle& style = ImGui::GetStyle();
@@ -723,9 +714,6 @@ void DrawPhaseLegend(const FrameTimings& timings, float width) {
   ImGui::Dummy(ImVec2(width, y - start.y));
 }
 
-/* One vertical bar per frame, each split into its phases, newest on the right.
-   The bar height is the frame period, so the budget line reads directly: bars
-   above it are frames that missed the target. */
 void DrawPhaseHistory(const FrameTimingRing& ring,
                       float width,
                       float height,
@@ -812,8 +800,6 @@ void ImGuiManager::LoadFpsGeometry() {
     geometry.custom = geometry.width > 0.0f && geometry.height > 0.0f;
   }
 
-  /* A negative coordinate is the "never placed" sentinel: a window the player
-     put against the left or top edge sits at zero, which is a real place. */
   const float x = ParseGeometry(config.GetValue("Debug", "FpsWindowX"), -1.0f);
   const float y = ParseGeometry(config.GetValue("Debug", "FpsWindowY"), -1.0f);
 
@@ -845,7 +831,6 @@ void ImGuiManager::SaveFpsGeometry() {
                     std::to_string(static_cast<int>(geometry.height)));
   }
 
-  // A settings write that fails costs the file, never the run.
   ExceptionState save_state;
   config.Save(save_state);
   if (save_state.HadException())
@@ -880,10 +865,6 @@ void ImGuiManager::BuildFPSWindow() {
     pos = ImVec2(viewport->Pos.x + display.x - size.x - margin,
                  viewport->Pos.y + margin);
 
-  /* Neither the size nor the place is fixed: the monitor is a normal window
-     the player can drag and resize, and the defaults only decide where it
-     shows up the first time.  On a game whose own window is smaller than the
-     overlay, moving it and shrinking it is the only way to read it. */
   ImGui::SetNextWindowPos(pos, ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(size, mode_changed && !geometry.custom
                                      ? ImGuiCond_Always
@@ -896,9 +877,6 @@ void ImGuiManager::BuildFPSWindow() {
     return;
   }
 
-  /* Geometry the player changed is taken back from the window itself, so a
-     drag or a resize survives the next frame, the next mode and the next
-     run. */
   {
     const ImVec2 actual_pos = ImGui::GetWindowPos();
     const ImVec2 actual_size = ImGui::GetWindowSize();
@@ -921,11 +899,6 @@ void ImGuiManager::BuildFPSWindow() {
       fps_geometry_dirty_ = true;
     }
 
-    /* A window that no longer fits -- because the mode changed, the player
-       resized it, or the display shrank since it was placed -- is pulled back
-       inside, and a window dragged past the edge keeps enough of its title bar
-       on screen to be caught again.  Nothing moves while the mouse is down:
-       that would fight the drag that is placing it. */
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
       const float right = viewport->Pos.x + display.x;
       const float bottom = viewport->Pos.y + display.y;
@@ -1005,17 +978,12 @@ void ImGuiManager::BuildFPSWindow() {
 
   ImGui::Separator();
 
-  /* Everything below scrolls: the window can be made as small as the player
-     likes and nothing is lost, it is only scrolled to. */
   if (ImGui::BeginChild("##frame_monitor_body", ImVec2(0.0f, 0.0f),
                         ImGuiChildFlags_None,
                         ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
     ImGui::Spacing();
     ImGui::TextDisabled("Frame composition");
 
-    /* The ring sits above the legend rather than beside it: the legend needs
-       the full width for "Graphics::Update" and "BitmapQueue", and a window
-       narrow enough to make that a problem is a window the player chose. */
     const float radius = U(50.0f);
     const float available = ImGui::GetContentRegionAvail().x;
     if (available > radius * 2.0f)

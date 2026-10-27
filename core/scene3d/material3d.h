@@ -54,7 +54,10 @@ struct PipelineTargetState3D {
 URGE_BINDING()
 class MaterialPass3D : public Object {
  public:
-  MaterialPass3D(URGE_EXCEPT, std::string tag, std::string vs_wgsl, std::string fs_wgsl);
+  MaterialPass3D(URGE_EXCEPT,
+                 std::string tag,
+                 std::string vs_wgsl,
+                 std::string fs_wgsl);
   ~MaterialPass3D() override;
 
   URGE_BINDING(Name : "tag")
@@ -444,7 +447,8 @@ class MaterialPass3D : public Object {
   URGE_BINDING()
   std::vector<std::string> SlotNames() const;
 
-  wgpu::RenderPipeline AcquirePipeline(URGE_EXCEPT, const PipelineTargetState3D& target);
+  wgpu::RenderPipeline AcquirePipeline(URGE_EXCEPT,
+                                       const PipelineTargetState3D& target);
   wgpu::RenderPipeline AcquireDepthOnlyPipeline(
       const PipelineTargetState3D& target);
   wgpu::BindGroup AcquireBindGroup(URGE_EXCEPT);
@@ -469,7 +473,6 @@ class MaterialPass3D : public Object {
     depth_only_ = value;
     state_dirty_ = true;
   }
-  void SetSources(std::string vs_wgsl, std::string fs_wgsl);
 
  private:
   struct Slot {
@@ -551,7 +554,8 @@ class Material3D : public Object {
   ~Material3D() override;
 
   URGE_BINDING()
-  RefPtr<MaterialPass3D> AddPass(URGE_EXCEPT, std::string tag,
+  RefPtr<MaterialPass3D> AddPass(URGE_EXCEPT,
+                                 std::string tag,
                                  std::string vs_wgsl,
                                  std::string fs_wgsl);
   URGE_BINDING()

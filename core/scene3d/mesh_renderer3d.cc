@@ -54,9 +54,13 @@ ATTR_DEF(MeshRenderer3D, RefPtr<Mesh3D>, Mesh) {
   return mesh_;
 }
 
-void MeshRenderer3D::SetMaterial(URGE_EXCEPT, int32_t slot, RefPtr<Material3D> material) {
+void MeshRenderer3D::SetMaterial(URGE_EXCEPT,
+                                 int32_t slot,
+                                 RefPtr<Material3D> material) {
   if (slot < 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh renderer 3d: a material slot cannot be negative.");
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "mesh renderer 3d: a material slot cannot be negative.");
     return;
   }
   if (material)
@@ -94,8 +98,10 @@ void MeshRenderer3D::UpdateBounds() {
 
 void MeshRenderer3D::SetInstanceMatrices(URGE_EXCEPT, std::vector<float> data) {
   if (data.size() % 16 != 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh renderer 3d: instance matrices are sixteen floats "
-                    "per instance.");
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "mesh renderer 3d: instance matrices are sixteen floats "
+        "per instance.");
     return;
   }
   instance_matrices_ = std::move(data);
@@ -111,8 +117,9 @@ void MeshRenderer3D::SetInstanceMatrices(URGE_EXCEPT, std::vector<float> data) {
   descriptor.size = instance_matrices_.size() * sizeof(float);
   instance_buffer_ = GPUDevice::Get().device().CreateBuffer(&descriptor);
   if (!instance_buffer_) {
-    exception_state.Throw(ExceptionState::kGPUError, "mesh renderer 3d: the device rejected the instance "
-                    "buffer.");
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "mesh renderer 3d: the device rejected the instance "
+                          "buffer.");
     return;
   }
   GPUDevice::Get().queue().WriteBuffer(

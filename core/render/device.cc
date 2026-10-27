@@ -36,6 +36,10 @@
 #include <emscripten.h>
 #endif
 
+#if defined(SDL_PLATFORM_ANDROID)
+#include <android/native_window.h>
+#endif
+
 #include "core/common/exception.h"
 #include "core/common/logger.h"
 
@@ -44,13 +48,6 @@ namespace urge {
 namespace {
 
 #if defined(OS_EMSCRIPTEN)
-/* The browser answers RequestAdapter and RequestDevice on its own event loop,
-   and no loop is running while this constructor blocks: a single
-   ProcessEvents() would arrive before the promise settled almost every time,
-   and the engine would go on to use a null adapter.  Yielding with Asyncify is
-   what lets the promise settle -- the frame loop does exactly this every frame.
-   A browser without WebGPU never answers at all, so the wait is bounded and
-   reports the failure instead of hanging. */
 constexpr int kGpuWaitFrames = 600;
 
 template <typename Ready>
@@ -79,6 +76,35 @@ wgpu::BackendType FromGFXBackend(std::string backend) {
   if (backend == "opengles")
     return wgpu::BackendType::OpenGLES;
   return wgpu::BackendType::Undefined;
+}
+
+bool BackendAvailable(wgpu::BackendType backend) {
+  if (backend == wgpu::BackendType::Undefined)
+    return true;
+
+  switch (backend) {
+#if defined(SDL_PLATFORM_WIN32)
+    case wgpu::BackendType::D3D11:
+    case wgpu::BackendType::D3D12:
+    case wgpu::BackendType::Vulkan:
+    case wgpu::BackendType::OpenGL:
+    case wgpu::BackendType::OpenGLES:
+      return true;
+#elif defined(SDL_PLATFORM_ANDROID)
+    case wgpu::BackendType::Vulkan:
+    case wgpu::BackendType::OpenGL:
+    case wgpu::BackendType::OpenGLES:
+      return true;
+#elif defined(SDL_PLATFORM_EMSCRIPTEN)
+    case wgpu::BackendType::WebGPU:
+      return true;
+#elif defined(SDL_PLATFORM_APPLE)
+    case wgpu::BackendType::Metal:
+      return true;
+#endif
+    default:
+      return false;
+  }
 }
 
 std::string BackendName(wgpu::BackendType backend) {
@@ -144,11 +170,6 @@ GPUDevice::GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend) {
       reinterpret_cast<wgpu::ChainedStruct*>(&instance_extras.chain);
 #endif
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
-  /* `wgpuInstanceWaitAny` returns immediately in the browser unless the
-     instance was created with the timed-wait feature, and a read-back that
-     returns immediately never runs its mapping callback -- `Bitmap#get_pixel`
-     then fails with "the mapping callback was never invoked".  The limit has to
-     be non-zero for the feature to be granted. */
   static constexpr wgpu::InstanceFeatureName kTimedWaitAny =
       wgpu::InstanceFeatureName::TimedWaitAny;
   static const wgpu::InstanceLimits kInstanceLimits = [] {
@@ -162,35 +183,75 @@ GPUDevice::GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend) {
 #endif
   instance_ = wgpu::CreateInstance(&instance_desc);
 
-  if (window != nullptr) {
-    wgpu::SurfaceDescriptor surface_desc;
+  window_ = window;
+  if (window_ != nullptr)
+    CreateSurfaceFromWindow();
+
+  CreateDevice(exception_state, backend);
+}
+
+bool GPUDevice::CreateSurfaceFromWindow() {
+  if (!window_)
+    return false;
+
+  wgpu::SurfaceDescriptor surface_desc;
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
-    /* There is no window handle to hand over in a browser: the surface is the
-       HTML canvas, and Emscripten's EGL -- which wgpu's GLES backend renders
-       through -- always binds to the module canvas.  The selector has to name
-       that same element, which is the `#canvas` the shell hands to the module
-       as `Module.canvas`. */
-    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas_source = {};
-    canvas_source.chain.sType = static_cast<WGPUSType>(
-        WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector);
-    canvas_source.selector = WGPUStringView{"#canvas", WGPU_STRLEN};
-    surface_desc.nextInChain =
-        reinterpret_cast<wgpu::ChainedStruct*>(&canvas_source.chain);
+  WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas_source = {};
+  canvas_source.chain.sType = static_cast<WGPUSType>(
+      WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector);
+  canvas_source.selector = WGPUStringView{"#canvas", WGPU_STRLEN};
+  surface_desc.nextInChain =
+      reinterpret_cast<wgpu::ChainedStruct*>(&canvas_source.chain);
 #elif defined(SDL_PLATFORM_WIN32)
-    SDL_PropertiesID window_prop = SDL_GetWindowProperties(window);
-    wgpu::SurfaceSourceWindowsHWND win_hwnd;
-    win_hwnd.hinstance = SDL_GetPointerProperty(
-        window_prop, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
-    win_hwnd.hwnd = SDL_GetPointerProperty(
-        window_prop, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-    surface_desc.nextInChain = &win_hwnd;
+  SDL_PropertiesID window_prop = SDL_GetWindowProperties(window_);
+  wgpu::SurfaceSourceWindowsHWND win_hwnd;
+  win_hwnd.hinstance = SDL_GetPointerProperty(
+      window_prop, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
+  win_hwnd.hwnd = SDL_GetPointerProperty(
+      window_prop, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+  surface_desc.nextInChain = &win_hwnd;
+#elif defined(SDL_PLATFORM_ANDROID)
+  void* native =
+      SDL_GetPointerProperty(SDL_GetWindowProperties(window_),
+                             SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
+  if (!native)
+    return false;
+
+  WGPUSurfaceSourceAndroidNativeWindow android_source = {};
+  android_source.chain.sType =
+      static_cast<WGPUSType>(WGPUSType_SurfaceSourceAndroidNativeWindow);
+  android_source.window = static_cast<ANativeWindow*>(native);
+  surface_desc.nextInChain =
+      reinterpret_cast<wgpu::ChainedStruct*>(&android_source.chain);
+  native_window_ = native;
 #else
 #error not support
 #endif
-    surface_ = instance_.CreateSurface(&surface_desc);
-  }
 
-  CreateDevice(exception_state, backend);
+  surface_ = instance_.CreateSurface(&surface_desc);
+  if (surface_ != nullptr)
+    ++surface_generation_;
+  return surface_ != nullptr;
+}
+
+bool GPUDevice::RefreshSurface() {
+#if defined(SDL_PLATFORM_ANDROID)
+  void* native =
+      SDL_GetPointerProperty(SDL_GetWindowProperties(window_),
+                             SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
+
+  if (!native)
+    return false;
+
+  if (native == native_window_)
+    return true;
+
+  LOGGER_INFO("[GPU] the window was replaced; rebuilding the swapchain");
+  surface_ = nullptr;
+  return CreateSurfaceFromWindow();
+#else
+  return true;
+#endif
 }
 
 void GPUDevice::WaitAny(wgpu::Future future) {
@@ -216,18 +277,21 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   };
   adapter_callback.userdata1 = this;
 
+  wgpu::BackendType requested = FromGFXBackend(backend);
+  if (!BackendAvailable(requested)) {
+    LOGGER_WARN(
+        "[GPU] backend '{}' does not exist on this platform; "
+        "using the default one",
+        backend);
+    requested = wgpu::BackendType::Undefined;
+  }
+
   wgpu::RequestAdapterOptions adapter_request;
-  adapter_request.backendType = FromGFXBackend(backend);
+  adapter_request.backendType = requested;
   if (surface_ != nullptr)
     adapter_request.compatibleSurface = surface_;
   instance_.RequestAdapter(&adapter_request, adapter_callback);
 
-  /* A backend may complete the request before returning from RequestAdapter
-     (the GLES one does, on Emscripten and on the desktop) -- but it is allowed
-     not to, and there is no event loop running yet to deliver a deferred
-     callback.  Pumping the instance once here makes the two cases look the
-     same to the rest of this function.  The browser is the other extreme: it
-     always answers later, so there the wait has to yield. */
 #if defined(OS_EMSCRIPTEN)
   if (!WaitForGpuObject(instance_, [this] { return adapter_ != nullptr; })) {
     exception_state.Throw(ExceptionState::kGPUError,
@@ -238,6 +302,12 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   if (!adapter_)
     instance_.ProcessEvents();
 #endif
+
+  if (!adapter_) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "no GPU adapter is available on this device.");
+    return;
+  }
 
   WGPURequestDeviceCallbackInfo device_callback = {};
   device_callback.mode = WGPUCallbackMode_AllowProcessEvents;

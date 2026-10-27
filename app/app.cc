@@ -20,26 +20,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/* The host is written as SDL's callback main loop rather than as a `main()`.
+/* Two hosts, chosen by URGE_RUNNER_MODEL.
 
-   That is what makes the frame loop the same on every platform: SDL decides
-   what a tick is -- an animation frame callback on the web, a plain loop on
-   the desktop, something else again where the system wants to drive it -- and
-   hands the same four functions the same state.  `SDL_AppIterate` is one tick,
-   and the engine's frame pacer decides how much game time belongs in it; see
-   bind/cruby_main.cc.
+   `poll` (the default everywhere the engine may block): this file has an
+   ordinary `main()`.  It brings the engine up and then hands the thread to the
+   game, which runs until the script ends; every `Graphics.update` is a whole
+   frame, draining SDL's queue and sleeping out the rest of the game's slot.
+   That is the shape RGSS has, and nothing has to be suspended between frames.
 
-   The one thing this changes inside the engine is events.  SDL drains its own
-   queue into `SDL_AppEvent`, so `SDL_PollEvent` in the frame would find
-   nothing left: events are pushed onto `Graphics` instead and the frame's
-   event pass reads them from there. */
+   `fiber` (the web, and anything else that cannot block): SDL's callback main
+   loop.  SDL decides what a tick is -- an animation frame callback in a
+   browser -- and `SDL_AppIterate` is one tick; the script runs on a stack of
+   its own and hands the thread back at every Present.  Because SDL drains its
+   queue into `SDL_AppEvent` there, `SDL_PollEvent` inside the frame would find
+   nothing left: events are pushed onto `Graphics` instead. */
 
+#if !defined(URGE_RUNNER_POLL)
 #define SDL_MAIN_USE_CALLBACKS 1
+#endif
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -54,6 +58,10 @@
 
 #include "app/platform/win32.h"
 
+#if defined(OS_ANDROID)
+#include "app/platform/android.h"
+#endif
+
 #include "core/system/archive.h"
 #include "core/audio/audio.h"
 #include "core/system/config.h"
@@ -64,6 +72,7 @@
 #include "core/input/input.h"
 #include "core/common/logger.h"
 #include "core/input/mouse.h"
+#include "core/input/touch.h"
 #include "core/network/network.h"
 #include "core/scene/plane.h"
 #include "core/render/primitive.h"
@@ -136,6 +145,7 @@ void Shutdown(AppState& state) {
   urge::Network::Reset(nullptr);
   urge::Graphics::Reset(nullptr);
   urge::FontContext::Reset(nullptr);
+  urge::Touch::Reset(nullptr);
   urge::Mouse::Reset(nullptr);
   urge::Input::Reset(nullptr);
   urge::Audio::Reset(nullptr);
@@ -166,6 +176,17 @@ bool Initialize(AppState& state,
      what the shell and the preloaded `Game.ini` are written for. */
   state.app = "Game";
   state.base_dir = "/";
+#elif defined(OS_ANDROID)
+  /* The game lives inside the APK's `assets/`, which is a zip PhysicsFS cannot
+     mount and RGSS cannot enumerate.  The activity unpacks it into the app's
+     own directory on the first launch of a new build and hands the path back;
+     from there this is the same layout a desktop game has -- the game and its
+     saves share one directory.  The name is fixed for the same reason it is on
+     the web: there is no executable file to take it from. */
+  state.app = "Game";
+  state.base_dir = platform::android::PrepareStorageRoot(exception_state);
+  if (exception_state.HadException())
+    return false;
 #else
   state.app = argv[0];
   for (size_t i = 0; i < state.app.size(); ++i)
@@ -275,9 +296,14 @@ bool Initialize(AppState& state,
 
   /* The mouse is created before the window exists: it reads the window of
      Graphics lazily, when a query or a warp runs, so it needs nothing of the
-     window to be constructed, see Mouse. */
+     window to be constructed, see Mouse.  The touch table is the same: it only
+     holds what SDL reported, and asks Graphics where the picture is when a
+     script reads a position. */
   auto mouse = new urge::Mouse();
   urge::Mouse::Reset(mouse);
+
+  auto touch = new urge::Touch();
+  urge::Touch::Reset(touch);
 
   /* The mixer is built on the audio settings the file carried, once the load
      paths are mounted -- it reads its tracks through them -- and before
@@ -311,6 +337,32 @@ bool Initialize(AppState& state,
 }
 
 }  // namespace
+
+#if defined(URGE_RUNNER_POLL)
+
+int main(int argc, char* argv[]) {
+  AppState state;
+
+  urge::ExceptionState exception_state;
+  if (!Initialize(state, argc, argv, exception_state)) {
+    ReportFailure(state, exception_state.message(), true);
+    Shutdown(state);
+    return EXIT_FAILURE;
+  }
+
+  /* The game runs here until the script ends -- `exit`, a closed window, or an
+     error.  There is no host loop around it: the frames are inside. */
+  const binding::BindingMain::Tick outcome = state.binding->Run();
+  const bool failed = outcome == binding::BindingMain::Tick::kFailed;
+
+  if (failed)
+    ReportFailure(state, state.binding->ErrorMessage(), true);
+
+  Shutdown(state);
+  return failed ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
+#else  // URGE_RUNNER_FIBER
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
   auto* state = new AppState();
@@ -379,3 +431,5 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result) {
   Shutdown(*state);
   delete state;
 }
+
+#endif  // URGE_RUNNER_POLL

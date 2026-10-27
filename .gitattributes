@@ -9,6 +9,12 @@
 # 不做任何换行符转换，避免与上游产生整文件级别的无意义差异。
 third_party/**     -text
 
+# 交给别人的脚本按 POSIX 换行入库：gradlew 是 bash 脚本，CRLF 会让它在
+# Linux/macOS 上直接跑不起来（`bad interpreter: /bin/sh^M`）。
+gradlew            text eol=lf
+*.sh               text eol=lf
+*.bat              text eol=crlf
+
 # 二进制资源，永不转换。
 *.png              binary
 *.ico              binary

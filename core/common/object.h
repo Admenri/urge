@@ -43,9 +43,6 @@ class Singleton {
   static Ty* TryGet() { return instance_.get(); }
   static void Reset(Ty* instance) { instance_.reset(instance); }
 
-  /* Hands the instance to the caller, which now owns it.  Used where tearing
-     the object down is worse than leaking it -- see Graphics::~Graphics on
-     Emscripten. */
   static Ty* Release() { return instance_.release(); }
 
  private:

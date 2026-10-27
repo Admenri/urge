@@ -1,13 +1,65 @@
 cmake_minimum_required(VERSION 3.30)
 
-add_executable(Game app.cc)
+# Android has no executable of its own: the APK's Java side loads a shared
+# library and looks up `SDL_main` in it, which `SDL_main_impl.h` defines for a
+# callback-loop app (`SDL_MAIN_USE_CALLBACKS` in app.cc).  So the same source
+# becomes `libmain.so` there and `Game.exe` everywhere else.
+if(ANDROID)
+  add_library(Game SHARED app.cc)
+  set_target_properties(Game PROPERTIES OUTPUT_NAME main)
+else()
+  add_executable(Game app.cc)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   target_sources(Game PUBLIC resources/app.rc)
   target_sources(Game PUBLIC platform/win32.cc)
 endif()
 
+if(ANDROID)
+  target_sources(Game PUBLIC platform/android.cc)
+endif()
+
 target_link_libraries(Game PUBLIC urge-core urge-binding)
+
+# ---------------------------------------------------------------------------
+# The Android packaging step.
+#
+# The native side is built here, by the preset, and Gradle only packages what
+# this build produced.  Both libraries have to reach jniLibs: SDL3 because its
+# `JNI_OnLoad` is what registers the native methods SDLActivity calls, and
+# libmain.so because that is where `SDL_main` lives.
+# ---------------------------------------------------------------------------
+if(ANDROID)
+  set(URGE_ANDROID_PROJECT "${PROJECT_SOURCE_DIR}/android" CACHE PATH
+    "Gradle project that packages the Android build")
+  set(_urge_jnilibs
+    "${URGE_ANDROID_PROJECT}/app/src/main/jniLibs/${ANDROID_ABI}")
+
+  # A RelWithDebInfo build carries its debug info, and a hundred megabytes of
+  # DWARF in a shared library is a download nobody wants.  The copy that goes
+  # into the APK is stripped; the one in the build tree keeps everything, so a
+  # native crash can still be read.
+  get_filename_component(_urge_toolchain_bin "${CMAKE_C_COMPILER}" DIRECTORY)
+  find_program(URGE_LLVM_STRIP NAMES llvm-strip llvm-strip.exe
+    HINTS "${_urge_toolchain_bin}")
+  if(NOT URGE_LLVM_STRIP)
+    message(WARNING
+      "URGE: llvm-strip was not found next to the compiler; the APK will "
+      "carry unstripped libraries.")
+  endif()
+
+  add_custom_command(TARGET Game POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${_urge_jnilibs}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:Game>" "${_urge_jnilibs}/libmain.so"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:SDL3-shared>" "${_urge_jnilibs}/libSDL3.so"
+    COMMAND ${URGE_LLVM_STRIP} --strip-unneeded
+            "${_urge_jnilibs}/libmain.so" "${_urge_jnilibs}/libSDL3.so"
+    COMMENT "URGE: copying the Android libraries into ${_urge_jnilibs}"
+    VERBATIM)
+endif()
 
 # On the web the engine's network backend is the browser's own.  The WebSocket
 # library is opt-in and has to reach the final link, which is here rather than

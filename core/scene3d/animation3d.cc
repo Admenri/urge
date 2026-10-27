@@ -49,7 +49,8 @@ Animation3D::Animation3D() = default;
 
 Animation3D::~Animation3D() = default;
 
-void Animation3D::AddTrack(URGE_EXCEPT, int32_t bone,
+void Animation3D::AddTrack(URGE_EXCEPT,
+                           int32_t bone,
                            int32_t path,
                            std::vector<float> times,
                            std::vector<float> values,
@@ -66,8 +67,9 @@ void Animation3D::AddTrack(URGE_EXCEPT, int32_t bone,
     return;
   }
   if (values.size() != times.size() * static_cast<size_t>(stride)) {
-    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: the value count does not match the key "
-                    "count.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "animation3d: the value count does not match the key "
+                          "count.");
     return;
   }
   Track track;
@@ -133,9 +135,14 @@ void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
   skeleton->EndPose();
 }
 
-void Animation3D::Blend(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float time, float weight) {
+void Animation3D::Blend(URGE_EXCEPT,
+                        RefPtr<Skeleton3D> skeleton,
+                        float time,
+                        float weight) {
   if (!skeleton->pose_open()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "animation3d: call skeleton.begin_pose before blend.");
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "animation3d: call skeleton.begin_pose before blend.");
     return;
   }
   Sample(skeleton.get(), time, std::clamp(weight, 0.0f, 1.0f), nullptr);

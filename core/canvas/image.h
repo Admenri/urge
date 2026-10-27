@@ -55,7 +55,8 @@ class Image : public Disposable {
   void SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color);
 
   URGE_BINDING()
-  void FillRect(URGE_EXCEPT, int32_t x,
+  void FillRect(URGE_EXCEPT,
+                int32_t x,
                 int32_t y,
                 int32_t width,
                 int32_t height,
@@ -64,19 +65,22 @@ class Image : public Disposable {
   void FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color);
 
   URGE_BINDING()
-  void Blt(URGE_EXCEPT, int32_t x,
+  void Blt(URGE_EXCEPT,
+           int32_t x,
            int32_t y,
            RefPtr<Image> src_image,
            RefPtr<Rect> src_rect,
            int32_t opacity = 255);
   URGE_BINDING()
-  void StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
+  void StretchBlt(URGE_EXCEPT,
+                  RefPtr<Rect> dst_rect,
                   RefPtr<Image> src_image,
                   RefPtr<Rect> src_rect,
                   int32_t opacity = 255);
 
   URGE_BINDING()
-  void GradientFillRect(URGE_EXCEPT, int32_t x,
+  void GradientFillRect(URGE_EXCEPT,
+                        int32_t x,
                         int32_t y,
                         int32_t width,
                         int32_t height,
@@ -84,7 +88,8 @@ class Image : public Disposable {
                         RefPtr<Color> color2,
                         bool vertical = false);
   URGE_BINDING()
-  void GradientFillRect(URGE_EXCEPT, RefPtr<Rect> rect,
+  void GradientFillRect(URGE_EXCEPT,
+                        RefPtr<Rect> rect,
                         RefPtr<Color> color1,
                         RefPtr<Color> color2,
                         bool vertical = false);
@@ -92,7 +97,11 @@ class Image : public Disposable {
   URGE_BINDING()
   void Clear(URGE_EXCEPT);
   URGE_BINDING()
-  void ClearRect(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height);
+  void ClearRect(URGE_EXCEPT,
+                 int32_t x,
+                 int32_t y,
+                 int32_t width,
+                 int32_t height);
   URGE_BINDING()
   void ClearRect(URGE_EXCEPT, RefPtr<Rect> rect);
 

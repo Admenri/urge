@@ -43,9 +43,13 @@ class AnimationStateMachine3D : public Object {
   ~AnimationStateMachine3D() override;
 
   URGE_BINDING()
-  void AddState(URGE_EXCEPT, std::string name, RefPtr<Animation3D> animation, bool loop);
+  void AddState(URGE_EXCEPT,
+                std::string name,
+                RefPtr<Animation3D> animation,
+                bool loop);
   URGE_BINDING()
-  void AddTransition(URGE_EXCEPT, std::string from,
+  void AddTransition(URGE_EXCEPT,
+                     std::string from,
                      std::string to,
                      float duration,
                      float exit_time);

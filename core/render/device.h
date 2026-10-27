@@ -27,8 +27,8 @@
 #include <variant>
 #include <vector>
 
-#include "core/common/definition.h"
 #include "SDL3/SDL_video.h"
+#include "core/common/definition.h"
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/object.h"
@@ -64,10 +64,22 @@ class GPUDevice : public Singleton<GPUDevice> {
 
   const DeviceInfo& info() const { return info_; }
 
+  bool RefreshSurface();
+
+  uint64_t surface_generation() const { return surface_generation_; }
+
   void WaitAny(wgpu::Future future);
 
  private:
+  bool CreateSurfaceFromWindow();
+
   void CreateDevice(URGE_EXCEPT, std::string backend);
+
+  SDL_Window* window_ = nullptr;
+
+  void* native_window_ = nullptr;
+
+  uint64_t surface_generation_ = 0;
 
   wgpu::Instance instance_;
   wgpu::Surface surface_;

@@ -4,7 +4,13 @@
 
 Reads the IR (`bind/api_reference.json`, produced by `bind/gen_api_json.py`)
 and writes one `binding_<class>.{h,cc}` per exported class or module, plus
-`binding_init.{h,cc}`.
+`binding_init.{h,cc}`, into `bind/autogen/`.
+
+Everything here writes into that one directory and nothing else, so the folder
+is safe to delete: it holds no source of truth, only what this script derives
+from the IR.  The hand-written half of the binding layer -- `cruby_utils.*`,
+`cruby_main.*`, `script_loop.*`, `binding_win32api.*` -- stays in `bind/` and is
+never touched.
 
 Generation is idempotent: every `.cc` is split into GENERATED blocks, which are
 rewritten on each run, and HANDWRITTEN blocks, which are preserved verbatim.
@@ -13,9 +19,8 @@ Delete a file to have it recreated from the template.
 Usage:
     python bind/generate_binding.py [ir.json] [output_dir]
 
-Defaults to `bind/api_reference.json` and the `bind/` directory next to this
-script.  The rules behind every emitted construct are documented in
-`bind/Bindgen.md`.
+Defaults to `bind/api_reference.json` and `bind/autogen/`.  The rules behind
+every emitted construct are documented in `bind/Bindgen.md`.
 """
 
 from __future__ import annotations
@@ -32,7 +37,7 @@ from typing import Any, Optional
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_IR = os.path.join(REPO_ROOT, "bind", "api_reference.json")
-DEFAULT_OUT = os.path.join(REPO_ROOT, "bind")
+DEFAULT_OUT = os.path.join(REPO_ROOT, "bind", "autogen")
 
 GENERATED_INCLUDES_BEGIN = "// --- GENERATED INCLUDES BEGIN ---"
 GENERATED_INCLUDES_END = "// --- GENERATED INCLUDES END ---"
@@ -1796,6 +1801,9 @@ def prune_stale_outputs(model: Model, out_dir: str) -> list[tuple[str, bool]]:
 def main() -> int:
     ir_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_IR
     out_dir = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_OUT
+    # A fresh clone has no autogen/ at all: it is derived, so it is the one
+    # thing here that is allowed to be missing.
+    os.makedirs(out_dir, exist_ok=True)
     with open(ir_path, "r", encoding="utf-8") as f:
         model = Model(json.load(f))
 

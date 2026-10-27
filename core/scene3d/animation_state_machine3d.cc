@@ -35,16 +35,20 @@ AnimationStateMachine3D::AnimationStateMachine3D() = default;
 
 AnimationStateMachine3D::~AnimationStateMachine3D() = default;
 
-void AnimationStateMachine3D::AddState(URGE_EXCEPT, std::string name,
+void AnimationStateMachine3D::AddState(URGE_EXCEPT,
+                                       std::string name,
                                        RefPtr<Animation3D> animation,
                                        bool loop) {
   if (name.empty()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: a state needs a "
-                    "name.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "state machine 3d: a state needs a "
+                          "name.");
     return;
   }
   if (FindState(name) >= 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: the state '{}' already exists.", name);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "state machine 3d: the state '{}' already exists.",
+                          name);
     return;
   }
   State state;
@@ -54,14 +58,17 @@ void AnimationStateMachine3D::AddState(URGE_EXCEPT, std::string name,
   states_.push_back(std::move(state));
 }
 
-void AnimationStateMachine3D::AddTransition(URGE_EXCEPT, std::string from,
+void AnimationStateMachine3D::AddTransition(URGE_EXCEPT,
+                                            std::string from,
                                             std::string to,
                                             float duration,
                                             float exit_time) {
   if (FindState(from) < 0 || FindState(to) < 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: transition '{}' -> '{}' uses an unknown "
-                    "state.",
-                    from, to);
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "state machine 3d: transition '{}' -> '{}' uses an unknown "
+        "state.",
+        from, to);
     return;
   }
   Transition transition;
@@ -104,7 +111,9 @@ void AnimationStateMachine3D::AdvanceTime(float& time,
 bool AnimationStateMachine3D::Play(URGE_EXCEPT, std::string name) {
   const int32_t index = FindState(name);
   if (index < 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "state machine 3d: the state '{}' does not exist.", name);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "state machine 3d: the state '{}' does not exist.",
+                          name);
     return {};
   }
   if (index == current_index_)
@@ -170,11 +179,9 @@ void AnimationStateMachine3D::Update(URGE_EXCEPT,
         blend_time_ / std::max(blend_duration_, 0.0001f), 0.0f, 1.0f);
     previous.animation->Blend(exception_state, skeleton, previous_time_,
                               1.0f - weight);
-    current.animation->Blend(exception_state, skeleton, current_time_,
-                             weight);
+    current.animation->Blend(exception_state, skeleton, current_time_, weight);
   } else {
-    current.animation->Blend(exception_state, skeleton, current_time_,
-                             1.0f);
+    current.animation->Blend(exception_state, skeleton, current_time_, 1.0f);
   }
 
   skeleton->EndPose();

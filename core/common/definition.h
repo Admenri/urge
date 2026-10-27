@@ -30,45 +30,19 @@
 
 namespace urge {
 
-//! A `RefPtr` parameter that also accepts `nil`.
-/*!
-    The two spellings are the same type; the difference is what the binding
-    generator is told to do with `nil` at the call boundary.
-
-    A plain `RefPtr<T>` parameter is *required*: the generated glue rejects
-    `nil` with `TypeError` before the engine is called, so the engine never
-    receives a null pointer there and must not test for one.  `MaybePtr<T>`
-    marks the parameters where `nil` is a meaningful argument -- an absent
-    viewport, a cleared texture slot, "no shadow light" -- and the glue passes
-    it through as `nullptr`.
-
-    Writing `MaybePtr` is therefore a promise the implementation has to keep:
-    it is the parameter's null contract, checked by `bind/gen_api_json.py`.
-*/
 template <typename T>
 using MaybePtr = RefPtr<T>;
 
-}  // namespace urge
+}
 
 #define URGE_BINDING(...)
 
-/*! First parameter of a declaration that may report a failure.
-
-    The marker is the whole contract, and the binding generator reads it: a
-    declaration carrying `URGE_EXCEPT` is called with a state the caller
-    inspects afterwards, and one without it cannot fail -- the glue does not
-    carry a state for it and does not check one.
-
-    There is deliberately no default argument.  Every call site has to decide
-    what to do with a failure: forward the state it was given, or make one of
-    its own and log.  A default would let a call silently swallow it.
-*/
 #define URGE_EXCEPT ExceptionState& exception_state
 
 #define ATTR(ty, name) \
   std::optional<ty> Attr_##name(std::optional<ty> value = std::nullopt)
-#define ATTR_EXC(ty, name)                                             \
-  std::optional<ty> Attr_##name(URGE_EXCEPT,                           \
+#define ATTR_EXC(ty, name)                   \
+  std::optional<ty> Attr_##name(URGE_EXCEPT, \
                                 std::optional<ty> value = std::nullopt)
 #define ATTR_DEF(klass, ty, name) \
   std::optional<ty> klass::Attr_##name(std::optional<ty> value)

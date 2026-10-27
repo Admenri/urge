@@ -1,0 +1,84 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The game's own files are not copied into this project.  The directory is
+// mounted as an asset source, so the APK picks them up from wherever they live:
+//
+//     ./gradlew assembleDebug -PurgeGameDir="J:/games/MyGame"
+//
+// Whatever is in that directory ends up under `assets/` in the APK, and
+// URGEActivity unpacks it on the device at first launch.
+def urgeGameDir = project.findProperty("urgeGameDir") ?: "../../game"
+
+// SDL's Android side -- SDLActivity, SDLSurface, the audio and controller
+// managers -- is not copied into this tree.  Its source directory is mounted as
+// one more Java source root, so the classes are compiled straight out of the
+// vendored SDL: updating third_party/SDL updates them, and there is no second
+// copy to drift.  Only the Java is taken; the project's manifest, resources and
+// gradle files are SDL's own and are not ours to build.
+def sdlJavaDir = file("${rootProject.projectDir}/../third_party/SDL/android-project/app/src/main/java")
+if (!sdlJavaDir.isDirectory()) {
+    throw new GradleException(
+        "SDL's Java sources are missing at ${sdlJavaDir}. " +
+        "third_party/SDL is a submodule: run `git submodule update --init --recursive`.")
+}
+
+android {
+    namespace = "com.admenri.urge"
+    compileSdk = 37
+    buildToolsVersion = "36.0.0"
+
+    defaultConfig {
+        applicationId = "com.admenri.urge"
+        // 28 is the floor the engine needs, and it is also what the native
+        // build targets (ANDROID_PLATFORM=android-28), so the two agree.
+        minSdk = 28
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        // arm64 for devices, x86_64 for emulator images.  A 32-bit ABI would
+        // need its own builtin_binary.rbbin (see third_party/ruby/cmake), which
+        // is the only reason they are not here.
+        ndk { abiFilters = ["arm64-v8a", "x86_64"] }
+    }
+
+    sourceSets {
+        main {
+            // Written by the `android-arm64` CMake preset, which copies
+            // libmain.so and libSDL3.so here after every native build.
+            jniLibs.srcDirs = ["src/main/jniLibs"]
+
+            java.srcDirs += sdlJavaDir
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+
+    packaging {
+        // Both libraries are already stripped by AGP; keeping the debug copies
+        // out of the APK is what keeps it a download and not a download plus
+        // three hundred megabytes of DWARF.
+        jniLibs { useLegacyPackaging = false }
+    }
+
+    lint { abortOnError = false }
+}
+
+def gameDir = file(urgeGameDir)
+if (gameDir.isDirectory()) {
+    android.sourceSets.main.assets.srcDirs += [gameDir]
+    logger.lifecycle("URGE: game assets from ${gameDir}")
+} else {
+    logger.lifecycle("URGE: no game directory at ${gameDir}; the APK will ship without assets")
+}
+
+dependencies {
+    implementation fileTree(include: ["*.jar"], dir: "libs")
+}

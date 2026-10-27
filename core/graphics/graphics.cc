@@ -31,16 +31,22 @@
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_system.h"
 #include "SDL3/SDL_timer.h"
 
 #include "core/audio/audio.h"
 #include "core/canvas/bitmap_queue.h"
 #include "core/common/common.h"
+#if defined(SDL_PLATFORM_ANDROID)
+#include <jni.h>
+#endif
+
 #include "core/common/exception.h"
 #include "core/common/logger.h"
 #include "core/graphics/gpu.h"
 #include "core/input/input.h"
 #include "core/input/mouse.h"
+#include "core/input/touch.h"
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
 #include "core/render/imgui_manager.h"
@@ -59,8 +65,28 @@ namespace {
 
 constexpr int32_t kMaxFrameRate = 240;
 
-uint64_t NowNS() {
-  return SDL_GetTicksNS();
+RectF FitScreenRect(int32_t surface_width,
+                    int32_t surface_height,
+                    int32_t screen_width,
+                    int32_t screen_height) {
+  if (surface_width <= 0 || surface_height <= 0)
+    return RectF(0.0f, 0.0f, static_cast<float>(std::max(surface_width, 0)),
+                 static_cast<float>(std::max(surface_height, 0)));
+
+  if (screen_width <= 0 || screen_height <= 0)
+    return RectF(0.0f, 0.0f, static_cast<float>(surface_width),
+                 static_cast<float>(surface_height));
+
+  const float scale = std::min(
+      static_cast<float>(surface_width) / static_cast<float>(screen_width),
+      static_cast<float>(surface_height) / static_cast<float>(screen_height));
+
+  const float width = static_cast<float>(screen_width) * scale;
+  const float height = static_cast<float>(screen_height) * scale;
+
+  return RectF((static_cast<float>(surface_width) - width) * 0.5f,
+               (static_cast<float>(surface_height) - height) * 0.5f, width,
+               height);
 }
 
 wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
@@ -82,20 +108,8 @@ wgpu::PresentMode PickPresentMode(const wgpu::SurfaceCapabilities& caps,
   return wgpu::PresentMode::Fifo;
 }
 
-/* Tells the host's loop how fast the game wants to be ticked.
-
-   On the desktop SDL calls `SDL_AppIterate` as fast as it can, so the host has
-   no clock of its own and the hint is what gives it one.  On the web the host
-   already has the best clock there is -- the display's refresh -- and the hint
-   must not be set: SDL answers it by switching the module off
-   `requestAnimationFrame` and onto a timer, and a WebGPU canvas can only be
-   presented from inside an animation frame.
-
-   The point of setting it at all is that the frame loop then needs no platform
-   branch: both hosts tick, and the loop decides how much game time belongs in
-   a tick.  See bind/cruby_main.cc. */
 void SyncHostTickRate(int32_t frame_rate) {
-#if !defined(OS_EMSCRIPTEN)
+#if defined(URGE_RUNNER_FIBER) && !defined(OS_EMSCRIPTEN)
   const std::string rate = std::to_string(std::max(frame_rate, 1));
   SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, rate.c_str());
 #else
@@ -103,7 +117,7 @@ void SyncHostTickRate(int32_t frame_rate) {
 #endif
 }
 
-}  // namespace
+}
 
 ScreenRootNode::ScreenRootNode() : Node() {}
 
@@ -134,17 +148,20 @@ void ScreenRootNode::PostDraw(DrawParam param) {
   param->pass.Draw(slot_.count, 1, slot_.first, 0);
 }
 
-Graphics::Graphics(URGE_EXCEPT)
-    : frame_rate_(Config::Get().xp() ? 40 : 60) {
+Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   auto& config = Config::Get();
 
   vsync_ = config.display.vsync;
   frame_skip_ = config.display.frame_skip;
 
   SyncHostTickRate(frame_rate_);
+  limiter_.SetRate(frame_rate_);
 
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
+  if (config.display.resizable != WindowResizable::kNone)
+    window_flag |= SDL_WINDOW_RESIZABLE;
+
   window_ = SDL_CreateWindow(config.game.title.c_str(), config.display.width,
                              config.display.height, window_flag);
   auto dpi = SDL_GetWindowDisplayScale(window_);
@@ -185,11 +202,6 @@ Graphics::~Graphics() {
   ShaderSet::Reset(nullptr);
   GPU::Reset(nullptr);
 #if defined(OS_EMSCRIPTEN)
-  /* wgpu-native's device destructor waits for the queue to drain and panics
-     when that times out, which on the web is always: the module is being torn
-     down and nothing can make progress any more.  The page is going away
-     anyway, so the device is leaked rather than destroyed -- the alternative is
-     an abort that hides whatever error got us here. */
   GPUDevice::Release();
 #else
   GPUDevice::Reset(nullptr);
@@ -200,22 +212,16 @@ Graphics::~Graphics() {
 
 void Graphics::Update(URGE_EXCEPT) {
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
+  frame_begin_tick_ = frame_begin;
 
   RenderStats& stats = GetRenderStats();
 
-  /* The script's share of the frame is the gap since the previous frame ended:
-     `Graphics.update` returns into the game and the game comes back here.
-     Everything measured below is the engine's share. */
   const double script_span =
       last_update_end_tick_ == 0
           ? 0.0
           : TicksToMilliseconds(frame_begin - last_update_end_tick_);
   logic_cost_ms_ = static_cast<float>(script_span);
 
-  /* Bitmap work the script itself forced -- `Bitmap#get_pixel` has to drain
-     the queue -- is already counted; it belongs to the script bucket rather
-     than to the engine's, and is kept apart below so nothing is counted
-     twice. */
   const double bitmap_before_update = stats.current.bitmap_total_ms();
 
   Audio::Get().Update();
@@ -231,27 +237,17 @@ void Graphics::Update(URGE_EXCEPT) {
 
   PresentInternal(exception_state);
 
-  /* The between-frames hook runs inside the frame, before the pacer: whatever
-     it costs is the frame's own work, which the pacer can then absorb, rather
-     than time the next frame inherits.  On the web this is the garbage
-     collection, and it is the only thing installed here. */
   if (frame_callback_)
     frame_callback_();
 
-  /* The pacer runs at the very end, after the frame is complete: what it does
-     -- sleep, hand the thread to a browser animation frame, or nothing at all
-     -- is the host's business, and doing it here means the next call to
-     `Update` starts a frame instead of finishing the previous one. */
   const uint64_t pace_begin = SDL_GetPerformanceCounter();
   if (present_callback_)
     present_callback_();
   const double delay_ms =
-      TicksToMilliseconds(SDL_GetPerformanceCounter() - pace_begin);
+      TicksToMilliseconds(SDL_GetPerformanceCounter() - pace_begin) +
+      pace_delay_ms_;
+  pace_delay_ms_ = 0.0;
 
-  /* Read after the pacer returns.  The wait belongs to no frame: measuring the
-     next frame's script share from the moment this one ended would count the
-     idle time as script time, and the F2 panel would report the display's
-     refresh rate as the game's own cost. */
   last_update_end_tick_ = SDL_GetPerformanceCounter();
 
   const double update_span =
@@ -334,7 +330,8 @@ void Graphics::Freeze(URGE_EXCEPT) {
   }
 }
 
-void Graphics::Transition(URGE_EXCEPT, int32_t duration,
+void Graphics::Transition(URGE_EXCEPT,
+                          int32_t duration,
                           std::string filename,
                           int32_t vague) {
   RefPtr<Bitmap> mapping = nullptr;
@@ -344,7 +341,8 @@ void Graphics::Transition(URGE_EXCEPT, int32_t duration,
   TransitionBitmap(exception_state, duration, mapping, vague);
 }
 
-void Graphics::TransitionBitmap(URGE_EXCEPT, int32_t duration,
+void Graphics::TransitionBitmap(URGE_EXCEPT,
+                                int32_t duration,
                                 RefPtr<Bitmap> bitmap,
                                 int32_t vague) {
   if (!frozen_)
@@ -430,25 +428,47 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
   present_.configured = false;
   screen_ = MakeRefCounted<Bitmap>(width, height);
 
-  auto dpi = SDL_GetWindowDisplayScale(window_);
-  SDL_SetWindowSize(window_, width * dpi, height * dpi);
-  SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
-                        SDL_WINDOWPOS_CENTERED);
+#if !defined(OS_ANDROID)
+  if (Config::Get().display.resizable == WindowResizable::kNone) {
+    auto dpi = SDL_GetWindowDisplayScale(window_);
+    SDL_SetWindowSize(window_, width * dpi, height * dpi);
+    SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
+                          SDL_WINDOWPOS_CENTERED);
+  }
+#endif
+
+  ApplyAspectConstraint();
+}
+
+void Graphics::ApplyAspectConstraint() {
+  if (!window_)
+    return;
+
+  if (Config::Get().display.resizable != WindowResizable::kRatio) {
+    SDL_SetWindowAspectRatio(window_, 0.0f, 0.0f);
+    return;
+  }
+
+  const int32_t width = Width();
+  const int32_t height = Height();
+  if (width <= 0 || height <= 0)
+    return;
+
+  const float aspect = static_cast<float>(width) / static_cast<float>(height);
+  SDL_SetWindowAspectRatio(window_, aspect, aspect);
 }
 
 void Graphics::PlayMovie(URGE_EXCEPT, std::string filename) {
   exception_state.Throw(ExceptionState::kRGSSError,
                         "unimplement video playback.");
-  return;}
+  return;
+}
 
 ATTR_DEF(Graphics, int32_t, FrameRate) {
   if (value.has_value()) {
-    /* Zero would make the pacer divide by it; anything above the ceiling is a
-       script asking for a rate no display can honour. */
     frame_rate_ = std::clamp(*value, 1, kMaxFrameRate);
-    /* The host ticks at the rate the game asks for, so a rate change has to
-       reach it or the game would be capped at the old one. */
     SyncHostTickRate(frame_rate_);
+    limiter_.SetRate(frame_rate_);
     RequestFrameReset();
     return std::nullopt;
   } else {
@@ -486,13 +506,49 @@ ATTR_DEF(Graphics, bool, FrameSkip) {
 
 ATTR_DEF(Graphics, bool, Fullscreen) {
   if (value.has_value()) {
-    SDL_SetWindowFullscreen(window_, *value);
+    pending_fullscreen_ = *value;
+    QueueHostTask(
+        [this, wanted = *value] { SDL_SetWindowFullscreen(window_, wanted); });
 
     present_.configured = false;
     return std::nullopt;
   } else {
+    if (pending_fullscreen_.has_value())
+      return *pending_fullscreen_;
     return (SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN) != 0;
   }
+}
+
+void Graphics::QueueHostTask(std::function<void()> task) {
+  host_tasks_.emplace_back(std::move(task));
+}
+
+void Graphics::RunHostTasks() {
+#if defined(SDL_PLATFORM_ANDROID)
+  if (auto* env = static_cast<JNIEnv*>(SDL_GetAndroidJNIEnv())) {
+    if (env->ExceptionCheck()) {
+      env->ExceptionClear();
+      if (!exception_dropped_) {
+        exception_dropped_ = true;
+        LOGGER_WARN(
+            "[Host] dropping a pending Java exception raised on the loop "
+            "stack");
+      }
+    }
+  }
+#endif
+
+  if (host_tasks_.empty())
+    return;
+
+  auto tasks = std::move(host_tasks_);
+  host_tasks_.clear();
+
+  LOGGER_INFO("[Host] running {} deferred platform task(s)", tasks.size());
+  for (auto& task : tasks)
+    task();
+
+  pending_fullscreen_.reset();
 }
 
 ATTR_DEF(Graphics, bool, VSync) {
@@ -515,18 +571,33 @@ void Graphics::PushEvent(const SDL_Event& event) {
 void Graphics::ProcessEvents(URGE_EXCEPT) {
   auto& imgui = ImGuiManager::Get();
 
+#if defined(URGE_RUNNER_POLL)
+  SDL_Event polled;
+  while (SDL_PollEvent(&polled))
+    pending_events_.push_back(polled);
+#endif
+
   bool quit = false;
   for (SDL_Event& event : pending_events_) {
     imgui.ProcessEvent(event);
 
     Input::Get().ProcessGamepadEvents(&event);
 
+    if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST ||
+        event.type == SDL_EVENT_DID_ENTER_BACKGROUND)
+      Touch::Get().CancelAll();
+
     if (!imgui.WantsGameInputBlocked()) {
       Input::Get().ProcessEvents(exception_state, &event);
       Mouse::Get().ProcessEvents(exception_state, &event);
+      Touch::Get().ProcessEvents(exception_state, &event);
     }
 
-    if (event.type == SDL_EVENT_QUIT)
+    if (event.type == SDL_EVENT_QUIT
+#if defined(URGE_RUNNER_POLL)
+        || event.type == SDL_EVENT_TERMINATING
+#endif
+    )
       quit = true;
     else if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
       present_.configured = false;
@@ -535,28 +606,34 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
 
   Input::Get().SetBlocked(imgui.WantsGameInputBlocked());
 
-  /* The window was closed.  It is reported as the exit the script already
-     knows -- `Graphics.update` raising the same way `exit` does -- so `ensure`
-     blocks still run, rather than the loop being torn down underneath them.
-     Checked after the whole batch, because the events that came with the quit
-     still belong to this frame. */
   if (quit)
     exception_state.Throw(ExceptionState::kExitError, {});
 }
 
 void Graphics::PresentInternal(URGE_EXCEPT) {
-  auto surface = GPUDevice::Get().swapchain();
+  auto& device = GPUDevice::Get();
   auto& imgui = ImGuiManager::Get();
 
   ProcessEvents(exception_state);
 
-  if (!present_.configured) {
-    int pixel_width = Width();
-    int pixel_height = Height();
-    SDL_GetWindowSizeInPixels(window_, &pixel_width, &pixel_height);
+  if (!device.RefreshSurface()) {
+    present_.configured = false;
+    return;
+  }
 
+  int pixel_width = Width();
+  int pixel_height = Height();
+  SDL_GetWindowSizeInPixels(window_, &pixel_width, &pixel_height);
+  if (present_.surface_generation != device.surface_generation() ||
+      present_.pixel_width != pixel_width ||
+      present_.pixel_height != pixel_height)
+    present_.configured = false;
+
+  auto surface = device.swapchain();
+
+  if (!present_.configured) {
     wgpu::SurfaceCapabilities capabilities;
-    surface.GetCapabilities(GPUDevice::Get().adapter(), &capabilities);
+    surface.GetCapabilities(device.adapter(), &capabilities);
 
     present_.format = capabilities.formats[0];
     for (uint32_t i = 0; i < capabilities.formatCount; ++i) {
@@ -573,7 +650,7 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
 
     surface.Unconfigure();
     wgpu::SurfaceConfiguration configure;
-    configure.device = GPUDevice::Get().device();
+    configure.device = device.device();
     configure.format = present_.format;
     configure.usage = wgpu::TextureUsage::RenderAttachment;
     configure.width = static_cast<uint32_t>(pixel_width);
@@ -595,10 +672,17 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
 
     imgui.SetRenderTargetFormat(present_.format);
 
+    present_.surface_generation = device.surface_generation();
+    present_.pixel_width = pixel_width;
+    present_.pixel_height = pixel_height;
     present_.configured = true;
   }
 
   imgui.Update();
+
+  const RectF viewport = ScreenRectInPixels();
+  if (viewport.width < 1.0f || viewport.height < 1.0f)
+    return;
 
   const uint64_t present_begin = SDL_GetPerformanceCounter();
 
@@ -619,7 +703,7 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
     case wgpu::SurfaceGetCurrentTextureStatus::Error:
       exception_state.Throw(ExceptionState::kRGSSError,
                             "failed to acquire surface texture.");
-      return;      break;
+      return;
   }
 
   present_.primitive.EmitQuad(RectI(0, 0, Width(), Height()), RectI(0, 0, 1, 1),
@@ -632,7 +716,7 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
     color_attachment.view = surface_texture.texture.CreateView(nullptr);
     color_attachment.loadOp = wgpu::LoadOp::Clear;
     color_attachment.storeOp = wgpu::StoreOp::Store;
-    color_attachment.clearValue = {0.67f, 0.54f, 0.87f, 1.0f};
+    color_attachment.clearValue = {0.0f, 0.0f, 0.0f, 1.0f};
     wgpu::RenderPassDescriptor pass_desc;
     pass_desc.colorAttachmentCount = 1;
     pass_desc.colorAttachments = &color_attachment;
@@ -643,6 +727,8 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
       pass.SetBindGroup(1, screen_->object_group(), 0, nullptr);
       pass.SetBindGroup(2, screen_->texture_group(), 0, nullptr);
       pass.SetVertexBuffer(0, present_.primitive.buffer(), 0, WGPU_WHOLE_SIZE);
+      pass.SetViewport(viewport.x, viewport.y, viewport.width, viewport.height,
+                       0.0f, 1.0f);
       pass.Draw(vertex_count, 1, 0, 0);
 
       imgui.RenderDrawData(pass);
@@ -653,20 +739,104 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command);
 
-#if defined(OS_EMSCRIPTEN)
-  /* The canvas is presented when the animation frame callback returns, so there
-     is nothing to hand over here -- and emdawnwebgpu does not implement
-     wgpuSurfacePresent at all ("TODO: This could probably be emulated with
-     ASYNCIFY"), it aborts.  The pacer installed on `Graphics` is what puts the
-     frame back inside a callback: it yields at the end of `Update`, the
-     callback returns, and the browser presents what was submitted above. */
-#else
+#if !defined(OS_EMSCRIPTEN)
   surface.Present();
 #endif
 
   present_cost_ms_ =
       static_cast<double>(SDL_GetPerformanceCounter() - present_begin) *
       1000.0 / SDL_GetPerformanceFrequency();
+
+#if defined(URGE_RUNNER_POLL)
+  RunHostTasks();
+
+  pace_delay_ms_ = limiter_.Wait(frame_begin_tick_);
+#endif
+}
+
+RectF Graphics::ScreenRectInWindow() const {
+  const int32_t screen_width = screen_ ? screen_->size().x : 0;
+  const int32_t screen_height = screen_ ? screen_->size().y : 0;
+
+  int32_t window_width = 0, window_height = 0;
+  if (!window_ || !SDL_GetWindowSize(window_, &window_width, &window_height))
+    return RectF(0.0f, 0.0f, static_cast<float>(screen_width),
+                 static_cast<float>(screen_height));
+
+  return FitScreenRect(window_width, window_height, screen_width,
+                       screen_height);
+}
+
+RectF Graphics::ScreenRectInPixels() const {
+  const int32_t screen_width = screen_ ? screen_->size().x : 0;
+  const int32_t screen_height = screen_ ? screen_->size().y : 0;
+
+  int32_t pixel_width = 0, pixel_height = 0;
+  if (!window_ ||
+      !SDL_GetWindowSizeInPixels(window_, &pixel_width, &pixel_height))
+    return RectF(0.0f, 0.0f, static_cast<float>(screen_width),
+                 static_cast<float>(screen_height));
+
+  return FitScreenRect(pixel_width, pixel_height, screen_width, screen_height);
+}
+
+glm::vec2 Graphics::WindowToScreen(float x, float y) const {
+  const RectF rect = ScreenRectInWindow();
+  if (rect.width <= 0.0f || rect.height <= 0.0f)
+    return glm::vec2(x, y);
+
+  const float screen_width =
+      screen_ ? static_cast<float>(screen_->size().x) : 0.0f;
+  const float screen_height =
+      screen_ ? static_cast<float>(screen_->size().y) : 0.0f;
+
+  return glm::vec2((x - rect.x) * screen_width / rect.width,
+                   (y - rect.y) * screen_height / rect.height);
+}
+
+glm::vec2 Graphics::ScreenToWindow(float x, float y) const {
+  const RectF rect = ScreenRectInWindow();
+  const float screen_width =
+      screen_ ? static_cast<float>(screen_->size().x) : 0.0f;
+  const float screen_height =
+      screen_ ? static_cast<float>(screen_->size().y) : 0.0f;
+  if (screen_width <= 0.0f || screen_height <= 0.0f)
+    return glm::vec2(x, y);
+
+  return glm::vec2(x * rect.width / screen_width + rect.x,
+                   y * rect.height / screen_height + rect.y);
+}
+
+glm::vec2 Graphics::WindowToScreenDelta(float dx, float dy) const {
+  const RectF rect = ScreenRectInWindow();
+  if (rect.width <= 0.0f || rect.height <= 0.0f)
+    return glm::vec2(dx, dy);
+
+  const float screen_width =
+      screen_ ? static_cast<float>(screen_->size().x) : 0.0f;
+  const float screen_height =
+      screen_ ? static_cast<float>(screen_->size().y) : 0.0f;
+
+  return glm::vec2(dx * screen_width / rect.width,
+                   dy * screen_height / rect.height);
+}
+
+glm::vec2 Graphics::NormalizedToScreen(float nx, float ny) const {
+  int32_t window_width = 0, window_height = 0;
+  if (!window_ || !SDL_GetWindowSize(window_, &window_width, &window_height))
+    return glm::vec2(nx, ny);
+
+  return WindowToScreen(nx * static_cast<float>(window_width),
+                        ny * static_cast<float>(window_height));
+}
+
+glm::vec2 Graphics::NormalizedToScreenDelta(float nx, float ny) const {
+  int32_t window_width = 0, window_height = 0;
+  if (!window_ || !SDL_GetWindowSize(window_, &window_width, &window_height))
+    return glm::vec2(nx, ny);
+
+  return WindowToScreenDelta(nx * static_cast<float>(window_width),
+                             ny * static_cast<float>(window_height));
 }
 
 }

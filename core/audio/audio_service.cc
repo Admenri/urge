@@ -455,19 +455,9 @@ void AudioService::SetMasterVolume(int32_t volume) {
   ma_engine_set_volume(&kernel_->engine, gain);
 }
 
-int32_t AudioService::GetMasterVolume() const {
-  return static_cast<int32_t>(ma_engine_get_volume(&kernel_->engine) * 100.0f +
-                              0.5f);
-}
-
 void AudioService::SetBusVolume(AudioBus bus, int32_t volume) {
   const float gain = std::clamp(volume, 0, 100) / 100.0f;
   ma_sound_group_set_volume(&kernel_->bus[BusIndex(bus)], gain);
-}
-
-int32_t AudioService::GetBusVolume(AudioBus bus) const {
-  return static_cast<int32_t>(
-      ma_sound_group_get_volume(&kernel_->bus[BusIndex(bus)]) * 100.0f + 0.5f);
 }
 
 bool AudioService::SetOutputDevice(const std::string& name) {

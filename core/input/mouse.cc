@@ -31,25 +31,7 @@
 
 namespace urge {
 
-namespace {
-
-bool WindowSizeInternal(SDL_Window* window, float* width, float* height) {
-  int size_x = 0, size_y = 0;
-  if (!window || !SDL_GetWindowSize(window, &size_x, &size_y))
-    return false;
-
-  if (size_x <= 0 || size_y <= 0)
-    return false;
-
-  *width = static_cast<float>(size_x);
-  *height = static_cast<float>(size_y);
-  return true;
-}
-
-}
-
 Mouse::Mouse() = default;
-
 Mouse::~Mouse() {
   if (!cursor_)
     return;
@@ -300,48 +282,21 @@ void Mouse::ProcessEvents(URGE_EXCEPT, SDL_Event* event) {
 }
 
 Mouse::Point Mouse::WindowToScreenInternal(const Point& position) {
-  float window_width = 0.0f, window_height = 0.0f;
-  if (!WindowSizeInternal(Graphics::Get().window(), &window_width,
-                          &window_height))
-    return position;
-
-  const float screen_width = static_cast<float>(Graphics::Get().Width());
-  const float screen_height = static_cast<float>(Graphics::Get().Height());
-  if (screen_width <= 0.0f || screen_height <= 0.0f)
-    return position;
-
-  return Point{position.x * screen_width / window_width,
-               position.y * screen_height / window_height};
+  const glm::vec2 screen =
+      Graphics::Get().WindowToScreen(position.x, position.y);
+  return Point{screen.x, screen.y};
 }
 
 Mouse::Point Mouse::ScreenToWindowInternal(const Point& position) {
-  float window_width = 0.0f, window_height = 0.0f;
-  if (!WindowSizeInternal(Graphics::Get().window(), &window_width,
-                          &window_height))
-    return position;
-
-  const float screen_width = static_cast<float>(Graphics::Get().Width());
-  const float screen_height = static_cast<float>(Graphics::Get().Height());
-  if (screen_width <= 0.0f || screen_height <= 0.0f)
-    return position;
-
-  return Point{position.x * window_width / screen_width,
-               position.y * window_height / screen_height};
+  const glm::vec2 window =
+      Graphics::Get().ScreenToWindow(position.x, position.y);
+  return Point{window.x, window.y};
 }
 
 Mouse::Point Mouse::WindowToScreenDeltaInternal(const Point& delta) {
-  float window_width = 0.0f, window_height = 0.0f;
-  if (!WindowSizeInternal(Graphics::Get().window(), &window_width,
-                          &window_height))
-    return delta;
-
-  const float screen_width = static_cast<float>(Graphics::Get().Width());
-  const float screen_height = static_cast<float>(Graphics::Get().Height());
-  if (screen_width <= 0.0f || screen_height <= 0.0f)
-    return delta;
-
-  return Point{delta.x * screen_width / window_width,
-               delta.y * screen_height / window_height};
+  const glm::vec2 screen =
+      Graphics::Get().WindowToScreenDelta(delta.x, delta.y);
+  return Point{screen.x, screen.y};
 }
 
 void Mouse::SyncPositionFromSystemInternal() {

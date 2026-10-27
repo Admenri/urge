@@ -321,8 +321,8 @@ GlbFile ParseGlb(URGE_EXCEPT,
                  const std::vector<uint8_t>& data,
                  const std::string& path) {
   if (data.size() < 12) {
-    exception_state.Throw(ExceptionState::kRGSSError, "gltf: '{}' is too small.",
-                          path);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "gltf: '{}' is too small.", path);
     return {};
   }
 
@@ -647,8 +647,7 @@ RefPtr<Material3D> BuildMaterial(URGE_EXCEPT,
                                  bool unlit) {
   auto material = MakeRefCounted<Material3D>();
   RefPtr<MaterialPass3D> pass = material->AddPass(
-      exception_state,
-      source.transparent ? "transparent" : "opaque",
+      exception_state, source.transparent ? "transparent" : "opaque",
       std::string(kLitVertexShader),
       std::string(unlit ? kUnlitFragmentShader : kLitFragmentShader));
 
@@ -753,7 +752,8 @@ RefPtr<Mesh3D> BuildMesh(URGE_EXCEPT,
   mesh->SetIndices(exception_state, std::move(indices));
   mesh->ClearSubmeshes();
   for (const SubMesh3D& submesh : *submeshes)
-    mesh->AddSubmesh(exception_state, static_cast<int32_t>(submesh.index_offset),
+    mesh->AddSubmesh(exception_state,
+                     static_cast<int32_t>(submesh.index_offset),
                      static_cast<int32_t>(submesh.index_count),
                      static_cast<int32_t>(submesh.mat_slot));
   return mesh;
@@ -770,8 +770,8 @@ GLTFModel3D::~GLTFModel3D() = default;
 void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
   const auto started = std::chrono::steady_clock::now();
 
-  const GlbFile glb = ParseGlb(exception_state, ReadFile(exception_state, path),
-                               path);
+  const GlbFile glb =
+      ParseGlb(exception_state, ReadFile(exception_state, path), path);
   if (exception_state.HadException())
     return;
 
@@ -826,7 +826,8 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
       }
       if (!built[mesh_index]) {
         std::vector<SubMesh3D> submeshes;
-        built[mesh_index] = BuildMesh(exception_state, glb, mesh_index, &submeshes);
+        built[mesh_index] =
+            BuildMesh(exception_state, glb, mesh_index, &submeshes);
         meshes_[mesh_index] = built[mesh_index];
       }
 
@@ -838,8 +839,8 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
         const size_t material_index = static_cast<size_t>(slot);
         renderer->SetMaterial(exception_state, slot,
                               material_index < materials_.size()
-                                        ? materials_[material_index]
-                                        : materials_.front());
+                                  ? materials_[material_index]
+                                  : materials_.front());
       }
       object = renderer;
     } else {
@@ -971,10 +972,13 @@ void GLTFModel3D::RebuildMaterials(URGE_EXCEPT) {
   }
 }
 
-void GLTFModel3D::SetMaterial(URGE_EXCEPT, int32_t index, RefPtr<Material3D> material) {
+void GLTFModel3D::SetMaterial(URGE_EXCEPT,
+                              int32_t index,
+                              RefPtr<Material3D> material) {
   if (index < 0 || static_cast<size_t>(index) >= materials_.size()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "gltf: material index {} is out of range (0..{}).", index,
-                    static_cast<int32_t>(materials_.size()) - 1);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "gltf: material index {} is out of range (0..{}).",
+                          index, static_cast<int32_t>(materials_.size()) - 1);
     return;
   }
   const RefPtr<Material3D> previous = materials_[static_cast<size_t>(index)];

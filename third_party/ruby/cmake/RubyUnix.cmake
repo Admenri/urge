@@ -157,6 +157,15 @@ set(RUBY_FUNCS
   pthread_getattr_np timer_create timer_settime
 )
 
+if(ANDROID)
+  # bionic declares `crypt_r` in <crypt.h> but has no such symbol, and the check
+  # below only needs a declaration to pass -- so the final link would fail with
+  # "undefined symbol: crypt_r".  Leaving it out is what makes the build fall
+  # back to Ruby's own missing/crypt.c, which is the implementation this
+  # platform wants anyway.
+  list(REMOVE_ITEM RUBY_FUNCS crypt_r)
+endif()
+
 foreach(fn IN LISTS RUBY_FUNCS)
   string(TOUPPER "${fn}" _up)
   set(_var "HAVE_${_up}")
@@ -595,10 +604,16 @@ string(APPEND RUBY_FEATURE_DEFINES "#define COROUTINE_H \"${RUBY_COROUTINE_H}\"\
 
 # ---------------------------------------------------------------------------
 # 10. Missing (replacement) implementations
+#
+# `crypt` is here because string.c has a fallback of its own: with neither
+# HAVE_CRYPT nor HAVE_CRYPT_R it includes missing/crypt.h and calls the
+# `crypt_r` that missing/crypt.c defines.  A platform that has <crypt.h> but no
+# such symbol -- bionic, where the header declares `crypt_r` and the library
+# does not define it -- therefore links only if this file is compiled.
 # ---------------------------------------------------------------------------
 foreach(_fn
-    acosh cbrt erf explicit_bzero ffs flock hypot lgamma_r memcmp memmove nan
-    nextafter setproctitle strchr strerror strlcat strlcpy strstr tgamma)
+    acosh cbrt crypt erf explicit_bzero ffs flock hypot lgamma_r memcmp memmove
+    nan nextafter setproctitle strchr strerror strlcat strlcpy strstr tgamma)
   string(TOUPPER "${_fn}" _up)
   if(NOT HAVE_${_up} AND EXISTS "${RUBY_SOURCE_DIR}/missing/${_fn}.c")
     list(APPEND RUBY_PLATFORM_SOURCES "${RUBY_SOURCE_DIR}/missing/${_fn}.c")

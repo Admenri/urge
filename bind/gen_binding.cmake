@@ -8,10 +8,10 @@ cmake_minimum_required(VERSION 3.30)
 # Run from the top-level CMakeLists.txt at configure time, and by hand after a
 # header change.  The pipeline is
 #
-#     core/**/*.h --gen_api_json.py--> api_reference.json --generate_binding.py--> binding_*.{h,cc}
+#     core/**/*.h --gen_api_json.py--> api_reference.json --generate_binding.py--> autogen/binding_*.{h,cc}
 #
 # and every step is skipped unless its inputs really differ.  That matters for
-# more than speed: `binding_*.cc` are compiled into `urge-binding`, and a file
+# more than speed: `autogen/binding_*.cc` are compiled into `urge-binding`, and a file
 # an IDE is told to "touch" every configure is a file the compiler will rebuild
 # every build.  Nothing here writes a generated file whose content would not
 # change.
@@ -42,6 +42,11 @@ get_filename_component(REPO_ROOT "${BIND_DIR}" DIRECTORY)
 
 set(CORE_DIR "${REPO_ROOT}/core")
 set(IR_FILE "${BIND_DIR}/api_reference.json")
+# Everything generate_binding.py writes lives here and nowhere else, so the
+# folder is derived state: it can be deleted and regenerated, and the
+# hand-written half of the layer (cruby_utils, cruby_main, script_loop,
+# binding_win32api) stays in bind/ next to it.
+set(GLUE_DIR "${BIND_DIR}/autogen")
 set(STAMP_FILE "${BIND_DIR}/.gen_stamp")
 set(GLUE_STAMP_FILE "${BIND_DIR}/.glue_stamp")
 
@@ -135,14 +140,8 @@ if(NOT STAMP_OUTDATED)
   )
   if(result EQUAL 0)
     string(STRIP "${IR_ON_DISK_DIGEST}" IR_ON_DISK_DIGEST)
-  else()
-    # No --digest <file> mode: fall back to the md5 of the file as-is.  It
-    # differs whenever `generated_at` does, which errs towards regenerating.
-    unset(IR_ON_DISK_DIGEST)
-    file(MD5 "${IR_FILE}" IR_ON_DISK_DIGEST)
   endif()
-  set(EXPECTED_IR_DIGEST "${HEADER_DIGEST}")
-  if(NOT IR_ON_DISK_DIGEST STREQUAL EXPECTED_IR_DIGEST)
+  if(NOT IR_ON_DISK_DIGEST STREQUAL HEADER_DIGEST)
     message(STATUS "bind: api_reference.json is stale against the headers")
     set(STAMP_OUTDATED TRUE)
   endif()
@@ -164,7 +163,7 @@ endif()
 # Step 2 -- the glue
 # ---------------------------------------------------------------------------
 
-file(GLOB GLUE_OUTPUTS "${BIND_DIR}/binding_*.h" "${BIND_DIR}/binding_*.cc")
+file(GLOB GLUE_OUTPUTS "${GLUE_DIR}/binding_*.h" "${GLUE_DIR}/binding_*.cc")
 list(SORT GLUE_OUTPUTS)
 
 # md5 of every generated glue file, in a stable order, plus the IR it came from.
@@ -182,7 +181,7 @@ endif()
 
 set(GLUE_OUTDATED FALSE)
 if(NOT GLUE_OUTPUTS)
-  message(STATUS "bind: no binding_* generated yet")
+  message(STATUS "bind: no binding_* generated yet in ${GLUE_DIR}")
   set(GLUE_OUTDATED TRUE)
 elseif(NOT PREVIOUS_GLUE STREQUAL GLUE_SIGNATURE)
   message(STATUS "bind: the glue no longer matches the IR it was generated from")
@@ -201,7 +200,7 @@ if(GLUE_OUTDATED)
     message(FATAL_ERROR "gen_binding.cmake: generate_binding.py failed (${result})")
   endif()
 
-  file(GLOB GLUE_OUTPUTS "${BIND_DIR}/binding_*.h" "${BIND_DIR}/binding_*.cc")
+  file(GLOB GLUE_OUTPUTS "${GLUE_DIR}/binding_*.h" "${GLUE_DIR}/binding_*.cc")
   list(SORT GLUE_OUTPUTS)
   set(GLUE_SIGNATURE "ir:${HEADER_DIGEST}\n")
   foreach(glue IN LISTS GLUE_OUTPUTS)

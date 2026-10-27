@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <charconv>
 #include "core/system/config.h"
+#include <charconv>
 
 #include <algorithm>
 #include <string>
@@ -32,6 +32,7 @@
 #include "SDL3/SDL_stdinc.h"
 
 #include "core/common/exception.h"
+#include "core/common/logger.h"
 #include "core/input/gamepad.h"
 #include "core/system/filesystem.h"
 
@@ -67,15 +68,38 @@ std::vector<std::string> SplitKeys(const std::string& line) {
   return names;
 }
 
+WindowResizable ParseResizable(const std::string& value) {
+  if (SDL_strcasecmp(value.c_str(), "free") == 0)
+    return WindowResizable::kFree;
+  if (SDL_strcasecmp(value.c_str(), "ratio") == 0)
+    return WindowResizable::kRatio;
+  if (!value.empty() && SDL_strcasecmp(value.c_str(), "none") != 0)
+    LOGGER_WARN(
+        "[Window] Resizable='{}' is not free/ratio/none; the window "
+        "stays fixed",
+        value);
+  return WindowResizable::kNone;
+}
+
+std::string ResizableName(WindowResizable value) {
+  switch (value) {
+    case WindowResizable::kFree:
+      return "free";
+    case WindowResizable::kRatio:
+      return "ratio";
+    case WindowResizable::kNone:
+      break;
+  }
+  return "none";
+}
+
 int32_t ParseKeyName(const std::string& name) {
   const auto scancode = SDL_GetScancodeFromName(name.c_str());
   if (scancode != SDL_SCANCODE_UNKNOWN)
     return static_cast<int32_t>(scancode);
-  // `std::stoi` reports a bad string by throwing, and this build has no
-  // exceptions: `from_chars` answers the same question as a return code.
   int32_t value = static_cast<int32_t>(SDL_SCANCODE_UNKNOWN);
-  const auto parsed = std::from_chars(name.data(), name.data() + name.size(),
-                                      value);
+  const auto parsed =
+      std::from_chars(name.data(), name.data() + name.size(), value);
   if (parsed.ec != std::errc() || parsed.ptr != name.data() + name.size())
     return static_cast<int32_t>(SDL_SCANCODE_UNKNOWN);
   return value;
@@ -158,7 +182,8 @@ std::string NormalizeUTF8(const std::string& text) {
 
 }
 
-Config::Config(URGE_EXCEPT, std::string inifile) : inifile_(std::move(inifile)) {
+Config::Config(URGE_EXCEPT, std::string inifile)
+    : inifile_(std::move(inifile)) {
   auto stream = IOService::Get().OpenReadRaw(exception_state, inifile_);
   if (stream) {
     size_t data_size = 0;
@@ -217,6 +242,8 @@ void Config::Save(URGE_EXCEPT) {
   parser_.Set("Display", "VSync", display.vsync);
   parser_.Set("Display", "Fullscreen", display.fullscreen);
   parser_.Set("Display", "FrameSkip", display.frame_skip);
+
+  parser_.Set("Window", "Resizable", ResizableName(display.resizable));
 
   parser_.Set("GFX", "Backend", gfx.backend);
   parser_.Set("GFX", "SpriteBatch", gfx.sprite_batch);
@@ -283,6 +310,9 @@ void Config::Load() {
       parser_.GetBool("Display", "Fullscreen", display.fullscreen);
   display.frame_skip =
       parser_.GetBool("Display", "FrameSkip", display.frame_skip);
+
+  display.resizable =
+      ParseResizable(parser_.Get("Window", "Resizable", "none"));
 
   gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
   gfx.sprite_batch = parser_.GetBool("GFX", "SpriteBatch", gfx.sprite_batch);

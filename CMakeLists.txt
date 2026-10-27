@@ -38,6 +38,16 @@ if(EMSCRIPTEN)
   # its own setjmp is the Asyncify-based one in wasm/setjmp.c.
 endif()
 
+if(ANDROID)
+  # Android has no executable entry point of its own: the APK's Java side loads
+  # `libmain.so` and calls `SDL_main` in it, which is either this file's `main`
+  # (URGE_RUNNER_MODEL=poll) or SDL's callback entry point (fiber).
+  # `OS_ANDROID` is what the engine branches on -- `core/system/filesystem.cc`
+  # already carries the PhysicsFS hand-off under it, and `Graphics` uses it to
+  # leave the surface's size to the system.
+  add_compile_definitions(OS_ANDROID)
+endif()
+
 # Video playback is optional.  dav1d and libwebm are native C libraries with no
 # Emscripten story, so the platform decides whether the engine is built at all.
 # The default follows the platform, but an explicit -DURGE_ENABLE_VIDEO=... on
@@ -46,7 +56,7 @@ endif()
 # The Ruby side is not conditional: `Video` stays exported either way, and every
 # call raises while the engine is off, so a script sees one API on every
 # platform -- only the depth behind it differs.  See core/video/video.h.
-if(EMSCRIPTEN)
+if(EMSCRIPTEN OR ANDROID)
   set(URGE_ENABLE_VIDEO_DEFAULT OFF)
 else()
   set(URGE_ENABLE_VIDEO_DEFAULT ON)
@@ -54,13 +64,24 @@ endif()
 option(URGE_ENABLE_VIDEO
   "Build the AV1/Vorbis video playback engine" ${URGE_ENABLE_VIDEO_DEFAULT})
 
-# The network subsystem is on everywhere, including the web: libcurl carries
-# the native side and Emscripten ships its own fetch/websocket, so neither
-# platform needs a dependency the other lacks.  The switch exists so a build
-# can drop the network code -- and libcurl with it -- the way the video switch
-# drops dav1d.  `Network` stays exported either way and raises while it is off,
-# see core/network/network.h.
-option(URGE_ENABLE_NETWORK "Build the WebSocket and HTTP client" ON)
+# The network subsystem is on everywhere the C library can be built, including
+# the web: libcurl carries the native side and Emscripten ships its own
+# fetch/websocket, so neither platform needs a dependency the other lacks.  The
+# switch exists so a build can drop the network code -- and libcurl with it --
+# the way the video switch drops dav1d.  `Network` stays exported either way and
+# raises while it is off, see core/network/network.h.
+#
+# Android is off by default for one reason: libcurl needs a TLS backend, and
+# Schannel (Windows) is the only one this tree can build without pulling in a
+# cross-compiled OpenSSL.  `-DURGE_ENABLE_NETWORK=ON` works once one is
+# available; nothing in the engine assumes the subsystem is there.
+if(ANDROID)
+  set(URGE_ENABLE_NETWORK_DEFAULT OFF)
+else()
+  set(URGE_ENABLE_NETWORK_DEFAULT ON)
+endif()
+option(URGE_ENABLE_NETWORK
+  "Build the WebSocket and HTTP client" ${URGE_ENABLE_NETWORK_DEFAULT})
 
 # ---------------------------------------------------------------------------
 # The script interpreter.
@@ -94,6 +115,57 @@ else()
 endif()
 
 option(URGE_BUILD_ACS_PACK "Build the .acs container packer" ON)
+
+# ---------------------------------------------------------------------------
+# Who owns the frame loop.
+#
+#   poll   the engine does: `main()` runs the script, and every
+#          `Graphics.update` is a whole frame -- it drains SDL's queue, draws,
+#          presents and then sleeps out the rest of the game's frame slot
+#          (core/graphics/frame_limiter.h).  This is the shape RGSS itself has,
+#          and what any platform that lets a thread block wants.
+#
+#   fiber  SDL does, through its callback API: one tick is one `SDL_AppIterate`,
+#          and the script runs on a stack of its own so it can survive from one
+#          tick to the next, handing the thread back at every Present
+#          (bind/script_loop.h).
+#
+# The browser is the reason `fiber` still exists: a page cannot block, so the
+# engine must give the thread back to the animation frame every time, and SDL's
+# callback loop is exactly that.  Everywhere else the engine may keep the
+# thread, so it does.
+if(NOT URGE_RUNNER_MODEL)
+  if(EMSCRIPTEN)
+    set(URGE_RUNNER_MODEL_DEFAULT fiber)
+  else()
+    set(URGE_RUNNER_MODEL_DEFAULT poll)
+  endif()
+else()
+  set(URGE_RUNNER_MODEL_DEFAULT "${URGE_RUNNER_MODEL}")
+endif()
+
+set(URGE_RUNNER_MODEL "${URGE_RUNNER_MODEL_DEFAULT}" CACHE STRING
+  "Frame loop owner: poll (engine runs main and sleeps) or fiber (SDL callbacks)")
+set_property(CACHE URGE_RUNNER_MODEL PROPERTY STRINGS poll fiber)
+
+if(NOT URGE_RUNNER_MODEL MATCHES "^(poll|fiber)$")
+  message(FATAL_ERROR
+    "URGE_RUNNER_MODEL is '${URGE_RUNNER_MODEL}'; it has to be poll or fiber.")
+endif()
+
+if(EMSCRIPTEN AND URGE_RUNNER_MODEL STREQUAL "poll")
+  message(FATAL_ERROR
+    "URGE_RUNNER_MODEL=poll cannot be used on the web: a page has to give the "
+    "thread back to the browser at every frame, so the loop has to be SDL's "
+    "callback loop.  Use fiber.")
+endif()
+
+message(STATUS "URGE: frame loop = ${URGE_RUNNER_MODEL}")
+if(URGE_RUNNER_MODEL STREQUAL "poll")
+  add_compile_definitions(URGE_RUNNER_POLL=1)
+else()
+  add_compile_definitions(URGE_RUNNER_FIBER=1)
+endif()
 
 add_subdirectory(third_party)
 

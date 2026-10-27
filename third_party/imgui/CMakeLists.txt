@@ -58,4 +58,12 @@ else()
   )
 endif()
 
-target_link_libraries(imgui-docking PUBLIC SDL3::SDL3-static webgpu-cpp-header)
+# Android links the shared SDL the Java glue loaded (see
+# third_party/CMakeLists.txt); everywhere else it is the static copy.
+if(ANDROID)
+  set(_imgui_sdl_target SDL3::SDL3)
+else()
+  set(_imgui_sdl_target SDL3::SDL3-static)
+endif()
+
+target_link_libraries(imgui-docking PUBLIC ${_imgui_sdl_target} webgpu-cpp-header)

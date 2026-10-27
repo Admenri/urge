@@ -29,8 +29,8 @@
 #include <string_view>
 #include <vector>
 
-#include "core/common/definition.h"
 #include "core/common/common.h"
+#include "core/common/definition.h"
 #include "core/common/object.h"
 #include "core/render/device.h"
 #include "core/render/shader.h"

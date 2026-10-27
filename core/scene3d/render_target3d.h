@@ -53,13 +53,15 @@ URGE_BINDING()
 class RenderTarget3D : public Object {
  public:
   URGE_BINDING()
-  RenderTarget3D(URGE_EXCEPT, int32_t width,
+  RenderTarget3D(URGE_EXCEPT,
+                 int32_t width,
                  int32_t height,
                  std::string color_format,
                  std::string depth_format,
                  int32_t samples);
   RenderTarget3D(URGE_EXCEPT, int32_t width, int32_t height, bool with_color);
-  RenderTarget3D(URGE_EXCEPT, int32_t width,
+  RenderTarget3D(URGE_EXCEPT,
+                 int32_t width,
                  int32_t height,
                  bool with_color,
                  int32_t layers);
@@ -106,7 +108,6 @@ class RenderTarget3D : public Object {
   wgpu::TextureView depth_view(int32_t layer) const;
   wgpu::TextureView depth_array_view() const { return depth_array_view_; }
   wgpu::TextureView depth_cube_view() const { return depth_cube_view_; }
-  wgpu::Texture depth_texture() const { return depth_texture_; }
   const std::vector<wgpu::TextureFormat>& color_formats() const {
     return color_formats_;
   }

@@ -56,7 +56,9 @@ URGE_BINDING()
 class TilemapVX : public Node {
  public:
   URGE_BINDING()
-  TilemapVX(URGE_EXCEPT, MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
+  TilemapVX(URGE_EXCEPT,
+            MaybePtr<Viewport> viewport = nullptr,
+            int32_t tilesize = 32);
   ~TilemapVX() override;
 
   URGE_BINDING()

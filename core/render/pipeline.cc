@@ -601,8 +601,7 @@ wgpu::BlendFactor ReadBlendFactor(URGE_EXCEPT, const std::string& name) {
   return {};
 }
 
-wgpu::BlendOperation ReadBlendOperation(URGE_EXCEPT,
-                                       const std::string& name) {
+wgpu::BlendOperation ReadBlendOperation(URGE_EXCEPT, const std::string& name) {
   for (const BlendName<wgpu::BlendOperation>& entry : kBlendOperations)
     if (name == entry.name)
       return entry.value;

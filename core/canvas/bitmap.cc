@@ -26,10 +26,7 @@
 
 #include <algorithm>
 #include <cstring>
-#include <fstream>
-#include <span>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "SDL3_image/SDL_image.h"
@@ -112,30 +109,6 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   }
 }
 
-struct MapResult {
-  bool invoked = false;
-  WGPUMapAsyncStatus status = WGPUMapAsyncStatus_Error;
-  std::string error;
-};
-
-std::string_view DescribeMapStatus(const MapResult& mapping) {
-  if (!mapping.invoked)
-    return "the mapping callback was never invoked";
-
-  switch (mapping.status) {
-    case WGPUMapAsyncStatus_Success:
-      return "the mapping succeeded but the buffer is not usable";
-    case WGPUMapAsyncStatus_CallbackCancelled:
-      return "the mapping was cancelled";
-    case WGPUMapAsyncStatus_Error:
-      return "the mapping failed with an error";
-    case WGPUMapAsyncStatus_Aborted:
-      return "the mapping was aborted, the device is probably lost";
-    default:
-      return "the mapping ended with an unknown status";
-  }
-}
-
 std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
                                             int32_t x,
                                             int32_t y,
@@ -182,18 +155,10 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
   CountSubmit(false);
   gpu.queue().Submit(1, &command);
 
-  MapResult mapping;
   WGPUBufferMapCallbackInfo map_callback = {};
   map_callback.mode = WGPUCallbackMode_WaitAnyOnly;
-  map_callback.callback = [](WGPUMapAsyncStatus status, WGPUStringView message,
-                             void* userdata1, void*) {
-    auto* result = static_cast<MapResult*>(userdata1);
-    result->invoked = true;
-    result->status = status;
-    if (status != WGPUMapAsyncStatus_Success)
-      result->error = std::string(wgpu::StringView(message));
+  map_callback.callback = [](WGPUMapAsyncStatus, WGPUStringView, void*, void*) {
   };
-  map_callback.userdata1 = &mapping;
 
   auto future =
       staging.MapAsync(wgpu::MapMode::Read, 0, byte_size, map_callback);
@@ -214,18 +179,17 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 
 }
 
-Bitmap::Bitmap(URGE_EXCEPT, std::string filename) : font_(MakeRefCounted<Font>()) {
+Bitmap::Bitmap(URGE_EXCEPT, std::string filename)
+    : font_(MakeRefCounted<Font>()) {
   SDL_Surface* image = nullptr;
 
-  IOService::Get().OpenRead(exception_state,
-      filename, [&](SDL_IOStream* stream, const std::string& ext) {
-        image = IMG_LoadTyped_IO(stream, true, ext.c_str());
-        return !!image;
-      });
+  IOService::Get().OpenRead(exception_state, filename,
+                            [&](SDL_IOStream* stream, const std::string& ext) {
+                              image =
+                                  IMG_LoadTyped_IO(stream, true, ext.c_str());
+                              return !!image;
+                            });
 
-  // A constructor cannot report a failure by not being one, so the body stops
-  // at the first one and `New`'s caller (the binding) turns the state into a
-  // Ruby exception.  Everything past this point needs `image`.
   if (exception_state.HadException() || !image)
     return;
 
@@ -304,7 +268,8 @@ RefPtr<Rect> Bitmap::GetRect() {
   return MakeRefCounted<Rect>(0, 0, size_.x, size_.y);
 }
 
-void Bitmap::Blt(URGE_EXCEPT, int32_t x,
+void Bitmap::Blt(URGE_EXCEPT,
+                 int32_t x,
                  int32_t y,
                  RefPtr<Bitmap> src_bitmap,
                  RefPtr<Rect> src_rect,
@@ -312,12 +277,14 @@ void Bitmap::Blt(URGE_EXCEPT, int32_t x,
   if (!Disposable::Guard(exception_state))
     return;
 
-  StretchBlt(exception_state,
+  StretchBlt(
+      exception_state,
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_bitmap, src_rect, opacity);
 }
 
-void Bitmap::StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
+void Bitmap::StretchBlt(URGE_EXCEPT,
+                        RefPtr<Rect> dst_rect,
                         RefPtr<Bitmap> src_bitmap,
                         RefPtr<Rect> src_rect,
                         int32_t opacity) {
@@ -337,7 +304,8 @@ void Bitmap::StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
   }
 }
 
-void Bitmap::MaskBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
+void Bitmap::MaskBlt(URGE_EXCEPT,
+                     RefPtr<Rect> dst_rect,
                      RefPtr<Bitmap> src_bitmap,
                      RefPtr<Rect> src_rect,
                      RefPtr<Bitmap> mask) {
@@ -357,7 +325,8 @@ void Bitmap::MaskBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
   }
 }
 
-void Bitmap::FillRect(URGE_EXCEPT, int32_t x,
+void Bitmap::FillRect(URGE_EXCEPT,
+                      int32_t x,
                       int32_t y,
                       int32_t width,
                       int32_t height,
@@ -372,11 +341,12 @@ void Bitmap::FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  FillRect(exception_state, rect->data.x, rect->data.y, rect->data.width, rect->data.height,
-           color);
+  FillRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
+           rect->data.height, color);
 }
 
-void Bitmap::GradientFillRect(URGE_EXCEPT, int32_t x,
+void Bitmap::GradientFillRect(URGE_EXCEPT,
+                              int32_t x,
                               int32_t y,
                               int32_t width,
                               int32_t height,
@@ -401,15 +371,17 @@ void Bitmap::GradientFillRect(URGE_EXCEPT, int32_t x,
   BitmapQueue::Get().Push(std::move(draw));
 }
 
-void Bitmap::GradientFillRect(URGE_EXCEPT, RefPtr<Rect> rect,
+void Bitmap::GradientFillRect(URGE_EXCEPT,
+                              RefPtr<Rect> rect,
                               RefPtr<Color> color1,
                               RefPtr<Color> color2,
                               bool vertical) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  GradientFillRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
-                   rect->data.height, color1, color2, vertical);
+  GradientFillRect(exception_state, rect->data.x, rect->data.y,
+                   rect->data.width, rect->data.height, color1, color2,
+                   vertical);
 }
 
 void Bitmap::Clear(URGE_EXCEPT) {
@@ -419,7 +391,11 @@ void Bitmap::Clear(URGE_EXCEPT) {
   ClearRect(exception_state, 0, 0, size_.x, size_.y);
 }
 
-void Bitmap::ClearRect(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height) {
+void Bitmap::ClearRect(URGE_EXCEPT,
+                       int32_t x,
+                       int32_t y,
+                       int32_t width,
+                       int32_t height) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -430,7 +406,8 @@ void Bitmap::ClearRect(URGE_EXCEPT, RefPtr<Rect> rect) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  ClearRect(exception_state, rect->data.x, rect->data.y, rect->data.width, rect->data.height);
+  ClearRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
+            rect->data.height);
 }
 
 RefPtr<Color> Bitmap::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
@@ -468,7 +445,8 @@ void Bitmap::RadialBlur(URGE_EXCEPT, int32_t angle, int32_t division) {
     return;
 }
 
-void Bitmap::DrawText(URGE_EXCEPT, int32_t x,
+void Bitmap::DrawText(URGE_EXCEPT,
+                      int32_t x,
                       int32_t y,
                       int32_t width,
                       int32_t height,
@@ -511,7 +489,10 @@ void Bitmap::DrawText(URGE_EXCEPT, int32_t x,
   BitmapQueue::Get().Push(std::move(draw));
 }
 
-void Bitmap::DrawText(URGE_EXCEPT, RefPtr<Rect> rect, std::string str, int32_t align) {
+void Bitmap::DrawText(URGE_EXCEPT,
+                      RefPtr<Rect> rect,
+                      std::string str,
+                      int32_t align) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -588,7 +569,9 @@ void Bitmap::UpdateWithImage(URGE_EXCEPT, RefPtr<Image> image) {
                        &buffer_layout, &target_size);
 }
 
-void Bitmap::UpdateWithPixels(URGE_EXCEPT, const void* pixels, uint32_t bytes_per_row) {
+void Bitmap::UpdateWithPixels(URGE_EXCEPT,
+                              const void* pixels,
+                              uint32_t bytes_per_row) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -689,9 +672,6 @@ void Bitmap::CreateInternal(SDL_Surface* data) {
 }
 
 void Bitmap::CreateResources(const glm::ivec2& size) {
-  // The GPU has no 0- or negative-sized texture, and handing one to wgpu is a
-  // device panic rather than an error.  The request is clamped and logged: a
-  // script that asked for nonsense gets a 1x1 bitmap and a line to read.
   size_ = glm::ivec2(std::max(size.x, 1), std::max(size.y, 1));
   if (size_.x != size.x || size_.y != size.y)
     LOGGER_ERROR("[Bitmap] {}x{} is not a valid size; using {}x{}", size.x,

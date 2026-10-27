@@ -4,11 +4,15 @@
 不依赖 CRuby VM 私有结构，也不修改任何引擎源码。
 
 ```
-core/**/*.h ──gen_api_json.py──▶ bind/api_reference.json ──generate_binding.py──▶ bind/binding_*.{h,cc}
-                                                                    └────────▶ bind/binding_init.{h,cc}
+core/**/*.h ──gen_api_json.py──▶ bind/api_reference.json ──generate_binding.py──▶ bind/autogen/binding_*.{h,cc}
+                                                                    └────────▶ bind/autogen/binding_init.{h,cc}
 bind/api_reference.json ──▶ bind/viewer/   只读查看器（UI + 命令行查询）
 bind/cruby_utils.{h,cc}   ← 手写运行时层（不生成）
 ```
+
+**`bind/autogen/` 是纯派生物**：里面每个文件都由 `generate_binding.py` 从 IR 写出，
+没有源，删掉就能重建，也不要手改。手写的那一半（`cruby_utils`、`cruby_main`、
+`script_loop`、`binding_win32api`）留在 `bind/` 里，生成器不碰。
 
 CRuby 解释器来自 `third_party/ruby`（4.0.0），CMake 目标为 `ruby-static`，其
 `target_include_directories` 是 `PUBLIC`，所以只要链接它就能 `#include "ruby.h"`。
@@ -46,7 +50,7 @@ socket↔fd 关联和 fcntl 模拟。静态 CRT 下 `_open` 在镜像自己的�
 
 ```bash
 python bind/gen_api_json.py          # core/**/*.h  → bind/api_reference.json
-python bind/generate_binding.py      # IR       → bind/binding_*.{h,cc}
+python bind/generate_binding.py      # IR       → bind/autogen/binding_*.{h,cc}
 ```
 
 两个脚本都可用第一个位置参数覆盖默认路径（`gen_api_json.py <output.json>`、
@@ -67,7 +71,7 @@ python bind/generate_binding.py      # IR       → bind/binding_*.{h,cc}
 于是每次 configure 都会评估一次，但**只在产出真的会变时才写出文件**：
 
 ```
-core/**/*.h ──gen_api_json.py──▶ api_reference.json ──generate_binding.py──▶ binding_*.{h,cc}
+core/**/*.h ──gen_api_json.py──▶ api_reference.json ──generate_binding.py──▶ autogen/binding_*.{h,cc}
 ```
 
 两级缓存，各自一个 stamp 文件：
@@ -75,7 +79,7 @@ core/**/*.h ──gen_api_json.py──▶ api_reference.json ──generate_bin
 | 文件 | 内容 | 回答的问题 |
 | --- | --- | --- |
 | `bind/.gen_stamp` | 头文件产出的 IR 摘要 + 两个生成器脚本的 md5 | 输入变了没有 |
-| `bind/.glue_stamp` | 每个 `binding_*` 的 md5 + 它来自哪个 IR 摘要 | 磁盘上的胶水还对得上 IR 吗 |
+| `bind/.glue_stamp` | 每个 `autogen/binding_*` 的 md5 + 它来自哪个 IR 摘要 | 磁盘上的胶水还对得上 IR 吗 |
 
 判断顺序：
 

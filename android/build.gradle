@@ -1,0 +1,25 @@
+// Top-level build file.  The application module is the only one: the native
+// side of the engine is built by the `android-arm64` CMake preset and arrives
+// here as libmain.so + libSDL3.so in app/src/main/jniLibs, so Gradle never runs
+// the NDK toolchain itself and there is exactly one build of the engine.
+
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:9.4.1'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
+}

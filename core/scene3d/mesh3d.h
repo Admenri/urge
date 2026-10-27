@@ -52,14 +52,18 @@ class Mesh3D : public Object {
   URGE_BINDING()
   void SetVertices(URGE_EXCEPT, std::vector<float> data);
   URGE_BINDING()
-  void SetSkinnedVertices(URGE_EXCEPT, std::vector<float> data,
+  void SetSkinnedVertices(URGE_EXCEPT,
+                          std::vector<float> data,
                           std::vector<uint32_t> joints,
                           std::vector<float> weights);
   URGE_BINDING()
   void SetIndices(URGE_EXCEPT, std::vector<uint32_t> data);
 
   URGE_BINDING()
-  void AddSubmesh(URGE_EXCEPT, int32_t index_offset, int32_t index_count, int32_t mat_slot);
+  void AddSubmesh(URGE_EXCEPT,
+                  int32_t index_offset,
+                  int32_t index_count,
+                  int32_t mat_slot);
   URGE_BINDING()
   void ClearSubmeshes();
   URGE_BINDING()
@@ -103,7 +107,8 @@ class Mesh3D : public Object {
   const std::vector<SubMesh3D>& submeshes() const { return submeshes_; }
 
   wgpu::Buffer AcquireJointBuffer(URGE_EXCEPT, uint64_t frame_token);
-  wgpu::BindGroup AcquireGroup(URGE_EXCEPT, uint32_t chunk_index,
+  wgpu::BindGroup AcquireGroup(URGE_EXCEPT,
+                               uint32_t chunk_index,
                                wgpu::Buffer mesh_buffer,
                                wgpu::Buffer joints);
 

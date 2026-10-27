@@ -31,12 +31,48 @@
     {
       "name": "emscripten-wasm32",
       "displayName": "WebAssembly (Emscripten)",
-      "description": "Cross-compiles the engine for wasm32 with the Emscripten SDK. The toolchain file is the one inside the SDK, referenced through $EMSDK, so no install path is recorded in this tree: source emsdk_env (or export EMSDK) first. Ninja is needed as well. Set URGE_WEB_ASSETS to a game directory: it is published beside the module as assets/ and indexed by app/build_mapping.py, so the game loads its resources on demand instead of the page waiting for all of them.",
+      "description": "Cross-compiles the engine for wasm32 with the Emscripten SDK. The SDK is found by cmake/emscripten.toolchain.cmake ($EMSDK, or $EMSCRIPTEN), so nothing machine specific is recorded here: source emsdk_env (or export EMSDK) first. Ninja is needed as well. Set URGE_WEB_ASSETS to a game directory: it is published beside the module as assets/ and indexed by app/build_mapping.py, so the game loads its resources on demand instead of the page waiting for all of them.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
-      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "toolchainFile": "${sourceDir}/cmake/emscripten.toolchain.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "android-arm64",
+      "displayName": "Android arm64-v8a (NDK)",
+      "description": "Cross-compiles the engine for Android (URGE_RUNNER_MODEL defaults to poll here: the engine owns the loop, which also keeps ART happy about the stack). The NDK is found by cmake/android.toolchain.cmake ($ANDROID_NDK_HOME, or the SDK's ndk/ directory), so nothing machine specific is recorded here. Game becomes libmain.so and is copied into android/app/src/main/jniLibs/arm64-v8a after the build, where the Gradle project packages it; the game's own files are read out of the APK's assets/ at first launch. Needs the aarch64-linux-android Rust target for wgpu-native. API 28 is the floor, and the APK's minSdk matches it.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "${sourceDir}/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ANDROID_ABI": "arm64-v8a",
+        "ANDROID_PLATFORM": "android-28",
+        "ANDROID_STL": "c++_static",
+        "URGE_ENABLE_VIDEO": "OFF",
+        "URGE_ENABLE_NETWORK": "OFF",
+        "URGE_ANDROID_PROJECT": "${sourceDir}/android",
+        "RUBY_BUILTIN_BINARY_PREBUILT": "${sourceDir}/third_party/ruby/prebuilt/builtin_binary-lp64.rbbin"
+      }
+    },
+    {
+      "name": "android-x86_64",
+      "displayName": "Android x86_64 (NDK, emulator)",
+      "description": "The same build for x86_64 emulator images, which is what a machine without an arm64 device has to test on. Output goes to android/app/src/main/jniLibs/x86_64 and is packaged into the same APK as the arm64 build, so one APK runs on both. Needs the x86_64-linux-android Rust target for wgpu-native.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "${sourceDir}/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ANDROID_ABI": "x86_64",
+        "ANDROID_PLATFORM": "android-28",
+        "ANDROID_STL": "c++_static",
+        "URGE_ENABLE_VIDEO": "OFF",
+        "URGE_ENABLE_NETWORK": "OFF",
+        "URGE_ANDROID_PROJECT": "${sourceDir}/android",
+        "RUBY_BUILTIN_BINARY_PREBUILT": "${sourceDir}/third_party/ruby/prebuilt/builtin_binary-lp64.rbbin"
       }
     }
   ],
@@ -57,6 +93,16 @@
       "name": "emscripten-wasm32",
       "displayName": "Build Game (wasm32, RelWithDebInfo)",
       "configurePreset": "emscripten-wasm32"
+    },
+    {
+      "name": "android-arm64",
+      "displayName": "Build Game (Android arm64-v8a, RelWithDebInfo)",
+      "configurePreset": "android-arm64"
+    },
+    {
+      "name": "android-x86_64",
+      "displayName": "Build Game (Android x86_64, RelWithDebInfo)",
+      "configurePreset": "android-x86_64"
     }
   ]
 }

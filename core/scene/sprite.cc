@@ -335,10 +335,9 @@ bool Sprite::Prepare(DrawParam param) {
   if (effect_) {
     ObjectData object_data;
     object_data.model_mat = transform;
-    // The pool answers an invalid chunk when it refuses; the draw path has
-    // no state of its own to report into.
     ExceptionState acquire_state;
-    object_slot_ = UniformManager::Get().object_uniforms().Acquire(acquire_state, object_data);
+    object_slot_ = UniformManager::Get().object_uniforms().Acquire(
+        acquire_state, object_data);
     return object_slot_.chunk != UniformBlockPool::kInvalidChunk;
   }
 
@@ -348,8 +347,6 @@ bool Sprite::Prepare(DrawParam param) {
 }
 
 bool Sprite::DoDraw(DrawParam param) {
-  // The draw path has no state of its own: the effect answers a null
-  // pipeline, which leaves this object undrawn.
   ExceptionState effect_state;
   if (effect_) {
     UniformManager& uniforms = UniformManager::Get();
@@ -359,7 +356,8 @@ bool Sprite::DoDraw(DrawParam param) {
     param->pass.SetPipeline(effect_->AcquirePipeline(effect_state));
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
-    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0, nullptr);
+    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0,
+                             nullptr);
     param->pass.SetVertexBuffer(0, SpriteBatch::Get().emitter().buffer(), 0,
                                 WGPU_WHOLE_SIZE);
     param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);

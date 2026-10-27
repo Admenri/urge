@@ -1,7 +1,22 @@
 cmake_minimum_required(VERSION 3.30)
 
 set(BUILD_SHARED_LIBS OFF)
-set(SDL_STATIC ON)
+
+# SDL is static everywhere except Android, where it has to be the shared
+# library the APK ships.  SDL's Android layer registers every native method
+# SDLActivity calls from `JNI_OnLoad` (src/core/android/SDL_android.c), and the
+# JVM only runs that for a library that was loaded by name -- which is why the
+# Java side loads `libSDL3.so` and then `libmain.so`.  A static copy linked into
+# libmain.so would leave those methods unregistered, and would also give the
+# engine a second set of SDL globals to disagree with.
+if(ANDROID)
+  set(SDL_STATIC OFF)
+  # SDL defaults both to BUILD_SHARED_LIBS, which this tree keeps off, so the
+  # shared library has to be asked for by name here.
+  set(SDL_SHARED ON)
+else()
+  set(SDL_STATIC ON)
+endif()
 set(SDLIMAGE_VENDORED OFF)
 
 # SDL_ttf is built into the engine as a static library that carries its own
@@ -175,12 +190,6 @@ endif()
 add_subdirectory(webgpu-cpp)
 add_subdirectory(imgui)
 add_subdirectory(wgpu-cmake)
-
-# glslang and spirv-reflect used to sit here.  The renderer now speaks WGSL --
-# the shading language both wgpu backends consume natively -- so no GLSL is
-# compiled at run time any more and there is no SPIR-V to reflect over.  The
-# reflection the pipelines need is read out of the WGSL source by
-# core/wgsl_reflect.cc.
 
 # The interpreter.  It is always the CRuby in third_party/ruby -- there is no
 # other source for `ruby-static` -- and this is the only place it is compiled.

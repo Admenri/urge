@@ -41,7 +41,6 @@ class IOService : public Singleton<IOService> {
   int32_t AddLoadPath(const std::string& new_path,
                       const std::string& mount_point,
                       bool append = true);
-  int32_t RemoveLoadPath(const std::string& old_path);
 
   bool MountArchive(const std::string& path, bool prepend = true);
 
@@ -49,7 +48,9 @@ class IOService : public Singleton<IOService> {
   std::vector<std::string> EnumDir(const std::string& dir);
 
   using OpenCallback = std::function<bool(SDL_IOStream*, const std::string&)>;
-  void OpenRead(URGE_EXCEPT, const std::string& file_path, OpenCallback callback);
+  void OpenRead(URGE_EXCEPT,
+                const std::string& file_path,
+                OpenCallback callback);
   SDL_IOStream* OpenReadRaw(URGE_EXCEPT, const std::string& filename);
   SDL_IOStream* OpenWrite(URGE_EXCEPT, const std::string& filename);
 };

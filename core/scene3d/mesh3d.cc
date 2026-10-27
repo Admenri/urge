@@ -60,8 +60,9 @@ ATTR_DEF(Mesh3D, RefPtr<Skeleton3D>, Skeleton) {
 
 void Mesh3D::SetVertices(URGE_EXCEPT, std::vector<float> data) {
   if (data.size() % kFloatsPerVertex != 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: vertices are eight floats per vertex "
-                    "(position, normal, texcoord).");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "mesh3d: vertices are eight floats per vertex "
+                          "(position, normal, texcoord).");
     return;
   }
   vertex_bytes_.resize(data.size() * sizeof(float));
@@ -77,18 +78,22 @@ void Mesh3D::SetVertices(URGE_EXCEPT, std::vector<float> data) {
   Upload(exception_state);
 }
 
-void Mesh3D::SetSkinnedVertices(URGE_EXCEPT, std::vector<float> data,
+void Mesh3D::SetSkinnedVertices(URGE_EXCEPT,
+                                std::vector<float> data,
                                 std::vector<uint32_t> joints,
                                 std::vector<float> weights) {
   if (data.size() % kFloatsPerVertex != 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: vertices are eight floats per vertex "
-                    "(position, normal, texcoord).");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "mesh3d: vertices are eight floats per vertex "
+                          "(position, normal, texcoord).");
     return;
   }
   const size_t count = data.size() / kFloatsPerVertex;
   if (joints.size() != count * 4 || weights.size() != count * 4) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: skinned vertices need four joint indices and four "
-                    "weights per vertex.");
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "mesh3d: skinned vertices need four joint indices and four "
+        "weights per vertex.");
     return;
   }
   vertex_bytes_.resize(count * kSkinnedStride);
@@ -126,18 +131,22 @@ void Mesh3D::SetIndices(URGE_EXCEPT, std::vector<uint32_t> data) {
   Upload(exception_state);
 }
 
-void Mesh3D::AddSubmesh(URGE_EXCEPT, int32_t index_offset,
+void Mesh3D::AddSubmesh(URGE_EXCEPT,
+                        int32_t index_offset,
                         int32_t index_count,
                         int32_t mat_slot) {
   if (index_offset < 0 || index_count <= 0) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: a submesh needs a non-negative offset and a "
-                    "positive index count.");
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "mesh3d: a submesh needs a non-negative offset and a "
+                          "positive index count.");
     return;
   }
   if (index_offset + index_count > index_count_) {
-    exception_state.Throw(ExceptionState::kRGSSError, "mesh3d: the submesh range [{}, {}) is outside the index "
-                    "buffer ({} indices).",
-                    index_offset, index_offset + index_count, index_count_);
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "mesh3d: the submesh range [{}, {}) is outside the index "
+        "buffer ({} indices).",
+        index_offset, index_offset + index_count, index_count_);
     return;
   }
   SubMesh3D submesh;
@@ -275,7 +284,8 @@ wgpu::Buffer Mesh3D::AcquireJointBuffer(URGE_EXCEPT, uint64_t frame_token) {
   return joint_buffer_;
 }
 
-wgpu::BindGroup Mesh3D::AcquireGroup(URGE_EXCEPT, uint32_t chunk_index,
+wgpu::BindGroup Mesh3D::AcquireGroup(URGE_EXCEPT,
+                                     uint32_t chunk_index,
                                      wgpu::Buffer mesh_buffer,
                                      wgpu::Buffer joints) {
   if (!joints)

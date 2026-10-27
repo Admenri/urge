@@ -43,17 +43,21 @@ constexpr uint32_t kMaxChunkSize = 1024 * 1024;
 
 }
 
-UniformBlockPool::UniformBlockPool(URGE_EXCEPT, wgpu::BindGroupLayout layout,
+UniformBlockPool::UniformBlockPool(URGE_EXCEPT,
+                                   wgpu::BindGroupLayout layout,
                                    uint32_t element_size,
                                    std::string_view name)
     : layout_(layout), name_(name), element_size_(element_size) {
   if (layout_ == nullptr) {
-    exception_state.Throw(ExceptionState::kGPUError, "the uniform pool '{}' was given no bind group layout.",
-                    name_);
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "the uniform pool '{}' was given no bind group layout.", name_);
     return;
   }
   if (element_size_ == 0) {
-    exception_state.Throw(ExceptionState::kGPUError, "the uniform pool '{}' was given an empty element.", name_);
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the uniform pool '{}' was given an empty element.",
+                          name_);
     return;
   }
   wgpu::Limits limits = {};
@@ -98,12 +102,15 @@ void UniformBlockPool::BeginFrame() {
   active_chunk_ = 0;
 }
 
-UniformBlockPool::Slot UniformBlockPool::Acquire(URGE_EXCEPT, const void* data,
+UniformBlockPool::Slot UniformBlockPool::Acquire(URGE_EXCEPT,
+                                                 const void* data,
                                                  uint32_t size) {
   if (size > element_size_) {
-    exception_state.Throw(ExceptionState::kGPUError, "the uniform pool '{}' holds {} byte elements but was "
-                    "given {} bytes.",
-                    name_, element_size_, size);
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "the uniform pool '{}' holds {} byte elements but was "
+        "given {} bytes.",
+        name_, element_size_, size);
     return {};
   }
   while (active_chunk_ < chunks_.size() &&
@@ -151,9 +158,11 @@ void UniformBlockPool::CreateChunk(URGE_EXCEPT) {
   if (chunk.buffer == nullptr || chunk.group == nullptr) {
     LOGGER_ERROR("uniform pool '{}': the device rejected a chunk of {} bytes",
                  name_, chunk_size_);
-    exception_state.Throw(ExceptionState::kGPUError, "the device rejected a chunk of the uniform pool '{}'.",
-                    name_);
-    return;  }
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "the device rejected a chunk of the uniform pool '{}'.", name_);
+    return;
+  }
 
   chunks_.push_back(std::move(chunk));
   staging_.emplace_back(chunk_size_);

@@ -208,8 +208,6 @@ void Viewport::PostPrepare(DrawParam param) {
 }
 
 bool Viewport::DoDraw(DrawParam param) {
-  // The draw path has no state of its own: the effect answers a null
-  // pipeline, which leaves this object undrawn.
   ExceptionState effect_state;
   FlushSpriteBatch(param);
 
@@ -231,7 +229,6 @@ bool Viewport::DoDraw(DrawParam param) {
 }
 
 void Viewport::PostDraw(DrawParam param) {
-  // Same as DoDraw: the filter pass reports into a state of its own.
   ExceptionState effect_state;
   if (!param->pass)
     return;
@@ -251,7 +248,8 @@ void Viewport::PostDraw(DrawParam param) {
       param->pass.SetBindGroup(0, param->scene, 0, nullptr);
       const uint32_t object_offset = 0;
       param->pass.SetBindGroup(1, object_group_, 1, &object_offset);
-      param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0, nullptr);
+      param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0,
+                               nullptr);
       param->pass.SetVertexBuffer(0, primitive_.buffer(), 0, WGPU_WHOLE_SIZE);
       param->pass.SetScissorRect(region_.x, region_.y, region_.width,
                                  region_.height);

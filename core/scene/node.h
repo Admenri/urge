@@ -86,7 +86,6 @@ class Node : public Disposable {
     return self_.TryCast<Ty>();
   }
 
-  glm::mat4 local_transform() { return transform_.local; }
   glm::mat4 world_transform() { return transform_.world; }
 
  private:

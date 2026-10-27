@@ -472,10 +472,9 @@ bool TilemapVX::Prepare(DrawParam param) {
   if (map_layer_.valid || above_layer_.valid) {
     UniformManager& uniforms = UniformManager::Get();
     const ObjectData object_data = {world_transform()};
-    // The pool answers an invalid chunk when it refuses; the draw path has
-    // no state of its own to report into.
     ExceptionState acquire_state;
-    object_slot_ = uniforms.object_uniforms().Acquire(acquire_state, object_data);
+    object_slot_ =
+        uniforms.object_uniforms().Acquire(acquire_state, object_data);
   }
 
   return true;
@@ -498,11 +497,14 @@ void TilemapVX::CreateShadowSet(URGE_EXCEPT) {
     if (i & 0x1)
       shadow_texture_->FillRect(exception_state, offset, 0, half, half, tint);
     if (i & 0x2)
-      shadow_texture_->FillRect(exception_state, offset + half, 0, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset + half, 0, half, half,
+                                tint);
     if (i & 0x4)
-      shadow_texture_->FillRect(exception_state, offset, half, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset, half, half, half,
+                                tint);
     if (i & 0x8)
-      shadow_texture_->FillRect(exception_state, offset + half, half, half, half, tint);
+      shadow_texture_->FillRect(exception_state, offset + half, half, half,
+                                half, tint);
   }
 }
 

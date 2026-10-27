@@ -39,7 +39,8 @@ URGE_BINDING()
 class Effect : public Object {
  public:
   URGE_BINDING()
-  Effect(URGE_EXCEPT, std::string vs_wgsl,
+  Effect(URGE_EXCEPT,
+         std::string vs_wgsl,
          std::string fs_wgsl,
          std::string blend_states = {});
   URGE_BINDING()
@@ -75,11 +76,15 @@ class Effect : public Object {
     uint64_t size = 0;
   };
 
-  void CreateInternal(URGE_EXCEPT, std::string vs_wgsl,
+  void CreateInternal(URGE_EXCEPT,
+                      std::string vs_wgsl,
                       std::string fs_wgsl,
                       std::string blend_states);
   void RebuildPipeline(URGE_EXCEPT);
-  void SetBufferBytes(URGE_EXCEPT, uint32_t slot, const void* data, uint32_t size);
+  void SetBufferBytes(URGE_EXCEPT,
+                      uint32_t slot,
+                      const void* data,
+                      uint32_t size);
   void RebuildBindGroup(URGE_EXCEPT);
 
   std::string vs_wgsl_;

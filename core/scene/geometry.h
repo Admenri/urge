@@ -43,11 +43,20 @@ class Geometry : public Node {
   ~Geometry() override;
 
   URGE_BINDING()
-  void SetPosition(URGE_EXCEPT, int32_t triangle, int32_t point, RefPtr<Vector3> position);
+  void SetPosition(URGE_EXCEPT,
+                   int32_t triangle,
+                   int32_t point,
+                   RefPtr<Vector3> position);
   URGE_BINDING()
-  void SetTexcoord(URGE_EXCEPT, int32_t triangle, int32_t point, RefPtr<Vector2> texcoord);
+  void SetTexcoord(URGE_EXCEPT,
+                   int32_t triangle,
+                   int32_t point,
+                   RefPtr<Vector2> texcoord);
   URGE_BINDING()
-  void SetColor(URGE_EXCEPT, int32_t triangle, int32_t point, RefPtr<Color> color);
+  void SetColor(URGE_EXCEPT,
+                int32_t triangle,
+                int32_t point,
+                RefPtr<Color> color);
 
   URGE_BINDING()
   ATTR(MaybePtr<Viewport>, Viewport);

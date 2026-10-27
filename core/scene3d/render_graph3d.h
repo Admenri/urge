@@ -235,7 +235,9 @@ class RenderGraphPass3D : public Object {
   URGE_BINDING(Name : "compute")
   RefPtr<ComputePass3D> GetCompute() const { return compute_; }
   URGE_BINDING(Name : "compute=")
-  void SetCompute(MaybePtr<ComputePass3D> value) { compute_ = std::move(value); }
+  void SetCompute(MaybePtr<ComputePass3D> value) {
+    compute_ = std::move(value);
+  }
 
   URGE_BINDING(Name : "cascades")
   ATTR(int32_t, Cascades) {
@@ -374,7 +376,10 @@ class RenderGraph3D : public Object {
   RefPtr<RenderGraphPass3D> PassAt(int32_t index) const;
 
   URGE_BINDING()
-  void AddTexture(URGE_EXCEPT, std::string name, std::string format, int32_t samples);
+  void AddTexture(URGE_EXCEPT,
+                  std::string name,
+                  std::string format,
+                  int32_t samples);
   URGE_BINDING()
   void AddStorageTexture(URGE_EXCEPT, std::string name, std::string format);
   URGE_BINDING()
@@ -423,7 +428,8 @@ class RenderGraph3D : public Object {
 
   std::vector<size_t> BuildOrder() const;
   RefPtr<RenderTarget3D> ShadowTarget(URGE_EXCEPT,
-                                      const std::string& name, int32_t layers);
+                                      const std::string& name,
+                                      int32_t layers);
   void ExecuteShadowPass(URGE_EXCEPT,
                          RenderContext3D* context,
                          RenderGraphPass3D* pass);

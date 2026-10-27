@@ -52,7 +52,8 @@ class Animation3D : public Object {
   ~Animation3D() override;
 
   URGE_BINDING()
-  void AddTrack(URGE_EXCEPT, int32_t bone,
+  void AddTrack(URGE_EXCEPT,
+                int32_t bone,
                 int32_t path,
                 std::vector<float> times,
                 std::vector<float> values,
@@ -98,7 +99,10 @@ class Animation3D : public Object {
   URGE_BINDING()
   void Apply(RefPtr<Skeleton3D> skeleton, float time);
   URGE_BINDING()
-  void Blend(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float time, float weight);
+  void Blend(URGE_EXCEPT,
+             RefPtr<Skeleton3D> skeleton,
+             float time,
+             float weight);
   URGE_BINDING()
   void BlendMasked(URGE_EXCEPT,
                    RefPtr<Skeleton3D> skeleton,

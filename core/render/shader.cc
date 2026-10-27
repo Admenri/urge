@@ -38,9 +38,6 @@ namespace urge {
 
 namespace {
 
-// The shader layer has no state to report into -- it is reached from the
-// effect and material code, which do -- so a rejected object leaves a line in
-// the log and the null handle it already answered with.
 void Fail(std::string_view what, const std::string& detail) {
   LOGGER_ERROR("[Shader] {} failed: {}", what, detail);
 }
@@ -124,7 +121,7 @@ void Pipeline::Initialize(
     const ShaderSource& vertex,
     const ShaderSource& fragment,
     std::vector<std::vector<VertexAttribute>> vertex_layout,
-    const std::set<uint32_t>* dynamic_sets,
+    const std::set<uint32_t>& dynamic_sets,
     std::vector<wgpu::VertexStepMode> step_modes) {
   const wgpu::Device device = GPUDevice::Get().device();
 
@@ -134,17 +131,15 @@ void Pipeline::Initialize(
   vertex_entry_ = vertex.entry_point;
   fragment_entry_ = fragment.entry_point;
 
-  if (dynamic_sets != nullptr) {
-    const std::vector<wgpu::BindGroupLayout> groups =
-        CreateGroupLayouts(vertex, fragment, *dynamic_sets);
+  const std::vector<wgpu::BindGroupLayout> groups =
+      CreateGroupLayouts(vertex, fragment, dynamic_sets);
 
-    wgpu::PipelineLayoutDescriptor layout_desc;
-    layout_desc.bindGroupLayoutCount = groups.size();
-    layout_desc.bindGroupLayouts = groups.empty() ? nullptr : groups.data();
-    layout_ = device.CreatePipelineLayout(&layout_desc);
-    if (layout_ == nullptr)
-      Fail("layout", "the device rejected the pipeline layout of the shader");
-  }
+  wgpu::PipelineLayoutDescriptor layout_desc;
+  layout_desc.bindGroupLayoutCount = groups.size();
+  layout_desc.bindGroupLayouts = groups.empty() ? nullptr : groups.data();
+  layout_ = device.CreatePipelineLayout(&layout_desc);
+  if (layout_ == nullptr)
+    Fail("layout", "the device rejected the pipeline layout of the shader");
 
   buffers_.reserve(vertex_layout.size());
   for (const std::vector<VertexAttribute>& slot : vertex_layout) {
@@ -168,17 +163,8 @@ Pipeline::Pipeline(const ShaderSource& vertex,
                    std::vector<std::vector<VertexAttribute>> vertex_layout,
                    const std::set<uint32_t>& dynamic_sets,
                    std::vector<wgpu::VertexStepMode> step_modes) {
-  Initialize(vertex, fragment, std::move(vertex_layout), &dynamic_sets,
+  Initialize(vertex, fragment, std::move(vertex_layout), dynamic_sets,
              std::move(step_modes));
-}
-
-Pipeline Pipeline::AutoLayout(
-    const ShaderSource& vertex,
-    const ShaderSource& fragment,
-    std::vector<std::vector<VertexAttribute>> vertex_layout) {
-  Pipeline pipeline;
-  pipeline.Initialize(vertex, fragment, std::move(vertex_layout), nullptr, {});
-  return pipeline;
 }
 
 wgpu::RenderPipeline Pipeline::MakeState(
@@ -225,15 +211,6 @@ wgpu::RenderPipeline Pipeline::MakeState(
     Fail("state", "the device rejected the state of the render pipeline");
 
   return pipeline;
-}
-
-wgpu::RenderPipeline Pipeline::MakeDefaultState(const wgpu::BlendState* blend) {
-  wgpu::ColorTargetState target;
-  target.format = kColorTargetFormat;
-  target.blend = blend;
-
-  return MakeState(GetDefaultPrimitiveState(), *GetDepthStencilState(),
-                   {target});
 }
 
 }

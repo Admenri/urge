@@ -122,20 +122,6 @@ class MaterialDefaults {
   wgpu::Sampler shadow_sampler_;
 };
 
-uint64_t VertexFormatBytes(wgpu::VertexFormat format) {
-  switch (format) {
-    case wgpu::VertexFormat::Float32x2:
-      return 8;
-    case wgpu::VertexFormat::Float32x3:
-      return 12;
-    case wgpu::VertexFormat::Float32x4:
-    case wgpu::VertexFormat::Uint32x4:
-      return 16;
-    default:
-      return 16;
-  }
-}
-
 wgpu::StencilFaceState MakeStencilFace(uint32_t compare,
                                        uint32_t fail,
                                        uint32_t depth_fail,
@@ -167,7 +153,8 @@ std::string PipelineTargetState3D::Key() const {
   return key;
 }
 
-MaterialPass3D::MaterialPass3D(URGE_EXCEPT, std::string tag,
+MaterialPass3D::MaterialPass3D(URGE_EXCEPT,
+                               std::string tag,
                                std::string vs_wgsl,
                                std::string fs_wgsl)
     : tag_(std::move(tag)),
@@ -181,19 +168,6 @@ MaterialPass3D::MaterialPass3D(URGE_EXCEPT, std::string tag,
 }
 
 MaterialPass3D::~MaterialPass3D() = default;
-
-void MaterialPass3D::SetSources(std::string vs_wgsl, std::string fs_wgsl) {
-  vs_wgsl_ = ComposeShader3D(vs_wgsl);
-  fs_wgsl_ = fs_wgsl.empty() ? std::string() : ComposeShader3D(fs_wgsl);
-  builder_.reset();
-  shadow_builder_.reset();
-  pipelines_.clear();
-  shadow_pipelines_.clear();
-  slots_.clear();
-  binding_ = nullptr;
-  state_dirty_ = true;
-  binding_dirty_ = true;
-}
 
 void MaterialPass3D::CollectSlots(URGE_EXCEPT) {
   slots_.clear();
@@ -218,8 +192,7 @@ void MaterialPass3D::CollectSlots(URGE_EXCEPT) {
       continue;
     if (info.kind == wgsl::BindingKind::kStorage ||
         info.kind == wgsl::BindingKind::kStorageReadWrite ||
-        info.kind == wgsl::BindingKind::kStorageTexture)
-    {
+        info.kind == wgsl::BindingKind::kStorageTexture) {
       exception_state.Throw(ExceptionState::kRGSSError,
                             "material3d: the pass '{}' binds '{}' as a "
                             "storage resource in group 2; storage buffers and "
@@ -250,7 +223,9 @@ void MaterialPass3D::CollectSlots(URGE_EXCEPT) {
   }
 }
 
-void MaterialPass3D::SetTextureSlot(URGE_EXCEPT, int32_t slot, RefPtr<Bitmap> texture) {
+void MaterialPass3D::SetTextureSlot(URGE_EXCEPT,
+                                    int32_t slot,
+                                    RefPtr<Bitmap> texture) {
   if (slots_.empty()) {
     CollectSlots(exception_state);
     if (exception_state.HadException())
@@ -259,8 +234,10 @@ void MaterialPass3D::SetTextureSlot(URGE_EXCEPT, int32_t slot, RefPtr<Bitmap> te
   if (texture_names_.empty())
     return;
   if (slot < 0 || slot >= static_cast<int32_t>(texture_names_.size())) {
-    exception_state.Throw(ExceptionState::kRGSSError, "material3d: texture slot {} is out of range (0..{}).",
-                    slot, static_cast<int32_t>(texture_names_.size()) - 1);
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "material3d: texture slot {} is out of range (0..{}).", slot,
+        static_cast<int32_t>(texture_names_.size()) - 1);
     return;
   }
   texture_map_[texture_names_[slot]] = std::move(texture);
@@ -294,7 +271,9 @@ RefPtr<Bitmap> MaterialPass3D::GetTexture(std::string name) const {
   return it == texture_map_.end() ? nullptr : it->second;
 }
 
-void MaterialPass3D::SetUniformSlot(URGE_EXCEPT, int32_t slot, std::vector<float> values) {
+void MaterialPass3D::SetUniformSlot(URGE_EXCEPT,
+                                    int32_t slot,
+                                    std::vector<float> values) {
   if (slots_.empty()) {
     CollectSlots(exception_state);
     if (exception_state.HadException())
@@ -303,8 +282,10 @@ void MaterialPass3D::SetUniformSlot(URGE_EXCEPT, int32_t slot, std::vector<float
   if (uniform_names_.empty())
     return;
   if (slot < 0 || slot >= static_cast<int32_t>(uniform_names_.size())) {
-    exception_state.Throw(ExceptionState::kRGSSError, "material3d: uniform slot {} is out of range (0..{}).",
-                    slot, static_cast<int32_t>(uniform_names_.size()) - 1);
+    exception_state.Throw(
+        ExceptionState::kRGSSError,
+        "material3d: uniform slot {} is out of range (0..{}).", slot,
+        static_cast<int32_t>(uniform_names_.size()) - 1);
     return;
   }
   uniform_map_[uniform_names_[slot]] = std::move(values);
@@ -464,7 +445,8 @@ wgpu::DepthStencilState MaterialPass3D::MakeDepthState(
   return state;
 }
 
-wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(URGE_EXCEPT,
+wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
+    URGE_EXCEPT,
     const PipelineTargetState3D& target) {
   if (state_dirty_) {
     pipelines_.clear();
@@ -479,7 +461,8 @@ wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(URGE_EXCEPT,
 
   EnsureBuilder(exception_state);
 
-  const std::optional<wgpu::BlendState> blend = ParseBlendState(exception_state, blend_);
+  const std::optional<wgpu::BlendState> blend =
+      ParseBlendState(exception_state, blend_);
 
   std::vector<wgpu::ColorTargetState> colors;
   colors.reserve(target.colors.size());
@@ -652,7 +635,9 @@ void MaterialPass3D::RebuildBindGroup(URGE_EXCEPT) {
 
   binding_ = GPUDevice::Get().device().CreateBindGroup(&desc);
   if (binding_ == nullptr) {
-    exception_state.Throw(ExceptionState::kGPUError, "material3d: the device rejected the material group.");
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "material3d: the device rejected the material group.");
     return;
   }
   binding_dirty_ = false;
@@ -662,7 +647,8 @@ Material3D::Material3D() = default;
 
 Material3D::~Material3D() = default;
 
-RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT, std::string tag,
+RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT,
+                                           std::string tag,
                                            std::string vs_wgsl,
                                            std::string fs_wgsl) {
   if (tag.empty()) {
@@ -672,14 +658,15 @@ RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT, std::string tag,
   }
   for (const RefPtr<MaterialPass3D>& pass : passes_) {
     if (pass->tag() == tag) {
-      exception_state.Throw(ExceptionState::kRGSSError, "material3d: the pass tag '{}' is already used.", tag);
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "material3d: the pass tag '{}' is already used.",
+                            tag);
       return {};
     }
   }
 
-  auto pass = MakeRefCounted<MaterialPass3D>(exception_state, std::move(tag),
-                                            std::move(vs_wgsl),
-                                             std::move(fs_wgsl));
+  auto pass = MakeRefCounted<MaterialPass3D>(
+      exception_state, std::move(tag), std::move(vs_wgsl), std::move(fs_wgsl));
   passes_.push_back(pass);
   return pass;
 }
@@ -687,9 +674,8 @@ RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT, std::string tag,
 RefPtr<MaterialPass3D> Material3D::AddShadowPass(URGE_EXCEPT,
                                                  std::string tag,
                                                  std::string vs_wgsl) {
-  RefPtr<MaterialPass3D> pass =
-      AddPass(exception_state, std::move(tag), std::move(vs_wgsl),
-              std::string());
+  RefPtr<MaterialPass3D> pass = AddPass(exception_state, std::move(tag),
+                                        std::move(vs_wgsl), std::string());
   pass->set_depth_only(true);
   return pass;
 }

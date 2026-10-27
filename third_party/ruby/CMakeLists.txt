@@ -188,8 +188,15 @@ ruby_apply_compile_options(rubycore)
 # `emscripten_scan_registers` -- and those are Asyncify operations, so the tool
 # needs `-sASYNCIFY`.  That is why the module uses JS-based exceptions rather
 # than wasm ones; see the top-level CMakeLists.txt.
+#
+# EXCLUDE_FROM_ALL because it is a build tool, not an artefact of the library:
+# it exists only to generate builtin_binary.rbbin, and only the build that has
+# to generate one needs it.  With RUBY_BUILTIN_BINARY_PREBUILT set -- which is
+# how a cross build works, miniruby being a program for the target -- nothing
+# depends on the output, so nothing builds it.  A normal build still gets it,
+# because the rbbin does depend on it.
 # ---------------------------------------------------------------------------
-add_executable(miniruby
+add_executable(miniruby EXCLUDE_FROM_ALL
   $<TARGET_OBJECTS:rubycore>
   "${RUBY_SOURCE_DIR}/main.c"
   "${RUBY_SOURCE_DIR}/miniinit.c"

@@ -28,9 +28,9 @@
 #include <tuple>
 #include <vector>
 
-#include "core/common/definition.h"
 #include "SDL3/SDL_surface.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "core/common/definition.h"
 
 #include "core/common/object.h"
 #include "core/common/utility.h"
@@ -56,8 +56,6 @@ class FontContext : public Singleton<FontContext> {
                         int32_t size,
                         TTF_FontStyleFlags style = TTF_STYLE_NORMAL,
                         int32_t outline = 0);
-
-  std::vector<std::string> ResolveName(const std::string& name) const;
 
   const FontData* FindFont(const std::string& name);
 

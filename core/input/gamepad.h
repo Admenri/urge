@@ -67,8 +67,6 @@ class GamepadDevice {
   bool Triggered(int32_t button) const;
   bool Repeated(int32_t button) const;
 
-  float Axis(int32_t axis) const;
-
   bool Rumble(float low, float high, int32_t duration_ms);
 
   static std::string ButtonToken(int32_t button);

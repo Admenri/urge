@@ -31,50 +31,36 @@ namespace binding {
 
 class BindingMain {
  public:
-  /*! Creates the loop's stack, brings the interpreter up on it, and loads the
-      game's scripts without running them.
-
-      The interpreter has to be born on the stack it is going to run on: it
-      records the machine stack's bounds at initialisation, and every
-      stack-overflow check and collector scan is measured against them. */
   explicit BindingMain(urge::ExceptionState& exception_state);
   ~BindingMain();
 
   BindingMain(const BindingMain&) = delete;
   BindingMain& operator=(const BindingMain&) = delete;
 
-  /*! What one tick of the loop decided. */
   enum class Tick {
-    /*! The frame ran; the game is still going. */
     kContinue,
-    /*! The script ran to its end.  The loop should quit. */
     kFinished,
-    /*! The script ended on an error; `ErrorMessage` says which. */
     kFailed,
   };
 
-  /*! One tick of the host's main loop: resumes the loop's stack and lets the
-      game run until it presents a frame -- or until the script ends, which is
-      the quit signal.
-
-      A tick may run no frame at all, or two, when the host's clock and the
-      game's rate do not divide: a 60 Hz display and a 40 fps game is the case
-      that needs it. */
+#if defined(URGE_RUNNER_POLL)
+  Tick Run();
+#else
   Tick IterateMainLoop();
+#endif
 
-  /*! The failure the script ended with, already formatted with its backtrace;
-      empty unless a tick returned `kFailed`. */
   const std::string& ErrorMessage() const;
 
  private:
-  /*! Entry point of the loop's stack.  `script_loop::Start` is given this and
-      the `BindingMain` to run it for. */
+  void InitializeInterpreter(urge::ExceptionState& exception_state);
+
+#if !defined(URGE_RUNNER_POLL)
   static void LoopEntry(void* arg);
 
-  void InitializeInterpreter(urge::ExceptionState& exception_state);
   void RunOnLoopStack();
+#endif
 
   int error_state_ = 0;
 };
 
-}  // namespace binding
+}

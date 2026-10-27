@@ -33,6 +33,12 @@
 
 namespace urge {
 
+enum class WindowResizable {
+  kNone,
+  kFree,
+  kRatio,
+};
+
 URGE_BINDING()
 class Config : public Singleton<Config> {
  public:
@@ -76,6 +82,7 @@ class Config : public Singleton<Config> {
     bool vsync = false;
     bool fullscreen = false;
     bool frame_skip = false;
+    WindowResizable resizable = WindowResizable::kNone;
   } display;
 
   struct {

@@ -82,7 +82,10 @@ class Mouse : public Singleton<Mouse> {
   int32_t ScrollY();
 
   URGE_BINDING()
-  void SetCursor(URGE_EXCEPT, MaybePtr<Bitmap> image, int32_t hot_x, int32_t hot_y);
+  void SetCursor(URGE_EXCEPT,
+                 MaybePtr<Bitmap> image,
+                 int32_t hot_x,
+                 int32_t hot_y);
 
   URGE_BINDING()
   ATTR(bool, Capture);

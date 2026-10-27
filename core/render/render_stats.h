@@ -38,27 +38,17 @@ inline double TicksToMilliseconds(std::uint64_t ticks) {
   return static_cast<double>(ticks) * 1000.0 / frequency;
 }
 
-/* The parts of a frame the monitor reports on.  They are the buckets a frame
-   period is cut into, and they add up to it: whatever the four measured ones
-   leave over lands in `kOther`, which is the pacing wait of the frame limiter
-   and anything the sampler could not attribute. */
 enum class FramePhase : std::uint8_t {
-  kScript = 0,  // the game's Ruby code, between two `Graphics.update` calls
-  kUpdate,      // Graphics::Update, minus the two below
-  kBitmap,      // BitmapQueue: vertex upload, recording, submission
-  kPresent,     // swapchain acquire, encode, submit, present
-  kOther,       // frame limiter wait and the unmeasured rest
+  kScript = 0,
+  kUpdate,
+  kBitmap,
+  kPresent,
+  kOther,
 };
 
 inline constexpr std::size_t kFramePhaseCount = 5;
 
 struct FrameTimings {
-  /* Wall time from the start of one `Graphics.update` to the start of the
-     next: the period the player actually sees, and the only figure a frame
-     rate may be derived from.  Timing the inside of `Graphics.update` alone
-     reports the length of the engine's share of the frame -- with a heavy
-     script and a vertical sync that blocks the present, that share is a third
-     of the period, and the rate derived from it reads three times too high. */
   double total_ms = 0.0;
 
   std::array<double, kFramePhaseCount> phase_ms{};
@@ -146,9 +136,6 @@ class FrameTimeHistory {
     return total / static_cast<double>(samples_.size());
   }
 
-  /* Average of the newest `count` samples -- the frame rate shown large is
-     taken from a window about a second long, so it moves at the speed of the
-     eye instead of at the speed of a single frame. */
   double RecentAverage(size_t count) const {
     if (samples_.empty() || count == 0)
       return 0.0;
@@ -206,9 +193,6 @@ class FrameTimeHistory {
   mutable bool sorted_stale_ = true;
 };
 
-/* The per-frame breakdown, kept for the stacked chart.  A ring rather than a
-   growing vector: the monitor runs for the whole session and only the newest
-   few seconds are ever drawn. */
 class FrameTimingRing {
  public:
   static constexpr std::size_t kCapacity = 180;
@@ -227,7 +211,6 @@ class FrameTimingRing {
 
   std::size_t size() const { return count_; }
 
-  /* `index` counts from the oldest sample still held. */
   const FrameTimings& At(std::size_t index) const {
     const std::size_t oldest = (next_ + kCapacity - count_) % kCapacity;
     return samples_[(oldest + index) % kCapacity];

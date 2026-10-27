@@ -44,14 +44,6 @@ constexpr const char* kStickLabels[4] = {"Pad L-Stick Left",
                                          "Pad L-Stick Right", "Pad L-Stick Up",
                                          "Pad L-Stick Down"};
 
-float NormalizeAxis(SDL_GamepadAxis axis, Sint16 value) {
-  if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ||
-      axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
-    return std::clamp(value / 32767.0f, 0.0f, 1.0f);
-
-  return std::clamp(value / 32767.0f, -1.0f, 1.0f);
-}
-
 Uint16 NormalizeRumble(float value) {
   return static_cast<Uint16>(std::clamp(value, 0.0f, 1.0f) * 65535.0f + 0.5f);
 }
@@ -137,14 +129,6 @@ bool GamepadDevice::Repeated(int32_t button) const {
   if (button < 0 || button >= kButtonCount)
     return false;
   return states_[button].repeat;
-}
-
-float GamepadDevice::Axis(int32_t axis) const {
-  if (!pad_ || axis < 0 || axis >= SDL_GAMEPAD_AXIS_COUNT)
-    return 0.0f;
-
-  const auto sdl_axis = static_cast<SDL_GamepadAxis>(axis);
-  return NormalizeAxis(sdl_axis, SDL_GetGamepadAxis(pad_, sdl_axis));
 }
 
 bool GamepadDevice::Rumble(float low, float high, int32_t duration_ms) {
@@ -359,9 +343,11 @@ void GamepadManager::OpenExisting() {
 Gamepad::Gamepad(URGE_EXCEPT, int32_t device_id) : id_(device_id) {
   device_ = SDL_OpenGamepad(device_id);
   if (!device_) {
-    exception_state.Throw(ExceptionState::kRGSSError, "failed to open gamepad {}: {}",
-                    device_id, SDL_GetError());
-    return;  }
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "failed to open gamepad {}: {}", device_id,
+                          SDL_GetError());
+    return;
+  }
 
   char text[33] = {};
   SDL_GUIDToString(SDL_GetGamepadGUIDForID(id_), text, sizeof(text));

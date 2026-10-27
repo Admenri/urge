@@ -1,0 +1,10 @@
+# Built by the `android-arm64` CMake preset; never checked in.
+/app/src/main/jniLibs/
+
+# Gradle / Android Studio
+.gradle/
+build/
+/local.properties
+*.iml
+/.idea/
+.cxx/

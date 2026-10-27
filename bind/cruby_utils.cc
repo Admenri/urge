@@ -1,25 +1,14 @@
 #include "cruby_utils.h"
 
-#include <set>
-
 namespace binding {
 
-// Defined here rather than in an entry point: the binding library has to work
-// on its own so that `InitBindings()` can be the single entry, see
-// binding_init.cc.
 VALUE g_reset_exception = Qnil;
 VALUE g_rgss_exception = Qnil;
 
-// Defined here rather than inline in the header so that every binding raises
-// the "several arities" argument error from one frame: no locals, no exception
-// region, nothing to destroy.
 void ArgcError(int argc) {
   rb_raise(rb_eArgError, "wrong number of arguments (given %d)", argc);
 }
 
-// Returns true if every byte of `str` forms a valid UTF-8 sequence. Used to
-// decide whether an untagged (ASCII-8BIT) string is really text that should be
-// re-tagged as UTF-8, as opposed to binary data that must be left alone.
 bool IsValidUTF8(VALUE str) {
   const auto* p = reinterpret_cast<const unsigned char*>(RSTRING_PTR(str));
   const long len = RSTRING_LEN(str);
@@ -43,7 +32,6 @@ bool IsValidUTF8(VALUE str) {
     for (long j = 1; j < n; ++j)
       if ((p[i + j] & 0xC0) != 0x80)
         return false;
-    // Reject overlong encodings and surrogate code points.
     if (n == 2 && p[i] < 0xC2)
       return false;
     if (n == 3 && p[i] == 0xE0 && p[i + 1] < 0xA0)
@@ -61,53 +49,6 @@ bool IsValidUTF8(VALUE str) {
   return true;
 }
 
-namespace {
-
-void ForceEncodingUTF8Impl(VALUE obj, std::set<VALUE>& visited) {
-  switch (TYPE(obj)) {
-    case T_STRING: {
-      if (OBJ_FROZEN(obj))
-        return;
-      if (rb_enc_get_index(obj) != rb_utf8_encindex() && IsValidUTF8(obj))
-        rb_enc_associate_index(obj, rb_utf8_encindex());
-      return;
-    }
-    case T_ARRAY:
-      if (!visited.insert(obj).second)
-        return;
-      for (long i = 0; i < RARRAY_LEN(obj); ++i)
-        ForceEncodingUTF8Impl(rb_ary_entry(obj, i), visited);
-      return;
-    case T_HASH: {
-      if (!visited.insert(obj).second)
-        return;
-      VALUE keys = rb_funcall(obj, rb_intern("keys"), 0);
-      for (long i = 0; i < RARRAY_LEN(keys); ++i) {
-        VALUE key = rb_ary_entry(keys, i);
-        ForceEncodingUTF8Impl(key, visited);
-        ForceEncodingUTF8Impl(rb_hash_aref(obj, key), visited);
-      }
-      return;
-    }
-    case T_OBJECT: {
-      if (!visited.insert(obj).second)
-        return;
-      VALUE ivars = rb_funcall(obj, rb_intern("instance_variables"), 0);
-      for (long i = 0; i < RARRAY_LEN(ivars); ++i) {
-        VALUE iv = rb_ary_entry(ivars, i);
-        ForceEncodingUTF8Impl(
-            rb_funcall(obj, rb_intern("instance_variable_get"), 1, iv),
-            visited);
-      }
-      return;
-    }
-    default:
-      return;
-  }
-}
-
-}  // namespace
-
 VALUE TagUTF8IfValid(VALUE str) {
   if (RB_TYPE_P(str, T_STRING) && !OBJ_FROZEN(str) &&
       rb_enc_get_index(str) != rb_utf8_encindex() && IsValidUTF8(str))
@@ -115,19 +56,10 @@ VALUE TagUTF8IfValid(VALUE str) {
   return str;
 }
 
-void ForceEncodingUTF8(VALUE obj) {
-  std::set<VALUE> visited;
-  ForceEncodingUTF8Impl(obj, visited);
-}
-
 int ParseArgs(int argc, VALUE* argv, const char* fmt, ...) {
   va_list args_iter;
   bool is_arg_optional = false;
   int count = 0;
-  // Walked as a plain C string on purpose: this function raises, and a
-  // `std::string` alive in its frame would give the frame a destructor -- which
-  // on the web means a landing pad, and a landing pad is what turns a raise
-  // into a trap (probe A in build/web-test/frame_shape_probe.rb).
   const char* ch = fmt;
 
   va_start(args_iter, fmt);
@@ -138,20 +70,6 @@ int ParseArgs(int argc, VALUE* argv, const char* fmt, ...) {
         rb_raise(rb_eArgError, "wrong number of arguments");
       break;
     }
-
-    /*
-     * o -> VALUE
-     * i -> int32
-     * u -> uint32
-     * l -> int64
-     * p -> uint64
-     * s -> std::string
-     * f -> double
-     * b -> bool
-     * n -> std::string
-     * z -> const char*
-     * r -> void*
-     */
 
     VALUE arg_element = argv[count];
     switch (*ch) {
@@ -312,8 +230,7 @@ int ParseArgs(int argc, VALUE* argv, const char* fmt, ...) {
 
   va_end(args_iter);
 
-  /* Real args caller provide */
   return count;
 }
 
-}  // namespace binding
+}

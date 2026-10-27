@@ -31,7 +31,9 @@
 
 namespace urge {
 
-AnimationLayer3D::AnimationLayer3D(URGE_EXCEPT, RefPtr<Animation3D> animation, float weight)
+AnimationLayer3D::AnimationLayer3D(URGE_EXCEPT,
+                                   RefPtr<Animation3D> animation,
+                                   float weight)
     : animation_(std::move(animation)), weight_(std::max(0.0f, weight)) {
   if (!animation_) {
     exception_state.Throw(ExceptionState::kRGSSError,
@@ -50,9 +52,8 @@ RefPtr<AnimationLayer3D> AnimationStack3D::AddLayer(
     URGE_EXCEPT,
     RefPtr<Animation3D> animation,
     float weight) {
-  auto layer =
-      MakeRefCounted<AnimationLayer3D>(exception_state, std::move(animation),
-                                       weight);
+  auto layer = MakeRefCounted<AnimationLayer3D>(exception_state,
+                                                std::move(animation), weight);
   layers_.push_back(layer);
   return layer;
 }
@@ -74,7 +75,9 @@ RefPtr<AnimationLayer3D> AnimationStack3D::LayerAt(int32_t index) const {
   return layers_[index];
 }
 
-void AnimationStack3D::Update(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float delta) {
+void AnimationStack3D::Update(URGE_EXCEPT,
+                              RefPtr<Skeleton3D> skeleton,
+                              float delta) {
   skeleton->BeginPose();
 
   for (const RefPtr<AnimationLayer3D>& layer : layers_) {

@@ -55,13 +55,13 @@ Image::Image(int32_t width, int32_t height) {
 }
 
 Image::Image(URGE_EXCEPT, std::string filename) {
-  IOService::Get().OpenRead(exception_state,
-      filename, [&](SDL_IOStream* stream, const std::string& ext) {
-        image_ = IMG_LoadTyped_IO(stream, true, ext.c_str());
-        return !!image_;
-      });
+  IOService::Get().OpenRead(exception_state, filename,
+                            [&](SDL_IOStream* stream, const std::string& ext) {
+                              image_ =
+                                  IMG_LoadTyped_IO(stream, true, ext.c_str());
+                              return !!image_;
+                            });
 
-  // Same as Bitmap: stop where the failure happened, the object stays empty.
   if (exception_state.HadException() || !image_)
     return;
 
@@ -121,7 +121,8 @@ void Image::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color) {
       static_cast<Uint8>(color->data.a));
 }
 
-void Image::FillRect(URGE_EXCEPT, int32_t x,
+void Image::FillRect(URGE_EXCEPT,
+                     int32_t x,
                      int32_t y,
                      int32_t width,
                      int32_t height,
@@ -137,11 +138,12 @@ void Image::FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  FillRect(exception_state, rect->data.x, rect->data.y, rect->data.width, rect->data.height,
-           color);
+  FillRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
+           rect->data.height, color);
 }
 
-void Image::Blt(URGE_EXCEPT, int32_t x,
+void Image::Blt(URGE_EXCEPT,
+                int32_t x,
                 int32_t y,
                 RefPtr<Image> src_image,
                 RefPtr<Rect> src_rect,
@@ -149,12 +151,14 @@ void Image::Blt(URGE_EXCEPT, int32_t x,
   if (!Disposable::Guard(exception_state))
     return;
 
-  StretchBlt(exception_state,
+  StretchBlt(
+      exception_state,
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
       src_image, src_rect, opacity);
 }
 
-void Image::StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
+void Image::StretchBlt(URGE_EXCEPT,
+                       RefPtr<Rect> dst_rect,
                        RefPtr<Image> src_image,
                        RefPtr<Rect> src_rect,
                        int32_t opacity) {
@@ -188,7 +192,8 @@ void Image::StretchBlt(URGE_EXCEPT, RefPtr<Rect> dst_rect,
   SDL_SetSurfaceBlendMode(source, previous_blend);
 }
 
-void Image::GradientFillRect(URGE_EXCEPT, int32_t x,
+void Image::GradientFillRect(URGE_EXCEPT,
+                             int32_t x,
                              int32_t y,
                              int32_t width,
                              int32_t height,
@@ -225,15 +230,17 @@ void Image::GradientFillRect(URGE_EXCEPT, int32_t x,
   }
 }
 
-void Image::GradientFillRect(URGE_EXCEPT, RefPtr<Rect> rect,
+void Image::GradientFillRect(URGE_EXCEPT,
+                             RefPtr<Rect> rect,
                              RefPtr<Color> color1,
                              RefPtr<Color> color2,
                              bool vertical) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  GradientFillRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
-                   rect->data.height, color1, color2, vertical);
+  GradientFillRect(exception_state, rect->data.x, rect->data.y,
+                   rect->data.width, rect->data.height, color1, color2,
+                   vertical);
 }
 
 void Image::Clear(URGE_EXCEPT) {
@@ -243,7 +250,11 @@ void Image::Clear(URGE_EXCEPT) {
   ClearRect(exception_state, 0, 0, image_->w, image_->h);
 }
 
-void Image::ClearRect(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height) {
+void Image::ClearRect(URGE_EXCEPT,
+                      int32_t x,
+                      int32_t y,
+                      int32_t width,
+                      int32_t height) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -254,7 +265,8 @@ void Image::ClearRect(URGE_EXCEPT, RefPtr<Rect> rect) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  ClearRect(exception_state, rect->data.x, rect->data.y, rect->data.width, rect->data.height);
+  ClearRect(exception_state, rect->data.x, rect->data.y, rect->data.width,
+            rect->data.height);
 }
 
 RefPtr<Image> Image::FromDump(URGE_EXCEPT, std::string data) {

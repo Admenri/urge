@@ -53,7 +53,8 @@ class UniformBlockPool {
     uint32_t offset = 0;
   };
 
-  UniformBlockPool(URGE_EXCEPT, wgpu::BindGroupLayout layout,
+  UniformBlockPool(URGE_EXCEPT,
+                   wgpu::BindGroupLayout layout,
                    uint32_t element_size,
                    std::string_view name = {});
   ~UniformBlockPool();
@@ -71,9 +72,6 @@ class UniformBlockPool {
 
   const std::string& name() const { return name_; }
   uint32_t element_size() const { return element_size_; }
-  uint32_t slot_stride() const { return slot_stride_; }
-  uint32_t chunk_size() const { return chunk_size_; }
-  uint32_t slots_per_chunk() const { return slots_per_chunk_; }
   std::size_t chunk_count() const { return chunks_.size(); }
   const Chunk& chunk(uint32_t index) const { return chunks_[index]; }
 

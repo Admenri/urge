@@ -63,16 +63,14 @@ std::string FormatBitrate(const VideoTrackInfo& info) {
 
 Video::Video(URGE_EXCEPT, std::string filename) {
   if (!player_.Open(exception_state, filename)) {
-    exception_state.Throw(ExceptionState::kRGSSError, "the video could not be opened: {}",
-                    filename);
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "the video could not be opened: {}", filename);
     return;
   }
   std::vector<uint8_t> track = player_.TakeAudio();
   if (track.empty())
     return;
 
-  // A video without its audio track still plays, so the failure is a warning
-  // and a state of its own rather than the caller's.
   ExceptionState audio_state;
   audio_ = MakeRefCounted<AudioStream>(
       audio_state, std::move(track),
@@ -249,9 +247,6 @@ void Video::SyncAudio() {
 
 namespace {
 
-// The stubs answer the failure the only way they can: `Video.new` is the one
-// call that carries a state, so that is where a script hears about it, and
-// everything else leaves a log line and answers a default.
 void VideoUnavailable(URGE_EXCEPT) {
   exception_state.Throw(ExceptionState::kRGSSError,
                         "video playback is not available in this build.");
@@ -320,9 +315,6 @@ void Video::Update() {
 }
 
 void Video::Render(URGE_EXCEPT, RefPtr<Bitmap>) {
-  // `Video.new` already failed, so no script can be holding one of these; the
-  // state is here because the declaration carries it, and a call that somehow
-  // arrives answers the same failure.
   VideoUnavailable(exception_state);
 }
 

@@ -29,8 +29,6 @@
 namespace urge {
 
 Table::Table(int32_t xsize, int32_t ysize, int32_t zsize) {
-  // The constructor cannot report, so a size that `Resize` would reject is
-  // clamped here: a table the script asked for is still a table.
   constexpr int64_t kMaxElements = 1 << 26;
   const int64_t elements = static_cast<int64_t>(xsize) * ysize * zsize;
   if (xsize < 0 || ysize < 0 || zsize < 0 || elements > kMaxElements) {
@@ -98,9 +96,6 @@ MARSHAL_LOAD_DEF(Table) {
 }
 
 void Table::Resize(URGE_EXCEPT, int32_t xsize, int32_t ysize, int32_t zsize) {
-  // A negative side multiplies into a huge `size_t`, and `vector::resize` on
-  // that aborts the process in a build without exceptions.  Zero is legal: an
-  // empty table is what the RGSS data files carry.
   constexpr int64_t kMaxElements = 1 << 26;
   const int64_t elements = static_cast<int64_t>(xsize) * ysize * zsize;
   if (xsize < 0 || ysize < 0 || zsize < 0 || elements > kMaxElements) {

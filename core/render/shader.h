@@ -102,17 +102,10 @@ class Pipeline {
            const std::set<uint32_t>& dynamic_sets = {},
            std::vector<wgpu::VertexStepMode> step_modes = {});
 
-  static Pipeline AutoLayout(
-      const ShaderSource& vertex,
-      const ShaderSource& fragment,
-      std::vector<std::vector<VertexAttribute>> vertex_layout);
-
   wgpu::RenderPipeline MakeState(wgpu::PrimitiveState primitive,
                                  std::optional<wgpu::DepthStencilState> depth,
                                  std::vector<wgpu::ColorTargetState> blends,
                                  wgpu::MultisampleState samples = {});
-
-  wgpu::RenderPipeline MakeDefaultState(const wgpu::BlendState* blend);
 
  private:
   struct VertexBuffer {
@@ -121,12 +114,10 @@ class Pipeline {
     wgpu::VertexStepMode step_mode = wgpu::VertexStepMode::Vertex;
   };
 
-  Pipeline() = default;
-
   void Initialize(const ShaderSource& vertex,
                   const ShaderSource& fragment,
                   std::vector<std::vector<VertexAttribute>> vertex_layout,
-                  const std::set<uint32_t>* dynamic_sets,
+                  const std::set<uint32_t>& dynamic_sets,
                   std::vector<wgpu::VertexStepMode> step_modes);
 
   wgpu::ShaderModule vertex_module_;

@@ -109,8 +109,7 @@ void World3D::EnsureTarget(URGE_EXCEPT) {
     return;
 
   target_ = MakeRefCounted<RenderTarget3D>(exception_state, width_, height_,
-                                  format_,
-                                           "depth32float", 1);
+                                           format_, "depth32float", 1);
   texture_group_ = nullptr;
 }
 
@@ -209,8 +208,7 @@ void World3D::UpdateQuad(URGE_EXCEPT, glm::ivec2 target_size) {
   struct QuadData {
     glm::vec4 rect;
     glm::vec4 target;
-  }
-  data;
+  } data;
 
   data.rect =
       glm::vec4(static_cast<float>(x_), static_cast<float>(y_),
@@ -252,14 +250,12 @@ void World3D::RenderScene(URGE_EXCEPT, DrawParam param) {
 
   if (!context_)
     context_ = MakeRefCounted<RenderContext3D>(exception_state, param->command,
-                                          target_);
+                                               target_);
   else
     context_->BeginFrame(param->command, target_);
 
   context_->Collect(scene_.get(), camera_.get());
   context_->Flush();
-  // The draw path has no state of its own to report into: a frame that
-  // cannot be built leaves a log line and the last good texture.
   ExceptionState frame_state;
   graph->Execute(frame_state, context_.get());
 }
@@ -270,8 +266,6 @@ bool World3D::Prepare(DrawParam param) {
   if (width_ <= 0 || height_ <= 0)
     return false;
 
-  // The draw path has no state to report into: a frame that cannot be built
-  // leaves a log line and the previous texture.
   ExceptionState frame_state;
   EnsureQuadPipeline(frame_state);
   RenderScene(frame_state, param);

@@ -288,10 +288,6 @@ int32_t IOService::AddLoadPath(const std::string& new_path,
   return PHYSFS_mount(new_path.c_str(), mount_point.c_str(), append);
 }
 
-int32_t IOService::RemoveLoadPath(const std::string& old_path) {
-  return PHYSFS_unmount(old_path.c_str());
-}
-
 bool IOService::MountArchive(const std::string& path, bool prepend) {
   return archive::Mount(path, prepend);
 }

@@ -105,7 +105,8 @@ Geometry::~Geometry() {
   Disposable::Dispose();
 }
 
-void Geometry::SetPosition(URGE_EXCEPT, int32_t triangle,
+void Geometry::SetPosition(URGE_EXCEPT,
+                           int32_t triangle,
                            int32_t point,
                            RefPtr<Vector3> position) {
   if (!Disposable::Guard(exception_state))
@@ -121,7 +122,8 @@ void Geometry::SetPosition(URGE_EXCEPT, int32_t triangle,
   v.vertex[point].position = glm::vec4(position->data, 1.0f);
 }
 
-void Geometry::SetTexcoord(URGE_EXCEPT, int32_t triangle,
+void Geometry::SetTexcoord(URGE_EXCEPT,
+                           int32_t triangle,
                            int32_t point,
                            RefPtr<Vector2> texcoord) {
   if (!Disposable::Guard(exception_state))
@@ -137,7 +139,10 @@ void Geometry::SetTexcoord(URGE_EXCEPT, int32_t triangle,
   v.vertex[point].texcoord = texcoord->data;
 }
 
-void Geometry::SetColor(URGE_EXCEPT, int32_t triangle, int32_t point, RefPtr<Color> color) {
+void Geometry::SetColor(URGE_EXCEPT,
+                        int32_t triangle,
+                        int32_t point,
+                        RefPtr<Color> color) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -227,8 +232,6 @@ bool Geometry::Prepare(DrawParam param) {
   UniformManager& uniforms = UniformManager::Get();
   ObjectData object_data;
   object_data.model_mat = world_transform();
-  // The pool answers an invalid chunk when it refuses; the draw path has
-  // no state of its own to report into.
   ExceptionState acquire_state;
   object_slot_ = uniforms.object_uniforms().Acquire(acquire_state, object_data);
 
@@ -238,8 +241,6 @@ bool Geometry::Prepare(DrawParam param) {
 }
 
 bool Geometry::DoDraw(DrawParam param) {
-  // The draw path has no state of its own: the effect answers a null
-  // pipeline, which leaves this object undrawn.
   ExceptionState effect_state;
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
@@ -249,7 +250,8 @@ bool Geometry::DoDraw(DrawParam param) {
     param->pass.SetPipeline(effect_->AcquirePipeline(effect_state));
     param->pass.SetBindGroup(0, param->scene, 0, nullptr);
     param->pass.SetBindGroup(1, object_chunk.group, 1, &object_slot_.offset);
-    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0, nullptr);
+    param->pass.SetBindGroup(2, effect_->AcquireBindGroup(effect_state), 0,
+                             nullptr);
     param->pass.SetVertexBuffer(0, param->vertices->buffer(), 0,
                                 WGPU_WHOLE_SIZE);
     param->pass.Draw(primitive_slot_.count, 1, primitive_slot_.first, 0);

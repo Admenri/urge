@@ -137,10 +137,8 @@ class AudioService {
   static AudioService* Create(const std::string& output = {});
 
   void SetMasterVolume(int32_t volume);
-  int32_t GetMasterVolume() const;
 
   void SetBusVolume(AudioBus bus, int32_t volume);
-  int32_t GetBusVolume(AudioBus bus) const;
 
   bool SetOutputDevice(const std::string& name);
   const std::string& output_device() const { return output_device_; }

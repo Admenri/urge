@@ -79,6 +79,20 @@ configure_file("${CMAKE_CURRENT_LIST_DIR}/encdb.h"
 # --- builtin_binary.rbbin -------------------------------------------------
 set(RUBY_BUILTIN_BINARY_RBBIN "${RUBY_BINARY_DIR}/builtin_binary.rbbin")
 
+# A cross build cannot run the miniruby it just built: that one is a program for
+# the *target*, so a Windows host is handed an aarch64 ELF it has no way to
+# execute.  RUBY_BUILTIN_BINARY_PREBUILT names a file a host build already
+# produced, and the build copies it instead of generating one.
+#
+# What the file contains is the compiled form of the builtin Ruby sources
+# (array.rb, kernel.rb, ...), which depends on the interpreter's word size and
+# byte order but not on its operating system -- so a 64-bit little-endian host's
+# file is exactly what a 64-bit little-endian target needs.  A 32-bit target
+# would need its own; that is one of the reasons the Android port is 64-bit only
+# for now.
+set(RUBY_BUILTIN_BINARY_PREBUILT "" CACHE FILEPATH
+  "Pre-generated builtin_binary.rbbin for a cross build, where miniruby is a program for the target; the tree keeps one at third_party/ruby/prebuilt/builtin_binary-lp64.rbbin")
+
 # miniruby is a native executable everywhere except on the web, where the only
 # thing the toolchain produces is a JavaScript module.  It is still a build
 # tool, so it runs on the build machine -- under node, which the Emscripten
@@ -110,6 +124,26 @@ function(ruby_host_tool_path out path)
 endfunction()
 
 function(ruby_generate_builtin_binary)
+  if(RUBY_BUILTIN_BINARY_PREBUILT)
+    if(NOT EXISTS "${RUBY_BUILTIN_BINARY_PREBUILT}")
+      message(FATAL_ERROR
+        "RUBY_BUILTIN_BINARY_PREBUILT is '${RUBY_BUILTIN_BINARY_PREBUILT}', "
+        "which does not exist. Generate it with a host build first "
+        "(cmake --build --preset win64-vendored-ruby --target miniruby, then run "
+        "miniruby on third_party/ruby/tool/generic_erb.rb), or use the copy the "
+        "tree keeps at third_party/ruby/prebuilt/builtin_binary.rbbin.")
+    endif()
+
+    add_custom_command(
+      OUTPUT "${RUBY_BUILTIN_BINARY_RBBIN}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              "${RUBY_BUILTIN_BINARY_PREBUILT}" "${RUBY_BUILTIN_BINARY_RBBIN}"
+      DEPENDS "${RUBY_BUILTIN_BINARY_PREBUILT}"
+      COMMENT "Using the pre-generated builtin_binary.rbbin"
+      VERBATIM)
+    return()
+  endif()
+
   ruby_host_tool_path(_lib "${RUBY_SOURCE_DIR}/lib")
   ruby_host_tool_path(_build "${RUBY_BINARY_DIR}")
   ruby_host_tool_path(_tool "${RUBY_SOURCE_DIR}/tool/generic_erb.rb")
