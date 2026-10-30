@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Material3D  (core/scene3d/material3d.h:550-575)
+// Material3D  (core/scene3d/material3d.h:556-581)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Material3D);

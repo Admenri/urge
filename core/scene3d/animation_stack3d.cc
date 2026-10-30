@@ -89,7 +89,7 @@ void AnimationStack3D::Update(URGE_EXCEPT,
       continue;
 
     const float from = layer->time();
-    float to = from + delta * layer->speed();
+    float to = from + delta * layer->speed() * animation->speed();
 
     const float duration = animation->Duration();
     if (animation->loop() && duration > 0.0f) {

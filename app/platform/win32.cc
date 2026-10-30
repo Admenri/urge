@@ -22,6 +22,7 @@
 
 #include "app/platform/win32.h"
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -101,6 +102,26 @@ std::string WStringToUTF8(const std::wstring& wstr) {
 
 namespace platform {
 namespace win32 {
+
+std::filesystem::path GetExecutablePath() {
+  // `GetModuleFileNameW` truncates and reports the buffer size instead of the
+  // path when the buffer is too small, so the loop grows until it fits.  The
+  // limit is the one Windows itself uses for a path.
+  std::wstring buffer(MAX_PATH, L'\0');
+  for (;;) {
+    const DWORD length = GetModuleFileNameW(nullptr, buffer.data(),
+                                            static_cast<DWORD>(buffer.size()));
+    if (length == 0)
+      return {};
+    if (length < buffer.size()) {
+      buffer.resize(length);
+      return std::filesystem::path(buffer);
+    }
+    if (buffer.size() >= 32768)
+      return {};
+    buffer.resize(buffer.size() * 2);
+  }
+}
 
 std::optional<std::string> GetRTPPath(int32_t version, std::string key) {
   const char* kRegPath = nullptr;

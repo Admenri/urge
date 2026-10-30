@@ -22,11 +22,19 @@
 
 #pragma once
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
 namespace platform {
 namespace win32 {
+
+/* The executable's own path, in the form the filesystem uses -- a wide path on
+   Windows, so a game installed under a name no ANSI code page can spell still
+   round-trips.  `argv[0]` cannot be used for this: the C runtime hands it over
+   already converted to the process's code page, and the conversion is lossy for
+   anything outside it. */
+std::filesystem::path GetExecutablePath();
 
 std::optional<std::string> GetRTPPath(int32_t version, std::string key);
 

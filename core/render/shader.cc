@@ -186,13 +186,13 @@ wgpu::RenderPipeline Pipeline::MakeState(
 
   wgpu::VertexState vertex_state;
   vertex_state.module = vertex_module_;
-  vertex_state.entryPoint = vertex_entry_;
+  vertex_state.entryPoint = wgpu::StringView(vertex_entry_);
   vertex_state.bufferCount = buffers.size();
   vertex_state.buffers = buffers.empty() ? nullptr : buffers.data();
 
   wgpu::FragmentState fragment_state;
   fragment_state.module = fragment_module_;
-  fragment_state.entryPoint = fragment_entry_;
+  fragment_state.entryPoint = wgpu::StringView(fragment_entry_);
   fragment_state.targetCount = blends.size();
   fragment_state.targets = blends.empty() ? nullptr : blends.data();
 

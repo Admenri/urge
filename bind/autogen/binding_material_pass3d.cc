@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// MaterialPass3D  (core/scene3d/material3d.h:55-447)
+// MaterialPass3D  (core/scene3d/material3d.h:55-452)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(MaterialPass3D);

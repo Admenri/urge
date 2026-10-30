@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-27T08:10:07Z",
+    "generated_at": "2026-10-30T13:27:07Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -9731,7 +9731,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "vertex_entry",
@@ -9743,7 +9743,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "vertex_entry=",
@@ -9761,7 +9761,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "fragment_entry",
@@ -9773,7 +9773,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "fragment_entry=",
@@ -9791,7 +9791,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "blend",
@@ -9803,7 +9803,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "blend=",
@@ -9821,7 +9821,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "params",
@@ -9833,7 +9833,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "params=",
@@ -9851,7 +9851,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "set_texture_slot",
@@ -9874,7 +9874,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "get_texture_slot",
@@ -9892,7 +9892,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "texture_slot_count",
@@ -9904,7 +9904,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "set_texture",
@@ -9927,7 +9927,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "get_texture",
@@ -9945,7 +9945,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "set_uniform_slot",
@@ -9968,7 +9968,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "get_uniform_slot",
@@ -9986,7 +9986,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "set_uniform",
@@ -10009,7 +10009,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "get_uniform",
@@ -10027,7 +10027,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "uniform_slot_count",
@@ -10039,7 +10039,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "ruby_name": "slot_names",
@@ -10051,7 +10051,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         }
       ],
       "attributes": [
@@ -10065,7 +10065,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "queue",
@@ -10077,7 +10077,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "skinned",
@@ -10089,7 +10089,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "instanced",
@@ -10101,7 +10101,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "fullscreen",
@@ -10113,7 +10113,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_only",
@@ -10125,7 +10125,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "topology",
@@ -10137,7 +10137,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "front_face",
@@ -10149,7 +10149,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "cull",
@@ -10161,7 +10161,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_test",
@@ -10173,7 +10173,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_write",
@@ -10185,7 +10185,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_compare",
@@ -10197,7 +10197,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_bias",
@@ -10209,7 +10209,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_bias_slope",
@@ -10221,7 +10221,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "depth_bias_clamp",
@@ -10233,7 +10233,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil",
@@ -10245,7 +10245,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_ref",
@@ -10257,7 +10257,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_read_mask",
@@ -10269,7 +10269,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_write_mask",
@@ -10281,7 +10281,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_front_compare",
@@ -10293,7 +10293,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_front_fail",
@@ -10305,7 +10305,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_front_depth_fail",
@@ -10317,7 +10317,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_front_pass",
@@ -10329,7 +10329,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_back_compare",
@@ -10341,7 +10341,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_back_fail",
@@ -10353,7 +10353,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_back_depth_fail",
@@ -10365,7 +10365,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "stencil_back_pass",
@@ -10377,7 +10377,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "color_write_mask",
@@ -10389,7 +10389,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "alpha_to_coverage",
@@ -10401,7 +10401,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         },
         {
           "name": "texture",
@@ -10413,7 +10413,7 @@
           "override": false,
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/scene3d/material3d.h:55-447"
+          "export": "core/scene3d/material3d.h:55-452"
         }
       ],
       "data_attributes": [],
@@ -10427,7 +10427,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/material3d.h:55-447",
+      "export": "core/scene3d/material3d.h:55-452",
       "cpp_name": "MaterialPass3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/material3d.h",
@@ -10441,7 +10441,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         }
       ],
       "initialize_copy": null,
@@ -10472,7 +10472,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "add_shadow_pass",
@@ -10495,7 +10495,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "get_pass",
@@ -10513,7 +10513,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "has_pass",
@@ -10531,7 +10531,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "remove_pass",
@@ -10549,7 +10549,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "pass_count",
@@ -10561,7 +10561,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "tags",
@@ -10573,7 +10573,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         },
         {
           "ruby_name": "pass_at",
@@ -10591,7 +10591,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:550-575"
+          "export": "core/scene3d/material3d.h:556-581"
         }
       ],
       "attributes": [],
@@ -10606,7 +10606,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/material3d.h:550-575",
+      "export": "core/scene3d/material3d.h:556-581",
       "cpp_name": "Material3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/material3d.h",
@@ -10975,7 +10975,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/render_queue3d.h:43-96"
+          "export": "core/scene3d/render_queue3d.h:43-97"
         }
       ],
       "initialize_copy": null,
@@ -10990,7 +10990,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_queue3d.h:43-96"
+          "export": "core/scene3d/render_queue3d.h:43-97"
         },
         {
           "ruby_name": "light_count",
@@ -11002,7 +11002,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_queue3d.h:43-96"
+          "export": "core/scene3d/render_queue3d.h:43-97"
         },
         {
           "ruby_name": "tags",
@@ -11014,7 +11014,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:43-96"
+          "export": "core/scene3d/render_queue3d.h:43-97"
         }
       ],
       "attributes": [],
@@ -11029,7 +11029,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_queue3d.h:43-96",
+      "export": "core/scene3d/render_queue3d.h:43-97",
       "cpp_name": "RenderQueue3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_queue3d.h",
@@ -13078,7 +13078,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "params": [
@@ -13094,7 +13094,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         }
       ],
       "initialize_copy": {
@@ -13106,7 +13106,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/canvas/bitmap.h:43-155"
+        "export": "core/canvas/bitmap.h:44-156"
       },
       "instance_methods": [
         {
@@ -13119,7 +13119,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "height",
@@ -13131,7 +13131,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "rect",
@@ -13143,7 +13143,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "blt",
@@ -13181,7 +13181,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "stretch_blt",
@@ -13214,7 +13214,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "mask_blt",
@@ -13247,7 +13247,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "fill_rect",
@@ -13285,7 +13285,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "fill_rect",
@@ -13308,7 +13308,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -13356,7 +13356,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -13389,7 +13389,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "clear",
@@ -13401,7 +13401,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "clear_rect",
@@ -13434,7 +13434,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "clear_rect",
@@ -13452,7 +13452,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "get_pixel",
@@ -13475,7 +13475,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "set_pixel",
@@ -13503,7 +13503,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "hue_change",
@@ -13521,7 +13521,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "blur",
@@ -13533,7 +13533,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "radial_blur",
@@ -13556,7 +13556,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "draw_text",
@@ -13599,7 +13599,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "draw_text",
@@ -13627,7 +13627,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "text_size",
@@ -13645,7 +13645,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "texture_view",
@@ -13657,7 +13657,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "texture",
@@ -13669,7 +13669,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "depth_stencil_view",
@@ -13681,7 +13681,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "to_image",
@@ -13693,7 +13693,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         },
         {
           "ruby_name": "update_with_image",
@@ -13711,7 +13711,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         }
       ],
       "attributes": [
@@ -13725,7 +13725,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         }
       ],
       "data_attributes": [],
@@ -13746,7 +13746,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:43-155"
+          "export": "core/canvas/bitmap.h:44-156"
         }
       ],
       "class_attributes": [],
@@ -13758,7 +13758,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/bitmap.h:43-155",
+      "export": "core/canvas/bitmap.h:44-156",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/canvas/bitmap.h",

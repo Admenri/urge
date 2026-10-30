@@ -8,3 +8,8 @@ build/
 *.iml
 /.idea/
 .cxx/
+
+# Release signing key and its passwords are never checked in.
+/keystore/
+*.jks
+*.keystore

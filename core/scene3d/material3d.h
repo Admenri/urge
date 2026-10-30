@@ -84,6 +84,7 @@ class MaterialPass3D : public Object {
     if (value != vertex_entry_) {
       vertex_entry_ = std::move(value);
       state_dirty_ = true;
+      builder_dirty_ = true;
     }
   }
 
@@ -94,6 +95,7 @@ class MaterialPass3D : public Object {
     if (value != fragment_entry_) {
       fragment_entry_ = std::move(value);
       state_dirty_ = true;
+      builder_dirty_ = true;
     }
   }
 
@@ -103,6 +105,7 @@ class MaterialPass3D : public Object {
       if (*value != skinned_) {
         skinned_ = *value;
         state_dirty_ = true;
+        builder_dirty_ = true;
       }
     }
     return skinned_;
@@ -114,6 +117,7 @@ class MaterialPass3D : public Object {
       if (*value != instanced_) {
         instanced_ = *value;
         state_dirty_ = true;
+        builder_dirty_ = true;
       }
     }
     return instanced_;
@@ -125,6 +129,7 @@ class MaterialPass3D : public Object {
       if (*value != fullscreen_) {
         fullscreen_ = *value;
         state_dirty_ = true;
+        builder_dirty_ = true;
       }
     }
     return fullscreen_;
@@ -529,6 +534,7 @@ class MaterialPass3D : public Object {
   uint32_t group_count_ = 0;
   bool state_dirty_ = true;
   bool binding_dirty_ = true;
+  bool builder_dirty_ = false;
 
   std::vector<Slot> slots_;
   std::vector<std::string> texture_names_;

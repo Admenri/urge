@@ -451,6 +451,11 @@ wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
   if (state_dirty_) {
     pipelines_.clear();
     shadow_pipelines_.clear();
+    if (builder_dirty_) {
+      builder_.reset();
+      shadow_builder_.reset();
+      builder_dirty_ = false;
+    }
     state_dirty_ = false;
   }
 
@@ -506,6 +511,11 @@ wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
   if (state_dirty_) {
     pipelines_.clear();
     shadow_pipelines_.clear();
+    if (builder_dirty_) {
+      builder_.reset();
+      shadow_builder_.reset();
+      builder_dirty_ = false;
+    }
     state_dirty_ = false;
   }
 

@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <optional>
 #include <set>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -122,8 +123,8 @@ class Pipeline {
 
   wgpu::ShaderModule vertex_module_;
   wgpu::ShaderModule fragment_module_;
-  std::string_view vertex_entry_;
-  std::string_view fragment_entry_;
+  std::string vertex_entry_;
+  std::string fragment_entry_;
   wgpu::PipelineLayout layout_;
   std::vector<VertexBuffer> buffers_;
 };

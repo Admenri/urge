@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -47,6 +48,37 @@ enum class FramePhase : std::uint8_t {
 };
 
 inline constexpr std::size_t kFramePhaseCount = 5;
+
+inline const char* FramePhaseName(FramePhase phase) {
+  switch (phase) {
+    case FramePhase::kScript:
+      return "script";
+    case FramePhase::kUpdate:
+      return "update";
+    case FramePhase::kBitmap:
+      return "bitmap";
+    case FramePhase::kPresent:
+      return "present";
+    case FramePhase::kOther:
+      break;
+  }
+  return "other";
+}
+
+inline std::atomic<std::uint8_t>& CurrentPhaseSlot() {
+  static std::atomic<std::uint8_t> slot{0};
+  return slot;
+}
+
+inline void SetCurrentFramePhase(FramePhase phase) {
+  CurrentPhaseSlot().store(static_cast<std::uint8_t>(phase),
+                           std::memory_order_relaxed);
+}
+
+inline FramePhase CurrentFramePhase() {
+  return static_cast<FramePhase>(
+      CurrentPhaseSlot().load(std::memory_order_relaxed));
+}
 
 struct FrameTimings {
   double total_ms = 0.0;
@@ -222,6 +254,57 @@ class FrameTimingRing {
   std::size_t count_ = 0;
 };
 
+struct FrameTimeTotals {
+  static constexpr std::size_t kBucketCount = 64;
+  static constexpr double kBucketMs = 1.0;
+
+  std::uint64_t frames = 0;
+  FrameTimings sum;
+  std::array<std::uint64_t, kBucketCount> buckets{};
+  std::uint64_t overflow = 0;
+  double worst_ms = 0.0;
+
+  void Add(const FrameTimings& timings) {
+    ++frames;
+    sum.total_ms += timings.total_ms;
+    for (std::size_t i = 0; i < kFramePhaseCount; ++i)
+      sum.phase_ms[i] += timings.phase_ms[i];
+
+    if (timings.total_ms > worst_ms)
+      worst_ms = timings.total_ms;
+
+    const auto index = static_cast<std::size_t>(timings.total_ms / kBucketMs);
+    if (index >= kBucketCount)
+      ++overflow;
+    else
+      ++buckets[index];
+  }
+
+  void Reset() { *this = FrameTimeTotals(); }
+
+  double average_ms() const {
+    return frames ? sum.total_ms / static_cast<double>(frames) : 0.0;
+  }
+
+  double average_phase(FramePhase phase) const {
+    return frames ? sum.phase(phase) / static_cast<double>(frames) : 0.0;
+  }
+
+  double Percentile(double fraction) const {
+    if (!frames)
+      return 0.0;
+
+    const double target = fraction * static_cast<double>(frames);
+    double accumulated = 0.0;
+    for (std::size_t i = 0; i < kBucketCount; ++i) {
+      accumulated += static_cast<double>(buckets[i]);
+      if (accumulated >= target)
+        return (static_cast<double>(i) + 0.5) * kBucketMs;
+    }
+    return static_cast<double>(kBucketCount) * kBucketMs;
+  }
+};
+
 struct RenderStats {
   RenderFrameCounters current;
   RenderFrameCounters last;
@@ -229,6 +312,8 @@ struct RenderStats {
   FrameTimings timings;
   FrameTimeHistory frame_history;
   FrameTimingRing timing_history;
+
+  FrameTimeTotals run;
 
   void EndFrame() {
     last = current;

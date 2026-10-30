@@ -14,6 +14,8 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   target_sources(Game PUBLIC resources/app.rc)
   target_sources(Game PUBLIC platform/win32.cc)
+  target_sources(Game PUBLIC platform/crash_handler.cc)
+  target_sources(Game PUBLIC platform/profiler.cc)
 endif()
 
 if(ANDROID)
@@ -190,3 +192,15 @@ if(EMSCRIPTEN)
 
   set_target_properties(Game PROPERTIES SUFFIX ".html")
 endif()
+
+# ---------------------------------------------------------------------------
+# Profile-guided optimization.
+#
+# It is included from here, at the very end, for one reason: it hangs a
+# pre-link step (the merge) and a post-build step (the PGO runtime) off the Game
+# target, and CMake only allows that in the directory that created it.  The
+# three targets it flags -- urge-core, urge-binding and this one -- already
+# exist by now, and setting properties on targets from another directory is
+# allowed.  See cmake/pgo.cmake.
+# ---------------------------------------------------------------------------
+include("${PROJECT_SOURCE_DIR}/cmake/pgo.cmake")

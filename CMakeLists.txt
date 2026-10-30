@@ -239,3 +239,7 @@ else()
     target_compile_options(${target} PRIVATE -fno-exceptions)
   endforeach()
 endif()
+
+# Profile-guided optimization is wired up at the end of app/CMakeLists.txt
+# rather than here: it hangs a step off the Game target, and CMake only allows
+# that in the directory that created it.  See cmake/pgo.cmake.

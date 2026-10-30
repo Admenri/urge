@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "core/graphics/graphics.h"
@@ -551,7 +552,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     quad.source = source;
     quad.destination = destination;
     quad.color = tile_color;
-    quads->push_back(quad);
+    quads->push_back(std::move(quad));
   };
 
   auto tilesize_src = [&](const RectF& raw) {
@@ -931,7 +932,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
 }
 
 void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
-  std::vector<TileQuad> quads;
+  std::vector<TileQuad>& quads = scratch_quads_;
   CollectMapData(above, &quads);
 
   layer->draws.clear();

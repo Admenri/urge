@@ -45,6 +45,8 @@ static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 namespace {
 
+constexpr std::int64_t kMaxSnapshotPixels = 1 << 20;
+
 glm::vec4 PremultiplyColor(const glm::vec4& color) {
   glm::vec4 result = color / 255.0f;
   result.r *= result.a;
@@ -419,10 +421,34 @@ RefPtr<Color> Bitmap::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
 
   AcquireHandle();
 
-  const std::vector<std::uint8_t> pixels =
-      ReadTextureRegion(texture_, x, y, 1, 1);
+  if (read_serial_ != content_serial_) {
+    const bool promote = probe_serial_ == content_serial_;
+    const std::int64_t area =
+        static_cast<std::int64_t>(size_.x) * static_cast<std::int64_t>(size_.y);
 
-  const glm::vec4 color = UnpremultiplyColor(pixels.data());
+    if (promote && area > 0 && area <= kMaxSnapshotPixels) {
+      read_pixels_ = ReadTextureRegion(texture_, 0, 0, size_.x, size_.y);
+      read_serial_ = content_serial_;
+      read_snapshot_ = true;
+    } else {
+      read_pixels_ = ReadTextureRegion(texture_, x, y, 1, 1);
+      probe_serial_ = content_serial_;
+      read_snapshot_ = false;
+    }
+  }
+
+  const std::uint8_t* pixel = read_pixels_.data();
+  if (read_snapshot_) {
+    const std::size_t offset =
+        (static_cast<std::size_t>(y) * static_cast<std::size_t>(size_.x) +
+         static_cast<std::size_t>(x)) *
+        4;
+    if (offset + 4 > read_pixels_.size())
+      return MakeRefCounted<Color>();
+    pixel += offset;
+  }
+
+  const glm::vec4 color = UnpremultiplyColor(pixel);
   return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
 }
 
@@ -567,6 +593,8 @@ void Bitmap::UpdateWithImage(URGE_EXCEPT, RefPtr<Image> image) {
 
   g_queue.WriteTexture(&destination, pixels.data(), data->pitch * data->h,
                        &buffer_layout, &target_size);
+
+  TouchContent();
 }
 
 void Bitmap::UpdateWithPixels(URGE_EXCEPT,
@@ -596,6 +624,8 @@ void Bitmap::UpdateWithPixels(URGE_EXCEPT,
   g_queue.WriteTexture(&destination, pixels,
                        static_cast<size_t>(bytes_per_row) * size_.y,
                        &buffer_layout, &target_size);
+
+  TouchContent();
 }
 
 RefPtr<Bitmap> Bitmap::FromImage(URGE_EXCEPT, RefPtr<Image> image) {
@@ -748,6 +778,7 @@ void Bitmap::UploadSurface(SDL_Surface* data) {
   g_queue.WriteTexture(&destination, data->pixels, data->pitch * data->h,
                        &buffer_layout, &target_size);
 
+  TouchContent();
   SDL_DestroySurface(data);
 }
 
@@ -759,6 +790,8 @@ void Bitmap::ClearToTransparent() {
   auto command = encoder.Finish(nullptr);
   CountSubmit(false);
   g_queue.Submit(1, &command);
+
+  TouchContent();
 }
 
 void Bitmap::CreateGroup() {

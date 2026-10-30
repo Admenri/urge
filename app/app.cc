@@ -40,6 +40,7 @@
 #endif
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -56,7 +57,21 @@
 #include "SDL3/SDL_messagebox.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
+/* The host reads two switches straight out of the environment, wide, so a
+   directory named in a language the ANSI code page cannot spell survives.  It
+   is the only Windows API this file calls itself; everything else goes through
+   `platform/`. */
+#if defined(_WIN32)
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 #include "app/platform/win32.h"
+
+#if defined(_WIN32)
+#include "app/platform/crash_handler.h"
+#include "app/platform/profiler.h"
+#endif
 
 #if defined(OS_ANDROID)
 #include "app/platform/android.h"
@@ -97,6 +112,65 @@ void WriteLogFile(std::string_view line, void* user) {
   SDL_FlushIO(stream);
 }
 
+/* Paths cross this file in two forms, and the two are not interchangeable.
+
+   `std::filesystem::path` is the native form: wide on Windows, bytes on
+   everything else.  It is the only form the system can be asked about, and the
+   only form that survives a name the process's code page cannot spell.
+
+   `std::string` here is UTF-8, because that is what everything downstream
+   takes: PhysicsFS and SDL both read paths as UTF-8, and the interpreter's
+   default external encoding is set to it.  `path::string()` is *not* that --
+   on Windows it converts through the ANSI code page, which turns a directory
+   called `游戏` into bytes that are not UTF-8 and mounts nothing.
+
+   So the conversion happens exactly twice, at the two boundaries below. */
+#if !defined(OS_EMSCRIPTEN)
+std::filesystem::path PathFromUTF8(const std::string& text) {
+  return std::filesystem::path(std::u8string(text.begin(), text.end()));
+}
+
+std::string PathToUTF8(const std::filesystem::path& path) {
+  const std::u8string text = path.generic_u8string();
+  return std::string(text.begin(), text.end());
+}
+#endif
+
+/* A switch that reads as a switch: `1`, `true`, `yes` and anything else that is
+   not explicitly off all mean on, because the two places that set it -- an ini
+   file written by hand and an environment variable set by a launcher -- spell
+   it differently. */
+#if defined(_WIN32)
+bool IsTruthy(const std::string& text) {
+  if (text.empty() || text == "0")
+    return false;
+  return SDL_strcasecmp(text.c_str(), "false") != 0 &&
+         SDL_strcasecmp(text.c_str(), "no") != 0 &&
+         SDL_strcasecmp(text.c_str(), "off") != 0;
+}
+
+/* The environment is read as wide and converted once, the same way the
+   executable's path is: a value that names a directory may be in a language the
+   ANSI code page cannot spell. */
+std::string ReadEnvironment(const std::string& name) {
+  wchar_t buffer[1024];
+  const DWORD length =
+      GetEnvironmentVariableW(PathFromUTF8(name).c_str(), buffer, 1024);
+  if (!length || length >= 1024)
+    return {};
+  return PathToUTF8(std::filesystem::path(std::wstring(buffer, length)));
+}
+
+int ReadInteger(const std::string& text, int fallback) {
+  int value = 0;
+  const auto parsed =
+      std::from_chars(text.data(), text.data() + text.size(), value);
+  if (parsed.ec != std::errc() || parsed.ptr != text.data() + text.size())
+    return fallback;
+  return value;
+}
+#endif
+
 /* Everything that has to survive between callbacks.  SDL hands this pointer
    back to every one of them, which is why none of it is a global: a host that
    restarts the engine -- or an embedder with two of them -- gets its own. */
@@ -129,6 +203,15 @@ void ReportFailure(const AppState& state,
    on a partially initialised state -- every step checks what it is about to
    tear down -- because it is the one path every exit takes. */
 void Shutdown(AppState& state) {
+#if defined(_WIN32)
+  /* The profile is written here, before anything is torn down: it reports the
+     frame budget out of the render statistics and the call stacks out of the
+     symbols of a running process, and neither exists any more a few lines
+     below.  A run that was never sampled pays one atomic load for this. */
+  platform::profiler::Stop();
+  platform::profiler::Uninstall();
+#endif
+
   /* The interpreter goes first: its teardown runs the game's `at_exit` and
      finalisers, which may still reach for the engine. */
   delete state.binding;
@@ -169,6 +252,13 @@ bool Initialize(AppState& state,
                 int argc,
                 char* argv[],
                 urge::ExceptionState& exception_state) {
+#if defined(_WIN32)
+  /* Before anything else, because a game that dies while the engine is coming
+     up -- a driver that refuses the adapter, a font directory that is not
+     there -- is exactly the kind of crash with no log line in front of it. */
+  platform::crash::Install();
+#endif
+
 #if defined(OS_EMSCRIPTEN)
   /* A browser has no executable path to take the name from: argv[0] is
      whatever the module was started with, and the working directory is the
@@ -188,25 +278,30 @@ bool Initialize(AppState& state,
   if (exception_state.HadException())
     return false;
 #else
-  state.app = argv[0];
-  for (size_t i = 0; i < state.app.size(); ++i)
-    if (state.app[i] == '\\')
-      state.app[i] = '/';
+  /* The executable's path is taken from the system rather than from argv[0]:
+     the C runtime hands that one over already converted to the ANSI code page,
+     so a game installed in a directory with a name that code page cannot spell
+     arrives here with `?` where the name was -- and a lossy conversion cannot
+     be undone further down.  `GetExecutablePath` asks Windows for the wide
+     path instead; everything is then kept native while it is split, and
+     converted to UTF-8 once. */
+#if defined(_WIN32)
+  const std::filesystem::path executable = platform::win32::GetExecutablePath();
+#else
+  const std::filesystem::path executable = std::filesystem::path(argv[0]);
+#endif
 
   // Game directory (where the executable lives)
-  state.base_dir = ".";
-  auto last_sep = state.app.find_last_of('/');
-  if (last_sep != std::string::npos) {
-    state.base_dir = state.app.substr(0, last_sep);
-    state.app = state.app.substr(last_sep + 1);
-  }
-#endif
+  std::filesystem::path game_dir = executable.parent_path();
+  if (game_dir.empty())
+    game_dir = std::filesystem::path(".");
 
   // The extension never belongs to the name: `Game.exe` and `Game` are the
   // same game, and both read `Game.ini`.
-  auto extension_sep = state.app.find_last_of('.');
-  if (extension_sep != std::string::npos)
-    state.app = state.app.substr(0, extension_sep);
+  state.app = PathToUTF8(executable.stem());
+  state.base_dir = PathToUTF8(game_dir);
+#endif
+
   state.ini = state.app + ".ini";
 
 #if !defined(OS_EMSCRIPTEN)
@@ -223,9 +318,9 @@ bool Initialize(AppState& state,
      to the write directory while the search path stayed where the shell was. */
   {
     std::error_code error;
-    std::filesystem::current_path(state.base_dir, error);
+    std::filesystem::current_path(PathFromUTF8(state.base_dir), error);
     if (!error)
-      state.base_dir = std::filesystem::current_path(error).generic_string();
+      state.base_dir = PathToUTF8(std::filesystem::current_path(error));
   }
 #endif
 
@@ -242,7 +337,16 @@ bool Initialize(AppState& state,
   g_log_stream = SDL_IOFromFile(state.log_path.c_str(), "w");
   if (g_log_stream)
     urge::SetLogSink(&WriteLogFile, g_log_stream);
+#if defined(_WIN32)
+  /* The crash report names the log beside the dump: one is the story up to the
+     last frame, the other is where it ended. */
+  platform::crash::SetLogPath(state.log_path.c_str());
 #endif
+#endif
+
+  /* The directory the engine ended up looking in, in the log, because "cannot
+     find Data/Scripts.rvdata2" is only actionable next to it. */
+  LOGGER_INFO("[Host] Game directory: {}", state.base_dir);
 
   auto io = new urge::IOService(exception_state, argv[0]);
   if (exception_state.HadException())
@@ -275,6 +379,40 @@ bool Initialize(AppState& state,
      read them: the binding mirrors them onto the RGSS `$DEBUG` / `$TEST` /
      `$BTEST` globals, and a game may look for its own. */
   state.config->SetCommandLine(argc, argv);
+
+#if defined(_WIN32)
+  /* The profiler goes up here: the settings are readable, the game directory
+     exists, and the engine is not up yet, so the cost of coming up is part of
+     what it measures.  It is off unless asked for -- it costs a thread and a
+     suspend/resume per sample -- and the environment wins over the ini, because
+     the machine a profile is wanted on is usually not the one the settings file
+     was written on:
+
+       [Debug] Profiler = true
+       [Debug] ProfilerInterval = 2000     microseconds between samples
+
+       URGE_PROFILER, URGE_PROFILER_INTERVAL, URGE_PROFILER_DIR */
+  {
+    platform::profiler::Options options;
+
+    std::string request = ReadEnvironment("URGE_PROFILER");
+    if (request.empty())
+      request = state.config->GetValue("Debug", "Profiler", "");
+
+    std::string interval = ReadEnvironment("URGE_PROFILER_INTERVAL");
+    if (interval.empty())
+      interval = state.config->GetValue("Debug", "ProfilerInterval", "");
+    if (!interval.empty())
+      options.interval_us = ReadInteger(interval, options.interval_us);
+
+    std::string directory = ReadEnvironment("URGE_PROFILER_DIR");
+    if (directory.empty())
+      directory = state.base_dir;
+
+    platform::profiler::Install(directory, state.app, options,
+                                IsTruthy(request));
+  }
+#endif
 
 // RTP reading
 #if defined(_WIN32)

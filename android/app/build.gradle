@@ -24,6 +24,31 @@ if (!sdlJavaDir.isDirectory()) {
         "third_party/SDL is a submodule: run `git submodule update --init --recursive`.")
 }
 
+// Release signing.  No key material is in the tree: the four values come from
+// local.properties (gitignored), from `-P` on the command line, or from the
+// environment, and when any of them is missing the release APK is left
+// unsigned -- signing is the one step that needs a key only the publisher has.
+//
+//     ./gradlew assembleRelease -PurgeStoreFile=keystore/urge-release.jks
+//         -PurgeStorePassword=... -PurgeKeyAlias=urge -PurgeKeyPassword=...
+def signingProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { signingProperties.load(it) }
+}
+
+def signingValue = { String property, String environment ->
+    project.findProperty(property) ?: signingProperties.getProperty(property)
+            ?: System.getenv(environment)
+}
+
+def releaseStoreFile = signingValue("urgeStoreFile", "URGE_STORE_FILE")
+def releaseStorePassword = signingValue("urgeStorePassword", "URGE_STORE_PASSWORD")
+def releaseKeyAlias = signingValue("urgeKeyAlias", "URGE_KEY_ALIAS")
+def releaseKeyPassword = signingValue("urgeKeyPassword", "URGE_KEY_PASSWORD")
+def releaseKeyReady = releaseStoreFile && releaseStorePassword
+        && releaseKeyAlias && releaseKeyPassword
+
 android {
     namespace = "com.admenri.urge"
     compileSdk = 37
@@ -35,8 +60,11 @@ android {
         // build targets (ANDROID_PLATFORM=android-28), so the two agree.
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Every published APK needs a higher versionCode.  Both can be given
+        // on the command line instead of edited here:
+        //   ./gradlew assembleRelease -PurgeVersionCode=2 -PurgeVersionName="1.1"
+        versionCode = (project.findProperty("urgeVersionCode") ?: 1) as Integer
+        versionName = project.findProperty("urgeVersionName") ?: "1.0"
 
         // arm64 for devices, x86_64 for emulator images.  A 32-bit ABI would
         // need its own builtin_binary.rbbin (see third_party/ruby/cmake), which
@@ -54,10 +82,27 @@ android {
         }
     }
 
+    signingConfigs {
+        // Empty when no key is configured: `buildTypes.release` only points at
+        // it when all four values are present, so an unconfigured checkout
+        // still produces an (unsigned) APK instead of failing the build.
+        release {
+            if (releaseKeyReady) {
+                storeFile = rootProject.file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled = false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            if (releaseKeyReady) {
+                signingConfig = signingConfigs.release
+            }
         }
     }
 
@@ -69,6 +114,12 @@ android {
     }
 
     lint { abortOnError = false }
+}
+
+if (releaseKeyReady) {
+    logger.lifecycle("URGE: release APK signed with ${releaseStoreFile} (alias ${releaseKeyAlias})")
+} else {
+    logger.lifecycle("URGE: no release key configured; assembleRelease leaves the APK unsigned")
 }
 
 def gameDir = file(urgeGameDir)

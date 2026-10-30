@@ -33,7 +33,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/canvas/bitmap.h:43-155)
+// Bitmap  (core/canvas/bitmap.h:44-156)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);

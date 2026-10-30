@@ -47,6 +47,7 @@
 extern "C" void rb_call_builtin_inits(void);
 extern "C" void Init_enc(void);
 extern "C" void Init_ext(void);
+extern "C" void Init_zlib(void);
 
 namespace binding {
 
@@ -304,6 +305,8 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   Init_enc();
   Init_ext();
   rb_call_builtin_inits();
+  Init_zlib();
+  rb_provide("zlib.so");
   LOGGER_INFO("[Ruby] VM ready");
 
 #if defined(OS_EMSCRIPTEN)

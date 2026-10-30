@@ -136,10 +136,12 @@ class RenderContext3D : public Object {
   struct GlobalsSlot {
     wgpu::Buffer buffer = nullptr;
     wgpu::BindGroup group = nullptr;
+    uint64_t frame = 0;
+    glm::ivec2 viewport = glm::ivec2(0);
   };
 
   void UploadView(URGE_EXCEPT, int32_t slot);
-  void UploadShadowView(URGE_EXCEPT, int32_t slot);
+  void EnsureShadowViewGroup(URGE_EXCEPT);
   void UpdateGlobals(URGE_EXCEPT, int32_t slot);
   wgpu::BindGroup GlobalsGroup(URGE_EXCEPT, int32_t slot);
 
@@ -178,6 +180,13 @@ class RenderContext3D : public Object {
   wgpu::BindGroup view_group_ = nullptr;
   wgpu::BindGroup shadow_view_group_ = nullptr;
   const void* view_group_shadow_target_ = nullptr;
+  const void* view_group_point_target_ = nullptr;
+
+  bool has_frame_clock_ = false;
+  double last_frame_seconds_ = 0.0;
+  float frame_time_ = 0.0f;
+  float frame_delta_ = 0.0f;
+  uint64_t globals_frame_ = 0;
 
   std::vector<GlobalsSlot> globals_slots_;
 

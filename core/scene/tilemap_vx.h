@@ -160,6 +160,8 @@ class TilemapVX : public Node {
 
   TileLayer map_layer_;
   TileLayer above_layer_;
+
+  std::vector<TileQuad> scratch_quads_;
 };
 
 }

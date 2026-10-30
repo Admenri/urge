@@ -100,10 +100,12 @@ void RenderQueue3D::CollectNode(Node3D* node,
       const glm::vec3 center = renderer->world_center();
       const float radius = renderer->world_radius();
 
-      const bool culled = camera && camera->Culled(center, radius, target_size,
-                                                   renderer->layers());
+      const bool layer_match =
+          !camera || (renderer->layers() & camera->culling_mask()) != 0;
+      const bool visible =
+          !camera || camera->IsVisible(center, radius, target_size);
 
-      if (!culled) {
+      if (layer_match && (visible || renderer->cast_shadow())) {
         const MeshData mesh_data = {world, glm::inverseTranspose(world)};
         ExceptionState acquire_state;
         const UniformBlockPool::Slot slot =
@@ -134,6 +136,7 @@ void RenderQueue3D::CollectNode(Node3D* node,
             item.distance = distance;
             item.model = world;
             item.state_key = reinterpret_cast<uint64_t>(pass.get());
+            item.culled = !visible;
             item.slot = slot;
             items_.push_back(std::move(item));
           }

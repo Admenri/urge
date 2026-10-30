@@ -91,9 +91,45 @@ void MeshRenderer3D::UpdateBounds() {
     return;
   }
 
+  const glm::vec3 local_center = mesh_->bounds_center();
+  const float local_radius = mesh_->bounds_radius();
   const glm::mat4 world = world_matrix();
-  world_center_ = glm::vec3(world * glm::vec4(mesh_->bounds_center(), 1.0f));
-  world_radius_ = mesh_->bounds_radius() * MaxAxisScale(world);
+
+  if (instance_count_ <= 0) {
+    world_center_ = glm::vec3(world * glm::vec4(local_center, 1.0f));
+    world_radius_ = local_radius * MaxAxisScale(world);
+    return;
+  }
+
+  for (int32_t index = 0; index < instance_count_; ++index) {
+    glm::mat4 instance(1.0f);
+    const float* source = instance_matrices_.data() + index * 16;
+    for (int column = 0; column < 4; ++column)
+      for (int row = 0; row < 4; ++row)
+        instance[column][row] = source[column * 4 + row];
+
+    const glm::mat4 combined = world * instance;
+    const glm::vec3 center =
+        glm::vec3(combined * glm::vec4(local_center, 1.0f));
+    const float radius = local_radius * MaxAxisScale(combined);
+
+    if (index == 0) {
+      world_center_ = center;
+      world_radius_ = radius;
+      continue;
+    }
+
+    const float distance = glm::length(center - world_center_);
+    if (distance + radius <= world_radius_)
+      continue;
+
+    const float merged_radius = (world_radius_ + distance + radius) * 0.5f;
+    if (distance > 0.0f) {
+      world_center_ += (center - world_center_) *
+                       ((merged_radius - world_radius_) / distance);
+    }
+    world_radius_ = merged_radius;
+  }
 }
 
 void MeshRenderer3D::SetInstanceMatrices(URGE_EXCEPT, std::vector<float> data) {

@@ -55,6 +55,7 @@ class RenderQueue3D : public Object {
     float distance = 0.0f;
     glm::mat4 model = glm::mat4(1.0f);
     uint64_t state_key = 0;
+    bool culled = false;
     UniformBlockPool::Slot slot;
   };
 

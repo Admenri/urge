@@ -108,6 +108,11 @@ void BitmapQueue::Flush() {
   std::vector<BitmapDraw> draws;
   draws.swap(draws_);
 
+  for (const BitmapDraw& draw : draws) {
+    if (draw.target)
+      draw.target->TouchContent();
+  }
+
   executing_ = true;
 
   const std::uint64_t begin = SDL_GetPerformanceCounter();

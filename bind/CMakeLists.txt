@@ -18,6 +18,9 @@ file(GLOB BINDING_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/autogen/*.cc")
 target_sources(urge-binding PRIVATE ${BINDING_SOURCES})
 
+# CRuby's zlib extension is plain C, so the glob above misses it.
+target_sources(urge-binding PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/zlib.c")
+
 # The generated files include each other by bare name ("binding_init.h"), and
 # cruby_main.cc includes them from the repository root ("bind/autogen/...",
 # which the top-level `include_directories` covers).

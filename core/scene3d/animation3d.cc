@@ -81,7 +81,10 @@ void Animation3D::AddTrack(URGE_EXCEPT,
   track.values = std::move(values);
 
   duration_ = std::max(duration_, track.times.back());
-  tracks_.push_back(std::move(track));
+  const auto position = std::upper_bound(
+      tracks_.begin(), tracks_.end(), bone,
+      [](int32_t value, const Track& item) { return value < item.bone; });
+  tracks_.insert(position, std::move(track));
 }
 
 void Animation3D::AddEvent(URGE_EXCEPT, float time, std::string name) {
@@ -171,32 +174,22 @@ void Animation3D::Sample(Skeleton3D* skeleton,
   if (weight <= 0.0f)
     return;
 
-  float local = time * speed_;
+  float local = time;
   if (duration_ > 0.0f && loop_) {
     local = std::fmod(local, duration_);
     if (local < 0.0f)
       local += duration_;
   }
 
-  for (const Track& track : tracks_) {
-    RefPtr<Node3D> bone = skeleton->BoneAt(track.bone);
-    if (!bone)
+  size_t index = 0;
+  while (index < tracks_.size()) {
+    const int32_t bone_index = tracks_[index].bone;
+    RefPtr<Node3D> bone = skeleton->BoneAt(bone_index);
+    if (!bone) {
+      while (index < tracks_.size() && tracks_[index].bone == bone_index)
+        ++index;
       continue;
-
-    const size_t index = FindKey(track.times, local);
-    const float start = track.times[index];
-
-    float alpha = 0.0f;
-    const bool has_next = index + 1 < track.times.size();
-    if (has_next && track.interpolation != kStep) {
-      const float span = track.times[index + 1] - start;
-      if (span > 0.0f)
-        alpha = std::clamp((local - start) / span, 0.0f, 1.0f);
     }
-
-    const float* first = &track.values[index * track.stride];
-    const float* second =
-        has_next ? &track.values[(index + 1) * track.stride] : first;
 
     const glm::vec4 base_rotation = bone->local_rotation();
     glm::vec3 position = bone->local_position();
@@ -204,29 +197,49 @@ void Animation3D::Sample(Skeleton3D* skeleton,
     glm::quat rotation(base_rotation.w, base_rotation.x, base_rotation.y,
                        base_rotation.z);
 
-    if (track.path == kRotation) {
-      glm::quat left(first[3], first[0], first[1], first[2]);
-      glm::quat right(second[3], second[0], second[1], second[2]);
-      if (glm::dot(left, right) < 0.0f)
-        right = -right;
+    for (; index < tracks_.size() && tracks_[index].bone == bone_index;
+         ++index) {
+      const Track& track = tracks_[index];
 
-      glm::quat mixed = glm::mix(left, right, alpha);
-      if (glm::length(mixed) <= 0.0f)
-        mixed = left;
-      else
-        mixed = glm::normalize(mixed);
-      rotation = mixed;
-    } else {
-      const glm::vec3 left(first[0], first[1], first[2]);
-      const glm::vec3 right(second[0], second[1], second[2]);
-      const glm::vec3 mixed = glm::mix(left, right, alpha);
-      if (track.path == kTranslation)
-        position = mixed;
-      else
-        scale = mixed;
+      const size_t key = FindKey(track.times, local);
+      const float start = track.times[key];
+
+      float alpha = 0.0f;
+      const bool has_next = key + 1 < track.times.size();
+      if (has_next && track.interpolation != kStep) {
+        const float span = track.times[key + 1] - start;
+        if (span > 0.0f)
+          alpha = std::clamp((local - start) / span, 0.0f, 1.0f);
+      }
+
+      const float* first = &track.values[key * track.stride];
+      const float* second =
+          has_next ? &track.values[(key + 1) * track.stride] : first;
+
+      if (track.path == kRotation) {
+        glm::quat left(first[3], first[0], first[1], first[2]);
+        glm::quat right(second[3], second[0], second[1], second[2]);
+        if (glm::dot(left, right) < 0.0f)
+          right = -right;
+
+        glm::quat mixed = glm::mix(left, right, alpha);
+        if (glm::length(mixed) <= 0.0f)
+          mixed = left;
+        else
+          mixed = glm::normalize(mixed);
+        rotation = mixed;
+      } else {
+        const glm::vec3 left(first[0], first[1], first[2]);
+        const glm::vec3 right(second[0], second[1], second[2]);
+        const glm::vec3 mixed = glm::mix(left, right, alpha);
+        if (track.path == kTranslation)
+          position = mixed;
+        else
+          scale = mixed;
+      }
     }
 
-    skeleton->BlendBone(track.bone, position, rotation, scale, weight, mask);
+    skeleton->BlendBone(bone_index, position, rotation, scale, weight, mask);
   }
 }
 

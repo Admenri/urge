@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "core/canvas/image.h"
 #include "core/common/definition.h"
@@ -162,6 +163,8 @@ class Bitmap : public Disposable {
 
   void AcquireHandle();
 
+  void TouchContent() { ++content_serial_; }
+
   wgpu::RenderPassEncoder BeginRendering(
       wgpu::CommandEncoder encoder,
       std::optional<glm::vec4> clear = std::nullopt,
@@ -222,6 +225,12 @@ class Bitmap : public Disposable {
   wgpu::Sampler sampler_;
 
   wgpu::BindGroup scene_group_, object_group_, texture_group_;
+
+  std::uint64_t content_serial_ = 1;
+  std::uint64_t read_serial_ = 0;
+  std::uint64_t probe_serial_ = 0;
+  bool read_snapshot_ = false;
+  std::vector<std::uint8_t> read_pixels_;
 };
 
 }

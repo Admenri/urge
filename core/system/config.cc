@@ -25,7 +25,9 @@
 
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "SDL3/SDL_keyboard.h"
 #include "SDL3/SDL_platform_defines.h"
@@ -250,19 +252,29 @@ void Config::Save(URGE_EXCEPT) {
 
   parser_.Set("Input", "PadBindings", input.pad_bindings);
 
-  parser_.RemoveSection("KeyBinding");
+  std::vector<std::string> names;
+  std::unordered_map<std::string, std::string> joined;
   for (const auto& binding : key_bindings) {
-    std::string line = parser_.Get("KeyBinding", binding.name);
-    if (!line.empty())
-      line += ',';
-    line += KeyNameOf(binding);
-    parser_.Set("KeyBinding", binding.name, line);
+    auto [it, inserted] = joined.try_emplace(binding.name);
+    if (inserted)
+      names.push_back(binding.name);
+    else
+      it->second += ',';
+    it->second += KeyNameOf(binding);
   }
+  for (const auto& name : parser_.GetKeys("KeyBinding"))
+    if (joined.find(name) == joined.end())
+      parser_.RemoveKey("KeyBinding", name);
+  for (const auto& name : names)
+    parser_.Set("KeyBinding", name, joined[name]);
+
+  if (!parser_.HasChanges())
+    return;
 
   auto* stream = IOService::Get().OpenWrite(exception_state, inifile_);
   if (!stream)
     return;
-  const std::string text = parser_.ToString();
+  const std::string text = parser_.RenderPatched();
   SDL_WriteIO(stream, text.data(), text.size());
   SDL_CloseIO(stream);
 }

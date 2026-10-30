@@ -87,6 +87,24 @@ if(ANDROID)
     set(_urge_clang_resource " -resource-dir=${_urge_clang_resource_dir}")
   endif()
 
+  # bindgen opens libclang with a bare `LoadLibraryExW(..., 0)`, which resolves
+  # the DLL's own imports through the process search path only -- the directory
+  # the DLL sits in is never consulted.  The NDK's libclang imports
+  # libwinpthread-1.dll from that very directory, so without the NDK bin on
+  # PATH the load fails with ERROR_MOD_NOT_FOUND and bindgen reports
+  # "Unable to find libclang".
+  #
+  # `cmake -E env` takes one argument per assignment, and corrosion expands the
+  # assignments as a CMake list, so plain semicolons inside PATH would split it
+  # into many arguments -- the loader would then only see the first directory.
+  # Escaped separators survive the list.  The property is written directly
+  # because `corrosion_set_env_vars` expands the value again on its way into
+  # `set_property`, which would unescape them.
+  set(_urge_cargo_path "${_urge_ndk_bin};$ENV{PATH}")
+  string(REPLACE ";" "\\;" _urge_cargo_path "${_urge_cargo_path}")
+  set_property(TARGET wgpu_native APPEND PROPERTY CORROSION_ENVIRONMENT_VARIABLES
+    "PATH=${_urge_cargo_path}")
+
   corrosion_set_env_vars(wgpu_native
     "LIBCLANG_PATH=${_urge_ndk_bin}"
     "BINDGEN_EXTRA_CLANG_ARGS=--target=${_urge_android_target} --sysroot=${_urge_ndk_sysroot}${_urge_clang_resource}")

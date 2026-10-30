@@ -36,8 +36,16 @@ Node3D::Node3D()
       scale_(MakeRefCounted<Vector3>(1.0f)) {}
 
 Node3D::~Node3D() {
-  if (parent_)
+  for (const RefPtr<Node3D>& child : children_) {
+    if (child->parent_ == this)
+      child->parent_ = nullptr;
+  }
+  children_.clear();
+
+  if (parent_) {
     parent_->RemoveChildRaw(this);
+    parent_ = nullptr;
+  }
 }
 
 void Node3D::SetParent(RefPtr<Node3D> value) {

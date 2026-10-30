@@ -76,26 +76,17 @@ PrimitiveEmitter& PrimitiveEmitter::Color4f(float r,
   return Color4f(glm::vec4(r, g, b, a));
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Color4f(const glm::vec4& color) {
-  color_ = color;
-  return *this;
-}
-
 PrimitiveEmitter& PrimitiveEmitter::Texcoord2f(float u, float v) {
   return Texcoord2f(glm::vec2(u, v));
-}
-
-PrimitiveEmitter& PrimitiveEmitter::Texcoord2f(const glm::vec2& texcoord) {
-  texcoord_ = texcoord;
-  return *this;
 }
 
 PrimitiveEmitter& PrimitiveEmitter::Vertex2f(float x, float y) {
   return EmitVertex(x, y, 0.f, 1.f);
 }
 
-PrimitiveEmitter& PrimitiveEmitter::Vertex2f(const glm::vec2& position) {
-  return Vertex2f(position.x, position.y);
+void PrimitiveEmitter::ReportMissingBatch() {
+  LOGGER_ERROR("PrimitiveEmitter: no active batch");
+  assert(false && "primitive emitter has no active batch");
 }
 
 PrimitiveEmitter& PrimitiveEmitter::Vertex4f(float x,
@@ -107,32 +98,6 @@ PrimitiveEmitter& PrimitiveEmitter::Vertex4f(float x,
 
 PrimitiveEmitter& PrimitiveEmitter::Vertex4f(const glm::vec4& position) {
   return Vertex4f(position.x, position.y, position.z, position.w);
-}
-
-PrimitiveEmitter& PrimitiveEmitter::EmitVertex(float x,
-                                               float y,
-                                               float z,
-                                               float w) {
-  if (!active_) {
-    LOGGER_ERROR("PrimitiveEmitter::EmitVertex: no active batch");
-    assert(false && "primitive emitter has no active batch");
-    return *this;
-  }
-
-  const glm::vec4 position(x, y, z, w);
-  if (type_ == PrimitiveType::kTriangle) {
-    PushVertex(position);
-    return *this;
-  }
-
-  pending_corners_[pending_size_] = position;
-  pending_texcoords_[pending_size_] = texcoord_;
-  pending_colors_[pending_size_] = color_;
-  if (++pending_size_ == kQuadCorners) {
-    ExpandQuad();
-    pending_size_ = 0;
-  }
-  return *this;
 }
 
 PrimitiveEmitter& PrimitiveEmitter::Rect(const RectF& rect,

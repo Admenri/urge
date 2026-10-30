@@ -75,15 +75,45 @@ class PrimitiveEmitter {
   Slot End();
 
   PrimitiveEmitter& Color4f(float r, float g, float b, float a = 1.f);
-  PrimitiveEmitter& Color4f(const glm::vec4& color);
   PrimitiveEmitter& Texcoord2f(float u, float v);
-  PrimitiveEmitter& Texcoord2f(const glm::vec2& texcoord);
-
   PrimitiveEmitter& Vertex2f(float x, float y);
-  PrimitiveEmitter& Vertex2f(const glm::vec2& position);
+  PrimitiveEmitter& Vertex2f(const glm::vec2& position) {
+    return Vertex2f(position.x, position.y);
+  }
   PrimitiveEmitter& Vertex4f(float x, float y, float z, float w);
   PrimitiveEmitter& Vertex4f(const glm::vec4& position);
-  PrimitiveEmitter& EmitVertex(float x, float y, float z, float w = 1.f);
+
+  PrimitiveEmitter& Color4f(const glm::vec4& color) {
+    color_ = color;
+    return *this;
+  }
+
+  PrimitiveEmitter& Texcoord2f(const glm::vec2& texcoord) {
+    texcoord_ = texcoord;
+    return *this;
+  }
+
+  PrimitiveEmitter& EmitVertex(float x, float y, float z, float w = 1.f) {
+    if (!active_) {
+      ReportMissingBatch();
+      return *this;
+    }
+
+    const glm::vec4 position(x, y, z, w);
+    if (type_ == PrimitiveType::kTriangle) {
+      PushVertex(position);
+      return *this;
+    }
+
+    pending_corners_[pending_size_] = position;
+    pending_texcoords_[pending_size_] = texcoord_;
+    pending_colors_[pending_size_] = color_;
+    if (++pending_size_ == kQuadCorners) {
+      ExpandQuad();
+      pending_size_ = 0;
+    }
+    return *this;
+  }
 
   PrimitiveEmitter& Rect(const RectF& rect, const RectF& texcoord);
   PrimitiveEmitter& EmitQuad(const RectF& rect,
@@ -114,6 +144,7 @@ class PrimitiveEmitter {
 
   void PushVertex(const glm::vec4& position);
   void ExpandQuad();
+  void ReportMissingBatch();
   bool EnsureVertexBuffer(std::size_t bytes);
 
   std::vector<VertexData> vertices_;

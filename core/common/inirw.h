@@ -25,12 +25,14 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <cstdint>
 #include <fstream>
 #include <istream>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace ini {
@@ -43,18 +45,27 @@ class Section {
     return it != values_.end() ? it->second : empty;
   }
 
-  void Set(const std::string& key, std::string value) {
-    if (values_.insert_or_assign(key, std::move(value)).second)
+  bool Set(const std::string& key, std::string value) {
+    auto it = values_.find(key);
+    if (it == values_.end()) {
       keys_.push_back(key);
+      values_.emplace(key, std::move(value));
+      return true;
+    }
+    if (it->second == value)
+      return false;
+    it->second = std::move(value);
+    return true;
   }
 
-  void Remove(const std::string& key) {
+  bool Remove(const std::string& key) {
     if (!values_.erase(key))
-      return;
+      return false;
 
     auto it = std::find(keys_.begin(), keys_.end(), key);
     if (it != keys_.end())
       keys_.erase(it);
+    return true;
   }
 
   bool empty() const { return keys_.empty(); }
@@ -63,6 +74,10 @@ class Section {
   }
 
   const std::vector<std::string>& keys() const { return keys_; }
+
+  bool operator==(const Section& other) const {
+    return keys_ == other.keys_ && values_ == other.values_;
+  }
 
  private:
   std::unordered_map<std::string, std::string> values_;
@@ -173,7 +188,14 @@ class IniFile {
     if (std::find(sectionOrder_.begin(), sectionOrder_.end(), section) ==
         sectionOrder_.end())
       sectionOrder_.push_back(section);
-    sec.Set(key, value);
+
+    auto removed =
+        std::find(removed_sections_.begin(), removed_sections_.end(), section);
+    if (removed != removed_sections_.end())
+      removed_sections_.erase(removed);
+
+    if (sec.Set(key, value))
+      Remember(&changed_, section, key);
   }
 
   void Set(const std::string& section, const std::string& key, int32_t value) {
@@ -190,16 +212,39 @@ class IniFile {
 
   void RemoveKey(const std::string& section, const std::string& key) {
     auto sit = sections_.find(section);
-    if (sit == sections_.end())
+    if (sit == sections_.end() || !sit->second.Remove(key))
       return;
-    sit->second.Remove(key);
+    Forget(&changed_, section, key);
+    Remember(&removed_keys_, section, key);
   }
 
   void RemoveSection(const std::string& section) {
-    sections_.erase(section);
+    auto sit = sections_.find(section);
+    if (sit == sections_.end())
+      return;
+
+    sections_.erase(sit);
     auto it = std::find(sectionOrder_.begin(), sectionOrder_.end(), section);
     if (it != sectionOrder_.end())
       sectionOrder_.erase(it);
+
+    auto match = [&section](const Change& change) {
+      return change.section == section;
+    };
+    changed_.erase(std::remove_if(changed_.begin(), changed_.end(), match),
+                   changed_.end());
+    removed_keys_.erase(
+        std::remove_if(removed_keys_.begin(), removed_keys_.end(), match),
+        removed_keys_.end());
+
+    if (std::find(removed_sections_.begin(), removed_sections_.end(),
+                  section) == removed_sections_.end())
+      removed_sections_.push_back(section);
+  }
+
+  bool HasChanges() const {
+    return !changed_.empty() || !removed_keys_.empty() ||
+           !removed_sections_.empty();
   }
 
   std::string ToString() const {
@@ -218,6 +263,134 @@ class IniFile {
     return oss.str();
   }
 
+  std::string RenderPatched() const {
+    if (source_.empty())
+      return ToString();
+
+    const std::string terminator = DominantTerminator();
+    std::string output;
+    size_t cursor = 0;
+    if (source_.size() >= 3 && static_cast<uint8_t>(source_[0]) == 0xEF &&
+        static_cast<uint8_t>(source_[1]) == 0xBB &&
+        static_cast<uint8_t>(source_[2]) == 0xBF) {
+      output.append(source_, 0, 3);
+      cursor = 3;
+    }
+
+    std::vector<Change> handled;
+    std::vector<std::string> seen;
+    std::string current;
+    std::string trailing;
+    bool dropping = false;
+
+    while (cursor < source_.size()) {
+      const size_t newline = source_.find('\n', cursor);
+      const size_t stop =
+          newline == std::string::npos ? source_.size() : newline + 1;
+      const std::string line = source_.substr(cursor, stop - cursor);
+      cursor = stop;
+
+      std::string_view text(line);
+      if (!text.empty() && text.back() == '\n')
+        text.remove_suffix(1);
+      if (!text.empty() && text.back() == '\r')
+        text.remove_suffix(1);
+      const std::string trimmed = Trim(text);
+
+      if (!trimmed.empty() && trimmed.front() == '[') {
+        FlushSection(current, handled, terminator, &output);
+        output += trailing;
+        trailing.clear();
+
+        const size_t close = trimmed.find(']');
+        current = (close != std::string::npos && close > 1)
+                      ? Trim(trimmed.substr(1, close - 1))
+                      : std::string();
+        dropping = sections_.find(current) == sections_.end();
+        if (dropping)
+          continue;
+        output += line;
+        if (std::find(seen.begin(), seen.end(), current) == seen.end())
+          seen.push_back(current);
+        continue;
+      }
+
+      if (dropping)
+        continue;
+
+      if (trimmed.empty()) {
+        trailing += line;
+        continue;
+      }
+
+      if (trimmed.front() == ';' || trimmed.front() == '#') {
+        output += trailing;
+        trailing.clear();
+        output += line;
+        continue;
+      }
+
+      output += trailing;
+      trailing.clear();
+
+      const size_t equals = trimmed.find('=');
+      if (equals == std::string_view::npos) {
+        output += line;
+        continue;
+      }
+
+      const std::string key = Trim(trimmed.substr(0, equals));
+      if (key.empty()) {
+        output += line;
+        continue;
+      }
+
+      if (Contains(removed_keys_, current, key))
+        continue;
+
+      if (!Contains(changed_, current, key)) {
+        output += line;
+        continue;
+      }
+
+      output += key;
+      output += '=';
+      output += ValueOf(current, key);
+      output += TerminatorOf(line);
+      Remember(&handled, current, key);
+    }
+
+    FlushSection(current, handled, terminator, &output);
+    output += trailing;
+
+    for (const auto& name : sectionOrder_) {
+      if (std::find(seen.begin(), seen.end(), name) != seen.end())
+        continue;
+
+      std::string block;
+      for (const auto& change : changed_) {
+        if (change.section != name || Contains(handled, name, change.key))
+          continue;
+        block += change.key;
+        block += '=';
+        block += ValueOf(name, change.key);
+        block += terminator;
+        Remember(&handled, name, change.key);
+      }
+      if (block.empty())
+        continue;
+
+      EnsureLineEnd(&output, terminator);
+      output += '[';
+      output += name;
+      output += ']';
+      output += terminator;
+      output += block;
+    }
+
+    return output;
+  }
+
   void Save(const std::string& filename) const {
     std::ofstream file(filename, std::ios::out | std::ios::trunc);
     if (!file.is_open())
@@ -226,6 +399,11 @@ class IniFile {
   }
 
  private:
+  struct Change {
+    std::string section;
+    std::string key;
+  };
+
   static std::string Trim(std::string_view s) {
     constexpr const char* ws = " \t\r\n";
     auto start = s.find_first_not_of(ws);
@@ -235,7 +413,95 @@ class IniFile {
     return std::string(s.substr(start, end - start + 1));
   }
 
+  static bool Contains(const std::vector<Change>& list,
+                       const std::string& section,
+                       const std::string& key) {
+    return std::any_of(list.begin(), list.end(), [&](const Change& change) {
+      return change.section == section && change.key == key;
+    });
+  }
+
+  static void Remember(std::vector<Change>* list,
+                       const std::string& section,
+                       const std::string& key) {
+    if (!Contains(*list, section, key))
+      list->push_back(Change{section, key});
+  }
+
+  static void Forget(std::vector<Change>* list,
+                     const std::string& section,
+                     const std::string& key) {
+    list->erase(std::remove_if(list->begin(), list->end(),
+                               [&](const Change& change) {
+                                 return change.section == section &&
+                                        change.key == key;
+                               }),
+                list->end());
+  }
+
+  static std::string TerminatorOf(const std::string& line) {
+    if (line.size() >= 2 && line[line.size() - 2] == '\r' &&
+        line.back() == '\n')
+      return "\r\n";
+    if (!line.empty() && line.back() == '\n')
+      return "\n";
+    return {};
+  }
+
+  static void EnsureLineEnd(std::string* output,
+                            const std::string& terminator) {
+    if (!output->empty() && output->back() != '\n')
+      *output += terminator;
+  }
+
+  std::string DominantTerminator() const {
+    size_t crlf = 0;
+    size_t lf = 0;
+    for (size_t i = 0; i < source_.size(); ++i) {
+      if (source_[i] != '\n')
+        continue;
+      if (i > 0 && source_[i - 1] == '\r')
+        ++crlf;
+      else
+        ++lf;
+    }
+    return crlf > lf ? "\r\n" : "\n";
+  }
+
+  const std::string& ValueOf(const std::string& section,
+                             const std::string& key) const {
+    static const std::string empty;
+    const Section* found = GetSection(section);
+    return found ? found->Get(key) : empty;
+  }
+
+  void FlushSection(const std::string& section,
+                    std::vector<Change>& handled,
+                    const std::string& terminator,
+                    std::string* output) const {
+    if (section.empty())
+      return;
+
+    for (const auto& change : changed_) {
+      if (change.section != section || Contains(handled, section, change.key))
+        continue;
+      if (!HasKey(section, change.key))
+        continue;
+
+      EnsureLineEnd(output, terminator);
+      *output += change.key;
+      *output += '=';
+      *output += ValueOf(section, change.key);
+      *output += terminator;
+      Remember(&handled, section, change.key);
+    }
+  }
+
   void Parse(std::string_view content) {
+    source_ = std::string(content);
+    changed_.clear();
+    removed_keys_.clear();
+    removed_sections_.clear();
     sections_.clear();
     sectionOrder_.clear();
 
@@ -278,8 +544,12 @@ class IniFile {
     }
   }
 
+  std::string source_;
   std::unordered_map<std::string, Section> sections_;
   std::vector<std::string> sectionOrder_;
+  std::vector<Change> changed_;
+  std::vector<Change> removed_keys_;
+  std::vector<std::string> removed_sections_;
 };
 
 }

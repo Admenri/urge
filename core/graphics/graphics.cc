@@ -214,6 +214,8 @@ void Graphics::Update(URGE_EXCEPT) {
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
   frame_begin_tick_ = frame_begin;
 
+  SetCurrentFramePhase(FramePhase::kUpdate);
+
   RenderStats& stats = GetRenderStats();
 
   const double script_span =
@@ -274,6 +276,7 @@ void Graphics::Update(URGE_EXCEPT) {
 
   stats.frame_history.Push(timings.total_ms);
   stats.timing_history.Push(timings);
+  stats.run.Add(timings);
 
   stats.EndFrame();
 
@@ -292,6 +295,8 @@ void Graphics::Update(URGE_EXCEPT) {
         timings.phase(FramePhase::kPresent), timings.phase(FramePhase::kOther),
         timings.total_ms);
   }
+
+  SetCurrentFramePhase(FramePhase::kScript);
 }
 
 void Graphics::Wait(URGE_EXCEPT, int32_t duration) {
@@ -614,6 +619,8 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   auto& device = GPUDevice::Get();
   auto& imgui = ImGuiManager::Get();
 
+  SetCurrentFramePhase(FramePhase::kPresent);
+
   ProcessEvents(exception_state);
 
   if (!device.RefreshSurface()) {
@@ -748,9 +755,11 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
       1000.0 / SDL_GetPerformanceFrequency();
 
 #if defined(URGE_RUNNER_POLL)
+  SetCurrentFramePhase(FramePhase::kOther);
   RunHostTasks();
 
   pace_delay_ms_ = limiter_.Wait(frame_begin_tick_);
+  SetCurrentFramePhase(FramePhase::kUpdate);
 #endif
 }
 

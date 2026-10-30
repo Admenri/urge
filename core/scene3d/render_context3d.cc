@@ -72,6 +72,9 @@ RenderContext3D::RenderContext3D(URGE_EXCEPT,
       static_cast<uint32_t>(sizeof(MeshData)), "mesh3d");
   view_stride_ = ViewStride();
   mesh_pool_->BeginFrame();
+
+  last_frame_seconds_ = ClockSeconds();
+  has_frame_clock_ = true;
 }
 
 RenderContext3D::~RenderContext3D() = default;
@@ -85,6 +88,15 @@ void RenderContext3D::BeginFrame(wgpu::CommandEncoder encoder,
   view_uploaded_.fill(false);
   mesh_pool_->BeginFrame();
   view_override_enabled_ = false;
+
+  const double seconds = ClockSeconds();
+  frame_time_ = static_cast<float>(seconds);
+  frame_delta_ = has_frame_clock_
+                     ? static_cast<float>(seconds - last_frame_seconds_)
+                     : 0.0f;
+  last_frame_seconds_ = seconds;
+  has_frame_clock_ = true;
+  ++globals_frame_;
 }
 
 void RenderContext3D::Collect(Node3D* root, Camera3D* camera) {
@@ -160,6 +172,10 @@ void RenderContext3D::SetPointShadow(
     const std::vector<glm::mat4>& face_matrices,
     int32_t light_index,
     float range) {
+  if (point_shadow_target_.get() != target.get()) {
+    view_group_ = nullptr;
+    view_uploaded_.fill(false);
+  }
   point_shadow_target_ = std::move(target);
   point_light_index_ = light_index;
   point_range_ = std::max(range, 0.01f);
@@ -243,7 +259,8 @@ void RenderContext3D::UploadView(URGE_EXCEPT, int32_t slot) {
   view_uploaded_[slot] = true;
 
   if (view_group_ != nullptr &&
-      view_group_shadow_target_ == shadow_target_.get())
+      view_group_shadow_target_ == shadow_target_.get() &&
+      view_group_point_target_ == point_shadow_target_.get())
     return;
 
   const wgpu::TextureView shadow_view =
@@ -284,17 +301,11 @@ void RenderContext3D::UploadView(URGE_EXCEPT, int32_t slot) {
     return;
   }
   view_group_shadow_target_ = shadow_target_.get();
+  view_group_point_target_ = point_shadow_target_.get();
 }
 
-void RenderContext3D::UploadShadowView(URGE_EXCEPT, int32_t slot) {
-  if (slot < 0 || slot >= kMaxViewSlots)
-    return;
-  if (view_uploaded_[slot])
-    return;
-
-  UploadView(exception_state, slot);
-
-  if (shadow_view_group_ != nullptr)
+void RenderContext3D::EnsureShadowViewGroup(URGE_EXCEPT) {
+  if (shadow_view_group_ != nullptr || view_buffer_ == nullptr)
     return;
 
   wgpu::BindGroupEntry entry = {};
@@ -357,21 +368,19 @@ void RenderContext3D::UpdateGlobals(URGE_EXCEPT, int32_t slot) {
     }
   }
 
-  static double last_seconds = 0.0;
-  static uint64_t frame_index = 0;
-
-  const double seconds = ClockSeconds();
-  const float delta = static_cast<float>(seconds - last_seconds);
-  last_seconds = seconds;
+  if (target.frame == globals_frame_ && target.viewport == pass_size_)
+    return;
 
   GlobalsData data = {};
-  data.time = glm::vec4(static_cast<float>(seconds), delta,
-                        static_cast<float>(frame_index++), 0.0f);
+  data.time = glm::vec4(frame_time_, frame_delta_,
+                        static_cast<float>(globals_frame_), 0.0f);
   const glm::vec2 size(static_cast<float>(std::max(1, pass_size_.x)),
                        static_cast<float>(std::max(1, pass_size_.y)));
   data.viewport = glm::vec4(size, 1.0f / size.x, 1.0f / size.y);
 
   GPUDevice::Get().queue().WriteBuffer(target.buffer, 0, &data, sizeof(data));
+  target.frame = globals_frame_;
+  target.viewport = pass_size_;
 }
 
 wgpu::BindGroup RenderContext3D::GlobalsGroup(URGE_EXCEPT, int32_t slot) {
@@ -433,12 +442,13 @@ void RenderContext3D::BeginPassEx(URGE_EXCEPT,
 
   pass_serial_ = (pass_serial_ + 1) % kMaxViewSlots;
 
+  UploadView(exception_state, pass_serial_);
+
   const bool shadow_pass =
-      shadow_target_ && target.get() == shadow_target_.get();
+      (shadow_target_ && target.get() == shadow_target_.get()) ||
+      (point_shadow_target_ && target.get() == point_shadow_target_.get());
   if (shadow_pass)
-    UploadShadowView(exception_state, pass_serial_);
-  else
-    UploadView(exception_state, pass_serial_);
+    EnsureShadowViewGroup(exception_state);
 }
 
 void RenderContext3D::EndPass() {
@@ -508,6 +518,7 @@ void RenderContext3D::Draw(URGE_EXCEPT, const RenderQueue3D::Item& item) {
   pass_.SetPipeline(pipeline);
 
   if (shadow_mode) {
+    EnsureShadowViewGroup(exception_state);
     pass_.SetBindGroup(0, shadow_view_group_, 1, &view_offset);
   } else {
     pass_.SetBindGroup(0, view_group_, 1, &view_offset);
@@ -569,6 +580,12 @@ int32_t RenderContext3D::DrawFilter(URGE_EXCEPT,
                                [](const RenderQueue3D::Item* item) {
                                  return !item->renderer ||
                                         !item->renderer->cast_shadow();
+                               }),
+                items.end());
+  } else {
+    items.erase(std::remove_if(items.begin(), items.end(),
+                               [](const RenderQueue3D::Item* item) {
+                                 return item->culled;
                                }),
                 items.end());
   }

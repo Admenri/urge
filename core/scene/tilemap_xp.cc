@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "core/graphics/graphics.h"
@@ -337,7 +338,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
     quad.source = source;
     quad.destination = destination;
     quad.color = color;
-    target->push_back(quad);
+    target->push_back(std::move(quad));
   };
 
   auto set_autotile_pos = [&](RectF& pos, int32_t index) {
