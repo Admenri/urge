@@ -137,6 +137,12 @@ set(BUILD_EXAMPLES OFF)
 set(CURL_STATIC_CRT ON CACHE BOOL
   "Build libcurl with the static MSVC runtime" FORCE)
 set(CURL_DISABLE_INSTALL ON)
+# The build-tree package libcurl writes (`libcurl-target.cmake`) is for
+# external projects that consume the library; this one links the target
+# directly and never reads it.  It also fails generation where a system zlib is
+# found: FindZLIB then leaves the vendored zlib's `ZLIB::ZLIB` alias in place,
+# which points at a target outside the export set.
+set(CURL_ENABLE_EXPORT_TARGET OFF)
 set(CURL_BUILD_EVERYTHING OFF)
 set(CURL_WERROR OFF)
 set(CURL_DISABLE_DICT ON)
@@ -163,8 +169,14 @@ set(CURL_USE_LIBPSL OFF)
 # so one has to be named per platform.  Schannel is the Windows native stack
 # and needs nothing installed; curl 8.x dropped its Secure Transport backend,
 # so macOS falls back to OpenSSL like Linux does.
+#
+# Android is the exception: its NDK carries no OpenSSL, and the BoringSSL it
+# does use internally exposes no linkable SSL API, so the TLS backend there is
+# the mbedTLS vendored below.
 if(WIN32)
   set(CURL_USE_SCHANNEL ON)
+elseif(ANDROID)
+  set(CURL_USE_MBEDTLS ON)
 else()
   set(CURL_USE_OPENSSL ON)
 endif()
@@ -236,6 +248,38 @@ if(URGE_ENABLE_VIDEO)
 
   add_subdirectory(dav1d)
   add_subdirectory(webm)
+endif()
+
+# mbedTLS is Android's TLS backend for libcurl, since the NDK has no OpenSSL to
+# link against.  libcurl is the only consumer: its finder module looks for an
+# installed copy otherwise, and it shadows this tree's CMAKE_MODULE_PATH, so
+# the build-tree archives are handed to it through the input variables it
+# documents.  Only the three static libraries are wanted: the command line
+# tools, the test suite and the install rules are all off.
+# `MBEDTLS_FATAL_WARNINGS` has to go too, or a warning from a newer NDK clang
+# becomes a build failure in code this tree does not own.
+if(URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN AND ANDROID)
+  set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
+  set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+  set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
+  set(USE_STATIC_MBEDTLS_LIBRARY ON CACHE BOOL "" FORCE)
+  set(USE_SHARED_MBEDTLS_LIBRARY OFF CACHE BOOL "" FORCE)
+  set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
+  add_subdirectory(mbedtls)
+
+  set(MBEDTLS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mbedtls/include"
+    CACHE PATH "mbedTLS headers for libcurl" FORCE)
+  set(_urge_mbedtls_libdir "${CMAKE_CURRENT_BINARY_DIR}/mbedtls/library")
+  set(MBEDTLS_LIBRARY
+    "${_urge_mbedtls_libdir}/${CMAKE_STATIC_LIBRARY_PREFIX}mbedtls${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    CACHE FILEPATH "mbedTLS library for libcurl" FORCE)
+  set(MBEDX509_LIBRARY
+    "${_urge_mbedtls_libdir}/${CMAKE_STATIC_LIBRARY_PREFIX}mbedx509${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    CACHE FILEPATH "mbedTLS X.509 library for libcurl" FORCE)
+  set(MBEDCRYPTO_LIBRARY
+    "${_urge_mbedtls_libdir}/${CMAKE_STATIC_LIBRARY_PREFIX}mbedcrypto${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    CACHE FILEPATH "mbedTLS crypto library for libcurl" FORCE)
+  unset(_urge_mbedtls_libdir)
 endif()
 
 if(URGE_ENABLE_NETWORK AND NOT EMSCRIPTEN)

@@ -1,68 +1,70 @@
-<img src="app/resources/urge_favicon_512.png" width="100" align="left" alt="URGE logo" />
+<img src="app/resources/urge_favicon_512.png" width="96" align="left" alt="URGE logo" />
 
-# URGE Core
+# Universal Ruby Game Engine (URGE)
 
-**Universal Ruby Game Engine** · an RGSS runtime built on WebGPU
+**A 2D / 3D hybrid game engine compatible with RGSS1 / RGSS2 / RGSS3**
 
-English | [简体中文](README.md)
+[简体中文](README.md) | English
 
 <br clear="left" />
 
 ---
 
-## 1. Overview
+## 1. Project Overview
 
-**URGE (Universal Ruby Game Engine)** is an RGSS (Ruby Game Scripting System) runtime
-for Windows. It is written from scratch in modern C++ (C++20), uses WebGPU as its
-hardware-accelerated graphics backend, and is compatible with the scripting APIs of
-RPG Maker XP (RGSS1), VX (RGSS2) and VX Ace (RGSS3) — existing projects generally run
-without any script changes.
+**URGE (Universal Ruby Game Engine)** is an RGSS runtime built from scratch. It is compatible with RPG Maker XP (RGSS1), VX (RGSS2) and VX Ace (RGSS3). The engine implements the window, renderer, input, audio, font and filesystem layers in C++20, and exposes them to an embedded CRuby interpreter through automatically generated bindings. Existing projects for these three RPG Maker versions run without script changes in principle.
 
-Every runtime facility (window, rendering, input, audio, fonts, filesystem) is
-implemented in C++ and exposed to an embedded CRuby interpreter through an
-automatically generated binding layer. From the script's point of view the familiar
-RGSS constants — `Bitmap`, `Sprite`, `Viewport`, `Graphics`, and so on — are still
-what you work with.
+WebGPU is the single rendering backend. The 2D screen and 3D world share one device, one set of resources and one frame loop, and `World3D` can composite a 3D render into the 2D scene at a chosen Z order — so classic RGSS projects can add 3D scenes, models and skeletal animation directly.
 
 ### Highlights
 
-| Feature | Description |
+| Area | Details |
 | --- | --- |
-| RGSS1 / 2 / 3 compatible | The version is derived from the `RGSS` key in `Game.ini`, or inferred from the archive extension |
-| WebGPU backend | Built on wgpu-native; every render target is `RGBA8Unorm` and the present pass compensates for sRGB |
-| 3D transform node tree | A single `Node` base class with parent/child hierarchy, position/rotation/scale and Z ordering |
-| Custom shaders | `Effect` attaches an arbitrary WGSL fragment shader to a node or to a subtree |
-| Embedded CRuby | Runs RPG Maker script archives (Marshal + zlib) directly, with no external Ruby installation |
-| Generated bindings | The CRuby glue is mechanically generated from the export blocks in `core/**/*.h`; signatures are the contract |
-| High pixel density | Logical resolution is decoupled from physical pixels, so the window scales correctly on HiDPI displays |
-| Virtual filesystem | Scripts, assets and RTP paths are mounted through PhysicsFS |
+| **RGSS compatibility** | RGSS1 / RGSS2 / RGSS3; the version is detected from the `RGSS` field in `Game.ini` or from the script archive extension (`.rxdata` / `.rvdata` / `.rvdata2`); `Window` / `Tilemap` map to the XP or VX implementation; the per-version `RPG` compatibility modules are built in |
+| **Script runtime** | Embedded CRuby 4.0.0; executes Marshal + zlib script archives directly, with no external Ruby installation; provides `rgss_main` / `rgss_stop` / `RGSSError` / `RGSSReset` and the usual RGSS entry points |
+| **Rendering** | WebGPU (wgpu-native on native platforms, the browser's WebGPU on the web); WGSL shaders and custom `Effect` passes; per-frame vertex batching and a uniform pool; logical resolution decoupled from physical pixels for high-DPI displays |
+| **2D** | `Bitmap` (Blt, gradients, text, pixel access), `Sprite`, `Plane`, `Viewport`, `WindowXP` / `WindowVX`, `TilemapXP` / `TilemapVX`, `Geometry`, `Animation`, sprite batching, 2D cameras |
+| **3D** | `Node3D` scene graph, perspective / orthographic cameras, `Light3D` with shadows, glTF model loading, skeletal skinning, animation stacks and state machines, PBR-style materials, `RenderGraph3D`, render targets and compute passes, `World3D` composited with 2D |
+| **Direct GPU access** | The `GPU` module exposes WebGPU buffers, textures, samplers, shaders, bind groups, render / compute pipelines and command encoding directly to Ruby |
+| **Audio** | BGM / BGS / ME / SE; WAV, Ogg Vorbis and Ogg Opus; MIDI with SoundFont; per-channel volume and output device selection; `AudioStream` for streaming playback and control |
+| **Input** | Keyboard, mouse, gamepad (multiple devices, hot-plug, rumble, triggers / sticks) and multi-touch (up to 16 fingers); key bindings are stored in `Game.ini` |
+| **Fonts** | Resolution order is `Fonts/` → system fonts → embedded font; file names and family names are supported, including CJK text; Windows defaults to Microsoft YaHei |
+| **Assets** | PhysicsFS virtual filesystem; automatic RTP detection on Windows; optional `.acs` encrypted containers (requires an `admenri/` drop-in) |
+| **Video** | WebM / AV1 playback (desktop, can be disabled); `Graphics.play_movie` provides a movie event with seek controls |
+| **Networking** | HTTP `Fetch` and `WebSocket` (desktop and web, can be disabled) |
+| **Diagnostics** | F1 settings panel, F2 frame-rate panel; runtime log; Windows crash dumps and symbolicated reports; optional PGO |
 
-### Technology stack
+### Platform Support
 
-| Component | Source | Purpose |
-| --- | --- | --- |
-| Language | C++20 | Engine and host |
-| Window / input / audio | SDL3, SDL_image, SDL_ttf | Platform abstraction, image decoding, font rasterisation |
-| Graphics API | WebGPU (wgpu-native) | Rendering backend |
-| Shader toolchain | none | WGSL goes straight to wgpu; a small in-tree reflector derives the descriptor layout |
-| Scripting runtime | CRuby 4.0.0 (`third_party/ruby`) | Executes RGSS scripts |
-| Virtual filesystem | PhysicsFS (physfs) | Asset and RTP mounting |
-| Math | glm | Vectors, matrices, projections |
-| Compression | zlib | Script-archive decompression |
+| Platform | Output | Graphics backend | Notes |
+| --- | --- | --- | --- |
+| Windows 10 1809+ (x64) | `Game.exe` | D3D12 by default; Vulkan / OpenGL and others selectable | Full feature set; video and networking on by default |
+| WebAssembly (WebGPU-capable browser) | `Game.html` + `Game.wasm` | Browser WebGPU | Video off by default; networking available |
+| Android 9+ (API 28, arm64-v8a / x86_64) | APK | Vulkan 1.1 | Video and networking on by default; TLS via the vendored mbedTLS |
+| Linux / macOS | — | — | No build presets yet |
 
-### Repository layout
+### Ruby Script API
+
+Bindings are generated from export markers in `core/**/*.h`. The generated API currently contains 84 classes and 9 modules.
+
+| Category | Classes / modules |
+| --- | --- |
+| Runtime modules | `Graphics`, `Input`, `Mouse`, `Touch`, `Audio`, `Network`, `Config`, `URGE`, `GPU` |
+| 2D | `Node`, `Sprite`, `Plane`, `Viewport`, `WindowXP`, `WindowVX`, `TilemapXP`, `TilemapVX`, `Geometry`, `Effect`, `Camera`, `OrthographicCamera`, `PerspectiveCamera` |
+| 3D | `Node3D`, `Scene3D`, `World3D`, `Camera3D`, `Light3D`, `GLTFModel3D`, `Mesh3D`, `MeshRenderer3D`, `Skeleton3D`, `BoneMask3D`, `Animation3D`, `AnimationLayer3D`, `AnimationStack3D`, `AnimationStateMachine3D`, `Material3D`, `MaterialPass3D`, `RenderTarget3D`, `ComputePass3D`, `RenderQueue3D`, `RenderContext3D`, `RenderGraph3D`, `RenderGraphPass3D`, `ForwardPipeline3D` |
+| GPU | `GPUObject`, `GPUBuffer`, `GPUTexture`, `GPUTextureView`, `GPUSampler`, `GPUShaderModule`, `GPUBindGroup`, `GPURenderPipeline`, `GPUComputePipeline`, `GPUCommandEncoder`, `GPURenderPassEncoder`, `GPUComputePassEncoder` and the matching `GPU*Descriptor` classes |
+| Data and canvas | `Bitmap`, `Image`, `Font`, `Color`, `Rect`, `Tone`, `Table`, `Vector2` / `Vector3` / `Vector4`, `Animation` |
+| Other | `Disposable`, `Gamepad`, `AudioStream`, `Video`, `WebSocket`, `Fetch`, `NetworkEvent` |
+
+### Repository Layout
 
 ```
 urge/
-├── app/              Host program
-│   ├── app.cc        Entry point: initialises the singletons, then enters the script layer
-│   ├── platform/     Platform-specific code (Win32 RTP path discovery, etc.)
-│   └── resources/    Application icons and Windows version resource
-├── core/             Engine core: all runtime facilities, independent of any script
-├── bind/             CRuby bindings: generated glue plus a hand-written runtime layer
-│   └── viewer/       Read-only API viewer built on the IR
-├── third_party/      Third-party dependencies (mostly Git submodules)
-├── test/             Tests
+├── app/              Host program (Windows / Web / Android) and entry point
+├── core/             Engine core: 2D, 3D, rendering, audio, input, fonts, network, video
+├── bind/             CRuby bindings, generators and the Win32API bridge
+├── android/          Android Gradle project
+├── third_party/      Third-party dependencies (Git submodules and vendored sources)
 └── CMakeLists.txt
 ```
 
@@ -70,48 +72,145 @@ urge/
 
 ## 2. Building
 
-### Requirements
+### 2.1 Requirements
 
-| Item | Requirement |
+Tools needed on every platform:
+
+| Tool | Requirement |
 | --- | --- |
-| Operating system | **Windows 10 1809 or newer (x64)**. wgpu defaults to the DX12 backend on Windows, so Windows 7 / 8 are not supported |
-| Compiler | Visual Studio 2022 or newer (MSVC, with C++20 support) |
-| Build system | CMake ≥ 3.30 |
-| Rust | A stable toolchain (wgpu-native is built from Cargo via Corrosion) |
-| Version control | Git (dependencies are provided as submodules) |
+| CMake | ≥ 3.30; the Windows preset uses the `Visual Studio 18 2026` generator, so it needs a CMake release that supports it (a recent 4.x) |
+| Python | 3.x, with `python` / `python3` / `py` on `PATH` (generates the Ruby bindings at configure time; also indexes web assets) |
+| Git | Needed to fetch the submodules |
+| C++ compiler | C++20 support |
+| Rust | Stable toolchain. Required for wgpu-native on desktop and Android; not needed for the web build (it uses the browser's WebGPU) |
+| Network | The first configure downloads Corrosion and compiles the Rust dependencies |
 
-### Clone and build
+Platform-specific requirements:
+
+| Platform | Install |
+| --- | --- |
+| **Windows** | Visual Studio 2026 (generator `Visual Studio 18 2026`) with the "Desktop development with C++" workload (MSVC x64 + Windows SDK); Rust target `x86_64-pc-windows-msvc` |
+| **Web** | Emscripten SDK (run `emsdk_env`, or set `EMSDK` / `EMSCRIPTEN`); Ninja |
+| **Android** | Android SDK (Platform 37, Build-Tools 36.0.0) and NDK; JDK 17 or newer; Rust targets `aarch64-linux-android` and `x86_64-linux-android`; Ninja |
+
+> Android devices need Vulkan 1.1; the minimum Android version is 9 (API 28).
+
+### 2.2 Get the Source
 
 ```bash
 git clone --recursive https://github.com/Admenri/urge.git
 cd urge
-cmake -S . -B build
-cmake --build build --config Release --target Game
 ```
 
-> `--recursive` is required. Every third-party dependency is either a submodule or
-> vendored in-tree; when they are missing, CMake fails during configuration.
+If the clone is missing submodules:
 
-The artifacts are written to:
+```bash
+git submodule update --init --recursive
+```
 
-- Release: `build/app/Release/Game.exe`
-- Debug: `build/app/Debug/Game.exe`
+### 2.3 Windows (x64)
 
-### Incremental builds
+```bash
+cmake --preset win64-vendored-ruby
+cmake --build --preset win64-vendored-ruby
+```
 
-Both `core/` and `bind/` collect their sources with `file(GLOB ...)`, and CMake freezes
-that file list at **configure time**. Therefore:
+Output:
 
-- **After adding or removing a source file**, re-run `cmake -S . -B build`. Otherwise the
-  new file is never compiled, or the link step fails with `LNK2019` / `LNK2001`.
-- When only the *contents* of existing files change, a plain `cmake --build` is enough —
-  no re-configure is needed.
+- RelWithDebInfo: `build/win64-vendored-ruby/app/RelWithDebInfo/Game.exe`
+- Debug build: `cmake --build --preset win64-vendored-ruby-debug`, output in `build/win64-vendored-ruby/app/Debug/Game.exe`
 
-### Running
+Without the preset, you can supply your own generator:
 
-Place `Game.exe` in the game project directory (the one containing `Game.ini` and
-`Data/`) and launch it. The engine uses the executable's directory as its working
-directory and reads configuration from `<executable-name>.ini`.
+```bash
+cmake -S . -B build -G "Visual Studio 18 2026" -A x64
+cmake --build build --config RelWithDebInfo --target Game
+```
+
+With a different Visual Studio version, replace `-G` / `-A` with the generator that matches your environment.
+
+### 2.4 Web (WebAssembly)
+
+```bash
+# Linux / macOS
+source /path/to/emsdk/emsdk_env.sh
+# Windows
+# emsdk_env.bat
+
+cmake --preset emscripten-wasm32 -DURGE_WEB_ASSETS="/path/to/game"
+cmake --build --preset emscripten-wasm32
+```
+
+`URGE_WEB_ASSETS` points at the game directory (containing `Game.ini`, `Data/`, and so on). The build output lives in `build/emscripten-wasm32/app/`:
+
+```
+Game.html  Game.js  Game.wasm  async_mapping.js  urge-helper.js  assets/
+```
+
+The game is published beside the module as `assets/`. Files matching `*.ini`, `*.acs` and `Data/Scripts.*` are preloaded before the first frame (adjust with `URGE_WEB_PRELOAD`); everything else is fetched the first time it is requested. Pass `-DURGE_WEB_EMBED_ASSETS=ON` at configure time to pack the game into a single `Game.data` instead.
+
+Serve the directory over HTTP (`localhost` or HTTPS; browsers generally expose WebGPU only in secure contexts):
+
+```bash
+python -m http.server 8000 -d build/emscripten-wasm32/app
+```
+
+Then open `http://localhost:8000/Game.html`.
+
+### 2.5 Android (arm64-v8a / x86_64)
+
+Add the Rust cross-compilation targets first:
+
+```bash
+rustup target add aarch64-linux-android x86_64-linux-android
+```
+
+Build the native libraries (choose the ABIs you need):
+
+```bash
+cmake --preset android-arm64
+cmake --build --preset android-arm64
+
+# Emulators or x86_64 devices
+cmake --preset android-x86_64
+cmake --build --preset android-x86_64
+```
+
+The build copies `libmain.so` and `libSDL3.so` into `android/app/src/main/jniLibs/<abi>/`; Gradle only packages them.
+
+Mount the game directory into the APK and build a debug package:
+
+```bash
+cd android
+# Use gradlew.bat on Windows
+./gradlew assembleDebug -P urgeGameDir="/path/to/game"
+```
+
+The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`. The game files are placed in the APK's `assets/` and unpacked into the app's private directory on first launch.
+
+Release builds need signing parameters (`urgeStoreFile`, `urgeStorePassword`, `urgeKeyAlias`, `urgeKeyPassword`, supplied through `local.properties`, `-P` or the environment); without them the APK is left unsigned.
+
+### 2.6 Running a Game
+
+**Windows**: put `Game.exe` in the game directory. The engine uses the executable's directory as the working directory and reads a configuration file with the same stem:
+
+```
+MyGame/
+├── Game.exe
+├── Game.ini
+├── Game.acs          # optional: encrypted asset container, takes priority over loose files
+├── Data/
+│   └── Scripts.rvdata2
+├── Graphics/
+├── Audio/
+└── Fonts/
+```
+
+- The configuration file is `<executable stem>.ini` (`Game.exe` → `Game.ini`).
+- If `<executable stem>.acs` exists and the build includes `admenri/`, that container is mounted first.
+- The runtime log is written to `<executable stem>.log`.
+
+**Web / Android**: the executable name is fixed to `Game`, so `Game.ini`, `Data/` and the rest live at the site root or under `assets/` in the APK.
 
 Example `Game.ini`:
 
@@ -120,277 +219,111 @@ Example `Game.ini`:
 RGSS = 3
 Scripts = Data/Scripts.rvdata2
 Title = My Game
-; RTP / RTP1 / RTP2 / RTP3 are optional; installed runtimes are auto-detected on Windows
+; RTP / RTP1 / RTP2 / RTP3 are optional; Windows detects installed runtimes automatically
+
+[Display]
+Width = 544
+Height = 416
+VSync = true
+Fullscreen = false
+FrameSkip = false
 
 [Window]
-Width = 640
-Height = 480
+Resizable = none
 
 [Audio]
 Soundfont = Fonts/Default.sf2
+MasterVolume = 100
 
 [GFX]
 Backend =
+SpriteBatch = true
+
+[Input]
+PadBindings = true
+
+[KeyBinding]
+C = Space,Return,pad:a
 ```
 
-Configuration keys:
+Configuration reference:
 
-| Section | Key | Default | Description |
+| Section | Key | Default | Notes |
 | --- | --- | --- | --- |
-| `Game` | `RGSS` | `0` (auto) | `1` = XP, `2` = VX, `3` = VX Ace; when `0`, inferred from the `Scripts` extension |
-| `Game` | `Scripts` | `Data/Scripts.rxdata` | Path to the script archive |
+| `Game` | `RGSS` | `0` (auto) | `1` = XP, `2` = VX, `3` = VX Ace; `0` infers it from the `Scripts` extension |
+| `Game` | `Scripts` | `Data/Scripts.rxdata` | Script archive path |
 | `Game` | `Title` | `(*^▽^*)` | Window title |
-| `Game` | `RTP` / `RTP1`–`RTP3` | empty | RPG Maker runtime names |
-| `Window` | `Width` / `Height` | XP: `640x480`, otherwise `544x416` | Logical resolution |
-| `Audio` | `Soundfont` | `Fonts/Default.sf2` | MIDI soundfont |
-| `GFX` | `Backend` | empty (auto) | wgpu backend selection |
+| `Game` | `RTP` / `RTP1`–`RTP3` | empty | RPG Maker runtime names; detected automatically on Windows |
+| `Display` | `Width` / `Height` | XP: `640×480`; others: `544×416` | Logical resolution |
+| `Display` | `VSync` / `Fullscreen` / `FrameSkip` | `false` | Vertical sync, fullscreen and frame skipping |
+| `Window` | `Resizable` | `none` | `none` / `free` / `ratio` |
+| `Audio` | `Soundfont` | `Fonts/Default.sf2` | MIDI SoundFont |
+| `Audio` | `MasterVolume` / `BGMVolume` / `BGSVolume` / `MEVolume` / `SEVolume` | `100` | Volumes |
+| `Audio` | `OutputDevice` | empty (system default) | Audio output device |
+| `GFX` | `Backend` | empty (auto) | `d3d11` / `d3d12` / `vulkan` / `opengl` / `opengles` / `metal` |
+| `GFX` | `SpriteBatch` | `true` | Sprite batching |
+| `Input` | `PadBindings` | `false` | Whether the default gamepad bindings have been written |
+| `KeyBinding` | — | — | One line per slot; gamepad entries use `pad:<token>` |
 
-### Fonts
+Additional notes:
 
-The Ruby `Font` class and the debug overlay (F1 / F2) share one font service,
-`core/font_context.*`, so both always draw from the same face. A name is resolved in this
-order, first hit wins:
+- **F1 / F2**: F1 opens the settings panel (where new key bindings can be added); F2 toggles the frame-rate display.
+- **Fonts**: resolved as `Fonts/` → system fonts → embedded font; both file names (extension optional) and family names work.
+- **Gamepads**: keyboard and gamepad map to the same set of slots; gamepads are hot-pluggable, with support for multiple devices, rumble, sticks and triggers.
+- **Profiling**: on Windows, enable sampling through the `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR` environment variables, or the `Profiler` / `ProfilerInterval` keys in `[Debug]`.
 
-1. `Fonts/` — faces shipped with the game (read through the load paths, so an `.acs`
-   archive can carry them);
-2. system fonts — on Windows `%WINDIR%\Fonts` and
-   `%LOCALAPPDATA%\Microsoft\Windows\Fonts`;
-3. the face compiled into the executable (`core/resources/embed.ttf.bin`), always
-   available as the last resort.
+### 2.7 Build Options
 
-A face may be named by file (`msyh.ttc`, `simhei.ttf`, extension optional) or by family
-(`Microsoft YaHei`, `微软雅黑`, `SimHei`); the family index is built only on the first
-lookup that misses the file-name map, and reads nothing but each font's `name` table. On
-Windows the default face is **Microsoft YaHei** (`msyh.ttc`), falling back through
-`msyh.ttf`, `Deng.ttf`, `simhei.ttf` and `simsun.ttc` to the embedded face; other
-platforms still default to the embedded face. A file of the same name under `Fonts/`
-shadows the system one. Payloads are read on demand and kept for the lifetime of the
-context, so the script side and the overlay share one copy.
+| Option | Default | Description |
+| --- | --- | --- |
+| `URGE_RUNNER_MODEL` | Desktop / Android: `poll`; Web: `fiber` | Which side owns the frame loop: the engine's main loop (`poll`) or SDL's callback loop (`fiber`) |
+| `URGE_ENABLE_VIDEO` | Desktop / Android `ON`; Web `OFF` | WebM / AV1 video playback |
+| `URGE_ENABLE_NETWORK` | All platforms `ON` | HTTP `Fetch` and `WebSocket` (the web build uses the browser's own implementation) |
+| `URGE_WIN7_COMPAT` | `OFF` | Link Windows 7 compatibility hooks: route Win8+ imports such as `WaitOnAddress`, `ProcessPrng` and `CreateFile2` to in-image fallbacks |
+| `URGE_VIDEO_AV1_8BIT_ONLY` | `OFF` | Build 8-bit AV1 only, reducing size (drops 10 / 12-bit video) |
+| `URGE_WEB_ASSETS` | empty | Game directory for the web build |
+| `URGE_WEB_PRELOAD` | `*.ini,*.acs,Data/Scripts.*` | Files preloaded before the first web frame |
+| `URGE_WEB_EMBED_ASSETS` | `OFF` | Pack the game into a single `Game.data` |
+| `URGE_BUILD_ACS_PACK` | `ON` | Build the `.acs` container packer when `admenri/` is present |
+| `URGE_PGO` | `off` | Two-pass profile-guided optimization: `generate` / `use` (MSVC) |
+| `URGE_EMSDK` / `URGE_ANDROID_NDK` | auto-detected | Explicit Emscripten SDK / Android NDK paths |
 
-### Input and gamepads
+> `URGE_WIN7_COMPAT` removes only the Win8+ API dependencies in the import table; Windows 7 has no D3D12, so the graphics backend still needs Vulkan / OpenGL drivers.
 
-`core/input/` drives the keyboard and the controller into one set of slots (`A` / `B` / `C` /
-`X` / `Y` / `Z` / `L` / `R` and `DOWN` / `LEFT` / `RIGHT` / `UP`). A pad works as soon as it is
-plugged in -- hot-plug included -- and only one pad is taken over at a time.
+> The Android NDK has no OpenSSL to link against, so the Android network build uses the vendored mbedTLS as libcurl's TLS backend and reads the system certificate directory `/system/etc/security/cacerts`; Windows uses Schannel and other desktop platforms use the system OpenSSL. When the video and network subsystems are built out, the corresponding Ruby modules still exist and raise on use, so the script API stays the same on every platform.
 
-| Pad button | Slot |
-| --- | --- |
-| A (south) / B (east) / X (west) / Y (north) | `C` / `B` / `A` / `X` |
-| LB / RB | `L` / `R` |
-| D-pad, left stick | `LEFT` / `RIGHT` / `UP` / `DOWN` |
+### 2.8 Third-Party Dependencies
 
-The left stick drives the direction slots alongside the d-pad (50% deadzone), so both feel
-native. Bindings live in the `[KeyBinding]` section of `Game.ini`, with pad entries written as
-`pad:<token>` (for example `C=Space,Return,pad:a`); `[Input] PadBindings=true` marks a file
-written by a build that knows about pads -- without it the pad defaults are added on load, which
-is how an old save file is upgraded. In the F1 panel, press `Add` and then a pad button to bind
-it to that slot.
-
-> A Bluetooth Xbox controller needs a one-line local patch in `third_party/SDL`: upstream
-> widened the "fake HID endpoint" test until it also rejected the real endpoint of a Bluetooth
-> pad. The reason and the verification are in `third_party/PATCHES.md`.
-
-Advanced use goes through the `Gamepad` class: one object is one controller, it owns its
-`SDL_Gamepad`, and a script may hold several at once.
-
-```ruby
-Gamepad.available_devices       # => [{ "id" => 2, "name" => "Xbox Series X Controller",
-                                #       "path" => "...", "player" => 0, "guid" => "..." }, ...]
-pad = Gamepad.new(2)            # open the id reported above
-pad.update                      # once per frame; button_trigger?/button_repeat? depend on it
-
-pad.button_press?(Gamepad::BUTTON_SOUTH)
-pad.button_trigger?(Gamepad::BUTTON_SOUTH)
-pad.button_repeat?(Gamepad::BUTTON_SOUTH)
-pad.get_axis_value(Gamepad::AXIS_LEFTX)     # raw SDL value: sticks -32768..32767, triggers 0..32767
-pad.pressed_buttons             # => [button, ...]
-pad.connect_state               # SDL connection state (0 = none, 1 = wired, 2 = wireless)
-pad.connect                     # re-attach after a replug, matched by GUID
-pad.player_index                # readable and writable
-pad.rumble(0.5, 0.5, 200)       # engine extension: low, high, milliseconds
-```
-
-The constants are SDL's numbers: `Gamepad::AXIS_*` (`LEFTX`, `LEFTY`, `RIGHTX`, `RIGHTY`,
-`LEFT_TRIGGER`, `RIGHT_TRIGGER`) and `Gamepad::BUTTON_*` (`SOUTH`, `EAST`, `WEST`, `NORTH`,
-`BACK`, `GUIDE`, `START`, `LEFT_STICK`, `RIGHT_STICK`, `LEFT_SHOULDER`, `RIGHT_SHOULDER`,
-`DPAD_*`, `MISC1..6`, `RIGHT_PADDLE1/2`, `LEFT_PADDLE1/2`, `TOUCHPAD`). `Gamepad.new` raises
-`RGSSError` when the device is already gone.
-
-### Third-party dependencies
-
-These dependencies are provided as Git submodules and must be fetched while cloning:
+The following dependencies are Git submodules and must be fetched with the source (`git submodule update --init --recursive`; `mbedtls` carries its own `framework` submodule):
 
 | Submodule | Purpose |
 | --- | --- |
-| `glm` | Math library |
+| `glm` | Vectors, matrices and projections |
 | `SDL` | Window, input, audio and platform abstraction |
-| `SDL_image` | Image decoding |
-| `SDL_ttf` | TrueType rasterisation (bundles FreeType / HarfBuzz / PlutoSVG) |
+| `SDL_image` | Image decoding (including libwebp) |
+| `SDL_ttf` | TrueType font rasterization (including FreeType) |
 | `physfs` | Virtual filesystem |
-| `wgpu-native` | WebGPU implementation (Rust) |
-| `zlib` | Script-archive decompression |
+| `wgpu-native` | Native WebGPU implementation |
+| `zlib` | Script archive decompression |
+| `curl` | HTTP and WebSocket |
+| `mbedtls` | TLS backend for libcurl on Android |
+| `ogg` / `vorbis` / `opus` / `opusfile` | Ogg Vorbis and Ogg Opus decoding |
 
-In addition, `third_party/` contains several **vendored** dependencies (not submodules):
-`ruby` (CRuby 4.0.0), `libffi` (the foreign-function interface the `Win32API` binding
-uses to make ABI-correct calls on x64), `webgpu-cpp` (the WebGPU C++ header wrapper),
-`miniaudio`, `imgui`, `dav1d` and `webm`.
+`third_party/` also vendors `ruby` (CRuby 4.0.0), `miniaudio`, `imgui`, `dav1d`, `webm`, `libffi` and `webgpu-cpp`. The web build uses Emscripten's `emdawnwebgpu` port instead of wgpu-native.
 
-The decoding libraries travel with their only consumer: `libwebp` lives in
-`third_party/SDL_image/external/`, and `ogg` / `vorbis` / `opus` / `opusfile` live in
-`third_party/miniaudio/external/`.
-
-`libffi` takes part in the build on Windows only (see `third_party/CMakeLists.txt`):
-its sole consumer is `bind/binding_win32api.cc`, and that binding compiles to an empty
-implementation elsewhere. Its build script is a line-for-line CMake translation of the
-upstream autotools project (`configure.ac` / `configure.host` / `Makefile.am`) rather
-than a redesign of it.
+The optional `admenri/` directory is not part of the open-source repository. When present, the build enables `.acs` encrypted containers and the `urge-acs-pack` packer; without it, games run from ordinary files.
 
 ---
 
-## 3. Architecture
+## 3. License
 
-### Layers
-
-The project is organised into four layers with a strictly top-down dependency
-direction:
-
-```mermaid
-graph TD
-  A["app/<br/>Host · Game.exe"] --> B["bind/<br/>CRuby bindings · urge-binding"]
-  B --> C["core/<br/>Engine core · urge-core"]
-  C --> D["third_party/<br/>Dependencies"]
-  B --> D
-```
-
-- **`app/`** — the host program. `app.cc` is the only entry point: it resolves the
-  executable path and `Game.ini`, initialises the `IOService`, `Config`, `Input`,
-  `Mouse`, `FontContext` and `Graphics` singletons in dependency order, then enters
-  `binding::BindingMain`; on shutdown it releases them in reverse order.
-- **`bind/`** — the CRuby binding static library. It depends on `urge-core` but contains
-  no entry point; the host calls `binding::InitBindings()` after `ruby_init()`.
-- **`core/`** — the engine core, built as the static library `urge-core`, with no
-  dependency on Ruby of any kind.
-- **`third_party/`** — all external dependencies, as submodules or vendored copies.
-
-### Rendering pipeline
-
-The graphics backend is WebGPU (wgpu-native). The engine uses exactly one render-target
-format, `RGBA8Unorm`. When the swapchain is an `*Srgb` format, the present pass runs a
-fragment shader that performs an **exact piecewise sRGB inverse encoding**, which cancels
-the sRGB target's own encode and reproduces the authored colour on any swapchain format.
-
-Shaders are authored in **WGSL** and handed to wgpu as they are -- both backends carry
-their own WGSL front end, so nothing is translated at run time. The descriptor layout the
-pipeline needs is read back out of the source by `core/wgsl_reflect.cc`. The bind-group
-convention is:
-
-| Set | Contents |
-| --- | --- |
-| 0 | Scene-level uniforms (screen size, projection, …) |
-| 1 | Per-drawable uniforms (dynamic offset, from a shared pool) |
-| 2 | Texture and sampler |
-| 3 | Per-node parameters (e.g. a sprite's colour / tone / opacity) |
-
-To cut per-frame CPU cost, the engine batches in two places:
-
-- **Uniform pools** (`core/render/uniform.h`): the per-drawable data of a frame is packed into a
-  few large buffers and addressed with a `dynamic offset`, instead of one buffer per
-  drawable.
-- **Frame vertex batch** (`core/primitive.{h,cc}`): the whole frame shares a single vertex
-  buffer; each drawable addresses its own range with `firstVertex`, collapsing hundreds of
-  `WriteBuffer` calls per frame into one.
-
-The per-frame sequence is:
+This project is released under the [MIT License](LICENSE.txt).
 
 ```
-SDL_AppIterate
-  └─ Graphics::Update
-       ├─ (prepare stage: allocate uniform slots, append vertices, flush the upload)
-       ├─ Node::Render (a render pass over the screen texture)
-       ├─ FPS control (FrameSkip / Delay)
-       └─ PresentInternal (draw the screen texture to the swapchain)
+Copyright (c) 2026 Admenri Adev
 ```
 
-### Node tree
-
-Every visible object derives from a single `Node` base class. Parent/child relationships
-are held in an intrusive doubly-linked list (`DrawableSet`), and each node carries a 3D
-transform (position, quaternion rotation, scale). `Node::Render` drives **three stages**
-in a fixed order:
-
-| Stage | Responsibility | Gating |
-| --- | --- | --- |
-| `Prepare` | Append geometry to the frame batch, write uniforms | Returning `true` is required for `DoDraw` |
-| `DoDraw` | Bind pipeline/resources and issue draws | Returning `true` is required for `PostDraw` |
-| `PostDraw` | Post-draw work (post-processing, popping the scissor stack) | — |
-
-> Note: **geometry must be emitted entirely in `Prepare`** — the frame batch is uploaded
-> between the two stages, so vertices appended in `DoDraw` are never submitted.
-
-How the node types map onto RGSS concepts:
-
-```mermaid
-graph TD
-  N["Node (transform · hierarchy · three-stage render)"] --> S["Sprite"]
-  N --> P["Plane (tiled)"]
-  N --> V["Viewport (clipping / offscreen effects)"]
-  N --> G["Geometry (triangle mesh)"]
-  N --> W["WindowVX / WindowXP"]
-  N --> T["TilemapVX / TilemapXP"]
-  N --> R["ScreenRootNode (brightness overlay)"]
-```
-
-`Tilemap` and `Window` are bound to `TilemapVX` / `TilemapXP` and `WindowVX` / `WindowXP`
-respectively, according to the RGSS version detected from `Game.ini`, so scripts see the
-constant that matches their target version.
-
-### Binding generation
-
-Classes in `core/` marked with `/*-export.begin-*/` … `/*-export.end-*/` are exported to
-Ruby. The pipeline reads only `core/**/*.h`; it neither modifies the engine sources nor
-depends on CRuby VM internals:
-
-```mermaid
-flowchart LR
-  H["core/**/*.h<br/>export blocks"] --> G["gen_api_json.py"]
-  G --> IR["bind/api_reference.json"]
-  IR --> B["generate_binding.py"]
-  B --> C["bind/binding_*.{h,cc}"]
-  IR --> V["bind/viewer<br/>read-only API viewer"]
-```
-
-This pipeline runs automatically during the **CMake configure step**
-(`bind/gen_binding.cmake`), and both generators follow a **"compare first, write second"**
-rule: when the content is unchanged they never touch the disk. The generated files keep
-their mtime, so no spurious recompilation is triggered. Adding an exported class therefore
-takes a single registration in `gen_api_json.py`'s `CLASS_ORDER`, followed by
-`cmake -S . -B build`.
-
-### Current Ruby API surface
-
-| Category | Count | Names |
-| --- | --- | --- |
-| Classes | 23 | `Disposable`, `Node`, `Gamepad`, `Geometry`, `Bitmap`, `Color`, `Font`, `Image`, `Animation`, `Plane`, `Rect`, `Sprite`, `Table`, `Tone`, `Vector2`, `Vector3`, `Vector4`, `TilemapVX`, `TilemapXP`, `Viewport`, `WindowVX`, `WindowXP`, `Effect` |
-| Modules | 4 | `Graphics`, `Input`, `Audio`, `Mouse` |
-
-### Core module map
-
-`core/` is grouped by function, and the include path mirrors the directory
-(`core/<group>/<file>`):
-
-| Directory | Contents |
-| --- | --- |
-| `common/` | Infrastructure and data classes: `definition.h` (`URGE_BINDING` / `ATTR` / `MARSHAL_*` / `KLASS_EQUAL` macros), `object.h`, `refptr.h`, `disposable.h`, `utility.{h,cc}` (`Rect` / `Color` / `Tone` / `Vector2/3/4`), `table.{h,cc}` (`Table`), `exception.h`, `logger.h`, `inirw.h` |
-| `system/` | Host facilities: `config.{h,cc}` (`Game.ini`), `filesystem.{h,cc}` (PhysicsFS and RTP paths), `archive.{h,cc}` (`.acs` container) |
-| `graphics/` | **Graphics classes exported to Ruby**: `graphics.{h,cc}` (the `Graphics` module: main loop, window and swapchain, present, transitions, snapshots, frame-rate control), `gpu.{h,cc}` (the `GPU` module and every `GPU*` descriptor/object), `effect.{h,cc}` (`Effect`, custom shaders) |
-| `render/` | **Internal rendering (not exported)**: `device.{h,cc}` (wgpu device and queue), `pipeline.{h,cc}`, `shader.{h,cc}`, `gpu_utils.h` (bind group/layout helpers), `primitive.{h,cc}` (frame vertex batch), `uniform.{h,cc}` (per-frame uniform pools), `render_stats.h`, `imgui_manager.{h,cc}` (the F1/F2 overlay) |
-| `scene/` | **Scene nodes**: `node` (three-stage render dispatch), `drawable` (drawable list), `sprite` / `sprite_batch`, `plane`, `viewport`, `window_vx` / `window_xp`, `tilemap_vx` / `tilemap_xp`, `geometry`, `camera` |
-| `canvas/` | **The canvas and what hangs off it**: `bitmap.{h,cc}` (bitmaps, GPU textures, `Blt`/gradients/text), `bitmap_queue.{h,cc}` (draw command queue), `image.{h,cc}` (palette), `animation.{h,cc}` (frame list) |
-| `font/` | `font{,_context,_renderer}.{h,cc}`: face resolution (`Fonts/` → system → embedded), SDL_ttf rendering and text metrics |
-| `audio/` | `audio.{h,cc}` (BGM / BGS / SE), `audio_service.{h,cc}`, `audio_stream.{h,cc}` |
-| `input/` | `input.{h,cc}` (keyboard and pad into one slot table), `gamepad.{h,cc}` (SDL3 pad, hot-plug, triggers/sticks/rumble, multiple pads, and the script-side `Gamepad` class), `mouse.{h,cc}`, `key_sym.h` (binding entry and the pressed/triggered/repeated machine) |
-| `network/` | `network.{h,cc}` (front end), `network_backend.h`, `network_curl.cc` / `network_web.cc` (one backend per platform) |
-| `video/` | `video{,_decoder,_demuxer,_player}.{h,cc}`: WebM/AV1 playback |
+Third-party dependencies keep their own licenses. RPG Maker runtimes (RTP) and game assets are not part of this repository and remain the property of their respective authors.
 
 ---
 

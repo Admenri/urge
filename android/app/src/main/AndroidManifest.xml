@@ -17,6 +17,10 @@
     <uses-feature android:name="android.hardware.type.pc" android:required="false" />
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- The engine's Network API is the game's own HTTP/WebSocket client
+         (libcurl through JNI-free native sockets), so the app needs the
+         install-time INTERNET permission; nothing else gates it. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:label="@string/app_name"

@@ -93,6 +93,7 @@
 #include "core/render/primitive.h"
 #include "core/scene/sprite.h"
 #include "core/render/uniform.h"
+#include "core/system/urge.h"
 
 #include "bind/cruby_main.h"
 
@@ -226,6 +227,7 @@ void Shutdown(AppState& state) {
   }
 
   urge::Network::Reset(nullptr);
+  urge::URGE::Reset(nullptr);
   urge::Graphics::Reset(nullptr);
   urge::FontContext::Reset(nullptr);
   urge::Touch::Reset(nullptr);
@@ -456,6 +458,12 @@ bool Initialize(AppState& state,
 
   auto graphics = new urge::Graphics(exception_state);
   urge::Graphics::Reset(graphics);
+
+  /* The platform facade reads the window Graphics just created, so it comes up
+     right after it and goes away first: every call it answers -- title, icon,
+     geometry, the clipboard -- is a query against that window. */
+  auto platform = new urge::URGE();
+  urge::URGE::Reset(platform);
 
   /* The network service owns no window and no device: it is built after
      everything else and driven by the script (`Network.update`), not by

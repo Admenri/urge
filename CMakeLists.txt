@@ -56,14 +56,14 @@ if(ANDROID)
 endif()
 
 # Video playback is optional.  dav1d and libwebm are native C libraries with no
-# Emscripten story, so the platform decides whether the engine is built at all.
-# The default follows the platform, but an explicit -DURGE_ENABLE_VIDEO=... on
+# Emscripten story, so the web build is the only one without the engine; every
+# other platform builds it by default.  An explicit -DURGE_ENABLE_VIDEO=... on
 # the command line still wins.
 #
 # The Ruby side is not conditional: `Video` stays exported either way, and every
 # call raises while the engine is off, so a script sees one API on every
 # platform -- only the depth behind it differs.  See core/video/video.h.
-if(EMSCRIPTEN OR ANDROID)
+if(EMSCRIPTEN)
   set(URGE_ENABLE_VIDEO_DEFAULT OFF)
 else()
   set(URGE_ENABLE_VIDEO_DEFAULT ON)
@@ -71,24 +71,19 @@ endif()
 option(URGE_ENABLE_VIDEO
   "Build the AV1/Vorbis video playback engine" ${URGE_ENABLE_VIDEO_DEFAULT})
 
-# The network subsystem is on everywhere the C library can be built, including
-# the web: libcurl carries the native side and Emscripten ships its own
-# fetch/websocket, so neither platform needs a dependency the other lacks.  The
-# switch exists so a build can drop the network code -- and libcurl with it --
-# the way the video switch drops dav1d.  `Network` stays exported either way and
-# raises while it is off, see core/network/network.h.
+# The network subsystem is on everywhere, including the web: libcurl carries
+# the native side and Emscripten ships its own fetch/websocket, so neither
+# platform needs a dependency the other lacks.  The switch exists so a build can
+# drop the network code -- and libcurl with it -- the way the video switch drops
+# dav1d.  `Network` stays exported either way and raises while it is off, see
+# core/network/network.h.
 #
-# Android is off by default for one reason: libcurl needs a TLS backend, and
-# Schannel (Windows) is the only one this tree can build without pulling in a
-# cross-compiled OpenSSL.  `-DURGE_ENABLE_NETWORK=ON` works once one is
-# available; nothing in the engine assumes the subsystem is there.
-if(ANDROID)
-  set(URGE_ENABLE_NETWORK_DEFAULT OFF)
-else()
-  set(URGE_ENABLE_NETWORK_DEFAULT ON)
-endif()
+# Native builds need a TLS backend for libcurl.  Windows uses Schannel, the
+# in-box Windows stack; Android, whose NDK carries no OpenSSL, uses the
+# vendored mbedTLS against the system CA store; other desktop platforms link
+# the system OpenSSL.  The web build has no libcurl at all.
 option(URGE_ENABLE_NETWORK
-  "Build the WebSocket and HTTP client" ${URGE_ENABLE_NETWORK_DEFAULT})
+  "Build the WebSocket and HTTP client" ON)
 
 # The static CRT, the static C++ library, SDL and wgpu import a few functions
 # that only exist from Windows 8 on (WaitOnAddress, ProcessPrng, CreateFile2,

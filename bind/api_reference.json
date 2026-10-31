@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-30T13:27:07Z",
+    "generated_at": "2026-10-30T14:32:16Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -82,6 +82,7 @@
       "core/system/archive.h",
       "core/system/config.h",
       "core/system/filesystem.h",
+      "core/system/urge.h",
       "core/video/video.h",
       "core/video/video_decoder.h",
       "core/video/video_demuxer.h",
@@ -3229,6 +3230,186 @@
           "setter": true,
           "attr_value_type": "bool",
           "export": "core/input/touch.h:37-87"
+        }
+      ]
+    },
+    {
+      "constants": [],
+      "unsupported": [],
+      "export": "core/system/urge.h:38-63",
+      "cpp_name": "URGE",
+      "cpp_parent": "Singleton",
+      "header": "core/system/urge.h",
+      "kind": "module",
+      "name": "URGE",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "platform",
+          "cpp_name": "GetPlatform",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": true,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "set_window_title",
+          "cpp_name": "SetWindowTitle",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "title",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "set_window_icon",
+          "cpp_name": "SetWindowIcon",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "icon",
+              "type": "RefPtr<Image>",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "move_window",
+          "cpp_name": "MoveWindow",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "move_window",
+          "cpp_name": "MoveWindow",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "x",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "y",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "width",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "height",
+              "type": "int32_t",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "get_window_rect",
+          "cpp_name": "GetWindowRect",
+          "return": {
+            "cpp_type": "RefPtr<Rect>",
+            "ruby_type": "Rect"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "open_url",
+          "cpp_name": "OpenURL",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "url",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "clipboard",
+          "cpp_name": "Clipboard",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "header_annotation": false,
+          "attr": true,
+          "attr_value_type": "std::string",
+          "export": "core/system/urge.h:38-63"
+        },
+        {
+          "ruby_name": "clipboard=",
+          "cpp_name": "Clipboard",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [
+            {
+              "name": "value",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "header_annotation": false,
+          "attr": true,
+          "setter": true,
+          "attr_value_type": "std::string",
+          "export": "core/system/urge.h:38-63"
         }
       ]
     }

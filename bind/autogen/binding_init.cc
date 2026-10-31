@@ -100,6 +100,7 @@
 #include "binding_mouse.h"
 #include "binding_network.h"
 #include "binding_touch.h"
+#include "binding_urge.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -225,6 +226,7 @@ void InitBindings() {
   InitMouseBinding();
   InitNetworkBinding();
   InitTouchBinding();
+  InitURGEBinding();
   InitWin32APIBinding();
 }
 // --- GENERATED END ---

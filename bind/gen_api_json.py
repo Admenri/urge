@@ -60,6 +60,7 @@ MODULE_CLASSES = {
     "GPU",
     "Network",
     "Config",
+    "URGE",
 }
 
 # Fixed presentation order (also the registration order of binding_init.cc:

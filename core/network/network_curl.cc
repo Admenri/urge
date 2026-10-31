@@ -70,6 +70,19 @@ RefPtr<NetworkEvent> MakeEvent(int32_t type) {
   return event;
 }
 
+// libcurl's mbedTLS backend checks the platform's CA directory, and Android
+// keeps its system store as a directory of hashed PEM files rather than the
+// `/etc/ssl/certs/ca-certificates.crt` bundle the backend looks for by
+// default.  Without this every https and wss connection fails verification
+// because the compiled-in path simply does not exist.
+void ConfigureTls(CURL* handle) {
+#if defined(OS_ANDROID)
+  curl_easy_setopt(handle, CURLOPT_CAPATH, "/system/etc/security/cacerts");
+#else
+  static_cast<void>(handle);
+#endif
+}
+
 class CurlWebSocketImpl final : public WebSocketImpl {
  public:
   CurlWebSocketImpl(NetworkBackend* backend,
@@ -305,6 +318,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     curl_easy_setopt(handle, CURLOPT_URL, url_.c_str());
     curl_easy_setopt(handle, CURLOPT_CONNECT_ONLY, 2L);
     curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+    ConfigureTls(handle);
 
     curl_easy_setopt(handle, CURLOPT_WS_OPTIONS, (long)CURLWS_NOAUTOPONG);
 
@@ -506,6 +520,7 @@ class CurlFetchImpl final : public FetchImpl {
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, &body);
     curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, OnHeader);
     curl_easy_setopt(handle, CURLOPT_HEADERDATA, &header_lines);
+    ConfigureTls(handle);
 
     if (method_ != "GET" && method_ != "get") {
       curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, method_.c_str());

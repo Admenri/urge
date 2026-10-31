@@ -4680,6 +4680,28 @@ waitpid(rb_pid_t pid, int *stat_loc, int options)
 
 #include <sys/timeb.h>
 
+static int have_precisetime = -1;
+
+static void
+get_systemtime(FILETIME *ft)
+{
+    typedef void (WINAPI *get_time_func)(FILETIME *ft);
+    static get_time_func func = (get_time_func)-1;
+
+    if (func == (get_time_func)-1) {
+        /* GetSystemTimePreciseAsFileTime is available since Windows 8 and Windows Server 2012. */
+        func = (get_time_func)get_proc_address("kernel32", "GetSystemTimePreciseAsFileTime", NULL);
+        if (func == NULL) {
+            func = GetSystemTimeAsFileTime;
+            have_precisetime = 0;
+        }
+        else
+            have_precisetime = 1;
+    }
+    if (!ft) return;
+    func(ft);
+}
+
 /* License: Ruby's */
 #define filetime_unit (10UL * 1000 * 1000)
 #define filetime_diff_days ((1970-1601)*3652425UL/10000)
@@ -4719,7 +4741,7 @@ gettimeofday(struct timeval *tv, struct timezone *tz)
     FILETIME ft;
     long subsec;
 
-    GetSystemTimePreciseAsFileTime(&ft);
+    get_systemtime(&ft);
     tv->tv_sec = filetime_split(&ft, &subsec);
     tv->tv_usec = subsec / 10;
 
@@ -4748,7 +4770,7 @@ clock_gettime(clockid_t clock_id, struct timespec *sp)
         {
             FILETIME ft;
 
-            GetSystemTimePreciseAsFileTime(&ft);
+            get_systemtime(&ft);
             filetime_to_timespec(ft, sp);
             return 0;
         }
@@ -5652,6 +5674,9 @@ filetime_to_unixtime(const FILETIME *ft)
 static long
 filetime_to_nsec(const FILETIME *ft)
 {
+    if (have_precisetime <= 0)
+        return 0;
+
     ULARGE_INTEGER tmp;
     tmp.LowPart = ft->dwLowDateTime;
     tmp.HighPart = ft->dwHighDateTime;
@@ -7559,7 +7584,7 @@ wutimensat(int dirfd, const WCHAR *path, const struct timespec *times, int flags
         }
     }
     else {
-        GetSystemTimePreciseAsFileTime(&atime);
+        get_systemtime(&atime);
         mtime = atime;
     }
 
