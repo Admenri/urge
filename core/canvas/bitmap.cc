@@ -459,16 +459,34 @@ void Bitmap::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color) {
 void Bitmap::HueChange(URGE_EXCEPT, int32_t hue) {
   if (!Disposable::Guard(exception_state))
     return;
+
+  hue %= 360;
+  if (hue < 0)
+    hue += 360;
+  if (hue == 0)
+    return;
+
+  BitmapQueue::Get().ApplyHue(*this, static_cast<float>(hue) / 360.0f);
 }
 
 void Bitmap::Blur(URGE_EXCEPT) {
   if (!Disposable::Guard(exception_state))
     return;
+
+  BitmapQueue::Get().ApplyBlur(*this);
 }
 
 void Bitmap::RadialBlur(URGE_EXCEPT, int32_t angle, int32_t division) {
   if (!Disposable::Guard(exception_state))
     return;
+
+  angle = std::clamp(angle, 0, 359);
+  division = std::clamp(division, 2, 100);
+  if (angle == 0)
+    return;
+
+  BitmapQueue::Get().ApplyRadialBlur(*this, static_cast<float>(angle),
+                                     static_cast<float>(division));
 }
 
 void Bitmap::DrawText(URGE_EXCEPT,

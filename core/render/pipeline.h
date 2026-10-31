@@ -97,6 +97,21 @@ class ColorBase : public Pipeline {
   ColorBase();
 };
 
+class FilterHue : public Pipeline {
+ public:
+  FilterHue();
+};
+
+class FilterBlur : public Pipeline {
+ public:
+  FilterBlur();
+};
+
+class FilterRadial : public Pipeline {
+ public:
+  FilterRadial();
+};
+
 class TintBase : public Pipeline {
  public:
   struct TintParam {
@@ -145,6 +160,9 @@ struct ShaderSet : public Singleton<ShaderSet> {
     TilemapBase tilemap_base;
     TransitionAlpha transition_alpha;
     TransitionVague transition_vague;
+    FilterHue filter_hue;
+    FilterBlur filter_blur;
+    FilterRadial filter_radial;
   } shader;
 
   struct {
@@ -187,6 +205,12 @@ struct ShaderSet : public Singleton<ShaderSet> {
       wgpu::RenderPipeline texture_dynamic_pma;
       wgpu::RenderPipeline texture_flash;
     } tilemap;
+
+    struct {
+      wgpu::RenderPipeline hue;
+      wgpu::RenderPipeline blur;
+      wgpu::RenderPipeline radial;
+    } filter;
   } state;
 
   ShaderSet();

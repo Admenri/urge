@@ -221,6 +221,191 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
     {},
 };
 
+// The three Bitmap filters share a vertex shader with the ordinary texture
+// pipeline: a full-target quad with its parameters in the vertex colour.  The
+// bitmaps are premultiplied, so every filter converts its samples to straight
+// RGBA, works there, and premultiplies the result again.
+
+const ShaderSource kFS_FilterHue = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+fn to_straight(color: vec4<f32>) -> vec4<f32> {
+  if (color.a <= 0.0) {
+    return vec4<f32>(0.0);
+  }
+  return vec4<f32>(min(color.rgb / color.a, vec3<f32>(1.0)), color.a);
+}
+
+fn rgb_to_hsv(c: vec3<f32>) -> vec3<f32> {
+  let K = vec4<f32>(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  let p = mix(vec4<f32>(c.b, c.g, K.w, K.z),
+              vec4<f32>(c.g, c.b, K.x, K.y),
+              step(c.b, c.g));
+  let q = mix(vec4<f32>(p.x, p.y, p.w, c.r),
+              vec4<f32>(c.r, p.y, p.z, p.x),
+              step(p.x, c.r));
+  let d = q.x - min(q.w, q.y);
+  let eps = 1.0e-10;
+  return vec3<f32>(abs(q.z + (q.w - q.y) / (6.0 * d + eps)),
+                   d / (q.x + eps), q.x);
+}
+
+fn hsv_to_rgb(c: vec3<f32>) -> vec3<f32> {
+  let K = vec4<f32>(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  let p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(vec3<f32>(K.x),
+                   clamp(p - vec3<f32>(K.x), vec3<f32>(0.0), vec3<f32>(1.0)),
+                   c.y);
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let straight = to_straight(
+      textureSampleLevel(u_texture, u_sampler, input.v_texcoord, 0.0));
+  var hsv = rgb_to_hsv(straight.rgb);
+  hsv.x = fract(hsv.x + input.v_color.r);
+  let rgb = hsv_to_rgb(hsv);
+  return vec4<f32>(rgb * straight.a, straight.a);
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
+
+const ShaderSource kFS_FilterBlur = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+fn to_straight(color: vec4<f32>) -> vec4<f32> {
+  if (color.a <= 0.0) {
+    return vec4<f32>(0.0);
+  }
+  return vec4<f32>(min(color.rgb / color.a, vec3<f32>(1.0)), color.a);
+}
+
+fn to_premultiplied(color: vec4<f32>) -> vec4<f32> {
+  return vec4<f32>(color.rgb * color.a, color.a);
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let texel = input.v_color.xy / vec2<f32>(textureDimensions(u_texture));
+
+  let left = to_straight(textureSampleLevel(
+      u_texture, u_sampler, input.v_texcoord - texel, 0.0));
+  let center = to_straight(textureSampleLevel(
+      u_texture, u_sampler, input.v_texcoord, 0.0));
+  let right = to_straight(textureSampleLevel(
+      u_texture, u_sampler, input.v_texcoord + texel, 0.0));
+
+  return to_premultiplied(left * 0.25 + center * 0.5 + right * 0.25);
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
+
+const ShaderSource kFS_FilterRadial = {
+    R"(
+@group(2) @binding(0) var u_texture: texture_2d<f32>;
+@group(2) @binding(1) var u_sampler: sampler;
+
+const PI: f32 = 3.141592653589793;
+
+struct FragmentInput {
+  @location(0) v_texcoord: vec2<f32>,
+  @location(1) v_color: vec4<f32>,
+};
+
+fn to_straight(color: vec4<f32>) -> vec4<f32> {
+  if (color.a <= 0.0) {
+    return vec4<f32>(0.0);
+  }
+  return vec4<f32>(min(color.rgb / color.a, vec3<f32>(1.0)), color.a);
+}
+
+fn to_premultiplied(color: vec4<f32>) -> vec4<f32> {
+  return vec4<f32>(color.rgb * color.a, color.a);
+}
+
+fn rotate_point(p: vec2<f32>, angle: f32) -> vec2<f32> {
+  let s = sin(angle);
+  let c = cos(angle);
+  return vec2<f32>(p.x * c - p.y * s, p.x * s + p.y * c);
+}
+
+// mkxp renders the rotated bitmap together with its four mirrored neighbours
+// (up, down, left, right), so edges keep content when the image rotates.  Only
+// those four bands exist; the corners stay transparent.
+fn sample_mirrored_cross(uv: vec2<f32>, size: vec2<f32>) -> vec4<f32> {
+  let x_out = uv.x < 0.0 || uv.x >= size.x;
+  let y_out = uv.y < 0.0 || uv.y >= size.y;
+  if (x_out && y_out) {
+    return vec4<f32>(0.0);
+  }
+
+  var p = uv;
+  if (x_out) {
+    p.x = select(2.0 * size.x - uv.x, -uv.x, uv.x < 0.0);
+  }
+  if (y_out) {
+    p.y = select(2.0 * size.y - uv.y, -uv.y, uv.y < 0.0);
+  }
+  if (p.x < 0.0 || p.x >= size.x || p.y < 0.0 || p.y >= size.y) {
+    return vec4<f32>(0.0);
+  }
+  return textureSampleLevel(u_texture, u_sampler, p / size, 0.0);
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let size = vec2<f32>(textureDimensions(u_texture));
+  let center = size * 0.5;
+  let angle = input.v_color.r * PI / 180.0;
+  let count = max(u32(input.v_color.g + 0.5), 1u);
+  let base = -angle * 0.5;
+  let step_angle = angle / f32(max(count, 2u) - 1u);
+  let point = input.v_texcoord * size;
+
+  var accum = vec4<f32>(0.0);
+  for (var i: u32 = 0u; i < count; i = i + 1u) {
+    let theta = base + f32(i) * step_angle;
+    let rotated = rotate_point(point - center, theta) + center;
+    accum += to_straight(sample_mirrored_cross(rotated, size));
+  }
+
+  return to_premultiplied(accum / f32(count));
+}
+)",
+    "fs_main",
+    {
+        {2,
+         {Texture(0, wgpu::ShaderStage::Fragment),
+          Sampler(1, wgpu::ShaderStage::Fragment)}},
+    },
+};
+
 const ShaderSource kFS_TintBase = {
     R"(
 @group(2) @binding(0) var u_texture: texture_2d<f32>;
@@ -781,6 +966,15 @@ TextureBaseDynamic::TextureBaseDynamic()
 ColorBase::ColorBase()
     : Pipeline(kVS_TransformBase, kFS_ColorBase, QuadVertexLayout()) {}
 
+FilterHue::FilterHue()
+    : Pipeline(kVS_TransformBase, kFS_FilterHue, QuadVertexLayout()) {}
+
+FilterBlur::FilterBlur()
+    : Pipeline(kVS_TransformBase, kFS_FilterBlur, QuadVertexLayout()) {}
+
+FilterRadial::FilterRadial()
+    : Pipeline(kVS_TransformBase, kFS_FilterRadial, QuadVertexLayout()) {}
+
 TintBase::TintBase()
     : Pipeline(kVS_TransformBase, kFS_TintBase, QuadVertexLayout(), {1}) {}
 
@@ -879,6 +1073,15 @@ ShaderSet::ShaderSet() : shader() {
       primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,
                               .blend = GetBlendState(BLEND_NORMAL)}});
+
+  // Filters replace the target's contents, so they have no blend state and no
+  // depth attachment (their passes are colour-only).
+  state.filter.hue = shader.filter_hue.MakeState(
+      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+  state.filter.blur = shader.filter_blur.MakeState(
+      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
+  state.filter.radial = shader.filter_radial.MakeState(
+      primitive, std::nullopt, {wgpu::ColorTargetState{.format = target}});
 }
 
 }

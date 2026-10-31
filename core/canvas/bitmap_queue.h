@@ -64,10 +64,28 @@ class BitmapQueue : public Singleton<BitmapQueue> {
 
   void Flush();
 
+  // Whole-bitmap filters.  They flush the pending batch, render through a
+  // reusable ping-pong texture and leave the result in the bitmap.
+  void ApplyHue(Bitmap& target, float hue);
+  void ApplyBlur(Bitmap& target);
+  void ApplyRadialBlur(Bitmap& target, float angle, float division);
+
  private:
   void OpenPass(const RefPtr<Bitmap>& target);
   void ClosePass();
   void Record(const BitmapDraw& draw, std::uint32_t first_vertex);
+
+  void EnsureFilterResources(const glm::ivec2& size);
+  wgpu::BindGroup MakeFilterSourceGroup(const wgpu::RenderPipeline& pipeline,
+                                        wgpu::TextureView view);
+  void DrawFilterQuad(wgpu::CommandEncoder encoder,
+                      const wgpu::RenderPipeline& pipeline,
+                      wgpu::TextureView destination,
+                      wgpu::BindGroup scene_group,
+                      wgpu::BindGroup object_group,
+                      wgpu::BindGroup source_group,
+                      std::uint32_t first_vertex);
+  void SubmitFilter(wgpu::CommandEncoder encoder, Bitmap& target);
 
   std::vector<BitmapDraw> draws_;
 
@@ -76,6 +94,13 @@ class BitmapQueue : public Singleton<BitmapQueue> {
   RefPtr<Bitmap> target_;
 
   PrimitiveEmitter vertices_;
+
+  PrimitiveEmitter filter_vertices_;
+  wgpu::Sampler filter_sampler_;
+  wgpu::Texture filter_texture_;
+  wgpu::TextureView filter_view_;
+  glm::ivec2 filter_size_ = glm::ivec2(0);
+
   bool executing_ = false;
 };
 
