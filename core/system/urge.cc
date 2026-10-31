@@ -23,8 +23,10 @@
 #include "core/system/urge.h"
 
 #include <string>
+#include <vector>
 
 #include "SDL3/SDL_clipboard.h"
+#include "SDL3/SDL_messagebox.h"
 #include "SDL3/SDL_misc.h"
 #include "SDL3/SDL_platform.h"
 #include "SDL3/SDL_stdinc.h"
@@ -100,6 +102,58 @@ RefPtr<Rect> URGE::GetWindowRect() {
 
 void URGE::OpenURL(std::string url) {
   SDL_OpenURL(url.c_str());
+}
+
+int32_t URGE::ShowMessageBox(std::string message) {
+  return ShowMessageBox("", message, {}, 0, 0, MESSAGEBOX_INFORMATION);
+}
+
+int32_t URGE::ShowMessageBox(std::string title,
+                             std::string message,
+                             std::vector<std::string> buttons,
+                             int32_t default_button,
+                             int32_t escape_button,
+                             int32_t flags) {
+  SDL_Window* window = CurrentWindow();
+
+  std::string title_text = title;
+  if (title_text.empty() && window) {
+    const char* window_title = SDL_GetWindowTitle(window);
+    if (window_title)
+      title_text = window_title;
+  }
+  if (title_text.empty())
+    title_text = "URGE";
+
+  if (buttons.empty())
+    buttons.push_back("OK");
+
+  std::vector<SDL_MessageBoxButtonData> button_data(buttons.size());
+  for (std::size_t i = 0; i < buttons.size(); ++i) {
+    uint32_t button_flags = 0;
+    if (static_cast<int32_t>(i) == default_button)
+      button_flags |= SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
+    if (static_cast<int32_t>(i) == escape_button)
+      button_flags |= SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
+
+    button_data[i].flags =
+        static_cast<SDL_MessageBoxButtonFlags>(button_flags);
+    button_data[i].buttonID = static_cast<int32_t>(i);
+    button_data[i].text = buttons[i].c_str();
+  }
+
+  SDL_MessageBoxData data = {};
+  data.flags = static_cast<SDL_MessageBoxFlags>(flags);
+  data.window = window;
+  data.title = title_text.c_str();
+  data.message = message.c_str();
+  data.numbuttons = static_cast<int>(button_data.size());
+  data.buttons = button_data.data();
+
+  int clicked = -1;
+  if (!SDL_ShowMessageBox(&data, &clicked))
+    return -1;
+  return static_cast<int32_t>(clicked);
 }
 
 ATTR_DEF(URGE, std::string, Clipboard) {

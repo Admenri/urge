@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// URGE  (core/system/urge.h:38-63)
+// URGE  (core/system/urge.h:39-90)
 // -------------------------------------------------------------------------
 
 RB_FUNC(URGE_GetPlatform) {
@@ -136,6 +136,139 @@ RB_FUNC(URGE_OpenURL) {
   return Qnil;
 }
 
+RB_FUNC(URGE_ShowMessageBox) {
+  if (argc == 1) {
+    // message_box(message)
+    VALUE message_val;
+    const char* message_data;
+    size_t message_size;
+    ParseArgs(argc, argv, "o", &message_val);
+    CheckString(message_val, &message_data, &message_size);
+
+    int32_t result = 0;
+
+    {
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(message_data, message_size));
+    }
+
+    return LONG2NUM(result);
+  } else if (argc == 2) {
+    // message_box(title, message)
+    VALUE title_val, message_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
+    ParseArgs(argc, argv, "oo", &title_val, &message_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+
+    int32_t result = 0;
+
+    {
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size));
+    }
+
+    return LONG2NUM(result);
+  } else if (argc == 3) {
+    // message_box(title, message, buttons)
+    VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
+    ParseArgs(argc, argv, "ooo", &title_val, &message_val, &buttons_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
+
+    int32_t result = 0;
+
+    {
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val));
+    }
+
+    return LONG2NUM(result);
+  } else if (argc == 4) {
+    // message_box(title, message, buttons, default_button)
+    VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
+    int default_button;
+    ParseArgs(argc, argv, "oooi", &title_val, &message_val, &buttons_val,
+        &default_button);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
+
+    int32_t result = 0;
+
+    {
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val), default_button);
+    }
+
+    return LONG2NUM(result);
+  } else if (argc == 5) {
+    // message_box(title, message, buttons, default_button, escape_button)
+    VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
+    int default_button, escape_button;
+    ParseArgs(argc, argv, "oooii", &title_val, &message_val, &buttons_val,
+        &default_button, &escape_button);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
+
+    int32_t result = 0;
+
+    {
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val), default_button,
+          escape_button);
+    }
+
+    return LONG2NUM(result);
+  } else if (argc == 6) {
+    // message_box(title, message, buttons, default_button, escape_button, flags)
+    VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
+    int default_button, escape_button, flags;
+    ParseArgs(argc, argv, "oooiii", &title_val, &message_val, &buttons_val,
+        &default_button, &escape_button, &flags);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
+
+    int32_t result = 0;
+
+    {
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val), default_button, escape_button,
+          flags);
+    }
+
+    return LONG2NUM(result);
+  } else {
+    ArgcError(argc);
+  }
+}
+
 RB_FUNC(URGE_Clipboard) {
   CheckArgc(argc, 0);
 
@@ -178,8 +311,19 @@ void InitURGEBinding() {
   DefineModuleFunction(mod, "move_window", URGE_MoveWindow);
   DefineModuleFunction(mod, "get_window_rect", URGE_GetWindowRect);
   DefineModuleFunction(mod, "open_url", URGE_OpenURL);
+  DefineModuleFunction(mod, "message_box", URGE_ShowMessageBox);
   DefineModuleFunction(mod, "clipboard", URGE_Clipboard);
   DefineModuleFunction(mod, "clipboard=", URGE_ClipboardEqual);
+  rb_const_set(mod, rb_intern("MESSAGEBOX_ERROR"),
+               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_ERROR)));
+  rb_const_set(mod, rb_intern("MESSAGEBOX_WARNING"),
+               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_WARNING)));
+  rb_const_set(mod, rb_intern("MESSAGEBOX_INFORMATION"),
+               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_INFORMATION)));
+  rb_const_set(mod, rb_intern("MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT"),
+               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT)));
+  rb_const_set(mod, rb_intern("MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT"),
+               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT)));
   InitURGEBindingAppend(mod);
 }
 // --- GENERATED END ---

@@ -275,23 +275,29 @@ void Bitmap::Blt(URGE_EXCEPT,
                  int32_t y,
                  RefPtr<Bitmap> src_bitmap,
                  RefPtr<Rect> src_rect,
-                 int32_t opacity) {
+                 int32_t opacity,
+                 int32_t blend_type) {
   if (!Disposable::Guard(exception_state))
     return;
 
   StretchBlt(
       exception_state,
       MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
-      src_bitmap, src_rect, opacity);
+      src_bitmap, src_rect, opacity, blend_type);
 }
 
 void Bitmap::StretchBlt(URGE_EXCEPT,
                         RefPtr<Rect> dst_rect,
                         RefPtr<Bitmap> src_bitmap,
                         RefPtr<Rect> src_rect,
-                        int32_t opacity) {
+                        int32_t opacity,
+                        int32_t blend_type) {
   if (!Disposable::Guard(exception_state))
     return;
+
+  blend_type =
+      std::clamp(blend_type, static_cast<int32_t>(BLEND_NONE),
+                 static_cast<int32_t>(BLEND_SUBTRACT));
 
   if (src_bitmap.get() != this) {
     BitmapDraw draw;
@@ -299,6 +305,7 @@ void Bitmap::StretchBlt(URGE_EXCEPT,
     draw.source = src_bitmap;
     draw.rect = RectF(dst_rect->data);
     draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
+    draw.blend_type = blend_type;
     draw.colors[0] = draw.colors[1] = draw.colors[2] = draw.colors[3] =
         glm::vec4(opacity / 255.0f);
 
@@ -310,9 +317,14 @@ void Bitmap::MaskBlt(URGE_EXCEPT,
                      RefPtr<Rect> dst_rect,
                      RefPtr<Bitmap> src_bitmap,
                      RefPtr<Rect> src_rect,
-                     RefPtr<Bitmap> mask) {
+                     RefPtr<Bitmap> mask,
+                     int32_t blend_type) {
   if (!Disposable::Guard(exception_state))
     return;
+
+  blend_type =
+      std::clamp(blend_type, static_cast<int32_t>(BLEND_NONE),
+                 static_cast<int32_t>(BLEND_SUBTRACT));
 
   if (src_bitmap.get() != this && mask.get() != this) {
     BitmapDraw draw;
@@ -322,6 +334,7 @@ void Bitmap::MaskBlt(URGE_EXCEPT,
     draw.mask = mask;
     draw.rect = RectF(dst_rect->data);
     draw.texcoord = MakeNorm(src_rect->data, src_bitmap->size_);
+    draw.blend_type = blend_type;
 
     BitmapQueue::Get().Push(std::move(draw));
   }

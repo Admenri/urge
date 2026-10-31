@@ -33,7 +33,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/canvas/bitmap.h:44-156)
+// Bitmap  (core/canvas/bitmap.h:44-159)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
@@ -191,6 +191,25 @@ RB_FUNC(Bitmap_Blt) {
     RaiseException(exception_state);
 
     return Qnil;
+  } else if (argc == 6) {
+    // blt(x, y, src_bitmap, src_rect, opacity, blend_type)
+    urge::ExceptionState exception_state;
+    int x, y, opacity, blend_type;
+    VALUE src_bitmap_val, src_rect_val;
+    urge::Bitmap* src_bitmap;
+    urge::Rect* src_rect;
+    ParseArgs(argc, argv, "iiooii", &x, &y, &src_bitmap_val, &src_rect_val,
+        &opacity, &blend_type);
+    src_bitmap = CheckObject<urge::Bitmap>(src_bitmap_val, kBitmapDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+
+    {
+      self_obj->Blt(exception_state, x, y, src_bitmap, src_rect, opacity,
+          blend_type);
+    }
+    RaiseException(exception_state);
+
+    return Qnil;
   } else {
     ArgcError(argc);
   }
@@ -238,6 +257,27 @@ RB_FUNC(Bitmap_StretchBlt) {
     RaiseException(exception_state);
 
     return Qnil;
+  } else if (argc == 5) {
+    // stretch_blt(dst_rect, src_bitmap, src_rect, opacity, blend_type)
+    urge::ExceptionState exception_state;
+    VALUE dst_rect_val, src_bitmap_val, src_rect_val;
+    urge::Rect* dst_rect;
+    urge::Bitmap* src_bitmap;
+    urge::Rect* src_rect;
+    int opacity, blend_type;
+    ParseArgs(argc, argv, "oooii", &dst_rect_val, &src_bitmap_val,
+        &src_rect_val, &opacity, &blend_type);
+    dst_rect = CheckObject<urge::Rect>(dst_rect_val, kRectDataType);
+    src_bitmap = CheckObject<urge::Bitmap>(src_bitmap_val, kBitmapDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+
+    {
+      self_obj->StretchBlt(exception_state, dst_rect, src_bitmap, src_rect,
+          opacity, blend_type);
+    }
+    RaiseException(exception_state);
+
+    return Qnil;
   } else {
     ArgcError(argc);
   }
@@ -246,26 +286,53 @@ RB_FUNC(Bitmap_StretchBlt) {
 RB_FUNC(Bitmap_MaskBlt) {
   auto* self_obj = GetSelfData<urge::Bitmap>(self);
 
-  urge::ExceptionState exception_state;
-  CheckArgc(argc, 4);
-  VALUE dst_rect_val, src_bitmap_val, src_rect_val, mask_val;
-  urge::Rect* dst_rect;
-  urge::Bitmap* src_bitmap;
-  urge::Rect* src_rect;
-  urge::Bitmap* mask;
-  ParseArgs(argc, argv, "oooo", &dst_rect_val, &src_bitmap_val, &src_rect_val,
-      &mask_val);
-  dst_rect = CheckObject<urge::Rect>(dst_rect_val, kRectDataType);
-  src_bitmap = CheckObject<urge::Bitmap>(src_bitmap_val, kBitmapDataType);
-  src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
-  mask = CheckObject<urge::Bitmap>(mask_val, kBitmapDataType);
+  if (argc == 4) {
+    // mask_blt(dst_rect, src_bitmap, src_rect, mask)
+    urge::ExceptionState exception_state;
+    VALUE dst_rect_val, src_bitmap_val, src_rect_val, mask_val;
+    urge::Rect* dst_rect;
+    urge::Bitmap* src_bitmap;
+    urge::Rect* src_rect;
+    urge::Bitmap* mask;
+    ParseArgs(argc, argv, "oooo", &dst_rect_val, &src_bitmap_val, &src_rect_val,
+        &mask_val);
+    dst_rect = CheckObject<urge::Rect>(dst_rect_val, kRectDataType);
+    src_bitmap = CheckObject<urge::Bitmap>(src_bitmap_val, kBitmapDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+    mask = CheckObject<urge::Bitmap>(mask_val, kBitmapDataType);
 
-  {
-    self_obj->MaskBlt(exception_state, dst_rect, src_bitmap, src_rect, mask);
+    {
+      self_obj->MaskBlt(exception_state, dst_rect, src_bitmap, src_rect, mask);
+    }
+    RaiseException(exception_state);
+
+    return Qnil;
+  } else if (argc == 5) {
+    // mask_blt(dst_rect, src_bitmap, src_rect, mask, blend_type)
+    urge::ExceptionState exception_state;
+    VALUE dst_rect_val, src_bitmap_val, src_rect_val, mask_val;
+    urge::Rect* dst_rect;
+    urge::Bitmap* src_bitmap;
+    urge::Rect* src_rect;
+    urge::Bitmap* mask;
+    int blend_type;
+    ParseArgs(argc, argv, "ooooi", &dst_rect_val, &src_bitmap_val,
+        &src_rect_val, &mask_val, &blend_type);
+    dst_rect = CheckObject<urge::Rect>(dst_rect_val, kRectDataType);
+    src_bitmap = CheckObject<urge::Bitmap>(src_bitmap_val, kBitmapDataType);
+    src_rect = CheckObject<urge::Rect>(src_rect_val, kRectDataType);
+    mask = CheckObject<urge::Bitmap>(mask_val, kBitmapDataType);
+
+    {
+      self_obj->MaskBlt(exception_state, dst_rect, src_bitmap, src_rect, mask,
+          blend_type);
+    }
+    RaiseException(exception_state);
+
+    return Qnil;
+  } else {
+    ArgcError(argc);
   }
-  RaiseException(exception_state);
-
-  return Qnil;
 }
 
 RB_FUNC(Bitmap_FillRect) {

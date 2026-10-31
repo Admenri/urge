@@ -1012,6 +1012,17 @@ ShaderSet::ShaderSet() : shader() {
   state.bitmap.color_noblend = shader.color_base.MakeState(
       primitive, *depth_stencil, {wgpu::ColorTargetState{.format = target}});
 
+  for (BlendType type : blend_types) {
+    state.bitmap.texture_blends[type] = shader.texture_base.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target,
+                                .blend = GetBlendState(type)}});
+    state.bitmap.texture_mask_blends[type] = shader.texture_mask_base.MakeState(
+        primitive, *depth_stencil,
+        {wgpu::ColorTargetState{.format = target,
+                                .blend = GetBlendState(type)}});
+  }
+
   state.graphics.color_pma = shader.color_base.MakeState(
       primitive, *depth_stencil,
       {wgpu::ColorTargetState{.format = target,

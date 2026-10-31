@@ -170,6 +170,8 @@ struct ShaderSet : public Singleton<ShaderSet> {
       wgpu::RenderPipeline texture_pma;
       wgpu::RenderPipeline texture_mask_pma;
       wgpu::RenderPipeline color_noblend;
+      std::map<BlendType, wgpu::RenderPipeline> texture_blends;
+      std::map<BlendType, wgpu::RenderPipeline> texture_mask_blends;
     } bitmap;
 
     struct {

@@ -61,6 +61,7 @@ MODULE_CLASSES = {
     "Network",
     "Config",
     "URGE",
+    "TextInput",
 }
 
 # Fixed presentation order (also the registration order of binding_init.cc:

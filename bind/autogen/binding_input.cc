@@ -118,7 +118,7 @@ RB_FUNC(Input_RepeatedManual) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Input  (core/input/input.h:55-79)
+// Input  (core/input/input.h:55-82)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Input_Update) {
@@ -263,6 +263,51 @@ RB_FUNC(Input_GetKeyName) {
   return value;
 }
 
+RB_FUNC(Input_Emulate) {
+  if (argc == 2) {
+    // emulate(scancode, down)
+    int scancode;
+    bool down;
+    ParseArgs(argc, argv, "ib", &scancode, &down);
+
+    bool result = false;
+
+    {
+      result = urge::Input::Get().Emulate(scancode, down);
+    }
+
+    return result ? Qtrue : Qfalse;
+  } else if (argc == 3) {
+    // emulate(scancode, down, modifier)
+    int scancode, modifier;
+    bool down;
+    ParseArgs(argc, argv, "ibi", &scancode, &down, &modifier);
+
+    bool result = false;
+
+    {
+      result = urge::Input::Get().Emulate(scancode, down, modifier);
+    }
+
+    return result ? Qtrue : Qfalse;
+  } else if (argc == 4) {
+    // emulate(scancode, down, modifier, repeat)
+    int scancode, modifier;
+    bool down, repeat;
+    ParseArgs(argc, argv, "ibib", &scancode, &down, &modifier, &repeat);
+
+    bool result = false;
+
+    {
+      result = urge::Input::Get().Emulate(scancode, down, modifier, repeat);
+    }
+
+    return result ? Qtrue : Qfalse;
+  } else {
+    ArgcError(argc);
+  }
+}
+
 void InitInputBindingAppend(VALUE mod);
 
 void InitInputBinding() {
@@ -278,6 +323,7 @@ void InitInputBinding() {
   DefineModuleFunction(mod, "key_trigger?", Input_KeyTriggered);
   DefineModuleFunction(mod, "key_repeat?", Input_KeyRepeated);
   DefineModuleFunction(mod, "get_key_name", Input_GetKeyName);
+  DefineModuleFunction(mod, "emulate", Input_Emulate);
   DefineInputKeyConstants(mod);
   InitInputBindingAppend(mod);
 }

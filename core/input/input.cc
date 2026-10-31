@@ -25,7 +25,9 @@
 #include <algorithm>
 
 #include "SDL3/SDL_scancode.h"
+#include "SDL3/SDL_timer.h"
 
+#include "core/graphics/graphics.h"
 #include "core/system/config.h"
 
 namespace urge {
@@ -238,6 +240,29 @@ bool Input::KeyRepeated(int32_t keycode) {
 
 std::string Input::GetKeyName(int32_t keycode) {
   return SDL_GetScancodeName(static_cast<SDL_Scancode>(keycode));
+}
+
+bool Input::Emulate(int32_t scancode,
+                    bool down,
+                    int32_t modifier,
+                    bool repeat) {
+  SDL_Event event = {};
+  event.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+  event.key.timestamp = SDL_GetTicksNS();
+  event.key.windowID = 0;
+  if (auto* graphics = Graphics::TryGet())
+    if (SDL_Window* window = graphics->window())
+      event.key.windowID = SDL_GetWindowID(window);
+  event.key.which = 0;
+  event.key.scancode = static_cast<SDL_Scancode>(scancode);
+  event.key.mod = static_cast<SDL_Keymod>(modifier);
+  event.key.raw = 0;
+  event.key.down = down;
+  event.key.repeat = repeat;
+  event.key.key = SDL_GetKeyFromScancode(
+      event.key.scancode, event.key.mod, true);
+
+  return SDL_PushEvent(&event);
 }
 
 std::string Input::BindingName(const KeySym& binding) {

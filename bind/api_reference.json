@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-10-30T14:32:16Z",
+    "generated_at": "2026-10-31T15:54:37Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -33,6 +33,7 @@
       "core/input/input.h",
       "core/input/key_sym.h",
       "core/input/mouse.h",
+      "core/input/text_input.h",
       "core/input/touch.h",
       "core/network/network.h",
       "core/network/network_backend.h",
@@ -1722,7 +1723,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/graphics/graphics.h:54-106",
+      "export": "core/graphics/graphics.h:54-109",
       "cpp_name": "Graphics",
       "cpp_parent": "Singleton",
       "header": "core/graphics/graphics.h",
@@ -1740,7 +1741,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "wait",
@@ -1758,7 +1759,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "fadein",
@@ -1776,7 +1777,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "fadeout",
@@ -1794,7 +1795,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "freeze",
@@ -1806,7 +1807,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "transition",
@@ -1834,7 +1835,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "transition_bitmap",
@@ -1862,7 +1863,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "snap_to_bitmap",
@@ -1874,7 +1875,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_reset",
@@ -1886,7 +1887,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "width",
@@ -1898,7 +1899,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "height",
@@ -1910,7 +1911,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "resize_screen",
@@ -1933,7 +1934,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "play_movie",
@@ -1951,7 +1952,19 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
+        },
+        {
+          "ruby_name": "root_node",
+          "cpp_name": "GetRootNode",
+          "return": {
+            "cpp_type": "RefPtr<Node>",
+            "ruby_type": "Node"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": true,
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_rate",
@@ -1964,7 +1977,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_rate=",
@@ -1984,7 +1997,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_count",
@@ -1997,7 +2010,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_count=",
@@ -2017,7 +2030,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "brightness",
@@ -2030,7 +2043,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "brightness=",
@@ -2050,7 +2063,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_skip",
@@ -2063,7 +2076,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "frame_skip=",
@@ -2083,7 +2096,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "fullscreen",
@@ -2096,7 +2109,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "fullscreen=",
@@ -2116,7 +2129,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "v_sync",
@@ -2129,7 +2142,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         },
         {
           "ruby_name": "v_sync=",
@@ -2149,14 +2162,14 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:54-106"
+          "export": "core/graphics/graphics.h:54-109"
         }
       ]
     },
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/input/input.h:55-79",
+      "export": "core/input/input.h:55-82",
       "cpp_name": "Input",
       "cpp_parent": "Singleton",
       "header": "core/input/input.h",
@@ -2174,7 +2187,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "pressed",
@@ -2192,7 +2205,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "triggered",
@@ -2210,7 +2223,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "repeated",
@@ -2228,7 +2241,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "dir4",
@@ -2240,7 +2253,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "dir8",
@@ -2252,7 +2265,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "key_press?",
@@ -2270,7 +2283,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "key_trigger?",
@@ -2288,7 +2301,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "key_repeat?",
@@ -2306,7 +2319,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
         },
         {
           "ruby_name": "get_key_name",
@@ -2324,7 +2337,40 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-79"
+          "export": "core/input/input.h:55-82"
+        },
+        {
+          "ruby_name": "emulate",
+          "cpp_name": "Emulate",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "scancode",
+              "type": "int32_t",
+              "default": null
+            },
+            {
+              "name": "down",
+              "type": "bool",
+              "default": null
+            },
+            {
+              "name": "modifier",
+              "type": "int32_t",
+              "default": "0"
+            },
+            {
+              "name": "repeat",
+              "type": "bool",
+              "default": "false"
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/input/input.h:55-82"
         }
       ]
     },
@@ -2926,6 +2972,133 @@
     {
       "constants": [],
       "unsupported": [],
+      "export": "core/input/text_input.h:42-65",
+      "cpp_name": "TextInput",
+      "cpp_parent": "Singleton",
+      "header": "core/input/text_input.h",
+      "kind": "module",
+      "name": "TextInput",
+      "singleton": true,
+      "functions": [
+        {
+          "ruby_name": "enable",
+          "cpp_name": "Enable",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "has_exception": true,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "enable",
+          "cpp_name": "Enable",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "region",
+              "type": "RefPtr<Rect>",
+              "default": null
+            }
+          ],
+          "has_exception": true,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "disable",
+          "cpp_name": "Disable",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "has_exception": true,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "active?",
+          "cpp_name": "IsActive",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": true,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "text",
+          "cpp_name": "Text",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "composition",
+          "cpp_name": "Composition",
+          "return": {
+            "cpp_type": "std::string",
+            "ruby_type": "String"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "editing_start",
+          "cpp_name": "EditingStart",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "editing_length",
+          "cpp_name": "EditingLength",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        },
+        {
+          "ruby_name": "clear",
+          "cpp_name": "Clear",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
+          "params": [],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/input/text_input.h:42-65"
+        }
+      ]
+    },
+    {
+      "constants": [],
+      "unsupported": [],
       "export": "core/input/touch.h:37-87",
       "cpp_name": "Touch",
       "cpp_parent": "Singleton",
@@ -3234,9 +3407,35 @@
       ]
     },
     {
-      "constants": [],
+      "constants": [
+        {
+          "name": "MESSAGEBOX_ERROR",
+          "cpp_name": "MESSAGEBOX_ERROR",
+          "value": "0x00000010"
+        },
+        {
+          "name": "MESSAGEBOX_WARNING",
+          "cpp_name": "MESSAGEBOX_WARNING",
+          "value": "0x00000020"
+        },
+        {
+          "name": "MESSAGEBOX_INFORMATION",
+          "cpp_name": "MESSAGEBOX_INFORMATION",
+          "value": "0x00000040"
+        },
+        {
+          "name": "MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT",
+          "cpp_name": "MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT",
+          "value": "0x00000080"
+        },
+        {
+          "name": "MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT",
+          "cpp_name": "MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT",
+          "value": "0x00000100"
+        }
+      ],
       "unsupported": [],
-      "export": "core/system/urge.h:38-63",
+      "export": "core/system/urge.h:39-90",
       "cpp_name": "URGE",
       "cpp_parent": "Singleton",
       "header": "core/system/urge.h",
@@ -3254,7 +3453,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "set_window_title",
@@ -3272,7 +3471,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "set_window_icon",
@@ -3290,7 +3489,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "move_window",
@@ -3313,7 +3512,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "move_window",
@@ -3346,7 +3545,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "get_window_rect",
@@ -3358,7 +3557,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "open_url",
@@ -3376,7 +3575,68 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
+        },
+        {
+          "ruby_name": "message_box",
+          "cpp_name": "ShowMessageBox",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "message",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": true,
+          "export": "core/system/urge.h:39-90"
+        },
+        {
+          "ruby_name": "message_box",
+          "cpp_name": "ShowMessageBox",
+          "return": {
+            "cpp_type": "int32_t",
+            "ruby_type": "Integer"
+          },
+          "params": [
+            {
+              "name": "title",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "message",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "buttons",
+              "type": "std::vector<std::string>",
+              "default": "{}"
+            },
+            {
+              "name": "default_button",
+              "type": "int32_t",
+              "default": "0"
+            },
+            {
+              "name": "escape_button",
+              "type": "int32_t",
+              "default": "-1"
+            },
+            {
+              "name": "flags",
+              "type": "int32_t",
+              "default": "0"
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": true,
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "clipboard",
@@ -3389,7 +3649,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "std::string",
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         },
         {
           "ruby_name": "clipboard=",
@@ -3409,7 +3669,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "std::string",
-          "export": "core/system/urge.h:38-63"
+          "export": "core/system/urge.h:39-90"
         }
       ]
     }
@@ -13259,7 +13519,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "params": [
@@ -13275,7 +13535,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         }
       ],
       "initialize_copy": {
@@ -13287,7 +13547,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/canvas/bitmap.h:44-156"
+        "export": "core/canvas/bitmap.h:44-159"
       },
       "instance_methods": [
         {
@@ -13300,7 +13560,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "height",
@@ -13312,7 +13572,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "rect",
@@ -13324,7 +13584,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "blt",
@@ -13358,11 +13618,16 @@
               "name": "opacity",
               "type": "int32_t",
               "default": "255"
+            },
+            {
+              "name": "blend_type",
+              "type": "int32_t",
+              "default": "0"
             }
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "stretch_blt",
@@ -13391,11 +13656,16 @@
               "name": "opacity",
               "type": "int32_t",
               "default": "255"
+            },
+            {
+              "name": "blend_type",
+              "type": "int32_t",
+              "default": "0"
             }
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "mask_blt",
@@ -13424,11 +13694,16 @@
               "name": "mask",
               "type": "RefPtr<Bitmap>",
               "default": null
+            },
+            {
+              "name": "blend_type",
+              "type": "int32_t",
+              "default": "0"
             }
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "fill_rect",
@@ -13466,7 +13741,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "fill_rect",
@@ -13489,7 +13764,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -13537,7 +13812,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "gradient_fill_rect",
@@ -13570,7 +13845,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "clear",
@@ -13582,7 +13857,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "clear_rect",
@@ -13615,7 +13890,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "clear_rect",
@@ -13633,7 +13908,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "get_pixel",
@@ -13656,7 +13931,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "set_pixel",
@@ -13684,7 +13959,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "hue_change",
@@ -13702,7 +13977,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "blur",
@@ -13714,7 +13989,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "radial_blur",
@@ -13737,7 +14012,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "draw_text",
@@ -13780,7 +14055,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "draw_text",
@@ -13808,7 +14083,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "text_size",
@@ -13826,7 +14101,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "texture_view",
@@ -13838,7 +14113,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "texture",
@@ -13850,7 +14125,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "depth_stencil_view",
@@ -13862,7 +14137,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "to_image",
@@ -13874,7 +14149,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         },
         {
           "ruby_name": "update_with_image",
@@ -13892,7 +14167,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         }
       ],
       "attributes": [
@@ -13906,7 +14181,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         }
       ],
       "data_attributes": [],
@@ -13927,7 +14202,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/canvas/bitmap.h:44-156"
+          "export": "core/canvas/bitmap.h:44-159"
         }
       ],
       "class_attributes": [],
@@ -13939,7 +14214,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/canvas/bitmap.h:44-156",
+      "export": "core/canvas/bitmap.h:44-159",
       "cpp_name": "Bitmap",
       "cpp_parent": "Disposable",
       "header": "core/canvas/bitmap.h",

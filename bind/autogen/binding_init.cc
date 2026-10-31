@@ -99,6 +99,7 @@
 #include "binding_input.h"
 #include "binding_mouse.h"
 #include "binding_network.h"
+#include "binding_text_input.h"
 #include "binding_touch.h"
 #include "binding_urge.h"
 // --- GENERATED INCLUDES END ---
@@ -225,6 +226,7 @@ void InitBindings() {
   InitInputBinding();
   InitMouseBinding();
   InitNetworkBinding();
+  InitTextInputBinding();
   InitTouchBinding();
   InitURGEBinding();
   InitWin32APIBinding();

@@ -51,6 +51,7 @@ struct BitmapDraw {
 
   RectF rect;
   RectF texcoord;
+  int32_t blend_type = 0;
   glm::vec4 colors[4] = {glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f),
                          glm::vec4(1.0f)};
 };

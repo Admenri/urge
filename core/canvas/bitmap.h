@@ -65,19 +65,22 @@ class Bitmap : public Disposable {
            int32_t y,
            RefPtr<Bitmap> src_bitmap,
            RefPtr<Rect> src_rect,
-           int32_t opacity = 255);
+           int32_t opacity = 255,
+           int32_t blend_type = 0);
   URGE_BINDING()
   void StretchBlt(URGE_EXCEPT,
                   RefPtr<Rect> dst_rect,
                   RefPtr<Bitmap> src_bitmap,
                   RefPtr<Rect> src_rect,
-                  int32_t opacity = 255);
+                  int32_t opacity = 255,
+                  int32_t blend_type = 0);
   URGE_BINDING()
   void MaskBlt(URGE_EXCEPT,
                RefPtr<Rect> dst_rect,
                RefPtr<Bitmap> src_bitmap,
                RefPtr<Rect> src_rect,
-               RefPtr<Bitmap> mask);
+               RefPtr<Bitmap> mask,
+               int32_t blend_type = 0);
   URGE_BINDING()
   void FillRect(URGE_EXCEPT,
                 int32_t x,

@@ -46,6 +46,7 @@
 #include "core/graphics/gpu.h"
 #include "core/input/input.h"
 #include "core/input/mouse.h"
+#include "core/input/text_input.h"
 #include "core/input/touch.h"
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
@@ -596,6 +597,8 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
       Input::Get().ProcessEvents(exception_state, &event);
       Mouse::Get().ProcessEvents(exception_state, &event);
       Touch::Get().ProcessEvents(exception_state, &event);
+      if (auto* text_input = TextInput::TryGet())
+        text_input->ProcessEvent(&event);
     }
 
     if (event.type == SDL_EVENT_QUIT

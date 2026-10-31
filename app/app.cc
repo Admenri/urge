@@ -85,6 +85,7 @@
 #include "core/font/font_context.h"
 #include "core/graphics/graphics.h"
 #include "core/input/input.h"
+#include "core/input/text_input.h"
 #include "core/common/logger.h"
 #include "core/input/mouse.h"
 #include "core/input/touch.h"
@@ -227,6 +228,7 @@ void Shutdown(AppState& state) {
   }
 
   urge::Network::Reset(nullptr);
+  urge::TextInput::Reset(nullptr);
   urge::URGE::Reset(nullptr);
   urge::Graphics::Reset(nullptr);
   urge::FontContext::Reset(nullptr);
@@ -464,6 +466,11 @@ bool Initialize(AppState& state,
      geometry, the clipboard -- is a query against that window. */
   auto platform = new urge::URGE();
   urge::URGE::Reset(platform);
+
+  /* Text input only reads the window when a script enables it, but it lives
+     beside the other input services and is torn down before Graphics. */
+  auto text_input = new urge::TextInput();
+  urge::TextInput::Reset(text_input);
 
   /* The network service owns no window and no device: it is built after
      everything else and driven by the script (`Network.update`), not by

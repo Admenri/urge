@@ -89,6 +89,9 @@ class Graphics : public Singleton<Graphics> {
   URGE_BINDING()
   void PlayMovie(URGE_EXCEPT, std::string filename);
 
+  URGE_BINDING(Name : "root_node")
+  RefPtr<Node> GetRootNode() { return root_; }
+
   URGE_BINDING()
   ATTR(int32_t, FrameRate);
   URGE_BINDING()

@@ -9,9 +9,11 @@
 #include "binding_graphics.h"
 
 #include "binding_bitmap.h"
+#include "binding_node.h"
 
 #include "core/canvas/bitmap.h"
 #include "core/graphics/graphics.h"
+#include "core/scene/node.h"
 // --- GENERATED INCLUDES END ---
 
 // --- HANDWRITTEN INCLUDES BEGIN ---
@@ -24,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Graphics  (core/graphics/graphics.h:54-106)
+// Graphics  (core/graphics/graphics.h:54-109)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {
@@ -292,6 +294,23 @@ RB_FUNC(Graphics_PlayMovie) {
   return Qnil;
 }
 
+RB_FUNC(Graphics_GetRootNode) {
+  CheckArgc(argc, 0);
+  urge::Node* result = nullptr;
+
+  {
+    urge::RefPtr<urge::Node> value = urge::Graphics::Get().GetRootNode();
+    result = value.get();
+    if (result)
+      result->AddRef();
+  }
+
+  VALUE value = WrapObject(result, kNodeDataType);
+  if (result)
+    result->Release();
+  return value;
+}
+
 RB_FUNC(Graphics_FrameRate) {
   CheckArgc(argc, 0);
 
@@ -454,6 +473,7 @@ void InitGraphicsBinding() {
   DefineModuleFunction(mod, "height", Graphics_Height);
   DefineModuleFunction(mod, "resize_screen", Graphics_ResizeScreen);
   DefineModuleFunction(mod, "play_movie", Graphics_PlayMovie);
+  DefineModuleFunction(mod, "root_node", Graphics_GetRootNode);
   DefineModuleFunction(mod, "frame_rate", Graphics_FrameRate);
   DefineModuleFunction(mod, "frame_rate=", Graphics_FrameRateEqual);
   DefineModuleFunction(mod, "frame_count", Graphics_FrameCount);

@@ -22,6 +22,7 @@
 
 #include "core/canvas/bitmap_queue.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -83,11 +84,15 @@ void BitmapQueue::Record(const BitmapDraw& draw, std::uint32_t first_vertex) {
 
   OpenPass(draw.target);
 
+  const auto& pipelines = ShaderSet::Get().state.bitmap;
+  const BlendType blend = static_cast<BlendType>(
+      std::clamp(draw.blend_type, static_cast<int32_t>(BLEND_NONE),
+                 static_cast<int32_t>(BLEND_SUBTRACT)));
+
   pass_.SetPipeline(draw.kind == BitmapDraw::Kind::kColor
-                        ? ShaderSet::Get().state.bitmap.color_noblend
-                        : (masked
-                               ? ShaderSet::Get().state.bitmap.texture_mask_pma
-                               : ShaderSet::Get().state.bitmap.texture_pma));
+                        ? pipelines.color_noblend
+                        : (masked ? pipelines.texture_mask_blends.at(blend)
+                                  : pipelines.texture_blends.at(blend)));
   pass_.SetBindGroup(0, draw.target->scene_group(), 0, nullptr);
   pass_.SetBindGroup(1, draw.target->object_group(), 0, nullptr);
 

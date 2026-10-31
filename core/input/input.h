@@ -79,6 +79,12 @@ class Input : public Singleton<Input> {
   URGE_BINDING()
   std::string GetKeyName(int32_t keycode);
 
+  URGE_BINDING()
+  bool Emulate(int32_t scancode,
+               bool down,
+               int32_t modifier = 0,
+               bool repeat = false);
+
  public:
   void ProcessEvents(URGE_EXCEPT, SDL_Event* event);
 

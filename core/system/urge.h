@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "core/common/definition.h"
 #include "core/common/object.h"
@@ -59,6 +60,32 @@ class URGE : public Singleton<URGE> {
 
   URGE_BINDING()
   void OpenURL(std::string url);
+
+  /* SDL message box flag values, for the `flags` argument of MessageBox. */
+  URGE_BINDING()
+  enum MessageBoxFlags : int32_t {
+    MESSAGEBOX_ERROR = 0x00000010,
+    MESSAGEBOX_WARNING = 0x00000020,
+    MESSAGEBOX_INFORMATION = 0x00000040,
+    MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT = 0x00000080,
+    MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT = 0x00000100,
+  };
+
+  /* `buttons` holds the button labels in display order; an empty list means
+   * one "OK" button.  `default_button` / `escape_button` are indices into that
+   * list, or -1 for none.  `flags` is an OR of MessageBoxFlags.  Returns the
+   * index of the clicked button, or -1 when the dialog could not be shown.
+   * The one-argument form uses the window title and a single OK button. */
+  URGE_BINDING(Name : "message_box")
+  int32_t ShowMessageBox(std::string message);
+
+  URGE_BINDING(Name : "message_box")
+  int32_t ShowMessageBox(std::string title,
+                         std::string message,
+                         std::vector<std::string> buttons = {},
+                         int32_t default_button = 0,
+                         int32_t escape_button = -1,
+                         int32_t flags = 0);
 
   URGE_BINDING()
   ATTR(std::string, Clipboard);
