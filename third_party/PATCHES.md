@@ -179,3 +179,45 @@
 
 
 
+
+## `ruby` —— 静态 CRT 下 fd 表仍然指向 ucrtbase.dll 的 `__pioinfo`
+
+- 文件：`win32/win32.c`，`__pioinfo` 的声明与 `set_pioinfo_extra()`
+- 现象：整树用 `/MT` 时，第一个 `File.open` 在
+  `rb_maygvl_fd_fix_cloexec` 里以 EBADF 失败。`_open` 在镜像自己的 fd 表里分配，
+  Ruby 写的却是 ucrtbase.dll 的表。
+- 原因：`set_pioinfo_extra()` 只为 DLL CRT 写：它 `LoadLibrary("ucrtbase.dll")`
+  再扫描 `_isatty` 的机器码找 `__pioinfo`。静态 CRT 下这张表就在本镜像里，
+  `libucrt.lib` 自己定义 `__pioinfo`；扫描到的 DLL 表和 `_open` 用的表不是同一张。
+- 补丁：`_MSC_VER && !_DLL` 时直接引用 `libucrt.lib` 的 `__pioinfo`，跳过扫描：
+
+  ```c
+  #if defined(_MSC_VER) && !defined(_DLL)
+  extern ioinfo *__pioinfo[];
+  # define RUBY_CRT_IMAGE_PIOINFO 1
+  #else
+  static ioinfo ** __pioinfo = NULL;
+  #endif
+  ```
+
+  `set_pioinfo_extra()` 里原来的 UCRTBASE 扫描整段包在
+  `#ifndef RUBY_CRT_IMAGE_PIOINFO` 里；`pioinfo_extra` 探测保留——Ruby 复刻的
+  `ioinfo` 是 64 字节，静态 UCRT 在 x64 上是 72 字节，探测会自动得到 8。
+- 验证：`/MT` 与 `/MTd` 的独立探针都能用该表完成 `_open` / `_write` / `_read`；
+  `Game.exe` 不再导入 vcruntime140.dll、MSVCP140.dll 和 api-ms-win-crt-*，
+  `dumpbin /IMPORTS` 里没有 CRT 符号。
+
+## `ruby` —— Debug 构建下 `rb_set_keys` 未定义
+
+- 文件：`st.c`，`set_keys()` 的定义
+- 现象：Debug 配置链接 miniruby 时
+  `set.obj : error LNK2019: 无法解析的外部符号 rb_set_keys`。
+- 原因：`internal/set_table.h` 把 `set_keys` 宏映射为外部符号 `rb_set_keys`，
+  `set.c` 在另一个翻译单元里调用它；但 `st.c` 把定义写成了 `inline`。MSVC 的
+  `config.h` 把 `inline` 定义成 `__inline`，这个定义不会导出符号。Release 的优化器
+  把 `set_i_to_a` 里 `ST_DATA_COMPATIBLE_P` 为 0 的死分支删掉，引用随之消失；
+  Debug 的 `/Od` 保留调用，于是链接失败。
+- 补丁：去掉 `set_keys` 定义上的 `inline`，让它按头文件的声明导出为
+  `rb_set_keys`。
+- 验证：`win64-vendored-ruby-debug --target ruby` 链接通过，Debug `ruby.exe`
+  跑 `smoke_test.rb` 63 项全过。

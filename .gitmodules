@@ -34,3 +34,6 @@
 [submodule "third_party/opusfile"]
 	path = third_party/miniaudio/external/opusfile
 	url = https://github.com/xiph/opusfile.git
+[submodule "third_party/mbedtls"]
+	path = third_party/mbedtls
+	url = https://github.com/Mbed-TLS/mbedtls.git

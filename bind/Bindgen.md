@@ -36,12 +36,12 @@ rb_call_builtin_inits();     // array.rb / hash.rb / kernel.rb 等 builtin iseq
 - 三个符号都不在公开头文件里，靠 `extern "C"` 手写声明（定义分别在
   `inits.c`、`enc/encdb.c`、`dmyext.c`）。
 
-**CRT 必须是动态版（`/MD`）。** Ruby 的 Win32 层靠 `win32/win32.c` 里
-`__pioinfo`（扫描 `ucrtbase.dll` 中 `_isatty` 的机器码定位）维护 fd 表，用于
-socket↔fd 关联和 fcntl 模拟。静态 CRT 下 `_open` 在镜像自己的表里分配 fd，
-而 Ruby 写的是 DLL 的表，两者永不一致：第一个 `File.open` 就在
-`rb_maygvl_fd_fix_cloexec` 里 EBADF。顶层 `CMakeLists.txt` 因此把整棵树设为
-`MultiThreadedDLL`，`third_party/ruby/CMakeLists.txt` 在配置期会拒绝 `/MT`。
+**CRT 可以是静态版（`/MT`）。** Ruby 的 Win32 层靠 `win32/win32.c` 里的
+`__pioinfo` 维护 fd 表，用于 socket↔fd 关联和 fcntl 模拟。DLL CRT 下这张表在
+`ucrtbase.dll` 里，靠扫描 `_isatty` 的机器码定位；静态 CRT 下表就在本镜像中，
+`libucrt.lib` 直接定义 `__pioinfo`，`win32/win32.c` 走另一条分支直接引用它。
+两条路径都要保留——顶层 `CMakeLists.txt` 现在把整棵树设为 `MultiThreaded`
+（静态 CRT），单独的 Ruby 构建仍可用 `/MD` 加扫描路径。
 
 ## 运行方式
 

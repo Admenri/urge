@@ -7,17 +7,24 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 if(MSVC)
   add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-  # The dynamic CRT is not a preference here, it is what the script
-  # interpreter requires.  Ruby's Windows port keeps its own view of the
-  # process file descriptors by reaching into the CRT's table (`__pioinfo` in
-  # win32/win32.c, located by scanning `_isatty` inside ucrtbase.dll) -- to
-  # associate sockets with fds and to emulate fcntl.  That table only exists in
-  # ucrtbase.dll: with the static CRT the scan finds the DLL's table while
-  # `_open` allocates from the image's own, so the two disagree and the first
-  # `File.open` fails with EBADF.  Everything in the tree therefore shares the
-  # DLL runtime, which is also why the executable ships next to
-  # vcruntime140.dll (the UCRT itself is part of Windows).
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+  # The static CRT is the whole point of this setting: the executable carries
+  # its C runtime instead of importing vcruntime140.dll and the api-ms-win-crt
+  # API sets.  Ruby needs the CRT's file-descriptor table -- its Windows port
+  # reaches into `__pioinfo` (win32/win32.c) to associate sockets with fds and
+  # to emulate fcntl.  With the DLL CRT that table belongs to ucrtbase.dll and
+  # Ruby finds it by scanning `_isatty` in that DLL; with the static CRT the
+  # table is the image's own and libucrt.lib defines `__pioinfo` outright, so
+  # win32/win32.c takes the other branch.  Every target in the tree shares this
+  # runtime, or allocations and file descriptors would cross two heaps.
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+  # cl puts /EHsc in its default C++ flags.  The /EHs-c- this project hands its
+  # own targets further down would then sit next to it on the same command
+  # line, and cl reports the contradiction:
+  #   cl : Command line warning D9025 : overriding '/EHs' with '/EHs-'
+  # Drop the default here, where the root scope still reaches every target;
+  # third_party puts it back for the upstream projects it builds.
+  string(REGEX REPLACE "(^| )/EHsc( |$)" "\\1" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
 if(EMSCRIPTEN)
@@ -82,6 +89,21 @@ else()
 endif()
 option(URGE_ENABLE_NETWORK
   "Build the WebSocket and HTTP client" ${URGE_ENABLE_NETWORK_DEFAULT})
+
+# The static CRT, the static C++ library, SDL and wgpu import a few functions
+# that only exist from Windows 8 on (WaitOnAddress, ProcessPrng, CreateFile2,
+# ...).  Windows 7 refuses to start the process because those imports cannot
+# be resolved, even when the code behind them is never reached.  This switch
+# links app/platform/win7_compat.cc, which redirects the import slots to
+# in-image wrappers that forward to the real API when it exists and implement
+# a fallback otherwise.  OFF keeps the import table exactly as the toolchain
+# produced it.
+option(URGE_WIN7_COMPAT
+  "Link Windows 7 compatibility hooks for imports that need Windows 8+" OFF)
+if(URGE_WIN7_COMPAT AND NOT MSVC)
+  message(FATAL_ERROR "URGE_WIN7_COMPAT uses MSVC linker hooks and needs MSVC.")
+endif()
+message(STATUS "URGE: Windows 7 compatibility hooks = ${URGE_WIN7_COMPAT}")
 
 # ---------------------------------------------------------------------------
 # The script interpreter.

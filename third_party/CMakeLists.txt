@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.30)
 
 set(BUILD_SHARED_LIBS OFF)
 
+# The top-level project drops cl's default /EHsc so its own targets can pass
+# /EHs-c- without the D9025 contradiction.  Everything under here is upstream
+# code and keeps the default: a vendored C++ target that uses exceptions must
+# still compile with unwind semantics.
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+endif()
+
 # SDL is static everywhere except Android, where it has to be the shared
 # library the APK ships.  SDL's Android layer registers every native method
 # SDLActivity calls from `JNI_OnLoad` (src/core/android/SDL_android.c), and the
@@ -57,8 +65,9 @@ set(MINIAUDIO_DEBUG_OUTPUT OFF)
 # pristine.  Everything a bundled copy has no business doing is turned off:
 # tests, command line tools, pkg-config files and CMake package exports.
 # OPUS_STATIC_RUNTIME has to match the runtime the rest of the tree links
-# against (see the MSVC block in the top-level CMakeLists.txt) -- the tree is
-# on the DLL runtime because the script interpreter needs it, so opus is too.
+# against (see the MSVC block in the top-level CMakeLists.txt).  The tree is on
+# the static CRT, so opus is too; the option only changes which runtime opus'
+# own targets select.
 #
 # BUILD_TESTING is a cache entry rather than a plain variable because libogg
 # opens with `cmake_minimum_required(VERSION 2.8.12)`, where `option()` still
@@ -75,7 +84,8 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 set(BUILD_TESTING OFF CACHE BOOL "Build the testing tree" FORCE)
 set(OPUS_BUILD_TESTING OFF)
 set(OPUS_BUILD_PROGRAMS OFF)
-set(OPUS_STATIC_RUNTIME OFF)
+set(OPUS_STATIC_RUNTIME ON CACHE BOOL
+  "Build opus with the static MSVC runtime" FORCE)
 set(OPUS_INSTALL_PKG_CONFIG_MODULE OFF)
 set(OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF)
 set(INSTALL_DOCS OFF)
@@ -121,6 +131,11 @@ list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(BUILD_CURL_EXE OFF)
 set(BUILD_STATIC_LIBS ON)
 set(BUILD_EXAMPLES OFF)
+# libcurl selects its MSVC runtime itself, and its default is the DLL one --
+# which would leave vcruntime140.dll in the executable no matter what the rest
+# of the tree does.  Point it at the static runtime the tree links against.
+set(CURL_STATIC_CRT ON CACHE BOOL
+  "Build libcurl with the static MSVC runtime" FORCE)
 set(CURL_DISABLE_INSTALL ON)
 set(CURL_BUILD_EVERYTHING OFF)
 set(CURL_WERROR OFF)

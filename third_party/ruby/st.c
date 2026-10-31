@@ -3185,8 +3185,13 @@ set_foreach_check(set_table *tab, set_foreach_check_callback_func *func, st_data
 }
 
 /* Set up array KEYS by at most SIZE keys of head table TAB entries.
-   Return the number of keys set up in array KEYS.  */
-inline st_index_t
+   Return the number of keys set up in array KEYS.
+
+   Not `inline`: internal/set_table.h declares this as an external
+   `rb_set_keys` and set.c calls it across translation units.  MSVC spells
+   `inline` as `__inline` (config.h), which emits no symbol, so an
+   unoptimized Debug build keeps the call while the definition is missing. */
+st_index_t
 set_keys(set_table *tab, st_data_t *keys, st_index_t size)
 {
     st_index_t i, bound;

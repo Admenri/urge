@@ -96,11 +96,11 @@ if(MSVC)
     # The counters are written to Game.pgc and folded into the .pgd named here.
     target_link_options(Game PRIVATE /LTCG "/GENPROFILE:PGD=${URGE_PGO_PROFILE_NATIVE}")
 
-    # The instrumented build calls into the PGO runtime to write its counters,
-    # and with the DLL runtime the engine is built with (/MD, which the
-    # interpreter requires) that runtime is a DLL rather than a static library.
-    # Without it beside the executable the process dies in the loader before a
-    # single line of the engine runs, which reads as "the game does nothing".
+    # The instrumented build calls into the PGO runtime to write its counters.
+    # MSVC ships that runtime as a DLL beside cl.exe rather than linking it
+    # into the image.  Without it beside the executable the process dies in the
+    # loader before a single line of the engine runs, which reads as "the game
+    # does nothing".
     file(GLOB URGE_PGO_RUNTIME "${URGE_PGO_COMPILER_DIR}/pgort*.dll")
     if(URGE_PGO_RUNTIME)
       list(GET URGE_PGO_RUNTIME 0 URGE_PGO_RUNTIME)

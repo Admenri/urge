@@ -43,25 +43,10 @@ project(Ruby
 set(RUBY_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(RUBY_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
-if(MSVC)
-  # Ruby's Windows port reaches into the CRT's file-descriptor table
-  # (`__pioinfo`, see win32/win32.c) to associate sockets with fds and to
-  # emulate fcntl.  That table lives in ucrtbase.dll, and the interpreter finds
-  # it by pattern-scanning `_isatty` *inside that DLL* -- so the CRT Ruby runs
-  # on has to be the DLL one.  With the static CRT the scan resolves the DLL's
-  # table while `_open` allocates fds from the image's own table: the two never
-  # agree, and the first `File.open` dies in `rb_maygvl_fd_fix_cloexec` with
-  # EBADF.  The host project already builds the DLL runtime for this reason;
-  # say so here rather than let a future /MT switch surface as a runtime crash.
-  if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-  elseif(NOT CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL")
-    message(FATAL_ERROR
-      "Ruby 4.0 requires the DLL CRT (CMAKE_MSVC_RUNTIME_LIBRARY must end in "
-      "'DLL'); the static CRT breaks its file-descriptor handling. "
-      "Current value: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
-  endif()
-endif()
+# The MSVC runtime is the host project's business: win32/win32.c handles both
+# the DLL CRT (it scans ucrtbase.dll for `__pioinfo`) and the static CRT (the
+# table is the image's own `__pioinfo`, defined by libucrt.lib).  A standalone
+# build keeps CMake's default unless the caller sets one.
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 

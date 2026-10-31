@@ -2433,7 +2433,17 @@ typedef struct {
 #define _CRTIMP __declspec(dllimport)
 #endif
 
+#if defined(_MSC_VER) && !defined(_DLL)
+/* With the static CRT the table is part of this image: libucrt.lib defines
+ * `__pioinfo` itself, so no ucrtbase.dll scan is needed (or possible -- the
+ * scan below is written for the DLL and finds the DLL's table). */
+extern ioinfo *__pioinfo[];
+# define RUBY_CRT_IMAGE_PIOINFO 1
+#else
+/* With the DLL CRT the table lives inside ucrtbase.dll; set_pioinfo_extra()
+ * locates it by scanning `_isatty` in that DLL. */
 static ioinfo ** __pioinfo = NULL;
+#endif
 #define IOINFO_L2E 6
 static inline ioinfo* _pioinfo(int);
 
@@ -2450,6 +2460,7 @@ static size_t pioinfo_extra = 0;	/* workaround for VC++8 SP1 */
 static void
 set_pioinfo_extra(void)
 {
+#ifndef RUBY_CRT_IMAGE_PIOINFO
 #define FUNCTION_RET 0xc3 /* ret */
 #ifdef _DEBUG
 # define UCRTBASE "ucrtbased.dll"
@@ -2590,6 +2601,7 @@ set_pioinfo_extra(void)
     __pioinfo = *(ioinfo***)(p);
 #endif
 #endif /* _M_ARM64 */
+#endif /* RUBY_CRT_IMAGE_PIOINFO */
     int fd;
 
     fd = _open("NUL", O_RDONLY);
