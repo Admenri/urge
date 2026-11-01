@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <format>
 #include <iterator>
+#include <mutex>
 #include <string>
 #include <string_view>
 
@@ -91,6 +92,13 @@ inline void*& SinkUser() {
   return user;
 }
 
+// The audio thread logs decoder warnings next to the main thread, and the
+// sink writes to one file, so every line is serialized.
+inline std::mutex& WriteMutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
 }
 
 inline LogLevel GetLogLevel() {
@@ -120,6 +128,8 @@ inline void LogWrite(LogLevel level,
     return;
 
   const std::string_view tag = kTags[index];
+
+  std::lock_guard lock(logger_detail::WriteMutex());
 
   std::string line;
   std::size_t begin = 0;

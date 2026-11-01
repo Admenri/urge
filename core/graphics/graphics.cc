@@ -217,6 +217,10 @@ Graphics::~Graphics() {
 }
 
 void Graphics::Update(URGE_EXCEPT) {
+#if defined(URGE_RUNNER_POLL)
+  WaitInBackground(exception_state);
+#endif
+
   const uint64_t frame_begin = SDL_GetPerformanceCounter();
   frame_begin_tick_ = frame_begin;
 
@@ -449,6 +453,64 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
 #endif
 
   ApplyAspectConstraint();
+}
+
+WindowResizable Graphics::resizable() const {
+  return Config::Get().display.resizable;
+}
+
+void Graphics::SetResizable(WindowResizable value) {
+  auto& config = Config::Get();
+  if (config.display.resizable == value)
+    return;
+
+  config.display.resizable = value;
+  if (window_)
+    SDL_SetWindowResizable(window_, value != WindowResizable::kNone);
+
+#if !defined(OS_ANDROID)
+  // Leaving the free sizes behind snaps the window back to the logical
+  // resolution, the same size ResizeScreen() would have asked for.
+  if (value == WindowResizable::kNone && window_ &&
+      (SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN) == 0) {
+    const float dpi = SDL_GetWindowDisplayScale(window_);
+    SDL_SetWindowSize(window_, static_cast<int>(Width() * dpi),
+                      static_cast<int>(Height() * dpi));
+    SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
+                          SDL_WINDOWPOS_CENTERED);
+  }
+#endif
+
+  present_.configured = false;
+  ApplyAspectConstraint();
+}
+
+bool Graphics::UpdateBackgroundState() {
+  const bool focused =
+      window_ && (SDL_GetWindowFlags(window_) & SDL_WINDOW_INPUT_FOCUS) != 0;
+  const bool paused = !focused && !Config::Get().display.background_running;
+
+  if (paused != background_paused_) {
+    background_paused_ = paused;
+    if (auto* audio = Audio::TryGet())
+      audio->SetBackgroundPaused(paused);
+    RequestFrameReset();
+    if (!paused)
+      last_update_end_tick_ = SDL_GetPerformanceCounter();
+    LOGGER_INFO("[Graphics] background pause {}", paused ? "on" : "off");
+  }
+
+  return background_paused_;
+}
+
+void Graphics::WaitInBackground(URGE_EXCEPT) {
+  if (!UpdateBackgroundState())
+    return;
+
+  while (UpdateBackgroundState()) {
+    ProcessEvents(exception_state);
+    SDL_Delay(10);
+  }
 }
 
 void Graphics::ApplyAspectConstraint() {
@@ -765,24 +827,24 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
 
   wgpu::TextureView present_source;
   if (use_upscaler) {
-    present_source = upscaler_->Run(encoder, screen_view, screen_size,
-                                    upscale_size);
+    present_source =
+        upscaler_->Run(encoder, screen_view, screen_size, upscale_size);
   }
 
   if (use_upscaler && present_source) {
     if (present_.source_generation != upscaler_->generation() ||
         !present_.source_group) {
-      present_.source_group = util::CreateBindGroup(
-          present_.pipeline.GetBindGroupLayout(2),
-          {{0, util::TextureViewSet(present_source)},
-           {1, util::SamplerSet(present_.sampler)}});
+      present_.source_group =
+          util::CreateBindGroup(present_.pipeline.GetBindGroupLayout(2),
+                                {{0, util::TextureViewSet(present_source)},
+                                 {1, util::SamplerSet(present_.sampler)}});
       present_.source_generation = upscaler_->generation();
     }
   } else if (present_.source_generation != 0) {
-    present_.source_group = util::CreateBindGroup(
-        present_.pipeline.GetBindGroupLayout(2),
-        {{0, util::TextureViewSet(screen_view)},
-         {1, util::SamplerSet(present_.sampler)}});
+    present_.source_group =
+        util::CreateBindGroup(present_.pipeline.GetBindGroupLayout(2),
+                              {{0, util::TextureViewSet(screen_view)},
+                               {1, util::SamplerSet(present_.sampler)}});
     present_.source_generation = 0;
   }
 

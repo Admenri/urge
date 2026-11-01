@@ -3,6 +3,20 @@ cmake_minimum_required(VERSION 3.30)
 add_library(urge-core STATIC)
 file(GLOB_RECURSE CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
+# The commit shown by the debug UI comes from a header written on every build
+# and only replaced when HEAD moved, so it follows a checkout without asking
+# for a reconfigure.
+set(URGE_BUILD_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+add_custom_target(urge-build-info
+  COMMAND ${CMAKE_COMMAND}
+          -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+          -DOUTPUT=${URGE_BUILD_INFO_DIR}/urge_build_info.h
+          -P ${PROJECT_SOURCE_DIR}/cmake/WriteBuildInfo.cmake
+  BYPRODUCTS ${URGE_BUILD_INFO_DIR}/urge_build_info.h
+  COMMENT "URGE: updating the build info header")
+add_dependencies(urge-core urge-build-info)
+target_include_directories(urge-core PRIVATE ${URGE_BUILD_INFO_DIR})
+
 # `video.cc` is the `Video` class itself: it stays exported to Ruby and turns
 # into the stub that raises while the subsystem is off.  The switch removes the
 # engine behind it -- demuxer, decoder and player -- and with them the only path
@@ -50,6 +64,12 @@ if(ANDROID)
   set(URGE_SDL_TARGET SDL3::SDL3)
 else()
   set(URGE_SDL_TARGET SDL3::SDL3-static)
+endif()
+
+# The audio service owns a decode thread on every platform that has one.
+if(NOT EMSCRIPTEN)
+  find_package(Threads REQUIRED)
+  target_link_libraries(urge-core PUBLIC Threads::Threads)
 endif()
 
 # The shaders are WGSL, which both wgpu backends parse themselves: no GLSL front

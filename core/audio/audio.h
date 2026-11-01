@@ -98,6 +98,9 @@ class Audio : public Singleton<Audio> {
 
   bool SetOutputDevice(std::string name);
 
+  // Pauses the output device for the background-pause feature.
+  void SetBackgroundPaused(bool paused);
+
   void Update();
 
   AudioService* service() { return service_.get(); }

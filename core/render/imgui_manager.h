@@ -60,6 +60,7 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildKeyboardPanel();
   void BuildGraphicsPanel();
   void BuildAudioPanel();
+  void BuildEnginePanel();
   void BuildAboutPanel();
   void BuildFPSWindow();
   void LoadFpsGeometry();

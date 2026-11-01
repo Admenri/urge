@@ -23,6 +23,7 @@
 #include "core/audio/audio_service.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <iterator>
 #include <memory>
@@ -33,6 +34,7 @@
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_init.h"
 #include "SDL3/SDL_iostream.h"
+#include "SDL3/SDL_thread.h"
 
 #include "decoders/libopus/miniaudio_libopus.h"
 #include "decoders/libvorbis/miniaudio_libvorbis.h"
@@ -54,6 +56,18 @@ constexpr size_t kBusCount = 4;
 
 constexpr size_t kMaxVoices = 24;
 
+// The audio thread mixes in these units and keeps about this much ahead of the
+// device.  A small queue keeps a late wake-up from starving the output without
+// making sound effects audibly late.
+constexpr ma_uint64 kMixChunkFrames = 512;
+constexpr int64_t kTargetLatencyMs = 40;
+
+// The answer is per thread and set at the top of the worker, so it needs no
+// lock and cannot race with the worker being started or stopped.
+#if !defined(OS_EMSCRIPTEN)
+thread_local bool g_on_audio_thread = false;
+#endif
+
 ma_decoding_backend_vtable* kDecodingBackends[] = {
     ma_decoding_backend_libvorbis,
     ma_decoding_backend_libopus,
@@ -64,11 +78,6 @@ constexpr ma_uint32 kDecodingBackendCount =
 
 constexpr size_t BusIndex(AudioBus bus) {
   return static_cast<size_t>(bus);
-}
-
-double MillisPerFrame(ma_engine* engine) {
-  const ma_uint32 rate = ma_engine_get_sample_rate(engine);
-  return rate ? 1000.0 / rate : 0.0;
 }
 
 SDL_AudioSpec EngineFormat() {
@@ -129,8 +138,13 @@ std::vector<uint8_t> ReadWholeFile(const std::string& filename) {
   return bytes;
 }
 
+#if defined(OS_EMSCRIPTEN)
+
+// No threads: the mixer runs inside the pull callback, exactly as the device
+// asks for data.
 struct PullState {
   ma_engine* engine = nullptr;
+  AudioService* service = nullptr;
   size_t frame_size = 0;
   std::vector<uint8_t> scratch;
 
@@ -164,47 +178,61 @@ void SDLCALL PullState::Callback(void* userdata,
 
   SDL_PutAudioStreamData(stream, state->scratch.data(),
                          static_cast<int>(wanted));
+
+  if (state->service)
+    state->service->RefreshClips();
 }
 
-}
+#endif  // OS_EMSCRIPTEN
+
+}  // namespace
 
 AudioClip::~AudioClip() {
   Close();
 }
 
-bool AudioClip::Open(ma_engine* engine,
-                     ma_sound_group* bus,
+bool AudioClip::Open(AudioService* service,
+                     AudioBus bus,
                      const std::string& filename) {
   Close();
 
-  if (!engine || filename.empty())
+  if (!service || filename.empty())
     return false;
 
+  // The file reaches memory on the caller's thread; the decoder and the sound
+  // that reads it are built on the audio thread.
   bytes_ = ReadWholeFile(filename);
   if (bytes_.empty())
     return false;
 
-  return Prepare(engine, bus, "the audio file '" + filename + "'");
+  bool opened = false;
+  const std::string label = "the audio file '" + filename + "'";
+  service->RunSync([&] { opened = Prepare(service, bus, label); });
+  return opened;
 }
 
-bool AudioClip::OpenMemory(ma_engine* engine,
-                           ma_sound_group* bus,
+bool AudioClip::OpenMemory(AudioService* service,
+                           AudioBus bus,
                            std::vector<uint8_t> bytes) {
   Close();
 
-  if (!engine || bytes.empty())
+  if (!service || bytes.empty())
     return false;
 
   bytes_ = std::move(bytes);
-  return Prepare(engine, bus, "the video audio track");
+
+  bool opened = false;
+  service->RunSync(
+      [&] { opened = Prepare(service, bus, "the video audio track"); });
+  return opened;
 }
 
-bool AudioClip::Prepare(ma_engine* engine,
-                        ma_sound_group* bus,
+bool AudioClip::Prepare(AudioService* service,
+                        AudioBus bus,
                         const std::string& label) {
-  ma_decoder_config config =
-      ma_decoder_config_init(ma_format_f32, ma_engine_get_channels(engine),
-                             ma_engine_get_sample_rate(engine));
+  ma_decoder_config config = ma_decoder_config_init(
+      ma_format_f32, ma_engine_get_channels(service->engine()),
+      ma_engine_get_sample_rate(service->engine()));
   config.ppCustomBackendVTables = kDecodingBackends;
   config.customBackendCount = kDecodingBackendCount;
   if (ma_decoder_init_memory(bytes_.data(), bytes_.size(), &config,
@@ -215,8 +243,9 @@ bool AudioClip::Prepare(ma_engine* engine,
   }
 
   auto* source = reinterpret_cast<ma_data_source*>(&decoder_);
-  if (ma_sound_init_from_data_source(engine, source, 0, bus, &sound_) !=
-      MA_SUCCESS) {
+  if (ma_sound_init_from_data_source(service->engine(), source, 0,
+                                     service->bus(bus),
+                                     &sound_) != MA_SUCCESS) {
     LOGGER_WARN("{} could not be mixed", label);
     ma_decoder_uninit(&decoder_);
     decoder_ = {};
@@ -224,11 +253,62 @@ bool AudioClip::Prepare(ma_engine* engine,
     return false;
   }
 
+  service_ = service;
   open_ = true;
+
+  ma_uint64 length = 0;
+  if (ma_sound_get_length_in_pcm_frames(&sound_, &length) == MA_SUCCESS)
+    length_frames_.store(length, std::memory_order_relaxed);
+
+  service->RegisterClip(this);
+  RefreshState();
   return true;
 }
 
 void AudioClip::Close() {
+  auto release = [this] {
+    if (open_) {
+      if (service_)
+        service_->UnregisterClip(this);
+
+      ma_sound_uninit(&sound_);
+      ma_decoder_uninit(&decoder_);
+      sound_ = {};
+      decoder_ = {};
+      open_ = false;
+    }
+
+    bytes_.clear();
+    service_ = nullptr;
+    cursor_frames_.store(0, std::memory_order_relaxed);
+    playing_.store(false, std::memory_order_relaxed);
+    at_end_.store(false, std::memory_order_relaxed);
+  };
+
+  if (service_)
+    service_->RunSync(release);
+  else
+    release();
+}
+
+void AudioClip::RefreshState() {
+  if (!open_) {
+    playing_.store(false, std::memory_order_relaxed);
+    at_end_.store(false, std::memory_order_relaxed);
+    return;
+  }
+
+  ma_uint64 cursor = 0;
+  if (ma_sound_get_cursor_in_pcm_frames(&sound_, &cursor) == MA_SUCCESS)
+    cursor_frames_.store(cursor, std::memory_order_relaxed);
+
+  playing_.store(ma_sound_is_playing(&sound_) != MA_FALSE,
+                 std::memory_order_relaxed);
+  at_end_.store(ma_sound_at_end(&sound_) != MA_FALSE,
+                std::memory_order_relaxed);
+}
+
+void AudioClip::ShutdownFromService() {
   if (open_) {
     ma_sound_uninit(&sound_);
     ma_decoder_uninit(&decoder_);
@@ -238,50 +318,67 @@ void AudioClip::Close() {
   }
 
   bytes_.clear();
+  service_ = nullptr;
+  cursor_frames_.store(0, std::memory_order_relaxed);
+  playing_.store(false, std::memory_order_relaxed);
+  at_end_.store(false, std::memory_order_relaxed);
 }
 
-AudioChannel::~AudioChannel() = default;
+AudioChannel::AudioChannel(AudioService* service, AudioBus bus)
+    : service_(service), bus_(bus) {}
 
-AudioChannel::AudioChannel(ma_engine* engine, ma_sound_group* bus)
-    : engine_(engine), bus_(bus) {}
+AudioChannel::~AudioChannel() {
+  clip_.Close();
+}
 
 bool AudioChannel::Play(const std::string& filename,
                         int32_t volume,
                         int32_t pitch,
                         float pos) {
-  if (filename.empty())
+  if (!service_ || filename.empty())
     return false;
 
   if (!clip_.IsOpen() || filename_ != filename) {
-    if (!clip_.Open(engine_, bus_, filename)) {
+    if (!clip_.Open(service_, bus_, filename)) {
       filename_.clear();
       return false;
     }
 
     filename_ = filename;
-    ma_sound_set_looping(clip_.sound(), looping_ ? MA_TRUE : MA_FALSE);
   }
 
   paused_ = false;
-  cursor_ = 0;
+  pause_cursor_ = 0;
 
-  ma_sound_set_volume(clip_.sound(), volume / 100.0f);
-  ma_sound_set_pitch(clip_.sound(), pitch / 100.0f);
+  bool started = false;
+  const float gain = volume / 100.0f;
+  const float speed = pitch / 100.0f;
+  service_->RunSync([this, gain, speed, pos, &started] {
+    ma_sound* sound = clip_.sound();
+    ma_sound_set_looping(sound, looping_ ? MA_TRUE : MA_FALSE);
+    ma_sound_set_volume(sound, gain);
+    ma_sound_set_pitch(sound, speed);
 
-  if (pos > 0.0f) {
-    const double frames = pos / MillisPerFrame(engine_);
-    ma_sound_seek_to_pcm_frame(clip_.sound(), static_cast<ma_uint64>(frames));
-  }
+    if (pos > 0.0f) {
+      const double frames =
+          static_cast<double>(pos) * AudioService::kEngineSampleRate / 1000.0;
+      ma_sound_seek_to_pcm_frame(sound, static_cast<ma_uint64>(frames));
+    }
 
-  return ma_sound_start(clip_.sound()) == MA_SUCCESS;
+    started = ma_sound_start(sound) == MA_SUCCESS;
+  });
+  return started;
 }
 
 void AudioChannel::Stop() {
   paused_ = false;
-  cursor_ = 0;
+  pause_cursor_ = 0;
 
-  if (clip_.IsOpen())
-    ma_sound_stop(clip_.sound());
+  if (service_ && clip_.IsOpen())
+    service_->Post([this] {
+      if (clip_.IsOpen())
+        ma_sound_stop(clip_.sound());
+    });
 }
 
 void AudioChannel::Fade(int32_t time) {
@@ -291,76 +388,97 @@ void AudioChannel::Fade(int32_t time) {
   }
 
   paused_ = false;
-  cursor_ = 0;
+  pause_cursor_ = 0;
 
-  if (clip_.IsOpen())
-    ma_sound_stop_with_fade_in_milliseconds(clip_.sound(),
-                                            static_cast<ma_uint64>(time));
+  if (service_ && clip_.IsOpen())
+    service_->Post([this, time] {
+      if (clip_.IsOpen()) {
+        ma_sound_stop_with_fade_in_milliseconds(clip_.sound(),
+                                                static_cast<ma_uint64>(time));
+      }
+    });
 }
 
 float AudioChannel::Pos() {
   if (!clip_.IsOpen())
     return 0.0f;
 
-  ma_uint64 frames = 0;
-  if (ma_sound_get_cursor_in_pcm_frames(clip_.sound(), &frames) != MA_SUCCESS)
-    return 0.0f;
-
-  return static_cast<float>(frames * MillisPerFrame(engine_));
+  return static_cast<float>(static_cast<double>(clip_.cursor_frames()) *
+                            1000.0 / AudioService::kEngineSampleRate);
 }
 
 bool AudioChannel::IsPlaying() {
-  return clip_.IsOpen() && ma_sound_is_playing(clip_.sound()) != MA_FALSE;
+  return clip_.IsOpen() && clip_.playing();
 }
 
 void AudioChannel::Pause() {
-  if (!clip_.IsOpen() || paused_)
+  if (!service_ || !clip_.IsOpen() || paused_)
     return;
 
-  ma_uint64 frames = 0;
-  ma_sound_get_cursor_in_pcm_frames(clip_.sound(), &frames);
-  cursor_ = frames;
-  ma_sound_stop(clip_.sound());
+  pause_cursor_ = clip_.cursor_frames();
   paused_ = true;
+
+  service_->Post([this] {
+    if (clip_.IsOpen())
+      ma_sound_stop(clip_.sound());
+  });
 }
 
 void AudioChannel::Resume() {
-  if (!paused_)
+  if (!service_ || !paused_ || !clip_.IsOpen())
     return;
 
   paused_ = false;
-  if (!clip_.IsOpen())
-    return;
 
-  ma_sound_seek_to_pcm_frame(clip_.sound(), cursor_);
-  ma_sound_start(clip_.sound());
+  const ma_uint64 frame = pause_cursor_;
+  service_->Post([this, frame] {
+    if (!clip_.IsOpen())
+      return;
+
+    ma_sound* sound = clip_.sound();
+    ma_sound_seek_to_pcm_frame(sound, frame);
+    ma_sound_start(sound);
+  });
 }
+
+void AudioChannel::SetLooping(bool looping) {
+  looping_ = looping;
+
+  if (service_ && clip_.IsOpen())
+    service_->Post([this, looping] {
+      if (clip_.IsOpen())
+        ma_sound_set_looping(clip_.sound(), looping ? MA_TRUE : MA_FALSE);
+    });
+}
+
+AudioEmit::AudioEmit(AudioService* service, AudioBus bus)
+    : service_(service), bus_(bus) {}
 
 AudioEmit::~AudioEmit() {
   Reap(true);
 }
 
-AudioEmit::AudioEmit(ma_engine* engine, ma_sound_group* bus)
-    : engine_(engine), bus_(bus) {}
-
 bool AudioEmit::Play(const std::string& filename,
                      int32_t volume,
                      int32_t pitch) {
-  if (filename.empty())
+  if (!service_ || filename.empty())
     return false;
 
   Reap(false);
 
-  auto* clip = new AudioClip();
-  if (!clip->Open(engine_, bus_, filename)) {
-    delete clip;
+  auto clip = std::make_unique<AudioClip>();
+  if (!clip->Open(service_, bus_, filename))
     return false;
-  }
 
-  queue_.push_back(clip);
-  ma_sound_set_volume(clip->sound(), volume / 100.0f);
-  ma_sound_set_pitch(clip->sound(), pitch / 100.0f);
-  ma_sound_start(clip->sound());
+  AudioClip* sound_clip = clip.get();
+  service_->Post([sound_clip, volume, pitch] {
+    ma_sound* sound = sound_clip->sound();
+    ma_sound_set_volume(sound, volume / 100.0f);
+    ma_sound_set_pitch(sound, pitch / 100.0f);
+    ma_sound_start(sound);
+  });
+
+  queue_.push_back(std::move(clip));
   return true;
 }
 
@@ -369,15 +487,24 @@ void AudioEmit::Stop() {
 }
 
 void AudioEmit::Reap(bool all) {
+  std::vector<std::unique_ptr<AudioClip>> dead;
   while (!queue_.empty()) {
-    AudioClip* head = queue_.front();
-    if (!all && ma_sound_at_end(head->sound()) == MA_FALSE &&
-        queue_.size() <= kMaxVoices)
+    AudioClip* head = queue_.front().get();
+    if (!all && !head->at_end() && queue_.size() <= kMaxVoices)
       break;
 
-    delete head;
+    dead.push_back(std::move(queue_.front()));
     queue_.pop_front();
   }
+
+  if (dead.empty())
+    return;
+
+  // std::function needs a copyable capture, so the owning vector travels
+  // behind a shared_ptr; the clips uninit on the audio thread.
+  auto doomed = std::make_shared<std::vector<std::unique_ptr<AudioClip>>>(
+      std::move(dead));
+  service_->Post([doomed] { doomed->clear(); });
 }
 
 struct AudioService::Kernel {
@@ -388,10 +515,19 @@ struct AudioService::Kernel {
   SDL_AudioSpec engine_format = {};
   SDL_AudioDeviceID device = 0;
   SDL_AudioStream* stream = nullptr;
+
+#if defined(OS_EMSCRIPTEN)
   PullState pull;
+#endif
 };
 
 AudioService::~AudioService() {
+  StopWorker();
+
+  for (AudioClip* clip : clips_)
+    clip->ShutdownFromService();
+  clips_.clear();
+
   CloseOutput();
 
   for (size_t i = 0; i < kBusCount; ++i)
@@ -405,7 +541,9 @@ AudioService::~AudioService() {
   delete kernel_;
 }
 
-AudioService::AudioService() : kernel_(new Kernel()) {}
+AudioService::AudioService() : kernel_(new Kernel()) {
+  mix_buffer_.assign(kMixChunkFrames * AudioService::kEngineChannels, 0.0f);
+}
 
 AudioService* AudioService::Create(const std::string& output) {
   std::unique_ptr<AudioService> service(new AudioService());
@@ -437,8 +575,11 @@ AudioService* AudioService::Create(const std::string& output) {
 
   kernel.engine_format = EngineFormat();
 
+#if defined(OS_EMSCRIPTEN)
   kernel.pull.engine = &kernel.engine;
+  kernel.pull.service = service.get();
   kernel.pull.frame_size = kEngineChannels * sizeof(float);
+#endif
 
   if (!service->OpenOutput(output))
     LOGGER_WARN("no audio output could be opened; the game runs silent");
@@ -447,24 +588,35 @@ AudioService* AudioService::Create(const std::string& output) {
                                         ? "system default"
                                         : service->output_device());
 
+  service->StartWorker();
   return service.release();
 }
 
 void AudioService::SetMasterVolume(int32_t volume) {
+  if (!kernel_)
+    return;
+
   const float gain = std::clamp(volume, 0, 100) / 100.0f;
-  ma_engine_set_volume(&kernel_->engine, gain);
+  Post([this, gain] { ma_engine_set_volume(&kernel_->engine, gain); });
 }
 
 void AudioService::SetBusVolume(AudioBus bus, int32_t volume) {
+  if (!kernel_)
+    return;
+
   const float gain = std::clamp(volume, 0, 100) / 100.0f;
-  ma_sound_group_set_volume(&kernel_->bus[BusIndex(bus)], gain);
+  Post([this, bus, gain] {
+    ma_sound_group_set_volume(&kernel_->bus[BusIndex(bus)], gain);
+  });
 }
 
 bool AudioService::SetOutputDevice(const std::string& name) {
   if (name == output_device_)
     return true;
 
-  if (!OpenOutput(name))
+  bool opened = false;
+  RunSync([this, &name, &opened] { opened = OpenOutput(name); });
+  if (!opened)
     return false;
 
   LOGGER_INFO("audio output: {}",
@@ -491,13 +643,101 @@ std::vector<std::string> AudioService::OutputDevices() {
   return names;
 }
 
+void AudioService::SetPaused(bool paused) {
+  if (paused_.exchange(paused) == paused)
+    return;
+
+  Post([this, paused] {
+    if (!kernel_->device)
+      return;
+
+    if (paused)
+      SDL_PauseAudioDevice(kernel_->device);
+    else
+      SDL_ResumeAudioDevice(kernel_->device);
+    LOGGER_INFO("audio output {}", paused ? "paused" : "resumed");
+  });
+}
+
 AudioChannel* AudioService::CreateStream(AudioBus bus) {
-  return new AudioChannel(&kernel_->engine, &kernel_->bus[BusIndex(bus)]);
+  return new AudioChannel(this, bus);
 }
 
 AudioEmit* AudioService::CreateEmitter() {
-  return new AudioEmit(&kernel_->engine,
-                       &kernel_->bus[BusIndex(AudioBus::kSE)]);
+  return new AudioEmit(this, AudioBus::kSE);
+}
+
+void AudioService::Post(std::function<void()> work) {
+#if defined(OS_EMSCRIPTEN)
+  if (work)
+    work();
+#else
+  if (!work)
+    return;
+
+  if (!running_.load(std::memory_order_relaxed) || OnAudioThread()) {
+    work();
+    return;
+  }
+
+  {
+    std::lock_guard lock(command_mutex_);
+    commands_.push_back(std::move(work));
+  }
+  command_cv_.notify_one();
+#endif
+}
+
+void AudioService::RunSync(const std::function<void()>& work) {
+#if defined(OS_EMSCRIPTEN)
+  work();
+#else
+  if (!running_.load(std::memory_order_relaxed) || OnAudioThread()) {
+    work();
+    return;
+  }
+
+  std::mutex done_mutex;
+  std::condition_variable done_cv;
+  bool done = false;
+
+  {
+    std::lock_guard lock(command_mutex_);
+    commands_.push_back([&] {
+      work();
+      {
+        std::lock_guard guard(done_mutex);
+        done = true;
+      }
+      done_cv.notify_one();
+    });
+  }
+  command_cv_.notify_one();
+
+  std::unique_lock lock(done_mutex);
+  done_cv.wait(lock, [&] { return done; });
+#endif
+}
+
+bool AudioService::OnAudioThread() const {
+#if defined(OS_EMSCRIPTEN)
+  return true;
+#else
+  return g_on_audio_thread;
+#endif
+}
+
+void AudioService::RegisterClip(AudioClip* clip) {
+  clips_.push_back(clip);
+}
+
+void AudioService::UnregisterClip(AudioClip* clip) {
+  clips_.erase(std::remove(clips_.begin(), clips_.end(), clip), clips_.end());
+}
+
+void AudioService::RefreshClips() {
+  for (AudioClip* clip : clips_)
+    clip->RefreshState();
 }
 
 ma_engine* AudioService::engine() {
@@ -506,6 +746,101 @@ ma_engine* AudioService::engine() {
 
 ma_sound_group* AudioService::bus(AudioBus bus) {
   return &kernel_->bus[BusIndex(bus)];
+}
+
+void AudioService::StartWorker() {
+#if !defined(OS_EMSCRIPTEN)
+  running_.store(true, std::memory_order_relaxed);
+  thread_ = std::thread(&AudioService::WorkerLoop, this);
+#endif
+}
+
+void AudioService::StopWorker() {
+#if !defined(OS_EMSCRIPTEN)
+  if (!running_.exchange(false))
+    return;
+
+  command_cv_.notify_all();
+  if (thread_.joinable())
+    thread_.join();
+
+  // Commands left behind may own clips; release them here, on the caller, now
+  // that the engine has no reader.
+  std::deque<std::function<void()>> pending;
+  {
+    std::lock_guard lock(command_mutex_);
+    pending.swap(commands_);
+  }
+#endif
+}
+
+void AudioService::WorkerLoop() {
+#if !defined(OS_EMSCRIPTEN)
+  g_on_audio_thread = true;
+  SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+
+  while (running_.load(std::memory_order_relaxed)) {
+    {
+      std::unique_lock lock(command_mutex_);
+      command_cv_.wait_for(
+          lock, std::chrono::milliseconds(paused_.load() ? 50 : 5), [this] {
+            return !commands_.empty() ||
+                   !running_.load(std::memory_order_relaxed);
+          });
+
+      std::deque<std::function<void()>> commands;
+      commands.swap(commands_);
+      lock.unlock();
+
+      for (auto& command : commands)
+        if (command)
+          command();
+    }
+
+    if (!running_.load(std::memory_order_relaxed))
+      break;
+
+    if (!paused_.load(std::memory_order_relaxed))
+      MixToStream();
+
+    RefreshClips();
+  }
+
+  g_on_audio_thread = false;
+#endif
+}
+
+void AudioService::MixToStream() {
+  Kernel& kernel = *kernel_;
+  if (!kernel.stream)
+    return;
+
+  const int64_t target = static_cast<int64_t>(kEngineSampleRate) *
+                         kEngineChannels * static_cast<int64_t>(sizeof(float)) *
+                         kTargetLatencyMs / 1000;
+
+  int64_t queued = SDL_GetAudioStreamQueued(kernel.stream);
+  if (queued < 0)
+    queued = 0;
+
+  while (queued < target) {
+    ma_uint64 read = 0;
+    ma_engine_read_pcm_frames(&kernel.engine, mix_buffer_.data(),
+                              kMixChunkFrames, &read);
+
+    if (read < kMixChunkFrames) {
+      std::fill(mix_buffer_.begin() + read * kEngineChannels, mix_buffer_.end(),
+                0.0f);
+    }
+
+    const int bytes = static_cast<int>(mix_buffer_.size() * sizeof(float));
+    if (!SDL_PutAudioStreamData(kernel.stream, mix_buffer_.data(), bytes))
+      break;
+
+    queued += bytes;
+    if (read == 0)
+      break;
+  }
 }
 
 bool AudioService::OpenOutput(const std::string& name) {
@@ -522,7 +857,7 @@ bool AudioService::OpenOutput(const std::string& name) {
       const char* label = SDL_GetAudioDeviceName(devices[i]);
       if (label && name == label) {
         target = devices[i];
-        resolved = label;
+        resolved = name;
         break;
       }
     }
@@ -554,13 +889,23 @@ bool AudioService::OpenOutput(const std::string& name) {
     return false;
   }
 
+#if defined(OS_EMSCRIPTEN)
   if (!SDL_SetAudioStreamGetCallback(kernel.stream, &PullState::Callback,
-                                     &kernel.pull) ||
-      !SDL_BindAudioStream(kernel.device, kernel.stream)) {
+                                     &kernel.pull)) {
+    LOGGER_ERROR("the audio output could not be fed: {}", SDL_GetError());
+    CloseOutput();
+    return false;
+  }
+#endif
+
+  if (!SDL_BindAudioStream(kernel.device, kernel.stream)) {
     LOGGER_ERROR("the audio output could not be bound: {}", SDL_GetError());
     CloseOutput();
     return false;
   }
+
+  if (paused_.load(std::memory_order_relaxed))
+    SDL_PauseAudioDevice(kernel.device);
 
   output_device_ = resolved;
   return true;

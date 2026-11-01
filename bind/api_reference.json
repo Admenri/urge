@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-11-01T01:17:47Z",
+    "generated_at": "2026-11-01T02:06:36Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -84,6 +84,7 @@
       "core/system/archive.h",
       "core/system/config.h",
       "core/system/filesystem.h",
+      "core/system/system_info.h",
       "core/system/urge.h",
       "core/video/video.h",
       "core/video/video_decoder.h",
@@ -1724,7 +1725,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/graphics/graphics.h:57-112",
+      "export": "core/graphics/graphics.h:58-121",
       "cpp_name": "Graphics",
       "cpp_parent": "Singleton",
       "header": "core/graphics/graphics.h",
@@ -1742,7 +1743,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "wait",
@@ -1760,7 +1761,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "fadein",
@@ -1778,7 +1779,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "fadeout",
@@ -1796,7 +1797,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "freeze",
@@ -1808,7 +1809,7 @@
           "params": [],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "transition",
@@ -1836,7 +1837,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "transition_bitmap",
@@ -1864,7 +1865,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "snap_to_bitmap",
@@ -1876,7 +1877,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_reset",
@@ -1888,7 +1889,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "width",
@@ -1900,7 +1901,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "height",
@@ -1912,7 +1913,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "resize_screen",
@@ -1935,7 +1936,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "play_movie",
@@ -1953,7 +1954,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "root_node",
@@ -1965,7 +1966,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_rate",
@@ -1978,7 +1979,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_rate=",
@@ -1998,7 +1999,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_count",
@@ -2011,7 +2012,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_count=",
@@ -2031,7 +2032,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "brightness",
@@ -2044,7 +2045,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "brightness=",
@@ -2064,7 +2065,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_skip",
@@ -2077,7 +2078,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "frame_skip=",
@@ -2097,7 +2098,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "fullscreen",
@@ -2110,7 +2111,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "fullscreen=",
@@ -2130,7 +2131,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "v_sync",
@@ -2143,7 +2144,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         },
         {
           "ruby_name": "v_sync=",
@@ -2163,7 +2164,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/graphics/graphics.h:57-112"
+          "export": "core/graphics/graphics.h:58-121"
         }
       ]
     },

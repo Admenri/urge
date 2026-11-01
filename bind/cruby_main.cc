@@ -524,6 +524,13 @@ BindingMain::Tick BindingMain::IterateMainLoop() {
   if (g_loop.finished)
     return OutcomeOfFinishedLoop();
 
+  // An unfocused window with background running off leaves the script
+  // suspended: the last presented frame stays on screen and the audio device
+  // is paused, while SDL keeps delivering the events that bring the focus
+  // back.
+  if (urge::Graphics::Get().UpdateBackgroundState())
+    return Tick::kContinue;
+
   const uint64_t now = SDL_GetPerformanceCounter();
   const double freq = static_cast<double>(SDL_GetPerformanceFrequency());
   const double delta = static_cast<double>(now - g_loop.last_tick) / freq;

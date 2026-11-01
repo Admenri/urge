@@ -401,6 +401,15 @@ const std::vector<ConfigField>& Fields() {
              ParseBoolean(value, config.display.frame_skip);
        },
        nullptr, nullptr},
+      {"Display", "BackgroundRunning", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return BooleanText(config.display.background_running);
+       },
+       [](Config& config, const std::string& value) {
+         config.display.background_running =
+             ParseBoolean(value, config.display.background_running);
+       },
+       nullptr, nullptr},
 
       {"Window", "Resizable", ConfigPersist::kOnChange,
        [](const Config& config) {

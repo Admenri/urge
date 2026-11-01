@@ -82,6 +82,7 @@ class Config : public Singleton<Config> {
     bool vsync = false;
     bool fullscreen = false;
     bool frame_skip = false;
+    bool background_running = false;
     WindowResizable resizable = WindowResizable::kNone;
   } display;
 

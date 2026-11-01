@@ -35,36 +35,31 @@ namespace {
 
 constexpr ma_uint64 kLoopPointEnd = ~static_cast<ma_uint64>(0);
 
-ma_uint32 SoundSampleRate(ma_sound* sound) {
-  ma_uint32 rate = 0;
-  if (ma_sound_get_data_format(sound, nullptr, nullptr, &rate, nullptr, 0) !=
-          MA_SUCCESS ||
-      rate == 0)
-    return AudioService::kEngineSampleRate;
-
-  return rate;
-}
-
-ma_uint64 MillisecondsToFrames(ma_uint32 rate, float pos) {
+ma_uint64 MillisecondsToFrames(float pos) {
   if (pos <= 0.0f)
     return 0;
 
-  return static_cast<ma_uint64>(static_cast<double>(pos) * rate / 1000.0);
+  return static_cast<ma_uint64>(static_cast<double>(pos) *
+                                AudioService::kEngineSampleRate / 1000.0);
 }
 
-float FramesToMilliseconds(ma_uint32 rate, ma_uint64 frames) {
-  if (rate == 0)
-    return 0.0f;
-
-  return static_cast<float>(static_cast<double>(frames) * 1000.0 / rate);
+float FramesToMilliseconds(ma_uint64 frames) {
+  return static_cast<float>(static_cast<double>(frames) * 1000.0 /
+                            AudioService::kEngineSampleRate);
 }
 
 }
 
 AudioStream::AudioStream(URGE_EXCEPT, std::string filename) {
   auto* service = Audio::Get().service();
+  if (!service) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "the audio service is not running.");
+    return;
+  }
+
   auto clip = std::make_unique<AudioClip>();
-  if (!clip->Open(service->engine(), service->bus(AudioBus::kSE), filename)) {
+  if (!clip->Open(service, AudioBus::kSE, filename)) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "the audio file could not be opened: {}", filename);
     return;
@@ -75,9 +70,14 @@ AudioStream::AudioStream(URGE_EXCEPT, std::string filename) {
 
 AudioStream::AudioStream(URGE_EXCEPT, std::vector<uint8_t> data, float length) {
   auto* service = Audio::Get().service();
+  if (!service) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "the audio service is not running.");
+    return;
+  }
+
   auto clip = std::make_unique<AudioClip>();
-  if (!clip->OpenMemory(service->engine(), service->bus(AudioBus::kSE),
-                        std::move(data))) {
+  if (!clip->OpenMemory(service, AudioBus::kSE, std::move(data))) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "the audio track could not be opened.");
     return;
@@ -93,39 +93,58 @@ void AudioStream::ApplyState() {
   if (!clip_)
     return;
 
-  ma_sound_set_volume(clip_->sound(), volume_);
-  ma_sound_set_pan(clip_->sound(), pan_);
-  ma_sound_set_pitch(clip_->sound(), pitch_);
-  ma_sound_set_looping(clip_->sound(), loop_ ? MA_TRUE : MA_FALSE);
+  auto* service = Audio::Get().service();
+  if (!service)
+    return;
+
+  const float volume = volume_;
+  const float pan = pan_;
+  const float pitch = pitch_;
+  const bool loop = loop_;
+  service->Post([clip = clip_.get(), volume, pan, pitch, loop] {
+    ma_sound* sound = clip->sound();
+    ma_sound_set_volume(sound, volume);
+    ma_sound_set_pan(sound, pan);
+    ma_sound_set_pitch(sound, pitch);
+    ma_sound_set_looping(sound, loop ? MA_TRUE : MA_FALSE);
+  });
 }
 
 void AudioStream::Start() {
-  if (clip_)
-    ma_sound_start(clip_->sound());
+  if (!clip_)
+    return;
+
+  if (auto* service = Audio::Get().service()) {
+    service->Post([clip = clip_.get()] { ma_sound_start(clip->sound()); });
+  }
 }
 
 void AudioStream::Stop() {
-  if (clip_)
-    ma_sound_stop(clip_->sound());
+  if (!clip_)
+    return;
+
+  if (auto* service = Audio::Get().service()) {
+    service->Post([clip = clip_.get()] { ma_sound_stop(clip->sound()); });
+  }
 }
 
 void AudioStream::Seek(float pos) {
   if (!clip_)
     return;
 
-  const ma_uint32 rate = SoundSampleRate(clip_->sound());
-  ma_sound_seek_to_pcm_frame(clip_->sound(), MillisecondsToFrames(rate, pos));
+  if (auto* service = Audio::Get().service()) {
+    const ma_uint64 frame = MillisecondsToFrames(pos);
+    service->Post([clip = clip_.get(), frame] {
+      ma_sound_seek_to_pcm_frame(clip->sound(), frame);
+    });
+  }
 }
 
 float AudioStream::Cursor() {
   if (!clip_)
     return 0.0f;
 
-  ma_uint64 frames = 0;
-  if (ma_sound_get_cursor_in_pcm_frames(clip_->sound(), &frames) != MA_SUCCESS)
-    return 0.0f;
-
-  return FramesToMilliseconds(SoundSampleRate(clip_->sound()), frames);
+  return FramesToMilliseconds(clip_->cursor_frames());
 }
 
 float AudioStream::Length() {
@@ -135,19 +154,15 @@ float AudioStream::Length() {
   if (length_ >= 0.0f)
     return length_;
 
-  ma_uint64 frames = 0;
-  if (ma_sound_get_length_in_pcm_frames(clip_->sound(), &frames) != MA_SUCCESS)
-    return 0.0f;
-
-  return FramesToMilliseconds(SoundSampleRate(clip_->sound()), frames);
+  return FramesToMilliseconds(clip_->length_frames());
 }
 
 bool AudioStream::IsPlaying() {
-  return clip_ && ma_sound_is_playing(clip_->sound()) != MA_FALSE;
+  return clip_ && clip_->playing();
 }
 
 bool AudioStream::IsEnd() {
-  return clip_ && ma_sound_at_end(clip_->sound()) != MA_FALSE;
+  return clip_ && clip_->at_end();
 }
 
 void AudioStream::SetStartTime(float pos) {
@@ -163,8 +178,14 @@ void AudioStream::SetStopTime(float pos) {
 ATTR_DEF(AudioStream, float, Volume) {
   if (value.has_value()) {
     volume_ = std::clamp(*value, 0.0f, 1.0f);
-    if (clip_)
-      ma_sound_set_volume(clip_->sound(), volume_);
+    if (clip_) {
+      if (auto* service = Audio::Get().service()) {
+        const float volume = volume_;
+        service->Post([clip = clip_.get(), volume] {
+          ma_sound_set_volume(clip->sound(), volume);
+        });
+      }
+    }
     return std::nullopt;
   }
 
@@ -174,8 +195,14 @@ ATTR_DEF(AudioStream, float, Volume) {
 ATTR_DEF(AudioStream, float, Pan) {
   if (value.has_value()) {
     pan_ = std::clamp(*value, -1.0f, 1.0f);
-    if (clip_)
-      ma_sound_set_pan(clip_->sound(), pan_);
+    if (clip_) {
+      if (auto* service = Audio::Get().service()) {
+        const float pan = pan_;
+        service->Post([clip = clip_.get(), pan] {
+          ma_sound_set_pan(clip->sound(), pan);
+        });
+      }
+    }
     return std::nullopt;
   }
 
@@ -184,10 +211,16 @@ ATTR_DEF(AudioStream, float, Pan) {
 
 ATTR_DEF(AudioStream, float, Pitch) {
   if (value.has_value()) {
-    if (*value > 0.0f) {
+    if (*value > 0.0f)
       pitch_ = *value;
-      if (clip_)
-        ma_sound_set_pitch(clip_->sound(), pitch_);
+
+    if (clip_) {
+      if (auto* service = Audio::Get().service()) {
+        const float pitch = pitch_;
+        service->Post([clip = clip_.get(), pitch] {
+          ma_sound_set_pitch(clip->sound(), pitch);
+        });
+      }
     }
     return std::nullopt;
   }
@@ -198,8 +231,14 @@ ATTR_DEF(AudioStream, float, Pitch) {
 ATTR_DEF(AudioStream, bool, Loop) {
   if (value.has_value()) {
     loop_ = *value;
-    if (clip_)
-      ma_sound_set_looping(clip_->sound(), loop_ ? MA_TRUE : MA_FALSE);
+    if (clip_) {
+      if (auto* service = Audio::Get().service()) {
+        const bool loop = loop_;
+        service->Post([clip = clip_.get(), loop] {
+          ma_sound_set_looping(clip->sound(), loop ? MA_TRUE : MA_FALSE);
+        });
+      }
+    }
     return std::nullopt;
   }
 
@@ -210,20 +249,28 @@ void AudioStream::ApplyLoopPoint() {
   if (!clip_)
     return;
 
-  auto* source = ma_sound_get_data_source(clip_->sound());
-  if (!source)
+  auto* service = Audio::Get().service();
+  if (!service)
     return;
 
-  const ma_uint32 rate = SoundSampleRate(clip_->sound());
-  const ma_uint64 begin = MillisecondsToFrames(rate, start_time_);
+  const ma_uint64 begin = MillisecondsToFrames(start_time_);
   const ma_uint64 end = stop_time_ > start_time_
-                            ? MillisecondsToFrames(rate, stop_time_)
+                            ? MillisecondsToFrames(stop_time_)
                             : kLoopPointEnd;
+  const float start = start_time_;
+  const float stop = stop_time_;
 
-  if (ma_data_source_set_loop_point_in_pcm_frames(source, begin, end) !=
-      MA_SUCCESS)
-    LOGGER_WARN("the loop point [{}, {}] ms was rejected by the audio stream",
-                start_time_, stop_time_);
+  service->Post([clip = clip_.get(), begin, end, start, stop] {
+    auto* source = ma_sound_get_data_source(clip->sound());
+    if (!source)
+      return;
+
+    if (ma_data_source_set_loop_point_in_pcm_frames(source, begin, end) !=
+        MA_SUCCESS) {
+      LOGGER_WARN("the loop point [{}, {}] ms was rejected by the audio stream",
+                  start, stop);
+    }
+  });
 }
 
 }

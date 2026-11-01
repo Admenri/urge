@@ -26,7 +26,7 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | **2D** | `Bitmap` (Blt, gradients, text, pixel access), `Sprite`, `Plane`, `Viewport`, `WindowXP` / `WindowVX`, `TilemapXP` / `TilemapVX`, `Geometry`, `Animation`, sprite batching, 2D cameras |
 | **3D** | `Node3D` scene graph, perspective / orthographic cameras, `Light3D` with shadows, glTF model loading, skeletal skinning, animation stacks and state machines, PBR-style materials, `RenderGraph3D`, render targets and compute passes, `World3D` composited with 2D |
 | **Direct GPU access** | The `GPU` module exposes WebGPU buffers, textures, samplers, shaders, bind groups, render / compute pipelines and command encoding directly to Ruby |
-| **Audio** | BGM / BGS / ME / SE; WAV, Ogg Vorbis and Ogg Opus; MIDI with SoundFont; per-channel volume and output device selection; `AudioStream` for streaming playback and control |
+| **Audio** | BGM / BGS / ME / SE; WAV, Ogg Vorbis and Ogg Opus; MIDI with SoundFont; per-channel volume and output device selection; `AudioStream` for streaming playback and control; decoding and mixing run on a dedicated audio thread (single-threaded where threads are unavailable) |
 | **Input** | Keyboard, mouse, gamepad (multiple devices, hot-plug, rumble, triggers / sticks) and multi-touch (up to 16 fingers); key bindings are stored in `Game.ini` |
 | **Fonts** | Resolution order is `Fonts/` → system fonts → embedded font; file names and family names are supported, including CJK text; Windows defaults to Microsoft YaHei |
 | **Assets** | PhysicsFS virtual filesystem; automatic RTP detection on Windows; optional `.acs` encrypted containers (requires an `admenri/` drop-in) |
@@ -256,6 +256,7 @@ Configuration reference:
 | `Game` | `RTP` / `RTP1`–`RTP3` | empty | RPG Maker runtime names; detected automatically on Windows |
 | `Display` | `Width` / `Height` | XP: `640×480`; others: `544×416` | Logical resolution |
 | `Display` | `VSync` / `Fullscreen` / `FrameSkip` | `false` | Vertical sync, fullscreen and frame skipping |
+| `Display` | `BackgroundRunning` | `false` | Keep running while the window is unfocused; when off, the picture, logic and audio pause |
 | `Window` | `Resizable` | `none` | `none` / `free` / `ratio` |
 | `Audio` | `Soundfont` | `Fonts/Default.sf2` | MIDI SoundFont |
 | `Audio` | `MasterVolume` / `BGMVolume` / `BGSVolume` / `MEVolume` / `SEVolume` | `100` | Volumes |
@@ -269,7 +270,7 @@ Configuration reference:
 
 Additional notes:
 
-- **F1 / F2**: F1 opens the settings panel (where new key bindings can be added); F2 toggles the frame-rate display.
+- **F1 / F2**: F1 opens the settings panel (key bindings, graphics, audio and engine information; new key bindings can be added there); F2 toggles the frame-rate display.
 - **Fonts**: resolved as `Fonts/` → system fonts → embedded font; both file names (extension optional) and family names work.
 - **Gamepads**: keyboard and gamepad map to the same set of slots; gamepads are hot-pluggable, with support for multiple devices, rumble, sticks and triggers.
 - **Profiling**: on Windows, enable sampling through the `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR` environment variables, or the `Profiler` / `ProfilerInterval` keys in `[Debug]`.

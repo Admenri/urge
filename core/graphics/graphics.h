@@ -40,6 +40,7 @@
 namespace urge {
 
 class Upscaler;
+enum class WindowResizable;
 
 class ScreenRootNode : public Node {
  public:
@@ -91,6 +92,14 @@ class Graphics : public Singleton<Graphics> {
   void ResizeScreen(int32_t width, int32_t height);
   URGE_BINDING()
   void PlayMovie(URGE_EXCEPT, std::string filename);
+
+  WindowResizable resizable() const;
+  void SetResizable(WindowResizable value);
+
+  // Freezes the game while the window is unfocused and background running is
+  // off.  The host asks this once per frame and skips resuming the script when
+  // it returns true; the audio device is paused on the transition.
+  bool UpdateBackgroundState();
 
   URGE_BINDING(Name : "root_node")
   RefPtr<Node> GetRootNode() { return root_; }
@@ -151,6 +160,10 @@ class Graphics : public Singleton<Graphics> {
 
   void ProcessEvents(URGE_EXCEPT);
   void PresentInternal(URGE_EXCEPT);
+  // Poll mode owns the thread between frames, so the only place the script can
+  // be held is inside Update(); events keep being pumped so the window can
+  // still be focused and closed.
+  void WaitInBackground(URGE_EXCEPT);
 
   void ApplyAspectConstraint();
 
@@ -171,6 +184,7 @@ class Graphics : public Singleton<Graphics> {
   int32_t brightness_ = 255;
   bool frame_skip_ = true;
   bool vsync_ = true;
+  bool background_paused_ = false;
 
   uint64_t last_update_end_tick_ = 0;
   float render_cost_ms_ = 0.0f;

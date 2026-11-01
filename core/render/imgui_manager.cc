@@ -26,8 +26,10 @@
 #include <climits>
 #include <cmath>
 #include <cstdlib>
+#include <initializer_list>
 #include <iterator>
 #include <string>
+#include <utility>
 
 #include "SDL3/SDL_keyboard.h"
 #include "SDL3/SDL_misc.h"
@@ -44,6 +46,7 @@
 #include "core/render/device.h"
 #include "core/render/render_stats.h"
 #include "core/system/config.h"
+#include "core/system/system_info.h"
 
 #include <cfloat>
 #include <cstdio>
@@ -98,6 +101,39 @@ const std::string& LicenseText() {
 ImGuiStyle& BaseStyle() {
   static ImGuiStyle base = ImGui::GetStyle();
   return base;
+}
+
+std::string RgssLabel(int32_t version) {
+  switch (version) {
+    case 1:
+      return "RGSS1 (RPG Maker XP)";
+    case 2:
+      return "RGSS2 (RPG Maker VX)";
+    case 3:
+      return "RGSS3 (RPG Maker VX Ace)";
+    default:
+      break;
+  }
+  return "Unknown (" + std::to_string(version) + ")";
+}
+
+void DrawInfoRows(
+    const char* id,
+    std::initializer_list<std::pair<const char*, std::string>> rows) {
+  if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingFixedFit))
+    return;
+
+  ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthFixed);
+  ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+  for (const auto& [label, value] : rows) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextDisabled("%s", label);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::TextWrapped("%s", value.c_str());
+  }
+
+  ImGui::EndTable();
 }
 
 }
@@ -319,6 +355,10 @@ void ImGuiManager::BuildSettingsWindow() {
       BuildAudioPanel();
       ImGui::EndTabItem();
     }
+    if (ImGui::BeginTabItem("Engine")) {
+      BuildEnginePanel();
+      ImGui::EndTabItem();
+    }
     if (ImGui::BeginTabItem("About")) {
       BuildAboutPanel();
       ImGui::EndTabItem();
@@ -476,6 +516,7 @@ void ImGuiManager::BuildKeyboardPanel() {
 
 void ImGuiManager::BuildGraphicsPanel() {
   auto& graphics = Graphics::Get();
+  auto& config = Config::Get();
 
   bool changed = false;
 
@@ -497,10 +538,54 @@ void ImGuiManager::BuildGraphicsPanel() {
     changed = true;
   }
 
+  static const char* const kResizableModes[] = {"None", "Free", "Ratio"};
+  int resizable = static_cast<int>(graphics.resizable());
+  if (ImGui::Combo("Resizable", &resizable, kResizableModes,
+                   static_cast<int>(std::size(kResizableModes)))) {
+    graphics.SetResizable(static_cast<WindowResizable>(resizable));
+    changed = true;
+  }
+
+  bool background_running = config.display.background_running;
+  if (ImGui::Checkbox("Run in background", &background_running)) {
+    config.display.background_running = background_running;
+    changed = true;
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip(
+        "Keep the game running while the window is unfocused.\n"
+        "When off, the picture, logic and audio pause.");
+  }
+
   if (changed) {
     StoreDisplaySettings();
     SaveSettings();
   }
+
+  ImGui::Spacing();
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  const auto text_or = [](const std::string& value, const char* fallback) {
+    return value.empty() ? fallback : value.c_str();
+  };
+
+  ImGui::Text("Present sampler  %s",
+              text_or(config.gfx.present_sampler, "nearest"));
+  ImGui::Text("Screen upscaler  %s", text_or(config.gfx.upscaler, "off"));
+  ImGui::Text("Resolution       %d x %d", graphics.Width(), graphics.Height());
+
+  const DeviceInfo& info = GPUDevice::Get().info();
+  ImGui::TextWrapped("GPU  %s", text_or(info.adapter_device, "unknown"));
+  if (!info.adapter_vendor.empty() || info.vendor_id != 0) {
+    ImGui::TextWrapped("Vendor  %s  (%04X:%04X)",
+                       text_or(info.adapter_vendor, "unknown"),
+                       static_cast<unsigned>(info.vendor_id),
+                       static_cast<unsigned>(info.device_id));
+  }
+  if (!info.adapter_architecture.empty())
+    ImGui::TextWrapped("Arch  %s", info.adapter_architecture.c_str());
+  ImGui::Text("Backend  %s", text_or(info.backend, "unknown"));
 }
 
 void ImGuiManager::BuildAudioPanel() {
@@ -563,6 +648,43 @@ void ImGuiManager::BuildAudioPanel() {
   } else {
     output_devices_stale_ = true;
   }
+}
+
+void ImGuiManager::BuildEnginePanel() {
+  const auto& config = Config::Get();
+  const auto text_or = [](const std::string& value) {
+    return value.empty() ? std::string("unknown") : value;
+  };
+
+  DrawInfoRows("##engine_build",
+               {
+                   {"RGSS", RgssLabel(config.game.rgss)},
+                   {"Commit", text_or(system_info::git_commit())},
+                   {"Build", text_or(system_info::build_time())},
+               });
+
+  ImGui::Spacing();
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  char memory[32] = {};
+  const uint64_t memory_mb = system_info::memory_mb();
+  if (memory_mb != 0) {
+    std::snprintf(memory, sizeof(memory), "%.1f GB",
+                  static_cast<double>(memory_mb) / 1024.0);
+  } else {
+    std::snprintf(memory, sizeof(memory), "unknown");
+  }
+
+  const std::string cpu = system_info::cpu_model() + "  (" +
+                          std::to_string(system_info::cpu_cores()) + " cores)";
+
+  DrawInfoRows("##engine_system",
+               {
+                   {"OS", text_or(system_info::os_version())},
+                   {"CPU", cpu},
+                   {"Memory", memory},
+               });
 }
 
 void ImGuiManager::BuildAboutPanel() {
@@ -1039,30 +1161,6 @@ void ImGuiManager::BuildFPSWindow() {
       ImGui::Text("submits     %8u (%u bitmap)",
                   static_cast<unsigned>(counters.frame_submits),
                   static_cast<unsigned>(counters.bitmap_submits));
-    }
-
-    if (ImGui::CollapsingHeader("Device")) {
-      const DeviceInfo& info = GPUDevice::Get().info();
-
-      const auto text_or = [](const std::string& value, const char* fallback) {
-        return value.empty() ? fallback : value.c_str();
-      };
-
-      ImGui::TextWrapped("GPU  %s", text_or(info.adapter_device, "unknown"));
-      if (!info.adapter_vendor.empty() || info.vendor_id != 0) {
-        ImGui::TextWrapped("Vendor  %s  (%04X:%04X)",
-                           text_or(info.adapter_vendor, "unknown"),
-                           static_cast<unsigned>(info.vendor_id),
-                           static_cast<unsigned>(info.device_id));
-      }
-      if (!info.adapter_architecture.empty())
-        ImGui::TextWrapped("Arch  %s", info.adapter_architecture.c_str());
-      ImGui::Text("Backend  %s", text_or(info.backend, "unknown"));
-
-      ImGui::Spacing();
-      ImGui::Text("CPU cores  %d", info.cpu_cores);
-      ImGui::Text("System RAM %llu MB",
-                  static_cast<unsigned long long>(info.system_ram_mb));
     }
   }
   ImGui::EndChild();

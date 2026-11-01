@@ -218,6 +218,11 @@ bool Audio::SetOutputDevice(std::string name) {
   return true;
 }
 
+void Audio::SetBackgroundPaused(bool paused) {
+  if (service_)
+    service_->SetPaused(paused);
+}
+
 void Audio::Update() {
   if (!bgm_)
     return;

@@ -26,7 +26,7 @@
 | **2D** | `Bitmap`（Blt、渐变、文字、像素读写）、`Sprite`、`Plane`、`Viewport`、`WindowXP` / `WindowVX`、`TilemapXP` / `TilemapVX`、`Geometry`、`Animation`、精灵批处理、2D 相机 |
 | **3D** | `Node3D` 场景树、透视 / 正交相机、`Light3D`（含阴影）、glTF 模型加载、骨骼蒙皮、动画栈与状态机、PBR 风格材质、`RenderGraph3D`、渲染目标与计算通道、`World3D` 与 2D 合成 |
 | **GPU 直通** | `GPU` 模块把 WebGPU 的缓冲区、纹理、采样器、着色器、绑定组、渲染 / 计算管线与命令编码直接暴露给 Ruby |
-| **音频** | BGM / BGS / ME / SE；WAV、Ogg Vorbis、Ogg Opus；MIDI + SoundFont；独立音量与输出设备选择；`AudioStream` 支持流式播放与控制 |
+| **音频** | BGM / BGS / ME / SE；WAV、Ogg Vorbis、Ogg Opus；MIDI + SoundFont；独立音量与输出设备选择；`AudioStream` 支持流式播放与控制；解码与混音运行在独立音频线程（无线程平台回退单线程） |
 | **输入** | 键盘、鼠标、手柄（多设备、热插拔、震动、扳机 / 摇杆）、多点触摸（最多 16 指）；键位绑定保存在 `Game.ini` |
 | **字体** | `Fonts/` → 系统字库 → 内嵌字体逐级回退；支持文件名与族名、CJK 文本；Windows 默认使用微软雅黑 |
 | **资源** | PhysicsFS 虚拟文件系统；Windows 下自动探测已安装的 RTP；可选 `.acs` 加密容器（需放入 `admenri/` 目录） |
@@ -256,6 +256,7 @@ C = Space,Return,pad:a
 | `Game` | `RTP` / `RTP1`–`RTP3` | 空 | RPG Maker 运行库名称；Windows 下自动探测 |
 | `Display` | `Width` / `Height` | XP：`640×480`；其余：`544×416` | 逻辑分辨率 |
 | `Display` | `VSync` / `Fullscreen` / `FrameSkip` | `false` | 垂直同步、全屏与跳帧 |
+| `Display` | `BackgroundRunning` | `false` | 窗口失焦时是否继续运行；关闭时自动暂停画面、逻辑与音频 |
 | `Window` | `Resizable` | `none` | `none` / `free` / `ratio` |
 | `Audio` | `Soundfont` | `Fonts/Default.sf2` | MIDI 音色库 |
 | `Audio` | `MasterVolume` / `BGMVolume` / `BGSVolume` / `MEVolume` / `SEVolume` | `100` | 音量 |
@@ -269,7 +270,7 @@ C = Space,Return,pad:a
 
 补充说明：
 
-- **F1 / F2**：F1 打开设置面板（可在此添加键位绑定），F2 切换帧率显示。
+- **F1 / F2**：F1 打开设置面板（键位、图形、音频与引擎信息，可在此添加键位绑定），F2 切换帧率显示。
 - **字体**：按 `Fonts/` → 系统字库 → 内嵌字体的顺序解析；文件名（可省略扩展名）与族名均可使用。
 - **手柄**：键盘与手柄映射到同一套 slot；手柄热插拔即用，支持多设备、震动与摇杆 / 扳机。
 - **性能分析**：Windows 下可通过环境变量 `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR`，或 `[Debug]` 段的 `Profiler` / `ProfilerInterval` 开启采样分析。
