@@ -88,6 +88,8 @@ class Config : public Singleton<Config> {
   struct {
     std::string backend = {};
     bool sprite_batch = true;
+    std::string present_sampler = "nearest";
+    std::string upscaler = "off";
   } gfx;
 
   struct {

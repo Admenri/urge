@@ -31,6 +31,7 @@
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_stdinc.h"
 #include "SDL3/SDL_system.h"
 #include "SDL3/SDL_timer.h"
 
@@ -44,6 +45,7 @@
 #include "core/common/exception.h"
 #include "core/common/logger.h"
 #include "core/graphics/gpu.h"
+#include "core/graphics/upscaler.h"
 #include "core/input/input.h"
 #include "core/input/mouse.h"
 #include "core/input/text_input.h"
@@ -182,6 +184,8 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   QuadVertexManager::Reset(new QuadVertexManager());
   SpriteBatch::Reset(new SpriteBatch());
   BitmapQueue::Reset(new BitmapQueue());
+  upscaler_ = std::make_unique<Upscaler>(
+      Upscaler::ParseMode(Config::Get().gfx.upscaler));
 
   root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(config.display.width, config.display.height);
@@ -195,6 +199,7 @@ Graphics::~Graphics() {
   present_ = {};
   screen_.reset();
   root_.reset();
+  upscaler_.reset();
 
   BitmapQueue::Reset(nullptr);
   SpriteBatch::Reset(nullptr);
@@ -680,6 +685,31 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
                   primitive, std::nullopt,
                   {wgpu::ColorTargetState{.format = present_.format}});
 
+    bool linear_sampler =
+        SDL_strcasecmp(Config::Get().gfx.present_sampler.c_str(), "linear") ==
+        0;
+    if (upscaler_) {
+      if (upscaler_->mode() == Upscaler::Mode::kNearest)
+        linear_sampler = false;
+      else if (upscaler_->mode() == Upscaler::Mode::kLinear)
+        linear_sampler = true;
+    }
+
+    wgpu::SamplerDescriptor sampler_desc;
+    sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
+    sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
+    sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
+    sampler_desc.magFilter =
+        linear_sampler ? wgpu::FilterMode::Linear : wgpu::FilterMode::Nearest;
+    sampler_desc.minFilter =
+        linear_sampler ? wgpu::FilterMode::Linear : wgpu::FilterMode::Nearest;
+    present_.sampler = device.device().CreateSampler(&sampler_desc);
+    present_.source_group = util::CreateBindGroup(
+        present_.pipeline.GetBindGroupLayout(2),
+        {{0, util::TextureViewSet(screen_->texture_view())},
+         {1, util::SamplerSet(present_.sampler)}});
+    present_.source_generation = 0;
+
     imgui.SetRenderTargetFormat(present_.format);
 
     present_.surface_generation = device.surface_generation();
@@ -716,11 +746,46 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
       return;
   }
 
+  const glm::ivec2 screen_size = screen_->size();
+  const bool use_upscaler =
+      upscaler_ && upscaler_->UsesShader() &&
+      viewport.width > static_cast<float>(screen_size.x) + 0.5f &&
+      viewport.height > static_cast<float>(screen_size.y) + 0.5f;
+  const glm::ivec2 upscale_size{
+      std::max(1, static_cast<int>(std::lround(viewport.width))),
+      std::max(1, static_cast<int>(std::lround(viewport.height)))};
+
+  const auto screen_view = screen_->texture_view();
+
   present_.primitive.EmitQuad(RectI(0, 0, Width(), Height()), RectI(0, 0, 1, 1),
                               glm::vec4(1.0f));
   const std::uint32_t vertex_count = present_.primitive.Upload();
 
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
+
+  wgpu::TextureView present_source;
+  if (use_upscaler) {
+    present_source = upscaler_->Run(encoder, screen_view, screen_size,
+                                    upscale_size);
+  }
+
+  if (use_upscaler && present_source) {
+    if (present_.source_generation != upscaler_->generation() ||
+        !present_.source_group) {
+      present_.source_group = util::CreateBindGroup(
+          present_.pipeline.GetBindGroupLayout(2),
+          {{0, util::TextureViewSet(present_source)},
+           {1, util::SamplerSet(present_.sampler)}});
+      present_.source_generation = upscaler_->generation();
+    }
+  } else if (present_.source_generation != 0) {
+    present_.source_group = util::CreateBindGroup(
+        present_.pipeline.GetBindGroupLayout(2),
+        {{0, util::TextureViewSet(screen_view)},
+         {1, util::SamplerSet(present_.sampler)}});
+    present_.source_generation = 0;
+  }
+
   {
     wgpu::RenderPassColorAttachment color_attachment;
     color_attachment.view = surface_texture.texture.CreateView(nullptr);
@@ -735,7 +800,7 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
       pass.SetPipeline(present_.pipeline);
       pass.SetBindGroup(0, screen_->scene_group(), 0, nullptr);
       pass.SetBindGroup(1, screen_->object_group(), 0, nullptr);
-      pass.SetBindGroup(2, screen_->texture_group(), 0, nullptr);
+      pass.SetBindGroup(2, present_.source_group, 0, nullptr);
       pass.SetVertexBuffer(0, present_.primitive.buffer(), 0, WGPU_WHOLE_SIZE);
       pass.SetViewport(viewport.x, viewport.y, viewport.width, viewport.height,
                        0.0f, 1.0f);

@@ -111,6 +111,16 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   }
 }
 
+RefPtr<GPUSampler> MakeDefaultSampler() {
+  wgpu::SamplerDescriptor sampler_desc;
+  sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
+  sampler_desc.magFilter = wgpu::FilterMode::Nearest;
+  sampler_desc.minFilter = wgpu::FilterMode::Nearest;
+  return MakeRefCounted<GPUSampler>(g_device.CreateSampler(&sampler_desc));
+}
+
 std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
                                             int32_t x,
                                             int32_t y,
@@ -229,6 +239,12 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
   auto command = encoder.Finish(nullptr);
   CountSubmit(false);
   g_queue.Submit(1, &command);
+
+  if (other->sampler_resource_) {
+    sampler_resource_ = other->sampler_resource_;
+    sampler_ = sampler_resource_->handle();
+    CreateGroup();
+  }
 }
 
 RefPtr<Bitmap> Bitmap::FromSurface(SDL_Surface* surface) {
@@ -264,6 +280,11 @@ int32_t Bitmap::Width() {
 
 int32_t Bitmap::Height() {
   return size_.y;
+}
+
+wgpu::Sampler Bitmap::sampler() {
+  AcquireHandle();
+  return sampler_;
 }
 
 RefPtr<Rect> Bitmap::GetRect() {
@@ -674,6 +695,16 @@ ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
   }
 }
 
+ATTR_DEF(Bitmap, RefPtr<GPUSampler>, Sampler) {
+  if (value.has_value()) {
+    sampler_resource_ = *value ? *value : MakeDefaultSampler();
+    sampler_ = sampler_resource_->handle();
+    CreateGroup();
+    return std::nullopt;
+  }
+  return sampler_resource_;
+}
+
 wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
                                                std::optional<glm::vec4> clear,
                                                bool clear_depth) {
@@ -781,13 +812,8 @@ void Bitmap::CreateResources(const glm::ivec2& size) {
               &object_uniform, sizeof(object_uniform));
   object_uniform_.Unmap();
 
-  wgpu::SamplerDescriptor sampler_desc;
-  sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
-  sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
-  sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
-  sampler_desc.magFilter = wgpu::FilterMode::Nearest;
-  sampler_desc.minFilter = wgpu::FilterMode::Nearest;
-  sampler_ = g_device.CreateSampler(&sampler_desc);
+  sampler_resource_ = MakeDefaultSampler();
+  sampler_ = sampler_resource_->handle();
 
   CreateGroup();
 }

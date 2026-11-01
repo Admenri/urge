@@ -249,6 +249,8 @@ void Config::Save(URGE_EXCEPT) {
 
   parser_.Set("GFX", "Backend", gfx.backend);
   parser_.Set("GFX", "SpriteBatch", gfx.sprite_batch);
+  parser_.Set("GFX", "PresentSampler", gfx.present_sampler);
+  parser_.Set("GFX", "Upscaler", gfx.upscaler);
 
   parser_.Set("Input", "PadBindings", input.pad_bindings);
 
@@ -328,6 +330,9 @@ void Config::Load() {
 
   gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
   gfx.sprite_batch = parser_.GetBool("GFX", "SpriteBatch", gfx.sprite_batch);
+  gfx.present_sampler =
+      parser_.Get("GFX", "PresentSampler", gfx.present_sampler);
+  gfx.upscaler = parser_.Get("GFX", "Upscaler", gfx.upscaler);
 
   input.pad_bindings =
       parser_.GetBool("Input", "PadBindings", input.pad_bindings);

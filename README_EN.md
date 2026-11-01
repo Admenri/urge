@@ -262,6 +262,8 @@ Configuration reference:
 | `Audio` | `OutputDevice` | empty (system default) | Audio output device |
 | `GFX` | `Backend` | empty (auto) | `d3d11` / `d3d12` / `vulkan` / `opengl` / `opengles` / `metal` |
 | `GFX` | `SpriteBatch` | `true` | Sprite batching |
+| `GFX` | `PresentSampler` | `nearest` | Final present sampling: `nearest` / `linear` |
+| `GFX` | `Upscaler` | `off` | Upscaler: `off` / `nearest` / `linear` / `bicubic` / `lanczos` / `fsr1` (only when the window is larger than the logical resolution) |
 | `Input` | `PadBindings` | `false` | Whether the default gamepad bindings have been written |
 | `KeyBinding` | — | — | One line per slot; gamepad entries use `pad:<token>` |
 

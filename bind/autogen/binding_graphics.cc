@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Graphics  (core/graphics/graphics.h:54-109)
+// Graphics  (core/graphics/graphics.h:57-112)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {

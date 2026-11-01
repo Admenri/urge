@@ -23,6 +23,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "SDL3/SDL_events.h"
@@ -37,6 +38,8 @@
 #include "core/scene/node.h"
 
 namespace urge {
+
+class Upscaler;
 
 class ScreenRootNode : public Node {
  public:
@@ -160,6 +163,7 @@ class Graphics : public Singleton<Graphics> {
   SDL_Window* window_ = nullptr;
   RefPtr<ScreenRootNode> root_;
   RefPtr<Bitmap> screen_;
+  std::unique_ptr<Upscaler> upscaler_;
 
   bool frozen_ = false;
   int32_t frame_rate_ = 60;
@@ -199,6 +203,9 @@ class Graphics : public Singleton<Graphics> {
 
     bool srgb_target = false;
     wgpu::RenderPipeline pipeline;
+    wgpu::Sampler sampler;
+    wgpu::BindGroup source_group;
+    uint64_t source_generation = 0;
     PrimitiveEmitter primitive;
   } present_;
 };

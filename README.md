@@ -262,6 +262,8 @@ C = Space,Return,pad:a
 | `Audio` | `OutputDevice` | 空（系统默认） | 音频输出设备 |
 | `GFX` | `Backend` | 空（自动） | `d3d11` / `d3d12` / `vulkan` / `opengl` / `opengles` / `metal` |
 | `GFX` | `SpriteBatch` | `true` | 精灵批处理 |
+| `GFX` | `PresentSampler` | `nearest` | 最终画面采样：`nearest` / `linear` |
+| `GFX` | `Upscaler` | `off` | 放大算法：`off` / `nearest` / `linear` / `bicubic` / `lanczos` / `fsr1`（仅窗口大于逻辑分辨率时生效） |
 | `Input` | `PadBindings` | `false` | 是否已写入手柄默认绑定 |
 | `KeyBinding` | — | — | 每个 slot 一行；手柄项写成 `pad:<token>` |
 

@@ -11,6 +11,7 @@
 #include "binding_color.h"
 #include "binding_disposable.h"
 #include "binding_font.h"
+#include "binding_gpu_sampler.h"
 #include "binding_gpu_texture.h"
 #include "binding_gpu_texture_view.h"
 #include "binding_image.h"
@@ -33,7 +34,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Bitmap  (core/canvas/bitmap.h:44-159)
+// Bitmap  (core/canvas/bitmap.h:45-162)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Bitmap, Disposable);
@@ -834,6 +835,14 @@ BINDING_ATTR_OBJECT_REF(Bitmap,
                         kFontDataType,
                         CheckObject);
 
+// Attribute: sampler (RefPtr<GPUSampler>)
+BINDING_ATTR_OBJECT_REF(Bitmap,
+                        urge::Bitmap,
+                        Sampler,
+                        urge::GPUSampler,
+                        kGPUSamplerDataType,
+                        CheckObject);
+
 void InitBitmapBindingAppend(VALUE klass);
 
 void InitBitmapBinding() {
@@ -868,6 +877,8 @@ void InitBitmapBinding() {
   DefineClassMethod(klass, "from_image", Bitmap_FromImage);
   DefineMethod(klass, "font", Bitmap_Font);
   DefineMethod(klass, "font=", Bitmap_FontEqual);
+  DefineMethod(klass, "sampler", Bitmap_Sampler);
+  DefineMethod(klass, "sampler=", Bitmap_SamplerEqual);
   InitBitmapBindingAppend(klass);
 }
 // --- GENERATED END ---

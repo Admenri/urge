@@ -32,6 +32,7 @@
 #include "core/common/utility.h"
 #include "core/font/font.h"
 #include "core/font/font_renderer.h"
+#include "core/graphics/gpu.h"
 #include "core/render/device.h"
 #include "core/render/primitive.h"
 
@@ -158,6 +159,8 @@ class Bitmap : public Disposable {
 
   URGE_BINDING()
   ATTR(RefPtr<Font>, Font);
+  URGE_BINDING()
+  ATTR(RefPtr<GPUSampler>, Sampler);
 
  public:
   void UpdateWithPixels(URGE_EXCEPT,
@@ -191,10 +194,7 @@ class Bitmap : public Disposable {
     AcquireHandle();
     return depth_stencil_view_;
   }
-  wgpu::Sampler sampler() {
-    AcquireHandle();
-    return sampler_;
-  }
+  wgpu::Sampler sampler();
 
   wgpu::BindGroup scene_group() {
     AcquireHandle();
@@ -226,6 +226,7 @@ class Bitmap : public Disposable {
 
   wgpu::Buffer scene_uniform_, object_uniform_;
   wgpu::Sampler sampler_;
+  RefPtr<GPUSampler> sampler_resource_;
 
   wgpu::BindGroup scene_group_, object_group_, texture_group_;
 
