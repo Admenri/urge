@@ -87,10 +87,13 @@ if(ANDROID)
     set(_urge_clang_resource " -resource-dir=${_urge_clang_resource_dir}")
   endif()
 
-  # bindgen opens libclang by name from LIBCLANG_PATH.  Windows keeps the DLL
-  # next to the compiler in bin/, while the Unix prebuilts place it in lib/
-  # (lib64/ on some revisions).
-  if(WIN32)
+  # An explicit LIBCLANG_PATH wins: the Linux NDK no longer ships libclang.so,
+  # so CI installs libclang-dev and names its directory.  Otherwise Windows
+  # keeps the DLL next to the compiler in bin/, and the Unix prebuilts use
+  # lib/ (lib64/ on some revisions) when they carry it at all.
+  if(DEFINED ENV{LIBCLANG_PATH} AND NOT "$ENV{LIBCLANG_PATH}" STREQUAL "")
+    set(_urge_libclang_dir "$ENV{LIBCLANG_PATH}")
+  elseif(WIN32)
     set(_urge_libclang_dir "${_urge_ndk_bin}")
   else()
     get_filename_component(_urge_libclang_dir
@@ -101,6 +104,12 @@ if(ANDROID)
     if(NOT _urge_libclang_files)
       get_filename_component(_urge_libclang_dir
         "${_urge_ndk_bin}/../lib64" ABSOLUTE)
+      file(GLOB _urge_libclang_files "${_urge_libclang_dir}/libclang*")
+    endif()
+    if(NOT _urge_libclang_files)
+      # NDK r27 dropped libclang from the Linux prebuilt.  Leave bindgen to
+      # its own search instead of pointing it at an empty directory.
+      set(_urge_libclang_dir "")
     endif()
   endif()
 
@@ -122,9 +131,9 @@ if(ANDROID)
     string(REPLACE ";" "\\;" _urge_cargo_path "${_urge_cargo_path}")
     set_property(TARGET wgpu_native APPEND PROPERTY
       CORROSION_ENVIRONMENT_VARIABLES "PATH=${_urge_cargo_path}")
-  else()
+  elseif(_urge_libclang_dir)
     # libclang finds its siblings (libLLVM, ...) through the loader search
-    # path, which does not include the NDK's lib directory by default.
+    # path, which does not include the chosen directory by default.
     set(_urge_cargo_lib_path "${_urge_libclang_dir}")
     if(APPLE)
       if(DEFINED ENV{DYLD_LIBRARY_PATH} AND
@@ -145,8 +154,11 @@ if(ANDROID)
     endif()
   endif()
 
+  if(_urge_libclang_dir)
+    corrosion_set_env_vars(wgpu_native
+      "LIBCLANG_PATH=${_urge_libclang_dir}")
+  endif()
   corrosion_set_env_vars(wgpu_native
-    "LIBCLANG_PATH=${_urge_libclang_dir}"
     "BINDGEN_EXTRA_CLANG_ARGS=--target=${_urge_android_target} --sysroot=${_urge_ndk_sysroot}${_urge_clang_resource}")
 
   set(OS_LIBRARIES android log)

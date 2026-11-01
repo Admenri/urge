@@ -225,11 +225,52 @@ jobs:
           echo "URGE_BUILD_TOOLS=$BUILD_TOOLS" >> "$GITHUB_ENV"
           echo "URGE: compileSdk=$COMPILE_SDK buildTools=$BUILD_TOOLS"
 
+      # NDK r27's Linux prebuilt no longer carries libclang.so; bindgen needs a
+      # host one to parse wgpu's C headers.
+      - name: libclang for bindgen
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libclang-dev
+          LIBCLANG_FILE="$(find /usr/lib/llvm-* -name 'libclang.so*' 2>/dev/null \
+            | sort -V | tail -n 1 || true)"
+          if [ -z "$LIBCLANG_FILE" ]; then
+            LIBCLANG_FILE="$(find /usr/lib -name 'libclang.so*' 2>/dev/null \
+              | sort -V | tail -n 1 || true)"
+          fi
+          if [ -z "$LIBCLANG_FILE" ]; then
+            echo "no system libclang found" >&2
+            exit 1
+          fi
+          echo "LIBCLANG_PATH=$(dirname "$LIBCLANG_FILE")" >> "$GITHUB_ENV"
+          echo "URGE: LIBCLANG_PATH=$(dirname "$LIBCLANG_FILE")"
+
       - name: Configure
         run: cmake --preset android-arm64
 
       - name: Build native
-        run: cmake --build --preset android-arm64
+        run: |
+          set -o pipefail
+          set +e
+          cmake --build --preset android-arm64 2>&1 \
+            | tee build-android.log \
+            | grep -vE 'warning:|note:|warnings? generated|In file included from|^[[:space:]]*[0-9]+ \||^[[:space:]]*\^|^[[:space:]]*\|'
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::group::Errors from the native build"
+            grep -nE 'error:|FAILED:|panicked at|fatal error|Unable to find' \
+              build-android.log | tail -60 || true
+            echo "::endgroup::"
+          fi
+          exit "$status"
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: android-native-build-log
+          path: build-android.log
+          retention-days: 7
 
       - name: Build APK
         run: |
