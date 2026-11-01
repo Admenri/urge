@@ -79,7 +79,7 @@ namespace {
 constexpr int kMaxDepthLimit = 192;
 constexpr std::size_t kMaxSamples = 1u << 20;
 constexpr std::uint32_t kModuleRefreshSamples = 4096;
-constexpr int kHotkeyVirtualKey = VK_F4;
+constexpr int kHotkeyVirtualKey = VK_F3;
 
 constexpr std::size_t kMaxTreeNodes = 200000;
 constexpr int kTreeLines = 220;
