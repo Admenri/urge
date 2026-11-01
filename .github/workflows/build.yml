@@ -1,0 +1,185 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: windows-amd64
+    runs-on: windows-latest
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # wgpu-native is built by Corrosion, which drives cargo.
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          # The presets pin "Visual Studio 18 2026"; older images still carry
+          # Visual Studio 17, so pick whichever the machine actually has.
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $generator = "Visual Studio 17 2022"
+          if (Test-Path $vswhere) {
+            $line = & $vswhere -latest -products * -property catalog_productLineVersion
+            if ($line -match "^18") { $generator = "Visual Studio 18 2026" }
+          }
+          Write-Host "URGE: generator = $generator"
+          cmake -S . -B build/ci -G $generator -A x64 -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: Build
+        run: cmake --build build/ci --config RelWithDebInfo --target Game
+
+      - name: Stage
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/ci/app/RelWithDebInfo/Game.exe dist/urge-windows-x64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urge-windows-amd64
+          path: dist/urge-windows-x64.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  wasm:
+    name: emscripten-wasm32
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+          actions-cache-folder: emsdk-cache
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Configure
+        run: cmake --preset emscripten-wasm32
+
+      - name: Build
+        run: cmake --build --preset emscripten-wasm32
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          out=build/emscripten-wasm32/app
+          mkdir -p dist/tools
+          cp "$out/Game.html" "$out/Game.js" "$out/Game.wasm" \
+             "$out/urge-helper.js" "$out/async_mapping.js" dist/
+          cp app/build_mapping.py dist/tools/
+          cat > dist/README.txt <<'EOF'
+          URGE web build
+          ==============
+
+          Serve this directory over HTTP (WebGPU needs a secure context;
+          localhost counts).  Open Game.html and drop the game's files in the
+          page, or publish a game directory beside the module:
+
+              python tools/build_mapping.py --input <game dir> --output async_mapping.js
+
+          async_mapping.js indexes the assets so the module can fetch them on
+          demand; the bundled one is empty.
+          EOF
+          (cd dist && zip -9 -r ../urge-emscripten-wasm32.zip .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urge-emscripten-wasm32
+          path: urge-emscripten-wasm32.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  android:
+    name: android-aarch64
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Android SDK packages
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          if [ -z "${ANDROID_HOME:-}" ]; then
+            echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          fi
+          SDKMANAGER="$(command -v sdkmanager || true)"
+          if [ -z "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$SDK" -path '*/cmdline-tools/*/bin/sdkmanager' | head -n 1)"
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-37" "build-tools;36.0.0" >/dev/null
+
+      - name: Configure
+        run: cmake --preset android-arm64
+
+      - name: Build native
+        run: cmake --build --preset android-arm64
+
+      - name: Build APK
+        run: |
+          set -euo pipefail
+          # .gitattributes checks the wrapper out with CRLF outside Windows.
+          sed -i 's/\r$//' android/gradlew
+          chmod +x android/gradlew
+          cd android
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Stage
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             dist/urge-android-aarch64.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urge-android-aarch64
+          path: dist/urge-android-aarch64.apk
+          if-no-files-found: error
+          retention-days: 14

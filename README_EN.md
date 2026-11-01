@@ -108,6 +108,8 @@ If the clone is missing submodules:
 git submodule update --init --recursive
 ```
 
+The repository ships `.github/workflows/build.yml`: pushes to `master`, `v*` tags and manual runs build the Windows x64 executable, an Emscripten bundle (including `build_mapping.py`) and an Android arm64 APK, all downloadable from the run's Artifacts.
+
 ### 2.3 Windows (x64)
 
 ```bash

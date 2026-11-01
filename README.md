@@ -108,6 +108,8 @@ cd urge
 git submodule update --init --recursive
 ```
 
+仓库自带 `.github/workflows/build.yml`：推送 `master`、打 `v*` 标签或手动触发时，会构建 Windows x64 可执行文件、Emscripten 包（含 `build_mapping.py`）与 Android arm64 APK，产物在 Actions 运行页面的 Artifacts 中下载。
+
 ### 2.3 Windows（x64）
 
 ```bash
