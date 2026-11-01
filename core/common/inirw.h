@@ -26,6 +26,7 @@
 #include <cctype>
 #include <charconv>
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <istream>
 #include <sstream>
@@ -130,9 +131,11 @@ class IniFile {
     auto s = Get(section, key);
     if (s.empty())
       return defaultVal;
-    float value = defaultVal;
-    const auto parsed = std::from_chars(s.data(), s.data() + s.size(), value);
-    if (parsed.ec != std::errc() || parsed.ptr != s.data() + s.size())
+    // libc++ 18 (the Android NDK) declares the floating-point from_chars
+    // overloads deleted; strtof is the portable spelling.
+    char* end = nullptr;
+    const float value = std::strtof(s.c_str(), &end);
+    if (end == s.c_str() || *end != '\0')
       return defaultVal;
     return value;
   }
