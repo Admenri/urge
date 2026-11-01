@@ -174,31 +174,51 @@ jobs:
           # redirect keeps yes' SIGPIPE notice out of the log.
           (yes | "$SDKMANAGER" --licenses) >/dev/null 2>&1 || true
 
-          # Platform 37 is a canary-only package on some runner images.  Try
-          # it there first, then fall back to the newest stable platform.
-          COMPILE_SDK=37
-          if ! "$SDKMANAGER" --channel=3 "platforms;android-37" >/dev/null 2>&1; then
-            COMPILE_SDK="$("$SDKMANAGER" --list 2>/dev/null \
-              | grep -oE 'platforms;android-[0-9]+' \
-              | sed 's/.*android-//' | sort -n | tail -n 1 || true)"
-            if [ -z "$COMPILE_SDK" ]; then
-              echo "no Android platform is available from sdkmanager" >&2
-              exit 1
-            fi
-            "$SDKMANAGER" "platforms;android-$COMPILE_SDK" >/dev/null
+          # Prefer what the image already carries.  Asking the repository for a
+          # brand-new platform is what previously made sdkmanager advertise
+          # package 37 and then refuse to install it.
+          INSTALLED="$("$SDKMANAGER" --list_installed 2>/dev/null || true)"
+          COMPILE_SDK="$(printf '%s\n' "$INSTALLED" \
+            | grep -oE 'platforms;android-[0-9]+' \
+            | sed 's/.*android-//' | sort -n | tail -n 1 || true)"
+          INSTALLED_BUILD_TOOLS="$(printf '%s\n' "$INSTALLED" \
+            | grep -oE 'build-tools;[0-9]+\.[0-9]+\.[0-9]+' \
+            | sed 's/build-tools;//' | sort -V | tail -n 1 || true)"
+
+          # A bare image: install the project's target, newest first.
+          if [ -z "$COMPILE_SDK" ]; then
+            for candidate in 37 36 35; do
+              if "$SDKMANAGER" "platforms;android-$candidate" >/dev/null 2>&1 \
+                 || "$SDKMANAGER" --channel=3 "platforms;android-$candidate" >/dev/null 2>&1; then
+                COMPILE_SDK=$candidate
+                break
+              fi
+            done
+          fi
+          if [ -z "$COMPILE_SDK" ]; then
+            echo "no Android platform could be installed" >&2
+            exit 1
           fi
 
+          # Keep the project's build-tools when the channel has them; otherwise
+          # use the revision already installed on the image.
           BUILD_TOOLS=36.0.0
-          if ! "$SDKMANAGER" "build-tools;36.0.0" >/dev/null 2>&1 &&
-             ! "$SDKMANAGER" --channel=3 "build-tools;36.0.0" >/dev/null 2>&1; then
-            BUILD_TOOLS="$("$SDKMANAGER" --list 2>/dev/null \
-              | grep -oE 'build-tools;[0-9]+\.[0-9]+\.[0-9]+' \
-              | sed 's/build-tools;//' | sort -V | tail -n 1 || true)"
-            if [ -z "$BUILD_TOOLS" ]; then
-              echo "no build-tools package is available from sdkmanager" >&2
-              exit 1
-            fi
-            "$SDKMANAGER" "build-tools;$BUILD_TOOLS" >/dev/null
+          if ! "$SDKMANAGER" "build-tools;36.0.0" >/dev/null 2>&1 \
+             && ! "$SDKMANAGER" --channel=3 "build-tools;36.0.0" >/dev/null 2>&1; then
+            BUILD_TOOLS="$INSTALLED_BUILD_TOOLS"
+          fi
+          if [ -z "$BUILD_TOOLS" ]; then
+            for candidate in 36.0.0 35.0.0 34.0.0; do
+              if "$SDKMANAGER" "build-tools;$candidate" >/dev/null 2>&1 \
+                 || "$SDKMANAGER" --channel=3 "build-tools;$candidate" >/dev/null 2>&1; then
+                BUILD_TOOLS=$candidate
+                break
+              fi
+            done
+          fi
+          if [ -z "$BUILD_TOOLS" ]; then
+            echo "no build-tools package could be installed" >&2
+            exit 1
           fi
 
           echo "URGE_COMPILE_SDK=$COMPILE_SDK" >> "$GITHUB_ENV"

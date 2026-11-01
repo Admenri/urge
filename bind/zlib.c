@@ -547,10 +547,9 @@ rb_zlib_crc32_combine(VALUE klass, VALUE crc1, VALUE crc2, VALUE len2)
 static VALUE
 rb_zlib_crc_table(VALUE obj)
 {
-#if !defined(HAVE_TYPE_Z_CRC_T)
-    /* z_crc_t is defined since zlib-1.2.7. */
-    typedef unsigned long z_crc_t;
-#endif
+    /* zlib.h defines z_crc_t since 1.2.7, and this build always uses at least
+       that.  The old fallback typedef was unsigned long, which disagrees with
+       the header on wasm32 (unsigned int) and failed the assignment below. */
     const z_crc_t *crctbl;
     VALUE dst;
     int i;
