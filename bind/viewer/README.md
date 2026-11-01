@@ -6,9 +6,9 @@
 本目录不参与编译，不产生任何 C++ 目标，`bind/CMakeLists.txt` 也不会 glob 到这里。
 
 ```
-bind/api_reference.json ──┬──▶ index.html      浏览器 UI（类树 / 搜索 / 签名 / 未能导出项）
+bind/api_reference.json ──┬──▶ index.html + config.js   浏览器 UI（类树 / 搜索 / 签名 / 未能导出项）
                           ├──▶ viewer.py       命令行查询（可被脚本或智能体调用）
-                          └──▶ api_embed.js    file:// 兜底快照（由 viewer.py embed 生成）
+                          └──▶ api_embed.js    file:// / 离线兜底快照（由 viewer.py embed 生成）
 ```
 
 ## 目录内容
@@ -16,13 +16,44 @@ bind/api_reference.json ──┬──▶ index.html      浏览器 UI（类树
 | 文件 | 说明 |
 | --- | --- |
 | `index.html` | 单文件 UI，零依赖、零 CDN。左边类树，右边签名表，顶部全局搜索 |
+| `config.js` | 部署配置：GitHub 上的 IR 地址与自动刷新间隔 |
 | `viewer.py` | 命令行入口：`serve` / `embed` / `list` / `show` / `search` / `stats` |
-| `api_embed.js` | 由 `viewer.py embed` 生成的兜底数据（`file://` 下用） |
+| `api_embed.js` | 由 `viewer.py embed` 生成的兜底数据（`file://` / 离线用） |
 | `README.md` | 本文件 |
+
+## 数据来源
+
+页面按下面的顺序寻找 IR，第一个可用的生效：
+
+1. `?ir=<url>` 查询参数（临时预览某个分支）
+2. `config.js` 里的 `irUrl`（默认是 GitHub 上本仓库的 `bind/api_reference.json`）
+3. 页面同目录的 `api_reference.json`（服务器自己拉取文件的部署方式）
+4. `../api_reference.json`（仓库内布局，`bind/` 的上一级）
+5. `api_embed.js` 快照
+
+在 `localhost` / `127.0.0.1` 下会先试本地文件，所以本地开发始终看到工作区的最新 IR；
+部署到其他域名时先请求 GitHub。右上角徽标签会显示当前来源（`github` / `local` / `custom` / `embedded`）。
+
+## 部署到服务器
+
+查看器是纯静态页面，不需要后端。把 `index.html` 和 `config.js` 上传到任意静态站点即可：
+
+```js
+// config.js
+window.URGE_VIEWER_CONFIG = {
+  irUrl: "https://raw.githubusercontent.com/Admenri/urge/master/bind/api_reference.json",
+  refreshSeconds: 0,   // 例如改成 300 则每 5 分钟重新拉取
+};
+```
+
+- 仓库或分支变了，只改 `irUrl`。
+- 想试某个分支而不用改文件：`index.html?ir=https://raw.githubusercontent.com/<owner>/<repo>/<branch>/bind/api_reference.json`。
+- 服务器可以定期把 JSON 拉到页面同目录，`config.js` 里把 `irUrl` 留空即可只读本地文件。
+- 所有请求都带 `cache=` 参数和 `no-store`，不会读到 CDN 上的旧 JSON；右上角 Reload 按钮可手动刷新。
 
 ## 两种打开方式
 
-**推荐：起本地服务**（页面会实时读取 IR，改完头文件重跑一次生成器就能看到最新结果）
+**推荐：起本地服务**（`localhost` 下优先读取工作区的 IR，改完头文件重跑一次生成器就能看到最新结果）
 
 ```bash
 python bind/viewer/viewer.py serve          # 默认 127.0.0.1:8770，自动开浏览器
@@ -31,14 +62,14 @@ python bind/viewer/viewer.py serve --port 8800 --no-open
 
 只绑定回环地址 —— 它会把 `bind/` 暴露成 HTTP，没有鉴权，不要对外。
 
-**离线：双击 `index.html`**。此时浏览器禁止 `file://` 下的 `fetch`，页面会自动退回
-`api_embed.js` 里的快照。首次使用前要先落一份快照：
+**离线：双击 `index.html`**。此时浏览器禁止 `file://` 下的 `fetch`，页面会依次尝试
+本地/远程 IR，最后退回 `api_embed.js` 里的快照。首次使用前要先落一份快照：
 
 ```bash
 python bind/viewer/viewer.py embed
 ```
 
-> 页面右上角会标出当前数据来源（`live` / `embedded`）。看到 `embedded` 就说明读的是快照，
+> 页面右上角会标出当前数据来源；看到 `embedded` 就说明读的是快照，
 > 重新生成了 IR 之后记得重跑 `embed`。
 
 ## 命令行查询

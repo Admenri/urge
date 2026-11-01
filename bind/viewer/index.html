@@ -156,6 +156,14 @@
     opacity: 0; transition: opacity .18s; pointer-events: none; z-index: 50;
   }
   .toast.on { opacity: .92; }
+  header button.reload {
+    padding: 6px 12px; font: inherit; font-size: 13px; border-radius: var(--radius);
+    border: 1px solid var(--border-strong); background: var(--bg); color: var(--text);
+    cursor: pointer;
+  }
+  header button.reload:hover { border-color: var(--accent); color: var(--accent); }
+  .errlist { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; }
+  .errlist li { margin: 2px 0; word-break: break-all; }
 </style>
 </head>
 <body>
@@ -170,6 +178,7 @@
     <input id="q" type="search" placeholder="Search the API &mdash; e.g. bitmap, press?" autocomplete="off" spellcheck="false">
     <div id="suggest"></div>
   </div>
+  <button id="reload" class="reload" type="button" title="Fetch the API JSON again">Reload</button>
 </header>
 
 <div id="layout">
@@ -178,17 +187,69 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- Optional deployment settings; a 404 here simply keeps the defaults. -->
+<script src="config.js"></script>
+
 <script>
 "use strict";
 
 /* ------------------------------------------------------------------ *
- * Data loading.  Over HTTP we read api_reference.json live; from
- * file:// the fetch is blocked by CORS, so we fall back to the
- * api_embed.js snapshot that `viewer.py embed` writes.
+ * Data loading.
  *
- * The IR sits one level up (bind/api_reference.json, next to this
- * folder), which is why the fetch path is `../`.
+ * The page is meant to be published on a static server and read the IR
+ * straight from GitHub.  Sources are tried in this order:
+ *
+ *   ?ir=<url>                    explicit override, wins everywhere
+ *   config.js irUrl              the deployed source (default: GitHub raw)
+ *   api_reference.json           a server that pulls the file itself
+ *   ../api_reference.json        the repository layout, next to bind/
+ *   api_embed.js                 offline snapshot written by viewer.py
+ *
+ * On localhost the local files come first, so `viewer.py serve` keeps showing
+ * the working tree; anywhere else the GitHub copy wins.  Fetches are uncached
+ * and cache-busted because the JSON changes with every commit but its URL does
+ * not.
  * ------------------------------------------------------------------ */
+
+var DEFAULT_IR_URL =
+  "https://raw.githubusercontent.com/Admenri/urge/master/bind/api_reference.json";
+
+function viewerConfig() {
+  return window.URGE_VIEWER_CONFIG || {};
+}
+
+function isLocalHost() {
+  if (location.protocol === "file:") return true;
+  var host = location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host === "[::1]" ||
+         host === "::1";
+}
+
+function irCandidates() {
+  var list = [];
+  var override = new URLSearchParams(location.search).get("ir");
+  if (override) list.push({ url: override, source: "custom" });
+
+  var config = viewerConfig();
+  var remote = config.irUrl === undefined ? DEFAULT_IR_URL : config.irUrl;
+  var locals = [
+    { url: "api_reference.json", source: "local" },
+    { url: "../api_reference.json", source: "local" },
+  ];
+  var remotes = remote ? [{ url: remote, source: "github" }] : [];
+
+  return list.concat(isLocalHost() ? locals.concat(remotes) : remotes.concat(locals));
+}
+
+async function fetchIR(url) {
+  var target = url + (url.indexOf("?") >= 0 ? "&" : "?") + "cache=" + Date.now();
+  var response = await fetch(target, { cache: "no-store" });
+  if (!response.ok) throw new Error("HTTP " + response.status);
+  var ir = await response.json();
+  if (!ir || (!Array.isArray(ir.classes) && !Array.isArray(ir.modules)))
+    throw new Error("not a binding IR");
+  return ir;
+}
 
 function loadEmbedded() {
   return new Promise(function (resolve) {
@@ -201,15 +262,31 @@ function loadEmbedded() {
 }
 
 async function loadIR() {
-  try {
-    var r = await fetch("../api_reference.json", { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status);
-    return { ir: await r.json(), source: "live" };
-  } catch (e) {
-    await loadEmbedded();
-    if (window.__URGE_API__) return { ir: window.__URGE_API__, source: "embedded" };
-    return { ir: null, source: "none" };
+  var errors = [];
+  var candidates = irCandidates();
+  for (var i = 0; i < candidates.length; i++) {
+    try {
+      return {
+        ir: await fetchIR(candidates[i].url),
+        source: candidates[i].source,
+        url: candidates[i].url,
+        errors: errors,
+      };
+    } catch (e) {
+      errors.push(candidates[i].url + "  (" + (e && e.message ? e.message : e) + ")");
+    }
   }
+
+  await loadEmbedded();
+  if (window.__URGE_API__) {
+    return {
+      ir: window.__URGE_API__,
+      source: "embedded",
+      url: "api_embed.js",
+      errors: errors,
+    };
+  }
+  return { ir: null, source: "none", url: "", errors: errors };
 }
 
 /* ------------------------------------------------------------------ *
@@ -436,7 +513,10 @@ function returnsOf(m) {
  * State
  * ------------------------------------------------------------------ */
 
-var STATE = { ir: null, source: "none", owners: [], memberIndex: [], selected: null };
+var STATE = {
+  ir: null, source: "none", url: "", fetched_at: "",
+  owners: [], memberIndex: [], selected: null
+};
 
 function esc(s) {
   return String(s === null || s === undefined ? "" : s)
@@ -444,9 +524,11 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
-function buildState(ir, source) {
+function buildState(ir, source, url) {
   STATE.ir = ir;
   STATE.source = source;
+  STATE.url = url || "";
+  STATE.fetched_at = new Date().toLocaleString();
   STATE.owners = (ir.classes || []).concat(ir.modules || []);
   STATE.memberIndex = [];
   STATE.owners.forEach(function (entry) {
@@ -546,7 +628,8 @@ function renderOverview() {
   html += "</div>";
 
   html += '<section><h3>Generator</h3><div class="grid">' +
-    "<div class='cell'><div class='k'>IR</div><div class='v'>bind/api_reference.json</div></div>" +
+    "<div class='cell'><div class='k'>IR source</div><div class='v'>" + esc(STATE.url || "\u2014") + "</div></div>" +
+    "<div class='cell'><div class='k'>Fetched</div><div class='v'>" + esc(STATE.fetched_at || "\u2014") + "</div></div>" +
     "<div class='cell'><div class='k'>Generated at</div><div class='v'>" + esc(meta.generated_at || "\u2014") + "</div></div>" +
     "<div class='cell'><div class='k'>Header scanner</div><div class='v'>" + esc(meta.generator || "\u2014") + "</div></div>" +
     "<div class='cell'><div class='k'>Rules</div><div class='v'>" + esc(meta.rules || "\u2014") + "</div></div>" +
@@ -756,6 +839,33 @@ function moveCursor(delta) {
  * Boot
  * ------------------------------------------------------------------ */
 
+function updateMeta(loaded) {
+  var meta = loaded.ir.meta || {};
+  var parts = [];
+  if (meta.generated_at) parts.push("generated " + meta.generated_at);
+  parts.push(loaded.source + " data");
+  document.getElementById("meta").textContent = parts.join("  \u00b7  ");
+}
+
+function showIR(loaded) {
+  buildState(loaded.ir, loaded.source, loaded.url);
+  updateMeta(loaded);
+  renderOverview();
+  renderNav();
+  if (STATE.selected && ownerOf(STATE.selected.owner))
+    renderDetail(STATE.selected.owner, STATE.selected.member);
+}
+
+async function refresh() {
+  var loaded = await loadIR();
+  if (!loaded.ir) {
+    toast("reload failed");
+    return;
+  }
+  showIR(loaded);
+  toast("reloaded " + loaded.source + " data");
+}
+
 async function boot() {
   suggestEl = document.getElementById("suggest");
   inputEl = document.getElementById("q");
@@ -763,27 +873,24 @@ async function boot() {
   var loaded = await loadIR();
   if (!loaded.ir) {
     document.getElementById("meta").textContent = "no IR found";
+    var tried = (loaded.errors || []).map(function (error) {
+      return "<li><code>" + esc(error) + "</code></li>";
+    }).join("");
     document.getElementById("main").innerHTML =
       '<h2 class="title">Cannot reach the IR</h2>' +
-      '<div class="banner">Neither <code>api_reference.json</code> (blocked when the page is opened ' +
-      'from <code>file://</code>) nor <code>api_embed.js</code> could be loaded.</div>' +
-      '<p class="hint">Either serve the folder:</p>' +
+      '<div class="banner">No binding JSON could be loaded. Sources tried:' +
+      '<ul class="errlist">' + tried + "</ul></div>" +
+      '<p class="hint">Set <code>irUrl</code> in <code>config.js</code>, pass ' +
+      '<code>?ir=&lt;url&gt;</code> to this page, or serve the repository:</p>' +
       '<pre class="mono" style="background:var(--code-bg);padding:12px;border-radius:8px;border:1px solid var(--border)">' +
       "python bind/viewer/viewer.py serve</pre>" +
-      '<p class="hint">or inline a snapshot so double-clicking works:</p>' +
+      '<p class="hint">An offline snapshot also works:</p>' +
       '<pre class="mono" style="background:var(--code-bg);padding:12px;border-radius:8px;border:1px solid var(--border)">' +
       "python bind/viewer/viewer.py embed</pre>";
     return;
   }
 
-  buildState(loaded.ir, loaded.source);
-  var meta = loaded.ir.meta || {};
-  document.getElementById("meta").textContent =
-    meta.generated_at ? "generated " + meta.generated_at + "  \u00b7  " + loaded.source :
-                        loaded.source + " data";
-
-  renderOverview();
-  renderNav();
+  showIR(loaded);
 
   inputEl.addEventListener("input", function () {
     renderSuggest(computeHits(inputEl.value), inputEl.value);
@@ -812,6 +919,11 @@ async function boot() {
       ev.preventDefault(); inputEl.focus();
     }
   });
+
+  document.getElementById("reload").addEventListener("click", refresh);
+
+  var seconds = Number(viewerConfig().refreshSeconds || 0);
+  if (seconds > 0) setInterval(refresh, Math.max(seconds, 5) * 1000);
 
   // Deep link: #Sprite#bitmap
   var hash = decodeURIComponent(location.hash.replace(/^#/, ""));
