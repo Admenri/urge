@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Python packages
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
       # wgpu-native is built by Corrosion, which drives cargo.
       - uses: dtolnay/rust-toolchain@stable
 
@@ -76,6 +79,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Python packages
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
 
       - uses: mymindstorm/setup-emsdk@v14
         with:
@@ -129,6 +135,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python packages
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
 
       - uses: actions/setup-java@v4
         with:

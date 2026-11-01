@@ -1,0 +1,5 @@
+# Python packages used while configuring the build.
+#
+# third_party/webgpu-cpp renders the wgpu:: C++ wrapper through Jinja2 at
+# configure time, so the generator needs this before CMake can finish.
+jinja2>=3.1

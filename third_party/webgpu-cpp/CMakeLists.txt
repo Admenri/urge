@@ -32,6 +32,20 @@ message(STATUS "Generating webgpu cpp header from ${WEBGPU_NATIVE_HEADER}")
 message(STATUS "Output directory: ${WEBGPUCPP_AUTOGEN_DIR}")
 
 # Run the parser/renderer to produce webgpu_cpp.hpp (plus webgpu_cpp.hpp.json).
+# The renderer imports Jinja2, which a bare Python install does not carry; say
+# so here instead of surfacing a generator traceback.
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}" -B -c "import jinja2"
+  RESULT_VARIABLE _JINJA_RESULT
+  OUTPUT_QUIET
+  ERROR_QUIET
+)
+if (NOT _JINJA_RESULT EQUAL 0)
+  message(FATAL_ERROR
+    "webgpu-cpp's generator needs Jinja2.  Install it with:\n"
+    "  ${Python3_EXECUTABLE} -m pip install -r ${CMAKE_SOURCE_DIR}/requirements.txt")
+endif()
+
 execute_process(
   COMMAND "${Python3_EXECUTABLE}" -B
           "${CMAKE_CURRENT_SOURCE_DIR}/autogen.py"

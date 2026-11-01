@@ -79,7 +79,7 @@ urge/
 | 工具 | 要求 |
 | --- | --- |
 | CMake | ≥ 3.30；Windows 预设使用 `Visual Studio 18 2026` 生成器，需要支持该生成器的 CMake（较新的 4.x） |
-| Python | 3.x，且 `python` / `python3` / `py` 位于 `PATH` 中（配置期生成 Ruby 绑定；Web 端还用于资源索引） |
+| Python | 3.x，且 `python` / `python3` / `py` 位于 `PATH` 中（配置期生成 Ruby 绑定；Web 端还用于资源索引）；另需安装 `jinja2`（生成 WebGPU C++ 头）：`pip install -r requirements.txt` |
 | Git | 克隆时需拉取子模块 |
 | C++ 编译器 | 支持 C++20 |
 | Rust | stable 工具链。桌面端与 Android 构建 wgpu-native 必需；Web 端使用浏览器 WebGPU，不需要 Rust |

@@ -79,7 +79,7 @@ Tools needed on every platform:
 | Tool | Requirement |
 | --- | --- |
 | CMake | ≥ 3.30; the Windows preset uses the `Visual Studio 18 2026` generator, so it needs a CMake release that supports it (a recent 4.x) |
-| Python | 3.x, with `python` / `python3` / `py` on `PATH` (generates the Ruby bindings at configure time; also indexes web assets) |
+| Python | 3.x, with `python` / `python3` / `py` on `PATH` (generates the Ruby bindings at configure time; also indexes web assets).  `jinja2` is needed as well for the WebGPU C++ header: `pip install -r requirements.txt` |
 | Git | Needed to fetch the submodules |
 | C++ compiler | C++20 support |
 | Rust | Stable toolchain. Required for wgpu-native on desktop and Android; not needed for the web build (it uses the browser's WebGPU) |
