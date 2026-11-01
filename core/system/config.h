@@ -105,13 +105,20 @@ class Config : public Singleton<Config> {
   bool vx() const { return game.rgss == 2; }
   bool vxa() const { return game.rgss == 3; }
 
+  // Writes back the fields that moved away from their loaded value; see
+  // UpdateBaseline().
   void Save(URGE_EXCEPT);
 
  private:
   void Load();
+  // Captures every mapped field right after loading.  Save() writes a field
+  // only when it differs from this snapshot, so values that Load() derived or
+  // normalized stay out of the file, while explicit later changes are kept.
+  void UpdateBaseline();
 
   std::string inifile_;
   ini::IniFile parser_;
+  std::vector<std::string> baseline_;
 };
 
 }

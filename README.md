@@ -273,6 +273,8 @@ C = Space,Return,pad:a
 - **字体**：按 `Fonts/` → 系统字库 → 内嵌字体的顺序解析；文件名（可省略扩展名）与族名均可使用。
 - **手柄**：键盘与手柄映射到同一套 slot；手柄热插拔即用，支持多设备、震动与摇杆 / 扳机。
 - **性能分析**：Windows 下可通过环境变量 `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR`，或 `[Debug]` 段的 `Profiler` / `ProfilerInterval` 开启采样分析。
+- **配置保存**：关闭时只把运行期间改动过的项写回 ini。加载时计算或转换得到的值（例如按 `Scripts` 扩展名推断的 `RGSS`、为兼容 ANSI 而转成 UTF-8 的 `Title`）不会回写；`Title` 始终保留文件原文，其余项在显式修改（包括脚本 `Config.set_value`）后才会保存。
+- **配置读写**：`Config.get_value` / `Config.set_value` 读写的是映射后的内存值，与引擎内部字段保持一致。
 
 ### 2.7 常用构建选项
 

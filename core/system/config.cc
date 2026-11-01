@@ -182,6 +182,283 @@ std::string NormalizeUTF8(const std::string& text) {
   return AnsiToUTF8(text);
 }
 
+int32_t ParseInteger(const std::string& text, int32_t fallback) {
+  int32_t value = fallback;
+  const auto parsed =
+      std::from_chars(text.data(), text.data() + text.size(), value);
+  if (parsed.ec != std::errc() || parsed.ptr != text.data() + text.size())
+    return fallback;
+  return value;
+}
+
+bool ParseBoolean(const std::string& text, bool fallback) {
+  if (text.empty())
+    return fallback;
+
+  const auto equal_ignore_case = [](const std::string& left,
+                                    const char* right) {
+    const size_t length = SDL_strlen(right);
+    return left.size() == length &&
+           SDL_strncasecmp(left.c_str(), right, length) == 0;
+  };
+  if (equal_ignore_case(text, "true") || text == "1" ||
+      equal_ignore_case(text, "yes"))
+    return true;
+  return false;
+}
+
+std::string BooleanText(bool value) {
+  return value ? "true" : "false";
+}
+
+enum class ConfigPersist {
+  // Written back when the value moved away from what Load() produced.
+  kOnChange,
+  // Never written by Save(): the file keeps the text the game author wrote.
+  kNever,
+};
+
+// One entry of the ini <-> memory map.  Load() applies the entries in order,
+// so a field that computes a default can rely on everything above it; Save()
+// compares against the snapshot taken after loading rather than writing the
+// whole struct back.
+struct ConfigField {
+  const char* section;
+  const char* key;
+  ConfigPersist persist;
+  std::string (*get)(const Config&);
+  void (*set)(Config&, const std::string&);
+  void (*after_load)(Config&);
+  std::string (*fallback)(const Config&);
+};
+
+void DeriveRGSSVersion(Config& config) {
+  if (config.game.rgss != 0)
+    return;
+
+  const auto dot = config.game.scripts.find_last_of('.');
+  const std::string ext = dot == std::string::npos
+                              ? config.game.scripts
+                              : config.game.scripts.substr(dot);
+
+  if (ext == ".rxdata")
+    config.game.rgss = 1;
+  else if (ext == ".rvdata")
+    config.game.rgss = 2;
+  else if (ext == ".rvdata2")
+    config.game.rgss = 3;
+}
+
+const std::vector<ConfigField>& Fields() {
+  static const std::vector<ConfigField> fields = {
+      // Scripts comes first: the RGSS default is read off its extension, and
+      // the Display defaults are read off the RGSS version.
+      {"Game", "Scripts", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.game.scripts; },
+       [](Config& config, const std::string& value) {
+         config.game.scripts = value;
+         ReplaceStringWidth(config.game.scripts, '\\', '/');
+       },
+       nullptr, nullptr},
+      {"Game", "RGSS", ConfigPersist::kOnChange,
+       [](const Config& config) { return std::to_string(config.game.rgss); },
+       [](Config& config, const std::string& value) {
+         config.game.rgss = ParseInteger(value, config.game.rgss);
+       },
+       &DeriveRGSSVersion, nullptr},
+      // The title is normalized to UTF-8 on the way in, and that conversion
+      // never goes back to the file: an ANSI ini keeps its own encoding.
+      {"Game", "Title", ConfigPersist::kNever,
+       [](const Config& config) { return config.game.title; },
+       [](Config& config, const std::string& value) {
+         config.game.title = NormalizeUTF8(value);
+       },
+       nullptr, nullptr},
+      {"Game", "RTP", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.game.rtp; },
+       [](Config& config, const std::string& value) {
+         config.game.rtp = value;
+       },
+       nullptr, nullptr},
+      {"Game", "RTP1", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.game.rtp1; },
+       [](Config& config, const std::string& value) {
+         config.game.rtp1 = value;
+       },
+       nullptr, nullptr},
+      {"Game", "RTP2", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.game.rtp2; },
+       [](Config& config, const std::string& value) {
+         config.game.rtp2 = value;
+       },
+       nullptr, nullptr},
+      {"Game", "RTP3", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.game.rtp3; },
+       [](Config& config, const std::string& value) {
+         config.game.rtp3 = value;
+       },
+       nullptr, nullptr},
+
+      {"Audio", "Soundfont", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.audio.soundfont; },
+       [](Config& config, const std::string& value) {
+         config.audio.soundfont = value;
+       },
+       nullptr, nullptr},
+      {"Audio", "MasterVolume", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.audio.master_volume);
+       },
+       [](Config& config, const std::string& value) {
+         config.audio.master_volume =
+             ParseInteger(value, config.audio.master_volume);
+       },
+       nullptr, nullptr},
+      {"Audio", "BGMVolume", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.audio.bgm_volume);
+       },
+       [](Config& config, const std::string& value) {
+         config.audio.bgm_volume = ParseInteger(value, config.audio.bgm_volume);
+       },
+       nullptr, nullptr},
+      {"Audio", "BGSVolume", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.audio.bgs_volume);
+       },
+       [](Config& config, const std::string& value) {
+         config.audio.bgs_volume = ParseInteger(value, config.audio.bgs_volume);
+       },
+       nullptr, nullptr},
+      {"Audio", "MEVolume", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.audio.me_volume);
+       },
+       [](Config& config, const std::string& value) {
+         config.audio.me_volume = ParseInteger(value, config.audio.me_volume);
+       },
+       nullptr, nullptr},
+      {"Audio", "SEVolume", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.audio.se_volume);
+       },
+       [](Config& config, const std::string& value) {
+         config.audio.se_volume = ParseInteger(value, config.audio.se_volume);
+       },
+       nullptr, nullptr},
+      {"Audio", "OutputDevice", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.audio.output_device; },
+       [](Config& config, const std::string& value) {
+         config.audio.output_device = value;
+       },
+       nullptr, nullptr},
+
+      // A missing Width/Height starts from the size the RGSS version ships
+      // with; the snapshot then keeps that default out of the file.
+      {"Display", "Width", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.display.width);
+       },
+       [](Config& config, const std::string& value) {
+         config.display.width = ParseInteger(value, config.display.width);
+       },
+       nullptr,
+       [](const Config& config) {
+         return std::to_string(config.xp() ? 640 : 544);
+       }},
+      {"Display", "Height", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return std::to_string(config.display.height);
+       },
+       [](Config& config, const std::string& value) {
+         config.display.height = ParseInteger(value, config.display.height);
+       },
+       nullptr,
+       [](const Config& config) {
+         return std::to_string(config.xp() ? 480 : 416);
+       }},
+      {"Display", "VSync", ConfigPersist::kOnChange,
+       [](const Config& config) { return BooleanText(config.display.vsync); },
+       [](Config& config, const std::string& value) {
+         config.display.vsync = ParseBoolean(value, config.display.vsync);
+       },
+       nullptr, nullptr},
+      {"Display", "Fullscreen", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return BooleanText(config.display.fullscreen);
+       },
+       [](Config& config, const std::string& value) {
+         config.display.fullscreen =
+             ParseBoolean(value, config.display.fullscreen);
+       },
+       nullptr, nullptr},
+      {"Display", "FrameSkip", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return BooleanText(config.display.frame_skip);
+       },
+       [](Config& config, const std::string& value) {
+         config.display.frame_skip =
+             ParseBoolean(value, config.display.frame_skip);
+       },
+       nullptr, nullptr},
+
+      {"Window", "Resizable", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return ResizableName(config.display.resizable);
+       },
+       [](Config& config, const std::string& value) {
+         config.display.resizable = ParseResizable(value);
+       },
+       nullptr, nullptr},
+
+      {"GFX", "Backend", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.gfx.backend; },
+       [](Config& config, const std::string& value) {
+         config.gfx.backend = value;
+       },
+       nullptr, nullptr},
+      {"GFX", "SpriteBatch", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return BooleanText(config.gfx.sprite_batch);
+       },
+       [](Config& config, const std::string& value) {
+         config.gfx.sprite_batch = ParseBoolean(value, config.gfx.sprite_batch);
+       },
+       nullptr, nullptr},
+      {"GFX", "PresentSampler", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.gfx.present_sampler; },
+       [](Config& config, const std::string& value) {
+         config.gfx.present_sampler = value;
+       },
+       nullptr, nullptr},
+      {"GFX", "Upscaler", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.gfx.upscaler; },
+       [](Config& config, const std::string& value) {
+         config.gfx.upscaler = value;
+       },
+       nullptr, nullptr},
+
+      {"Input", "PadBindings", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return BooleanText(config.input.pad_bindings);
+       },
+       [](Config& config, const std::string& value) {
+         config.input.pad_bindings =
+             ParseBoolean(value, config.input.pad_bindings);
+       },
+       nullptr, nullptr},
+  };
+  return fields;
+}
+
+const ConfigField* FindField(const std::string& section,
+                             const std::string& key) {
+  for (const auto& field : Fields())
+    if (section == field.section && key == field.key)
+      return &field;
+  return nullptr;
+}
+
 }
 
 Config::Config(URGE_EXCEPT, std::string inifile)
@@ -201,10 +478,16 @@ Config::Config(URGE_EXCEPT, std::string inifile)
 std::string Config::GetValue(std::string section,
                              std::string key,
                              std::string defval) {
+  if (const auto* field = FindField(section, key))
+    return field->get(*this);
   return parser_.Get(section, key, defval);
 }
 
 void Config::SetValue(std::string section, std::string key, std::string value) {
+  if (const auto* field = FindField(section, key)) {
+    field->set(*this, value);
+    return;
+  }
   parser_.Set(section, key, value);
 }
 
@@ -223,36 +506,16 @@ bool Config::HasCommandLine(const std::string& token) const {
 }
 
 void Config::Save(URGE_EXCEPT) {
-  parser_.Set("Game", "RGSS", game.rgss);
-  parser_.Set("Game", "Scripts", game.scripts);
-  parser_.Set("Game", "Title", game.title);
-  parser_.Set("Game", "RTP", game.rtp);
-  parser_.Set("Game", "RTP1", game.rtp1);
-  parser_.Set("Game", "RTP2", game.rtp2);
-  parser_.Set("Game", "RTP3", game.rtp3);
-
-  parser_.Set("Audio", "Soundfont", audio.soundfont);
-  parser_.Set("Audio", "MasterVolume", audio.master_volume);
-  parser_.Set("Audio", "BGMVolume", audio.bgm_volume);
-  parser_.Set("Audio", "BGSVolume", audio.bgs_volume);
-  parser_.Set("Audio", "MEVolume", audio.me_volume);
-  parser_.Set("Audio", "SEVolume", audio.se_volume);
-  parser_.Set("Audio", "OutputDevice", audio.output_device);
-
-  parser_.Set("Display", "Width", display.width);
-  parser_.Set("Display", "Height", display.height);
-  parser_.Set("Display", "VSync", display.vsync);
-  parser_.Set("Display", "Fullscreen", display.fullscreen);
-  parser_.Set("Display", "FrameSkip", display.frame_skip);
-
-  parser_.Set("Window", "Resizable", ResizableName(display.resizable));
-
-  parser_.Set("GFX", "Backend", gfx.backend);
-  parser_.Set("GFX", "SpriteBatch", gfx.sprite_batch);
-  parser_.Set("GFX", "PresentSampler", gfx.present_sampler);
-  parser_.Set("GFX", "Upscaler", gfx.upscaler);
-
-  parser_.Set("Input", "PadBindings", input.pad_bindings);
+  const auto& fields = Fields();
+  for (size_t i = 0; i < fields.size(); ++i) {
+    const auto& field = fields[i];
+    if (field.persist != ConfigPersist::kOnChange)
+      continue;
+    const std::string value = field.get(*this);
+    if (i < baseline_.size() && value == baseline_[i])
+      continue;
+    parser_.Set(field.section, field.key, value);
+  }
 
   std::vector<std::string> names;
   std::unordered_map<std::string, std::string> joined;
@@ -279,68 +542,38 @@ void Config::Save(URGE_EXCEPT) {
   const std::string text = parser_.RenderPatched();
   SDL_WriteIO(stream, text.data(), text.size());
   SDL_CloseIO(stream);
+
+  UpdateBaseline();
 }
 
 void Config::Load() {
-  game.rgss = parser_.GetInt("Game", "RGSS", game.rgss);
-  game.scripts = parser_.Get("Game", "Scripts", game.scripts);
-  ReplaceStringWidth(game.scripts, '\\', '/');
-  game.title = NormalizeUTF8(parser_.Get("Game", "Title", game.title));
-  game.rtp = parser_.Get("Game", "RTP", game.rtp);
-  game.rtp1 = parser_.Get("Game", "RTP1", game.rtp);
-  game.rtp2 = parser_.Get("Game", "RTP2", game.rtp);
-  game.rtp3 = parser_.Get("Game", "RTP3", game.rtp);
-
-  if (game.rgss == 0) {
-    std::string ext;
-    auto dot = game.scripts.find_last_of('.');
-    if (dot != std::string::npos)
-      ext = game.scripts.substr(dot);
+  for (const auto& field : Fields()) {
+    std::string value;
+    if (parser_.HasKey(field.section, field.key))
+      value = parser_.Get(field.section, field.key);
+    else if (field.fallback)
+      value = field.fallback(*this);
     else
-      ext = game.scripts;
+      value = field.get(*this);
 
-    if (ext == ".rxdata")
-      game.rgss = 1;
-    else if (ext == ".rvdata")
-      game.rgss = 2;
-    else if (ext == ".rvdata2")
-      game.rgss = 3;
+    field.set(*this, value);
+    if (field.after_load)
+      field.after_load(*this);
   }
-
-  audio.soundfont = parser_.Get("Audio", "Soundfont", audio.soundfont);
-  audio.master_volume =
-      parser_.GetInt("Audio", "MasterVolume", audio.master_volume);
-  audio.bgm_volume = parser_.GetInt("Audio", "BGMVolume", audio.bgm_volume);
-  audio.bgs_volume = parser_.GetInt("Audio", "BGSVolume", audio.bgs_volume);
-  audio.me_volume = parser_.GetInt("Audio", "MEVolume", audio.me_volume);
-  audio.se_volume = parser_.GetInt("Audio", "SEVolume", audio.se_volume);
-  audio.output_device =
-      parser_.Get("Audio", "OutputDevice", audio.output_device);
-
-  display.width = parser_.GetInt("Display", "Width", xp() ? 640 : 544);
-  display.height = parser_.GetInt("Display", "Height", xp() ? 480 : 416);
-  display.vsync = parser_.GetBool("Display", "VSync", display.vsync);
-  display.fullscreen =
-      parser_.GetBool("Display", "Fullscreen", display.fullscreen);
-  display.frame_skip =
-      parser_.GetBool("Display", "FrameSkip", display.frame_skip);
-
-  display.resizable =
-      ParseResizable(parser_.Get("Window", "Resizable", "none"));
-
-  gfx.backend = parser_.Get("GFX", "Backend", gfx.backend);
-  gfx.sprite_batch = parser_.GetBool("GFX", "SpriteBatch", gfx.sprite_batch);
-  gfx.present_sampler =
-      parser_.Get("GFX", "PresentSampler", gfx.present_sampler);
-  gfx.upscaler = parser_.Get("GFX", "Upscaler", gfx.upscaler);
-
-  input.pad_bindings =
-      parser_.GetBool("Input", "PadBindings", input.pad_bindings);
 
   key_bindings.clear();
   for (const auto& symbol : parser_.GetKeys("KeyBinding"))
     for (const auto& name : SplitKeys(parser_.Get("KeyBinding", symbol)))
       key_bindings.push_back(ParseKeyBinding(symbol, name));
+
+  UpdateBaseline();
+}
+
+void Config::UpdateBaseline() {
+  const auto& fields = Fields();
+  baseline_.resize(fields.size());
+  for (size_t i = 0; i < fields.size(); ++i)
+    baseline_[i] = fields[i].get(*this);
 }
 
 }
