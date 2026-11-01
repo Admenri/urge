@@ -150,10 +150,47 @@ jobs:
           fi
           SDKMANAGER="$(command -v sdkmanager || true)"
           if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER="$(find "$SDK" -path '*/cmdline-tools/*/bin/sdkmanager' | head -n 1)"
+            SDKMANAGER="$(find "$SDK" -path '*/cmdline-tools/*/bin/sdkmanager' | head -n 1 || true)"
           fi
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "platforms;android-37" "build-tools;36.0.0" >/dev/null
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager was not found under $SDK" >&2
+            exit 1
+          fi
+
+          # The license prompt is interactive and closes the pipe early; the
+          # redirect keeps yes' SIGPIPE notice out of the log.
+          (yes | "$SDKMANAGER" --licenses) >/dev/null 2>&1 || true
+
+          # Platform 37 is a canary-only package on some runner images.  Try
+          # it there first, then fall back to the newest stable platform.
+          COMPILE_SDK=37
+          if ! "$SDKMANAGER" --channel=3 "platforms;android-37" >/dev/null 2>&1; then
+            COMPILE_SDK="$("$SDKMANAGER" --list 2>/dev/null \
+              | grep -oE 'platforms;android-[0-9]+' \
+              | sed 's/.*android-//' | sort -n | tail -n 1 || true)"
+            if [ -z "$COMPILE_SDK" ]; then
+              echo "no Android platform is available from sdkmanager" >&2
+              exit 1
+            fi
+            "$SDKMANAGER" "platforms;android-$COMPILE_SDK" >/dev/null
+          fi
+
+          BUILD_TOOLS=36.0.0
+          if ! "$SDKMANAGER" "build-tools;36.0.0" >/dev/null 2>&1 &&
+             ! "$SDKMANAGER" --channel=3 "build-tools;36.0.0" >/dev/null 2>&1; then
+            BUILD_TOOLS="$("$SDKMANAGER" --list 2>/dev/null \
+              | grep -oE 'build-tools;[0-9]+\.[0-9]+\.[0-9]+' \
+              | sed 's/build-tools;//' | sort -V | tail -n 1 || true)"
+            if [ -z "$BUILD_TOOLS" ]; then
+              echo "no build-tools package is available from sdkmanager" >&2
+              exit 1
+            fi
+            "$SDKMANAGER" "build-tools;$BUILD_TOOLS" >/dev/null
+          fi
+
+          echo "URGE_COMPILE_SDK=$COMPILE_SDK" >> "$GITHUB_ENV"
+          echo "URGE_BUILD_TOOLS=$BUILD_TOOLS" >> "$GITHUB_ENV"
+          echo "URGE: compileSdk=$COMPILE_SDK buildTools=$BUILD_TOOLS"
 
       - name: Configure
         run: cmake --preset android-arm64
@@ -168,7 +205,9 @@ jobs:
           sed -i 's/\r$//' android/gradlew
           chmod +x android/gradlew
           cd android
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon assembleDebug \
+            -PurgeCompileSdk="$URGE_COMPILE_SDK" \
+            -PurgeBuildToolsVersion="$URGE_BUILD_TOOLS"
 
       - name: Stage
         run: |

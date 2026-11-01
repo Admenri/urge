@@ -51,8 +51,11 @@ def releaseKeyReady = releaseStoreFile && releaseStorePassword
 
 android {
     namespace = "com.admenri.urge"
-    compileSdk = 37
-    buildToolsVersion = "36.0.0"
+    // The defaults are what this tree targets.  CI runners do not always carry
+    // the newest channel, so the versions can be overridden on the command
+    // line: -PurgeCompileSdk=36 -PurgeBuildToolsVersion=36.0.0
+    compileSdk = (project.findProperty("urgeCompileSdk") ?: 37) as Integer
+    buildToolsVersion = project.findProperty("urgeBuildToolsVersion") ?: "36.0.0"
 
     defaultConfig {
         applicationId = "com.admenri.urge"
