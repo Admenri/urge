@@ -77,6 +77,10 @@
 #include "app/platform/android.h"
 #endif
 
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten.h>
+#endif
+
 #include "core/system/archive.h"
 #include "core/audio/audio.h"
 #include "core/system/config.h"
@@ -583,6 +587,15 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result) {
 
   Shutdown(*state);
   delete state;
+
+#if defined(OS_EMSCRIPTEN)
+  // SDL cancels its callback loop without exiting the Emscripten runtime.
+  // Notify an embedding host after teardown has closed the game's files.
+  EM_ASM({
+    if (typeof window !== "undefined" && window.urgeHostDidExit)
+      window.urgeHostDidExit($0);
+  }, result == SDL_APP_SUCCESS ? 0 : 1);
+#endif
 }
 
 #endif  // URGE_RUNNER_POLL
