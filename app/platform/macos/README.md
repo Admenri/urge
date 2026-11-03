@@ -82,6 +82,22 @@ The executable is built for the current architecture; Intel builds have not
 been validated on hardware. Signing/notarization for distribution remains a
 separate step.
 
+## GitHub Actions artifacts
+
+The `Build` workflow (`.github/workflows/build.yml`) includes a `macos-arm64`
+job alongside the other platforms. It runs on pushes to `master`, pushes of
+`v*` tags and manual dispatch. The macOS job uses an arm64 `macos-26` runner
+and retains the macOS 13.3 deployment target.
+
+Two archives are uploaded separately and retained for 14 days:
+
+- `urge-macos-arm64-game.zip`: standalone `Game`, license and dependency notices.
+- `urge-macos-arm64-app.zip`: `URGE.app`, license and dependency notices.
+
+The workflow uses the native build script, including its dependency and minimum
+OS audits. It verifies executable permissions and signatures after extracting
+the archives. The app is ad-hoc signed; local signing details are below.
+
 ## Native HiDPI / Retina
 
 Window sizes (`Game.ini`, `URGE.move_window` and `URGE.get_window_rect`) use
