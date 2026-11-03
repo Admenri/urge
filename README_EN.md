@@ -41,8 +41,7 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | Windows 10 1809+ (x64) | `Game.exe` | D3D12 by default; Vulkan / OpenGL and others selectable | Full feature set; video and networking on by default |
 | WebAssembly (WebGPU-capable browser) | `Game.html` + `Game.wasm` | Browser WebGPU | Video off by default; networking available |
 | Android 9+ (API 28, arm64-v8a / x86_64) | APK | Vulkan 1.1 | Video and networking on by default; TLS via the vendored mbedTLS |
-| macOS 26.0+ | `URGE.app` (Wasm + WKWebView) | Browser WebGPU | See the [macOS host guide](app/platform/macos/README.md) |
-| macOS native (experimental, deployment target 13.3) | `Game` / `URGE.app` | wgpu-native → Metal | arm64 validated on 26.6.2; testing on 13.3 still needed |
+| MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O executable) / `URGE.app` (App package) | wgpu-native → Metal | Experimental |
 | Linux native engine | — | — | No build presets yet |
 
 ### Ruby Script API

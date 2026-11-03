@@ -41,8 +41,7 @@
 | Windows 10 1809+（x64） | `Game.exe` | D3D12（默认，可切换 Vulkan / OpenGL 等） | 功能最完整；视频与网络默认开启 |
 | WebAssembly（支持 WebGPU 的浏览器） | `Game.html` + `Game.wasm` | 浏览器 WebGPU | 视频默认关闭；网络可用 |
 | Android 9+（API 28，arm64-v8a / x86_64） | APK | Vulkan 1.1 | 视频与网络默认开启；TLS 使用内置 mbedTLS |
-| macOS 26.0+ | `URGE.app`（Wasm + WKWebView） | 浏览器 WebGPU | 构建与使用见 [macOS 宿主说明](app/platform/macos/README.md) |
-| macOS Native（实验性，部署目标 13.3） | `Game` / `URGE.app` | wgpu-native → Metal | 已在 26.6.2 验证 arm64；仍需 13.3 实机测试 |
+| MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O可执行文件) / `URGE.app` (App包) | wgpu-native → Metal | 实验性支持 |
 | Linux 原生引擎 | — | — | 尚未提供构建预设 |
 
 ### Ruby 脚本 API
