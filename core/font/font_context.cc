@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -50,6 +51,19 @@ constexpr int32_t kMaxFontSize = 96;
 #if defined(_WIN32)
 constexpr const char* kWindowsDefaultFaces[] = {
     "msyh.ttc", "msyh.ttf", "Deng.ttf", "simhei.ttf", "simsun.ttc",
+};
+#elif defined(__APPLE__)
+constexpr const char* kMacOSDefaultFaces[] = {
+    "STHeiti Medium.ttc", "PingFang.ttc",    "Songti.ttc",
+    "Arial Unicode.ttf",  kEmbeddedFontName,
+};
+#elif defined(__ANDROID__) || (defined(__linux__) && !defined(__EMSCRIPTEN__))
+constexpr const char* kCJKDefaultFaces[] = {
+    "NotoSansCJKsc-Regular.otf", "NotoSansSC-Regular.otf",
+    "NotoSansCJK-Regular.ttc",   "NotoSansCJK-VF.ttc",
+    "NotoSansSC[wght].ttf",      "NotoSerifCJK-Regular.ttc",
+    "wqy-microhei.ttc",          "wqy-zenhei.ttc",
+    "DroidSansFallback.ttf",     kEmbeddedFontName,
 };
 #endif
 
@@ -79,7 +93,8 @@ bool HasFontExtension(const std::string& name) {
   return false;
 }
 
-#if defined(_WIN32)
+#if !defined(__EMSCRIPTEN__) && (defined(_WIN32) || defined(__APPLE__) || \
+                                 defined(__ANDROID__) || defined(__linux__))
 std::string PathToUtf8(const std::filesystem::path& path) {
   const std::u8string utf8 = path.u8string();
   return std::string(utf8.begin(), utf8.end());
@@ -284,6 +299,12 @@ FontContext::FontContext(URGE_EXCEPT) {
 #if defined(_WIN32)
   for (const char* face : kWindowsDefaultFaces)
     default_name_.emplace_back(face);
+#elif defined(__APPLE__)
+  for (const char* face : kMacOSDefaultFaces)
+    default_name_.emplace_back(face);
+#elif defined(__ANDROID__) || (defined(__linux__) && !defined(__EMSCRIPTEN__))
+  for (const char* face : kCJKDefaultFaces)
+    default_name_.emplace_back(face);
 #else
   default_name_.emplace_back(kEmbeddedFontName);
 #endif
@@ -340,24 +361,16 @@ TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
 
   std::vector<std::string> candidates = names;
   candidates.push_back(default_font_);
+  // A discovered system face can still be unreadable or invalid.
+  candidates.emplace_back(kEmbeddedFontName);
 
   for (const std::string& candidate : candidates) {
     const std::string key = Resolve(candidate);
     if (key.empty())
       continue;
 
-    const auto cache_key =
-        std::make_tuple(key, size, static_cast<int32_t>(style), outline);
-
-    auto cached = font_cache_.find(cache_key);
-    if (cached != font_cache_.end())
-      return cached->second;
-
-    TTF_Font* font = OpenFont(key, size, style, outline);
-    if (font) {
-      font_cache_.emplace(cache_key, font);
+    if (TTF_Font* font = CachedFont(key, size, style, outline))
       return font;
-    }
   }
 
   return nullptr;
@@ -488,9 +501,10 @@ void FontContext::LoadFontDirectory(URGE_EXCEPT, const std::string& directory) {
 }
 
 void FontContext::LoadSystemFonts() {
-#if defined(_WIN32)
+#if !defined(__EMSCRIPTEN__) && (defined(_WIN32) || defined(__APPLE__) || \
+                                 defined(__ANDROID__) || defined(__linux__))
   std::vector<std::string> directories;
-
+#if defined(_WIN32)
   if (const char* windows = SDL_getenv("WINDIR"))
     directories.push_back(std::string(windows) + "\\Fonts");
   else
@@ -498,17 +512,58 @@ void FontContext::LoadSystemFonts() {
 
   if (const char* local = SDL_getenv("LOCALAPPDATA"))
     directories.push_back(std::string(local) + "\\Microsoft\\Windows\\Fonts");
+#elif defined(__APPLE__)
+  directories = {"/System/Library/Fonts", "/System/Library/Fonts/Supplemental",
+                 "/Library/Fonts"};
+  if (const char* home = SDL_getenv("HOME"))
+    directories.push_back(std::string(home) + "/Library/Fonts");
+#elif defined(__ANDROID__)
+  directories = {"/system/fonts", "/product/fonts", "/vendor/fonts"};
+#else
+  directories = {"/usr/share/fonts", "/usr/local/share/fonts"};
+  if (const char* paths = SDL_getenv("XDG_DATA_DIRS")) {
+    std::string_view remaining(paths);
+    while (!remaining.empty()) {
+      const size_t colon = remaining.find(':');
+      const std::string path(remaining.substr(0, colon));
+      if (!path.empty() && FromUtf8(path).is_absolute())
+        directories.push_back(path + "/fonts");
+      if (colon == std::string_view::npos)
+        break;
+      remaining.remove_prefix(colon + 1);
+    }
+  }
+  const char* data = SDL_getenv("XDG_DATA_HOME");
+  if (data && FromUtf8(data).is_absolute())
+    directories.push_back(std::string(data) + "/fonts");
+  else if (const char* home = SDL_getenv("HOME"))
+    directories.push_back(std::string(home) + "/.local/share/fonts");
+  if (const char* home = SDL_getenv("HOME"))
+    directories.push_back(std::string(home) + "/.fonts");
+#endif
 
   for (const std::string& directory : directories) {
     std::error_code error;
-    std::filesystem::directory_iterator iterator(FromUtf8(directory), error);
+#if defined(__linux__) && !defined(__ANDROID__)
+    // Distribution and per-user fonts commonly live in nested subdirectories.
+    // Do not follow directory symlinks; inaccessible subdirectories are
+    // skipped.
+    using FontIterator = std::filesystem::recursive_directory_iterator;
+#else
+    using FontIterator = std::filesystem::directory_iterator;
+#endif
+    FontIterator iterator(
+        FromUtf8(directory),
+        std::filesystem::directory_options::skip_permission_denied, error);
+    if (error == std::errc::no_such_file_or_directory)
+      continue;
     if (error) {
       LOGGER_WARN("[Font] cannot list {}: {}", directory, error.message());
       continue;
     }
 
     size_t added = 0;
-    const std::filesystem::directory_iterator end;
+    const FontIterator end;
     while (iterator != end) {
       const std::filesystem::directory_entry& item = *iterator;
 
@@ -567,6 +622,22 @@ void FontContext::BuildFamilyIndex() {
               families_.size(), indexed, SDL_GetTicks() - start);
 }
 
+TTF_Font* FontContext::CachedFont(const std::string& key,
+                                  int32_t size,
+                                  TTF_FontStyleFlags style,
+                                  int32_t outline) {
+  const auto cache_key =
+      std::make_tuple(key, size, static_cast<int32_t>(style), outline);
+  const auto cached = font_cache_.find(cache_key);
+  if (cached != font_cache_.end())
+    return cached->second;
+
+  TTF_Font* font = OpenFont(key, size, style, outline);
+  if (font)
+    font_cache_.emplace(cache_key, font);
+  return font;
+}
+
 TTF_Font* FontContext::OpenFont(const std::string& key,
                                 int32_t size,
                                 TTF_FontStyleFlags style,
@@ -595,6 +666,21 @@ TTF_Font* FontContext::OpenFont(const std::string& key,
 
   if (outline > 0)
     TTF_SetFontOutline(font, outline);
+
+#if !defined(__EMSCRIPTEN__) && \
+    (defined(__APPLE__) || defined(__ANDROID__) || defined(__linux__))
+  // A resolvable Latin font (e.g. Tahoma in an RGSS font-name array) can
+  // still lack Chinese glyphs. Keep its own glyphs and metrics; SDL_ttf uses
+  // the platform default only for missing characters. The default never
+  // falls back to itself, and every face is cached with matching style/size.
+  const std::string fallback_key = Resolve(default_font_);
+  if (!fallback_key.empty() && fallback_key != key) {
+    TTF_Font* fallback = CachedFont(fallback_key, size, style, outline);
+    if (fallback && !TTF_AddFallbackFont(font, fallback))
+      LOGGER_WARN("[Font] Cannot add glyph fallback for {}: {}", key,
+                  SDL_GetError());
+  }
+#endif
 
   return font;
 }

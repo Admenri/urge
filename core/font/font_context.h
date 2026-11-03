@@ -80,6 +80,11 @@ class FontContext : public Singleton<FontContext> {
 
   const FontData* Load(Entry& entry);
 
+  TTF_Font* CachedFont(const std::string& key,
+                       int32_t size,
+                       TTF_FontStyleFlags style,
+                       int32_t outline);
+
   TTF_Font* OpenFont(const std::string& key,
                      int32_t size,
                      TTF_FontStyleFlags style,

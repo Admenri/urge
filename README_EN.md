@@ -300,7 +300,7 @@ Configuration reference:
 Additional notes:
 
 - **F1 / F2**: F1 opens the settings panel (key bindings, graphics, audio and engine information; new key bindings can be added there); F2 toggles the frame-rate display.
-- **Fonts**: resolved as `Fonts/` → system fonts → embedded font; both file names (extension optional) and family names work.
+- **Fonts**: resolved as `Fonts/` → system fonts → embedded font; both file names (extension optional) and family names work. See [platform discovery and glyph fallback (Chinese)](core/font/README.md) for platform coverage and limits.
 - **Gamepads**: keyboard and gamepad map to the same set of slots; gamepads are hot-pluggable, with support for multiple devices, rumble, sticks and triggers.
 - **Profiling**: on Windows, enable sampling through the `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR` environment variables, or the `Profiler` / `ProfilerInterval` keys in `[Debug]`.
 - **Saving**: only values changed during the run are written back on exit. Values computed or converted while loading (such as `RGSS` inferred from the `Scripts` extension, or `Title` converted to UTF-8) are left out; `Title` always keeps the file's original text, and other values are saved once they are changed explicitly (including `Config.set_value` from a script).
