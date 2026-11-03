@@ -68,6 +68,18 @@ namespace {
 
 constexpr int32_t kMaxFrameRate = 240;
 
+// SDL's macOS window/mouse coordinates are points; its display scale includes
+// the Retina pixel density. Only the final drawable is sized in backing pixels.
+float WindowSizeScale(SDL_Window* window) {
+  const float scale = SDL_GetWindowDisplayScale(window);
+#if defined(SDL_PLATFORM_MACOS)
+  const float density = SDL_GetWindowPixelDensity(window);
+  return density > 0.0f ? scale / density : 1.0f;
+#else
+  return scale;
+#endif
+}
+
 RectF FitScreenRect(int32_t surface_width,
                     int32_t surface_height,
                     int32_t screen_width,
@@ -163,14 +175,14 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
 #if defined(SDL_PLATFORM_MACOS)
-  window_flag |= SDL_WINDOW_METAL;
+  window_flag |= SDL_WINDOW_METAL | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #endif
   if (config.display.resizable != WindowResizable::kNone)
     window_flag |= SDL_WINDOW_RESIZABLE;
 
   window_ = SDL_CreateWindow(config.game.title.c_str(), config.display.width,
                              config.display.height, window_flag);
-  auto dpi = SDL_GetWindowDisplayScale(window_);
+  const float dpi = WindowSizeScale(window_);
   SDL_SetWindowSize(window_, static_cast<int>(config.display.width * dpi),
                     static_cast<int>(config.display.height * dpi));
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
@@ -451,7 +463,7 @@ void Graphics::ResizeScreen(int32_t width, int32_t height) {
 
 #if !defined(OS_ANDROID)
   if (Config::Get().display.resizable == WindowResizable::kNone) {
-    auto dpi = SDL_GetWindowDisplayScale(window_);
+    const float dpi = WindowSizeScale(window_);
     SDL_SetWindowSize(window_, width * dpi, height * dpi);
     SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
@@ -479,7 +491,7 @@ void Graphics::SetResizable(WindowResizable value) {
   // resolution, the same size ResizeScreen() would have asked for.
   if (value == WindowResizable::kNone && window_ &&
       (SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN) == 0) {
-    const float dpi = SDL_GetWindowDisplayScale(window_);
+    const float dpi = WindowSizeScale(window_);
     SDL_SetWindowSize(window_, static_cast<int>(Width() * dpi),
                       static_cast<int>(Height() * dpi));
     SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
@@ -784,6 +796,13 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
     present_.pixel_width = pixel_width;
     present_.pixel_height = pixel_height;
     present_.configured = true;
+#if defined(SDL_PLATFORM_MACOS)
+    int window_width = 0, window_height = 0;
+    SDL_GetWindowSize(window_, &window_width, &window_height);
+    LOGGER_INFO("[Graphics] window {}x{} points, drawable {}x{} pixels, density {:.2f}",
+                window_width, window_height, pixel_width, pixel_height,
+                SDL_GetWindowPixelDensity(window_));
+#endif
   }
 
   imgui.Update();

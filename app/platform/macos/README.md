@@ -145,6 +145,37 @@ The executable is built for the current architecture; Intel builds have not
 been validated on hardware. Signing/notarization for distribution remains a
 separate step.
 
+## Native HiDPI / Retina
+
+Window sizes (`Game.ini`, `URGE.move_window` and `URGE.get_window_rect`) use
+macOS logical points. The native Metal window requests a high-density backing
+buffer; only presentation uses drawable pixels. A 720×240-point window on a 2×
+display therefore presents to a 1440×480-pixel drawable. macOS applies the user's
+scaled display mode. Mouse coordinates are mapped from window points into the
+game's logical screen, and ImGui uses the framebuffer scale for its text atlas.
+
+The game bitmap resolution (`Graphics.width/height`, `Bitmap` and snapshots)
+remains independent of the drawable size. Text drawn into a small bitmap and
+then magnified is still magnified bitmap text: enabling Retina presentation
+does not re-rasterize those glyphs. For example, a 320×240 game displayed in a
+640×480-point window on a 2× display magnifies its bitmap pixels by 4×. A 12-pixel
+glyph in that bitmap will have rough edges; this is separate from native UI text
+rendered at the backing resolution.
+
+Check logical sizing, pixel sizing, resize modes, readback and saves:
+
+```sh
+python3 app/platform/macos/tests/run_native_smoke.py --hidpi
+python3 app/platform/macos/tests/run_native_smoke.py --bundle --hidpi
+# On a known 2× display, additionally require a Retina drawable:
+URGE_TEST_PIXEL_DENSITY=2 python3 app/platform/macos/tests/run_native_smoke.py --hidpi
+```
+
+The test runs twice in each of the None/Free/Ratio resize modes and checks the
+reported backing pixel size against window points and pixel density. Moving
+between displays is handled by SDL's backing-size notifications and the
+presentation layer's drawable-size checks.
+
 ## Local signing and Gatekeeper
 
 Both build scripts ad-hoc sign their `.app` output for local development. For a
