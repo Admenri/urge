@@ -207,7 +207,7 @@ Native `URGE.app` 使用 URGE 图标，可通过“文件 → 打开游戏…”
 codesign --force --sign - /path/to/game/Game
 codesign --verify --strict --verbose=2 /path/to/game/Game
 
-# Native app；WebView 版本将路径改为 build/macos-webview/URGE.app。
+# Native app。
 codesign --force --sign - build/macos-native/URGE.app
 codesign --verify --deep --strict --verbose=2 build/macos-native/URGE.app
 ```
@@ -233,6 +233,8 @@ MyGame/
 - 配置文件为 `<可执行文件名>.ini`（`Game.exe` → `Game.ini`）。
 - 若存在 `<可执行文件名>.acs` 且构建包含 `admenri/`，该容器会被优先挂载。
 - 运行日志写入 `<可执行文件名>.log`。
+
+**MacOS**: 将Game可执行文件放入游戏目录，确保具有可执行权限。或使用URGE.app启动后通过菜单选择游戏目录来启动游戏。 
 
 **Web / Android**：可执行名固定为 `Game`，因此配置与资源分别位于站点根目录或 APK 的 `assets/` 下的 `Game.ini`、`Data/` 等路径。
 

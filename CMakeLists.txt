@@ -84,8 +84,9 @@ option(URGE_ENABLE_VIDEO
 #
 # Native builds need a TLS backend for libcurl.  Windows uses Schannel, the
 # in-box Windows stack; Android, whose NDK carries no OpenSSL, uses the
-# vendored mbedTLS against the system CA store; other desktop platforms link
-# the system OpenSSL.  The web build has no libcurl at all.
+# vendored mbedTLS against the system CA store; macOS builds static OpenSSL
+# from pinned sources, while other desktop platforms link system OpenSSL.
+# The web build has no libcurl at all.
 option(URGE_ENABLE_NETWORK
   "Build the WebSocket and HTTP client" ON)
 

@@ -200,7 +200,7 @@ Build with `./app/platform/macos/build-native.sh`, then open
 **File → Open Game…** (⌘O) to select a folder containing `Game.ini`. The standalone
 `Game` keeps its executable-directory layout and standard menu.
 
-Build scripts ad-hoc sign the app. To sign a modified local copy manually:
+The build script ad-hoc signs the app. To sign a modified local copy manually:
 
 ```sh
 codesign --force --sign - /path/to/game/Game
@@ -236,6 +236,8 @@ MyGame/
 - The configuration file is `<executable stem>.ini` (`Game.exe` → `Game.ini`).
 - If `<executable stem>.acs` exists and the build includes `admenri/`, that container is mounted first.
 - The runtime log is written to `<executable stem>.log`.
+
+**MacOS**: put the executable file 'Game' into the game directory. Alternatively you can launch URGE.app and open game from menu.
 
 **Web / Android**: the executable name is fixed to `Game`, so `Game.ini`, `Data/` and the rest live at the site root or under `assets/` in the APK.
 

@@ -8,17 +8,20 @@ if [[ ! -x "$tools/bin/python" ]]; then python3 -m venv "$tools"; fi
 "$tools/bin/python" -m pip install -r "$repo/requirements.txt"
 export PATH="$tools/bin:$PATH"
 
+# Do not let shell include/library overrides inject package-manager libraries.
+unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH CPPFLAGS LDFLAGS
+unset CMAKE_PREFIX_PATH CMAKE_INCLUDE_PATH CMAKE_LIBRARY_PATH CMAKE_FRAMEWORK_PATH
 arch="$(uname -m)"
-"$tools/bin/python" "$repo/app/platform/macos/prepare-deps.py" --arch "$arch" --target "$target"
+"$tools/bin/python" "$repo/third_party/macos/prepare-deps.py" --arch "$arch" --target "$target"
 prefix="$repo/build/macos-deps/$arch-$target/prefix"
 configure=(cmake)
 # Discard dependency probes from the earlier system-library build once. In
 # particular, curl caches pkg-config results even if pkg-config is later off.
-if [[ ! -f "$build/.static-deps-version" ]] || [[ "$(cat "$build/.static-deps-version")" != "1:$prefix" ]]; then
+if [[ ! -f "$build/.static-deps-version" ]] || [[ "$(cat "$build/.static-deps-version")" != "2:$prefix" ]]; then
   configure+=(--fresh)
 fi
 
-# Keep the native runner separate from the Wasm/WKWebView build.
+# Configure the native Metal engine with repository-built static dependencies.
 "${configure[@]}" -S "$repo" -B "$build" -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_OSX_ARCHITECTURES="$arch" \
@@ -31,9 +34,9 @@ fi
   -DPython3_EXECUTABLE="$tools/bin/python" \
   -DURGE_MACOS_DEPS_PREFIX="$prefix"
 cmake --build "$build" --target Game --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-8}"
-"$tools/bin/python" "$repo/app/platform/macos/audit-native.py" "$build/app/Game" \
+"$tools/bin/python" "$repo/third_party/macos/audit-native.py" "$build/app/Game" \
   --target "$target" --archives-root "$prefix" --archives-root "$build"
-printf '1:%s\n' "$prefix" > "$build/.static-deps-version"
+printf '2:%s\n' "$prefix" > "$build/.static-deps-version"
 
 mkdir -p "$build/demo/Data"
 cp "$build/app/Game" "$build/demo/Game"

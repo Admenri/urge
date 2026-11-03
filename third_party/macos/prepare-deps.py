@@ -11,7 +11,7 @@ import subprocess
 import tarfile
 import urllib.request
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[2]
 MANIFEST = Path(__file__).with_name("dependencies.json")
 
 
