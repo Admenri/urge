@@ -41,7 +41,8 @@
 | Windows 10 1809+（x64） | `Game.exe` | D3D12（默认，可切换 Vulkan / OpenGL 等） | 功能最完整；视频与网络默认开启 |
 | WebAssembly（支持 WebGPU 的浏览器） | `Game.html` + `Game.wasm` | 浏览器 WebGPU | 视频默认关闭；网络可用 |
 | Android 9+（API 28，arm64-v8a / x86_64） | APK | Vulkan 1.1 | 视频与网络默认开启；TLS 使用内置 mbedTLS |
-| Linux / macOS | — | — | 尚未提供构建预设 |
+| MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O可执行文件) / `URGE.app` (App包) | wgpu-native → Metal | 实验性支持 |
+| Linux 原生引擎 | — | — | 尚未提供构建预设 |
 
 ### Ruby 脚本 API
 
@@ -192,6 +193,27 @@ cd android
 
 发布构建需要签名参数（`urgeStoreFile`、`urgeStorePassword`、`urgeKeyAlias`、`urgeKeyPassword`，可写在 `local.properties` 或通过 `-P` / 环境变量提供）；缺失时 APK 保持未签名。
 
+### macOS Native 与本地签名
+
+```sh
+./app/platform/macos/build-native.sh
+open build/macos-native/URGE.app
+```
+
+Native `URGE.app` 使用 URGE 图标，可通过“文件 → 打开游戏…”（⌘O）选择包含 `Game.ini` 的文件夹。裸 `Game` 不增加选目录菜单，仍放在游戏目录运行。构建脚本已为 `.app` 自动添加本地临时签名；手动修改或替换包内容后，可重新签名：
+
+```sh
+# 裸可执行文件：请签名实际运行的那一份。
+codesign --force --sign - /path/to/game/Game
+codesign --verify --strict --verbose=2 /path/to/game/Game
+
+# Native app。
+codesign --force --sign - build/macos-native/URGE.app
+codesign --verify --deep --strict --verbose=2 build/macos-native/URGE.app
+```
+
+`--sign -` 无需开发者证书，但仅提供 ad-hoc 临时签名，**不等于 Developer ID 签名或 Apple 公证，也不保证下载的文件通过 Gatekeeper**。若确认是自己的可信构建，首次打开被拦截后，可在“系统设置 → 隐私与安全性”中对该应用选择“仍要打开”（如系统提供此选项）。不要全局关闭 Gatekeeper。分发给其他用户需要 Developer ID 签名与公证；详见 [macOS 构建、图标与本地签名说明](app/platform/macos/README.md#local-signing-and-gatekeeper) 和 [Apple 官方说明](https://support.apple.com/en-gb/102445)。
+
 ### 2.6 运行游戏
 
 **Windows**：把 `Game.exe` 放进游戏目录即可。引擎以可执行文件所在目录为工作目录，并读取与可执行文件同名的配置：
@@ -211,6 +233,8 @@ MyGame/
 - 配置文件为 `<可执行文件名>.ini`（`Game.exe` → `Game.ini`）。
 - 若存在 `<可执行文件名>.acs` 且构建包含 `admenri/`，该容器会被优先挂载。
 - 运行日志写入 `<可执行文件名>.log`。
+
+**MacOS**: 将Game可执行文件放入游戏目录，确保具有可执行权限。或使用URGE.app启动后选择游戏目录来启动游戏。 
 
 **Web / Android**：可执行名固定为 `Game`，因此配置与资源分别位于站点根目录或 APK 的 `assets/` 下的 `Game.ini`、`Data/` 等路径。
 

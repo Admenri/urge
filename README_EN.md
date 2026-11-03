@@ -41,7 +41,8 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | Windows 10 1809+ (x64) | `Game.exe` | D3D12 by default; Vulkan / OpenGL and others selectable | Full feature set; video and networking on by default |
 | WebAssembly (WebGPU-capable browser) | `Game.html` + `Game.wasm` | Browser WebGPU | Video off by default; networking available |
 | Android 9+ (API 28, arm64-v8a / x86_64) | APK | Vulkan 1.1 | Video and networking on by default; TLS via the vendored mbedTLS |
-| Linux / macOS | — | — | No build presets yet |
+| MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O executable) / `URGE.app` (App package) | wgpu-native → Metal | Experimental |
+| Linux native engine | — | — | No build presets yet |
 
 ### Ruby Script API
 
@@ -192,6 +193,30 @@ The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`. The g
 
 Release builds need signing parameters (`urgeStoreFile`, `urgeStorePassword`, `urgeKeyAlias`, `urgeKeyPassword`, supplied through `local.properties`, `-P` or the environment); without them the APK is left unsigned.
 
+### macOS Native and Local Signing
+
+Build with `./app/platform/macos/build-native.sh`, then open
+`build/macos-native/URGE.app`. The native app uses the URGE icon and provides
+**File → Open Game…** (⌘O) to select a folder containing `Game.ini`. The standalone
+`Game` keeps its executable-directory layout and standard menu.
+
+The build script ad-hoc signs the app. To sign a modified local copy manually:
+
+```sh
+codesign --force --sign - /path/to/game/Game
+codesign --verify --strict --verbose=2 /path/to/game/Game
+codesign --force --sign - build/macos-native/URGE.app
+codesign --verify --deep --strict --verbose=2 build/macos-native/URGE.app
+```
+
+Ad-hoc signing (`--sign -`) needs no certificate but does not provide Developer
+ID trust or notarization, and may not satisfy Gatekeeper for downloaded copies.
+For your own trusted build, use the app-specific **Open Anyway** option under
+**System Settings → Privacy & Security**, if offered after an attempted launch.
+Do not disable Gatekeeper globally. Public distribution requires Developer ID
+signing and notarization. See the [macOS signing guide](app/platform/macos/README.md#local-signing-and-gatekeeper)
+and [Apple's instructions](https://support.apple.com/en-gb/102445).
+
 ### 2.6 Running a Game
 
 **Windows**: put `Game.exe` in the game directory. The engine uses the executable's directory as the working directory and reads a configuration file with the same stem:
@@ -211,6 +236,8 @@ MyGame/
 - The configuration file is `<executable stem>.ini` (`Game.exe` → `Game.ini`).
 - If `<executable stem>.acs` exists and the build includes `admenri/`, that container is mounted first.
 - The runtime log is written to `<executable stem>.log`.
+
+**MacOS**: put the executable file 'Game' into the game directory. Alternatively you can launch URGE.app select game.
 
 **Web / Android**: the executable name is fixed to `Game`, so `Game.ini`, `Data/` and the rest live at the site root or under `assets/` in the APK.
 

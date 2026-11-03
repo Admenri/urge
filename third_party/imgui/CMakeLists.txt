@@ -31,6 +31,10 @@ if(NOT EMSCRIPTEN)
        DESTINATION "${_IMGUI_WGPU_INCLUDE}/webgpu")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set_source_files_properties(backends/imgui_impl_wgpu.cpp PROPERTIES LANGUAGE OBJCXX)
+endif()
+
 add_library(imgui-docking STATIC
   "${CMAKE_CURRENT_SOURCE_DIR}/imgui.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/imgui_draw.cpp"

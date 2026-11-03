@@ -1,0 +1,18 @@
+{
+  "openssl": {
+    "url": "https://github.com/openssl/openssl/releases/download/openssl-3.6.5/openssl-3.6.5.tar.gz",
+    "sha256": "a2157c2830efdec3788939b00c9b0638306d3f0bbb76dc4832ee503bb397df98"
+  },
+  "brotli": {
+    "url": "https://codeload.github.com/google/brotli/tar.gz/refs/tags/v1.2.0",
+    "sha256": "816c96e8e8f193b40151dad7e8ff37b1221d019dbcb9c35cd3fadbfe6477dfec"
+  },
+  "zstd": {
+    "url": "https://codeload.github.com/facebook/zstd/tar.gz/refs/tags/v1.5.7",
+    "sha256": "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3"
+  },
+  "nghttp2": {
+    "url": "https://codeload.github.com/nghttp2/nghttp2/tar.gz/refs/tags/v1.70.0",
+    "sha256": "d38d641fb3877b4847c774ad88b5f3ab70daf1ae0e616079bbeec4691186fc6a"
+  }
+}

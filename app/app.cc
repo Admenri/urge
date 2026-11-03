@@ -39,9 +39,14 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 #endif
 
+#if defined(__APPLE__)
+#include "platform/macos/native_app.h"
+#endif
+
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <clocale>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -75,6 +80,10 @@
 
 #if defined(OS_ANDROID)
 #include "app/platform/android.h"
+#endif
+
+#if defined(OS_EMSCRIPTEN)
+#include <emscripten.h>
 #endif
 
 #include "core/system/archive.h"
@@ -181,6 +190,7 @@ struct AppState {
   std::string base_dir;
   std::string ini;
   std::string log_path;
+  bool startup_canceled = false;
 
   urge::Config* config = nullptr;
   binding::BindingMain* binding = nullptr;
@@ -256,6 +266,12 @@ bool Initialize(AppState& state,
                 int argc,
                 char* argv[],
                 urge::ExceptionState& exception_state) {
+#if defined(__APPLE__)
+  // Engine URLs and paths are UTF-8. Apple IDN in libcurl converts from the
+  // process charset, so initialize LC_CTYPE before starting worker threads.
+  // Leave numeric formatting and the other locale categories unchanged.
+  std::setlocale(LC_CTYPE, "en_US.UTF-8");
+#endif
 #if defined(_WIN32)
   /* Before anything else, because a game that dies while the engine is coming
      up -- a driver that refuses the adapter, a font directory that is not
@@ -304,6 +320,21 @@ bool Initialize(AppState& state,
   // same game, and both read `Game.ini`.
   state.app = PathToUTF8(executable.stem());
   state.base_dir = PathToUTF8(game_dir);
+#if defined(__APPLE__)
+  // The startup folder picker needs SDL to initialize the Cocoa application.
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
+  std::string bundle_error;
+  const std::string bundle_game = platform::macos::PrepareBundledGame(
+      argc, argv, state.startup_canceled, bundle_error);
+  if (state.startup_canceled)
+    return false;
+  if (!bundle_error.empty()) {
+    exception_state.Throw(urge::ExceptionState::kIOError, bundle_error);
+    return false;
+  }
+  if (!bundle_game.empty())
+    state.base_dir = bundle_game;
+#endif
 #endif
 
   state.ini = state.app + ".ini";
@@ -328,7 +359,13 @@ bool Initialize(AppState& state,
   }
 #endif
 
+#if !defined(__APPLE__)
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
+#endif
+#if defined(__APPLE__)
+  platform::macos::SetDefaultApplicationIcon();
+  platform::macos::InstallGameMenu();
+#endif
   TTF_Init();
 
   /* A game handed to a player is started by double-clicking it, so there is no
@@ -498,6 +535,11 @@ int main(int argc, char* argv[]) {
 
   urge::ExceptionState exception_state;
   if (!Initialize(state, argc, argv, exception_state)) {
+    if (state.startup_canceled) {
+      Shutdown(state);
+      SDL_Quit();
+      return EXIT_SUCCESS;
+    }
     ReportFailure(state, exception_state.message(), true);
     Shutdown(state);
     return EXIT_FAILURE;
@@ -512,6 +554,10 @@ int main(int argc, char* argv[]) {
     ReportFailure(state, state.binding->ErrorMessage(), true);
 
   Shutdown(state);
+#if defined(__APPLE__)
+  if (!platform::macos::RelaunchSelectedGame())
+    return EXIT_FAILURE;
+#endif
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
@@ -523,6 +569,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
 
   urge::ExceptionState exception_state;
   if (!Initialize(*state, argc, argv, exception_state)) {
+    if (state->startup_canceled)
+      return SDL_APP_SUCCESS;
     ReportFailure(*state, exception_state.message(), true);
     return SDL_APP_FAILURE;
   }
@@ -583,6 +631,19 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result) {
 
   Shutdown(*state);
   delete state;
+
+#if defined(__APPLE__)
+  platform::macos::RelaunchSelectedGame();
+#endif
+
+#if defined(OS_EMSCRIPTEN)
+  // SDL cancels its callback loop without exiting the Emscripten runtime.
+  // Notify an embedding host after teardown has closed the game's files.
+  EM_ASM({
+    if (typeof window !== "undefined" && window.urgeHostDidExit)
+      window.urgeHostDidExit($0);
+  }, result == SDL_APP_SUCCESS ? 0 : 1);
+#endif
 }
 
 #endif  // URGE_RUNNER_POLL

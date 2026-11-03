@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.30)
 
 project(URGE LANGUAGES CXX C)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  enable_language(OBJC OBJCXX)
+  set(CMAKE_OBJCXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 include_directories(${PROJECT_SOURCE_DIR})
@@ -80,8 +84,9 @@ option(URGE_ENABLE_VIDEO
 #
 # Native builds need a TLS backend for libcurl.  Windows uses Schannel, the
 # in-box Windows stack; Android, whose NDK carries no OpenSSL, uses the
-# vendored mbedTLS against the system CA store; other desktop platforms link
-# the system OpenSSL.  The web build has no libcurl at all.
+# vendored mbedTLS against the system CA store; macOS builds static OpenSSL
+# from pinned sources, while other desktop platforms link system OpenSSL.
+# The web build has no libcurl at all.
 option(URGE_ENABLE_NETWORK
   "Build the WebSocket and HTTP client" ON)
 
