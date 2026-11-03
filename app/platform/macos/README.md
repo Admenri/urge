@@ -56,16 +56,31 @@ not pause the test. Interactive games retain their own background-pause setting.
 
 The engine can also be built as a native arm64 executable using wgpu-native's
 Metal backend and an SDL Cocoa window. This is independent of WKWebView and
-does not require Emscripten. The deployment target remains macOS 26.0.
+does not require Emscripten. Its deployment target is macOS 13.3; the
+Wasm/WKWebView host above still requires macOS 26.0.
 
-With Xcode, CMake, Ninja, Rust, Python 3, Ruby, pkg-config and the native
-dependencies (including OpenSSL and libpng) available:
+Build tools: Xcode, CMake 3.30+, Ninja, Rust, Python 3.12+ and Ruby.
+Homebrew libraries and pkg-config are not required. Tools may be installed
+by any method; they are not needed to run the resulting executable.
 
 ```sh
 ./app/platform/macos/build-native.sh
 build/macos-native/demo/Game
 python3 app/platform/macos/tests/run_native_smoke.py
+python3 app/platform/macos/tests/run_native_dependencies.py
 ```
+
+The default output directory is `build/macos-native`, targeting macOS 13.3.
+Set `URGE_MACOS_DEPLOYMENT_TARGET` to select another target, or
+`URGE_NATIVE_BUILD_DIR` to use a separate build directory; pass the same build
+directory to the integration tests. Changing targets automatically discards
+stale dependency probes. All dependency libraries and the Rust backend are
+rebuilt with the selected target. Availability diagnostics
+are errors, and the final audit also checks deployment records inside static
+archives. The current arm64 build passes the graphics and dependency
+integration tests on macOS 26.6.2. It has not yet been run on macOS 13.3; these
+checks cannot replace testing on that system. The 13.3 floor comes from the
+system libc++ floating-point formatting used by `std::format`.
 
 The smoke test runs the native executable twice and checks the Metal backend,
 Ruby 4, PNG decoding, 120 rendered frames, GPU pixel readback, save restoration
@@ -73,9 +88,35 @@ and clean exit. The executable reads `Game.ini` and game files from its own
 directory. To run another game, copy `build/macos-native/app/Game` into that
 game's directory.
 
-This is a local development build: it links some Homebrew dynamic libraries,
-which are not bundled for distribution. HTTP gzip/deflate decompression is
-disabled (`CURL_ZLIB=OFF`) to avoid libcurl's configure checks referencing the
-in-tree zlib target from a separate CMake test project. The engine's zlib and
-RGSS script compression remain available. Native video and networking are
-compiled, but are not covered by the graphics smoke test.
+The build prepares static image and network libraries in
+`build/macos-deps/<architecture>-13.3/prefix`. Existing submodules supply zlib,
+libpng, WebP, libavif and AOM; additional source versions and SHA-256 checksums
+are pinned in `dependencies.json`. First builds download OpenSSL, Brotli, Zstd
+and nghttp2; later builds reuse the verified archives and compiled libraries.
+For a network requiring the local proxy, use:
+
+```sh
+HTTPS_PROXY=http://127.0.0.1:10801 HTTP_PROXY=http://127.0.0.1:10801 ./app/platform/macos/build-native.sh
+```
+
+The executable links only macOS system libraries and frameworks; the build
+rejects other runtime library paths. No dependency prefix, Homebrew installation
+or external CA bundle needs to accompany `Game`. Dependency license files are
+copied to `build/macos-native/licenses/`; retain the applicable notices when
+distributing a build. HTTPS/WSS use statically linked OpenSSL with Apple's
+system certificate trust store; IDN uses Apple's ICU implementation. HTTP/2,
+WebSockets, gzip, zlib/raw deflate, Brotli and Zstd remain enabled. Ruby's full
+zlib extension (including gzip readers/writers) and RGSS script compression
+also remain available. Fetch automatically advertises supported encodings and
+returns the decoded body; decompression/transport errors leave `success?` false
+even when the server returned HTTP 200. Native video is compiled but not covered
+by these tests.
+
+The dependency integration test uses local HTTP/TLS/HTTP2/WebSocket servers. It
+checks binary response decompression, stacked encodings, redirects, compression
+errors, certificate verification, WebSocket echo, Ruby zlib streams/files and
+PNG/JPEG/TIFF/WebP/AVIF decoding. The engine runs with filesystem access to
+Homebrew and the dependency prefix denied, also exercising lazy decoder loads.
+The executable is built for the current architecture; Intel builds have not
+been validated on hardware. Signing/notarization for distribution remains a
+separate step.

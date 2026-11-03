@@ -181,6 +181,10 @@ else()
   set(CURL_USE_OPENSSL ON)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  include("${PROJECT_SOURCE_DIR}/app/platform/macos/native-deps.cmake")
+endif()
+
 add_subdirectory(glm)
 add_subdirectory(SDL)
 
@@ -188,7 +192,9 @@ add_subdirectory(SDL)
 # upstream keeps for a vendored WEBP backend -- because the image library is
 # its only consumer in this tree.  It still has to come up first: SDL_image's
 # WEBP backend links the targets it defines.
-add_subdirectory(SDL_image/external/libwebp)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  add_subdirectory(SDL_image/external/libwebp)
+endif()
 
 add_subdirectory(SDL_image)
 add_subdirectory(SDL_ttf)

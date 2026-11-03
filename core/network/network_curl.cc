@@ -488,7 +488,7 @@ class CurlFetchImpl final : public FetchImpl {
     self.headers_ = std::move(result_headers_);
     self.done_ = true;
     self.success_ =
-        result_error_.empty() && result_status_ >= 200 && result_status_ < 300;
+        self.error_.empty() && result_status_ >= 200 && result_status_ < 300;
     self.progress_ = 1.0f;
 
     finished_ = false;

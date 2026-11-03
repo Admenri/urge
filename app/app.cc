@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <clocale>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -260,6 +261,12 @@ bool Initialize(AppState& state,
                 int argc,
                 char* argv[],
                 urge::ExceptionState& exception_state) {
+#if defined(__APPLE__)
+  // Engine URLs and paths are UTF-8. Apple IDN in libcurl converts from the
+  // process charset, so initialize LC_CTYPE before starting worker threads.
+  // Leave numeric formatting and the other locale categories unchanged.
+  std::setlocale(LC_CTYPE, "en_US.UTF-8");
+#endif
 #if defined(_WIN32)
   /* Before anything else, because a game that dies while the engine is coming
      up -- a driver that refuses the adapter, a font directory that is not

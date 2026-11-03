@@ -1,5 +1,6 @@
 """Run the actual native Metal executable twice, independently of WebKit."""
 from pathlib import Path
+import os
 import shutil
 import struct
 import subprocess
@@ -9,7 +10,8 @@ import zlib
 
 def main():
     repo = Path(__file__).resolve().parents[4]
-    binary = repo / "build/macos-native/app/Game"
+    build = Path(os.environ.get("URGE_NATIVE_BUILD_DIR", repo / "build/macos-native"))
+    binary = build / "app/Game"
     if not binary.exists():
         raise SystemExit("Build with ./app/platform/macos/build-native.sh first.")
     with tempfile.TemporaryDirectory(prefix="urge-native-游戏 ") as directory:
