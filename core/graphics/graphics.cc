@@ -162,6 +162,9 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
 
   auto window_flag =
       SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_HIDDEN;
+#if defined(SDL_PLATFORM_MACOS)
+  window_flag |= SDL_WINDOW_METAL;
+#endif
   if (config.display.resizable != WindowResizable::kNone)
     window_flag |= SDL_WINDOW_RESIZABLE;
 
@@ -173,6 +176,9 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                         SDL_WINDOWPOS_CENTERED);
   SDL_ShowWindow(window_);
+#if defined(SDL_PLATFORM_MACOS)
+  SDL_RaiseWindow(window_);
+#endif
 
   SDL_SetWindowFullscreen(window_, config.display.fullscreen);
 
@@ -806,6 +812,17 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
       exception_state.Throw(ExceptionState::kRGSSError,
                             "failed to acquire surface texture.");
       return;
+    default:  // wgpu-native can return extensions such as Occluded.
+      break;
+  }
+
+  // An occluded Metal window has no drawable. Do not pass a null texture to
+  // wgpu-native; keep pacing the loop until the window becomes visible again.
+  if (!surface_texture.texture) {
+#if defined(URGE_RUNNER_POLL)
+    limiter_.Wait(frame_begin_tick_);
+#endif
+    return;
   }
 
   const glm::ivec2 screen_size = screen_->size();

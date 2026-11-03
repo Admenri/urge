@@ -27,6 +27,9 @@
 
 #include "SDL3/SDL_cpuinfo.h"
 #include "SDL3/SDL_platform_defines.h"
+#if defined(SDL_PLATFORM_MACOS)
+#include "SDL3/SDL_metal.h"
+#endif
 
 #if defined(WEBGPU_BACKEND_WGPU)
 #include "wgpu.h"
@@ -190,6 +193,15 @@ GPUDevice::GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend) {
   CreateDevice(exception_state, backend);
 }
 
+GPUDevice::~GPUDevice() {
+#if defined(SDL_PLATFORM_MACOS)
+  // The surface retains the layer; release it before destroying SDL's view.
+  surface_ = nullptr;
+  if (metal_view_)
+    SDL_Metal_DestroyView(metal_view_);
+#endif
+}
+
 bool GPUDevice::CreateSurfaceFromWindow() {
   if (!window_)
     return false;
@@ -224,6 +236,16 @@ bool GPUDevice::CreateSurfaceFromWindow() {
   surface_desc.nextInChain =
       reinterpret_cast<wgpu::ChainedStruct*>(&android_source.chain);
   native_window_ = native;
+#elif defined(SDL_PLATFORM_MACOS)
+  if (!metal_view_)
+    metal_view_ = SDL_Metal_CreateView(window_);
+  if (!metal_view_)
+    return false;
+  wgpu::SurfaceSourceMetalLayer metal_source;
+  metal_source.layer = SDL_Metal_GetLayer(metal_view_);
+  if (!metal_source.layer)
+    return false;
+  surface_desc.nextInChain = &metal_source;
 #else
 #error not support
 #endif

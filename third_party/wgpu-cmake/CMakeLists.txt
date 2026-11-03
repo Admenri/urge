@@ -162,6 +162,15 @@ if(ANDROID)
     "BINDGEN_EXTRA_CLANG_ARGS=--target=${_urge_android_target} --sysroot=${_urge_ndk_sysroot}${_urge_clang_resource}")
 
   set(OS_LIBRARIES android log)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml
+                         NO_DEFAULT_FEATURES FEATURES wgsl metal
+                         CRATE_TYPES staticlib)
+  find_library(URGE_METAL_FRAMEWORK Metal REQUIRED)
+  find_library(URGE_QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
+  find_library(URGE_FOUNDATION_FRAMEWORK Foundation REQUIRED)
+  set(OS_LIBRARIES ${URGE_METAL_FRAMEWORK} ${URGE_QUARTZCORE_FRAMEWORK}
+                   ${URGE_FOUNDATION_FRAMEWORK})
 elseif(WIN32)
   corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml)
   set(OS_LIBRARIES d3dcompiler ws2_32 userenv bcrypt ntdll opengl32 Propsys RuntimeObject)

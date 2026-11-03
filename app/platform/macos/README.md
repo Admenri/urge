@@ -51,3 +51,31 @@ The second command launches the actual app twice. It checks Ruby 4, 120 rendered
 frames, GPU pixel readback, lazy PNG loading and save restoration after restart.
 The smoke fixture allows background execution so switching to another app does
 not pause the test. Interactive games retain their own background-pause setting.
+
+## Experimental native Metal runner
+
+The engine can also be built as a native arm64 executable using wgpu-native's
+Metal backend and an SDL Cocoa window. This is independent of WKWebView and
+does not require Emscripten. The deployment target remains macOS 26.0.
+
+With Xcode, CMake, Ninja, Rust, Python 3, Ruby, pkg-config and the native
+dependencies (including OpenSSL and libpng) available:
+
+```sh
+./app/platform/macos/build-native.sh
+build/macos-native/demo/Game
+python3 app/platform/macos/tests/run_native_smoke.py
+```
+
+The smoke test runs the native executable twice and checks the Metal backend,
+Ruby 4, PNG decoding, 120 rendered frames, GPU pixel readback, save restoration
+and clean exit. The executable reads `Game.ini` and game files from its own
+directory. To run another game, copy `build/macos-native/app/Game` into that
+game's directory.
+
+This is a local development build: it links some Homebrew dynamic libraries,
+which are not bundled for distribution. HTTP gzip/deflate decompression is
+disabled (`CURL_ZLIB=OFF`) to avoid libcurl's configure checks referencing the
+in-tree zlib target from a separate CMake test project. The engine's zlib and
+RGSS script compression remain available. Native video and networking are
+compiled, but are not covered by the graphics smoke test.

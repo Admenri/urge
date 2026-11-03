@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.30)
 
 project(URGE LANGUAGES CXX C)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  enable_language(OBJC OBJCXX)
+  set(CMAKE_OBJCXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 include_directories(${PROJECT_SOURCE_DIR})

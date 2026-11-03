@@ -56,6 +56,7 @@ DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter);
 class GPUDevice : public Singleton<GPUDevice> {
  public:
   GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend);
+  ~GPUDevice();
 
   wgpu::Device device() const { return device_; }
   wgpu::Adapter adapter() const { return adapter_; }
@@ -78,6 +79,9 @@ class GPUDevice : public Singleton<GPUDevice> {
   SDL_Window* window_ = nullptr;
 
   void* native_window_ = nullptr;
+#if defined(SDL_PLATFORM_MACOS)
+  void* metal_view_ = nullptr;
+#endif
 
   uint64_t surface_generation_ = 0;
 

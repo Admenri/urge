@@ -86,6 +86,11 @@ endif()
 
 # Helper: compile a snippet with the platform preamble.
 function(ruby_c_check code var)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # SDK headers may declare weak imports introduced after the deployment
+    # target. Such functions must select Ruby's fallback on older systems.
+    string(APPEND CMAKE_REQUIRED_FLAGS " -Werror=unguarded-availability-new")
+  endif()
   check_c_source_compiles("${RUBY_CHECK_PREAMBLE}\n${code}" ${var})
 endfunction()
 
@@ -122,6 +127,11 @@ if(RUBY_USE_GMP)
     list(APPEND RUBY_LINK_LIBS gmp)
     set(RUBY_USE_GMP_FINAL ON)
   endif()
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_library(RUBY_COREFOUNDATION_FRAMEWORK CoreFoundation REQUIRED)
+  list(APPEND RUBY_LINK_LIBS ${RUBY_COREFOUNDATION_FRAMEWORK})
 endif()
 
 # Function checks need the same libraries the final link uses.
@@ -169,11 +179,27 @@ endif()
 foreach(fn IN LISTS RUBY_FUNCS)
   string(TOUPPER "${fn}" _up)
   set(_var "HAVE_${_up}")
-  ruby_c_check("int main(void) { (void)${fn}; return 0; }" ${_var})
+  # Keep Ruby's results separate from the parent project's feature cache.
+  ruby_c_check("int main(void) { (void)${fn}; return 0; }" RUBY_AVAILABLE_${_up})
+  set(${_var} "${RUBY_AVAILABLE_${_up}}")
   if(${_var})
     string(APPEND RUBY_FEATURE_DEFINES "#define ${_var} 1\n")
   endif()
 endforeach()
+
+# Darwin initializes the VM before pthread TLS keys are allocated. Use native
+# compiler TLS for the execution-context pointer, as Ruby's configure does.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  ruby_c_check("static __thread void *ec; int main(void){return ec != 0;}" RUBY_HAVE_THREAD_LOCAL)
+  if(RUBY_HAVE_THREAD_LOCAL)
+    string(APPEND RUBY_FEATURE_DEFINES "#define RB_THREAD_LOCAL_SPECIFIER __thread\n")
+  endif()
+endif()
+
+# Darwin's pathname normalization shares helpers with the fork initializer.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND HAVE_FORK)
+  string(APPEND RUBY_FEATURE_DEFINES "#define HAVE_WORKING_FORK 1\n")
+endif()
 
 # Functions that are macros in <math.h> can only be tested by calling them.
 function(ruby_check_call var code)
@@ -407,6 +433,10 @@ ruby_c_check("int main(void){struct stat s;(void)s.st_rdev;return 0;}" HAVE_STRU
 ruby_c_check("int main(void){struct stat s;(void)s.st_atim;return 0;}" HAVE_STRUCT_STAT_ST_ATIM)
 ruby_c_check("int main(void){struct stat s;(void)s.st_mtim;return 0;}" HAVE_STRUCT_STAT_ST_MTIM)
 ruby_c_check("int main(void){struct stat s;(void)s.st_ctim;return 0;}" HAVE_STRUCT_STAT_ST_CTIM)
+ruby_c_check("int main(void){struct stat s;(void)s.st_atimespec;return 0;}" HAVE_STRUCT_STAT_ST_ATIMESPEC)
+ruby_c_check("int main(void){struct stat s;(void)s.st_mtimespec;return 0;}" HAVE_STRUCT_STAT_ST_MTIMESPEC)
+ruby_c_check("int main(void){struct stat s;(void)s.st_ctimespec;return 0;}" HAVE_STRUCT_STAT_ST_CTIMESPEC)
+ruby_c_check("int main(void){struct stat s;(void)s.st_birthtimespec;return 0;}" HAVE_STRUCT_STAT_ST_BIRTHTIMESPEC)
 ruby_c_check("int main(void){struct timeval t;(void)t.tv_sec;return 0;}" HAVE_STRUCT_TIMEVAL)
 ruby_c_check("int main(void){struct timespec t;(void)t.tv_sec;return 0;}" HAVE_STRUCT_TIMESPEC)
 ruby_c_check("int main(void){struct timezone t;(void)t;return 0;}" HAVE_STRUCT_TIMEZONE)
@@ -420,6 +450,8 @@ foreach(_cv
     HAVE_STRUCT_STAT_ST_BLKSIZE HAVE_STRUCT_STAT_ST_BLOCKS
     HAVE_STRUCT_STAT_ST_RDEV HAVE_STRUCT_STAT_ST_ATIM
     HAVE_STRUCT_STAT_ST_MTIM HAVE_STRUCT_STAT_ST_CTIM
+    HAVE_STRUCT_STAT_ST_ATIMESPEC HAVE_STRUCT_STAT_ST_MTIMESPEC
+    HAVE_STRUCT_STAT_ST_CTIMESPEC HAVE_STRUCT_STAT_ST_BIRTHTIMESPEC
     HAVE_STRUCT_TIMEVAL HAVE_STRUCT_TIMESPEC HAVE_STRUCT_TIMEZONE
     HAVE_STRUCT_TM_TM_ZONE HAVE_STRUCT_TM_TM_GMTOFF
     HAVE_STRUCT_STATX_STX_BTIME)
