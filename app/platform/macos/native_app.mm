@@ -28,6 +28,22 @@ void ShowGameError(NSString* message) {
   alert.informativeText = message;
   [alert runModal];
 }
+
+NSURL* ChooseGameFolder() {
+  NSOpenPanel* panel = [NSOpenPanel openPanel];
+  panel.canChooseFiles = NO;
+  panel.canChooseDirectories = YES;
+  panel.allowsMultipleSelection = NO;
+  panel.message = @"Choose a game folder containing Game.ini.";
+  panel.prompt = @"Open Game";
+  while ([panel runModal] == NSModalResponseOK) {
+    NSURL* game = panel.URL.URLByResolvingSymlinksInPath;
+    if (IsGameFolder(game))
+      return game;
+    ShowGameError(@"The selected folder does not contain Game.ini.");
+  }
+  return nil;
+}
 }
 
 @interface URGEGameMenuController : NSObject
@@ -38,19 +54,9 @@ void ShowGameError(NSString* message) {
 - (void)openGame:(id)sender {
   if (!gPendingGame.empty())
     return;
-  NSOpenPanel* panel = [NSOpenPanel openPanel];
-  panel.canChooseFiles = NO;
-  panel.canChooseDirectories = YES;
-  panel.allowsMultipleSelection = NO;
-  panel.message = @"Choose a game folder containing Game.ini.";
-  panel.prompt = @"Open Game";
-  if ([panel runModal] != NSModalResponseOK)
+  NSURL* game = ChooseGameFolder();
+  if (!game)
     return;
-  NSURL* game = panel.URL.URLByResolvingSymlinksInPath;
-  if (!IsGameFolder(game)) {
-    ShowGameError(@"The selected folder does not contain Game.ini.");
-    return;
-  }
   gPendingGame = game.fileSystemRepresentation;
   SDL_Event event = {};
   event.type = SDL_EVENT_QUIT;
@@ -63,10 +69,11 @@ void ShowGameError(NSString* message) {
 
 namespace platform::macos {
 
-std::string PrepareBundledGame(int argc, char* argv[], std::string& error) {
+std::string PrepareBundledGame(int argc, char* argv[], bool& canceled,
+                               std::string& error) {
   @autoreleasepool {
     NSBundle* bundle = [NSBundle mainBundle];
-    if (![bundle.bundleIdentifier isEqualToString:@"com.sxysxy.urge.native"])
+    if (![[bundle objectForInfoDictionaryKey:@"CFBundlePackageType"] isEqualToString:@"APPL"])
       return {};
     gExecutable = bundle.executableURL.fileSystemRepresentation;
     gArguments = {gExecutable};
@@ -96,28 +103,11 @@ std::string PrepareBundledGame(int argc, char* argv[], std::string& error) {
     if ([files fileExistsAtPath:[[adjacent URLByAppendingPathComponent:@"Game.ini"] path]])
       return std::string(adjacent.fileSystemRepresentation);
 
-    NSURL* support = [[files URLsForDirectory:NSApplicationSupportDirectory
-                                   inDomains:NSUserDomainMask] firstObject];
-    NSURL* game = [support URLByAppendingPathComponent:@"URGE/NativeDemo" isDirectory:YES];
-    NSError* failure = nil;
-    if (!game || ![files createDirectoryAtURL:[game URLByAppendingPathComponent:@"Data" isDirectory:YES]
-                 withIntermediateDirectories:YES attributes:nil error:&failure]) {
-      error = failure ? failure.localizedDescription.UTF8String : "Cannot locate Application Support";
+    [NSApp activateIgnoringOtherApps:YES];
+    NSURL* game = ChooseGameFolder();
+    if (!game) {
+      canceled = true;
       return {};
-    }
-    NSURL* demo = [bundle.resourceURL URLByAppendingPathComponent:@"Demo" isDirectory:YES];
-    for (NSString* name in @[@"Game.ini", @"Data/Scripts.rxdata"]) {
-      NSURL* destination = [game URLByAppendingPathComponent:name];
-      // Keep user display/input preferences; refresh only the bundled script.
-      if ([name isEqualToString:@"Game.ini"] && [files fileExistsAtPath:destination.path])
-        continue;
-      NSData* source = [NSData dataWithContentsOfURL:[demo URLByAppendingPathComponent:name]
-                                           options:0 error:&failure];
-      if (!source || (![source isEqualToData:[NSData dataWithContentsOfURL:destination]] &&
-                      ![source writeToURL:destination options:NSDataWritingAtomic error:&failure])) {
-        error = failure ? failure.localizedDescription.UTF8String : "Cannot prepare bundled demo";
-        return {};
-      }
     }
     return std::string(game.fileSystemRepresentation);
   }

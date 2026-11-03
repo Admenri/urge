@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleExecutable</key><string>Game</string>
-  <key>CFBundleIdentifier</key><string>com.sxysxy.urge.native</string>
+  <key>CFBundleIdentifier</key><string>com.urge</string>
   <key>CFBundleName</key><string>URGE</string>
   <key>CFBundleDisplayName</key><string>URGE</string>
   <key>CFBundlePackageType</key><string>APPL</string>

@@ -190,6 +190,7 @@ struct AppState {
   std::string base_dir;
   std::string ini;
   std::string log_path;
+  bool startup_canceled = false;
 
   urge::Config* config = nullptr;
   binding::BindingMain* binding = nullptr;
@@ -320,8 +321,13 @@ bool Initialize(AppState& state,
   state.app = PathToUTF8(executable.stem());
   state.base_dir = PathToUTF8(game_dir);
 #if defined(__APPLE__)
+  // The startup folder picker needs SDL to initialize the Cocoa application.
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
   std::string bundle_error;
-  const std::string bundle_game = platform::macos::PrepareBundledGame(argc, argv, bundle_error);
+  const std::string bundle_game = platform::macos::PrepareBundledGame(
+      argc, argv, state.startup_canceled, bundle_error);
+  if (state.startup_canceled)
+    return false;
   if (!bundle_error.empty()) {
     exception_state.Throw(urge::ExceptionState::kIOError, bundle_error);
     return false;
@@ -353,7 +359,9 @@ bool Initialize(AppState& state,
   }
 #endif
 
+#if !defined(__APPLE__)
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
+#endif
 #if defined(__APPLE__)
   platform::macos::SetDefaultApplicationIcon();
   platform::macos::InstallGameMenu();
@@ -527,6 +535,11 @@ int main(int argc, char* argv[]) {
 
   urge::ExceptionState exception_state;
   if (!Initialize(state, argc, argv, exception_state)) {
+    if (state.startup_canceled) {
+      Shutdown(state);
+      SDL_Quit();
+      return EXIT_SUCCESS;
+    }
     ReportFailure(state, exception_state.message(), true);
     Shutdown(state);
     return EXIT_FAILURE;
@@ -556,6 +569,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
 
   urge::ExceptionState exception_state;
   if (!Initialize(*state, argc, argv, exception_state)) {
+    if (state->startup_canceled)
+      return SDL_APP_SUCCESS;
     ReportFailure(*state, exception_state.message(), true);
     return SDL_APP_FAILURE;
   }

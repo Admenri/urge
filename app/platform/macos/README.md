@@ -3,14 +3,14 @@
 The macOS app and standalone executable use wgpu-native’s Metal backend and
 an SDL Cocoa window. The deployment target is macOS 13.3.
 
-Build tools: Xcode, CMake 3.30+, Ninja, Rust, Python 3.12+ and Ruby.
+Build tools: Xcode, CMake 3.30+, Ninja, Rust, Python 3.12+.
 Homebrew libraries and pkg-config are not required. Tools may be installed
 by any method; they are not needed to run the resulting executable.
 
 ```sh
 ./app/platform/macos/build-native.sh
 open build/macos-native/URGE.app
-# Or: build/macos-native/demo/Game
+# Or: copy build/macos-native/app/Game into a game directory and run it there.
 ```
 
 The app uses the existing URGE logo as its Finder/Dock application icon,
@@ -20,7 +20,7 @@ runtime Dock icon, so it needs no external icon file. Games can still override
 that icon with `URGE.set_window_icon`. The bare file's Finder icon remains the
 system executable icon; the `.app` provides the portable Finder icon.
 
-`build/macos-native/URGE.app` contains the native engine and demo. Use
+`build/macos-native/URGE.app` contains the native engine. Use
 **File → Open Game…** (⌘O) in the native app to select a folder containing
 `Game.ini`. The current game exits through normal teardown before the engine
 restarts in the selected directory. The standalone `Game` executable keeps its
@@ -29,10 +29,9 @@ standard menu and executable-directory game layout.
 The native app also accepts `--game /path/to/game` when its `Contents/MacOS/Game`
 executable is launched from a terminal. An explicit selection takes precedence
 over a game beside the app. If `Game.ini` is beside the native app, it runs that
-game and writes logs/saves beside it. Otherwise it prepares its bundled demo under
-`~/Library/Application Support/URGE/NativeDemo/`, preserving user preferences
-and saves while refreshing the bundled script. Running the app does not write
-to its signed contents.
+game and writes logs/saves beside it. Otherwise the app opens a folder picker
+at startup. Choose a directory containing `Game.ini`; canceling exits normally.
+No demo is bundled, and the app does not write to its signed contents.
 
 The default output directory is `build/macos-native`, targeting macOS 13.3.
 Set `URGE_MACOS_DEPLOYMENT_TARGET` to select another target, or

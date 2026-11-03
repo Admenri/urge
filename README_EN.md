@@ -237,7 +237,7 @@ MyGame/
 - If `<executable stem>.acs` exists and the build includes `admenri/`, that container is mounted first.
 - The runtime log is written to `<executable stem>.log`.
 
-**MacOS**: put the executable file 'Game' into the game directory. Alternatively you can launch URGE.app and open game from menu.
+**MacOS**: put the executable file 'Game' into the game directory. Alternatively you can launch URGE.app select game.
 
 **Web / Android**: the executable name is fixed to `Game`, so `Game.ini`, `Data/` and the rest live at the site root or under `assets/` in the APK.
 
