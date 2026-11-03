@@ -24,6 +24,7 @@
 
 #include "bind/autogen/binding_init.h"
 #include "bind/cruby_utils.h"
+#include "bind/legacy_classes.h"
 #include "bind/script_loop.h"
 #include "core/common/logger.h"
 #include "core/graphics/graphics.h"
@@ -340,6 +341,20 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
     exception_state.Throw(urge::ExceptionState::kRGSSError,
                           "failed to define the script evaluator.");
     return;
+  }
+
+  if (config.xp() || config.vx()) {
+    rb_protect(
+        [](VALUE) -> VALUE {
+          InitLegacyClasses();
+          return Qnil;
+        },
+        Qnil, &error_state_);
+    if (error_state_) {
+      exception_state.Throw(urge::ExceptionState::kRGSSError,
+                            "failed to initialize legacy class compatibility.");
+      return;
+    }
   }
 
   InitBindings();

@@ -302,6 +302,7 @@ C = Space,Return,pad:a
 - **性能分析**：Windows 下可通过环境变量 `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR`，或 `[Debug]` 段的 `Profiler` / `ProfilerInterval` 开启采样分析。
 - **配置保存**：关闭时只把运行期间改动过的项写回 ini。加载时计算或转换得到的值（例如按 `Scripts` 扩展名推断的 `RGSS`、为兼容 ANSI 而转成 UTF-8 的 `Title`）不会回写；`Title` 始终保留文件原文，其余项在显式修改（包括脚本 `Config.set_value`）后才会保存。
 - **配置读写**：`Config.get_value` / `Config.set_value` 读写的是映射后的内存值，与引擎内部字段保持一致。
+- **旧脚本配置类兼容**：RGSS1/2 仅在未捕获的特定继承冲突发生后尝试恢复配置类声明，正常脚本不做源码预处理；适用条件与限制见 [兼容说明](bind/LEGACY_CLASSES.md)。
 
 ### 2.7 常用构建选项
 

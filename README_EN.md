@@ -305,6 +305,7 @@ Additional notes:
 - **Profiling**: on Windows, enable sampling through the `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR` environment variables, or the `Profiler` / `ProfilerInterval` keys in `[Debug]`.
 - **Saving**: only values changed during the run are written back on exit. Values computed or converted while loading (such as `RGSS` inferred from the `Scripts` extension, or `Title` converted to UTF-8) are left out; `Title` always keeps the file's original text, and other values are saved once they are changed explicitly (including `Config.set_value` from a script).
 - **Reading and writing**: `Config.get_value` / `Config.set_value` operate on the mapped in-memory values, so they stay consistent with the engine's own fields.
+- **Legacy configuration classes**: RGSS1/2 attempt a narrow recovery only after an uncaught superclass mismatch; successful scripts are not preprocessed. See the [compatibility notes (Chinese)](bind/LEGACY_CLASSES.md) for scope and limits.
 
 ### 2.7 Build Options
 
