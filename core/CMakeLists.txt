@@ -85,6 +85,8 @@ target_link_libraries(urge-core PUBLIC
   imgui-docking
   miniaudio)
 
+target_link_libraries(urge-core PRIVATE urge-ini-encoding)
+
 # wgpu-native's own extensions -- `wgpuDevicePoll`, `WGPUInstanceExtras`,
 # `wgpu.h` -- which the web build does not have: there the same C API is
 # implemented by emdawnwebgpu.

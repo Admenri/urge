@@ -37,12 +37,7 @@
 #include "core/common/logger.h"
 #include "core/input/gamepad.h"
 #include "core/system/filesystem.h"
-
-#if defined(SDL_PLATFORM_WIN32)
-#include <windows.h>
-#else
-#include <cstdlib>
-#endif
+#include "core/system/ini_encoding.h"
 
 namespace urge {
 
@@ -139,49 +134,6 @@ urge::KeySym ParseKeyBinding(const std::string& symbol,
   return binding;
 }
 
-bool IsUTF8Text(const std::string& text) {
-  const char* cursor = text.c_str();
-  size_t left = text.size();
-  while (left > 0 && *cursor != '\0')
-    if (SDL_StepUTF8(&cursor, &left) == SDL_INVALID_UNICODE_CODEPOINT)
-      return false;
-  return true;
-}
-
-std::string AnsiToUTF8(const std::string& text) {
-#if defined(SDL_PLATFORM_WIN32)
-  const int length = MultiByteToWideChar(
-      CP_ACP, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
-  if (length <= 0)
-    return text;
-
-  std::wstring wide(static_cast<size_t>(length), L'\0');
-  MultiByteToWideChar(CP_ACP, 0, text.data(), static_cast<int>(text.size()),
-                      wide.data(), length);
-#else
-  const size_t length = std::mbstowcs(nullptr, text.c_str(), 0);
-  if (length == static_cast<size_t>(-1))
-    return text;
-
-  std::wstring wide(length, L'\0');
-  std::mbstowcs(wide.data(), text.c_str(), length);
-#endif
-
-  char* utf8 = SDL_iconv_wchar_utf8(wide.c_str());
-  if (!utf8)
-    return text;
-
-  std::string result(utf8);
-  SDL_free(utf8);
-  return result;
-}
-
-std::string NormalizeUTF8(const std::string& text) {
-  if (IsUTF8Text(text))
-    return text;
-  return AnsiToUTF8(text);
-}
-
 int32_t ParseInteger(const std::string& text, int32_t fallback) {
   int32_t value = fallback;
   const auto parsed =
@@ -266,12 +218,11 @@ const std::vector<ConfigField>& Fields() {
          config.game.rgss = ParseInteger(value, config.game.rgss);
        },
        &DeriveRGSSVersion, nullptr},
-      // The title is normalized to UTF-8 on the way in, and that conversion
-      // never goes back to the file: an ANSI ini keeps its own encoding.
+      // Title remains authored text: runtime changes are never persisted.
       {"Game", "Title", ConfigPersist::kNever,
        [](const Config& config) { return config.game.title; },
        [](Config& config, const std::string& value) {
-         config.game.title = NormalizeUTF8(value);
+         config.game.title = value;
        },
        nullptr, nullptr},
       {"Game", "RTP", ConfigPersist::kOnChange,
@@ -468,6 +419,45 @@ const ConfigField* FindField(const std::string& section,
   return nullptr;
 }
 
+// Patch legacy byte-oriented INIs one value at a time. Unchanged titles,
+// comments and paths retain their exact original bytes. This also lets a web
+// build (whose browser only encodes UTF-8) save ordinary ASCII settings.
+bool PatchLegacy(const ini::IniFile& current,
+                 const std::string& original_text,
+                 const std::string& original_bytes,
+                 const std::string& encoding,
+                 std::string& output) {
+  ini::IniFile before(original_text, true);
+  ini::IniFile bytes(original_bytes, true);
+  const auto encode = [&](const std::string& value, std::string& result) {
+    return ini_encoding::Convert(value, "UTF-8", encoding, result);
+  };
+  for (const auto& section : current.GetSectionNames()) {
+    for (const auto& key : current.GetKeys(section)) {
+      const auto value = current.Get(section, key);
+      if (before.HasKey(section, key) && before.Get(section, key) == value)
+        continue;
+      std::string encoded_section, encoded_key, encoded_value;
+      if (!encode(section, encoded_section) || !encode(key, encoded_key) ||
+          !encode(value, encoded_value))
+        return false;
+      bytes.Set(encoded_section, encoded_key, encoded_value);
+    }
+  }
+  for (const auto& section : before.GetSectionNames()) {
+    for (const auto& key : before.GetKeys(section)) {
+      if (current.HasKey(section, key))
+        continue;
+      std::string encoded_section, encoded_key;
+      if (!encode(section, encoded_section) || !encode(key, encoded_key))
+        return false;
+      bytes.RemoveKey(encoded_section, encoded_key);
+    }
+  }
+  output = bytes.RenderPatched();
+  return true;
+}
+
 }
 
 Config::Config(URGE_EXCEPT, std::string inifile)
@@ -476,11 +466,31 @@ Config::Config(URGE_EXCEPT, std::string inifile)
   if (stream) {
     size_t data_size = 0;
     auto* data_ptr = SDL_LoadFile_IO(stream, &data_size, true);
-    std::string data(static_cast<char*>(data_ptr), data_size);
-    parser_.LoadFromString(data);
+    if (!data_ptr) {
+      exception_state.Throw(ExceptionState::kIOError, "Cannot read {}: {}",
+                            inifile_, SDL_GetError());
+      return;
+    }
+    std::string bytes(static_cast<char*>(data_ptr), data_size);
     SDL_free(data_ptr);
+    std::string data, error;
+    save_enabled_ = ini_encoding::Decode(bytes, data, encoding_, bom_, error);
+    if (!save_enabled_)
+      LOGGER_WARN("[Config] {}: {}", inifile_, error);
+    else if (encoding_ != "UTF-8")
+      LOGGER_INFO("[Config] Reading {} as {}", inifile_, encoding_);
+    const bool unicode_encoding =
+        SDL_strncasecmp(encoding_.c_str(), "UTF", 3) == 0 ||
+        SDL_strncasecmp(encoding_.c_str(), "UCS", 3) == 0;
+    if (save_enabled_ && bom_.empty() && !unicode_encoding) {
+      original_bytes_ = std::move(bytes);
+      original_text_ = data;
+    }
+    parser_.LoadFromString(bom_ == "\xEF\xBB\xBF" ? bom_ + data : data);
   }
 
+  if (exception_state.HadException())
+    return;
   Load();
 }
 
@@ -493,6 +503,10 @@ std::string Config::GetValue(std::string section,
 }
 
 void Config::SetValue(std::string section, std::string key, std::string value) {
+  if (section == "Game" && key == "IniEncoding") {
+    LOGGER_WARN("[Config] IniEncoding can only be changed before startup");
+    return;
+  }
   if (const auto* field = FindField(section, key)) {
     field->set(*this, value);
     return;
@@ -515,6 +529,8 @@ bool Config::HasCommandLine(const std::string& token) const {
 }
 
 void Config::Save(URGE_EXCEPT) {
+  if (!save_enabled_)
+    return;
   const auto& fields = Fields();
   for (size_t i = 0; i < fields.size(); ++i) {
     const auto& field = fields[i];
@@ -545,10 +561,32 @@ void Config::Save(URGE_EXCEPT) {
   if (!parser_.HasChanges())
     return;
 
+  // Finish the conversion before opening (and truncating) the original file.
+  std::string text = parser_.RenderPatched();
+  if (!ini_encoding::IsUTF8(text)) {
+    exception_state.Throw(ExceptionState::kIOError,
+                          "Cannot save {}: invalid UTF-8 configuration value",
+                          inifile_);
+    return;
+  }
+  if (encoding_ != "UTF-8") {
+    std::string encoded;
+    const bool converted =
+        original_bytes_.empty()
+            ? ini_encoding::Convert(text, "UTF-8", encoding_, encoded)
+            : PatchLegacy(parser_, original_text_, original_bytes_, encoding_,
+                          encoded);
+    if (!converted) {
+      exception_state.Throw(ExceptionState::kIOError,
+                            "Cannot save {}: a value cannot be encoded as {}",
+                            inifile_, encoding_);
+      return;
+    }
+    text = bom_ + encoded;
+  }
   auto* stream = IOService::Get().OpenWrite(exception_state, inifile_);
   if (!stream)
     return;
-  const std::string text = parser_.RenderPatched();
   SDL_WriteIO(stream, text.data(), text.size());
   SDL_CloseIO(stream);
 

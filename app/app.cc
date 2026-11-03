@@ -235,6 +235,8 @@ void Shutdown(AppState& state) {
   if (state.config) {
     urge::ExceptionState exception_state;
     state.config->Save(exception_state);
+    if (exception_state.HadException())
+      LOGGER_ERROR("[Config] {}", exception_state.message());
   }
 
   urge::Network::Reset(nullptr);
