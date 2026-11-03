@@ -84,9 +84,10 @@ separate step.
 
 ## GitHub Actions artifacts
 
-The `Build macOS` workflow runs on pushes to `master`, pushes of `v*` tags,
-and manual dispatch, matching the other platform builds. It uses an arm64
-`macos-26` runner and retains the macOS 13.3 deployment target.
+The `Build` workflow (`.github/workflows/build.yml`) includes a `macos-arm64`
+job alongside the other platforms. It runs on pushes to `master`, pushes of
+`v*` tags and manual dispatch. The macOS job uses an arm64 `macos-26` runner
+and retains the macOS 13.3 deployment target.
 
 Two archives are uploaded separately and retained for 14 days:
 
