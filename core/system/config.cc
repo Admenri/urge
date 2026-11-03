@@ -561,6 +561,12 @@ void Config::Save(URGE_EXCEPT) {
   if (!parser_.HasChanges())
     return;
 
+  WriteIni(exception_state);
+  if (!exception_state.HadException())
+    UpdateBaseline();
+}
+
+void Config::WriteIni(URGE_EXCEPT) {
   // Finish the conversion before opening (and truncating) the original file.
   std::string text = parser_.RenderPatched();
   if (!ini_encoding::IsUTF8(text)) {
@@ -587,10 +593,77 @@ void Config::Save(URGE_EXCEPT) {
   auto* stream = IOService::Get().OpenWrite(exception_state, inifile_);
   if (!stream)
     return;
-  SDL_WriteIO(stream, text.data(), text.size());
-  SDL_CloseIO(stream);
+  const bool written =
+      SDL_WriteIO(stream, text.data(), text.size()) == text.size();
+  const bool closed = SDL_CloseIO(stream);
+  if (!written || !closed) {
+    exception_state.Throw(ExceptionState::kIOError, "Cannot write {}: {}",
+                          inifile_, SDL_GetError());
+    return;
+  }
+}
 
-  UpdateBaseline();
+std::string Config::ReadProfileValue(std::string section,
+                                     std::string key,
+                                     const std::string& fallback) const {
+  for (const auto& candidate : parser_.GetSectionNames())
+    if (SDL_strcasecmp(candidate.c_str(), section.c_str()) == 0) {
+      section = candidate;
+      break;
+    }
+  for (const auto& candidate : parser_.GetKeys(section))
+    if (SDL_strcasecmp(candidate.c_str(), key.c_str()) == 0) {
+      key = candidate;
+      break;
+    }
+  return parser_.Get(section, key, fallback);
+}
+
+void Config::WriteProfileValue(URGE_EXCEPT,
+                               std::string section,
+                               const std::string* key,
+                               const std::string* value) {
+  if (!save_enabled_) {
+    exception_state.Throw(
+        ExceptionState::kIOError,
+        "Cannot write a profile loaded with lossy INI decoding");
+    return;
+  }
+  auto previous_parser = parser_;
+  for (const auto& candidate : parser_.GetSectionNames())
+    if (SDL_strcasecmp(candidate.c_str(), section.c_str()) == 0) {
+      section = candidate;
+      break;
+    }
+  if (!key) {
+    parser_.RemoveSection(section);
+  } else {
+    std::string actual_key = *key;
+    for (const auto& candidate : parser_.GetKeys(section))
+      if (SDL_strcasecmp(candidate.c_str(), key->c_str()) == 0) {
+        actual_key = candidate;
+        break;
+      }
+    if (!value) {
+      parser_.RemoveKey(section, actual_key);
+    } else {
+      if (SDL_strcasecmp(section.c_str(), "Game") == 0 &&
+          SDL_strcasecmp(actual_key.c_str(), "IniEncoding") == 0) {
+        exception_state.Throw(
+            ExceptionState::kIOError,
+            "IniEncoding cannot be changed while the game is running");
+        return;
+      }
+      parser_.Set(section, actual_key, *value);
+    }
+  }
+  // A profile API edits file contents, not already loaded engine settings.
+  // Persist the shared parser directly; the usual Config save retains its
+  // independent runtime-change tracking.
+  WriteIni(exception_state);
+  if (exception_state.HadException()) {
+    parser_ = std::move(previous_parser);
+  }
 }
 
 void Config::Load() {

@@ -32,9 +32,8 @@ target_link_libraries(urge-binding PUBLIC ruby-static urge-core zlibstatic)
 
 # libffi backs the Win32API binding (binding_win32api.cc), which uses it to call
 # a DLL export whose signature is only known at runtime.  The dependency is
-# Windows-only for the same reason the binding is: `third_party/CMakeLists.txt`
-# only brings the library up there, and off Windows the binding compiles to an
-# empty initialiser that needs nothing from it.
+# Windows-only: `third_party/CMakeLists.txt` only brings the library up there.
+# Other platforms use an explicit shim registry, not native DLL calls or libffi.
 if(WIN32)
   target_link_libraries(urge-binding PUBLIC libffi)
 endif()

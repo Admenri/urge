@@ -236,12 +236,4 @@ void InitWin32APIBinding() {
 
 }
 
-#else
-
-namespace binding {
-
-void InitWin32APIBinding() {}
-
-}
-
 #endif

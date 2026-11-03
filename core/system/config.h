@@ -110,8 +110,20 @@ class Config : public Singleton<Config> {
   // UpdateBaseline().
   void Save(URGE_EXCEPT);
 
+  // Win32 profile APIs share the live parser so an external-style INI write
+  // cannot be overwritten by the next configuration save.
+  const std::string& filename() const { return inifile_; }
+  std::string ReadProfileValue(std::string section,
+                               std::string key,
+                               const std::string& fallback) const;
+  void WriteProfileValue(URGE_EXCEPT,
+                         std::string section,
+                         const std::string* key,
+                         const std::string* value);
+
  private:
   void Load();
+  void WriteIni(URGE_EXCEPT);
   // Captures every mapped field right after loading.  Save() writes a field
   // only when it differs from this snapshot, so values that Load() derived or
   // normalized stay out of the file, while explicit later changes are kept.
