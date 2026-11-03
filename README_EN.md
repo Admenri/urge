@@ -42,7 +42,8 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | WebAssembly (WebGPU-capable browser) | `Game.html` + `Game.wasm` | Browser WebGPU | Video off by default; networking available |
 | Android 9+ (API 28, arm64-v8a / x86_64) | APK | Vulkan 1.1 | Video and networking on by default; TLS via the vendored mbedTLS |
 | macOS 26.0+ | `URGE.app` (Wasm + WKWebView) | Browser WebGPU | See the [macOS host guide](app/platform/macos/README.md) |
-| Linux / macOS native engine | — | — | No build presets yet |
+| macOS native (experimental, deployment target 13.3) | `Game` / `URGE.app` | wgpu-native → Metal | arm64 validated on 26.6.2; testing on 13.3 still needed |
+| Linux native engine | — | — | No build presets yet |
 
 ### Ruby Script API
 
@@ -192,6 +193,30 @@ cd android
 The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`. The game files are placed in the APK's `assets/` and unpacked into the app's private directory on first launch.
 
 Release builds need signing parameters (`urgeStoreFile`, `urgeStorePassword`, `urgeKeyAlias`, `urgeKeyPassword`, supplied through `local.properties`, `-P` or the environment); without them the APK is left unsigned.
+
+### macOS Native and Local Signing
+
+Build with `./app/platform/macos/build-native.sh`, then open
+`build/macos-native/URGE.app`. The native app uses the URGE icon and provides
+**File → Open Game…** (⌘O) to select a folder containing `Game.ini`. The standalone
+`Game` keeps its executable-directory layout and standard menu.
+
+Build scripts ad-hoc sign the app. To sign a modified local copy manually:
+
+```sh
+codesign --force --sign - /path/to/game/Game
+codesign --verify --strict --verbose=2 /path/to/game/Game
+codesign --force --sign - build/macos-native/URGE.app
+codesign --verify --deep --strict --verbose=2 build/macos-native/URGE.app
+```
+
+Ad-hoc signing (`--sign -`) needs no certificate but does not provide Developer
+ID trust or notarization, and may not satisfy Gatekeeper for downloaded copies.
+For your own trusted build, use the app-specific **Open Anyway** option under
+**System Settings → Privacy & Security**, if offered after an attempted launch.
+Do not disable Gatekeeper globally. Public distribution requires Developer ID
+signing and notarization. See the [macOS signing guide](app/platform/macos/README.md#local-signing-and-gatekeeper)
+and [Apple's instructions](https://support.apple.com/en-gb/102445).
 
 ### 2.6 Running a Game
 

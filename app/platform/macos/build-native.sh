@@ -40,4 +40,19 @@ cp "$build/app/Game" "$build/demo/Game"
 cp "$repo/test/text_input/Game.ini" "$build/demo/Game.ini"
 ruby "$repo/test/text_input/pack_scripts.rb" "$repo/test/text_input/main.rb" "$build/demo/Data/Scripts.rxdata"
 cp -R "$prefix/share/urge/licenses" "$build/"
-printf '\nRun %s\n' "$build/demo/Game"
+
+# The bundle and the standalone executable use the same native Metal engine.
+# Keep data under Resources, outside the bundle's signed executable directory.
+bundle="$build/URGE.app"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources/Demo/Data"
+rm -rf "$bundle/Contents/MacOS/Data"
+rm -f "$bundle/Contents/MacOS/Game.ini" "$bundle/Contents/MacOS/Game.log"
+cp "$build/app/Game" "$bundle/Contents/MacOS/Game"
+cp "$build/demo/Game.ini" "$bundle/Contents/Resources/Demo/Game.ini"
+cp "$build/demo/Data/Scripts.rxdata" "$bundle/Contents/Resources/Demo/Data/Scripts.rxdata"
+cp "$repo/app/platform/macos/NativeInfo.plist" "$bundle/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion $target" "$bundle/Contents/Info.plist"
+"$tools/bin/python" "$repo/app/platform/macos/build-icon.py" icns "$repo/app/resources/urge_favicon.png" \
+  "$bundle/Contents/Resources/URGE.icns"
+codesign --force --sign - "$bundle"
+printf '\nRun %s or open %s\n' "$build/demo/Game" "$bundle"

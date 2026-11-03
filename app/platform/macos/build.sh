@@ -26,6 +26,8 @@ swiftc "$repo/app/platform/macos/App.swift" "$repo/app/platform/macos/LocalServe
   -target "$(uname -m)-apple-macosx26.0" \
   -framework AppKit -framework WebKit -framework Network -o "$bundle/Contents/MacOS/URGE"
 cp "$repo/app/platform/macos/Info.plist" "$bundle/Contents/Info.plist"
+python3 "$repo/app/platform/macos/build-icon.py" icns "$repo/app/resources/urge_favicon.png" \
+  "$bundle/Contents/Resources/URGE.icns"
 for name in Game.html Game.js Game.wasm urge-helper.js; do
   cp "$wasm/app/$name" "$bundle/Contents/Resources/Web/$name"
 done

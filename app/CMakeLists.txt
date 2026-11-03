@@ -27,6 +27,21 @@ endif()
 
 target_link_libraries(Game PUBLIC urge-core urge-binding)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  set(_urge_icon_header "${CMAKE_CURRENT_BINARY_DIR}/generated/urge_icon.h")
+  add_custom_command(OUTPUT "${_urge_icon_header}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/platform/macos/build-icon.py"
+      header "${CMAKE_CURRENT_SOURCE_DIR}/resources/urge_favicon_512.png" "${_urge_icon_header}"
+    DEPENDS platform/macos/build-icon.py resources/urge_favicon_512.png
+    VERBATIM)
+  target_sources(Game PRIVATE platform/macos/native_app.mm "${_urge_icon_header}")
+  target_include_directories(Game PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+  target_compile_options(Game PRIVATE "$<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>")
+  find_library(URGE_APPKIT_FRAMEWORK AppKit REQUIRED)
+  target_link_libraries(Game PRIVATE "${URGE_APPKIT_FRAMEWORK}")
+endif()
+
 # ---------------------------------------------------------------------------
 # The Android packaging step.
 #

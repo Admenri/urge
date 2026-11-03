@@ -39,6 +39,10 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 #endif
 
+#if defined(__APPLE__)
+#include "platform/macos/native_app.h"
+#endif
+
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -315,6 +319,16 @@ bool Initialize(AppState& state,
   // same game, and both read `Game.ini`.
   state.app = PathToUTF8(executable.stem());
   state.base_dir = PathToUTF8(game_dir);
+#if defined(__APPLE__)
+  std::string bundle_error;
+  const std::string bundle_game = platform::macos::PrepareBundledGame(argc, argv, bundle_error);
+  if (!bundle_error.empty()) {
+    exception_state.Throw(urge::ExceptionState::kIOError, bundle_error);
+    return false;
+  }
+  if (!bundle_game.empty())
+    state.base_dir = bundle_game;
+#endif
 #endif
 
   state.ini = state.app + ".ini";
@@ -340,6 +354,10 @@ bool Initialize(AppState& state,
 #endif
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
+#if defined(__APPLE__)
+  platform::macos::SetDefaultApplicationIcon();
+  platform::macos::InstallGameMenu();
+#endif
   TTF_Init();
 
   /* A game handed to a player is started by double-clicking it, so there is no
@@ -523,6 +541,10 @@ int main(int argc, char* argv[]) {
     ReportFailure(state, state.binding->ErrorMessage(), true);
 
   Shutdown(state);
+#if defined(__APPLE__)
+  if (!platform::macos::RelaunchSelectedGame())
+    return EXIT_FAILURE;
+#endif
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
@@ -594,6 +616,10 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result) {
 
   Shutdown(*state);
   delete state;
+
+#if defined(__APPLE__)
+  platform::macos::RelaunchSelectedGame();
+#endif
 
 #if defined(OS_EMSCRIPTEN)
   // SDL cancels its callback loop without exiting the Emscripten runtime.

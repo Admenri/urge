@@ -65,10 +65,34 @@ by any method; they are not needed to run the resulting executable.
 
 ```sh
 ./app/platform/macos/build-native.sh
-build/macos-native/demo/Game
+open build/macos-native/URGE.app
+# Or: build/macos-native/demo/Game
 python3 app/platform/macos/tests/run_native_smoke.py
+python3 app/platform/macos/tests/run_native_smoke.py --bundle
 python3 app/platform/macos/tests/run_native_dependencies.py
 ```
+
+Both hosts use the existing URGE logo as their Finder/Dock application icon,
+generated as a multi-resolution `.icns` from `app/resources/urge_favicon.png`.
+The standalone native `Game` also embeds the 512-pixel logo for its default
+runtime Dock icon, so it needs no external icon file. Games can still override
+that icon with `URGE.set_window_icon`. The bare file's Finder icon remains the
+system executable icon; the `.app` provides the portable Finder icon.
+
+`build/macos-native/URGE.app` contains the native engine and demo, independent
+of the WebView app. Use **File → Open Game…** (⌘O) in the native app to select a folder containing
+`Game.ini`. The current game exits through normal teardown before the engine
+restarts in the selected directory. The standalone `Game` executable keeps its
+standard menu and executable-directory game layout.
+
+The native app also accepts `--game /path/to/game` when its `Contents/MacOS/Game`
+executable is launched from a terminal. An explicit selection takes precedence
+over a game beside the app. If `Game.ini` is beside the native app, it runs that
+game and writes logs/saves beside it. Otherwise it prepares its bundled demo under
+`~/Library/Application Support/URGE/NativeDemo/`, preserving user preferences
+and saves while refreshing the bundled script. Running the app does not write
+to its signed contents. The bundle smoke test checks adjacent game discovery,
+rendering/saves over two launches and signature validity afterward.
 
 The default output directory is `build/macos-native`, targeting macOS 13.3.
 Set `URGE_MACOS_DEPLOYMENT_TARGET` to select another target, or
@@ -120,3 +144,46 @@ Homebrew and the dependency prefix denied, also exercising lazy decoder loads.
 The executable is built for the current architecture; Intel builds have not
 been validated on hardware. Signing/notarization for distribution remains a
 separate step.
+
+## Local signing and Gatekeeper
+
+Both build scripts ad-hoc sign their `.app` output for local development. For a
+standalone executable copied to a game directory, or a bundle whose contents you
+have changed, sign the final copy and verify it:
+
+```sh
+# Standalone native executable (use the path of the copy you actually run).
+codesign --force --sign - /path/to/game/Game
+codesign --verify --strict --verbose=2 /path/to/game/Game
+
+# Native app. For WebView, use build/macos-webview/URGE.app instead.
+codesign --force --sign - build/macos-native/URGE.app
+codesign --verify --deep --strict --verbose=2 build/macos-native/URGE.app
+```
+
+`--sign -` creates an **ad-hoc** signature; it requires no paid certificate.
+Sign after changing the executable, `Info.plist`, icon or other bundle resources.
+For these bundles, signing the `.app` signs its main executable and seals its
+resources; `--deep` above is used for verification, not for signing. Rebuilds
+replace the output and the build script signs it again.
+
+A valid local signature does **not** establish a Developer ID identity or Apple
+notarization, and it does not guarantee Gatekeeper approval of downloaded or
+quarantined copies. For your own trusted build that macOS blocks, first try to
+open it, then use **System Settings → Privacy & Security → Open Anyway** for that
+specific app if the system offers the option. Do not disable Gatekeeper globally.
+See Apple's [opening apps safely](https://support.apple.com/en-gb/102445).
+
+You can inspect quarantine metadata and Gatekeeper's assessment without changing
+system security settings:
+
+```sh
+xattr -p com.apple.quarantine build/macos-native/URGE.app
+spctl --assess --type execute --verbose=2 build/macos-native/URGE.app
+```
+
+A missing quarantine attribute is normal for a local build. An ad-hoc build may
+be rejected by `spctl` even though `codesign --verify` succeeds; these checks
+answer different questions. Public distribution requires a Developer ID
+Application signature and notarization, as described in Apple's
+[distribution guide](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).

@@ -42,7 +42,8 @@
 | WebAssembly（支持 WebGPU 的浏览器） | `Game.html` + `Game.wasm` | 浏览器 WebGPU | 视频默认关闭；网络可用 |
 | Android 9+（API 28，arm64-v8a / x86_64） | APK | Vulkan 1.1 | 视频与网络默认开启；TLS 使用内置 mbedTLS |
 | macOS 26.0+ | `URGE.app`（Wasm + WKWebView） | 浏览器 WebGPU | 构建与使用见 [macOS 宿主说明](app/platform/macos/README.md) |
-| Linux / macOS 原生引擎 | — | — | 尚未提供构建预设 |
+| macOS Native（实验性，部署目标 13.3） | `Game` / `URGE.app` | wgpu-native → Metal | 已在 26.6.2 验证 arm64；仍需 13.3 实机测试 |
+| Linux 原生引擎 | — | — | 尚未提供构建预设 |
 
 ### Ruby 脚本 API
 
@@ -192,6 +193,27 @@ cd android
 产物位于 `android/app/build/outputs/apk/debug/app-debug.apk`。游戏文件会进入 APK 的 `assets/`，并在首次启动时解包到应用的私有目录。
 
 发布构建需要签名参数（`urgeStoreFile`、`urgeStorePassword`、`urgeKeyAlias`、`urgeKeyPassword`，可写在 `local.properties` 或通过 `-P` / 环境变量提供）；缺失时 APK 保持未签名。
+
+### macOS Native 与本地签名
+
+```sh
+./app/platform/macos/build-native.sh
+open build/macos-native/URGE.app
+```
+
+Native `URGE.app` 使用 URGE 图标，可通过“文件 → 打开游戏…”（⌘O）选择包含 `Game.ini` 的文件夹。裸 `Game` 不增加选目录菜单，仍放在游戏目录运行。构建脚本已为 `.app` 自动添加本地临时签名；手动修改或替换包内容后，可重新签名：
+
+```sh
+# 裸可执行文件：请签名实际运行的那一份。
+codesign --force --sign - /path/to/game/Game
+codesign --verify --strict --verbose=2 /path/to/game/Game
+
+# Native app；WebView 版本将路径改为 build/macos-webview/URGE.app。
+codesign --force --sign - build/macos-native/URGE.app
+codesign --verify --deep --strict --verbose=2 build/macos-native/URGE.app
+```
+
+`--sign -` 无需开发者证书，但仅提供 ad-hoc 临时签名，**不等于 Developer ID 签名或 Apple 公证，也不保证下载的文件通过 Gatekeeper**。若确认是自己的可信构建，首次打开被拦截后，可在“系统设置 → 隐私与安全性”中对该应用选择“仍要打开”（如系统提供此选项）。不要全局关闭 Gatekeeper。分发给其他用户需要 Developer ID 签名与公证；详见 [macOS 构建、图标与本地签名说明](app/platform/macos/README.md#local-signing-and-gatekeeper) 和 [Apple 官方说明](https://support.apple.com/en-gb/102445)。
 
 ### 2.6 运行游戏
 

@@ -1,5 +1,6 @@
 """Run the actual native Metal executable twice, independently of WebKit."""
 from pathlib import Path
+import argparse
 import os
 import shutil
 import struct
@@ -9,6 +10,9 @@ import zlib
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bundle", action="store_true", help="Test the signed app with an adjacent game")
+    args = parser.parse_args()
     repo = Path(__file__).resolve().parents[4]
     build = Path(os.environ.get("URGE_NATIVE_BUILD_DIR", repo / "build/macos-native"))
     binary = build / "app/Game"
@@ -18,7 +22,13 @@ def main():
         game = Path(directory)
         (game / "Data").mkdir()
         (game / "Graphics").mkdir()
-        shutil.copy2(binary, game / "Game")
+        executable = game / "Game"
+        bundle = game / "URGE.app"
+        if args.bundle:
+            shutil.copytree(build / "URGE.app", bundle)
+            executable = bundle / "Contents/MacOS/Game"
+        else:
+            shutil.copy2(binary, executable)
         ini = (repo / "test/text_input/Game.ini").read_text()
         ini = ini.replace("[Display]", "[Display]\nBackgroundRunning=true")
         ini = ini.replace("Backend=", "Backend=metal")
@@ -34,7 +44,7 @@ def main():
         (game / "Graphics/check.png").write_bytes(png)
         for count in (1, 2):
             try:
-                result = subprocess.run([str(game / "Game")], stdout=subprocess.PIPE,
+                result = subprocess.run([str(executable)], stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT, text=True, timeout=30)
             except subprocess.TimeoutExpired as error:
                 print((error.stdout or b"").decode(errors="replace"), flush=True)
@@ -44,6 +54,9 @@ def main():
             assert "Backend: Metal" in result.stdout
             assert "SMOKE_PASS" in result.stdout and f"persisted_run={count}" in result.stdout
             assert (game / "Smoke.rvdata2").is_file()
+        if args.bundle:
+            subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
+            print("PASS: adjacent game, saves outside bundle and intact code signature")
         print("PASS: native Metal, Ruby 4, GPU readback, PNG decoding and saves across two launches")
 
 
