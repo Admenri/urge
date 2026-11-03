@@ -127,7 +127,7 @@ endif()
 if(EMSCRIPTEN)
   set(URGE_WEB_ASSETS "" CACHE PATH
     "Game directory served beside the module as assets/ (contents land at /)")
-  set(URGE_WEB_PRELOAD "*.ini,*.acs,Data/Scripts.*" CACHE STRING
+  set(URGE_WEB_PRELOAD "*.ini,*.acs,*.rgssad,*.rgss2a,*.rgss3a,Data/Scripts.*" CACHE STRING
     "Glob patterns the web build loads before the first frame")
   option(URGE_WEB_EMBED_ASSETS
     "Pack the game into Game.data instead of loading it on demand" OFF)

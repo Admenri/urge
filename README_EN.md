@@ -29,7 +29,7 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | **Audio** | BGM / BGS / ME / SE; WAV, Ogg Vorbis and Ogg Opus; MIDI with SoundFont; per-channel volume and output device selection; `AudioStream` for streaming playback and control; decoding and mixing run on a dedicated audio thread (single-threaded where threads are unavailable) |
 | **Input** | Keyboard, mouse, gamepad (multiple devices, hot-plug, rumble, triggers / sticks) and multi-touch (up to 16 fingers); key bindings are stored in `Game.ini` |
 | **Fonts** | Resolution order is `Fonts/` → system fonts → embedded font; file names and family names are supported, including CJK text; Windows defaults to Microsoft YaHei |
-| **Assets** | PhysicsFS virtual filesystem; automatic RTP detection on Windows; optional `.acs` encrypted containers (requires an `admenri/` drop-in) |
+| **Assets** | PhysicsFS virtual filesystem; direct read-only `.rgssad` / `.rgss2a` / `.rgss3a` support; automatic RTP detection on Windows; optional `.acs` containers (requires `admenri/`) |
 | **Video** | WebM / AV1 playback (desktop, can be disabled); `Graphics.play_movie` provides a movie event with seek controls |
 | **Networking** | HTTP `Fetch` and `WebSocket` (desktop and web, can be disabled) |
 | **Diagnostics** | F1 settings panel, F2 frame-rate panel; runtime log; Windows crash dumps and symbolicated reports; optional PGO |
@@ -150,7 +150,7 @@ cmake --build --preset emscripten-wasm32
 Game.html  Game.js  Game.wasm  async_mapping.js  urge-helper.js  assets/
 ```
 
-The game is published beside the module as `assets/`. Files matching `*.ini`, `*.acs` and `Data/Scripts.*` are preloaded before the first frame (adjust with `URGE_WEB_PRELOAD`); everything else is fetched the first time it is requested. Pass `-DURGE_WEB_EMBED_ASSETS=ON` at configure time to pack the game into a single `Game.data` instead.
+The game is published beside the module as `assets/`. Files matching `*.ini`, `*.acs`, `*.rgssad`, `*.rgss2a`, `*.rgss3a` and `Data/Scripts.*` are preloaded before the first frame (adjust with `URGE_WEB_PRELOAD`); everything else is fetched the first time it is requested. Pass `-DURGE_WEB_EMBED_ASSETS=ON` at configure time to pack the game into a single `Game.data` instead.
 
 Serve the directory over HTTP (`localhost` or HTTPS; browsers generally expose WebGPU only in secure contexts):
 
@@ -235,6 +235,8 @@ MyGame/
 
 - The configuration file is `<executable stem>.ini` (`Game.exe` → `Game.ini`).
 - If `<executable stem>.acs` exists and the build includes `admenri/`, that container is mounted first.
+- Original resource containers are discovered by executable stem, in `.rgss3a`, `.rgss2a`, `.rgssad` order; the first existing archive is selected. This is built in and does not require `admenri/`. Unparseable index structure causes a startup error. An incomplete resource payload does not prevent mounting; only opening that resource fails, with normal PhysicsFS fallback to other search paths.
+- Resource priority is ACS (when enabled), then RGSS, then the ordinary game directory. RGSS resources are exposed only as read-only virtual streams. Saves and logs remain in the game directory; no assets are extracted and no extraction or decryption-export tool is provided.
 - The runtime log is written to `<executable stem>.log`.
 
 **MacOS**: put the executable file 'Game' into the game directory. Alternatively you can launch URGE.app select game.
@@ -316,7 +318,7 @@ Additional notes:
 | `URGE_WIN7_COMPAT` | `OFF` | Link Windows 7 compatibility hooks: route Win8+ imports such as `WaitOnAddress`, `ProcessPrng` and `CreateFile2` to in-image fallbacks |
 | `URGE_VIDEO_AV1_8BIT_ONLY` | `OFF` | Build 8-bit AV1 only, reducing size (drops 10 / 12-bit video) |
 | `URGE_WEB_ASSETS` | empty | Game directory for the web build |
-| `URGE_WEB_PRELOAD` | `*.ini,*.acs,Data/Scripts.*` | Files preloaded before the first web frame |
+| `URGE_WEB_PRELOAD` | `*.ini,*.acs,*.rgssad,*.rgss2a,*.rgss3a,Data/Scripts.*` | Files preloaded before the first web frame |
 | `URGE_WEB_EMBED_ASSETS` | `OFF` | Pack the game into a single `Game.data` |
 | `URGE_BUILD_ACS_PACK` | `ON` | Build the `.acs` container packer when `admenri/` is present |
 | `URGE_PGO` | `off` | Two-pass profile-guided optimization: `generate` / `use` (MSVC) |
@@ -345,7 +347,7 @@ The following dependencies are Git submodules and must be fetched with the sourc
 
 `third_party/` also vendors `ruby` (CRuby 4.0.0), `miniaudio`, `imgui`, `dav1d`, `webm`, `libffi` and `webgpu-cpp`. The web build uses Emscripten's `emdawnwebgpu` port instead of wgpu-native.
 
-The optional `admenri/` directory is not part of the open-source repository. When present, the build enables `.acs` encrypted containers and the `urge-acs-pack` packer; without it, games run from ordinary files.
+The optional `admenri/` directory is not part of the open-source repository. When present, the build enables `.acs` encrypted containers and the `urge-acs-pack` packer; without it, ordinary files and original RGSS resource archives remain supported.
 
 ---
 

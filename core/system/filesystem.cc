@@ -72,7 +72,7 @@ namespace {
 
 void ToLower(std::string& str) {
   for (size_t i = 0; i < str.size(); ++i)
-    str[i] = tolower(str[i]);
+    str[i] = tolower(static_cast<unsigned char>(str[i]));
 }
 
 const char* FindFileExtName(const char* filename) {
@@ -272,6 +272,8 @@ IOService::IOService(URGE_EXCEPT, const std::string& argv0) {
     return;
   }
   archive::Register();
+  if (!rgss_archive::Register())
+    exception_state.Throw(ExceptionState::kIOError, "failed to register RGSS archivers.");
 }
 
 IOService::~IOService() {
@@ -289,6 +291,8 @@ int32_t IOService::AddLoadPath(const std::string& new_path,
 }
 
 bool IOService::MountArchive(const std::string& path, bool prepend) {
+  if (rgss_archive::SupportsPath(path))
+    return rgss_archive::Mount(path, prepend);
   return archive::Mount(path, prepend);
 }
 

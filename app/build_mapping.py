@@ -49,7 +49,7 @@ before every open.
 
 Files whose names match one of the `--preload` patterns are marked `preload`
 and fetched before the game starts instead of on demand: the configuration and
-the script archive are needed before the first frame, and an `.acs` container
+the script archive are needed before the first frame, and an `.acs` or RGSS resource container
 has to be a real file before PhysicsFS can mount it.
 
 Usage:
@@ -67,7 +67,7 @@ import sys
 
 # Needed before the game's first frame: the configuration names the script
 # archive, and a container has to exist in the filesystem before it is mounted.
-DEFAULT_PRELOAD = "*.ini,*.acs,Data/Scripts.*"
+DEFAULT_PRELOAD = "*.ini,*.acs,*.rgssad,*.rgss2a,*.rgss3a,Data/Scripts.*"
 
 
 def matches(relative_path, pattern):

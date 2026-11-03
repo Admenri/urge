@@ -37,3 +37,10 @@ bool Mount(const std::string& path, bool prepend = true);
 }
 
 }
+
+// Built-in read-only RGSS containers; independent of the optional ACS drop-in.
+namespace urge::rgss_archive {
+bool Register();
+bool SupportsPath(const std::string& path);
+bool Mount(const std::string& path, bool prepend = true);
+}
