@@ -61,6 +61,7 @@
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_messagebox.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "physfs.h"
 
 /* The host reads two switches straight out of the environment, wide, so a
    directory named in a language the ANSI code page cannot spell survives.  It
@@ -400,6 +401,33 @@ bool Initialize(AppState& state,
      path and the write directory from drifting apart. */
   io->SetWritePath(state.base_dir);
   io->AddLoadPath(state.base_dir, "/");
+
+  // Mount the original RGSS resource container through the same IO service.
+  // If several generations are present, use the newest one deterministically.
+  // ACS is mounted afterward so its existing priority is preserved.
+  const auto game_files = io->EnumDir("");
+  for (const char* extension : {".rgss3a", ".rgss2a", ".rgssad"}) {
+    const std::string expected = state.app + extension;
+    std::string path;
+    for (const auto& name : game_files) {
+      PHYSFS_Stat stat;
+      if (SDL_strcasecmp(name.c_str(), expected.c_str()) == 0 &&
+          PHYSFS_stat(name.c_str(), &stat) && stat.filetype == PHYSFS_FILETYPE_REGULAR) {
+        path = name;
+        break;
+      }
+    }
+    if (path.empty())
+      continue;
+    if (!io->MountArchive(path)) {
+      exception_state.Throw(urge::ExceptionState::kIOError,
+          "Cannot mount RGSS archive {}: {}", path,
+          PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+      return false;
+    }
+    LOGGER_INFO("[Host] RGSS resource archive: {}", path);
+    break;
+  }
 
   /* A shipped game carries its resources in `<name>.acs`, named after the
      executable exactly the way the ini above is: `Game.exe` reads `Game.acs`.

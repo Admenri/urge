@@ -29,7 +29,7 @@
 | **音频** | BGM / BGS / ME / SE；WAV、Ogg Vorbis、Ogg Opus；MIDI + SoundFont；独立音量与输出设备选择；`AudioStream` 支持流式播放与控制；解码与混音运行在独立音频线程（无线程平台回退单线程） |
 | **输入** | 键盘、鼠标、手柄（多设备、热插拔、震动、扳机 / 摇杆）、多点触摸（最多 16 指）；键位绑定保存在 `Game.ini` |
 | **字体** | `Fonts/` → 系统字库 → 内嵌字体逐级回退；支持文件名与族名、CJK 文本；Windows 默认使用微软雅黑 |
-| **资源** | PhysicsFS 虚拟文件系统；Windows 下自动探测已安装的 RTP；可选 `.acs` 加密容器（需放入 `admenri/` 目录） |
+| **资源** | PhysicsFS 虚拟文件系统；直接读取 `.rgssad` / `.rgss2a` / `.rgss3a`；Windows 下自动探测 RTP；可选 `.acs` 容器（需 `admenri/`） |
 | **视频** | WebM / AV1 播放（桌面端，可关闭）；`Graphics.play_movie` 提供带进度控制的影片事件 |
 | **网络** | HTTP `Fetch` 与 `WebSocket`（桌面与 Web，可关闭） |
 | **调试** | F1 设置面板、F2 帧率面板；运行日志；Windows 崩溃转储与符号化报告；可选 PGO |
@@ -150,7 +150,7 @@ cmake --build --preset emscripten-wasm32
 Game.html  Game.js  Game.wasm  async_mapping.js  urge-helper.js  assets/
 ```
 
-游戏文件以 `assets/` 形式随模块发布：`*.ini`、`*.acs` 与 `Data/Scripts.*` 在首帧前预加载（可用 `URGE_WEB_PRELOAD` 调整），其余文件在首次访问时按需下载。若希望把游戏打包成单个 `Game.data`，配置时加上 `-DURGE_WEB_EMBED_ASSETS=ON`。
+游戏文件以 `assets/` 形式随模块发布：`*.ini`、`*.acs`、`*.rgssad`、`*.rgss2a`、`*.rgss3a` 与 `Data/Scripts.*` 在首帧前预加载（可用 `URGE_WEB_PRELOAD` 调整），其余文件在首次访问时按需下载。若希望把游戏打包成单个 `Game.data`，配置时加上 `-DURGE_WEB_EMBED_ASSETS=ON`。
 
 通过 HTTP 访问（`localhost` 或 HTTPS；浏览器普遍只在安全上下文中提供 WebGPU）：
 
@@ -232,6 +232,8 @@ MyGame/
 
 - 配置文件为 `<可执行文件名>.ini`（`Game.exe` → `Game.ini`）。
 - 若存在 `<可执行文件名>.acs` 且构建包含 `admenri/`，该容器会被优先挂载。
+- 自动探测同名 `.rgss3a`、`.rgss2a`、`.rgssad` 资源档案，按此顺序选择第一个存在者；不依赖 `admenri/`。索引结构无法解析时启动会报错；个别资源数据不完整不会导致整个档案挂载失败，只在读取该资源时失败。
+- 资源查找优先级为 ACS（如启用）→ RGSS 档案 → 普通游戏目录。RGSS 资源仅通过只读虚拟文件流加载；存档和日志仍写入普通游戏目录，不会解包资源，也不提供档案提取或解密导出工具。
 - 运行日志写入 `<可执行文件名>.log`。
 
 **MacOS**: 将Game可执行文件放入游戏目录，确保具有可执行权限。或使用URGE.app启动后选择游戏目录来启动游戏。 
@@ -313,7 +315,7 @@ C = Space,Return,pad:a
 | `URGE_WIN7_COMPAT` | `OFF` | 链接 Windows 7 兼容钩子：把 `WaitOnAddress`、`ProcessPrng`、`CreateFile2` 等 Win8+ 导入转到内置回退实现 |
 | `URGE_VIDEO_AV1_8BIT_ONLY` | `OFF` | 仅编译 8-bit AV1，减小体积（会失去 10 / 12-bit 视频） |
 | `URGE_WEB_ASSETS` | 空 | Web 端游戏目录 |
-| `URGE_WEB_PRELOAD` | `*.ini,*.acs,Data/Scripts.*` | Web 端首帧前预加载的文件 |
+| `URGE_WEB_PRELOAD` | `*.ini,*.acs,*.rgssad,*.rgss2a,*.rgss3a,Data/Scripts.*` | Web 端首帧前预加载的文件 |
 | `URGE_WEB_EMBED_ASSETS` | `OFF` | 将游戏打包为单个 `Game.data` |
 | `URGE_BUILD_ACS_PACK` | `ON` | 存在 `admenri/` 时构建 `.acs` 容器打包工具 |
 | `URGE_PGO` | `off` | `generate` / `use` 两阶段 PGO（MSVC） |
@@ -342,7 +344,7 @@ C = Space,Return,pad:a
 
 此外，`third_party/` 中还内嵌了 `ruby`（CRuby 4.0.0）、`miniaudio`、`imgui`、`dav1d`、`webm`、`libffi` 与 `webgpu-cpp`。Web 端使用 Emscripten 的 `emdawnwebgpu` 端口，而不是 wgpu-native。
 
-可选的 `admenri/` 目录不在开源仓库中：放入该目录后，构建会自动启用 `.acs` 加密容器与 `urge-acs-pack` 打包工具；没有它时引擎以普通文件方式运行。
+可选的 `admenri/` 目录不在开源仓库中：放入该目录后，构建会自动启用 `.acs` 加密容器与 `urge-acs-pack` 打包工具；没有它时引擎仍可读取普通文件和 RGSS 资源档案。
 
 ---
 
