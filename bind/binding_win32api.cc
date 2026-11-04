@@ -65,6 +65,31 @@ ffi_abi SelectAbi(VALUE calltype) {
 #endif
 }
 
+void* ResolveProcedure(HMODULE module, const char* name) {
+  auto* proc = reinterpret_cast<void*>(::GetProcAddress(module, name));
+  if (!proc) {
+    std::string ansi(name);
+    ansi += "A";
+    proc = reinterpret_cast<void*>(::GetProcAddress(module, ansi.c_str()));
+  }
+  return proc;
+}
+
+RB_FUNC(Win32API_supported) {
+  CheckArgc(argc, 2);
+  StringValue(argv[0]);
+  StringValue(argv[1]);
+  const char* library = StringValueCStr(argv[0]);
+  const char* procedure = StringValueCStr(argv[1]);
+  const DWORD previous_error = ::GetLastError();
+  const HMODULE module = ::LoadLibraryA(library);
+  const bool found = module && ResolveProcedure(module, procedure);
+  if (module)
+    ::FreeLibrary(module);
+  ::SetLastError(previous_error);
+  return found ? Qtrue : Qfalse;
+}
+
 struct Win32APIObject {
   HMODULE module = nullptr;
   void* proc = nullptr;
@@ -108,14 +133,7 @@ RB_FUNC(Win32API_initialize) {
     rb_raise(rb_eRuntimeError, "LoadLibrary: %s", dll_name);
   }
 
-  object->proc =
-      reinterpret_cast<void*>(::GetProcAddress(object->module, proc_name));
-  if (!object->proc) {
-    std::string ansi(proc_name);
-    ansi += "A";
-    object->proc =
-        reinterpret_cast<void*>(::GetProcAddress(object->module, ansi.c_str()));
-  }
+  object->proc = ResolveProcedure(object->module, proc_name);
   if (!object->proc) {
     Win32API_Free(object);
     rb_raise(rb_eRuntimeError, "GetProcAddress: %s", proc_name);
@@ -229,6 +247,7 @@ void InitWin32APIBinding() {
   auto klass = rb_define_class("Win32API", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kWin32APIDataType>);
 
+  DefineClassMethod(klass, "supported?", Win32API_supported);
   DefineMethod(klass, "initialize", Win32API_initialize);
   DefineMethod(klass, "call", Win32API_call);
   rb_define_alias(klass, "Call", "call");

@@ -26,6 +26,8 @@ namespace binding::win32api {
 void RegisterPlatform(Registry& registry) {
 #if defined(SDL_PLATFORM_MACOS)
   RegisterMacOS(registry);
+#elif defined(SDL_PLATFORM_EMSCRIPTEN)
+  RegisterWasm(registry);
 #else
   // New platforms opt in to shared families and supply their own OS handlers.
   // An unimplemented platform never silently claims to support a Win32 API.

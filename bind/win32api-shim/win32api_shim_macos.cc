@@ -67,6 +67,7 @@ Result Priority(std::span<const Argument> args) {
 }  // namespace
 void RegisterMacOS(Registry& registry) {
   RegisterProfiles(registry);
+  RegisterProcess(registry);
   RegisterSDL(registry);
   memory::Register(registry);
   registry.Add("kernel32", "SetPriorityClass", 2, 0, Priority);

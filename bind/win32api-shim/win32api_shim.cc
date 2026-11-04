@@ -27,7 +27,17 @@
 namespace binding::win32api {
 namespace {
 thread_local uint32_t last_error = 0;
-std::string LibraryName(std::string name) {
+Result NoOp(std::span<const Argument>) {
+  SetLastError(120);  // ERROR_CALL_NOT_IMPLEMENTED
+  return {};
+}
+}  // namespace
+
+Function MakeNoOp(size_t arity) {
+  return Function{arity, 0, NoOp, true};
+}
+
+std::string NormalizeLibraryName(std::string name) {
   const auto slash = name.find_last_of("/\\");
   if (slash != std::string::npos)
     name.erase(0, slash + 1);
@@ -38,7 +48,6 @@ std::string LibraryName(std::string name) {
     name.resize(name.size() - 4);
   return name;
 }
-}  // namespace
 
 std::string_view Argument::text() const {
   if (!buffer)
@@ -56,13 +65,19 @@ void Registry::Add(const std::string& library,
                    size_t arity,
                    uint32_t writable,
                    Handler handler) {
-  functions_.emplace(LibraryName(library) + ':' + name,
+  functions_.emplace(NormalizeLibraryName(library) + ':' + name,
                      Function{arity, writable, handler});
+}
+void Registry::AddNoOp(const std::string& library,
+                       const std::string& name,
+                       size_t arity) {
+  functions_.emplace(NormalizeLibraryName(library) + ':' + name,
+                     MakeNoOp(arity));
 }
 const Function* Registry::Find(std::string library,
                                const std::string& name) const {
   const auto found =
-      functions_.find(LibraryName(std::move(library)) + ':' + name);
+      functions_.find(NormalizeLibraryName(std::move(library)) + ':' + name);
   return found == functions_.end() ? nullptr : &found->second;
 }
 const Registry& GetRegistry() {

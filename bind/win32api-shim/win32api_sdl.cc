@@ -60,10 +60,57 @@ Result FindWindow(std::span<const Argument> args) {
   if (!args[1].null()) {
     if (!memory::String(args[1], text, error))
       return Result::Failure(std::move(error));
-    if (text != SDL_GetWindowTitle(window))
+    if (SDL_strcasecmp(text.c_str(), SDL_GetWindowTitle(window)) != 0)
       return {};
   }
   return Result{kWindow};
+}
+Result FindWindowEx(std::span<const Argument> args) {
+  if (!MainThread())
+    return Result::Failure("window APIs must run on the main thread");
+  // The shim exposes one top-level window and no child/message-only windows.
+  if (!args[0].null()) {
+    if (!args[0].buffer && args[0].number == kWindow && Window() &&
+        args[1].null())
+      return {};
+    return Fail(1400);
+  }
+  if (!args[1].null()) {
+    if (!args[1].buffer && args[1].number == kWindow && Window())
+      return {};  // Enumeration ends after our only top-level window.
+    return Fail(1400);
+  }
+  return FindWindow(args.subspan(2));
+}
+Result TopWindow(std::span<const Argument> args) {
+  if (!MainThread())
+    return Result::Failure("window APIs must run on the main thread");
+  if (args[0].null())
+    return Result{Window() ? kWindow : 0};
+  if (!args[0].buffer && args[0].number == kWindow && Window())
+    return {};  // No child windows.
+  return Fail(1400);
+}
+Result RelatedWindow(std::span<const Argument> args) {
+  if (!MainThread())
+    return Result::Failure("window APIs must run on the main thread");
+  if (args[0].buffer || args[0].number != kWindow || !Window())
+    return Fail(1400);
+  if (args[1].buffer)
+    return Fail(87);
+  switch (args[1].number) {
+    case 0:  // GW_HWNDFIRST
+    case 1:  // GW_HWNDLAST
+    case 6:  // GW_ENABLEDPOPUP: no owned popup, so return self.
+      return Result{kWindow};
+    case 2:  // GW_HWNDNEXT
+    case 3:  // GW_HWNDPREV
+    case 4:  // GW_OWNER
+    case 5:  // GW_CHILD
+      return {};
+    default:
+      return Fail(87);
+  }
 }
 Result Foreground(std::span<const Argument>) {
   if (!MainThread())
@@ -106,11 +153,19 @@ Result SystemMetrics(std::span<const Argument> args) {
   if (!MainThread())
     return Result::Failure("window APIs must run on the main thread");
   SDL_Rect bounds{};
+  int top = 0, left = 0, bottom = 0, right = 0;
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+  // The canvas is the browser's virtual desktop. Do not expose monitor or
+  // browser-chrome geometry, which cannot be mapped to RGSS coordinates.
+  auto* window = Window();
+  if (!window || !SDL_GetWindowSize(window, &bounds.w, &bounds.h))
+    return Fail(1400);
+#else
   if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds))
     return Fail(87);
-  int top = 0, left = 0, bottom = 0, right = 0;
   if (auto* window = Window())
     SDL_GetWindowBordersSize(window, &top, &left, &bottom, &right);
+#endif
   switch (args[0].number) {
     case 0:
       return Result{bounds.w};
@@ -317,6 +372,23 @@ bool ReadPoint(const Argument& input,
 SDL_Window* Handle(const Argument& argument) {
   return !argument.buffer && argument.number == kWindow ? Window() : nullptr;
 }
+Result WindowThreadProcessId(std::span<const Argument> args) {
+  if (!MainThread())
+    return Result::Failure("window APIs must run on the main thread");
+  if (!Handle(args[0]))
+    return Fail(1400);  // Invalid HWND must leave the PID buffer unchanged.
+  const uint32_t thread = CurrentThreadId();
+  if (!thread)
+    return {};
+  if (!args[1].null()) {
+    auto written = WriteWords(
+        args[1],
+        std::array<int32_t, 1>{std::bit_cast<int32_t>(CurrentProcessId())});
+    if (!written.error.empty())
+      return written;
+  }
+  return Result{thread};
+}
 Result GetRect(std::span<const Argument> args, bool client) {
   if (!MainThread())
     return Result::Failure("window APIs must run on the main thread");
@@ -325,10 +397,15 @@ Result GetRect(std::span<const Argument> args, bool client) {
     return Fail(1400);
   int x = 0, y = 0, w = 0, h = 0, top = 0, left = 0, bottom = 0, right = 0;
   SDL_GetWindowSize(window, &w, &h);
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
   if (!client) {
     SDL_GetWindowPosition(window, &x, &y);
     SDL_GetWindowBordersSize(window, &top, &left, &bottom, &right);
   }
+#else
+  // A canvas has neither a desktop position nor a non-client border.
+  (void)client;
+#endif
   const std::array<int64_t, 4> rect{static_cast<int64_t>(x) - left,
                                     static_cast<int64_t>(y) - top,
                                     static_cast<int64_t>(x) + w + right,
@@ -353,7 +430,9 @@ Result ConvertPoint(std::span<const Argument> args, bool to_client) {
   if (!ReadPoint(args[1], point, error))
     return Result::Failure(std::move(error));
   int x = 0, y = 0;
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
   SDL_GetWindowPosition(window, &x, &y);
+#endif
   const int sign = to_client ? -1 : 1;
   const int64_t target_x =
       static_cast<int64_t>(point[0]) + sign * static_cast<int64_t>(x);
@@ -370,7 +449,12 @@ Result CursorPosition(std::span<const Argument> args) {
   if (!MainThread())
     return Result::Failure("mouse APIs must run on the main thread");
   float x = 0, y = 0;
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+  // SDL translates CSS scaling and devicePixelRatio into canvas logical units.
+  SDL_GetMouseState(&x, &y);
+#else
   SDL_GetGlobalMouseState(&x, &y);
+#endif
   return WriteWords(args[0], std::array<int32_t, 2>{static_cast<int32_t>(x),
                                                     static_cast<int32_t>(y)});
 }
@@ -577,15 +661,25 @@ Result ShowCursor(std::span<const Argument> args) {
 void RegisterSDL(Registry& registry) {
   registry.Add("user32", "FindWindow", 2, 0, FindWindow);
   registry.Add("user32", "FindWindowA", 2, 0, FindWindow);
+  registry.Add("user32", "FindWindowEx", 4, 0, FindWindowEx);
+  registry.Add("user32", "FindWindowExA", 4, 0, FindWindowEx);
+  registry.Add("user32", "GetTopWindow", 1, 0, TopWindow);
+  registry.Add("user32", "GetWindow", 2, 0, RelatedWindow);
+  registry.Add("user32", "GetWindowThreadProcessId", 2, 2,
+               WindowThreadProcessId);
   registry.Add("user32", "GetForegroundWindow", 0, 0, Foreground);
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
   registry.Add("user32", "MoveWindow", 6, 0, MoveWindow);
+#endif
   registry.Add("user32", "GetSystemMetrics", 1, 0, SystemMetrics);
   registry.Add("user32", "GetKeyState", 1, 0, KeyState);
   registry.Add("user32", "GetActiveWindow", 0, 0, Foreground);
   registry.Add("user32", "GetAsyncKeyState", 1, 0, AsyncKeyState);
   registry.Add("user32", "GetKeyboardState", 1, 1, KeyboardState);
   registry.Add("user32", "GetCursorPos", 1, 1, CursorPosition);
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
   registry.Add("user32", "SetCursorPos", 2, 0, SetCursorPosition);
+#endif
   registry.Add(
       "user32", "ScreenToClient", 2, 2,
       [](std::span<const Argument> args) { return ConvertPoint(args, true); });
@@ -606,9 +700,11 @@ void RegisterSDL(Registry& registry) {
   registry.Add("user32", "SetWindowTextA", 2, 0, SetWindowText);
   registry.Add("user32", "IsWindow", 1, 0, IsWindow);
   registry.Add("user32", "IsWindowVisible", 1, 0, Visible);
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
   registry.Add("user32", "SetForegroundWindow", 1, 0, RaiseWindow);
   registry.Add("user32", "ShowWindow", 2, 0, ShowWindow);
   registry.Add("user32", "SetWindowPos", 7, 0, SetWindowPosition);
+#endif
   registry.Add("user32", "ShowCursor", 1, 0, ShowCursor);
 }
 }  // namespace binding::win32api

@@ -27,6 +27,9 @@
 #if !defined(_WIN32)
 #include <array>
 #include <cstdint>
+#include <mutex>
+#include <unordered_set>
+#include <utility>
 
 namespace binding {
 namespace {
@@ -53,6 +56,9 @@ Kind Classify(char code) {
 }
 struct ShimObject {
   const win32api::Function* function = nullptr;
+  win32api::Function fallback{};
+  std::string library;
+  std::string procedure;
   std::array<Kind, kMaxArguments> kinds{};
   size_t count = 0;
   bool ready = false;
@@ -87,6 +93,24 @@ std::string DisplayName(const char* name) {
   return result;
 }
 
+void WarnUnsupportedOnce(const ShimObject& object) {
+  static std::mutex mutex;
+  static std::unordered_set<std::string> warned;
+  // Use the full normalized identity for deduplication; display names are
+  // escaped and bounded separately so script text cannot inject log lines.
+  std::string key = win32api::NormalizeLibraryName(object.library);
+  key.push_back('\0');
+  key += object.procedure;
+  bool first;
+  {
+    std::lock_guard lock(mutex);
+    first = warned.insert(std::move(key)).second;
+  }
+  if (first)
+    LOGGER_WARN("[Win32API] Unsupported API {}; using no-op (error 120)",
+                object.label);
+}
+
 struct Invocation {
   int argc;
   VALUE* argv;
@@ -110,12 +134,10 @@ VALUE InitializeBody(VALUE opaque) {
   StringValue(argv[1]);
   const char* library = StringValueCStr(argv[0]);
   const char* procedure = StringValueCStr(argv[1]);
+  object->library = library;
+  object->procedure = procedure;
   object->label = DisplayName(library) + "!" + DisplayName(procedure);
   object->function = win32api::GetRegistry().Find(library, procedure);
-  if (!object->function)
-    rb_raise(rb_eRuntimeError,
-             "Win32API shim: unsupported function %s on this platform",
-             object->label.c_str());
   const auto add = [&](char code) {
     const Kind kind = Classify(code);
     if (kind == Kind::kInvalid)
@@ -144,7 +166,7 @@ VALUE InitializeBody(VALUE opaque) {
         add(*codes);
     }
   }
-  if (object->count != object->function->arity)
+  if (object->function && object->count != object->function->arity)
     rb_raise(rb_eArgError,
              "Win32API shim: %s expects %d arguments, signature declares %d",
              object->label.c_str(), static_cast<int>(object->function->arity),
@@ -155,6 +177,14 @@ VALUE InitializeBody(VALUE opaque) {
     if (!code[0] || code[1] || object->result_kind == Kind::kInvalid)
       rb_raise(rb_eArgError, "Win32API shim: invalid result type");
   }
+  // Unknown exports use the caller's validated signature without mutating the
+  // registry. Each instance owns its fallback so registry pointers stay stable.
+  if (!object->function) {
+    object->fallback = win32api::MakeNoOp(object->count);
+    object->function = &object->fallback;
+  }
+  if (object->function->noop)
+    WarnUnsupportedOnce(*object);
   // The optional calling convention is meaningful only for a native DLL.
   object->ready = true;
   return self;
@@ -187,6 +217,13 @@ VALUE CallBody(VALUE opaque) {
   if (static_cast<size_t>(argc) != object->count)
     rb_raise(rb_eArgError, "wrong number of arguments (%d for %d)", argc,
              static_cast<int>(object->count));
+  if (object->function->noop) {
+    // No-op calls must not coerce values, borrow buffers or invoke callbacks.
+    // Only the declared argument count and return category are relevant.
+    win32api::SetLastError(120);  // ERROR_CALL_NOT_IMPLEMENTED
+    return object->result_kind == Kind::kPointer ? rb_str_new("", 0)
+                                                 : INT2NUM(0);
+  }
   std::array<VALUE, kMaxArguments> values{};
   std::array<win32api::Argument, kMaxArguments> arguments{};
   // Finish Ruby conversions (which can allocate or move a String) before

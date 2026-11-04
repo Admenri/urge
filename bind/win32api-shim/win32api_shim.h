@@ -56,7 +56,11 @@ struct Function {
   size_t arity;
   uint32_t writable;
   Handler handler;
+  bool noop = false;
 };
+
+Function MakeNoOp(size_t arity);
+std::string NormalizeLibraryName(std::string name);
 
 // Registration happens once before resolution. The resulting registry is
 // immutable; each platform contributes handlers without changing Ruby's ABI.
@@ -67,6 +71,9 @@ class Registry {
            size_t arity,
            uint32_t writable,
            Handler handler);
+  void AddNoOp(const std::string& library,
+               const std::string& name,
+               size_t arity);
   const Function* Find(std::string library, const std::string& name) const;
 
  private:
@@ -76,7 +83,11 @@ class Registry {
 const Registry& GetRegistry();
 void RegisterPlatform(Registry& registry);
 void RegisterMacOS(Registry& registry);
+void RegisterWasm(Registry& registry);
 void RegisterProfiles(Registry& registry);
+void RegisterProcess(Registry& registry);
+uint32_t CurrentProcessId();
+uint32_t CurrentThreadId();
 void RegisterSDL(Registry& registry);
 uint32_t LastError();
 void SetLastError(uint32_t value);
