@@ -22,6 +22,8 @@
 
 #include "bind/legacy-ruby-compat/legacy_ruby_compat.h"
 
+#include <initializer_list>
+
 #include "bind/legacy-ruby-compat/legacy_classes.h"
 #include "ruby.h"
 
@@ -30,9 +32,10 @@ namespace {
 
 bool g_class_recovery_enabled = false;
 
-// Ruby 1.8.1/1.9.2 entry points removed from current Ruby. Only missing names are
-// installed; existing public, protected, and private methods take precedence.
-// Sources and deliberately deferred behavior changes are listed in README.md.
+// Ruby 1.8.1/1.9.2 entry points removed from current Ruby. Only missing names
+// are installed; existing public, protected, and private methods take
+// precedence. Sources and deliberately deferred behavior changes are listed in
+// README.md.
 bool HasMethod(VALUE owner, const char* name) {
   VALUE symbol = ID2SYM(rb_intern(name));
   return RTEST(rb_funcall(owner, rb_intern("method_defined?"), 1, symbol)) ||
@@ -67,6 +70,46 @@ VALUE ArrayIndices(int argc, VALUE* argv, VALUE self) {
 void ConstantIfMissing(const char* name, VALUE value) {
   if (!rb_const_defined(rb_cObject, rb_intern(name)))
     rb_define_global_const(name, value);
+}
+
+// These removed security APIs exist only for script compatibility. Never
+// modify object flags or activate the old VM's safe-level restrictions.
+VALUE NoOpTaint(VALUE self) {
+  return self;
+}
+
+VALUE NeverTainted(VALUE) {
+  return Qfalse;
+}
+
+VALUE SafeLevel(ID, VALUE*) {
+  return INT2FIX(0);
+}
+
+void IgnoreSafeLevel(VALUE, ID, VALUE*) {}
+
+void InitSafetyAPIs(bool ruby19) {
+  for (const char* name : {"taint", "untaint"}) {
+    if (!HasMethod(rb_mKernel, name))
+      rb_define_method(rb_mKernel, name, RUBY_METHOD_FUNC(NoOpTaint), 0);
+  }
+  if (!HasMethod(rb_mKernel, "tainted?"))
+    rb_define_method(rb_mKernel, "tainted?", RUBY_METHOD_FUNC(NeverTainted), 0);
+
+  // The separate trust API was introduced after the RGSS1/2 Ruby baseline.
+  if (ruby19) {
+    for (const char* name : {"trust", "untrust"}) {
+      if (!HasMethod(rb_mKernel, name))
+        rb_define_method(rb_mKernel, name, RUBY_METHOD_FUNC(NoOpTaint), 0);
+    }
+    if (!HasMethod(rb_mKernel, "untrusted?"))
+      rb_define_method(rb_mKernel, "untrusted?", RUBY_METHOD_FUNC(NeverTainted),
+                       0);
+  }
+
+  // A setter is required: a null setter makes the global read-only and raises
+  // on assignment. Ignore writes without retaining any Ruby object or state.
+  rb_define_virtual_variable("$SAFE", SafeLevel, IgnoreSafeLevel);
 }
 
 // Present in both original Ruby baselines; also needed by RGSS3.
@@ -114,6 +157,7 @@ void InitLegacyRubyCompat(int rgss_version) {
     return;
 
   InitSharedAPIs();
+  InitSafetyAPIs(rgss_version == 3);
   if (rgss_version == 3) {
     // Dir.exist?/exists? were present in 1.9.2, but not in 1.8.1.
     AliasIfMissing(rb_singleton_class(rb_cDir), "exists?", "exist?");
@@ -129,10 +173,12 @@ VALUE EvalRubyScript(VALUE source, VALUE filename) {
   if (g_class_recovery_enabled) {
     VALUE compatibility =
         rb_const_get(rb_cObject, rb_intern("URGELegacyRubyCompat"));
-    return rb_funcall(compatibility, rb_intern("evaluate"), 2, source, filename);
+    return rb_funcall(compatibility, rb_intern("evaluate"), 2, source,
+                      filename);
   }
-  VALUE scope = rb_funcall(
-      rb_const_get(rb_cObject, rb_intern("TOPLEVEL_BINDING")), rb_intern("dup"), 0);
+  VALUE scope =
+      rb_funcall(rb_const_get(rb_cObject, rb_intern("TOPLEVEL_BINDING")),
+                 rb_intern("dup"), 0);
   VALUE args[] = {source, scope, filename};
   return rb_funcallv(rb_mKernel, rb_intern("eval"), 3, args);
 }
