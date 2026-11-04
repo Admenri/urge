@@ -58,11 +58,12 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item build/ci/app/RelWithDebInfo/Game.exe dist/urge-windows-x64.exe
+          Copy-Item build/ci/app/audio-codec-licenses.txt dist/audio-codec-licenses.txt
 
       - uses: actions/upload-artifact@v7
         with:
           name: urge-windows-amd64
-          path: dist/urge-windows-x64.exe
+          path: dist/
           if-no-files-found: error
           retention-days: 14
 
@@ -190,6 +191,7 @@ jobs:
           mkdir -p dist/tools
           cp "$out/Game.html" "$out/Game.js" "$out/Game.wasm" \
              "$out/urge-helper.js" "$out/async_mapping.js" dist/
+          cp "$out/audio-codec-licenses.txt" dist/
           cp app/build_mapping.py dist/tools/
           cat > dist/README.txt <<'EOF'
           URGE web build

@@ -179,7 +179,11 @@ RB_FUNC(Win32API_call) {
     arguments[i] = &slots[i];
   }
 
+#ifdef _WIN64
+  int64_t number_result = 0;
+#else
   int32_t number_result = 0;
+#endif
   void* pointer_result = nullptr;
   void* result_address = nullptr;
   if (object->signature.result == TypeKind::kPointer)
@@ -197,7 +201,7 @@ RB_FUNC(Win32API_call) {
       return rb_str_new_cstr(static_cast<const char*>(pointer_result));
     case TypeKind::kNumber:
     case TypeKind::kInteger:
-      return INT2NUM(number_result);
+      return INT2NUM(static_cast<int32_t>(number_result));
     case TypeKind::kVoid:
     default:
       return INT2NUM(0);

@@ -40,6 +40,10 @@
 
 namespace urge {
 
+namespace audioformat {
+struct SoundBank;
+}
+
 class AudioService;
 
 enum class AudioBus {
@@ -159,7 +163,9 @@ class AudioService {
   AudioService(const AudioService&) = delete;
   AudioService& operator=(const AudioService&) = delete;
 
-  static AudioService* Create(const std::string& output = {});
+  static AudioService* Create(const std::string& output = {},
+                              const std::string& midi_soundfont = {});
+  bool SetupMIDI();
 
   void SetMasterVolume(int32_t volume);
 
@@ -213,6 +219,9 @@ class AudioService {
 
   Kernel* kernel_ = nullptr;
   std::string output_device_;
+  std::string midi_soundfont_;
+  std::shared_ptr<const audioformat::SoundBank> midi_font_;
+  bool midi_attempted_ = false;
   std::atomic<bool> paused_{false};
 
   // Audio thread only.  The destructor touches it after the thread is joined.

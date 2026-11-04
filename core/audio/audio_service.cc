@@ -39,6 +39,8 @@
 #include "decoders/libopus/miniaudio_libopus.h"
 #include "decoders/libvorbis/miniaudio_libvorbis.h"
 
+#include "core/audio/decoders/backend.h"
+#include "core/audio/decoders/soundfont.h"
 #include "core/common/exception.h"
 #include "core/common/logger.h"
 #include "core/system/filesystem.h"
@@ -69,6 +71,7 @@ thread_local bool g_on_audio_thread = false;
 #endif
 
 ma_decoding_backend_vtable* kDecodingBackends[] = {
+    audioformat::DecodingBackend(),
     ma_decoding_backend_libvorbis,
     ma_decoding_backend_libopus,
 };
@@ -205,6 +208,10 @@ bool AudioClip::Open(AudioService* service,
   if (bytes_.empty())
     return false;
 
+  if (audioformat::IsMIDI(bytes_) && !service->SetupMIDI()) {
+    bytes_.clear();
+    return false;
+  }
   bool opened = false;
   const std::string label = "the audio file '" + filename + "'";
   service->RunSync([&] { opened = Prepare(service, bus, label); });
@@ -221,6 +228,10 @@ bool AudioClip::OpenMemory(AudioService* service,
 
   bytes_ = std::move(bytes);
 
+  if (audioformat::IsMIDI(bytes_) && !service->SetupMIDI()) {
+    bytes_.clear();
+    return false;
+  }
   bool opened = false;
   service->RunSync(
       [&] { opened = Prepare(service, bus, "the video audio track"); });
@@ -235,6 +246,7 @@ bool AudioClip::Prepare(AudioService* service,
       ma_engine_get_sample_rate(service->engine()));
   config.ppCustomBackendVTables = kDecodingBackends;
   config.customBackendCount = kDecodingBackendCount;
+  config.pCustomBackendUserData = &service->midi_font_;
   if (ma_decoder_init_memory(bytes_.data(), bytes_.size(), &config,
                              &decoder_) != MA_SUCCESS) {
     LOGGER_WARN("{} is in a format the mixer cannot decode", label);
@@ -242,6 +254,7 @@ bool AudioClip::Prepare(AudioService* service,
     return false;
   }
 
+  audioformat::ConfigureLoopPoints(decoder_);
   auto* source = reinterpret_cast<ma_data_source*>(&decoder_);
   if (ma_sound_init_from_data_source(service->engine(), source, 0,
                                      service->bus(bus),
@@ -545,8 +558,10 @@ AudioService::AudioService() : kernel_(new Kernel()) {
   mix_buffer_.assign(kMixChunkFrames * AudioService::kEngineChannels, 0.0f);
 }
 
-AudioService* AudioService::Create(const std::string& output) {
+AudioService* AudioService::Create(const std::string& output,
+                                    const std::string& midi_soundfont) {
   std::unique_ptr<AudioService> service(new AudioService());
+  service->midi_soundfont_ = midi_soundfont;
   Kernel& kernel = *service->kernel_;
 
   if (ma_log_init(nullptr, &kernel.log) == MA_SUCCESS) {
@@ -590,6 +605,65 @@ AudioService* AudioService::Create(const std::string& output) {
 
   service->StartWorker();
   return service.release();
+}
+
+bool AudioService::SetupMIDI() {
+  if (midi_attempted_)
+    return static_cast<bool>(midi_font_);
+  midi_attempted_ = true;
+  std::vector<std::string> candidates;
+  if (!midi_soundfont_.empty())
+    candidates.push_back(midi_soundfont_);
+#if defined(_WIN32)
+  const char* root =
+      SDL_GetEnvironmentVariable(SDL_GetEnvironment(), "SystemRoot");
+  candidates.push_back(std::string(root ? root : "C:/Windows") +
+                       "/System32/drivers/gm.dls");
+#elif defined(SDL_PLATFORM_MACOS)
+  candidates.push_back(
+      "/System/Library/Components/CoreAudio.component/Contents/"
+      "Resources/gs_instruments.dls");
+#endif
+  for (auto path : candidates) {
+    std::replace(path.begin(), path.end(), '\\', '/');
+    SDL_IOStream* stream = nullptr;
+    bool absolute = !path.empty() &&
+                    (path[0] == '/' ||
+                     (path.size() > 2 && path[1] == ':' && path[2] == '/'));
+    if (absolute) {
+      stream = SDL_IOFromFile(path.c_str(), "rb");
+    } else {
+      ExceptionState exception;
+      IOService::Get().OpenRead(
+          exception, path, [&stream](SDL_IOStream* opened, const std::string&) {
+            stream = opened;
+            return true;
+          });
+    }
+    if (!stream) {
+      LOGGER_WARN("[Audio] MIDI soundfont '{}' could not be opened", path);
+      continue;
+    }
+    Sint64 size = SDL_GetIOSize(stream);
+    std::vector<uint8_t> bytes;
+    if (size > 0 && size <= 256 * 1024 * 1024) {
+      bytes.resize(static_cast<size_t>(size));
+      size_t read = SDL_ReadIO(stream, bytes.data(), bytes.size());
+      if (read != bytes.size())
+        bytes.clear();
+    }
+    SDL_CloseIO(stream);
+    std::string error;
+    midi_font_ = audioformat::LoadSoundBank(bytes, error);
+    if (midi_font_) {
+      LOGGER_INFO("[Audio] MIDI soundfont: {} ({} regions)", path,
+                  midi_font_->regions.size());
+      return true;
+    }
+    LOGGER_WARN("[Audio] MIDI soundfont '{}': {}", path, error);
+  }
+  LOGGER_WARN("[Audio] MIDI disabled: no usable DLS/SF2 soundfont");
+  return false;
 }
 
 void AudioService::SetMasterVolume(int32_t volume) {

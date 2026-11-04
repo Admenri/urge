@@ -250,10 +250,10 @@ const std::vector<ConfigField>& Fields() {
        },
        nullptr, nullptr},
 
-      {"Audio", "Soundfont", ConfigPersist::kOnChange,
-       [](const Config& config) { return config.audio.soundfont; },
+      {"Audio", "MIDISoundFont", ConfigPersist::kOnChange,
+       [](const Config& config) { return config.audio.midi_soundfont; },
        [](Config& config, const std::string& value) {
-         config.audio.soundfont = value;
+         config.audio.midi_soundfont = value;
        },
        nullptr, nullptr},
       {"Audio", "MasterVolume", ConfigPersist::kOnChange,
