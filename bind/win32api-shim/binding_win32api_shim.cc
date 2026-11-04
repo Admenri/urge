@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "bind/binding_win32api.h"
+#include "bind/win32api_common.h"
 #include "bind/win32api-shim/win32api_memory.h"
 #include "bind/win32api-shim/win32api_shim.h"
 
@@ -33,38 +34,17 @@
 
 namespace binding {
 namespace {
-constexpr size_t kMaxArguments = 32;
-enum class Kind { kVoid, kNumber, kPointer, kInvalid };
-Kind Classify(char code) {
-  switch (code) {
-    case 'n':
-    case 'N':
-    case 'l':
-    case 'L':
-    case 'i':
-    case 'I':
-      return Kind::kNumber;
-    case 'p':
-    case 'P':
-      return Kind::kPointer;
-    case 'v':
-    case 'V':
-      return Kind::kVoid;
-    default:
-      return Kind::kInvalid;
-  }
-}
+using Kind = win32api::TypeKind;
+constexpr size_t kMaxArguments = win32api::kMaxShimArguments;
 struct ShimObject {
   const win32api::Function* function = nullptr;
   win32api::Function fallback{};
   std::string library;
   std::string procedure;
-  std::array<Kind, kMaxArguments> kinds{};
-  size_t count = 0;
+  win32api::Signature signature;
   bool ready = false;
   bool busy = false;
   std::string label;
-  Kind result_kind = Kind::kVoid;
   // Ruby raises with longjmp: own C++ result storage in the Ruby object so
   // error reporting and allocating a Ruby return value cannot leak it.
   win32api::Result result;
@@ -128,59 +108,27 @@ VALUE InitializeBody(VALUE opaque) {
   VALUE* argv = context.argv;
   const VALUE self = context.self;
   auto* object = context.object;
-  if (argc < 3 || argc > 5)
-    rb_raise(rb_eArgError, "wrong number of arguments (%d for 3..5)", argc);
-  StringValue(argv[0]);
-  StringValue(argv[1]);
+  win32api::CheckInitializeArgumentCount(argc);
+  win32api::ValidateNames(argv);
   const char* library = StringValueCStr(argv[0]);
   const char* procedure = StringValueCStr(argv[1]);
   object->library = library;
   object->procedure = procedure;
   object->label = DisplayName(library) + "!" + DisplayName(procedure);
   object->function = win32api::GetRegistry().Find(library, procedure);
-  const auto add = [&](char code) {
-    const Kind kind = Classify(code);
-    if (kind == Kind::kInvalid)
-      rb_raise(
-          rb_eArgError,
-          "Win32API shim: invalid argument type (expected N, L, I, P or V)");
-    if (kind == Kind::kVoid)
-      return;
-    if (object->count == kMaxArguments)
-      rb_raise(rb_eArgError, "Win32API shim: too many arguments");
-    object->kinds[object->count++] = kind;
-  };
-  if (!NIL_P(argv[2])) {
-    if (RB_TYPE_P(argv[2], T_ARRAY)) {
-      for (long i = 0; i < RARRAY_LEN(argv[2]); ++i) {
-        VALUE item = rb_ary_entry(argv[2], i);
-        const char* code = StringValueCStr(item);
-        if (!code[0] || code[1])
-          rb_raise(rb_eArgError,
-                   "Win32API shim: array types must be single characters");
-        add(code[0]);
-      }
-    } else {
-      const char* codes = StringValueCStr(argv[2]);
-      for (; *codes; ++codes)
-        add(*codes);
-    }
-  }
-  if (object->function && object->count != object->function->arity)
+  object->signature.ParseImports(argv[2], win32api::SignaturePolicy::kShim);
+  if (object->function &&
+      object->signature.arguments.size() != object->function->arity)
     rb_raise(rb_eArgError,
              "Win32API shim: %s expects %d arguments, signature declares %d",
              object->label.c_str(), static_cast<int>(object->function->arity),
-             static_cast<int>(object->count));
-  if (argc >= 4 && !NIL_P(argv[3])) {
-    const char* code = StringValueCStr(argv[3]);
-    object->result_kind = Classify(code[0]);
-    if (!code[0] || code[1] || object->result_kind == Kind::kInvalid)
-      rb_raise(rb_eArgError, "Win32API shim: invalid result type");
-  }
+             static_cast<int>(object->signature.arguments.size()));
+  object->signature.ParseResult(argc >= 4 ? argv[3] : Qnil,
+                               win32api::SignaturePolicy::kShim);
   // Unknown exports use the caller's validated signature without mutating the
   // registry. Each instance owns its fallback so registry pointers stay stable.
   if (!object->function) {
-    object->fallback = win32api::MakeNoOp(object->count);
+    object->fallback = win32api::MakeNoOp(object->signature.arguments.size());
     object->function = &object->fallback;
   }
   if (object->function->noop)
@@ -191,8 +139,7 @@ VALUE InitializeBody(VALUE opaque) {
 }
 
 RB_FUNC(ShimInitialize) {
-  if (argc < 3 || argc > 5)
-    rb_raise(rb_eArgError, "wrong number of arguments (%d for 3..5)", argc);
+  win32api::CheckInitializeArgumentCount(argc);
   rb_check_frozen(self);
   auto* previous = static_cast<ShimObject*>(RTYPEDDATA_DATA(self));
   if (previous && previous->busy)
@@ -214,15 +161,15 @@ VALUE CallBody(VALUE opaque) {
   auto* object = context.object;
   if (!object->ready)
     rb_raise(rb_eRuntimeError, "Win32API shim: uninitialized function");
-  if (static_cast<size_t>(argc) != object->count)
+  if (static_cast<size_t>(argc) != object->signature.arguments.size())
     rb_raise(rb_eArgError, "wrong number of arguments (%d for %d)", argc,
-             static_cast<int>(object->count));
+             static_cast<int>(object->signature.arguments.size()));
   if (object->function->noop) {
     // No-op calls must not coerce values, borrow buffers or invoke callbacks.
     // Only the declared argument count and return category are relevant.
     win32api::SetLastError(120);  // ERROR_CALL_NOT_IMPLEMENTED
-    return object->result_kind == Kind::kPointer ? rb_str_new("", 0)
-                                                 : INT2NUM(0);
+    return object->signature.result == Kind::kPointer ? rb_str_new("", 0)
+                                                     : INT2NUM(0);
   }
   std::array<VALUE, kMaxArguments> values{};
   std::array<win32api::Argument, kMaxArguments> arguments{};
@@ -230,14 +177,14 @@ VALUE CallBody(VALUE opaque) {
   // borrowing any buffer pointer. In particular, arguments may alias.
   for (int i = 0; i < argc; ++i) {
     VALUE value = argv[i];
-    if (object->kinds[i] == Kind::kPointer && !NIL_P(value) &&
+    if (object->signature.arguments[i] == Kind::kPointer && !NIL_P(value) &&
         !RB_INTEGER_TYPE_P(value)) {
       StringValue(value);
       if (object->function->writable & (1u << i))
         rb_str_modify(value);
     } else if (!NIL_P(value)) {
       arguments[i].number = NUM2LL(value);
-    } else if (object->kinds[i] != Kind::kPointer) {
+    } else if (object->signature.arguments[i] != Kind::kPointer) {
       rb_raise(rb_eTypeError, "Win32API shim: nil is only valid for a pointer");
     }
     values[i] = value;
@@ -250,14 +197,15 @@ VALUE CallBody(VALUE opaque) {
     }
   }
   object->result = object->function->handler(
-      std::span<const win32api::Argument>(arguments.data(), object->count));
+      std::span<const win32api::Argument>(
+          arguments.data(), object->signature.arguments.size()));
   if (!object->result.error.empty())
     rb_raise(rb_eRuntimeError, "Win32API shim: %s",
              object->result.error.c_str());
   if (object->result.destination >= argc)
     rb_raise(rb_eRuntimeError,
              "Win32API shim: invalid destination returned by backend");
-  switch (object->result_kind) {
+  switch (object->signature.result) {
     case Kind::kPointer:
       if (object->result.destination >= 0 &&
           arguments[object->result.destination].buffer) {
@@ -272,6 +220,7 @@ VALUE CallBody(VALUE opaque) {
                  "Win32API shim: raw pointer results are unsupported");
       return rb_str_new(object->result.text.data(), object->result.text.size());
     case Kind::kNumber:
+    case Kind::kInteger:
       if (object->result.destination >= 0 &&
           arguments[object->result.destination].buffer)
         rb_raise(rb_eRuntimeError,
@@ -302,8 +251,7 @@ RB_FUNC(ShimCopy) {
 
 RB_FUNC(ShimSupported) {
   CheckArgc(argc, 2);
-  StringValue(argv[0]);
-  StringValue(argv[1]);
+  win32api::ValidateNames(argv);
   const char* library = StringValueCStr(argv[0]);
   const char* procedure = StringValueCStr(argv[1]);
   return win32api::GetRegistry().Find(library, procedure) ? Qtrue : Qfalse;
@@ -312,13 +260,8 @@ RB_FUNC(ShimSupported) {
 
 void InitWin32APIBinding() {
   win32api::memory::Reset();
-  VALUE klass = rb_define_class("Win32API", rb_cObject);
-  rb_define_alloc_func(klass, ClassAllocate<&kShimDataType>);
-  DefineMethod(klass, "initialize", ShimInitialize);
-  DefineMethod(klass, "call", ShimCall);
-  DefineMethod(klass, "initialize_copy", ShimCopy);
-  rb_define_alias(klass, "Call", "call");
-  DefineClassMethod(klass, "supported?", ShimSupported);
+  win32api::DefineClass(ClassAllocate<&kShimDataType>, ShimInitialize, ShimCall,
+                       ShimSupported, ShimCopy);
   rb_provide("Win32API.rb");
   rb_provide("win32api.rb");
 }

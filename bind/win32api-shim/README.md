@@ -220,9 +220,12 @@ WASM 沿用相同的配置处理，但写入仅保留在当前页面运行时的
 
 ## 模块与平台扩展
 
-本目录集中维护非 Windows 兼容层，通过自己的 `CMakeLists.txt` 加入 `urge-binding`，沿用 `InitWin32APIBinding()` 初始化入口。`bind/CMakeLists.txt` 仅在 `NOT WIN32` 时加入本模块。Windows 的 `bind/binding_win32api.cc`、LoadLibrary/GetProcAddress/libffi 调用链不受影响。
+本目录集中维护非 Windows 兼容层，通过自己的 `CMakeLists.txt` 加入 `urge-binding`，沿用 `InitWin32APIBinding()` 初始化入口。`bind/CMakeLists.txt` 仅在 `NOT WIN32` 时加入本模块。Windows 的 `bind/binding_win32api.cc` 保留 LoadLibrary/GetProcAddress/libffi 原生调用链。两端共用 `bind/win32api_common.{h,cc}` 中的类型码、签名解析、库名/函数名参数转换及 Ruby 类和方法注册；参数封送、内存访问、返回值和生命周期仍由各自后端处理。
 
-- `binding_win32api_shim.cc`：Ruby 参数封送、返回值和实例生命周期。
+共享解析器保留两种既有策略：Windows 原生绑定允许签名中的未知类型码、数组项取首字符，`I` 与 `N/L` 保留不同的 libffi 参数类型；shim 严格检查单字符数组项、合法类型码和最多 32 个参数。返回值的默认类型均为 `V`。原生构造过程中若签名转换抛出 Ruby 异常，会释放本次临时对象和 DLL 引用，已有实例保持原样。
+
+- `../win32api_common.{h,cc}`：两端共用的 Ruby 绑定基础设施；由 `bind/CMakeLists.txt` 在所有平台编译。
+- `binding_win32api_shim.cc`：shim 的 Ruby 参数封送、返回值和实例生命周期，使用共享签名解析与注册入口。
 - `win32api_shim.{h,cc}`：与 Ruby/宿主 ABI 解耦的参数、结果、函数元数据及不可变注册表。
 - `win32api_memory.{h,cc}`：跨平台的受保护虚拟堆及内存函数族。
 - `win32api_process.cc`：当前进程/线程 ID 和伪句柄；窗口关联由 SDL 函数族使用。
