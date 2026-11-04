@@ -138,11 +138,23 @@ dependencies {
 }
 
 // Include the MIT notices for the built-in audio decoder reference code.
-def codecNoticesDir = layout.buildDirectory.dir("generated/codecNotices")
-def copyCodecNotices = tasks.register("copyCodecNotices", Copy) {
-    from(rootProject.file("../core/audio/decoders/LICENSES.md"))
-    into(codecNoticesDir)
-    rename { "audio-codec-licenses.txt" }
+// The Variant API requires a DirectoryProperty and wires the producer task
+// into asset merging. Each variant gets its own generated output directory.
+abstract class CopyCodecNotices extends Copy {
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDirectory()
 }
-android.sourceSets.main.assets.srcDir(codecNoticesDir)
-tasks.named("preBuild").configure { dependsOn(copyCodecNotices) }
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def copyCodecNotices = tasks.register(
+                "copy${variant.name.capitalize()}CodecNotices", CopyCodecNotices) {
+            from(rootProject.file("../core/audio/decoders/LICENSES.md"))
+            into(outputDirectory)
+            rename { "audio-codec-licenses.txt" }
+        }
+        variant.sources.assets.addGeneratedSourceDirectory(copyCodecNotices) {
+            it.outputDirectory
+        }
+    }
+}
