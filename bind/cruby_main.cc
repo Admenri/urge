@@ -27,6 +27,7 @@
 #include "bind/legacy-ruby-compat/legacy_ruby_compat.h"
 #include "bind/script_loop.h"
 #include "core/common/logger.h"
+#include "core/font/font.h"
 #include "core/graphics/graphics.h"
 #include "core/system/config.h"
 #include "core/system/filesystem.h"
@@ -349,6 +350,11 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   }
 
   InitBindings();
+
+  // RGSS1/2/3 manuals specify default Font sizes of 22/20/24 respectively.
+  // Set this for each game session before scripts can construct any fonts;
+  // subsequent Font.default_size assignments retain their normal behavior.
+  urge::Font::Attr_DefaultSize(config.xp() ? 22 : config.vx() ? 20 : 24);
 
   auto tilemap_klass = rb_const_get(
       rb_cObject, rb_intern(config.xp() ? "TilemapXP" : "TilemapVX"));
