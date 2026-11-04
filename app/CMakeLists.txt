@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.30)
 configure_file("${PROJECT_SOURCE_DIR}/core/audio/decoders/LICENSES.md"
   "${CMAKE_CURRENT_BINARY_DIR}/audio-codec-licenses.txt" COPYONLY)
 
+configure_file("${PROJECT_SOURCE_DIR}/third_party/ruby/cmake/ENCODINGS_LICENSES.txt"
+  "${CMAKE_CURRENT_BINARY_DIR}/ruby-encoding-licenses.txt" COPYONLY)
+
 # Android has no executable of its own: the APK's Java side loads a shared
 # library and looks up `SDL_main` in it, which `SDL_main_impl.h` defines for a
 # callback-loop app (`SDL_MAIN_USE_CALLBACKS` in app.cc).  So the same source

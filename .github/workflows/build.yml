@@ -59,6 +59,7 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item build/ci/app/RelWithDebInfo/Game.exe dist/urge-windows-x64.exe
           Copy-Item build/ci/app/audio-codec-licenses.txt dist/audio-codec-licenses.txt
+          Copy-Item build/ci/app/ruby-encoding-licenses.txt dist/ruby-encoding-licenses.txt
 
       - uses: actions/upload-artifact@v7
         with:
@@ -192,6 +193,7 @@ jobs:
           cp "$out/Game.html" "$out/Game.js" "$out/Game.wasm" \
              "$out/urge-helper.js" "$out/async_mapping.js" dist/
           cp "$out/audio-codec-licenses.txt" dist/
+          cp "$out/ruby-encoding-licenses.txt" dist/
           cp app/build_mapping.py dist/tools/
           cat > dist/README.txt <<'EOF'
           URGE web build

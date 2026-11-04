@@ -117,7 +117,7 @@ set(RUBY_PRISM_SOURCES
 
 # --- built-in encodings (BUILTIN_ENCOBJS in enc/Makefile.in) ---------------
 # Everything else in enc/ is a dynamically loadable encoding in the original
-# build; this build is core-only, so only the built-ins are compiled in.
+# build. RubyEncodings.cmake optionally adds the static RGSS codec subset.
 set(RUBY_ENC_SOURCES
   enc/ascii.c
   enc/us_ascii.c
