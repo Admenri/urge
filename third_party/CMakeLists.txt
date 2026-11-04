@@ -251,6 +251,24 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 add_subdirectory(glm)
+# Desktop Unix provides legacy INI code pages through the OS iconv. Windows
+# uses its code-page APIs, Android Java Charset, and Web TextDecoder; SDL's
+# built-in converter covers Unicode on targets without system iconv.
+add_library(urge-ini-encoding INTERFACE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  # Use the SDK header and linker stub directly, never a cached Homebrew finder.
+  target_link_libraries(urge-ini-encoding INTERFACE iconv)
+  target_compile_definitions(urge-ini-encoding INTERFACE URGE_USE_SYSTEM_ICONV=1)
+elseif(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
+  find_package(Iconv MODULE QUIET)
+  if(Iconv_FOUND)
+    target_link_libraries(urge-ini-encoding INTERFACE Iconv::Iconv)
+    target_compile_definitions(urge-ini-encoding INTERFACE URGE_USE_SYSTEM_ICONV=1)
+  else()
+    message(STATUS "URGE: iconv unavailable; legacy INI text will be filtered to ASCII")
+  endif()
+endif()
+
 add_subdirectory(SDL)
 
 # libwebp lives inside SDL_image's own `external/` directory -- the slot

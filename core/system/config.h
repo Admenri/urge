@@ -119,6 +119,11 @@ class Config : public Singleton<Config> {
 
   std::string inifile_;
   ini::IniFile parser_;
+  std::string encoding_ = "UTF-8";
+  std::string bom_;
+  std::string original_bytes_;
+  std::string original_text_;
+  bool save_enabled_ = false;
   std::vector<std::string> baseline_;
 };
 
