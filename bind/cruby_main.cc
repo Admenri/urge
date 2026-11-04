@@ -24,7 +24,7 @@
 
 #include "bind/autogen/binding_init.h"
 #include "bind/cruby_utils.h"
-#include "bind/legacy_classes.h"
+#include "bind/legacy-ruby-compat/legacy_ruby_compat.h"
 #include "bind/script_loop.h"
 #include "core/common/logger.h"
 #include "core/graphics/graphics.h"
@@ -175,9 +175,7 @@ VALUE EvalString(VALUE string, VALUE filename, int32_t* state) {
 
   auto evaluate = [](VALUE parameter) -> VALUE {
     EvaluteContext* context = reinterpret_cast<EvaluteContext*>(parameter);
-    VALUE argv[] = {context->string, context->filename};
-    return rb_funcall2(Qnil, rb_intern("__urge_eval_script"), std::size(argv),
-                       argv);
+    return EvalRubyScript(context->string, context->filename);
   };
 
   EvaluteContext context = {string, filename};
@@ -332,29 +330,16 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   DefineModuleFunction(rb_mKernel, "load_data", load_data);
   DefineModuleFunction(rb_mKernel, "save_data", save_data);
 
-  rb_eval_string_protect(
-      "def __urge_eval_script(source, filename)\n"
-      "  eval(source, nil, filename)\n"
-      "end\n",
-      &error_state_);
+  rb_protect(
+      [](VALUE version) -> VALUE {
+        InitLegacyRubyCompat(NUM2INT(version));
+        return Qnil;
+      },
+      INT2NUM(config.game.rgss), &error_state_);
   if (error_state_) {
     exception_state.Throw(urge::ExceptionState::kRGSSError,
-                          "failed to define the script evaluator.");
+                          "failed to initialize Ruby compatibility.");
     return;
-  }
-
-  if (config.xp() || config.vx()) {
-    rb_protect(
-        [](VALUE) -> VALUE {
-          InitLegacyClasses();
-          return Qnil;
-        },
-        Qnil, &error_state_);
-    if (error_state_) {
-      exception_state.Throw(urge::ExceptionState::kRGSSError,
-                            "failed to initialize legacy class compatibility.");
-      return;
-    }
   }
 
   InitBindings();

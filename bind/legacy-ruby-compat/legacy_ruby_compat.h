@@ -22,8 +22,14 @@
 
 #pragma once
 
+#include "ruby.h"
+
 namespace binding {
-// Install the RGSS1/2 evaluator's exception-only, configuration-class fallback.
-// Call after the ordinary evaluator is defined; RGSS3 keeps that evaluator.
-void InitLegacyClasses();
+// The only startup entry for Ruby compatibility and script evaluation.
+// RGSS1/2/3: restore missing API names from the matching Ruby baseline.
+// Only RGSS1/2 enable exception-only class recovery.
+void InitLegacyRubyCompat(int rgss_version);
+
+// Called within the host's rb_protect; no global Ruby helper is installed.
+VALUE EvalRubyScript(VALUE source, VALUE filename);
 }  // namespace binding

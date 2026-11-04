@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "bind/legacy_classes.h"
+#include "bind/legacy-ruby-compat/legacy_classes.h"
 
 #include <algorithm>
 #include <optional>
@@ -231,11 +231,10 @@ VALUE Applied(VALUE, VALUE name, VALUE filename, VALUE line) {
 }
 
 // TracePoint observes only exception raises. Its binding retains the failed
-// eval's local variables without changing the ordinary eval(source, nil, file)
-// path or wrapping/recompiling successful scripts. Source analysis and recovery
+// eval's local variables without rewriting/recompiling successful scripts. Source analysis and recovery
 // start only after an uncaught, matching TypeError reaches this evaluator.
 constexpr const char* kEvaluator = R"RUBY(
-module URGELegacyClasses
+module URGELegacyRubyCompat
   def self.recover(source, filename, error, observed, repaired)
     return unless error.instance_of?(TypeError) && observed &&
                   observed[0].equal?(error)
@@ -286,47 +285,49 @@ module URGELegacyClasses
     applied(name, filename, observed[2])
     [tail, observed[1]]
   end
-end
 
-def __urge_eval_script(source, filename)
-  __urge_original = source
-  __urge_next_source = source
-  __urge_filename = filename
-  __urge_context = nil
-  __urge_observed = nil
-  __urge_repaired = {}
-  __urge_trace = TracePoint.new(:raise) do |event|
-    __urge_event_error = event.raised_exception
-    if __urge_event_error.instance_of?(TypeError) && event.path == __urge_filename
-      __urge_observed = [__urge_event_error, event.binding, event.lineno]
-    end
-  end
-  begin
-    while true
-      __urge_observed = nil
-      __urge_trace.enable(target_thread: Thread.current)
-      begin
-        return eval(__urge_next_source, __urge_context, __urge_filename)
-      rescue TypeError => __urge_error
-        __urge_trace.disable
-        raise unless __urge_error.instance_of?(TypeError) && __urge_observed &&
-                     __urge_observed[0].equal?(__urge_error) &&
-                     __urge_error.message.start_with?('superclass mismatch for class ')
-        __urge_recovery = URGELegacyClasses.recover(
-          __urge_original, __urge_filename, __urge_error, __urge_observed, __urge_repaired)
-        raise unless __urge_recovery
-        __urge_next_source, __urge_context = __urge_recovery
+  def self.evaluate(source, filename)
+    __urge_original = source
+    __urge_next_source = source
+    __urge_filename = filename
+    # Keep game constants at Object after moving this evaluator into a module.
+    # Each script gets its own local scope; recovery reuses the failed Binding.
+    __urge_context = TOPLEVEL_BINDING.dup
+    __urge_observed = nil
+    __urge_repaired = {}
+    __urge_trace = TracePoint.new(:raise) do |event|
+      __urge_event_error = event.raised_exception
+      if __urge_event_error.instance_of?(TypeError) && event.path == __urge_filename
+        __urge_observed = [__urge_event_error, event.binding, event.lineno]
       end
     end
-  ensure
-    __urge_trace.disable
+    begin
+      while true
+        __urge_observed = nil
+        __urge_trace.enable(target_thread: Thread.current)
+        begin
+          return eval(__urge_next_source, __urge_context, __urge_filename)
+        rescue TypeError => __urge_error
+          __urge_trace.disable
+          raise unless __urge_error.instance_of?(TypeError) && __urge_observed &&
+                       __urge_observed[0].equal?(__urge_error) &&
+                       __urge_error.message.start_with?('superclass mismatch for class ')
+          __urge_recovery = URGELegacyRubyCompat.recover(
+            __urge_original, __urge_filename, __urge_error, __urge_observed, __urge_repaired)
+          raise unless __urge_recovery
+          __urge_next_source, __urge_context = __urge_recovery
+        end
+      end
+    ensure
+      __urge_trace.disable
+    end
   end
 end
 )RUBY";
 }  // namespace
 
 void InitLegacyClasses() {
-  VALUE compatibility = rb_define_module("URGELegacyClasses");
+  VALUE compatibility = rb_define_module("URGELegacyRubyCompat");
   rb_define_singleton_method(compatibility, "plan", RUBY_METHOD_FUNC(Plan), 3);
   rb_define_singleton_method(compatibility, "applied",
                              RUBY_METHOD_FUNC(Applied), 3);
