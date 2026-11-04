@@ -71,12 +71,13 @@ configure_file("${CMAKE_CURRENT_LIST_DIR}/rbconfig.rb.in"
                @ONLY)
 
 # --- encdb.h --------------------------------------------------------------
+# RubyEncodings.cmake selects the core or expanded pre-generated database.
 # Generated once from the built-in encoding sources (enc/ascii.c,
 # enc/us_ascii.c, enc/unicode.c, enc/utf_8.c).  It only lists encoding names,
 # aliases and replicas, so it does not depend on the target platform; keeping
 # a copy in cmake/ means the build does not need a Ruby interpreter to
 # configure itself.
-configure_file("${CMAKE_CURRENT_LIST_DIR}/encdb.h"
+configure_file("${RUBY_ENCDB_SOURCE}"
                "${RUBY_BINARY_DIR}/encdb.h"
                COPYONLY)
 

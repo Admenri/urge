@@ -98,6 +98,7 @@ include(RubyPlatform)
 # Sources
 # ---------------------------------------------------------------------------
 include(RubySources)
+include(RubyEncodings)
 
 # ---------------------------------------------------------------------------
 # Platform configuration: generates <build>/include/ruby/config.h
@@ -282,6 +283,8 @@ add_dependencies(ruby ruby-static)
 if(RUBY_INSTALL_RULES)
   include(GNUInstallDirs)
   install(TARGETS ruby RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  install(FILES "${RUBY_SOURCE_DIR}/cmake/ENCODINGS_LICENSES.txt"
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/ruby")
   install(FILES "${RUBY_BINARY_DIR}/rbconfig.rb"
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/ruby/${RUBY_LIB_VERSION}/${RUBY_ARCH}")
   install(DIRECTORY "${RUBY_SOURCE_DIR}/lib/"

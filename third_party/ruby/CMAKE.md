@@ -65,10 +65,13 @@ cmake --build build-wasm -j
 
 ---
 
+RGSS 的静态编码模块和来源见 [cmake/RGSS_ENCODINGS.md](cmake/RGSS_ENCODINGS.md)。
+
 ## 2. 选项
 
 | 选项 | 默认 | 说明 |
 |------|------|------|
+| `RUBY_STATIC_RGSS_ENCODINGS` | `ON` | 静态编入 RGSS3 的单字节、UTF-16/32、Shift_JIS 转码和编码定义，含 WASM |
 | `RUBY_ENABLE_YJIT` | `OFF` | 打开即报错：本构建不支持 YJIT |
 | `RUBY_ENABLE_ZJIT` | `OFF` | 同上 |
 | `RUBY_USE_GMP` | `OFF` | 找到 GMP 时启用（Bignum 加速） |

@@ -137,7 +137,7 @@ dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
 }
 
-// Include the MIT notices for the built-in audio decoder reference code.
+// Include license notices for the bundled audio decoders and Ruby encodings.
 // The Variant API requires a DirectoryProperty and wires the producer task
 // into asset merging. Each variant gets its own generated output directory.
 abstract class CopyCodecNotices extends Copy {
@@ -149,9 +149,13 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         def copyCodecNotices = tasks.register(
                 "copy${variant.name.capitalize()}CodecNotices", CopyCodecNotices) {
-            from(rootProject.file("../core/audio/decoders/LICENSES.md"))
+            from(rootProject.file("../core/audio/decoders/LICENSES.md")) {
+                rename { "audio-codec-licenses.txt" }
+            }
             into(outputDirectory)
-            rename { "audio-codec-licenses.txt" }
+            from(rootProject.file("../third_party/ruby/cmake/ENCODINGS_LICENSES.txt")) {
+                rename { "ruby-encoding-licenses.txt" }
+            }
         }
         variant.sources.assets.addGeneratedSourceDirectory(copyCodecNotices) {
             it.outputDirectory

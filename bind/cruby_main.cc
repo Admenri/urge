@@ -86,14 +86,20 @@ RB_FUNC(marshal_load_utf8) {
 
   auto string_utf8 = [](VALUE yielded, VALUE self, int argc, const VALUE* argv,
                         VALUE blockarg) -> VALUE {
-    if (RB_TYPE_P(yielded, RUBY_T_STRING))
+    // Legacy RGSS byte strings need UTF-8 tagging; explicitly encoded Ruby
+    // strings must retain their encoding when restored from a save file.
+    if (RB_TYPE_P(yielded, RUBY_T_STRING) &&
+        rb_enc_get_index(yielded) == rb_ascii8bit_encindex())
       rb_enc_associate(yielded, rb_utf8_encoding());
     return yielded;
   };
 
   auto utf8_conv = [](VALUE yielded, VALUE self, int argc, const VALUE* argv,
                       VALUE blockarg) -> VALUE {
-    if (RB_TYPE_P(yielded, RUBY_T_STRING))
+    // Legacy RGSS byte strings need UTF-8 tagging; explicitly encoded Ruby
+    // strings must retain their encoding when restored from a save file.
+    if (RB_TYPE_P(yielded, RUBY_T_STRING) &&
+        rb_enc_get_index(yielded) == rb_ascii8bit_encindex())
       rb_enc_associate(yielded, rb_utf8_encoding());
     return rb_funcall(self, rb_intern("call"), 1, yielded);
   };
