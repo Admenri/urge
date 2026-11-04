@@ -29,9 +29,9 @@ void RegisterPlatform(Registry& registry) {
 #elif defined(SDL_PLATFORM_EMSCRIPTEN)
   RegisterWasm(registry);
 #else
-  // New platforms opt in to shared families and supply their own OS handlers.
-  // An unimplemented platform never silently claims to support a Win32 API.
-  (void)registry;
+  // Desktop queries need only SDL and bounded Ruby buffers. Other function
+  // families remain opt-in for platforms without their full shim backend.
+  RegisterDesktop(registry);
 #endif
 }
 }  // namespace binding::win32api

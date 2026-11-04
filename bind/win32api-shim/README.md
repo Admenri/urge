@@ -7,13 +7,13 @@
 | Windows | 原生 DLL 调用 |
 | macOS | 已启用兼容接口 |
 | WASM / Web | 已启用，部分为空操作 |
-| Linux / Android | 基础框架及空操作 |
+| Linux / Android | 基础框架、桌面查询及空操作 |
 
-下文按功能列出 macOS 和 WASM 的已注册接口及平台差异。非 Windows 平台的未知库、未注册函数统一降级为空操作。
+下文按功能列出 macOS 和 WASM 的已注册接口及平台差异。Linux/Android 另提供本节的桌面查询接口。非 Windows 平台的未知库、未注册函数统一降级为空操作。
 
 ## 调用约定
 
-`[A]` 表示同时注册无后缀和 `A` 后缀名称；字符串按 UTF-8 处理，未实现 `W` 版本及完整 Windows ANSI 代码页语义。DLL 名忽略 ASCII 大小写、路径前缀和 `.dll` 后缀；例如 `kernel32`、`kernel32.dll` 和 `KERNEL32.DLL` 都解析到同一组接口。函数名保持大小写敏感，不匹配 `.exe` 等其他扩展名。这是兼容层内的名称匹配，不会查找或加载磁盘上的 DLL。
+`[A]` 表示同时注册无后缀和 `A` 后缀名称；字符串按 UTF-8 处理，除下文仅处理 RECT 的 `SystemParametersInfoW` 外，未实现 `W` 字符串版本及完整 Windows ANSI 代码页语义。DLL 名忽略 ASCII 大小写、路径前缀和 `.dll` 后缀；例如 `kernel32`、`kernel32.dll` 和 `KERNEL32.DLL` 都解析到同一组接口。函数名保持大小写敏感，不匹配 `.exe` 等其他扩展名。这是兼容层内的名称匹配，不会查找或加载磁盘上的 DLL。
 
 原版 CRuby 1.8 Win32API 将库名交给 `LoadLibrary`，后者在省略扩展名时默认补 `.dll`；参见 [CRuby 1.8 源码](https://github.com/ruby/ruby/blob/v1_8_7_374/ext/Win32API/Win32API.c) 和 [LoadLibrary 文档](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya)。
 
@@ -123,8 +123,15 @@ end
 
 ## 窗口操作
 
+`GetDesktopWindow()` 返回独立于游戏窗口的虚拟桌面句柄。macOS/Linux/Android 的 `GetWindowRect`、`GetClientRect` 对该句柄均写入 `(0, 0, 主显示器宽, 主显示器高)`；尺寸来自 SDL，使用逻辑坐标，不包含多屏联合区域。WASM 中它表示 canvas，宽高为游戏窗口的逻辑尺寸。上述接口及 `IsWindow`、`IsWindowVisible` 在所有非 Windows 平台注册，要求主线程；Windows 保持原生实现。
+
+`SystemParametersInfo`、`SystemParametersInfoA/W` 仅支持 `SPI_GETWORKAREA`（0x0030），通过 `pvParam` 写入主显示器可用工作区的完整 RECT，排除系统菜单栏、Dock、任务栏等占用区域；坐标相对主显示器原点，沿用本兼容层的逻辑坐标。WASM 返回完整 canvas 区域。`uiParam`、`fWinIni` 对这项查询不使用；其他 action 返回 0、设置错误码 120 并首次警告，不读取或改变系统设置。`W` 名称只支持这里不涉及字符串的查询。此接口也在所有非 Windows 平台注册。
+
+桌面句柄只能用于这里的查询，不能被当作内存地址、游戏窗口或其他进程的原生 HWND。查询仍执行完整 RECT 长度、冻结及地址检查，失败不写入部分结构。句柄不会使窗口移动、改标题或进程 ID 查询操作到系统桌面。
+
 | 库 | 接口 |
 | --- | --- |
+| `user32` | `GetDesktopWindow`、`SystemParametersInfo[A/W]`（仅 `SPI_GETWORKAREA`） |
 | `user32` | `FindWindow[A]`、`FindWindowEx[A]`、`GetTopWindow`、`GetWindow` |
 | `user32` | `GetForegroundWindow`、`GetActiveWindow`、`IsWindow`、`IsWindowVisible` |
 | `user32` | `GetWindowThreadProcessId` |
@@ -133,7 +140,7 @@ end
 | `user32` | `MoveWindow`、`SetWindowPos`、`ShowWindow`、`SetForegroundWindow` |
 | `user32` | `GetSystemMetrics` |
 
-只暴露 URGE 自己的窗口，使用稳定的虚拟 HWND。窗口接口要求主线程；不查找或操作其他应用的窗口。`POINT` 为两个、`RECT` 为四个小端 32 位有符号整数，输出可写入 Ruby 字符串或受保护内存；短缓冲区会跳过写入、返回 0，并按内存保护规则记录首次警告。
+除上述只读虚拟桌面外，只暴露 URGE 自己的窗口，使用稳定的虚拟 HWND。窗口接口要求主线程；不查找或操作其他应用的窗口。`POINT` 为两个、`RECT` 为四个小端 32 位有符号整数，输出可写入 Ruby 字符串或受保护内存；短缓冲区会跳过写入、返回 0，并按内存保护规则记录首次警告。
 
 `GetClientRect` 返回 `(0, 0, width, height)`，不含标题栏和边框。`GetWindowText[A]` 的容量包含末尾 NUL，返回已写入的字节数（不含 NUL）；`GetWindowTextLength[A]` 返回 UTF-8 字节数。`SetWindowText[A]` 修改当前窗口标题，不持久化到 Game.ini。
 

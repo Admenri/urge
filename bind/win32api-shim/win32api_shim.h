@@ -91,6 +91,7 @@ void RegisterProcess(Registry& registry);
 uint32_t CurrentProcessId();
 uint32_t CurrentThreadId();
 void RegisterSDL(Registry& registry);
+void RegisterDesktop(Registry& registry);
 uint32_t LastError();
 void SetLastError(uint32_t value);
 

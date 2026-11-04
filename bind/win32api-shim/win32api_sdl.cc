@@ -33,6 +33,7 @@
 namespace binding::win32api {
 namespace {
 constexpr int64_t kWindow = 1;
+constexpr int64_t kDesktop = 2;
 Result Fail(uint32_t code) {
   SetLastError(code);
   return {};
@@ -43,6 +44,14 @@ SDL_Window* Window() {
 }
 bool MainThread() {
   return SDL_IsMainThread();
+}
+bool DesktopHandle(const Argument& argument) {
+  return !argument.buffer && argument.number == kDesktop && Window();
+}
+Result Desktop(std::span<const Argument>) {
+  if (!MainThread())
+    return Result::Failure("window APIs must run on the main thread");
+  return Result{Window() ? kDesktop : 0};
 }
 Result FindWindow(std::span<const Argument> args) {
   if (!MainThread())
@@ -355,6 +364,43 @@ Result WriteWords(const Argument& output, const std::array<int32_t, N>& words) {
   return memory::Write(output, bytes.data(), bytes.size(), failure) ? Result{1}
                                                                     : failure;
 }
+Result WorkArea(std::span<const Argument> args) {
+  if (!MainThread())
+    return Result::Failure("window APIs must run on the main thread");
+  if (args[0].buffer || args[0].number != 0x0030) {
+    SetLastError(120);
+    Result result;
+    result.warning = "SystemParametersInfo action is unsupported; using no-op";
+    return result;
+  }
+  SDL_Rect bounds{};
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+  if (!Window() || !SDL_GetWindowSize(Window(), &bounds.w, &bounds.h))
+    return Fail(1400);
+#else
+  SDL_Rect display{};
+  const auto primary = SDL_GetPrimaryDisplay();
+  if (!SDL_GetDisplayBounds(primary, &display) ||
+      !SDL_GetDisplayUsableBounds(primary, &bounds))
+    return Fail(87);
+  // Normalize to the same primary-display origin as the desktop HWND.
+  const int64_t x = static_cast<int64_t>(bounds.x) - display.x;
+  const int64_t y = static_cast<int64_t>(bounds.y) - display.y;
+  if (x < INT_MIN || x > INT_MAX || y < INT_MIN || y > INT_MAX)
+    return Fail(87);
+  bounds.x = static_cast<int>(x);
+  bounds.y = static_cast<int>(y);
+#endif
+  const int64_t right = static_cast<int64_t>(bounds.x) + bounds.w;
+  const int64_t bottom = static_cast<int64_t>(bounds.y) + bounds.h;
+  if (right < INT_MIN || right > INT_MAX || bottom < INT_MIN ||
+      bottom > INT_MAX)
+    return Fail(87);
+  return WriteWords(
+      args[2],
+      std::array<int32_t, 4>{bounds.x, bounds.y, static_cast<int32_t>(right),
+                             static_cast<int32_t>(bottom)});
+}
 bool ReadPoint(const Argument& input,
                std::array<int32_t, 2>& point,
                Result& failure) {
@@ -392,6 +438,20 @@ Result WindowThreadProcessId(std::span<const Argument> args) {
 Result GetRect(std::span<const Argument> args, bool client) {
   if (!MainThread())
     return Result::Failure("window APIs must run on the main thread");
+  if (DesktopHandle(args[0])) {
+    SDL_Rect bounds{};
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+    if (!SDL_GetWindowSize(Window(), &bounds.w, &bounds.h))
+      return Fail(87);
+#else
+    if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds))
+      return Fail(87);
+#endif
+    // The desktop rectangle describes the primary display, not the union of
+    // all monitors. Its client and window origins are both (0, 0).
+    return WriteWords(args[1],
+                      std::array<int32_t, 4>{0, 0, bounds.w, bounds.h});
+  }
   auto* window = Handle(args[0]);
   if (!window)
     return Fail(1400);
@@ -539,11 +599,13 @@ Result WindowTextLength(std::span<const Argument> args) {
 Result IsWindow(std::span<const Argument> args) {
   if (!MainThread())
     return Result::Failure("window APIs must run on the main thread");
-  return Result{Handle(args[0]) ? 1 : 0};
+  return Result{Handle(args[0]) || DesktopHandle(args[0]) ? 1 : 0};
 }
 Result Visible(std::span<const Argument> args) {
   if (!MainThread())
     return Result::Failure("window APIs must run on the main thread");
+  if (DesktopHandle(args[0]))
+    return Result{1};
   auto* window = Handle(args[0]);
   return Result{
       window && !(SDL_GetWindowFlags(window) & SDL_WINDOW_HIDDEN) ? 1 : 0};
@@ -658,7 +720,22 @@ Result ShowCursor(std::span<const Argument> args) {
 }
 
 }  // namespace
+void RegisterDesktop(Registry& registry) {
+  registry.Add("user32", "GetDesktopWindow", 0, 0, Desktop);
+  registry.Add("user32", "SystemParametersInfo", 4, 4, WorkArea);
+  registry.Add("user32", "SystemParametersInfoA", 4, 4, WorkArea);
+  registry.Add("user32", "SystemParametersInfoW", 4, 4, WorkArea);
+  registry.Add(
+      "user32", "GetWindowRect", 2, 2,
+      [](std::span<const Argument> args) { return GetRect(args, false); });
+  registry.Add(
+      "user32", "GetClientRect", 2, 2,
+      [](std::span<const Argument> args) { return GetRect(args, true); });
+  registry.Add("user32", "IsWindow", 1, 0, IsWindow);
+  registry.Add("user32", "IsWindowVisible", 1, 0, Visible);
+}
 void RegisterSDL(Registry& registry) {
+  RegisterDesktop(registry);
   registry.Add("user32", "FindWindow", 2, 0, FindWindow);
   registry.Add("user32", "FindWindowA", 2, 0, FindWindow);
   registry.Add("user32", "FindWindowEx", 4, 0, FindWindowEx);
@@ -686,20 +763,12 @@ void RegisterSDL(Registry& registry) {
   registry.Add(
       "user32", "ClientToScreen", 2, 2,
       [](std::span<const Argument> args) { return ConvertPoint(args, false); });
-  registry.Add(
-      "user32", "GetWindowRect", 2, 2,
-      [](std::span<const Argument> args) { return GetRect(args, false); });
-  registry.Add(
-      "user32", "GetClientRect", 2, 2,
-      [](std::span<const Argument> args) { return GetRect(args, true); });
   registry.Add("user32", "GetWindowText", 3, 2, WindowText);
   registry.Add("user32", "GetWindowTextA", 3, 2, WindowText);
   registry.Add("user32", "GetWindowTextLength", 1, 0, WindowTextLength);
   registry.Add("user32", "GetWindowTextLengthA", 1, 0, WindowTextLength);
   registry.Add("user32", "SetWindowText", 2, 0, SetWindowText);
   registry.Add("user32", "SetWindowTextA", 2, 0, SetWindowText);
-  registry.Add("user32", "IsWindow", 1, 0, IsWindow);
-  registry.Add("user32", "IsWindowVisible", 1, 0, Visible);
 #if !defined(SDL_PLATFORM_EMSCRIPTEN)
   registry.Add("user32", "SetForegroundWindow", 1, 0, RaiseWindow);
   registry.Add("user32", "ShowWindow", 2, 0, ShowWindow);
