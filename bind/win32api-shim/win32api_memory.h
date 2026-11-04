@@ -26,15 +26,13 @@
 namespace binding::win32api::memory {
 // All numeric addresses refer exclusively to this bounded virtual heap. These
 // helpers copy under its lock; no host pointer or unlocked view escapes.
-bool Read(const Argument& source,
-          void* output,
-          size_t size,
-          std::string& error);
+bool Read(const Argument& source, void* output, size_t size, Result& failure);
 bool Write(const Argument& destination,
            const void* input,
            size_t size,
-           std::string& error);
-bool String(const Argument& source, std::string& output, std::string& error);
+           Result& failure);
+bool String(const Argument& source, std::string& output, Result& failure);
+Result Rejected(const char* reason);
 Result Move(std::span<const Argument> args);
 void Register(Registry& registry);
 void Reset();

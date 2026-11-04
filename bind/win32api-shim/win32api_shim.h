@@ -48,6 +48,8 @@ struct Result {
   int destination = -1;
   std::string text;
   std::string error;
+  // Nonfatal safety diagnostics are logged by the binding, once per API.
+  std::string warning;
   static Result Failure(std::string message);
 };
 

@@ -127,10 +127,10 @@ Heap& GetHeap() {
   return heap;
 }
 Result Invalid() {
-  SetLastError(487);
-  return Result::Failure(
-      "memory access rejected: unmanaged, freed, or out-of-bounds "
-      "address/buffer (original RGSS object layouts are unsupported)");
+  return Rejected(
+      "memory operation skipped: unmanaged, freed, out-of-bounds "
+      "or unterminated address/buffer (original RGSS object "
+      "layouts are unsupported)");
 }
 bool Length(const Argument& argument, size_t& count) {
   if (argument.buffer || argument.number < 0 ||
@@ -142,6 +142,14 @@ bool Length(const Argument& argument, size_t& count) {
 Result Destination(const Argument& argument) {
   Result result{argument.number};
   result.destination = 0;
+  return result;
+}
+Result Bounded(Result result, size_t requested, size_t actual) {
+  if (actual < requested) {
+    SetLastError(487);  // ERROR_INVALID_ADDRESS
+    result.warning = "memory operation limited to " + std::to_string(actual) +
+                     " of " + std::to_string(requested) + " bytes";
+  }
   return result;
 }
 Result Allocate(std::span<const Argument> args) {
@@ -215,18 +223,20 @@ Result Copy(std::span<const Argument> args, bool overlap) {
     return Destination(args[0]);
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
-  auto* destination = heap.View(args[0], size);
-  auto* source = heap.View(args[1], size);
-  if (!destination || !source)
+  size_t destination_size = 0, source_size = 0;
+  auto* destination = heap.View(args[0], 0, &destination_size);
+  auto* source = heap.View(args[1], 0, &source_size);
+  if (!destination || !source || !destination_size || !source_size)
     return Invalid();
+  const size_t actual = std::min({size, destination_size, source_size});
   if (!overlap) {
     const auto first = reinterpret_cast<uintptr_t>(destination),
                second = reinterpret_cast<uintptr_t>(source);
-    if (first < second ? second - first < size : first - second < size)
-      return Result::Failure("memcpy ranges overlap; use memmove");
+    if (first < second ? second - first < actual : first - second < actual)
+      return Rejected("memcpy skipped: ranges overlap; use memmove");
   }
-  std::memmove(destination, source, size);
-  return Destination(args[0]);
+  std::memmove(destination, source, actual);
+  return Bounded(Destination(args[0]), size, actual);
 }
 Result Set(std::span<const Argument> args) {
   size_t size;
@@ -236,11 +246,13 @@ Result Set(std::span<const Argument> args) {
     return Destination(args[0]);
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
-  auto* destination = heap.View(args[0], size);
-  if (!destination)
+  size_t available = 0;
+  auto* destination = heap.View(args[0], 0, &available);
+  if (!destination || !available)
     return Invalid();
-  std::memset(destination, static_cast<unsigned char>(args[1].number), size);
-  return Destination(args[0]);
+  const size_t actual = std::min(size, available);
+  std::memset(destination, static_cast<unsigned char>(args[1].number), actual);
+  return Bounded(Destination(args[0]), size, actual);
 }
 Result Compare(std::span<const Argument> args) {
   size_t size;
@@ -286,18 +298,23 @@ Result StringCopy(std::span<const Argument> args) {
   size_t length;
   if (!CString(heap, args[1], source, length) || length >= kMaxAllocation)
     return Invalid();
-  auto* destination = heap.View(args[0], length + 1);
-  if (!destination)
+  size_t available = 0;
+  auto* destination = heap.View(args[0], 0, &available);
+  if (!destination || !available)
     return Invalid();
-  std::memmove(destination, source, length);
-  destination[length] = 0;
-  return Destination(args[0]);
+  const size_t actual = std::min(length, available - 1);
+  std::memmove(destination, source, actual);
+  destination[actual] = 0;
+  return Bounded(Destination(args[0]), length + 1, actual + 1);
 }
 // A movable HGLOBAL is a separate opaque token, never a readable address.
 // All bookkeeping and copies share the CRT heap lock and bounds checks.
 Result GlobalFailure(uint32_t code, int64_t value = 0) {
+  Result result{value};
+  if (code == 6)
+    result.warning = "global memory operation skipped: invalid or freed handle";
   SetLastError(code);
-  return Result{value};
+  return result;
 }
 auto FindGlobal(Heap& heap, const Argument& argument) {
   if (argument.buffer || argument.number <= 0 ||
@@ -469,17 +486,14 @@ Result GlobalReallocate(std::span<const Argument> args) {
 }
 }  // namespace
 
-bool Read(const Argument& source,
-          void* output,
-          size_t size,
-          std::string& error) {
+bool Read(const Argument& source, void* output, size_t size, Result& failure) {
   if (!size)
     return true;
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
   const auto* data = heap.View(source, size);
   if (!data) {
-    error = Invalid().error;
+    failure = Invalid();
     return false;
   }
   std::memcpy(output, data, size);
@@ -488,32 +502,38 @@ bool Read(const Argument& source,
 bool Write(const Argument& destination,
            const void* input,
            size_t size,
-           std::string& error) {
+           Result& failure) {
   if (!size)
     return true;
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
   auto* data = heap.View(destination, size);
   if (!data) {
-    error = Invalid().error;
+    failure = Invalid();
     return false;
   }
   std::memcpy(data, input, size);
   return true;
 }
-bool String(const Argument& source, std::string& output, std::string& error) {
+bool String(const Argument& source, std::string& output, Result& failure) {
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
   const unsigned char* data;
   size_t length;
   if (!CString(heap, source, data, length) || length > kMaxAllocation) {
-    error = Invalid().error;
+    failure = Invalid();
     return false;
   }
   output.assign(reinterpret_cast<const char*>(data), length);
   return true;
 }
 
+Result Rejected(const char* reason) {
+  SetLastError(487);  // ERROR_INVALID_ADDRESS
+  Result result;
+  result.warning = reason;
+  return result;
+}
 Result Move(std::span<const Argument> args) {
   return Copy(args, true);
 }

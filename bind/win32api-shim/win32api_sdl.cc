@@ -50,16 +50,17 @@ Result FindWindow(std::span<const Argument> args) {
   auto* window = Window();
   if (!window)
     return {};
-  std::string text, error;
+  std::string text;
+  Result failure;
   if (!args[0].null()) {
-    if (!memory::String(args[0], text, error))
-      return Result::Failure(std::move(error));
+    if (!memory::String(args[0], text, failure))
+      return failure;
     if (SDL_strcasecmp(text.c_str(), "RGSS Player") != 0)
       return {};
   }
   if (!args[1].null()) {
-    if (!memory::String(args[1], text, error))
-      return Result::Failure(std::move(error));
+    if (!memory::String(args[1], text, failure))
+      return failure;
     if (SDL_strcasecmp(text.c_str(), SDL_GetWindowTitle(window)) != 0)
       return {};
   }
@@ -350,16 +351,15 @@ Result WriteWords(const Argument& output, const std::array<int32_t, N>& words) {
     for (size_t j = 0; j < 4; ++j)
       bytes[i * 4 + j] = static_cast<unsigned char>(value >> (j * 8));
   }
-  std::string error;
-  return memory::Write(output, bytes.data(), bytes.size(), error)
-             ? Result{1}
-             : Result::Failure(std::move(error));
+  Result failure;
+  return memory::Write(output, bytes.data(), bytes.size(), failure) ? Result{1}
+                                                                    : failure;
 }
 bool ReadPoint(const Argument& input,
                std::array<int32_t, 2>& point,
-               std::string& error) {
+               Result& failure) {
   std::array<unsigned char, 8> bytes{};
-  if (!memory::Read(input, bytes.data(), bytes.size(), error))
+  if (!memory::Read(input, bytes.data(), bytes.size(), failure))
     return false;
   for (size_t i = 0; i < 2; ++i) {
     uint32_t value = 0;
@@ -384,7 +384,7 @@ Result WindowThreadProcessId(std::span<const Argument> args) {
     auto written = WriteWords(
         args[1],
         std::array<int32_t, 1>{std::bit_cast<int32_t>(CurrentProcessId())});
-    if (!written.error.empty())
+    if (!written.error.empty() || !written.warning.empty())
       return written;
   }
   return Result{thread};
@@ -426,9 +426,9 @@ Result ConvertPoint(std::span<const Argument> args, bool to_client) {
   if (!window)
     return Fail(1400);
   std::array<int32_t, 2> point;
-  std::string error;
-  if (!ReadPoint(args[1], point, error))
-    return Result::Failure(std::move(error));
+  Result failure;
+  if (!ReadPoint(args[1], point, failure))
+    return failure;
   int x = 0, y = 0;
 #if !defined(SDL_PLATFORM_EMSCRIPTEN)
   SDL_GetWindowPosition(window, &x, &y);
@@ -480,10 +480,9 @@ Result KeyboardState(std::span<const Argument> args) {
     bytes[i] =
         static_cast<unsigned char>((state & 0x8000 ? 0x80 : 0) | (state & 1));
   }
-  std::string error;
-  return memory::Write(args[0], bytes.data(), bytes.size(), error)
-             ? Result{1}
-             : Result::Failure(std::move(error));
+  Result failure;
+  return memory::Write(args[0], bytes.data(), bytes.size(), failure) ? Result{1}
+                                                                     : failure;
 }
 Result AsyncKeyState(std::span<const Argument> args) {
   if (!MainThread())
@@ -510,9 +509,9 @@ Result WindowText(std::span<const Argument> args) {
       std::min(title.size(), static_cast<size_t>(args[2].number - 1));
   std::string text(title.substr(0, length));
   text.push_back('\0');
-  std::string error;
-  if (!memory::Write(args[1], text.data(), text.size(), error))
-    return Result::Failure(std::move(error));
+  Result failure;
+  if (!memory::Write(args[1], text.data(), text.size(), failure))
+    return failure;
   return Result{static_cast<int64_t>(length)};
 }
 Result SetWindowText(std::span<const Argument> args) {
@@ -521,9 +520,10 @@ Result SetWindowText(std::span<const Argument> args) {
   auto* window = Handle(args[0]);
   if (!window)
     return Fail(1400);
-  std::string text, error;
-  if (!memory::String(args[1], text, error))
-    return Result::Failure(std::move(error));
+  std::string text;
+  Result failure;
+  if (!memory::String(args[1], text, failure))
+    return failure;
   if (!urge::ini_encoding::IsUTF8(text))
     return Fail(1113);
   return SDL_SetWindowTitle(window, text.c_str()) ? Result{1} : Fail(87);

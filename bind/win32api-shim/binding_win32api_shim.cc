@@ -21,9 +21,9 @@
 // SOFTWARE.
 
 #include "bind/binding_win32api.h"
-#include "bind/win32api_common.h"
 #include "bind/win32api-shim/win32api_memory.h"
 #include "bind/win32api-shim/win32api_shim.h"
+#include "bind/win32api_common.h"
 
 #if !defined(_WIN32)
 #include <array>
@@ -73,7 +73,7 @@ std::string DisplayName(const char* name) {
   return result;
 }
 
-void WarnUnsupportedOnce(const ShimObject& object) {
+void WarnOnce(const ShimObject& object, bool memory) {
   static std::mutex mutex;
   static std::unordered_set<std::string> warned;
   // Use the full normalized identity for deduplication; display names are
@@ -81,14 +81,19 @@ void WarnUnsupportedOnce(const ShimObject& object) {
   std::string key = win32api::NormalizeLibraryName(object.library);
   key.push_back('\0');
   key += object.procedure;
+  key.push_back(memory ? 'M' : 'U');
   bool first;
   {
     std::lock_guard lock(mutex);
     first = warned.insert(std::move(key)).second;
   }
-  if (first)
-    LOGGER_WARN("[Win32API] Unsupported API {}; using no-op (error 120)",
-                object.label);
+  if (first) {
+    if (memory)
+      LOGGER_WARN("[Win32API] {}: {}", object.label, object.result.warning);
+    else
+      LOGGER_WARN("[Win32API] Unsupported API {}; using no-op (error 120)",
+                  object.label);
+  }
 }
 
 struct Invocation {
@@ -124,7 +129,7 @@ VALUE InitializeBody(VALUE opaque) {
              object->label.c_str(), static_cast<int>(object->function->arity),
              static_cast<int>(object->signature.arguments.size()));
   object->signature.ParseResult(argc >= 4 ? argv[3] : Qnil,
-                               win32api::SignaturePolicy::kShim);
+                                win32api::SignaturePolicy::kShim);
   // Unknown exports use the caller's validated signature without mutating the
   // registry. Each instance owns its fallback so registry pointers stay stable.
   if (!object->function) {
@@ -132,7 +137,7 @@ VALUE InitializeBody(VALUE opaque) {
     object->function = &object->fallback;
   }
   if (object->function->noop)
-    WarnUnsupportedOnce(*object);
+    WarnOnce(*object, false);
   // The optional calling convention is meaningful only for a native DLL.
   object->ready = true;
   return self;
@@ -169,7 +174,7 @@ VALUE CallBody(VALUE opaque) {
     // Only the declared argument count and return category are relevant.
     win32api::SetLastError(120);  // ERROR_CALL_NOT_IMPLEMENTED
     return object->signature.result == Kind::kPointer ? rb_str_new("", 0)
-                                                     : INT2NUM(0);
+                                                      : INT2NUM(0);
   }
   std::array<VALUE, kMaxArguments> values{};
   std::array<win32api::Argument, kMaxArguments> arguments{};
@@ -180,8 +185,6 @@ VALUE CallBody(VALUE opaque) {
     if (object->signature.arguments[i] == Kind::kPointer && !NIL_P(value) &&
         !RB_INTEGER_TYPE_P(value)) {
       StringValue(value);
-      if (object->function->writable & (1u << i))
-        rb_str_modify(value);
     } else if (!NIL_P(value)) {
       arguments[i].number = NUM2LL(value);
     } else if (object->signature.arguments[i] != Kind::kPointer) {
@@ -189,6 +192,23 @@ VALUE CallBody(VALUE opaque) {
     }
     values[i] = value;
   }
+  // Check every output before detaching any String; frozen buffers are a
+  // rejected memory operation, not a Ruby exception. Conversions above may
+  // themselves have frozen or aliased an earlier argument.
+  for (int i = 0; i < argc; ++i) {
+    if ((object->function->writable & (1u << i)) &&
+        RB_TYPE_P(values[i], T_STRING) && OBJ_FROZEN(values[i])) {
+      object->result = win32api::memory::Rejected(
+          "memory operation skipped: frozen output buffer");
+      WarnOnce(*object, true);
+      return object->signature.result == Kind::kPointer ? rb_str_new("", 0)
+                                                        : INT2NUM(0);
+    }
+  }
+  for (int i = 0; i < argc; ++i)
+    if ((object->function->writable & (1u << i)) &&
+        RB_TYPE_P(values[i], T_STRING))
+      rb_str_modify(values[i]);
   for (int i = 0; i < argc; ++i) {
     if (RB_TYPE_P(values[i], T_STRING)) {
       arguments[i].buffer = true;
@@ -196,9 +216,11 @@ VALUE CallBody(VALUE opaque) {
       arguments[i].size = static_cast<size_t>(RSTRING_LEN(values[i]));
     }
   }
-  object->result = object->function->handler(
-      std::span<const win32api::Argument>(
+  object->result =
+      object->function->handler(std::span<const win32api::Argument>(
           arguments.data(), object->signature.arguments.size()));
+  if (!object->result.warning.empty())
+    WarnOnce(*object, true);
   if (!object->result.error.empty())
     rb_raise(rb_eRuntimeError, "Win32API shim: %s",
              object->result.error.c_str());
@@ -261,7 +283,7 @@ RB_FUNC(ShimSupported) {
 void InitWin32APIBinding() {
   win32api::memory::Reset();
   win32api::DefineClass(ClassAllocate<&kShimDataType>, ShimInitialize, ShimCall,
-                       ShimSupported, ShimCopy);
+                        ShimSupported, ShimCopy);
   rb_provide("Win32API.rb");
   rb_provide("win32api.rb");
 }
