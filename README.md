@@ -20,7 +20,7 @@
 
 | 领域 | 说明 |
 | --- | --- |
-| **RGSS 兼容** | 支持 RGSS1 / RGSS2 / RGSS3；按 `Game.ini` 的 `RGSS` 字段或脚本归档扩展名（`.rxdata` / `.rvdata` / `.rvdata2`）自动判定版本；`Window` / `Tilemap` 按版本映射到 XP 或 VX 实现；内置各版本所需的 `RPG` 兼容模块 |
+| **RGSS 兼容** | 支持 RGSS1 / RGSS2 / RGSS3；按 `Game.ini` 的 `RGSS` 字段或脚本归档扩展名（`.rxdata` / `.rvdata` / `.rvdata2`）自动判定版本；`Window` / `Tilemap` 按版本映射到 XP 或 VX 实现；内置各版本所需的 `RPG` 兼容模块；[旧版ruby行为兼容](bind/legacy-ruby-compat/README.md) |
 | **脚本运行时** | 内嵌 CRuby 4.0.0，直接执行 Marshal + zlib 脚本归档，无需安装外部 Ruby；提供 `rgss_main` / `rgss_stop` / `RGSSError` / `RGSSReset` 等入口 |
 | **渲染** | WebGPU（原生端 wgpu-native，Web 端浏览器 WebGPU）；WGSL 着色器与自定义 `Effect`；帧顶点批与 uniform 池；逻辑分辨率与物理像素解耦，适配高分屏 |
 | **2D** | `Bitmap`（Blt、渐变、文字、像素读写）、`Sprite`、`Plane`、`Viewport`、`WindowXP` / `WindowVX`、`TilemapXP` / `TilemapVX`、`Geometry`、`Animation`、精灵批处理、2D 相机 |

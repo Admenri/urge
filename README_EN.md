@@ -20,7 +20,7 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 
 | Area | Details |
 | --- | --- |
-| **RGSS compatibility** | RGSS1 / RGSS2 / RGSS3; the version is detected from the `RGSS` field in `Game.ini` or from the script archive extension (`.rxdata` / `.rvdata` / `.rvdata2`); `Window` / `Tilemap` map to the XP or VX implementation; the per-version `RPG` compatibility modules are built in |
+| **RGSS compatibility** | RGSS1 / RGSS2 / RGSS3; the version is detected from the `RGSS` field in `Game.ini` or from the script archive extension (`.rxdata` / `.rvdata` / `.rvdata2`); `Window` / `Tilemap` map to the XP or VX implementation; the per-version `RPG` compatibility modules are built in; [Legacy Ruby behavior compatibility](bind/legacy-ruby-compat/README.md) |
 | **Script runtime** | Embedded CRuby 4.0.0; executes Marshal + zlib script archives directly, with no external Ruby installation; provides `rgss_main` / `rgss_stop` / `RGSSError` / `RGSSReset` and the usual RGSS entry points |
 | **Rendering** | WebGPU (wgpu-native on native platforms, the browser's WebGPU on the web); WGSL shaders and custom `Effect` passes; per-frame vertex batching and a uniform pool; logical resolution decoupled from physical pixels for high-DPI displays |
 | **2D** | `Bitmap` (Blt, gradients, text, pixel access), `Sprite`, `Plane`, `Viewport`, `WindowXP` / `WindowVX`, `TilemapXP` / `TilemapVX`, `Geometry`, `Animation`, sprite batching, 2D cameras |
