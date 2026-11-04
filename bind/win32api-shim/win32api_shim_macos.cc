@@ -21,8 +21,8 @@
 // SOFTWARE.
 
 #include "SDL3/SDL_platform_defines.h"
-#include "bind/win32api_memory.h"
-#include "bind/win32api_shim.h"
+#include "bind/win32api-shim/win32api_memory.h"
+#include "bind/win32api-shim/win32api_shim.h"
 #if defined(SDL_PLATFORM_MACOS)
 #include <sys/resource.h>
 #include <cerrno>

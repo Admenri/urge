@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "bind/win32api_shim.h"
+#include "bind/win32api-shim/win32api_shim.h"
 
 #include <utility>
 

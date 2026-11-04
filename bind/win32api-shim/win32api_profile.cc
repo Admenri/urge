@@ -22,7 +22,7 @@
 
 #include <cstdlib>
 #include "SDL3/SDL.h"
-#include "bind/win32api_shim.h"
+#include "bind/win32api-shim/win32api_shim.h"
 #include "core/common/exception.h"
 #include "core/common/inirw.h"
 #include "core/common/logger.h"

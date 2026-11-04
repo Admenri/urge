@@ -26,8 +26,8 @@
 #include <climits>
 #include <string>
 #include "SDL3/SDL.h"
-#include "bind/win32api_memory.h"
-#include "bind/win32api_shim.h"
+#include "bind/win32api-shim/win32api_memory.h"
+#include "bind/win32api-shim/win32api_shim.h"
 #include "core/graphics/graphics.h"
 #include "core/system/ini_encoding.h"
 namespace binding::win32api {

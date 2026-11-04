@@ -21,8 +21,8 @@
 // SOFTWARE.
 
 #include "bind/binding_win32api.h"
-#include "bind/win32api_memory.h"
-#include "bind/win32api_shim.h"
+#include "bind/win32api-shim/win32api_memory.h"
+#include "bind/win32api-shim/win32api_shim.h"
 
 #if !defined(_WIN32)
 #include <array>

@@ -37,3 +37,8 @@ target_link_libraries(urge-binding PUBLIC ruby-static urge-core zlibstatic)
 if(WIN32)
   target_link_libraries(urge-binding PUBLIC libffi)
 endif()
+
+# Keep the non-Windows shim separate from the native Windows DLL binding.
+if(NOT WIN32)
+  add_subdirectory(win32api-shim)
+endif()

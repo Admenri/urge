@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "bind/win32api_memory.h"
+#include "bind/win32api-shim/win32api_memory.h"
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -38,15 +38,34 @@ constexpr uint64_t kAddressLimit = 0x70000000;
 struct Block {
   std::unique_ptr<unsigned char[]> data;
   size_t size;
+  size_t capacity;
+  bool global = false;
+};
+struct GlobalBlock {
+  uint32_t address;
+  size_t size;
+  bool movable;
+  uint8_t locks = 0;
 };
 struct Heap {
   std::mutex mutex;
   std::map<uint32_t, Block> blocks;
+  std::map<uint32_t, GlobalBlock> globals;
   uint64_t next = 0x10000000;
   size_t total = 0;
-  uint32_t Allocate(size_t size) {
+  uint32_t Reserve(size_t size) {
+    if (size + 32 > kAddressLimit - next) {
+      SetLastError(8);
+      return 0;
+    }
+    const uint32_t address = static_cast<uint32_t>(next);
+    // Never reuse tokens, including movable handles and discarded objects.
+    next += ((size + 15) & ~uint64_t{15}) + 16;
+    return address;
+  }
+  uint32_t Allocate(size_t size, bool global = false) {
     size = std::max(size, size_t{1});
-    if (blocks.size() >= kMaxBlocks || size > kMaxAllocation ||
+    if (blocks.size() + globals.size() >= kMaxBlocks || size > kMaxAllocation ||
         size > kMaxTotal - total || size + 32 > kAddressLimit - next) {
       SetLastError(8);
       return 0;
@@ -57,12 +76,11 @@ struct Heap {
       SetLastError(8);
       return 0;
     }
-    const uint32_t address = static_cast<uint32_t>(next);
-    // Never reuse addresses, even after free or a VM reset. Stale pointers
-    // cannot accidentally acquire access to a later allocation.
-    next += ((size + 15) & ~uint64_t{15}) + 16;
+    const uint32_t address = Reserve(size);
+    if (!address)
+      return 0;
     total += size;
-    blocks.emplace(address, Block{std::move(bytes), size});
+    blocks.emplace(address, Block{std::move(bytes), size, size, global});
     return address;
   }
   unsigned char* View(const Argument& value,
@@ -98,7 +116,8 @@ struct Heap {
     const auto found = blocks.find(static_cast<uint32_t>(address));
     if (found == blocks.end())
       return false;
-    total -= found->second.size;
+    // A shrink retains storage; charge its entire capacity until release.
+    total -= found->second.capacity;
     blocks.erase(found);
     return true;
   }
@@ -150,6 +169,12 @@ Result Free(std::span<const Argument> args) {
     return Invalid();
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
+  const auto found = heap.blocks.find(static_cast<uint32_t>(args[0].number));
+  if (args[0].number != 0 &&
+      (args[0].number < 0 ||
+       static_cast<uint64_t>(args[0].number) >= kAddressLimit ||
+       found == heap.blocks.end() || found->second.global))
+    return Invalid();
   return heap.Free(args[0].number) ? Result{} : Invalid();
 }
 Result Reallocate(std::span<const Argument> args) {
@@ -168,7 +193,7 @@ Result Reallocate(std::span<const Argument> args) {
       static_cast<uint64_t>(args[0].number) >= kAddressLimit)
     return Invalid();
   const auto found = heap.blocks.find(static_cast<uint32_t>(args[0].number));
-  if (found == heap.blocks.end())
+  if (found == heap.blocks.end() || found->second.global)
     return Invalid();
   if (!size) {
     heap.Free(args[0].number);
@@ -268,6 +293,180 @@ Result StringCopy(std::span<const Argument> args) {
   destination[length] = 0;
   return Destination(args[0]);
 }
+// A movable HGLOBAL is a separate opaque token, never a readable address.
+// All bookkeeping and copies share the CRT heap lock and bounds checks.
+Result GlobalFailure(uint32_t code, int64_t value = 0) {
+  SetLastError(code);
+  return Result{value};
+}
+auto FindGlobal(Heap& heap, const Argument& argument) {
+  if (argument.buffer || argument.number <= 0 ||
+      static_cast<uint64_t>(argument.number) >= kAddressLimit)
+    return heap.globals.end();
+  return heap.globals.find(static_cast<uint32_t>(argument.number));
+}
+bool GlobalOptions(const Argument& argument, uint32_t& flags) {
+  if (argument.buffer || argument.number < 0 ||
+      static_cast<uint64_t>(argument.number) > UINT32_MAX)
+    return false;
+  flags = static_cast<uint32_t>(argument.number);
+  // Accept documented obsolete allocation bits as no-ops. Reject GMEM_MODIFY
+  // and unknown flags rather than pretending to implement attribute changes.
+  constexpr uint32_t allowed =
+      0x0002 | 0x0010 | 0x0020 | 0x0040 | 0x0100 | 0x1000 | 0x2000 | 0x4000;
+  return !(flags & ~allowed);
+}
+Result GlobalAllocate(std::span<const Argument> args) {
+  uint32_t flags;
+  size_t size;
+  if (!GlobalOptions(args[0], flags))
+    return GlobalFailure(87);
+  if (!Length(args[1], size))
+    return GlobalFailure(8);
+  const bool movable = (flags & 2) != 0;
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  if (heap.blocks.size() + heap.globals.size() >= kMaxBlocks)
+    return GlobalFailure(8);
+  const uint32_t handle = movable ? heap.Reserve(1) : 0;
+  if (movable && !handle)
+    return {};
+  const uint32_t address = size || !movable ? heap.Allocate(size, true) : 0;
+  if ((size || !movable) && !address)
+    return {};
+  const uint32_t result = movable ? handle : address;
+  heap.globals.emplace(result, GlobalBlock{address, size, movable});
+  return Result{result};
+}
+Result GlobalFree(std::span<const Argument> args) {
+  if (args[0].null())
+    return {};
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  const auto found = FindGlobal(heap, args[0]);
+  if (found == heap.globals.end())
+    return GlobalFailure(6, args[0].number);
+  heap.Free(found->second.address);
+  heap.globals.erase(found);
+  return {};
+}
+Result GlobalLock(std::span<const Argument> args) {
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  const auto found = FindGlobal(heap, args[0]);
+  if (found == heap.globals.end())
+    return GlobalFailure(6);
+  auto& object = found->second;
+  if (!object.size)
+    return GlobalFailure(157);  // ERROR_DISCARDED
+  if (object.movable) {
+    if (object.locks == UINT8_MAX)
+      return GlobalFailure(8);
+    ++object.locks;
+  }
+  return Result{object.address};
+}
+Result GlobalUnlock(std::span<const Argument> args) {
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  const auto found = FindGlobal(heap, args[0]);
+  if (found == heap.globals.end())
+    return GlobalFailure(6);
+  auto& object = found->second;
+  if (!object.movable)
+    return Result{1};
+  if (!object.locks)
+    return GlobalFailure(158);  // ERROR_NOT_LOCKED
+  --object.locks;
+  if (object.locks)
+    return Result{1};
+  // Zero also denotes successful final unlock; GetLastError distinguishes it.
+  SetLastError(0);
+  return {};
+}
+Result GlobalSize(std::span<const Argument> args) {
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  const auto found = FindGlobal(heap, args[0]);
+  if (found == heap.globals.end())
+    return GlobalFailure(6);
+  return Result{static_cast<int64_t>(found->second.size)};
+}
+Result GlobalFlags(std::span<const Argument> args) {
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  const auto found = FindGlobal(heap, args[0]);
+  if (found == heap.globals.end())
+    return GlobalFailure(6, 0x8000);  // GMEM_INVALID_HANDLE
+  return Result{found->second.address ? found->second.locks : 0x4000};
+}
+Result GlobalHandle(std::span<const Argument> args) {
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  if (!args[0].buffer && args[0].number > 0 &&
+      static_cast<uint64_t>(args[0].number) < kAddressLimit) {
+    for (const auto& [handle, object] : heap.globals)
+      if (object.address == static_cast<uint32_t>(args[0].number))
+        return Result{handle};
+  }
+  return GlobalFailure(6);
+}
+Result GlobalReallocate(std::span<const Argument> args) {
+  uint32_t flags;
+  size_t size;
+  if (!GlobalOptions(args[2], flags))
+    return GlobalFailure(87);
+  if (!Length(args[1], size))
+    return GlobalFailure(8);
+  auto& heap = GetHeap();
+  std::lock_guard lock(heap.mutex);
+  const auto found = FindGlobal(heap, args[0]);
+  if (found == heap.globals.end())
+    return GlobalFailure(6);
+  auto& object = found->second;
+  if (!size && object.movable) {
+    if (object.locks)
+      return GlobalFailure(212);  // ERROR_LOCKED
+    heap.Free(object.address);
+    object.address = 0;
+    object.size = 0;
+    return Result{found->first};
+  }
+  const size_t allocation = std::max(size, size_t{1});
+  // Preserve numeric pointer validity for an in-place shrink/regrowth. The
+  // original reserved virtual range must never overlap a subsequent block.
+  auto old = heap.blocks.find(object.address);
+  if (old != heap.blocks.end() && allocation <= old->second.capacity) {
+    auto& block = old->second;
+    if (allocation > block.size)
+      std::memset(block.data.get() + block.size, 0, allocation - block.size);
+    block.size = allocation;
+    object.size = size;
+    return Result{found->first};
+  }
+  if (old != heap.blocks.end() && (!object.movable || object.locks) &&
+      !(flags & 2))
+    return GlobalFailure(8);  // The caller did not permit moving this pointer.
+  const uint32_t address = heap.Allocate(allocation, true);
+  if (!address)
+    return {};  // Original handle, bytes and lock count remain intact.
+  if (old != heap.blocks.end())
+    std::memcpy(heap.blocks.at(address).data.get(), old->second.data.get(),
+                std::min(size, object.size));
+  const uint32_t previous = object.address;
+  object.address = address;
+  object.size = size;
+  if (object.movable) {
+    heap.Free(previous);
+    return Result{found->first};
+  }
+  // Fixed handles equal the pointer; relocating one invalidates the old token.
+  const auto replacement = object;
+  heap.globals.emplace(address, replacement);
+  heap.globals.erase(found);
+  heap.Free(previous);
+  return Result{address};
+}
 }  // namespace
 
 bool Read(const Argument& source,
@@ -321,10 +520,19 @@ Result Move(std::span<const Argument> args) {
 void Reset() {
   auto& heap = GetHeap();
   std::lock_guard lock(heap.mutex);
+  heap.globals.clear();
   heap.blocks.clear();
   heap.total = 0;
 }
 void Register(Registry& registry) {
+  registry.Add("kernel32", "GlobalAlloc", 2, 0, GlobalAllocate);
+  registry.Add("kernel32", "GlobalReAlloc", 3, 0, GlobalReallocate);
+  registry.Add("kernel32", "GlobalFree", 1, 0, GlobalFree);
+  registry.Add("kernel32", "GlobalLock", 1, 0, GlobalLock);
+  registry.Add("kernel32", "GlobalUnlock", 1, 0, GlobalUnlock);
+  registry.Add("kernel32", "GlobalSize", 1, 0, GlobalSize);
+  registry.Add("kernel32", "GlobalFlags", 1, 0, GlobalFlags);
+  registry.Add("kernel32", "GlobalHandle", 1, 0, GlobalHandle);
   const auto move_memory = [](std::span<const Argument> args) {
     auto result = Move(args);
     result.destination = -1;
