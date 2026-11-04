@@ -164,7 +164,11 @@ set(RUBY_FUNCS
   _setjmp _longjmp _setjmpex
   pthread_attr_setinheritsched pthread_attr_getstack pthread_attr_getguardsize
   pthread_condattr_setclock pthread_setname_np pthread_sigmask
-  pthread_getattr_np timer_create timer_settime
+  # Ruby's worker-thread bootstrap needs the native stack bounds. Without
+  # Darwin's pair below, Thread.new enters the unsupported-stack error path
+  # before the new execution context is installed.
+  pthread_getattr_np pthread_get_stackaddr_np pthread_get_stacksize_np
+  timer_create timer_settime
 )
 
 if(ANDROID)

@@ -306,6 +306,7 @@ C = Space,Return,pad:a
 - **配置编码**：支持 UTF-8（含可选 BOM）及带 BOM 的 UTF-16 / UTF-32。无 BOM 且不是有效 UTF-8 的旧 INI，Windows 默认使用系统 ANSI 代码页，其他平台默认使用 GB18030（兼容 GBK/GB2312），不依赖系统 locale。旧代码页无法可靠自动识别；其他编码请在 `[Game]` 中添加 ASCII 配置项 `IniEncoding=CP932`（或 `BIG5` 等），也可用环境变量 `URGE_INI_ENCODING=CP932` 覆盖。BOM 优先于这两项。转换覆盖标题、路径及自定义配置项。Windows 使用 Win32 代码页 API，macOS 使用系统 iconv，Linux 在可用时使用系统 iconv（构建时未找到则自动降级为 ASCII 过滤），Android 使用 Java Charset，Web 使用浏览器 TextDecoder；无需额外安装编码库或 Homebrew。编码不支持、字节序列非法或含 NUL 时会记录警告，滤除非 ASCII 字符后继续加载，并禁用该次配置写回以保留原文件。过滤可能使非 ASCII 路径失效，此时需要指定正确编码或把 INI 转为 UTF-8。
 - **配置保存**：关闭时只把运行期间改动过的项写回 ini。加载时计算或转换得到的值（例如按 `Scripts` 扩展名推断的 `RGSS`、为兼容 ANSI 而转成 UTF-8 的 `Title`）不会回写；`Title` 始终保留文件原文，其余项在显式修改（包括脚本 `Config.set_value`）后才会保存。写回沿用加载时的编码、BOM 和换行；若新值无法用原编码表示，会保留原文件并在日志中报告保存失败。`IniEncoding` 应在启动前设置，运行中不能修改。Web 对旧编码 INI 可保存 ASCII 配置修改，并保留未修改文本的原始字节；由于浏览器只提供 UTF-8 编码器，旧编码中的新增非 ASCII 值会报告保存失败，建议先转为 UTF-8。
 - **配置读写**：`Config.get_value` / `Config.set_value` 读写的是映射后的内存值，与引擎内部字段保持一致。
+- **Win32API 兼容**：Windows 保留原生 DLL 调用，各平台均提供 `Win32API.supported?` 能力探测；macOS 和 WASM 提供部分 `user32`、`kernel32` 和 `msvcrt`/`ucrtbase` 接口，支持窗口、输入、INI 和受保护虚拟内存。不会解引用脚本传入的宿主地址或原版 RGSS 对象布局；范围、限制和平台扩展方式见 [Win32API 兼容层](bind/win32api-shim/README.md)。
 
 ### 2.7 常用构建选项
 

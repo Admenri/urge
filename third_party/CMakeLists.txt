@@ -311,6 +311,11 @@ add_subdirectory(wgpu-cmake)
 # other source for `ruby-static` -- and this is the only place it is compiled.
 add_subdirectory(ruby)
 
+if(EMSCRIPTEN)
+  # WebAssembly has no shared-library target; the engine links zlibstatic.
+  set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Build shared zlib" FORCE)
+  set(ZLIB_BUILD_TESTING OFF CACHE BOOL "Build zlib tests" FORCE)
+endif()
 add_subdirectory(zlib)
 
 # libffi exists in this tree for one consumer: the Win32API binding
