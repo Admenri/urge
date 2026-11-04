@@ -158,6 +158,8 @@ void InitLegacyRubyCompat(int rgss_version) {
 
   InitSharedAPIs();
   InitSafetyAPIs(rgss_version == 3);
+  InitLegacyClasses(rgss_version < 3);
+  g_class_recovery_enabled = true;
   if (rgss_version == 3) {
     // Dir.exist?/exists? were present in 1.9.2, but not in 1.8.1.
     AliasIfMissing(rb_singleton_class(rb_cDir), "exists?", "exist?");
@@ -165,8 +167,6 @@ void InitLegacyRubyCompat(int rgss_version) {
   }
 
   InitRuby18APIs();
-  InitLegacyClasses();
-  g_class_recovery_enabled = true;
 }
 
 VALUE EvalRubyScript(VALUE source, VALUE filename) {

@@ -39,6 +39,7 @@ namespace binding {
 namespace {
 
 struct RecoveryPlan {
+  bool integer_alias = false;
   std::string name;
   std::string parent;
   std::vector<std::string> constants;
@@ -84,8 +85,9 @@ bool ConfigurationConstants(const pm_class_node_t* node,
 }
 
 std::optional<RecoveryPlan> FindPlan(std::string_view source,
-                                     std::string_view message,
-                                     size_t line) {
+                                    std::string_view message,
+                                    size_t line,
+                                    bool configuration_classes) {
   constexpr std::string_view prefix = "superclass mismatch for class ";
   if (message.substr(0, prefix.size()) != prefix || !line ||
       source.find("shareable_constant_value") != std::string_view::npos)
@@ -129,8 +131,7 @@ std::optional<RecoveryPlan> FindPlan(std::string_view source,
           first = node;
           continue;
         }
-        if (node_line != line || !first || ambiguous || first->superclass ||
-            !node->superclass ||
+        if (node_line != line || !node->superclass ||
             !PM_NODE_TYPE_P(node->superclass, PM_CONSTANT_READ_NODE))
           break;
         // A standalone, single-line header identifies the failed statement;
@@ -145,7 +146,12 @@ std::optional<RecoveryPlan> FindPlan(std::string_view source,
             header.find_first_of("\r\n") != std::string_view::npos)
           break;
         RecoveryPlan plan;
-        if (!ConfigurationConstants(first, plan.constants))
+        plan.integer_alias = (name == "Fixnum" || name == "Bignum") &&
+                             Text(node->superclass) == "Integer";
+        if (!plan.integer_alias &&
+            (!configuration_classes || !first || ambiguous ||
+             first->superclass ||
+             !ConfigurationConstants(first, plan.constants)))
           break;
         plan.name = name;
         plan.parent = Text(node->superclass);
@@ -167,6 +173,16 @@ std::optional<RecoveryPlan> FindPlan(std::string_view source,
           if (plan.continuation[j] != '\n' && plan.continuation[j] != '\r')
             plan.continuation[j] = ' ';
         }
+        if (plan.integer_alias) {
+          // Integer aliases already denote the class being reopened. Remove
+          // only the superclass clause; retain the class body and line layout.
+          const size_t start = node->inheritance_operator_loc.start -
+                               reinterpret_cast<const uint8_t*>(source.data());
+          const size_t end = node->superclass->location.end -
+                             reinterpret_cast<const uint8_t*>(source.data());
+          std::fill(plan.continuation.begin() + start,
+                    plan.continuation.begin() + end, ' ');
+        }
         result = std::move(plan);
         break;
       }
@@ -178,7 +194,11 @@ std::optional<RecoveryPlan> FindPlan(std::string_view source,
   return result;
 }
 
-VALUE Plan(VALUE, VALUE source, VALUE message, VALUE line) {
+VALUE Plan(VALUE,
+           VALUE source,
+           VALUE message,
+           VALUE line,
+           VALUE configuration_classes) {
   Check_Type(source, T_STRING);
   Check_Type(message, T_STRING);
   const size_t line_number = NUM2SIZET(line);
@@ -188,7 +208,7 @@ VALUE Plan(VALUE, VALUE source, VALUE message, VALUE line) {
     const auto plan = FindPlan(
         {RSTRING_PTR(source), static_cast<size_t>(RSTRING_LEN(source))},
         {RSTRING_PTR(message), static_cast<size_t>(RSTRING_LEN(message))},
-        line_number);
+        line_number, RTEST(configuration_classes));
     if (!plan)
       return Qnil;
     struct Context {
@@ -213,6 +233,7 @@ VALUE Plan(VALUE, VALUE source, VALUE message, VALUE line) {
                       rb_str_new(plan.parent.data(), plan.parent.size()));
           rb_ary_push(result, names);
           rb_ary_push(result, tail);
+          rb_ary_push(result, plan.integer_alias ? Qtrue : Qfalse);
           RB_GC_GUARD(names);
           RB_GC_GUARD(tail);
           return result;
@@ -224,8 +245,13 @@ VALUE Plan(VALUE, VALUE source, VALUE message, VALUE line) {
   return result;
 }
 
-VALUE Applied(VALUE, VALUE name, VALUE filename, VALUE line) {
-  LOGGER_INFO("[Ruby] Legacy configuration-class fallback: {} ({}:{})",
+VALUE Applied(VALUE,
+              VALUE name,
+              VALUE filename,
+              VALUE line,
+              VALUE integer_alias) {
+  LOGGER_INFO("[Ruby] Legacy {} fallback: {} ({}:{})",
+              RTEST(integer_alias) ? "integer-alias" : "configuration-class",
               StringValueCStr(name), StringValueCStr(filename), NUM2LONG(line));
   return Qnil;
 }
@@ -241,9 +267,21 @@ module URGELegacyRubyCompat
     location = error.backtrace_locations&.first
     return unless location && location.path == filename &&
                   location.lineno == observed[2]
-    plan = self.plan(source, error.message, observed[2])
+    plan = self.plan(source, error.message, observed[2], @configuration_classes)
     return unless plan
-    name, parent_name, names, tail = plan
+    name, parent_name, names, tail, integer_alias = plan
+    if integer_alias
+      key = [name, observed[2]]
+      return if repaired[key] || Object.autoload?(name) || Object.autoload?('Integer')
+      return unless Object.const_defined?(name, false) &&
+                    Object.const_defined?('Integer', false) &&
+                    Object.const_get(name, false).equal?(@integer_class) &&
+                    Object.const_get('Integer', false).equal?(@integer_class) &&
+                    !@integer_class.frozen?
+      repaired[key] = true
+      applied(name, filename, observed[2], true)
+      return [tail, observed[1]]
+    end
     return if repaired[name] || Object.frozen? ||
               Object.autoload?(name) || Object.autoload?(parent_name)
     return unless Object.const_defined?(name, false) &&
@@ -282,7 +320,7 @@ module URGELegacyRubyCompat
     Object.send(:remove_const, name)
     Object.const_set(name, replacement)
     repaired[name] = true
-    applied(name, filename, observed[2])
+    applied(name, filename, observed[2], false)
     [tail, observed[1]]
   end
 
@@ -326,11 +364,14 @@ end
 )RUBY";
 }  // namespace
 
-void InitLegacyClasses() {
+void InitLegacyClasses(bool configuration_classes) {
   VALUE compatibility = rb_define_module("URGELegacyRubyCompat");
-  rb_define_singleton_method(compatibility, "plan", RUBY_METHOD_FUNC(Plan), 3);
+  rb_ivar_set(compatibility, rb_intern("@integer_class"), rb_cInteger);
+  rb_ivar_set(compatibility, rb_intern("@configuration_classes"),
+              configuration_classes ? Qtrue : Qfalse);
+  rb_define_singleton_method(compatibility, "plan", RUBY_METHOD_FUNC(Plan), 4);
   rb_define_singleton_method(compatibility, "applied",
-                             RUBY_METHOD_FUNC(Applied), 3);
+                             RUBY_METHOD_FUNC(Applied), 4);
   rb_eval_string(kEvaluator);
 }
 }  // namespace binding

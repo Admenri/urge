@@ -2,10 +2,10 @@
 
 本目录集中保存旧 Ruby API 补齐、行为恢复和相关文档。初始化入口为 `InitLegacyRubyCompat(rgss_version)`，脚本求值入口为 C++ 的 `EvalRubyScript`；宿主只负责调用和捕获异常。没有全局 Ruby 求值辅助函数，也不在游戏目录装载额外补丁文件。测试在仓库外进行，本目录只保留运行时代码。
 
-本兼容层的目标仅为：使用 CRuby 4.0 运行 RGSS1/2/3 的旧脚本。不要求旧 RGSS 运行现代 Ruby 脚本。positional Hash / keyword 参数适配不在范围内。API 补齐和本文明确列出的固定值兼容在初始化时安装；配置类行为恢复仍遵循“先按 CRuby 4.0 执行，发生明确错误后再尝试有限 fallback”的约定。
+本兼容层的目标仅为：使用 CRuby 4.0 运行 RGSS1/2/3 的旧脚本。不要求旧 RGSS 运行现代 Ruby 脚本。positional Hash / keyword 参数适配不在范围内。API 补齐和本文明确列出的固定值兼容在初始化时安装；类声明行为恢复仍遵循“先按 CRuby 4.0 执行，发生明确错误后再尝试有限 fallback”的约定。
 
 - `legacy_ruby_compat.cc/.h`：版本开关、缺失 API 清单和求值分派。
-- `legacy_classes.cc/.h`：配置类继承冲突的异常后恢复；Ruby 实现也嵌在此文件内。
+- `legacy_classes.cc/.h`：配置类继承冲突及整数别名声明的异常后恢复；Ruby 实现也嵌在此文件内。
 - [CLASS_FALLBACK.md](CLASS_FALLBACK.md)：已有类恢复的触发条件和限制。
 
 ## 版本基线
@@ -98,7 +98,7 @@ RGSS1/2/3 均补齐 `Object#taint`、`untaint`、`tainted?`；RGSS3 额外补齐
 | 反射结果 | `methods`、`instance_methods`、`constants` 等以字符串命名 | 通常返回 Symbol | 保留现代结果；在已确认的旧消费者处转换，不全局改反射 API |
 | block 形参作用域 | 可覆盖同名外部局部变量 | block 形参有独立作用域 | 大多不报错，无法通过异常恢复；需要显式脚本级迁移方案 |
 | Hash 遍历顺序 | 不承诺现代插入顺序 | 保持插入顺序 | 不复刻旧散列表布局；不得承诺重复值查键的旧遍历结果 |
-| `Fixnum` / `Bignum` | 两个可见整数类，原版 RGSS 为 32 位宿主 | 统一为 Integer，旧常量在所带 4.0 中缺失 | **已实现别名**：两者均指向 Integer，按兼容策略合并旧类名，不复刻原版整数分类 |
+| `Fixnum` / `Bignum` | 两个可见整数类，原版 RGSS 为 32 位宿主 | 统一为 Integer，旧常量在所带 4.0 中缺失 | **已实现别名**：两者均指向 Integer，按兼容策略合并旧类名；`class Fixnum/Bignum < Integer` 在对应异常后按无显式父类的重新打开处理，不复刻原版整数分类 |
 | Proc/block 参数展开、隐式捕获 block | 部分规则与现代不同 | 形参数量/展开更严格；隐式 `Proc.new` 捕获不可依赖 | 保持现代行为；有明确旧调用点、原始参数和可重复调用保证时，才评估局部适配 |
 | 老式 `retry` 等语法 | 1.8 支持某些迭代上下文 | 现代编译可抛 SyntaxError | **候选，未实现**；只能在编译失败后按明确语法分析，不用正则盲改字符串或整份源码 |
 | `$SAFE`、taint / trust | 依赖旧 VM 的安全级别、污点和信任机制 | 机制已移除 | **已提供无机制兼容**：taint / trust 修改返回接收者、查询为 false；`$SAFE` 恒为 0，写入忽略，不恢复旧安全限制 |
@@ -110,7 +110,7 @@ RGSS1/2/3 均补齐 `Object#taint`、`untaint`、`tainted?`；RGSS3 额外补齐
 
 RGSS3 的 Ruby 1.9.2 已采用 Enumerator、字符型字符串索引、Hash 型 `Hash#select` 结果和独立 block 形参作用域；上述 1.8 → 1.9 行为差异不应再次为它启用。后来的 Ruby 2.x/3.x 仍有 API 删除与行为调整，因此不能把“无需 1.8 行为恢复”等同于“无需 API 兼容”。
 
-本轮为 RGSS3 安装上表中标为“补齐”的 API，求值仍走普通路径，不创建类恢复模块。`Fixnum` 和 `Bignum` 在此模式下也都别名到 Integer。`$SAFE` 与 taint / trust 采用上文的无机制兼容。Proc/block 调用规则仍按上表中的边界评估，不做通用异常重试；positional Hash / keyword 参数不做适配。
+RGSS3 安装上表中标为“补齐”的 API；求值先执行原始源码，仅在匹配的异常后启用整数别名类声明恢复，不启用 RGSS1/2 的配置类恢复。`Fixnum` 和 `Bignum` 在此模式下也都别名到 Integer，允许在此边界内恢复旧式的 `< Integer` 声明。`$SAFE` 与 taint / trust 采用上文的无机制兼容。Proc/block 调用规则仍按上表中的边界评估，不做通用异常重试；positional Hash / keyword 参数不做适配。
 
 ## String / Symbol 转换
 

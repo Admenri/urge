@@ -27,7 +27,7 @@
 namespace binding {
 // The only startup entry for Ruby compatibility and script evaluation.
 // RGSS1/2/3: restore missing API names from the matching Ruby baseline.
-// Only RGSS1/2 enable exception-only class recovery.
+// Integer-alias recovery: RGSS1/2/3; configuration-class recovery: RGSS1/2.
 void InitLegacyRubyCompat(int rgss_version);
 
 // Called within the host's rb_protect; no global Ruby helper is installed.

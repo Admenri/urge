@@ -23,7 +23,7 @@
 #pragma once
 
 namespace binding {
-// Internal setup for exception-only configuration-class recovery.
-// Called only by InitLegacyRubyCompat for RGSS1/2.
-void InitLegacyClasses();
+// Exception-only integer-alias recovery for RGSS1/2/3. Configuration-class
+// recovery remains restricted to RGSS1/2 by InitLegacyRubyCompat.
+void InitLegacyClasses(bool configuration_classes);
 }  // namespace binding
