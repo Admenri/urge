@@ -67,7 +67,7 @@ class Config : public Singleton<Config> {
   } game;
 
   struct {
-    std::string soundfont = "Fonts/Default.sf2";
+    std::string midi_soundfont;
     int32_t master_volume = 100;
     int32_t bgm_volume = 100;
     int32_t bgs_volume = 100;

@@ -136,3 +136,13 @@ if (gameDir.isDirectory()) {
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
 }
+
+// Include the MIT notices for the built-in audio decoder reference code.
+def codecNoticesDir = layout.buildDirectory.dir("generated/codecNotices")
+def copyCodecNotices = tasks.register("copyCodecNotices", Copy) {
+    from(rootProject.file("../core/audio/decoders/LICENSES.md"))
+    into(codecNoticesDir)
+    rename { "audio-codec-licenses.txt" }
+}
+android.sourceSets.main.assets.srcDir(codecNoticesDir)
+tasks.named("preBuild").configure { dependsOn(copyCodecNotices) }

@@ -39,7 +39,8 @@ int32_t ClampVolume(int32_t volume) {
 }
 
 Audio::Audio()
-    : service_(AudioService::Create(Config::Get().audio.output_device)) {
+    : service_(AudioService::Create(Config::Get().audio.output_device,
+                                     Config::Get().audio.midi_soundfont)) {
   if (!service_)
     return;
 
@@ -59,7 +60,8 @@ Audio::Audio()
 Audio::~Audio() = default;
 
 void Audio::SetupMIDI() {
-  LOGGER_WARN("MIDI playback is not supported by the mixer; ignored");
+  if (service_)
+    service_->SetupMIDI();
 }
 
 void Audio::BGMPlay(std::string filename,

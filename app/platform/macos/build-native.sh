@@ -39,11 +39,13 @@ cmake --build "$build" --target Game --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-8
 printf '2:%s\n' "$prefix" > "$build/.static-deps-version"
 
 cp -R "$prefix/share/urge/licenses" "$build/"
+cp "$repo/core/audio/decoders/LICENSES.md" "$build/licenses/audio-codecs.txt"
 
 # The bundle and the standalone executable use the same native Metal engine.
 # Keep data under Resources, outside the bundle's signed executable directory.
 bundle="$build/URGE.app"
-mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources/licenses"
+cp "$build/licenses/audio-codecs.txt" "$bundle/Contents/Resources/licenses/"
 # Remove demo resources left by previous builds.
 rm -rf "$bundle/Contents/Resources/Demo" "$build/demo"
 rm -rf "$bundle/Contents/MacOS/Data"
