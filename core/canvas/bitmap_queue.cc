@@ -79,7 +79,9 @@ void BitmapQueue::ClosePass() {
   pass_ = nullptr;
 }
 
-void BitmapQueue::Record(const BitmapDraw& draw, std::uint32_t first_vertex) {
+void BitmapQueue::Record(const BitmapDraw& draw,
+                         std::uint32_t first_vertex,
+                         std::uint32_t vertex_count) {
   const bool masked = draw.kind == BitmapDraw::Kind::kTextureMask;
 
   OpenPass(draw.target);
@@ -89,7 +91,8 @@ void BitmapQueue::Record(const BitmapDraw& draw, std::uint32_t first_vertex) {
       std::clamp(draw.blend_type, static_cast<int32_t>(BLEND_NONE),
                  static_cast<int32_t>(BLEND_SUBTRACT)));
 
-  pass_.SetPipeline(draw.kind == BitmapDraw::Kind::kColor
+  pass_.SetPipeline(draw.pipeline ? draw.pipeline
+                    : draw.kind == BitmapDraw::Kind::kColor
                         ? pipelines.color_noblend
                         : (masked ? pipelines.texture_mask_blends.at(blend)
                                   : pipelines.texture_blends.at(blend)));
@@ -105,7 +108,7 @@ void BitmapQueue::Record(const BitmapDraw& draw, std::uint32_t first_vertex) {
   }
 
   pass_.SetVertexBuffer(0, vertices_.buffer(), 0, WGPU_WHOLE_SIZE);
-  pass_.Draw(kQuadVertexCount, 1, first_vertex, 0);
+  pass_.Draw(vertex_count, 1, first_vertex, 0);
 }
 
 void BitmapQueue::Flush() {
@@ -116,6 +119,8 @@ void BitmapQueue::Flush() {
   draws.swap(draws_);
 
   for (const BitmapDraw& draw : draws) {
+    if (draw.prepare)
+      draw.prepare();
     if (draw.target)
       draw.target->TouchContent();
   }
@@ -124,17 +129,27 @@ void BitmapQueue::Flush() {
 
   const std::uint64_t begin = SDL_GetPerformanceCounter();
 
+  std::vector<PrimitiveEmitter::Slot> slots;
+  slots.reserve(draws.size());
   for (const BitmapDraw& draw : draws) {
-    vertices_.EmitQuad(draw.rect, draw.texcoord, draw.colors[0], draw.colors[1],
-                       draw.colors[2], draw.colors[3]);
-    vertices_.End();
+    if (draw.vertices.empty()) {
+      vertices_.EmitQuad(draw.rect, draw.texcoord, draw.colors[0],
+                         draw.colors[1], draw.colors[2], draw.colors[3]);
+    } else {
+      vertices_.BeginTriangle();
+      for (const auto& vertex : draw.vertices)
+        vertices_.Color4f(vertex.color)
+            .Texcoord2f(vertex.texcoord)
+            .Vertex4f(vertex.position);
+    }
+    slots.push_back(vertices_.End());
   }
   vertices_.Upload();
 
   const std::uint64_t uploaded = SDL_GetPerformanceCounter();
 
   for (std::size_t index = 0; index < draws.size(); ++index)
-    Record(draws[index], static_cast<std::uint32_t>(index) * kQuadVertexCount);
+    Record(draws[index], slots[index].first, slots[index].count);
 
   ClosePass();
 

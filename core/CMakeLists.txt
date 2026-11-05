@@ -77,7 +77,6 @@ endif()
 target_link_libraries(urge-core PUBLIC
   glm
   ${URGE_SDL_TARGET}
-  SDL3_ttf::SDL3_ttf
   SDL3_image::SDL3_image-static
   physfs-static
   webgpu-cpp-header
@@ -113,4 +112,12 @@ if(URGE_ENABLE_ARCHIVE_ENCRYPTION AND URGE_BUILD_ACS_PACK)
     "${PROJECT_SOURCE_DIR}/admenri/monocypher.c")
   target_include_directories(urge-acs-pack PRIVATE "${PROJECT_SOURCE_DIR}/admenri")
   target_link_libraries(urge-acs-pack PRIVATE zlibstatic)
+endif()
+
+# Font backend selection stays behind core/font. Reuse the vendored FreeType
+# target on non-Apple platforms, never a Homebrew/system font library.
+if(APPLE)
+  target_link_libraries(urge-core PRIVATE "-framework CoreText" "-framework CoreGraphics")
+else()
+  target_link_libraries(urge-core PRIVATE Freetype::Freetype)
 endif()

@@ -72,26 +72,6 @@ glm::vec4 PremultiplyOpacity(int32_t opacity) {
   return glm::vec4(value, value, value, value);
 }
 
-RectI AlignTextRect(const RectI& region,
-                    int32_t text_width,
-                    int32_t text_height,
-                    int32_t align) {
-  int32_t x = region.x;
-  switch (align) {
-    case 1:
-      x += (region.width - text_width) / 2;
-      break;
-    case 2:
-      x += region.width - text_width;
-      break;
-    default:
-      break;
-  }
-
-  const int32_t y = region.y + (region.height - text_height) / 2;
-  return RectI(x, y, text_width, text_height);
-}
-
 void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   for (int32_t x = 0; x < width; ++x, pixels += 4) {
     const std::uint32_t alpha = pixels[3];
@@ -539,32 +519,7 @@ void Bitmap::DrawText(URGE_EXCEPT,
   if (width <= 0 || height <= 0)
     return;
 
-  FontRenderer::TextRun* run = text_renderer_.Acquire(*font_, str);
-  if (!run)
-    return;
-
-  const RectI composed = AlignTextRect(RectI(x, y, width, height), run->size.x,
-                                       run->size.y, align);
-  const RectI blit_region =
-      MakeIntersect(composed, RectI(0, 0, size_.x, size_.y));
-  if (!blit_region.width || !blit_region.height)
-    return;
-
-  const RectF source_rect(static_cast<float>(blit_region.x - composed.x),
-                          static_cast<float>(blit_region.y - composed.y),
-                          static_cast<float>(blit_region.width),
-                          static_cast<float>(blit_region.height));
-
-  const glm::vec4 opacity = PremultiplyOpacity(run->opacity);
-
-  BitmapDraw draw;
-  draw.target = this;
-  draw.text_group = run->group;
-  draw.rect = RectF(blit_region);
-  draw.texcoord = MakeNorm(source_rect, glm::vec2(run->size));
-  draw.colors[0] = draw.colors[1] = draw.colors[2] = draw.colors[3] = opacity;
-
-  BitmapQueue::Get().Push(std::move(draw));
+  FontRenderer::Draw(*this, *font_, RectI(x, y, width, height), str, align);
 }
 
 void Bitmap::DrawText(URGE_EXCEPT,

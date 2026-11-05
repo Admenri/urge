@@ -26,9 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "SDL3/SDL_surface.h"
-#include "SDL3_ttf/SDL_ttf.h"
-
 #include "core/common/common.h"
 #include "core/common/definition.h"
 #include "core/common/refptr.h"
@@ -89,10 +86,6 @@ class Font : public Object {
   static ATTR(RefPtr<Color>, DefaultOutColor);
   URGE_BINDING()
   static ATTR(RefPtr<Color>, DefaultGradientColor);
-
-  TTF_Font* ttf_font(int32_t outline = 0);
-
-  SDL_Surface* RenderText(const std::string& text, uint8_t* font_opacity);
 
   bool MeasureText(const std::string& text, int32_t* width, int32_t* height);
 

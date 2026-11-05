@@ -23,6 +23,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 #include "core/canvas/bitmap.h"
@@ -48,6 +49,11 @@ struct BitmapDraw {
   RefPtr<Bitmap> mask;
 
   wgpu::BindGroup text_group;
+  // Optional module-owned pipeline and prebuilt triangle batch. The queue
+  // knows nothing about font backends, glyphs, or atlas management.
+  wgpu::RenderPipeline pipeline;
+  std::vector<VertexData> vertices;
+  std::function<void()> prepare;
 
   RectF rect;
   RectF texcoord;
@@ -74,7 +80,9 @@ class BitmapQueue : public Singleton<BitmapQueue> {
  private:
   void OpenPass(const RefPtr<Bitmap>& target);
   void ClosePass();
-  void Record(const BitmapDraw& draw, std::uint32_t first_vertex);
+  void Record(const BitmapDraw& draw,
+              std::uint32_t first_vertex,
+              std::uint32_t vertex_count);
 
   void EnsureFilterResources(const glm::ivec2& size);
   wgpu::BindGroup MakeFilterSourceGroup(const wgpu::RenderPipeline& pipeline,

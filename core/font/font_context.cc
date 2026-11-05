@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "core/font/font_context.h"
+#include "core/font/font_renderer.h"
 
 #include <algorithm>
 #include <cstring>
@@ -30,6 +31,7 @@
 #include <vector>
 
 #include "SDL3/SDL_stdinc.h"
+#include "SDL3/SDL_timer.h"
 
 #include "core/common/logger.h"
 #include "core/resources/embed.ttf.bin"
@@ -42,11 +44,6 @@ namespace {
 constexpr char kEmbeddedFontName[] = "Default.ttf";
 
 constexpr char kFontDirectory[] = "Fonts/";
-
-constexpr float kFontRealScale = 0.9f;
-
-constexpr int32_t kMinFontSize = 6;
-constexpr int32_t kMaxFontSize = 96;
 
 #if defined(_WIN32)
 constexpr const char* kWindowsDefaultFaces[] = {
@@ -290,12 +287,6 @@ bool ReadFileFamilyNames(const std::string& path,
 }
 
 FontContext::FontContext(URGE_EXCEPT) {
-  if (!TTF_Init()) {
-    exception_state.Throw(ExceptionState::kRGSSError, "TTF_Init failed: {}",
-                          SDL_GetError());
-    return;
-  }
-
 #if defined(_WIN32)
   for (const char* face : kWindowsDefaultFaces)
     default_name_.emplace_back(face);
@@ -339,10 +330,7 @@ FontContext::FontContext(URGE_EXCEPT) {
 }
 
 FontContext::~FontContext() {
-  for (auto& entry : font_cache_) {
-    if (entry.second)
-      TTF_CloseFont(entry.second);
-  }
+  renderer_.reset();
 
   for (auto& entry : entries_)
     SDL_free(entry.second.data.data);
@@ -352,28 +340,10 @@ bool FontContext::FontExists(const std::string& name) {
   return !Resolve(name).empty();
 }
 
-TTF_Font* FontContext::AcquireFont(const std::vector<std::string>& names,
-                                   int32_t size,
-                                   TTF_FontStyleFlags style,
-                                   int32_t outline) {
-  if (size < kMinFontSize || size > kMaxFontSize)
-    return nullptr;
-
-  std::vector<std::string> candidates = names;
-  candidates.push_back(default_font_);
-  // A discovered system face can still be unreadable or invalid.
-  candidates.emplace_back(kEmbeddedFontName);
-
-  for (const std::string& candidate : candidates) {
-    const std::string key = Resolve(candidate);
-    if (key.empty())
-      continue;
-
-    if (TTF_Font* font = CachedFont(key, size, style, outline))
-      return font;
-  }
-
-  return nullptr;
+FontRenderer& FontContext::renderer() {
+  if (!renderer_)
+    renderer_ = std::make_unique<FontRenderer>();
+  return *renderer_;
 }
 
 const FontContext::FontData* FontContext::FindFont(const std::string& name) {
@@ -620,69 +590,6 @@ void FontContext::BuildFamilyIndex() {
 
   LOGGER_INFO("[Font] Indexed {} names from {} faces in {} ms",
               families_.size(), indexed, SDL_GetTicks() - start);
-}
-
-TTF_Font* FontContext::CachedFont(const std::string& key,
-                                  int32_t size,
-                                  TTF_FontStyleFlags style,
-                                  int32_t outline) {
-  const auto cache_key =
-      std::make_tuple(key, size, static_cast<int32_t>(style), outline);
-  const auto cached = font_cache_.find(cache_key);
-  if (cached != font_cache_.end())
-    return cached->second;
-
-  TTF_Font* font = OpenFont(key, size, style, outline);
-  if (font)
-    font_cache_.emplace(cache_key, font);
-  return font;
-}
-
-TTF_Font* FontContext::OpenFont(const std::string& key,
-                                int32_t size,
-                                TTF_FontStyleFlags style,
-                                int32_t outline) {
-  auto entry = entries_.find(key);
-  if (entry == entries_.end())
-    return nullptr;
-
-  const FontData* data = Load(entry->second);
-  if (!data)
-    return nullptr;
-
-  SDL_IOStream* stream =
-      SDL_IOFromConstMem(data->data, static_cast<size_t>(data->size));
-  if (!stream)
-    return nullptr;
-
-  TTF_Font* font = TTF_OpenFontIO(stream, true, size * kFontRealScale);
-  if (!font) {
-    LOGGER_ERROR("[Font] Failed to open {}: {}", key, SDL_GetError());
-    return nullptr;
-  }
-
-  if (style != TTF_STYLE_NORMAL)
-    TTF_SetFontStyle(font, style);
-
-  if (outline > 0)
-    TTF_SetFontOutline(font, outline);
-
-#if !defined(__EMSCRIPTEN__) && \
-    (defined(__APPLE__) || defined(__ANDROID__) || defined(__linux__))
-  // A resolvable Latin font (e.g. Tahoma in an RGSS font-name array) can
-  // still lack Chinese glyphs. Keep its own glyphs and metrics; SDL_ttf uses
-  // the platform default only for missing characters. The default never
-  // falls back to itself, and every face is cached with matching style/size.
-  const std::string fallback_key = Resolve(default_font_);
-  if (!fallback_key.empty() && fallback_key != key) {
-    TTF_Font* fallback = CachedFont(fallback_key, size, style, outline);
-    if (fallback && !TTF_AddFallbackFont(font, fallback))
-      LOGGER_WARN("[Font] Cannot add glyph fallback for {}: {}", key,
-                  SDL_GetError());
-  }
-#endif
-
-  return font;
 }
 
 }
