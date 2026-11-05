@@ -52,8 +52,10 @@ class Camera3D : public Node3D {
 
   URGE_BINDING()
   ATTR(float, Near) {
-    if (value.has_value())
+    if (value.has_value()) {
       near_ = std::max(*value, 0.001f);
+      far_ = std::max(far_, near_ + 0.001f);
+    }
     return near_;
   }
 

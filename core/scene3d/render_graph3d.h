@@ -426,7 +426,7 @@ class RenderGraph3D : public Object {
     bool storage = false;
   };
 
-  std::vector<size_t> BuildOrder() const;
+  std::vector<size_t> BuildOrder(URGE_EXCEPT) const;
   RefPtr<RenderTarget3D> ShadowTarget(URGE_EXCEPT,
                                       const std::string& name,
                                       int32_t layers);
@@ -443,9 +443,6 @@ class RenderGraph3D : public Object {
   std::vector<RefPtr<RenderGraphPass3D>> passes_;
   std::map<std::string, RefPtr<RenderTarget3D>> targets_;
   std::map<std::string, RefPtr<RenderTarget3D>> shadow_targets_;
-  std::map<std::string, RefPtr<RenderTarget3D>> mrt_targets_;
-  std::map<std::string, std::pair<RefPtr<RenderTarget3D>, int32_t>>
-      attachment_views_;
   std::map<std::string, TextureDesc> textures_;
   RefPtr<RenderTarget3D> final_target_;
   RefPtr<Color> ambient_;

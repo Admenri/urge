@@ -82,6 +82,7 @@ class RenderContext3D : public Object {
   void SetShadowSplits(std::vector<float> splits);
   void SetShadowCascades(int32_t count);
   void SetShadowFade(float ratio);
+  void SetShadowLightIndex(int32_t index) { shadow_light_index_ = index; }
   void SetPointShadow(RefPtr<RenderTarget3D> target,
                       const std::vector<glm::mat4>& face_matrices,
                       int32_t light_index,
@@ -162,6 +163,7 @@ class RenderContext3D : public Object {
   glm::mat4 shadow_matrices_[kMaxCascades] = {};
   glm::vec4 shadow_splits_ = glm::vec4(0.0f);
   int32_t shadow_cascade_count_ = 1;
+  int32_t shadow_light_index_ = -1;
   float shadow_size_ = 1024.0f;
   float shadow_fade_ = 0.15f;
   RefPtr<RenderTarget3D> point_shadow_target_;
@@ -169,12 +171,13 @@ class RenderContext3D : public Object {
   int32_t point_light_index_ = -1;
   float point_range_ = 10.0f;
 
-  int32_t pass_serial_ = 0;
+  int32_t pass_serial_ = -1;
   bool shadow_pass_mode_ = false;
   int32_t cull_override_ = -1;
   bool sort_back_to_front_ = false;
-  std::array<bool, 16> view_uploaded_ = {};
-
+  // Each pass owns a distinct region until the frame is submitted. Queue
+  // writes are executed before the command buffer, so a ring would alias views.
+  std::vector<wgpu::Buffer> view_buffers_;
   wgpu::Buffer view_buffer_ = nullptr;
   uint32_t view_stride_ = 0;
   wgpu::BindGroup view_group_ = nullptr;

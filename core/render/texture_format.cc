@@ -81,6 +81,10 @@ std::string TextureFormatName(wgpu::TextureFormat format) {
       return "rgba8unorm";
     case wgpu::TextureFormat::RGBA8UnormSrgb:
       return "rgba8unorm-srgb";
+    case wgpu::TextureFormat::RGBA8Snorm:
+      return "rgba8snorm";
+    case wgpu::TextureFormat::R8Unorm:
+      return "r8unorm";
     case wgpu::TextureFormat::BGRA8Unorm:
       return "bgra8unorm";
     case wgpu::TextureFormat::BGRA8UnormSrgb:
@@ -103,6 +107,8 @@ std::string TextureFormatName(wgpu::TextureFormat format) {
       return "depth24plus";
     case wgpu::TextureFormat::Depth24PlusStencil8:
       return "depth24plus-stencil8";
+    case wgpu::TextureFormat::Depth16Unorm:
+      return "depth16unorm";
     default:
       return "undefined";
   }
@@ -126,14 +132,10 @@ bool IsStorageCapable(wgpu::TextureFormat format) {
     case wgpu::TextureFormat::RGBA8Snorm:
     case wgpu::TextureFormat::RGBA8Uint:
     case wgpu::TextureFormat::RGBA8Sint:
-    case wgpu::TextureFormat::R8Unorm:
-    case wgpu::TextureFormat::RG16Float:
     case wgpu::TextureFormat::RGBA16Float:
     case wgpu::TextureFormat::R32Float:
     case wgpu::TextureFormat::RG32Float:
     case wgpu::TextureFormat::RGBA32Float:
-    case wgpu::TextureFormat::RG11B10Ufloat:
-    case wgpu::TextureFormat::RGB10A2Unorm:
       return true;
     default:
       return false;

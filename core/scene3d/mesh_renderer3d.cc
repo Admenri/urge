@@ -122,6 +122,11 @@ void MeshRenderer3D::UpdateBounds() {
     const float distance = glm::length(center - world_center_);
     if (distance + radius <= world_radius_)
       continue;
+    if (distance + world_radius_ <= radius) {
+      world_center_ = center;
+      world_radius_ = radius;
+      continue;
+    }
 
     const float merged_radius = (world_radius_ + distance + radius) * 0.5f;
     if (distance > 0.0f) {

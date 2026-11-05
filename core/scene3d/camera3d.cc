@@ -96,7 +96,8 @@ std::vector<float> Camera3D::ComputeSplits(int32_t count,
                                            float max_distance) const {
   const int32_t cascades = std::clamp(count, 1, 4);
   const float near_plane = near_;
-  const float far_plane = std::max(max_distance, near_plane + 0.01f);
+  const float far_plane = std::clamp(max_distance, near_plane + 0.001f, far_);
+  lambda = std::clamp(lambda, 0.0f, 1.0f);
   const float ratio = far_plane / near_plane;
 
   std::vector<float> splits(cascades);
@@ -144,7 +145,7 @@ std::vector<glm::mat4> Camera3D::ComputeCascades(
     int32_t index = 0;
     for (int32_t side = 0; side < 2; ++side) {
       const float depth = side == 0 ? near_plane : far_plane;
-      const float half_height = tan_half * depth;
+      const float half_height = orthographic_ ? ortho_size_ : tan_half * depth;
       const float half_width = half_height * aspect;
 
       for (int32_t corner = 0; corner < 4; ++corner) {
@@ -233,7 +234,7 @@ bool Camera3D::IsVisible(const glm::vec3& center,
 
   const glm::vec4 planes[6] = {
       row(3) + row(0), row(3) - row(0), row(3) + row(1),
-      row(3) - row(1), row(3) + row(2), row(3) - row(2),
+      row(3) - row(1), row(2),          row(3) - row(2),
   };
 
   for (const glm::vec4& plane : planes) {

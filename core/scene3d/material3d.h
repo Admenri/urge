@@ -455,6 +455,7 @@ class MaterialPass3D : public Object {
   wgpu::RenderPipeline AcquirePipeline(URGE_EXCEPT,
                                        const PipelineTargetState3D& target);
   wgpu::RenderPipeline AcquireDepthOnlyPipeline(
+      URGE_EXCEPT,
       const PipelineTargetState3D& target);
   wgpu::BindGroup AcquireBindGroup(URGE_EXCEPT);
   bool HasGroup(uint32_t group) const;
@@ -468,6 +469,7 @@ class MaterialPass3D : public Object {
       return;
     fullscreen_ = value;
     state_dirty_ = true;
+    builder_dirty_ = true;
   }
   bool skinned() const { return skinned_; }
   bool instanced() const { return instanced_; }
@@ -490,7 +492,7 @@ class MaterialPass3D : public Object {
   void CollectSlots(URGE_EXCEPT);
   void RebuildBindGroup(URGE_EXCEPT);
   void EnsureBuilder(URGE_EXCEPT);
-  void EnsureShadowBuilder();
+  void EnsureShadowBuilder(URGE_EXCEPT);
   wgpu::DepthStencilState MakeDepthState(wgpu::TextureFormat format) const;
   std::vector<std::vector<VertexAttribute>> VertexLayout() const;
 
@@ -537,6 +539,7 @@ class MaterialPass3D : public Object {
   bool builder_dirty_ = false;
 
   std::vector<Slot> slots_;
+  std::vector<util::LayoutEntry> material_entries_;
   std::vector<std::string> texture_names_;
   std::vector<std::string> uniform_names_;
   std::map<std::string, RefPtr<Bitmap>> texture_map_;

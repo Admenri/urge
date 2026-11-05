@@ -69,7 +69,7 @@ UniformBlockPool::UniformBlockPool(URGE_EXCEPT,
           ? kDefaultSlotStride
           : limits.minUniformBufferOffsetAlignment;
 
-  slot_stride_ = std::max(alignment, element_size_);
+  slot_stride_ = ((element_size_ + alignment - 1) / alignment) * alignment;
 
   const uint64_t binding_limit =
       limits.maxUniformBufferBindingSize == WGPU_LIMIT_U64_UNDEFINED
@@ -117,8 +117,11 @@ UniformBlockPool::Slot UniformBlockPool::Acquire(URGE_EXCEPT,
          chunks_[active_chunk_].used == chunks_[active_chunk_].capacity)
     ++active_chunk_;
 
-  if (active_chunk_ >= chunks_.size())
+  if (active_chunk_ >= chunks_.size()) {
     CreateChunk(exception_state);
+    if (exception_state.HadException())
+      return {};
+  }
 
   const uint32_t offset = chunks_[active_chunk_].used++ * slot_stride_;
   std::memcpy(staging_[active_chunk_].data() + offset, data, size);

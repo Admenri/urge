@@ -51,6 +51,12 @@ Node3D::~Node3D() {
 void Node3D::SetParent(RefPtr<Node3D> value) {
   if (parent_ == value.get())
     return;
+  for (Node3D* ancestor = value.get(); ancestor; ancestor = ancestor->parent_)
+    if (ancestor == this)
+      return;
+
+  // The old parent may own the last reference during a native reparent call.
+  RefPtr<Node3D> keep_alive(this);
 
   if (parent_)
     parent_->RemoveChildRaw(this);

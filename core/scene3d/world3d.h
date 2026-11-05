@@ -134,6 +134,7 @@ class World3D : public Node {
   int32_t width_ = 1;
   int32_t height_ = 1;
   std::string format_ = "rgba8unorm";
+  std::string last_render_error_;
 
   RefPtr<Node3D> scene_;
   RefPtr<Camera3D> camera_;

@@ -31,6 +31,26 @@
 
 namespace urge {
 
+namespace {
+
+bool SupportsColorResolve(wgpu::TextureFormat format) {
+  switch (format) {
+    case wgpu::TextureFormat::RGBA8Unorm:
+    case wgpu::TextureFormat::RGBA8UnormSrgb:
+    case wgpu::TextureFormat::BGRA8Unorm:
+    case wgpu::TextureFormat::BGRA8UnormSrgb:
+    case wgpu::TextureFormat::RGBA16Float:
+    case wgpu::TextureFormat::RG16Float:
+    case wgpu::TextureFormat::R8Unorm:
+    case wgpu::TextureFormat::RGB10A2Unorm:
+      return true;
+    default:
+      return false;
+  }
+}
+
+}  // namespace
+
 RenderTarget3D::RenderTarget3D(URGE_EXCEPT,
                                int32_t width,
                                int32_t height,
@@ -94,11 +114,67 @@ RenderTarget3D::RenderTarget3D(URGE_EXCEPT, const RenderTargetDesc3D& desc) {
   CreateResources(exception_state, desc);
 }
 
+RenderTarget3D::RenderTarget3D(
+    URGE_EXCEPT,
+    const std::vector<RefPtr<RenderTarget3D>>& colors,
+    RefPtr<RenderTarget3D> depth) {
+  RefPtr<RenderTarget3D> first = colors.empty() ? depth : colors.front();
+  if (!first)
+    return;
+  size_ = first->size();
+  samples_ = first->samples();
+  for (const RefPtr<RenderTarget3D>& color : colors) {
+    if (!color || color->ColorCount() != 1 || color->size() != size_ ||
+        color->samples() != samples_) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "render target 3d: MRT colors must have matching "
+                            "dimensions and sample counts.");
+      return;
+    }
+    color_formats_.push_back(color->color_formats()[0]);
+    color_views_.push_back(color->color_view());
+    resolve_views_.push_back(color->sampled_view());
+  }
+  if (!depth)
+    return;
+  if (!depth->HasDepth() || depth->size() != size_ ||
+      depth->samples() != samples_) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render target 3d: MRT depth must match its colors.");
+    return;
+  }
+  layers_ = depth->layers_;
+  depth_format_ = depth->depth_format_;
+  depth_texture_ = depth->depth_texture_;
+  depth_array_view_ = depth->depth_array_view_;
+  depth_cube_view_ = depth->depth_cube_view_;
+  layer_views_ = depth->layer_views_;
+}
+
 RenderTarget3D::~RenderTarget3D() = default;
 
 void RenderTarget3D::CreateResources(URGE_EXCEPT,
                                      const RenderTargetDesc3D& desc) {
   const wgpu::Device device = GPUDevice::Get().device();
+
+  if (desc.samples != 1 && desc.samples != 4) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render target 3d: sample count must be 1 or 4.");
+    return;
+  }
+  if (desc.depth != wgpu::TextureFormat::Undefined &&
+      !IsDepthFormat(desc.depth)) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render target 3d: invalid depth format.");
+    return;
+  }
+  if (desc.samples > 1 &&
+      (desc.layers > 1 || desc.mip_levels > 1 || desc.storage)) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render target 3d: multisampling cannot be combined "
+                          "with array layers, mipmaps or storage.");
+    return;
+  }
 
   size_ = glm::ivec2(std::max(1, desc.width), std::max(1, desc.height));
   layers_ = std::clamp(static_cast<int32_t>(desc.layers), 1, 8);
@@ -106,11 +182,27 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT,
   const uint32_t mip_levels = std::max<uint32_t>(1, desc.mip_levels);
 
   for (const wgpu::TextureFormat format : desc.colors) {
-    if (IsDepthFormat(format)) {
+    if (format == wgpu::TextureFormat::Undefined || IsDepthFormat(format)) {
       exception_state.Throw(
           ExceptionState::kRGSSError,
           "render target 3d: '{}' is a depth format, not a color "
           "format.",
+          TextureFormatName(format));
+      return;
+    }
+    // The device is created without optional texture format features.
+    if (format == wgpu::TextureFormat::RGBA8Snorm ||
+        format == wgpu::TextureFormat::RG11B10Ufloat) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "render target 3d: '{}' is not renderable on the "
+                            "current device without optional format features.",
+                            TextureFormatName(format));
+      return;
+    }
+    if (samples_ > 1 && !SupportsColorResolve(format)) {
+      exception_state.Throw(
+          ExceptionState::kRGSSError,
+          "render target 3d: '{}' does not support MSAA resolve.",
           TextureFormatName(format));
       return;
     }
@@ -121,7 +213,13 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT,
     if (samples_ == 1)
       color_desc.usage |=
           wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
-    if (desc.storage && IsStorageCapable(format))
+    if (desc.storage && !IsStorageCapable(format)) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "render target 3d: '{}' does not support storage.",
+                            TextureFormatName(format));
+      return;
+    }
+    if (desc.storage)
       color_desc.usage |= wgpu::TextureUsage::StorageBinding;
     color_desc.dimension = wgpu::TextureDimension::e2D;
     color_desc.size.width = static_cast<uint32_t>(size_.x);
@@ -139,7 +237,9 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT,
       return;
     }
     color_textures_.push_back(texture);
-    color_views_.push_back(texture.CreateView(nullptr));
+    wgpu::TextureViewDescriptor color_view_desc;
+    color_view_desc.mipLevelCount = 1;
+    color_views_.push_back(texture.CreateView(&color_view_desc));
 
     if (samples_ > 1) {
       wgpu::TextureDescriptor resolve_desc;
@@ -162,7 +262,7 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT,
         return;
       }
       color_textures_.push_back(resolved);
-      resolve_views_.push_back(resolved.CreateView(nullptr));
+      resolve_views_.push_back(resolved.CreateView(&color_view_desc));
     } else {
       resolve_views_.push_back(color_views_.back());
     }
@@ -190,30 +290,33 @@ void RenderTarget3D::CreateResources(URGE_EXCEPT,
         "render target 3d: the device rejected the depth texture.");
     return;
   }
-  wgpu::TextureViewDescriptor array_desc;
-  array_desc.dimension = wgpu::TextureViewDimension::e2DArray;
-  array_desc.baseArrayLayer = 0;
-  array_desc.arrayLayerCount = static_cast<uint32_t>(layers_);
-  depth_array_view_ = depth_texture_.CreateView(&array_desc);
-  if (!depth_array_view_) {
-    exception_state.Throw(
-        ExceptionState::kGPUError,
-        "render target 3d: the device rejected the depth array "
-        "view.");
-    return;
-  }
-  if (layers_ == 6) {
-    wgpu::TextureViewDescriptor cube_desc;
-    cube_desc.dimension = wgpu::TextureViewDimension::Cube;
-    cube_desc.baseArrayLayer = 0;
-    cube_desc.arrayLayerCount = 6;
-    depth_cube_view_ = depth_texture_.CreateView(&cube_desc);
-    if (!depth_cube_view_) {
+  // Multisampled textures only support a 2D view in WebGPU.
+  if (samples_ == 1) {
+    wgpu::TextureViewDescriptor array_desc;
+    array_desc.dimension = wgpu::TextureViewDimension::e2DArray;
+    array_desc.baseArrayLayer = 0;
+    array_desc.arrayLayerCount = static_cast<uint32_t>(layers_);
+    depth_array_view_ = depth_texture_.CreateView(&array_desc);
+    if (!depth_array_view_) {
       exception_state.Throw(
           ExceptionState::kGPUError,
-          "render target 3d: the device rejected the depth cube "
+          "render target 3d: the device rejected the depth array "
           "view.");
       return;
+    }
+    if (layers_ == 6) {
+      wgpu::TextureViewDescriptor cube_desc;
+      cube_desc.dimension = wgpu::TextureViewDimension::Cube;
+      cube_desc.baseArrayLayer = 0;
+      cube_desc.arrayLayerCount = 6;
+      depth_cube_view_ = depth_texture_.CreateView(&cube_desc);
+      if (!depth_cube_view_) {
+        exception_state.Throw(
+            ExceptionState::kGPUError,
+            "render target 3d: the device rejected the depth cube "
+            "view.");
+        return;
+      }
     }
   }
 

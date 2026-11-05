@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "core/common/exception.h"
+#include "core/common/logger.h"
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
 #include "core/render/pipeline.h"
@@ -241,11 +242,11 @@ void World3D::UpdateQuad(URGE_EXCEPT, glm::ivec2 target_size) {
 
 void World3D::RenderScene(URGE_EXCEPT, DrawParam param) {
   EnsureTarget(exception_state);
-  if (!target_)
+  if (exception_state.HadException() || !target_)
     return;
 
   RefPtr<RenderGraph3D> graph = ActiveGraph(exception_state);
-  if (!graph)
+  if (exception_state.HadException() || !graph)
     return;
 
   if (!context_)
@@ -253,11 +254,12 @@ void World3D::RenderScene(URGE_EXCEPT, DrawParam param) {
                                                target_);
   else
     context_->BeginFrame(param->command, target_);
+  if (exception_state.HadException())
+    return;
 
   context_->Collect(scene_.get(), camera_.get());
   context_->Flush();
-  ExceptionState frame_state;
-  graph->Execute(frame_state, context_.get());
+  graph->Execute(exception_state, context_.get());
 }
 
 bool World3D::Prepare(DrawParam param) {
@@ -268,8 +270,18 @@ bool World3D::Prepare(DrawParam param) {
 
   ExceptionState frame_state;
   EnsureQuadPipeline(frame_state);
-  RenderScene(frame_state, param);
-  UpdateQuad(frame_state, param->target->size());
+  if (!frame_state.HadException())
+    RenderScene(frame_state, param);
+  if (!frame_state.HadException())
+    UpdateQuad(frame_state, param->target->size());
+  if (frame_state.HadException()) {
+    if (last_render_error_ != frame_state.message()) {
+      last_render_error_ = frame_state.message();
+      LOGGER_ERROR("[World3D] {}", last_render_error_);
+    }
+    return false;
+  }
+  last_render_error_.clear();
 
   return texture_group_ != nullptr;
 }

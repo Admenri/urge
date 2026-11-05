@@ -80,6 +80,7 @@ void RenderQueue3D::CollectNode(Node3D* node,
 
   if (Light3D* light = dynamic_cast<Light3D*>(node)) {
     LightItem item;
+    item.light = light;
     item.type = static_cast<int32_t>(light->type());
     item.position = glm::vec3(world[3]);
     item.direction = -glm::normalize(glm::vec3(world[2]));
@@ -105,7 +106,9 @@ void RenderQueue3D::CollectNode(Node3D* node,
       const bool visible =
           !camera || camera->IsVisible(center, radius, target_size);
 
-      if (layer_match && (visible || renderer->cast_shadow())) {
+      // Keep candidates for all cameras and offscreen shadow casters. Culling
+      // is evaluated against the camera and dimensions of the current pass.
+      {
         const MeshData mesh_data = {world, glm::inverseTranspose(world)};
         ExceptionState acquire_state;
         const UniformBlockPool::Slot slot =
@@ -134,9 +137,11 @@ void RenderQueue3D::CollectNode(Node3D* node,
             item.queue = pass->queue();
             item.tag_id = pass->tag_id();
             item.distance = distance;
+            item.center = center;
+            item.radius = radius;
             item.model = world;
             item.state_key = reinterpret_cast<uint64_t>(pass.get());
-            item.culled = !visible;
+            item.culled = !layer_match || !visible;
             item.slot = slot;
             items_.push_back(std::move(item));
           }

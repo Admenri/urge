@@ -42,10 +42,17 @@ namespace urge {
 
 namespace {
 
-constexpr int32_t kMaxViewSlots = 16;
+constexpr int32_t kViewsPerBuffer = 16;
 
 uint32_t ViewStride() {
-  return static_cast<uint32_t>(((sizeof(ViewData) + 255u) / 256u) * 256u);
+  wgpu::Limits limits = {};
+  GPUDevice::Get().device().GetLimits(&limits);
+  const uint32_t alignment =
+      limits.minUniformBufferOffsetAlignment == WGPU_LIMIT_U32_UNDEFINED
+          ? 256u
+          : std::max(1u, limits.minUniformBufferOffsetAlignment);
+  return static_cast<uint32_t>(
+      ((sizeof(ViewData) + alignment - 1) / alignment) * alignment);
 }
 
 double ClockSeconds() {
@@ -75,19 +82,25 @@ RenderContext3D::RenderContext3D(URGE_EXCEPT,
 
   last_frame_seconds_ = ClockSeconds();
   has_frame_clock_ = true;
+  BeginFrame(encoder_, target_);
 }
 
 RenderContext3D::~RenderContext3D() = default;
 
 void RenderContext3D::BeginFrame(wgpu::CommandEncoder encoder,
                                  RefPtr<RenderTarget3D> target) {
+  EndPass();
   encoder_ = encoder;
   target_ = std::move(target);
   pass_ = nullptr;
-  pass_serial_ = 0;
-  view_uploaded_.fill(false);
+  pass_serial_ = -1;
   mesh_pool_->BeginFrame();
   view_override_enabled_ = false;
+  shadow_pass_mode_ = false;
+  cull_override_ = -1;
+  sort_back_to_front_ = false;
+  SetShadow(nullptr, glm::mat4(1.0f));
+  SetPointShadow(nullptr, {}, -1, 10.0f);
 
   const double seconds = ClockSeconds();
   frame_time_ = static_cast<float>(seconds);
@@ -130,7 +143,7 @@ void RenderContext3D::SetViewOverride(const glm::mat4& view_proj) {
 void RenderContext3D::SetShadow(RefPtr<RenderTarget3D> target,
                                 const glm::mat4& view_proj) {
   SetShadow(std::move(target), view_proj, 0);
-  shadow_cascade_count_ = 1;
+  shadow_cascade_count_ = shadow_target_ ? 1 : 0;
 }
 
 void RenderContext3D::SetShadow(RefPtr<RenderTarget3D> target,
@@ -139,14 +152,17 @@ void RenderContext3D::SetShadow(RefPtr<RenderTarget3D> target,
   if (cascade < 0 || cascade >= static_cast<int32_t>(kMaxCascades))
     return;
 
-  if (target) {
-    if (shadow_target_.get() != target.get()) {
-      shadow_target_ = target;
-      view_group_ = nullptr;
-      view_uploaded_.fill(false);
-    }
-    shadow_size_ = static_cast<float>(std::max(1, target->Width()));
+  if (shadow_target_.get() != target.get()) {
+    shadow_target_ = target;
+    view_group_ = nullptr;
   }
+  if (!target) {
+    shadow_cascade_count_ = 0;
+    shadow_light_index_ = -1;
+    shadow_splits_ = glm::vec4(0.0f);
+    return;
+  }
+  shadow_size_ = static_cast<float>(std::max(1, target->Width()));
   shadow_matrices_[cascade] = view_proj;
   shadow_matrix_ = shadow_matrices_[0];
   shadow_cascade_count_ = std::max(shadow_cascade_count_, cascade + 1);
@@ -174,7 +190,6 @@ void RenderContext3D::SetPointShadow(
     float range) {
   if (point_shadow_target_.get() != target.get()) {
     view_group_ = nullptr;
-    view_uploaded_.fill(false);
   }
   point_shadow_target_ = std::move(target);
   point_light_index_ = light_index;
@@ -185,30 +200,35 @@ void RenderContext3D::SetPointShadow(
 }
 
 void RenderContext3D::UploadView(URGE_EXCEPT, int32_t slot) {
-  if (slot < 0 || slot >= kMaxViewSlots)
-    return;
-  if (view_uploaded_[slot])
+  if (slot < 0)
     return;
 
   const wgpu::Device device = GPUDevice::Get().device();
 
-  const uint64_t needed = static_cast<uint64_t>(view_stride_) * kMaxViewSlots;
-  if (view_buffer_ == nullptr || view_buffer_.GetSize() < needed) {
+  const size_t chunk = static_cast<size_t>(slot / kViewsPerBuffer);
+  if (chunk >= view_buffers_.size())
+    view_buffers_.resize(chunk + 1);
+  const uint64_t needed = static_cast<uint64_t>(view_stride_) * kViewsPerBuffer;
+  if (view_buffers_[chunk] == nullptr) {
     wgpu::BufferDescriptor desc;
     desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
     desc.size = needed;
-    view_buffer_ = device.CreateBuffer(&desc);
-    if (view_buffer_ == nullptr) {
+    view_buffers_[chunk] = device.CreateBuffer(&desc);
+    if (view_buffers_[chunk] == nullptr) {
       exception_state.Throw(
           ExceptionState::kGPUError,
           "render context 3d: the device rejected the view buffer.");
       return;
     }
+  }
+  if (view_buffer_.Get() != view_buffers_[chunk].Get()) {
+    view_buffer_ = view_buffers_[chunk];
     view_group_ = nullptr;
     shadow_view_group_ = nullptr;
   }
 
   ViewData data = {};
+  data.view_proj = glm::mat4(1.0f);
   if (view_override_enabled_)
     data.view_proj = view_override_;
   else if (camera_)
@@ -242,9 +262,10 @@ void RenderContext3D::UploadView(URGE_EXCEPT, int32_t slot) {
 
   data.light_view_proj = shadow_matrix_;
   data.cascade_splits = shadow_splits_;
-  data.cascade_params =
-      glm::vec4(static_cast<float>(shadow_cascade_count_),
-                1.0f / std::max(shadow_size_, 1.0f), shadow_fade_, 0.0f);
+  data.cascade_params = glm::vec4(
+      shadow_target_ ? static_cast<float>(shadow_cascade_count_) : 0.0f,
+      1.0f / std::max(shadow_size_, 1.0f), shadow_fade_,
+      static_cast<float>(shadow_light_index_));
   for (uint32_t i = 0; i < kMaxCascades; ++i)
     data.cascade_matrices[i] = shadow_matrices_[i];
 
@@ -254,9 +275,9 @@ void RenderContext3D::UploadView(URGE_EXCEPT, int32_t slot) {
     data.point_face_view_proj[i] = point_faces_[i];
 
   GPUDevice::Get().queue().WriteBuffer(
-      view_buffer_, static_cast<uint64_t>(slot) * view_stride_, &data,
+      view_buffer_,
+      static_cast<uint64_t>(slot % kViewsPerBuffer) * view_stride_, &data,
       sizeof(data));
-  view_uploaded_[slot] = true;
 
   if (view_group_ != nullptr &&
       view_group_shadow_target_ == shadow_target_.get() &&
@@ -329,11 +350,11 @@ void RenderContext3D::EnsureShadowViewGroup(URGE_EXCEPT) {
 }
 
 void RenderContext3D::UpdateGlobals(URGE_EXCEPT, int32_t slot) {
-  if (slot < 0 || slot >= kMaxViewSlots)
+  if (slot < 0)
     return;
 
   if (static_cast<size_t>(slot) >= globals_slots_.size())
-    globals_slots_.resize(kMaxViewSlots);
+    globals_slots_.resize(static_cast<size_t>(slot) + 1);
 
   GlobalsSlot& target = globals_slots_[slot];
   if (target.buffer == nullptr) {
@@ -423,6 +444,11 @@ void RenderContext3D::BeginPassEx(URGE_EXCEPT,
                           "render context has no encoder.");
     return;
   }
+  if (!target) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "render context 3d: a pass needs a target.");
+    return;
+  }
   if (pass_) {
     pass_.End();
     pass_ = nullptr;
@@ -440,9 +466,13 @@ void RenderContext3D::BeginPassEx(URGE_EXCEPT,
   pass_ = target->BeginRendering(encoder_, colors, clear_depth, clear_stencil,
                                  layer);
 
-  pass_serial_ = (pass_serial_ + 1) % kMaxViewSlots;
+  ++pass_serial_;
 
   UploadView(exception_state, pass_serial_);
+  if (exception_state.HadException()) {
+    EndPass();
+    return;
+  }
 
   const bool shadow_pass =
       (shadow_target_ && target.get() == shadow_target_.get()) ||
@@ -503,17 +533,38 @@ void RenderContext3D::Draw(URGE_EXCEPT, const RenderQueue3D::Item& item) {
   }
   const bool shadow_mode = shadow_pass_mode_ || item.pass->depth_only();
 
+  if (exception_state.HadException())
+    return;
+  if (item.pass->instanced() &&
+      (!item.renderer || item.renderer->InstanceCount() == 0))
+    return;
+
   PipelineTargetState3D state = target_state();
   state.flip_winding = glm::determinant(glm::mat3(item.model)) < 0.0f;
   const wgpu::RenderPipeline pipeline =
-      shadow_mode ? item.pass->AcquireDepthOnlyPipeline(state)
+      shadow_mode ? item.pass->AcquireDepthOnlyPipeline(exception_state, state)
                   : item.pass->AcquirePipeline(exception_state, state);
+  if (exception_state.HadException() || !pipeline)
+    return;
 
   const wgpu::Buffer joints =
       item.mesh->AcquireJointBuffer(exception_state, frame_token_);
+  if (exception_state.HadException())
+    return;
   const UniformBlockPool::Chunk& chunk = mesh_pool_->chunk(item.slot.chunk);
+  const wgpu::BindGroup mesh_group = item.mesh->AcquireGroup(
+      exception_state, item.slot.chunk, chunk.buffer, joints);
+  const wgpu::BindGroup material_group =
+      item.pass->HasGroup(2) ? item.pass->AcquireBindGroup(exception_state)
+                             : nullptr;
+  const wgpu::BindGroup globals_group =
+      item.pass->HasGroup(3) ? GlobalsGroup(exception_state, pass_serial_)
+                             : nullptr;
+  if (exception_state.HadException())
+    return;
 
-  uint32_t view_offset = static_cast<uint32_t>(pass_serial_) * view_stride_;
+  uint32_t view_offset =
+      static_cast<uint32_t>(pass_serial_ % kViewsPerBuffer) * view_stride_;
 
   pass_.SetPipeline(pipeline);
 
@@ -525,22 +576,11 @@ void RenderContext3D::Draw(URGE_EXCEPT, const RenderQueue3D::Item& item) {
   }
 
   uint32_t mesh_offset = item.slot.offset;
-  pass_.SetBindGroup(1,
-                     item.mesh->AcquireGroup(exception_state, item.slot.chunk,
-                                             chunk.buffer, joints),
-                     1, &mesh_offset);
-
-  if (!shadow_mode) {
-    if (item.pass->HasGroup(2))
-      pass_.SetBindGroup(2, item.pass->AcquireBindGroup(exception_state), 0,
-                         nullptr);
-    if (item.pass->HasGroup(3)) {
-      const wgpu::BindGroup globals =
-          GlobalsGroup(exception_state, pass_serial_);
-      if (globals)
-        pass_.SetBindGroup(3, globals, 0, nullptr);
-    }
-  }
+  pass_.SetBindGroup(1, mesh_group, 1, &mesh_offset);
+  if (material_group)
+    pass_.SetBindGroup(2, material_group, 0, nullptr);
+  if (globals_group)
+    pass_.SetBindGroup(3, globals_group, 0, nullptr);
 
   pass_.SetVertexBuffer(0, item.mesh->vertex_buffer(), 0, WGPU_WHOLE_SIZE);
   if (item.pass->instanced() && item.renderer &&
@@ -583,18 +623,33 @@ int32_t RenderContext3D::DrawFilter(URGE_EXCEPT,
                                }),
                 items.end());
   } else {
-    items.erase(std::remove_if(items.begin(), items.end(),
-                               [](const RenderQueue3D::Item* item) {
-                                 return item->culled;
-                               }),
+    items.erase(std::remove_if(
+                    items.begin(), items.end(),
+                    [this](const RenderQueue3D::Item* item) {
+                      return camera_ &&
+                             (((item->layers & camera_->culling_mask()) == 0) ||
+                              !camera_->IsVisible(item->center, item->radius,
+                                                  pass_size_));
+                    }),
                 items.end());
   }
 
-  if (sort_back_to_front_)
-    RenderQueue3D::SortByDistance(items, true);
+  if (sort_back_to_front_) {
+    const glm::mat4 view = camera_ ? camera_->view() : glm::mat4(1.0f);
+    std::stable_sort(items.begin(), items.end(),
+                     [&view](const auto* left, const auto* right) {
+                       if (left->queue != right->queue)
+                         return left->queue < right->queue;
+                       return (view * glm::vec4(left->center, 1.0f)).z <
+                              (view * glm::vec4(right->center, 1.0f)).z;
+                     });
+  }
 
-  for (const RenderQueue3D::Item* item : items)
+  for (const RenderQueue3D::Item* item : items) {
     Draw(exception_state, *item);
+    if (exception_state.HadException())
+      break;
+  }
 
   return static_cast<int32_t>(items.size());
 }
@@ -604,18 +659,26 @@ void RenderContext3D::DrawFullscreen(URGE_EXCEPT, RefPtr<MaterialPass3D> pass) {
     return;
 
   const PipelineTargetState3D state = target_state();
-  pass_.SetPipeline(pass->AcquirePipeline(exception_state, state));
+  const wgpu::RenderPipeline pipeline =
+      pass->AcquirePipeline(exception_state, state);
+  if (exception_state.HadException() || !pipeline)
+    return;
+  const wgpu::BindGroup material_group =
+      pass->HasGroup(2) ? pass->AcquireBindGroup(exception_state) : nullptr;
+  const wgpu::BindGroup globals_group =
+      pass->HasGroup(3) ? GlobalsGroup(exception_state, pass_serial_) : nullptr;
+  if (exception_state.HadException())
+    return;
+  pass_.SetPipeline(pipeline);
 
-  uint32_t view_offset = static_cast<uint32_t>(pass_serial_) * view_stride_;
+  uint32_t view_offset =
+      static_cast<uint32_t>(pass_serial_ % kViewsPerBuffer) * view_stride_;
   pass_.SetBindGroup(0, view_group_, 1, &view_offset);
 
-  if (pass->HasGroup(2))
-    pass_.SetBindGroup(2, pass->AcquireBindGroup(exception_state), 0, nullptr);
-  if (pass->HasGroup(3)) {
-    const wgpu::BindGroup globals = GlobalsGroup(exception_state, pass_serial_);
-    if (globals)
-      pass_.SetBindGroup(3, globals, 0, nullptr);
-  }
+  if (material_group)
+    pass_.SetBindGroup(2, material_group, 0, nullptr);
+  if (globals_group)
+    pass_.SetBindGroup(3, globals_group, 0, nullptr);
 
   if (pass->stencil())
     pass_.SetStencilReference(pass->stencil_ref());

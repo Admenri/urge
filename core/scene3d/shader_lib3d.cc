@@ -331,7 +331,7 @@ fn urge_shade(world_position: vec3<f32>,
     }
 
     var shadow = 1.0;
-    if (light_type < 0.5) {
+    if (light_type < 0.5 && i32(u_view.cascade_params.w) == i32(i)) {
       shadow = urge_shadow_factor(world_position, normal);
     } else if (i32(u_view.point_shadow_params.x) == i32(i)) {
       shadow = urge_point_shadow_factor(world_position, normal);

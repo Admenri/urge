@@ -38,6 +38,7 @@
 namespace urge {
 
 class Camera3D;
+class Light3D;
 
 URGE_BINDING()
 class RenderQueue3D : public Object {
@@ -53,6 +54,8 @@ class RenderQueue3D : public Object {
     int32_t queue = 2000;
     int32_t tag_id = 0;
     float distance = 0.0f;
+    glm::vec3 center = glm::vec3(0.0f);
+    float radius = 0.0f;
     glm::mat4 model = glm::mat4(1.0f);
     uint64_t state_key = 0;
     bool culled = false;
@@ -60,6 +63,7 @@ class RenderQueue3D : public Object {
   };
 
   struct LightItem {
+    RefPtr<Light3D> light;
     int32_t type = 0;
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);

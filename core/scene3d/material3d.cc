@@ -174,9 +174,6 @@ void MaterialPass3D::CollectSlots(URGE_EXCEPT) {
   texture_names_.clear();
   uniform_names_.clear();
 
-  if (fs_wgsl_.empty())
-    return;
-
   const std::vector<wgsl::BindingInfo> infos =
       wgsl::ReflectBindings(vs_wgsl_, fs_wgsl_);
 
@@ -240,8 +237,7 @@ void MaterialPass3D::SetTextureSlot(URGE_EXCEPT,
         static_cast<int32_t>(texture_names_.size()) - 1);
     return;
   }
-  texture_map_[texture_names_[slot]] = std::move(texture);
-  binding_dirty_ = true;
+  SetTexture(texture_names_[slot], std::move(texture));
 }
 
 RefPtr<Bitmap> MaterialPass3D::GetTextureSlot(int32_t slot) const {
@@ -253,6 +249,7 @@ RefPtr<Bitmap> MaterialPass3D::GetTextureSlot(int32_t slot) const {
 }
 
 void MaterialPass3D::SetTexture(std::string name, RefPtr<Bitmap> texture) {
+  view_map_.erase(name);
   texture_map_[std::move(name)] = std::move(texture);
   binding_dirty_ = true;
 }
@@ -260,7 +257,8 @@ void MaterialPass3D::SetTexture(std::string name, RefPtr<Bitmap> texture) {
 void MaterialPass3D::SetTextureView(std::string name,
                                     RefPtr<GPUTextureView> view) {
   const auto found = view_map_.find(name);
-  if (found != view_map_.end() && found->second.get() == view.get())
+  if (found != view_map_.end() && found->second && view &&
+      found->second->handle().Get() == view->handle().Get())
     return;
   view_map_[std::move(name)] = std::move(view);
   binding_dirty_ = true;
@@ -350,36 +348,37 @@ void MaterialPass3D::EnsureBuilder(URGE_EXCEPT) {
         break;
       case wgsl::BindingKind::kTextureCube:
         material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
+            {slot.binding, both_stages,
              util::TextureLayout::Float(wgpu::TextureViewDimension::Cube)});
         break;
       case wgsl::BindingKind::kTextureArray:
         material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
+            {slot.binding, both_stages,
              util::TextureLayout::Float(wgpu::TextureViewDimension::e2DArray)});
         break;
       case wgsl::BindingKind::kTextureDepth:
         material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
+            {slot.binding, both_stages,
              util::TextureLayout::Depth(wgpu::TextureViewDimension::e2D)});
         break;
       case wgsl::BindingKind::kSampler:
-        material.push_back({slot.binding, wgpu::ShaderStage::Fragment,
-                            util::SamplerLayout::Filtering()});
+        material.push_back(
+            {slot.binding, both_stages, util::SamplerLayout::Filtering()});
         break;
       case wgsl::BindingKind::kSamplerComparison:
-        material.push_back({slot.binding, wgpu::ShaderStage::Fragment,
-                            util::SamplerLayout::Comparison()});
+        material.push_back(
+            {slot.binding, both_stages, util::SamplerLayout::Comparison()});
         break;
       default:
         material.push_back(
-            {slot.binding, wgpu::ShaderStage::Fragment,
+            {slot.binding, both_stages,
              util::TextureLayout::Float(wgpu::TextureViewDimension::e2D)});
         break;
     }
   }
 
   material_layout_ = util::CreateBindLayout(material);
+  material_entries_ = material;
 
   LayoutGroups groups;
   groups.push_back({kGroupView, ViewEntries()});
@@ -397,13 +396,18 @@ void MaterialPass3D::EnsureBuilder(URGE_EXCEPT) {
   group_count_ = static_cast<uint32_t>(groups.size());
 }
 
-void MaterialPass3D::EnsureShadowBuilder() {
+void MaterialPass3D::EnsureShadowBuilder(URGE_EXCEPT) {
   if (shadow_builder_)
+    return;
+  EnsureBuilder(exception_state);
+  if (exception_state.HadException())
     return;
 
   LayoutGroups groups;
   groups.push_back({kGroupView, ShadowViewEntries()});
   groups.push_back({kGroupMesh, MeshEntries()});
+  groups.push_back({kGroupMaterial, material_entries_});
+  groups.push_back({kGroupGlobals, GlobalsEntries()});
 
   const ShaderSource vertex{vs_wgsl_, vertex_entry_, groups};
   const ShaderSource fragment{};
@@ -465,9 +469,13 @@ wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
       return entry.second;
 
   EnsureBuilder(exception_state);
+  if (exception_state.HadException())
+    return nullptr;
 
   const std::optional<wgpu::BlendState> blend =
       ParseBlendState(exception_state, blend_);
+  if (exception_state.HadException())
+    return nullptr;
 
   std::vector<wgpu::ColorTargetState> colors;
   colors.reserve(target.colors.size());
@@ -500,6 +508,12 @@ wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
 
   const wgpu::RenderPipeline pipeline =
       builder_->MakeState(primitive, depth, colors, samples);
+  if (!pipeline) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "material3d: the device rejected pipeline '{}'.",
+                          tag_);
+    return nullptr;
+  }
 
   pipelines_.emplace_back(key, pipeline);
   binding_dirty_ = true;
@@ -507,6 +521,7 @@ wgpu::RenderPipeline MaterialPass3D::AcquirePipeline(
 }
 
 wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
+    URGE_EXCEPT,
     const PipelineTargetState3D& target) {
   if (state_dirty_) {
     pipelines_.clear();
@@ -524,7 +539,9 @@ wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
     if (entry.first == key)
       return entry.second;
 
-  EnsureShadowBuilder();
+  EnsureShadowBuilder(exception_state);
+  if (exception_state.HadException())
+    return nullptr;
 
   wgpu::DepthStencilState depth;
   depth.format = target.depth == wgpu::TextureFormat::Undefined
@@ -542,8 +559,9 @@ wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
   depth.stencilWriteMask = 0;
 
   wgpu::PrimitiveState primitive = GetDefaultPrimitiveState();
-  primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-  primitive.cullMode = static_cast<wgpu::CullMode>(cull_);
+  primitive.topology = static_cast<wgpu::PrimitiveTopology>(topology_);
+  primitive.cullMode = static_cast<wgpu::CullMode>(
+      target.cull >= 0 ? target.cull : static_cast<int32_t>(cull_));
   primitive.frontFace =
       target.flip_winding
           ? (static_cast<wgpu::FrontFace>(front_face_) == wgpu::FrontFace::CCW
@@ -556,6 +574,12 @@ wgpu::RenderPipeline MaterialPass3D::AcquireDepthOnlyPipeline(
 
   const wgpu::RenderPipeline pipeline =
       shadow_builder_->MakeState(primitive, depth, {}, samples);
+  if (!pipeline) {
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "material3d: the device rejected shadow pipeline '{}'.", tag_);
+    return nullptr;
+  }
 
   shadow_pipelines_.emplace_back(key, pipeline);
   return pipeline;
@@ -573,6 +597,8 @@ bool MaterialPass3D::HasGroup(uint32_t group) const {
 
 void MaterialPass3D::RebuildBindGroup(URGE_EXCEPT) {
   EnsureBuilder(exception_state);
+  if (exception_state.HadException())
+    return;
 
   std::vector<wgpu::BindGroupEntry> entries;
   entries.reserve(slots_.size());
@@ -628,8 +654,19 @@ void MaterialPass3D::RebuildBindGroup(URGE_EXCEPT) {
           RefPtr<Bitmap> texture =
               found == texture_map_.end() ? nullptr : found->second;
           const bool usable = texture && !texture->IsDisposed();
-          entry.textureView = usable ? texture->texture_view()
-                                     : MaterialDefaults::Get().white_view();
+          if (usable)
+            entry.textureView = texture->texture_view();
+          else if (slot.kind == wgsl::BindingKind::kTextureDepth)
+            entry.textureView = AcquireEmptyShadowView();
+          else if (slot.kind == wgsl::BindingKind::kTexture2D)
+            entry.textureView = MaterialDefaults::Get().white_view();
+          else {
+            exception_state.Throw(ExceptionState::kRGSSError,
+                                  "material3d: texture '{}' must be bound with "
+                                  "a view of the declared dimension.",
+                                  slot.name);
+            return;
+          }
         }
         break;
       }
