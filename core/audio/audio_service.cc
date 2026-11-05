@@ -777,12 +777,13 @@ void AudioService::RunSync(const std::function<void()>& work) {
 
   {
     std::lock_guard lock(command_mutex_);
-    commands_.push_back([&] {
+    commands_.push_back([&, work] {
       work();
-      {
-        std::lock_guard guard(done_mutex);
-        done = true;
-      }
+      // Keep the caller from observing completion and destroying its stack
+      // mutex/CV until notification has finished. The predicate may already
+      // be true before the caller enters wait(), without any notification.
+      std::lock_guard guard(done_mutex);
+      done = true;
       done_cv.notify_one();
     });
   }
