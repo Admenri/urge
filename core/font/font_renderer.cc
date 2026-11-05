@@ -411,18 +411,23 @@ void FontRenderer::Draw(Bitmap& bitmap,
   if (!layout || layout->glyphs.empty())
     return;
   state.EnsureGPU();
-  const float pad = font.outline_ ? 1.0f : 0.0f;
-  const float width =
-      std::ceil(layout->width) + pad * 2 + (font.shadow_ ? 1 : 0);
-  const float height = layout->height + pad * 2 + (font.shadow_ ? 1 : 0);
+  // RGSS1/2/3 squeeze only the text advance, never the font size or height.
+  // Use the same logical metrics as text_size: decoration bearings must not
+  // make a string shrink merely because outline/shadow was enabled.
+  const float width = std::ceil(layout->width);
+  const float height = layout->height;
   const float scale =
       width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
+  // Once the minimum scale is reached, clip the remaining text from the
+  // leading edge. RGSS does not use negative center/right alignment offsets.
+  const float spare_width = std::max(0.0f, region.width - width * scale);
   float left = region.x;
   if (align == 1)
-    left += (region.width - width * scale) / 2;
+    left += std::floor(spare_width / 2);
   else if (align == 2)
-    left += region.width - width * scale;
-  const float top = region.y + std::floor((region.height - height) / 2);
+    left += spare_width;
+  const float top =
+      region.y + std::floor(std::max(0.0f, region.height - height) / 2);
   const auto clip =
       MakeIntersect(region, RectI(0, 0, bitmap.size().x, bitmap.size().y));
   if (clip.width <= 0 || clip.height <= 0)
@@ -430,11 +435,11 @@ void FontRenderer::Draw(Bitmap& bitmap,
   std::vector<Prepared> fill, stroke;
   auto prepare = [&](int outline, std::vector<Prepared>& out) {
     for (const auto& glyph : layout->glyphs) {
-      // Anchor fractional mask phases to the destination pixel grid. Centered
-      // text can begin at a half pixel even when glyph advances are integral.
+      // Anchor fractional glyph origins to the destination pixel grid.
+      // Layout advances can be fractional even with whole-pixel alignment.
       const float phase_origin = scale == 1.0f ? left : 0.0f;
-      const float gx = glyph.x + pad + phase_origin;
-      const float gy = layout->ascent + glyph.y + pad;
+      const float gx = glyph.x + phase_origin;
+      const float gy = layout->ascent + glyph.y;
       const float x = std::floor(gx), y = std::floor(gy);
       const int px =
           std::clamp(static_cast<int>(std::floor((gx - x) * 4)), 0, 3);

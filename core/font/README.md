@@ -11,7 +11,18 @@
 
 普通文字优先使用字体轮廓，跳过 SimHei 等字体中常见的内嵌单色位图，避免这些位图使灰度抗锯齿失效。描边同样由轮廓生成；透明文字使用单通道覆盖率，不使用会在彩色背景上产生色边的 LCD 子像素抗锯齿。`Font.solid` 仍显式选择单色输出。只有位图、没有轮廓的字体保留位图回退。
 
-字号直接使用 RGSS 的逻辑像素，不再乘以 0.9；RGSS1/2/3 的默认字号分别为 22/20/24。字体布局与测量共用同一后端，描边、阴影不改变 `text_size` 的文字度量。超出绘制矩形的文字横向压缩（最低 60%）并裁剪。
+字号直接使用 RGSS 的逻辑像素，不再乘以 0.9；RGSS1/2/3 的默认字号分别为 22/20/24。字体布局与测量共用同一后端，描边、阴影不改变 `text_size` 的文字度量。
+
+### `Bitmap#draw_text` 的 RGSS 缩放行为
+
+RGSS1/2/3 手册均规定：文字超出传入矩形的宽度时自动横向压缩，最小为原宽的 60%。两个重载 `draw_text(x, y, width, height, str, align)` 与 `draw_text(rect, str, align)` 使用相同行为。
+
+- 按 `text_size` 的文字逻辑宽度与传入矩形的 `width` 比较；不按与 Bitmap 相交后剩余的可见宽度计算。描边和阴影不改变文字的逻辑度量。
+- 压缩比例为 `max(0.6, min(1.0, width / text_width))`，只压缩横向；不放大短文字，不改变 `font.size` 或 `text_size` 的返回值，也不重排换行。
+- 先按压缩后的文字宽度执行左/中/右对齐，居中的偏移取整；达到下限后仍超宽时从框的起点绘制并裁剪，避免负偏移截掉文字开头。
+- 垂直保持原始字号，空间足够时居中；高度不足时从框的顶部开始并裁剪，不为了适应高度而缩小字形。最终绘制受传入矩形和 Bitmap 边界共同裁剪。
+
+文档来源：[RGSS1 / XP](https://www.rpg-maker.fr/dl/monos/aide/xp/source/rgss/gc_bitmap.html)、[RGSS2 / VX](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rgss/gc_bitmap.html)、[RGSS3 / VX Ace 手册转载](https://pdfcoffee.com/rpg-maker-vx-ace-help-rgss3-reference-manual-4-pdf-free.html)。兼容以文档定义的缩放与布局语义为准。原版 GDI 会按整数字宽重新选字形，具体字体的最终字形宽度和像素结果可能与这里的连续几何压缩不同。
 
 这仍是在游戏原始分辨率的 Bitmap 中绘制文字。Retina 与窗口缩放继续由现有显示管线处理；本模块没有把整个游戏 Bitmap 改为高分辨率，也不保证任意放大后都如原生桌面 UI 一样平滑。
 
