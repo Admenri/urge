@@ -22,45 +22,40 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
-#include <unordered_map>
-
-#include "core/font/font.h"
-#include "core/render/device.h"
+#include "core/common/common.h"
 
 namespace urge {
-
+class Bitmap;
+class Font;
 class FontRenderer {
  public:
-  struct TextRun {
-    wgpu::Texture texture;
-    wgpu::BindGroup group;
-    glm::ivec2 size = glm::ivec2(0);
-    std::uint8_t opacity = 255;
-    std::uint64_t stamp = 0;
+  struct Statistics {
+    uint64_t layouts = 0, layout_hits = 0, glyph_hits = 0;
+    uint64_t rasterized_glyphs = 0, upload_calls = 0, upload_bytes = 0,
+             vertex_bytes = 0;
+    uint64_t atlas_pages = 0, atlas_evictions = 0, draw_batches = 0;
   };
-
-  FontRenderer() = default;
-  ~FontRenderer() = default;
-
+  FontRenderer();
+  ~FontRenderer();
   FontRenderer(const FontRenderer&) = delete;
   FontRenderer& operator=(const FontRenderer&) = delete;
-
-  TextRun* Acquire(Font& font, const std::string& text);
+  static void Draw(Bitmap& bitmap,
+                   Font& font,
+                   const RectI& region,
+                   const std::string& text,
+                   int32_t align);
+  static bool Measure(Font& font,
+                      const std::string& text,
+                      int32_t* width,
+                      int32_t* height);
+  static Statistics GetStatistics();
 
  private:
-  TextRun* Store(std::string key,
-                 wgpu::Texture texture,
-                 wgpu::BindGroup group,
-                 const glm::ivec2& size,
-                 std::uint8_t opacity);
-
-  wgpu::Sampler sampler_;
-  std::unordered_map<std::string, TextRun> runs_;
-  std::size_t bytes_ = 0;
-  std::uint64_t stamp_ = 0;
+  struct Impl;
+  Impl& State();
+  std::unique_ptr<Impl> impl_;
 };
-
-}
+}  // namespace urge

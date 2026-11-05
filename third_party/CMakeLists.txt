@@ -27,22 +27,6 @@ else()
 endif()
 set(SDLIMAGE_VENDORED OFF)
 
-# SDL_ttf is built into the engine as a static library that carries its own
-# FreeType and PlutoSVG copies (the "vendored" layout, which is also
-# what the upstream project defaults to on MSVC). Samples and install rules are
-# not wanted, and a warning is not an error in a bundled copy.
-set(SDLTTF_VENDORED ON)
-set(SDLTTF_SAMPLES OFF)
-set(SDLTTF_INSTALL OFF)
-set(SDLTTF_WERROR OFF)
-
-# HarfBuzz is what SDL_ttf shapes complex scripts with -- Arabic, Thai, the
-# Indic family -- and it is by far the heaviest thing in the vendored set (its
-# own copy alone is a hundred megabytes of source).  The engine renders CJK,
-# Latin and Cyrillic, all of which FreeType's own layout handles, so the shaping
-# library is not built; SDL_ttf falls back to plain FreeType without it.
-set(SDLTTF_HARFBUZZ OFF)
-
 # miniaudio renders into a buffer the engine hands to SDL, so it must not open
 # a sound card of its own: SDL owns the device and the format negotiation.
 set(MINIAUDIO_NO_DEVICEIO ON)
@@ -280,7 +264,22 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 add_subdirectory(SDL_image)
-add_subdirectory(SDL_ttf)
+# core/font uses CoreText on Apple and a small direct FreeType backend on
+# other platforms. Reuse the already-vendored source without building SDL_ttf,
+# HarfBuzz, or searching package managers for a second font library.
+if(NOT APPLE)
+  set(FT_DISABLE_ZLIB ON CACHE BOOL "FreeType uses no external zlib" FORCE)
+  set(FT_DISABLE_BZIP2 ON CACHE BOOL "FreeType uses no external bzip2" FORCE)
+  set(FT_DISABLE_PNG ON CACHE BOOL "FreeType uses no external png" FORCE)
+  set(FT_DISABLE_BROTLI ON CACHE BOOL "FreeType uses no external brotli" FORCE)
+  set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "No contextual FreeType shaping dependency" FORCE)
+  set(FT_REQUIRE_HARFBUZZ OFF CACHE BOOL "No HarfBuzz dependency" FORCE)
+  add_subdirectory(SDL_ttf/external/freetype font-freetype EXCLUDE_FROM_ALL)
+  set_target_properties(freetype PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  if(NOT TARGET Freetype::Freetype)
+    add_library(Freetype::Freetype ALIAS freetype)
+  endif()
+endif()
 add_subdirectory(physfs)
 
 # The Xiph codecs live inside miniaudio's `external/` directory: the audio

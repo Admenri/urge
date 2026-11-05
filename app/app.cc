@@ -60,7 +60,6 @@
 #include "SDL3/SDL_iostream.h"
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_messagebox.h"
-#include "SDL3_ttf/SDL_ttf.h"
 #include "physfs.h"
 
 /* The host reads two switches straight out of the environment, wide, so a
@@ -259,7 +258,6 @@ void Shutdown(AppState& state) {
     g_log_stream = nullptr;
   }
 
-  TTF_Quit();
 }
 
 /* Everything `main()` used to do before the loop: the names, the filesystem,
@@ -369,7 +367,6 @@ bool Initialize(AppState& state,
   platform::macos::SetDefaultApplicationIcon();
   platform::macos::InstallGameMenu();
 #endif
-  TTF_Init();
 
   /* A game handed to a player is started by double-clicking it, so there is no
      console behind `stderr` and the message box is the only place a failure is

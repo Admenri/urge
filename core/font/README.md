@@ -1,19 +1,43 @@
-# 平台字体发现与缺字回退
+# 字体发现与渲染
 
-字体仍由 SDL_ttf/FreeType 渲染。游戏脚本可以使用字体文件名（可省略扩展名）或字体族名。
+游戏脚本继续使用 `Font`、`Bitmap#text_size` 和 `Bitmap#draw_text`。字体后端、排版缓存、字形图集和字体着色器均位于 `core/font`，不引入 Skia；借鉴其“排版与栅格化分离、覆盖率字形缓存、GPU 合成”的设计。画布只接收通用的三角形批次和提交前准备回调。
+
+## 抗锯齿与尺寸
+
+| 平台 | 字体后端 |
+| --- | --- |
+| macOS | CoreText 排版，CoreGraphics 灰度覆盖率栅格化 |
+| Windows / Linux / Android / WASM | 仓库内 FreeType，轮廓优先与灰度栅格化 |
+
+普通文字优先使用字体轮廓，跳过 SimHei 等字体中常见的内嵌单色位图，避免这些位图使灰度抗锯齿失效。描边同样由轮廓生成；透明文字使用单通道覆盖率，不使用会在彩色背景上产生色边的 LCD 子像素抗锯齿。`Font.solid` 仍显式选择单色输出。只有位图、没有轮廓的字体保留位图回退。
+
+字号直接使用 RGSS 的逻辑像素，不再乘以 0.9；RGSS1/2/3 的默认字号分别为 22/20/24。字体布局与测量共用同一后端，描边、阴影不改变 `text_size` 的文字度量。超出绘制矩形的文字横向压缩（最低 60%）并裁剪。
+
+这仍是在游戏原始分辨率的 Bitmap 中绘制文字。Retina 与窗口缩放继续由现有显示管线处理；本模块没有把整个游戏 Bitmap 改为高分辨率，也不保证任意放大后都如原生桌面 UI 一样平滑。
+
+## 缓存与 GPU 合成
+
+- 字形冷缓存时由 CPU 栅格化为 A8 覆盖率，上传到共享的 R8 图集；颜色、渐变、透明度、阴影和描边图层在 GPU 合成。改变文字颜色不需要重新栅格化字形。
+- 每页图集为 1024×1024，最多保留 8 页活动缓存；使用 LRU 淘汰整页。淘汰不覆盖旧纹理，尚未提交或执行中的绘制继续持有旧资源，结束后释放，因此瞬时资源占用可能超过活动缓存预算。
+- 每次画布队列提交前，将同页新增字形的脏矩形合并上传，避免每次 `draw_text` 都创建或上传整串 RGBA 文字纹理。重复数字可以共用已有字形；顶点数据仍需上传。
+- 排版缓存最多 1024 项、估算 2 MiB；字体面与字形 advance 也有数量限制。图集包含透明边框，避免线性采样串入相邻字形。
+
+设置环境变量 `URGE_FONT_STATS=1`，退出时打印排版命中、栅格化数量、图集上传次数/字节、顶点字节与淘汰次数。上传字节仅统计字体模块主动写入的图集区域，不代表总 GPU 流量。
+
+macOS 使用 CoreText 的文字运行与缺字回退；非 macOS 后端保留常用 CJK、拉丁文、西里尔文字的字形选择与 kerning 范围，没有新增完整的复杂文字 shaping 引擎。
+
+## 系统字体发现与缺字回退
+
+脚本可以指定字体文件名（可省略扩展名）或字体族名。游戏 `Fonts/` 中的同名字体不会被系统文件覆盖。系统字体只登记路径，需要时才读取完整文件。
 
 | 平台 | 系统字体发现 | 缺字处理 |
 | --- | --- | --- |
-| Windows | 保持现有 Windows 系统与用户 Fonts 目录扫描 | 保持现有选择逻辑 |
-| macOS | `/System/Library/Fonts`、其 `Supplemental` 目录、`/Library/Fonts`、`~/Library/Fonts` | 优先选择可用的系统中文默认字体，为选中字体补充缺少的字形 |
-| Linux | 递归扫描 `/usr/share/fonts`、`/usr/local/share/fonts`、`XDG_DATA_DIRS` 下的 `fonts`、`XDG_DATA_HOME/fonts`（未设置时使用 `~/.local/share/fonts`）、`~/.fonts` | 优先选择可用 Noto CJK、文泉驿等中文字体并提供缺字回退 |
-| Android | `/system/fonts`、`/product/fonts`、`/vendor/fonts` | 优先选择可用 Noto CJK 等中文字体并提供缺字回退 |
-| WASM/Web | 保持游戏 `Fonts/` 与内嵌字体；不自动读取宿主系统字库 | 保持现状；中文字体需随游戏打包，并通过 `Font.default_name` 或 `Font.name` 指定 |
+| Windows | 现有系统与用户 Fonts 目录 | 字体名候选与内嵌字体 |
+| macOS | `/System/Library/Fonts`（含 `Supplemental`）、`/Library/Fonts`、`~/Library/Fonts` | 平台默认字体与 CoreText 缺字回退 |
+| Linux | `/usr/share/fonts`、`/usr/local/share/fonts`、XDG 字体目录、`~/.fonts` | 可用 Noto CJK、文泉驿等默认字体 |
+| Android | `/system/fonts`、`/product/fonts`、`/vendor/fonts` | 可用 Noto CJK 等默认字体 |
+| WASM/Web | 游戏 `Fonts/` 与内嵌字体 | 中文字体需随游戏打包并指定 |
 
-游戏 `Fonts/` 中的同名字体文件不会被系统文件覆盖。系统字体只登记路径，需要渲染时才读取完整文件；字体对象按文件、字号、样式与描边缓存。平台默认回退字体使用相同字号、样式和描边，且不回退到自身。
+Linux 的 XDG 路径包括 `XDG_DATA_DIRS` 下的 `fonts` 和 `XDG_DATA_HOME/fonts`（未设置时使用 `~/.local/share/fonts`）。不解析 Fontconfig 自定义规则，也不保证覆盖 Android 厂商专用路径和动态字体配置。无法访问的目录会跳过；未发现中文字体时不会下载字体，内嵌字体也不保证覆盖中文。
 
-这也覆盖了字体名数组的一个常见情况：游戏指定的“黑体、SimHei”等字体不存在，但较后的 Tahoma/Arial 存在。选到的西文字体保留其原有字形，缺少的汉字再交给平台中文默认字体。未发现中文字体时不会自动下载字体；字体不可读或损坏时仍可使用内嵌字体，避免全部文字消失。内嵌字体本身不保证覆盖中文。
-
-此实现按常用目录、文件名及字体集合首个字体面的族名进行发现，不等同于完整的操作系统字体匹配服务：Linux 不解析 Fontconfig 的自定义规则，Android 不保证覆盖厂商专用路径与所有动态字体配置。无法访问的目录会跳过，不要求安装额外字体枚举库，也没有提高 Android API 级别。
-
-浏览器原始本机字体访问需要专门授权，无法作为透明、通用的自动回退，因此 Web 维持原路径；参见 [Local Font Access API](https://developer.chrome.com/docs/capabilities/web-apis/local-fonts)。
+WASM 不枚举浏览器宿主的系统字库。字体栅格化代码与其他非 macOS 平台共用，不依赖浏览器字体枚举或本机字体授权接口。

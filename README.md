@@ -339,7 +339,7 @@ C = Space,Return,pad:a
 | `glm` | 向量、矩阵与投影 |
 | `SDL` | 窗口、输入、音频与平台抽象 |
 | `SDL_image` | 位图解码（含 libwebp） |
-| `SDL_ttf` | TrueType 字体栅格化（内含 FreeType） |
+| `FreeType` / `CoreText` | 轮廓优先的灰度字体栅格化与字形图集；macOS 使用 CoreText，其余平台使用仓库内 FreeType |
 | `physfs` | 虚拟文件系统 |
 | `wgpu-native` | 原生 WebGPU 实现 |
 | `zlib` | 脚本归档解压 |

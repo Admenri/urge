@@ -342,7 +342,7 @@ The following dependencies are Git submodules and must be fetched with the sourc
 | `glm` | Vectors, matrices and projections |
 | `SDL` | Window, input, audio and platform abstraction |
 | `SDL_image` | Image decoding (including libwebp) |
-| `SDL_ttf` | TrueType font rasterization (including FreeType) |
+| `FreeType` / `CoreText` | Outline-first grayscale rasterization and glyph atlases; CoreText on macOS, vendored FreeType elsewhere |
 | `physfs` | Virtual filesystem |
 | `wgpu-native` | Native WebGPU implementation |
 | `zlib` | Script archive decompression |

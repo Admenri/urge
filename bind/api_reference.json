@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-11-04T13:13:39Z",
+    "generated_at": "2026-11-05T03:18:22Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -28,6 +28,7 @@
       "core/common/table.h",
       "core/common/utility.h",
       "core/font/font.h",
+      "core/font/font_backend.h",
       "core/font/font_context.h",
       "core/font/font_renderer.h",
       "core/graphics/effect.h",
@@ -14427,7 +14428,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         }
       ],
       "initialize_copy": {
@@ -14439,7 +14440,7 @@
           }
         ],
         "has_exception": false,
-        "export": "core/font/font.h:40-90"
+        "export": "core/font/font.h:37-87"
       },
       "instance_methods": [],
       "attributes": [
@@ -14453,7 +14454,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "size",
@@ -14465,7 +14466,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "bold",
@@ -14477,7 +14478,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "italic",
@@ -14489,7 +14490,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "outline",
@@ -14501,7 +14502,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "shadow",
@@ -14513,7 +14514,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "solid",
@@ -14525,7 +14526,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "color",
@@ -14537,7 +14538,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "out_color",
@@ -14549,7 +14550,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "gradient_color",
@@ -14561,7 +14562,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         }
       ],
       "data_attributes": [],
@@ -14582,7 +14583,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         }
       ],
       "class_attributes": [
@@ -14596,7 +14597,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_size",
@@ -14608,7 +14609,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_bold",
@@ -14620,7 +14621,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_italic",
@@ -14632,7 +14633,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_outline",
@@ -14644,7 +14645,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_shadow",
@@ -14656,7 +14657,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_solid",
@@ -14668,7 +14669,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_color",
@@ -14680,7 +14681,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_out_color",
@@ -14692,7 +14693,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         },
         {
           "name": "default_gradient_color",
@@ -14704,7 +14705,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/font/font.h:40-90"
+          "export": "core/font/font.h:37-87"
         }
       ],
       "constants": [],
@@ -14715,7 +14716,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/font/font.h:40-90",
+      "export": "core/font/font.h:37-87",
       "cpp_name": "Font",
       "cpp_parent": "Object",
       "header": "core/font/font.h",

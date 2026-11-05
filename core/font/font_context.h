@@ -24,18 +24,19 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include "SDL3/SDL_surface.h"
-#include "SDL3_ttf/SDL_ttf.h"
 #include "core/common/definition.h"
 
 #include "core/common/object.h"
 #include "core/common/utility.h"
 
 namespace urge {
+
+class FontRenderer;
 
 class FontContext : public Singleton<FontContext> {
  public:
@@ -52,10 +53,7 @@ class FontContext : public Singleton<FontContext> {
 
   bool FontExists(const std::string& name);
 
-  TTF_Font* AcquireFont(const std::vector<std::string>& names,
-                        int32_t size,
-                        TTF_FontStyleFlags style = TTF_STYLE_NORMAL,
-                        int32_t outline = 0);
+  FontRenderer& renderer();
 
   const FontData* FindFont(const std::string& name);
 
@@ -80,16 +78,6 @@ class FontContext : public Singleton<FontContext> {
 
   const FontData* Load(Entry& entry);
 
-  TTF_Font* CachedFont(const std::string& key,
-                       int32_t size,
-                       TTF_FontStyleFlags style,
-                       int32_t outline);
-
-  TTF_Font* OpenFont(const std::string& key,
-                     int32_t size,
-                     TTF_FontStyleFlags style,
-                     int32_t outline);
-
   std::vector<std::string> default_name_;
 
   std::string default_font_;
@@ -100,8 +88,7 @@ class FontContext : public Singleton<FontContext> {
 
   bool family_index_ready_ = false;
 
-  std::map<std::tuple<std::string, int32_t, int32_t, int32_t>, TTF_Font*>
-      font_cache_;
+  std::unique_ptr<FontRenderer> renderer_;
 };
 
 }
