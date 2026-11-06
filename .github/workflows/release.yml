@@ -1,0 +1,70 @@
+name: Release
+
+# A new tag starts a build of every platform; the finished artifacts become the
+# assets of the release with that tag.
+on:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build
+    uses: ./.github/workflows/build.yml
+
+  publish:
+    name: attach-assets
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: urge-*
+          path: artifacts
+
+      - name: Stage assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          find artifacts -type f \( -name 'urge-macos-arm64-*.zip' \
+            -o -name urge-emscripten-wasm32.zip \
+            -o -name urge-android-aarch64.apk \) -exec cp -t release-assets/ {} +
+          # The windows artifact is a loose executable plus its license files.
+          windows_dir="$(find artifacts -type f -name urge-windows-x64.exe | head -n1)"
+          test -n "$windows_dir"
+          (cd "$(dirname "$windows_dir")" \
+            && zip -9 -qr "$OLDPWD/release-assets/urge-windows-x64.zip" .)
+          for asset in urge-windows-x64.zip urge-macos-arm64-game.zip \
+                       urge-macos-arm64-app.zip urge-emscripten-wasm32.zip \
+                       urge-android-aarch64.apk; do
+            test -f "release-assets/$asset"
+          done
+          ls -l release-assets
+
+      - name: Publish
+        run: |
+          set -euo pipefail
+          # Drafting the release in the web UI creates tag and release together,
+          # so by now the release is already there.  A plain "git push --tags"
+          # only has the tag.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" release-assets/* --clobber
+          gh release view "$TAG" --json tagName,name,assets \
+            --jq '{tag: .tagName, name: .name, assets: [.assets[].name]}'

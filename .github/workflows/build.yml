@@ -3,7 +3,9 @@ name: Build
 on:
   push:
     branches: [master]
-    tags: ["v*"]
+  # Tag builds happen through release.yml, which calls these jobs and then
+  # attaches the artifacts to the release.
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -136,15 +138,10 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          path: dist/urge-macos-arm64-game.zip
-          archive: false
-          if-no-files-found: error
-          retention-days: 14
-
-      - uses: actions/upload-artifact@v7
-        with:
-          path: dist/urge-macos-arm64-app.zip
-          archive: false
+          name: urge-macos-arm64
+          path: |
+            dist/urge-macos-arm64-game.zip
+            dist/urge-macos-arm64-app.zip
           if-no-files-found: error
           retention-days: 14
 
