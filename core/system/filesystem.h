@@ -23,6 +23,7 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 #include "SDL3/SDL_iostream.h"
 
