@@ -27,6 +27,7 @@
 
 #include "core/common/exception.h"
 #include "core/system/archive.h"
+#include "core/system/urge_bundle.h"
 
 #if __ANDROID__
 #include <jni.h>
@@ -274,10 +275,14 @@ IOService::IOService(URGE_EXCEPT, const std::string& argv0) {
   archive::Register();
   if (!rgss_archive::Register())
     exception_state.Throw(ExceptionState::kIOError, "failed to register RGSS archivers.");
+  if (!urge_bundle::Register())
+    exception_state.Throw(ExceptionState::kIOError, "failed to register EDB archiver.");
 }
 
 IOService::~IOService() {
+  archive::Unregister();
   PHYSFS_deinit();
+  urge_bundle::SetPassword("");
 }
 
 bool IOService::SetWritePath(const std::string& path) {

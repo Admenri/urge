@@ -38,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderContext3D  (core/scene3d/render_context3d.h:51-127)
+// RenderContext3D  (core/scene3d/render_context3d.h:51-128)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderContext3D);

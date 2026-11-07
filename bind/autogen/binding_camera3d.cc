@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera3D  (core/scene3d/camera3d.h:40-145)
+// Camera3D  (core/scene3d/camera3d.h:40-147)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Camera3D, Node3D);

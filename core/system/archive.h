@@ -32,6 +32,9 @@ bool Available();
 
 void Register();
 
+// End the startup-only ACS loading window, including when no ACS was shipped.
+bool Unregister();
+
 bool Mount(const std::string& path, bool prepend = true);
 
 }

@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderTarget3D  (core/scene3d/render_target3d.h:53-91)
+// RenderTarget3D  (core/scene3d/render_target3d.h:53-94)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderTarget3D);

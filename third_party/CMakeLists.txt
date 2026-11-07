@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.30)
 
 set(BUILD_SHARED_LIBS OFF)
 
+# Public EDB bundles use the portable Monocypher 4.0.3 primitives.
+add_subdirectory(monocypher)
+
 # The top-level project drops cl's default /EHsc so its own targets can pass
 # /EHs-c- without the D9025 contradiction.  Everything under here is upstream
 # code and keeps the default: a vendored C++ target that uses exceptions must

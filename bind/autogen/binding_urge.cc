@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// URGE  (core/system/urge.h:39-90)
+// URGE  (core/system/urge.h:39-101)
 // -------------------------------------------------------------------------
 
 RB_FUNC(URGE_GetPlatform) {
@@ -134,6 +134,63 @@ RB_FUNC(URGE_OpenURL) {
   }
 
   return Qnil;
+}
+
+RB_FUNC(URGE_AddLoadPath) {
+  CheckArgc(argc, 3);
+  VALUE path_val, mount_val;
+  const char* path_data;
+  size_t path_size, mount_size;
+  const char* mount_data;
+  bool append;
+  ParseArgs(argc, argv, "oob", &path_val, &mount_val, &append);
+  CheckString(path_val, &path_data, &path_size);
+  CheckString(mount_val, &mount_data, &mount_size);
+
+  bool result = false;
+
+  {
+    result = urge::URGE::Get().AddLoadPath(std::string(path_data, path_size),
+        std::string(mount_data, mount_size), append);
+  }
+
+  return result ? Qtrue : Qfalse;
+}
+
+RB_FUNC(URGE_RemoveLoadPath) {
+  CheckArgc(argc, 1);
+  VALUE path_val;
+  const char* path_data;
+  size_t path_size;
+  ParseArgs(argc, argv, "o", &path_val);
+  CheckString(path_val, &path_data, &path_size);
+
+  bool result = false;
+
+  {
+    result = urge::URGE::Get(
+        ).RemoveLoadPath(std::string(path_data, path_size));
+  }
+
+  return result ? Qtrue : Qfalse;
+}
+
+RB_FUNC(URGE_SetBundlePassword) {
+  CheckArgc(argc, 1);
+  VALUE password_val;
+  const char* password_data;
+  size_t password_size;
+  ParseArgs(argc, argv, "o", &password_val);
+  CheckString(password_val, &password_data, &password_size);
+
+  bool result = false;
+
+  {
+    result = urge::URGE::Get(
+        ).SetBundlePassword(std::string(password_data, password_size));
+  }
+
+  return result ? Qtrue : Qfalse;
 }
 
 RB_FUNC(URGE_ShowMessageBox) {
@@ -311,6 +368,9 @@ void InitURGEBinding() {
   DefineModuleFunction(mod, "move_window", URGE_MoveWindow);
   DefineModuleFunction(mod, "get_window_rect", URGE_GetWindowRect);
   DefineModuleFunction(mod, "open_url", URGE_OpenURL);
+  DefineModuleFunction(mod, "add_load_path", URGE_AddLoadPath);
+  DefineModuleFunction(mod, "remove_load_path", URGE_RemoveLoadPath);
+  DefineModuleFunction(mod, "set_bundle_password", URGE_SetBundlePassword);
   DefineModuleFunction(mod, "message_box", URGE_ShowMessageBox);
   DefineModuleFunction(mod, "clipboard", URGE_Clipboard);
   DefineModuleFunction(mod, "clipboard=", URGE_ClipboardEqual);

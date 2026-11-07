@@ -61,6 +61,17 @@ class URGE : public Singleton<URGE> {
   URGE_BINDING()
   void OpenURL(std::string url);
 
+  // Empty mount names the VFS root. append=false gives the new path priority.
+  URGE_BINDING()
+  bool AddLoadPath(std::string path, std::string mount, bool append);
+
+  URGE_BINDING()
+  bool RemoveLoadPath(std::string path);
+
+  // Set before mounting EDB. Empty clears the password for future mounts.
+  URGE_BINDING()
+  bool SetBundlePassword(std::string password);
+
   /* SDL message box flag values, for the `flags` argument of MessageBox. */
   URGE_BINDING()
   enum MessageBoxFlags : int32_t {

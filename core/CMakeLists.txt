@@ -47,7 +47,6 @@ target_sources(urge-core PRIVATE ${CORE_SOURCES})
 
 if(URGE_ENABLE_ARCHIVE_ENCRYPTION)
   target_sources(urge-core PRIVATE
-    "${PROJECT_SOURCE_DIR}/admenri/monocypher.c"
     "${PROJECT_SOURCE_DIR}/admenri/archive.cc"
     "${PROJECT_SOURCE_DIR}/admenri/acs_archiver.cc")
   target_include_directories(urge-core PRIVATE "${PROJECT_SOURCE_DIR}/admenri")
@@ -83,6 +82,8 @@ target_link_libraries(urge-core PUBLIC
   webgpu_wgpu
   imgui-docking
   miniaudio)
+
+target_link_libraries(urge-core PRIVATE urge-monocypher)
 
 target_link_libraries(urge-core PRIVATE urge-ini-encoding)
 

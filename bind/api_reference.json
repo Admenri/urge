@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-11-05T03:18:22Z",
+    "generated_at": "2026-11-07T10:23:18Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -54,18 +54,6 @@
       "core/render/texture_format.h",
       "core/render/uniform.h",
       "core/render/wgsl_reflect.h",
-      "core/scene/camera.h",
-      "core/scene/drawable.h",
-      "core/scene/geometry.h",
-      "core/scene/node.h",
-      "core/scene/plane.h",
-      "core/scene/sprite.h",
-      "core/scene/sprite_batch.h",
-      "core/scene/tilemap_vx.h",
-      "core/scene/tilemap_xp.h",
-      "core/scene/viewport.h",
-      "core/scene/window_vx.h",
-      "core/scene/window_xp.h",
       "core/scene3d/animation3d.h",
       "core/scene3d/animation_stack3d.h",
       "core/scene3d/animation_state_machine3d.h",
@@ -81,18 +69,33 @@
       "core/scene3d/node3d.h",
       "core/scene3d/render_context3d.h",
       "core/scene3d/render_graph3d.h",
+      "core/scene3d/render_graph_order3d.h",
       "core/scene3d/render_queue3d.h",
       "core/scene3d/render_target3d.h",
       "core/scene3d/scene3d.h",
       "core/scene3d/shader_lib3d.h",
       "core/scene3d/skeleton3d.h",
       "core/scene3d/world3d.h",
+      "core/scene/camera.h",
+      "core/scene/drawable.h",
+      "core/scene/geometry.h",
+      "core/scene/node.h",
+      "core/scene/plane.h",
+      "core/scene/sprite.h",
+      "core/scene/sprite_batch.h",
+      "core/scene/tilemap_vx.h",
+      "core/scene/tilemap_xp.h",
+      "core/scene/viewport.h",
+      "core/scene/window_vx.h",
+      "core/scene/window_xp.h",
       "core/system/archive.h",
       "core/system/config.h",
       "core/system/filesystem.h",
       "core/system/ini_encoding.h",
       "core/system/system_info.h",
       "core/system/urge.h",
+      "core/system/urge_bundle.h",
+      "core/system/urge_bundle_format.h",
       "core/video/video.h",
       "core/video/video_decoder.h",
       "core/video/video_demuxer.h",
@@ -3444,7 +3447,7 @@
         }
       ],
       "unsupported": [],
-      "export": "core/system/urge.h:39-90",
+      "export": "core/system/urge.h:39-101",
       "cpp_name": "URGE",
       "cpp_parent": "Singleton",
       "header": "core/system/urge.h",
@@ -3462,7 +3465,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "set_window_title",
@@ -3480,7 +3483,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "set_window_icon",
@@ -3498,7 +3501,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "move_window",
@@ -3521,7 +3524,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "move_window",
@@ -3554,7 +3557,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "get_window_rect",
@@ -3566,7 +3569,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "open_url",
@@ -3584,7 +3587,71 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
+        },
+        {
+          "ruby_name": "add_load_path",
+          "cpp_name": "AddLoadPath",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "path",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "mount",
+              "type": "std::string",
+              "default": null
+            },
+            {
+              "name": "append",
+              "type": "bool",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:39-101"
+        },
+        {
+          "ruby_name": "remove_load_path",
+          "cpp_name": "RemoveLoadPath",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "path",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:39-101"
+        },
+        {
+          "ruby_name": "set_bundle_password",
+          "cpp_name": "SetBundlePassword",
+          "return": {
+            "cpp_type": "bool",
+            "ruby_type": "Boolean"
+          },
+          "params": [
+            {
+              "name": "password",
+              "type": "std::string",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "message_box",
@@ -3602,7 +3669,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "message_box",
@@ -3645,7 +3712,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "clipboard",
@@ -3658,7 +3725,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "std::string",
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         },
         {
           "ruby_name": "clipboard=",
@@ -3678,7 +3745,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "std::string",
-          "export": "core/system/urge.h:39-90"
+          "export": "core/system/urge.h:39-101"
         }
       ]
     }
@@ -8023,7 +8090,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         }
       ],
       "initialize_copy": null,
@@ -8038,7 +8105,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "ruby_name": "target=",
@@ -8056,7 +8123,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "ruby_name": "shadow_splits",
@@ -8084,7 +8151,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "ruby_name": "shadow_cascades",
@@ -8132,7 +8199,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "ruby_name": "view_projection",
@@ -8155,7 +8222,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         }
       ],
       "attributes": [
@@ -8169,7 +8236,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "near",
@@ -8181,7 +8248,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "far",
@@ -8193,7 +8260,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "orthographic",
@@ -8205,7 +8272,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "ortho_size",
@@ -8217,7 +8284,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "culling_mask",
@@ -8229,7 +8296,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "clear_flags",
@@ -8241,7 +8308,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "clear_color",
@@ -8253,7 +8320,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         },
         {
           "name": "priority",
@@ -8265,7 +8332,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-145"
+          "export": "core/scene3d/camera3d.h:40-147"
         }
       ],
       "data_attributes": [],
@@ -8279,7 +8346,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/camera3d.h:40-145",
+      "export": "core/scene3d/camera3d.h:40-147",
       "cpp_name": "Camera3D",
       "cpp_parent": "Node3D",
       "header": "core/scene3d/camera3d.h",
@@ -10891,7 +10958,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         }
       ],
       "initialize_copy": null,
@@ -10922,7 +10989,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "add_shadow_pass",
@@ -10945,7 +11012,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "get_pass",
@@ -10963,7 +11030,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "has_pass",
@@ -10981,7 +11048,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "remove_pass",
@@ -10999,7 +11066,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "pass_count",
@@ -11011,7 +11078,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "tags",
@@ -11023,7 +11090,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         },
         {
           "ruby_name": "pass_at",
@@ -11041,7 +11108,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/material3d.h:556-581"
+          "export": "core/scene3d/material3d.h:559-584"
         }
       ],
       "attributes": [],
@@ -11056,7 +11123,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/material3d.h:556-581",
+      "export": "core/scene3d/material3d.h:559-584",
       "cpp_name": "Material3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/material3d.h",
@@ -11096,7 +11163,7 @@
             }
           ],
           "has_exception": true,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         }
       ],
       "initialize_copy": null,
@@ -11111,7 +11178,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "height",
@@ -11123,7 +11190,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "has_color",
@@ -11135,7 +11202,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "layers",
@@ -11147,7 +11214,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "color_count",
@@ -11159,7 +11226,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "samples",
@@ -11171,7 +11238,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "has_depth",
@@ -11183,7 +11250,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "has_stencil",
@@ -11195,7 +11262,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "color_formats",
@@ -11207,7 +11274,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         },
         {
           "ruby_name": "depth_format",
@@ -11219,7 +11286,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_target3d.h:53-91"
+          "export": "core/scene3d/render_target3d.h:53-94"
         }
       ],
       "attributes": [],
@@ -11234,7 +11301,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_target3d.h:53-91",
+      "export": "core/scene3d/render_target3d.h:53-94",
       "cpp_name": "RenderTarget3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_target3d.h",
@@ -11425,7 +11492,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/render_queue3d.h:43-97"
+          "export": "core/scene3d/render_queue3d.h:44-101"
         }
       ],
       "initialize_copy": null,
@@ -11440,7 +11507,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_queue3d.h:43-97"
+          "export": "core/scene3d/render_queue3d.h:44-101"
         },
         {
           "ruby_name": "light_count",
@@ -11452,7 +11519,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_queue3d.h:43-97"
+          "export": "core/scene3d/render_queue3d.h:44-101"
         },
         {
           "ruby_name": "tags",
@@ -11464,7 +11531,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_queue3d.h:43-97"
+          "export": "core/scene3d/render_queue3d.h:44-101"
         }
       ],
       "attributes": [],
@@ -11479,7 +11546,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_queue3d.h:43-97",
+      "export": "core/scene3d/render_queue3d.h:44-101",
       "cpp_name": "RenderQueue3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_queue3d.h",
@@ -11502,7 +11569,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "camera",
@@ -11514,7 +11581,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "queue",
@@ -11526,7 +11593,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "ambient",
@@ -11538,7 +11605,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "ambient=",
@@ -11556,7 +11623,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "set_view_projection",
@@ -11574,7 +11641,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "begin_pass",
@@ -11602,7 +11669,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "end_pass",
@@ -11614,7 +11681,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "pass",
@@ -11626,7 +11693,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "draw_filter",
@@ -11664,7 +11731,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "draw_item",
@@ -11682,7 +11749,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "set_viewport",
@@ -11715,7 +11782,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "set_scissor_rect",
@@ -11748,7 +11815,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         },
         {
           "ruby_name": "draw_indexed_indirect",
@@ -11771,7 +11838,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_context3d.h:51-127"
+          "export": "core/scene3d/render_context3d.h:51-128"
         }
       ],
       "attributes": [],
@@ -11792,7 +11859,7 @@
           "reason": "internal parameter type: std::vector<RefPtr<Color>>"
         }
       ],
-      "export": "core/scene3d/render_context3d.h:51-127",
+      "export": "core/scene3d/render_context3d.h:51-128",
       "cpp_name": "RenderContext3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_context3d.h",

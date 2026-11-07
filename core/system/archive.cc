@@ -31,6 +31,10 @@ bool Available() {
 
 void Register() {}
 
+bool Unregister() {
+  return true;
+}
+
 bool Mount(const std::string& path, bool prepend) {
   (void)path;
   (void)prepend;

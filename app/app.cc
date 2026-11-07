@@ -438,6 +438,15 @@ bool Initialize(AppState& state,
   if (urge::archive::Available() && io->Exists(archive_path))
     io->MountArchive(archive_path);
 
+  // Scripts may add arbitrary load paths later. Never let them open another
+  // private container with the engine's embedded ACS key.
+  if (!urge::archive::Unregister()) {
+    exception_state.Throw(urge::ExceptionState::kIOError,
+        "Cannot unregister ACS archiver: {}",
+        PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+    return false;
+  }
+
   state.config = new urge::Config(exception_state, state.ini);
   urge::Config::Reset(state.config);
   if (exception_state.HadException())

@@ -36,6 +36,9 @@
 #include "core/canvas/image.h"
 #include "core/common/utility.h"
 #include "core/graphics/graphics.h"
+#include "core/system/urge_bundle.h"
+#include "monocypher.h"
+#include "physfs.h"
 
 namespace urge {
 
@@ -104,6 +107,29 @@ void URGE::OpenURL(std::string url) {
   SDL_OpenURL(url.c_str());
 }
 
+bool URGE::AddLoadPath(std::string path, std::string mount, bool append) {
+  if (path.empty() || path.find('\0') != std::string::npos ||
+      mount.find('\0') != std::string::npos) {
+    PHYSFS_setErrorCode(PHYSFS_ERR_INVALID_ARGUMENT);
+    return false;
+  }
+  return PHYSFS_mount(path.c_str(), mount.c_str(), append ? 1 : 0) != 0;
+}
+
+bool URGE::RemoveLoadPath(std::string path) {
+  if (path.empty() || path.find('\0') != std::string::npos) {
+    PHYSFS_setErrorCode(PHYSFS_ERR_INVALID_ARGUMENT);
+    return false;
+  }
+  return PHYSFS_unmount(path.c_str()) != 0;
+}
+
+bool URGE::SetBundlePassword(std::string password) {
+  const bool result = urge_bundle::SetPassword(password);
+  crypto_wipe(password.data(), password.size());
+  return result;
+}
+
 int32_t URGE::ShowMessageBox(std::string message) {
   return ShowMessageBox("", message, {}, 0, 0, MESSAGEBOX_INFORMATION);
 }
@@ -136,8 +162,7 @@ int32_t URGE::ShowMessageBox(std::string title,
     if (static_cast<int32_t>(i) == escape_button)
       button_flags |= SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
 
-    button_data[i].flags =
-        static_cast<SDL_MessageBoxButtonFlags>(button_flags);
+    button_data[i].flags = static_cast<SDL_MessageBoxButtonFlags>(button_flags);
     button_data[i].buttonID = static_cast<int32_t>(i);
     button_data[i].text = buttons[i].c_str();
   }

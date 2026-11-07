@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderQueue3D  (core/scene3d/render_queue3d.h:43-97)
+// RenderQueue3D  (core/scene3d/render_queue3d.h:44-101)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderQueue3D);
