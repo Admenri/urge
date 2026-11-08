@@ -22,7 +22,28 @@
 
 #include "core/font/font_backend.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace urge::font {
+CellMetrics MakeCellMetrics(int size,
+                            double units_per_em,
+                            double ascent,
+                            double descent) {
+  CellMetrics cell{static_cast<double>(size),
+                   static_cast<int>(std::ceil(size * 0.8)), size};
+  const double height = ascent + descent;
+  if (size <= 0 || units_per_em <= 0 || ascent < 0 || descent < 0 ||
+      !std::isfinite(height) || height <= 0)
+    return cell;
+  const double em_size = size * units_per_em / height;
+  if (!std::isfinite(em_size) || em_size <= 0 || em_size > 512)
+    return cell;
+  cell.em_size = em_size;
+  cell.ascent =
+      std::clamp(static_cast<int>(std::ceil(size * ascent / height)), 0, size);
+  return cell;
+}
 bool DecodeUTF8(const std::string& text, std::vector<uint32_t>& out) {
   out.clear();
   for (size_t i = 0; i < text.size();) {
