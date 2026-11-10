@@ -33,6 +33,7 @@
 #include FT_GLYPH_H
 #include FT_STROKER_H
 #include FT_SYNTHESIS_H
+#include FT_TRUETYPE_TABLES_H
 #include "core/font/font.h"
 #include "core/font/font_context.h"
 
@@ -41,6 +42,7 @@ namespace {
 class FreeTypeFace final : public Face {
  public:
   FT_Face face = nullptr;
+  CellMetrics cell;
   bool bold = false, italic = false;
   std::unordered_map<uint32_t, float> advances;
   float Advance(uint32_t glyph) {
@@ -171,14 +173,8 @@ class FreeTypeBackend final : public Backend {
     if (candidates.empty())
       return result;
     auto primary = candidates.front();
-    // Use ascender/descent rather than optional line gap: the latter adds
-    // leading to SimHei's nominal RGSS text cell.
-    const auto y_scale = primary->face->size->metrics.y_scale;
-    result.ascent = static_cast<int>(
-        std::ceil(FT_MulFix(primary->face->ascender, y_scale) / 64.0));
-    const int descent = static_cast<int>(
-        std::ceil(FT_MulFix(primary->face->descender, y_scale) / 64.0));
-    result.height = std::max(1, result.ascent - descent);
+    result.ascent = primary->cell.ascent;
+    result.height = primary->cell.height;
     std::shared_ptr<FreeTypeFace> previous;
     FT_UInt previous_glyph = 0;
     for (auto c : characters) {
@@ -199,7 +195,9 @@ class FreeTypeBackend final : public Backend {
                        FT_KERNING_DEFAULT, &kern);
         result.width += kern.x / 64.0f;
       }
-      result.glyphs.push_back({selected, glyph, result.width, 0});
+      result.glyphs.push_back(
+          {selected, glyph, result.width,
+           static_cast<float>(selected->cell.ascent - primary->cell.ascent)});
       result.width += selected->Advance(glyph);
       previous = selected;
       previous_glyph = glyph;
@@ -222,8 +220,34 @@ class FreeTypeBackend final : public Backend {
     if (FT_New_Memory_Face(library_, static_cast<const FT_Byte*>(data->data),
                            static_cast<FT_Long>(data->size), 0, &face->face))
       return {};
-    if (FT_Set_Pixel_Sizes(face->face, 0, font.size_))
-      return {};
+    if (FT_IS_SCALABLE(face->face) && face->face->units_per_EM) {
+      double ascent = face->face->ascender;
+      double descent = -face->face->descender;
+      const auto* os2 = static_cast<const TT_OS2*>(
+          FT_Get_Sfnt_Table(face->face, ft_sfnt_os2));
+      if (os2 && os2->version != 0xffff &&
+          (os2->usWinAscent || os2->usWinDescent)) {
+        ascent = os2->usWinAscent;
+        descent = os2->usWinDescent;
+      }
+      face->cell = MakeCellMetrics(font.size_, face->face->units_per_EM, ascent,
+                                   descent);
+      // Set an explicit design-unit scale: rounding the em size to an integer
+      // first makes fonts with tall Windows cells grow beyond RGSS line boxes.
+      FT_Size_RequestRec request{};
+      request.type = FT_SIZE_REQUEST_TYPE_SCALES;
+      request.height = static_cast<FT_Long>(std::lround(
+          face->cell.em_size * 64 * 65536 / face->face->units_per_EM));
+      if (FT_Request_Size(face->face, &request))
+        return {};
+    } else {
+      if (FT_Set_Pixel_Sizes(face->face, 0, font.size_))
+        return {};
+      face->cell = {
+          static_cast<double>(font.size_),
+          static_cast<int>(face->face->size->metrics.ascender / 64),
+          std::max(1, static_cast<int>(face->face->size->metrics.height / 64))};
+    }
     face->bold = font.bold_;
     face->italic = font.italic_;
     face->id = ++next_id_;

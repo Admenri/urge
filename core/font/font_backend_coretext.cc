@@ -46,13 +46,37 @@ class CF {
   CF(const CF&) = delete;
   CF& operator=(const CF&) = delete;
   T get() const { return value_; }
+  void reset(T value) {
+    if (value_)
+      CFRelease(value_);
+    value_ = value;
+  }
 
  private:
   T value_;
 };
+CellMetrics MetricsForFont(CTFontRef font, int size) {
+  const double units = CTFontGetUnitsPerEm(font);
+  const double em_size = CTFontGetSize(font);
+  double ascent = em_size > 0 ? CTFontGetAscent(font) * units / em_size : 0;
+  double descent = em_size > 0 ? CTFontGetDescent(font) * units / em_size : 0;
+  CF<CFDataRef> os2(
+      CTFontCopyTable(font, kCTFontTableOS2, kCTFontTableOptionNoOptions));
+  if (os2.get() && CFDataGetLength(os2.get()) >= 78) {
+    const auto* data = CFDataGetBytePtr(os2.get());
+    const unsigned win_ascent = (unsigned(data[74]) << 8) | data[75];
+    const unsigned win_descent = (unsigned(data[76]) << 8) | data[77];
+    if (win_ascent || win_descent) {
+      ascent = win_ascent;
+      descent = win_descent;
+    }
+  }
+  return MakeCellMetrics(size, units, ascent, descent);
+}
 class CoreTextFace final : public Face {
  public:
   CTFontRef font = nullptr;
+  CellMetrics cell;
   bool bold = false, italic = false;
   struct Advance {
     CGGlyph glyph = 0;
@@ -197,11 +221,8 @@ class CoreTextBackend final : public Backend {
         result.width += a.width;
       }
       if (complete) {
-        result.ascent =
-            static_cast<int>(std::ceil(CTFontGetAscent(primary->font)));
-        result.height = std::max(
-            1, static_cast<int>(std::ceil(CTFontGetAscent(primary->font) +
-                                          CTFontGetDescent(primary->font))));
+        result.ascent = primary->cell.ascent;
+        result.height = primary->cell.height;
         return result;
       }
       result = {};
@@ -221,17 +242,41 @@ class CoreTextBackend final : public Backend {
     CF<CFDictionaryRef> attributes(CFDictionaryCreate(
         nullptr, keys, values, 3, &kCFTypeDictionaryKeyCallBacks,
         &kCFTypeDictionaryValueCallBacks));
-    CF<CFAttributedStringRef> attributed(
+    CF<CFAttributedStringRef> initial(
         CFAttributedStringCreate(nullptr, string.get(), attributes.get()));
+    CF<CFMutableAttributedStringRef> attributed(
+        CFAttributedStringCreateMutableCopy(nullptr, 0, initial.get()));
     CF<CTLineRef> line(CTLineCreateWithAttributedString(attributed.get()));
     if (!line.get())
       return result;
+    // Native fallback inherits the primary em size, which can describe a
+    // different cell height in another font. Normalize each fallback face and
+    // shape again so its advances and glyph masks use the same size.
+    bool reshape = false;
+    CFArrayRef initial_runs = CTLineGetGlyphRuns(line.get());
+    for (CFIndex i = 0; i < CFArrayGetCount(initial_runs); ++i) {
+      auto run = static_cast<CTRunRef>(
+          const_cast<void*>(CFArrayGetValueAtIndex(initial_runs, i)));
+      auto selected = static_cast<CTFontRef>(
+          CFDictionaryGetValue(CTRunGetAttributes(run), kCTFontAttributeName));
+      auto face = RunFace(selected, font.bold_, font.italic_, font.size_);
+      if (std::abs(CTFontGetSize(selected) - CTFontGetSize(face->font)) >
+          0.001) {
+        CFAttributedStringSetAttribute(attributed.get(),
+                                       CTRunGetStringRange(run),
+                                       kCTFontAttributeName, face->font);
+        reshape = true;
+      }
+    }
+    if (reshape) {
+      line.reset(CTLineCreateWithAttributedString(attributed.get()));
+      if (!line.get())
+        return result;
+    }
     result.width = static_cast<float>(
         CTLineGetTypographicBounds(line.get(), nullptr, nullptr, nullptr));
-    result.ascent = static_cast<int>(std::ceil(CTFontGetAscent(primary->font)));
-    result.height = std::max(
-        1, static_cast<int>(std::ceil(CTFontGetAscent(primary->font) +
-                                      CTFontGetDescent(primary->font))));
+    result.ascent = primary->cell.ascent;
+    result.height = primary->cell.height;
     CFArrayRef runs = CTLineGetGlyphRuns(line.get());
     for (CFIndex i = 0; i < CFArrayGetCount(runs); ++i) {
       auto run = static_cast<CTRunRef>(
@@ -239,15 +284,16 @@ class CoreTextBackend final : public Backend {
       const CFIndex count = CTRunGetGlyphCount(run);
       auto selected = static_cast<CTFontRef>(
           CFDictionaryGetValue(CTRunGetAttributes(run), kCTFontAttributeName));
-      auto face = RunFace(selected, font.bold_, font.italic_);
+      auto face = RunFace(selected, font.bold_, font.italic_, font.size_);
       std::vector<CGGlyph> glyphs(count);
       std::vector<CGPoint> positions(count);
       CTRunGetGlyphs(run, CFRangeMake(0, 0), glyphs.data());
       CTRunGetPositions(run, CFRangeMake(0, 0), positions.data());
       for (CFIndex j = 0; j < count; ++j)
-        result.glyphs.push_back({face, glyphs[j],
-                                 static_cast<float>(positions[j].x),
-                                 static_cast<float>(-positions[j].y)});
+        result.glyphs.push_back(
+            {face, glyphs[j], static_cast<float>(positions[j].x),
+             static_cast<float>(-positions[j].y + face->cell.ascent -
+                                primary->cell.ascent)});
     }
     return result;
   }
@@ -255,15 +301,25 @@ class CoreTextBackend final : public Backend {
  private:
   std::shared_ptr<CoreTextFace> RunFace(CTFontRef font,
                                         bool bold,
-                                        bool italic) {
+                                        bool italic,
+                                        int size) {
+    const auto cell = MetricsForFont(font, size);
+    CF<CTFontRef> normalized(std::abs(cell.em_size - CTFontGetSize(font)) >
+                                     0.001
+                                 ? CTFontCreateCopyWithAttributes(
+                                       font, cell.em_size, nullptr, nullptr)
+                                 : nullptr);
+    if (normalized.get())
+      font = normalized.get();
     std::erase_if(runs_, [](const auto& face) { return face.expired(); });
     for (auto& weak : runs_)
-      if (auto face = weak.lock(); face && face->bold == bold &&
-                                   face->italic == italic &&
-                                   CFEqual(face->font, font))
+      if (auto face = weak.lock();
+          face && face->bold == bold && face->italic == italic &&
+          face->cell.height == size && CFEqual(face->font, font))
         return face;
     auto face = std::make_shared<CoreTextFace>();
     face->font = font;
+    face->cell = cell;
     CFRetain(font);
     face->bold = bold;
     face->italic = italic;
@@ -292,7 +348,7 @@ class CoreTextBackend final : public Backend {
                                                       nullptr, nullptr));
     if (!ctfont.get())
       return {};
-    auto face = RunFace(ctfont.get(), spec.bold_, spec.italic_);
+    auto face = RunFace(ctfont.get(), spec.bold_, spec.italic_, spec.size_);
     if (faces_.size() >= 128)
       faces_.erase(faces_.begin());
     faces_.emplace(key, face);

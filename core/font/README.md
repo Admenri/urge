@@ -11,7 +11,11 @@
 
 普通文字优先使用字体轮廓，跳过 SimHei 等字体中常见的内嵌单色位图，避免这些位图使灰度抗锯齿失效。描边同样由轮廓生成；透明文字使用单通道覆盖率，不使用会在彩色背景上产生色边的 LCD 子像素抗锯齿。`Font.solid` 仍显式选择单色输出。只有位图、没有轮廓的字体保留位图回退。
 
-字号直接使用 RGSS 的逻辑像素，不再乘以 0.9；RGSS1/2/3 的默认字号分别为 22/20/24。字体布局与测量共用同一后端，描边、阴影不改变 `text_size` 的文字度量。
+RGSS1/2/3 的默认字号分别为 22/20/24，单位为游戏逻辑像素的**字符单元高度**。后端根据字体的 Windows ascent/descent（OpenType `OS/2` 表中的 `usWinAscent` / `usWinDescent`）换算 em 尺寸和基线；这些度量不可用时使用后端提供的 ascent/descent。字体的 line gap 不计入 RGSS 行框。
+
+因此不再把 `font.size` 直接当作 OpenType 的 em 大小，也不使用固定 0.9 系数。SimHei 的单元高度恰好为 1 em，尺寸保持原样；Lolita 等单元高度大于 1 em 的字体按自身比例换算，避免字号 24 产生约 33 像素行高而被 24 像素绘制框截断。缺字回退字体也采用同一单元高度，分别定位其基线，macOS 的回退运行重新排版以保持测量和实际字形间距一致。
+
+字体布局与测量共用同一后端，`font.size` 属性和脚本行高不因这个换算而改变；描边、阴影不改变 `text_size` 的文字度量。这个尺寸契约与 [GDI 正字体高度的字符单元定义](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw) 一致。
 
 ### `Bitmap#draw_text` 的 RGSS 缩放行为
 

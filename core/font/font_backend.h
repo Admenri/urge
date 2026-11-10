@@ -32,6 +32,17 @@ class Font;
 class FontContext;
 namespace font {
 
+// RGSS's positive GDI font height describes a character cell, not an em.
+// Keep the conversion shared so native and FreeType faces use one contract.
+struct CellMetrics {
+  double em_size = 0;
+  int ascent = 0, height = 0;
+};
+CellMetrics MakeCellMetrics(int size,
+                            double units_per_em,
+                            double ascent,
+                            double descent);
+
 // Positions and metrics are in RGSS bitmap pixels, independent of display DPI.
 struct Mask {
   int x = 0, y = 0, width = 0, height = 0;
