@@ -8,10 +8,5 @@
 /bind/.glue_stamp
 /admenri
 __pycache__/
-/test/*/Game.exe
-/test/*/Data
-/test/*/*.log
-/test/*/*.glb
-/test/*/*.png
-/test/*/gltf_image_*
+/test
 .DS_Store
