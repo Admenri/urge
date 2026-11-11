@@ -1245,6 +1245,8 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
         suffix = "FLOAT"
     elif cpp_type == "bool":
         suffix = "BOOL"
+    elif cpp_type == "std::string":
+        suffix = "STRING"
     else:
         raise ValueError("no attribute macro for %r" % cpp_type)
     if has_exception:

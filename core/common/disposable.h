@@ -32,7 +32,7 @@ URGE_BINDING()
 class Disposable : public Object {
  public:
   URGE_BINDING(Name : "disposed?")
-  bool IsDisposed() { return disposed_; }
+  bool IsDisposed() const { return disposed_; }
   URGE_BINDING()
   void Dispose() { ReleaseSelf(); }
 

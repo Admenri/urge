@@ -30,6 +30,7 @@
 #include "core/render/render_stats.h"
 #include "core/render/uniform.h"
 #include "core/scene/sprite_batch.h"
+#include "core/ui/ui.h"
 
 namespace urge {
 
@@ -37,13 +38,18 @@ Node::Node()
     : self_([&](DrawParam param) { ExecutePrepare(param); },
             [&](DrawParam param) { ExecuteRendering(param); },
             ZValue()),
-      world_root_(true) {}
+      world_root_(true) {
+  self_.SetNode(this);
+  children_.SetNode(this);
+}
 
 Node::Node(RefPtr<Node> parent, const ZValue& z)
     : self_([&](DrawParam param) { ExecutePrepare(param); },
             [&](DrawParam param) { ExecuteRendering(param); },
             z),
       world_root_(false) {
+  self_.SetNode(this);
+  children_.SetNode(this);
   Attr_Parent(parent);
 }
 
@@ -54,6 +60,8 @@ Node::~Node() {
 }
 
 void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
+  if (UI::TryGet())
+    UI::Get().PrepareTree(this, glm::vec2(target->size()));
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
 
   DrawContext context = {};
@@ -91,6 +99,9 @@ void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
   auto command_buffer = encoder.Finish(nullptr);
   CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command_buffer);
+  // Rendering changes the bitmap just like a drawing operation. Invalidate
+  // pixel readback caches and consumers that cache this bitmap as a UI skin.
+  target->TouchContent();
 }
 
 ATTR_DEF(Node, int32_t, Z) {
@@ -115,8 +126,14 @@ ATTR_DEF(Node, bool, Visible) {
 
 ATTR_DEF(Node, RefPtr<Node>, Parent) {
   if (value.has_value()) {
+    // A cycle cannot be rendered or transformed. Preserve the previous parent.
+    for (Node* ancestor = value->get(); ancestor;
+         ancestor = ancestor->scene_parent())
+      if (ancestor == this)
+        return std::nullopt;
     parent_ = *value;
-    DrawableSet* default_parent = &Graphics::Get().root()->children_;
+    DrawableSet* default_parent = Graphics::TryGet() && Graphics::Get().root()
+        ? &Graphics::Get().root()->children_ : nullptr;
     DrawableSet* parent = parent_ ? &parent_->children_ : default_parent;
     self_.SetParent(parent);
     return std::nullopt;
@@ -171,21 +188,68 @@ ATTR_DEF(Node, RefPtr<Camera>, Camera) {
 }
 
 void Node::DisposeObject() {
-  self_.RemoveFromList();
+  self_.SetParent(nullptr);
   parent_.reset();
 }
 
 void Node::ExecutePrepare(DrawParam param) {
   const auto current_model = param->model.top();
-  param->model.push(current_model * transform_.local);
+  param->model.push(current_model * local_matrix());
   {
     transform_.world = param->model.top();
     allow_do_draw_ = Prepare(param);
+    param->model.push(transform_.world * child_matrix());
     children_.DispatchPrepare(param);
+    param->model.pop();
     if (allow_do_draw_)
       PostPrepare(param);
   }
   param->model.pop();
+}
+
+std::vector<RefPtr<Node>> Node::Children() const {
+  std::vector<RefPtr<Node>> result;
+  for (Node* child : children_raw())
+    result.emplace_back(child);
+  return result;
+}
+
+glm::mat4 Node::local_matrix() const {
+  // Vector objects are mutable through Ruby. Read their current values rather
+  // than relying on attribute assignment to invalidate a cached matrix.
+  const auto q = transform_.quaternion->data;
+  return layout_matrix() *
+      glm::translate(glm::mat4(1.0f), transform_.position->data) *
+      glm::mat4_cast(glm::quat(q.w, q.x, q.y, q.z)) *
+      glm::scale(glm::mat4(1.0f), transform_.scale->data);
+}
+
+glm::mat4 Node::resolved_world_matrix() const {
+  Node* parent = scene_parent();
+  return parent ? parent->resolved_world_matrix() * parent->child_matrix() *
+                     local_matrix() : local_matrix();
+}
+
+std::vector<float> Node::WorldMatrix() const {
+  const auto matrix = resolved_world_matrix();
+  std::vector<float> result(16);
+  for (int i = 0; i < 16; ++i)
+    result[i] = matrix[i / 4][i % 4];
+  return result;
+}
+
+bool Node::visible_in_tree() const {
+  if (IsDisposed() || !self_.visible())
+    return false;
+  Node* parent = scene_parent();
+  return !parent || parent->visible_in_tree();
+}
+
+RefPtr<Camera> Node::effective_camera() const {
+  if (camera_)
+    return camera_;
+  Node* parent = scene_parent();
+  return parent ? parent->effective_camera() : nullptr;
 }
 
 void Node::ExecuteRendering(DrawParam param) {

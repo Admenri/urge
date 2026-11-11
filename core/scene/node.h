@@ -31,6 +31,8 @@
 
 namespace urge {
 
+class UIState;
+
 URGE_BINDING()
 class Node : public Disposable {
  public:
@@ -39,7 +41,7 @@ class Node : public Disposable {
   URGE_BINDING()
   explicit Node();
   URGE_BINDING()
-  Node(RefPtr<Node> parent);
+  Node(MaybePtr<Node> parent);
   ~Node() override;
 
   URGE_BINDING()
@@ -62,7 +64,22 @@ class Node : public Disposable {
   URGE_BINDING()
   ATTR(MaybePtr<Camera>, Camera);
 
+  URGE_BINDING()
+  std::vector<RefPtr<Node>> Children() const;
+  URGE_BINDING()
+  std::vector<float> WorldMatrix() const;
+
+  Node* scene_parent() const { return self_.parent_node(); }
+  std::vector<Node*> children_raw() const { return children_.Nodes(); }
+  bool visible_in_tree() const;
+  glm::mat4 local_matrix() const;
+  glm::mat4 resolved_world_matrix() const;
+  RefPtr<Camera> effective_camera() const;
+  virtual UIState* ui_state() const { return nullptr; }
+  virtual glm::mat4 child_matrix() const { return glm::mat4(1.0f); }
+
  protected:
+  virtual glm::mat4 layout_matrix() const { return glm::mat4(1.0f); }
   virtual bool Prepare(DrawParam param) { return false; }
   virtual void PostPrepare(DrawParam param) {}
   virtual bool DoDraw(DrawParam param) { return false; }

@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.30)
 
 add_library(urge-binding STATIC)
 
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/ui_api.rb")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/ui_api.rb" URGE_UI_RUBY_SOURCE)
+configure_file(ui_ruby_api.h.in "${CMAKE_CURRENT_BINARY_DIR}/ui_ruby_api.h" @ONLY)
+target_include_directories(urge-binding PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+
 # `autogen/` holds what `bind/gen_binding.cmake` generated, this directory holds
 # the hand-written half of the layer.  Both are compiled, so both are globbed.
 #

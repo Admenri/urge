@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(urge_ui_math_tests LANGUAGES CXX)
+enable_testing()
+add_executable(ui_math_tests ui_math_test.cc ../../core/ui/ui_math.cc)
+target_compile_features(ui_math_tests PRIVATE cxx_std_20)
+target_compile_definitions(ui_math_tests PRIVATE GLM_FORCE_DEPTH_ZERO_TO_ONE)
+target_include_directories(ui_math_tests PRIVATE ../.. ../../third_party/glm)
+add_test(NAME ui_math COMMAND ui_math_tests)

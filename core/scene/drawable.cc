@@ -24,6 +24,18 @@
 
 namespace urge {
 
+Node* Drawable::parent_node() const {
+  return parent_ ? parent_->node() : nullptr;
+}
+
+std::vector<Node*> DrawableSet::Nodes() const {
+  std::vector<Node*> result;
+  for (auto* item = root_.next_; item != &root_; item = item->next_)
+    if (item->node())
+      result.push_back(item->node());
+  return result;
+}
+
 Drawable::Drawable() : prev_(this), next_(this) {}
 
 Drawable::Drawable(OnPrepare on_prepare, OnDraw on_draw, const ZValue& order)

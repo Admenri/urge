@@ -92,6 +92,28 @@
 #include "binding_camera.h"
 #include "binding_orthographic_camera.h"
 #include "binding_perspective_camera.h"
+#include "binding_ui_button.h"
+#include "binding_ui_canvas.h"
+#include "binding_ui_dialog.h"
+#include "binding_ui_dropdown.h"
+#include "binding_ui_event.h"
+#include "binding_ui_image.h"
+#include "binding_ui_input_field.h"
+#include "binding_ui_layout_group.h"
+#include "binding_ui_list.h"
+#include "binding_ui_panel.h"
+#include "binding_ui_progress_bar.h"
+#include "binding_ui_raycast_hit.h"
+#include "binding_ui_raycaster.h"
+#include "binding_ui_rect_transform.h"
+#include "binding_ui_scroll_bar.h"
+#include "binding_ui_scroll_panel.h"
+#include "binding_ui_separator.h"
+#include "binding_ui_slider.h"
+#include "binding_ui_state.h"
+#include "binding_ui_style.h"
+#include "binding_ui_text.h"
+#include "binding_ui_toggle.h"
 #include "binding_audio.h"
 #include "binding_config.h"
 #include "binding_gpu.h"
@@ -101,6 +123,7 @@
 #include "binding_network.h"
 #include "binding_text_input.h"
 #include "binding_touch.h"
+#include "binding_ui.h"
 #include "binding_urge.h"
 // --- GENERATED INCLUDES END ---
 
@@ -219,6 +242,28 @@ void InitBindings() {
   InitCameraBinding();
   InitOrthographicCameraBinding();
   InitPerspectiveCameraBinding();
+  InitUIButtonBinding();
+  InitUICanvasBinding();
+  InitUIDialogBinding();
+  InitUIDropdownBinding();
+  InitUIEventBinding();
+  InitUIImageBinding();
+  InitUIInputFieldBinding();
+  InitUILayoutGroupBinding();
+  InitUIListBinding();
+  InitUIPanelBinding();
+  InitUIProgressBarBinding();
+  InitUIRaycastHitBinding();
+  InitUIRaycasterBinding();
+  InitUIRectTransformBinding();
+  InitUIScrollBarBinding();
+  InitUIScrollPanelBinding();
+  InitUISeparatorBinding();
+  InitUISliderBinding();
+  InitUIStateBinding();
+  InitUIStyleBinding();
+  InitUITextBinding();
+  InitUIToggleBinding();
   InitAudioBinding();
   InitConfigBinding();
   InitGPUBinding();
@@ -228,6 +273,7 @@ void InitBindings() {
   InitNetworkBinding();
   InitTextInputBinding();
   InitTouchBinding();
+  InitUIBinding();
   InitURGEBinding();
   InitWin32APIBinding();
 }

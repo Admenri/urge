@@ -24,6 +24,7 @@
 
 #include "bind/autogen/binding_init.h"
 #include "bind/cruby_utils.h"
+#include "ui_ruby_api.h"
 #include "bind/legacy-ruby-compat/legacy_ruby_compat.h"
 #include "bind/script_loop.h"
 #include "core/common/logger.h"
@@ -350,6 +351,12 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   }
 
   InitBindings();
+  rb_eval_string_protect(kUIRubyAPI, &error_state_);
+  if (error_state_) {
+    exception_state.Throw(urge::ExceptionState::kRGSSError,
+                          "failed to initialize UI Ruby API.");
+    return;
+  }
 
   // RGSS1/2/3 manuals specify default Font sizes of 22/20/24 respectively.
   // Set this for each game session before scripts can construct any fonts;
