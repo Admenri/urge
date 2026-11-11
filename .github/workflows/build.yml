@@ -191,7 +191,7 @@ jobs:
              "$out/urge-helper.js" "$out/async_mapping.js" dist/
           cp "$out/audio-codec-licenses.txt" dist/
           cp "$out/ruby-encoding-licenses.txt" dist/
-          cp app/build_mapping.py dist/tools/
+          cp tools/build_mapping.py dist/tools/
           cat > dist/README.txt <<'EOF'
           URGE web build
           ==============
