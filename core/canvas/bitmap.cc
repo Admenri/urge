@@ -202,6 +202,7 @@ Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
 
 Bitmap::Bitmap(RefPtr<Bitmap> other)
     : Bitmap(other->size().x, other->size().y) {
+  font_ = MakeRefCounted<Font>(other->font_);
   AcquireHandle();
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);

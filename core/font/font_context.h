@@ -64,6 +64,7 @@ class FontContext : public Singleton<FontContext> {
   struct Entry {
     FontData data;
     std::string path;
+    bool game = false;
     bool embedded = false;
     bool failed = false;
   };

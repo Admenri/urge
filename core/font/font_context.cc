@@ -366,15 +366,27 @@ std::string FontContext::Resolve(const std::string& name) {
   if (entries_.find(key) != entries_.end())
     return key;
 
+  std::string system_file;
   for (const char* extension : kFontExtensions) {
     const std::string with_extension = key + extension;
-    if (entries_.find(with_extension) != entries_.end())
+    auto candidate = entries_.find(with_extension);
+    if (candidate == entries_.end())
+      continue;
+    if (candidate->second.game)
       return with_extension;
+    if (system_file.empty())
+      system_file = with_extension;
   }
 
   BuildFamilyIndex();
 
   auto family = families_.find(key);
+  // A game's renamed font must also win over a system filename inferred
+  // from the family name. Explicit filenames still take the fast path above.
+  if (family != families_.end() && entries_.at(family->second).game)
+    return family->second;
+  if (!system_file.empty())
+    return system_file;
   if (family != families_.end())
     return family->second;
 
@@ -462,6 +474,7 @@ void FontContext::LoadFontDirectory(URGE_EXCEPT, const std::string& directory) {
     }
 
     Entry entry;
+    entry.game = true;
     entry.data.size = size;
     entry.data.data = memory;
 
@@ -569,23 +582,27 @@ void FontContext::BuildFamilyIndex() {
   const uint64_t start = SDL_GetTicks();
   size_t indexed = 0;
 
-  for (const auto& [key, entry] : entries_) {
-    std::vector<std::string> names;
-    bool parsed = false;
+  for (bool game : {true, false}) {
+    for (const auto& [key, entry] : entries_) {
+      if (entry.game != game)
+        continue;
+      std::vector<std::string> names;
+      bool parsed = false;
 
-    if (entry.data.data) {
-      parsed = ParseFamilyNames(static_cast<const uint8_t*>(entry.data.data),
-                                static_cast<size_t>(entry.data.size), &names);
-    } else if (!entry.path.empty()) {
-      parsed = ReadFileFamilyNames(entry.path, &names);
+      if (entry.data.data) {
+        parsed = ParseFamilyNames(static_cast<const uint8_t*>(entry.data.data),
+                                  static_cast<size_t>(entry.data.size), &names);
+      } else if (!entry.path.empty()) {
+        parsed = ReadFileFamilyNames(entry.path, &names);
+      }
+
+      if (!parsed)
+        continue;
+
+      ++indexed;
+      for (const std::string& name : names)
+        families_.emplace(ToLower(name), key);
     }
-
-    if (!parsed)
-      continue;
-
-    ++indexed;
-    for (const std::string& name : names)
-      families_.emplace(ToLower(name), key);
   }
 
   LOGGER_INFO("[Font] Indexed {} names from {} faces in {} ms",
