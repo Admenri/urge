@@ -370,10 +370,14 @@ void TilemapVX::Update() {
 }
 
 void TilemapVX::SetBitmap(int32_t index, RefPtr<Bitmap> bitmap) {
+  if (index < 0 || index >= TILE_NUMS)
+    return;
   bitmaps_[index] = bitmap;
 }
 
 RefPtr<Bitmap> TilemapVX::GetBitmap(int32_t index) {
+  if (index < 0 || index >= TILE_NUMS)
+    return nullptr;
   return bitmaps_[index];
 }
 

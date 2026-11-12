@@ -130,6 +130,8 @@ RefPtr<Bitmap> TilemapXP::GetTileset() {
 }
 
 void TilemapXP::SetAutotile(int32_t index, RefPtr<Bitmap> bitmap) {
+  if (index < 0 || index >= 7)
+    return;
   autotiles_[index].texture = bitmap;
   if (!bitmap) {
     autotiles_[index].frames = 0;
@@ -141,6 +143,8 @@ void TilemapXP::SetAutotile(int32_t index, RefPtr<Bitmap> bitmap) {
 }
 
 RefPtr<Bitmap> TilemapXP::GetAutotile(int32_t index) {
+  if (index < 0 || index >= 7)
+    return nullptr;
   return autotiles_[index].texture;
 }
 

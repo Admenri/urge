@@ -131,8 +131,12 @@ inline void RaiseException(const urge::ExceptionState& exception_state) {
 
 template <typename Ty, bool kNullable = false>
 inline Ty* CheckObject(VALUE value, const rb_data_type_t& type) {
-  if (!NIL_P(value))
-    return static_cast<Ty*>(rb_check_typeddata(value, &type));
+  if (!NIL_P(value)) {
+    auto* ptr = static_cast<Ty*>(rb_check_typeddata(value, &type));
+    if (!ptr)
+      RaiseMissingInstanceData(value);
+    return ptr;
+  }
   if constexpr (!kNullable)
     rb_raise(rb_eTypeError, "wrong argument type nil (expected %s)",
              type.wrap_struct_name);
