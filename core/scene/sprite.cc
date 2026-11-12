@@ -305,7 +305,7 @@ ATTR_DEF(Sprite, RefPtr<Effect>, Effect) {
 void Sprite::DisposeObject() {
   Node::DisposeObject();
 
-  bitmap_.reset();
+  // RGSS keeps bitmap readable after dispose; release it with the Sprite.
   effect_.reset();
 }
 
