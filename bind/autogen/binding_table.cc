@@ -165,6 +165,7 @@ RB_FUNC(Table_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Table* other_obj = CheckObject<urge::Table>(other_val, kTableDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Table* result = nullptr;
 

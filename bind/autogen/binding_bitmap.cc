@@ -93,6 +93,7 @@ RB_FUNC(Bitmap_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Bitmap* other_obj = CheckObject<urge::Bitmap>(other_val, kBitmapDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Bitmap* result = nullptr;
 

@@ -92,6 +92,7 @@ RB_FUNC(Color_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Color* other_obj = CheckObject<urge::Color>(other_val, kColorDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Color* result = nullptr;
 

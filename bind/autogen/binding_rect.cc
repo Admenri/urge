@@ -72,6 +72,7 @@ RB_FUNC(Rect_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Rect* other_obj = CheckObject<urge::Rect>(other_val, kRectDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Rect* result = nullptr;
 

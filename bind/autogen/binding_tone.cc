@@ -92,6 +92,7 @@ RB_FUNC(Tone_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Tone* other_obj = CheckObject<urge::Tone>(other_val, kToneDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Tone* result = nullptr;
 

@@ -1061,6 +1061,7 @@ def emit_initialize_copy(entry: dict) -> list[str]:
             '  ParseArgs(argc, argv, "o", &other_val);',
             "  urge::%s* other_obj = CheckObject<urge::%s>(other_val, k%sDataType);"
             % (name, name, name),
+            "  CheckDisposedInstanceData(other_val);",
             "",
             "  urge::%s* result = nullptr;" % name,
             "",

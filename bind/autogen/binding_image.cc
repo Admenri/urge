@@ -90,6 +90,7 @@ RB_FUNC(Image_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Image* other_obj = CheckObject<urge::Image>(other_val, kImageDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Image* result = nullptr;
 

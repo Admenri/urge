@@ -91,6 +91,7 @@ RB_FUNC(Vector2_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Vector2* other_obj = CheckObject<urge::Vector2>(other_val, kVector2DataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Vector2* result = nullptr;
 

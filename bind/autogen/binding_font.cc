@@ -97,6 +97,7 @@ RB_FUNC(Font_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Font* other_obj = CheckObject<urge::Font>(other_val, kFontDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Font* result = nullptr;
 

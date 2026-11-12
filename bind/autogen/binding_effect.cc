@@ -103,6 +103,7 @@ RB_FUNC(Effect_initialize_copy) {
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
   urge::Effect* other_obj = CheckObject<urge::Effect>(other_val, kEffectDataType);
+  CheckDisposedInstanceData(other_val);
 
   urge::Effect* result = nullptr;
 
