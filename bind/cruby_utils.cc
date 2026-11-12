@@ -1,6 +1,16 @@
 #include "cruby_utils.h"
 
+#include "bind/autogen/binding_sprite.h"
+
 namespace binding {
+
+[[noreturn]] void RaiseMissingInstanceData(VALUE self) {
+  // RGSS exposes an uninitialized Sprite as disposed, including subclasses
+  // whose initialize intentionally skips super. Other types keep their guard.
+  if (rb_typeddata_is_kind_of(self, &kSpriteDataType))
+    rb_raise(g_rgss_exception, "disposed sprite");
+  rb_raise(rb_eRuntimeError, "invalid instance data: missing call to super?");
+}
 
 VALUE g_reset_exception = Qnil;
 VALUE g_rgss_exception = Qnil;

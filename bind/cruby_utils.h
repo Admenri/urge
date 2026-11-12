@@ -82,11 +82,13 @@ inline VALUE SetupSelfData(VALUE self, Ty* data) {
   return self;
 }
 
+[[noreturn]] void RaiseMissingInstanceData(VALUE self);
+
 template <typename Ty>
 inline Ty* GetSelfData(VALUE self) {
   auto* ptr = static_cast<Ty*>(RTYPEDDATA_DATA(self));
   if (!ptr)
-    rb_raise(rb_eRuntimeError, "invalid instance data: missing call to super?");
+    RaiseMissingInstanceData(self);
   return ptr;
 }
 
