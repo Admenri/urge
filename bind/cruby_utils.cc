@@ -1,15 +1,72 @@
 #include "cruby_utils.h"
 
+#include "bind/autogen/binding_bitmap.h"
+#include "bind/autogen/binding_plane.h"
 #include "bind/autogen/binding_sprite.h"
+#include "bind/autogen/binding_tilemap_xp.h"
+#include "bind/autogen/binding_tilemap_vx.h"
+#include "bind/autogen/binding_viewport.h"
+#include "bind/autogen/binding_window_xp.h"
+#include "bind/autogen/binding_window_vx.h"
+
+#include "core/canvas/bitmap.h"
+#include "core/scene/plane.h"
+#include "core/scene/sprite.h"
+#include "core/scene/tilemap_xp.h"
+#include "core/scene/tilemap_vx.h"
+#include "core/scene/viewport.h"
+#include "core/scene/window_xp.h"
+#include "core/scene/window_vx.h"
 
 namespace binding {
 
+namespace {
+struct LegacyDisposableType {
+  const rb_data_type_t* type;
+  const char* name;
+  bool (*is_disposed)(void*);
+};
+
+template <typename T>
+bool IsDisposed(void* ptr) {
+  return static_cast<T*>(ptr)->IsDisposed();
+}
+
+const LegacyDisposableType* LegacyType(VALUE object) {
+  static const LegacyDisposableType types[] = {
+      {&kSpriteDataType, "sprite", IsDisposed<urge::Sprite>},
+      {&kPlaneDataType, "plane", IsDisposed<urge::Plane>},
+      {&kWindowXPDataType, "window", IsDisposed<urge::WindowXP>},
+      {&kWindowVXDataType, "window", IsDisposed<urge::WindowVX>},
+      {&kTilemapXPDataType, "tilemap", IsDisposed<urge::TilemapXP>},
+      {&kTilemapVXDataType, "tilemap", IsDisposed<urge::TilemapVX>},
+      {&kViewportDataType, "viewport", IsDisposed<urge::Viewport>},
+      {&kBitmapDataType, "bitmap", IsDisposed<urge::Bitmap>},
+  };
+  for (auto* actual = RTYPEDDATA_TYPE(object); actual; actual = actual->parent)
+    for (const auto& type : types)
+      if (actual == type.type)
+        return &type;
+  return nullptr;
+}
+}  // namespace
+
+bool IsLegacyDisposable(VALUE self) {
+  return LegacyType(self) != nullptr;
+}
+
 [[noreturn]] void RaiseMissingInstanceData(VALUE self) {
-  // RGSS exposes an uninitialized Sprite as disposed, including subclasses
-  // whose initialize intentionally skips super. Other types keep their guard.
-  if (rb_typeddata_is_kind_of(self, &kSpriteDataType))
-    rb_raise(g_rgss_exception, "disposed sprite");
+  // RGSS treats allocated instances whose initialize skipped super as disposed.
+  if (const auto* type = LegacyType(self))
+    rb_raise(g_rgss_exception, "disposed %s", type->name);
   rb_raise(rb_eRuntimeError, "invalid instance data: missing call to super?");
+}
+
+void CheckDisposedInstanceData(VALUE self) {
+  // Keep URGE extension types on their existing lifecycle contract.
+  const auto* type = LegacyType(self);
+  if (type && type->is_disposed(RTYPEDDATA_DATA(self)))
+    rb_raise(g_rgss_exception, "disposed %s", type->name);
 }
 
 VALUE g_reset_exception = Qnil;

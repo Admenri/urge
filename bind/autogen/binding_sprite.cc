@@ -29,28 +29,20 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-RB_FUNC(Sprite_Bitmap);
-
-RB_FUNC(Sprite_UninitializedBitmap) {
+RB_FUNC(Sprite_BitmapCompat) {
   CheckArgc(argc, 0);
   if (!RTYPEDDATA_DATA(self))
     return Qnil;
-  return Sprite_Bitmap(argc, argv, self);
+  auto* sprite = GetSelfData<urge::Sprite, true>(self);
+  auto* bitmap = sprite->Attr_Bitmap()->get();
+  VALUE cached = rb_iv_get(self, "_Bitmap");
+  if (!NIL_P(cached) && CheckMaybeObject<urge::Bitmap>(cached, kBitmapDataType) == bitmap)
+    return cached;
+  VALUE result = WrapObject(bitmap, kBitmapDataType);
+  rb_iv_set(self, "_Bitmap", result);
+  return result;
 }
 
-RB_FUNC(Sprite_DisposeCompat) {
-  CheckArgc(argc, 0);
-  auto* sprite = static_cast<urge::Sprite*>(RTYPEDDATA_DATA(self));
-  if (sprite)
-    sprite->Dispose();
-  return Qnil;
-}
-
-RB_FUNC(Sprite_IsDisposedCompat) {
-  CheckArgc(argc, 0);
-  auto* sprite = static_cast<urge::Sprite*>(RTYPEDDATA_DATA(self));
-  return !sprite || sprite->IsDisposed() ? Qtrue : Qfalse;
-}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
@@ -325,9 +317,7 @@ void InitSpriteBinding() {
 // belong here. The block is preserved verbatim; empty it and the
 // generator writes this body back.
 void InitSpriteBindingAppend(VALUE klass) {
-  DefineMethod(klass, "bitmap", Sprite_UninitializedBitmap);
-  DefineMethod(klass, "dispose", Sprite_DisposeCompat);
-  DefineMethod(klass, "disposed?", Sprite_IsDisposedCompat);
+  DefineMethod(klass, "bitmap", Sprite_BitmapCompat);
 }
 // --- HANDWRITTEN INIT END ---
 

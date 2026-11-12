@@ -73,6 +73,9 @@ RB_FUNC(TilemapBitmaps_Set) {
 }
 
 RB_FUNC(Tilemap_GetBitmaps) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self))
+    return Qnil;
   return AllocateBitmapsProxy(self, "TilemapBitmapArray");
 }
 // --- HANDWRITTEN END ---

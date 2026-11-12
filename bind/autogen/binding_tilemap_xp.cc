@@ -73,6 +73,9 @@ RB_FUNC(TilemapAutotile_Set) {
 }
 
 RB_FUNC(TilemapXP_Autotiles) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self))
+    return Qnil;
   return AllocateAutotileProxy(self, "TilemapAutotileArray");
 }
 // --- HANDWRITTEN END ---

@@ -84,11 +84,16 @@ inline VALUE SetupSelfData(VALUE self, Ty* data) {
 
 [[noreturn]] void RaiseMissingInstanceData(VALUE self);
 
-template <typename Ty>
+bool IsLegacyDisposable(VALUE self);
+void CheckDisposedInstanceData(VALUE self);
+
+template <typename Ty, bool kAllowDisposed = false>
 inline Ty* GetSelfData(VALUE self) {
   auto* ptr = static_cast<Ty*>(RTYPEDDATA_DATA(self));
   if (!ptr)
     RaiseMissingInstanceData(self);
+  if constexpr (!kAllowDisposed)
+    CheckDisposedInstanceData(self);
   return ptr;
 }
 

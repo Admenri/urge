@@ -17,6 +17,20 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
+RB_FUNC(Disposable_DisposeCompat) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self) && IsLegacyDisposable(self))
+    return Qnil;
+  GetSelfData<urge::Disposable, true>(self)->Dispose();
+  return Qnil;
+}
+
+RB_FUNC(Disposable_IsDisposedCompat) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self) && IsLegacyDisposable(self))
+    return Qtrue;
+  return GetSelfData<urge::Disposable, true>(self)->IsDisposed() ? Qtrue : Qfalse;
+}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
@@ -69,7 +83,8 @@ void InitDisposableBinding() {
 // belong here. The block is preserved verbatim; empty it and the
 // generator writes this body back.
 void InitDisposableBindingAppend(VALUE klass) {
-  (void)klass;
+  DefineMethod(klass, "dispose", Disposable_DisposeCompat);
+  DefineMethod(klass, "disposed?", Disposable_IsDisposedCompat);
 }
 // --- HANDWRITTEN INIT END ---
 
