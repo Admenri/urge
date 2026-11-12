@@ -218,15 +218,18 @@ module UI
     type.prepend(WidgetAPI)
   end
 
-  module FrameAPI
-    def update(*args)
-      result = super
+  # RGSS scripts commonly alias Graphics.update before redefining it. A
+  # prepended wrapper would be captured by that alias, and its super would
+  # resolve to the new script method, creating an infinite recursion.
+  # Capture the native method once so later aliases keep a fixed call target.
+  [self, Graphics].each do |mod|
+    native_update = mod.method(:update)
+    mod.define_singleton_method(:update) do |*args|
+      result = native_update.call(*args)
       UI.dispatch
       result
     end
   end
-  singleton_class.prepend(FrameAPI)
-  Graphics.singleton_class.prepend(FrameAPI)
 end
 
 class UIRectTransform
