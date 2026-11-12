@@ -26,50 +26,55 @@ namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
 VALUE AllocateBitmapsProxy(VALUE parent, const char* klass_name) {
+  VALUE cached = rb_iv_get(parent, "_TilemapSlots");
+  if (!NIL_P(cached))
+    return cached;
   VALUE klass = rb_const_get(rb_cObject, rb_intern(klass_name));
   VALUE obj = rb_obj_alloc(klass);
   rb_iv_set(obj, "@parent", parent);
+  rb_iv_set(obj, "@values", rb_ary_new());
+  rb_iv_set(parent, "_TilemapSlots", obj);
   return obj;
 }
 
-// `TilemapBitmapArray` is a Ruby-side proxy around the tilemap table: it holds the owning
-// Tilemap in `@parent` and answers `[]` / `[]=` through the two accessors below.
+// Keep the parent and assigned Ruby Bitmaps alive, including after dispose.
+// Native getters are still consulted so direct set_bitmap calls stay visible.
 RB_FUNC(TilemapBitmaps_Get) {
+  CheckArgc(argc, 1);
   VALUE parent_val = rb_iv_get(self, "@parent");
-  urge::TilemapVX* parent =
-      CheckObject<urge::TilemapVX>(parent_val, kTilemapVXDataType);
+  auto* parent = CheckObject<urge::TilemapVX>(parent_val, kTilemapVXDataType);
   int index = 0;
   ParseArgs(argc, argv, "i", &index);
+  if (index < 0 || index >= 9)
+    return Qnil;
 
-  urge::Bitmap* result = nullptr;
-
-  {
-    urge::RefPtr<urge::Bitmap> value = parent->GetBitmap(index);
-    result = value.get();
-    if (result)
-      result->AddRef();
-  }
-
+  auto* result = parent->GetBitmap(index).get();
+  VALUE values = rb_iv_get(self, "@values");
+  Check_Type(values, T_ARRAY);
+  VALUE cached = rb_ary_entry(values, index);
+  if (CheckMaybeObject<urge::Bitmap>(cached, kBitmapDataType) == result)
+    return cached;
   VALUE object = WrapObject(result, kBitmapDataType);
-  if (result)
-    result->Release();
+  rb_ary_store(values, index, object);
   return object;
 }
 
 RB_FUNC(TilemapBitmaps_Set) {
+  CheckArgc(argc, 2);
   VALUE parent_val = rb_iv_get(self, "@parent");
-  urge::TilemapVX* parent =
-      CheckObject<urge::TilemapVX>(parent_val, kTilemapVXDataType);
+  auto* parent = CheckObject<urge::TilemapVX>(parent_val, kTilemapVXDataType);
   int index = 0;
   VALUE bitmap_val = Qnil;
   ParseArgs(argc, argv, "io", &index, &bitmap_val);
-  urge::Bitmap* bitmap = CheckObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
-
-  {
-    parent->SetBitmap(index, bitmap);
-  }
-
-  return Qnil;
+  if (index < 0 || index >= 9)
+    return Qnil;
+  auto* bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
+  VALUE values = rb_iv_get(self, "@values");
+  Check_Type(values, T_ARRAY);
+  // Update the GC root before passing the non-owning argument to the core.
+  rb_ary_store(values, index, bitmap_val);
+  parent->SetBitmap(index, bitmap);
+  return bitmap_val;
 }
 
 RB_FUNC(Tilemap_GetBitmaps) {

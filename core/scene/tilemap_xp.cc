@@ -226,8 +226,7 @@ void TilemapXP::DisposeObject() {
 
   aboves_.clear();
   tileset_.reset();
-  for (auto& it : autotiles_)
-    it.texture.reset();
+  // RGSS keeps autotiles readable after dispose, until the Tilemap is collected.
 
   ground_layer_.primitive.Reset();
   ground_layer_.draws.clear();

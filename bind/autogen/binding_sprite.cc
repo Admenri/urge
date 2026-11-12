@@ -42,7 +42,6 @@ RB_FUNC(Sprite_BitmapCompat) {
   rb_iv_set(self, "_Bitmap", result);
   return result;
 }
-
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
