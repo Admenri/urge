@@ -26,6 +26,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -64,11 +65,14 @@ struct Output {
  @builtin(position) position: vec4<f32>,
  @location(0) uv: vec2<f32>,
  @location(1) color: vec4<f32>,
+ @location(2) point: vec2<f32>,
+ @location(3) @interpolate(flat) layer: i32,
 };
 @vertex fn vs_main(v: Input)->Output {
  var o: Output;
- o.position=scene.matrix*object.matrix*v.position;
- o.uv=v.uv; o.color=v.color; return o;
+ o.position=scene.matrix*object.matrix*vec4<f32>(v.position.xy,0,1);
+ o.uv=v.uv; o.color=v.color; o.point=v.position.xy;
+ o.layer=i32(v.position.z); return o;
 }
 )",
     "vs_main",
@@ -81,15 +85,39 @@ const ShaderSource kFragment = {
     R"(
 @group(2) @binding(0) var atlas: texture_2d<f32>;
 @group(2) @binding(1) var filtering: sampler;
-@fragment fn fs_main(@location(0) uv:vec2<f32>,@location(1) color:vec4<f32>)->@location(0) vec4<f32> {
- return color*textureSample(atlas,filtering,uv).r;
+struct TextClip { rect: vec4<f32>, margin: vec4<f32> };
+@group(2) @binding(2) var<uniform> text_clip: TextClip;
+fn coverage(uv:vec2<f32>,point:vec2<f32>)->f32 {
+ if (any(point < text_clip.rect.xy) || any(point >= text_clip.rect.zw)) { return 0; }
+ return textureSampleLevel(atlas,filtering,uv,0).r;
+}
+@fragment fn fs_main(@location(0) uv:vec2<f32>,@location(1) color:vec4<f32>,
+ @location(2) point:vec2<f32>,@location(3) @interpolate(flat) layer:i32)->@location(0) vec4<f32> {
+ let edge=any(point < text_clip.rect.xy+text_clip.margin.xy) ||
+          any(point >= text_clip.rect.zw-text_clip.margin.xy);
+ // Interior glyphs retain their vector outlines. Only the cut edges are
+ // rebuilt from clipped coverage, so the outline closes inside the text box.
+ if (layer==3) {
+  if (!edge) { return vec4<f32>(0); }
+  var mask=0.0;
+  for (var y=-1; y<=1; y++) {
+   for (var x=-1; x<=1; x++) {
+    let step=vec2<f32>(f32(x),f32(y));
+    mask=max(mask,coverage(uv+step/1024.0,point+step*text_clip.margin.xy));
+   }
+  }
+  return color*mask;
+ }
+ if (edge && (layer==1 || layer==2)) { return vec4<f32>(0); }
+ return color*textureSampleLevel(atlas,filtering,uv,0).r;
 }
 )",
     "fs_main",
     {{2,
       {{0, wgpu::ShaderStage::Fragment,
         util::TextureLayout::Float(wgpu::TextureViewDimension::e2D)},
-       {1, wgpu::ShaderStage::Fragment, util::SamplerLayout::Filtering()}}}}};
+       {1, wgpu::ShaderStage::Fragment, util::SamplerLayout::Filtering()},
+       {2, wgpu::ShaderStage::Fragment, util::BufferLayout::Uniform(false, 32)}}}}};
 
 std::string LayoutKey(const Font& f, const std::string& text) {
   std::string key =
@@ -120,7 +148,6 @@ struct Page {
   int dirty_left = kAtlasSize, dirty_top = kAtlasSize, dirty_right = 0,
       dirty_bottom = 0;
   wgpu::Texture texture;
-  wgpu::BindGroup group;
   std::vector<uint8_t> pixels;
   bool Pack(int width, int height, int& ox, int& oy) {
     if (x + width > kAtlasSize) {
@@ -163,13 +190,14 @@ void Quad(std::vector<VertexData>& out,
           const RectF& rect,
           const RectF& uv,
           const glm::vec4& top,
-          const glm::vec4& bottom) {
-  const VertexData a{{rect.x, rect.y, 0, 1}, {uv.x, uv.y}, top};
+          const glm::vec4& bottom,
+          int layer) {
+  const VertexData a{{rect.x, rect.y, layer, 1}, {uv.x, uv.y}, top};
   const VertexData b{
-      {rect.x + rect.width, rect.y, 0, 1}, {uv.x + uv.width, uv.y}, top};
+      {rect.x + rect.width, rect.y, layer, 1}, {uv.x + uv.width, uv.y}, top};
   const VertexData c{
-      {rect.x, rect.y + rect.height, 0, 1}, {uv.x, uv.y + uv.height}, bottom};
-  const VertexData d{{rect.x + rect.width, rect.y + rect.height, 0, 1},
+      {rect.x, rect.y + rect.height, layer, 1}, {uv.x, uv.y + uv.height}, bottom};
+  const VertexData d{{rect.x + rect.width, rect.y + rect.height, layer, 1},
                      {uv.x + uv.width, uv.y + uv.height},
                      bottom};
   out.insert(out.end(), {a, b, c, c, b, d});
@@ -231,6 +259,35 @@ struct FontRenderer::Impl {
     layout_bytes += bytes;
     return &entry.first->second.layout;
   }
+  struct CachedClip {
+    wgpu::Buffer buffer;
+    std::unordered_map<uint64_t, wgpu::BindGroup> groups;
+    uint64_t stamp = 0;
+  };
+  std::map<std::array<float, 8>, CachedClip> clips;
+
+  CachedClip& Clipping(const std::array<float, 8>& values) {
+    auto found = clips.find(values);
+    if (found != clips.end()) {
+      found->second.stamp = ++stamp;
+      return found->second;
+    }
+    // Repeated Window redraws reuse immutable clip uniforms and bind groups.
+    if (clips.size() >= 256) {
+      auto victim = std::min_element(clips.begin(), clips.end(),
+          [](const auto& a, const auto& b) { return a.second.stamp < b.second.stamp; });
+      clips.erase(victim);
+    }
+    auto& entry = clips[values];
+    wgpu::BufferDescriptor desc{};
+    desc.size = sizeof(values);
+    desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+    entry.buffer = g_device.CreateBuffer(&desc);
+    g_queue.WriteBuffer(entry.buffer, 0, values.data(), sizeof(values));
+    entry.stamp = ++stamp;
+    return entry;
+  }
+
   void EnsureGPU() {
     if (pipeline)
       return;
@@ -255,6 +312,8 @@ struct FontRenderer::Impl {
       });
       // Never overwrite an evicted texture: deferred/in-flight draw commands
       // may still use its cells. Bind groups keep the retired texture alive.
+      for (auto& [key, clip] : clips)
+        clip.groups.erase((*victim)->id);
       pages.erase(victim);
       ++stats.atlas_evictions;
     }
@@ -268,10 +327,6 @@ struct FontRenderer::Impl {
     desc.usage =
         wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
     page->texture = g_device.CreateTexture(&desc);
-    page->group = util::CreateBindGroup(
-        pipeline.GetBindGroupLayout(2),
-        {{0, util::TextureViewSet(page->texture.CreateView(nullptr))},
-         {1, util::SamplerSet(sampler)}});
     pages.push_back(page);
     stats.atlas_pages = pages.size();
     return page;
@@ -298,36 +353,38 @@ struct FontRenderer::Impl {
                                       py / 4.0f);
     ++stats.rasterized_glyphs;
     AtlasGlyph image;
-    if (mask.width <= 0 || mask.height <= 0 || mask.width + 2 > kAtlasSize ||
-        mask.height + 2 > kAtlasSize ||
+    if (mask.width <= 0 || mask.height <= 0 || mask.width + 4 > kAtlasSize ||
+        mask.height + 4 > kAtlasSize ||
         mask.pixels.size() != static_cast<size_t>(mask.width) * mask.height) {
       // Empty glyphs (spaces) need no GPU storage, but still retain advances.
       if (glyphs.size() < 65536)
         glyphs.emplace(key, image);
       return image;
     }
+    // Boundary caps sample neighbours outside an expanded glyph quad. Keep
+    // two transparent texels around each cell to isolate adjacent glyphs.
     std::shared_ptr<Page> page;
     int x = 0, y = 0;
     for (auto& candidate : pages)
-      if (candidate->Pack(mask.width + 2, mask.height + 2, x, y)) {
+      if (candidate->Pack(mask.width + 4, mask.height + 4, x, y)) {
         page = candidate;
         break;
       }
     if (!page) {
       page = NewPage();
-      page->Pack(mask.width + 2, mask.height + 2, x, y);
+      page->Pack(mask.width + 4, mask.height + 4, x, y);
     }
     for (int row = 0; row < mask.height; ++row)
       std::copy_n(mask.pixels.data() + static_cast<size_t>(row) * mask.width,
                   mask.width,
                   page->pixels.data() +
-                      static_cast<size_t>(y + 1 + row) * kAtlasSize + x + 1);
+                      static_cast<size_t>(y + 2 + row) * kAtlasSize + x + 2);
     page->dirty_left = std::min(page->dirty_left, x);
     page->dirty_top = std::min(page->dirty_top, y);
-    page->dirty_right = std::max(page->dirty_right, x + mask.width + 2);
-    page->dirty_bottom = std::max(page->dirty_bottom, y + mask.height + 2);
+    page->dirty_right = std::max(page->dirty_right, x + mask.width + 4);
+    page->dirty_bottom = std::max(page->dirty_bottom, y + mask.height + 4);
     page->stamp = ++stamp;
-    image = {page, x + 1, y + 1, mask.width, mask.height, mask.x, mask.y};
+    image = {page, x + 2, y + 2, mask.width, mask.height, mask.x, mask.y};
     glyphs.emplace(key, image);
     return image;
   }
@@ -432,6 +489,11 @@ void FontRenderer::Draw(Bitmap& bitmap,
       MakeIntersect(region, RectI(0, 0, bitmap.size().x, bitmap.size().y));
   if (clip.width <= 0 || clip.height <= 0)
     return;
+  const std::array<float, 8> clipping = {
+      static_cast<float>(clip.x), static_cast<float>(clip.y),
+      static_cast<float>(clip.x + clip.width), static_cast<float>(clip.y + clip.height),
+      scale, 1.0f, 0, 0};
+  auto& clip_state = state.Clipping(clipping);
   std::vector<Prepared> fill, stroke;
   auto prepare = [&](int outline, std::vector<Prepared>& out) {
     for (const auto& glyph : layout->glyphs) {
@@ -468,11 +530,20 @@ void FontRenderer::Draw(Bitmap& bitmap,
       font.color_ ? std::clamp(font.color_->data.a / 255.0f, 0.0f, 1.0f) : 1.0f;
   auto emit = [&](const std::vector<Prepared>& images, int layer) {
     for (const auto& item : images) {
-      const auto& im = item.image;
+      auto im = item.image;
+      if (layer == 3) {
+        --im.x; --im.y; --im.bearing_x; --im.bearing_y;
+        im.width += 2; im.height += 2;
+      }
       const float offset = layer == 0 ? 1 : 0;
       RectF rect(left + (item.x + im.bearing_x + offset) * scale,
                  top + item.y + im.bearing_y + offset, im.width * scale,
                  static_cast<float>(im.height));
+      // Interior glyphs need no extra cap geometry or atlas sampling pass.
+      if (layer == 3 && rect.x >= clip.x + scale && rect.y >= clip.y + 1 &&
+          rect.x + rect.width <= clip.x + clip.width - scale &&
+          rect.y + rect.height <= clip.y + clip.height - 1)
+        continue;
       const float x = std::max(rect.x, static_cast<float>(clip.x)),
                   y = std::max(rect.y, static_cast<float>(clip.y));
       const float right = std::min(rect.x + rect.width,
@@ -487,7 +558,7 @@ void FontRenderer::Draw(Bitmap& bitmap,
       glm::vec4 a, b;
       if (layer == 0)
         a = b = glm::vec4(0, 0, 0, opacity);
-      else if (layer == 1)
+      else if (layer == 1 || layer == 3)
         a = b = PremultipliedColor(font.out_color_, opacity);
       else {
         auto gradient = [&](float yy) {
@@ -519,17 +590,27 @@ void FontRenderer::Draw(Bitmap& bitmap,
         current_page = im.page->id;
       }
       batch.target = &bitmap;
-      batch.text_group = im.page->group;
+      auto& group = clip_state.groups[im.page->id];
+      if (!group)
+        group = util::CreateBindGroup(
+            state.pipeline.GetBindGroupLayout(2),
+            {{0, util::TextureViewSet(im.page->texture.CreateView(nullptr))},
+             {1, util::SamplerSet(state.sampler)},
+             {2, util::BufferSet(clip_state.buffer)}});
+      batch.text_group = group;
       batch.pipeline = state.pipeline;
       if (!batch.prepare)
         batch.prepare = [&state, page = im.page] { state.Upload(page); };
-      Quad(batch.vertices, RectF(x, y, right - x, bottom - y), uv, a, b);
+      Quad(batch.vertices, RectF(x, y, right - x, bottom - y), uv, a, b,
+           layer == 2 && !font.outline_ ? 0 : layer);
     }
   };
   if (font.shadow_)
     emit(font.outline_ ? stroke : fill, 0);
-  if (font.outline_)
+  if (font.outline_) {
     emit(stroke, 1);
+    emit(fill, 3);
+  }
   emit(fill, 2);
   flush();
 }
