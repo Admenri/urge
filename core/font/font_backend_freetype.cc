@@ -27,9 +27,12 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <string_view>
 #include <tuple>
 #include <unordered_map>
 #include FT_FREETYPE_H
+#include FT_GASP_H
+#include FT_FONT_FORMATS_H
 #include FT_GLYPH_H
 #include FT_STROKER_H
 #include FT_SYNTHESIS_H
@@ -43,6 +46,7 @@ class FreeTypeFace final : public Face {
  public:
   FT_Face face = nullptr;
   CellMetrics cell;
+  FT_Int32 load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
   bool bold = false, italic = false;
   std::unordered_map<uint32_t, float> advances;
   float Advance(uint32_t glyph) {
@@ -50,7 +54,7 @@ class FreeTypeFace final : public Face {
     if (found != advances.end())
       return found->second;
     FT_Set_Transform(face, nullptr, nullptr);
-    if (FT_Load_Glyph(face, glyph, FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP))
+    if (FT_Load_Glyph(face, glyph, load_flags))
       return 0;
     if (bold)
       FT_GlyphSlot_Embolden(face->glyph);
@@ -76,10 +80,7 @@ class FreeTypeFace final : public Face {
     FT_Set_Transform(face, &matrix, &delta);
     // Outline priority prevents SimHei/SimSun's monochrome strikes from
     // silently disabling gray antialiasing. Bitmap-only fonts still work.
-    int flags = FT_LOAD_TARGET_NORMAL;
-    if (FT_IS_SCALABLE(face))
-      flags |= FT_LOAD_NO_BITMAP;
-    if (FT_Load_Glyph(face, index, flags))
+    if (FT_Load_Glyph(face, index, load_flags))
       return result;
     if (bold)
       FT_GlyphSlot_Embolden(face->glyph);
@@ -247,6 +248,27 @@ class FreeTypeBackend final : public Backend {
           static_cast<double>(font.size_),
           static_cast<int>(face->face->size->metrics.ascender / 64),
           std::max(1, static_cast<int>(face->face->size->metrics.height / 64))};
+    }
+    face->load_flags = FT_LOAD_DEFAULT;
+    if (FT_IS_SCALABLE(face->face))
+      face->load_flags |= FT_LOAD_NO_BITMAP;
+    const int gasp = FT_Get_Gasp(face->face, face->face->size->metrics.y_ppem);
+    if (gasp != FT_GASP_NO_TABLE && !(gasp & FT_GASP_DO_GRIDFIT)) {
+      // Honour fonts such as Lolita that explicitly request gray coverage
+      // without grid fitting. Auto-hinting can distort their thin joins.
+      face->load_flags |= FT_LOAD_NO_HINTING;
+    } else if (gasp == FT_GASP_NO_TABLE &&
+               std::string_view(FT_Get_Font_Format(face->face) ?
+                   FT_Get_Font_Format(face->face) : "") == "TrueType") {
+      FT_ULong program = 0, preparation = 0;
+      FT_Load_Sfnt_Table(face->face, FT_MAKE_TAG('f', 'p', 'g', 'm'),
+                        0, nullptr, &program);
+      FT_Load_Sfnt_Table(face->face, FT_MAKE_TAG('p', 'r', 'e', 'p'),
+                        0, nullptr, &preparation);
+      const auto* profile = static_cast<const TT_MaxProfile*>(
+          FT_Get_Sfnt_Table(face->face, ft_sfnt_maxp));
+      if (!program && !preparation && (!profile || !profile->maxSizeOfInstructions))
+        face->load_flags |= FT_LOAD_TARGET_LIGHT;
     }
     face->bold = font.bold_;
     face->italic = font.italic_;
