@@ -323,9 +323,10 @@ bool UIState::Prepare(DrawParam param) {
     for (int i = 0; i < 4; ++i) Hash(key, style_->slice_->data[i]);
     if (bitmap_) Hash(key, bitmap_->content_serial());
     if (key != paint_key || !Disposable::Check(surface)) {
-      surface = MakeRefCounted<Bitmap>(width, height);
       ExceptionState ex;
-      Paint(ex, width, height);
+      surface = MakeRefCounted<Bitmap>(ex, width, height);
+      if (!ex.HadException())
+        Paint(ex, width, height);
       if (ex.HadException()) {
         LOGGER_ERROR("[UI] {}", ex.message());
         surface.reset();

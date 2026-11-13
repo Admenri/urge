@@ -36,9 +36,9 @@ URGE_BINDING()
 class WindowVX : public Node {
  public:
   URGE_BINDING()
-  WindowVX(int32_t x, int32_t y, int32_t width, int32_t height);
+  WindowVX(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING()
-  WindowVX(MaybePtr<Viewport> viewport = nullptr);
+  WindowVX(URGE_EXCEPT, MaybePtr<Viewport> viewport = nullptr);
   ~WindowVX() override;
 
   URGE_BINDING()

@@ -189,19 +189,31 @@ Bitmap::Bitmap(URGE_EXCEPT, std::string filename)
     auto* converted_image = SDL_ConvertSurface(image, kInternalPixelFormat);
     SDL_DestroySurface(image);
     image = converted_image;
+    if (!image) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "could not convert bitmap '{}': {}", filename,
+                            SDL_GetError());
+      return;
+    }
   }
 
-  CreateResources({image->w, image->h});
+  if (!CreateResources(exception_state, {image->w, image->h})) {
+    SDL_DestroySurface(image);
+    return;
+  }
   UploadSurface(image);
 }
 
-Bitmap::Bitmap(int32_t width, int32_t height) : font_(MakeRefCounted<Font>()) {
-  CreateResources({width, height});
-  ClearToTransparent();
+Bitmap::Bitmap(URGE_EXCEPT, int32_t width, int32_t height)
+    : font_(MakeRefCounted<Font>()) {
+  if (CreateResources(exception_state, {width, height}))
+    ClearToTransparent();
 }
 
-Bitmap::Bitmap(RefPtr<Bitmap> other)
-    : Bitmap(other->size().x, other->size().y) {
+Bitmap::Bitmap(URGE_EXCEPT, RefPtr<Bitmap> other)
+    : Bitmap(exception_state, other->size().x, other->size().y) {
+  if (exception_state.HadException())
+    return;
   font_ = MakeRefCounted<Font>(other->font_);
   AcquireHandle();
 
@@ -228,7 +240,7 @@ Bitmap::Bitmap(RefPtr<Bitmap> other)
   }
 }
 
-RefPtr<Bitmap> Bitmap::FromSurface(SDL_Surface* surface) {
+RefPtr<Bitmap> Bitmap::FromSurface(URGE_EXCEPT, SDL_Surface* surface) {
   if (!surface)
     return nullptr;
 
@@ -236,13 +248,21 @@ RefPtr<Bitmap> Bitmap::FromSurface(SDL_Surface* surface) {
     SDL_Surface* converted = SDL_ConvertSurface(surface, kInternalPixelFormat);
     SDL_DestroySurface(surface);
     surface = converted;
-    if (!surface)
+    if (!surface) {
+      exception_state.Throw(ExceptionState::kRGSSError,
+                            "could not convert bitmap surface: {}",
+                            SDL_GetError());
       return nullptr;
+    }
   }
 
-  auto bitmap = MakeRefCounted<Bitmap>(surface->w, surface->h);
+  auto bitmap = MakeRefCounted<Bitmap>(exception_state, surface->w, surface->h);
+  if (exception_state.HadException()) {
+    SDL_DestroySurface(surface);
+    return nullptr;
+  }
+  // UploadSurface consumes the surface, including its final destruction.
   bitmap->UploadSurface(surface);
-  SDL_DestroySurface(surface);
   return bitmap;
 }
 
@@ -637,7 +657,10 @@ void Bitmap::UpdateWithPixels(URGE_EXCEPT,
 }
 
 RefPtr<Bitmap> Bitmap::FromImage(URGE_EXCEPT, RefPtr<Image> image) {
-  auto result = MakeRefCounted<Bitmap>(image->Width(), image->Height());
+  auto result = MakeRefCounted<Bitmap>(exception_state, image->Width(),
+                                       image->Height());
+  if (exception_state.HadException())
+    return nullptr;
   result->UpdateWithImage(exception_state, image);
   return result;
 }
@@ -714,16 +737,22 @@ RefPtr<GPUTextureView> Bitmap::GetDepthStencilView() {
   return MakeRefCounted<GPUTextureView>(depth_stencil_view_);
 }
 
-void Bitmap::CreateInternal(SDL_Surface* data) {
-  CreateResources({data->w, data->h});
-  UploadSurface(data);
-}
-
-void Bitmap::CreateResources(const glm::ivec2& size) {
+bool Bitmap::CreateResources(URGE_EXCEPT, const glm::ivec2& size) {
+  if (exception_state.HadException())
+    return false;
   size_ = glm::ivec2(std::max(size.x, 1), std::max(size.y, 1));
   if (size_.x != size.x || size_.y != size.y)
     LOGGER_ERROR("[Bitmap] {}x{} is not a valid size; using {}x{}", size.x,
                  size.y, size_.x, size_.y);
+
+  const auto limit = GPUDevice::Get().max_texture_dimension_2d();
+  if (static_cast<uint32_t>(size_.x) > limit ||
+      static_cast<uint32_t>(size_.y) > limit) {
+    exception_state.Throw(ExceptionState::kRGSSError,
+                          "bitmap size {}x{} exceeds GPU texture limit {}x{}.",
+                          size_.x, size_.y, limit, limit);
+    return false;
+  }
 
   wgpu::TextureDescriptor texture_desc;
   texture_desc.usage = wgpu::TextureUsage::RenderAttachment |
@@ -772,6 +801,7 @@ void Bitmap::CreateResources(const glm::ivec2& size) {
   sampler_ = sampler_resource_->handle();
 
   CreateGroup();
+  return true;
 }
 
 void Bitmap::UploadSurface(SDL_Surface* data) {

@@ -37,15 +37,18 @@ RB_DEF_TYPE_INHERIT(WindowXP, Node);
 RB_FUNC(WindowXP_initialize) {
   if (argc == 0) {
     // initialize()
+    urge::ExceptionState exception_state;
 
     urge::WindowXP* result = nullptr;
 
     {
-      urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>();
-      result = value.get();
+      urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>(
+          exception_state);
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -53,6 +56,7 @@ RB_FUNC(WindowXP_initialize) {
     return object;
   } else if (argc == 1) {
     // initialize(viewport)
+    urge::ExceptionState exception_state;
     VALUE viewport_val;
     urge::Viewport* viewport;
     ParseArgs(argc, argv, "o", &viewport_val);
@@ -62,11 +66,12 @@ RB_FUNC(WindowXP_initialize) {
 
     {
       urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>(
-          viewport);
-      result = value.get();
+          exception_state, viewport);
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)

@@ -102,7 +102,7 @@ RB_FUNC(TilemapVX_initialize) {
     {
       urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
           exception_state);
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
@@ -125,7 +125,7 @@ RB_FUNC(TilemapVX_initialize) {
     {
       urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
           exception_state, viewport);
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
@@ -149,7 +149,7 @@ RB_FUNC(TilemapVX_initialize) {
     {
       urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
           exception_state, viewport, tilesize);
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }

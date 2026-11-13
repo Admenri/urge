@@ -70,12 +70,12 @@ RectI ApplyOpenness(const RectI& rect, int32_t height, int32_t openness) {
 
 }
 
-WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
+WindowVX::WindowVX(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height)
     : Node(nullptr,
            Config::Get().vxa()
                ? ZValue(100, std::numeric_limits<int32_t>::max())
                : ZValue()),
-      contents_(MakeRefCounted<Bitmap>(1, 1)),
+      contents_(MakeRefCounted<Bitmap>(exception_state, 1, 1)),
       cursor_rect_(MakeRefCounted<Rect>()),
       x_(x),
       y_(y),
@@ -90,7 +90,8 @@ WindowVX::WindowVX(int32_t x, int32_t y, int32_t width, int32_t height)
   CreateTintBinding();
 }
 
-WindowVX::WindowVX(RefPtr<Viewport> viewport) : WindowVX(0, 0, 0, 0) {
+WindowVX::WindowVX(URGE_EXCEPT, RefPtr<Viewport> viewport)
+    : WindowVX(exception_state, 0, 0, 0, 0) {
   Attr_Viewport(viewport);
 }
 

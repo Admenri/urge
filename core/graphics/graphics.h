@@ -81,7 +81,7 @@ class Graphics : public Singleton<Graphics> {
                         MaybePtr<Bitmap> bitmap = {},
                         int32_t vague = 40);
   URGE_BINDING()
-  RefPtr<Bitmap> SnapToBitmap();
+  RefPtr<Bitmap> SnapToBitmap(URGE_EXCEPT);
   URGE_BINDING()
   void FrameReset();
   URGE_BINDING()
@@ -89,7 +89,7 @@ class Graphics : public Singleton<Graphics> {
   URGE_BINDING()
   int32_t Height();
   URGE_BINDING()
-  void ResizeScreen(int32_t width, int32_t height);
+  void ResizeScreen(URGE_EXCEPT, int32_t width, int32_t height);
   URGE_BINDING()
   void PlayMovie(URGE_EXCEPT, std::string filename);
 

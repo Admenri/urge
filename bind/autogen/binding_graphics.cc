@@ -217,15 +217,19 @@ RB_FUNC(Graphics_TransitionBitmap) {
 }
 
 RB_FUNC(Graphics_SnapToBitmap) {
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
+
   urge::Bitmap* result = nullptr;
 
   {
-    urge::RefPtr<urge::Bitmap> value = urge::Graphics::Get().SnapToBitmap();
+    urge::RefPtr<urge::Bitmap> value = urge::Graphics::Get(
+        ).SnapToBitmap(exception_state);
     result = value.get();
     if (result)
       result->AddRef();
   }
+  RaiseException(exception_state);
 
   VALUE value = WrapObject(result, kBitmapDataType);
   if (result)
@@ -265,13 +269,15 @@ RB_FUNC(Graphics_Height) {
 }
 
 RB_FUNC(Graphics_ResizeScreen) {
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   int width, height;
   ParseArgs(argc, argv, "ii", &width, &height);
 
   {
-    urge::Graphics::Get().ResizeScreen(width, height);
+    urge::Graphics::Get().ResizeScreen(exception_state, width, height);
   }
+  RaiseException(exception_state);
 
   return Qnil;
 }

@@ -47,11 +47,11 @@ class Bitmap : public Disposable {
   URGE_BINDING()
   Bitmap(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
-  Bitmap(int32_t width, int32_t height);
+  Bitmap(URGE_EXCEPT, int32_t width, int32_t height);
   URGE_BINDING()
-  Bitmap(RefPtr<Bitmap> other);
+  Bitmap(URGE_EXCEPT, RefPtr<Bitmap> other);
 
-  static RefPtr<Bitmap> FromSurface(SDL_Surface* surface);
+  static RefPtr<Bitmap> FromSurface(URGE_EXCEPT, SDL_Surface* surface);
   ~Bitmap() override;
 
   URGE_BINDING()
@@ -212,8 +212,7 @@ class Bitmap : public Disposable {
 
  private:
   void DisposeObject() override;
-  void CreateInternal(SDL_Surface* data);
-  void CreateResources(const glm::ivec2& size);
+  bool CreateResources(URGE_EXCEPT, const glm::ivec2& size);
   void UploadSurface(SDL_Surface* data);
   void ClearToTransparent();
   void CreateGroup();
@@ -221,7 +220,7 @@ class Bitmap : public Disposable {
   RefPtr<Font> font_;
   FontRenderer text_renderer_;
 
-  glm::ivec2 size_;
+  glm::ivec2 size_ = glm::ivec2(0);
   wgpu::Texture texture_, depth_stencil_;
   wgpu::TextureView texture_view_, depth_stencil_view_;
 

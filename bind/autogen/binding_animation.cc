@@ -48,7 +48,7 @@ RB_FUNC(Animation_initialize) {
   {
     urge::RefPtr<urge::Animation> value = urge::MakeRefCounted<urge::Animation>(
         exception_state, std::string(filename_data, filename_size));
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

@@ -54,7 +54,7 @@ RB_FUNC(Bitmap_initialize) {
     {
       urge::RefPtr<urge::Bitmap> value = urge::MakeRefCounted<urge::Bitmap>(
           exception_state, std::string(filename_data, filename_size));
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
@@ -66,6 +66,7 @@ RB_FUNC(Bitmap_initialize) {
     return object;
   } else if (argc == 2) {
     // initialize(width, height)
+    urge::ExceptionState exception_state;
     int width, height;
     ParseArgs(argc, argv, "ii", &width, &height);
 
@@ -73,11 +74,12 @@ RB_FUNC(Bitmap_initialize) {
 
     {
       urge::RefPtr<urge::Bitmap> value = urge::MakeRefCounted<urge::Bitmap>(
-          width, height);
-      result = value.get();
+          exception_state, width, height);
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -89,6 +91,7 @@ RB_FUNC(Bitmap_initialize) {
 }
 
 RB_FUNC(Bitmap_initialize_copy) {
+  urge::ExceptionState exception_state;
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
@@ -98,11 +101,12 @@ RB_FUNC(Bitmap_initialize_copy) {
   urge::Bitmap* result = nullptr;
 
   {
-    urge::RefPtr<urge::Bitmap> value = urge::MakeRefCounted<urge::Bitmap>(other_obj);
-    result = value.get();
+    urge::RefPtr<urge::Bitmap> value = urge::MakeRefCounted<urge::Bitmap>(exception_state, other_obj);
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }
+  RaiseException(exception_state);
 
   VALUE object = SetupSelfData(self, result);
   if (result)

@@ -795,7 +795,9 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
 
     SDL_IOStream* stream = SDL_IOFromConstMem(glb.bin.data() + offset, length);
     SDL_Surface* surface = stream ? IMG_Load_IO(stream, true) : nullptr;
-    images_.push_back(Bitmap::FromSurface(surface));
+    images_.push_back(Bitmap::FromSurface(exception_state, surface));
+    if (exception_state.HadException())
+      return;
   }
 
   const Json& material_list = glb.json["materials"];

@@ -50,7 +50,7 @@ RB_FUNC(RenderTarget3D_initialize) {
         exception_state, width, height,
         std::string(color_format_data, color_format_size),
         std::string(depth_format_data, depth_format_size), samples);
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

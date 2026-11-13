@@ -24,6 +24,7 @@
 
 #include <algorithm>
 
+#include "core/common/logger.h"
 #include "core/graphics/graphics.h"
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
@@ -175,7 +176,8 @@ bool Viewport::Prepare(DrawParam param) {
     region_ = RectI();
 
   if (effect_) {
-    AcquireOffscreen(param->target->size());
+    if (!AcquireOffscreen(param->target->size()))
+      return false;
 
     primitive_.EmitQuad(
         self_scissor,
@@ -192,7 +194,11 @@ bool Viewport::Prepare(DrawParam param) {
   post_process_ =
       region_() && (blend_color.a != 0.0f || blend_tone != glm::vec4(0.0f));
   if (post_process_) {
-    AcquireOffscreen(glm::ivec2(region_.width, region_.height));
+    if (!AcquireOffscreen(glm::ivec2(region_.width, region_.height))) {
+      post_process_ = false;
+      param->scissors.pop();
+      return false;
+    }
 
     primitive_.EmitQuad(region_,
                         MakeNorm(RectI(region_.Size()), offscreen_->size()),
@@ -322,15 +328,22 @@ void Viewport::CreateEffectBindings() {
                                       {{0, util::BufferSet(tint_uniform_)}});
 }
 
-void Viewport::AcquireOffscreen(glm::ivec2 size) {
+bool Viewport::AcquireOffscreen(glm::ivec2 size) {
   if (offscreen_ && offscreen_->size().x >= size.x &&
       offscreen_->size().y >= size.y)
-    return;
+    return true;
 
   const int32_t width = std::max(size.x, offscreen_ ? offscreen_->size().x : 0);
   const int32_t height =
       std::max(size.y, offscreen_ ? offscreen_->size().y : 0);
-  offscreen_ = MakeRefCounted<Bitmap>(width, height);
+  ExceptionState exception_state;
+  auto offscreen = MakeRefCounted<Bitmap>(exception_state, width, height);
+  if (exception_state.HadException()) {
+    LOGGER_ERROR("[Viewport] {}", exception_state.message());
+    return false;
+  }
+  offscreen_ = std::move(offscreen);
+  return true;
 }
 
 }

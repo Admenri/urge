@@ -491,7 +491,10 @@ bool TilemapVX::DoDraw(DrawParam param) {
 }
 
 void TilemapVX::CreateShadowSet(URGE_EXCEPT) {
-  shadow_texture_ = MakeRefCounted<Bitmap>(16 * tilesize_, tilesize_);
+  shadow_texture_ =
+      MakeRefCounted<Bitmap>(exception_state, 16 * tilesize_, tilesize_);
+  if (exception_state.HadException())
+    return;
 
   const int32_t half = tilesize_ / 2;
   RefPtr<Color> tint = MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 128.0f);

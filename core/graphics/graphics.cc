@@ -196,6 +196,8 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   SDL_SetWindowFullscreen(window_, config.display.fullscreen);
 
   GPUDevice::Reset(new GPUDevice(exception_state, window_, config.gfx.backend));
+  if (exception_state.HadException())
+    return;
   GPU::Reset(new GPU());
   ShaderSet::Reset(new ShaderSet());
 
@@ -207,7 +209,9 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
       Upscaler::ParseMode(Config::Get().gfx.upscaler));
 
   root_ = MakeRefCounted<ScreenRootNode>();
-  ResizeScreen(config.display.width, config.display.height);
+  ResizeScreen(exception_state, config.display.width, config.display.height);
+  if (exception_state.HadException())
+    return;
 
   ImGuiManager::Reset(new ImGuiManager(window_));
   UI::Reset(new UI());
@@ -375,6 +379,8 @@ void Graphics::Transition(URGE_EXCEPT,
   if (!filename.empty())
     mapping = MakeRefCounted<Bitmap>(exception_state, filename);
 
+  if (exception_state.HadException())
+    return;
   TransitionBitmap(exception_state, duration, mapping, vague);
 }
 
@@ -387,8 +393,13 @@ void Graphics::TransitionBitmap(URGE_EXCEPT,
 
   brightness_ = 255;
 
-  const RefPtr<Bitmap> frozen_scene = MakeRefCounted<Bitmap>(screen_);
-  const RefPtr<Bitmap> current_scene = SnapToBitmap();
+  const RefPtr<Bitmap> frozen_scene =
+      MakeRefCounted<Bitmap>(exception_state, screen_);
+  if (exception_state.HadException())
+    return;
+  const RefPtr<Bitmap> current_scene = SnapToBitmap(exception_state);
+  if (exception_state.HadException())
+    return;
 
   const bool mapped = bitmap != nullptr;
   const wgpu::RenderPipeline pipeline =
@@ -443,8 +454,10 @@ void Graphics::TransitionBitmap(URGE_EXCEPT,
   frozen_ = false;
 }
 
-RefPtr<Bitmap> Graphics::SnapToBitmap() {
-  auto result = MakeRefCounted<Bitmap>(Width(), Height());
+RefPtr<Bitmap> Graphics::SnapToBitmap(URGE_EXCEPT) {
+  auto result = MakeRefCounted<Bitmap>(exception_state, Width(), Height());
+  if (exception_state.HadException())
+    return nullptr;
   root_->Render(result, Color::Black());
   return result;
 }
@@ -461,9 +474,12 @@ int32_t Graphics::Height() {
   return screen_->size().y;
 }
 
-void Graphics::ResizeScreen(int32_t width, int32_t height) {
+void Graphics::ResizeScreen(URGE_EXCEPT, int32_t width, int32_t height) {
+  auto screen = MakeRefCounted<Bitmap>(exception_state, width, height);
+  if (exception_state.HadException())
+    return;
   present_.configured = false;
-  screen_ = MakeRefCounted<Bitmap>(width, height);
+  screen_ = std::move(screen);
 
 #if !defined(OS_ANDROID)
   if (Config::Get().display.resizable == WindowResizable::kNone) {

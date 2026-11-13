@@ -52,7 +52,7 @@ RB_FUNC(Effect_initialize) {
       urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
           exception_state, std::string(vs_wgsl_data, vs_wgsl_size),
           std::string(fs_wgsl_data, fs_wgsl_size));
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
@@ -82,7 +82,7 @@ RB_FUNC(Effect_initialize) {
           exception_state, std::string(vs_wgsl_data, vs_wgsl_size),
           std::string(fs_wgsl_data, fs_wgsl_size),
           std::string(blend_states_data, blend_states_size));
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
@@ -109,7 +109,7 @@ RB_FUNC(Effect_initialize_copy) {
 
   {
     urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(exception_state, other_obj);
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

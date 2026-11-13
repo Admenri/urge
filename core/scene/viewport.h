@@ -70,7 +70,7 @@ class Viewport : public Node {
  private:
   void ResetTransform();
   void CreateEffectBindings();
-  void AcquireOffscreen(glm::ivec2 size);
+  bool AcquireOffscreen(glm::ivec2 size);
 
   RefPtr<Rect> rect_;
   glm::ivec2 origin_ = glm::ivec2(0);

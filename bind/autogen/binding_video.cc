@@ -76,7 +76,7 @@ RB_FUNC(Video_initialize) {
   {
     urge::RefPtr<urge::Video> value = urge::MakeRefCounted<urge::Video>(
         exception_state, std::string(filename_data, filename_size));
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

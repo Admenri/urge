@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-11-12T19:00:17Z",
+    "generated_at": "2026-11-13T15:48:15Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -1900,7 +1900,7 @@
             "ruby_type": "Bitmap"
           },
           "params": [],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
           "export": "core/graphics/graphics.h:58-121"
         },
@@ -1959,7 +1959,7 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
           "export": "core/graphics/graphics.h:58-121"
         },
@@ -13835,7 +13835,7 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "export": "core/canvas/bitmap.h:45-162"
         }
       ],
@@ -13847,7 +13847,7 @@
             "default": null
           }
         ],
-        "has_exception": false,
+        "has_exception": true,
         "export": "core/canvas/bitmap.h:45-162"
       },
       "instance_methods": [
@@ -17746,7 +17746,7 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "export": "core/scene/window_vx.h:36-91"
         },
         {
@@ -17757,7 +17757,7 @@
               "default": "nullptr"
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "export": "core/scene/window_vx.h:36-91"
         }
       ],
@@ -18105,7 +18105,7 @@
               "default": "nullptr"
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "export": "core/scene/window_xp.h:49-92"
         }
       ],

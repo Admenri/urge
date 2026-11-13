@@ -73,7 +73,7 @@ RB_FUNC(Gamepad_initialize) {
   {
     urge::RefPtr<urge::Gamepad> value = urge::MakeRefCounted<urge::Gamepad>(
         exception_state, device_id);
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

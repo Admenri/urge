@@ -178,10 +178,10 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-WindowXP::WindowXP(RefPtr<Viewport> viewport)
+WindowXP::WindowXP(URGE_EXCEPT, RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
       above_(MakeRefCounted<WindowXPAbove>(this, viewport)),
-      contents_(MakeRefCounted<Bitmap>(1, 1)),
+      contents_(MakeRefCounted<Bitmap>(exception_state, 1, 1)),
       cursor_rect_(MakeRefCounted<Rect>()) {
   Node::SetupTrait(this);
   CreateTintBinding();

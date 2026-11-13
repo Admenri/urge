@@ -52,7 +52,7 @@ RB_FUNC(ComputePass3D_initialize) {
     urge::RefPtr<urge::ComputePass3D> value = urge::MakeRefCounted<urge::ComputePass3D>(
         exception_state, std::string(wgsl_data, wgsl_size),
         std::string(entry_data, entry_size));
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

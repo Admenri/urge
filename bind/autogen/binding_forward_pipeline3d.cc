@@ -41,7 +41,7 @@ RB_FUNC(ForwardPipeline3D_initialize) {
   {
     urge::RefPtr<urge::ForwardPipeline3D> value = urge::MakeRefCounted<urge::ForwardPipeline3D>(
         exception_state);
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

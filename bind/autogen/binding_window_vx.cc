@@ -38,15 +38,18 @@ RB_DEF_TYPE_INHERIT(WindowVX, Node);
 RB_FUNC(WindowVX_initialize) {
   if (argc == 0) {
     // initialize()
+    urge::ExceptionState exception_state;
 
     urge::WindowVX* result = nullptr;
 
     {
-      urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>();
-      result = value.get();
+      urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
+          exception_state);
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -54,6 +57,7 @@ RB_FUNC(WindowVX_initialize) {
     return object;
   } else if (argc == 1) {
     // initialize(viewport)
+    urge::ExceptionState exception_state;
     VALUE viewport_val;
     urge::Viewport* viewport;
     ParseArgs(argc, argv, "o", &viewport_val);
@@ -63,11 +67,12 @@ RB_FUNC(WindowVX_initialize) {
 
     {
       urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
-          viewport);
-      result = value.get();
+          exception_state, viewport);
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)
@@ -75,6 +80,7 @@ RB_FUNC(WindowVX_initialize) {
     return object;
   } else if (argc == 4) {
     // initialize(x, y, width, height)
+    urge::ExceptionState exception_state;
     int x, y, width, height;
     ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
@@ -82,11 +88,12 @@ RB_FUNC(WindowVX_initialize) {
 
     {
       urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
-          x, y, width, height);
-      result = value.get();
+          exception_state, x, y, width, height);
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }
+    RaiseException(exception_state);
 
     VALUE object = SetupSelfData(self, result);
     if (result)

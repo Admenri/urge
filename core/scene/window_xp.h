@@ -49,7 +49,7 @@ URGE_BINDING()
 class WindowXP : public Node {
  public:
   URGE_BINDING()
-  WindowXP(MaybePtr<Viewport> viewport = nullptr);
+  WindowXP(URGE_EXCEPT, MaybePtr<Viewport> viewport = nullptr);
   ~WindowXP() override;
 
   URGE_BINDING()

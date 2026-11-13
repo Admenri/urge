@@ -51,7 +51,7 @@ RB_FUNC(Image_initialize) {
     {
       urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(
           exception_state, std::string(filename_data, filename_size));
-      result = value.get();
+      result = exception_state.HadException() ? nullptr : value.get();
       if (result)
         result->AddRef();
     }

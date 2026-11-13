@@ -44,7 +44,7 @@ RB_FUNC(AudioStream_initialize) {
   {
     urge::RefPtr<urge::AudioStream> value = urge::MakeRefCounted<urge::AudioStream>(
         exception_state, std::string(filename_data, filename_size));
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }

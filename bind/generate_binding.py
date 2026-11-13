@@ -1011,7 +1011,12 @@ def emit_initialize(entry: dict) -> list[str]:
                 inner,
             )
         )
-        lines.append(inner + "result = value.get();")
+        # Failed construction must release its temporary before Ruby longjmps.
+        result_expr = (
+            "exception_state.HadException() ? nullptr : value.get()"
+            if has_exception else "value.get()"
+        )
+        lines.append(inner + "result = %s;" % result_expr)
         lines.append(inner + "if (result)")
         lines.append(inner + "  result->AddRef();")
         lines.append(nested + "}")
@@ -1069,7 +1074,10 @@ def emit_initialize_copy(entry: dict) -> list[str]:
             "    urge::RefPtr<urge::%s> value = "
             "urge::MakeRefCounted<urge::%s>(%s);"
             % (name, name, ctor_args),
-            "    result = value.get();",
+            "    result = %s;" % (
+                "exception_state.HadException() ? nullptr : value.get()"
+                if has_exception else "value.get()"
+            ),
             "    if (result)",
             "      result->AddRef();",
             "  }",

@@ -49,7 +49,7 @@ RB_FUNC(GLTFModel3D_initialize) {
   {
     urge::RefPtr<urge::GLTFModel3D> value = urge::MakeRefCounted<urge::GLTFModel3D>(
         exception_state, std::string(path_data, path_size));
-    result = value.get();
+    result = exception_state.HadException() ? nullptr : value.get();
     if (result)
       result->AddRef();
   }
