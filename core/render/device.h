@@ -65,6 +65,8 @@ class GPUDevice : public Singleton<GPUDevice> {
 
   const DeviceInfo& info() const { return info_; }
 
+  uint32_t max_texture_dimension_2d() const { return max_texture_dimension_2d_; }
+
   bool RefreshSurface();
 
   uint64_t surface_generation() const { return surface_generation_; }
@@ -92,6 +94,7 @@ class GPUDevice : public Singleton<GPUDevice> {
   wgpu::Queue queue_;
 
   DeviceInfo info_;
+  uint32_t max_texture_dimension_2d_ = 1;
 };
 
 }

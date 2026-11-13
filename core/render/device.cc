@@ -341,7 +341,20 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   };
   device_callback.userdata1 = this;
 
+  wgpu::Limits adapter_limits;
+  if (!adapter_.GetLimits(&adapter_limits) ||
+      !adapter_limits.maxTextureDimension2D) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "could not query the GPU texture limits.");
+    return;
+  }
+
+  // WebGPU otherwise enables only its default limit, even when the adapter
+  // supports larger textures (e.g. tall RGSS pictures used for scrolling).
+  wgpu::Limits required_limits;
+  required_limits.maxTextureDimension2D = adapter_limits.maxTextureDimension2D;
   wgpu::DeviceDescriptor device_desc;
+  device_desc.requiredLimits = &required_limits;
   adapter_.RequestDevice(&device_desc, device_callback);
 
 #if defined(OS_EMSCRIPTEN)
@@ -354,6 +367,17 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   if (!device_)
     instance_.ProcessEvents();
 #endif
+
+  wgpu::Limits device_limits;
+  if (!device_ || !device_.GetLimits(&device_limits) ||
+      !device_limits.maxTextureDimension2D) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "could not create the GPU device or query its limits.");
+    return;
+  }
+  max_texture_dimension_2d_ = device_limits.maxTextureDimension2D;
+  LOGGER_INFO("[GPU] Maximum 2D texture dimension: {} (adapter: {})",
+              max_texture_dimension_2d_, adapter_limits.maxTextureDimension2D);
 
   wgpu::AdapterInfo adapter_info;
   adapter_.GetInfo(&adapter_info);
