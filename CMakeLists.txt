@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.30)
 
+# The engine and vendored libraries use headers, not C++ named modules.
+# CMake's automatic std-module synthesis can pick up the host libstdc++
+# manifest while cross-compiling (notably Android NDK + Ubuntu GCC 15).
+# Disable scanning before language/target initialization, including subprojects.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 project(URGE LANGUAGES CXX C)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   enable_language(OBJC OBJCXX)
