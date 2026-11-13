@@ -93,11 +93,15 @@ fn coverage(uv:vec2<f32>,point:vec2<f32>)->f32 {
 }
 @fragment fn fs_main(@location(0) uv:vec2<f32>,@location(1) color:vec4<f32>,
  @location(2) point:vec2<f32>,@location(3) @interpolate(flat) layer:i32)->@location(0) vec4<f32> {
- let edge=any(point < text_clip.rect.xy+text_clip.margin.xy) ||
-          any(point >= text_clip.rect.zw-text_clip.margin.xy);
+ let edges=layer>>2;
+ let draw_layer=layer&3;
+ let edge=((edges&1)!=0 && point.x < text_clip.rect.x+text_clip.margin.x) ||
+          ((edges&2)!=0 && point.x >= text_clip.rect.z-text_clip.margin.x) ||
+          ((edges&4)!=0 && point.y < text_clip.rect.y+text_clip.margin.y) ||
+          ((edges&8)!=0 && point.y >= text_clip.rect.w-text_clip.margin.y);
  // Interior glyphs retain their vector outlines. Only the cut edges are
  // rebuilt from clipped coverage, so the outline closes inside the text box.
- if (layer==3) {
+ if (draw_layer==3) {
   if (!edge) { return vec4<f32>(0); }
   var mask=0.0;
   for (var y=-1; y<=1; y++) {
@@ -108,7 +112,7 @@ fn coverage(uv:vec2<f32>,point:vec2<f32>)->f32 {
   }
   return color*mask;
  }
- if (edge && (layer==1 || layer==2)) { return vec4<f32>(0); }
+ if (edge && (draw_layer==1 || draw_layer==2)) { return vec4<f32>(0); }
  return color*textureSampleLevel(atlas,filtering,uv,0).r;
 }
 )",
@@ -167,10 +171,13 @@ struct Page {
 struct AtlasGlyph {
   std::shared_ptr<Page> page;
   int x = 0, y = 0, width = 0, height = 0, bearing_x = 0, bearing_y = 0;
+  int ink_left = 0, ink_right = 0, ink_top = 0, ink_bottom = 0;
 };
 struct Prepared {
   AtlasGlyph image;
   float x = 0, y = 0;
+  RectF ink;
+  int edges = 0;
 };
 glm::vec4 PremultipliedColor(const RefPtr<urge::Color>& color,
                              float opacity = 1) {
@@ -385,6 +392,16 @@ struct FontRenderer::Impl {
     page->dirty_bottom = std::max(page->dirty_bottom, y + mask.height + 4);
     page->stamp = ++stamp;
     image = {page, x + 2, y + 2, mask.width, mask.height, mask.x, mask.y};
+    image.ink_left = mask.width;
+    image.ink_top = mask.height;
+    for (int row = 0; row < mask.height; ++row)
+      for (int col = 0; col < mask.width; ++col)
+        if (mask.pixels[static_cast<size_t>(row) * mask.width + col]) {
+          image.ink_left = std::min(image.ink_left, col);
+          image.ink_right = std::max(image.ink_right, col + 1);
+          image.ink_top = std::min(image.ink_top, row);
+          image.ink_bottom = std::max(image.ink_bottom, row + 1);
+        }
     glyphs.emplace(key, image);
     return image;
   }
@@ -475,14 +492,9 @@ void FontRenderer::Draw(Bitmap& bitmap,
   const float height = layout->height;
   const float scale =
       width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
-  // Once the minimum scale is reached, clip the remaining text from the
-  // leading edge. RGSS does not use negative center/right alignment offsets.
-  const float spare_width = std::max(0.0f, region.width - width * scale);
+  // Raster phase is unchanged by whole-pixel alignment. Compute decoration
+  // bounds from the prepared glyphs, keeping advance-only squeeze/text_size.
   float left = region.x;
-  if (align == 1)
-    left += std::floor(spare_width / 2);
-  else if (align == 2)
-    left += spare_width;
   const float top =
       region.y + std::floor(std::max(0.0f, region.height - height) / 2);
   const auto clip =
@@ -507,14 +519,48 @@ void FontRenderer::Draw(Bitmap& bitmap,
           std::clamp(static_cast<int>(std::floor((gx - x) * 4)), 0, 3);
       const int py =
           std::clamp(static_cast<int>(std::floor((gy - y) * 4)), 0, 3);
-      auto image = state.Glyph(glyph, outline, font.solid_, px, py);
-      if (image.page)
-        out.push_back({std::move(image), x - phase_origin, y});
+      auto body = state.Glyph(glyph, 0, font.solid_, px, py);
+      auto image = outline ? state.Glyph(glyph, outline, font.solid_, px, py) : body;
+      if (image.page) {
+        RectF ink(x - phase_origin + body.bearing_x + body.ink_left,
+                  y + body.bearing_y + body.ink_top,
+                  body.ink_right - body.ink_left, body.ink_bottom - body.ink_top);
+        out.push_back({std::move(image), x - phase_origin, y, ink});
+      }
     }
   };
   prepare(0, fill);
   if (font.outline_)
     prepare(1, stroke);
+  float ink_left = 0, ink_right = width;
+  for (const auto& item : fill) {
+    ink_left = std::min(ink_left, item.x + item.image.bearing_x + item.image.ink_left);
+    ink_right = std::max(ink_right, item.x + item.image.bearing_x + item.image.ink_right);
+  }
+  // Reserve the outline on both sides, including for left alignment. Negative
+  // bearings and italic overhang belong to the rendered box, not its advance.
+  const float padding = font.outline_ ? 1.0f : 0.0f;
+  const float shadow = font.shadow_ ? 1.0f : 0.0f;
+  const float decorated_width = (ink_right - ink_left + 2 * padding + shadow) * scale;
+  const float spare_width = std::max(0.0f, region.width - decorated_width);
+  left += (padding - ink_left) * scale;
+  if (align == 1)
+    left += std::floor(spare_width / 2);
+  else if (align == 2)
+    left += spare_width;
+  // A stroke merely touching the box is still a complete outline. Rebuild
+  // only edges touched by the body, never a normally padded glyph's border.
+  for (auto* list : {&fill, &stroke})
+    for (auto& item : *list) {
+      const float x0 = left + item.ink.x * scale;
+      const float x1 = x0 + item.ink.width * scale;
+      const float y0 = top + item.ink.y;
+      const float y1 = y0 + item.ink.height;
+      item.edges = (x0 < clip.x + scale ? 1 : 0) |
+                   (x1 > clip.x + clip.width - scale ? 2 : 0) |
+                   (y0 < clip.y + 1 ? 4 : 0) |
+                   (y1 > clip.y + clip.height - 1 ? 8 : 0);
+    }
   // Upload at queue flush, coalescing new cells across all text calls.
   BitmapDraw batch;
   uint64_t current_page = 0;
@@ -532,6 +578,8 @@ void FontRenderer::Draw(Bitmap& bitmap,
     for (const auto& item : images) {
       auto im = item.image;
       if (layer == 3) {
+        if (!item.edges)
+          continue;
         --im.x; --im.y; --im.bearing_x; --im.bearing_y;
         im.width += 2; im.height += 2;
       }
@@ -602,7 +650,7 @@ void FontRenderer::Draw(Bitmap& bitmap,
       if (!batch.prepare)
         batch.prepare = [&state, page = im.page] { state.Upload(page); };
       Quad(batch.vertices, RectF(x, y, right - x, bottom - y), uv, a, b,
-           layer == 2 && !font.outline_ ? 0 : layer);
+           (layer == 2 && !font.outline_ ? 0 : layer) | (item.edges << 2));
     }
   };
   if (font.shadow_)
