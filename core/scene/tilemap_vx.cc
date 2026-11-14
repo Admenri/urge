@@ -827,7 +827,8 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
 
   auto process_shadow_tile = [&](int8_t shadow_id, int32_t x, int32_t y) {
     tile_color = glm::vec4(0.0f);
-    const RectF tex(shadow_id * tilesize_ + 0.5f, tilesize_ + 0.5f,
+    // The shadow atlas has one tile row. Keep the half-texel inset within it.
+    const RectF tex(shadow_id * tilesize_ + 0.5f, 0.5f,
                     tilesize_ - 1.0f, tilesize_ - 1.0f);
     const RectF pos(x * tilesize_, y * tilesize_, tilesize_, tilesize_);
 
