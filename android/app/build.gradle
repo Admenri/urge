@@ -149,7 +149,7 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         def copyCodecNotices = tasks.register(
                 "copy${variant.name.capitalize()}CodecNotices", CopyCodecNotices) {
-            from(rootProject.file("../core/audio/decoders/LICENSES.md")) {
+            from(rootProject.file("../doc/Audio.md")) {
                 rename { "audio-codec-licenses.txt" }
             }
             into(outputDirectory)

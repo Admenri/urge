@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-configure_file("${PROJECT_SOURCE_DIR}/core/audio/decoders/LICENSES.md"
+configure_file("${PROJECT_SOURCE_DIR}/doc/Audio.md"
   "${CMAKE_CURRENT_BINARY_DIR}/audio-codec-licenses.txt" COPYONLY)
 
 configure_file("${PROJECT_SOURCE_DIR}/third_party/ruby/cmake/ENCODINGS_LICENSES.txt"
