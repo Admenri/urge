@@ -325,10 +325,11 @@ void Graphics::Wait(URGE_EXCEPT, int32_t duration) {
 
 void Graphics::Fadein(URGE_EXCEPT, int32_t duration) {
   duration = std::max(duration, 1);
-  int32_t step = (255 - brightness_) / duration;
+  const int32_t start = brightness_;
   for (int32_t i = 0; i < duration; ++i) {
-    brightness_ += step;
-    brightness_ = std::clamp<int32_t>(brightness_, 0, 255);
+    // Compute each frame from the original value; integer step accumulation
+    // otherwise leaves the last presented frame short of full brightness.
+    brightness_ = start + static_cast<int64_t>(255 - start) * (i + 1) / duration;
 
     Update(exception_state);
   }
@@ -337,10 +338,11 @@ void Graphics::Fadein(URGE_EXCEPT, int32_t duration) {
 
 void Graphics::Fadeout(URGE_EXCEPT, int32_t duration) {
   duration = std::max(duration, 1);
-  int32_t step = brightness_ / duration;
+  const int32_t start = brightness_;
   for (int32_t i = 0; i < duration; ++i) {
-    brightness_ -= step;
-    brightness_ = std::clamp<int32_t>(brightness_, 0, 255);
+    // Present true black on the final frame, before a subsequent freeze or
+    // loading pause. Assigning zero only after Update leaves the old dim map.
+    brightness_ = static_cast<int64_t>(start) * (duration - i - 1) / duration;
 
     Update(exception_state);
   }
