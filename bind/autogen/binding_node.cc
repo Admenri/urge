@@ -31,51 +31,48 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/scene/node.h:37-69)
+// Node  (core/scene/node.h:35-62)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Node, Disposable);
 
 RB_FUNC(Node_initialize) {
-  if (argc == 0) {
-    // initialize()
 
-    urge::Node* result = nullptr;
+  urge::Node* result = nullptr;
 
-    {
-      urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>();
-      result = value.get();
-      if (result)
-        result->AddRef();
-    }
-
-    VALUE object = SetupSelfData(self, result);
+  {
+    urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>();
+    result = value.get();
     if (result)
-      result->Release();
-    return object;
-  } else if (argc == 1) {
-    // initialize(parent)
-    VALUE parent_val;
-    urge::Node* parent;
-    ParseArgs(argc, argv, "o", &parent_val);
-    parent = CheckMaybeObject<urge::Node>(parent_val, kNodeDataType);
-
-    urge::Node* result = nullptr;
-
-    {
-      urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>(parent);
-      result = value.get();
-      if (result)
-        result->AddRef();
-    }
-
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
-  } else {
-    ArgcError(argc);
+      result->AddRef();
   }
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
+}
+
+RB_FUNC(Node_initialize_copy) {
+  VALUE other_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &other_val);
+  urge::Node* other_obj = CheckObject<urge::Node>(other_val, kNodeDataType);
+  CheckDisposedInstanceData(other_val);
+
+  urge::Node* result = nullptr;
+
+  {
+    urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
+  }
+
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Node_Render) {
@@ -110,21 +107,6 @@ RB_FUNC(Node_Render) {
   } else {
     ArgcError(argc);
   }
-}
-
-RB_FUNC(Node_WorldMatrix) {
-  auto* self_obj = GetSelfData<urge::Node>(self);
-
-  CheckArgc(argc, 0);
-  std::vector<float>* result = nullptr;
-
-  {
-    result = new std::vector<float>(self_obj->WorldMatrix());
-  }
-
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
 }
 
 // Attribute: z (int32_t)
@@ -181,8 +163,8 @@ void InitNodeBinding() {
   rb_define_alloc_func(klass, ClassAllocate<&kNodeDataType>);
 
   DefineMethod(klass, "initialize", Node_initialize);
+  DefineMethod(klass, "initialize_copy", Node_initialize_copy);
   DefineMethod(klass, "render", Node_Render);
-  DefineMethod(klass, "world_matrix", Node_WorldMatrix);
   DefineMethod(klass, "z", Node_Z);
   DefineMethod(klass, "z=", Node_ZEqual);
   DefineMethod(klass, "visible", Node_Visible);

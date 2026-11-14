@@ -79,7 +79,6 @@ struct ZValue {
 };
 
 class DrawableSet;
-class Node;
 
 class Drawable {
  public:
@@ -93,7 +92,6 @@ class Drawable {
   void SortWith(ZValue value);
 
   bool& visible() { return visible_; }
-  bool visible() const { return visible_; }
   ZValue& order() { return z_; }
 
   void SetParent(DrawableSet* parent);
@@ -101,9 +99,6 @@ class Drawable {
 
   Drawable* Prev() { return prev_; }
   Drawable* Next() { return next_; }
-  void SetNode(Node* node) { node_ = node; }
-  Node* node() const { return node_; }
-  Node* parent_node() const;
 
   template <typename Ty>
   void SetupTrait(Ty* self) {
@@ -133,7 +128,6 @@ class Drawable {
   Drawable* next_ = nullptr;
 
   DrawableSet* parent_ = nullptr;
-  Node* node_ = nullptr;
   bool visible_ = true;
   ZValue z_ = {};
 
@@ -148,14 +142,10 @@ class DrawableSet {
 
   void DispatchPrepare(DrawParam param);
   void DispatchDraw(DrawParam param);
-  void SetNode(Node* node) { node_ = node; }
-  Node* node() const { return node_; }
-  std::vector<Node*> Nodes() const;
 
  private:
   friend class Drawable;
   Drawable root_;
-  Node* node_ = nullptr;
 };
 
 class FlashableNode {

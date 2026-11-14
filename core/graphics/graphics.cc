@@ -53,7 +53,6 @@
 #include "core/render/device.h"
 #include "core/render/gpu_utils.h"
 #include "core/render/imgui_manager.h"
-#include "core/ui/ui.h"
 #include "core/render/pipeline.h"
 #include "core/render/primitive.h"
 #include "core/render/render_stats.h"
@@ -214,11 +213,9 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
     return;
 
   ImGuiManager::Reset(new ImGuiManager(window_));
-  UI::Reset(new UI());
 }
 
 Graphics::~Graphics() {
-  UI::Reset(nullptr);
   ImGuiManager::Reset(nullptr);
 
   present_ = {};
@@ -264,7 +261,6 @@ void Graphics::Update(URGE_EXCEPT) {
   Audio::Get().Update();
   Input::Get().Update();
   Mouse::Get().Update();
-  UI::Get().Update();
 
   const uint64_t render_begin = SDL_GetPerformanceCounter();
   if (!frozen_)
@@ -691,8 +687,6 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
   bool quit = false;
   for (SDL_Event& event : pending_events_) {
     imgui.ProcessEvent(event);
-    const bool ui_handled = !imgui.WantsGameInputBlocked() &&
-                            UI::Get().ProcessEvent(event);
 
     Input::Get().ProcessGamepadEvents(&event);
 
@@ -700,11 +694,7 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
         event.type == SDL_EVENT_DID_ENTER_BACKGROUND)
       Touch::Get().CancelAll();
 
-    const bool release = event.type == SDL_EVENT_KEY_UP ||
-        event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
-        event.type == SDL_EVENT_FINGER_UP ||
-        event.type == SDL_EVENT_FINGER_CANCELED;
-    if (!imgui.WantsGameInputBlocked() && (!ui_handled || release)) {
+    if (!imgui.WantsGameInputBlocked()) {
       Input::Get().ProcessEvents(exception_state, &event);
       Mouse::Get().ProcessEvents(exception_state, &event);
       Touch::Get().ProcessEvents(exception_state, &event);
@@ -723,7 +713,7 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
   }
   pending_events_.clear();
 
-  Input::Get().SetBlocked(imgui.WantsGameInputBlocked() || UI::Get().KeyboardBlocked());
+  Input::Get().SetBlocked(imgui.WantsGameInputBlocked());
 
   if (quit)
     exception_state.Throw(ExceptionState::kExitError, {});

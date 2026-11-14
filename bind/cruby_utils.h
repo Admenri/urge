@@ -345,31 +345,6 @@ VALUE TagUTF8IfValid(VALUE str);
     return Qnil;                                \
   }
 
-// Allocate in Ruby before taking an owning C++ string, so Ruby exceptions
-// never jump across a live std::string destructor.
-#define BINDING_ATTR_STRING(ty, selfty, cap)                    \
-  RB_FUNC(ty##_##cap) {                                        \
-    auto* self_obj = GetSelfData<selfty>(self);                 \
-    CheckArgc(argc, 0);                                        \
-    long length = 0;                                          \
-    { length = static_cast<long>(self_obj->Attr_##cap()->size()); } \
-    VALUE result = rb_utf8_str_new(nullptr, length);            \
-    {                                                         \
-      const auto text = *self_obj->Attr_##cap();               \
-      if (length) memcpy(RSTRING_PTR(result), text.data(), length); \
-    }                                                         \
-    return result;                                            \
-  }                                                           \
-  RB_FUNC(ty##_##cap##Equal) {                                 \
-    auto* self_obj = GetSelfData<selfty>(self);                 \
-    CheckArgc(argc, 1);                                        \
-    Check_Type(argv[0], T_STRING);                             \
-    const char* data = RSTRING_PTR(argv[0]);                    \
-    const auto length = static_cast<size_t>(RSTRING_LEN(argv[0])); \
-    { self_obj->Attr_##cap(std::string(data, length)); }        \
-    return Qnil;                                              \
-  }
-
 #define BINDING_ATTR_VECTOR(ty, selfty, cap, elem)             \
   RB_FUNC(ty##_##cap) {                                        \
     auto* self_obj = GetSelfData<selfty>(self);                \

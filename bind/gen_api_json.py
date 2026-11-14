@@ -62,7 +62,6 @@ MODULE_CLASSES = {
     "Config",
     "URGE",
     "TextInput",
-    "UI",
 }
 
 # Fixed presentation order (also the registration order of binding_init.cc:

@@ -170,7 +170,6 @@ class Bitmap : public Disposable {
   void AcquireHandle();
 
   void TouchContent() { ++content_serial_; }
-  uint64_t content_serial() const { return content_serial_; }
 
   wgpu::RenderPassEncoder BeginRendering(
       wgpu::CommandEncoder encoder,

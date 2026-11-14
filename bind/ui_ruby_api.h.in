@@ -1,3 +1,0 @@
-// Generated at configure time from bind/ui_api.rb.
-#pragma once
-inline constexpr char kUIRubyAPI[] = R"urge_ui(@URGE_UI_RUBY_SOURCE@)urge_ui";
