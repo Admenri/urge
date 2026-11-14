@@ -376,6 +376,14 @@ void Graphics::TransitionBitmap(URGE_EXCEPT,
 
   brightness_ = 255;
 
+  // A zero-frame RGSS transition unfreezes immediately. Do not present an
+  // extra frame: scripts may restore brightness before their next update.
+  if (duration <= 0) {
+    root_->Render(screen_, Color::Black());
+    frozen_ = false;
+    return;
+  }
+
   const RefPtr<Bitmap> frozen_scene =
       MakeRefCounted<Bitmap>(exception_state, screen_);
   if (exception_state.HadException())
@@ -401,11 +409,11 @@ void Graphics::TransitionBitmap(URGE_EXCEPT,
   const wgpu::BindGroup scene_textures =
       util::CreateBindGroup(pipeline.GetBindGroupLayout(2), bindings);
 
-  const int32_t steps = std::max(duration, 1);
+  const int32_t steps = duration;
   const float vague_norm = std::clamp(vague, 1, 256) / 256.0f;
 
   for (int32_t frame = 0; frame < steps; ++frame) {
-    const float progress = frame * (1.0f / duration);
+    const float progress = static_cast<float>(frame + 1) / steps;
     const glm::vec4 vertex_color = glm::vec4(vague_norm, 0.0f, 0.0f, progress);
 
     quad_emitter_.Reset();
