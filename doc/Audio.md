@@ -1,4 +1,4 @@
-# WMA / MIDI 音频解码
+# Part I: WMA / MIDI 音频解码
 
 本目录为 URGE 内置的 C++ 解码器。音频仍经过 miniaudio 混音和 SDL 输出，沿用现有音量、变速、暂停、定位、淡出和 BGM/BGS/ME/SE 通道；不新增设备后端，不依赖 FFmpeg、Rust、FluidSynth、Homebrew 或操作系统 MIDI 合成器。
 
@@ -46,3 +46,95 @@ Linux、Android、Web 不假定有系统音源，需要随游戏提供可用文�
 - `backend.cc`：miniaudio data source 适配及默认循环区间。
 
 参考 OxideAV、libdmusic、TinySoundFont/TinyMidiLoader 的 MIT 实现，版本和许可见 [LICENSES.md](LICENSES.md)。CC111 的资源约定见 [RPG Maker VX 资源规范](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rpgvx/resource.html)。
+
+
+# Part II: Third-party reference notices
+
+The C++ readers and synthesizer are maintained in URGE. They use no Rust,
+FFmpeg, FluidSynth, libdmusic, or TinySoundFont runtime library.
+
+The following MIT implementations informed the format parsing and synthesis.
+WMA wire tables in `wma_tables.inc` are adapted from OxideAV.
+
+## OxideAV WMA
+
+Reference: [4ef59994ea5a19c9ddb87649c066f7e85f627c15](https://github.com/OxideAV/oxideav-wma/tree/4ef59994ea5a19c9ddb87649c066f7e85f627c15).
+
+```text
+MIT License
+
+Copyright (c) 2026 Karpelès Lab Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## libdmusic
+
+Reference: [790662e71120ff70359033083eb5a8a5751d5300](https://github.com/libdmusic/libdmusic/tree/790662e71120ff70359033083eb5a8a5751d5300).
+
+```text
+MIT License
+
+Copyright (c) 2019 Francesco Bertolaccini
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## TinySoundFont / SFZero
+
+Reference: [853a0a171759f1ddba0de1442133a75912bbeffa](https://github.com/schellingb/TinySoundFont/tree/853a0a171759f1ddba0de1442133a75912bbeffa).
+
+```text
+Copyright (C) 2017-2025 Bernhard Schelling (Based on SFZero, Copyright (C) 2012 Steve Folta, https://github.com/stevefolta/SFZero)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
