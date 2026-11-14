@@ -32,7 +32,7 @@
 | **资源** | PhysicsFS 虚拟文件系统；直接读取 `.rgssad` / `.rgss2a` / `.rgss3a`；Windows 下自动探测 RTP；可选 `.acs` 容器（需 `admenri/`） |
 | **视频** | WebM / AV1 播放（桌面端，可关闭）；`Graphics.play_movie` 提供带进度控制的影片事件 |
 | **网络** | HTTP `Fetch` 与 `WebSocket`（桌面与 Web，可关闭） |
-| **调试** | F1 设置面板、F2 帧率面板；运行日志；Windows 崩溃转储与符号化报告；可选 PGO |
+| **调试** | F1 设置面板、F2 帧率面板；运行日志；Windows 崩溃转储与符号化报告 |
 
 ### 平台支持
 
@@ -302,7 +302,6 @@ C = Space,Return,pad:a
 - **F1 / F2**：F1 打开设置面板（键位、图形、音频与引擎信息，可在此添加键位绑定），F2 切换帧率显示。
 - **字体**：按 `Fonts/` → 系统字库 → 内嵌字体的顺序解析；文件名（可省略扩展名）与族名均可使用。系统字体发现范围与缺字回退见 [字体说明](core/font/README.md)。
 - **手柄**：键盘与手柄映射到同一套 slot；手柄热插拔即用，支持多设备、震动与摇杆 / 扳机。
-- **性能分析**：Windows 下可通过环境变量 `URGE_PROFILER` / `URGE_PROFILER_INTERVAL` / `URGE_PROFILER_DIR`，或 `[Debug]` 段的 `Profiler` / `ProfilerInterval` 开启采样分析。
 - **脚本编码**：内置 Ruby 在各平台（含 WASM）静态支持 RGSS3 的 `single_byte`、`utf_16_32`、`japanese_sjis`，包括 Shift_JIS、Windows-31J/CP932、UTF-16/32 和单字节代码页的双向转码；不依赖系统 iconv 或 Win32 转码 API。具体范围和来源见 [编码模块说明](third_party/ruby/cmake/RGSS_ENCODINGS.md)。
 - **配置编码**：支持 UTF-8（含可选 BOM）及带 BOM 的 UTF-16 / UTF-32。无 BOM 且不是有效 UTF-8 的旧 INI，Windows 默认使用系统 ANSI 代码页，其他平台默认使用 GB18030（兼容 GBK/GB2312），不依赖系统 locale。旧代码页无法可靠自动识别；其他编码请在 `[Game]` 中添加 ASCII 配置项 `IniEncoding=CP932`（或 `BIG5` 等），也可用环境变量 `URGE_INI_ENCODING=CP932` 覆盖。BOM 优先于这两项。转换覆盖标题、路径及自定义配置项。Windows 使用 Win32 代码页 API，macOS 使用系统 iconv，Linux 在可用时使用系统 iconv（构建时未找到则自动降级为 ASCII 过滤），Android 使用 Java Charset，Web 使用浏览器 TextDecoder；无需额外安装编码库或 Homebrew。编码不支持、字节序列非法或含 NUL 时会记录警告，滤除非 ASCII 字符后继续加载，并禁用该次配置写回以保留原文件。过滤可能使非 ASCII 路径失效，此时需要指定正确编码或把 INI 转为 UTF-8。
 - **配置保存**：关闭时只把运行期间改动过的项写回 ini。加载时计算或转换得到的值（例如按 `Scripts` 扩展名推断的 `RGSS`、为兼容 ANSI 而转成 UTF-8 的 `Title`）不会回写；`Title` 始终保留文件原文，其余项在显式修改（包括脚本 `Config.set_value`）后才会保存。写回沿用加载时的编码、BOM 和换行；若新值无法用原编码表示，会保留原文件并在日志中报告保存失败。`IniEncoding` 应在启动前设置，运行中不能修改。Web 对旧编码 INI 可保存 ASCII 配置修改，并保留未修改文本的原始字节；由于浏览器只提供 UTF-8 编码器，旧编码中的新增非 ASCII 值会报告保存失败，建议先转为 UTF-8。
@@ -323,7 +322,6 @@ C = Space,Return,pad:a
 | `URGE_WEB_PRELOAD` | `*.ini,*.acs,*.rgssad,*.rgss2a,*.rgss3a,Data/Scripts.*` | Web 端首帧前预加载的文件 |
 | `URGE_WEB_EMBED_ASSETS` | `OFF` | 将游戏打包为单个 `Game.data` |
 | `URGE_BUILD_ACS_PACK` | `ON` | 存在 `admenri/` 时构建 `.acs` 容器打包工具 |
-| `URGE_PGO` | `off` | `generate` / `use` 两阶段 PGO（MSVC） |
 | `URGE_EMSDK` / `URGE_ANDROID_NDK` | 自动探测 | 显式指定 Emscripten SDK / Android NDK 路径 |
 
 > `URGE_WIN7_COMPAT` 只消除导入表里的 Win8+ API 依赖；Windows 7 没有 D3D12，图形后端仍需 Vulkan / OpenGL 驱动支持。
