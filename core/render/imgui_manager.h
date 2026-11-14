@@ -37,8 +37,6 @@ namespace urge {
 
 class ImGuiManager : public Singleton<ImGuiManager> {
  public:
-  enum class FpsMode { kHidden = 0, kCompact = 1, kDetailed = 2 };
-
   explicit ImGuiManager(SDL_Window* window);
   ~ImGuiManager();
 
@@ -51,7 +49,7 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void Update();
   void RenderDrawData(wgpu::RenderPassEncoder pass);
 
-  bool fps_visible() const { return fps_mode_ != FpsMode::kHidden; }
+  bool fps_visible() const { return fps_visible_; }
 
  private:
   float U(float value) const { return value * ui_scale_; }
@@ -65,7 +63,6 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   void BuildFPSWindow();
   void LoadFpsGeometry();
   void SaveFpsGeometry();
-  void CycleFPSMode();
 
   void CaptureBinding(const Input::KeySym& binding);
 
@@ -78,7 +75,7 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   bool renderer_ready_ = false;
   wgpu::TextureFormat render_format_ = wgpu::TextureFormat::Undefined;
   bool settings_visible_ = false;
-  FpsMode fps_mode_ = FpsMode::kHidden;
+  bool fps_visible_ = false;
   int32_t capture_slot_ = -1;
   std::vector<Input::KeySym> default_bindings_;
   bool defaults_captured_ = false;
@@ -96,10 +93,9 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   bool fps_geometry_loaded_ = false;
   bool fps_window_has_position_ = false;
   bool fps_geometry_dirty_ = false;
-  FpsMode fps_applied_mode_ = FpsMode::kHidden;
   float fps_window_x_ = 0.0f;
   float fps_window_y_ = 0.0f;
-  FpsWindowGeometry fps_window_[2];
+  FpsWindowGeometry fps_window_;
 };
 
 }
