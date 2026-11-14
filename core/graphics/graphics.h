@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <vector>
 
@@ -33,6 +32,7 @@
 #include "core/common/definition.h"
 #include "core/common/object.h"
 #include "core/graphics/frame_limiter.h"
+#include "core/graphics/profiler.h"
 #include "core/render/primitive.h"
 #include "core/render/shader.h"
 #include "core/scene/node.h"
@@ -115,9 +115,6 @@ class Graphics : public Singleton<Graphics> {
   URGE_BINDING()
   ATTR(bool, Fullscreen);
 
-  void QueueHostTask(std::function<void()> task);
-
-  void RunHostTasks();
   URGE_BINDING()
   ATTR(bool, VSync);
 
@@ -186,11 +183,7 @@ class Graphics : public Singleton<Graphics> {
   bool vsync_ = true;
   bool background_paused_ = false;
 
-  uint64_t last_update_end_tick_ = 0;
-  float render_cost_ms_ = 0.0f;
-  float logic_cost_ms_ = 0.0f;
-  float other_cost_ms_ = 0.0f;
-  double present_cost_ms_ = 0.0;
+  std::unique_ptr<Profiler> profiler_ = std::make_unique<Profiler>();
 
   PrimitiveEmitter quad_emitter_;
 
@@ -199,12 +192,6 @@ class Graphics : public Singleton<Graphics> {
   uint64_t frame_begin_tick_ = 0;
 
   double pace_delay_ms_ = 0.0;
-
-  std::vector<std::function<void()>> host_tasks_;
-
-  std::optional<bool> pending_fullscreen_;
-
-  bool exception_dropped_ = false;
 
   struct {
     bool configured = false;

@@ -564,8 +564,6 @@ BindingMain::Tick BindingMain::IterateMainLoop() {
   for (int32_t i = 0; i < repeat && !g_loop.finished; ++i)
     script_loop::Resume();
 
-  urge::Graphics::Get().RunHostTasks();
-
   if (g_loop.finished)
     return OutcomeOfFinishedLoop();
 

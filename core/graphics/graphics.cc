@@ -38,9 +38,6 @@
 #include "core/audio/audio.h"
 #include "core/canvas/bitmap_queue.h"
 #include "core/common/common.h"
-#if defined(SDL_PLATFORM_ANDROID)
-#include <jni.h>
-#endif
 
 #include "core/common/exception.h"
 #include "core/common/logger.h"
@@ -132,7 +129,7 @@ void SyncHostTickRate(int32_t frame_rate) {
 #endif
 }
 
-}
+}  // namespace
 
 ScreenRootNode::ScreenRootNode() : Node() {}
 
@@ -188,8 +185,10 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED,
                         SDL_WINDOWPOS_CENTERED);
   SDL_ShowWindow(window_);
-#if defined(SDL_PLATFORM_MACOS)
   SDL_RaiseWindow(window_);
+
+#if defined(SDL_PLATFORM_ANDROID)
+  config.display.fullscreen = true;
 #endif
 
   SDL_SetWindowFullscreen(window_, config.display.fullscreen);
@@ -250,24 +249,17 @@ void Graphics::Update(URGE_EXCEPT) {
 
   RenderStats& stats = GetRenderStats();
 
-  const double script_span =
-      last_update_end_tick_ == 0
-          ? 0.0
-          : TicksToMilliseconds(frame_begin - last_update_end_tick_);
-  logic_cost_ms_ = static_cast<float>(script_span);
+  const double script_span = profiler_->BeginFrame(frame_begin);
 
   const double bitmap_before_update = stats.current.bitmap_total_ms();
 
   Audio::Get().Update();
-  Input::Get().Update();
-  Mouse::Get().Update();
 
-  const uint64_t render_begin = SDL_GetPerformanceCounter();
+  profiler_->BeginRecord(Profiler::kRender);
   if (!frozen_)
     root_->Render(screen_, Color::Black());
   ++frame_count_;
-  render_cost_ms_ = static_cast<float>(
-      TicksToMilliseconds(SDL_GetPerformanceCounter() - render_begin));
+  profiler_->EndRecord();
 
   PresentInternal(exception_state);
 
@@ -282,24 +274,19 @@ void Graphics::Update(URGE_EXCEPT) {
       pace_delay_ms_;
   pace_delay_ms_ = 0.0;
 
-  last_update_end_tick_ = SDL_GetPerformanceCounter();
-
-  const double update_span =
-      TicksToMilliseconds(last_update_end_tick_ - frame_begin);
+  const double update_span = profiler_->EndFrame(frame_begin);
   const double bitmap_total = stats.current.bitmap_total_ms();
   const double bitmap_in_update =
       std::max(0.0, bitmap_total - bitmap_before_update);
-
-  other_cost_ms_ =
-      static_cast<float>(std::max(0.0, update_span - render_cost_ms_));
 
   FrameTimings& timings = stats.timings;
   timings.total_ms = script_span + update_span;
   timings.set_phase(FramePhase::kScript, script_span - bitmap_before_update);
   timings.set_phase(FramePhase::kBitmap, bitmap_total);
-  timings.set_phase(FramePhase::kPresent, present_cost_ms_);
+  timings.set_phase(FramePhase::kPresent, profiler_->present_cost_ms());
   timings.set_phase(FramePhase::kUpdate, update_span - bitmap_in_update -
-                                             present_cost_ms_ - delay_ms);
+                                             profiler_->present_cost_ms() -
+                                             delay_ms);
 
   const double measured =
       timings.phase(FramePhase::kScript) + timings.phase(FramePhase::kUpdate) +
@@ -322,7 +309,7 @@ void Graphics::Update(URGE_EXCEPT) {
         counters.bitmap_ops, counters.bitmap_submits, counters.frame_submits,
         counters.bitmap_upload_ms, counters.bitmap_record_ms,
         counters.bitmap_finish_ms, counters.bitmap_submit_ms,
-        counters.bitmap_total_ms(), render_cost_ms_,
+        counters.bitmap_total_ms(), profiler_->render_cost_ms(),
         timings.phase(FramePhase::kScript), timings.phase(FramePhase::kUpdate),
         timings.phase(FramePhase::kPresent), timings.phase(FramePhase::kOther),
         timings.total_ms);
@@ -530,7 +517,7 @@ bool Graphics::UpdateBackgroundState() {
       audio->SetBackgroundPaused(paused);
     RequestFrameReset();
     if (!paused)
-      last_update_end_tick_ = SDL_GetPerformanceCounter();
+      profiler_->ResumeFromBackground();
     LOGGER_INFO("[Graphics] background pause {}", paused ? "on" : "off");
   }
 
@@ -613,49 +600,12 @@ ATTR_DEF(Graphics, bool, FrameSkip) {
 
 ATTR_DEF(Graphics, bool, Fullscreen) {
   if (value.has_value()) {
-    pending_fullscreen_ = *value;
-    QueueHostTask(
-        [this, wanted = *value] { SDL_SetWindowFullscreen(window_, wanted); });
-
+    SDL_SetWindowFullscreen(window_, *value);
     present_.configured = false;
     return std::nullopt;
   } else {
-    if (pending_fullscreen_.has_value())
-      return *pending_fullscreen_;
     return (SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN) != 0;
   }
-}
-
-void Graphics::QueueHostTask(std::function<void()> task) {
-  host_tasks_.emplace_back(std::move(task));
-}
-
-void Graphics::RunHostTasks() {
-#if defined(SDL_PLATFORM_ANDROID)
-  if (auto* env = static_cast<JNIEnv*>(SDL_GetAndroidJNIEnv())) {
-    if (env->ExceptionCheck()) {
-      env->ExceptionClear();
-      if (!exception_dropped_) {
-        exception_dropped_ = true;
-        LOGGER_WARN(
-            "[Host] dropping a pending Java exception raised on the loop "
-            "stack");
-      }
-    }
-  }
-#endif
-
-  if (host_tasks_.empty())
-    return;
-
-  auto tasks = std::move(host_tasks_);
-  host_tasks_.clear();
-
-  LOGGER_INFO("[Host] running {} deferred platform task(s)", tasks.size());
-  for (auto& task : tasks)
-    task();
-
-  pending_fullscreen_.reset();
 }
 
 ATTR_DEF(Graphics, bool, VSync) {
@@ -815,9 +765,10 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
 #if defined(SDL_PLATFORM_MACOS)
     int window_width = 0, window_height = 0;
     SDL_GetWindowSize(window_, &window_width, &window_height);
-    LOGGER_INFO("[Graphics] window {}x{} points, drawable {}x{} pixels, density {:.2f}",
-                window_width, window_height, pixel_width, pixel_height,
-                SDL_GetWindowPixelDensity(window_));
+    LOGGER_INFO(
+        "[Graphics] window {}x{} points, drawable {}x{} pixels, density {:.2f}",
+        window_width, window_height, pixel_width, pixel_height,
+        SDL_GetWindowPixelDensity(window_));
 #endif
   }
 
@@ -827,7 +778,7 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   if (viewport.width < 1.0f || viewport.height < 1.0f)
     return;
 
-  const uint64_t present_begin = SDL_GetPerformanceCounter();
+  profiler_->BeginRecord(Profiler::kPresent);
 
   wgpu::SurfaceTexture surface_texture;
   surface.GetCurrentTexture(&surface_texture);
@@ -839,9 +790,7 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
     case wgpu::SurfaceGetCurrentTextureStatus::Outdated:
     case wgpu::SurfaceGetCurrentTextureStatus::Lost:
       present_.configured = false;
-      present_cost_ms_ =
-          static_cast<double>(SDL_GetPerformanceCounter() - present_begin) *
-          1000.0 / SDL_GetPerformanceFrequency();
+      profiler_->EndRecord();
       return;
     case wgpu::SurfaceGetCurrentTextureStatus::Error:
       exception_state.Throw(ExceptionState::kRGSSError,
@@ -932,14 +881,10 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   surface.Present();
 #endif
 
-  present_cost_ms_ =
-      static_cast<double>(SDL_GetPerformanceCounter() - present_begin) *
-      1000.0 / SDL_GetPerformanceFrequency();
+  profiler_->EndRecord();
 
 #if defined(URGE_RUNNER_POLL)
   SetCurrentFramePhase(FramePhase::kOther);
-  RunHostTasks();
-
   pace_delay_ms_ = limiter_.Wait(frame_begin_tick_);
   SetCurrentFramePhase(FramePhase::kUpdate);
 #endif
@@ -1030,4 +975,4 @@ glm::vec2 Graphics::NormalizedToScreenDelta(float nx, float ny) const {
                              ny * static_cast<float>(window_height));
 }
 
-}
+}  // namespace urge
