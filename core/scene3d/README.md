@@ -72,25 +72,6 @@
 保留全部候选绘制项让多相机结果正确，但增加了 CPU 收集和 uniform 上传量。场景规模扩大时，
 可在图编译后按使用的相机/阴影视锥做候选联合裁剪，并缓存各视图的裁剪结果。
 
-## 验证
+## 构建
 
 原生 Windows 构建：`cmake --build --preset win64-vendored-ruby --target Game --parallel 8`。
-
-依赖排序的独立测试无需 GPU，在 VS Developer PowerShell 中执行：
-
-```powershell
-cl /nologo /std:c++20 /EHsc /I. test/scene3d/render_graph_order_test.cc /Fe:build/scene3d-order-test.exe /Fo:build/scene3d-order-test.obj
-build/scene3d-order-test.exe
-```
-
-GPU 回归使用已编译的 Game 和本机 Ruby，仅用 Ruby 打包 RGSS Marshal 脚本：
-
-```powershell
-python test/scene3d/run_regression.py --game build/win64-vendored-ruby/app/RelWithDebInfo/Game.exe
-```
-
-结果位于 `build/scene3d-regression/scene3d-results.txt`。测试覆盖多 Pass、前置消费者、MRT 覆写与重建、
-MSAA、相机覆写、阴影重置、Compute 状态、顶点材质绑定、悬空 owner，以及错误图恢复。
-日志中的五个 World3D 错误是专门的负向用例，其他错误使测试失败。
-
-本轮实际验证平台为 Windows / Vulkan / NVIDIA RTX 3050 Laptop；其他后端尚未运行回归。

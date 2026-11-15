@@ -192,6 +192,10 @@ cmake -S . -B build                                  # 仅当生成文件数量�
 cmake --build build --config Debug --target urge-binding
 ```
 
+`URGE_BINDING_IR_FILE` 可指定独立的 IR 路径，避免覆盖工作区中已编辑的 API 文档；
+`URGE_BINDING_GLUE_DIR` 可指定独立的胶水生成目录。共享生成 stamp 的同一 checkout
+应串行生成，不能同时重写不同配置的输出。
+
 产物 `build/bind/Debug/urge-binding.lib`（静态库）。`bind/CMakeLists.txt` 用
 `file(GLOB ...)` 收集 `*.cc`，与 `core/CMakeLists.txt` 一致；CMake 在 configure 时冻结
 文件列表，所以**新增/删除** `binding_*.cc` 后必须重跑一次 `cmake -S . -B build`，否则
@@ -199,39 +203,6 @@ cmake --build build --config Debug --target urge-binding
 
 `urge-binding` 是纯胶水库，不含入口点。宿主（`app/`）负责 `ruby_init()` /
 `ruby_sysinit()` 之后调用 `binding::InitBindings()`；Ruby 与引擎循环的驱动不在本库内。
-
-### 运行时验证（`bind/test/`）
-
-`bind/test/` **不在版本控制里**（`bind/CMakeLists.txt` 也没有 `add_subdirectory(test)`）。
-若工作区里存在这套冒烟测试，在它自己的构建目录里构建：
-
-```bash
-cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
-./Debug/urge-binding-smoke.exe
-```
-
-（在仓库根的 `build/` 里用 `--target urge-binding-smoke` 会因为目标在子目录而报
-`MSB1009: 项目文件不存在`。）
-
-`bind/test/smoke_main.cc` 启动内嵌 VM、调用 `InitBindings()`，然后用一段 Ruby 脚本逐条
-断言 API 契约（`failures=0`、退出码 0 表示全部通过）。它不是交付物的一部分，但**改动
-`URGE_BINDING()` 标记、生成器覆盖项或 `cruby_utils.h` 之后必须跑一次**：编译器检查不了
-`rb_data_type_t` 的布局、`SetupSelfData`/`GetSelfData` 的往返、`ParseArgs` 写入的类型、
-类树与 Ruby 名，只有真机跑一遍才能确认。
-
-脚本只用**构造方式**验证不需要 GPU 的类（`Disposable`、`Rect`、`Color`、`Tone`、
-`Vector2/3/4`、`Table`、`Font`）；`Bitmap`、`Node`、`Sprite`、`Viewport`、`Plane`、
-`Image` 只做注册级检查（`allocate` 是否给出 typed data、方法名是否齐全、
-`initialize`/`initialize_copy` 是否为 `private`），因为实例化它们需要活的图形设备；
-`Graphics`/`Input` 的**函数**一律不调用——它们读的单例要等窗口建立后才存在，调用会是空
-解引用——只检查模块性、方法名和 `Input::*` 常量。
-
-两个与解释器版本有关的坑已经写在脚本注释里，改动时不要"修回去"：
-
-- `$stdout.sync = true` 必须设：`main()` 不调用 `ruby_cleanup`，否则 `puts` 的输出留在
-  缓冲区里，报告只剩 C 侧的 `printf`。
-- `Module#method_defined?` 传 **String 会返回 false**，必须传 Symbol（`respond_to?` 没这
-  个问题）。
 
 ## 输入与导出范围
 
@@ -404,9 +375,9 @@ RB_FUNC(Bitmap_Width) {
 }
 ```
 
-为什么分在这三个位置，全部用 `build/web-test/frame_shape_probe.rb` 在 web 构建上实测过：
+三个边界用于保证 Ruby 非局部退出不跨越仍持有 C++ 资源的帧：
 
-| 探针 | 帧形态 | 结果 |
+| 边界示例 | 帧形态 | 结果 |
 | --- | --- | --- |
 | A | 完全没有 try/catch，`std::string` 存活时 raise | **trap** |
 | B | try 已结束，`std::string` 存活时 raise | **trap** |
@@ -989,14 +960,12 @@ class / module 条目字段：
   需要同步更新。
 - 生成物行宽 ≤ 80，且保持 CRLF（两个生成脚本都以 `newline="\r\n"` 写文件）。
   `bind/` 里唯一的例外是 `viewer/api_embed.js`，`viewer.py` 以 `newline="\n"` 写它；
-  手写文件（`Bindgen.md`、`cruby_utils.*`、`*.py`、`test/*`）本来就是 LF，别去"统一"。
+  手写文件（`Bindgen.md`、`cruby_utils.*`、`*.py`）本来就是 LF，别去"统一"。
 - 绑定目标 `urge-binding` 能编译（零错误、零告警）。
 - `gen_api_json.py` 的 `check_base_order` 没报错（配置期会自己跑一遍）。
 - 没有残留生成物：`bind/` 下每个 `binding_<name>.{h,cc}` 都对应 IR 里的一个条目。
   配置期会自动清理（见「残留文件清理」），手动跑过生成器的话留意它的
   `removed …` 输出。
-- 若工作区里存在 `bind/test/` 冒烟测试（未纳入版本控制），跑过且 `failures=0`，
-  见「运行时验证」。
 - 用 `python bind/viewer/viewer.py stats` 复核一遍计数：`unsupported` 数量应与
   `meta.skipped` 一致，`module attribute` 数量应为模块属性读写对的一半。
 
@@ -1009,8 +978,8 @@ class / module 条目字段：
 1. 在 `core/**/*.h` 的类与声明前加 `URGE_BINDING()` 标记（改名再加 `Name : "..."`）；
 2. **新增导出类时**：把类名加进 `gen_api_json.py` 的 `CLASS_ORDER`（排在它基类之后）。
    不登记也能导出，但会被排到列表末尾，可能落在基类**之前**，而注册顺序要求派生类在后。
-   漏登记现在会被 `check_base_order` 直接拦下（见「运行时验证」上方的 `CLASS_ORDER`
-   说明），不必等到运行时才发现。若这个类是 `Singleton<T>` 子类，还要加进同文件的
+   漏登记现在会被 `check_base_order` 直接拦下（见上文 `CLASS_ORDER` 说明），
+   不必等到运行时才发现。若这个类是 `Singleton<T>` 子类，还要加进同文件的
    `MODULE_CLASSES` —— 见下面第 3 条；
 3. **若改了 C++ 方法名，先改完 `core/` 和 `app/` 里的全部调用点**——绑定依赖
    `urge-core`，`core/` 编不过就看不到绑定自己的错误。快速自检：
@@ -1027,11 +996,8 @@ class / module 条目字段：
    `generate_binding.py` 的 `HANDWRITTEN_SEED` **和**已存在生成物里的那一块；
    更稳的做法是删掉该 `.cc` 再跑一次生成器（文件缺失时它用种子重建）。
    自检：`grep -c 'OldName' bind/binding_*.cc` 必须为 0；
-7. 若 Ruby 可见名变了（新增、改名、加 `?`），同步 `bind/test/smoke_main.cc`
-   里对应的断言（若该目录存在）——它按名字断言，改名前它不会失败，改名后才会；
-8. 编译 `urge-binding`；若工作区里有 `bind/test/`，一并构建并跑一次冒烟测试。
-   然后做一次上文「生成后检查」；
-9. 重跑 `python bind/viewer/viewer.py embed`，否则 `file://` 打开的查看器
+7. 编译 `urge-binding`，然后做一次上文「生成后检查」；
+8. 重跑 `python bind/viewer/viewer.py embed`，否则 `file://` 打开的查看器
    还在用旧快照。
 
 签名描述不了的新行为（参数重排、额外常量、非常规注册）加进 `generate_binding.py`

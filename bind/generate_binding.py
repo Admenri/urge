@@ -163,7 +163,7 @@ def vector_codec(cpp_type: str) -> Optional[str]:
 # Everything here is plain data, and that is not a style choice.  The frame that
 # parses arguments is the frame that raises, and a frame owning anything with a
 # destructor gets a landing pad -- which is what turns `rb_raise` into a trap on
-# the web (probe A in build/web-test/frame_shape_probe.rb).  The three types
+# the web when Ruby unwinds a frame with live C++ owners.  The three types
 # that would break it are handled separately in `param_plan`:
 #
 #   std::string      -> `const char*` + `size_t`, rebuilt in phase 2

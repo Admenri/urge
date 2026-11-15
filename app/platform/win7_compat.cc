@@ -36,15 +36,7 @@ namespace {
 template <typename Fn>
 Fn resolve(HMODULE module, const char *name)
 {
-#ifdef URGE_WIN7_FORCE_FALLBACK
-    // The standalone fallback test compiles with this to run the Windows 7
-    // code paths on a newer system.
-    (void)module;
-    (void)name;
-    return nullptr;
-#else
     return module ? reinterpret_cast<Fn>(GetProcAddress(module, name)) : nullptr;
-#endif
 }
 
 HMODULE kernel32_module()

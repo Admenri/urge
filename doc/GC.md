@@ -116,38 +116,3 @@ Ruby 的非局部退出不运行普通 C++ 栈析构。绑定分为 Ruby 校验�
 标准 Ruby Fiber 初始化及 resume/transfer、ObjectSpace finalizer 使用绑定层的局部作用域保护；scope registry 是弱的，不能因此永久保活已废弃的 Fiber。包裹帧会改变 backtrace／反射可见形态，但参数、block、kwargs 和普通异常仍按原接口转发。
 
 不承诺从绕过标准入口的直接 C API Fiber/finalizer，或永不返回的未知 native callback 的 Ruby-only 循环中强行退出。未知 owning frame 不允许跨 C++ RAII 非局部跳转；不得以释放活栈或截断 ensure 来掩盖该限制。脚本若在 ensure 中主动替换退出控制流并继续捕获，也不以反复投递破坏其清理过程。
-
-## 验证入口
-
-独立原生测试不链接脚本引擎或 renderer：
-
-```sh
-cmake -S test/gc -B build/gc-regression -G "Visual Studio 18 2026" -A x64
-cmake --build build/gc-regression --config Debug
-ctest --test-dir build/gc-regression -C Debug --output-on-failure
-```
-
-完整引擎验证使用 `URGE_BUILD_GC_TESTS=ON`。仅该测试构建暴露 native/capsule 数量及显式收集探针，生产构建不暴露。
-
-```sh
-cmake --preset win64-vendored-ruby \
-  -DURGE_BUILD_GC_TESTS=ON \
-  -DURGE_BINDING_IR_FILE=build/gc-validation-api.json
-cmake --build --preset win64-vendored-ruby-debug
-python -I test/gc-integration/run.py \
-  --engine build/win64-vendored-ruby/app/Debug/Game.exe --rgss 1 2 3
-```
-
-`URGE_BINDING_IR_FILE` 允许验证构建使用独立 IR，避免覆盖工作区中已编辑的 API 文档。`URGE_BINDING_GLUE_DIR` 可指定新的生成目录，验证不依赖工作区已有 HANDWRITTEN 的冷构建。生成器同时维护 HANDWRITTEN 的初始种子与现有文件，包括 disposed 兼容、Tilemap 代理、Input 查询和 Mouse 常量；空目录生成不能依赖已有输出掩盖错误。共享生成 stamp 的同一 checkout 应串行生成，不能同时重写不同配置的输出。
-
-`test/gc/garbage_collector_test.cc` 覆盖 raw 工厂无隐式根、Root／Persistent copy/move/reset、根地址随 vector 重分配迁移、late-root、构造异常注销及暂停 worker 根的安全点；可控线程调度还验证 raw 返回到外部根登记的交接屏障阻止新 epoch 和已完成 epoch 的清扫。保留循环、epoch、Sweep、弱槽、cancel 和独立 host 联合扫描回归。可用 `URGE_GC_NO_EXCEPTIONS=ON` 独立配置验证禁用 C++ 异常的契约；ASan 配置只需对该测试目标设置编译／链接选项，不必配置完整引擎。
-
-```sh
-python -I test/gc-integration/generation_test.py
-```
-
-生成单元测试先将当前 header 的 API 写入 `build/` 下独立 IR，再逐例复制；不会覆盖用户的 `bind/api_reference.json`，也不读取现有 autogen 作为冷构建种子。除 raw pointer／heap Root guard 外，仍验证冷目录、单文件／全目录删除、HANDWRITTEN 保留、字节／时间戳幂等和公共兼容 API。
-
-`test/gc-integration` 包含实际引擎的身份、渲染、coercion、循环、Fiber 语义及悬停关闭回归，Ruby API 未因 C++ 指针迁移而改名；`network_roots.cc` 验证 Persistent 根跨 Network 服务关闭及析构的存活；`test/gc/lazy_sweep_probe.rb` 检查 stress=2、大堆、GC 设置恢复及物理回收。独立原生／Python 单元测试通过不代表这些完整引擎回归已经运行。
-
-Debug CRuby 会保守扫描仍运行的解释器 C 帧。仅让 Ruby 方法返回，不能保证旧 VALUE 消失；循环回收测试应在已经结束的 Ruby Fiber 中构造对象。另外 WeakMap 物理 size 可能滞后，应检查有效 keys。不能用测试栈误保活推导永久泄漏，也不能只以 wrapper 消失证明 native/capsule 已清理。

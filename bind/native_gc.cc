@@ -669,33 +669,6 @@ void DriveCollection() {
     rb_jump_tag(state);
 }
 
-#if defined(URGE_GC_TEST_EXPORTS)
-VALUE NativeGCStats(VALUE) {
-  // Snapshot before allocating the result: its Ruby allocations may themselves
-  // collect. Only integer counts escape, never roots to all native wrappers.
-  const size_t objects = GarbageCollector::Get().ObjectCount();
-  const size_t capsules = g.capsules.size();
-  size_t live = 0, retired = 0;
-  for (const auto& cap : g.capsules) {
-    live += Live(cap.get());
-    retired += cap->finalized;
-  }
-  VALUE result = rb_hash_new();
-  rb_hash_aset(result, ID2SYM(rb_intern("native_objects")), SIZET2NUM(objects));
-  rb_hash_aset(result, ID2SYM(rb_intern("capsules")), SIZET2NUM(capsules));
-  rb_hash_aset(result, ID2SYM(rb_intern("live_wrappers")), SIZET2NUM(live));
-  rb_hash_aset(result, ID2SYM(rb_intern("retired_capsules")), SIZET2NUM(retired));
-  return result;
-}
-VALUE CollectNativeGCForTest(VALUE) {
-  g.requested.store(true);
-  // The Ruby method entry owns no native RAII, just like an RB_FUNC boundary.
-  // A finalizer's reentrant request stays queued for the next legal boundary.
-  NativeGCSafePoint();
-  return Qnil;
-}
-#endif
-
 // Internal borrowed operation. Only OwnedBody may call it across Ruby
 // allocation: the context's Root protects native and its complete C++ graph.
 VALUE WrapNativeObjectBody(GarbageCollected* native,
@@ -741,11 +714,6 @@ void InitializeNativeGC() {
   GarbageCollector::Get().SetHost(nullptr, RequestCollection, CanReclaim, &g);
   g.baseline = GarbageCollector::Get().ObjectCount();
   g.initialized = true;
-#if defined(URGE_GC_TEST_EXPORTS)
-  VALUE mod = rb_define_module("URGE");
-  rb_define_module_function(mod, "__native_gc_stats", NativeGCStats, 0);
-  rb_define_module_function(mod, "__collect_native_gc", CollectNativeGCForTest, 0);
-#endif
 }
 void InitializeNativeScriptControl() {
   rb_gc_register_address(&g_finalizer_class);
