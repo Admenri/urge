@@ -36,6 +36,13 @@ namespace win32 {
    anything outside it. */
 std::filesystem::path GetExecutablePath();
 
+// Keep GUI launches silent, including when a parent supplied standard handles.
+bool InitializeStandardStreams();
+
+// Allocate a console and bind both CRT streams and Windows standard handles.
+// Must run before Ruby captures its standard streams. Repeated calls are safe.
+bool OpenConsole();
+
 std::optional<std::string> GetRTPPath(int32_t version, std::string key);
 
 }  // namespace win32

@@ -18,6 +18,9 @@ else()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  # SDL_main supplies WinMain for the GUI subsystem; allocate a console only
+  # when the game's startup options request one.
+  set_target_properties(Game PROPERTIES WIN32_EXECUTABLE TRUE)
   target_sources(Game PUBLIC resources/app.rc)
   target_sources(Game PUBLIC platform/win32.cc)
   target_sources(Game PUBLIC platform/crash_handler.cc)

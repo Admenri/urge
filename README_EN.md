@@ -132,6 +132,8 @@ cmake --build build --config RelWithDebInfo --target Game
 
 With a different Visual Studio version, replace `-G` / `-A` with the generator that matches your environment.
 
+The Windows `Game` target uses CMake's `WIN32_EXECUTABLE` property (GUI subsystem), so no console opens by default. This does not select a 32-bit architecture; these presets still build x64.
+
 ### 2.4 Web (WebAssembly)
 
 ```bash
@@ -239,6 +241,8 @@ MyGame/
 - Resource priority is ACS (when enabled), then RGSS, then the ordinary game directory. RGSS resources are exposed only as read-only virtual streams. Saves and logs remain in the game directory; no assets are extracted and no extraction or decryption-export tool is provided.
 - The runtime log is written to `<executable stem>.log`.
 
+**Optional Windows console**: add the exact standalone command-line token `console` (for example, `Game console test` or `Game.exe console test`), or set `WinConsole=true` in the game INI's `[Platform]` section. Either dynamically allocates a console and routes C / Ruby / engine / SDL stdout and stderr to it. Existing `test` / `debug` / `btest` arguments still work, and log files such as `Game.log` are still written. The `console` switch applies only to that launch and is not saved to the INI; `WinConsole` defaults to `false`, and changes to this INI setting take effect on the next start.
+
 **MacOS**: put the executable file 'Game' into the game directory. Alternatively you can launch URGE.app select game.
 
 **Web / Android**: the executable name is fixed to `Game`, so `Game.ini`, `Data/` and the rest live at the site root or under `assets/` in the APK.
@@ -251,6 +255,9 @@ RGSS = 3
 Scripts = Data/Scripts.rvdata2
 Title = My Game
 ; RTP / RTP1 / RTP2 / RTP3 are optional; Windows detects installed runtimes automatically
+
+[Platform]
+WinConsole = false
 
 [Display]
 Width = 544
@@ -286,6 +293,7 @@ Configuration reference:
 | `Game` | `IniEncoding` | auto | Source encoding for BOM-less INIs, e.g. `GB18030` / `CP932` / `BIG5`; read only at startup |
 | `Game` | `Title` | `(*^▽^*)` | Window title |
 | `Game` | `RTP` / `RTP1`–`RTP3` | empty | RPG Maker runtime names; detected automatically on Windows |
+| `Platform` | `WinConsole` | `false` | Windows only: dynamically allocate a console at startup and redirect stdout / stderr; changes take effect on the next start |
 | `Display` | `Width` / `Height` | XP: `640×480`; others: `544×416` | Logical resolution |
 | `Display` | `VSync` / `Fullscreen` / `FrameSkip` | `false` | Vertical sync, fullscreen and frame skipping |
 | `Display` | `BackgroundRunning` | `false` | Keep running while the window is unfocused; when off, the picture, logic and audio pause |

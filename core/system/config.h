@@ -67,6 +67,10 @@ class Config : public Singleton<Config> {
   } game;
 
   struct {
+    bool win_console = false;
+  } platform;
+
+  struct {
     std::string midi_soundfont;
     int32_t master_volume = 100;
     int32_t bgm_volume = 100;

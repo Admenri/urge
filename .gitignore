@@ -11,4 +11,5 @@ __pycache__/
 /test/*
 !/test/gc/
 !/test/gc-integration/
+!/test/console-integration/
 .DS_Store

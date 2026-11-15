@@ -49,15 +49,18 @@
 #include <clocale>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <format>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <system_error>
 
 #include "SDL3/SDL_iostream.h"
+#include "SDL3/SDL_log.h"
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_messagebox.h"
 #include "physfs.h"
@@ -109,6 +112,63 @@
 namespace {
 
 SDL_IOStream* g_log_stream = nullptr;
+void WriteLogFile(std::string_view line, void* user);
+
+#if defined(_WIN32)
+std::mutex g_startup_log_mutex;
+std::string g_startup_console_log;
+bool g_buffer_console_log = true;
+
+void BufferConsoleLog(std::string_view line) {
+  std::lock_guard lock(g_startup_log_mutex);
+  if (g_buffer_console_log)
+    g_startup_console_log.append(line);
+}
+
+// SDL's default callback attaches to the parent's console. Use CRT output
+// instead, and never call SDL here: an SDL IO error may itself invoke this.
+void SDLCALL WriteSDLLog(void*, int, SDL_LogPriority priority, const char* message) {
+  const char* severity = "";
+  if (priority == SDL_LOG_PRIORITY_WARN)
+    severity = "WARNING: ";
+  else if (priority == SDL_LOG_PRIORITY_ERROR)
+    severity = "ERROR: ";
+  else if (priority == SDL_LOG_PRIORITY_CRITICAL)
+    severity = "CRITICAL: ";
+  const std::string line = std::string("[SDL] ") + severity + message + "\n";
+  if (IsDebuggerPresent()) {
+    const int length = MultiByteToWideChar(CP_UTF8, 0, line.c_str(), -1, nullptr, 0);
+    if (length > 0) {
+      std::wstring wide(length, L'\0');
+      MultiByteToWideChar(CP_UTF8, 0, line.c_str(), -1, wide.data(), length);
+      OutputDebugStringW(wide.c_str());
+    }
+  }
+  std::lock_guard lock(g_startup_log_mutex);
+  std::fwrite(line.data(), 1, line.size(), stderr);
+  std::fflush(stderr);
+  if (g_buffer_console_log)
+    g_startup_console_log.append(line);
+}
+
+bool FinishConsoleStartup(bool enable, bool final_attempt = true) {
+  // SDL logging and engine logging may come from worker threads by now.
+  std::lock_guard log_lock(urge::logger_detail::WriteMutex());
+  std::lock_guard startup_lock(g_startup_log_mutex);
+  const bool opened = enable && platform::win32::OpenConsole();
+  if (enable && !opened && !final_attempt)
+    return false;
+  if (opened) {
+    std::fwrite(g_startup_console_log.data(), 1,
+                g_startup_console_log.size(), stderr);
+    std::fflush(stderr);
+  }
+  std::string().swap(g_startup_console_log);
+  g_buffer_console_log = false;
+  urge::SetLogSink(g_log_stream ? &WriteLogFile : nullptr, g_log_stream);
+  return opened;
+}
+#endif
 
 /* The mirror of `stderr` on disk.  It is written line by line and flushed at
    once: a run that dies in the interpreter never reaches the orderly shutdown
@@ -121,6 +181,13 @@ void WriteLogFile(std::string_view line, void* user) {
   SDL_WriteIO(stream, line.data(), line.size());
   SDL_FlushIO(stream);
 }
+
+#if defined(_WIN32)
+void WriteStartupLogFile(std::string_view line, void* user) {
+  BufferConsoleLog(line);
+  WriteLogFile(line, user);
+}
+#endif
 
 /* Paths cross this file in two forms, and the two are not interchangeable.
 
@@ -207,12 +274,14 @@ void Shutdown(AppState& state) {
   urge::IOService::Reset(nullptr);
   state.config = nullptr;
 
+  urge::SetLogSink(nullptr, nullptr);
   if (g_log_stream) {
-    urge::SetLogSink(nullptr, nullptr);
     SDL_CloseIO(g_log_stream);
     g_log_stream = nullptr;
   }
-
+#if defined(_WIN32)
+  FinishConsoleStartup(false);
+#endif
 }
 
 /* Everything `main()` used to do before the loop: the names, the filesystem,
@@ -233,6 +302,19 @@ bool Initialize(AppState& state,
      up -- a driver that refuses the adapter, a font directory that is not
      there -- is exactly the kind of crash with no log line in front of it. */
   platform::crash::Install();
+  if (!platform::win32::InitializeStandardStreams()) {
+    exception_state.Throw(urge::ExceptionState::kIOError,
+                          "Cannot initialize Windows standard streams");
+    return false;
+  }
+  SDL_SetLogOutputFunction(&WriteSDLLog, nullptr);
+  for (int i = 1; i < argc; ++i) {
+    if (argv[i] && std::string_view(argv[i]) == "console") {
+      if (!FinishConsoleStartup(true, false))
+        LOGGER_WARN("[Host] Cannot open the Windows console");
+      break;
+    }
+  }
 #endif
 
 #if defined(OS_EMSCRIPTEN)
@@ -315,9 +397,6 @@ bool Initialize(AppState& state,
   }
 #endif
 
-#if !defined(__APPLE__)
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
-#endif
 #if defined(__APPLE__)
   platform::macos::SetDefaultApplicationIcon();
   platform::macos::InstallGameMenu();
@@ -331,13 +410,22 @@ bool Initialize(AppState& state,
 #if !defined(OS_EMSCRIPTEN)
   state.log_path = state.base_dir + "/" + state.app + ".log";
   g_log_stream = SDL_IOFromFile(state.log_path.c_str(), "w");
+#if defined(_WIN32)
+  // Capture startup lines even when the directory refuses the file mirror.
+  urge::SetLogSink(&WriteStartupLogFile, g_log_stream);
+#else
   if (g_log_stream)
     urge::SetLogSink(&WriteLogFile, g_log_stream);
+#endif
 #if defined(_WIN32)
   /* The crash report names the log beside the dump: one is the story up to the
      last frame, the other is where it ended. */
   platform::crash::SetLogPath(state.log_path.c_str());
 #endif
+#endif
+
+#if !defined(__APPLE__)
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD);
 #endif
 
   /* The directory the engine ended up looking in, in the log, because "cannot
@@ -411,6 +499,12 @@ bool Initialize(AppState& state,
      read them: the binding mirrors them onto the RGSS `$DEBUG` / `$TEST` /
      `$BTEST` globals, and a game may look for its own. */
   state.config->SetCommandLine(argc, argv);
+#if defined(_WIN32)
+  const bool console_requested = state.config->platform.win_console ||
+                                 state.config->HasCommandLine("console");
+  if (!FinishConsoleStartup(console_requested) && console_requested)
+    LOGGER_WARN("[Host] Cannot open the Windows console");
+#endif
 
 // RTP reading
 #if defined(_WIN32)

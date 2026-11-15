@@ -22,11 +22,15 @@
 
 #include "app/platform/win32.h"
 
+#include <cstdio>
 #include <filesystem>
+#include <iostream>
 #include <string>
 #include <vector>
 
+#include <io.h>
 #include <windows.h>
+
 
 namespace {
 
@@ -98,6 +102,44 @@ std::string WStringToUTF8(const std::wstring& wstr) {
   return strTo;
 }
 
+bool ReopenStandardStream(FILE* stream,
+                          int descriptor,
+                          const char* path,
+                          const char* mode) {
+  // A GUI CRT can report -2 for a stream while keeping its fd reserved.
+  // Free that slot first so freopen and Ruby agree on exactly fd 0/1/2.
+  if (_fileno(stream) != descriptor)
+    _close(descriptor);
+  return std::freopen(path, mode, stream) != nullptr &&
+         _fileno(stream) == descriptor;
+}
+
+bool RebindStandardStreams(const char* input_path, const char* output_path) {
+  const bool input = ReopenStandardStream(stdin, 0, input_path, "r");
+  const bool output = ReopenStandardStream(stdout, 1, output_path, "w+");
+  const bool error = ReopenStandardStream(stderr, 2, output_path, "w+");
+  if (!input || !output || !error)
+    return false;
+
+  const bool handles =
+      SetStdHandle(STD_INPUT_HANDLE,
+                   reinterpret_cast<HANDLE>(_get_osfhandle(0))) &&
+      SetStdHandle(STD_OUTPUT_HANDLE,
+                   reinterpret_cast<HANDLE>(_get_osfhandle(1))) &&
+      SetStdHandle(STD_ERROR_HANDLE,
+                   reinterpret_cast<HANDLE>(_get_osfhandle(2)));
+  if (!handles)
+    return false;
+
+  std::setvbuf(stdout, nullptr, _IONBF, 0);
+  std::setvbuf(stderr, nullptr, _IONBF, 0);
+  std::cin.clear();
+  std::cout.clear();
+  std::cerr.clear();
+  std::clog.clear();
+  return true;
+}
+
 }  // namespace
 
 namespace platform {
@@ -121,6 +163,25 @@ std::filesystem::path GetExecutablePath() {
       return {};
     buffer.resize(buffer.size() * 2);
   }
+}
+
+bool InitializeStandardStreams() {
+  return RebindStandardStreams("NUL", "NUL");
+}
+
+bool OpenConsole() {
+  // ERROR_ACCESS_DENIED also means the process already owns a console (for
+  // example, one supplied by a debugger). Never attach to the parent's.
+  if (!AllocConsole() && GetLastError() != ERROR_ACCESS_DENIED)
+    return false;
+
+  SetConsoleCP(CP_UTF8);
+  SetConsoleOutputCP(CP_UTF8);
+
+  if (!RebindStandardStreams("CONIN$", "CONOUT$"))
+    return false;
+
+  return true;
 }
 
 std::optional<std::string> GetRTPPath(int32_t version, std::string key) {

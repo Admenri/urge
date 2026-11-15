@@ -132,6 +132,8 @@ cmake --build build --config RelWithDebInfo --target Game
 
 使用其他 Visual Studio 版本时，把 `-G` / `-A` 换成与你的环境对应的生成器即可。
 
+Windows 的 `Game` 目标使用 CMake `WIN32_EXECUTABLE`（GUI 子系统），默认不打开控制台。这与 32 位架构无关；以上预设仍构建 x64。
+
 ### 2.4 Web（WebAssembly）
 
 ```bash
@@ -236,6 +238,8 @@ MyGame/
 - 资源查找优先级为 ACS（如启用）→ RGSS 档案 → 普通游戏目录。RGSS 资源仅通过只读虚拟文件流加载；存档和日志仍写入普通游戏目录，不会解包资源，也不提供档案提取或解密导出工具。
 - 运行日志写入 `<可执行文件名>.log`。
 
+**Windows 可选控制台**：启动时添加完全匹配的独立参数 `console`（例如 `Game console test` 或 `Game.exe console test`），或在游戏 INI 的 `[Platform]` 段设置 `WinConsole=true`，即可动态创建控制台，将 C / Ruby / 引擎 / SDL 的标准输出与标准错误路由到该窗口。原有 `test` / `debug` / `btest` 参数仍正常生效，日志文件（如 `Game.log`）仍正常写入。命令行 `console` 仅对本次启动有效，不会写回 INI；`WinConsole` 默认 `false`，修改此 INI 设置在下次启动时生效。
+
 **MacOS**: 将Game可执行文件放入游戏目录，确保具有可执行权限。或使用URGE.app启动后选择游戏目录来启动游戏。 
 
 **Web / Android**：可执行名固定为 `Game`，因此配置与资源分别位于站点根目录或 APK 的 `assets/` 下的 `Game.ini`、`Data/` 等路径。
@@ -248,6 +252,9 @@ RGSS = 3
 Scripts = Data/Scripts.rvdata2
 Title = My Game
 ; RTP / RTP1 / RTP2 / RTP3 可选；Windows 下会自动探测已安装的运行库
+
+[Platform]
+WinConsole = false
 
 [Display]
 Width = 544
@@ -283,6 +290,7 @@ C = Space,Return,pad:a
 | `Game` | `IniEncoding` | 自动 | 无 BOM 时的 INI 源编码，如 `GB18030` / `CP932` / `BIG5`；仅启动时读取 |
 | `Game` | `Title` | `(*^▽^*)` | 窗口标题 |
 | `Game` | `RTP` / `RTP1`–`RTP3` | 空 | RPG Maker 运行库名称；Windows 下自动探测 |
+| `Platform` | `WinConsole` | `false` | 仅 Windows：启动时动态创建控制台并重定向标准输出 / 标准错误；修改后下次启动生效 |
 | `Display` | `Width` / `Height` | XP：`640×480`；其余：`544×416` | 逻辑分辨率 |
 | `Display` | `VSync` / `Fullscreen` / `FrameSkip` | `false` | 垂直同步、全屏与跳帧 |
 | `Display` | `BackgroundRunning` | `false` | 窗口失焦时是否继续运行；关闭时自动暂停画面、逻辑与音频 |

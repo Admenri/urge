@@ -250,6 +250,16 @@ const std::vector<ConfigField>& Fields() {
        },
        nullptr, nullptr},
 
+      {"Platform", "WinConsole", ConfigPersist::kOnChange,
+       [](const Config& config) {
+         return BooleanText(config.platform.win_console);
+       },
+       [](Config& config, const std::string& value) {
+         config.platform.win_console =
+             ParseBoolean(value, config.platform.win_console);
+       },
+       nullptr, nullptr},
+
       {"Audio", "MIDISoundFont", ConfigPersist::kOnChange,
        [](const Config& config) { return config.audio.midi_soundfont; },
        [](Config& config, const std::string& value) {
