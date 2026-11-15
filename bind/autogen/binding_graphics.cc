@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Graphics  (core/graphics/graphics.h:59-119)
+// Graphics  (core/graphics/graphics.h:58-118)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Graphics_Update) {
@@ -123,14 +123,15 @@ RB_FUNC(Graphics_Transition) {
     urge::ExceptionState exception_state;
     int duration;
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "io", &duration, &filename_val);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
       urge::Graphics::Get().Transition(exception_state, duration,
-          TakeString(filename_val));
+          std::string(filename_data, filename_size));
     }
-    RB_GC_GUARD(filename_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -139,14 +140,15 @@ RB_FUNC(Graphics_Transition) {
     urge::ExceptionState exception_state;
     int duration, vague;
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "ioi", &duration, &filename_val, &vague);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
       urge::Graphics::Get().Transition(exception_state, duration,
-          TakeString(filename_val), vague);
+          std::string(filename_data, filename_size), vague);
     }
-    RB_GC_GUARD(filename_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -190,7 +192,6 @@ RB_FUNC(Graphics_TransitionBitmap) {
     {
       urge::Graphics::Get().TransitionBitmap(exception_state, duration, bitmap);
     }
-    RB_GC_GUARD(bitmap_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -207,7 +208,6 @@ RB_FUNC(Graphics_TransitionBitmap) {
       urge::Graphics::Get().TransitionBitmap(exception_state, duration, bitmap,
           vague);
     }
-    RB_GC_GUARD(bitmap_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -220,16 +220,21 @@ RB_FUNC(Graphics_SnapToBitmap) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Bitmap* result = nullptr;
 
   {
-    urge::Bitmap* value = urge::Graphics::Get().SnapToBitmap(exception_state);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Bitmap> value = urge::Graphics::Get(
+        ).SnapToBitmap(exception_state);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kBitmapDataType);
+  VALUE value = WrapObject(result, kBitmapDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Graphics_FrameReset) {
@@ -281,13 +286,15 @@ RB_FUNC(Graphics_PlayMovie) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
   ParseArgs(argc, argv, "o", &filename_val);
-  filename_val = CheckString(filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
   {
-    urge::Graphics::Get().PlayMovie(exception_state, TakeString(filename_val));
+    urge::Graphics::Get().PlayMovie(exception_state,
+        std::string(filename_data, filename_size));
   }
-  RB_GC_GUARD(filename_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -295,14 +302,19 @@ RB_FUNC(Graphics_PlayMovie) {
 
 RB_FUNC(Graphics_GetRootNode) {
   CheckArgc(argc, 0);
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Node* result = nullptr;
 
   {
-    urge::Node* value = urge::Graphics::Get().GetRootNode();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Node> value = urge::Graphics::Get().GetRootNode();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedWrapObject(result, kNodeDataType);
+  VALUE value = WrapObject(result, kNodeDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Graphics_FrameRate) {

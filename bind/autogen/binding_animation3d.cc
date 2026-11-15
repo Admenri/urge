@@ -31,23 +31,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Animation3D  (core/scene3d/animation3d.h:37-103)
+// Animation3D  (core/scene3d/animation3d.h:37-106)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Animation3D);
 
 RB_FUNC(Animation3D_initialize) {
-  CheckConstructorSelf(self, kAnimation3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Animation3D* result = nullptr;
 
   {
-    urge::Animation3D* value = urge::MakeGarbageCollected<urge::Animation3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Animation3D> value = urge::MakeRefCounted<urge::Animation3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Animation3D_AddTrack) {
@@ -59,16 +62,14 @@ RB_FUNC(Animation3D_AddTrack) {
   VALUE times_val, values_val;
   ParseArgs(argc, argv, "iiooi", &bone, &path, &times_val, &values_val,
       &interpolation);
-  times_val = CheckVectorOf<float>(times_val);
-  values_val = CheckVectorOf<float>(values_val);
+  CheckVectorOf<float>(times_val);
+  CheckVectorOf<float>(values_val);
 
   {
     self_obj->AddTrack(exception_state, bone, path,
         TakeVectorOf<float>(times_val), TakeVectorOf<float>(values_val),
         interpolation);
   }
-  RB_GC_GUARD(times_val);
-  RB_GC_GUARD(values_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -81,14 +82,15 @@ RB_FUNC(Animation3D_AddEvent) {
   CheckArgc(argc, 2);
   double time;
   VALUE name_val;
+  const char* name_data;
+  size_t name_size;
   ParseArgs(argc, argv, "fo", &time, &name_val);
-  name_val = CheckString(name_val);
+  CheckString(name_val, &name_data, &name_size);
 
   {
     self_obj->AddEvent(exception_state, static_cast<float>(time),
-        TakeString(name_val));
+        std::string(name_data, name_size));
   }
-  RB_GC_GUARD(name_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -120,7 +122,11 @@ RB_FUNC(Animation3D_EventName) {
     result = new std::string(self_obj->EventName(index));
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Animation3D_EventTime) {
@@ -178,7 +184,6 @@ RB_FUNC(Animation3D_Apply) {
   {
     self_obj->Apply(skeleton, static_cast<float>(time));
   }
-  RB_GC_GUARD(skeleton_val);
 
   return Qnil;
 }
@@ -198,7 +203,6 @@ RB_FUNC(Animation3D_Blend) {
     self_obj->Blend(exception_state, skeleton, static_cast<float>(time),
         static_cast<float>(weight));
   }
-  RB_GC_GUARD(skeleton_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -221,8 +225,6 @@ RB_FUNC(Animation3D_BlendMasked) {
     self_obj->BlendMasked(exception_state, skeleton, static_cast<float>(time),
         static_cast<float>(weight), mask);
   }
-  RB_GC_GUARD(skeleton_val);
-  RB_GC_GUARD(mask_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -239,10 +241,8 @@ void InitAnimation3DBindingAppend(VALUE klass);
 void InitAnimation3DBinding() {
   auto klass = rb_define_class("Animation3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kAnimation3DDataType>);
-  RegisterNativeType<urge::Animation3D>(klass, kAnimation3DDataType);
 
   DefineMethod(klass, "initialize", Animation3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "add_track", Animation3D_AddTrack);
   DefineMethod(klass, "add_event", Animation3D_AddEvent);
   DefineMethod(klass, "event_count", Animation3D_EventCount);

@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroup  (core/graphics/gpu.h:860-860)
+// GPUBindGroup  (core/graphics/gpu.h:854-854)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroup, GPUObject);
@@ -39,9 +39,7 @@ void InitGPUBindGroupBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUBindGroup", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUBindGroupDataType>);
-  RegisterNativeType<urge::GPUBindGroup>(klass, kGPUBindGroupDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUBindGroupBindingAppend(klass);
 }
 // --- GENERATED END ---

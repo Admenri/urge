@@ -29,7 +29,6 @@
 #include "glm/glm.hpp"
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/render/uniform.h"
 #include "core/scene3d/material3d.h"
@@ -45,10 +44,9 @@ URGE_BINDING()
 class RenderQueue3D : public Object {
  public:
   struct Item {
-    void Trace(GCVisitor& visitor) const;
-    Member<MeshRenderer3D> renderer;
-    Member<Mesh3D> mesh;
-    Member<MaterialPass3D> pass;
+    RefPtr<MeshRenderer3D> renderer;
+    RefPtr<Mesh3D> mesh;
+    RefPtr<MaterialPass3D> pass;
     std::string tag;
     uint32_t index_offset = 0;
     uint32_t index_count = 0;
@@ -65,8 +63,7 @@ class RenderQueue3D : public Object {
   };
 
   struct LightItem {
-    void Trace(GCVisitor& visitor) const;
-    Member<Light3D> light;
+    RefPtr<Light3D> light;
     int32_t type = 0;
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -80,8 +77,6 @@ class RenderQueue3D : public Object {
   RenderQueue3D();
   ~RenderQueue3D() override;
 
-  void Trace(GCVisitor& visitor) const override;
-
   void Clear();
   void Collect(Node3D* root,
                Camera3D* camera,
@@ -91,9 +86,6 @@ class RenderQueue3D : public Object {
   const std::vector<Item>& items() const { return items_; }
   const std::vector<LightItem>& lights() const { return lights_; }
 
-  // Borrowed entries remain valid only while this queue is reachable and its
-  // items are not cleared/rebuilt. The returned pointers are not external
-  // roots.
   std::vector<const Item*> Filter(const std::vector<std::string>& tags,
                                   const std::vector<int32_t>& tag_ids,
                                   int32_t queue_min,

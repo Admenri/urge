@@ -133,7 +133,6 @@ void DefineRGSSExceptions() {
 }  // namespace
 
 void InitBindings() {
-  InitializeNativeGC();
   DefineRGSSExceptions();
 
   InitDisposableBinding();

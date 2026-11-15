@@ -34,18 +34,16 @@ namespace urge {
 URGE_BINDING()
 class Node : public Disposable {
  public:
-  Node(Node* parent, const ZValue& z);
+  Node(RefPtr<Node> parent, const ZValue& z);
 
   URGE_BINDING()
   explicit Node();
   URGE_BINDING()
-  Node(Node* parent);
+  Node(RefPtr<Node> parent);
   ~Node() override;
-  void Trace(GCVisitor& visitor) const override;
-  void PrepareForCollection() override;
 
   URGE_BINDING()
-  void Render(Bitmap* target, MaybePtr<Color> clear = nullptr);
+  void Render(RefPtr<Bitmap> target, MaybePtr<Color> clear = nullptr);
 
   URGE_BINDING()
   virtual ATTR(int32_t, Z);
@@ -97,30 +95,24 @@ class Node : public Disposable {
 
   DrawableSet children_;
   Drawable self_;
-  Member<Node> parent_;
-  Member<Camera> camera_;
+  RefPtr<Node> parent_;
+  RefPtr<Camera> camera_;
   bool world_root_ = false;
 
   bool allow_do_draw_ = false;
   bool allow_post_draw_ = false;
 
   struct Transform3D {
-    void Trace(GCVisitor& visitor) const {
-      visitor.Trace(position);
-      visitor.Trace(quaternion);
-      visitor.Trace(scale);
-    }
-
-    Member<Vector3> position;
-    Member<Vector4> quaternion;
-    Member<Vector3> scale;
+    RefPtr<Vector3> position;
+    RefPtr<Vector4> quaternion;
+    RefPtr<Vector3> scale;
     glm::mat4 local = glm::mat4(1.0f);
     glm::mat4 world = glm::mat4(1.0f);
 
     Transform3D()
-        : position(MakeGarbageCollected<Vector3>(0.0f)),
-          quaternion(MakeGarbageCollected<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
-          scale(MakeGarbageCollected<Vector3>(1.0f)) {}
+        : position(MakeRefCounted<Vector3>(0.0f)),
+          quaternion(MakeRefCounted<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
+          scale(MakeRefCounted<Vector3>(1.0f)) {}
   } transform_;
 };
 

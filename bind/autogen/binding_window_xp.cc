@@ -29,28 +29,31 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowXP  (core/scene/window_xp.h:50-94)
+// WindowXP  (core/scene/window_xp.h:49-92)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(WindowXP, Node);
 
 RB_FUNC(WindowXP_initialize) {
-  CheckConstructorSelf(self, kWindowXPDataType);
   if (argc == 0) {
     // initialize()
     urge::ExceptionState exception_state;
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::WindowXP* result = nullptr;
 
     {
-      urge::WindowXP* value = urge::MakeGarbageCollected<urge::WindowXP>(
+      urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>(
           exception_state);
-      if (!exception_state.HadException())
-        result = new urge::GarbageCollector::Root(value);
+      result = exception_state.HadException() ? nullptr : value.get();
+      if (result)
+        result->AddRef();
     }
     RaiseException(exception_state);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(viewport)
     urge::ExceptionState exception_state;
@@ -59,18 +62,21 @@ RB_FUNC(WindowXP_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::WindowXP* result = nullptr;
 
     {
-      urge::WindowXP* value = urge::MakeGarbageCollected<urge::WindowXP>(
+      urge::RefPtr<urge::WindowXP> value = urge::MakeRefCounted<urge::WindowXP>(
           exception_state, viewport);
-      if (!exception_state.HadException())
-        result = new urge::GarbageCollector::Root(value);
+      result = exception_state.HadException() ? nullptr : value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(viewport_val);
     RaiseException(exception_state);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -117,7 +123,7 @@ BINDING_ATTR_OBJECT_REF(WindowXP,
 // Attribute: stretch (bool)
 BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Stretch);
 
-// Attribute: cursor_rect (Rect*)
+// Attribute: cursor_rect (RefPtr<Rect>)
 BINDING_ATTR_OBJECT(WindowXP,
                     urge::WindowXP,
                     CursorRect,
@@ -167,10 +173,8 @@ void InitWindowXPBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("WindowXP", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kWindowXPDataType>);
-  RegisterNativeType<urge::WindowXP>(klass, kWindowXPDataType);
 
   DefineMethod(klass, "initialize", WindowXP_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "update", WindowXP_Update);
   DefineMethod(klass, "visible", WindowXP_Visible);
   DefineMethod(klass, "visible=", WindowXP_VisibleEqual);

@@ -37,40 +37,49 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Image, Disposable);
 
 RB_FUNC(Image_initialize) {
-  CheckConstructorSelf(self, kImageDataType);
   if (argc == 1) {
     // initialize(filename)
     urge::ExceptionState exception_state;
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "o", &filename_val);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Image* result = nullptr;
 
     {
-      urge::Image* value = urge::MakeGarbageCollected<urge::Image>(
-          exception_state, TakeString(filename_val));
-      if (!exception_state.HadException())
-        result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(
+          exception_state, std::string(filename_data, filename_size));
+      result = exception_state.HadException() ? nullptr : value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(filename_val);
     RaiseException(exception_state);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 2) {
     // initialize(width, height)
     int width, height;
     ParseArgs(argc, argv, "ii", &width, &height);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Image* result = nullptr;
 
     {
-      urge::Image* value = urge::MakeGarbageCollected<urge::Image>(width,
+      urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(width,
           height);
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -80,21 +89,22 @@ RB_FUNC(Image_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
-  if (self == other_val)
-    return self;
-  CheckConstructorSelf(self, kImageDataType);
   urge::Image* other_obj = CheckObject<urge::Image>(other_val, kImageDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Image* result = nullptr;
 
   {
-    urge::Image* value = urge::MakeGarbageCollected<urge::Image>(other_obj);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Image> value = urge::MakeRefCounted<urge::Image>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(other_val);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Image_Width) {
@@ -131,16 +141,20 @@ RB_FUNC(Image_GetPixel) {
   int x, y;
   ParseArgs(argc, argv, "ii", &x, &y);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Color* result = nullptr;
 
   {
-    urge::Color* value = self_obj->GetPixel(exception_state, x, y);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Color> value = self_obj->GetPixel(exception_state, x, y);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kColorDataType);
+  VALUE value = WrapObject(result, kColorDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Image_SetPixel) {
@@ -157,7 +171,6 @@ RB_FUNC(Image_SetPixel) {
   {
     self_obj->SetPixel(exception_state, x, y, color);
   }
-  RB_GC_GUARD(color_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -179,8 +192,6 @@ RB_FUNC(Image_FillRect) {
     {
       self_obj->FillRect(exception_state, rect, color);
     }
-    RB_GC_GUARD(rect_val);
-    RB_GC_GUARD(color_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -196,7 +207,6 @@ RB_FUNC(Image_FillRect) {
     {
       self_obj->FillRect(exception_state, x, y, width, height, color);
     }
-    RB_GC_GUARD(color_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -222,8 +232,6 @@ RB_FUNC(Image_Blt) {
     {
       self_obj->Blt(exception_state, x, y, src_image, src_rect);
     }
-    RB_GC_GUARD(src_image_val);
-    RB_GC_GUARD(src_rect_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -242,8 +250,6 @@ RB_FUNC(Image_Blt) {
     {
       self_obj->Blt(exception_state, x, y, src_image, src_rect, opacity);
     }
-    RB_GC_GUARD(src_image_val);
-    RB_GC_GUARD(src_rect_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -270,9 +276,6 @@ RB_FUNC(Image_StretchBlt) {
     {
       self_obj->StretchBlt(exception_state, dst_rect, src_image, src_rect);
     }
-    RB_GC_GUARD(dst_rect_val);
-    RB_GC_GUARD(src_image_val);
-    RB_GC_GUARD(src_rect_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -294,9 +297,6 @@ RB_FUNC(Image_StretchBlt) {
       self_obj->StretchBlt(exception_state, dst_rect, src_image, src_rect,
           opacity);
     }
-    RB_GC_GUARD(dst_rect_val);
-    RB_GC_GUARD(src_image_val);
-    RB_GC_GUARD(src_rect_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -323,9 +323,6 @@ RB_FUNC(Image_GradientFillRect) {
     {
       self_obj->GradientFillRect(exception_state, rect, color1, color2);
     }
-    RB_GC_GUARD(rect_val);
-    RB_GC_GUARD(color1_val);
-    RB_GC_GUARD(color2_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -347,9 +344,6 @@ RB_FUNC(Image_GradientFillRect) {
       self_obj->GradientFillRect(exception_state, rect, color1, color2,
           vertical);
     }
-    RB_GC_GUARD(rect_val);
-    RB_GC_GUARD(color1_val);
-    RB_GC_GUARD(color2_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -369,8 +363,6 @@ RB_FUNC(Image_GradientFillRect) {
       self_obj->GradientFillRect(exception_state, x, y, width, height, color1,
           color2);
     }
-    RB_GC_GUARD(color1_val);
-    RB_GC_GUARD(color2_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -391,8 +383,6 @@ RB_FUNC(Image_GradientFillRect) {
       self_obj->GradientFillRect(exception_state, x, y, width, height, color1,
           color2, vertical);
     }
-    RB_GC_GUARD(color1_val);
-    RB_GC_GUARD(color2_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -429,7 +419,6 @@ RB_FUNC(Image_ClearRect) {
     {
       self_obj->ClearRect(exception_state, rect);
     }
-    RB_GC_GUARD(rect_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -461,10 +450,13 @@ RB_FUNC(Image_ToDump) {
   {
     result = new std::string(self_obj->ToDump(exception_state));
   }
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Image_SaveFile) {
@@ -473,13 +465,15 @@ RB_FUNC(Image_SaveFile) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
   ParseArgs(argc, argv, "o", &filename_val);
-  filename_val = CheckString(filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
   {
-    self_obj->SaveFile(exception_state, TakeString(filename_val));
+    self_obj->SaveFile(exception_state,
+        std::string(filename_data, filename_size));
   }
-  RB_GC_GUARD(filename_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -489,21 +483,26 @@ RB_FUNC(Image_FromDump) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE data_val;
+  const char* data_data;
+  size_t data_size;
   ParseArgs(argc, argv, "o", &data_val);
-  data_val = CheckString(data_val);
+  CheckString(data_val, &data_data, &data_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Image* result = nullptr;
 
   {
-    urge::Image* value = urge::Image::FromDump(exception_state,
-        TakeString(data_val));
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Image> value = urge::Image::FromDump(exception_state,
+        std::string(data_data, data_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(data_val);
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kImageDataType);
+  VALUE value = WrapObject(result, kImageDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitImageBindingAppend(VALUE klass);
@@ -512,7 +511,6 @@ void InitImageBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Disposable"));
   auto klass = rb_define_class("Image", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kImageDataType>);
-  RegisterNativeType<urge::Image>(klass, kImageDataType);
 
   DefineMethod(klass, "initialize", Image_initialize);
   DefineMethod(klass, "initialize_copy", Image_initialize_copy);

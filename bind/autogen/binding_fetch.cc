@@ -47,91 +47,118 @@ void DefineFetchBody(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Fetch  (core/network/network.h:130-163)
+// Fetch  (core/network/network.h:126-158)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Fetch);
 
 RB_FUNC(Fetch_initialize) {
-  CheckConstructorSelf(self, kFetchDataType);
   if (argc == 1) {
     // initialize(url)
     VALUE url_val;
+    const char* url_data;
+    size_t url_size;
     ParseArgs(argc, argv, "o", &url_val);
-    url_val = CheckString(url_val);
+    CheckString(url_val, &url_data, &url_size);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Fetch* result = nullptr;
 
     {
-      urge::Fetch* value = urge::MakeGarbageCollected<urge::Fetch>(
-          TakeString(url_val));
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(url_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 2) {
     // initialize(url, method)
     VALUE url_val, method_val;
+    const char* url_data;
+    size_t url_size, method_size;
+    const char* method_data;
     ParseArgs(argc, argv, "oo", &url_val, &method_val);
-    url_val = CheckString(url_val);
-    method_val = CheckString(method_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Fetch* result = nullptr;
 
     {
-      urge::Fetch* value = urge::MakeGarbageCollected<urge::Fetch>(
-          TakeString(url_val), TakeString(method_val));
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size),
+          std::string(method_data, method_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(url_val);
-    RB_GC_GUARD(method_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 3) {
     // initialize(url, method, body)
     VALUE url_val, method_val, body_val;
+    const char* url_data;
+    size_t url_size, method_size, body_size;
+    const char* method_data;
+    const char* body_data;
     ParseArgs(argc, argv, "ooo", &url_val, &method_val, &body_val);
-    url_val = CheckString(url_val);
-    method_val = CheckString(method_val);
-    body_val = CheckString(body_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+    CheckString(body_val, &body_data, &body_size);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Fetch* result = nullptr;
 
     {
-      urge::Fetch* value = urge::MakeGarbageCollected<urge::Fetch>(
-          TakeString(url_val), TakeString(method_val), TakeString(body_val));
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size),
+          std::string(method_data, method_size),
+          std::string(body_data, body_size));
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(url_val);
-    RB_GC_GUARD(method_val);
-    RB_GC_GUARD(body_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 4) {
     // initialize(url, method, body, headers)
     VALUE url_val, method_val, body_val, headers_val;
+    const char* url_data;
+    size_t url_size, method_size, body_size;
+    const char* method_data;
+    const char* body_data;
     ParseArgs(argc, argv, "oooo", &url_val, &method_val, &body_val,
         &headers_val);
-    url_val = CheckString(url_val);
-    method_val = CheckString(method_val);
-    body_val = CheckString(body_val);
-    headers_val = CheckVectorOf<std::string>(headers_val);
+    CheckString(url_val, &url_data, &url_size);
+    CheckString(method_val, &method_data, &method_size);
+    CheckString(body_val, &body_data, &body_size);
+    CheckVectorOf<std::string>(headers_val);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Fetch* result = nullptr;
 
     {
-      urge::Fetch* value = urge::MakeGarbageCollected<urge::Fetch>(
-          TakeString(url_val), TakeString(method_val), TakeString(body_val),
+      urge::RefPtr<urge::Fetch> value = urge::MakeRefCounted<urge::Fetch>(
+          std::string(url_data, url_size),
+          std::string(method_data, method_size),
+          std::string(body_data, body_size),
           TakeVectorOf<std::string>(headers_val));
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(url_val);
-    RB_GC_GUARD(method_val);
-    RB_GC_GUARD(body_val);
-    RB_GC_GUARD(headers_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -208,7 +235,11 @@ RB_FUNC(Fetch_GetStatusText) {
     result = new std::string(self_obj->GetStatusText());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetText) {
@@ -221,7 +252,11 @@ RB_FUNC(Fetch_GetText) {
     result = new std::string(self_obj->GetText());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetError) {
@@ -234,7 +269,11 @@ RB_FUNC(Fetch_GetError) {
     result = new std::string(self_obj->GetError());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetProgress) {
@@ -255,17 +294,23 @@ RB_FUNC(Fetch_GetHeader) {
 
   CheckArgc(argc, 1);
   VALUE name_val;
+  const char* name_data;
+  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  name_val = CheckString(name_val);
+  CheckString(name_val, &name_data, &name_size);
 
   std::string* result = nullptr;
 
   {
-    result = new std::string(self_obj->GetHeader(TakeString(name_val)));
+    result = new std::string(
+        self_obj->GetHeader(std::string(name_data, name_size)));
   }
-  RB_GC_GUARD(name_val);
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Fetch_GetHeaders) {
@@ -278,7 +323,9 @@ RB_FUNC(Fetch_GetHeaders) {
     result = new std::vector<std::string>(self_obj->GetHeaders());
   }
 
-  return OwnedWrapVector<std::string>(result);
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 void InitFetchBindingAppend(VALUE klass);
@@ -286,10 +333,8 @@ void InitFetchBindingAppend(VALUE klass);
 void InitFetchBinding() {
   auto klass = rb_define_class("Fetch", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kFetchDataType>);
-  RegisterNativeType<urge::Fetch>(klass, kFetchDataType);
 
   DefineMethod(klass, "initialize", Fetch_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "start", Fetch_Start);
   DefineMethod(klass, "abort", Fetch_Abort);
   DefineMethod(klass, "done?", Fetch_IsDone);

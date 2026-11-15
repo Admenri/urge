@@ -31,7 +31,7 @@
 #include "core/canvas/image.h"
 #include "core/common/definition.h"
 #include "core/common/disposable.h"
-#include "core/common/member.h"
+#include "core/common/refptr.h"
 
 namespace urge {
 
@@ -55,7 +55,7 @@ class Animation : public Disposable {
   std::vector<int32_t> Delays(URGE_EXCEPT);
 
   URGE_BINDING()
-  Image* Frame(URGE_EXCEPT, int32_t index);
+  RefPtr<Image> Frame(URGE_EXCEPT, int32_t index);
 
  private:
   void DisposeObject() override;

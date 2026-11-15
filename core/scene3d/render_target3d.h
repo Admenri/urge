@@ -67,8 +67,8 @@ class RenderTarget3D : public Object {
                  int32_t layers);
   explicit RenderTarget3D(URGE_EXCEPT, const RenderTargetDesc3D& desc);
   RenderTarget3D(URGE_EXCEPT,
-                 const std::vector<RenderTarget3D*>& colors,
-                 RenderTarget3D* depth);
+                 const std::vector<RefPtr<RenderTarget3D>>& colors,
+                 RefPtr<RenderTarget3D> depth);
   ~RenderTarget3D() override;
 
   URGE_BINDING()

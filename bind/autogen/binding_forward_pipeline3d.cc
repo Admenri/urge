@@ -34,21 +34,23 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(ForwardPipeline3D, RenderGraph3D);
 
 RB_FUNC(ForwardPipeline3D_initialize) {
-  CheckConstructorSelf(self, kForwardPipeline3DDataType);
-  CheckArgc(argc, 0);
   urge::ExceptionState exception_state;
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::ForwardPipeline3D* result = nullptr;
 
   {
-    urge::ForwardPipeline3D* value = urge::MakeGarbageCollected<urge::ForwardPipeline3D>(
+    urge::RefPtr<urge::ForwardPipeline3D> value = urge::MakeRefCounted<urge::ForwardPipeline3D>(
         exception_state);
-    if (!exception_state.HadException())
-      result = new urge::GarbageCollector::Root(value);
+    result = exception_state.HadException() ? nullptr : value.get();
+    if (result)
+      result->AddRef();
   }
   RaiseException(exception_state);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(ForwardPipeline3D_SetCascades) {
@@ -141,10 +143,8 @@ void InitForwardPipeline3DBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("RenderGraph3D"));
   auto klass = rb_define_class("ForwardPipeline3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kForwardPipeline3DDataType>);
-  RegisterNativeType<urge::ForwardPipeline3D>(klass, kForwardPipeline3DDataType);
 
   DefineMethod(klass, "initialize", ForwardPipeline3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_cascades", ForwardPipeline3D_SetCascades);
   DefineMethod(klass, "set_shadow_distance", ForwardPipeline3D_SetShadowDistance);
   DefineMethod(klass, "set_split_lambda", ForwardPipeline3D_SetSplitLambda);

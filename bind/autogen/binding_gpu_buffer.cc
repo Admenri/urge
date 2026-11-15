@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBuffer  (core/graphics/gpu.h:738-759)
+// GPUBuffer  (core/graphics/gpu.h:732-753)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBuffer, GPUObject);
@@ -87,7 +87,11 @@ RB_FUNC(GPUBuffer_Read) {
     result = new std::string(self_obj->Read(offset, size));
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUBuffer_Write) {
@@ -96,13 +100,14 @@ RB_FUNC(GPUBuffer_Write) {
   CheckArgc(argc, 2);
   uint64_t offset;
   VALUE data_val;
+  const char* data_data;
+  size_t data_size;
   ParseArgs(argc, argv, "po", &offset, &data_val);
-  data_val = CheckString(data_val);
+  CheckString(data_val, &data_data, &data_size);
 
   {
-    self_obj->Write(offset, TakeString(data_val));
+    self_obj->Write(offset, std::string(data_data, data_size));
   }
-  RB_GC_GUARD(data_val);
 
   return Qnil;
 }
@@ -130,9 +135,7 @@ void InitGPUBufferBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUBuffer", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUBufferDataType>);
-  RegisterNativeType<urge::GPUBuffer>(klass, kGPUBufferDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "size", GPUBuffer_GetSize);
   DefineMethod(klass, "map_async", GPUBuffer_MapAsync);
   DefineMethod(klass, "unmap", GPUBuffer_Unmap);

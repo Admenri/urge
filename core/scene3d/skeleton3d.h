@@ -29,7 +29,6 @@
 #include "glm/gtc/quaternion.hpp"
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/scene3d/node3d.h"
 
@@ -42,8 +41,6 @@ class Skeleton3D : public Object {
   Skeleton3D();
   ~Skeleton3D() override;
 
-  void Trace(GCVisitor& visitor) const override;
-
   URGE_BINDING()
   void SetBones(URGE_EXCEPT,
                 std::vector<int32_t> parents,
@@ -52,7 +49,7 @@ class Skeleton3D : public Object {
   URGE_BINDING()
   int32_t BoneCount() const { return static_cast<int32_t>(bones_.size()); }
   URGE_BINDING()
-  Node3D* BoneAt(int32_t index) const;
+  RefPtr<Node3D> BoneAt(int32_t index) const;
   URGE_BINDING()
   int32_t BoneParent(int32_t index) const;
 
@@ -78,7 +75,7 @@ class Skeleton3D : public Object {
   bool pose_open() const { return pose_open_; }
 
   const std::vector<glm::mat4>& joint_matrices();
-  const std::vector<Member<Node3D>>& bones() const { return bones_; }
+  const std::vector<RefPtr<Node3D>>& bones() const { return bones_; }
 
  private:
   struct BoneRest {
@@ -95,7 +92,7 @@ class Skeleton3D : public Object {
     bool sampled = false;
   };
 
-  std::vector<Member<Node3D>> bones_;
+  std::vector<RefPtr<Node3D>> bones_;
   std::vector<glm::mat4> inverse_bind_;
   std::vector<glm::mat4> joints_;
   std::vector<PoseSample> pose_;

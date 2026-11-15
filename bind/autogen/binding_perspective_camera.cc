@@ -28,23 +28,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// PerspectiveCamera  (core/scene/camera.h:76-86)
+// PerspectiveCamera  (core/scene/camera.h:75-85)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(PerspectiveCamera, Camera);
 
 RB_FUNC(PerspectiveCamera_initialize) {
-  CheckConstructorSelf(self, kPerspectiveCameraDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::PerspectiveCamera* result = nullptr;
 
   {
-    urge::PerspectiveCamera* value = urge::MakeGarbageCollected<urge::PerspectiveCamera>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::PerspectiveCamera> value = urge::MakeRefCounted<urge::PerspectiveCamera>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Attribute: fov (float)
@@ -62,10 +65,8 @@ void InitPerspectiveCameraBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Camera"));
   auto klass = rb_define_class("PerspectiveCamera", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kPerspectiveCameraDataType>);
-  RegisterNativeType<urge::PerspectiveCamera>(klass, kPerspectiveCameraDataType);
 
   DefineMethod(klass, "initialize", PerspectiveCamera_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "fov", PerspectiveCamera_Fov);
   DefineMethod(klass, "fov=", PerspectiveCamera_FovEqual);
   DefineMethod(klass, "near", PerspectiveCamera_Near);

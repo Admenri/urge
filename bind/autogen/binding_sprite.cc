@@ -34,35 +34,40 @@ RB_FUNC(Sprite_BitmapCompat) {
   if (!RTYPEDDATA_DATA(self))
     return Qnil;
   auto* sprite = GetSelfData<urge::Sprite, true>(self);
-  urge::GarbageCollector::Root* result = nullptr;
-  {
-    urge::Bitmap* bitmap = *sprite->Attr_Bitmap();
-    result = new urge::GarbageCollector::Root(bitmap);
-  }
-  return OwnedWrapObject(result, kBitmapDataType);
+  auto* bitmap = sprite->Attr_Bitmap()->get();
+  VALUE cached = rb_iv_get(self, "_Bitmap");
+  if (!NIL_P(cached) && CheckMaybeObject<urge::Bitmap>(cached, kBitmapDataType) == bitmap)
+    return cached;
+  VALUE result = WrapObject(bitmap, kBitmapDataType);
+  rb_iv_set(self, "_Bitmap", result);
+  return result;
 }
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Sprite  (core/scene/sprite.h:35-94)
+// Sprite  (core/scene/sprite.h:35-93)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Sprite, Node);
 
 RB_FUNC(Sprite_initialize) {
-  CheckConstructorSelf(self, kSpriteDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Sprite* result = nullptr;
 
     {
-      urge::Sprite* value = urge::MakeGarbageCollected<urge::Sprite>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Sprite> value = urge::MakeRefCounted<urge::Sprite>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(viewport)
     VALUE viewport_val;
@@ -70,15 +75,20 @@ RB_FUNC(Sprite_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Sprite* result = nullptr;
 
     {
-      urge::Sprite* value = urge::MakeGarbageCollected<urge::Sprite>(viewport);
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Sprite> value = urge::MakeRefCounted<urge::Sprite>(
+          viewport);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(viewport_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -98,7 +108,6 @@ RB_FUNC(Sprite_Flash) {
   {
     self_obj->Flash(exception_state, color, duration);
   }
-  RB_GC_GUARD(color_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -160,7 +169,7 @@ BINDING_ATTR_OBJECT_REF(Sprite,
                         kBitmapDataType,
                         CheckMaybeObject);
 
-// Attribute: src_rect (Rect*)
+// Attribute: src_rect (RefPtr<Rect>)
 BINDING_ATTR_OBJECT(Sprite,
                     urge::Sprite,
                     SrcRect,
@@ -216,7 +225,7 @@ BINDING_ATTR_INT(Sprite, urge::Sprite, Opacity);
 // Attribute: blend_type (int32_t)
 BINDING_ATTR_INT(Sprite, urge::Sprite, BlendType);
 
-// Attribute: color (Color*)
+// Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Sprite,
                     urge::Sprite,
                     Color,
@@ -224,7 +233,7 @@ BINDING_ATTR_OBJECT(Sprite,
                     kColorDataType,
                     CheckObject);
 
-// Attribute: tone (Tone*)
+// Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Sprite,
                     urge::Sprite,
                     Tone,
@@ -246,10 +255,8 @@ void InitSpriteBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Sprite", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kSpriteDataType>);
-  RegisterNativeType<urge::Sprite>(klass, kSpriteDataType);
 
   DefineMethod(klass, "initialize", Sprite_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "flash", Sprite_Flash);
   DefineMethod(klass, "update", Sprite_Update);
   DefineMethod(klass, "width", Sprite_Width);

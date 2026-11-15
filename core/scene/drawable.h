@@ -25,7 +25,6 @@
 #include <functional>
 #include <stack>
 
-#include "core/common/persistent.h"
 #include "core/canvas/bitmap.h"
 #include "core/common/common.h"
 #include "core/common/object.h"
@@ -39,7 +38,7 @@ struct DrawContext {
 
   wgpu::CommandEncoder command;
 
-  Persistent<Bitmap> target;
+  RefPtr<Bitmap> target;
 
   PrimitiveEmitter* vertices = nullptr;
 
@@ -97,7 +96,6 @@ class Drawable {
 
   void SetParent(DrawableSet* parent);
   void RemoveFromList();
-  void ClearCallbacks();
 
   Drawable* Prev() { return prev_; }
   Drawable* Next() { return next_; }
@@ -141,9 +139,6 @@ class DrawableSet {
  public:
   DrawableSet();
   ~DrawableSet();
-
-  // Registrations are non-owning; detach without retaining/disposing children.
-  void DetachAll();
 
   void DispatchPrepare(DrawParam param);
   void DispatchDraw(DrawParam param);

@@ -40,16 +40,6 @@
 
 namespace urge {
 
-void RenderContext3D::Trace(GCVisitor& visitor) const {
-  Object::Trace(visitor);
-  visitor.Trace(target_);
-  visitor.Trace(camera_);
-  visitor.Trace(queue_);
-  visitor.Trace(ambient_);
-  visitor.Trace(shadow_target_);
-  visitor.Trace(point_shadow_target_);
-}
-
 namespace {
 
 constexpr int32_t kViewsPerBuffer = 16;
@@ -80,10 +70,10 @@ uint64_t NextFrameToken() {
 
 RenderContext3D::RenderContext3D(URGE_EXCEPT,
                                  wgpu::CommandEncoder encoder,
-                                 RenderTarget3D* target)
+                                 RefPtr<RenderTarget3D> target)
     : encoder_(encoder),
-      target_(target),
-      ambient_(MakeGarbageCollected<Color>(26.0f, 28.0f, 36.0f, 255.0f)) {
+      target_(std::move(target)),
+      ambient_(MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f)) {
   mesh_pool_ = std::make_unique<UniformBlockPool>(
       exception_state, AcquireMeshUniformLayout(),
       static_cast<uint32_t>(sizeof(MeshData)), "mesh3d");
@@ -92,16 +82,16 @@ RenderContext3D::RenderContext3D(URGE_EXCEPT,
 
   last_frame_seconds_ = ClockSeconds();
   has_frame_clock_ = true;
-  BeginFrame(encoder_, target_.get());
+  BeginFrame(encoder_, target_);
 }
 
 RenderContext3D::~RenderContext3D() = default;
 
 void RenderContext3D::BeginFrame(wgpu::CommandEncoder encoder,
-                                 RenderTarget3D* target) {
+                                 RefPtr<RenderTarget3D> target) {
   EndPass();
   encoder_ = encoder;
-  target_ = target;
+  target_ = std::move(target);
   pass_ = nullptr;
   pass_serial_ = -1;
   mesh_pool_->BeginFrame();
@@ -125,7 +115,7 @@ void RenderContext3D::BeginFrame(wgpu::CommandEncoder encoder,
 void RenderContext3D::Collect(Node3D* root, Camera3D* camera) {
   camera_ = camera;
   if (!queue_)
-    queue_ = MakeGarbageCollected<RenderQueue3D>();
+    queue_ = MakeRefCounted<RenderQueue3D>();
 
   frame_token_ = NextFrameToken();
   pass_size_ = target_ ? target_->size() : glm::ivec2(1);
@@ -136,13 +126,12 @@ void RenderContext3D::Flush() {
   mesh_pool_->Flush();
 }
 
-void RenderContext3D::SetAmbient(Color* value) {
-  ambient_ =
-      value ? value : MakeGarbageCollected<Color>(0.0f, 0.0f, 0.0f, 255.0f);
+void RenderContext3D::SetAmbient(RefPtr<Color> value) {
+  ambient_ = value ? value : MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 255.0f);
 }
 
-void RenderContext3D::SetViewProjection(Camera3D* camera) {
-  camera_ = camera;
+void RenderContext3D::SetViewProjection(RefPtr<Camera3D> camera) {
+  camera_ = std::move(camera);
   view_override_enabled_ = false;
 }
 
@@ -151,19 +140,19 @@ void RenderContext3D::SetViewOverride(const glm::mat4& view_proj) {
   view_override_enabled_ = true;
 }
 
-void RenderContext3D::SetShadow(RenderTarget3D* target,
+void RenderContext3D::SetShadow(RefPtr<RenderTarget3D> target,
                                 const glm::mat4& view_proj) {
   SetShadow(std::move(target), view_proj, 0);
   shadow_cascade_count_ = shadow_target_ ? 1 : 0;
 }
 
-void RenderContext3D::SetShadow(RenderTarget3D* target,
+void RenderContext3D::SetShadow(RefPtr<RenderTarget3D> target,
                                 const glm::mat4& view_proj,
                                 int32_t cascade) {
   if (cascade < 0 || cascade >= static_cast<int32_t>(kMaxCascades))
     return;
 
-  if (shadow_target_.get() != target) {
+  if (shadow_target_.get() != target.get()) {
     shadow_target_ = target;
     view_group_ = nullptr;
   }
@@ -195,14 +184,14 @@ void RenderContext3D::SetShadowCascades(int32_t count) {
 }
 
 void RenderContext3D::SetPointShadow(
-    RenderTarget3D* target,
+    RefPtr<RenderTarget3D> target,
     const std::vector<glm::mat4>& face_matrices,
     int32_t light_index,
     float range) {
-  if (point_shadow_target_.get() != target) {
+  if (point_shadow_target_.get() != target.get()) {
     view_group_ = nullptr;
   }
-  point_shadow_target_ = target;
+  point_shadow_target_ = std::move(target);
   point_light_index_ = light_index;
   point_range_ = std::max(range, 0.01f);
   for (uint32_t i = 0; i < 6; ++i)
@@ -434,10 +423,10 @@ PipelineTargetState3D RenderContext3D::target_state() const {
 }
 
 void RenderContext3D::BeginPass(URGE_EXCEPT,
-                                RenderTarget3D* target,
-                                Color* clear,
+                                RefPtr<RenderTarget3D> target,
+                                RefPtr<Color> clear,
                                 bool clear_depth) {
-  std::vector<Color*> clears;
+  std::vector<RefPtr<Color>> clears;
   if (clear)
     clears.push_back(clear);
   BeginPassEx(exception_state, std::move(target), std::move(clears),
@@ -445,8 +434,8 @@ void RenderContext3D::BeginPass(URGE_EXCEPT,
 }
 
 void RenderContext3D::BeginPassEx(URGE_EXCEPT,
-                                  RenderTarget3D* target,
-                                  std::vector<Color*> clears,
+                                  RefPtr<RenderTarget3D> target,
+                                  std::vector<RefPtr<Color>> clears,
                                   bool clear_depth,
                                   bool clear_stencil,
                                   int32_t layer) {
@@ -467,7 +456,7 @@ void RenderContext3D::BeginPassEx(URGE_EXCEPT,
 
   std::vector<std::optional<glm::vec4>> colors;
   colors.reserve(clears.size());
-  for (Color* clear : clears)
+  for (const RefPtr<Color>& clear : clears)
     colors.push_back(clear ? std::optional<glm::vec4>(clear->Normalize())
                            : std::nullopt);
 
@@ -486,8 +475,8 @@ void RenderContext3D::BeginPassEx(URGE_EXCEPT,
   }
 
   const bool shadow_pass =
-      (shadow_target_ && target == shadow_target_.get()) ||
-      (point_shadow_target_ && target == point_shadow_target_.get());
+      (shadow_target_ && target.get() == shadow_target_.get()) ||
+      (point_shadow_target_ && target.get() == point_shadow_target_.get());
   if (shadow_pass)
     EnsureShadowViewGroup(exception_state);
 }
@@ -499,10 +488,10 @@ void RenderContext3D::EndPass() {
   }
 }
 
-GPURenderPassEncoder* RenderContext3D::GetPass() {
+RefPtr<GPURenderPassEncoder> RenderContext3D::GetPass() {
   if (!pass_)
     return nullptr;
-  return MakeGarbageCollected<GPURenderPassEncoder>(pass_);
+  return MakeRefCounted<GPURenderPassEncoder>(pass_);
 }
 
 void RenderContext3D::SetViewport(float x, float y, float width, float height) {
@@ -521,7 +510,8 @@ void RenderContext3D::SetScissorRect(int32_t x,
                          static_cast<uint32_t>(std::max(0, height)));
 }
 
-void RenderContext3D::DrawIndexedIndirect(GPUBuffer* buffer, int32_t offset) {
+void RenderContext3D::DrawIndexedIndirect(RefPtr<GPUBuffer> buffer,
+                                          int32_t offset) {
   if (!pass_ || !buffer)
     return;
   pass_.DrawIndexedIndirect(buffer->handle(),
@@ -664,7 +654,7 @@ int32_t RenderContext3D::DrawFilter(URGE_EXCEPT,
   return static_cast<int32_t>(items.size());
 }
 
-void RenderContext3D::DrawFullscreen(URGE_EXCEPT, MaterialPass3D* pass) {
+void RenderContext3D::DrawFullscreen(URGE_EXCEPT, RefPtr<MaterialPass3D> pass) {
   if (!pass_ || !pass)
     return;
 

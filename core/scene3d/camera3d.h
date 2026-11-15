@@ -30,7 +30,6 @@
 #include "glm/glm.hpp"
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/common/utility.h"
 #include "core/scene3d/node3d.h"
@@ -43,8 +42,6 @@ class Camera3D : public Node3D {
   URGE_BINDING()
   Camera3D();
   ~Camera3D() override;
-
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   ATTR(float, Fov) {
@@ -104,7 +101,7 @@ class Camera3D : public Node3D {
         clear_color_ = *value;
       return std::nullopt;
     }
-    return clear_color_.get();
+    return clear_color_;
   }
 
   URGE_BINDING(Name : "priority")
@@ -162,7 +159,7 @@ class Camera3D : public Node3D {
   bool clear_depth_enabled() const { return (clear_flags_ & 2u) != 0; }
   bool clear_stencil_enabled() const { return (clear_flags_ & 4u) != 0; }
   uint32_t culling_mask() const { return culling_mask_; }
-  Color* clear_color() const { return clear_color_.get(); }
+  const RefPtr<Color>& clear_color() const { return clear_color_; }
   int32_t priority() const { return priority_; }
   const std::string& target() const { return target_; }
 
@@ -174,8 +171,8 @@ class Camera3D : public Node3D {
   float ortho_size_ = 10.0f;
   uint32_t culling_mask_ = 0xFFFFFFFFu;
   uint32_t clear_flags_ = 3;
-  Member<Color> clear_color_ =
-      MakeGarbageCollected<Color>(26.0f, 28.0f, 36.0f, 255.0f);
+  RefPtr<Color> clear_color_ =
+      MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f);
   int32_t priority_ = 0;
   std::string target_;
 };

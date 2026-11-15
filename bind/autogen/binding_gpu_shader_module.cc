@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUShaderModule  (core/graphics/gpu.h:827-827)
+// GPUShaderModule  (core/graphics/gpu.h:821-821)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUShaderModule, GPUObject);
@@ -39,9 +39,7 @@ void InitGPUShaderModuleBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUShaderModule", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUShaderModuleDataType>);
-  RegisterNativeType<urge::GPUShaderModule>(klass, kGPUShaderModuleDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUShaderModuleBindingAppend(klass);
 }
 // --- GENERATED END ---

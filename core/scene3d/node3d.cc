@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/common/persistent.h"
 #include "core/scene3d/node3d.h"
 
 #include <algorithm>
@@ -31,87 +30,68 @@
 
 namespace urge {
 
-void Node3D::Trace(GCVisitor& visitor) const {
-  Object::Trace(visitor);
-  visitor.Trace(position_);
-  visitor.Trace(rotation_);
-  visitor.Trace(scale_);
-  visitor.Trace(children_);
-}
-
 Node3D::Node3D()
-    : position_(MakeGarbageCollected<Vector3>(0.0f)),
-      rotation_(MakeGarbageCollected<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
-      scale_(MakeGarbageCollected<Vector3>(1.0f)) {}
+    : position_(MakeRefCounted<Vector3>(0.0f)),
+      rotation_(MakeRefCounted<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
+      scale_(MakeRefCounted<Vector3>(1.0f)) {}
 
-Node3D::~Node3D() = default;
-
-void Node3D::PrepareForCollection() {
-  Object::PrepareForCollection();
-  // Weak slots targeting garbage have already been cleared. Always process
-  // our children while the entire garbage batch is still allocated.
-  for (const auto& child : children_) {
-    if (child->parent_.get() == this)
-      child->parent_.reset();
+Node3D::~Node3D() {
+  for (const RefPtr<Node3D>& child : children_) {
+    if (child->parent_ == this)
+      child->parent_ = nullptr;
   }
   children_.clear();
 
-  if (parent_)
+  if (parent_) {
     parent_->RemoveChildRaw(this);
-  parent_.reset();
+    parent_ = nullptr;
+  }
 }
 
-void Node3D::SetParent(Node3D* value) {
-  if (parent_.get() == value)
+void Node3D::SetParent(RefPtr<Node3D> value) {
+  if (parent_ == value.get())
     return;
-  for (Node3D* ancestor = value; ancestor; ancestor = ancestor->parent_.get())
+  for (Node3D* ancestor = value.get(); ancestor; ancestor = ancestor->parent_)
     if (ancestor == this)
       return;
 
-  // Keep the child rooted while changing the old and new parent edges.
-  Persistent<Node3D> keep_alive(this);
+  // The old parent may own the last reference during a native reparent call.
+  RefPtr<Node3D> keep_alive(this);
 
   if (parent_)
     parent_->RemoveChildRaw(this);
 
-  parent_ = value;
+  parent_ = value.get();
   if (parent_)
     parent_->children_.push_back(this);
 }
 
-void Node3D::AddChild(Node3D* child) {
+void Node3D::AddChild(RefPtr<Node3D> child) {
   if (!child)
     return;
   child->SetParent(this);
 }
 
-void Node3D::RemoveChild(Node3D* child) {
+void Node3D::RemoveChild(RefPtr<Node3D> child) {
   if (!child)
     return;
-  if (child->parent_.get() == this)
+  if (child->parent_ == this)
     child->parent_ = nullptr;
-  RemoveChildRaw(child);
+  RemoveChildRaw(child.get());
 }
 
-Node3D* Node3D::ChildAt(int32_t index) const {
+RefPtr<Node3D> Node3D::ChildAt(int32_t index) const {
   if (index < 0 || index >= static_cast<int32_t>(children_.size()))
     return nullptr;
-  return children_[index].get();
-}
-
-std::vector<Node3D*> Node3D::NativeChildrenSnapshot() const {
-  std::vector<Node3D*> result;
-  result.reserve(children_.size());
-  for (const auto& child : children_)
-    result.emplace_back(child.get());
-  return result;
+  return children_[index];
 }
 
 void Node3D::RemoveChildRaw(Node3D* child) {
-  children_.erase(
-      std::remove_if(children_.begin(), children_.end(),
-                     [child](const auto& item) { return item.get() == child; }),
-      children_.end());
+  children_.erase(std::remove_if(children_.begin(), children_.end(),
+                                 [child](const RefPtr<Node3D>& item) {
+                                   return item.get() == child;
+                                 }),
+                  children_.end());
 }
 
 glm::mat4 Node3D::local_matrix() const {

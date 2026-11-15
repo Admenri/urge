@@ -27,31 +27,29 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// PlayerInfo returns an owning map by value. Box it in the native-only phase,
-// then ensure cleanup even if a Ruby allocation raises or exits nonlocally.
+// `PlayerInfo()` answers a `std::string` map, so the whole thing is built into
+// the Ruby hash inside phase 2 -- the hash is a VALUE, so nothing owning has to
+// cross the boundary.
 RB_FUNC(Video_PlayerInfo) {
   auto* self_obj = GetSelfData<urge::Video>(self);
   CheckArgc(argc, 0);
-  using InfoMap = std::map<std::string, std::string>;
-  InfoMap* result = nullptr;
+
+  VALUE result = Qnil;
 
   {
-    result = new InfoMap(self_obj->PlayerInfo());
+    result = rb_hash_new();
+    for (const auto& entry : self_obj->PlayerInfo()) {
+      VALUE key = rb_enc_str_new(entry.first.data(),
+                                 static_cast<long>(entry.first.size()),
+                                 rb_utf8_encoding());
+      VALUE value = rb_enc_str_new(entry.second.data(),
+                                   static_cast<long>(entry.second.size()),
+                                   rb_utf8_encoding());
+      rb_hash_aset(result, key, value);
+    }
   }
 
-  return OwnedConvertBox<InfoMap>(result, [](const InfoMap& entries) -> VALUE {
-    VALUE info = rb_hash_new();
-    for (const auto& entry : entries) {
-      VALUE key = rb_enc_str_new(entry.first.data(),
-                                static_cast<long>(entry.first.size()),
-                                rb_utf8_encoding());
-      VALUE value = rb_enc_str_new(entry.second.data(),
-                                  static_cast<long>(entry.second.size()),
-                                  rb_utf8_encoding());
-      rb_hash_aset(info, key, value);
-    }
-    return info;
-  });
+  return result;
 }
 void DefineVideoPlayerInfo(VALUE klass) {
   DefineMethod(klass, "player_info", Video_PlayerInfo);
@@ -60,31 +58,34 @@ void DefineVideoPlayerInfo(VALUE klass) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Video  (core/video/video.h:42-76)
+// Video  (core/video/video.h:42-74)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Video);
 
 RB_FUNC(Video_initialize) {
-  CheckConstructorSelf(self, kVideoDataType);
-  CheckArgc(argc, 1);
   urge::ExceptionState exception_state;
   VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
   ParseArgs(argc, argv, "o", &filename_val);
-  filename_val = CheckString(filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Video* result = nullptr;
 
   {
-    urge::Video* value = urge::MakeGarbageCollected<urge::Video>(
-        exception_state, TakeString(filename_val));
-    if (!exception_state.HadException())
-      result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Video> value = urge::MakeRefCounted<urge::Video>(
+        exception_state, std::string(filename_data, filename_size));
+    result = exception_state.HadException() ? nullptr : value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(filename_val);
   RaiseException(exception_state);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Video_Play) {
@@ -190,14 +191,19 @@ RB_FUNC(Video_GetAudioStream) {
   auto* self_obj = GetSelfData<urge::Video>(self);
 
   CheckArgc(argc, 0);
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::AudioStream* result = nullptr;
 
   {
-    urge::AudioStream* value = self_obj->GetAudioStream();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::AudioStream> value = self_obj->GetAudioStream();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedWrapObject(result, kAudioStreamDataType);
+  VALUE value = WrapObject(result, kAudioStreamDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Video_Update) {
@@ -224,7 +230,6 @@ RB_FUNC(Video_Render) {
   {
     self_obj->Render(exception_state, target);
   }
-  RB_GC_GUARD(target_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -235,10 +240,8 @@ void InitVideoBindingAppend(VALUE klass);
 void InitVideoBinding() {
   auto klass = rb_define_class("Video", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kVideoDataType>);
-  RegisterNativeType<urge::Video>(klass, kVideoDataType);
 
   DefineMethod(klass, "initialize", Video_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "play", Video_Play);
   DefineMethod(klass, "pause", Video_Pause);
   DefineMethod(klass, "stop", Video_Stop);

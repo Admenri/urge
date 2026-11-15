@@ -47,7 +47,6 @@ RB_FUNC(GPUComputePassEncoder_SetPipeline) {
   {
     self_obj->SetPipeline(pipeline);
   }
-  RB_GC_GUARD(pipeline_val);
 
   return Qnil;
 }
@@ -65,7 +64,6 @@ RB_FUNC(GPUComputePassEncoder_SetBindGroup) {
   {
     self_obj->SetBindGroup(index, group);
   }
-  RB_GC_GUARD(group_val);
 
   return Qnil;
 }
@@ -113,13 +111,15 @@ RB_FUNC(GPUComputePassEncoder_InsertDebugMarker) {
 
   CheckArgc(argc, 1);
   VALUE marker_label_val;
+  const char* marker_label_data;
+  size_t marker_label_size;
   ParseArgs(argc, argv, "o", &marker_label_val);
-  marker_label_val = CheckString(marker_label_val);
+  CheckString(marker_label_val, &marker_label_data, &marker_label_size);
 
   {
-    self_obj->InsertDebugMarker(TakeString(marker_label_val));
+    self_obj->InsertDebugMarker(
+        std::string(marker_label_data, marker_label_size));
   }
-  RB_GC_GUARD(marker_label_val);
 
   return Qnil;
 }
@@ -129,13 +129,14 @@ RB_FUNC(GPUComputePassEncoder_PushDebugGroup) {
 
   CheckArgc(argc, 1);
   VALUE group_label_val;
+  const char* group_label_data;
+  size_t group_label_size;
   ParseArgs(argc, argv, "o", &group_label_val);
-  group_label_val = CheckString(group_label_val);
+  CheckString(group_label_val, &group_label_data, &group_label_size);
 
   {
-    self_obj->PushDebugGroup(TakeString(group_label_val));
+    self_obj->PushDebugGroup(std::string(group_label_data, group_label_size));
   }
-  RB_GC_GUARD(group_label_val);
 
   return Qnil;
 }
@@ -168,9 +169,7 @@ void InitGPUComputePassEncoderBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUComputePassEncoder", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUComputePassEncoderDataType>);
-  RegisterNativeType<urge::GPUComputePassEncoder>(klass, kGPUComputePassEncoderDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_pipeline", GPUComputePassEncoder_SetPipeline);
   DefineMethod(klass, "set_bind_group", GPUComputePassEncoder_SetBindGroup);
   DefineMethod(klass, "dispatch_workgroups", GPUComputePassEncoder_DispatchWorkgroups);

@@ -31,7 +31,6 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/scene3d/skeleton3d.h"
 
@@ -49,8 +48,6 @@ class Mesh3D : public Object {
   URGE_BINDING()
   Mesh3D();
   ~Mesh3D() override;
-
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void SetVertices(URGE_EXCEPT, std::vector<float> data);
@@ -106,7 +103,7 @@ class Mesh3D : public Object {
   bool skinned() const { return skinned_; }
   glm::vec3 bounds_center() const { return bounds_center_; }
   float bounds_radius() const { return bounds_radius_; }
-  Skeleton3D* skeleton() const { return skeleton_.get(); }
+  RefPtr<Skeleton3D> skeleton() const { return skeleton_; }
   const std::vector<SubMesh3D>& submeshes() const { return submeshes_; }
 
   wgpu::Buffer AcquireJointBuffer(URGE_EXCEPT, uint64_t frame_token);
@@ -125,7 +122,7 @@ class Mesh3D : public Object {
   void Upload(URGE_EXCEPT);
   void UpdateBounds();
 
-  Member<Skeleton3D> skeleton_;
+  RefPtr<Skeleton3D> skeleton_;
 
   std::vector<uint8_t> vertex_bytes_;
   std::vector<uint32_t> indices_;

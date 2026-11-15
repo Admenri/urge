@@ -28,23 +28,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Material3D  (core/scene3d/material3d.h:562-589)
+// Material3D  (core/scene3d/material3d.h:559-584)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Material3D);
 
 RB_FUNC(Material3D_initialize) {
-  CheckConstructorSelf(self, kMaterial3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Material3D* result = nullptr;
 
   {
-    urge::Material3D* value = urge::MakeGarbageCollected<urge::Material3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Material3D> value = urge::MakeRefCounted<urge::Material3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Material3D_AddPass) {
@@ -53,25 +56,32 @@ RB_FUNC(Material3D_AddPass) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE tag_val, vs_wgsl_val, fs_wgsl_val;
+  const char* tag_data;
+  size_t tag_size, vs_wgsl_size, fs_wgsl_size;
+  const char* vs_wgsl_data;
+  const char* fs_wgsl_data;
   ParseArgs(argc, argv, "ooo", &tag_val, &vs_wgsl_val, &fs_wgsl_val);
-  tag_val = CheckString(tag_val);
-  vs_wgsl_val = CheckString(vs_wgsl_val);
-  fs_wgsl_val = CheckString(fs_wgsl_val);
+  CheckString(tag_val, &tag_data, &tag_size);
+  CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
+  CheckString(fs_wgsl_val, &fs_wgsl_data, &fs_wgsl_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::MaterialPass3D* result = nullptr;
 
   {
-    urge::MaterialPass3D* value = self_obj->AddPass(exception_state,
-        TakeString(tag_val), TakeString(vs_wgsl_val), TakeString(fs_wgsl_val));
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->AddPass(
+        exception_state, std::string(tag_data, tag_size),
+        std::string(vs_wgsl_data, vs_wgsl_size),
+        std::string(fs_wgsl_data, fs_wgsl_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(tag_val);
-  RB_GC_GUARD(vs_wgsl_val);
-  RB_GC_GUARD(fs_wgsl_val);
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kMaterialPass3DDataType);
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Material3D_AddShadowPass) {
@@ -80,23 +90,29 @@ RB_FUNC(Material3D_AddShadowPass) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE tag_val, vs_wgsl_val;
+  const char* tag_data;
+  size_t tag_size, vs_wgsl_size;
+  const char* vs_wgsl_data;
   ParseArgs(argc, argv, "oo", &tag_val, &vs_wgsl_val);
-  tag_val = CheckString(tag_val);
-  vs_wgsl_val = CheckString(vs_wgsl_val);
+  CheckString(tag_val, &tag_data, &tag_size);
+  CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::MaterialPass3D* result = nullptr;
 
   {
-    urge::MaterialPass3D* value = self_obj->AddShadowPass(exception_state,
-        TakeString(tag_val), TakeString(vs_wgsl_val));
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->AddShadowPass(
+        exception_state, std::string(tag_data, tag_size),
+        std::string(vs_wgsl_data, vs_wgsl_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(tag_val);
-  RB_GC_GUARD(vs_wgsl_val);
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kMaterialPass3DDataType);
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Material3D_GetPass) {
@@ -104,18 +120,25 @@ RB_FUNC(Material3D_GetPass) {
 
   CheckArgc(argc, 1);
   VALUE tag_val;
+  const char* tag_data;
+  size_t tag_size;
   ParseArgs(argc, argv, "o", &tag_val);
-  tag_val = CheckString(tag_val);
+  CheckString(tag_val, &tag_data, &tag_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::MaterialPass3D* result = nullptr;
 
   {
-    urge::MaterialPass3D* value = self_obj->GetPass(TakeString(tag_val));
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->GetPass(
+        std::string(tag_data, tag_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(tag_val);
 
-  return OwnedWrapObject(result, kMaterialPass3DDataType);
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Material3D_HasPass) {
@@ -123,15 +146,16 @@ RB_FUNC(Material3D_HasPass) {
 
   CheckArgc(argc, 1);
   VALUE tag_val;
+  const char* tag_data;
+  size_t tag_size;
   ParseArgs(argc, argv, "o", &tag_val);
-  tag_val = CheckString(tag_val);
+  CheckString(tag_val, &tag_data, &tag_size);
 
   bool result = false;
 
   {
-    result = self_obj->HasPass(TakeString(tag_val));
+    result = self_obj->HasPass(std::string(tag_data, tag_size));
   }
-  RB_GC_GUARD(tag_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -141,13 +165,14 @@ RB_FUNC(Material3D_RemovePass) {
 
   CheckArgc(argc, 1);
   VALUE tag_val;
+  const char* tag_data;
+  size_t tag_size;
   ParseArgs(argc, argv, "o", &tag_val);
-  tag_val = CheckString(tag_val);
+  CheckString(tag_val, &tag_data, &tag_size);
 
   {
-    self_obj->RemovePass(TakeString(tag_val));
+    self_obj->RemovePass(std::string(tag_data, tag_size));
   }
-  RB_GC_GUARD(tag_val);
 
   return Qnil;
 }
@@ -175,7 +200,9 @@ RB_FUNC(Material3D_Tags) {
     result = new std::vector<std::string>(self_obj->Tags());
   }
 
-  return OwnedWrapVector<std::string>(result);
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Material3D_PassAt) {
@@ -185,14 +212,19 @@ RB_FUNC(Material3D_PassAt) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::MaterialPass3D* result = nullptr;
 
   {
-    urge::MaterialPass3D* value = self_obj->PassAt(index);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::MaterialPass3D> value = self_obj->PassAt(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedWrapObject(result, kMaterialPass3DDataType);
+  VALUE value = WrapObject(result, kMaterialPass3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitMaterial3DBindingAppend(VALUE klass);
@@ -200,10 +232,8 @@ void InitMaterial3DBindingAppend(VALUE klass);
 void InitMaterial3DBinding() {
   auto klass = rb_define_class("Material3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kMaterial3DDataType>);
-  RegisterNativeType<urge::Material3D>(klass, kMaterial3DDataType);
 
   DefineMethod(klass, "initialize", Material3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "add_pass", Material3D_AddPass);
   DefineMethod(klass, "add_shadow_pass", Material3D_AddShadowPass);
   DefineMethod(klass, "get_pass", Material3D_GetPass);

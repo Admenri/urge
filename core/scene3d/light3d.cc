@@ -24,11 +24,6 @@
 
 namespace urge {
 
-void Light3D::Trace(GCVisitor& visitor) const {
-  Node3D::Trace(visitor);
-  visitor.Trace(color_);
-}
-
 Light3D::Light3D() = default;
 
 Light3D::~Light3D() = default;

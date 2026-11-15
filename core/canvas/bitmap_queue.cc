@@ -58,11 +58,11 @@ void BitmapQueue::Push(BitmapDraw draw) {
   draws_.push_back(std::move(draw));
 }
 
-void BitmapQueue::OpenPass(Bitmap* target) {
+void BitmapQueue::OpenPass(const RefPtr<Bitmap>& target) {
   if (!encoder_)
     encoder_ = g_device.CreateCommandEncoder(nullptr);
 
-  if (pass_ && target_.get() == target)
+  if (pass_ && target_ == target)
     return;
 
   ClosePass();
@@ -84,7 +84,7 @@ void BitmapQueue::Record(const BitmapDraw& draw,
                          std::uint32_t vertex_count) {
   const bool masked = draw.kind == BitmapDraw::Kind::kTextureMask;
 
-  OpenPass(draw.target.get());
+  OpenPass(draw.target);
 
   const auto& pipelines = ShaderSet::Get().state.bitmap;
   const BlendType blend = static_cast<BlendType>(

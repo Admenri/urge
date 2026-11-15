@@ -29,24 +29,28 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Viewport  (core/scene/viewport.h:35-62)
+// Viewport  (core/scene/viewport.h:35-60)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Viewport, Node);
 
 RB_FUNC(Viewport_initialize) {
-  CheckConstructorSelf(self, kViewportDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Viewport* result = nullptr;
 
     {
-      urge::Viewport* value = urge::MakeGarbageCollected<urge::Viewport>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(rect)
     VALUE rect_val;
@@ -54,29 +58,39 @@ RB_FUNC(Viewport_initialize) {
     ParseArgs(argc, argv, "o", &rect_val);
     rect = CheckObject<urge::Rect>(rect_val, kRectDataType);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Viewport* result = nullptr;
 
     {
-      urge::Viewport* value = urge::MakeGarbageCollected<urge::Viewport>(rect);
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>(
+          rect);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(rect_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 4) {
     // initialize(x, y, width, height)
     int x, y, width, height;
     ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Viewport* result = nullptr;
 
     {
-      urge::Viewport* value = urge::MakeGarbageCollected<urge::Viewport>(x, y,
-          width, height);
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Viewport> value = urge::MakeRefCounted<urge::Viewport>(
+          x, y, width, height);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -96,7 +110,6 @@ RB_FUNC(Viewport_Flash) {
   {
     self_obj->Flash(exception_state, color, duration);
   }
-  RB_GC_GUARD(color_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -116,7 +129,7 @@ RB_FUNC(Viewport_Update) {
   return Qnil;
 }
 
-// Attribute: rect (Rect*)
+// Attribute: rect (RefPtr<Rect>)
 BINDING_ATTR_OBJECT(Viewport,
                     urge::Viewport,
                     Rect,
@@ -130,7 +143,7 @@ BINDING_ATTR_INT(Viewport, urge::Viewport, OX);
 // Attribute: oy (int32_t)
 BINDING_ATTR_INT(Viewport, urge::Viewport, OY);
 
-// Attribute: color (Color*)
+// Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Viewport,
                     urge::Viewport,
                     Color,
@@ -138,7 +151,7 @@ BINDING_ATTR_OBJECT(Viewport,
                     kColorDataType,
                     CheckObject);
 
-// Attribute: tone (Tone*)
+// Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(Viewport,
                     urge::Viewport,
                     Tone,
@@ -160,10 +173,8 @@ void InitViewportBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Viewport", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kViewportDataType>);
-  RegisterNativeType<urge::Viewport>(klass, kViewportDataType);
 
   DefineMethod(klass, "initialize", Viewport_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "flash", Viewport_Flash);
   DefineMethod(klass, "update", Viewport_Update);
   DefineMethod(klass, "rect", Viewport_Rect);

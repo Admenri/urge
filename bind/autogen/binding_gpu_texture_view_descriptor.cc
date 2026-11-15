@@ -28,23 +28,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTextureViewDescriptor  (core/graphics/gpu.h:173-219)
+// GPUTextureViewDescriptor  (core/graphics/gpu.h:172-218)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTextureViewDescriptor, GPUObject);
 
 RB_FUNC(GPUTextureViewDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPUTextureViewDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPUTextureViewDescriptor* result = nullptr;
 
   {
-    urge::GPUTextureViewDescriptor* value = urge::MakeGarbageCollected<urge::GPUTextureViewDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPUTextureViewDescriptor> value = urge::MakeRefCounted<urge::GPUTextureViewDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUTextureViewDescriptor_GetLabel) {
@@ -57,7 +60,11 @@ RB_FUNC(GPUTextureViewDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUTextureViewDescriptor_SetLabel) {
@@ -65,13 +72,14 @@ RB_FUNC(GPUTextureViewDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -117,10 +125,8 @@ void InitGPUTextureViewDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUTextureViewDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUTextureViewDescriptorDataType>);
-  RegisterNativeType<urge::GPUTextureViewDescriptor>(klass, kGPUTextureViewDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUTextureViewDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUTextureViewDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUTextureViewDescriptor_SetLabel);
   DefineMethod(klass, "format", GPUTextureViewDescriptor_Format);

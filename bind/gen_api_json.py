@@ -48,8 +48,9 @@ DEFAULT_OUTPUT = os.path.join(REPO_ROOT, "bind", "api_reference.json")
 # `Singleton<T>` classes which are exported as Ruby modules, not as classes.
 #
 # This list is not cosmetic: a module is reached through `Ty::Get()` and owns no
-# Ruby object, while an exported class has a traced GarbageCollected payload.
-# A Singleton must not be treated as an allocatable managed native instance.
+# Ruby object, while a class goes through `RB_DEF_TYPE`/`SetupSelfData`, which
+# require `Release()`/`AddRef()`.  `Singleton` has neither, so a `Singleton<T>`
+# left out of this set fails to compile the moment its glue is generated.
 MODULE_CLASSES = {
     "Graphics",
     "Input",
@@ -184,12 +185,12 @@ SCALAR_TYPE_FORMAT = {
     "char*": "z",
 }
 
-# A raw managed `T*` is required; only `MaybePtr<T>` (the nullable T* alias in
-# definition.h) accepts nil. Keep the spelling in the IR. Pointer syntax alone
-# is not a GC type: only exported GarbageCollected descendants qualify.
-MAYBE_PTR_RE = re.compile(r"^MaybePtr<\s*(?P<inner>[\w:]+)\s*>$")
-RAW_OBJECT_PTR_RE = re.compile(r"^(?P<inner>[\w:]+)\s*\*$")
-GC_OBJECT_TYPES = set(CLASS_ORDER) - MODULE_CLASSES
+# `RefPtr<T>` and its alias `MaybePtr<T>` (core/common/definition.h) are the
+# same C++ type and differ only in the null contract they declare to the glue:
+# a `RefPtr<T>` parameter is required and `nil` is rejected, a `MaybePtr<T>`
+# one reads `nil` as `nullptr`.  The spelling is carried into the IR unchanged,
+# so the generated code and the API reference both say which one was meant.
+REFPTR_RE = re.compile(r"^(?P<kind>RefPtr|MaybePtr)<\s*(?P<inner>[\w:]+)\s*>$")
 VECTOR_RE = re.compile(r"^std::vector<\s*(?P<inner>.+?)\s*>$")
 
 # `std::vector<T>` crosses the boundary as a Ruby Array, so whether one is
@@ -202,7 +203,7 @@ VECTOR_RE = re.compile(r"^std::vector<\s*(?P<inner>.+?)\s*>$")
 #
 # `bool` is absent on purpose: `std::vector<bool>` is a packed bitset whose
 # element is a proxy rather than a `bool`, so it is not an interchangeable
-# container.  A `std::vector` of anything else -- `T*`, `glm::vec2`, a
+# container.  A `std::vector` of anything else -- `RefPtr<T>`, `glm::vec2`, a
 # nested vector -- is left unbound, the same as any other internal type.
 #
 # `generate_binding.py` mirrors this list in `VECTOR_CODECS`; a new element has
@@ -365,22 +366,15 @@ ANNOTATION_NAME_RE = re.compile(r"\bName\s*:\s*\"(?P<name>[^\"]*)\"")
 
 def is_bindable_type(cpp_type: str) -> bool:
     t = cpp_type.strip()
-    if t in SCALAR_TYPE_FORMAT or object_inner(t) is not None:
+    if t in SCALAR_TYPE_FORMAT or REFPTR_RE.match(t):
         return True
     element = vector_element(t)
     return element is not None and element in VECTOR_ELEMENTS
 
 
-def object_inner(cpp_type: str) -> Optional[str]:
-    """Exported GC pointee, never C strings, void* or foreign/resource pointers."""
-    t = cpp_type.strip()
-    m = MAYBE_PTR_RE.match(t) or RAW_OBJECT_PTR_RE.match(t)
-    if not m:
-        return None
-    inner = m.group("inner")
-    if inner.startswith("urge::"):
-        inner = inner[len("urge::"):]
-    return inner if inner in GC_OBJECT_TYPES else None
+def refptr_inner(cpp_type: str) -> Optional[str]:
+    m = REFPTR_RE.match(cpp_type.strip())
+    return m.group("inner") if m else None
 
 
 def map_ruby_type(cpp_type: str) -> str:
@@ -391,14 +385,12 @@ def map_ruby_type(cpp_type: str) -> str:
     element = vector_element(t)
     if element is not None and element in VECTOR_ELEMENTS:
         return "Array<" + VECTOR_RUBY_ELEMENTS.get(element, "Integer") + ">"
-    inner = object_inner(t)
+    inner = refptr_inner(t)
     if inner:
         return inner.split("::")[-1]
-    # Documentation may name an object vector without making it bindable.
-    if element is not None:
-        inner = object_inner(element)
-        if inner:
-            return "Array<" + inner + ">"
+    m = re.match(r"std::vector<RefPtr<\s*([\w:]+)\s*>>$", t)
+    if m:
+        return "Array<" + m.group(1).split("::")[-1] + ">"
     m = re.match(r"std::optional<(\w+)>$", t)
     if m:
         return map_ruby_type(m.group(1))
@@ -765,7 +757,7 @@ def parse_class(
 
         if func_name.startswith("~"):
             # A marked destructor is exported for documentation only: Ruby
-            # never calls it; the native collector reclaims unreachable objects.
+            # never calls it, the typed data release does.
             continue
 
         if func_name == name:
@@ -780,9 +772,7 @@ def parse_class(
                     }
                 )
                 continue
-            if (len(params) == 1
-                    and RAW_OBJECT_PTR_RE.match(params[0]["type"].strip())
-                    and object_inner(params[0]["type"]) == name):
+            if len(params) == 1 and params[0]["type"] == "RefPtr<" + name + ">":
                 result["initialize_copy"] = {
                     "params": params,
                     "has_exception": call["has_exception"],
@@ -989,34 +979,11 @@ def build_document() -> dict[str, Any]:
     classes: dict[str, dict[str, Any]] = {}
     modules: dict[str, dict[str, Any]] = {}
 
-    # Discover the complete exported GC hierarchy before parsing any signatures:
-    # an early header may reference a class declared in a later one. Do not infer
-    # managed ownership from a pointer spelling or from a non-GC exported class.
-    sources = []
-    parents = {}
-    exported = set()
     for header in headers:
         source = os.path.relpath(header, REPO_ROOT).replace("\\", "/")
         with open(header, "r", encoding="utf-8", errors="replace") as f:
             text = f.read()
-        declarations = extract_classes(text)
-        sources.append((source, text, declarations))
-        for cls in declarations:
-            parents[cls["name"]] = cls["parent"]
-            if class_is_exported(text, cls["start"]):
-                exported.add(cls["name"])
-    managed = {"GarbageCollected"}
-    while True:
-        descendants = {name for name, parent in parents.items()
-                       if parent and parent.removeprefix("urge::") in managed}
-        if descendants <= managed:
-            break
-        managed.update(descendants)
-    GC_OBJECT_TYPES.clear()
-    GC_OBJECT_TYPES.update(exported & managed - MODULE_CLASSES)
-
-    for source, text, declarations in sources:
-        for cls in declarations:
+        for cls in extract_classes(text):
             name = cls["name"]
             if name in classes or name in modules:
                 continue

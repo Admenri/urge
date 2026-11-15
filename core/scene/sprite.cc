@@ -38,15 +38,6 @@
 
 namespace urge {
 
-void Sprite::Trace(GCVisitor& visitor) const {
-  Node::Trace(visitor);
-  visitor.Trace(bitmap_);
-  visitor.Trace(src_rect_);
-  visitor.Trace(color_);
-  visitor.Trace(tone_);
-  visitor.Trace(effect_);
-}
-
 namespace {
 
 constexpr float kPi = 3.14159265358979323846f;
@@ -61,12 +52,12 @@ float DegreesToRadians(float degrees) {
 
 }
 
-Sprite::Sprite(Viewport* viewport)
+Sprite::Sprite(RefPtr<Viewport> viewport)
     : Node(viewport, ZValue()),
-      src_rect_(MakeGarbageCollected<Rect>()),
+      src_rect_(MakeRefCounted<Rect>()),
 
-      color_(MakeGarbageCollected<Color>()),
-      tone_(MakeGarbageCollected<Tone>()),
+      color_(MakeRefCounted<Color>()),
+      tone_(MakeRefCounted<Tone>()),
       rgssvx_style_(Config::Get().vx() || Config::Get().vxa()) {
   Node::SetupTrait(this);
 }
@@ -75,7 +66,7 @@ Sprite::~Sprite() {
   Disposable::Dispose();
 }
 
-void Sprite::Flash(URGE_EXCEPT, Color* color, int32_t duration) {
+void Sprite::Flash(URGE_EXCEPT, RefPtr<Color> color, int32_t duration) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -103,34 +94,34 @@ int32_t Sprite::Height() {
   return src_rect_->data.height;
 }
 
-ATTR_DEF(Sprite, Viewport*, Viewport) {
+ATTR_DEF(Sprite, RefPtr<Viewport>, Viewport) {
   auto parent_value = Node::Attr_Parent(value);
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return viewport;
+    return RefPtr<Viewport>(viewport);
   } else {
     return std::nullopt;
   }
 }
 
-ATTR_DEF(Sprite, Bitmap*, Bitmap) {
+ATTR_DEF(Sprite, RefPtr<Bitmap>, Bitmap) {
   if (value.has_value()) {
     bitmap_ = *value;
     if (bitmap_)
       src_rect_->Set(bitmap_->GetRect());
     return std::nullopt;
   } else {
-    return bitmap_.get();
+    return bitmap_;
   }
 }
 
-ATTR_DEF(Sprite, Rect*, SrcRect) {
+ATTR_DEF(Sprite, RefPtr<Rect>, SrcRect) {
   if (value.has_value()) {
     src_rect_->Set(*value);
     return std::nullopt;
   } else {
-    return src_rect_.get();
+    return src_rect_;
   }
 }
 
@@ -284,30 +275,30 @@ ATTR_DEF(Sprite, int32_t, BlendType) {
   }
 }
 
-ATTR_DEF(Sprite, Color*, Color) {
+ATTR_DEF(Sprite, RefPtr<Color>, Color) {
   if (value.has_value()) {
     color_->Set(*value);
     return std::nullopt;
   } else {
-    return color_.get();
+    return color_;
   }
 }
 
-ATTR_DEF(Sprite, Tone*, Tone) {
+ATTR_DEF(Sprite, RefPtr<Tone>, Tone) {
   if (value.has_value()) {
     tone_->Set(*value);
     return std::nullopt;
   } else {
-    return tone_.get();
+    return tone_;
   }
 }
 
-ATTR_DEF(Sprite, Effect*, Effect) {
+ATTR_DEF(Sprite, RefPtr<Effect>, Effect) {
   if (value.has_value()) {
     effect_ = *value;
     return std::nullopt;
   } else {
-    return effect_.get();
+    return effect_;
   }
 }
 
@@ -383,7 +374,7 @@ bool Sprite::DoDraw(DrawParam param) {
   if (!extends_run) {
     FlushSpriteBatch(param);
     run.active = true;
-    run.texture = bitmap_.get();
+    run.texture = bitmap_;
     run.blend_type = blend_type_;
     run.scene = param->scene;
     run.first_vertex = primitive_slot_.first;

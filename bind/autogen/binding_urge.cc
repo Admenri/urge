@@ -42,19 +42,24 @@ RB_FUNC(URGE_GetPlatform) {
     result = new std::string(urge::URGE::Get().GetPlatform());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(URGE_SetWindowTitle) {
   CheckArgc(argc, 1);
   VALUE title_val;
+  const char* title_data;
+  size_t title_size;
   ParseArgs(argc, argv, "o", &title_val);
-  title_val = CheckString(title_val);
+  CheckString(title_val, &title_data, &title_size);
 
   {
-    urge::URGE::Get().SetWindowTitle(TakeString(title_val));
+    urge::URGE::Get().SetWindowTitle(std::string(title_data, title_size));
   }
-  RB_GC_GUARD(title_val);
 
   return Qnil;
 }
@@ -69,7 +74,6 @@ RB_FUNC(URGE_SetWindowIcon) {
   {
     urge::URGE::Get().SetWindowIcon(icon);
   }
-  RB_GC_GUARD(icon_val);
 
   return Qnil;
 }
@@ -102,26 +106,32 @@ RB_FUNC(URGE_MoveWindow) {
 
 RB_FUNC(URGE_GetWindowRect) {
   CheckArgc(argc, 0);
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Rect* result = nullptr;
 
   {
-    urge::Rect* value = urge::URGE::Get().GetWindowRect();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Rect> value = urge::URGE::Get().GetWindowRect();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedWrapObject(result, kRectDataType);
+  VALUE value = WrapObject(result, kRectDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(URGE_OpenURL) {
   CheckArgc(argc, 1);
   VALUE url_val;
+  const char* url_data;
+  size_t url_size;
   ParseArgs(argc, argv, "o", &url_val);
-  url_val = CheckString(url_val);
+  CheckString(url_val, &url_data, &url_size);
 
   {
-    urge::URGE::Get().OpenURL(TakeString(url_val));
+    urge::URGE::Get().OpenURL(std::string(url_data, url_size));
   }
-  RB_GC_GUARD(url_val);
 
   return Qnil;
 }
@@ -129,19 +139,20 @@ RB_FUNC(URGE_OpenURL) {
 RB_FUNC(URGE_AddLoadPath) {
   CheckArgc(argc, 3);
   VALUE path_val, mount_val;
+  const char* path_data;
+  size_t path_size, mount_size;
+  const char* mount_data;
   bool append;
   ParseArgs(argc, argv, "oob", &path_val, &mount_val, &append);
-  path_val = CheckString(path_val);
-  mount_val = CheckString(mount_val);
+  CheckString(path_val, &path_data, &path_size);
+  CheckString(mount_val, &mount_data, &mount_size);
 
   bool result = false;
 
   {
-    result = urge::URGE::Get().AddLoadPath(TakeString(path_val),
-        TakeString(mount_val), append);
+    result = urge::URGE::Get().AddLoadPath(std::string(path_data, path_size),
+        std::string(mount_data, mount_size), append);
   }
-  RB_GC_GUARD(path_val);
-  RB_GC_GUARD(mount_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -149,15 +160,17 @@ RB_FUNC(URGE_AddLoadPath) {
 RB_FUNC(URGE_RemoveLoadPath) {
   CheckArgc(argc, 1);
   VALUE path_val;
+  const char* path_data;
+  size_t path_size;
   ParseArgs(argc, argv, "o", &path_val);
-  path_val = CheckString(path_val);
+  CheckString(path_val, &path_data, &path_size);
 
   bool result = false;
 
   {
-    result = urge::URGE::Get().RemoveLoadPath(TakeString(path_val));
+    result = urge::URGE::Get(
+        ).RemoveLoadPath(std::string(path_data, path_size));
   }
-  RB_GC_GUARD(path_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -165,15 +178,17 @@ RB_FUNC(URGE_RemoveLoadPath) {
 RB_FUNC(URGE_SetBundlePassword) {
   CheckArgc(argc, 1);
   VALUE password_val;
+  const char* password_data;
+  size_t password_size;
   ParseArgs(argc, argv, "o", &password_val);
-  password_val = CheckString(password_val);
+  CheckString(password_val, &password_data, &password_size);
 
   bool result = false;
 
   {
-    result = urge::URGE::Get().SetBundlePassword(TakeString(password_val));
+    result = urge::URGE::Get(
+        ).SetBundlePassword(std::string(password_data, password_size));
   }
-  RB_GC_GUARD(password_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -182,117 +197,128 @@ RB_FUNC(URGE_ShowMessageBox) {
   if (argc == 1) {
     // message_box(message)
     VALUE message_val;
+    const char* message_data;
+    size_t message_size;
     ParseArgs(argc, argv, "o", &message_val);
-    message_val = CheckString(message_val);
+    CheckString(message_val, &message_data, &message_size);
 
     int32_t result = 0;
 
     {
-      result = urge::URGE::Get().ShowMessageBox(TakeString(message_val));
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(message_data, message_size));
     }
-    RB_GC_GUARD(message_val);
 
     return LONG2NUM(result);
   } else if (argc == 2) {
     // message_box(title, message)
     VALUE title_val, message_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
     ParseArgs(argc, argv, "oo", &title_val, &message_val);
-    title_val = CheckString(title_val);
-    message_val = CheckString(message_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
 
     int32_t result = 0;
 
     {
-      result = urge::URGE::Get().ShowMessageBox(TakeString(title_val),
-          TakeString(message_val));
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size));
     }
-    RB_GC_GUARD(title_val);
-    RB_GC_GUARD(message_val);
 
     return LONG2NUM(result);
   } else if (argc == 3) {
     // message_box(title, message, buttons)
     VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
     ParseArgs(argc, argv, "ooo", &title_val, &message_val, &buttons_val);
-    title_val = CheckString(title_val);
-    message_val = CheckString(message_val);
-    buttons_val = CheckVectorOf<std::string>(buttons_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
 
     int32_t result = 0;
 
     {
-      result = urge::URGE::Get().ShowMessageBox(TakeString(title_val),
-          TakeString(message_val), TakeVectorOf<std::string>(buttons_val));
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val));
     }
-    RB_GC_GUARD(title_val);
-    RB_GC_GUARD(message_val);
-    RB_GC_GUARD(buttons_val);
 
     return LONG2NUM(result);
   } else if (argc == 4) {
     // message_box(title, message, buttons, default_button)
     VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
     int default_button;
     ParseArgs(argc, argv, "oooi", &title_val, &message_val, &buttons_val,
         &default_button);
-    title_val = CheckString(title_val);
-    message_val = CheckString(message_val);
-    buttons_val = CheckVectorOf<std::string>(buttons_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
 
     int32_t result = 0;
 
     {
-      result = urge::URGE::Get().ShowMessageBox(TakeString(title_val),
-          TakeString(message_val), TakeVectorOf<std::string>(buttons_val),
-          default_button);
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val), default_button);
     }
-    RB_GC_GUARD(title_val);
-    RB_GC_GUARD(message_val);
-    RB_GC_GUARD(buttons_val);
 
     return LONG2NUM(result);
   } else if (argc == 5) {
     // message_box(title, message, buttons, default_button, escape_button)
     VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
     int default_button, escape_button;
     ParseArgs(argc, argv, "oooii", &title_val, &message_val, &buttons_val,
         &default_button, &escape_button);
-    title_val = CheckString(title_val);
-    message_val = CheckString(message_val);
-    buttons_val = CheckVectorOf<std::string>(buttons_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
 
     int32_t result = 0;
 
     {
-      result = urge::URGE::Get().ShowMessageBox(TakeString(title_val),
-          TakeString(message_val), TakeVectorOf<std::string>(buttons_val),
-          default_button, escape_button);
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val), default_button,
+          escape_button);
     }
-    RB_GC_GUARD(title_val);
-    RB_GC_GUARD(message_val);
-    RB_GC_GUARD(buttons_val);
 
     return LONG2NUM(result);
   } else if (argc == 6) {
     // message_box(title, message, buttons, default_button, escape_button, flags)
     VALUE title_val, message_val, buttons_val;
+    const char* title_data;
+    size_t title_size, message_size;
+    const char* message_data;
     int default_button, escape_button, flags;
     ParseArgs(argc, argv, "oooiii", &title_val, &message_val, &buttons_val,
         &default_button, &escape_button, &flags);
-    title_val = CheckString(title_val);
-    message_val = CheckString(message_val);
-    buttons_val = CheckVectorOf<std::string>(buttons_val);
+    CheckString(title_val, &title_data, &title_size);
+    CheckString(message_val, &message_data, &message_size);
+    CheckVectorOf<std::string>(buttons_val);
 
     int32_t result = 0;
 
     {
-      result = urge::URGE::Get().ShowMessageBox(TakeString(title_val),
-          TakeString(message_val), TakeVectorOf<std::string>(buttons_val),
-          default_button, escape_button, flags);
+      result = urge::URGE::Get(
+          ).ShowMessageBox(std::string(title_data, title_size),
+          std::string(message_data, message_size),
+          TakeVectorOf<std::string>(buttons_val), default_button, escape_button,
+          flags);
     }
-    RB_GC_GUARD(title_val);
-    RB_GC_GUARD(message_val);
-    RB_GC_GUARD(buttons_val);
 
     return LONG2NUM(result);
   } else {
@@ -309,19 +335,24 @@ RB_FUNC(URGE_Clipboard) {
     result = new std::string((*urge::URGE::Get().Attr_Clipboard()));
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(URGE_ClipboardEqual) {
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    urge::URGE::Get().Attr_Clipboard(TakeString(value_val));
+    urge::URGE::Get().Attr_Clipboard(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }

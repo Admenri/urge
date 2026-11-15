@@ -30,23 +30,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera  (core/scene/camera.h:38-58)
+// Camera  (core/scene/camera.h:38-57)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Camera);
 
 RB_FUNC(Camera_initialize) {
-  CheckConstructorSelf(self, kCameraDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Camera* result = nullptr;
 
   {
-    urge::Camera* value = urge::MakeGarbageCollected<urge::Camera>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Camera> value = urge::MakeRefCounted<urge::Camera>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Camera_ViewProjection) {
@@ -62,7 +65,9 @@ RB_FUNC(Camera_ViewProjection) {
     result = new std::vector<float>(self_obj->ViewProjection(width, height));
   }
 
-  return OwnedWrapVector<float>(result);
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 // Attribute: position (MaybePtr<Vector3>)
@@ -94,10 +99,8 @@ void InitCameraBindingAppend(VALUE klass);
 void InitCameraBinding() {
   auto klass = rb_define_class("Camera", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kCameraDataType>);
-  RegisterNativeType<urge::Camera>(klass, kCameraDataType);
 
   DefineMethod(klass, "initialize", Camera_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "view_projection", Camera_ViewProjection);
   DefineMethod(klass, "position", Camera_Position);
   DefineMethod(klass, "position=", Camera_PositionEqual);

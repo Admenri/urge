@@ -40,7 +40,6 @@ class Camera : public Object {
   URGE_BINDING()
   Camera();
   ~Camera() override;
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   ATTR(MaybePtr<Vector3>, Position);
@@ -63,9 +62,9 @@ class Camera : public Object {
                  const glm::ivec2& size) const;
 
  protected:
-  Member<Vector3> position_;
-  Member<Vector4> quaternion_;
-  Member<Vector3> scale_;
+  RefPtr<Vector3> position_;
+  RefPtr<Vector4> quaternion_;
+  RefPtr<Vector3> scale_;
 
  private:
   wgpu::Buffer scene_uniform_ = nullptr;

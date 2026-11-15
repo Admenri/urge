@@ -29,23 +29,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUPipelineLayoutDescriptor  (core/graphics/gpu.h:383-400)
+// GPUPipelineLayoutDescriptor  (core/graphics/gpu.h:382-399)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUPipelineLayoutDescriptor, GPUObject);
 
 RB_FUNC(GPUPipelineLayoutDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPUPipelineLayoutDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPUPipelineLayoutDescriptor* result = nullptr;
 
   {
-    urge::GPUPipelineLayoutDescriptor* value = urge::MakeGarbageCollected<urge::GPUPipelineLayoutDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPUPipelineLayoutDescriptor> value = urge::MakeRefCounted<urge::GPUPipelineLayoutDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUPipelineLayoutDescriptor_GetLabel) {
@@ -58,7 +61,11 @@ RB_FUNC(GPUPipelineLayoutDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUPipelineLayoutDescriptor_SetLabel) {
@@ -66,13 +73,14 @@ RB_FUNC(GPUPipelineLayoutDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -89,7 +97,6 @@ RB_FUNC(GPUPipelineLayoutDescriptor_AddBindGroupLayout) {
   {
     self_obj->AddBindGroupLayout(layout);
   }
-  RB_GC_GUARD(layout_val);
 
   return Qnil;
 }
@@ -105,10 +112,8 @@ void InitGPUPipelineLayoutDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUPipelineLayoutDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUPipelineLayoutDescriptorDataType>);
-  RegisterNativeType<urge::GPUPipelineLayoutDescriptor>(klass, kGPUPipelineLayoutDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUPipelineLayoutDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUPipelineLayoutDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUPipelineLayoutDescriptor_SetLabel);
   DefineMethod(klass, "add_bind_group_layout", GPUPipelineLayoutDescriptor_AddBindGroupLayout);

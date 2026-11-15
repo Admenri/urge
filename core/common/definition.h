@@ -26,13 +26,13 @@
 #include <string>
 
 #include "core/common/exception.h"
-#include "core/common/member.h"
+#include "core/common/refptr.h"
 
 namespace urge {
 
-// Nullable raw pointer used only to describe the binding nil contract.
 template <typename T>
-using MaybePtr = T*;
+using MaybePtr = RefPtr<T>;
+
 }
 
 #define URGE_BINDING(...)
@@ -49,10 +49,12 @@ using MaybePtr = T*;
 #define ATTR_EXC_DEF(klass, ty, name) \
   std::optional<ty> klass::Attr_##name(URGE_EXCEPT, std::optional<ty> value)
 
-#define MARSHAL_DUMP(ty) static std::string MarshalDump(ty* obj);
-#define MARSHAL_DUMP_DEF(ty) std::string ty::MarshalDump(ty* obj)
-#define MARSHAL_LOAD(ty) static ty* MarshalLoad(URGE_EXCEPT, std::string data);
-#define MARSHAL_LOAD_DEF(ty) ty* ty::MarshalLoad(URGE_EXCEPT, std::string data)
+#define MARSHAL_DUMP(ty) static std::string MarshalDump(RefPtr<ty> obj);
+#define MARSHAL_DUMP_DEF(ty) std::string ty::MarshalDump(RefPtr<ty> obj)
+#define MARSHAL_LOAD(ty) \
+  static RefPtr<ty> MarshalLoad(URGE_EXCEPT, std::string data);
+#define MARSHAL_LOAD_DEF(ty) \
+  RefPtr<ty> ty::MarshalLoad(URGE_EXCEPT, std::string data)
 
 #define KLASS_EQUAL(ty)                    \
   bool operator==(const ty& other) const;  \

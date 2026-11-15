@@ -24,57 +24,69 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Font  (core/font/font.h:37-88)
+// Font  (core/font/font.h:37-87)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Font);
 
 RB_FUNC(Font_initialize) {
-  CheckConstructorSelf(self, kFontDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Font* result = nullptr;
 
     {
-      urge::Font* value = urge::MakeGarbageCollected<urge::Font>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(names)
     VALUE names_val;
     ParseArgs(argc, argv, "o", &names_val);
-    names_val = CheckVectorOf<std::string>(names_val);
+    CheckVectorOf<std::string>(names_val);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Font* result = nullptr;
 
     {
-      urge::Font* value = urge::MakeGarbageCollected<urge::Font>(
+      urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(
           TakeVectorOf<std::string>(names_val));
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(names_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 2) {
     // initialize(names, size)
     VALUE names_val;
     int size;
     ParseArgs(argc, argv, "oi", &names_val, &size);
-    names_val = CheckVectorOf<std::string>(names_val);
+    CheckVectorOf<std::string>(names_val);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Font* result = nullptr;
 
     {
-      urge::Font* value = urge::MakeGarbageCollected<urge::Font>(
+      urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(
           TakeVectorOf<std::string>(names_val), size);
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(names_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -84,35 +96,37 @@ RB_FUNC(Font_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
-  if (self == other_val)
-    return self;
-  CheckConstructorSelf(self, kFontDataType);
   urge::Font* other_obj = CheckObject<urge::Font>(other_val, kFontDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Font* result = nullptr;
 
   {
-    urge::Font* value = urge::MakeGarbageCollected<urge::Font>(other_obj);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Font> value = urge::MakeRefCounted<urge::Font>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(other_val);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Font_Existed) {
   CheckArgc(argc, 1);
   VALUE name_val;
+  const char* name_data;
+  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  name_val = CheckString(name_val);
+  CheckString(name_val, &name_data, &name_size);
 
   bool result = false;
 
   {
-    result = urge::Font::Existed(TakeString(name_val));
+    result = urge::Font::Existed(std::string(name_data, name_size));
   }
-  RB_GC_GUARD(name_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -138,7 +152,7 @@ BINDING_ATTR_BOOL(Font, urge::Font, Shadow);
 // Attribute: solid (bool)
 BINDING_ATTR_BOOL(Font, urge::Font, Solid);
 
-// Attribute: color (Color*)
+// Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Font,
                     urge::Font,
                     Color,
@@ -146,7 +160,7 @@ BINDING_ATTR_OBJECT(Font,
                     kColorDataType,
                     CheckObject);
 
-// Attribute: out_color (Color*)
+// Attribute: out_color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Font,
                     urge::Font,
                     OutColor,
@@ -154,7 +168,7 @@ BINDING_ATTR_OBJECT(Font,
                     kColorDataType,
                     CheckObject);
 
-// Attribute: gradient_color (Color*)
+// Attribute: gradient_color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Font,
                     urge::Font,
                     GradientColor,
@@ -183,7 +197,7 @@ BINDING_CLASS_ATTR_BOOL(Font, urge::Font, DefaultShadow);
 // Class attribute: default_solid (bool)
 BINDING_CLASS_ATTR_BOOL(Font, urge::Font, DefaultSolid);
 
-// Class attribute: default_color (Color*)
+// Class attribute: default_color (RefPtr<Color>)
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultColor,
@@ -191,7 +205,7 @@ BINDING_CLASS_ATTR_OBJECT(Font,
                           kColorDataType,
                           CheckObject);
 
-// Class attribute: default_out_color (Color*)
+// Class attribute: default_out_color (RefPtr<Color>)
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultOutColor,
@@ -199,7 +213,7 @@ BINDING_CLASS_ATTR_OBJECT(Font,
                           kColorDataType,
                           CheckObject);
 
-// Class attribute: default_gradient_color (Color*)
+// Class attribute: default_gradient_color (RefPtr<Color>)
 BINDING_CLASS_ATTR_OBJECT(Font,
                           urge::Font,
                           DefaultGradientColor,
@@ -212,7 +226,6 @@ void InitFontBindingAppend(VALUE klass);
 void InitFontBinding() {
   auto klass = rb_define_class("Font", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kFontDataType>);
-  RegisterNativeType<urge::Font>(klass, kFontDataType);
 
   DefineMethod(klass, "initialize", Font_initialize);
   DefineMethod(klass, "initialize_copy", Font_initialize_copy);

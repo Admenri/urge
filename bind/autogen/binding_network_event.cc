@@ -62,17 +62,20 @@ void DefineNetworkEventConstants(VALUE klass) {
 RB_DEF_TYPE(NetworkEvent);
 
 RB_FUNC(NetworkEvent_initialize) {
-  CheckConstructorSelf(self, kNetworkEventDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::NetworkEvent* result = nullptr;
 
   {
-    urge::NetworkEvent* value = urge::MakeGarbageCollected<urge::NetworkEvent>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::NetworkEvent> value = urge::MakeRefCounted<urge::NetworkEvent>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(NetworkEvent_GetType) {
@@ -98,7 +101,11 @@ RB_FUNC(NetworkEvent_GetText) {
     result = new std::string(self_obj->GetText());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(NetworkEvent_GetCode) {
@@ -124,7 +131,11 @@ RB_FUNC(NetworkEvent_GetReason) {
     result = new std::string(self_obj->GetReason());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(NetworkEvent_GetErrorMessage) {
@@ -137,7 +148,11 @@ RB_FUNC(NetworkEvent_GetErrorMessage) {
     result = new std::string(self_obj->GetErrorMessage());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 void InitNetworkEventBindingAppend(VALUE klass);
@@ -145,10 +160,8 @@ void InitNetworkEventBindingAppend(VALUE klass);
 void InitNetworkEventBinding() {
   auto klass = rb_define_class("NetworkEvent", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kNetworkEventDataType>);
-  RegisterNativeType<urge::NetworkEvent>(klass, kNetworkEventDataType);
 
   DefineMethod(klass, "initialize", NetworkEvent_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "type", NetworkEvent_GetType);
   DefineMethod(klass, "text", NetworkEvent_GetText);
   DefineMethod(klass, "code", NetworkEvent_GetCode);

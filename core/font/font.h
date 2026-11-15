@@ -28,7 +28,7 @@
 
 #include "core/common/common.h"
 #include "core/common/definition.h"
-#include "core/common/member.h"
+#include "core/common/refptr.h"
 #include "core/common/utility.h"
 
 namespace urge {
@@ -39,9 +39,8 @@ class Font : public Object {
   URGE_BINDING()
   Font(std::vector<std::string> names = {}, int32_t size = 0);
   URGE_BINDING()
-  Font(Font* other);
+  Font(RefPtr<Font> other);
   ~Font() override = default;
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING(Name : "exist?")
   static bool Existed(std::string name);
@@ -61,11 +60,11 @@ class Font : public Object {
   URGE_BINDING()
   ATTR(bool, Solid);
   URGE_BINDING()
-  ATTR(Color*, Color);
+  ATTR(RefPtr<Color>, Color);
   URGE_BINDING()
-  ATTR(Color*, OutColor);
+  ATTR(RefPtr<Color>, OutColor);
   URGE_BINDING()
-  ATTR(Color*, GradientColor);
+  ATTR(RefPtr<Color>, GradientColor);
 
   URGE_BINDING()
   static ATTR(std::vector<std::string>, DefaultName);
@@ -82,11 +81,11 @@ class Font : public Object {
   URGE_BINDING()
   static ATTR(bool, DefaultSolid);
   URGE_BINDING()
-  static ATTR(Color*, DefaultColor);
+  static ATTR(RefPtr<Color>, DefaultColor);
   URGE_BINDING()
-  static ATTR(Color*, DefaultOutColor);
+  static ATTR(RefPtr<Color>, DefaultOutColor);
   URGE_BINDING()
-  static ATTR(Color*, DefaultGradientColor);
+  static ATTR(RefPtr<Color>, DefaultGradientColor);
 
   bool MeasureText(const std::string& text, int32_t* width, int32_t* height);
 
@@ -94,7 +93,7 @@ class Font : public Object {
   int32_t size_ = 24;
   bool bold_ = false, italic_ = false, outline_ = true, shadow_ = false,
        solid_ = false;
-  Member<Color> color_, out_color_, gradient_color_;
+  RefPtr<Color> color_, out_color_, gradient_color_;
 };
 
 }

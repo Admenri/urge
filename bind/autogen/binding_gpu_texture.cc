@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTexture  (core/graphics/gpu.h:769-795)
+// GPUTexture  (core/graphics/gpu.h:763-789)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTexture, GPUObject);
@@ -144,14 +144,19 @@ RB_FUNC(GPUTexture_CreateView) {
 
   if (argc == 0) {
     // create_view()
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::GPUTextureView* result = nullptr;
 
     {
-      urge::GPUTextureView* value = self_obj->CreateView();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::GPUTextureView> value = self_obj->CreateView();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedWrapObject(result, kGPUTextureViewDataType);
+    VALUE value = WrapObject(result, kGPUTextureViewDataType);
+    if (result)
+      result->Release();
+    return value;
   } else if (argc == 1) {
     // create_view(descriptor)
     VALUE descriptor_val;
@@ -159,15 +164,20 @@ RB_FUNC(GPUTexture_CreateView) {
     ParseArgs(argc, argv, "o", &descriptor_val);
     descriptor = CheckMaybeObject<urge::GPUTextureViewDescriptor>(descriptor_val, kGPUTextureViewDescriptorDataType);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::GPUTextureView* result = nullptr;
 
     {
-      urge::GPUTextureView* value = self_obj->CreateView(descriptor);
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::GPUTextureView> value = self_obj->CreateView(
+          descriptor);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(descriptor_val);
 
-    return OwnedWrapObject(result, kGPUTextureViewDataType);
+    VALUE value = WrapObject(result, kGPUTextureViewDataType);
+    if (result)
+      result->Release();
+    return value;
   } else {
     ArgcError(argc);
   }
@@ -190,9 +200,7 @@ void InitGPUTextureBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUTexture", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUTextureDataType>);
-  RegisterNativeType<urge::GPUTexture>(klass, kGPUTextureDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "width", GPUTexture_Width);
   DefineMethod(klass, "height", GPUTexture_Height);
   DefineMethod(klass, "depth_or_array_layers", GPUTexture_DepthOrArrayLayers);

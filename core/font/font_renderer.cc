@@ -179,7 +179,8 @@ struct Prepared {
   RectF ink;
   int edges = 0;
 };
-glm::vec4 PremultipliedColor(const urge::Color* color, float opacity = 1) {
+glm::vec4 PremultipliedColor(const RefPtr<urge::Color>& color,
+                             float opacity = 1) {
   if (!color)
     return glm::vec4(0);
   glm::vec4 c = glm::clamp(
@@ -606,10 +607,10 @@ void FontRenderer::Draw(Bitmap& bitmap,
       if (layer == 0)
         a = b = glm::vec4(0, 0, 0, opacity);
       else if (layer == 1 || layer == 3)
-        a = b = PremultipliedColor(font.out_color_.get(), opacity);
+        a = b = PremultipliedColor(font.out_color_, opacity);
       else {
         auto gradient = [&](float yy) {
-          auto c = PremultipliedColor(font.color_.get());
+          auto c = PremultipliedColor(font.color_);
           if (font.gradient_color_ && font.gradient_color_->data.a > 0) {
             const float t =
                 std::clamp((yy - top) / std::max(1.0f, height), 0.0f, 1.0f) *

@@ -28,23 +28,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// OrthographicCamera  (core/scene/camera.h:98-108)
+// OrthographicCamera  (core/scene/camera.h:97-107)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(OrthographicCamera, Camera);
 
 RB_FUNC(OrthographicCamera_initialize) {
-  CheckConstructorSelf(self, kOrthographicCameraDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::OrthographicCamera* result = nullptr;
 
   {
-    urge::OrthographicCamera* value = urge::MakeGarbageCollected<urge::OrthographicCamera>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::OrthographicCamera> value = urge::MakeRefCounted<urge::OrthographicCamera>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Attribute: size (float)
@@ -62,10 +65,8 @@ void InitOrthographicCameraBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Camera"));
   auto klass = rb_define_class("OrthographicCamera", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kOrthographicCameraDataType>);
-  RegisterNativeType<urge::OrthographicCamera>(klass, kOrthographicCameraDataType);
 
   DefineMethod(klass, "initialize", OrthographicCamera_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "size", OrthographicCamera_Size);
   DefineMethod(klass, "size=", OrthographicCamera_SizeEqual);
   DefineMethod(klass, "near", OrthographicCamera_Near);

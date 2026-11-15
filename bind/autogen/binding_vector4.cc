@@ -27,47 +27,61 @@ namespace binding {
 RB_DEF_TYPE(Vector4);
 
 RB_FUNC(Vector4_initialize) {
-  CheckConstructorSelf(self, kVector4DataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Vector4* result = nullptr;
 
     {
-      urge::Vector4* value = urge::MakeGarbageCollected<urge::Vector4>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(v)
     double v;
     ParseArgs(argc, argv, "f", &v);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Vector4* result = nullptr;
 
     {
-      urge::Vector4* value = urge::MakeGarbageCollected<urge::Vector4>(
+      urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(
           static_cast<float>(v));
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 4) {
     // initialize(xv, yv, zv, wv)
     double xv, yv, zv, wv;
     ParseArgs(argc, argv, "ffff", &xv, &yv, &zv, &wv);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Vector4* result = nullptr;
 
     {
-      urge::Vector4* value = urge::MakeGarbageCollected<urge::Vector4>(
+      urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(
           static_cast<float>(xv), static_cast<float>(yv),
           static_cast<float>(zv), static_cast<float>(wv));
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -77,21 +91,22 @@ RB_FUNC(Vector4_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
-  if (self == other_val)
-    return self;
-  CheckConstructorSelf(self, kVector4DataType);
   urge::Vector4* other_obj = CheckObject<urge::Vector4>(other_val, kVector4DataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Vector4* result = nullptr;
 
   {
-    urge::Vector4* value = urge::MakeGarbageCollected<urge::Vector4>(other_obj);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Vector4> value = urge::MakeRefCounted<urge::Vector4>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(other_val);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Vector4_Set) {
@@ -107,7 +122,6 @@ RB_FUNC(Vector4_Set) {
     {
       self_obj->Set(v);
     }
-    RB_GC_GUARD(v_val);
 
     return Qnil;
   } else if (argc == 4) {
@@ -143,7 +157,6 @@ void InitVector4BindingAppend(VALUE klass);
 void InitVector4Binding() {
   auto klass = rb_define_class("Vector4", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kVector4DataType>);
-  RegisterNativeType<urge::Vector4>(klass, kVector4DataType);
 
   DefineMethod(klass, "initialize", Vector4_initialize);
   DefineMethod(klass, "initialize_copy", Vector4_initialize_copy);

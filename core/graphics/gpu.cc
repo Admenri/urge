@@ -57,7 +57,7 @@ wgpu::DepthStencilState DefaultDepthStencil() {
   return state;
 }
 
-wgpu::TexelCopyTextureInfo CopyTextureInfo(GPUTexture* texture,
+wgpu::TexelCopyTextureInfo CopyTextureInfo(RefPtr<GPUTexture> texture,
                                            uint32_t mip_level,
                                            uint32_t x,
                                            uint32_t y) {
@@ -69,6 +69,7 @@ wgpu::TexelCopyTextureInfo CopyTextureInfo(GPUTexture* texture,
   info.aspect = wgpu::TextureAspect::All;
   return info;
 }
+
 }
 
 void GPUBindGroupLayoutDescriptor::AddUniform(uint32_t binding,
@@ -121,16 +122,17 @@ void GPUBindGroupLayoutDescriptor::AddSampler(uint32_t binding,
 }
 
 void GPUPipelineLayoutDescriptor::AddBindGroupLayout(
-    GPUBindGroupLayout* layout) {
+    RefPtr<GPUBindGroupLayout> layout) {
   layouts.push_back(layout->handle());
 }
 
-void GPUBindGroupDescriptor::AddBuffer(uint32_t binding, GPUBuffer* buffer) {
+void GPUBindGroupDescriptor::AddBuffer(uint32_t binding,
+                                       RefPtr<GPUBuffer> buffer) {
   AddBufferRange(binding, buffer, 0, WGPU_WHOLE_SIZE);
 }
 
 void GPUBindGroupDescriptor::AddBufferRange(uint32_t binding,
-                                            GPUBuffer* buffer,
+                                            RefPtr<GPUBuffer> buffer,
                                             uint64_t offset,
                                             uint64_t size) {
   wgpu::BindGroupEntry entry = {};
@@ -142,14 +144,15 @@ void GPUBindGroupDescriptor::AddBufferRange(uint32_t binding,
 }
 
 void GPUBindGroupDescriptor::AddTexture(uint32_t binding,
-                                        GPUTextureView* view) {
+                                        RefPtr<GPUTextureView> view) {
   wgpu::BindGroupEntry entry = {};
   entry.binding = binding;
   entry.textureView = view->handle();
   entries.push_back(entry);
 }
 
-void GPUBindGroupDescriptor::AddSampler(uint32_t binding, GPUSampler* sampler) {
+void GPUBindGroupDescriptor::AddSampler(uint32_t binding,
+                                        RefPtr<GPUSampler> sampler) {
   wgpu::BindGroupEntry entry = {};
   entry.binding = binding;
   entry.sampler = sampler->handle();
@@ -291,7 +294,7 @@ void GPURenderPipelineDescriptor::SetMultisample(
   alpha_to_coverage = alpha_to_coverage_enabled;
 }
 
-void GPURenderPassDescriptor::AddColorAttachment(GPUTextureView* view,
+void GPURenderPassDescriptor::AddColorAttachment(RefPtr<GPUTextureView> view,
                                                  uint32_t attachment_load_op,
                                                  uint32_t attachment_store_op,
                                                  float r,
@@ -309,7 +312,7 @@ void GPURenderPassDescriptor::AddColorAttachment(GPUTextureView* view,
   color_attachments.push_back(attachment);
 }
 
-void GPURenderPassDescriptor::SetColorResolve(GPUTextureView* resolve) {
+void GPURenderPassDescriptor::SetColorResolve(RefPtr<GPUTextureView> resolve) {
   if (color_attachments.empty()) {
     LOGGER_ERROR("[GPU] set_color_resolve: add a color attachment first");
     return;
@@ -318,7 +321,7 @@ void GPURenderPassDescriptor::SetColorResolve(GPUTextureView* resolve) {
 }
 
 void GPURenderPassDescriptor::SetDepthStencilAttachment(
-    GPUTextureView* view,
+    RefPtr<GPUTextureView> view,
     uint32_t depth_load,
     uint32_t depth_store,
     float depth_clear,
@@ -338,7 +341,8 @@ void GPURenderPassDescriptor::SetDepthStencilAttachment(
   stencil_read_only = read_only_stencil;
 }
 
-void GPURenderPassDescriptor::SetOcclusionQuerySet(GPUQuerySet* query_set) {
+void GPURenderPassDescriptor::SetOcclusionQuerySet(
+    RefPtr<GPUQuerySet> query_set) {
   occlusion_query_set = query_set;
 }
 
@@ -382,7 +386,8 @@ void GPUBuffer::Write(uint64_t offset, std::string data) {
   buffer_.Unmap();
 }
 
-GPUTextureView* GPUTexture::CreateView(GPUTextureViewDescriptor* descriptor) {
+RefPtr<GPUTextureView> GPUTexture::CreateView(
+    RefPtr<GPUTextureViewDescriptor> descriptor) {
   wgpu::TextureViewDescriptor desc;
   if (descriptor) {
     desc.label = View(descriptor->label);
@@ -396,23 +401,23 @@ GPUTextureView* GPUTexture::CreateView(GPUTextureViewDescriptor* descriptor) {
     desc.aspect = static_cast<wgpu::TextureAspect>(descriptor->aspect);
   }
   wgpu::TextureView view = texture_.CreateView(&desc);
-  return MakeGarbageCollected<GPUTextureView>(view);
+  return MakeRefCounted<GPUTextureView>(view);
 }
 
-GPUBindGroupLayout* GPURenderPipeline::GetBindGroupLayout(
+RefPtr<GPUBindGroupLayout> GPURenderPipeline::GetBindGroupLayout(
     uint32_t group_index) {
-  return MakeGarbageCollected<GPUBindGroupLayout>(
+  return MakeRefCounted<GPUBindGroupLayout>(
       pipeline_.GetBindGroupLayout(group_index));
 }
 
-GPUBindGroupLayout* GPUComputePipeline::GetBindGroupLayout(
+RefPtr<GPUBindGroupLayout> GPUComputePipeline::GetBindGroupLayout(
     uint32_t group_index) {
-  return MakeGarbageCollected<GPUBindGroupLayout>(
+  return MakeRefCounted<GPUBindGroupLayout>(
       pipeline_.GetBindGroupLayout(group_index));
 }
 
-GPURenderPassEncoder* GPUCommandEncoder::BeginRenderPass(
-    GPURenderPassDescriptor* descriptor) {
+RefPtr<GPURenderPassEncoder> GPUCommandEncoder::BeginRenderPass(
+    RefPtr<GPURenderPassDescriptor> descriptor) {
   std::vector<wgpu::RenderPassColorAttachment> attachments;
   attachments.reserve(descriptor->color_attachments.size());
   for (const auto& source : descriptor->color_attachments) {
@@ -462,31 +467,31 @@ GPURenderPassEncoder* GPUCommandEncoder::BeginRenderPass(
                                : nullptr;
 
   wgpu::RenderPassEncoder encoder = encoder_.BeginRenderPass(&desc);
-  return MakeGarbageCollected<GPURenderPassEncoder>(encoder);
+  return MakeRefCounted<GPURenderPassEncoder>(encoder);
 }
 
-GPUComputePassEncoder* GPUCommandEncoder::BeginComputePass(
-    GPUComputePassDescriptor* descriptor) {
+RefPtr<GPUComputePassEncoder> GPUCommandEncoder::BeginComputePass(
+    RefPtr<GPUComputePassDescriptor> descriptor) {
   wgpu::ComputePassDescriptor desc;
   if (descriptor)
     desc.label = View(descriptor->label);
   wgpu::ComputePassEncoder encoder = encoder_.BeginComputePass(&desc);
-  return MakeGarbageCollected<GPUComputePassEncoder>(encoder);
+  return MakeRefCounted<GPUComputePassEncoder>(encoder);
 }
 
-void GPUCommandEncoder::CopyBufferToBuffer(GPUBuffer* source,
+void GPUCommandEncoder::CopyBufferToBuffer(RefPtr<GPUBuffer> source,
                                            uint64_t source_offset,
-                                           GPUBuffer* destination,
+                                           RefPtr<GPUBuffer> destination,
                                            uint64_t destination_offset,
                                            uint64_t size) {
   encoder_.CopyBufferToBuffer(source->handle(), source_offset,
                               destination->handle(), destination_offset, size);
 }
 
-void GPUCommandEncoder::CopyBufferToTexture(GPUBuffer* source,
+void GPUCommandEncoder::CopyBufferToTexture(RefPtr<GPUBuffer> source,
                                             uint32_t bytes_per_row,
                                             uint32_t rows_per_image,
-                                            GPUTexture* destination,
+                                            RefPtr<GPUTexture> destination,
                                             uint32_t destination_mip_level,
                                             uint32_t destination_x,
                                             uint32_t destination_y,
@@ -510,11 +515,11 @@ void GPUCommandEncoder::CopyBufferToTexture(GPUBuffer* source,
   encoder_.CopyBufferToTexture(&source_info, &destination_info, &copy_size);
 }
 
-void GPUCommandEncoder::CopyTextureToBuffer(GPUTexture* source,
+void GPUCommandEncoder::CopyTextureToBuffer(RefPtr<GPUTexture> source,
                                             uint32_t source_mip_level,
                                             uint32_t source_x,
                                             uint32_t source_y,
-                                            GPUBuffer* destination,
+                                            RefPtr<GPUBuffer> destination,
                                             uint32_t bytes_per_row,
                                             uint32_t rows_per_image,
                                             uint32_t width,
@@ -537,11 +542,11 @@ void GPUCommandEncoder::CopyTextureToBuffer(GPUTexture* source,
   encoder_.CopyTextureToBuffer(&source_info, &destination_info, &copy_size);
 }
 
-void GPUCommandEncoder::CopyTextureToTexture(GPUTexture* source,
+void GPUCommandEncoder::CopyTextureToTexture(RefPtr<GPUTexture> source,
                                              uint32_t source_mip_level,
                                              uint32_t source_x,
                                              uint32_t source_y,
-                                             GPUTexture* destination,
+                                             RefPtr<GPUTexture> destination,
                                              uint32_t destination_mip_level,
                                              uint32_t destination_x,
                                              uint32_t destination_y,
@@ -567,16 +572,16 @@ void GPUCommandEncoder::CopyTextureToTexture(GPUTexture* source,
   encoder_.CopyTextureToTexture(&source_info, &destination_info, &copy_size);
 }
 
-void GPUCommandEncoder::ResolveQuerySet(GPUQuerySet* query_set,
+void GPUCommandEncoder::ResolveQuerySet(RefPtr<GPUQuerySet> query_set,
                                         uint32_t first_query,
                                         uint32_t query_count,
-                                        GPUBuffer* destination,
+                                        RefPtr<GPUBuffer> destination,
                                         uint64_t destination_offset) {
   encoder_.ResolveQuerySet(query_set->handle(), first_query, query_count,
                            destination->handle(), destination_offset);
 }
 
-void GPUCommandEncoder::ClearBuffer(GPUBuffer* buffer,
+void GPUCommandEncoder::ClearBuffer(RefPtr<GPUBuffer> buffer,
                                     uint64_t offset,
                                     uint64_t size) {
   encoder_.ClearBuffer(buffer->handle(), offset, size);
@@ -594,27 +599,28 @@ void GPUCommandEncoder::PopDebugGroup() {
   encoder_.PopDebugGroup();
 }
 
-GPUCommandBuffer* GPUCommandEncoder::Finish() {
+RefPtr<GPUCommandBuffer> GPUCommandEncoder::Finish() {
   wgpu::CommandBufferDescriptor desc;
   wgpu::CommandBuffer command_buffer = encoder_.Finish(&desc);
-  return MakeGarbageCollected<GPUCommandBuffer>(command_buffer);
+  return MakeRefCounted<GPUCommandBuffer>(command_buffer);
 }
 
-void GPURenderPassEncoder::SetPipeline(GPURenderPipeline* pipeline) {
+void GPURenderPassEncoder::SetPipeline(RefPtr<GPURenderPipeline> pipeline) {
   encoder_.SetPipeline(pipeline->handle());
 }
 
-void GPURenderPassEncoder::SetBindGroup(uint32_t index, GPUBindGroup* group) {
+void GPURenderPassEncoder::SetBindGroup(uint32_t index,
+                                        RefPtr<GPUBindGroup> group) {
   encoder_.SetBindGroup(index, group->handle(), 0, nullptr);
 }
 
 void GPURenderPassEncoder::SetVertexBuffer(uint32_t slot,
-                                           GPUBuffer* buffer,
+                                           RefPtr<GPUBuffer> buffer,
                                            uint64_t offset) {
   encoder_.SetVertexBuffer(slot, buffer->handle(), offset, WGPU_WHOLE_SIZE);
 }
 
-void GPURenderPassEncoder::SetIndexBuffer(GPUBuffer* buffer,
+void GPURenderPassEncoder::SetIndexBuffer(RefPtr<GPUBuffer> buffer,
                                           uint32_t format,
                                           uint64_t offset) {
   encoder_.SetIndexBuffer(buffer->handle(),
@@ -638,13 +644,14 @@ void GPURenderPassEncoder::DrawIndexed(uint32_t index_count,
                        first_instance);
 }
 
-void GPURenderPassEncoder::DrawIndirect(GPUBuffer* indirect_buffer,
+void GPURenderPassEncoder::DrawIndirect(RefPtr<GPUBuffer> indirect_buffer,
                                         uint64_t indirect_offset) {
   encoder_.DrawIndirect(indirect_buffer->handle(), indirect_offset);
 }
 
-void GPURenderPassEncoder::DrawIndexedIndirect(GPUBuffer* indirect_buffer,
-                                               uint64_t indirect_offset) {
+void GPURenderPassEncoder::DrawIndexedIndirect(
+    RefPtr<GPUBuffer> indirect_buffer,
+    uint64_t indirect_offset) {
   encoder_.DrawIndexedIndirect(indirect_buffer->handle(), indirect_offset);
 }
 
@@ -692,11 +699,12 @@ void GPURenderPassEncoder::PopDebugGroup() {
   encoder_.PopDebugGroup();
 }
 
-void GPUComputePassEncoder::SetPipeline(GPUComputePipeline* pipeline) {
+void GPUComputePassEncoder::SetPipeline(RefPtr<GPUComputePipeline> pipeline) {
   encoder_.SetPipeline(pipeline->handle());
 }
 
-void GPUComputePassEncoder::SetBindGroup(uint32_t index, GPUBindGroup* group) {
+void GPUComputePassEncoder::SetBindGroup(uint32_t index,
+                                         RefPtr<GPUBindGroup> group) {
   encoder_.SetBindGroup(index, group->handle(), 0, nullptr);
 }
 
@@ -718,18 +726,18 @@ void GPUComputePassEncoder::PopDebugGroup() {
   encoder_.PopDebugGroup();
 }
 
-void GPUQueue::Submit(GPUCommandBuffer* command_buffer) {
+void GPUQueue::Submit(RefPtr<GPUCommandBuffer> command_buffer) {
   wgpu::CommandBuffer commands[] = {command_buffer->handle()};
   queue_.Submit(1, commands);
 }
 
-void GPUQueue::WriteBuffer(GPUBuffer* buffer,
+void GPUQueue::WriteBuffer(RefPtr<GPUBuffer> buffer,
                            uint64_t offset,
                            std::string data) {
   queue_.WriteBuffer(buffer->handle(), offset, data.data(), data.size());
 }
 
-void GPUQueue::WriteTexture(GPUTexture* texture,
+void GPUQueue::WriteTexture(RefPtr<GPUTexture> texture,
                             uint32_t mip_level,
                             uint32_t x,
                             uint32_t y,
@@ -755,21 +763,21 @@ void GPUQueue::WriteTexture(GPUTexture* texture,
                       &write_size);
 }
 
-GPUQueue* GPU::queue() {
-  return MakeGarbageCollected<GPUQueue>(GPUDevice::Get().queue());
+RefPtr<GPUQueue> GPU::queue() {
+  return MakeRefCounted<GPUQueue>(GPUDevice::Get().queue());
 }
 
-GPUBuffer* GPU::CreateBuffer(GPUBufferDescriptor* descriptor) {
+RefPtr<GPUBuffer> GPU::CreateBuffer(RefPtr<GPUBufferDescriptor> descriptor) {
   wgpu::BufferDescriptor desc;
   desc.label = View(descriptor->label);
   desc.size = descriptor->size;
   desc.usage = static_cast<wgpu::BufferUsage>(descriptor->usage);
   desc.mappedAtCreation = descriptor->mapped_at_creation;
   wgpu::Buffer buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-  return MakeGarbageCollected<GPUBuffer>(buffer);
+  return MakeRefCounted<GPUBuffer>(buffer);
 }
 
-GPUTexture* GPU::CreateTexture(GPUTextureDescriptor* descriptor) {
+RefPtr<GPUTexture> GPU::CreateTexture(RefPtr<GPUTextureDescriptor> descriptor) {
   wgpu::TextureDescriptor desc;
   desc.label = View(descriptor->label);
   desc.usage = static_cast<wgpu::TextureUsage>(descriptor->usage);
@@ -781,10 +789,10 @@ GPUTexture* GPU::CreateTexture(GPUTextureDescriptor* descriptor) {
   desc.mipLevelCount = descriptor->mip_level_count;
   desc.sampleCount = descriptor->sample_count;
   wgpu::Texture texture = GPUDevice::Get().device().CreateTexture(&desc);
-  return MakeGarbageCollected<GPUTexture>(texture);
+  return MakeRefCounted<GPUTexture>(texture);
 }
 
-GPUSampler* GPU::CreateSampler(GPUSamplerDescriptor* descriptor) {
+RefPtr<GPUSampler> GPU::CreateSampler(RefPtr<GPUSamplerDescriptor> descriptor) {
   wgpu::SamplerDescriptor desc;
   desc.label = View(descriptor->label);
   desc.addressModeU =
@@ -802,11 +810,11 @@ GPUSampler* GPU::CreateSampler(GPUSamplerDescriptor* descriptor) {
   desc.compare = static_cast<wgpu::CompareFunction>(descriptor->compare);
   desc.maxAnisotropy = static_cast<uint16_t>(descriptor->max_anisotropy);
   wgpu::Sampler sampler = GPUDevice::Get().device().CreateSampler(&desc);
-  return MakeGarbageCollected<GPUSampler>(sampler);
+  return MakeRefCounted<GPUSampler>(sampler);
 }
 
-GPUShaderModule* GPU::CreateShaderModule(
-    GPUShaderModuleDescriptor* descriptor) {
+RefPtr<GPUShaderModule> GPU::CreateShaderModule(
+    RefPtr<GPUShaderModuleDescriptor> descriptor) {
   if (descriptor->code.empty()) {
     LOGGER_ERROR("[GPU] create_shader_module: the descriptor has no source");
     return nullptr;
@@ -818,11 +826,11 @@ GPUShaderModule* GPU::CreateShaderModule(
   desc.nextInChain = &source;
   wgpu::ShaderModule module =
       GPUDevice::Get().device().CreateShaderModule(&desc);
-  return MakeGarbageCollected<GPUShaderModule>(module);
+  return MakeRefCounted<GPUShaderModule>(module);
 }
 
-GPUBindGroupLayout* GPU::CreateBindGroupLayout(
-    GPUBindGroupLayoutDescriptor* descriptor) {
+RefPtr<GPUBindGroupLayout> GPU::CreateBindGroupLayout(
+    RefPtr<GPUBindGroupLayoutDescriptor> descriptor) {
   wgpu::BindGroupLayoutDescriptor desc;
   desc.label = View(descriptor->label);
   desc.entryCount = descriptor->entries.size();
@@ -830,11 +838,11 @@ GPUBindGroupLayout* GPU::CreateBindGroupLayout(
       descriptor->entries.empty() ? nullptr : descriptor->entries.data();
   wgpu::BindGroupLayout layout =
       GPUDevice::Get().device().CreateBindGroupLayout(&desc);
-  return MakeGarbageCollected<GPUBindGroupLayout>(layout);
+  return MakeRefCounted<GPUBindGroupLayout>(layout);
 }
 
-GPUPipelineLayout* GPU::CreatePipelineLayout(
-    GPUPipelineLayoutDescriptor* descriptor) {
+RefPtr<GPUPipelineLayout> GPU::CreatePipelineLayout(
+    RefPtr<GPUPipelineLayoutDescriptor> descriptor) {
   wgpu::PipelineLayoutDescriptor desc;
   desc.label = View(descriptor->label);
   desc.bindGroupLayoutCount = descriptor->layouts.size();
@@ -843,10 +851,11 @@ GPUPipelineLayout* GPU::CreatePipelineLayout(
   desc.immediateSize = descriptor->immediate_size;
   wgpu::PipelineLayout layout =
       GPUDevice::Get().device().CreatePipelineLayout(&desc);
-  return MakeGarbageCollected<GPUPipelineLayout>(layout);
+  return MakeRefCounted<GPUPipelineLayout>(layout);
 }
 
-GPUBindGroup* GPU::CreateBindGroup(GPUBindGroupDescriptor* descriptor) {
+RefPtr<GPUBindGroup> GPU::CreateBindGroup(
+    RefPtr<GPUBindGroupDescriptor> descriptor) {
   if (!descriptor->layout) {
     LOGGER_ERROR("[GPU] create_bind_group: the descriptor has no layout");
     return nullptr;
@@ -858,11 +867,11 @@ GPUBindGroup* GPU::CreateBindGroup(GPUBindGroupDescriptor* descriptor) {
   desc.entries =
       descriptor->entries.empty() ? nullptr : descriptor->entries.data();
   wgpu::BindGroup group = GPUDevice::Get().device().CreateBindGroup(&desc);
-  return MakeGarbageCollected<GPUBindGroup>(group);
+  return MakeRefCounted<GPUBindGroup>(group);
 }
 
-GPURenderPipeline* GPU::CreateRenderPipeline(
-    GPURenderPipelineDescriptor* descriptor) {
+RefPtr<GPURenderPipeline> GPU::CreateRenderPipeline(
+    RefPtr<GPURenderPipelineDescriptor> descriptor) {
   if (!descriptor->layout || !descriptor->vertex_module) {
     LOGGER_ERROR(
         "[GPU] create_render_pipeline: the descriptor needs a layout and a "
@@ -937,11 +946,11 @@ GPURenderPipeline* GPU::CreateRenderPipeline(
 
   wgpu::RenderPipeline pipeline =
       GPUDevice::Get().device().CreateRenderPipeline(&desc);
-  return MakeGarbageCollected<GPURenderPipeline>(pipeline);
+  return MakeRefCounted<GPURenderPipeline>(pipeline);
 }
 
-GPUComputePipeline* GPU::CreateComputePipeline(
-    GPUComputePipelineDescriptor* descriptor) {
+RefPtr<GPUComputePipeline> GPU::CreateComputePipeline(
+    RefPtr<GPUComputePipelineDescriptor> descriptor) {
   if (!descriptor->layout || !descriptor->module) {
     LOGGER_ERROR(
         "[GPU] create_compute_pipeline: the descriptor needs a layout and a "
@@ -955,22 +964,24 @@ GPUComputePipeline* GPU::CreateComputePipeline(
   desc.compute.entryPoint = View(descriptor->entry_point);
   wgpu::ComputePipeline pipeline =
       GPUDevice::Get().device().CreateComputePipeline(&desc);
-  return MakeGarbageCollected<GPUComputePipeline>(pipeline);
+  return MakeRefCounted<GPUComputePipeline>(pipeline);
 }
 
-GPUQuerySet* GPU::CreateQuerySet(GPUQuerySetDescriptor* descriptor) {
+RefPtr<GPUQuerySet> GPU::CreateQuerySet(
+    RefPtr<GPUQuerySetDescriptor> descriptor) {
   wgpu::QuerySetDescriptor desc;
   desc.label = View(descriptor->label);
   desc.type = static_cast<wgpu::QueryType>(descriptor->type);
   desc.count = descriptor->count;
   wgpu::QuerySet query_set = GPUDevice::Get().device().CreateQuerySet(&desc);
-  return MakeGarbageCollected<GPUQuerySet>(query_set);
+  return MakeRefCounted<GPUQuerySet>(query_set);
 }
 
-GPUCommandEncoder* GPU::CreateCommandEncoder() {
+RefPtr<GPUCommandEncoder> GPU::CreateCommandEncoder() {
   wgpu::CommandEncoderDescriptor desc;
   wgpu::CommandEncoder encoder =
       GPUDevice::Get().device().CreateCommandEncoder(&desc);
-  return MakeGarbageCollected<GPUCommandEncoder>(encoder);
+  return MakeRefCounted<GPUCommandEncoder>(encoder);
 }
+
 }

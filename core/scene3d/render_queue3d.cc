@@ -34,22 +34,6 @@
 
 namespace urge {
 
-void RenderQueue3D::Trace(GCVisitor& visitor) const {
-  Object::Trace(visitor);
-  visitor.Trace(items_);
-  visitor.Trace(lights_);
-}
-
-void RenderQueue3D::Item::Trace(GCVisitor& visitor) const {
-  visitor.Trace(renderer);
-  visitor.Trace(mesh);
-  visitor.Trace(pass);
-}
-
-void RenderQueue3D::LightItem::Trace(GCVisitor& visitor) const {
-  visitor.Trace(light);
-}
-
 RenderQueue3D::RenderQueue3D() = default;
 
 RenderQueue3D::~RenderQueue3D() = default;
@@ -108,7 +92,7 @@ void RenderQueue3D::CollectNode(Node3D* node,
   }
 
   if (MeshRenderer3D* renderer = dynamic_cast<MeshRenderer3D*>(node)) {
-    Mesh3D* mesh = renderer->mesh();
+    RefPtr<Mesh3D> mesh = renderer->mesh();
     const bool drawable = mesh && mesh->index_count() > 0 &&
                           mesh->VertexCount() > 0 &&
                           !renderer->materials().empty();
@@ -138,12 +122,12 @@ void RenderQueue3D::CollectNode(Node3D* node,
             continue;
 
           for (const std::string& tag : found->second->Tags()) {
-            MaterialPass3D* pass = found->second->GetPass(tag);
+            RefPtr<MaterialPass3D> pass = found->second->GetPass(tag);
             if (!pass)
               continue;
 
             Item item;
-            item.renderer = renderer;
+            item.renderer = RefPtr<MeshRenderer3D>(renderer);
             item.mesh = mesh;
             item.pass = pass;
             item.tag = tag;
@@ -156,7 +140,7 @@ void RenderQueue3D::CollectNode(Node3D* node,
             item.center = center;
             item.radius = radius;
             item.model = world;
-            item.state_key = reinterpret_cast<uint64_t>(pass);
+            item.state_key = reinterpret_cast<uint64_t>(pass.get());
             item.culled = !layer_match || !visible;
             item.slot = slot;
             items_.push_back(std::move(item));
@@ -166,7 +150,7 @@ void RenderQueue3D::CollectNode(Node3D* node,
     }
   }
 
-  for (const auto& child : node->children())
+  for (const RefPtr<Node3D>& child : node->children())
     CollectNode(child.get(), world, camera, eye, target_size, pool);
 }
 

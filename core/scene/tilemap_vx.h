@@ -42,14 +42,14 @@ class TilemapVX;
 
 class TilemapVXAbove : public Node {
  public:
-  TilemapVXAbove(TilemapVX* parent, Viewport* viewport);
+  TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport);
 
  private:
   void DisposeObject() override;
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  WeakMember<TilemapVX> parent_;
+  TilemapVX* parent_ = nullptr;
 };
 
 URGE_BINDING()
@@ -60,7 +60,6 @@ class TilemapVX : public Node {
             MaybePtr<Viewport> viewport = nullptr,
             int32_t tilesize = 32);
   ~TilemapVX() override;
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void Update();
@@ -68,7 +67,7 @@ class TilemapVX : public Node {
   URGE_BINDING()
   void SetBitmap(int32_t index, MaybePtr<Bitmap> bitmap);
   URGE_BINDING()
-  Bitmap* GetBitmap(int32_t index);
+  RefPtr<Bitmap> GetBitmap(int32_t index);
 
   URGE_BINDING()
   ATTR(MaybePtr<Viewport>, Viewport);
@@ -93,24 +92,18 @@ class TilemapVX : public Node {
   friend class TilemapVXAbove;
 
   struct TileQuad {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(texture); }
-
-    Member<Bitmap> texture;
+    RefPtr<Bitmap> texture;
     RectF source;
     RectF destination;
     glm::vec4 color = glm::vec4(1.0f);
   };
 
   struct TileDraw {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(texture); }
-
-    Member<Bitmap> texture;
+    RefPtr<Bitmap> texture;
     PrimitiveEmitter::Slot slot;
   };
 
   struct TileLayer {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(draws); }
-
     PrimitiveEmitter primitive;
     std::vector<TileDraw> draws;
     bool valid = false;
@@ -143,8 +136,8 @@ class TilemapVX : public Node {
 
   bool rgss3_style_ = true;
 
-  Member<TilemapVXAbove> above_;
-  Member<Bitmap> shadow_texture_;
+  RefPtr<TilemapVXAbove> above_;
+  RefPtr<Bitmap> shadow_texture_;
 
   RectI render_viewport_ = {};
   glm::vec2 render_offset_ = glm::vec2(0.0f);
@@ -157,10 +150,10 @@ class TilemapVX : public Node {
   int32_t regular_anim_ = 0;
   int32_t waterfall_anim_ = 0;
 
-  Member<Bitmap> bitmaps_[TILE_NUMS] = {};
-  Member<Table> map_data_;
-  Member<Table> flash_data_;
-  Member<Table> flags_;
+  RefPtr<Bitmap> bitmaps_[TILE_NUMS] = {};
+  RefPtr<Table> map_data_;
+  RefPtr<Table> flash_data_;
+  RefPtr<Table> flags_;
   int32_t ox_ = 0, oy_ = 0;
   bool xrepeat_ = true, yrepeat_ = true;
   int32_t tilesize_ = 32;

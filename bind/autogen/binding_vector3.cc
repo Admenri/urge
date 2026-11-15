@@ -27,47 +27,61 @@ namespace binding {
 RB_DEF_TYPE(Vector3);
 
 RB_FUNC(Vector3_initialize) {
-  CheckConstructorSelf(self, kVector3DataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Vector3* result = nullptr;
 
     {
-      urge::Vector3* value = urge::MakeGarbageCollected<urge::Vector3>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Vector3> value = urge::MakeRefCounted<urge::Vector3>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(v)
     double v;
     ParseArgs(argc, argv, "f", &v);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Vector3* result = nullptr;
 
     {
-      urge::Vector3* value = urge::MakeGarbageCollected<urge::Vector3>(
+      urge::RefPtr<urge::Vector3> value = urge::MakeRefCounted<urge::Vector3>(
           static_cast<float>(v));
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 3) {
     // initialize(xv, yv, zv)
     double xv, yv, zv;
     ParseArgs(argc, argv, "fff", &xv, &yv, &zv);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Vector3* result = nullptr;
 
     {
-      urge::Vector3* value = urge::MakeGarbageCollected<urge::Vector3>(
+      urge::RefPtr<urge::Vector3> value = urge::MakeRefCounted<urge::Vector3>(
           static_cast<float>(xv), static_cast<float>(yv),
           static_cast<float>(zv));
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -77,21 +91,22 @@ RB_FUNC(Vector3_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
-  if (self == other_val)
-    return self;
-  CheckConstructorSelf(self, kVector3DataType);
   urge::Vector3* other_obj = CheckObject<urge::Vector3>(other_val, kVector3DataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Vector3* result = nullptr;
 
   {
-    urge::Vector3* value = urge::MakeGarbageCollected<urge::Vector3>(other_obj);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Vector3> value = urge::MakeRefCounted<urge::Vector3>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(other_val);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Vector3_Set) {
@@ -107,7 +122,6 @@ RB_FUNC(Vector3_Set) {
     {
       self_obj->Set(v);
     }
-    RB_GC_GUARD(v_val);
 
     return Qnil;
   } else if (argc == 3) {
@@ -140,7 +154,6 @@ void InitVector3BindingAppend(VALUE klass);
 void InitVector3Binding() {
   auto klass = rb_define_class("Vector3", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kVector3DataType>);
-  RegisterNativeType<urge::Vector3>(klass, kVector3DataType);
 
   DefineMethod(klass, "initialize", Vector3_initialize);
   DefineMethod(klass, "initialize_copy", Vector3_initialize_copy);

@@ -26,23 +26,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderQueue3D  (core/scene3d/render_queue3d.h:45-109)
+// RenderQueue3D  (core/scene3d/render_queue3d.h:44-101)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderQueue3D);
 
 RB_FUNC(RenderQueue3D_initialize) {
-  CheckConstructorSelf(self, kRenderQueue3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::RenderQueue3D* result = nullptr;
 
   {
-    urge::RenderQueue3D* value = urge::MakeGarbageCollected<urge::RenderQueue3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::RenderQueue3D> value = urge::MakeRefCounted<urge::RenderQueue3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(RenderQueue3D_Count) {
@@ -81,7 +84,9 @@ RB_FUNC(RenderQueue3D_Tags) {
     result = new std::vector<std::string>(self_obj->Tags());
   }
 
-  return OwnedWrapVector<std::string>(result);
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 void InitRenderQueue3DBindingAppend(VALUE klass);
@@ -89,10 +94,8 @@ void InitRenderQueue3DBindingAppend(VALUE klass);
 void InitRenderQueue3DBinding() {
   auto klass = rb_define_class("RenderQueue3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRenderQueue3DDataType>);
-  RegisterNativeType<urge::RenderQueue3D>(klass, kRenderQueue3DDataType);
 
   DefineMethod(klass, "initialize", RenderQueue3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "count", RenderQueue3D_Count);
   DefineMethod(klass, "light_count", RenderQueue3D_LightCount);
   DefineMethod(klass, "tags", RenderQueue3D_Tags);

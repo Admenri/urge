@@ -102,12 +102,6 @@ WebSocket::WebSocket(std::string url, std::vector<std::string> protocols)
 
 WebSocket::~WebSocket() = default;
 
-void WebSocket::PrepareForCollection() {
-  // The backend owns asynchronous callbacks and explicit native event roots.
-  // Stop/untrack it while the whole managed garbage batch still exists.
-  impl_.reset();
-}
-
 void WebSocket::Attach(std::unique_ptr<WebSocketImpl> impl) {
   impl_ = std::move(impl);
 }
@@ -154,7 +148,7 @@ void WebSocket::Close(int32_t code, std::string reason) {
     impl_->Close(code, reason);
 }
 
-NetworkEvent* WebSocket::NextEvent() {
+RefPtr<NetworkEvent> WebSocket::NextEvent() {
   if (!impl_)
     return nullptr;
 
@@ -180,12 +174,6 @@ Fetch::Fetch(std::string url,
       request_headers_(std::move(headers)) {}
 
 Fetch::~Fetch() = default;
-
-void Fetch::PrepareForCollection() {
-  if (impl_)
-    impl_->Abort();
-  impl_.reset();
-}
 
 void Fetch::Attach(std::unique_ptr<FetchImpl> impl) {
   impl_ = std::move(impl);
@@ -265,9 +253,9 @@ void Network::CloseAll() {
 #endif
 }
 
-WebSocket* Network::OpenWebSocket(URGE_EXCEPT,
-                                  std::string url,
-                                  std::vector<std::string> protocols) {
+RefPtr<WebSocket> Network::OpenWebSocket(URGE_EXCEPT,
+                                         std::string url,
+                                         std::vector<std::string> protocols) {
 #if URGE_ENABLE_NETWORK
   return backend_->OpenWebSocket(url, protocols);
 #else
@@ -276,11 +264,11 @@ WebSocket* Network::OpenWebSocket(URGE_EXCEPT,
 #endif
 }
 
-Fetch* Network::OpenFetch(URGE_EXCEPT,
-                          std::string url,
-                          std::string method,
-                          std::string body,
-                          std::vector<std::string> headers) {
+RefPtr<Fetch> Network::OpenFetch(URGE_EXCEPT,
+                                 std::string url,
+                                 std::string method,
+                                 std::string body,
+                                 std::vector<std::string> headers) {
 #if URGE_ENABLE_NETWORK
   return backend_->OpenFetch(url, method, body, headers);
 #else

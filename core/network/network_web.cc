@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/common/persistent.h"
 #include "core/network/network_backend.h"
 
 #include <emscripten/fetch.h>
@@ -39,8 +38,8 @@ namespace urge {
 
 namespace {
 
-Persistent<NetworkEvent> MakeEvent(int32_t type) {
-  Persistent<NetworkEvent> event = MakeGarbageCollected<NetworkEvent>();
+RefPtr<NetworkEvent> MakeEvent(int32_t type) {
+  auto event = MakeRefCounted<NetworkEvent>();
   event->type_ = type;
   return event;
 }
@@ -104,7 +103,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
 
     while (static_cast<int32_t>(main_queue_.size()) > max_events_) {
       auto it = std::find_if(main_queue_.begin(), main_queue_.end(),
-                             [](const Persistent<NetworkEvent>& event) {
+                             [](const RefPtr<NetworkEvent>& event) {
                                return event->type_ != NetworkEvent::Close &&
                                       event->type_ != NetworkEvent::Error;
                              });
@@ -118,13 +117,13 @@ class WebWebSocketImpl final : public WebSocketImpl {
 
   void SetMaxEvents(int32_t max_events) override { max_events_ = max_events; }
 
-  NetworkEvent* NextEvent() override {
+  RefPtr<NetworkEvent> NextEvent() override {
     if (main_queue_.empty())
       return nullptr;
 
     auto event = std::move(main_queue_.front());
     main_queue_.pop_front();
-    return event.get();
+    return event;
   }
 
   int32_t Pending() override {
@@ -156,16 +155,11 @@ class WebWebSocketImpl final : public WebSocketImpl {
                                reason.c_str());
   }
 
-  void DetachBackend() {
-    backend_ = nullptr;
-    Stop();
-  }
-
   void Stop() {
-    stopped_ = true;
-    ready_state_ = WebSocket::ClosedState;
     if (socket_ < 0)
       return;
+
+    stopped_ = true;
 
     emscripten_websocket_set_onopen_callback(socket_, nullptr, nullptr);
     emscripten_websocket_set_onmessage_callback(socket_, nullptr, nullptr);
@@ -252,7 +246,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
     error_ = "the websocket reported an error";
   }
 
-  void PushEvent(Persistent<NetworkEvent> event) {
+  void PushEvent(RefPtr<NetworkEvent> event) {
     worker_queue_.push_back(std::move(event));
   }
 
@@ -271,36 +265,28 @@ class WebWebSocketImpl final : public WebSocketImpl {
   int32_t dropped_ = 0;
   int32_t max_events_ = 1024;
 
-  std::deque<Persistent<NetworkEvent>> worker_queue_;
-  std::deque<Persistent<NetworkEvent>> main_queue_;
+  std::deque<RefPtr<NetworkEvent>> worker_queue_;
+  std::deque<RefPtr<NetworkEvent>> main_queue_;
 };
 
 class WebFetchImpl final : public FetchImpl {
  public:
-  WebFetchImpl(NetworkBackend* backend,
-               std::string url,
+  WebFetchImpl(std::string url,
                std::string method,
                std::string body,
                std::vector<std::string> headers)
-      : backend_(backend),
-        url_(std::move(url)),
+      : url_(std::move(url)),
         method_(std::move(method)),
         body_(std::move(body)),
         headers_(std::move(headers)) {}
 
   ~WebFetchImpl() override {
-    if (backend_)
-      backend_->Untrack(this);
-    Abort();
-  }
-
-  void DetachBackend() {
-    backend_ = nullptr;
-    Abort();
+    if (fetch_)
+      emscripten_fetch_close(fetch_);
   }
 
   void Start() override {
-    if (started_ || aborted_)
+    if (started_)
       return;
 
     started_ = true;
@@ -346,9 +332,9 @@ class WebFetchImpl final : public FetchImpl {
 
   void Abort() override {
     aborted_ = true;
-    auto* fetch = std::exchange(fetch_, nullptr);
-    if (fetch)
-      emscripten_fetch_close(fetch);
+    if (fetch_)
+      emscripten_fetch_close(fetch_);
+    fetch_ = nullptr;
   }
 
   void Poll(Fetch& self) override {
@@ -423,7 +409,6 @@ class WebFetchImpl final : public FetchImpl {
     done_ = true;
   }
 
-  NetworkBackend* backend_ = nullptr;
   std::string url_;
   std::string method_;
   std::string body_;
@@ -447,11 +432,9 @@ class WebFetchImpl final : public FetchImpl {
 
 class WebNetworkBackend final : public NetworkBackend {
  public:
-  ~WebNetworkBackend() override { GlobalCleanup(); }
-
   void GlobalInit() override {}
 
-  void GlobalCleanup() override { CloseAll(); }
+  void GlobalCleanup() override {}
 
   void Update() override {
     for (auto* socket : sockets_)
@@ -464,9 +447,10 @@ class WebNetworkBackend final : public NetworkBackend {
       socket->SetMaxEvents(max_events_);
   }
 
-  WebSocket* OpenWebSocket(const std::string& url,
-                           const std::vector<std::string>& protocols) override {
-    auto socket = MakeGarbageCollected<WebSocket>(url, protocols);
+  RefPtr<WebSocket> OpenWebSocket(
+      const std::string& url,
+      const std::vector<std::string>& protocols) override {
+    auto socket = MakeRefCounted<WebSocket>(url, protocols);
     auto impl = std::make_unique<WebWebSocketImpl>(this, url, protocols);
     impl->SetMaxEvents(max_events_);
     WebWebSocketImpl* raw = impl.get();
@@ -476,28 +460,19 @@ class WebNetworkBackend final : public NetworkBackend {
     return socket;
   }
 
-  Fetch* OpenFetch(const std::string& url,
-                   const std::string& method,
-                   const std::string& body,
-                   const std::vector<std::string>& headers) override {
-    auto fetch = MakeGarbageCollected<Fetch>(url, method, body, headers);
-    auto impl =
-        std::make_unique<WebFetchImpl>(this, url, method, body, headers);
-    WebFetchImpl* raw = impl.get();
-    fetch->Attach(std::move(impl));
-    fetches_.push_back(raw);
+  RefPtr<Fetch> OpenFetch(const std::string& url,
+                          const std::string& method,
+                          const std::string& body,
+                          const std::vector<std::string>& headers) override {
+    auto fetch = MakeRefCounted<Fetch>(url, method, body, headers);
+    fetch->Attach(std::make_unique<WebFetchImpl>(url, method, body, headers));
     return fetch;
   }
 
   void CloseAll() override {
-    std::vector<WebWebSocketImpl*> sockets;
-    std::vector<WebFetchImpl*> fetches;
-    sockets.swap(sockets_);
-    fetches.swap(fetches_);
-    for (auto* socket : sockets)
-      socket->DetachBackend();
-    for (auto* fetch : fetches)
-      fetch->DetachBackend();
+    for (auto* socket : sockets_)
+      socket->Stop();
+    sockets_.clear();
   }
 
   void Untrack(WebSocketImpl* impl) override {
@@ -506,16 +481,8 @@ class WebNetworkBackend final : public NetworkBackend {
                    sockets_.end());
   }
 
-  void Untrack(FetchImpl* impl) override {
-    auto* fetch = static_cast<WebFetchImpl*>(impl);
-    fetches_.erase(std::remove(fetches_.begin(), fetches_.end(), fetch),
-                   fetches_.end());
-  }
-
  private:
-  // Non-owning registries; WebSocket/Fetch wrappers own their implementations.
   std::vector<WebWebSocketImpl*> sockets_;
-  std::vector<WebFetchImpl*> fetches_;
   int32_t max_events_ = 1024;
 };
 

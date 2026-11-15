@@ -32,25 +32,28 @@ namespace binding {
 RB_DEF_TYPE(AudioStream);
 
 RB_FUNC(AudioStream_initialize) {
-  CheckConstructorSelf(self, kAudioStreamDataType);
-  CheckArgc(argc, 1);
   urge::ExceptionState exception_state;
   VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
   ParseArgs(argc, argv, "o", &filename_val);
-  filename_val = CheckString(filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::AudioStream* result = nullptr;
 
   {
-    urge::AudioStream* value = urge::MakeGarbageCollected<urge::AudioStream>(
-        exception_state, TakeString(filename_val));
-    if (!exception_state.HadException())
-      result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::AudioStream> value = urge::MakeRefCounted<urge::AudioStream>(
+        exception_state, std::string(filename_data, filename_size));
+    result = exception_state.HadException() ? nullptr : value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(filename_val);
   RaiseException(exception_state);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(AudioStream_Start) {
@@ -186,10 +189,8 @@ void InitAudioStreamBindingAppend(VALUE klass);
 void InitAudioStreamBinding() {
   auto klass = rb_define_class("AudioStream", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kAudioStreamDataType>);
-  RegisterNativeType<urge::AudioStream>(klass, kAudioStreamDataType);
 
   DefineMethod(klass, "initialize", AudioStream_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "start", AudioStream_Start);
   DefineMethod(klass, "stop", AudioStream_Stop);
   DefineMethod(klass, "seek", AudioStream_Seek);

@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/common/utility.h"
 #include "core/scene3d/camera3d.h"
@@ -41,8 +40,6 @@ class Scene3D : public Node3D {
   Scene3D();
   ~Scene3D() override;
 
-  void Trace(GCVisitor& visitor) const override;
-
   URGE_BINDING(Name : "ambient")
   ATTR(MaybePtr<Color>, Ambient) {
     if (value.has_value()) {
@@ -50,23 +47,23 @@ class Scene3D : public Node3D {
         ambient_ = *value;
       return std::nullopt;
     }
-    return ambient_.get();
+    return ambient_;
   }
 
   URGE_BINDING()
   void Add(MaybePtr<Node3D> node);
   URGE_BINDING()
-  std::vector<Camera3D*> Cameras();
+  std::vector<RefPtr<Camera3D>> Cameras();
   URGE_BINDING()
   int32_t NodeCount() const;
 
-  Color* ambient() const { return ambient_.get(); }
+  const RefPtr<Color>& ambient() const { return ambient_; }
 
  private:
-  void CollectCameras(Node3D* node, std::vector<Camera3D*>& out);
+  void CollectCameras(Node3D* node, std::vector<RefPtr<Camera3D>>& out);
   int32_t CountNodes(const Node3D* node) const;
 
-  Member<Color> ambient_ =
-      MakeGarbageCollected<Color>(26.0f, 28.0f, 36.0f, 255.0f);
+  RefPtr<Color> ambient_ = MakeRefCounted<Color>(26.0f, 28.0f, 36.0f, 255.0f);
 };
+
 }

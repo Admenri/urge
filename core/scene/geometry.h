@@ -41,20 +41,22 @@ class Geometry : public Node {
   URGE_BINDING()
   Geometry(MaybePtr<Viewport> viewport = nullptr);
   ~Geometry() override;
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void SetPosition(URGE_EXCEPT,
                    int32_t triangle,
                    int32_t point,
-                   Vector3* position);
+                   RefPtr<Vector3> position);
   URGE_BINDING()
   void SetTexcoord(URGE_EXCEPT,
                    int32_t triangle,
                    int32_t point,
-                   Vector2* texcoord);
+                   RefPtr<Vector2> texcoord);
   URGE_BINDING()
-  void SetColor(URGE_EXCEPT, int32_t triangle, int32_t point, Color* color);
+  void SetColor(URGE_EXCEPT,
+                int32_t triangle,
+                int32_t point,
+                RefPtr<Color> color);
 
   URGE_BINDING()
   ATTR(MaybePtr<Viewport>, Viewport);
@@ -74,10 +76,10 @@ class Geometry : public Node {
 
   PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter);
 
-  Member<Bitmap> bitmap_;
+  RefPtr<Bitmap> bitmap_;
   int32_t blend_type_ = 0;
 
-  Member<Effect> effect_;
+  RefPtr<Effect> effect_;
 
   struct TriangleData {
     VertexData vertex[3];

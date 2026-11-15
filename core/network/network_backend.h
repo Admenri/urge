@@ -41,7 +41,7 @@ class WebSocketImpl {
   virtual void Swap() = 0;
   virtual void SetMaxEvents(int32_t max_events) = 0;
 
-  virtual NetworkEvent* NextEvent() = 0;
+  virtual RefPtr<NetworkEvent> NextEvent() = 0;
   virtual int32_t Pending() = 0;
 
   virtual void SendText(const std::string& data) = 0;
@@ -82,20 +82,17 @@ class NetworkBackend {
 
   virtual void SetMaxEvents(int32_t max_events) = 0;
 
-  virtual WebSocket* OpenWebSocket(
+  virtual RefPtr<WebSocket> OpenWebSocket(
       const std::string& url,
       const std::vector<std::string>& protocols) = 0;
-  virtual Fetch* OpenFetch(const std::string& url,
-                           const std::string& method,
-                           const std::string& body,
-                           const std::vector<std::string>& headers) = 0;
+  virtual RefPtr<Fetch> OpenFetch(const std::string& url,
+                                  const std::string& method,
+                                  const std::string& body,
+                                  const std::vector<std::string>& headers) = 0;
 
   virtual void CloseAll() = 0;
 
-  // Registries are non-owning; shutdown must detach their implementations
-  // before this backend dies, even when a managed wrapper has a native root.
   virtual void Untrack(WebSocketImpl* impl) = 0;
-  virtual void Untrack(FetchImpl* impl) = 0;
 
  protected:
   NetworkBackend() = default;

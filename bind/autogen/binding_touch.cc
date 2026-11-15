@@ -57,7 +57,9 @@ RB_FUNC(Touch_Ids) {
     result = new std::vector<int64_t>(urge::Touch::Get().Ids());
   }
 
-  return OwnedWrapVector<int64_t>(result);
+  VALUE value = WrapVectorOf<int64_t>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Touch_IdAt) {

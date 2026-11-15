@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/scene3d/animation3d.h"
 
@@ -43,12 +42,10 @@ class AnimationStateMachine3D : public Object {
   AnimationStateMachine3D();
   ~AnimationStateMachine3D() override;
 
-  void Trace(GCVisitor& visitor) const override;
-
   URGE_BINDING()
   void AddState(URGE_EXCEPT,
                 std::string name,
-                Animation3D* animation,
+                RefPtr<Animation3D> animation,
                 bool loop);
   URGE_BINDING()
   void AddTransition(URGE_EXCEPT,
@@ -60,7 +57,7 @@ class AnimationStateMachine3D : public Object {
   URGE_BINDING()
   bool Play(URGE_EXCEPT, std::string name);
   URGE_BINDING()
-  void Update(URGE_EXCEPT, Skeleton3D* skeleton, float delta);
+  void Update(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float delta);
 
   URGE_BINDING(Name : "state")
   std::string CurrentState() const { return current_name_; }
@@ -74,10 +71,8 @@ class AnimationStateMachine3D : public Object {
 
  private:
   struct State {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(animation); }
-
     std::string name;
-    Member<Animation3D> animation;
+    RefPtr<Animation3D> animation;
     bool loop = true;
   };
 

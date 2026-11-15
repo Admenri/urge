@@ -28,23 +28,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUShaderModuleDescriptor  (core/graphics/gpu.h:324-341)
+// GPUShaderModuleDescriptor  (core/graphics/gpu.h:323-340)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUShaderModuleDescriptor, GPUObject);
 
 RB_FUNC(GPUShaderModuleDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPUShaderModuleDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPUShaderModuleDescriptor* result = nullptr;
 
   {
-    urge::GPUShaderModuleDescriptor* value = urge::MakeGarbageCollected<urge::GPUShaderModuleDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPUShaderModuleDescriptor> value = urge::MakeRefCounted<urge::GPUShaderModuleDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUShaderModuleDescriptor_GetLabel) {
@@ -57,7 +60,11 @@ RB_FUNC(GPUShaderModuleDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUShaderModuleDescriptor_SetLabel) {
@@ -65,13 +72,14 @@ RB_FUNC(GPUShaderModuleDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -86,7 +94,11 @@ RB_FUNC(GPUShaderModuleDescriptor_GetCode) {
     result = new std::string(self_obj->GetCode());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUShaderModuleDescriptor_SetCode) {
@@ -94,13 +106,14 @@ RB_FUNC(GPUShaderModuleDescriptor_SetCode) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetCode(TakeString(value_val));
+    self_obj->SetCode(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -115,7 +128,11 @@ RB_FUNC(GPUShaderModuleDescriptor_GetEntryPoint) {
     result = new std::string(self_obj->GetEntryPoint());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUShaderModuleDescriptor_SetEntryPoint) {
@@ -123,13 +140,14 @@ RB_FUNC(GPUShaderModuleDescriptor_SetEntryPoint) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetEntryPoint(TakeString(value_val));
+    self_obj->SetEntryPoint(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -140,10 +158,8 @@ void InitGPUShaderModuleDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUShaderModuleDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUShaderModuleDescriptorDataType>);
-  RegisterNativeType<urge::GPUShaderModuleDescriptor>(klass, kGPUShaderModuleDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUShaderModuleDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUShaderModuleDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUShaderModuleDescriptor_SetLabel);
   DefineMethod(klass, "code", GPUShaderModuleDescriptor_GetCode);

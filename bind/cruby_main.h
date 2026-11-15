@@ -61,7 +61,6 @@ class BindingMain {
 #endif
 
   int error_state_ = 0;
-  bool vm_initialized_ = false;
 };
 
 }

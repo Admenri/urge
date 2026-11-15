@@ -27,32 +27,41 @@ namespace binding {
 RB_DEF_TYPE(Rect);
 
 RB_FUNC(Rect_initialize) {
-  CheckConstructorSelf(self, kRectDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Rect* result = nullptr;
 
     {
-      urge::Rect* value = urge::MakeGarbageCollected<urge::Rect>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 4) {
     // initialize(xv, yv, wv, hv)
     int xv, yv, wv, hv;
     ParseArgs(argc, argv, "iiii", &xv, &yv, &wv, &hv);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Rect* result = nullptr;
 
     {
-      urge::Rect* value = urge::MakeGarbageCollected<urge::Rect>(xv, yv, wv,
-          hv);
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>(xv, yv,
+          wv, hv);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -62,21 +71,22 @@ RB_FUNC(Rect_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
-  if (self == other_val)
-    return self;
-  CheckConstructorSelf(self, kRectDataType);
   urge::Rect* other_obj = CheckObject<urge::Rect>(other_val, kRectDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Rect* result = nullptr;
 
   {
-    urge::Rect* value = urge::MakeGarbageCollected<urge::Rect>(other_obj);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Rect> value = urge::MakeRefCounted<urge::Rect>(other_obj);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(other_val);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Rect__dump) {
@@ -85,30 +95,39 @@ RB_FUNC(Rect__dump) {
   std::string* result = nullptr;
 
   {
-    result = new std::string(urge::Rect::MarshalDump(self_obj));
+    result = new std::string(urge::Rect::MarshalDump(urge::RefPtr<urge::Rect>(self_obj)));
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(Rect__load) {
   VALUE data_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &data_val);
-  data_val = CheckString(data_val);
+  const char* data_data;
+  size_t data_size;
+  CheckString(data_val, &data_data, &data_size);
 
   urge::ExceptionState exception_state;
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Rect* result = nullptr;
 
   {
-    urge::Rect* value = urge::Rect::MarshalLoad(exception_state, TakeString(data_val));
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Rect> value = urge::Rect::MarshalLoad(exception_state, std::string(data_data, data_size));
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(data_val);
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedSetupSelf(self, result, true);
+  VALUE object = SetupSelfData(rb_obj_alloc(self), result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Value equality: ==, eql?, === (KLASS_EQUAL)
@@ -144,7 +163,6 @@ RB_FUNC(Rect_Set) {
     {
       self_obj->Set(rect);
     }
-    RB_GC_GUARD(rect_val);
 
     return Qnil;
   } else if (argc == 4) {
@@ -190,7 +208,6 @@ void InitRectBindingAppend(VALUE klass);
 void InitRectBinding() {
   auto klass = rb_define_class("Rect", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRectDataType>);
-  RegisterNativeType<urge::Rect>(klass, kRectDataType);
 
   DefineMethod(klass, "initialize", Rect_initialize);
   DefineMethod(klass, "initialize_copy", Rect_initialize_copy);

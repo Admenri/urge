@@ -32,23 +32,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupDescriptor  (core/graphics/gpu.h:410-437)
+// GPUBindGroupDescriptor  (core/graphics/gpu.h:409-435)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupDescriptor, GPUObject);
 
 RB_FUNC(GPUBindGroupDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPUBindGroupDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPUBindGroupDescriptor* result = nullptr;
 
   {
-    urge::GPUBindGroupDescriptor* value = urge::MakeGarbageCollected<urge::GPUBindGroupDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPUBindGroupDescriptor> value = urge::MakeRefCounted<urge::GPUBindGroupDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_GetLabel) {
@@ -61,7 +64,11 @@ RB_FUNC(GPUBindGroupDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUBindGroupDescriptor_SetLabel) {
@@ -69,13 +76,14 @@ RB_FUNC(GPUBindGroupDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -93,7 +101,6 @@ RB_FUNC(GPUBindGroupDescriptor_AddBuffer) {
   {
     self_obj->AddBuffer(binding, buffer);
   }
-  RB_GC_GUARD(buffer_val);
 
   return Qnil;
 }
@@ -112,7 +119,6 @@ RB_FUNC(GPUBindGroupDescriptor_AddBufferRange) {
   {
     self_obj->AddBufferRange(binding, buffer, offset, size);
   }
-  RB_GC_GUARD(buffer_val);
 
   return Qnil;
 }
@@ -130,7 +136,6 @@ RB_FUNC(GPUBindGroupDescriptor_AddTexture) {
   {
     self_obj->AddTexture(binding, view);
   }
-  RB_GC_GUARD(view_val);
 
   return Qnil;
 }
@@ -148,7 +153,6 @@ RB_FUNC(GPUBindGroupDescriptor_AddSampler) {
   {
     self_obj->AddSampler(binding, sampler);
   }
-  RB_GC_GUARD(sampler_val);
 
   return Qnil;
 }
@@ -167,10 +171,8 @@ void InitGPUBindGroupDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUBindGroupDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUBindGroupDescriptorDataType>);
-  RegisterNativeType<urge::GPUBindGroupDescriptor>(klass, kGPUBindGroupDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUBindGroupDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUBindGroupDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUBindGroupDescriptor_SetLabel);
   DefineMethod(klass, "add_buffer", GPUBindGroupDescriptor_AddBuffer);

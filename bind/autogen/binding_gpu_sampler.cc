@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUSampler  (core/graphics/gpu.h:816-816)
+// GPUSampler  (core/graphics/gpu.h:810-810)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUSampler, GPUObject);
@@ -39,9 +39,7 @@ void InitGPUSamplerBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUSampler", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUSamplerDataType>);
-  RegisterNativeType<urge::GPUSampler>(klass, kGPUSamplerDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUSamplerBindingAppend(klass);
 }
 // --- GENERATED END ---

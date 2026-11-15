@@ -135,7 +135,7 @@ int32_t Mouse::ScrollY() {
 }
 
 void Mouse::SetCursor(URGE_EXCEPT,
-                      Bitmap* image,
+                      RefPtr<Bitmap> image,
                       int32_t hot_x,
                       int32_t hot_y) {
   if (!image) {
@@ -147,7 +147,7 @@ void Mouse::SetCursor(URGE_EXCEPT,
     return;
   }
 
-  Image* surface = image->ToImage(exception_state);
+  RefPtr<Image> surface = image->ToImage(exception_state);
   if (!surface)
     return;
 

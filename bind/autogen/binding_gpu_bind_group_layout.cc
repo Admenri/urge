@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBindGroupLayout  (core/graphics/gpu.h:838-838)
+// GPUBindGroupLayout  (core/graphics/gpu.h:832-832)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBindGroupLayout, GPUObject);
@@ -39,9 +39,7 @@ void InitGPUBindGroupLayoutBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUBindGroupLayout", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUBindGroupLayoutDataType>);
-  RegisterNativeType<urge::GPUBindGroupLayout>(klass, kGPUBindGroupLayoutDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUBindGroupLayoutBindingAppend(klass);
 }
 // --- GENERATED END ---

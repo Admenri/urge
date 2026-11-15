@@ -30,23 +30,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPipelineDescriptor  (core/graphics/gpu.h:485-598)
+// GPURenderPipelineDescriptor  (core/graphics/gpu.h:482-594)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPipelineDescriptor, GPUObject);
 
 RB_FUNC(GPURenderPipelineDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPURenderPipelineDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPURenderPipelineDescriptor* result = nullptr;
 
   {
-    urge::GPURenderPipelineDescriptor* value = urge::MakeGarbageCollected<urge::GPURenderPipelineDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPURenderPipelineDescriptor> value = urge::MakeRefCounted<urge::GPURenderPipelineDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPURenderPipelineDescriptor_GetLabel) {
@@ -59,7 +62,11 @@ RB_FUNC(GPURenderPipelineDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPURenderPipelineDescriptor_SetLabel) {
@@ -67,13 +74,14 @@ RB_FUNC(GPURenderPipelineDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -88,7 +96,11 @@ RB_FUNC(GPURenderPipelineDescriptor_GetVertexEntryPoint) {
     result = new std::string(self_obj->GetVertexEntryPoint());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPURenderPipelineDescriptor_SetVertexEntryPoint) {
@@ -96,13 +108,14 @@ RB_FUNC(GPURenderPipelineDescriptor_SetVertexEntryPoint) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetVertexEntryPoint(TakeString(value_val));
+    self_obj->SetVertexEntryPoint(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -117,7 +130,11 @@ RB_FUNC(GPURenderPipelineDescriptor_GetFragmentEntryPoint) {
     result = new std::string(self_obj->GetFragmentEntryPoint());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPURenderPipelineDescriptor_SetFragmentEntryPoint) {
@@ -125,13 +142,14 @@ RB_FUNC(GPURenderPipelineDescriptor_SetFragmentEntryPoint) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetFragmentEntryPoint(TakeString(value_val));
+    self_obj->SetFragmentEntryPoint(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -491,10 +509,8 @@ void InitGPURenderPipelineDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPURenderPipelineDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPURenderPipelineDescriptorDataType>);
-  RegisterNativeType<urge::GPURenderPipelineDescriptor>(klass, kGPURenderPipelineDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPURenderPipelineDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPURenderPipelineDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPURenderPipelineDescriptor_SetLabel);
   DefineMethod(klass, "vertex_entry_point", GPURenderPipelineDescriptor_GetVertexEntryPoint);

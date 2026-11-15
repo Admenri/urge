@@ -31,8 +31,7 @@
 
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/common/member.h"
-#include "core/common/member.h"
+#include "core/common/refptr.h"
 #include "core/render/device.h"
 
 namespace urge {
@@ -398,7 +397,7 @@ class GPUPipelineLayoutDescriptor : public GPUObject {
   }
 
   URGE_BINDING()
-  void AddBindGroupLayout(GPUBindGroupLayout* layout);
+  void AddBindGroupLayout(RefPtr<GPUBindGroupLayout> layout);
 
  public:
   std::string label;
@@ -409,7 +408,6 @@ class GPUPipelineLayoutDescriptor : public GPUObject {
 URGE_BINDING()
 class GPUBindGroupDescriptor : public GPUObject {
  public:
-  void Trace(GCVisitor& visitor) const override;
   URGE_BINDING()
   GPUBindGroupDescriptor() = default;
 
@@ -422,31 +420,30 @@ class GPUBindGroupDescriptor : public GPUObject {
   ATTR(MaybePtr<GPUBindGroupLayout>, Layout) {
     if (value)
       layout = *value;
-    return layout.get();
+    return layout;
   }
 
   URGE_BINDING()
-  void AddBuffer(uint32_t binding, GPUBuffer* buffer);
+  void AddBuffer(uint32_t binding, RefPtr<GPUBuffer> buffer);
   URGE_BINDING()
   void AddBufferRange(uint32_t binding,
-                      GPUBuffer* buffer,
+                      RefPtr<GPUBuffer> buffer,
                       uint64_t offset,
                       uint64_t size);
   URGE_BINDING()
-  void AddTexture(uint32_t binding, GPUTextureView* view);
+  void AddTexture(uint32_t binding, RefPtr<GPUTextureView> view);
   URGE_BINDING()
-  void AddSampler(uint32_t binding, GPUSampler* sampler);
+  void AddSampler(uint32_t binding, RefPtr<GPUSampler> sampler);
 
  public:
   std::string label;
-  Member<GPUBindGroupLayout> layout;
+  RefPtr<GPUBindGroupLayout> layout;
   std::vector<wgpu::BindGroupEntry> entries;
 };
 
 URGE_BINDING()
 class GPUComputePipelineDescriptor : public GPUObject {
  public:
-  void Trace(GCVisitor& visitor) const override;
   URGE_BINDING()
   GPUComputePipelineDescriptor() = default;
 
@@ -459,14 +456,14 @@ class GPUComputePipelineDescriptor : public GPUObject {
   ATTR(MaybePtr<GPUPipelineLayout>, Layout) {
     if (value)
       layout = *value;
-    return layout.get();
+    return layout;
   }
 
   URGE_BINDING()
   ATTR(MaybePtr<GPUShaderModule>, Module) {
     if (value)
       module = *value;
-    return module.get();
+    return module;
   }
 
   URGE_BINDING(Name : "entry_point")
@@ -476,15 +473,14 @@ class GPUComputePipelineDescriptor : public GPUObject {
 
  public:
   std::string label;
-  Member<GPUPipelineLayout> layout;
-  Member<GPUShaderModule> module;
+  RefPtr<GPUPipelineLayout> layout;
+  RefPtr<GPUShaderModule> module;
   std::string entry_point;
 };
 
 URGE_BINDING()
 class GPURenderPipelineDescriptor : public GPUObject {
  public:
-  void Trace(GCVisitor& visitor) const override;
   struct VertexBufferLayout {
     uint64_t stride = 0;
     uint32_t step_mode = 1;
@@ -509,14 +505,14 @@ class GPURenderPipelineDescriptor : public GPUObject {
   ATTR(MaybePtr<GPUPipelineLayout>, Layout) {
     if (value)
       layout = *value;
-    return layout.get();
+    return layout;
   }
 
   URGE_BINDING()
   ATTR(MaybePtr<GPUShaderModule>, VertexModule) {
     if (value)
       vertex_module = *value;
-    return vertex_module.get();
+    return vertex_module;
   }
 
   URGE_BINDING(Name : "vertex_entry_point")
@@ -528,7 +524,7 @@ class GPURenderPipelineDescriptor : public GPUObject {
   ATTR(MaybePtr<GPUShaderModule>, FragmentModule) {
     if (value)
       fragment_module = *value;
-    return fragment_module.get();
+    return fragment_module;
   }
 
   URGE_BINDING(Name : "fragment_entry_point")
@@ -602,10 +598,10 @@ class GPURenderPipelineDescriptor : public GPUObject {
 
  public:
   std::string label;
-  Member<GPUPipelineLayout> layout;
-  Member<GPUShaderModule> vertex_module;
+  RefPtr<GPUPipelineLayout> layout;
+  RefPtr<GPUShaderModule> vertex_module;
   std::string vertex_entry_point = "main";
-  Member<GPUShaderModule> fragment_module;
+  RefPtr<GPUShaderModule> fragment_module;
   std::string fragment_entry_point = "main";
   uint32_t topology =
       static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleList);
@@ -623,11 +619,9 @@ class GPURenderPipelineDescriptor : public GPUObject {
 URGE_BINDING()
 class GPURenderPassDescriptor : public GPUObject {
  public:
-  void Trace(GCVisitor& visitor) const override;
   struct ColorAttachment {
-    Member<GPUTextureView> view;
-    Member<GPUTextureView> resolve;
-    void Trace(GCVisitor& visitor) const;
+    RefPtr<GPUTextureView> view;
+    RefPtr<GPUTextureView> resolve;
     uint32_t load_op = 1;
     uint32_t store_op = 1;
     float clear_r = 0.f;
@@ -645,7 +639,7 @@ class GPURenderPassDescriptor : public GPUObject {
   void SetLabel(std::string value) { label = value; }
 
   URGE_BINDING()
-  void AddColorAttachment(GPUTextureView* view,
+  void AddColorAttachment(RefPtr<GPUTextureView> view,
                           uint32_t load_op,
                           uint32_t store_op,
                           float clear_r = 0.f,
@@ -675,7 +669,7 @@ class GPURenderPassDescriptor : public GPUObject {
 
   std::vector<ColorAttachment> color_attachments;
 
-  Member<GPUTextureView> depth_view;
+  RefPtr<GPUTextureView> depth_view;
   uint32_t depth_load_op = 2;
   uint32_t depth_store_op = 1;
   float depth_clear_value = 1.f;
@@ -685,7 +679,7 @@ class GPURenderPassDescriptor : public GPUObject {
   bool depth_read_only = false;
   bool stencil_read_only = false;
 
-  Member<GPUQuerySet> occlusion_query_set;
+  RefPtr<GPUQuerySet> occlusion_query_set;
 };
 
 URGE_BINDING()
@@ -790,7 +784,7 @@ class GPUTexture : public GPUObject {
   uint32_t Usage() { return static_cast<uint32_t>(texture_.GetUsage()); }
 
   URGE_BINDING()
-  GPUTextureView* CreateView(
+  RefPtr<GPUTextureView> CreateView(
       MaybePtr<GPUTextureViewDescriptor> descriptor = nullptr);
   URGE_BINDING()
   void Destroy() { texture_.Destroy(); }
@@ -873,7 +867,7 @@ class GPURenderPipeline : public GPUObject {
   GPURenderPipeline(wgpu::RenderPipeline pipeline) : pipeline_(pipeline) {}
 
   URGE_BINDING()
-  GPUBindGroupLayout* GetBindGroupLayout(uint32_t group_index);
+  RefPtr<GPUBindGroupLayout> GetBindGroupLayout(uint32_t group_index);
 
   wgpu::RenderPipeline handle() const { return pipeline_; }
 
@@ -887,7 +881,7 @@ class GPUComputePipeline : public GPUObject {
   GPUComputePipeline(wgpu::ComputePipeline pipeline) : pipeline_(pipeline) {}
 
   URGE_BINDING()
-  GPUBindGroupLayout* GetBindGroupLayout(uint32_t group_index);
+  RefPtr<GPUBindGroupLayout> GetBindGroupLayout(uint32_t group_index);
 
   wgpu::ComputePipeline handle() const { return pipeline_; }
 
@@ -931,21 +925,22 @@ class GPUCommandEncoder : public GPUObject {
   GPUCommandEncoder(wgpu::CommandEncoder encoder) : encoder_(encoder) {}
 
   URGE_BINDING()
-  GPURenderPassEncoder* BeginRenderPass(GPURenderPassDescriptor* descriptor);
+  RefPtr<GPURenderPassEncoder> BeginRenderPass(
+      RefPtr<GPURenderPassDescriptor> descriptor);
   URGE_BINDING()
-  GPUComputePassEncoder* BeginComputePass(
+  RefPtr<GPUComputePassEncoder> BeginComputePass(
       MaybePtr<GPUComputePassDescriptor> descriptor = nullptr);
   URGE_BINDING()
-  void CopyBufferToBuffer(GPUBuffer* source,
+  void CopyBufferToBuffer(RefPtr<GPUBuffer> source,
                           uint64_t source_offset,
-                          GPUBuffer* destination,
+                          RefPtr<GPUBuffer> destination,
                           uint64_t destination_offset,
                           uint64_t size);
   URGE_BINDING()
-  void CopyBufferToTexture(GPUBuffer* source,
+  void CopyBufferToTexture(RefPtr<GPUBuffer> source,
                            uint32_t bytes_per_row,
                            uint32_t rows_per_image,
-                           GPUTexture* destination,
+                           RefPtr<GPUTexture> destination,
                            uint32_t destination_mip_level,
                            uint32_t destination_x,
                            uint32_t destination_y,
@@ -953,22 +948,22 @@ class GPUCommandEncoder : public GPUObject {
                            uint32_t height,
                            uint32_t depth_or_array_layers = 1);
   URGE_BINDING()
-  void CopyTextureToBuffer(GPUTexture* source,
+  void CopyTextureToBuffer(RefPtr<GPUTexture> source,
                            uint32_t source_mip_level,
                            uint32_t source_x,
                            uint32_t source_y,
-                           GPUBuffer* destination,
+                           RefPtr<GPUBuffer> destination,
                            uint32_t bytes_per_row,
                            uint32_t rows_per_image,
                            uint32_t width,
                            uint32_t height,
                            uint32_t depth_or_array_layers = 1);
   URGE_BINDING()
-  void CopyTextureToTexture(GPUTexture* source,
+  void CopyTextureToTexture(RefPtr<GPUTexture> source,
                             uint32_t source_mip_level,
                             uint32_t source_x,
                             uint32_t source_y,
-                            GPUTexture* destination,
+                            RefPtr<GPUTexture> destination,
                             uint32_t destination_mip_level,
                             uint32_t destination_x,
                             uint32_t destination_y,
@@ -976,13 +971,13 @@ class GPUCommandEncoder : public GPUObject {
                             uint32_t height,
                             uint32_t depth_or_array_layers = 1);
   URGE_BINDING()
-  void ResolveQuerySet(GPUQuerySet* query_set,
+  void ResolveQuerySet(RefPtr<GPUQuerySet> query_set,
                        uint32_t first_query,
                        uint32_t query_count,
-                       GPUBuffer* destination,
+                       RefPtr<GPUBuffer> destination,
                        uint64_t destination_offset);
   URGE_BINDING()
-  void ClearBuffer(GPUBuffer* buffer, uint64_t offset, uint64_t size);
+  void ClearBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, uint64_t size);
   URGE_BINDING()
   void InsertDebugMarker(std::string marker_label);
   URGE_BINDING()
@@ -990,7 +985,7 @@ class GPUCommandEncoder : public GPUObject {
   URGE_BINDING()
   void PopDebugGroup();
   URGE_BINDING()
-  GPUCommandBuffer* Finish();
+  RefPtr<GPUCommandBuffer> Finish();
 
   wgpu::CommandEncoder handle() const { return encoder_; }
 
@@ -1004,13 +999,17 @@ class GPURenderPassEncoder : public GPUObject {
   GPURenderPassEncoder(wgpu::RenderPassEncoder encoder) : encoder_(encoder) {}
 
   URGE_BINDING()
-  void SetPipeline(GPURenderPipeline* pipeline);
+  void SetPipeline(RefPtr<GPURenderPipeline> pipeline);
   URGE_BINDING()
-  void SetBindGroup(uint32_t index, GPUBindGroup* group);
+  void SetBindGroup(uint32_t index, RefPtr<GPUBindGroup> group);
   URGE_BINDING()
-  void SetVertexBuffer(uint32_t slot, GPUBuffer* buffer, uint64_t offset = 0);
+  void SetVertexBuffer(uint32_t slot,
+                       RefPtr<GPUBuffer> buffer,
+                       uint64_t offset = 0);
   URGE_BINDING()
-  void SetIndexBuffer(GPUBuffer* buffer, uint32_t format, uint64_t offset = 0);
+  void SetIndexBuffer(RefPtr<GPUBuffer> buffer,
+                      uint32_t format,
+                      uint64_t offset = 0);
   URGE_BINDING()
   void Draw(uint32_t vertex_count,
             uint32_t instance_count = 1,
@@ -1023,9 +1022,10 @@ class GPURenderPassEncoder : public GPUObject {
                    int32_t base_vertex = 0,
                    uint32_t first_instance = 0);
   URGE_BINDING()
-  void DrawIndirect(GPUBuffer* indirect_buffer, uint64_t indirect_offset = 0);
+  void DrawIndirect(RefPtr<GPUBuffer> indirect_buffer,
+                    uint64_t indirect_offset = 0);
   URGE_BINDING()
-  void DrawIndexedIndirect(GPUBuffer* indirect_buffer,
+  void DrawIndexedIndirect(RefPtr<GPUBuffer> indirect_buffer,
                            uint64_t indirect_offset = 0);
   URGE_BINDING()
   void SetViewport(float x,
@@ -1059,9 +1059,9 @@ class GPUComputePassEncoder : public GPUObject {
   GPUComputePassEncoder(wgpu::ComputePassEncoder encoder) : encoder_(encoder) {}
 
   URGE_BINDING()
-  void SetPipeline(GPUComputePipeline* pipeline);
+  void SetPipeline(RefPtr<GPUComputePipeline> pipeline);
   URGE_BINDING()
-  void SetBindGroup(uint32_t index, GPUBindGroup* group);
+  void SetBindGroup(uint32_t index, RefPtr<GPUBindGroup> group);
   URGE_BINDING()
   void DispatchWorkgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1);
   URGE_BINDING()
@@ -1083,11 +1083,11 @@ class GPUQueue : public GPUObject {
   GPUQueue(wgpu::Queue queue) : queue_(queue) {}
 
   URGE_BINDING()
-  void Submit(GPUCommandBuffer* command_buffer);
+  void Submit(RefPtr<GPUCommandBuffer> command_buffer);
   URGE_BINDING()
-  void WriteBuffer(GPUBuffer* buffer, uint64_t offset, std::string data);
+  void WriteBuffer(RefPtr<GPUBuffer> buffer, uint64_t offset, std::string data);
   URGE_BINDING()
-  void WriteTexture(GPUTexture* texture,
+  void WriteTexture(RefPtr<GPUTexture> texture,
                     uint32_t mip_level,
                     uint32_t x,
                     uint32_t y,
@@ -1480,33 +1480,36 @@ class GPU : public Singleton<GPU> {
   GPU() = default;
 
   URGE_BINDING()
-  GPUQueue* queue();
+  RefPtr<GPUQueue> queue();
 
   URGE_BINDING()
-  GPUBuffer* CreateBuffer(GPUBufferDescriptor* descriptor);
+  RefPtr<GPUBuffer> CreateBuffer(RefPtr<GPUBufferDescriptor> descriptor);
   URGE_BINDING()
-  GPUTexture* CreateTexture(GPUTextureDescriptor* descriptor);
+  RefPtr<GPUTexture> CreateTexture(RefPtr<GPUTextureDescriptor> descriptor);
   URGE_BINDING()
-  GPUSampler* CreateSampler(GPUSamplerDescriptor* descriptor);
+  RefPtr<GPUSampler> CreateSampler(RefPtr<GPUSamplerDescriptor> descriptor);
   URGE_BINDING()
-  GPUShaderModule* CreateShaderModule(GPUShaderModuleDescriptor* descriptor);
+  RefPtr<GPUShaderModule> CreateShaderModule(
+      RefPtr<GPUShaderModuleDescriptor> descriptor);
   URGE_BINDING()
-  GPUBindGroupLayout* CreateBindGroupLayout(
-      GPUBindGroupLayoutDescriptor* descriptor);
+  RefPtr<GPUBindGroupLayout> CreateBindGroupLayout(
+      RefPtr<GPUBindGroupLayoutDescriptor> descriptor);
   URGE_BINDING()
-  GPUPipelineLayout* CreatePipelineLayout(
-      GPUPipelineLayoutDescriptor* descriptor);
+  RefPtr<GPUPipelineLayout> CreatePipelineLayout(
+      RefPtr<GPUPipelineLayoutDescriptor> descriptor);
   URGE_BINDING()
-  GPUBindGroup* CreateBindGroup(GPUBindGroupDescriptor* descriptor);
+  RefPtr<GPUBindGroup> CreateBindGroup(
+      RefPtr<GPUBindGroupDescriptor> descriptor);
   URGE_BINDING()
-  GPURenderPipeline* CreateRenderPipeline(
-      GPURenderPipelineDescriptor* descriptor);
+  RefPtr<GPURenderPipeline> CreateRenderPipeline(
+      RefPtr<GPURenderPipelineDescriptor> descriptor);
   URGE_BINDING()
-  GPUComputePipeline* CreateComputePipeline(
-      GPUComputePipelineDescriptor* descriptor);
+  RefPtr<GPUComputePipeline> CreateComputePipeline(
+      RefPtr<GPUComputePipelineDescriptor> descriptor);
   URGE_BINDING()
-  GPUQuerySet* CreateQuerySet(GPUQuerySetDescriptor* descriptor);
+  RefPtr<GPUQuerySet> CreateQuerySet(RefPtr<GPUQuerySetDescriptor> descriptor);
   URGE_BINDING()
-  GPUCommandEncoder* CreateCommandEncoder();
+  RefPtr<GPUCommandEncoder> CreateCommandEncoder();
 };
+
 }

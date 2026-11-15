@@ -30,23 +30,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassDescriptor  (core/graphics/gpu.h:624-670)
+// GPURenderPassDescriptor  (core/graphics/gpu.h:620-664)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassDescriptor, GPUObject);
 
 RB_FUNC(GPURenderPassDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPURenderPassDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPURenderPassDescriptor* result = nullptr;
 
   {
-    urge::GPURenderPassDescriptor* value = urge::MakeGarbageCollected<urge::GPURenderPassDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPURenderPassDescriptor> value = urge::MakeRefCounted<urge::GPURenderPassDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPURenderPassDescriptor_GetLabel) {
@@ -59,7 +62,11 @@ RB_FUNC(GPURenderPassDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPURenderPassDescriptor_SetLabel) {
@@ -67,13 +74,14 @@ RB_FUNC(GPURenderPassDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -92,7 +100,6 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
     {
       self_obj->AddColorAttachment(view, load_op, store_op);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 4) {
@@ -108,7 +115,6 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
       self_obj->AddColorAttachment(view, load_op, store_op,
           static_cast<float>(clear_r));
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 5) {
@@ -125,7 +131,6 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
       self_obj->AddColorAttachment(view, load_op, store_op,
           static_cast<float>(clear_r), static_cast<float>(clear_g));
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 6) {
@@ -143,7 +148,6 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
           static_cast<float>(clear_r), static_cast<float>(clear_g),
           static_cast<float>(clear_b));
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 7) {
@@ -161,7 +165,6 @@ RB_FUNC(GPURenderPassDescriptor_AddColorAttachment) {
           static_cast<float>(clear_r), static_cast<float>(clear_g),
           static_cast<float>(clear_b), static_cast<float>(clear_a));
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else {
@@ -181,7 +184,6 @@ RB_FUNC(GPURenderPassDescriptor_SetColorResolve) {
   {
     self_obj->SetColorResolve(resolve);
   }
-  RB_GC_GUARD(resolve_val);
 
   return Qnil;
 }
@@ -200,7 +202,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
     {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 4) {
@@ -217,7 +218,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value));
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 5) {
@@ -234,7 +234,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
       self_obj->SetDepthStencilAttachment(view, depth_load_op, depth_store_op,
           static_cast<float>(depth_clear_value), stencil_load_op);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 6) {
@@ -252,7 +251,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 7) {
@@ -271,7 +269,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op, stencil_clear_value);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 8) {
@@ -291,7 +288,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
           static_cast<float>(depth_clear_value), stencil_load_op,
           stencil_store_op, stencil_clear_value, depth_read_only);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else if (argc == 9) {
@@ -313,7 +309,6 @@ RB_FUNC(GPURenderPassDescriptor_SetDepthStencilAttachment) {
           stencil_store_op, stencil_clear_value, depth_read_only,
           stencil_read_only);
     }
-    RB_GC_GUARD(view_val);
 
     return Qnil;
   } else {
@@ -333,7 +328,6 @@ RB_FUNC(GPURenderPassDescriptor_SetOcclusionQuerySet) {
   {
     self_obj->SetOcclusionQuerySet(query_set);
   }
-  RB_GC_GUARD(query_set_val);
 
   return Qnil;
 }
@@ -344,10 +338,8 @@ void InitGPURenderPassDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPURenderPassDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPURenderPassDescriptorDataType>);
-  RegisterNativeType<urge::GPURenderPassDescriptor>(klass, kGPURenderPassDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPURenderPassDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPURenderPassDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPURenderPassDescriptor_SetLabel);
   DefineMethod(klass, "add_color_attachment", GPURenderPassDescriptor_AddColorAttachment);

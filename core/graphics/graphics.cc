@@ -206,7 +206,7 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   upscaler_ = std::make_unique<Upscaler>(
       Upscaler::ParseMode(Config::Get().gfx.upscaler));
 
-  root_ = MakeGarbageCollected<ScreenRootNode>();
+  root_ = MakeRefCounted<ScreenRootNode>();
   ResizeScreen(exception_state, config.display.width, config.display.height);
   if (exception_state.HadException())
     return;
@@ -222,17 +222,8 @@ Graphics::~Graphics() {
   root_.reset();
   upscaler_.reset();
 
-  // Drain queued work while its font backend and GPU resources still exist.
-  // Both native task holders contain persistent roots; clear them before GC.
-  if (BitmapQueue* queue = BitmapQueue::TryGet())
-    queue->Flush();
   BitmapQueue::Reset(nullptr);
   SpriteBatch::Reset(nullptr);
-
-  // The host has finished shutdown/cleared its GC bridge before Graphics dies.
-  // Prepare/dispose and reclaim managed resources before their native services.
-  GarbageCollector::Get().Collect();
-
   QuadVertexManager::Reset(nullptr);
   UniformManager::Reset(nullptr);
   ShaderSet::Reset(nullptr);
@@ -266,7 +257,7 @@ void Graphics::Update(URGE_EXCEPT) {
 
   profiler_->BeginRecord(Profiler::kRender);
   if (!frozen_)
-    root_->Render(screen_.get(), Color::Black());
+    root_->Render(screen_, Color::Black());
   ++frame_count_;
   profiler_->EndRecord();
 
@@ -360,7 +351,7 @@ void Graphics::Fadeout(URGE_EXCEPT, int32_t duration) {
 
 void Graphics::Freeze(URGE_EXCEPT) {
   if (!frozen_) {
-    root_->Render(screen_.get(), Color::Black());
+    root_->Render(screen_, Color::Black());
     frozen_ = true;
   }
 }
@@ -369,39 +360,37 @@ void Graphics::Transition(URGE_EXCEPT,
                           int32_t duration,
                           std::string filename,
                           int32_t vague) {
-  Persistent<Bitmap> mapping;
+  RefPtr<Bitmap> mapping = nullptr;
   if (!filename.empty())
-    mapping = MakeGarbageCollected<Bitmap>(exception_state, filename);
+    mapping = MakeRefCounted<Bitmap>(exception_state, filename);
 
   if (exception_state.HadException())
     return;
-  TransitionBitmap(exception_state, duration, mapping.get(), vague);
+  TransitionBitmap(exception_state, duration, mapping, vague);
 }
 
 void Graphics::TransitionBitmap(URGE_EXCEPT,
                                 int32_t duration,
-                                Bitmap* bitmap,
+                                RefPtr<Bitmap> bitmap,
                                 int32_t vague) {
   if (!frozen_)
     return;
 
-  // Update invokes host callbacks on every transition frame.
-  const Persistent<Bitmap> bitmap_root(bitmap);
   brightness_ = 255;
 
   // A zero-frame RGSS transition unfreezes immediately. Do not present an
   // extra frame: scripts may restore brightness before their next update.
   if (duration <= 0) {
-    root_->Render(screen_.get(), Color::Black());
+    root_->Render(screen_, Color::Black());
     frozen_ = false;
     return;
   }
 
-  const Persistent<Bitmap> frozen_scene =
-      MakeGarbageCollected<Bitmap>(exception_state, screen_.get());
+  const RefPtr<Bitmap> frozen_scene =
+      MakeRefCounted<Bitmap>(exception_state, screen_);
   if (exception_state.HadException())
     return;
-  const Persistent<Bitmap> current_scene = SnapToBitmap(exception_state);
+  const RefPtr<Bitmap> current_scene = SnapToBitmap(exception_state);
   if (exception_state.HadException())
     return;
 
@@ -458,9 +447,8 @@ void Graphics::TransitionBitmap(URGE_EXCEPT,
   frozen_ = false;
 }
 
-Bitmap* Graphics::SnapToBitmap(URGE_EXCEPT) {
-  auto result =
-      MakeGarbageCollected<Bitmap>(exception_state, Width(), Height());
+RefPtr<Bitmap> Graphics::SnapToBitmap(URGE_EXCEPT) {
+  auto result = MakeRefCounted<Bitmap>(exception_state, Width(), Height());
   if (exception_state.HadException())
     return nullptr;
   root_->Render(result, Color::Black());
@@ -480,7 +468,7 @@ int32_t Graphics::Height() {
 }
 
 void Graphics::ResizeScreen(URGE_EXCEPT, int32_t width, int32_t height) {
-  auto screen = MakeGarbageCollected<Bitmap>(exception_state, width, height);
+  auto screen = MakeRefCounted<Bitmap>(exception_state, width, height);
   if (exception_state.HadException())
     return;
   present_.configured = false;

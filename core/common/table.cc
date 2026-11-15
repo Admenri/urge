@@ -45,7 +45,7 @@ Table::Table(int32_t xsize, int32_t ysize, int32_t zsize) {
                0);
 }
 
-Table::Table(Table* other)
+Table::Table(RefPtr<Table> other)
     : xsize_(other->xsize_),
       ysize_(other->ysize_),
       zsize_(other->zsize_),
@@ -82,7 +82,7 @@ MARSHAL_LOAD_DEF(Table) {
   uint32_t zsize = *(raw_ptr + 3);
   uint32_t data_size = *(raw_ptr + 4);
 
-  Table* obj = MakeGarbageCollected<Table>(xsize, ysize, zsize);
+  RefPtr<Table> obj = MakeRefCounted<Table>(xsize, ysize, zsize);
   if (data_size != obj->xsize_ * obj->ysize_ * obj->zsize_) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "invalid table serialize data");

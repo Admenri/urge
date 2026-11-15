@@ -37,12 +37,10 @@ class Viewport : public Node {
   URGE_BINDING()
   Viewport(int32_t x, int32_t y, int32_t width, int32_t height);
   URGE_BINDING()
-  Viewport(Rect* rect);
+  Viewport(RefPtr<Rect> rect);
   URGE_BINDING()
   Viewport();
   ~Viewport() override;
-  void Trace(GCVisitor& visitor) const override;
-  void PrepareForCollection() override;
 
   URGE_BINDING()
   void Flash(URGE_EXCEPT, MaybePtr<Color> color, int32_t duration);
@@ -50,15 +48,15 @@ class Viewport : public Node {
   void Update(URGE_EXCEPT);
 
   URGE_BINDING()
-  ATTR(Rect*, Rect);
+  ATTR(RefPtr<Rect>, Rect);
   URGE_BINDING()
   ATTR(int32_t, OX);
   URGE_BINDING()
   ATTR(int32_t, OY);
   URGE_BINDING()
-  ATTR(Color*, Color);
+  ATTR(RefPtr<Color>, Color);
   URGE_BINDING()
-  ATTR(Tone*, Tone);
+  ATTR(RefPtr<Tone>, Tone);
   URGE_BINDING()
   ATTR(MaybePtr<Effect>, Effect);
 
@@ -74,19 +72,19 @@ class Viewport : public Node {
   void CreateEffectBindings();
   bool AcquireOffscreen(glm::ivec2 size);
 
-  Member<Rect> rect_;
+  RefPtr<Rect> rect_;
   glm::ivec2 origin_ = glm::ivec2(0);
-  Member<Color> color_;
-  Member<Tone> tone_;
-  Member<Effect> effect_;
+  RefPtr<Color> color_;
+  RefPtr<Tone> tone_;
+  RefPtr<Effect> effect_;
 
   FlashableNode flashing_;
 
-  Member<Bitmap> offscreen_;
+  RefPtr<Bitmap> offscreen_;
   wgpu::Buffer object_uniform_, tint_uniform_;
   wgpu::BindGroup object_group_, tint_group_;
 
-  Member<Bitmap> filter_target_;
+  RefPtr<Bitmap> filter_target_;
 
   RectI parent_scissor_, region_;
   bool post_process_ = false;

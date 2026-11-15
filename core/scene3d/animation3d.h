@@ -97,12 +97,15 @@ class Animation3D : public Object {
   }
 
   URGE_BINDING()
-  void Apply(Skeleton3D* skeleton, float time);
+  void Apply(RefPtr<Skeleton3D> skeleton, float time);
   URGE_BINDING()
-  void Blend(URGE_EXCEPT, Skeleton3D* skeleton, float time, float weight);
+  void Blend(URGE_EXCEPT,
+             RefPtr<Skeleton3D> skeleton,
+             float time,
+             float weight);
   URGE_BINDING()
   void BlendMasked(URGE_EXCEPT,
-                   Skeleton3D* skeleton,
+                   RefPtr<Skeleton3D> skeleton,
                    float time,
                    float weight,
                    MaybePtr<BoneMask3D> mask);

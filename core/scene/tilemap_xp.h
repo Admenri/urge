@@ -43,16 +43,15 @@ class TilemapXP;
 class TilemapXPAbove : public Node {
  public:
   TilemapXPAbove(TilemapXP* parent,
-                 Viewport* viewport,
+                 RefPtr<Viewport> viewport,
                  const ZValue& z,
                  int32_t id);
 
  private:
-  void DisposeObject() override;
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  WeakMember<TilemapXP> parent_;
+  TilemapXP* parent_ = nullptr;
   int32_t id_ = 0;
 };
 
@@ -62,7 +61,6 @@ class TilemapXP : public Node {
   URGE_BINDING()
   TilemapXP(MaybePtr<Viewport> viewport = nullptr, int32_t tilesize = 32);
   ~TilemapXP() override;
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void Update();
@@ -70,12 +68,12 @@ class TilemapXP : public Node {
   URGE_BINDING(Name : "tileset=")
   void SetTileset(MaybePtr<Bitmap> bitmap);
   URGE_BINDING(Name : "tileset")
-  Bitmap* GetTileset();
+  RefPtr<Bitmap> GetTileset();
 
   URGE_BINDING()
   void SetAutotile(int32_t index, MaybePtr<Bitmap> bitmap);
   URGE_BINDING()
-  Bitmap* GetAutotile(int32_t index);
+  RefPtr<Bitmap> GetAutotile(int32_t index);
 
   URGE_BINDING()
   ATTR(MaybePtr<Viewport>, Viewport);
@@ -100,33 +98,25 @@ class TilemapXP : public Node {
   static constexpr int32_t kMaxPriorities = 5;
 
   struct TileQuad {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(texture); }
-
-    Member<Bitmap> texture;
+    RefPtr<Bitmap> texture;
     RectF source;
     RectF destination;
     glm::vec4 color = glm::vec4(1.0f);
   };
 
   struct TileDraw {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(texture); }
-
-    Member<Bitmap> texture;
+    RefPtr<Bitmap> texture;
     PrimitiveEmitter::Slot slot;
   };
 
   struct TileLayer {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(draws); }
-
     PrimitiveEmitter primitive;
     std::vector<TileDraw> draws;
     bool valid = false;
   };
 
   struct Autotile {
-    void Trace(GCVisitor& visitor) const { visitor.Trace(texture); }
-
-    Member<Bitmap> texture;
+    RefPtr<Bitmap> texture;
     int32_t frames = 0;
   };
 
@@ -144,7 +134,7 @@ class TilemapXP : public Node {
   void DrawAboveLayer(DrawParam param, int32_t id);
   bool HasAboveLayer(int32_t id) const;
 
-  std::vector<Member<TilemapXPAbove>> aboves_;
+  std::vector<RefPtr<TilemapXPAbove>> aboves_;
   RectI render_viewport_ = {};
   glm::vec2 render_offset_ = glm::vec2(0.0f);
   UniformBlockPool::Slot object_slot_ = {};
@@ -152,11 +142,11 @@ class TilemapXP : public Node {
   int32_t flash_timer_ = 0;
   int32_t flash_opacity_ = 0;
 
-  Member<Bitmap> tileset_;
+  RefPtr<Bitmap> tileset_;
   Autotile autotiles_[7] = {};
-  Member<Table> map_data_;
-  Member<Table> flash_data_;
-  Member<Table> priorities_;
+  RefPtr<Table> map_data_;
+  RefPtr<Table> flash_data_;
+  RefPtr<Table> priorities_;
   int32_t ox_ = 0, oy_ = 0;
   bool xrepeat_ = true, yrepeat_ = true;
   int32_t tilesize_ = 32;

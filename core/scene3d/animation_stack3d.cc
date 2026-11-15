@@ -31,21 +31,10 @@
 
 namespace urge {
 
-void AnimationLayer3D::Trace(GCVisitor& visitor) const {
-  Object::Trace(visitor);
-  visitor.Trace(animation_);
-  visitor.Trace(mask_);
-}
-
-void AnimationStack3D::Trace(GCVisitor& visitor) const {
-  Object::Trace(visitor);
-  visitor.Trace(layers_);
-}
-
 AnimationLayer3D::AnimationLayer3D(URGE_EXCEPT,
-                                   Animation3D* animation,
+                                   RefPtr<Animation3D> animation,
                                    float weight)
-    : animation_(animation), weight_(std::max(0.0f, weight)) {
+    : animation_(std::move(animation)), weight_(std::max(0.0f, weight)) {
   if (!animation_) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "animation layer 3d: an animation is needed.");
@@ -59,22 +48,20 @@ AnimationStack3D::AnimationStack3D() = default;
 
 AnimationStack3D::~AnimationStack3D() = default;
 
-AnimationLayer3D* AnimationStack3D::AddLayer(URGE_EXCEPT,
-                                             Animation3D* animation,
-                                             float weight) {
-  auto layer = MakeGarbageCollected<AnimationLayer3D>(
-      exception_state, std::move(animation), weight);
+RefPtr<AnimationLayer3D> AnimationStack3D::AddLayer(
+    URGE_EXCEPT,
+    RefPtr<Animation3D> animation,
+    float weight) {
+  auto layer = MakeRefCounted<AnimationLayer3D>(exception_state,
+                                                std::move(animation), weight);
   layers_.push_back(layer);
   return layer;
 }
 
-void AnimationStack3D::RemoveLayer(AnimationLayer3D* layer) {
+void AnimationStack3D::RemoveLayer(RefPtr<AnimationLayer3D> layer) {
   if (!layer)
     return;
-  layers_.erase(std::remove_if(layers_.begin(), layers_.end(),
-                               [&layer](const auto& item) {
-                                 return item.get() == layer;
-                               }),
+  layers_.erase(std::remove(layers_.begin(), layers_.end(), layer),
                 layers_.end());
 }
 
@@ -82,20 +69,22 @@ void AnimationStack3D::ClearLayers() {
   layers_.clear();
 }
 
-AnimationLayer3D* AnimationStack3D::LayerAt(int32_t index) const {
+RefPtr<AnimationLayer3D> AnimationStack3D::LayerAt(int32_t index) const {
   if (index < 0 || index >= static_cast<int32_t>(layers_.size()))
     return nullptr;
-  return layers_[index].get();
+  return layers_[index];
 }
 
-void AnimationStack3D::Update(URGE_EXCEPT, Skeleton3D* skeleton, float delta) {
+void AnimationStack3D::Update(URGE_EXCEPT,
+                              RefPtr<Skeleton3D> skeleton,
+                              float delta) {
   skeleton->BeginPose();
 
-  for (const auto& layer : layers_) {
+  for (const RefPtr<AnimationLayer3D>& layer : layers_) {
     if (!layer->playing() || layer->weight() <= 0.0f)
       continue;
 
-    Animation3D* animation = layer->animation();
+    RefPtr<Animation3D> animation = layer->animation();
     if (!animation)
       continue;
 

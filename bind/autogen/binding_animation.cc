@@ -36,25 +36,28 @@ namespace binding {
 RB_DEF_TYPE_INHERIT(Animation, Disposable);
 
 RB_FUNC(Animation_initialize) {
-  CheckConstructorSelf(self, kAnimationDataType);
-  CheckArgc(argc, 1);
   urge::ExceptionState exception_state;
   VALUE filename_val;
+  const char* filename_data;
+  size_t filename_size;
   ParseArgs(argc, argv, "o", &filename_val);
-  filename_val = CheckString(filename_val);
+  CheckString(filename_val, &filename_data, &filename_size);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Animation* result = nullptr;
 
   {
-    urge::Animation* value = urge::MakeGarbageCollected<urge::Animation>(
-        exception_state, TakeString(filename_val));
-    if (!exception_state.HadException())
-      result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Animation> value = urge::MakeRefCounted<urge::Animation>(
+        exception_state, std::string(filename_data, filename_size));
+    result = exception_state.HadException() ? nullptr : value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(filename_val);
   RaiseException(exception_state);
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Animation_Width) {
@@ -134,10 +137,11 @@ RB_FUNC(Animation_Delays) {
   {
     result = new std::vector<int32_t>(self_obj->Delays(exception_state));
   }
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapVector<int32_t>(result);
+  VALUE value = WrapVectorOf<int32_t>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Animation_Frame) {
@@ -148,16 +152,20 @@ RB_FUNC(Animation_Frame) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Image* result = nullptr;
 
   {
-    urge::Image* value = self_obj->Frame(exception_state, index);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Image> value = self_obj->Frame(exception_state, index);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kImageDataType);
+  VALUE value = WrapObject(result, kImageDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 void InitAnimationBindingAppend(VALUE klass);
@@ -166,10 +174,8 @@ void InitAnimationBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Disposable"));
   auto klass = rb_define_class("Animation", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kAnimationDataType>);
-  RegisterNativeType<urge::Animation>(klass, kAnimationDataType);
 
   DefineMethod(klass, "initialize", Animation_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "width", Animation_Width);
   DefineMethod(klass, "height", Animation_Height);
   DefineMethod(klass, "count", Animation_Count);

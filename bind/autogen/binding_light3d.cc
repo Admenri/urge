@@ -30,23 +30,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Light3D  (core/scene3d/light3d.h:37-76)
+// Light3D  (core/scene3d/light3d.h:36-73)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Light3D, Node3D);
 
 RB_FUNC(Light3D_initialize) {
-  CheckConstructorSelf(self, kLight3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Light3D* result = nullptr;
 
   {
-    urge::Light3D* value = urge::MakeGarbageCollected<urge::Light3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Light3D> value = urge::MakeRefCounted<urge::Light3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 // Attribute: type (uint32_t)
@@ -75,10 +78,8 @@ void InitLight3DBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node3D"));
   auto klass = rb_define_class("Light3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kLight3DDataType>);
-  RegisterNativeType<urge::Light3D>(klass, kLight3DDataType);
 
   DefineMethod(klass, "initialize", Light3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "type", Light3D_Type);
   DefineMethod(klass, "type=", Light3D_TypeEqual);
   DefineMethod(klass, "color", Light3D_Color);

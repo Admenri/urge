@@ -29,23 +29,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Mesh3D  (core/scene3d/mesh3d.h:47-100)
+// Mesh3D  (core/scene3d/mesh3d.h:46-97)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Mesh3D);
 
 RB_FUNC(Mesh3D_initialize) {
-  CheckConstructorSelf(self, kMesh3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Mesh3D* result = nullptr;
 
   {
-    urge::Mesh3D* value = urge::MakeGarbageCollected<urge::Mesh3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Mesh3D> value = urge::MakeRefCounted<urge::Mesh3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Mesh3D_SetVertices) {
@@ -55,12 +58,11 @@ RB_FUNC(Mesh3D_SetVertices) {
   CheckArgc(argc, 1);
   VALUE data_val;
   ParseArgs(argc, argv, "o", &data_val);
-  data_val = CheckVectorOf<float>(data_val);
+  CheckVectorOf<float>(data_val);
 
   {
     self_obj->SetVertices(exception_state, TakeVectorOf<float>(data_val));
   }
-  RB_GC_GUARD(data_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -73,17 +75,14 @@ RB_FUNC(Mesh3D_SetSkinnedVertices) {
   CheckArgc(argc, 3);
   VALUE data_val, joints_val, weights_val;
   ParseArgs(argc, argv, "ooo", &data_val, &joints_val, &weights_val);
-  data_val = CheckVectorOf<float>(data_val);
-  joints_val = CheckVectorOf<uint32_t>(joints_val);
-  weights_val = CheckVectorOf<float>(weights_val);
+  CheckVectorOf<float>(data_val);
+  CheckVectorOf<uint32_t>(joints_val);
+  CheckVectorOf<float>(weights_val);
 
   {
     self_obj->SetSkinnedVertices(exception_state, TakeVectorOf<float>(data_val),
         TakeVectorOf<uint32_t>(joints_val), TakeVectorOf<float>(weights_val));
   }
-  RB_GC_GUARD(data_val);
-  RB_GC_GUARD(joints_val);
-  RB_GC_GUARD(weights_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -96,12 +95,11 @@ RB_FUNC(Mesh3D_SetIndices) {
   CheckArgc(argc, 1);
   VALUE data_val;
   ParseArgs(argc, argv, "o", &data_val);
-  data_val = CheckVectorOf<uint32_t>(data_val);
+  CheckVectorOf<uint32_t>(data_val);
 
   {
     self_obj->SetIndices(exception_state, TakeVectorOf<uint32_t>(data_val));
   }
-  RB_GC_GUARD(data_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -257,7 +255,9 @@ RB_FUNC(Mesh3D_BoundsCenter) {
     result = new std::vector<float>(self_obj->BoundsCenter());
   }
 
-  return OwnedWrapVector<float>(result);
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Mesh3D_BoundsMin) {
@@ -270,7 +270,9 @@ RB_FUNC(Mesh3D_BoundsMin) {
     result = new std::vector<float>(self_obj->BoundsMin());
   }
 
-  return OwnedWrapVector<float>(result);
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Mesh3D_BoundsMax) {
@@ -283,7 +285,9 @@ RB_FUNC(Mesh3D_BoundsMax) {
     result = new std::vector<float>(self_obj->BoundsMax());
   }
 
-  return OwnedWrapVector<float>(result);
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Mesh3D_BoundsRadius) {
@@ -312,10 +316,8 @@ void InitMesh3DBindingAppend(VALUE klass);
 void InitMesh3DBinding() {
   auto klass = rb_define_class("Mesh3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kMesh3DDataType>);
-  RegisterNativeType<urge::Mesh3D>(klass, kMesh3DDataType);
 
   DefineMethod(klass, "initialize", Mesh3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_vertices", Mesh3D_SetVertices);
   DefineMethod(klass, "set_skinned_vertices", Mesh3D_SetSkinnedVertices);
   DefineMethod(klass, "set_indices", Mesh3D_SetIndices);

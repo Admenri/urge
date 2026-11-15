@@ -37,13 +37,6 @@ Drawable::~Drawable() {
   RemoveFromList();
 }
 
-void Drawable::ClearCallbacks() {
-  on_prepare_ = {};
-  on_draw_ = {};
-  trait_type_ = 0;
-  self_data_ = nullptr;
-}
-
 void Drawable::SortWith(ZValue value) {
   if (value != z_) {
     auto old_z = z_;
@@ -118,10 +111,6 @@ DrawableSet::DrawableSet() {
 }
 
 DrawableSet::~DrawableSet() {
-  DetachAll();
-}
-
-void DrawableSet::DetachAll() {
   while (root_.next_ != &root_) {
     root_.next_->parent_ = nullptr;
     root_.next_->RemoveFromList();

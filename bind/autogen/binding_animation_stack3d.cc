@@ -32,23 +32,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// AnimationStack3D  (core/scene3d/animation_stack3d.h:103-127)
+// AnimationStack3D  (core/scene3d/animation_stack3d.h:100-124)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(AnimationStack3D);
 
 RB_FUNC(AnimationStack3D_initialize) {
-  CheckConstructorSelf(self, kAnimationStack3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::AnimationStack3D* result = nullptr;
 
   {
-    urge::AnimationStack3D* value = urge::MakeGarbageCollected<urge::AnimationStack3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::AnimationStack3D> value = urge::MakeRefCounted<urge::AnimationStack3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(AnimationStack3D_AddLayer) {
@@ -62,18 +65,21 @@ RB_FUNC(AnimationStack3D_AddLayer) {
   ParseArgs(argc, argv, "of", &animation_val, &weight);
   animation = CheckObject<urge::Animation3D>(animation_val, kAnimation3DDataType);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::AnimationLayer3D* result = nullptr;
 
   {
-    urge::AnimationLayer3D* value = self_obj->AddLayer(exception_state,
-        animation, static_cast<float>(weight));
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::AnimationLayer3D> value = self_obj->AddLayer(
+        exception_state, animation, static_cast<float>(weight));
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
-  RB_GC_GUARD(animation_val);
-  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  return OwnedWrapObject(result, kAnimationLayer3DDataType);
+  VALUE value = WrapObject(result, kAnimationLayer3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(AnimationStack3D_RemoveLayer) {
@@ -88,7 +94,6 @@ RB_FUNC(AnimationStack3D_RemoveLayer) {
   {
     self_obj->RemoveLayer(layer);
   }
-  RB_GC_GUARD(layer_val);
 
   return Qnil;
 }
@@ -124,14 +129,19 @@ RB_FUNC(AnimationStack3D_LayerAt) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::AnimationLayer3D* result = nullptr;
 
   {
-    urge::AnimationLayer3D* value = self_obj->LayerAt(index);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::AnimationLayer3D> value = self_obj->LayerAt(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedWrapObject(result, kAnimationLayer3DDataType);
+  VALUE value = WrapObject(result, kAnimationLayer3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(AnimationStack3D_Update) {
@@ -148,7 +158,6 @@ RB_FUNC(AnimationStack3D_Update) {
   {
     self_obj->Update(exception_state, skeleton, static_cast<float>(delta));
   }
-  RB_GC_GUARD(skeleton_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -164,7 +173,9 @@ RB_FUNC(AnimationStack3D_TakeEvents) {
     result = new std::vector<std::string>(self_obj->TakeEvents());
   }
 
-  return OwnedWrapVector<std::string>(result);
+  VALUE value = WrapVectorOf<std::string>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(AnimationStack3D_EventCount) {
@@ -185,10 +196,8 @@ void InitAnimationStack3DBindingAppend(VALUE klass);
 void InitAnimationStack3DBinding() {
   auto klass = rb_define_class("AnimationStack3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kAnimationStack3DDataType>);
-  RegisterNativeType<urge::AnimationStack3D>(klass, kAnimationStack3DDataType);
 
   DefineMethod(klass, "initialize", AnimationStack3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "add_layer", AnimationStack3D_AddLayer);
   DefineMethod(klass, "remove_layer", AnimationStack3D_RemoveLayer);
   DefineMethod(klass, "clear_layers", AnimationStack3D_ClearLayers);

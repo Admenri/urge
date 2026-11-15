@@ -28,7 +28,6 @@
 
 #include "glm/glm.hpp"
 
-#include "core/common/persistent.h"
 #include "core/canvas/bitmap.h"
 #include "core/common/object.h"
 #include "core/render/primitive.h"
@@ -53,7 +52,7 @@ class SpriteBatch : public Singleton<SpriteBatch> {
     uint32_t first_vertex = 0;
     uint32_t end_vertex = 0;
     int32_t blend_type = 0;
-    Persistent<Bitmap> texture;
+    RefPtr<Bitmap> texture;
     wgpu::BindGroup scene;
   };
 

@@ -29,7 +29,6 @@
 #include "glm/glm.hpp"
 
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/scene3d/material3d.h"
 #include "core/scene3d/mesh3d.h"
@@ -40,9 +39,7 @@ namespace urge {
 class Bitmap;
 
 struct MaterialSource3D {
-  void Trace(GCVisitor& visitor) const { visitor.Trace(texture); }
-
-  Member<Bitmap> texture;
+  RefPtr<Bitmap> texture;
   glm::vec4 color = glm::vec4(1.0f);
   float roughness = 0.7f;
   float metallic = 0.0f;
@@ -56,10 +53,8 @@ class GLTFModel3D : public Object {
   explicit GLTFModel3D(URGE_EXCEPT, std::string path);
   ~GLTFModel3D() override;
 
-  void Trace(GCVisitor& visitor) const override;
-
   URGE_BINDING(Name : "root")
-  Node3D* GetRoot() const { return root_.get(); }
+  RefPtr<Node3D> GetRoot() const { return root_; }
 
   URGE_BINDING(Name : "material_count")
   int32_t MaterialCount() const {
@@ -94,21 +89,21 @@ class GLTFModel3D : public Object {
   URGE_BINDING()
   void SetMaterial(URGE_EXCEPT, int32_t index, MaybePtr<Material3D> material);
   URGE_BINDING()
-  Material3D* GetMaterial(int32_t index) const;
+  RefPtr<Material3D> GetMaterial(int32_t index) const;
 
-  const std::vector<Member<Material3D>>& materials() const {
+  const std::vector<RefPtr<Material3D>>& materials() const {
     return materials_;
   }
-  const std::vector<Member<Mesh3D>>& meshes() const { return meshes_; }
+  const std::vector<RefPtr<Mesh3D>>& meshes() const { return meshes_; }
 
  private:
   void Load(URGE_EXCEPT, std::string path);
   void RebuildMaterials(URGE_EXCEPT);
 
-  Member<Node3D> root_;
-  std::vector<Member<Material3D>> materials_;
-  std::vector<Member<Mesh3D>> meshes_;
-  std::vector<Member<Bitmap>> images_;
+  RefPtr<Node3D> root_;
+  std::vector<RefPtr<Material3D>> materials_;
+  std::vector<RefPtr<Mesh3D>> meshes_;
+  std::vector<RefPtr<Bitmap>> images_;
   glm::vec3 bounds_min_ = glm::vec3(0.0f);
   glm::vec3 bounds_max_ = glm::vec3(0.0f);
   int32_t node_count_ = 0;

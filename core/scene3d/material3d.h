@@ -32,7 +32,6 @@
 
 #include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
-#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/render/pipeline.h"
 #include "core/render/shader.h"
@@ -60,8 +59,6 @@ class MaterialPass3D : public Object {
                  std::string vs_wgsl,
                  std::string fs_wgsl);
   ~MaterialPass3D() override;
-
-  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING(Name : "tag")
   std::string GetTag() const { return tag_; }
@@ -427,7 +424,7 @@ class MaterialPass3D : public Object {
   URGE_BINDING()
   void SetTextureSlot(URGE_EXCEPT, int32_t slot, MaybePtr<Bitmap> texture);
   URGE_BINDING()
-  Bitmap* GetTextureSlot(int32_t slot) const;
+  RefPtr<Bitmap> GetTextureSlot(int32_t slot) const;
   URGE_BINDING(Name : "texture_slot_count")
   int32_t TextureSlotCount() const {
     return static_cast<int32_t>(texture_names_.size());
@@ -435,9 +432,9 @@ class MaterialPass3D : public Object {
 
   URGE_BINDING()
   void SetTexture(std::string name, MaybePtr<Bitmap> texture);
-  void SetTextureView(std::string name, GPUTextureView* view);
+  void SetTextureView(std::string name, RefPtr<GPUTextureView> view);
   URGE_BINDING()
-  Bitmap* GetTexture(std::string name) const;
+  RefPtr<Bitmap> GetTexture(std::string name) const;
 
   URGE_BINDING()
   void SetUniformSlot(URGE_EXCEPT, int32_t slot, std::vector<float> values);
@@ -545,8 +542,8 @@ class MaterialPass3D : public Object {
   std::vector<util::LayoutEntry> material_entries_;
   std::vector<std::string> texture_names_;
   std::vector<std::string> uniform_names_;
-  std::map<std::string, Member<Bitmap>> texture_map_;
-  std::map<std::string, Member<GPUTextureView>> view_map_;
+  std::map<std::string, RefPtr<Bitmap>> texture_map_;
+  std::map<std::string, RefPtr<GPUTextureView>> view_map_;
   std::map<std::string, std::vector<float>> uniform_map_;
   std::map<std::string, wgpu::Buffer> uniform_buffers_;
 
@@ -565,19 +562,17 @@ class Material3D : public Object {
   Material3D();
   ~Material3D() override;
 
-  void Trace(GCVisitor& visitor) const override;
-
   URGE_BINDING()
-  MaterialPass3D* AddPass(URGE_EXCEPT,
-                          std::string tag,
-                          std::string vs_wgsl,
-                          std::string fs_wgsl);
+  RefPtr<MaterialPass3D> AddPass(URGE_EXCEPT,
+                                 std::string tag,
+                                 std::string vs_wgsl,
+                                 std::string fs_wgsl);
   URGE_BINDING()
-  MaterialPass3D* AddShadowPass(URGE_EXCEPT,
-                                std::string tag,
-                                std::string vs_wgsl);
+  RefPtr<MaterialPass3D> AddShadowPass(URGE_EXCEPT,
+                                       std::string tag,
+                                       std::string vs_wgsl);
   URGE_BINDING()
-  MaterialPass3D* GetPass(std::string tag);
+  RefPtr<MaterialPass3D> GetPass(std::string tag);
   URGE_BINDING()
   bool HasPass(std::string tag);
   URGE_BINDING()
@@ -587,10 +582,10 @@ class Material3D : public Object {
   URGE_BINDING()
   std::vector<std::string> Tags() const;
   URGE_BINDING()
-  MaterialPass3D* PassAt(int32_t index) const;
+  RefPtr<MaterialPass3D> PassAt(int32_t index) const;
 
  private:
-  std::vector<Member<MaterialPass3D>> passes_;
+  std::vector<RefPtr<MaterialPass3D>> passes_;
 };
 
 }

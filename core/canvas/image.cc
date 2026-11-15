@@ -37,7 +37,7 @@ namespace {
 
 const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
-Uint32 MapColor(SDL_Surface* surface, Color* color) {
+Uint32 MapColor(SDL_Surface* surface, const RefPtr<Color>& color) {
   const SDL_PixelFormatDetails* details =
       SDL_GetPixelFormatDetails(surface->format);
   return SDL_MapRGBA(details, nullptr, static_cast<Uint8>(color->data.r),
@@ -45,6 +45,7 @@ Uint32 MapColor(SDL_Surface* surface, Color* color) {
                      static_cast<Uint8>(color->data.b),
                      static_cast<Uint8>(color->data.a));
 }
+
 }
 
 Image::Image(SDL_Surface* image) : image_(image) {}
@@ -71,7 +72,7 @@ Image::Image(URGE_EXCEPT, std::string filename) {
   }
 }
 
-Image::Image(Image* other) {
+Image::Image(RefPtr<Image> other) {
   image_ = SDL_ConvertSurface(other->image_, kInternalPixelFormat);
 }
 
@@ -87,7 +88,7 @@ int32_t Image::Height() {
   return image_->h;
 }
 
-Color* Image::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
+RefPtr<Color> Image::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
   if (!Disposable::Guard(exception_state))
     return {};
 
@@ -101,12 +102,12 @@ Color* Image::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
   SDL_GetRGBA(*reinterpret_cast<const uint32_t*>(pixel), pixel_detail, nullptr,
               &color[0], &color[1], &color[2], &color[3]);
 
-  return MakeGarbageCollected<Color>(
+  return MakeRefCounted<Color>(
       static_cast<float>(color[0]), static_cast<float>(color[1]),
       static_cast<float>(color[2]), static_cast<float>(color[3]));
 }
 
-void Image::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, Color* color) {
+void Image::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -125,7 +126,7 @@ void Image::FillRect(URGE_EXCEPT,
                      int32_t y,
                      int32_t width,
                      int32_t height,
-                     Color* color) {
+                     RefPtr<Color> color) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -133,7 +134,7 @@ void Image::FillRect(URGE_EXCEPT,
   SDL_FillSurfaceRect(image_, &rect, MapColor(image_, color));
 }
 
-void Image::FillRect(URGE_EXCEPT, Rect* rect, Color* color) {
+void Image::FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -144,22 +145,22 @@ void Image::FillRect(URGE_EXCEPT, Rect* rect, Color* color) {
 void Image::Blt(URGE_EXCEPT,
                 int32_t x,
                 int32_t y,
-                Image* src_image,
-                Rect* src_rect,
+                RefPtr<Image> src_image,
+                RefPtr<Rect> src_rect,
                 int32_t opacity) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  StretchBlt(exception_state,
-             MakeGarbageCollected<Rect>(x, y, src_rect->data.width,
-                                        src_rect->data.height),
-             src_image, src_rect, opacity);
+  StretchBlt(
+      exception_state,
+      MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
+      src_image, src_rect, opacity);
 }
 
 void Image::StretchBlt(URGE_EXCEPT,
-                       Rect* dst_rect,
-                       Image* src_image,
-                       Rect* src_rect,
+                       RefPtr<Rect> dst_rect,
+                       RefPtr<Image> src_image,
+                       RefPtr<Rect> src_rect,
                        int32_t opacity) {
   if (!Disposable::Guard(exception_state))
     return;
@@ -196,8 +197,8 @@ void Image::GradientFillRect(URGE_EXCEPT,
                              int32_t y,
                              int32_t width,
                              int32_t height,
-                             Color* color1,
-                             Color* color2,
+                             RefPtr<Color> color1,
+                             RefPtr<Color> color2,
                              bool vertical) {
   if (!Disposable::Guard(exception_state))
     return;
@@ -230,9 +231,9 @@ void Image::GradientFillRect(URGE_EXCEPT,
 }
 
 void Image::GradientFillRect(URGE_EXCEPT,
-                             Rect* rect,
-                             Color* color1,
-                             Color* color2,
+                             RefPtr<Rect> rect,
+                             RefPtr<Color> color1,
+                             RefPtr<Color> color2,
                              bool vertical) {
   if (!Disposable::Guard(exception_state))
     return;
@@ -257,10 +258,10 @@ void Image::ClearRect(URGE_EXCEPT,
   if (!Disposable::Guard(exception_state))
     return;
 
-  FillRect(exception_state, x, y, width, height, MakeGarbageCollected<Color>());
+  FillRect(exception_state, x, y, width, height, MakeRefCounted<Color>());
 }
 
-void Image::ClearRect(URGE_EXCEPT, Rect* rect) {
+void Image::ClearRect(URGE_EXCEPT, RefPtr<Rect> rect) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -268,7 +269,7 @@ void Image::ClearRect(URGE_EXCEPT, Rect* rect) {
             rect->data.height);
 }
 
-Image* Image::FromDump(URGE_EXCEPT, std::string data) {
+RefPtr<Image> Image::FromDump(URGE_EXCEPT, std::string data) {
   auto* stream = SDL_IOFromConstMem(data.data(), data.size());
   auto* image = IMG_LoadTyped_IO(stream, true, "PNG");
 
@@ -282,7 +283,7 @@ Image* Image::FromDump(URGE_EXCEPT, std::string data) {
     image = converted_image;
   }
 
-  return MakeGarbageCollected<Image>(image);
+  return MakeRefCounted<Image>(image);
 }
 
 std::string Image::ToDump(URGE_EXCEPT) {

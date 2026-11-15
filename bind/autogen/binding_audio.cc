@@ -37,54 +37,60 @@ RB_FUNC(Audio_BGMPlay) {
   if (argc == 1) {
     // bgm_play(filename)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "o", &filename_val);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGMPlay(TakeString(filename_val));
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size));
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 2) {
     // bgm_play(filename, volume)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume;
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGMPlay(TakeString(filename_val), volume);
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
+          volume);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 3) {
     // bgm_play(filename, volume, pitch)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume, pitch;
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGMPlay(TakeString(filename_val), volume, pitch);
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
+          volume, pitch);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 4) {
     // bgm_play(filename, volume, pitch, pos)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume, pitch;
     double pos;
     ParseArgs(argc, argv, "oiif", &filename_val, &volume, &pitch, &pos);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGMPlay(TakeString(filename_val), volume, pitch,
-          static_cast<float>(pos));
+      urge::Audio::Get().BGMPlay(std::string(filename_data, filename_size),
+          volume, pitch, static_cast<float>(pos));
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else {
@@ -128,54 +134,60 @@ RB_FUNC(Audio_BGSPlay) {
   if (argc == 1) {
     // bgs_play(filename)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "o", &filename_val);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGSPlay(TakeString(filename_val));
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size));
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 2) {
     // bgs_play(filename, volume)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume;
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGSPlay(TakeString(filename_val), volume);
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
+          volume);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 3) {
     // bgs_play(filename, volume, pitch)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume, pitch;
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGSPlay(TakeString(filename_val), volume, pitch);
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
+          volume, pitch);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 4) {
     // bgs_play(filename, volume, pitch, pos)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume, pitch;
     double pos;
     ParseArgs(argc, argv, "oiif", &filename_val, &volume, &pitch, &pos);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().BGSPlay(TakeString(filename_val), volume, pitch,
-          static_cast<float>(pos));
+      urge::Audio::Get().BGSPlay(std::string(filename_data, filename_size),
+          volume, pitch, static_cast<float>(pos));
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else {
@@ -219,39 +231,44 @@ RB_FUNC(Audio_MEPlay) {
   if (argc == 1) {
     // me_play(filename)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "o", &filename_val);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().MEPlay(TakeString(filename_val));
+      urge::Audio::Get().MEPlay(std::string(filename_data, filename_size));
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 2) {
     // me_play(filename, volume)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume;
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().MEPlay(TakeString(filename_val), volume);
+      urge::Audio::Get().MEPlay(std::string(filename_data, filename_size),
+          volume);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 3) {
     // me_play(filename, volume, pitch)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume, pitch;
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().MEPlay(TakeString(filename_val), volume, pitch);
+      urge::Audio::Get().MEPlay(std::string(filename_data, filename_size),
+          volume, pitch);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else {
@@ -284,39 +301,44 @@ RB_FUNC(Audio_SEPlay) {
   if (argc == 1) {
     // se_play(filename)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     ParseArgs(argc, argv, "o", &filename_val);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().SEPlay(TakeString(filename_val));
+      urge::Audio::Get().SEPlay(std::string(filename_data, filename_size));
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 2) {
     // se_play(filename, volume)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume;
     ParseArgs(argc, argv, "oi", &filename_val, &volume);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().SEPlay(TakeString(filename_val), volume);
+      urge::Audio::Get().SEPlay(std::string(filename_data, filename_size),
+          volume);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else if (argc == 3) {
     // se_play(filename, volume, pitch)
     VALUE filename_val;
+    const char* filename_data;
+    size_t filename_size;
     int volume, pitch;
     ParseArgs(argc, argv, "oii", &filename_val, &volume, &pitch);
-    filename_val = CheckString(filename_val);
+    CheckString(filename_val, &filename_data, &filename_size);
 
     {
-      urge::Audio::Get().SEPlay(TakeString(filename_val), volume, pitch);
+      urge::Audio::Get().SEPlay(std::string(filename_data, filename_size),
+          volume, pitch);
     }
-    RB_GC_GUARD(filename_val);
 
     return Qnil;
   } else {

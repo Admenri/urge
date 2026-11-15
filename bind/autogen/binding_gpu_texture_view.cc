@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUTextureView  (core/graphics/gpu.h:805-805)
+// GPUTextureView  (core/graphics/gpu.h:799-799)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUTextureView, GPUObject);
@@ -39,9 +39,7 @@ void InitGPUTextureViewBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUTextureView", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUTextureViewDataType>);
-  RegisterNativeType<urge::GPUTextureView>(klass, kGPUTextureViewDataType);
 
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUTextureViewBindingAppend(klass);
 }
 // --- GENERATED END ---

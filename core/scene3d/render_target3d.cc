@@ -114,15 +114,16 @@ RenderTarget3D::RenderTarget3D(URGE_EXCEPT, const RenderTargetDesc3D& desc) {
   CreateResources(exception_state, desc);
 }
 
-RenderTarget3D::RenderTarget3D(URGE_EXCEPT,
-                               const std::vector<RenderTarget3D*>& colors,
-                               RenderTarget3D* depth) {
-  RenderTarget3D* first = colors.empty() ? depth : colors.front();
+RenderTarget3D::RenderTarget3D(
+    URGE_EXCEPT,
+    const std::vector<RefPtr<RenderTarget3D>>& colors,
+    RefPtr<RenderTarget3D> depth) {
+  RefPtr<RenderTarget3D> first = colors.empty() ? depth : colors.front();
   if (!first)
     return;
   size_ = first->size();
   samples_ = first->samples();
-  for (RenderTarget3D* color : colors) {
+  for (const RefPtr<RenderTarget3D>& color : colors) {
     if (!color || color->ColorCount() != 1 || color->size() != size_ ||
         color->samples() != samples_) {
       exception_state.Throw(ExceptionState::kRGSSError,

@@ -29,23 +29,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Skeleton3D  (core/scene3d/skeleton3d.h:39-69)
+// Skeleton3D  (core/scene3d/skeleton3d.h:38-66)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Skeleton3D);
 
 RB_FUNC(Skeleton3D_initialize) {
-  CheckConstructorSelf(self, kSkeleton3DDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Skeleton3D* result = nullptr;
 
   {
-    urge::Skeleton3D* value = urge::MakeGarbageCollected<urge::Skeleton3D>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Skeleton3D> value = urge::MakeRefCounted<urge::Skeleton3D>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(Skeleton3D_SetBones) {
@@ -55,15 +58,13 @@ RB_FUNC(Skeleton3D_SetBones) {
   CheckArgc(argc, 2);
   VALUE parents_val, inverse_bind_val;
   ParseArgs(argc, argv, "oo", &parents_val, &inverse_bind_val);
-  parents_val = CheckVectorOf<int32_t>(parents_val);
-  inverse_bind_val = CheckVectorOf<float>(inverse_bind_val);
+  CheckVectorOf<int32_t>(parents_val);
+  CheckVectorOf<float>(inverse_bind_val);
 
   {
     self_obj->SetBones(exception_state, TakeVectorOf<int32_t>(parents_val),
         TakeVectorOf<float>(inverse_bind_val));
   }
-  RB_GC_GUARD(parents_val);
-  RB_GC_GUARD(inverse_bind_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -89,14 +90,19 @@ RB_FUNC(Skeleton3D_BoneAt) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::Node3D* result = nullptr;
 
   {
-    urge::Node3D* value = self_obj->BoneAt(index);
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::Node3D> value = self_obj->BoneAt(index);
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedWrapObject(result, kNode3DDataType);
+  VALUE value = WrapObject(result, kNode3DDataType);
+  if (result)
+    result->Release();
+  return value;
 }
 
 RB_FUNC(Skeleton3D_BoneParent) {
@@ -125,7 +131,9 @@ RB_FUNC(Skeleton3D_JointMatrices) {
     result = new std::vector<float>(self_obj->JointMatrices());
   }
 
-  return OwnedWrapVector<float>(result);
+  VALUE value = WrapVectorOf<float>(*result);
+  delete result;
+  return value;
 }
 
 RB_FUNC(Skeleton3D_BeginPose) {
@@ -177,10 +185,8 @@ void InitSkeleton3DBindingAppend(VALUE klass);
 void InitSkeleton3DBinding() {
   auto klass = rb_define_class("Skeleton3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kSkeleton3DDataType>);
-  RegisterNativeType<urge::Skeleton3D>(klass, kSkeleton3DDataType);
 
   DefineMethod(klass, "initialize", Skeleton3D_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_bones", Skeleton3D_SetBones);
   DefineMethod(klass, "bone_count", Skeleton3D_BoneCount);
   DefineMethod(klass, "bone_at", Skeleton3D_BoneAt);

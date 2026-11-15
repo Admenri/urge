@@ -30,23 +30,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePipelineDescriptor  (core/graphics/gpu.h:447-474)
+// GPUComputePipelineDescriptor  (core/graphics/gpu.h:445-471)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePipelineDescriptor, GPUObject);
 
 RB_FUNC(GPUComputePipelineDescriptor_initialize) {
-  CheckConstructorSelf(self, kGPUComputePipelineDescriptorDataType);
-  CheckArgc(argc, 0);
 
-  urge::GarbageCollector::Root* result = nullptr;
+  urge::GPUComputePipelineDescriptor* result = nullptr;
 
   {
-    urge::GPUComputePipelineDescriptor* value = urge::MakeGarbageCollected<urge::GPUComputePipelineDescriptor>();
-    result = new urge::GarbageCollector::Root(value);
+    urge::RefPtr<urge::GPUComputePipelineDescriptor> value = urge::MakeRefCounted<urge::GPUComputePipelineDescriptor>();
+    result = value.get();
+    if (result)
+      result->AddRef();
   }
 
-  return OwnedSetupSelf(self, result);
+  VALUE object = SetupSelfData(self, result);
+  if (result)
+    result->Release();
+  return object;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_GetLabel) {
@@ -59,7 +62,11 @@ RB_FUNC(GPUComputePipelineDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_SetLabel) {
@@ -67,13 +74,14 @@ RB_FUNC(GPUComputePipelineDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetLabel(TakeString(value_val));
+    self_obj->SetLabel(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -88,7 +96,11 @@ RB_FUNC(GPUComputePipelineDescriptor_GetEntryPoint) {
     result = new std::string(self_obj->GetEntryPoint());
   }
 
-  return OwnedWrapString(result);
+  VALUE value = rb_enc_str_new(
+      result->data(), static_cast<long>(result->size()),
+      rb_utf8_encoding());
+  delete result;
+  return value;
 }
 
 RB_FUNC(GPUComputePipelineDescriptor_SetEntryPoint) {
@@ -96,13 +108,14 @@ RB_FUNC(GPUComputePipelineDescriptor_SetEntryPoint) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
+  const char* value_data;
+  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  value_val = CheckString(value_val);
+  CheckString(value_val, &value_data, &value_size);
 
   {
-    self_obj->SetEntryPoint(TakeString(value_val));
+    self_obj->SetEntryPoint(std::string(value_data, value_size));
   }
-  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -129,10 +142,8 @@ void InitGPUComputePipelineDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUComputePipelineDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUComputePipelineDescriptorDataType>);
-  RegisterNativeType<urge::GPUComputePipelineDescriptor>(klass, kGPUComputePipelineDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUComputePipelineDescriptor_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUComputePipelineDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUComputePipelineDescriptor_SetLabel);
   DefineMethod(klass, "entry_point", GPUComputePipelineDescriptor_GetEntryPoint);

@@ -37,15 +37,6 @@
 
 namespace urge {
 
-void WindowVX::Trace(GCVisitor& visitor) const {
-  Node::Trace(visitor);
-  visitor.Trace(viewport_);
-  visitor.Trace(window_skin_);
-  visitor.Trace(contents_);
-  visitor.Trace(cursor_rect_);
-  visitor.Trace(tone_);
-}
-
 namespace {
 
 constexpr int32_t kPauseCycle = 32;
@@ -79,17 +70,13 @@ RectI ApplyOpenness(const RectI& rect, int32_t height, int32_t openness) {
 
 }
 
-WindowVX::WindowVX(URGE_EXCEPT,
-                   int32_t x,
-                   int32_t y,
-                   int32_t width,
-                   int32_t height)
+WindowVX::WindowVX(URGE_EXCEPT, int32_t x, int32_t y, int32_t width, int32_t height)
     : Node(nullptr,
            Config::Get().vxa()
                ? ZValue(100, std::numeric_limits<int32_t>::max())
                : ZValue()),
-      contents_(MakeGarbageCollected<Bitmap>(exception_state, 1, 1)),
-      cursor_rect_(MakeGarbageCollected<Rect>()),
+      contents_(MakeRefCounted<Bitmap>(exception_state, 1, 1)),
+      cursor_rect_(MakeRefCounted<Rect>()),
       x_(x),
       y_(y),
       width_(width),
@@ -97,13 +84,13 @@ WindowVX::WindowVX(URGE_EXCEPT,
       padding_(Config::Get().vxa() ? 12 : 16),
       padding_bottom_(padding_),
       back_opacity_(Config::Get().vxa() ? 192 : 255),
-      tone_(MakeGarbageCollected<Tone>()),
+      tone_(MakeRefCounted<Tone>()),
       rgss3_style_(Config::Get().vxa()) {
   Node::SetupTrait(this);
   CreateTintBinding();
 }
 
-WindowVX::WindowVX(URGE_EXCEPT, Viewport* viewport)
+WindowVX::WindowVX(URGE_EXCEPT, RefPtr<Viewport> viewport)
     : WindowVX(exception_state, 0, 0, 0, 0) {
   Attr_Viewport(viewport);
 }
@@ -144,41 +131,41 @@ bool WindowVX::Closed() {
   return openness_ == 0;
 }
 
-ATTR_DEF(WindowVX, Viewport*, Viewport) {
+ATTR_DEF(WindowVX, RefPtr<Viewport>, Viewport) {
   auto parent_value = Node::Attr_Parent(value);
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return viewport;
+    return RefPtr<Viewport>(viewport);
   } else {
     return std::nullopt;
   }
 }
 
-ATTR_DEF(WindowVX, Bitmap*, Windowskin) {
+ATTR_DEF(WindowVX, RefPtr<Bitmap>, Windowskin) {
   if (value.has_value()) {
     window_skin_ = *value;
     return std::nullopt;
   } else {
-    return window_skin_.get();
+    return window_skin_;
   }
 }
 
-ATTR_DEF(WindowVX, Bitmap*, Contents) {
+ATTR_DEF(WindowVX, RefPtr<Bitmap>, Contents) {
   if (value.has_value()) {
     contents_ = *value;
     return std::nullopt;
   } else {
-    return contents_.get();
+    return contents_;
   }
 }
 
-ATTR_DEF(WindowVX, Rect*, CursorRect) {
+ATTR_DEF(WindowVX, RefPtr<Rect>, CursorRect) {
   if (value.has_value()) {
     cursor_rect_->Set(*value);
     return std::nullopt;
   } else {
-    return cursor_rect_.get();
+    return cursor_rect_;
   }
 }
 
@@ -318,12 +305,12 @@ ATTR_DEF(WindowVX, int32_t, Openness) {
   }
 }
 
-ATTR_DEF(WindowVX, Tone*, Tone) {
+ATTR_DEF(WindowVX, RefPtr<Tone>, Tone) {
   if (value.has_value()) {
     tone_->Set(*value);
     return std::nullopt;
   } else {
-    return tone_.get();
+    return tone_;
   }
 }
 

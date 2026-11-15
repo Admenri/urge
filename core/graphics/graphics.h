@@ -28,7 +28,6 @@
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_video.h"
 
-#include "core/common/persistent.h"
 #include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
@@ -82,7 +81,7 @@ class Graphics : public Singleton<Graphics> {
                         MaybePtr<Bitmap> bitmap = {},
                         int32_t vague = 40);
   URGE_BINDING()
-  Bitmap* SnapToBitmap(URGE_EXCEPT);
+  RefPtr<Bitmap> SnapToBitmap(URGE_EXCEPT);
   URGE_BINDING()
   void FrameReset();
   URGE_BINDING()
@@ -103,7 +102,7 @@ class Graphics : public Singleton<Graphics> {
   bool UpdateBackgroundState();
 
   URGE_BINDING(Name : "root_node")
-  Node* GetRootNode() { return root_.get(); }
+  RefPtr<Node> GetRootNode() { return root_; }
 
   URGE_BINDING()
   ATTR(int32_t, FrameRate);
@@ -119,7 +118,7 @@ class Graphics : public Singleton<Graphics> {
   URGE_BINDING()
   ATTR(bool, VSync);
 
-  ScreenRootNode* root() { return root_.get(); }
+  RefPtr<ScreenRootNode> root() { return root_; }
   SDL_Window* window() const { return window_; }
 
   RectF ScreenRectInWindow() const;
@@ -172,8 +171,8 @@ class Graphics : public Singleton<Graphics> {
   std::vector<SDL_Event> pending_events_;
 
   SDL_Window* window_ = nullptr;
-  Persistent<ScreenRootNode> root_;
-  Persistent<Bitmap> screen_;
+  RefPtr<ScreenRootNode> root_;
+  RefPtr<Bitmap> screen_;
   std::unique_ptr<Upscaler> upscaler_;
 
   bool frozen_ = false;

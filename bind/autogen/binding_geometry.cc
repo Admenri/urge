@@ -38,24 +38,28 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Geometry  (core/scene/geometry.h:39-67)
+// Geometry  (core/scene/geometry.h:39-69)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Geometry, Node);
 
 RB_FUNC(Geometry_initialize) {
-  CheckConstructorSelf(self, kGeometryDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Geometry* result = nullptr;
 
     {
-      urge::Geometry* value = urge::MakeGarbageCollected<urge::Geometry>();
-      result = new urge::GarbageCollector::Root(value);
+      urge::RefPtr<urge::Geometry> value = urge::MakeRefCounted<urge::Geometry>();
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else if (argc == 1) {
     // initialize(viewport)
     VALUE viewport_val;
@@ -63,16 +67,20 @@ RB_FUNC(Geometry_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::GarbageCollector::Root* result = nullptr;
+    urge::Geometry* result = nullptr;
 
     {
-      urge::Geometry* value = urge::MakeGarbageCollected<urge::Geometry>(
+      urge::RefPtr<urge::Geometry> value = urge::MakeRefCounted<urge::Geometry>(
           viewport);
-      result = new urge::GarbageCollector::Root(value);
+      result = value.get();
+      if (result)
+        result->AddRef();
     }
-    RB_GC_GUARD(viewport_val);
 
-    return OwnedSetupSelf(self, result);
+    VALUE object = SetupSelfData(self, result);
+    if (result)
+      result->Release();
+    return object;
   } else {
     ArgcError(argc);
   }
@@ -92,7 +100,6 @@ RB_FUNC(Geometry_SetPosition) {
   {
     self_obj->SetPosition(exception_state, triangle, point, position);
   }
-  RB_GC_GUARD(position_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -112,7 +119,6 @@ RB_FUNC(Geometry_SetTexcoord) {
   {
     self_obj->SetTexcoord(exception_state, triangle, point, texcoord);
   }
-  RB_GC_GUARD(texcoord_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -132,7 +138,6 @@ RB_FUNC(Geometry_SetColor) {
   {
     self_obj->SetColor(exception_state, triangle, point, color);
   }
-  RB_GC_GUARD(color_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -174,10 +179,8 @@ void InitGeometryBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Geometry", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGeometryDataType>);
-  RegisterNativeType<urge::Geometry>(klass, kGeometryDataType);
 
   DefineMethod(klass, "initialize", Geometry_initialize);
-  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_position", Geometry_SetPosition);
   DefineMethod(klass, "set_texcoord", Geometry_SetTexcoord);
   DefineMethod(klass, "set_color", Geometry_SetColor);
