@@ -34,6 +34,20 @@
 
 namespace urge {
 
+void TilemapVX::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(above_);
+  visitor.Trace(shadow_texture_);
+  visitor.Trace(map_data_);
+  visitor.Trace(flash_data_);
+  visitor.Trace(flags_);
+  visitor.Trace(map_layer_);
+  visitor.Trace(above_layer_);
+  visitor.Trace(scratch_quads_);
+  for (const auto& bitmap : bitmaps_)
+    visitor.Trace(bitmap);
+}
+
 namespace {
 
 const RectF kAutotileSrcRegular[] = {
@@ -326,24 +340,28 @@ const RectF kAutotileSrcWaterfall[] = {
 
 }
 
-TilemapVXAbove::TilemapVXAbove(TilemapVX* parent, RefPtr<Viewport> viewport)
+TilemapVXAbove::TilemapVXAbove(TilemapVX* parent, Viewport* viewport)
     : Node(viewport, ZValue(200)), parent_(parent) {}
 
-void TilemapVXAbove::DisposeObject() {}
+void TilemapVXAbove::DisposeObject() {
+  Node::DisposeObject();
+  parent_.reset();
+}
 
 bool TilemapVXAbove::Prepare(DrawParam param) {
   return parent_ && parent_->HasAboveLayer();
 }
 
 bool TilemapVXAbove::DoDraw(DrawParam param) {
-  parent_->DrawAboveLayer(param);
+  if (parent_)
+    parent_->DrawAboveLayer(param);
   return false;
 }
 
-TilemapVX::TilemapVX(URGE_EXCEPT, RefPtr<Viewport> viewport, int32_t tilesize)
+TilemapVX::TilemapVX(URGE_EXCEPT, Viewport* viewport, int32_t tilesize)
     : Node(viewport, ZValue()),
       rgss3_style_(Config::Get().vxa()),
-      above_(MakeRefCounted<TilemapVXAbove>(this, viewport)),
+      above_(MakeGarbageCollected<TilemapVXAbove>(this, viewport)),
       tilesize_(tilesize) {
   Node::SetupTrait(this);
   CreateShadowSet(exception_state);
@@ -369,19 +387,19 @@ void TilemapVX::Update() {
   flash_opacity_ = std::abs(16 - flash_timer_) * 8 + 32;
 }
 
-void TilemapVX::SetBitmap(int32_t index, RefPtr<Bitmap> bitmap) {
+void TilemapVX::SetBitmap(int32_t index, Bitmap* bitmap) {
   if (index < 0 || index >= TILE_NUMS)
     return;
   bitmaps_[index] = bitmap;
 }
 
-RefPtr<Bitmap> TilemapVX::GetBitmap(int32_t index) {
+Bitmap* TilemapVX::GetBitmap(int32_t index) {
   if (index < 0 || index >= TILE_NUMS)
     return nullptr;
-  return bitmaps_[index];
+  return bitmaps_[index].get();
 }
 
-ATTR_DEF(TilemapVX, RefPtr<Viewport>, Viewport) {
+ATTR_DEF(TilemapVX, Viewport*, Viewport) {
   if (value.has_value() && above_)
     above_->Attr_Parent(*value);
 
@@ -389,7 +407,7 @@ ATTR_DEF(TilemapVX, RefPtr<Viewport>, Viewport) {
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return RefPtr<Viewport>(viewport);
+    return viewport;
   } else {
     return std::nullopt;
   }
@@ -407,34 +425,34 @@ ATTR_DEF(TilemapVX, int32_t, Z) {
   return Node::Attr_Z(value);
 }
 
-ATTR_DEF(TilemapVX, RefPtr<Table>, MapData) {
+ATTR_DEF(TilemapVX, Table*, MapData) {
   if (value.has_value()) {
     map_data_ = *value;
     return std::nullopt;
   } else {
-    return map_data_;
+    return map_data_.get();
   }
 }
 
-ATTR_DEF(TilemapVX, RefPtr<Table>, FlashData) {
+ATTR_DEF(TilemapVX, Table*, FlashData) {
   if (value.has_value()) {
     flash_data_ = *value;
     return std::nullopt;
   } else {
-    return flash_data_;
+    return flash_data_.get();
   }
 }
 
-ATTR_DEF(TilemapVX, RefPtr<Table>, Flags) {
+ATTR_DEF(TilemapVX, Table*, Flags) {
   if (value.has_value()) {
     flags_ = *value;
     return std::nullopt;
   } else {
-    return flags_;
+    return flags_.get();
   }
 }
 
-ATTR_DEF(TilemapVX, RefPtr<Table>, Passages) {
+ATTR_DEF(TilemapVX, Table*, Passages) {
   return Attr_Flags(value);
 }
 
@@ -459,12 +477,17 @@ ATTR_DEF(TilemapVX, int32_t, OY) {
 void TilemapVX::DisposeObject() {
   Node::DisposeObject();
 
+  if (above_)
+    above_->Dispose();
   above_.reset();
   shadow_texture_.reset();
   map_layer_.primitive.Reset();
   above_layer_.primitive.Reset();
   map_layer_.draws.clear();
   above_layer_.draws.clear();
+  // The last upper-layer build leaves bitmap edges in this private cache.
+  // Keep the public bitmap slots readable after disposal, but release quads.
+  scratch_quads_.clear();
 }
 
 bool TilemapVX::Prepare(DrawParam param) {
@@ -492,12 +515,12 @@ bool TilemapVX::DoDraw(DrawParam param) {
 
 void TilemapVX::CreateShadowSet(URGE_EXCEPT) {
   shadow_texture_ =
-      MakeRefCounted<Bitmap>(exception_state, 16 * tilesize_, tilesize_);
+      MakeGarbageCollected<Bitmap>(exception_state, 16 * tilesize_, tilesize_);
   if (exception_state.HadException())
     return;
 
   const int32_t half = tilesize_ / 2;
-  RefPtr<Color> tint = MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 128.0f);
+  Color* tint = MakeGarbageCollected<Color>(0.0f, 0.0f, 0.0f, 128.0f);
 
   for (int32_t i = 0; i < 16; ++i) {
     const int32_t offset = i * tilesize_;
@@ -552,7 +575,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
 
   glm::vec4 tile_color(0.0f);
 
-  auto push_quad = [&](const RefPtr<Bitmap>& texture, const RectF& source,
+  auto push_quad = [&](const Member<Bitmap>& texture, const RectF& source,
                        const RectF& destination) {
     TileQuad quad;
     quad.texture = texture;
@@ -572,7 +595,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     return res < 0 ? res + range : res;
   };
 
-  auto get_wrap_data = [&](RefPtr<Table> t, int32_t x, int32_t y,
+  auto get_wrap_data = [&](const Member<Table>& t, int32_t x, int32_t y,
                            int32_t z) -> int16_t {
     if (!t)
       return 0;
@@ -588,7 +611,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
     return t->Get(tile_x, tile_y, z);
   };
 
-  auto get_map_flag = [&](RefPtr<Table> t, int32_t tile_id) -> int16_t {
+  auto get_map_flag = [&](const Member<Table>& t, int32_t tile_id) -> int16_t {
     if (!t)
       return 0;
 
@@ -625,7 +648,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
   };
 
   auto read_autotile_common = [&](int32_t pattern_id,
-                                  const RefPtr<Bitmap>& texture,
+                                  const Member<Bitmap>& texture,
                                   const glm::vec2& offset, int32_t x, int32_t y,
                                   const RectF* rect_src) {
     for (int32_t i = 0; i < 4; ++i) {
@@ -644,7 +667,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
   };
 
   auto read_autotile_table = [&](int32_t pattern_id,
-                                 const RefPtr<Bitmap>& texture,
+                                 const Member<Bitmap>& texture,
                                  const glm::vec2& offset, int32_t x, int32_t y,
                                  bool occlusion) {
     for (int32_t i = 0; i < 6; ++i) {
@@ -673,7 +696,7 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
   };
 
   auto read_autotile_waterfall = [&](int32_t pattern_id,
-                                     const RefPtr<Bitmap>& texture,
+                                     const Member<Bitmap>& texture,
                                      const glm::vec2& offset, int32_t x,
                                      int32_t y) {
     if (pattern_id > 0x3)
@@ -950,7 +973,7 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
 
   size_t index = 0;
   while (index < quads.size()) {
-    const RefPtr<Bitmap>& texture = quads[index].texture;
+    const Member<Bitmap>& texture = quads[index].texture;
 
     if (!Disposable::Check(texture)) {
       ++index;
@@ -961,7 +984,7 @@ void TilemapVX::BuildLayer(bool above, TileLayer* layer) {
                                  static_cast<float>(texture->size().y));
 
     layer->primitive.BeginQuad();
-    while (index < quads.size() && quads[index].texture == texture) {
+    while (index < quads.size() && quads[index].texture.get() == texture.get()) {
       RectF dest = quads[index].destination;
       dest.x += render_offset_.x;
       dest.y += render_offset_.y;

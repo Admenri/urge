@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUObject  (core/graphics/gpu.h:57-57)
+// GPUObject  (core/graphics/gpu.h:58-58)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(GPUObject);
@@ -36,7 +36,9 @@ void InitGPUObjectBindingAppend(VALUE klass);
 void InitGPUObjectBinding() {
   auto klass = rb_define_class("GPUObject", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUObjectDataType>);
+  RegisterNativeType<urge::GPUObject>(klass, kGPUObjectDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUObjectBindingAppend(klass);
 }
 // --- GENERATED END ---

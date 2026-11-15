@@ -36,6 +36,17 @@
 
 namespace urge {
 
+void MaterialPass3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(texture_map_);
+  visitor.Trace(view_map_);
+}
+
+void Material3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(passes_);
+}
+
 namespace {
 
 constexpr uint32_t kGroupView = 0;
@@ -222,7 +233,7 @@ void MaterialPass3D::CollectSlots(URGE_EXCEPT) {
 
 void MaterialPass3D::SetTextureSlot(URGE_EXCEPT,
                                     int32_t slot,
-                                    RefPtr<Bitmap> texture) {
+                                    Bitmap* texture) {
   if (slots_.empty()) {
     CollectSlots(exception_state);
     if (exception_state.HadException())
@@ -240,33 +251,34 @@ void MaterialPass3D::SetTextureSlot(URGE_EXCEPT,
   SetTexture(texture_names_[slot], std::move(texture));
 }
 
-RefPtr<Bitmap> MaterialPass3D::GetTextureSlot(int32_t slot) const {
+Bitmap* MaterialPass3D::GetTextureSlot(int32_t slot) const {
   if (slot < 0 || slot >= static_cast<int32_t>(texture_names_.size()))
     return nullptr;
 
   const auto it = texture_map_.find(texture_names_[slot]);
-  return it == texture_map_.end() ? nullptr : it->second;
+  return it == texture_map_.end() ? nullptr
+                                  : it->second.get();
 }
 
-void MaterialPass3D::SetTexture(std::string name, RefPtr<Bitmap> texture) {
+void MaterialPass3D::SetTexture(std::string name, Bitmap* texture) {
   view_map_.erase(name);
-  texture_map_[std::move(name)] = std::move(texture);
+  texture_map_[std::move(name)] = texture;
   binding_dirty_ = true;
 }
 
-void MaterialPass3D::SetTextureView(std::string name,
-                                    RefPtr<GPUTextureView> view) {
+void MaterialPass3D::SetTextureView(std::string name, GPUTextureView* view) {
   const auto found = view_map_.find(name);
   if (found != view_map_.end() && found->second && view &&
       found->second->handle().Get() == view->handle().Get())
     return;
-  view_map_[std::move(name)] = std::move(view);
+  view_map_[std::move(name)] = view;
   binding_dirty_ = true;
 }
 
-RefPtr<Bitmap> MaterialPass3D::GetTexture(std::string name) const {
+Bitmap* MaterialPass3D::GetTexture(std::string name) const {
   const auto it = texture_map_.find(name);
-  return it == texture_map_.end() ? nullptr : it->second;
+  return it == texture_map_.end() ? nullptr
+                                  : it->second.get();
 }
 
 void MaterialPass3D::SetUniformSlot(URGE_EXCEPT,
@@ -651,8 +663,8 @@ void MaterialPass3D::RebuildBindGroup(URGE_EXCEPT) {
 
         if (entry.textureView == nullptr) {
           const auto found = texture_map_.find(slot.name);
-          RefPtr<Bitmap> texture =
-              found == texture_map_.end() ? nullptr : found->second;
+          Bitmap* texture =
+              found == texture_map_.end() ? nullptr : found->second.get();
           const bool usable = texture && !texture->IsDisposed();
           if (usable)
             entry.textureView = texture->texture_view();
@@ -694,16 +706,16 @@ Material3D::Material3D() = default;
 
 Material3D::~Material3D() = default;
 
-RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT,
-                                           std::string tag,
-                                           std::string vs_wgsl,
-                                           std::string fs_wgsl) {
+MaterialPass3D* Material3D::AddPass(URGE_EXCEPT,
+                                    std::string tag,
+                                    std::string vs_wgsl,
+                                    std::string fs_wgsl) {
   if (tag.empty()) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "material3d: a pass needs a tag.");
     return {};
   }
-  for (const RefPtr<MaterialPass3D>& pass : passes_) {
+  for (const auto& pass : passes_) {
     if (pass->tag() == tag) {
       exception_state.Throw(ExceptionState::kRGSSError,
                             "material3d: the pass tag '{}' is already used.",
@@ -712,25 +724,25 @@ RefPtr<MaterialPass3D> Material3D::AddPass(URGE_EXCEPT,
     }
   }
 
-  auto pass = MakeRefCounted<MaterialPass3D>(
+  auto pass = MakeGarbageCollected<MaterialPass3D>(
       exception_state, std::move(tag), std::move(vs_wgsl), std::move(fs_wgsl));
   passes_.push_back(pass);
   return pass;
 }
 
-RefPtr<MaterialPass3D> Material3D::AddShadowPass(URGE_EXCEPT,
-                                                 std::string tag,
-                                                 std::string vs_wgsl) {
-  RefPtr<MaterialPass3D> pass = AddPass(exception_state, std::move(tag),
-                                        std::move(vs_wgsl), std::string());
+MaterialPass3D* Material3D::AddShadowPass(URGE_EXCEPT,
+                                          std::string tag,
+                                          std::string vs_wgsl) {
+  MaterialPass3D* pass = AddPass(exception_state, std::move(tag),
+                                 std::move(vs_wgsl), std::string());
   pass->set_depth_only(true);
   return pass;
 }
 
-RefPtr<MaterialPass3D> Material3D::GetPass(std::string tag) {
-  for (const RefPtr<MaterialPass3D>& pass : passes_)
+MaterialPass3D* Material3D::GetPass(std::string tag) {
+  for (const auto& pass : passes_)
     if (pass->tag() == tag)
-      return pass;
+      return pass.get();
   return nullptr;
 }
 
@@ -739,25 +751,23 @@ bool Material3D::HasPass(std::string tag) {
 }
 
 void Material3D::RemovePass(std::string tag) {
-  passes_.erase(std::remove_if(passes_.begin(), passes_.end(),
-                               [&tag](const RefPtr<MaterialPass3D>& pass) {
-                                 return pass->tag() == tag;
-                               }),
-                passes_.end());
+  passes_.erase(
+      std::remove_if(passes_.begin(), passes_.end(),
+                     [&tag](const auto& pass) { return pass->tag() == tag; }),
+      passes_.end());
 }
 
 std::vector<std::string> Material3D::Tags() const {
   std::vector<std::string> tags;
   tags.reserve(passes_.size());
-  for (const RefPtr<MaterialPass3D>& pass : passes_)
+  for (const auto& pass : passes_)
     tags.push_back(pass->tag());
   return tags;
 }
 
-RefPtr<MaterialPass3D> Material3D::PassAt(int32_t index) const {
+MaterialPass3D* Material3D::PassAt(int32_t index) const {
   if (index < 0 || index >= static_cast<int32_t>(passes_.size()))
     return nullptr;
-  return passes_[index];
+  return passes_[index].get();
 }
-
 }

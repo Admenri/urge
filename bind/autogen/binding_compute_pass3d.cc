@@ -31,37 +31,33 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// ComputePass3D  (core/scene3d/render_graph3d.h:51-80)
+// ComputePass3D  (core/scene3d/render_graph3d.h:52-81)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(ComputePass3D);
 
 RB_FUNC(ComputePass3D_initialize) {
+  CheckConstructorSelf(self, kComputePass3DDataType);
+  CheckArgc(argc, 2);
   urge::ExceptionState exception_state;
   VALUE wgsl_val, entry_val;
-  const char* wgsl_data;
-  size_t wgsl_size, entry_size;
-  const char* entry_data;
   ParseArgs(argc, argv, "oo", &wgsl_val, &entry_val);
-  CheckString(wgsl_val, &wgsl_data, &wgsl_size);
-  CheckString(entry_val, &entry_data, &entry_size);
+  wgsl_val = CheckString(wgsl_val);
+  entry_val = CheckString(entry_val);
 
-  urge::ComputePass3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::ComputePass3D> value = urge::MakeRefCounted<urge::ComputePass3D>(
-        exception_state, std::string(wgsl_data, wgsl_size),
-        std::string(entry_data, entry_size));
-    result = exception_state.HadException() ? nullptr : value.get();
-    if (result)
-      result->AddRef();
+    urge::ComputePass3D* value = urge::MakeGarbageCollected<urge::ComputePass3D>(
+        exception_state, TakeString(wgsl_val), TakeString(entry_val));
+    if (!exception_state.HadException())
+      result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(wgsl_val);
+  RB_GC_GUARD(entry_val);
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(ComputePass3D_SetUniform) {
@@ -69,16 +65,15 @@ RB_FUNC(ComputePass3D_SetUniform) {
 
   CheckArgc(argc, 2);
   VALUE name_val, values_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "oo", &name_val, &values_val);
-  CheckString(name_val, &name_data, &name_size);
-  CheckVectorOf<float>(values_val);
+  name_val = CheckString(name_val);
+  values_val = CheckVectorOf<float>(values_val);
 
   {
-    self_obj->SetUniform(std::string(name_data, name_size),
-        TakeVectorOf<float>(values_val));
+    self_obj->SetUniform(TakeString(name_val), TakeVectorOf<float>(values_val));
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(values_val);
 
   return Qnil;
 }
@@ -88,16 +83,15 @@ RB_FUNC(ComputePass3D_SetBuffer) {
 
   CheckArgc(argc, 2);
   VALUE name_val, values_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "oo", &name_val, &values_val);
-  CheckString(name_val, &name_data, &name_size);
-  CheckVectorOf<float>(values_val);
+  name_val = CheckString(name_val);
+  values_val = CheckVectorOf<float>(values_val);
 
   {
-    self_obj->SetBuffer(std::string(name_data, name_size),
-        TakeVectorOf<float>(values_val));
+    self_obj->SetBuffer(TakeString(name_val), TakeVectorOf<float>(values_val));
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(values_val);
 
   return Qnil;
 }
@@ -107,16 +101,16 @@ RB_FUNC(ComputePass3D_SetTexture) {
 
   CheckArgc(argc, 2);
   VALUE name_val, texture_val;
-  const char* name_data;
-  size_t name_size;
   urge::Bitmap* texture;
   ParseArgs(argc, argv, "oo", &name_val, &texture_val);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
   texture = CheckMaybeObject<urge::Bitmap>(texture_val, kBitmapDataType);
 
   {
-    self_obj->SetTexture(std::string(name_data, name_size), texture);
+    self_obj->SetTexture(TakeString(name_val), texture);
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(texture_val);
 
   return Qnil;
 }
@@ -126,17 +120,17 @@ RB_FUNC(ComputePass3D_SetTarget) {
 
   CheckArgc(argc, 3);
   VALUE name_val, target_val;
-  const char* name_data;
-  size_t name_size;
   urge::RenderTarget3D* target;
   int index;
   ParseArgs(argc, argv, "ooi", &name_val, &target_val, &index);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
   target = CheckObject<urge::RenderTarget3D>(target_val, kRenderTarget3DDataType);
 
   {
-    self_obj->SetTarget(std::string(name_data, name_size), target, index);
+    self_obj->SetTarget(TakeString(name_val), target, index);
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(target_val);
 
   return Qnil;
 }
@@ -155,8 +149,10 @@ void InitComputePass3DBindingAppend(VALUE klass);
 void InitComputePass3DBinding() {
   auto klass = rb_define_class("ComputePass3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kComputePass3DDataType>);
+  RegisterNativeType<urge::ComputePass3D>(klass, kComputePass3DDataType);
 
   DefineMethod(klass, "initialize", ComputePass3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_uniform", ComputePass3D_SetUniform);
   DefineMethod(klass, "set_buffer", ComputePass3D_SetBuffer);
   DefineMethod(klass, "set_texture", ComputePass3D_SetTexture);

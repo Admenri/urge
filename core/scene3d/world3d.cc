@@ -33,6 +33,16 @@
 
 namespace urge {
 
+void World3D::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(scene_);
+  visitor.Trace(camera_);
+  visitor.Trace(graph_);
+  visitor.Trace(default_graph_);
+  visitor.Trace(target_);
+  visitor.Trace(context_);
+}
+
 namespace {
 
 constexpr std::string_view kQuadShader = R"(
@@ -83,8 +93,18 @@ World3D::World3D(int32_t x, int32_t y, int32_t width, int32_t height)
   Attr_Parent(nullptr);
 }
 
-World3D::~World3D() {
-  Disposable::Dispose();
+World3D::~World3D() = default;
+
+void World3D::PrepareForCollection() {
+  // Node detaches Drawable registrations before any object in the batch dies.
+  // Its Dispose dispatch also clears this World's resources, idempotently.
+  Node::PrepareForCollection();
+  context_.reset();
+  target_.reset();
+  default_graph_.reset();
+  graph_.reset();
+  camera_.reset();
+  scene_.reset();
 }
 
 void World3D::DisposeObject() {
@@ -97,20 +117,20 @@ void World3D::DisposeObject() {
   scene_.reset();
 }
 
-RefPtr<RenderGraph3D> World3D::ActiveGraph(URGE_EXCEPT) {
+RenderGraph3D* World3D::ActiveGraph(URGE_EXCEPT) {
   if (graph_)
-    return graph_;
+    return graph_.get();
   if (!default_graph_)
-    default_graph_ = MakeRefCounted<ForwardPipeline3D>(exception_state);
-  return default_graph_;
+    default_graph_ = MakeGarbageCollected<ForwardPipeline3D>(exception_state);
+  return default_graph_.get();
 }
 
 void World3D::EnsureTarget(URGE_EXCEPT) {
   if (target_ && target_->Width() == width_ && target_->Height() == height_)
     return;
 
-  target_ = MakeRefCounted<RenderTarget3D>(exception_state, width_, height_,
-                                           format_, "depth32float", 1);
+  target_ = MakeGarbageCollected<RenderTarget3D>(
+      exception_state, width_, height_, format_, "depth32float", 1);
   texture_group_ = nullptr;
 }
 
@@ -245,15 +265,15 @@ void World3D::RenderScene(URGE_EXCEPT, DrawParam param) {
   if (exception_state.HadException() || !target_)
     return;
 
-  RefPtr<RenderGraph3D> graph = ActiveGraph(exception_state);
+  RenderGraph3D* graph = ActiveGraph(exception_state);
   if (exception_state.HadException() || !graph)
     return;
 
   if (!context_)
-    context_ = MakeRefCounted<RenderContext3D>(exception_state, param->command,
-                                               target_);
+    context_ = MakeGarbageCollected<RenderContext3D>(
+        exception_state, param->command, target_.get());
   else
-    context_->BeginFrame(param->command, target_);
+    context_->BeginFrame(param->command, target_.get());
   if (exception_state.HadException())
     return;
 

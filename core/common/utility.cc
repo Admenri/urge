@@ -39,7 +39,8 @@ MARSHAL_LOAD_DEF(Rect) {
   }
 
   const int32_t* ptr = reinterpret_cast<const int32_t*>(data.data());
-  return MakeRefCounted<Rect>(*(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3));
+  return MakeGarbageCollected<Rect>(*(ptr + 0), *(ptr + 1), *(ptr + 2),
+                                    *(ptr + 3));
 }
 
 KLASS_EQUAL_DEF(Rect) {
@@ -72,7 +73,7 @@ MARSHAL_LOAD_DEF(Color) {
   const float blue = static_cast<float>(*(ptr + 2));
   const float alpha = static_cast<float>(*(ptr + 3));
 
-  return MakeRefCounted<Color>(red, green, blue, alpha);
+  return MakeGarbageCollected<Color>(red, green, blue, alpha);
 }
 
 KLASS_EQUAL_DEF(Color) {
@@ -106,7 +107,7 @@ MARSHAL_LOAD_DEF(Tone) {
   const float blue = static_cast<float>(*(ptr + 2));
   const float gray = static_cast<float>(*(ptr + 3));
 
-  return MakeRefCounted<Tone>(red, green, blue, gray);
+  return MakeGarbageCollected<Tone>(red, green, blue, gray);
 }
 
 KLASS_EQUAL_DEF(Tone) {

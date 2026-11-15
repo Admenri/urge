@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePipeline  (core/graphics/gpu.h:879-883)
+// GPUComputePipeline  (core/graphics/gpu.h:885-889)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePipeline, GPUObject);
@@ -41,20 +41,14 @@ RB_FUNC(GPUComputePipeline_GetBindGroupLayout) {
   uint32_t group_index;
   ParseArgs(argc, argv, "u", &group_index);
 
-  urge::GPUBindGroupLayout* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GPUBindGroupLayout> value = self_obj->GetBindGroupLayout(
-        group_index);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::GPUBindGroupLayout* value = self_obj->GetBindGroupLayout(group_index);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kGPUBindGroupLayoutDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kGPUBindGroupLayoutDataType);
 }
 
 void InitGPUComputePipelineBindingAppend(VALUE klass);
@@ -63,7 +57,9 @@ void InitGPUComputePipelineBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUComputePipeline", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUComputePipelineDataType>);
+  RegisterNativeType<urge::GPUComputePipeline>(klass, kGPUComputePipelineDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "get_bind_group_layout", GPUComputePipeline_GetBindGroupLayout);
   InitGPUComputePipelineBindingAppend(klass);
 }

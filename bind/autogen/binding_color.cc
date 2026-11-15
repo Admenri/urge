@@ -27,61 +27,47 @@ namespace binding {
 RB_DEF_TYPE(Color);
 
 RB_FUNC(Color_initialize) {
+  CheckConstructorSelf(self, kColorDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::Color* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>();
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Color* value = urge::MakeGarbageCollected<urge::Color>();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 3) {
     // initialize(r, g, b)
     double r, g, b;
     ParseArgs(argc, argv, "fff", &r, &g, &b);
 
-    urge::Color* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>(
+      urge::Color* value = urge::MakeGarbageCollected<urge::Color>(
           static_cast<float>(r), static_cast<float>(g), static_cast<float>(b));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 4) {
     // initialize(r, g, b, a)
     double r, g, b, a;
     ParseArgs(argc, argv, "ffff", &r, &g, &b, &a);
 
-    urge::Color* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>(
+      urge::Color* value = urge::MakeGarbageCollected<urge::Color>(
           static_cast<float>(r), static_cast<float>(g), static_cast<float>(b),
           static_cast<float>(a));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -91,22 +77,21 @@ RB_FUNC(Color_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
+  if (self == other_val)
+    return self;
+  CheckConstructorSelf(self, kColorDataType);
   urge::Color* other_obj = CheckObject<urge::Color>(other_val, kColorDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::Color* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Color> value = urge::MakeRefCounted<urge::Color>(other_obj);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Color* value = urge::MakeGarbageCollected<urge::Color>(other_obj);
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(other_val);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Color__dump) {
@@ -115,39 +100,30 @@ RB_FUNC(Color__dump) {
   std::string* result = nullptr;
 
   {
-    result = new std::string(urge::Color::MarshalDump(urge::RefPtr<urge::Color>(self_obj)));
+    result = new std::string(urge::Color::MarshalDump(self_obj));
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(Color__load) {
   VALUE data_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &data_val);
-  const char* data_data;
-  size_t data_size;
-  CheckString(data_val, &data_data, &data_size);
+  data_val = CheckString(data_val);
 
   urge::ExceptionState exception_state;
-  urge::Color* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Color> value = urge::Color::MarshalLoad(exception_state, std::string(data_data, data_size));
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Color* value = urge::Color::MarshalLoad(exception_state, TakeString(data_val));
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(data_val);
+  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(rb_obj_alloc(self), result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result, true);
 }
 
 // Value equality: ==, eql?, === (KLASS_EQUAL)
@@ -183,6 +159,7 @@ RB_FUNC(Color_Set) {
     {
       self_obj->Set(color);
     }
+    RB_GC_GUARD(color_val);
 
     return Qnil;
   } else if (argc == 3) {
@@ -229,6 +206,7 @@ void InitColorBindingAppend(VALUE klass);
 void InitColorBinding() {
   auto klass = rb_define_class("Color", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kColorDataType>);
+  RegisterNativeType<urge::Color>(klass, kColorDataType);
 
   DefineMethod(klass, "initialize", Color_initialize);
   DefineMethod(klass, "initialize_copy", Color_initialize_copy);

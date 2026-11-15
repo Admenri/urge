@@ -67,7 +67,7 @@ void URGE::SetWindowTitle(std::string title) {
   SDL_SetWindowTitle(window, title.c_str());
 }
 
-void URGE::SetWindowIcon(RefPtr<Image> icon) {
+void URGE::SetWindowIcon(Image* icon) {
   SDL_Window* window = CurrentWindow();
   if (!window || !icon)
     return;
@@ -89,10 +89,10 @@ void URGE::MoveWindow(int32_t x, int32_t y, int32_t width, int32_t height) {
   SDL_SetWindowSize(window, width, height);
 }
 
-RefPtr<Rect> URGE::GetWindowRect() {
+Rect* URGE::GetWindowRect() {
   SDL_Window* window = CurrentWindow();
   if (!window)
-    return MakeRefCounted<Rect>();
+    return MakeGarbageCollected<Rect>();
 
   int x = 0;
   int y = 0;
@@ -100,7 +100,7 @@ RefPtr<Rect> URGE::GetWindowRect() {
   int height = 0;
   SDL_GetWindowPosition(window, &x, &y);
   SDL_GetWindowSize(window, &width, &height);
-  return MakeRefCounted<Rect>(x, y, width, height);
+  return MakeGarbageCollected<Rect>(x, y, width, height);
 }
 
 void URGE::OpenURL(std::string url) {

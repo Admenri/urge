@@ -40,6 +40,7 @@ class WindowVX : public Node {
   URGE_BINDING()
   WindowVX(URGE_EXCEPT, MaybePtr<Viewport> viewport = nullptr);
   ~WindowVX() override;
+  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void Update();
@@ -57,7 +58,7 @@ class WindowVX : public Node {
   URGE_BINDING()
   ATTR(MaybePtr<Bitmap>, Contents);
   URGE_BINDING()
-  ATTR(RefPtr<Rect>, CursorRect);
+  ATTR(Rect*, CursorRect);
   URGE_BINDING()
   ATTR(bool, Active);
   URGE_BINDING()
@@ -89,7 +90,7 @@ class WindowVX : public Node {
   URGE_BINDING()
   ATTR(int32_t, Openness);
   URGE_BINDING()
-  ATTR(RefPtr<Tone>, Tone);
+  ATTR(Tone*, Tone);
 
   static constexpr uint32_t kStencilReference = 1;
 
@@ -127,17 +128,17 @@ class WindowVX : public Node {
   RectI ContentRectInternal() const;
   void CreateTintBinding();
 
-  RefPtr<Viewport> viewport_;
-  RefPtr<Bitmap> window_skin_;
-  RefPtr<Bitmap> contents_;
-  RefPtr<Rect> cursor_rect_;
+  Member<Viewport> viewport_;
+  Member<Bitmap> window_skin_;
+  Member<Bitmap> contents_;
+  Member<Rect> cursor_rect_;
   bool active_ = true, arrows_visible_ = true, pause_ = false;
   int32_t x_ = 0, y_ = 0, width_ = 0, height_ = 0;
   int32_t ox_ = 0, oy_ = 0;
   int32_t padding_ = 12, padding_bottom_ = 12;
   int32_t opacity_ = 255, back_opacity_ = 192, contents_opacity_ = 255;
   int32_t openness_ = 255;
-  RefPtr<Tone> tone_;
+  Member<Tone> tone_;
   int32_t scale_ = 2;
 
   int32_t pause_index_ = 0;

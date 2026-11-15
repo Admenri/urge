@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 
 namespace urge {
 
@@ -49,9 +49,10 @@ class Singleton {
   inline static std::unique_ptr<Ty> instance_;
 };
 
-class Object : public RefCounted<Object> {
+class Object : public GarbageCollected {
  public:
-  virtual ~Object() = default;
+  ~Object() override = default;
+  void Trace(GCVisitor&) const override {}
 };
 
 }

@@ -129,7 +129,7 @@ def ruby_default(param: dict) -> str | None:
     """Translate a C++ default into what a script author would actually write.
 
     The IR records the C++ spelling (``nullptr``, ``{}``, ``255.f``), which is
-    noise for a Ruby reader: ``RefPtr<Color> color = {}`` is ``color = nil``.
+    noise for a Ruby reader: ``MaybePtr<Color> color = {}`` is ``color = nil``.
     Only the handful of shapes the headers use are mapped; anything else is
     passed through untouched so an unmapped default stays visible rather than
     being silently mangled.
@@ -145,7 +145,7 @@ def ruby_default(param: dict) -> str | None:
             return "[]"
         if "string" in cpp_type:
             return '""'
-        if cpp_type.startswith(("RefPtr", "MaybePtr")):
+        if cpp_type.startswith("MaybePtr<") or cpp_type.rstrip().endswith("*"):
             return "nil"
         return "{}"
     if default in ("std::string()", "std::string{}"):

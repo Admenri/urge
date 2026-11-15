@@ -85,7 +85,7 @@ std::vector<int32_t> Animation::Delays(URGE_EXCEPT) {
                               animation_->delays + animation_->count);
 }
 
-RefPtr<Image> Animation::Frame(URGE_EXCEPT, int32_t index) {
+Image* Animation::Frame(URGE_EXCEPT, int32_t index) {
   if (!Disposable::Guard(exception_state))
     return {};
 
@@ -94,7 +94,7 @@ RefPtr<Image> Animation::Frame(URGE_EXCEPT, int32_t index) {
 
   auto* frame =
       SDL_ConvertSurface(animation_->frames[index], kInternalPixelFormat);
-  return MakeRefCounted<Image>(frame);
+  return MakeGarbageCollected<Image>(frame);
 }
 
 void Animation::DisposeObject() {

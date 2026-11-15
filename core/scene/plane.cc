@@ -35,16 +35,23 @@
 
 namespace urge {
 
+void Plane::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(bitmap_);
+  visitor.Trace(color_);
+  visitor.Trace(tone_);
+}
+
 namespace {
 
 constexpr int64_t kMaxPlaneTiles = 1 << 18;
 
 }
 
-Plane::Plane(RefPtr<Viewport> viewport)
+Plane::Plane(Viewport* viewport)
     : Node(viewport, ZValue()),
-      color_(MakeRefCounted<Color>()),
-      tone_(MakeRefCounted<Tone>()) {
+      color_(MakeGarbageCollected<Color>()),
+      tone_(MakeGarbageCollected<Tone>()) {
   Node::SetupTrait(this);
   CreateEffectBindings();
 }
@@ -53,23 +60,23 @@ Plane::~Plane() {
   Disposable::Dispose();
 }
 
-ATTR_DEF(Plane, RefPtr<Viewport>, Viewport) {
+ATTR_DEF(Plane, Viewport*, Viewport) {
   auto parent_value = Node::Attr_Parent(value);
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return RefPtr<Viewport>(viewport);
+    return viewport;
   } else {
     return std::nullopt;
   }
 }
 
-ATTR_DEF(Plane, RefPtr<Bitmap>, Bitmap) {
+ATTR_DEF(Plane, Bitmap*, Bitmap) {
   if (value.has_value()) {
     bitmap_ = *value;
     return std::nullopt;
   } else {
-    return bitmap_;
+    return bitmap_.get();
   }
 }
 
@@ -128,21 +135,21 @@ ATTR_DEF(Plane, int32_t, BlendType) {
   }
 }
 
-ATTR_DEF(Plane, RefPtr<Color>, Color) {
+ATTR_DEF(Plane, Color*, Color) {
   if (value.has_value()) {
     color_->Set(*value);
     return std::nullopt;
   } else {
-    return color_;
+    return color_.get();
   }
 }
 
-ATTR_DEF(Plane, RefPtr<Tone>, Tone) {
+ATTR_DEF(Plane, Tone*, Tone) {
   if (value.has_value()) {
     tone_->Set(*value);
     return std::nullopt;
   } else {
-    return tone_;
+    return tone_.get();
   }
 }
 

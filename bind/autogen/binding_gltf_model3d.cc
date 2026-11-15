@@ -31,53 +31,45 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GLTFModel3D  (core/scene3d/gltf_loader3d.h:50-91)
+// GLTFModel3D  (core/scene3d/gltf_loader3d.h:53-96)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(GLTFModel3D);
 
 RB_FUNC(GLTFModel3D_initialize) {
+  CheckConstructorSelf(self, kGLTFModel3DDataType);
+  CheckArgc(argc, 1);
   urge::ExceptionState exception_state;
   VALUE path_val;
-  const char* path_data;
-  size_t path_size;
   ParseArgs(argc, argv, "o", &path_val);
-  CheckString(path_val, &path_data, &path_size);
+  path_val = CheckString(path_val);
 
-  urge::GLTFModel3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GLTFModel3D> value = urge::MakeRefCounted<urge::GLTFModel3D>(
-        exception_state, std::string(path_data, path_size));
-    result = exception_state.HadException() ? nullptr : value.get();
-    if (result)
-      result->AddRef();
+    urge::GLTFModel3D* value = urge::MakeGarbageCollected<urge::GLTFModel3D>(
+        exception_state, TakeString(path_val));
+    if (!exception_state.HadException())
+      result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(path_val);
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(GLTFModel3D_GetRoot) {
   auto* self_obj = GetSelfData<urge::GLTFModel3D>(self);
 
   CheckArgc(argc, 0);
-  urge::Node3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Node3D> value = self_obj->GetRoot();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Node3D* value = self_obj->GetRoot();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kNode3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kNode3DDataType);
 }
 
 RB_FUNC(GLTFModel3D_MaterialCount) {
@@ -142,9 +134,7 @@ RB_FUNC(GLTFModel3D_BoundsCenter) {
     result = new std::vector<float>(self_obj->BoundsCenter());
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 RB_FUNC(GLTFModel3D_BoundsSize) {
@@ -157,9 +147,7 @@ RB_FUNC(GLTFModel3D_BoundsSize) {
     result = new std::vector<float>(self_obj->BoundsSize());
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 RB_FUNC(GLTFModel3D_BoundsRadius) {
@@ -203,6 +191,7 @@ RB_FUNC(GLTFModel3D_SetMaterial) {
   {
     self_obj->SetMaterial(exception_state, index, material);
   }
+  RB_GC_GUARD(material_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -215,19 +204,14 @@ RB_FUNC(GLTFModel3D_GetMaterial) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::Material3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Material3D> value = self_obj->GetMaterial(index);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Material3D* value = self_obj->GetMaterial(index);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kMaterial3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kMaterial3DDataType);
 }
 
 // Attribute: unlit (bool)
@@ -238,8 +222,10 @@ void InitGLTFModel3DBindingAppend(VALUE klass);
 void InitGLTFModel3DBinding() {
   auto klass = rb_define_class("GLTFModel3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kGLTFModel3DDataType>);
+  RegisterNativeType<urge::GLTFModel3D>(klass, kGLTFModel3DDataType);
 
   DefineMethod(klass, "initialize", GLTFModel3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "root", GLTFModel3D_GetRoot);
   DefineMethod(klass, "material_count", GLTFModel3D_MaterialCount);
   DefineMethod(klass, "mesh_count", GLTFModel3D_MeshCount);

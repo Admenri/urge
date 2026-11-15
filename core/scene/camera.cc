@@ -36,6 +36,13 @@
 
 namespace urge {
 
+void Camera::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(position_);
+  visitor.Trace(quaternion_);
+  visitor.Trace(scale_);
+}
+
 namespace {
 
 float AspectOf(const glm::ivec2& size) {
@@ -47,42 +54,42 @@ float AspectOf(const glm::ivec2& size) {
 }
 
 Camera::Camera()
-    : position_(MakeRefCounted<Vector3>(0.0f)),
-      quaternion_(MakeRefCounted<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
-      scale_(MakeRefCounted<Vector3>(1.0f)) {}
+    : position_(MakeGarbageCollected<Vector3>(0.0f)),
+      quaternion_(MakeGarbageCollected<Vector4>(0.0f, 0.0f, 0.0f, 1.0f)),
+      scale_(MakeGarbageCollected<Vector3>(1.0f)) {}
 
 Camera::~Camera() {
   scene_group_ = nullptr;
   scene_uniform_ = nullptr;
 }
 
-ATTR_DEF(Camera, RefPtr<Vector3>, Position) {
+ATTR_DEF(Camera, Vector3*, Position) {
   if (value.has_value()) {
     if (*value)
       position_ = *value;
     return std::nullopt;
   } else {
-    return position_;
+    return position_.get();
   }
 }
 
-ATTR_DEF(Camera, RefPtr<Vector4>, Quaternion) {
+ATTR_DEF(Camera, Vector4*, Quaternion) {
   if (value.has_value()) {
     if (*value)
       quaternion_ = *value;
     return std::nullopt;
   } else {
-    return quaternion_;
+    return quaternion_.get();
   }
 }
 
-ATTR_DEF(Camera, RefPtr<Vector3>, Scale) {
+ATTR_DEF(Camera, Vector3*, Scale) {
   if (value.has_value()) {
     if (*value)
       scale_ = *value;
     return std::nullopt;
   } else {
-    return scale_;
+    return scale_.get();
   }
 }
 

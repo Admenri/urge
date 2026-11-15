@@ -33,6 +33,12 @@
 
 namespace urge {
 
+void Geometry::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(bitmap_);
+  visitor.Trace(effect_);
+}
+
 namespace {
 
 constexpr int32_t kDefaultTextureSize = 1;
@@ -97,7 +103,7 @@ class DefaultTexture {
 
 }
 
-Geometry::Geometry(RefPtr<Viewport> viewport) : Node(viewport, ZValue()) {
+Geometry::Geometry(Viewport* viewport) : Node(viewport, ZValue()) {
   Node::SetupTrait(this);
 }
 
@@ -108,7 +114,7 @@ Geometry::~Geometry() {
 void Geometry::SetPosition(URGE_EXCEPT,
                            int32_t triangle,
                            int32_t point,
-                           RefPtr<Vector3> position) {
+                           Vector3* position) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -125,7 +131,7 @@ void Geometry::SetPosition(URGE_EXCEPT,
 void Geometry::SetTexcoord(URGE_EXCEPT,
                            int32_t triangle,
                            int32_t point,
-                           RefPtr<Vector2> texcoord) {
+                           Vector2* texcoord) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -142,7 +148,7 @@ void Geometry::SetTexcoord(URGE_EXCEPT,
 void Geometry::SetColor(URGE_EXCEPT,
                         int32_t triangle,
                         int32_t point,
-                        RefPtr<Color> color) {
+                        Color* color) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -159,12 +165,12 @@ void Geometry::SetColor(URGE_EXCEPT,
                                     normalized.b * alpha, alpha);
 }
 
-ATTR_DEF(Geometry, RefPtr<Viewport>, Viewport) {
+ATTR_DEF(Geometry, Viewport*, Viewport) {
   auto parent_value = Node::Attr_Parent(value);
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return RefPtr<Viewport>(viewport);
+    return viewport;
   } else {
     return std::nullopt;
   }
@@ -185,12 +191,12 @@ ATTR_EXC_DEF(Geometry, int32_t, Capacity) {
   }
 }
 
-ATTR_DEF(Geometry, RefPtr<Bitmap>, Bitmap) {
+ATTR_DEF(Geometry, Bitmap*, Bitmap) {
   if (value.has_value()) {
     bitmap_ = *value;
     return std::nullopt;
   } else {
-    return bitmap_;
+    return bitmap_.get();
   }
 }
 
@@ -204,12 +210,12 @@ ATTR_DEF(Geometry, int32_t, BlendType) {
   }
 }
 
-ATTR_DEF(Geometry, RefPtr<Effect>, Effect) {
+ATTR_DEF(Geometry, Effect*, Effect) {
   if (value.has_value()) {
     effect_ = *value;
     return std::nullopt;
   } else {
-    return effect_;
+    return effect_.get();
   }
 }
 

@@ -35,6 +35,14 @@
 
 namespace urge {
 
+void WindowXP::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(above_);
+  visitor.Trace(windowskin_);
+  visitor.Trace(contents_);
+  visitor.Trace(cursor_rect_);
+}
+
 namespace {
 
 constexpr int32_t kSliceSize = 8;
@@ -48,13 +56,18 @@ constexpr int32_t kContentOffset = 8;
 
 }
 
-WindowXPAbove::WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport)
+WindowXPAbove::WindowXPAbove(WindowXP* parent, Viewport* viewport)
     : Node(viewport, ZValue()), parent_(parent) {
   Node::SetupTrait(this);
 }
 
+void WindowXPAbove::DisposeObject() {
+  Node::DisposeObject();
+  parent_.reset();
+}
+
 bool WindowXPAbove::Prepare(DrawParam param) {
-  if (parent_ == nullptr)
+  if (!parent_)
     return false;
 
   parent_->stencil_clear_slot_ = {};
@@ -112,13 +125,13 @@ bool WindowXPAbove::Prepare(DrawParam param) {
 }
 
 bool WindowXPAbove::DoDraw(DrawParam param) {
-  if (parent_ == nullptr || !parent_->above_prepare_)
+  if (!parent_ || !parent_->above_prepare_)
     return false;
 
   if (parent_->above_object_slot_.chunk == UniformBlockPool::kInvalidChunk)
     return false;
 
-  WindowXP* window = parent_;
+  WindowXP* window = parent_.get();
 
   UniformManager& uniforms = UniformManager::Get();
   const UniformBlockPool::Chunk& object_chunk =
@@ -178,11 +191,11 @@ bool WindowXPAbove::DoDraw(DrawParam param) {
   return false;
 }
 
-WindowXP::WindowXP(URGE_EXCEPT, RefPtr<Viewport> viewport)
+WindowXP::WindowXP(URGE_EXCEPT, Viewport* viewport)
     : Node(viewport, ZValue()),
-      above_(MakeRefCounted<WindowXPAbove>(this, viewport)),
-      contents_(MakeRefCounted<Bitmap>(exception_state, 1, 1)),
-      cursor_rect_(MakeRefCounted<Rect>()) {
+      above_(MakeGarbageCollected<WindowXPAbove>(this, viewport)),
+      contents_(MakeGarbageCollected<Bitmap>(exception_state, 1, 1)),
+      cursor_rect_(MakeGarbageCollected<Rect>()) {
   Node::SetupTrait(this);
   CreateTintBinding();
 }
@@ -217,7 +230,7 @@ ATTR_DEF(WindowXP, bool, Visible) {
   return Node::Attr_Visible(value);
 }
 
-ATTR_DEF(WindowXP, RefPtr<Viewport>, Viewport) {
+ATTR_DEF(WindowXP, Viewport*, Viewport) {
   if (above_)
     above_->Attr_Parent(value.has_value() ? *value : nullptr);
 
@@ -225,27 +238,27 @@ ATTR_DEF(WindowXP, RefPtr<Viewport>, Viewport) {
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return RefPtr<Viewport>(viewport);
+    return viewport;
   } else {
     return std::nullopt;
   }
 }
 
-ATTR_DEF(WindowXP, RefPtr<Bitmap>, Windowskin) {
+ATTR_DEF(WindowXP, Bitmap*, Windowskin) {
   if (value.has_value()) {
     windowskin_ = *value;
     return std::nullopt;
   } else {
-    return windowskin_;
+    return windowskin_.get();
   }
 }
 
-ATTR_DEF(WindowXP, RefPtr<Bitmap>, Contents) {
+ATTR_DEF(WindowXP, Bitmap*, Contents) {
   if (value.has_value()) {
     contents_ = *value;
     return std::nullopt;
   } else {
-    return contents_;
+    return contents_.get();
   }
 }
 
@@ -258,12 +271,12 @@ ATTR_DEF(WindowXP, bool, Stretch) {
   }
 }
 
-ATTR_DEF(WindowXP, RefPtr<Rect>, CursorRect) {
+ATTR_DEF(WindowXP, Rect*, CursorRect) {
   if (value.has_value()) {
     cursor_rect_->Set(*value);
     return std::nullopt;
   } else {
-    return cursor_rect_;
+    return cursor_rect_.get();
   }
 }
 
@@ -379,6 +392,8 @@ ATTR_DEF(WindowXP, int32_t, Z) {
 void WindowXP::DisposeObject() {
   Node::DisposeObject();
 
+  if (above_)
+    above_->Dispose();
   above_.reset();
   windowskin_.reset();
   contents_.reset();

@@ -31,6 +31,7 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
+#include "core/common/member.h"
 #include "core/scene3d/material3d.h"
 #include "core/scene3d/mesh3d.h"
 #include "core/scene3d/node3d.h"
@@ -44,13 +45,15 @@ class MeshRenderer3D : public Node3D {
   MeshRenderer3D();
   ~MeshRenderer3D() override;
 
+  void Trace(GCVisitor& visitor) const override;
+
   URGE_BINDING(Name : "mesh")
   ATTR(MaybePtr<Mesh3D>, Mesh);
 
   URGE_BINDING()
   void SetMaterial(URGE_EXCEPT, int32_t slot, MaybePtr<Material3D> material);
   URGE_BINDING()
-  RefPtr<Material3D> GetMaterial(int32_t slot) const;
+  Material3D* GetMaterial(int32_t slot) const;
   URGE_BINDING(Name : "material_count")
   int32_t MaterialCount() const {
     return static_cast<int32_t>(materials_.size());
@@ -90,18 +93,18 @@ class MeshRenderer3D : public Node3D {
   void UpdateBounds();
   glm::vec3 world_center() const { return world_center_; }
   float world_radius() const { return world_radius_; }
-  const std::map<int32_t, RefPtr<Material3D>>& materials() const {
+  const std::map<int32_t, Member<Material3D>>& materials() const {
     return materials_;
   }
-  RefPtr<Mesh3D> mesh() const { return mesh_; }
+  Mesh3D* mesh() const { return mesh_.get(); }
   bool cast_shadow() const { return cast_shadow_; }
   bool receive_shadow() const { return receive_shadow_; }
   int32_t render_queue() const { return render_queue_; }
   wgpu::Buffer instance_buffer() const { return instance_buffer_; }
 
  private:
-  RefPtr<Mesh3D> mesh_;
-  std::map<int32_t, RefPtr<Material3D>> materials_;
+  Member<Mesh3D> mesh_;
+  std::map<int32_t, Member<Material3D>> materials_;
 
   bool cast_shadow_ = true;
   bool receive_shadow_ = true;

@@ -33,13 +33,20 @@
 
 namespace urge {
 
+void Node::Trace(GCVisitor& visitor) const {
+  Disposable::Trace(visitor);
+  visitor.Trace(parent_);
+  visitor.Trace(camera_);
+  visitor.Trace(transform_);
+}
+
 Node::Node()
     : self_([&](DrawParam param) { ExecutePrepare(param); },
             [&](DrawParam param) { ExecuteRendering(param); },
             ZValue()),
       world_root_(true) {}
 
-Node::Node(RefPtr<Node> parent, const ZValue& z)
+Node::Node(Node* parent, const ZValue& z)
     : self_([&](DrawParam param) { ExecutePrepare(param); },
             [&](DrawParam param) { ExecuteRendering(param); },
             z),
@@ -47,13 +54,13 @@ Node::Node(RefPtr<Node> parent, const ZValue& z)
   Attr_Parent(parent);
 }
 
-Node::Node(RefPtr<Node> parent) : Node(parent, ZValue()) {}
+Node::Node(Node* parent) : Node(parent, ZValue()) {}
 
 Node::~Node() {
   Disposable::Dispose();
 }
 
-void Node::Render(RefPtr<Bitmap> target, RefPtr<Color> clear) {
+void Node::Render(Bitmap* target, Color* clear) {
   auto encoder = GPUDevice::Get().device().CreateCommandEncoder(nullptr);
 
   DrawContext context = {};
@@ -113,7 +120,7 @@ ATTR_DEF(Node, bool, Visible) {
   }
 }
 
-ATTR_DEF(Node, RefPtr<Node>, Parent) {
+ATTR_DEF(Node, Node*, Parent) {
   if (value.has_value()) {
     parent_ = *value;
     DrawableSet* default_parent = &Graphics::Get().root()->children_;
@@ -121,11 +128,11 @@ ATTR_DEF(Node, RefPtr<Node>, Parent) {
     self_.SetParent(parent);
     return std::nullopt;
   } else {
-    return parent_;
+    return parent_.get();
   }
 }
 
-ATTR_DEF(Node, RefPtr<Vector3>, Position) {
+ATTR_DEF(Node, Vector3*, Position) {
   if (value) {
     if (*value) {
       transform_.position = *value;
@@ -133,11 +140,11 @@ ATTR_DEF(Node, RefPtr<Vector3>, Position) {
     }
     return std::nullopt;
   } else {
-    return transform_.position;
+    return transform_.position.get();
   }
 }
 
-ATTR_DEF(Node, RefPtr<Vector4>, Quaternion) {
+ATTR_DEF(Node, Vector4*, Quaternion) {
   if (value) {
     if (*value) {
       transform_.quaternion = *value;
@@ -145,11 +152,11 @@ ATTR_DEF(Node, RefPtr<Vector4>, Quaternion) {
     }
     return std::nullopt;
   } else {
-    return transform_.quaternion;
+    return transform_.quaternion.get();
   }
 }
 
-ATTR_DEF(Node, RefPtr<Vector3>, Scale) {
+ATTR_DEF(Node, Vector3*, Scale) {
   if (value) {
     if (*value) {
       transform_.scale = *value;
@@ -157,21 +164,30 @@ ATTR_DEF(Node, RefPtr<Vector3>, Scale) {
     }
     return std::nullopt;
   } else {
-    return transform_.scale;
+    return transform_.scale.get();
   }
 }
 
-ATTR_DEF(Node, RefPtr<Camera>, Camera) {
+ATTR_DEF(Node, Camera*, Camera) {
   if (value.has_value()) {
     camera_ = *value;
     return std::nullopt;
   } else {
-    return camera_;
+    return camera_.get();
   }
 }
 
+void Node::PrepareForCollection() {
+  // Run derived disposal while every object in the garbage batch is allocated.
+  Disposable::PrepareForCollection();
+  // Repeated cleanup is necessary even if Dispose was called earlier.
+  self_.SetParent(nullptr);
+  children_.DetachAll();
+  self_.ClearCallbacks();
+}
+
 void Node::DisposeObject() {
-  self_.RemoveFromList();
+  self_.SetParent(nullptr);
   parent_.reset();
 }
 

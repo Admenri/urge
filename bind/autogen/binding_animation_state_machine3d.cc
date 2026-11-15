@@ -31,26 +31,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// AnimationStateMachine3D  (core/scene3d/animation_state_machine3d.h:39-69)
+// AnimationStateMachine3D  (core/scene3d/animation_state_machine3d.h:40-72)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(AnimationStateMachine3D);
 
 RB_FUNC(AnimationStateMachine3D_initialize) {
+  CheckConstructorSelf(self, kAnimationStateMachine3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::AnimationStateMachine3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::AnimationStateMachine3D> value = urge::MakeRefCounted<urge::AnimationStateMachine3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::AnimationStateMachine3D* value = urge::MakeGarbageCollected<urge::AnimationStateMachine3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(AnimationStateMachine3D_AddState) {
@@ -59,18 +56,17 @@ RB_FUNC(AnimationStateMachine3D_AddState) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE name_val, animation_val;
-  const char* name_data;
-  size_t name_size;
   urge::Animation3D* animation;
   bool loop;
   ParseArgs(argc, argv, "oob", &name_val, &animation_val, &loop);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
   animation = CheckObject<urge::Animation3D>(animation_val, kAnimation3DDataType);
 
   {
-    self_obj->AddState(exception_state, std::string(name_data, name_size),
-        animation, loop);
+    self_obj->AddState(exception_state, TakeString(name_val), animation, loop);
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(animation_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -82,19 +78,18 @@ RB_FUNC(AnimationStateMachine3D_AddTransition) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 4);
   VALUE from_val, to_val;
-  const char* from_data;
-  size_t from_size, to_size;
-  const char* to_data;
   double duration, exit_time;
   ParseArgs(argc, argv, "ooff", &from_val, &to_val, &duration, &exit_time);
-  CheckString(from_val, &from_data, &from_size);
-  CheckString(to_val, &to_data, &to_size);
+  from_val = CheckString(from_val);
+  to_val = CheckString(to_val);
 
   {
-    self_obj->AddTransition(exception_state, std::string(from_data, from_size),
-        std::string(to_data, to_size), static_cast<float>(duration),
+    self_obj->AddTransition(exception_state, TakeString(from_val),
+        TakeString(to_val), static_cast<float>(duration),
         static_cast<float>(exit_time));
   }
+  RB_GC_GUARD(from_val);
+  RB_GC_GUARD(to_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -106,16 +101,15 @@ RB_FUNC(AnimationStateMachine3D_Play) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE name_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
 
   bool result = false;
 
   {
-    result = self_obj->Play(exception_state, std::string(name_data, name_size));
+    result = self_obj->Play(exception_state, TakeString(name_val));
   }
+  RB_GC_GUARD(name_val);
   RaiseException(exception_state);
 
   return result ? Qtrue : Qfalse;
@@ -135,6 +129,7 @@ RB_FUNC(AnimationStateMachine3D_Update) {
   {
     self_obj->Update(exception_state, skeleton, static_cast<float>(delta));
   }
+  RB_GC_GUARD(skeleton_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -150,11 +145,7 @@ RB_FUNC(AnimationStateMachine3D_CurrentState) {
     result = new std::string(self_obj->CurrentState());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(AnimationStateMachine3D_Blending) {
@@ -193,9 +184,7 @@ RB_FUNC(AnimationStateMachine3D_TakeEvents) {
     result = new std::vector<std::string>(self_obj->TakeEvents());
   }
 
-  VALUE value = WrapVectorOf<std::string>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<std::string>(result);
 }
 
 void InitAnimationStateMachine3DBindingAppend(VALUE klass);
@@ -203,8 +192,10 @@ void InitAnimationStateMachine3DBindingAppend(VALUE klass);
 void InitAnimationStateMachine3DBinding() {
   auto klass = rb_define_class("AnimationStateMachine3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kAnimationStateMachine3DDataType>);
+  RegisterNativeType<urge::AnimationStateMachine3D>(klass, kAnimationStateMachine3DDataType);
 
   DefineMethod(klass, "initialize", AnimationStateMachine3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "add_state", AnimationStateMachine3D_AddState);
   DefineMethod(klass, "add_transition", AnimationStateMachine3D_AddTransition);
   DefineMethod(klass, "play", AnimationStateMachine3D_Play);

@@ -31,7 +31,7 @@
 #include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 #if URGE_ENABLE_VIDEO
 #include "core/video/video_player.h"
 #endif
@@ -44,6 +44,8 @@ class Video : public Object {
   URGE_BINDING()
   Video(URGE_EXCEPT, std::string filename);
   ~Video() override;
+  void Trace(GCVisitor& visitor) const override;
+  void PrepareForCollection() override;
 
   URGE_BINDING()
   void Play();
@@ -65,21 +67,21 @@ class Video : public Object {
   float Duration();
 
   URGE_BINDING(Name : "audio_stream")
-  RefPtr<AudioStream> GetAudioStream();
+  AudioStream* GetAudioStream();
 
   std::map<std::string, std::string> PlayerInfo();
 
   URGE_BINDING()
   void Update();
   URGE_BINDING()
-  void Render(URGE_EXCEPT, RefPtr<Bitmap> target);
+  void Render(URGE_EXCEPT, Bitmap* target);
 
  private:
 #if URGE_ENABLE_VIDEO
   void SyncAudio();
 
   VideoPlayer player_;
-  RefPtr<AudioStream> audio_;
+  Member<AudioStream> audio_;
   std::vector<uint8_t> scaled_;
   bool audio_align_ = false;
 #endif

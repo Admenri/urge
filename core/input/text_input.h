@@ -29,7 +29,7 @@
 
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 #include "core/common/utility.h"
 
 namespace urge {
@@ -47,7 +47,7 @@ class TextInput : public Singleton<TextInput> {
   URGE_BINDING()
   bool Enable(URGE_EXCEPT);
   URGE_BINDING()
-  bool Enable(URGE_EXCEPT, RefPtr<Rect> region);
+  bool Enable(URGE_EXCEPT, Rect* region);
   URGE_BINDING()
   bool Disable(URGE_EXCEPT);
   URGE_BINDING(Name : "active?")

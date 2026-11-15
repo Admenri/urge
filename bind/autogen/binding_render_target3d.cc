@@ -32,34 +32,30 @@ namespace binding {
 RB_DEF_TYPE(RenderTarget3D);
 
 RB_FUNC(RenderTarget3D_initialize) {
+  CheckConstructorSelf(self, kRenderTarget3DDataType);
+  CheckArgc(argc, 5);
   urge::ExceptionState exception_state;
   int width, height, samples;
   VALUE color_format_val, depth_format_val;
-  const char* color_format_data;
-  size_t color_format_size, depth_format_size;
-  const char* depth_format_data;
   ParseArgs(argc, argv, "iiooi", &width, &height, &color_format_val,
       &depth_format_val, &samples);
-  CheckString(color_format_val, &color_format_data, &color_format_size);
-  CheckString(depth_format_val, &depth_format_data, &depth_format_size);
+  color_format_val = CheckString(color_format_val);
+  depth_format_val = CheckString(depth_format_val);
 
-  urge::RenderTarget3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderTarget3D> value = urge::MakeRefCounted<urge::RenderTarget3D>(
-        exception_state, width, height,
-        std::string(color_format_data, color_format_size),
-        std::string(depth_format_data, depth_format_size), samples);
-    result = exception_state.HadException() ? nullptr : value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderTarget3D* value = urge::MakeGarbageCollected<urge::RenderTarget3D>(
+        exception_state, width, height, TakeString(color_format_val),
+        TakeString(depth_format_val), samples);
+    if (!exception_state.HadException())
+      result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(color_format_val);
+  RB_GC_GUARD(depth_format_val);
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(RenderTarget3D_Width) {
@@ -176,9 +172,7 @@ RB_FUNC(RenderTarget3D_ColorFormats) {
     result = new std::vector<std::string>(self_obj->ColorFormats());
   }
 
-  VALUE value = WrapVectorOf<std::string>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<std::string>(result);
 }
 
 RB_FUNC(RenderTarget3D_DepthFormat) {
@@ -191,11 +185,7 @@ RB_FUNC(RenderTarget3D_DepthFormat) {
     result = new std::string(self_obj->DepthFormat());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 void InitRenderTarget3DBindingAppend(VALUE klass);
@@ -203,8 +193,10 @@ void InitRenderTarget3DBindingAppend(VALUE klass);
 void InitRenderTarget3DBinding() {
   auto klass = rb_define_class("RenderTarget3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRenderTarget3DDataType>);
+  RegisterNativeType<urge::RenderTarget3D>(klass, kRenderTarget3DDataType);
 
   DefineMethod(klass, "initialize", RenderTarget3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "width", RenderTarget3D_Width);
   DefineMethod(klass, "height", RenderTarget3D_Height);
   DefineMethod(klass, "has_color", RenderTarget3D_HasColor);

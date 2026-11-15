@@ -32,13 +32,12 @@ VALUE AllocateAutotileProxy(VALUE parent, const char* klass_name) {
   VALUE klass = rb_const_get(rb_cObject, rb_intern(klass_name));
   VALUE obj = rb_obj_alloc(klass);
   rb_iv_set(obj, "@parent", parent);
-  rb_iv_set(obj, "@values", rb_ary_new());
   rb_iv_set(parent, "_TilemapSlots", obj);
   return obj;
 }
 
-// Keep the parent and assigned Ruby Bitmaps alive, including after dispose.
-// Native getters are still consulted so direct set_autotile calls stay visible.
+// The proxy owns its Ruby parent; Bitmap identity/liveness comes from the
+// canonical weak registry and the parent's traced native edges, not caches.
 RB_FUNC(TilemapAutotile_Get) {
   CheckArgc(argc, 1);
   VALUE parent_val = rb_iv_get(self, "@parent");
@@ -48,15 +47,13 @@ RB_FUNC(TilemapAutotile_Get) {
   if (index < 0 || index >= 7)
     return Qnil;
 
-  auto* result = parent->GetAutotile(index).get();
-  VALUE values = rb_iv_get(self, "@values");
-  Check_Type(values, T_ARRAY);
-  VALUE cached = rb_ary_entry(values, index);
-  if (CheckMaybeObject<urge::Bitmap>(cached, kBitmapDataType) == result)
-    return cached;
-  VALUE object = WrapObject(result, kBitmapDataType);
-  rb_ary_store(values, index, object);
-  return object;
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Bitmap* bitmap = parent->GetAutotile(index);
+    result = new urge::GarbageCollector::Root(bitmap);
+  }
+  RB_GC_GUARD(parent_val);
+  return OwnedWrapObject(result, kBitmapDataType);
 }
 
 RB_FUNC(TilemapAutotile_Set) {
@@ -69,11 +66,8 @@ RB_FUNC(TilemapAutotile_Set) {
   if (index < 0 || index >= 7)
     return Qnil;
   auto* bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
-  VALUE values = rb_iv_get(self, "@values");
-  Check_Type(values, T_ARRAY);
-  // Update the GC root before passing the non-owning argument to the core.
-  rb_ary_store(values, index, bitmap_val);
   parent->SetAutotile(index, bitmap);
+  RB_GC_GUARD(parent_val);
   return bitmap_val;
 }
 
@@ -87,28 +81,24 @@ RB_FUNC(TilemapXP_Autotiles) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// TilemapXP  (core/scene/tilemap_xp.h:59-92)
+// TilemapXP  (core/scene/tilemap_xp.h:60-94)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(TilemapXP, Node);
 
 RB_FUNC(TilemapXP_initialize) {
+  CheckConstructorSelf(self, kTilemapXPDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::TilemapXP* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>();
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::TilemapXP* value = urge::MakeGarbageCollected<urge::TilemapXP>();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 1) {
     // initialize(viewport)
     VALUE viewport_val;
@@ -116,20 +106,16 @@ RB_FUNC(TilemapXP_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::TilemapXP* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>(
+      urge::TilemapXP* value = urge::MakeGarbageCollected<urge::TilemapXP>(
           viewport);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(viewport_val);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 2) {
     // initialize(viewport, tilesize)
     VALUE viewport_val;
@@ -138,20 +124,16 @@ RB_FUNC(TilemapXP_initialize) {
     ParseArgs(argc, argv, "oi", &viewport_val, &tilesize);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::TilemapXP* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::TilemapXP> value = urge::MakeRefCounted<urge::TilemapXP>(
+      urge::TilemapXP* value = urge::MakeGarbageCollected<urge::TilemapXP>(
           viewport, tilesize);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(viewport_val);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -180,6 +162,7 @@ RB_FUNC(TilemapXP_SetTileset) {
   {
     self_obj->SetTileset(bitmap);
   }
+  RB_GC_GUARD(bitmap_val);
 
   return Qnil;
 }
@@ -188,19 +171,14 @@ RB_FUNC(TilemapXP_GetTileset) {
   auto* self_obj = GetSelfData<urge::TilemapXP>(self);
 
   CheckArgc(argc, 0);
-  urge::Bitmap* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Bitmap> value = self_obj->GetTileset();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Bitmap* value = self_obj->GetTileset();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kBitmapDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kBitmapDataType);
 }
 
 RB_FUNC(TilemapXP_SetAutotile) {
@@ -216,6 +194,7 @@ RB_FUNC(TilemapXP_SetAutotile) {
   {
     self_obj->SetAutotile(index, bitmap);
   }
+  RB_GC_GUARD(bitmap_val);
 
   return Qnil;
 }
@@ -227,19 +206,14 @@ RB_FUNC(TilemapXP_GetAutotile) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::Bitmap* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Bitmap> value = self_obj->GetAutotile(index);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Bitmap* value = self_obj->GetAutotile(index);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kBitmapDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kBitmapDataType);
 }
 
 // Attribute: viewport (MaybePtr<Viewport>)
@@ -292,8 +266,10 @@ void InitTilemapXPBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("TilemapXP", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kTilemapXPDataType>);
+  RegisterNativeType<urge::TilemapXP>(klass, kTilemapXPDataType);
 
   DefineMethod(klass, "initialize", TilemapXP_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "update", TilemapXP_Update);
   DefineMethod(klass, "tileset=", TilemapXP_SetTileset);
   DefineMethod(klass, "tileset", TilemapXP_GetTileset);

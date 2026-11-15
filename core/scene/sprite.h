@@ -37,6 +37,7 @@ class Sprite : public Node {
   URGE_BINDING()
   Sprite(MaybePtr<Viewport> viewport = nullptr);
   ~Sprite() override;
+  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void Flash(URGE_EXCEPT, MaybePtr<Color> color, int32_t duration);
@@ -53,7 +54,7 @@ class Sprite : public Node {
   URGE_BINDING()
   ATTR(MaybePtr<Bitmap>, Bitmap);
   URGE_BINDING()
-  ATTR(RefPtr<Rect>, SrcRect);
+  ATTR(Rect*, SrcRect);
   URGE_BINDING()
   ATTR(int32_t, X);
   URGE_BINDING()
@@ -87,9 +88,9 @@ class Sprite : public Node {
   URGE_BINDING()
   ATTR(int32_t, BlendType);
   URGE_BINDING()
-  ATTR(RefPtr<Color>, Color);
+  ATTR(Color*, Color);
   URGE_BINDING()
-  ATTR(RefPtr<Tone>, Tone);
+  ATTR(Tone*, Tone);
   URGE_BINDING()
   ATTR(MaybePtr<Effect>, Effect);
 
@@ -105,8 +106,8 @@ class Sprite : public Node {
   bool CanBatchWith(const Sprite& other) const;
   bool NextIsBatchable();
 
-  RefPtr<Bitmap> bitmap_;
-  RefPtr<Rect> src_rect_;
+  Member<Bitmap> bitmap_;
+  Member<Rect> src_rect_;
   int32_t x_ = 0, y_ = 0;
   int32_t ox_ = 0, oy_ = 0;
   float zoom_x_ = 1.0f, zoom_y_ = 1.0f;
@@ -116,9 +117,9 @@ class Sprite : public Node {
   bool mirror_ = false;
   int32_t bush_depth_ = 0, bush_opacity_ = 128;
   int32_t opacity_ = 255, blend_type_ = 0;
-  RefPtr<Color> color_;
-  RefPtr<Tone> tone_;
-  RefPtr<Effect> effect_;
+  Member<Color> color_;
+  Member<Tone> tone_;
+  Member<Effect> effect_;
 
   FlashableNode flashing_;
   bool rgssvx_style_ = true;

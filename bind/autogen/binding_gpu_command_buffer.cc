@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUCommandBuffer  (core/graphics/gpu.h:911-911)
+// GPUCommandBuffer  (core/graphics/gpu.h:917-917)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUCommandBuffer, GPUObject);
@@ -39,7 +39,9 @@ void InitGPUCommandBufferBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUCommandBuffer", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUCommandBufferDataType>);
+  RegisterNativeType<urge::GPUCommandBuffer>(klass, kGPUCommandBufferDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUCommandBufferBindingAppend(klass);
 }
 // --- GENERATED END ---

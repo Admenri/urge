@@ -33,18 +33,28 @@
 
 namespace urge {
 
+void Viewport::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(rect_);
+  visitor.Trace(color_);
+  visitor.Trace(tone_);
+  visitor.Trace(effect_);
+  visitor.Trace(offscreen_);
+  visitor.Trace(filter_target_);
+}
+
 Viewport::Viewport(int32_t x, int32_t y, int32_t width, int32_t height)
     : Node(nullptr, ZValue()),
-      rect_(MakeRefCounted<Rect>(x, y, width, height)),
-      color_(MakeRefCounted<Color>()),
-      tone_(MakeRefCounted<Tone>()) {
-  rect_->slot.change = [&]() { ResetTransform(); };
+      rect_(MakeGarbageCollected<Rect>(x, y, width, height)),
+      color_(MakeGarbageCollected<Color>()),
+      tone_(MakeGarbageCollected<Tone>()) {
+  rect_->slot.change = [this]() { ResetTransform(); };
   Node::SetupTrait(this);
   ResetTransform();
   CreateEffectBindings();
 }
 
-Viewport::Viewport(RefPtr<Rect> rect)
+Viewport::Viewport(Rect* rect)
     : Viewport(rect->data.x,
                rect->data.y,
                rect->data.width,
@@ -57,7 +67,7 @@ Viewport::~Viewport() {
   Disposable::Dispose();
 }
 
-void Viewport::Flash(URGE_EXCEPT, RefPtr<Color> color, int32_t duration) {
+void Viewport::Flash(URGE_EXCEPT, Color* color, int32_t duration) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -74,13 +84,13 @@ void Viewport::Update(URGE_EXCEPT) {
   flashing_.Update();
 }
 
-ATTR_DEF(Viewport, RefPtr<Rect>, Rect) {
+ATTR_DEF(Viewport, Rect*, Rect) {
   if (value.has_value()) {
     rect_->Set(*value);
     ResetTransform();
     return std::nullopt;
   } else {
-    return rect_;
+    return rect_.get();
   }
 }
 
@@ -104,36 +114,45 @@ ATTR_DEF(Viewport, int32_t, OY) {
   }
 }
 
-ATTR_DEF(Viewport, RefPtr<Color>, Color) {
+ATTR_DEF(Viewport, Color*, Color) {
   if (value.has_value()) {
     color_->Set(*value);
     return std::nullopt;
   } else {
-    return color_;
+    return color_.get();
   }
 }
 
-ATTR_DEF(Viewport, RefPtr<Tone>, Tone) {
+ATTR_DEF(Viewport, Tone*, Tone) {
   if (value.has_value()) {
     tone_->Set(*value);
     return std::nullopt;
   } else {
-    return tone_;
+    return tone_.get();
   }
 }
 
-ATTR_DEF(Viewport, RefPtr<Effect>, Effect) {
+ATTR_DEF(Viewport, Effect*, Effect) {
   if (value.has_value()) {
     effect_ = *value;
 
     ResetTransform();
     return std::nullopt;
   } else {
-    return effect_;
+    return effect_.get();
   }
 }
 
+void Viewport::PrepareForCollection() {
+  // The observed Rect can outlive this viewport, including after Dispose.
+  if (rect_)
+    rect_->slot.change = {};
+  Node::PrepareForCollection();
+}
+
 void Viewport::DisposeObject() {
+  if (rect_)
+    rect_->slot.change = {};
   Node::DisposeObject();
 
   effect_.reset();
@@ -221,8 +240,8 @@ bool Viewport::DoDraw(DrawParam param) {
     param->pass.End();
     param->pass = offscreen_->BeginRendering(param->command, glm::vec4(0.0f));
 
-    filter_target_ = param->target;
-    param->target = offscreen_;
+    filter_target_ = param->target.get();
+    param->target = offscreen_.get();
 
     param->pass.SetScissorRect(region_.x, region_.y, region_.width,
                                region_.height);
@@ -244,10 +263,10 @@ void Viewport::PostDraw(DrawParam param) {
   if (effect_) {
     param->pass.End();
 
-    param->target = filter_target_;
+    param->target = filter_target_.get();
     param->pass = param->target->BeginRendering(param->command);
 
-    effect_->SetFilterSource(offscreen_);
+    effect_->SetFilterSource(offscreen_.get());
 
     if (region_()) {
       param->pass.SetPipeline(effect_->AcquirePipeline(effect_state));
@@ -300,7 +319,7 @@ void Viewport::ResetTransform() {
       glm::vec3(static_cast<float>(rect_->data.x - origin_.x),
                 static_cast<float>(rect_->data.y - origin_.y), 0.0f);
 
-  Attr_Position(MakeRefCounted<Vector3>(offset));
+  Attr_Position(MakeGarbageCollected<Vector3>(offset));
 }
 
 void Viewport::CreateEffectBindings() {
@@ -337,7 +356,7 @@ bool Viewport::AcquireOffscreen(glm::ivec2 size) {
   const int32_t height =
       std::max(size.y, offscreen_ ? offscreen_->size().y : 0);
   ExceptionState exception_state;
-  auto offscreen = MakeRefCounted<Bitmap>(exception_state, width, height);
+  auto offscreen = MakeGarbageCollected<Bitmap>(exception_state, width, height);
   if (exception_state.HadException()) {
     LOGGER_ERROR("[Viewport] {}", exception_state.message());
     return false;

@@ -31,26 +31,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera3D  (core/scene3d/camera3d.h:40-147)
+// Camera3D  (core/scene3d/camera3d.h:41-150)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Camera3D, Node3D);
 
 RB_FUNC(Camera3D_initialize) {
+  CheckConstructorSelf(self, kCamera3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::Camera3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Camera3D> value = urge::MakeRefCounted<urge::Camera3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Camera3D* value = urge::MakeGarbageCollected<urge::Camera3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Camera3D_GetTarget) {
@@ -63,11 +60,7 @@ RB_FUNC(Camera3D_GetTarget) {
     result = new std::string(self_obj->GetTarget());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(Camera3D_SetTarget) {
@@ -75,14 +68,13 @@ RB_FUNC(Camera3D_SetTarget) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
-  const char* value_data;
-  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  CheckString(value_val, &value_data, &value_size);
+  value_val = CheckString(value_val);
 
   {
-    self_obj->SetTarget(std::string(value_data, value_size));
+    self_obj->SetTarget(TakeString(value_val));
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -102,9 +94,7 @@ RB_FUNC(Camera3D_ShadowSplits) {
         self_obj->ShadowSplits(count, static_cast<float>(lambda), static_cast<float>(max_distance)));
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 RB_FUNC(Camera3D_ShadowCascades) {
@@ -125,10 +115,9 @@ RB_FUNC(Camera3D_ShadowCascades) {
     result = new std::vector<float>(
         self_obj->ShadowCascades(light_direction, count, static_cast<float>(lambda), width, height, static_cast<float>(max_distance), shadow_size));
   }
+  RB_GC_GUARD(light_direction_val);
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 RB_FUNC(Camera3D_ViewProjection) {
@@ -144,9 +133,7 @@ RB_FUNC(Camera3D_ViewProjection) {
     result = new std::vector<float>(self_obj->ViewProjection(width, height));
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 // Attribute: fov (float)
@@ -187,8 +174,10 @@ void InitCamera3DBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node3D"));
   auto klass = rb_define_class("Camera3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kCamera3DDataType>);
+  RegisterNativeType<urge::Camera3D>(klass, kCamera3DDataType);
 
   DefineMethod(klass, "initialize", Camera3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "target", Camera3D_GetTarget);
   DefineMethod(klass, "target=", Camera3D_SetTarget);
   DefineMethod(klass, "shadow_splits", Camera3D_ShadowSplits);

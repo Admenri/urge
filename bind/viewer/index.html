@@ -328,7 +328,7 @@ function rubyDefault(p) {
   if (d === "{}" || d === "{ }") {
     if (ty.indexOf("vector") >= 0) return "[]";
     if (ty.indexOf("string") >= 0) return '""';
-    if (ty.indexOf("RefPtr") === 0) return "nil";
+    if (ty.indexOf("MaybePtr<") === 0 || /\*\s*$/.test(ty)) return "nil";
     return "{}";
   }
   if (d === "std::string()" || d === "std::string{}") return '""';

@@ -29,69 +29,58 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Effect  (core/graphics/effect.h:39-58)
+// Effect  (core/graphics/effect.h:40-60)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Effect);
 
 RB_FUNC(Effect_initialize) {
+  CheckConstructorSelf(self, kEffectDataType);
   if (argc == 2) {
     // initialize(vs_wgsl, fs_wgsl)
     urge::ExceptionState exception_state;
     VALUE vs_wgsl_val, fs_wgsl_val;
-    const char* vs_wgsl_data;
-    size_t vs_wgsl_size, fs_wgsl_size;
-    const char* fs_wgsl_data;
     ParseArgs(argc, argv, "oo", &vs_wgsl_val, &fs_wgsl_val);
-    CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
-    CheckString(fs_wgsl_val, &fs_wgsl_data, &fs_wgsl_size);
+    vs_wgsl_val = CheckString(vs_wgsl_val);
+    fs_wgsl_val = CheckString(fs_wgsl_val);
 
-    urge::Effect* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
-          exception_state, std::string(vs_wgsl_data, vs_wgsl_size),
-          std::string(fs_wgsl_data, fs_wgsl_size));
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      urge::Effect* value = urge::MakeGarbageCollected<urge::Effect>(
+          exception_state, TakeString(vs_wgsl_val), TakeString(fs_wgsl_val));
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(vs_wgsl_val);
+    RB_GC_GUARD(fs_wgsl_val);
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 3) {
     // initialize(vs_wgsl, fs_wgsl, blend_states)
     urge::ExceptionState exception_state;
     VALUE vs_wgsl_val, fs_wgsl_val, blend_states_val;
-    const char* vs_wgsl_data;
-    size_t vs_wgsl_size, fs_wgsl_size, blend_states_size;
-    const char* fs_wgsl_data;
-    const char* blend_states_data;
     ParseArgs(argc, argv, "ooo", &vs_wgsl_val, &fs_wgsl_val, &blend_states_val);
-    CheckString(vs_wgsl_val, &vs_wgsl_data, &vs_wgsl_size);
-    CheckString(fs_wgsl_val, &fs_wgsl_data, &fs_wgsl_size);
-    CheckString(blend_states_val, &blend_states_data, &blend_states_size);
+    vs_wgsl_val = CheckString(vs_wgsl_val);
+    fs_wgsl_val = CheckString(fs_wgsl_val);
+    blend_states_val = CheckString(blend_states_val);
 
-    urge::Effect* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(
-          exception_state, std::string(vs_wgsl_data, vs_wgsl_size),
-          std::string(fs_wgsl_data, fs_wgsl_size),
-          std::string(blend_states_data, blend_states_size));
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      urge::Effect* value = urge::MakeGarbageCollected<urge::Effect>(
+          exception_state, TakeString(vs_wgsl_val), TakeString(fs_wgsl_val),
+          TakeString(blend_states_val));
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(vs_wgsl_val);
+    RB_GC_GUARD(fs_wgsl_val);
+    RB_GC_GUARD(blend_states_val);
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -102,23 +91,23 @@ RB_FUNC(Effect_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
+  if (self == other_val)
+    return self;
+  CheckConstructorSelf(self, kEffectDataType);
   urge::Effect* other_obj = CheckObject<urge::Effect>(other_val, kEffectDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::Effect* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Effect> value = urge::MakeRefCounted<urge::Effect>(exception_state, other_obj);
-    result = exception_state.HadException() ? nullptr : value.get();
-    if (result)
-      result->AddRef();
+    urge::Effect* value = urge::MakeGarbageCollected<urge::Effect>(exception_state, other_obj);
+    if (!exception_state.HadException())
+      result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(other_val);
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Effect_SetFloat) {
@@ -129,11 +118,12 @@ RB_FUNC(Effect_SetFloat) {
   uint32_t slot;
   VALUE data_val;
   ParseArgs(argc, argv, "uo", &slot, &data_val);
-  CheckVectorOf<float>(data_val);
+  data_val = CheckVectorOf<float>(data_val);
 
   {
     self_obj->SetFloat(exception_state, slot, TakeVectorOf<float>(data_val));
   }
+  RB_GC_GUARD(data_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -147,11 +137,12 @@ RB_FUNC(Effect_SetInt) {
   uint32_t slot;
   VALUE data_val;
   ParseArgs(argc, argv, "uo", &slot, &data_val);
-  CheckVectorOf<int32_t>(data_val);
+  data_val = CheckVectorOf<int32_t>(data_val);
 
   {
     self_obj->SetInt(exception_state, slot, TakeVectorOf<int32_t>(data_val));
   }
+  RB_GC_GUARD(data_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -170,6 +161,7 @@ RB_FUNC(Effect_SetTexture) {
   {
     self_obj->SetTexture(slot, texture);
   }
+  RB_GC_GUARD(texture_val);
 
   return Qnil;
 }
@@ -187,6 +179,7 @@ RB_FUNC(Effect_SetSampler) {
   {
     self_obj->SetSampler(slot, texture);
   }
+  RB_GC_GUARD(texture_val);
 
   return Qnil;
 }
@@ -198,15 +191,13 @@ RB_FUNC(Effect_SetBlock) {
   CheckArgc(argc, 2);
   uint32_t slot;
   VALUE uniform_block_val;
-  const char* uniform_block_data;
-  size_t uniform_block_size;
   ParseArgs(argc, argv, "uo", &slot, &uniform_block_val);
-  CheckString(uniform_block_val, &uniform_block_data, &uniform_block_size);
+  uniform_block_val = CheckString(uniform_block_val);
 
   {
-    self_obj->SetBlock(exception_state, slot,
-        std::string(uniform_block_data, uniform_block_size));
+    self_obj->SetBlock(exception_state, slot, TakeString(uniform_block_val));
   }
+  RB_GC_GUARD(uniform_block_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -217,6 +208,7 @@ void InitEffectBindingAppend(VALUE klass);
 void InitEffectBinding() {
   auto klass = rb_define_class("Effect", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kEffectDataType>);
+  RegisterNativeType<urge::Effect>(klass, kEffectDataType);
 
   DefineMethod(klass, "initialize", Effect_initialize);
   DefineMethod(klass, "initialize_copy", Effect_initialize_copy);

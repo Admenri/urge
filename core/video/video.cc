@@ -33,6 +33,21 @@
 
 namespace urge {
 
+void Video::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+#if URGE_ENABLE_VIDEO
+  visitor.Trace(audio_);
+#endif
+}
+
+void Video::PrepareForCollection() {
+#if URGE_ENABLE_VIDEO
+  // Join native decode workers before any managed object in this garbage batch
+  // is destroyed. An externally rooted audio stream remains independently live.
+  player_.Close();
+#endif
+}
+
 #if URGE_ENABLE_VIDEO
 namespace {
 
@@ -72,7 +87,7 @@ Video::Video(URGE_EXCEPT, std::string filename) {
     return;
 
   ExceptionState audio_state;
-  audio_ = MakeRefCounted<AudioStream>(
+  audio_ = MakeGarbageCollected<AudioStream>(
       audio_state, std::move(track),
       static_cast<float>(player_.duration() * kMillisecondsPerSecond));
   if (audio_state.HadException()) {
@@ -141,8 +156,8 @@ float Video::Duration() {
   return static_cast<float>(player_.duration() * kMillisecondsPerSecond);
 }
 
-RefPtr<AudioStream> Video::GetAudioStream() {
-  return audio_;
+AudioStream* Video::GetAudioStream() {
+  return audio_.get();
 }
 
 std::map<std::string, std::string> Video::PlayerInfo() {
@@ -172,7 +187,7 @@ void Video::Update() {
   SyncAudio();
 }
 
-void Video::Render(URGE_EXCEPT, RefPtr<Bitmap> target) {
+void Video::Render(URGE_EXCEPT, Bitmap* target) {
   const std::vector<uint8_t>* source = player_.rgba();
   if (!source || source->empty())
     return;
@@ -300,7 +315,7 @@ float Video::Duration() {
   return 0.0f;
 }
 
-RefPtr<AudioStream> Video::GetAudioStream() {
+AudioStream* Video::GetAudioStream() {
   VideoUnavailable();
   return nullptr;
 }
@@ -314,7 +329,7 @@ void Video::Update() {
   VideoUnavailable();
 }
 
-void Video::Render(URGE_EXCEPT, RefPtr<Bitmap>) {
+void Video::Render(URGE_EXCEPT, Bitmap*) {
   VideoUnavailable(exception_state);
 }
 

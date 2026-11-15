@@ -32,6 +32,19 @@
 
 namespace urge {
 
+void TilemapXP::Trace(GCVisitor& visitor) const {
+  Node::Trace(visitor);
+  visitor.Trace(aboves_);
+  visitor.Trace(tileset_);
+  visitor.Trace(map_data_);
+  visitor.Trace(flash_data_);
+  visitor.Trace(priorities_);
+  visitor.Trace(ground_layer_);
+  visitor.Trace(above_layers_);
+  for (const auto& autotile : autotiles_)
+    visitor.Trace(autotile);
+}
+
 namespace {
 
 const glm::vec2 kAutotileSrcRegular[48][4] = {
@@ -88,21 +101,27 @@ const glm::vec2 kAutotileSrcRegular[48][4] = {
 }
 
 TilemapXPAbove::TilemapXPAbove(TilemapXP* parent,
-                               RefPtr<Viewport> viewport,
+                               Viewport* viewport,
                                const ZValue& z,
                                int32_t id)
     : Node(viewport, z), parent_(parent), id_(id) {}
+
+void TilemapXPAbove::DisposeObject() {
+  Node::DisposeObject();
+  parent_.reset();
+}
 
 bool TilemapXPAbove::Prepare(DrawParam param) {
   return parent_ && parent_->HasAboveLayer(id_);
 }
 
 bool TilemapXPAbove::DoDraw(DrawParam param) {
-  parent_->DrawAboveLayer(param, id_);
+  if (parent_)
+    parent_->DrawAboveLayer(param, id_);
   return false;
 }
 
-TilemapXP::TilemapXP(RefPtr<Viewport> viewport, int32_t tilesize)
+TilemapXP::TilemapXP(Viewport* viewport, int32_t tilesize)
     : Node(viewport, ZValue()), tilesize_(tilesize) {
   Node::SetupTrait(this);
 }
@@ -121,15 +140,15 @@ void TilemapXP::Update() {
   flash_opacity_ = std::abs(16 - flash_timer_) * 8 + 32;
 }
 
-void TilemapXP::SetTileset(RefPtr<Bitmap> bitmap) {
+void TilemapXP::SetTileset(Bitmap* bitmap) {
   tileset_ = bitmap;
 }
 
-RefPtr<Bitmap> TilemapXP::GetTileset() {
-  return tileset_;
+Bitmap* TilemapXP::GetTileset() {
+  return tileset_.get();
 }
 
-void TilemapXP::SetAutotile(int32_t index, RefPtr<Bitmap> bitmap) {
+void TilemapXP::SetAutotile(int32_t index, Bitmap* bitmap) {
   if (index < 0 || index >= 7)
     return;
   autotiles_[index].texture = bitmap;
@@ -142,13 +161,13 @@ void TilemapXP::SetAutotile(int32_t index, RefPtr<Bitmap> bitmap) {
   }
 }
 
-RefPtr<Bitmap> TilemapXP::GetAutotile(int32_t index) {
+Bitmap* TilemapXP::GetAutotile(int32_t index) {
   if (index < 0 || index >= 7)
     return nullptr;
-  return autotiles_[index].texture;
+  return autotiles_[index].texture.get();
 }
 
-ATTR_DEF(TilemapXP, RefPtr<Viewport>, Viewport) {
+ATTR_DEF(TilemapXP, Viewport*, Viewport) {
   if (value.has_value())
     for (auto& it : aboves_)
       it->Attr_Parent(*value);
@@ -157,7 +176,7 @@ ATTR_DEF(TilemapXP, RefPtr<Viewport>, Viewport) {
   if (parent_value.has_value()) {
     auto parent = *parent_value;
     Viewport* viewport = parent ? parent->TryCast<Viewport>() : nullptr;
-    return RefPtr<Viewport>(viewport);
+    return viewport;
   } else {
     return std::nullopt;
   }
@@ -176,30 +195,30 @@ ATTR_DEF(TilemapXP, int32_t, Z) {
   return Node::Attr_Z(value);
 }
 
-ATTR_DEF(TilemapXP, RefPtr<Table>, MapData) {
+ATTR_DEF(TilemapXP, Table*, MapData) {
   if (value.has_value()) {
     map_data_ = *value;
     return std::nullopt;
   } else {
-    return map_data_;
+    return map_data_.get();
   }
 }
 
-ATTR_DEF(TilemapXP, RefPtr<Table>, FlashData) {
+ATTR_DEF(TilemapXP, Table*, FlashData) {
   if (value.has_value()) {
     flash_data_ = *value;
     return std::nullopt;
   } else {
-    return flash_data_;
+    return flash_data_.get();
   }
 }
 
-ATTR_DEF(TilemapXP, RefPtr<Table>, Priorities) {
+ATTR_DEF(TilemapXP, Table*, Priorities) {
   if (value.has_value()) {
     priorities_ = *value;
     return std::nullopt;
   } else {
-    return priorities_;
+    return priorities_.get();
   }
 }
 
@@ -224,6 +243,9 @@ ATTR_DEF(TilemapXP, int32_t, OY) {
 void TilemapXP::DisposeObject() {
   Node::DisposeObject();
 
+  for (const auto& above : aboves_)
+    if (above)
+      above->Dispose();
   aboves_.clear();
   tileset_.reset();
   // RGSS keeps autotiles readable after dispose, until the Tilemap is collected.
@@ -309,13 +331,15 @@ void TilemapXP::UpdateAboves() {
   if (above_layers_count == static_cast<int32_t>(aboves_.size()))
     return;
 
+  for (const auto& above : aboves_)
+    if (above)
+      above->Dispose();
   aboves_.clear();
   aboves_.reserve(above_layers_count);
-  RefPtr<Viewport> viewport_ref =
-      viewport.has_value() ? viewport.value() : nullptr;
+  Viewport* viewport_ref = viewport.has_value() ? viewport.value() : nullptr;
   for (int32_t i = 0; i < above_layers_count; ++i) {
     auto above_node =
-        MakeRefCounted<TilemapXPAbove>(this, viewport_ref, ZValue(), i);
+        MakeGarbageCollected<TilemapXPAbove>(this, viewport_ref, ZValue(), i);
     aboves_.push_back(std::move(above_node));
   }
 }
@@ -333,7 +357,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
   aboves->clear();
   aboves->resize(aboves_.size());
 
-  auto push_quad = [](const RefPtr<Bitmap>& texture,
+  auto push_quad = [](const Member<Bitmap>& texture,
                       std::vector<TileQuad>* target, const RectF& source,
                       const RectF& destination, const glm::vec4& color) {
     TileQuad quad;
@@ -422,7 +446,7 @@ void TilemapXP::ParseTiles(std::vector<TileQuad>* ground,
     return res < 0 ? res + range : res;
   };
 
-  auto get_wrap_data = [&](RefPtr<Table> t, int32_t x, int32_t y,
+  auto get_wrap_data = [&](const Member<Table>& t, int32_t x, int32_t y,
                            int32_t z) -> int16_t {
     if (!t)
       return 0;
@@ -507,7 +531,7 @@ void TilemapXP::BuildLayers() {
 
     size_t index = 0;
     while (index < quads.size()) {
-      const RefPtr<Bitmap>& texture = quads[index].texture;
+      const Member<Bitmap>& texture = quads[index].texture;
 
       if (!Disposable::Check(texture)) {
         ++index;
@@ -518,7 +542,7 @@ void TilemapXP::BuildLayers() {
                                    static_cast<float>(texture->size().y));
 
       layer->primitive.BeginQuad();
-      while (index < quads.size() && quads[index].texture == texture) {
+      while (index < quads.size() && quads[index].texture.get() == texture.get()) {
         RectF dest = quads[index].destination;
         dest.x += render_offset_.x;
         dest.y += render_offset_.y;

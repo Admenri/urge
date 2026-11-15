@@ -69,7 +69,9 @@ void InitDisposableBindingAppend(VALUE klass);
 void InitDisposableBinding() {
   auto klass = rb_define_class("Disposable", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kDisposableDataType>);
+  RegisterNativeType<urge::Disposable>(klass, kDisposableDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "disposed?", Disposable_IsDisposed);
   DefineMethod(klass, "dispose", Disposable_Dispose);
   InitDisposableBindingAppend(klass);

@@ -41,12 +41,22 @@ set(BIND_DIR "${CMAKE_CURRENT_LIST_DIR}")
 get_filename_component(REPO_ROOT "${BIND_DIR}" DIRECTORY)
 
 set(CORE_DIR "${REPO_ROOT}/core")
-set(IR_FILE "${BIND_DIR}/api_reference.json")
-# Everything generate_binding.py writes lives here and nowhere else, so the
-# folder is derived state: it can be deleted and regenerated, and the
-# hand-written half of the layer (cruby_utils, cruby_main, script_loop,
-# binding_win32api) stays in bind/ next to it.
-set(GLUE_DIR "${BIND_DIR}/autogen")
+# An alternate IR keeps validation builds from overwriting an edited reference.
+# The generated glue still lives in autogen/ and follows the current headers.
+if(URGE_BINDING_IR_FILE)
+  get_filename_component(IR_FILE "${URGE_BINDING_IR_FILE}" ABSOLUTE
+    BASE_DIR "${REPO_ROOT}")
+else()
+  set(IR_FILE "${BIND_DIR}/api_reference.json")
+endif()
+# The output directory is derived state. An alternate directory permits cold
+# generation validation without deleting workspace HANDWRITTEN blocks.
+if(URGE_BINDING_GLUE_DIR)
+  get_filename_component(GLUE_DIR "${URGE_BINDING_GLUE_DIR}" ABSOLUTE
+    BASE_DIR "${REPO_ROOT}")
+else()
+  set(GLUE_DIR "${BIND_DIR}/autogen")
+endif()
 set(STAMP_FILE "${BIND_DIR}/.gen_stamp")
 set(GLUE_STAMP_FILE "${BIND_DIR}/.glue_stamp")
 
@@ -150,7 +160,7 @@ endif()
 set(IR_REGENERATED FALSE)
 if(STAMP_OUTDATED)
   execute_process(
-    COMMAND "${GEN_PY}" "${GEN_IR_SCRIPT}"
+    COMMAND "${GEN_PY}" "${GEN_IR_SCRIPT}" "${IR_FILE}"
     RESULT_VARIABLE result
   )
   if(NOT result EQUAL 0)
@@ -193,7 +203,7 @@ endif()
 
 if(GLUE_OUTDATED)
   execute_process(
-    COMMAND "${GEN_PY}" "${GEN_GLUE_SCRIPT}"
+    COMMAND "${GEN_PY}" "${GEN_GLUE_SCRIPT}" "${IR_FILE}" "${GLUE_DIR}"
     RESULT_VARIABLE result
   )
   if(NOT result EQUAL 0)

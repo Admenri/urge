@@ -41,6 +41,32 @@
 
 namespace urge {
 
+void ComputePass3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(texture_map_);
+  visitor.Trace(target_map_);
+}
+
+void RenderGraphPass3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(clear_color_);
+  visitor.Trace(camera_);
+  visitor.Trace(shadow_light_);
+  visitor.Trace(point_shadow_light_);
+  visitor.Trace(material_);
+  visitor.Trace(compute_);
+}
+
+void RenderGraph3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(passes_);
+  visitor.Trace(targets_);
+  visitor.Trace(shadow_targets_);
+  visitor.Trace(final_target_);
+  visitor.Trace(ambient_);
+  visitor.Trace(camera_);
+}
+
 namespace {
 
 bool IsFinalTarget(const std::string& name) {
@@ -96,21 +122,21 @@ void ComputePass3D::SetBuffer(std::string name, std::vector<float> values) {
   binding_dirty_ = true;
 }
 
-void ComputePass3D::SetTexture(std::string name, RefPtr<Bitmap> texture) {
+void ComputePass3D::SetTexture(std::string name, Bitmap* texture) {
   target_map_.erase(name);
-  texture_map_[std::move(name)] = std::move(texture);
+  texture_map_[std::move(name)] = texture;
   binding_dirty_ = true;
 }
 
 void ComputePass3D::SetTarget(std::string name,
-                              RefPtr<RenderTarget3D> target,
+                              RenderTarget3D* target,
                               int32_t index) {
   const auto found = target_map_.find(name);
-  if (found != target_map_.end() && found->second.first.get() == target.get() &&
+  if (found != target_map_.end() && found->second.first.get() == target &&
       found->second.second == index)
     return;
   texture_map_.erase(name);
-  target_map_[std::move(name)] = {std::move(target), index};
+  target_map_[std::move(name)] = {target, index};
   binding_dirty_ = true;
 }
 
@@ -316,6 +342,14 @@ RenderGraphPass3D::RenderGraphPass3D(std::string name)
 
 RenderGraphPass3D::~RenderGraphPass3D() = default;
 
+void RenderGraphPass3D::SetOwner(RenderGraph3D* graph) {
+  graph_.reset(graph);
+}
+
+void RenderGraphPass3D::SetContext(RenderContext3D* context) {
+  context_.reset(context);
+}
+
 void RenderGraphPass3D::BindTexture(std::string slot, std::string texture) {
   if (slot.empty() || texture.empty())
     return;
@@ -330,21 +364,20 @@ std::vector<std::string> RenderGraphPass3D::GetBindings() const {
   return result;
 }
 
-RefPtr<GPUTextureView> RenderGraphPass3D::GetTexture(URGE_EXCEPT,
-                                                     std::string name) {
+GPUTextureView* RenderGraphPass3D::GetTexture(URGE_EXCEPT, std::string name) {
   if (!graph_)
     return nullptr;
   const wgpu::TextureView view =
       graph_->ResolveColorView(exception_state, name);
-  return view ? MakeRefCounted<GPUTextureView>(view) : nullptr;
+  return view ? MakeGarbageCollected<GPUTextureView>(view) : nullptr;
 }
 
-RefPtr<GPURenderPassEncoder> RenderGraphPass3D::GetPass() {
+GPURenderPassEncoder* RenderGraphPass3D::GetPass() {
   return context_ ? context_->GetPass() : nullptr;
 }
 
-RefPtr<RenderContext3D> RenderGraphPass3D::GetContext() {
-  return context_;
+RenderContext3D* RenderGraphPass3D::GetContext() {
+  return context_.get();
 }
 
 int32_t RenderGraphPass3D::Width() {
@@ -361,18 +394,24 @@ int32_t RenderGraphPass3D::Height() {
 
 RenderGraph3D::RenderGraph3D() = default;
 
-RenderGraph3D::~RenderGraph3D() {
+RenderGraph3D::~RenderGraph3D() = default;
+
+void RenderGraph3D::PrepareForCollection() {
+  Object::PrepareForCollection();
+  // Clear only follows Member edges while all garbage objects are allocated;
+  // the destructor must never dereference an already deleted pass.
   Clear();
+  ambient_.reset();
+  camera_.reset();
 }
 
-RefPtr<RenderGraphPass3D> RenderGraph3D::AddPass(URGE_EXCEPT,
-                                                 std::string name) {
+RenderGraphPass3D* RenderGraph3D::AddPass(URGE_EXCEPT, std::string name) {
   if (name.empty()) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "render graph 3d: a pass needs a name.");
     return {};
   }
-  for (const RefPtr<RenderGraphPass3D>& pass : passes_) {
+  for (const auto& pass : passes_) {
     if (pass->GetName() == name) {
       exception_state.Throw(ExceptionState::kRGSSError,
                             "render graph 3d: the pass '{}' already exists.",
@@ -381,22 +420,22 @@ RefPtr<RenderGraphPass3D> RenderGraph3D::AddPass(URGE_EXCEPT,
     }
   }
 
-  auto pass = MakeRefCounted<RenderGraphPass3D>(std::move(name));
+  auto pass = MakeGarbageCollected<RenderGraphPass3D>(std::move(name));
   pass->SetOwner(this);
   passes_.push_back(pass);
   return pass;
 }
 
-RefPtr<RenderGraphPass3D> RenderGraph3D::GetPass(std::string name) {
-  for (const RefPtr<RenderGraphPass3D>& pass : passes_)
+RenderGraphPass3D* RenderGraph3D::GetPass(std::string name) {
+  for (const auto& pass : passes_)
     if (pass->GetName() == name)
-      return pass;
+      return pass.get();
   return nullptr;
 }
 
 void RenderGraph3D::RemovePass(std::string name) {
   passes_.erase(std::remove_if(passes_.begin(), passes_.end(),
-                               [&name](const RefPtr<RenderGraphPass3D>& pass) {
+                               [&name](const auto& pass) {
                                  if (pass->GetName() != name)
                                    return false;
                                  pass->SetOwner(nullptr);
@@ -407,7 +446,7 @@ void RenderGraph3D::RemovePass(std::string name) {
 }
 
 void RenderGraph3D::Clear() {
-  for (const RefPtr<RenderGraphPass3D>& pass : passes_) {
+  for (const auto& pass : passes_) {
     pass->SetOwner(nullptr);
     pass->SetContext(nullptr);
   }
@@ -418,10 +457,10 @@ void RenderGraph3D::Clear() {
   final_target_ = nullptr;
 }
 
-RefPtr<RenderGraphPass3D> RenderGraph3D::PassAt(int32_t index) const {
+RenderGraphPass3D* RenderGraph3D::PassAt(int32_t index) const {
   if (index < 0 || index >= static_cast<int32_t>(passes_.size()))
     return nullptr;
-  return passes_[index];
+  return passes_[index].get();
 }
 
 void RenderGraph3D::AddTexture(URGE_EXCEPT,
@@ -497,8 +536,7 @@ void RenderGraph3D::SetTextureScale(URGE_EXCEPT,
   targets_.clear();
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::GetTexture(URGE_EXCEPT,
-                                                 std::string name) {
+RenderTarget3D* RenderGraph3D::GetTexture(URGE_EXCEPT, std::string name) {
   return Target(exception_state, name);
 }
 
@@ -510,9 +548,9 @@ std::vector<std::string> RenderGraph3D::TextureNames() const {
   return names;
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::ShadowTarget(URGE_EXCEPT,
-                                                   const std::string& name,
-                                                   int32_t layers) {
+RenderTarget3D* RenderGraph3D::ShadowTarget(URGE_EXCEPT,
+                                            const std::string& name,
+                                            int32_t layers) {
   if (IsFinalTarget(name))
     return nullptr;
 
@@ -520,24 +558,23 @@ RefPtr<RenderTarget3D> RenderGraph3D::ShadowTarget(URGE_EXCEPT,
   auto it = shadow_targets_.find(name);
   if (it != shadow_targets_.end() && it->second->LayerCount() == clamped &&
       it->second->Width() == shadow_size_)
-    return it->second;
+    return it->second.get();
 
-  auto target = MakeRefCounted<RenderTarget3D>(exception_state, shadow_size_,
-                                               shadow_size_, false, clamped);
+  auto target = MakeGarbageCollected<RenderTarget3D>(
+      exception_state, shadow_size_, shadow_size_, false, clamped);
   if (exception_state.HadException())
     return nullptr;
   shadow_targets_[name] = target;
   return target;
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::Target(URGE_EXCEPT,
-                                             const std::string& name) {
+RenderTarget3D* RenderGraph3D::Target(URGE_EXCEPT, const std::string& name) {
   if (IsFinalTarget(name))
-    return final_target_;
+    return final_target_.get();
 
   const auto shadow = shadow_targets_.find(name);
   if (shadow != shadow_targets_.end())
-    return shadow->second;
+    return shadow->second.get();
 
   const auto desc = textures_.find(name);
   if (desc == textures_.end()) {
@@ -559,7 +596,7 @@ RefPtr<RenderTarget3D> RenderGraph3D::Target(URGE_EXCEPT,
   auto it = targets_.find(name);
   if (it != targets_.end() && it->second->Width() == width &&
       it->second->Height() == height)
-    return it->second;
+    return it->second.get();
 
   RenderTargetDesc3D target_desc;
   target_desc.width = width;
@@ -574,22 +611,23 @@ RefPtr<RenderTarget3D> RenderGraph3D::Target(URGE_EXCEPT,
     target_desc.depth = wgpu::TextureFormat::Depth32Float;
   }
 
-  auto target = MakeRefCounted<RenderTarget3D>(exception_state, target_desc);
+  auto target =
+      MakeGarbageCollected<RenderTarget3D>(exception_state, target_desc);
   if (exception_state.HadException())
     return nullptr;
   targets_[name] = target;
   return target;
 }
 
-RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(URGE_EXCEPT,
-                                                    RenderGraphPass3D* pass) {
+RenderTarget3D* RenderGraph3D::TargetForPass(URGE_EXCEPT,
+                                             RenderGraphPass3D* pass) {
   const std::vector<std::string>& colors = pass->colors();
   if (colors.size() <= 1)
     return Target(exception_state, colors.empty() ? std::string() : colors[0]);
 
-  std::vector<RefPtr<RenderTarget3D>> attachments;
+  std::vector<RenderTarget3D*> attachments;
   std::set<std::string> attached;
-  RefPtr<RenderTarget3D> depth;
+  RenderTarget3D* depth = nullptr;
   for (const std::string& color : colors) {
     if (!attached.insert(color).second) {
       exception_state.Throw(
@@ -605,7 +643,7 @@ RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(URGE_EXCEPT,
                             pass->name(), color);
       return {};
     }
-    RefPtr<RenderTarget3D> target = Target(exception_state, color);
+    RenderTarget3D* target = Target(exception_state, color);
     if (exception_state.HadException() || !target)
       return {};
     if (target->HasColor()) {
@@ -625,12 +663,13 @@ RefPtr<RenderTarget3D> RenderGraph3D::TargetForPass(URGE_EXCEPT,
     depth = attachments.front();
   // Compose views of the named resources instead of allocating another set of
   // textures. Subsequent single-output and compute passes see the same pixels.
-  return MakeRefCounted<RenderTarget3D>(exception_state, attachments, depth);
+  return MakeGarbageCollected<RenderTarget3D>(exception_state, attachments,
+                                              depth);
 }
 
 wgpu::TextureView RenderGraph3D::ResolveColorView(URGE_EXCEPT,
                                                   const std::string& name) {
-  RefPtr<RenderTarget3D> target = Target(exception_state, name);
+  RenderTarget3D* target = Target(exception_state, name);
   return target ? (target->HasColor() ? target->sampled_view(0)
                                       : target->depth_view())
                 : nullptr;
@@ -641,7 +680,7 @@ std::vector<size_t> RenderGraph3D::BuildOrder(URGE_EXCEPT) const {
     return IsFinalTarget(name) ? std::string("screen") : name;
   };
   std::vector<RenderGraphAccess3D> accesses;
-  for (const RefPtr<RenderGraphPass3D>& pass : passes_) {
+  for (const auto& pass : passes_) {
     if (pass->enabled() && pass->kind() > 2) {
       exception_state.Throw(ExceptionState::kRGSSError,
                             "render graph 3d: pass '{}' has unknown kind {}.",
@@ -713,7 +752,7 @@ void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
   context->SetSortBackToFront(false);
 
   if (pass->point_shadow_light()) {
-    RefPtr<Light3D> light = pass->point_shadow_light();
+    Light3D* light = pass->point_shadow_light();
     const glm::vec3 eye(light->world_matrix()[3]);
     const float range = std::max(light->range(), 0.1f);
 
@@ -722,7 +761,7 @@ void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
       const std::vector<RenderQueue3D::LightItem>& lights =
           context->GetQueue()->lights();
       for (size_t i = 0; i < std::min<size_t>(lights.size(), kMaxLights); ++i) {
-        if (lights[i].type == 1 && lights[i].light.get() == light.get()) {
+        if (lights[i].type == 1 && lights[i].light.get() == light) {
           light_index = static_cast<int32_t>(i);
           break;
         }
@@ -731,8 +770,7 @@ void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
 
     if (light_index < 0 || !light->cast_shadow())
       return;
-    RefPtr<RenderTarget3D> target =
-        ShadowTarget(exception_state, target_name, 6);
+    RenderTarget3D* target = ShadowTarget(exception_state, target_name, 6);
     if (!target)
       return;
 
@@ -774,14 +812,13 @@ void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
   }
 
   const int32_t cascades = std::clamp(pass->cascades(), 1, 4);
-  RefPtr<RenderTarget3D> target =
-      ShadowTarget(exception_state, target_name, cascades);
+  RenderTarget3D* target = ShadowTarget(exception_state, target_name, cascades);
   if (!target)
     return;
 
-  RefPtr<Camera3D> camera = pass->camera()
-                                ? pass->camera()
-                                : (camera_ ? camera_ : context->GetCamera());
+  Camera3D* camera = pass->camera()
+                         ? pass->camera()
+                         : (camera_ ? camera_.get() : context->GetCamera());
 
   glm::vec3 light_direction(0.0f, -1.0f, 0.0f);
   int32_t light_index = -1;
@@ -791,7 +828,7 @@ void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
       const auto& item = lights[i];
       if (item.type == 0 && item.cast_shadow &&
           (!pass->shadow_light() ||
-           item.light.get() == pass->shadow_light().get())) {
+           item.light.get() == pass->shadow_light())) {
         light_direction = item.direction;
         light_index = static_cast<int32_t>(i);
         break;
@@ -837,13 +874,13 @@ void RenderGraph3D::ExecuteShadowPass(URGE_EXCEPT,
 void RenderGraph3D::ExecuteRasterPass(URGE_EXCEPT,
                                       RenderContext3D* context,
                                       RenderGraphPass3D* pass) {
-  RefPtr<Camera3D> camera = pass->camera()
-                                ? pass->camera()
-                                : (camera_ ? camera_ : context->GetCamera());
+  Camera3D* camera = pass->camera()
+                         ? pass->camera()
+                         : (camera_ ? camera_.get() : context->GetCamera());
   if (camera)
     context->SetViewProjection(camera);
 
-  RefPtr<RenderTarget3D> target = TargetForPass(exception_state, pass);
+  RenderTarget3D* target = TargetForPass(exception_state, pass);
   if (exception_state.HadException() || !target)
     return;
 
@@ -855,17 +892,16 @@ void RenderGraph3D::ExecuteRasterPass(URGE_EXCEPT,
       const wgpu::TextureView view = ResolveColorView(exception_state, texture);
       if (exception_state.HadException() || !view)
         return;
-      const RefPtr<GPUTextureView> wrapped =
-          MakeRefCounted<GPUTextureView>(view);
+      GPUTextureView* const wrapped =
+          MakeGarbageCollected<GPUTextureView>(view);
       for (const auto* item : items)
         item->pass->SetTextureView(slot, wrapped);
     }
   }
 
   const bool clear_color = (pass->clear_flags() & 1u) != 0;
-  std::vector<RefPtr<Color>> clears(
-      static_cast<size_t>(target->ColorCount()),
-      clear_color ? pass->clear_color() : RefPtr<Color>());
+  std::vector<Color*> clears(static_cast<size_t>(target->ColorCount()),
+                             clear_color ? pass->clear_color() : nullptr);
 
   context->SetShadowPassMode(false);
   context->SetCullOverride(pass->cull_override());
@@ -886,11 +922,11 @@ void RenderGraph3D::ExecuteRasterPass(URGE_EXCEPT,
 void RenderGraph3D::ExecuteFullscreenPass(URGE_EXCEPT,
                                           RenderContext3D* context,
                                           RenderGraphPass3D* pass) {
-  RefPtr<MaterialPass3D> material = pass->material();
+  MaterialPass3D* material = pass->material();
   if (!material)
     return;
 
-  RefPtr<RenderTarget3D> target = TargetForPass(exception_state, pass);
+  RenderTarget3D* target = TargetForPass(exception_state, pass);
   if (exception_state.HadException() || !target)
     return;
 
@@ -902,13 +938,12 @@ void RenderGraph3D::ExecuteFullscreenPass(URGE_EXCEPT,
     if (exception_state.HadException() || !view)
       return;
     material->SetTextureView(binding.first,
-                             MakeRefCounted<GPUTextureView>(view));
+                             MakeGarbageCollected<GPUTextureView>(view));
   }
 
   const bool clear_color = (pass->clear_flags() & 1u) != 0;
-  std::vector<RefPtr<Color>> clears(
-      static_cast<size_t>(target->ColorCount()),
-      clear_color ? pass->clear_color() : RefPtr<Color>());
+  std::vector<Color*> clears(static_cast<size_t>(target->ColorCount()),
+                             clear_color ? pass->clear_color() : nullptr);
 
   context->SetShadowPassMode(false);
   context->SetCullOverride(pass->cull_override());
@@ -926,12 +961,12 @@ void RenderGraph3D::Execute(URGE_EXCEPT, RenderContext3D* context) {
 
   final_target_ = context->GetTarget();
   if (camera_)
-    context->SetViewProjection(camera_);
+    context->SetViewProjection(camera_.get());
   if (ambient_)
-    context->SetAmbient(ambient_);
+    context->SetAmbient(ambient_.get());
 
-  const RefPtr<Camera3D> default_camera =
-      camera_ ? camera_ : context->GetCamera();
+  Camera3D* const default_camera =
+      camera_ ? camera_.get() : context->GetCamera();
   const std::vector<size_t> order = BuildOrder(exception_state);
 
   for (size_t index : order) {
@@ -945,7 +980,7 @@ void RenderGraph3D::Execute(URGE_EXCEPT, RenderContext3D* context) {
                                               : default_camera);
     if (pass->kind() == 2 && pass->compute()) {
       for (const auto& [slot, texture] : pass->bindings()) {
-        RefPtr<RenderTarget3D> target = Target(exception_state, texture);
+        RenderTarget3D* target = Target(exception_state, texture);
         if (target)
           pass->compute()->SetTarget(slot, target, 0);
       }
@@ -979,5 +1014,4 @@ void RenderGraph3D::Execute(URGE_EXCEPT, RenderContext3D* context) {
   context->SetSortBackToFront(false);
   final_target_ = nullptr;
 }
-
 }

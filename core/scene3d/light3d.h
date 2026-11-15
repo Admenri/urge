@@ -27,6 +27,7 @@
 #include "glm/glm.hpp"
 
 #include "core/common/definition.h"
+#include "core/common/member.h"
 #include "core/common/utility.h"
 #include "core/scene3d/node3d.h"
 
@@ -38,6 +39,8 @@ class Light3D : public Node3D {
   URGE_BINDING()
   Light3D();
   ~Light3D() override;
+
+  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   ATTR(uint32_t, Type) {
@@ -53,7 +56,7 @@ class Light3D : public Node3D {
         color_ = *value;
       return std::nullopt;
     }
-    return color_;
+    return color_.get();
   }
 
   URGE_BINDING()
@@ -85,7 +88,8 @@ class Light3D : public Node3D {
 
  private:
   uint32_t type_ = 0;
-  RefPtr<Color> color_ = MakeRefCounted<Color>(255.0f, 255.0f, 255.0f, 255.0f);
+  Member<Color> color_ =
+      MakeGarbageCollected<Color>(255.0f, 255.0f, 255.0f, 255.0f);
   float intensity_ = 1.0f;
   float range_ = 10.0f;
   bool cast_shadow_ = false;

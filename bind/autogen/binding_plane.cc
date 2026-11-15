@@ -30,28 +30,24 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Plane  (core/scene/plane.h:35-59)
+// Plane  (core/scene/plane.h:35-60)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Plane, Node);
 
 RB_FUNC(Plane_initialize) {
+  CheckConstructorSelf(self, kPlaneDataType);
   if (argc == 0) {
     // initialize()
 
-    urge::Plane* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Plane> value = urge::MakeRefCounted<urge::Plane>();
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Plane* value = urge::MakeGarbageCollected<urge::Plane>();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 1) {
     // initialize(viewport)
     VALUE viewport_val;
@@ -59,20 +55,15 @@ RB_FUNC(Plane_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::Plane* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Plane> value = urge::MakeRefCounted<urge::Plane>(
-          viewport);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Plane* value = urge::MakeGarbageCollected<urge::Plane>(viewport);
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(viewport_val);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -112,7 +103,7 @@ BINDING_ATTR_INT(Plane, urge::Plane, Opacity);
 // Attribute: blend_type (int32_t)
 BINDING_ATTR_INT(Plane, urge::Plane, BlendType);
 
-// Attribute: color (RefPtr<Color>)
+// Attribute: color (Color*)
 BINDING_ATTR_OBJECT(Plane,
                     urge::Plane,
                     Color,
@@ -120,7 +111,7 @@ BINDING_ATTR_OBJECT(Plane,
                     kColorDataType,
                     CheckObject);
 
-// Attribute: tone (RefPtr<Tone>)
+// Attribute: tone (Tone*)
 BINDING_ATTR_OBJECT(Plane,
                     urge::Plane,
                     Tone,
@@ -134,8 +125,10 @@ void InitPlaneBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("Plane", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kPlaneDataType>);
+  RegisterNativeType<urge::Plane>(klass, kPlaneDataType);
 
   DefineMethod(klass, "initialize", Plane_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "viewport", Plane_Viewport);
   DefineMethod(klass, "viewport=", Plane_ViewportEqual);
   DefineMethod(klass, "bitmap", Plane_Bitmap);

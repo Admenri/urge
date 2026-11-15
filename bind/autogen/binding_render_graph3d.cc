@@ -34,26 +34,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraph3D  (core/scene3d/render_graph3d.h:359-409)
+// RenderGraph3D  (core/scene3d/render_graph3d.h:358-411)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraph3D);
 
 RB_FUNC(RenderGraph3D_initialize) {
+  CheckConstructorSelf(self, kRenderGraph3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::RenderGraph3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderGraph3D> value = urge::MakeRefCounted<urge::RenderGraph3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderGraph3D* value = urge::MakeGarbageCollected<urge::RenderGraph3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(RenderGraph3D_AddPass) {
@@ -62,26 +59,21 @@ RB_FUNC(RenderGraph3D_AddPass) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE name_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
 
-  urge::RenderGraphPass3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderGraphPass3D> value = self_obj->AddPass(
-        exception_state, std::string(name_data, name_size));
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderGraphPass3D* value = self_obj->AddPass(exception_state,
+        TakeString(name_val));
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(name_val);
+  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  VALUE value = WrapObject(result, kRenderGraphPass3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderGraphPass3DDataType);
 }
 
 RB_FUNC(RenderGraph3D_GetPass) {
@@ -89,25 +81,18 @@ RB_FUNC(RenderGraph3D_GetPass) {
 
   CheckArgc(argc, 1);
   VALUE name_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
 
-  urge::RenderGraphPass3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderGraphPass3D> value = self_obj->GetPass(
-        std::string(name_data, name_size));
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderGraphPass3D* value = self_obj->GetPass(TakeString(name_val));
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(name_val);
 
-  VALUE value = WrapObject(result, kRenderGraphPass3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderGraphPass3DDataType);
 }
 
 RB_FUNC(RenderGraph3D_RemovePass) {
@@ -115,14 +100,13 @@ RB_FUNC(RenderGraph3D_RemovePass) {
 
   CheckArgc(argc, 1);
   VALUE name_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
 
   {
-    self_obj->RemovePass(std::string(name_data, name_size));
+    self_obj->RemovePass(TakeString(name_val));
   }
+  RB_GC_GUARD(name_val);
 
   return Qnil;
 }
@@ -158,19 +142,14 @@ RB_FUNC(RenderGraph3D_PassAt) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::RenderGraphPass3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderGraphPass3D> value = self_obj->PassAt(index);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderGraphPass3D* value = self_obj->PassAt(index);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kRenderGraphPass3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderGraphPass3DDataType);
 }
 
 RB_FUNC(RenderGraph3D_AddTexture) {
@@ -179,18 +158,17 @@ RB_FUNC(RenderGraph3D_AddTexture) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   VALUE name_val, format_val;
-  const char* name_data;
-  size_t name_size, format_size;
-  const char* format_data;
   int samples;
   ParseArgs(argc, argv, "ooi", &name_val, &format_val, &samples);
-  CheckString(name_val, &name_data, &name_size);
-  CheckString(format_val, &format_data, &format_size);
+  name_val = CheckString(name_val);
+  format_val = CheckString(format_val);
 
   {
-    self_obj->AddTexture(exception_state, std::string(name_data, name_size),
-        std::string(format_data, format_size), samples);
+    self_obj->AddTexture(exception_state, TakeString(name_val),
+        TakeString(format_val), samples);
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(format_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -202,18 +180,16 @@ RB_FUNC(RenderGraph3D_AddStorageTexture) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE name_val, format_val;
-  const char* name_data;
-  size_t name_size, format_size;
-  const char* format_data;
   ParseArgs(argc, argv, "oo", &name_val, &format_val);
-  CheckString(name_val, &name_data, &name_size);
-  CheckString(format_val, &format_data, &format_size);
+  name_val = CheckString(name_val);
+  format_val = CheckString(format_val);
 
   {
-    self_obj->AddStorageTexture(exception_state,
-        std::string(name_data, name_size),
-        std::string(format_data, format_size));
+    self_obj->AddStorageTexture(exception_state, TakeString(name_val),
+        TakeString(format_val));
   }
+  RB_GC_GUARD(name_val);
+  RB_GC_GUARD(format_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -225,16 +201,15 @@ RB_FUNC(RenderGraph3D_SetTextureScale) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   VALUE name_val;
-  const char* name_data;
-  size_t name_size;
   double scale;
   ParseArgs(argc, argv, "of", &name_val, &scale);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
 
   {
-    self_obj->SetTextureScale(exception_state,
-        std::string(name_data, name_size), static_cast<float>(scale));
+    self_obj->SetTextureScale(exception_state, TakeString(name_val),
+        static_cast<float>(scale));
   }
+  RB_GC_GUARD(name_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -246,26 +221,21 @@ RB_FUNC(RenderGraph3D_GetTexture) {
   urge::ExceptionState exception_state;
   CheckArgc(argc, 1);
   VALUE name_val;
-  const char* name_data;
-  size_t name_size;
   ParseArgs(argc, argv, "o", &name_val);
-  CheckString(name_val, &name_data, &name_size);
+  name_val = CheckString(name_val);
 
-  urge::RenderTarget3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderTarget3D> value = self_obj->GetTexture(
-        exception_state, std::string(name_data, name_size));
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderTarget3D* value = self_obj->GetTexture(exception_state,
+        TakeString(name_val));
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(name_val);
+  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  VALUE value = WrapObject(result, kRenderTarget3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderTarget3DDataType);
 }
 
 RB_FUNC(RenderGraph3D_TextureNames) {
@@ -278,28 +248,21 @@ RB_FUNC(RenderGraph3D_TextureNames) {
     result = new std::vector<std::string>(self_obj->TextureNames());
   }
 
-  VALUE value = WrapVectorOf<std::string>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<std::string>(result);
 }
 
 RB_FUNC(RenderGraph3D_GetAmbient) {
   auto* self_obj = GetSelfData<urge::RenderGraph3D>(self);
 
   CheckArgc(argc, 0);
-  urge::Color* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Color> value = self_obj->GetAmbient();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Color* value = self_obj->GetAmbient();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kColorDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kColorDataType);
 }
 
 RB_FUNC(RenderGraph3D_SetAmbient) {
@@ -314,6 +277,7 @@ RB_FUNC(RenderGraph3D_SetAmbient) {
   {
     self_obj->SetAmbient(value);
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -334,8 +298,10 @@ void InitRenderGraph3DBindingAppend(VALUE klass);
 void InitRenderGraph3DBinding() {
   auto klass = rb_define_class("RenderGraph3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRenderGraph3DDataType>);
+  RegisterNativeType<urge::RenderGraph3D>(klass, kRenderGraph3DDataType);
 
   DefineMethod(klass, "initialize", RenderGraph3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "add_pass", RenderGraph3D_AddPass);
   DefineMethod(klass, "get_pass", RenderGraph3D_GetPass);
   DefineMethod(klass, "remove_pass", RenderGraph3D_RemovePass);

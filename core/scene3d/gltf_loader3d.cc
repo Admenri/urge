@@ -48,6 +48,15 @@
 
 namespace urge {
 
+void GLTFModel3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(root_);
+  visitor.Trace(materials_);
+  visitor.Trace(meshes_);
+  visitor.Trace(images_);
+  visitor.Trace(material_sources_);
+}
+
 namespace {
 
 struct Json {
@@ -614,7 +623,7 @@ Transform Decompose(const glm::mat4& matrix) {
 }
 
 MaterialSource3D BuildMaterialSource(const GlbFile& glb,
-                                     const std::vector<RefPtr<Bitmap>>& images,
+                                     const std::vector<Member<Bitmap>>& images,
                                      size_t index) {
   const Json& definition = glb.json["materials"].At(index);
   const Json& pbr = definition["pbrMetallicRoughness"];
@@ -642,11 +651,11 @@ MaterialSource3D BuildMaterialSource(const GlbFile& glb,
   return source;
 }
 
-RefPtr<Material3D> BuildMaterial(URGE_EXCEPT,
-                                 const MaterialSource3D& source,
-                                 bool unlit) {
-  auto material = MakeRefCounted<Material3D>();
-  RefPtr<MaterialPass3D> pass = material->AddPass(
+Material3D* BuildMaterial(URGE_EXCEPT,
+                          const MaterialSource3D& source,
+                          bool unlit) {
+  auto material = MakeGarbageCollected<Material3D>();
+  MaterialPass3D* pass = material->AddPass(
       exception_state, source.transparent ? "transparent" : "opaque",
       std::string(kLitVertexShader),
       std::string(unlit ? kUnlitFragmentShader : kLitFragmentShader));
@@ -665,14 +674,14 @@ RefPtr<Material3D> BuildMaterial(URGE_EXCEPT,
   }
 
   if (source.texture)
-    pass->SetTexture("u_albedo", source.texture);
+    pass->SetTexture("u_albedo", source.texture.get());
   return material;
 }
 
-RefPtr<Mesh3D> BuildMesh(URGE_EXCEPT,
-                         const GlbFile& glb,
-                         size_t mesh_index,
-                         std::vector<SubMesh3D>* submeshes) {
+Mesh3D* BuildMesh(URGE_EXCEPT,
+                  const GlbFile& glb,
+                  size_t mesh_index,
+                  std::vector<SubMesh3D>* submeshes) {
   const Json& definition = glb.json["meshes"].At(mesh_index);
   const Json& primitives = definition["primitives"];
 
@@ -747,7 +756,7 @@ RefPtr<Mesh3D> BuildMesh(URGE_EXCEPT,
       submeshes->push_back(submesh);
   }
 
-  auto mesh = MakeRefCounted<Mesh3D>();
+  auto mesh = MakeGarbageCollected<Mesh3D>();
   mesh->SetVertices(exception_state, std::move(vertices));
   mesh->SetIndices(exception_state, std::move(indices));
   mesh->ClearSubmeshes();
@@ -758,7 +767,6 @@ RefPtr<Mesh3D> BuildMesh(URGE_EXCEPT,
                      static_cast<int32_t>(submesh.mat_slot));
   return mesh;
 }
-
 }
 
 GLTFModel3D::GLTFModel3D(URGE_EXCEPT, std::string path) {
@@ -809,18 +817,18 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
   for (const MaterialSource3D& source : material_sources_)
     materials_.push_back(BuildMaterial(exception_state, source, unlit_));
 
-  root_ = MakeRefCounted<Node3D>();
+  root_ = MakeGarbageCollected<Node3D>();
 
   const Json& meshes_json = glb.json["meshes"];
   meshes_.resize(meshes_json.Size());
 
-  std::vector<RefPtr<Mesh3D>> built(meshes_json.Size());
+  std::vector<Mesh3D*> built(meshes_json.Size());
 
   std::function<void(size_t, Node3D*)> build_node = [&](size_t node_index,
                                                         Node3D* parent) {
     const Json& node = glb.json["nodes"].At(node_index);
 
-    RefPtr<Node3D> object;
+    Node3D* object;
     if (node["mesh"].IsNumber()) {
       const size_t mesh_index = static_cast<size_t>(node["mesh"].Int());
       if (mesh_index >= built.size()) {
@@ -833,20 +841,22 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
         meshes_[mesh_index] = built[mesh_index];
       }
 
-      auto renderer = MakeRefCounted<MeshRenderer3D>();
+      auto renderer = MakeGarbageCollected<MeshRenderer3D>();
       renderer->Attr_Mesh(built[mesh_index]);
       const Json& primitives = glb.json["meshes"].At(mesh_index)["primitives"];
       for (size_t p = 0; p < primitives.Size(); ++p) {
         const int slot = std::max(0, primitives.At(p)["material"].Int(0));
         const size_t material_index = static_cast<size_t>(slot);
-        renderer->SetMaterial(exception_state, slot,
-                              material_index < materials_.size()
-                                  ? materials_[material_index]
-                                  : materials_.front());
+        renderer->SetMaterial(
+            exception_state, slot,
+            (material_index < materials_.size()
+                                    ? materials_[material_index]
+                                    : materials_.front())
+                                   .get());
       }
       object = renderer;
     } else {
-      object = MakeRefCounted<Node3D>();
+      object = MakeGarbageCollected<Node3D>();
     }
 
     const Transform transform = Decompose(NodeMatrix(node));
@@ -860,7 +870,7 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
 
     const Json& children = node["children"];
     for (size_t i = 0; i < children.Size(); ++i)
-      build_node(static_cast<size_t>(children.At(i).Int()), object.get());
+      build_node(static_cast<size_t>(children.At(i).Int()), object);
   };
 
   const Json& scenes = glb.json["scenes"];
@@ -875,7 +885,7 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
 
   std::function<void(Node3D*)> measure = [&](Node3D* node) {
     if (auto* renderer = dynamic_cast<MeshRenderer3D*>(node)) {
-      RefPtr<Mesh3D> mesh = renderer->mesh();
+      Mesh3D* mesh = renderer->mesh();
       if (mesh) {
         const glm::vec3 center = mesh->bounds_center();
         const float radius = mesh->bounds_radius();
@@ -893,7 +903,7 @@ void GLTFModel3D::Load(URGE_EXCEPT, std::string path) {
       }
     }
 
-    for (const RefPtr<Node3D>& child : node->children())
+    for (const auto& child : node->children())
       measure(child.get());
   };
 
@@ -953,8 +963,8 @@ void GLTFModel3D::RebuildMaterials(URGE_EXCEPT) {
   for (size_t i = 0; i < material_sources_.size(); ++i) {
     if (i >= materials_.size())
       break;
-    const RefPtr<Material3D> previous = materials_[i];
-    const RefPtr<Material3D> replacement =
+    Material3D* const previous(materials_[i].get());
+    Material3D* const replacement =
         BuildMaterial(exception_state, material_sources_[i], unlit_);
     materials_[i] = replacement;
 
@@ -962,12 +972,12 @@ void GLTFModel3D::RebuildMaterials(URGE_EXCEPT) {
       if (auto* renderer = dynamic_cast<MeshRenderer3D*>(node)) {
         std::vector<int32_t> slots;
         for (const auto& entry : renderer->materials())
-          if (entry.second.get() == previous.get())
+          if (entry.second.get() == previous)
             slots.push_back(entry.first);
         for (const int32_t slot : slots)
           renderer->SetMaterial(exception_state, slot, replacement);
       }
-      for (const RefPtr<Node3D>& child : node->children())
+      for (const auto& child : node->children())
         rebind(child.get());
     };
     rebind(root_.get());
@@ -976,39 +986,38 @@ void GLTFModel3D::RebuildMaterials(URGE_EXCEPT) {
 
 void GLTFModel3D::SetMaterial(URGE_EXCEPT,
                               int32_t index,
-                              RefPtr<Material3D> material) {
+                              Material3D* material) {
   if (index < 0 || static_cast<size_t>(index) >= materials_.size()) {
     exception_state.Throw(ExceptionState::kRGSSError,
                           "gltf: material index {} is out of range (0..{}).",
                           index, static_cast<int32_t>(materials_.size()) - 1);
     return;
   }
-  const RefPtr<Material3D> previous = materials_[static_cast<size_t>(index)];
+  Material3D* const previous(materials_[static_cast<size_t>(index)].get());
   materials_[static_cast<size_t>(index)] = material;
 
-  if (!root_ || previous.get() == material.get())
+  if (!root_ || previous == material)
     return;
 
   std::function<void(Node3D*)> rebind = [&](Node3D* node) {
     if (auto* renderer = dynamic_cast<MeshRenderer3D*>(node)) {
       std::vector<int32_t> slots;
       for (const auto& entry : renderer->materials())
-        if (entry.second.get() == previous.get())
+        if (entry.second.get() == previous)
           slots.push_back(entry.first);
       for (const int32_t slot : slots)
         renderer->SetMaterial(exception_state, slot, material);
     }
 
-    for (const RefPtr<Node3D>& child : node->children())
+    for (const auto& child : node->children())
       rebind(child.get());
   };
   rebind(root_.get());
 }
 
-RefPtr<Material3D> GLTFModel3D::GetMaterial(int32_t index) const {
+Material3D* GLTFModel3D::GetMaterial(int32_t index) const {
   if (index < 0 || static_cast<size_t>(index) >= materials_.size())
     return nullptr;
-  return materials_[static_cast<size_t>(index)];
+  return materials_[static_cast<size_t>(index)].get();
 }
-
 }

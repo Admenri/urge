@@ -38,7 +38,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderContext3D  (core/scene3d/render_context3d.h:51-128)
+// RenderContext3D  (core/scene3d/render_context3d.h:52-131)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderContext3D);
@@ -47,76 +47,56 @@ RB_FUNC(RenderContext3D_GetTarget) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   CheckArgc(argc, 0);
-  urge::RenderTarget3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderTarget3D> value = self_obj->GetTarget();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderTarget3D* value = self_obj->GetTarget();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kRenderTarget3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderTarget3DDataType);
 }
 
 RB_FUNC(RenderContext3D_GetCamera) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   CheckArgc(argc, 0);
-  urge::Camera3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Camera3D> value = self_obj->GetCamera();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Camera3D* value = self_obj->GetCamera();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kCamera3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kCamera3DDataType);
 }
 
 RB_FUNC(RenderContext3D_GetQueue) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   CheckArgc(argc, 0);
-  urge::RenderQueue3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderQueue3D> value = self_obj->GetQueue();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderQueue3D* value = self_obj->GetQueue();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kRenderQueue3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderQueue3DDataType);
 }
 
 RB_FUNC(RenderContext3D_GetAmbient) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   CheckArgc(argc, 0);
-  urge::Color* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Color> value = self_obj->GetAmbient();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Color* value = self_obj->GetAmbient();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kColorDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kColorDataType);
 }
 
 RB_FUNC(RenderContext3D_SetAmbient) {
@@ -131,6 +111,7 @@ RB_FUNC(RenderContext3D_SetAmbient) {
   {
     self_obj->SetAmbient(value);
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -147,6 +128,7 @@ RB_FUNC(RenderContext3D_SetViewProjection) {
   {
     self_obj->SetViewProjection(camera);
   }
+  RB_GC_GUARD(camera_val);
 
   return Qnil;
 }
@@ -165,6 +147,7 @@ RB_FUNC(RenderContext3D_BeginPass) {
     {
       self_obj->BeginPass(exception_state, target);
     }
+    RB_GC_GUARD(target_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -181,6 +164,8 @@ RB_FUNC(RenderContext3D_BeginPass) {
     {
       self_obj->BeginPass(exception_state, target, clear);
     }
+    RB_GC_GUARD(target_val);
+    RB_GC_GUARD(clear_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -198,6 +183,8 @@ RB_FUNC(RenderContext3D_BeginPass) {
     {
       self_obj->BeginPass(exception_state, target, clear, clear_depth);
     }
+    RB_GC_GUARD(target_val);
+    RB_GC_GUARD(clear_val);
     RaiseException(exception_state);
 
     return Qnil;
@@ -221,19 +208,14 @@ RB_FUNC(RenderContext3D_GetPass) {
   auto* self_obj = GetSelfData<urge::RenderContext3D>(self);
 
   CheckArgc(argc, 0);
-  urge::GPURenderPassEncoder* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GPURenderPassEncoder> value = self_obj->GetPass();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::GPURenderPassEncoder* value = self_obj->GetPass();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kGPURenderPassEncoderDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kGPURenderPassEncoderDataType);
 }
 
 RB_FUNC(RenderContext3D_DrawFilter) {
@@ -246,8 +228,8 @@ RB_FUNC(RenderContext3D_DrawFilter) {
   uint32_t layers;
   ParseArgs(argc, argv, "ooiiu", &tags_val, &tag_ids_val, &queue_min,
       &queue_max, &layers);
-  CheckVectorOf<std::string>(tags_val);
-  CheckVectorOf<int32_t>(tag_ids_val);
+  tags_val = CheckVectorOf<std::string>(tags_val);
+  tag_ids_val = CheckVectorOf<int32_t>(tag_ids_val);
 
   int32_t result = 0;
 
@@ -256,6 +238,8 @@ RB_FUNC(RenderContext3D_DrawFilter) {
         TakeVectorOf<std::string>(tags_val), TakeVectorOf<int32_t>(tag_ids_val),
         queue_min, queue_max, layers);
   }
+  RB_GC_GUARD(tags_val);
+  RB_GC_GUARD(tag_ids_val);
   RaiseException(exception_state);
 
   return LONG2NUM(result);
@@ -321,6 +305,7 @@ RB_FUNC(RenderContext3D_DrawIndexedIndirect) {
   {
     self_obj->DrawIndexedIndirect(buffer, offset);
   }
+  RB_GC_GUARD(buffer_val);
 
   return Qnil;
 }
@@ -330,7 +315,9 @@ void InitRenderContext3DBindingAppend(VALUE klass);
 void InitRenderContext3DBinding() {
   auto klass = rb_define_class("RenderContext3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kRenderContext3DDataType>);
+  RegisterNativeType<urge::RenderContext3D>(klass, kRenderContext3DDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "target", RenderContext3D_GetTarget);
   DefineMethod(klass, "camera", RenderContext3D_GetCamera);
   DefineMethod(klass, "queue", RenderContext3D_GetQueue);

@@ -127,19 +127,19 @@ float Animation3D::EventTime(int32_t index) const {
   return events_[index].time;
 }
 
-void Animation3D::Apply(RefPtr<Skeleton3D> skeleton, float time) {
+void Animation3D::Apply(Skeleton3D* skeleton, float time) {
   if (skeleton->pose_open()) {
-    Sample(skeleton.get(), time, 1.0f, nullptr);
+    Sample(skeleton, time, 1.0f, nullptr);
     return;
   }
 
   skeleton->BeginPose();
-  Sample(skeleton.get(), time, 1.0f, nullptr);
+  Sample(skeleton, time, 1.0f, nullptr);
   skeleton->EndPose();
 }
 
 void Animation3D::Blend(URGE_EXCEPT,
-                        RefPtr<Skeleton3D> skeleton,
+                        Skeleton3D* skeleton,
                         float time,
                         float weight) {
   if (!skeleton->pose_open()) {
@@ -148,14 +148,14 @@ void Animation3D::Blend(URGE_EXCEPT,
         "animation3d: call skeleton.begin_pose before blend.");
     return;
   }
-  Sample(skeleton.get(), time, std::clamp(weight, 0.0f, 1.0f), nullptr);
+  Sample(skeleton, time, std::clamp(weight, 0.0f, 1.0f), nullptr);
 }
 
 void Animation3D::BlendMasked(URGE_EXCEPT,
-                              RefPtr<Skeleton3D> skeleton,
+                              Skeleton3D* skeleton,
                               float time,
                               float weight,
-                              RefPtr<BoneMask3D> mask) {
+                              BoneMask3D* mask) {
   if (!skeleton->pose_open()) {
     exception_state.Throw(
         ExceptionState::kRGSSError,
@@ -163,7 +163,7 @@ void Animation3D::BlendMasked(URGE_EXCEPT,
     return;
   }
 
-  Sample(skeleton.get(), time, std::clamp(weight, 0.0f, 1.0f),
+  Sample(skeleton, time, std::clamp(weight, 0.0f, 1.0f),
          mask ? mask->weights() : nullptr);
 }
 
@@ -184,7 +184,7 @@ void Animation3D::Sample(Skeleton3D* skeleton,
   size_t index = 0;
   while (index < tracks_.size()) {
     const int32_t bone_index = tracks_[index].bone;
-    RefPtr<Node3D> bone = skeleton->BoneAt(bone_index);
+    Node3D* bone = skeleton->BoneAt(bone_index);
     if (!bone) {
       while (index < tracks_.size() && tracks_[index].bone == bone_index)
         ++index;
@@ -242,5 +242,4 @@ void Animation3D::Sample(Skeleton3D* skeleton,
     skeleton->BlendBone(bone_index, position, rotation, scale, weight, mask);
   }
 }
-
 }

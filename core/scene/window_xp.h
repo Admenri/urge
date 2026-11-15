@@ -36,13 +36,14 @@ class WindowXP;
 
 class WindowXPAbove : public Node {
  public:
-  WindowXPAbove(WindowXP* parent, RefPtr<Viewport> viewport);
+  WindowXPAbove(WindowXP* parent, Viewport* viewport);
 
  protected:
+  void DisposeObject() override;
   bool Prepare(DrawParam param) override;
   bool DoDraw(DrawParam param) override;
 
-  WindowXP* parent_ = nullptr;
+  WeakMember<WindowXP> parent_;
 };
 
 URGE_BINDING()
@@ -51,6 +52,7 @@ class WindowXP : public Node {
   URGE_BINDING()
   WindowXP(URGE_EXCEPT, MaybePtr<Viewport> viewport = nullptr);
   ~WindowXP() override;
+  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void Update();
@@ -66,7 +68,7 @@ class WindowXP : public Node {
   URGE_BINDING()
   ATTR(bool, Stretch);
   URGE_BINDING()
-  ATTR(RefPtr<Rect>, CursorRect);
+  ATTR(Rect*, CursorRect);
   URGE_BINDING()
   ATTR(bool, Active);
   URGE_BINDING()
@@ -128,7 +130,7 @@ class WindowXP : public Node {
   static constexpr uint32_t kStencilReference = 1;
   static constexpr uint32_t kStencilClear = 0;
 
-  RefPtr<WindowXPAbove> above_;
+  Member<WindowXPAbove> above_;
   bool above_prepare_ = false;
 
   int32_t scale_ = 2;
@@ -136,10 +138,10 @@ class WindowXP : public Node {
   int32_t cursor_opacity_ = 255;
   bool cursor_fade_ = false;
 
-  RefPtr<Bitmap> windowskin_;
-  RefPtr<Bitmap> contents_;
+  Member<Bitmap> windowskin_;
+  Member<Bitmap> contents_;
   bool stretch_ = true;
-  RefPtr<Rect> cursor_rect_;
+  Member<Rect> cursor_rect_;
   bool active_ = true;
   bool pause_ = false;
   int32_t x_ = 0, y_ = 0, width_ = 0, height_ = 0;

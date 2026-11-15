@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPassEncoder  (core/graphics/gpu.h:997-1049)
+// GPURenderPassEncoder  (core/graphics/gpu.h:1002-1049)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPassEncoder, GPUObject);
@@ -48,6 +48,7 @@ RB_FUNC(GPURenderPassEncoder_SetPipeline) {
   {
     self_obj->SetPipeline(pipeline);
   }
+  RB_GC_GUARD(pipeline_val);
 
   return Qnil;
 }
@@ -65,6 +66,7 @@ RB_FUNC(GPURenderPassEncoder_SetBindGroup) {
   {
     self_obj->SetBindGroup(index, group);
   }
+  RB_GC_GUARD(group_val);
 
   return Qnil;
 }
@@ -83,6 +85,7 @@ RB_FUNC(GPURenderPassEncoder_SetVertexBuffer) {
     {
       self_obj->SetVertexBuffer(slot, buffer);
     }
+    RB_GC_GUARD(buffer_val);
 
     return Qnil;
   } else if (argc == 3) {
@@ -97,6 +100,7 @@ RB_FUNC(GPURenderPassEncoder_SetVertexBuffer) {
     {
       self_obj->SetVertexBuffer(slot, buffer, offset);
     }
+    RB_GC_GUARD(buffer_val);
 
     return Qnil;
   } else {
@@ -118,6 +122,7 @@ RB_FUNC(GPURenderPassEncoder_SetIndexBuffer) {
     {
       self_obj->SetIndexBuffer(buffer, format);
     }
+    RB_GC_GUARD(buffer_val);
 
     return Qnil;
   } else if (argc == 3) {
@@ -132,6 +137,7 @@ RB_FUNC(GPURenderPassEncoder_SetIndexBuffer) {
     {
       self_obj->SetIndexBuffer(buffer, format, offset);
     }
+    RB_GC_GUARD(buffer_val);
 
     return Qnil;
   } else {
@@ -266,6 +272,7 @@ RB_FUNC(GPURenderPassEncoder_DrawIndirect) {
     {
       self_obj->DrawIndirect(indirect_buffer);
     }
+    RB_GC_GUARD(indirect_buffer_val);
 
     return Qnil;
   } else if (argc == 2) {
@@ -279,6 +286,7 @@ RB_FUNC(GPURenderPassEncoder_DrawIndirect) {
     {
       self_obj->DrawIndirect(indirect_buffer, indirect_offset);
     }
+    RB_GC_GUARD(indirect_buffer_val);
 
     return Qnil;
   } else {
@@ -299,6 +307,7 @@ RB_FUNC(GPURenderPassEncoder_DrawIndexedIndirect) {
     {
       self_obj->DrawIndexedIndirect(indirect_buffer);
     }
+    RB_GC_GUARD(indirect_buffer_val);
 
     return Qnil;
   } else if (argc == 2) {
@@ -312,6 +321,7 @@ RB_FUNC(GPURenderPassEncoder_DrawIndexedIndirect) {
     {
       self_obj->DrawIndexedIndirect(indirect_buffer, indirect_offset);
     }
+    RB_GC_GUARD(indirect_buffer_val);
 
     return Qnil;
   } else {
@@ -411,15 +421,13 @@ RB_FUNC(GPURenderPassEncoder_InsertDebugMarker) {
 
   CheckArgc(argc, 1);
   VALUE marker_label_val;
-  const char* marker_label_data;
-  size_t marker_label_size;
   ParseArgs(argc, argv, "o", &marker_label_val);
-  CheckString(marker_label_val, &marker_label_data, &marker_label_size);
+  marker_label_val = CheckString(marker_label_val);
 
   {
-    self_obj->InsertDebugMarker(
-        std::string(marker_label_data, marker_label_size));
+    self_obj->InsertDebugMarker(TakeString(marker_label_val));
   }
+  RB_GC_GUARD(marker_label_val);
 
   return Qnil;
 }
@@ -429,14 +437,13 @@ RB_FUNC(GPURenderPassEncoder_PushDebugGroup) {
 
   CheckArgc(argc, 1);
   VALUE group_label_val;
-  const char* group_label_data;
-  size_t group_label_size;
   ParseArgs(argc, argv, "o", &group_label_val);
-  CheckString(group_label_val, &group_label_data, &group_label_size);
+  group_label_val = CheckString(group_label_val);
 
   {
-    self_obj->PushDebugGroup(std::string(group_label_data, group_label_size));
+    self_obj->PushDebugGroup(TakeString(group_label_val));
   }
+  RB_GC_GUARD(group_label_val);
 
   return Qnil;
 }
@@ -469,7 +476,9 @@ void InitGPURenderPassEncoderBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPURenderPassEncoder", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPURenderPassEncoderDataType>);
+  RegisterNativeType<urge::GPURenderPassEncoder>(klass, kGPURenderPassEncoderDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_pipeline", GPURenderPassEncoder_SetPipeline);
   DefineMethod(klass, "set_bind_group", GPURenderPassEncoder_SetBindGroup);
   DefineMethod(klass, "set_vertex_buffer", GPURenderPassEncoder_SetVertexBuffer);

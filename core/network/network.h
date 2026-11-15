@@ -29,7 +29,7 @@
 
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 
 namespace urge {
 
@@ -86,6 +86,7 @@ class WebSocket : public Object {
   URGE_BINDING()
   WebSocket(std::string url, std::vector<std::string> protocols = {});
   ~WebSocket() override;
+  void PrepareForCollection() override;
 
   URGE_BINDING(Name : "url")
   std::string GetUrl();
@@ -106,7 +107,7 @@ class WebSocket : public Object {
   void Close(int32_t code = 1000, std::string reason = "");
 
   URGE_BINDING()
-  RefPtr<NetworkEvent> NextEvent();
+  NetworkEvent* NextEvent();
   URGE_BINDING(Name : "pending")
   int32_t GetPending();
 
@@ -119,6 +120,9 @@ class WebSocket : public Object {
  private:
   std::string url_;
   std::vector<std::string> protocols_;
+  // Asynchronous backend queues hold explicit persistent task roots. They are
+  // released when PrepareForCollection stops/untracks the backend; do not turn
+  // worker-owned queues into untraced Member storage.
   std::unique_ptr<WebSocketImpl> impl_;
 };
 
@@ -131,6 +135,7 @@ class Fetch : public Object {
         std::string body = "",
         std::vector<std::string> headers = {});
   ~Fetch() override;
+  void PrepareForCollection() override;
 
   URGE_BINDING()
   void Start();
@@ -188,15 +193,15 @@ class Network : public Singleton<Network> {
   URGE_BINDING()
   void Update();
   URGE_BINDING(Name : "websocket")
-  RefPtr<WebSocket> OpenWebSocket(URGE_EXCEPT,
-                                  std::string url,
-                                  std::vector<std::string> protocols = {});
+  WebSocket* OpenWebSocket(URGE_EXCEPT,
+                           std::string url,
+                           std::vector<std::string> protocols = {});
   URGE_BINDING(Name : "fetch")
-  RefPtr<Fetch> OpenFetch(URGE_EXCEPT,
-                          std::string url,
-                          std::string method = "GET",
-                          std::string body = "",
-                          std::vector<std::string> headers = {});
+  Fetch* OpenFetch(URGE_EXCEPT,
+                   std::string url,
+                   std::string method = "GET",
+                   std::string body = "",
+                   std::vector<std::string> headers = {});
 
   URGE_BINDING()
   ATTR(int32_t, Timeout);

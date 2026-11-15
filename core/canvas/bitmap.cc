@@ -41,6 +41,12 @@
 
 namespace urge {
 
+void Bitmap::Trace(GCVisitor& visitor) const {
+  Disposable::Trace(visitor);
+  visitor.Trace(font_);
+  visitor.Trace(sampler_resource_);
+}
+
 static const SDL_PixelFormat kInternalPixelFormat = SDL_PIXELFORMAT_ABGR8888;
 
 namespace {
@@ -91,14 +97,15 @@ void UnpremultiplyPixelRow(std::uint8_t* pixels, int32_t width) {
   }
 }
 
-RefPtr<GPUSampler> MakeDefaultSampler() {
+GPUSampler* MakeDefaultSampler() {
   wgpu::SamplerDescriptor sampler_desc;
   sampler_desc.addressModeU = wgpu::AddressMode::ClampToEdge;
   sampler_desc.addressModeV = wgpu::AddressMode::ClampToEdge;
   sampler_desc.addressModeW = wgpu::AddressMode::ClampToEdge;
   sampler_desc.magFilter = wgpu::FilterMode::Nearest;
   sampler_desc.minFilter = wgpu::FilterMode::Nearest;
-  return MakeRefCounted<GPUSampler>(g_device.CreateSampler(&sampler_desc));
+  return MakeGarbageCollected<GPUSampler>(
+      g_device.CreateSampler(&sampler_desc));
 }
 
 std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
@@ -172,7 +179,7 @@ std::vector<std::uint8_t> ReadTextureRegion(wgpu::Texture texture,
 }
 
 Bitmap::Bitmap(URGE_EXCEPT, std::string filename)
-    : font_(MakeRefCounted<Font>()) {
+    : font_(MakeGarbageCollected<Font>()) {
   SDL_Surface* image = nullptr;
 
   IOService::Get().OpenRead(exception_state, filename,
@@ -205,16 +212,16 @@ Bitmap::Bitmap(URGE_EXCEPT, std::string filename)
 }
 
 Bitmap::Bitmap(URGE_EXCEPT, int32_t width, int32_t height)
-    : font_(MakeRefCounted<Font>()) {
+    : font_(MakeGarbageCollected<Font>()) {
   if (CreateResources(exception_state, {width, height}))
     ClearToTransparent();
 }
 
-Bitmap::Bitmap(URGE_EXCEPT, RefPtr<Bitmap> other)
+Bitmap::Bitmap(URGE_EXCEPT, Bitmap* other)
     : Bitmap(exception_state, other->size().x, other->size().y) {
   if (exception_state.HadException())
     return;
-  font_ = MakeRefCounted<Font>(other->font_);
+  font_ = MakeGarbageCollected<Font>(other->font_.get());
   AcquireHandle();
 
   auto encoder = g_device.CreateCommandEncoder(nullptr);
@@ -240,7 +247,7 @@ Bitmap::Bitmap(URGE_EXCEPT, RefPtr<Bitmap> other)
   }
 }
 
-RefPtr<Bitmap> Bitmap::FromSurface(URGE_EXCEPT, SDL_Surface* surface) {
+Bitmap* Bitmap::FromSurface(URGE_EXCEPT, SDL_Surface* surface) {
   if (!surface)
     return nullptr;
 
@@ -256,7 +263,8 @@ RefPtr<Bitmap> Bitmap::FromSurface(URGE_EXCEPT, SDL_Surface* surface) {
     }
   }
 
-  auto bitmap = MakeRefCounted<Bitmap>(exception_state, surface->w, surface->h);
+  auto bitmap =
+      MakeGarbageCollected<Bitmap>(exception_state, surface->w, surface->h);
   if (exception_state.HadException()) {
     SDL_DestroySurface(surface);
     return nullptr;
@@ -288,30 +296,30 @@ wgpu::Sampler Bitmap::sampler() {
   return sampler_;
 }
 
-RefPtr<Rect> Bitmap::GetRect() {
-  return MakeRefCounted<Rect>(0, 0, size_.x, size_.y);
+Rect* Bitmap::GetRect() {
+  return MakeGarbageCollected<Rect>(0, 0, size_.x, size_.y);
 }
 
 void Bitmap::Blt(URGE_EXCEPT,
                  int32_t x,
                  int32_t y,
-                 RefPtr<Bitmap> src_bitmap,
-                 RefPtr<Rect> src_rect,
+                 Bitmap* src_bitmap,
+                 Rect* src_rect,
                  int32_t opacity,
                  int32_t blend_type) {
   if (!Disposable::Guard(exception_state))
     return;
 
-  StretchBlt(
-      exception_state,
-      MakeRefCounted<Rect>(x, y, src_rect->data.width, src_rect->data.height),
-      src_bitmap, src_rect, opacity, blend_type);
+  StretchBlt(exception_state,
+             MakeGarbageCollected<Rect>(x, y, src_rect->data.width,
+                                        src_rect->data.height),
+             src_bitmap, src_rect, opacity, blend_type);
 }
 
 void Bitmap::StretchBlt(URGE_EXCEPT,
-                        RefPtr<Rect> dst_rect,
-                        RefPtr<Bitmap> src_bitmap,
-                        RefPtr<Rect> src_rect,
+                        Rect* dst_rect,
+                        Bitmap* src_bitmap,
+                        Rect* src_rect,
                         int32_t opacity,
                         int32_t blend_type) {
   if (!Disposable::Guard(exception_state))
@@ -321,7 +329,7 @@ void Bitmap::StretchBlt(URGE_EXCEPT,
       std::clamp(blend_type, static_cast<int32_t>(BLEND_NONE),
                  static_cast<int32_t>(BLEND_SUBTRACT));
 
-  if (src_bitmap.get() != this) {
+  if (src_bitmap != this) {
     BitmapDraw draw;
     draw.target = this;
     draw.source = src_bitmap;
@@ -336,10 +344,10 @@ void Bitmap::StretchBlt(URGE_EXCEPT,
 }
 
 void Bitmap::MaskBlt(URGE_EXCEPT,
-                     RefPtr<Rect> dst_rect,
-                     RefPtr<Bitmap> src_bitmap,
-                     RefPtr<Rect> src_rect,
-                     RefPtr<Bitmap> mask,
+                     Rect* dst_rect,
+                     Bitmap* src_bitmap,
+                     Rect* src_rect,
+                     Bitmap* mask,
                      int32_t blend_type) {
   if (!Disposable::Guard(exception_state))
     return;
@@ -348,7 +356,7 @@ void Bitmap::MaskBlt(URGE_EXCEPT,
       std::clamp(blend_type, static_cast<int32_t>(BLEND_NONE),
                  static_cast<int32_t>(BLEND_SUBTRACT));
 
-  if (src_bitmap.get() != this && mask.get() != this) {
+  if (src_bitmap != this && mask != this) {
     BitmapDraw draw;
     draw.kind = BitmapDraw::Kind::kTextureMask;
     draw.target = this;
@@ -367,14 +375,14 @@ void Bitmap::FillRect(URGE_EXCEPT,
                       int32_t y,
                       int32_t width,
                       int32_t height,
-                      RefPtr<Color> color) {
+                      Color* color) {
   if (!Disposable::Guard(exception_state))
     return;
 
   GradientFillRect(exception_state, x, y, width, height, color, color);
 }
 
-void Bitmap::FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color) {
+void Bitmap::FillRect(URGE_EXCEPT, Rect* rect, Color* color) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -387,8 +395,8 @@ void Bitmap::GradientFillRect(URGE_EXCEPT,
                               int32_t y,
                               int32_t width,
                               int32_t height,
-                              RefPtr<Color> color1,
-                              RefPtr<Color> color2,
+                              Color* color1,
+                              Color* color2,
                               bool vertical) {
   if (!Disposable::Guard(exception_state))
     return;
@@ -409,9 +417,9 @@ void Bitmap::GradientFillRect(URGE_EXCEPT,
 }
 
 void Bitmap::GradientFillRect(URGE_EXCEPT,
-                              RefPtr<Rect> rect,
-                              RefPtr<Color> color1,
-                              RefPtr<Color> color2,
+                              Rect* rect,
+                              Color* color1,
+                              Color* color2,
                               bool vertical) {
   if (!Disposable::Guard(exception_state))
     return;
@@ -436,10 +444,10 @@ void Bitmap::ClearRect(URGE_EXCEPT,
   if (!Disposable::Guard(exception_state))
     return;
 
-  FillRect(exception_state, x, y, width, height, MakeRefCounted<Color>());
+  FillRect(exception_state, x, y, width, height, MakeGarbageCollected<Color>());
 }
 
-void Bitmap::ClearRect(URGE_EXCEPT, RefPtr<Rect> rect) {
+void Bitmap::ClearRect(URGE_EXCEPT, Rect* rect) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -447,12 +455,12 @@ void Bitmap::ClearRect(URGE_EXCEPT, RefPtr<Rect> rect) {
             rect->data.height);
 }
 
-RefPtr<Color> Bitmap::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
+Color* Bitmap::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
   if (!Disposable::Guard(exception_state))
     return {};
 
   if (x < 0 || y < 0 || x >= size_.x || y >= size_.y)
-    return MakeRefCounted<Color>();
+    return MakeGarbageCollected<Color>();
 
   AcquireHandle();
 
@@ -479,15 +487,15 @@ RefPtr<Color> Bitmap::GetPixel(URGE_EXCEPT, int32_t x, int32_t y) {
          static_cast<std::size_t>(x)) *
         4;
     if (offset + 4 > read_pixels_.size())
-      return MakeRefCounted<Color>();
+      return MakeGarbageCollected<Color>();
     pixel += offset;
   }
 
   const glm::vec4 color = UnpremultiplyColor(pixel);
-  return MakeRefCounted<Color>(color.r, color.g, color.b, color.a);
+  return MakeGarbageCollected<Color>(color.r, color.g, color.b, color.a);
 }
 
-void Bitmap::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color) {
+void Bitmap::SetPixel(URGE_EXCEPT, int32_t x, int32_t y, Color* color) {
   GradientFillRect(exception_state, x, y, 1, 1, color, color);
 }
 
@@ -543,10 +551,7 @@ void Bitmap::DrawText(URGE_EXCEPT,
   FontRenderer::Draw(*this, *font_, RectI(x, y, width, height), str, align);
 }
 
-void Bitmap::DrawText(URGE_EXCEPT,
-                      RefPtr<Rect> rect,
-                      std::string str,
-                      int32_t align) {
+void Bitmap::DrawText(URGE_EXCEPT, Rect* rect, std::string str, int32_t align) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -554,21 +559,21 @@ void Bitmap::DrawText(URGE_EXCEPT,
            rect->data.height, str, align);
 }
 
-RefPtr<Rect> Bitmap::TextSize(URGE_EXCEPT, std::string str) {
+Rect* Bitmap::TextSize(URGE_EXCEPT, std::string str) {
   if (!Disposable::Guard(exception_state))
     return {};
 
   if (!font_)
-    return MakeRefCounted<Rect>();
+    return MakeGarbageCollected<Rect>();
 
   int32_t width = 0, height = 0;
   if (!font_->MeasureText(str, &width, &height))
-    return MakeRefCounted<Rect>();
+    return MakeGarbageCollected<Rect>();
 
-  return MakeRefCounted<Rect>(0, 0, width, height);
+  return MakeGarbageCollected<Rect>(0, 0, width, height);
 }
 
-RefPtr<Image> Bitmap::ToImage(URGE_EXCEPT) {
+Image* Bitmap::ToImage(URGE_EXCEPT) {
   if (!Disposable::Guard(exception_state))
     return {};
 
@@ -587,10 +592,10 @@ RefPtr<Image> Bitmap::ToImage(URGE_EXCEPT) {
     UnpremultiplyPixelRow(row, size_.x);
   }
 
-  return MakeRefCounted<Image>(data);
+  return MakeGarbageCollected<Image>(data);
 }
 
-void Bitmap::UpdateWithImage(URGE_EXCEPT, RefPtr<Image> image) {
+void Bitmap::UpdateWithImage(URGE_EXCEPT, Image* image) {
   if (!Disposable::Guard(exception_state))
     return;
 
@@ -656,32 +661,32 @@ void Bitmap::UpdateWithPixels(URGE_EXCEPT,
   TouchContent();
 }
 
-RefPtr<Bitmap> Bitmap::FromImage(URGE_EXCEPT, RefPtr<Image> image) {
-  auto result = MakeRefCounted<Bitmap>(exception_state, image->Width(),
-                                       image->Height());
+Bitmap* Bitmap::FromImage(URGE_EXCEPT, Image* image) {
+  auto result = MakeGarbageCollected<Bitmap>(exception_state, image->Width(),
+                                             image->Height());
   if (exception_state.HadException())
     return nullptr;
   result->UpdateWithImage(exception_state, image);
   return result;
 }
 
-ATTR_DEF(Bitmap, RefPtr<Font>, Font) {
+ATTR_DEF(Bitmap, Font*, Font) {
   if (value) {
-    font_ = MakeRefCounted<Font>(*value);
+    font_ = MakeGarbageCollected<Font>(*value);
     return std::nullopt;
   } else {
-    return font_;
+    return font_.get();
   }
 }
 
-ATTR_DEF(Bitmap, RefPtr<GPUSampler>, Sampler) {
+ATTR_DEF(Bitmap, GPUSampler*, Sampler) {
   if (value.has_value()) {
     sampler_resource_ = *value ? *value : MakeDefaultSampler();
     sampler_ = sampler_resource_->handle();
     CreateGroup();
     return std::nullopt;
   }
-  return sampler_resource_;
+  return sampler_resource_.get();
 }
 
 wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
@@ -722,19 +727,19 @@ wgpu::RenderPassEncoder Bitmap::BeginRendering(wgpu::CommandEncoder encoder,
 
 void Bitmap::DisposeObject() {}
 
-RefPtr<GPUTextureView> Bitmap::GetTextureView() {
+GPUTextureView* Bitmap::GetTextureView() {
   AcquireHandle();
-  return MakeRefCounted<GPUTextureView>(texture_view_);
+  return MakeGarbageCollected<GPUTextureView>(texture_view_);
 }
 
-RefPtr<GPUTexture> Bitmap::GetTexture() {
+GPUTexture* Bitmap::GetTexture() {
   AcquireHandle();
-  return MakeRefCounted<GPUTexture>(texture_);
+  return MakeGarbageCollected<GPUTexture>(texture_);
 }
 
-RefPtr<GPUTextureView> Bitmap::GetDepthStencilView() {
+GPUTextureView* Bitmap::GetDepthStencilView() {
   AcquireHandle();
-  return MakeRefCounted<GPUTextureView>(depth_stencil_view_);
+  return MakeGarbageCollected<GPUTextureView>(depth_stencil_view_);
 }
 
 bool Bitmap::CreateResources(URGE_EXCEPT, const glm::ivec2& size) {

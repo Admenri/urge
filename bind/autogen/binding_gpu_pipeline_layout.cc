@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUPipelineLayout  (core/graphics/gpu.h:843-843)
+// GPUPipelineLayout  (core/graphics/gpu.h:849-849)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUPipelineLayout, GPUObject);
@@ -39,7 +39,9 @@ void InitGPUPipelineLayoutBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUPipelineLayout", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUPipelineLayoutDataType>);
+  RegisterNativeType<urge::GPUPipelineLayout>(klass, kGPUPipelineLayoutDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   InitGPUPipelineLayoutBindingAppend(klass);
 }
 // --- GENERATED END ---

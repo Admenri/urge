@@ -29,73 +29,74 @@ namespace urge {
 ForwardPipeline3D::ForwardPipeline3D(URGE_EXCEPT) {
   Attr_ShadowSize(1024);
 
-  shadow_pass_ = AddPass(exception_state, "shadow");
-  shadow_pass_->Attr_DepthOnly(true);
-  shadow_pass_->Attr_Cascades(4);
-  shadow_pass_->SetColors({"shadow"});
-  shadow_pass_->Attr_ClearFlags(3u);
-  shadow_pass_->Attr_QueueMin(0);
-  shadow_pass_->Attr_QueueMax(4000);
-  shadow_pass_->Attr_Layers(0xFFFFFFFFu);
+  const auto shadow_pass = AddPass(exception_state, "shadow");
+  shadow_pass->Attr_DepthOnly(true);
+  shadow_pass->Attr_Cascades(4);
+  shadow_pass->SetColors({"shadow"});
+  shadow_pass->Attr_ClearFlags(3u);
+  shadow_pass->Attr_QueueMin(0);
+  shadow_pass->Attr_QueueMax(4000);
+  shadow_pass->Attr_Layers(0xFFFFFFFFu);
 
-  opaque_pass_ = AddPass(exception_state, "opaque");
-  opaque_pass_->SetTags({"opaque"});
-  opaque_pass_->Attr_ClearFlags(3u);
-  opaque_pass_->Attr_QueueMin(0);
-  opaque_pass_->Attr_QueueMax(queue_split_ - 1);
+  const auto opaque_pass = AddPass(exception_state, "opaque");
+  opaque_pass->SetTags({"opaque"});
+  opaque_pass->Attr_ClearFlags(3u);
+  opaque_pass->Attr_QueueMin(0);
+  opaque_pass->Attr_QueueMax(queue_split_ - 1);
 
-  transparent_back_pass_ = AddPass(exception_state, "transparent_back");
-  transparent_back_pass_->SetTags({"transparent"});
-  transparent_back_pass_->Attr_ClearFlags(0u);
-  transparent_back_pass_->Attr_QueueMin(queue_split_);
-  transparent_back_pass_->Attr_QueueMax(4000);
-  transparent_back_pass_->Attr_SortBackToFront(true);
-  transparent_back_pass_->Attr_CullOverride(2);
+  const auto transparent_back_pass =
+      AddPass(exception_state, "transparent_back");
+  transparent_back_pass->SetTags({"transparent"});
+  transparent_back_pass->Attr_ClearFlags(0u);
+  transparent_back_pass->Attr_QueueMin(queue_split_);
+  transparent_back_pass->Attr_QueueMax(4000);
+  transparent_back_pass->Attr_SortBackToFront(true);
+  transparent_back_pass->Attr_CullOverride(2);
 
-  transparent_pass_ = AddPass(exception_state, "transparent");
-  transparent_pass_->SetTags({"transparent"});
-  transparent_pass_->Attr_ClearFlags(0u);
-  transparent_pass_->Attr_QueueMin(queue_split_);
-  transparent_pass_->Attr_QueueMax(4000);
-  transparent_pass_->Attr_SortBackToFront(true);
-  transparent_pass_->Attr_CullOverride(3);
+  const auto transparent_pass = AddPass(exception_state, "transparent");
+  transparent_pass->SetTags({"transparent"});
+  transparent_pass->Attr_ClearFlags(0u);
+  transparent_pass->Attr_QueueMin(queue_split_);
+  transparent_pass->Attr_QueueMax(4000);
+  transparent_pass->Attr_SortBackToFront(true);
+  transparent_pass->Attr_CullOverride(3);
 }
 
 ForwardPipeline3D::~ForwardPipeline3D() = default;
 
 void ForwardPipeline3D::SetCascades(int32_t count) {
-  if (shadow_pass_)
-    shadow_pass_->Attr_Cascades(count);
+  if (const auto pass = GetPass("shadow"))
+    pass->Attr_Cascades(count);
 }
 
 void ForwardPipeline3D::SetShadowDistance(float distance) {
-  if (shadow_pass_)
-    shadow_pass_->Attr_ShadowDistance(distance);
+  if (const auto pass = GetPass("shadow"))
+    pass->Attr_ShadowDistance(distance);
 }
 
 void ForwardPipeline3D::SetSplitLambda(float lambda) {
-  if (shadow_pass_)
-    shadow_pass_->Attr_SplitLambda(lambda);
+  if (const auto pass = GetPass("shadow"))
+    pass->Attr_SplitLambda(lambda);
 }
 
 void ForwardPipeline3D::SetCascadeFade(float fade) {
-  if (shadow_pass_)
-    shadow_pass_->Attr_CascadeFade(fade);
+  if (const auto pass = GetPass("shadow"))
+    pass->Attr_CascadeFade(fade);
 }
 
 void ForwardPipeline3D::SetShadowEnabled(bool enabled) {
-  if (shadow_pass_)
-    shadow_pass_->Attr_Enabled(enabled);
+  if (const auto pass = GetPass("shadow"))
+    pass->Attr_Enabled(enabled);
 }
 
 void ForwardPipeline3D::SetQueueSplit(int32_t queue) {
   queue_split_ = std::max(1, queue);
-  if (opaque_pass_)
-    opaque_pass_->Attr_QueueMax(queue_split_ - 1);
-  if (transparent_pass_)
-    transparent_pass_->Attr_QueueMin(queue_split_);
-  if (transparent_back_pass_)
-    transparent_back_pass_->Attr_QueueMin(queue_split_);
+  if (const auto pass = GetPass("opaque"))
+    pass->Attr_QueueMax(queue_split_ - 1);
+  if (const auto pass = GetPass("transparent"))
+    pass->Attr_QueueMin(queue_split_);
+  if (const auto pass = GetPass("transparent_back"))
+    pass->Attr_QueueMin(queue_split_);
 }
 
 }

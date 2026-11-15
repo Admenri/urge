@@ -29,6 +29,11 @@
 
 namespace urge {
 
+void Skeleton3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(bones_);
+}
+
 Skeleton3D::Skeleton3D() = default;
 
 Skeleton3D::~Skeleton3D() = default;
@@ -44,10 +49,10 @@ void Skeleton3D::SetBones(URGE_EXCEPT,
         "bone.");
     return;
   }
-  std::vector<RefPtr<Node3D>> bones;
+  std::vector<Node3D*> bones;
   bones.reserve(count);
   for (size_t i = 0; i < count; ++i)
-    bones.push_back(MakeRefCounted<Node3D>());
+    bones.push_back(MakeGarbageCollected<Node3D>());
 
   for (size_t i = 0; i < count; ++i) {
     const int32_t parent = parents[i];
@@ -73,21 +78,21 @@ void Skeleton3D::SetBones(URGE_EXCEPT,
   for (size_t i = 0; i < count; ++i)
     std::memcpy(&inverse_bind_[i], &inverse_bind[i * 16], sizeof(glm::mat4));
 
-  bones_ = std::move(bones);
+  bones_.assign(bones.begin(), bones.end());
   joints_.clear();
 }
 
-RefPtr<Node3D> Skeleton3D::BoneAt(int32_t index) const {
+Node3D* Skeleton3D::BoneAt(int32_t index) const {
   if (index < 0 || index >= static_cast<int32_t>(bones_.size()))
     return nullptr;
-  return bones_[index];
+  return bones_[index].get();
 }
 
 int32_t Skeleton3D::BoneParent(int32_t index) const {
   if (index < 0 || index >= static_cast<int32_t>(bones_.size()))
     return -1;
 
-  Node3D* parent = bones_[index]->GetParent().get();
+  Node3D* parent = bones_[index]->GetParent();
   if (!parent)
     return -1;
 

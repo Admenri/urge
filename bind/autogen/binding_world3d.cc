@@ -38,29 +38,26 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// World3D  (core/scene3d/world3d.h:42-116)
+// World3D  (core/scene3d/world3d.h:43-120)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(World3D, Node);
 
 RB_FUNC(World3D_initialize) {
+  CheckConstructorSelf(self, kWorld3DDataType);
+  CheckArgc(argc, 4);
   int x, y, width, height;
   ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
-  urge::World3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::World3D> value = urge::MakeRefCounted<urge::World3D>(x,
-        y, width, height);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::World3D* value = urge::MakeGarbageCollected<urge::World3D>(x, y,
+        width, height);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(World3D_GetFormat) {
@@ -73,11 +70,7 @@ RB_FUNC(World3D_GetFormat) {
     result = new std::string(self_obj->GetFormat());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(World3D_SetFormat) {
@@ -85,14 +78,13 @@ RB_FUNC(World3D_SetFormat) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
-  const char* value_data;
-  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  CheckString(value_val, &value_data, &value_size);
+  value_val = CheckString(value_val);
 
   {
-    self_obj->SetFormat(std::string(value_data, value_size));
+    self_obj->SetFormat(TakeString(value_val));
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -101,38 +93,28 @@ RB_FUNC(World3D_GetTarget) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
   CheckArgc(argc, 0);
-  urge::RenderTarget3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderTarget3D> value = self_obj->GetTarget();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderTarget3D* value = self_obj->GetTarget();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kRenderTarget3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderTarget3DDataType);
 }
 
 RB_FUNC(World3D_GetContext) {
   auto* self_obj = GetSelfData<urge::World3D>(self);
 
   CheckArgc(argc, 0);
-  urge::RenderContext3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::RenderContext3D> value = self_obj->GetContext();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::RenderContext3D* value = self_obj->GetContext();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kRenderContext3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kRenderContext3DDataType);
 }
 
 // Attribute: x (int32_t)
@@ -177,8 +159,10 @@ void InitWorld3DBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("World3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kWorld3DDataType>);
+  RegisterNativeType<urge::World3D>(klass, kWorld3DDataType);
 
   DefineMethod(klass, "initialize", World3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "format", World3D_GetFormat);
   DefineMethod(klass, "format=", World3D_SetFormat);
   DefineMethod(klass, "target", World3D_GetTarget);

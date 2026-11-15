@@ -211,6 +211,7 @@ RB_FUNC(Mouse_SetCursor) {
   {
     urge::Mouse::Get().SetCursor(exception_state, image, hot_x, hot_y);
   }
+  RB_GC_GUARD(image_val);
   RaiseException(exception_state);
 
   return Qnil;

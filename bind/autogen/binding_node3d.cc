@@ -26,49 +26,73 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
+namespace {
+using ChildrenSnapshot = std::vector<urge::GarbageCollector::Root>;
+VALUE ConvertNode3DChildren(VALUE opaque) {
+  auto* children = reinterpret_cast<ChildrenSnapshot*>(opaque);
+  VALUE result = rb_ary_new_capa(static_cast<long>(children->size()));
+  for (size_t i = 0; i < children->size(); ++i)
+    rb_ary_push(result, WrapObject((*children)[i].get(), kNode3DDataType));
+  return result;
+}
+VALUE ReleaseNode3DChildren(VALUE opaque) {
+  delete reinterpret_cast<ChildrenSnapshot*>(opaque);
+  return Qnil;
+}
+}  // namespace
+
+RB_FUNC(Node3D_Children) {
+  CheckArgc(argc, 0);
+  auto* node = GetSelfData<urge::Node3D>(self);
+  ChildrenSnapshot* children = nullptr;
+  {
+    const auto snapshot = node->NativeChildrenSnapshot();
+    ChildrenSnapshot roots;
+    roots.reserve(snapshot.size());
+    for (auto* child : snapshot)
+      roots.emplace_back(child);
+    children = new ChildrenSnapshot(std::move(roots));
+  }
+  // The heap box roots every child across array/wrapper allocation and any
+  // Ruby longjmp. Never generalize the IR's object-vector API surface.
+  const VALUE opaque = reinterpret_cast<VALUE>(children);
+  return rb_ensure(ConvertNode3DChildren, opaque, ReleaseNode3DChildren, opaque);
+}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node3D  (core/scene3d/node3d.h:37-104)
+// Node3D  (core/scene3d/node3d.h:38-108)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Node3D);
 
 RB_FUNC(Node3D_initialize) {
+  CheckConstructorSelf(self, kNode3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::Node3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Node3D> value = urge::MakeRefCounted<urge::Node3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Node3D* value = urge::MakeGarbageCollected<urge::Node3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Node3D_GetParent) {
   auto* self_obj = GetSelfData<urge::Node3D>(self);
 
   CheckArgc(argc, 0);
-  urge::Node3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Node3D> value = self_obj->GetParent();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Node3D* value = self_obj->GetParent();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kNode3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kNode3DDataType);
 }
 
 RB_FUNC(Node3D_SetParent) {
@@ -83,6 +107,7 @@ RB_FUNC(Node3D_SetParent) {
   {
     self_obj->SetParent(value);
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -99,6 +124,7 @@ RB_FUNC(Node3D_AddChild) {
   {
     self_obj->AddChild(child);
   }
+  RB_GC_GUARD(child_val);
 
   return Qnil;
 }
@@ -115,6 +141,7 @@ RB_FUNC(Node3D_RemoveChild) {
   {
     self_obj->RemoveChild(child);
   }
+  RB_GC_GUARD(child_val);
 
   return Qnil;
 }
@@ -139,19 +166,14 @@ RB_FUNC(Node3D_ChildAt) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::Node3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Node3D> value = self_obj->ChildAt(index);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Node3D* value = self_obj->ChildAt(index);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kNode3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kNode3DDataType);
 }
 
 RB_FUNC(Node3D_GetWorldMatrix) {
@@ -164,9 +186,7 @@ RB_FUNC(Node3D_GetWorldMatrix) {
     result = new std::vector<float>(self_obj->GetWorldMatrix());
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 // Attribute: position (MaybePtr<Vector3>)
@@ -204,8 +224,10 @@ void InitNode3DBindingAppend(VALUE klass);
 void InitNode3DBinding() {
   auto klass = rb_define_class("Node3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kNode3DDataType>);
+  RegisterNativeType<urge::Node3D>(klass, kNode3DDataType);
 
   DefineMethod(klass, "initialize", Node3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "parent", Node3D_GetParent);
   DefineMethod(klass, "parent=", Node3D_SetParent);
   DefineMethod(klass, "add_child", Node3D_AddChild);
@@ -234,7 +256,7 @@ void InitNode3DBinding() {
 // differs from its C++ one -- belong here. The block is preserved
 // verbatim; empty it and the generator writes this body back.
 void InitNode3DBindingAppend(VALUE klass) {
-  (void)klass;
+  DefineMethod(klass, "children", Node3D_Children);
 }
 // --- HANDWRITTEN INIT END ---
 

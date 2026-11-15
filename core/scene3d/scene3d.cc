@@ -26,31 +26,36 @@
 
 namespace urge {
 
+void Scene3D::Trace(GCVisitor& visitor) const {
+  Node3D::Trace(visitor);
+  visitor.Trace(ambient_);
+}
+
 Scene3D::Scene3D() = default;
 
 Scene3D::~Scene3D() = default;
 
-void Scene3D::Add(RefPtr<Node3D> node) {
+void Scene3D::Add(Node3D* node) {
   AddChild(std::move(node));
 }
 
-void Scene3D::CollectCameras(Node3D* node, std::vector<RefPtr<Camera3D>>& out) {
+void Scene3D::CollectCameras(Node3D* node, std::vector<Camera3D*>& out) {
   if (Camera3D* camera = dynamic_cast<Camera3D*>(node))
-    out.push_back(RefPtr<Camera3D>(camera));
+    out.push_back(camera);
 
-  for (const RefPtr<Node3D>& child : node->children())
+  for (const auto& child : node->children())
     CollectCameras(child.get(), out);
 }
 
-std::vector<RefPtr<Camera3D>> Scene3D::Cameras() {
-  std::vector<RefPtr<Camera3D>> cameras;
+std::vector<Camera3D*> Scene3D::Cameras() {
+  std::vector<Camera3D*> cameras;
   CollectCameras(this, cameras);
   return cameras;
 }
 
 int32_t Scene3D::CountNodes(const Node3D* node) const {
   int32_t count = 1;
-  for (const RefPtr<Node3D>& child : node->children())
+  for (const auto& child : node->children())
     count += CountNodes(child.get());
   return count;
 }

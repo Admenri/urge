@@ -30,6 +30,12 @@
 
 namespace urge {
 
+void MeshRenderer3D::Trace(GCVisitor& visitor) const {
+  Node3D::Trace(visitor);
+  visitor.Trace(mesh_);
+  visitor.Trace(materials_);
+}
+
 namespace {
 
 float MaxAxisScale(const glm::mat4& matrix) {
@@ -45,18 +51,18 @@ MeshRenderer3D::MeshRenderer3D() = default;
 
 MeshRenderer3D::~MeshRenderer3D() = default;
 
-ATTR_DEF(MeshRenderer3D, RefPtr<Mesh3D>, Mesh) {
+ATTR_DEF(MeshRenderer3D, Mesh3D*, Mesh) {
   if (value.has_value()) {
     mesh_ = *value;
     UpdateBounds();
     return std::nullopt;
   }
-  return mesh_;
+  return mesh_.get();
 }
 
 void MeshRenderer3D::SetMaterial(URGE_EXCEPT,
                                  int32_t slot,
-                                 RefPtr<Material3D> material) {
+                                 Material3D* material) {
   if (slot < 0) {
     exception_state.Throw(
         ExceptionState::kRGSSError,
@@ -64,14 +70,15 @@ void MeshRenderer3D::SetMaterial(URGE_EXCEPT,
     return;
   }
   if (material)
-    materials_[slot] = std::move(material);
+    materials_[slot] = material;
   else
     materials_.erase(slot);
 }
 
-RefPtr<Material3D> MeshRenderer3D::GetMaterial(int32_t slot) const {
+Material3D* MeshRenderer3D::GetMaterial(int32_t slot) const {
   const auto it = materials_.find(slot);
-  return it == materials_.end() ? nullptr : it->second;
+  return it == materials_.end() ? nullptr
+                                : it->second.get();
 }
 
 std::vector<float> MeshRenderer3D::BoundsCenter() {

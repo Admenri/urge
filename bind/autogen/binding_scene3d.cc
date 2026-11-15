@@ -31,26 +31,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Scene3D  (core/scene3d/scene3d.h:37-57)
+// Scene3D  (core/scene3d/scene3d.h:38-60)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Scene3D, Node3D);
 
 RB_FUNC(Scene3D_initialize) {
+  CheckConstructorSelf(self, kScene3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::Scene3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Scene3D> value = urge::MakeRefCounted<urge::Scene3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Scene3D* value = urge::MakeGarbageCollected<urge::Scene3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Scene3D_Add) {
@@ -65,6 +62,7 @@ RB_FUNC(Scene3D_Add) {
   {
     self_obj->Add(node);
   }
+  RB_GC_GUARD(node_val);
 
   return Qnil;
 }
@@ -96,8 +94,10 @@ void InitScene3DBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node3D"));
   auto klass = rb_define_class("Scene3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kScene3DDataType>);
+  RegisterNativeType<urge::Scene3D>(klass, kScene3DDataType);
 
   DefineMethod(klass, "initialize", Scene3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "add", Scene3D_Add);
   DefineMethod(klass, "node_count", Scene3D_NodeCount);
   DefineMethod(klass, "ambient", Scene3D_Ambient);

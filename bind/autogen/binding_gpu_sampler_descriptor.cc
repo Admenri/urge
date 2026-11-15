@@ -28,26 +28,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUSamplerDescriptor  (core/graphics/gpu.h:237-301)
+// GPUSamplerDescriptor  (core/graphics/gpu.h:238-302)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUSamplerDescriptor, GPUObject);
 
 RB_FUNC(GPUSamplerDescriptor_initialize) {
+  CheckConstructorSelf(self, kGPUSamplerDescriptorDataType);
+  CheckArgc(argc, 0);
 
-  urge::GPUSamplerDescriptor* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GPUSamplerDescriptor> value = urge::MakeRefCounted<urge::GPUSamplerDescriptor>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::GPUSamplerDescriptor* value = urge::MakeGarbageCollected<urge::GPUSamplerDescriptor>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(GPUSamplerDescriptor_GetLabel) {
@@ -60,11 +57,7 @@ RB_FUNC(GPUSamplerDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(GPUSamplerDescriptor_SetLabel) {
@@ -72,14 +65,13 @@ RB_FUNC(GPUSamplerDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
-  const char* value_data;
-  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  CheckString(value_val, &value_data, &value_size);
+  value_val = CheckString(value_val);
 
   {
-    self_obj->SetLabel(std::string(value_data, value_size));
+    self_obj->SetLabel(TakeString(value_val));
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -134,8 +126,10 @@ void InitGPUSamplerDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUSamplerDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUSamplerDescriptorDataType>);
+  RegisterNativeType<urge::GPUSamplerDescriptor>(klass, kGPUSamplerDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUSamplerDescriptor_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUSamplerDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUSamplerDescriptor_SetLabel);
   DefineMethod(klass, "address_mode_u", GPUSamplerDescriptor_AddressModeU);

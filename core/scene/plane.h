@@ -37,6 +37,7 @@ class Plane : public Node {
   URGE_BINDING()
   Plane(MaybePtr<Viewport> viewport = nullptr);
   ~Plane() override;
+  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   ATTR(MaybePtr<Viewport>, Viewport);
@@ -55,9 +56,9 @@ class Plane : public Node {
   URGE_BINDING()
   ATTR(int32_t, BlendType);
   URGE_BINDING()
-  ATTR(RefPtr<Color>, Color);
+  ATTR(Color*, Color);
   URGE_BINDING()
-  ATTR(RefPtr<Tone>, Tone);
+  ATTR(Tone*, Tone);
 
  private:
   void DisposeObject() override;
@@ -69,12 +70,12 @@ class Plane : public Node {
   PrimitiveEmitter::Slot EmitGeometryInternal(PrimitiveEmitter& emitter,
                                               DrawParam param);
 
-  RefPtr<Bitmap> bitmap_;
+  Member<Bitmap> bitmap_;
   int32_t ox_ = 0, oy_ = 0;
   float zoom_x_ = 1.0f, zoom_y_ = 1.0f;
   int32_t opacity_ = 255, blend_type_ = 0;
-  RefPtr<Color> color_;
-  RefPtr<Tone> tone_;
+  Member<Color> color_;
+  Member<Tone> tone_;
 
   UniformBlockPool::Slot object_slot_ = {};
   PrimitiveEmitter::Slot primitive_slot_ = {};

@@ -98,63 +98,48 @@ RB_FUNC(Table_Set) {
 RB_DEF_TYPE(Table);
 
 RB_FUNC(Table_initialize) {
+  CheckConstructorSelf(self, kTableDataType);
   if (argc == 1) {
     // initialize(xsize)
     int xsize;
     ParseArgs(argc, argv, "i", &xsize);
 
-    urge::Table* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(
-          xsize);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Table* value = urge::MakeGarbageCollected<urge::Table>(xsize);
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 2) {
     // initialize(xsize, ysize)
     int xsize, ysize;
     ParseArgs(argc, argv, "ii", &xsize, &ysize);
 
-    urge::Table* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(xsize,
+      urge::Table* value = urge::MakeGarbageCollected<urge::Table>(xsize,
           ysize);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 3) {
     // initialize(xsize, ysize, zsize)
     int xsize, ysize, zsize;
     ParseArgs(argc, argv, "iii", &xsize, &ysize, &zsize);
 
-    urge::Table* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(xsize,
-          ysize, zsize);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Table* value = urge::MakeGarbageCollected<urge::Table>(xsize, ysize,
+          zsize);
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -164,22 +149,21 @@ RB_FUNC(Table_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
+  if (self == other_val)
+    return self;
+  CheckConstructorSelf(self, kTableDataType);
   urge::Table* other_obj = CheckObject<urge::Table>(other_val, kTableDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::Table* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Table> value = urge::MakeRefCounted<urge::Table>(other_obj);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Table* value = urge::MakeGarbageCollected<urge::Table>(other_obj);
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(other_val);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Table__dump) {
@@ -188,39 +172,30 @@ RB_FUNC(Table__dump) {
   std::string* result = nullptr;
 
   {
-    result = new std::string(urge::Table::MarshalDump(urge::RefPtr<urge::Table>(self_obj)));
+    result = new std::string(urge::Table::MarshalDump(self_obj));
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(Table__load) {
   VALUE data_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &data_val);
-  const char* data_data;
-  size_t data_size;
-  CheckString(data_val, &data_data, &data_size);
+  data_val = CheckString(data_val);
 
   urge::ExceptionState exception_state;
-  urge::Table* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Table> value = urge::Table::MarshalLoad(exception_state, std::string(data_data, data_size));
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Table* value = urge::Table::MarshalLoad(exception_state, TakeString(data_val));
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(data_val);
+  DeleteFailedResult(result, exception_state);
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(rb_obj_alloc(self), result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result, true);
 }
 
 RB_FUNC(Table_Resize) {
@@ -311,6 +286,7 @@ void InitTableBindingAppend(VALUE klass);
 void InitTableBinding() {
   auto klass = rb_define_class("Table", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kTableDataType>);
+  RegisterNativeType<urge::Table>(klass, kTableDataType);
 
   DefineMethod(klass, "initialize", Table_initialize);
   DefineMethod(klass, "initialize_copy", Table_initialize_copy);

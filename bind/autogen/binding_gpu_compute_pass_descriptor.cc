@@ -28,26 +28,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePassDescriptor  (core/graphics/gpu.h:686-693)
+// GPUComputePassDescriptor  (core/graphics/gpu.h:692-699)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePassDescriptor, GPUObject);
 
 RB_FUNC(GPUComputePassDescriptor_initialize) {
+  CheckConstructorSelf(self, kGPUComputePassDescriptorDataType);
+  CheckArgc(argc, 0);
 
-  urge::GPUComputePassDescriptor* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GPUComputePassDescriptor> value = urge::MakeRefCounted<urge::GPUComputePassDescriptor>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::GPUComputePassDescriptor* value = urge::MakeGarbageCollected<urge::GPUComputePassDescriptor>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(GPUComputePassDescriptor_GetLabel) {
@@ -60,11 +57,7 @@ RB_FUNC(GPUComputePassDescriptor_GetLabel) {
     result = new std::string(self_obj->GetLabel());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(GPUComputePassDescriptor_SetLabel) {
@@ -72,14 +65,13 @@ RB_FUNC(GPUComputePassDescriptor_SetLabel) {
 
   CheckArgc(argc, 1);
   VALUE value_val;
-  const char* value_data;
-  size_t value_size;
   ParseArgs(argc, argv, "o", &value_val);
-  CheckString(value_val, &value_data, &value_size);
+  value_val = CheckString(value_val);
 
   {
-    self_obj->SetLabel(std::string(value_data, value_size));
+    self_obj->SetLabel(TakeString(value_val));
   }
+  RB_GC_GUARD(value_val);
 
   return Qnil;
 }
@@ -90,8 +82,10 @@ void InitGPUComputePassDescriptorBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUComputePassDescriptor", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUComputePassDescriptorDataType>);
+  RegisterNativeType<urge::GPUComputePassDescriptor>(klass, kGPUComputePassDescriptorDataType);
 
   DefineMethod(klass, "initialize", GPUComputePassDescriptor_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "label", GPUComputePassDescriptor_GetLabel);
   DefineMethod(klass, "label=", GPUComputePassDescriptor_SetLabel);
   InitGPUComputePassDescriptorBindingAppend(klass);

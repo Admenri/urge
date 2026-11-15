@@ -31,48 +31,44 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Node  (core/scene/node.h:35-62)
+// Node  (core/scene/node.h:35-64)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Node, Disposable);
 
 RB_FUNC(Node_initialize) {
+  CheckConstructorSelf(self, kNodeDataType);
+  CheckArgc(argc, 0);
 
-  urge::Node* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Node* value = urge::MakeGarbageCollected<urge::Node>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Node_initialize_copy) {
   VALUE other_val = Qnil;
   CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other_val);
+  if (self == other_val)
+    return self;
+  CheckConstructorSelf(self, kNodeDataType);
   urge::Node* other_obj = CheckObject<urge::Node>(other_val, kNodeDataType);
   CheckDisposedInstanceData(other_val);
 
-  urge::Node* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Node> value = urge::MakeRefCounted<urge::Node>(other_obj);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Node* value = urge::MakeGarbageCollected<urge::Node>(other_obj);
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(other_val);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Node_Render) {
@@ -88,6 +84,7 @@ RB_FUNC(Node_Render) {
     {
       self_obj->Render(target);
     }
+    RB_GC_GUARD(target_val);
 
     return Qnil;
   } else if (argc == 2) {
@@ -102,6 +99,8 @@ RB_FUNC(Node_Render) {
     {
       self_obj->Render(target, clear);
     }
+    RB_GC_GUARD(target_val);
+    RB_GC_GUARD(clear_val);
 
     return Qnil;
   } else {
@@ -161,6 +160,7 @@ void InitNodeBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Disposable"));
   auto klass = rb_define_class("Node", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kNodeDataType>);
+  RegisterNativeType<urge::Node>(klass, kNodeDataType);
 
   DefineMethod(klass, "initialize", Node_initialize);
   DefineMethod(klass, "initialize_copy", Node_initialize_copy);

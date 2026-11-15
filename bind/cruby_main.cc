@@ -122,8 +122,12 @@ RB_FUNC(rgss_main) {
 RB_FUNC(rgss_stop) {
   urge::ExceptionState exception_state;
   for (;;) {
+    NativeGCSafePoint();
     urge::Graphics::Get().Update(exception_state);
     RaiseException(exception_state);
+    // Update's native owning locals have unwound; rgss_stop never reaches the
+    // outer RB_FUNC return boundary, so service collection/exit requests here.
+    NativeGCSafePoint();
   }
   return Qnil;
 }
@@ -196,6 +200,7 @@ struct LoopState {
   bool initialized = false;
   bool finished = false;
   bool cleaned_up = false;
+  bool cleaning_up = false;
 
   bool failed = false;
   bool exited = false;
@@ -230,7 +235,9 @@ int32_t FramesDue(double delta_rate) {
 #if !defined(URGE_RUNNER_POLL)
 
 void PresentPacer() {
-  script_loop::YieldToHost();
+  // at_exit/finalizers keep a live backend, but must not suspend cleanup.
+  if (!g_loop.cleaning_up)
+    script_loop::YieldToHost();
 }
 
 #endif
@@ -251,6 +258,9 @@ VALUE EvaluateScripts(VALUE scripts) {
     int state = 0;
     EvalString(rb_ary_entry(script, 2), rb_ary_entry(script, 1), &state);
     if (state) {
+      // Propagate the private shutdown throw past this inner protection frame.
+      if (NativeGCExitRequested())
+        rb_jump_tag(state);
       RecordFailure(rb_errinfo());
       break;
     }
@@ -268,31 +278,16 @@ void RunScripts() {
   }
 
   int state = 0;
-  rb_protect(EvaluateScripts, scripts, &state);
+  rb_protect(
+      [](VALUE value) -> VALUE {
+        return RunNativeScriptCatch(EvaluateScripts, value);
+      }, scripts, &state);
   if (state && !g_loop.failed)
     RecordFailure(rb_errinfo());
 }
 
 }
 
-#if defined(OS_EMSCRIPTEN)
-namespace {
-
-constexpr int kCollectInterval = 60;
-
-void CollectGarbage() {
-  static int frames = 0;
-  if (++frames < kCollectInterval)
-    return;
-  frames = 0;
-
-  rb_gc_enable();
-  rb_gc_start();
-  rb_gc_disable();
-}
-
-}
-#endif
 
 void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   auto& config = urge::Config::Get();
@@ -308,17 +303,19 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   LOGGER_INFO("[Ruby] starting the interpreter");
   RUBY_INIT_STACK;
   ruby_init();
+  vm_initialized_ = true;
+  InitializeNativeGC();
   Init_enc();
   Init_ext();
   rb_call_builtin_inits();
   Init_zlib();
   rb_provide("zlib.so");
+  InitializeNativeScriptControl();
   LOGGER_INFO("[Ruby] VM ready");
 
-#if defined(OS_EMSCRIPTEN)
-  rb_gc_disable();
-  urge::Graphics::Get().SetFrameCallback(&CollectGarbage);
-#endif
+  // Automatic GC remains enabled on every platform. Frame scheduling is an
+  // additional threshold, not a substitute for binding allocation safe points.
+  urge::Graphics::Get().SetFrameCallback(&NativeGCFrame);
 
   rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
   rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
@@ -333,6 +330,11 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   DefineModuleFunction(marshal_klass, "load", marshal_load_utf8);
 
   DefineModuleFunction(rb_mKernel, "rgss_main", rgss_main);
+  // Both the RB_FUNC shell and rgss_main_body are POD-only around Proc.call.
+  // A finalizer-local shutdown catch must relay via LINE even if this block
+  // never returns to the RB_FUNC safe point. Authorize only this actual CFUNC,
+  // including Kernel's module_function copy/aliases, never its Ruby name.
+  RegisterNativeScriptPODEntry(rgss_main);
   DefineModuleFunction(rb_mKernel, "rgss_stop", rgss_stop);
   DefineModuleFunction(rb_mKernel, "load_data", load_data);
   DefineModuleFunction(rb_mKernel, "save_data", save_data);
@@ -439,7 +441,11 @@ void BindingMain::RunOnLoopStack() {
 
   if (g_loop.command == LoopState::Command::kCleanup) {
     g_loop.command = LoopState::Command::kNone;
-    ruby_cleanup(error_state_);
+    g_loop.cleaning_up = true;
+    BeginNativeGCShutdown();
+    if (vm_initialized_)
+      ruby_cleanup(error_state_);
+    FinishNativeGCShutdown();
     g_loop.cleaned_up = true;
     script_loop::YieldToHost();
   }
@@ -454,6 +460,7 @@ void BindingMain::LoopEntry(void* arg) {
 #if defined(URGE_RUNNER_POLL)
 
 BindingMain::BindingMain(urge::ExceptionState& exception_state) {
+  g_loop = LoopState{};
   InitializeInterpreter(exception_state);
   if (!exception_state.HadException())
     g_loop.initialized = true;
@@ -472,19 +479,24 @@ BindingMain::Tick BindingMain::Run() {
 }
 
 BindingMain::~BindingMain() {
-  if (auto* graphics = urge::Graphics::TryGet())
+  if (!g_loop.cleaned_up) {
+    g_loop.cleaning_up = true;
+    BeginNativeGCShutdown();
+    if (vm_initialized_)
+      ruby_cleanup(error_state_);
+    FinishNativeGCShutdown();
+    g_loop.cleaned_up = true;
+  }
+  if (auto* graphics = urge::Graphics::TryGet()) {
     graphics->SetPresentCallback(nullptr);
-
-  if (g_loop.cleaned_up)
-    return;
-
-  g_loop.cleaned_up = true;
-  ruby_cleanup(error_state_);
+    graphics->SetFrameCallback(nullptr);
+  }
 }
 
 #else
 
 BindingMain::BindingMain(urge::ExceptionState& exception_state) {
+  g_loop = LoopState{};
   if (!script_loop::Start(&BindingMain::LoopEntry, this)) {
     exception_state.Throw(urge::ExceptionState::kRGSSError,
                           "failed to allocate the script stack.");
@@ -503,18 +515,24 @@ BindingMain::BindingMain(urge::ExceptionState& exception_state) {
 }
 
 BindingMain::~BindingMain() {
-  if (auto* graphics = urge::Graphics::TryGet())
-    graphics->SetPresentCallback(nullptr);
-
   if (!script_loop::Started())
     return;
 
-  if (!g_loop.initialized || g_loop.finished) {
-    g_loop.command = LoopState::Command::kCleanup;
-    while (!g_loop.cleaned_up)
-      script_loop::Resume();
-  }
+  // Resume a suspended script instead of freeing its live Ruby machine stack.
+  // The enclosing RB_FUNC's POD-only return boundary throws the private stop
+  // token after native presentation unwinds. Fiber/finalizer-local catches
+  // finish their ensures, then relay to RunScripts on safe Ruby/POD boundaries.
+  // The next resume runs cleanup on the SAME initializing VM stack.
+  if (!g_loop.finished)
+    RequestNativeGCExit();
+  g_loop.command = LoopState::Command::kCleanup;
+  while (!g_loop.cleaned_up)
+    script_loop::Resume();
 
+  if (auto* graphics = urge::Graphics::TryGet()) {
+    graphics->SetPresentCallback(nullptr);
+    graphics->SetFrameCallback(nullptr);
+  }
   script_loop::Finish();
 }
 

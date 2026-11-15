@@ -28,7 +28,7 @@
 
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 
 namespace urge {
 
@@ -48,7 +48,7 @@ class URGE : public Singleton<URGE> {
   void SetWindowTitle(std::string title);
 
   URGE_BINDING()
-  void SetWindowIcon(RefPtr<Image> icon);
+  void SetWindowIcon(Image* icon);
 
   URGE_BINDING()
   void MoveWindow(int32_t width, int32_t height);
@@ -56,7 +56,7 @@ class URGE : public Singleton<URGE> {
   void MoveWindow(int32_t x, int32_t y, int32_t width, int32_t height);
 
   URGE_BINDING()
-  RefPtr<Rect> GetWindowRect();
+  Rect* GetWindowRect();
 
   URGE_BINDING()
   void OpenURL(std::string url);

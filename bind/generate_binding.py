@@ -167,7 +167,7 @@ def vector_codec(cpp_type: str) -> Optional[str]:
 # that would break it are handled separately in `param_plan`:
 #
 #   std::string      -> `const char*` + `size_t`, rebuilt in phase 2
-#   RefPtr<T>        -> `T*`, re-wrapped by the call itself
+#   T* / MaybePtr<T> -> required / nullable managed pointer, passed raw
 #   std::vector<T>   -> the VALUE, validated here, converted in phase 2
 SCALAR_PARAMS = {
     "int8_t": ("i", "int", "static_cast<int8_t>({n})"),
@@ -211,12 +211,13 @@ INT_RETURNS = {
     "uint64_t": "ULL2NUM",
 }
 
-# `RefPtr<T>` and its alias `MaybePtr<T>` (core/common/definition.h) are one
-# C++ type with two null contracts.  `RefPtr<T>` is required, so `nil` is
-# rejected in phase 1 and the engine never sees a null pointer for it;
-# `MaybePtr<T>` reads `nil` as `nullptr`.  Which one a parameter was written
-# with is the only thing that decides, see `param_plan` / `attr_macro`.
-REFPTR_RE = re.compile(r"^(?P<kind>RefPtr|MaybePtr)<\s*(?P<inner>[\w:]+)\s*>$")
+# Only exported GC classes in the IR are object pointees. Raw `T*` is required;
+# `MaybePtr<T>` is its nullable alias, and the only spelling that accepts nil.
+# Primitive/resource pointers must never take the managed object path.
+MAYBE_PTR_RE = re.compile(r"^MaybePtr<\s*(?P<inner>[\w:]+)\s*>$")
+RAW_OBJECT_PTR_RE = re.compile(r"^(?P<inner>[\w:]+)\s*\*$")
+GC_OBJECT_TYPES: set[str] = set()
+ROOT_SLOT = "urge::GarbageCollector::Root* result = nullptr;"
 
 # ---------------------------------------------------------------------------
 # Override table
@@ -227,78 +228,66 @@ REFPTR_RE = re.compile(r"^(?P<kind>RefPtr|MaybePtr)<\s*(?P<inner>[\w:]+)\s*>$")
 # ---------------------------------------------------------------------------
 
 TABLE_MANUAL = """\
-// `Table#[]` / `Table#[]=` are hand written: Ruby hands the operands in
-// (x[, y[, z]]) order with the value last, while `Table::Get` / `Table::Set`
-// take the value first, so the arguments have to be reordered.  Out of range
-// reads answer nil and out of range writes are ignored.
+// Ruby puts the value last in Table#[]=, unlike Table::Set. Match the existing
+// RGSS glue: out-of-range reads answer zero and writes are ignored.
 RB_FUNC(Table_Get) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
-  EXC_BEGIN {
-    if (argc == 1) {
-      // [](x)
-      int x;
-      ParseArgs(argc, argv, "i", &x);
-      if (x < 0 || x >= self_obj->Xsize())
-        return Qnil;
-      return INT2NUM(self_obj->Get(x));
+  int x = 0, y = 0, z = 0;
+  if (argc == 1) {
+    ParseArgs(argc, argv, "i", &x);
+  } else if (argc == 2) {
+    ParseArgs(argc, argv, "ii", &x, &y);
+  } else if (argc == 3) {
+    ParseArgs(argc, argv, "iii", &x, &y, &z);
+  } else {
+    ArgcError(argc);
+  }
+
+  int32_t result = 0;
+  {
+    if (x < 0 || x >= self_obj->Xsize()) {
+      result = 0;
+    } else if (argc == 1) {
+      result = self_obj->Get(x);
+    } else if (y < 0 || y >= self_obj->Ysize()) {
+      result = 0;
     } else if (argc == 2) {
-      // [](x, y)
-      int x, y;
-      ParseArgs(argc, argv, "ii", &x, &y);
-      if (x < 0 || x >= self_obj->Xsize() || y < 0 || y >= self_obj->Ysize())
-        return Qnil;
-      return INT2NUM(self_obj->Get(x, y));
-    } else if (argc == 3) {
-      // [](x, y, z)
-      int x, y, z;
-      ParseArgs(argc, argv, "iii", &x, &y, &z);
-      if (x < 0 || x >= self_obj->Xsize() || y < 0 || y >= self_obj->Ysize() ||
-          z < 0 || z >= self_obj->Zsize())
-        return Qnil;
-      return INT2NUM(self_obj->Get(x, y, z));
+      result = self_obj->Get(x, y);
+    } else if (z < 0 || z >= self_obj->Zsize()) {
+      result = 0;
     } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
+      result = self_obj->Get(x, y, z);
     }
   }
-  EXC_END;
-  return Qnil;
+  return INT2NUM(result);
 }
 
 RB_FUNC(Table_Set) {
   auto* self_obj = GetSelfData<urge::Table>(self);
 
   int x = 0, y = 0, z = 0, value = 0;
-  EXC_BEGIN {
-    if (argc == 2) {
-      // []=(x, value)
-      ParseArgs(argc, argv, "ii", &x, &value);
-    } else if (argc == 3) {
-      // []=(x, y, value)
-      ParseArgs(argc, argv, "iii", &x, &y, &value);
-    } else if (argc == 4) {
-      // []=(x, y, z, value)
-      ParseArgs(argc, argv, "iiii", &x, &y, &z, &value);
-    } else {
-      rb_raise(rb_eArgError, "%s", "wrong number of arguments");
-    }
-
-    if (x < 0 || x >= self_obj->Xsize() || y < 0 || y >= self_obj->Ysize() ||
-        z < 0 || z >= self_obj->Zsize()) {
-      return Qnil;
-    }
-
-    self_obj->Set(static_cast<int16_t>(value), x, y, z);
+  if (argc == 2) {
+    ParseArgs(argc, argv, "ii", &x, &value);
+  } else if (argc == 3) {
+    ParseArgs(argc, argv, "iii", &x, &y, &value);
+  } else if (argc == 4) {
+    ParseArgs(argc, argv, "iiii", &x, &y, &z, &value);
+  } else {
+    ArgcError(argc);
   }
-  EXC_END;
+
+  {
+    if (x >= 0 && x < self_obj->Xsize() && y >= 0 && y < self_obj->Ysize() &&
+        z >= 0 && z < self_obj->Zsize())
+      self_obj->Set(static_cast<int16_t>(value), x, y, z);
+  }
   return Qnil;
 }
 """
 
 INPUT_MANUAL = """\
-// RGSS key constants (`Input::DOWN`, `Input::A`, ...).  They come from the
-// table in core/input/input.h rather than from a declaration in the export block,
-// so they cannot be generated.
+// RGSS key constants come from the table, not the IR's exported declarations.
 void DefineInputKeyConstants(VALUE mod) {
   for (const auto& binding : urge::kKeyboardBindings) {
     ID key =
@@ -306,34 +295,111 @@ void DefineInputKeyConstants(VALUE mod) {
     rb_const_set(mod, key, LONG2NUM(binding.key_id));
   }
 }
+
+// Symbol/String names and RGSS numeric key ids are the legacy query contract.
+// Carry only pointer/length data across Ruby-capable parsing; the name belongs
+// to Ruby's symbol table or the static engine table, not an owning C++ local.
+void GetKeyBinding(VALUE value, const char** name, size_t* size) {
+  *name = nullptr;
+  *size = 0;
+
+  if (SYMBOL_P(value) || RB_TYPE_P(value, T_STRING)) {
+    const char* text = rb_id2name(rb_to_id(value));
+    *name = text;
+    *size = std::strlen(text);
+    return;
+  }
+  if (FIXNUM_P(value)) {
+    auto key_id = NUM2LONG(value);
+    for (size_t i = 0; i < std::size(urge::kKeyboardBindings); ++i) {
+      if (urge::kKeyboardBindings[i].key_id == key_id) {
+        *name = urge::kKeyboardBindings[i].name.data();
+        *size = urge::kKeyboardBindings[i].name.size();
+        return;
+      }
+    }
+  }
+}
+
+RB_FUNC(Input_PressedManual) {
+  CheckArgc(argc, 1);
+  VALUE sym = Qnil;
+  ParseArgs(argc, argv, "o", &sym);
+  const char* key = nullptr;
+  size_t key_size = 0;
+  GetKeyBinding(sym, &key, &key_size);
+  if (!key)
+    return Qfalse;
+
+  bool result = false;
+  {
+    result = urge::Input::Get().Pressed(std::string(key, key_size));
+  }
+  return result ? Qtrue : Qfalse;
+}
+
+RB_FUNC(Input_TriggeredManual) {
+  CheckArgc(argc, 1);
+  VALUE sym = Qnil;
+  ParseArgs(argc, argv, "o", &sym);
+  const char* key = nullptr;
+  size_t key_size = 0;
+  GetKeyBinding(sym, &key, &key_size);
+  if (!key)
+    return Qfalse;
+
+  bool result = false;
+  {
+    result = urge::Input::Get().Triggered(std::string(key, key_size));
+  }
+  return result ? Qtrue : Qfalse;
+}
+
+RB_FUNC(Input_RepeatedManual) {
+  CheckArgc(argc, 1);
+  VALUE sym = Qnil;
+  ParseArgs(argc, argv, "o", &sym);
+  const char* key = nullptr;
+  size_t key_size = 0;
+  GetKeyBinding(sym, &key, &key_size);
+  if (!key)
+    return Qfalse;
+
+  bool result = false;
+  {
+    result = urge::Input::Get().Repeated(std::string(key, key_size));
+  }
+  return result ? Qtrue : Qfalse;
+}
 """
 
 VIDEO_MANUAL = """\
-// `Video#player_info` answers a Ruby Hash, and the generator has no `std::map`
-// codec, so both the body and its registration are hand written here.  The C++
-// accessor deliberately carries no `URGE_BINDING()` marker: the IR cannot
-// describe a Hash, and a declaration it has to skip would only show up as an
-// `unsupported` entry.
+// PlayerInfo returns an owning map by value. Box it in the native-only phase,
+// then ensure cleanup even if a Ruby allocation raises or exits nonlocally.
 RB_FUNC(Video_PlayerInfo) {
   auto* self_obj = GetSelfData<urge::Video>(self);
+  CheckArgc(argc, 0);
+  using InfoMap = std::map<std::string, std::string>;
+  InfoMap* result = nullptr;
 
-  EXC_BEGIN {
-    VALUE hash = rb_hash_new();
-    for (const auto& entry : self_obj->PlayerInfo()) {
-      VALUE key = rb_enc_str_new(entry.first.data(),
-                                 static_cast<long>(entry.first.size()),
-                                 rb_utf8_encoding());
-      VALUE value = rb_enc_str_new(entry.second.data(),
-                                   static_cast<long>(entry.second.size()),
-                                   rb_utf8_encoding());
-      rb_hash_aset(hash, key, value);
-    }
-    return hash;
+  {
+    result = new InfoMap(self_obj->PlayerInfo());
   }
-  EXC_END;
-  return Qnil;
-}
 
+  return OwnedConvertBox<InfoMap>(result, [](const InfoMap& entries) -> VALUE {
+    VALUE info = rb_hash_new();
+    for (const auto& entry : entries) {
+      VALUE key = rb_enc_str_new(entry.first.data(),
+                                static_cast<long>(entry.first.size()),
+                                rb_utf8_encoding());
+      VALUE value = rb_enc_str_new(entry.second.data(),
+                                  static_cast<long>(entry.second.size()),
+                                  rb_utf8_encoding());
+      rb_hash_aset(info, key, value);
+    }
+    return info;
+  });
+}
 void DefineVideoPlayerInfo(VALUE klass) {
   DefineMethod(klass, "player_info", Video_PlayerInfo);
 }
@@ -345,9 +411,16 @@ NETWORK_EVENT_MANUAL = """\
 // therefore carries no `URGE_BINDING()` marker.
 RB_FUNC(NetworkEvent_Data) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
+  CheckArgc(argc, 0);
 
-  const std::string& data = self_obj->data();
-  return rb_enc_str_new(data.data(), static_cast<long>(data.size()),
+  const char* data = nullptr;
+  size_t size = 0;
+  {
+    const std::string& payload = self_obj->data();
+    data = payload.data();
+    size = payload.size();
+  }
+  return rb_enc_str_new(data, static_cast<long>(size),
                         rb_ascii8bit_encoding());
 }
 
@@ -384,9 +457,16 @@ FETCH_MANUAL = """\
 // `NetworkEvent#data`.
 RB_FUNC(Fetch_Body) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
+  CheckArgc(argc, 0);
 
-  const std::string& body = self_obj->body();
-  return rb_enc_str_new(body.data(), static_cast<long>(body.size()),
+  const char* body = nullptr;
+  size_t size = 0;
+  {
+    const std::string& payload = self_obj->body();
+    body = payload.data();
+    size = payload.size();
+  }
+  return rb_enc_str_new(body, static_cast<long>(size),
                         rb_ascii8bit_encoding());
 }
 
@@ -396,45 +476,229 @@ void DefineFetchBody(VALUE klass) {
 """
 
 GAMEPAD_MANUAL = """\
-namespace {
-
-/* Device names and paths are UTF-8 on every platform SDL runs on; tagging them
-   here keeps a Chinese controller name readable from the script. */
+// `DeviceInfo` carries `std::string` members, so the Ruby hash is built in
+// phase 3 from the vector phase 2 produced -- the vector itself cannot live in
+// the frame that raises.
 VALUE GamepadText(const std::string& text) {
   return rb_enc_str_new(text.data(), static_cast<long>(text.size()),
                         rb_utf8_encoding());
 }
 
-}  // namespace
-
-/* `Gamepad.available_devices` -- the IR can describe a `std::vector<Struct>`
-   no better than "not bindable", so the array of Hashes is built by hand,
-   the same way the reference binding does it. */
 RB_FUNC(Gamepad_available_devices) {
-  std::vector<urge::Gamepad::DeviceInfo> devices;
+  CheckArgc(argc, 0);
 
-  EXC_BEGIN {
-    devices = urge::Gamepad::GetAvailableDevices();
-  }
-  EXC_END;
+  std::vector<urge::Gamepad::DeviceInfo>* result = nullptr;
 
-  VALUE result = rb_ary_new();
-
-  for (const auto& device : devices) {
-    VALUE info = rb_hash_new();
-    rb_hash_aset(info, rb_str_new2("id"), INT2NUM(device.id));
-    rb_hash_aset(info, rb_str_new2("name"), GamepadText(device.name));
-    rb_hash_aset(info, rb_str_new2("path"), GamepadText(device.path));
-    rb_hash_aset(info, rb_str_new2("player"), INT2NUM(device.player_index));
-    rb_hash_aset(info, rb_str_new2("guid"), GamepadText(device.guid));
-    rb_ary_push(result, info);
+  {
+    result = new std::vector<urge::Gamepad::DeviceInfo>(
+        urge::Gamepad::GetAvailableDevices());
   }
 
-  return result;
+  return OwnedConvertBox<std::vector<urge::Gamepad::DeviceInfo>>(
+      result, [](const std::vector<urge::Gamepad::DeviceInfo>& values) -> VALUE {
+        VALUE devices = rb_ary_new();
+        for (const auto& device : values) {
+          VALUE info = rb_hash_new();
+          rb_hash_aset(info, rb_str_new2("id"), INT2NUM(device.id));
+          rb_hash_aset(info, rb_str_new2("name"), GamepadText(device.name));
+          rb_hash_aset(info, rb_str_new2("path"), GamepadText(device.path));
+          rb_hash_aset(info, rb_str_new2("player"), INT2NUM(device.player_index));
+          rb_hash_aset(info, rb_str_new2("guid"), GamepadText(device.guid));
+          rb_ary_push(devices, info);
+        }
+        return devices;
+      });
 }
 """
 
+NODE3D_CHILDREN_MANUAL = """\
+namespace {
+using ChildrenSnapshot = std::vector<urge::GarbageCollector::Root>;
+VALUE ConvertNode3DChildren(VALUE opaque) {
+  auto* children = reinterpret_cast<ChildrenSnapshot*>(opaque);
+  VALUE result = rb_ary_new_capa(static_cast<long>(children->size()));
+  for (size_t i = 0; i < children->size(); ++i)
+    rb_ary_push(result, WrapObject((*children)[i].get(), kNode3DDataType));
+  return result;
+}
+VALUE ReleaseNode3DChildren(VALUE opaque) {
+  delete reinterpret_cast<ChildrenSnapshot*>(opaque);
+  return Qnil;
+}
+}  // namespace
+
+RB_FUNC(Node3D_Children) {
+  CheckArgc(argc, 0);
+  auto* node = GetSelfData<urge::Node3D>(self);
+  ChildrenSnapshot* children = nullptr;
+  {
+    const auto snapshot = node->NativeChildrenSnapshot();
+    ChildrenSnapshot roots;
+    roots.reserve(snapshot.size());
+    for (auto* child : snapshot)
+      roots.emplace_back(child);
+    children = new ChildrenSnapshot(std::move(roots));
+  }
+  // The heap box roots every child across array/wrapper allocation and any
+  // Ruby longjmp. Never generalize the IR's object-vector API surface.
+  const VALUE opaque = reinterpret_cast<VALUE>(children);
+  return rb_ensure(ConvertNode3DChildren, opaque, ReleaseNode3DChildren, opaque);
+}
+"""
+
+DISPOSABLE_MANUAL = """\
+// Disposed native objects remain inspectable and dispose is idempotent. RGSS
+// allocated instances with no native payload are already disposed as well.
+RB_FUNC(Disposable_DisposeCompat) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self) && IsLegacyDisposable(self))
+    return Qnil;
+  GetSelfData<urge::Disposable, true>(self)->Dispose();
+  return Qnil;
+}
+
+RB_FUNC(Disposable_IsDisposedCompat) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self) && IsLegacyDisposable(self))
+    return Qtrue;
+  return GetSelfData<urge::Disposable, true>(self)->IsDisposed() ? Qtrue : Qfalse;
+}
+"""
+
+SPRITE_MANUAL = """\
+// RGSS can read bitmap on allocated and disposed Sprites. The native edge and
+// weak canonical registry preserve identity; do not install a Ruby bitmap cache.
+RB_FUNC(Sprite_BitmapCompat) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self))
+    return Qnil;
+  auto* sprite = GetSelfData<urge::Sprite, true>(self);
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Bitmap* bitmap = *sprite->Attr_Bitmap();
+    result = new urge::GarbageCollector::Root(bitmap);
+  }
+  return OwnedWrapObject(result, kBitmapDataType);
+}
+"""
+
+TILEMAP_XP_MANUAL = """\
+VALUE AllocateAutotileProxy(VALUE parent, const char* klass_name) {
+  VALUE cached = rb_iv_get(parent, "_TilemapSlots");
+  if (!NIL_P(cached))
+    return cached;
+  VALUE klass = rb_const_get(rb_cObject, rb_intern(klass_name));
+  VALUE obj = rb_obj_alloc(klass);
+  rb_iv_set(obj, "@parent", parent);
+  rb_iv_set(parent, "_TilemapSlots", obj);
+  return obj;
+}
+
+// Only the proxy/parent link is cached. Bitmap identity and liveness belong to
+// the weak canonical registry and traced native edges, never an @values array.
+RB_FUNC(TilemapAutotile_Get) {
+  CheckArgc(argc, 1);
+  VALUE parent_val = rb_iv_get(self, "@parent");
+  auto* parent = CheckObject<urge::TilemapXP>(parent_val, kTilemapXPDataType);
+  int index = 0;
+  ParseArgs(argc, argv, "i", &index);
+  if (index < 0 || index >= 7)
+    return Qnil;
+
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Bitmap* bitmap = parent->GetAutotile(index);
+    result = new urge::GarbageCollector::Root(bitmap);
+  }
+  RB_GC_GUARD(parent_val);
+  return OwnedWrapObject(result, kBitmapDataType);
+}
+
+RB_FUNC(TilemapAutotile_Set) {
+  CheckArgc(argc, 2);
+  VALUE parent_val = rb_iv_get(self, "@parent");
+  auto* parent = CheckObject<urge::TilemapXP>(parent_val, kTilemapXPDataType);
+  int index = 0;
+  VALUE bitmap_val = Qnil;
+  ParseArgs(argc, argv, "io", &index, &bitmap_val);
+  if (index < 0 || index >= 7)
+    return Qnil;
+  auto* bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
+  parent->SetAutotile(index, bitmap);
+  RB_GC_GUARD(parent_val);
+  return bitmap_val;
+}
+
+RB_FUNC(TilemapXP_Autotiles) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self))
+    return Qnil;
+  return AllocateAutotileProxy(self, "TilemapAutotileArray");
+}
+"""
+
+TILEMAP_VX_MANUAL = """\
+VALUE AllocateBitmapsProxy(VALUE parent, const char* klass_name) {
+  VALUE cached = rb_iv_get(parent, "_TilemapSlots");
+  if (!NIL_P(cached))
+    return cached;
+  VALUE klass = rb_const_get(rb_cObject, rb_intern(klass_name));
+  VALUE obj = rb_obj_alloc(klass);
+  rb_iv_set(obj, "@parent", parent);
+  rb_iv_set(parent, "_TilemapSlots", obj);
+  return obj;
+}
+
+// Only the proxy/parent link is cached. Bitmap identity and liveness belong to
+// the weak canonical registry and traced native edges, never an @values array.
+RB_FUNC(TilemapBitmaps_Get) {
+  CheckArgc(argc, 1);
+  VALUE parent_val = rb_iv_get(self, "@parent");
+  auto* parent = CheckObject<urge::TilemapVX>(parent_val, kTilemapVXDataType);
+  int index = 0;
+  ParseArgs(argc, argv, "i", &index);
+  if (index < 0 || index >= 9)
+    return Qnil;
+
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Bitmap* bitmap = parent->GetBitmap(index);
+    result = new urge::GarbageCollector::Root(bitmap);
+  }
+  RB_GC_GUARD(parent_val);
+  return OwnedWrapObject(result, kBitmapDataType);
+}
+
+RB_FUNC(TilemapBitmaps_Set) {
+  CheckArgc(argc, 2);
+  VALUE parent_val = rb_iv_get(self, "@parent");
+  auto* parent = CheckObject<urge::TilemapVX>(parent_val, kTilemapVXDataType);
+  int index = 0;
+  VALUE bitmap_val = Qnil;
+  ParseArgs(argc, argv, "io", &index, &bitmap_val);
+  if (index < 0 || index >= 9)
+    return Qnil;
+  auto* bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
+  parent->SetBitmap(index, bitmap);
+  RB_GC_GUARD(parent_val);
+  return bitmap_val;
+}
+
+RB_FUNC(Tilemap_GetBitmaps) {
+  CheckArgc(argc, 0);
+  if (!RTYPEDDATA_DATA(self))
+    return Qnil;
+  return AllocateBitmapsProxy(self, "TilemapBitmapArray");
+}
+"""
+
+# Explicit source-of-truth seeds, not a snapshot read from autogen at runtime.
+# Adding handwritten public glue requires both its body and its append hook here.
 HANDWRITTEN_SEED = {
+    "binding_disposable.cc": DISPOSABLE_MANUAL,
+    "binding_sprite.cc": SPRITE_MANUAL,
+    "binding_tilemap_xp.cc": TILEMAP_XP_MANUAL,
+    "binding_tilemap_vx.cc": TILEMAP_VX_MANUAL,
     "binding_table.cc": TABLE_MANUAL,
     "binding_input.cc": INPUT_MANUAL,
     "binding_gamepad.cc": GAMEPAD_MANUAL,
@@ -442,6 +706,61 @@ HANDWRITTEN_SEED = {
     "binding_network_event.cc": NETWORK_EVENT_MANUAL,
     "binding_web_socket.cc": WEBSOCKET_MANUAL,
     "binding_fetch.cc": FETCH_MANUAL,
+    "binding_node3d.cc": NODE3D_CHILDREN_MANUAL,
+}
+
+# Cold (or emptied) HANDWRITTEN INIT blocks. Keeping these paired with the
+# bodies above makes single-file deletion behave like a full cold generation.
+# Existing nonempty handwritten blocks still belong to the caller and survive.
+HANDWRITTEN_INIT_SEED = {
+    "Disposable": """\
+void InitDisposableBindingAppend(VALUE klass) {
+  DefineMethod(klass, "dispose", Disposable_DisposeCompat);
+  DefineMethod(klass, "disposed?", Disposable_IsDisposedCompat);
+}
+""",
+    "Sprite": """\
+void InitSpriteBindingAppend(VALUE klass) {
+  DefineMethod(klass, "bitmap", Sprite_BitmapCompat);
+}
+""",
+    "TilemapXP": """\
+void InitTilemapXPBindingAppend(VALUE klass) {
+  auto proxy = rb_define_class("TilemapAutotileArray", rb_cObject);
+  DefineMethod(proxy, "[]", TilemapAutotile_Get);
+  DefineMethod(proxy, "[]=", TilemapAutotile_Set);
+  DefineMethod(klass, "autotiles", TilemapXP_Autotiles);
+}
+""",
+    "TilemapVX": """\
+void InitTilemapVXBindingAppend(VALUE klass) {
+  auto proxy = rb_define_class("TilemapBitmapArray", rb_cObject);
+  DefineMethod(proxy, "[]", TilemapBitmaps_Get);
+  DefineMethod(proxy, "[]=", TilemapBitmaps_Set);
+  DefineMethod(klass, "bitmaps", Tilemap_GetBitmaps);
+}
+""",
+    "Input": """\
+void InitInputBindingAppend(VALUE mod) {
+  DefineModuleFunction(mod, "press?", Input_PressedManual);
+  DefineModuleFunction(mod, "trigger?", Input_TriggeredManual);
+  DefineModuleFunction(mod, "repeat?", Input_RepeatedManual);
+}
+""",
+    "Mouse": """\
+void InitMouseBindingAppend(VALUE klass) {
+  rb_const_set(klass, rb_intern("LEFT"), INT2NUM(urge::Mouse::Left));
+  rb_const_set(klass, rb_intern("MIDDLE"), INT2NUM(urge::Mouse::Middle));
+  rb_const_set(klass, rb_intern("RIGHT"), INT2NUM(urge::Mouse::Right));
+  rb_const_set(klass, rb_intern("X1"), INT2NUM(urge::Mouse::X1));
+  rb_const_set(klass, rb_intern("X2"), INT2NUM(urge::Mouse::X2));
+}
+""",
+    "Node3D": """\
+void InitNode3DBindingAppend(VALUE klass) {
+  DefineMethod(klass, "children", Node3D_Children);
+}
+""",
 }
 
 # Statements appended to the generated Init*Binding() body.
@@ -461,8 +780,8 @@ EXTRA_INIT_CALLS = {
 #
 # Win32API is the one such binding: it is a thin libffi wrapper over
 # LoadLibrary/GetProcAddress and lives entirely in bind/binding_win32api.cc.
-# The matching `#include` sits in the preserved HANDWRITTEN INCLUDES block of
-# binding_init.cc, which is the other half of what Bindgen.md prescribes for a
+# The matching `#include` is seeded into the preserved HANDWRITTEN INCLUDES
+# block of binding_init.cc on a cold run, as Bindgen.md prescribes for a
 # symbol a generated file has to name ("跨文件请加进 *_INCLUDES 区").
 EXTRA_INIT_BINDING_CALLS = [
     "InitWin32APIBinding();",
@@ -488,15 +807,21 @@ def snake(name: str) -> str:
     return "".join(out)
 
 
-def refptr_inner(cpp_type: str) -> Optional[str]:
-    m = REFPTR_RE.match(cpp_type.strip())
-    return m.group("inner") if m else None
+def object_inner(cpp_type: str) -> Optional[str]:
+    """Exported GC pointee, never C strings, void* or foreign/resource pointers."""
+    t = cpp_type.strip()
+    m = MAYBE_PTR_RE.match(t) or RAW_OBJECT_PTR_RE.match(t)
+    if not m:
+        return None
+    inner = m.group("inner")
+    if inner.startswith("urge::"):
+        inner = inner[len("urge::"):]
+    return inner if inner in GC_OBJECT_TYPES else None
 
 
-def refptr_is_maybe(cpp_type: str) -> bool:
-    """Whether an object argument is written `MaybePtr`, i.e. accepts `nil`."""
-    m = REFPTR_RE.match(cpp_type.strip())
-    return bool(m) and m.group("kind") == "MaybePtr"
+def object_is_maybe(cpp_type: str) -> bool:
+    """Only the explicit nullable alias accepts nil, not a defaulted raw T*."""
+    return MAYBE_PTR_RE.match(cpp_type.strip()) is not None
 
 
 def split_top_level(text: str, sep: str = ",") -> list[str]:
@@ -590,6 +915,10 @@ class Model:
         self.classes: list[dict] = list(ir["classes"])
         self.modules: list[dict] = list(ir["modules"])
         self.by_cpp_name = {c["cpp_name"]: c for c in self.classes}
+        # gen_api_json has already classified exported GarbageCollected types.
+        # No module/singleton or primitive pointee belongs to this set.
+        GC_OBJECT_TYPES.clear()
+        GC_OBJECT_TYPES.update(self.by_cpp_name)
         self.marshalable = {
             c["cpp_name"]
             for c in self.classes
@@ -600,7 +929,7 @@ class Model:
         return self.classes + self.modules
 
     def references(self, entry: dict) -> list[str]:
-        """C++ classes this entry passes through `RefPtr`."""
+        """Exported GC pointees this entry passes as raw or nullable pointers."""
         types: set[str] = set()
         param_groups: list[list[dict]] = []
         for ctor in entry.get("constructors", []):
@@ -621,7 +950,7 @@ class Model:
         for params in param_groups:
             for p in params:
                 types.add(p["type"])
-        names = {refptr_inner(t) for t in types}
+        names = {object_inner(t) for t in types}
         names.discard(None)
         names.discard(entry["cpp_name"])
         return sorted(n for n in names if n in self.by_cpp_name)
@@ -650,17 +979,18 @@ def param_plan(cpp_type: str, name: str):
     """Everything one argument costs: `(format, decls, parse targets, checks, arg)`.
 
     `decls` is a list of `(type, name)` pairs -- plain data only -- and `checks`
-    are the statements that validate the parsed VALUE and fill in the raw form.
-    `arg` is what goes into the C++ call; it is evaluated inside phase 2, which
-    is where an owning temporary is allowed to live.
+    validate the parsed VALUE and replace strings/vectors with private Ruby
+    snapshots. No buffer pointer is cached across another argument's checks.
+    `arg` is evaluated inside phase 2, where owning temporaries are allowed but
+    Ruby-capable coercion is not; it only reads the normalized snapshots.
     """
-    inner = refptr_inner(cpp_type)
+    inner = object_inner(cpp_type)
     if inner is not None:
         # `MaybePtr<T>` is the parameter saying `nil` is a value; anything else
         # is required, and `CheckObject` raises `TypeError` for `nil` -- the
         # same answer `rb_check_typeddata` gives any other wrong type.  That is
         # what lets the engine drop its own null checks.
-        check = "CheckMaybeObject" if refptr_is_maybe(cpp_type) else "CheckObject"
+        check = "CheckMaybeObject" if object_is_maybe(cpp_type) else "CheckObject"
         return (
             "o",
             [("VALUE", name + "_val"), ("urge::%s*" % inner, name)],
@@ -675,20 +1005,23 @@ def param_plan(cpp_type: str, name: str):
             "o",
             [("VALUE", name + "_val")],
             [name + "_val"],
-            ["CheckVectorOf<%s>(%s_val);" % (element, name)],
+            ["%s_val = CheckVectorOf<%s>(%s_val);" % (name, element, name)],
             "TakeVectorOf<%s>(%s_val)" % (element, name),
         )
     if cpp_type == "std::string":
         return (
             "o",
-            [
-                ("VALUE", name + "_val"),
-                ("const char*", name + "_data"),
-                ("size_t", name + "_size"),
-            ],
+            [("VALUE", name + "_val")],
             [name + "_val"],
-            ["CheckString(%s_val, &%s_data, &%s_size);" % (name, name, name)],
-            "std::string(%s_data, %s_size)" % (name, name),
+            ["%s_val = CheckString(%s_val);" % (name, name)],
+            "TakeString(%s_val)" % name,
+        )
+    if cpp_type in ("const char*", "char*"):
+        return (
+            "o", [("VALUE", name + "_val")],
+            [name + "_val"],
+            ["%s_val = CheckCString(%s_val);" % (name, name)],
+            "RSTRING_PTR(%s_val)" % name,
         )
     fmt, local_type, template = SCALAR_PARAMS[cpp_type]
     return (fmt, [(local_type, name)], [name], [], template.format(n=name))
@@ -704,6 +1037,7 @@ class ParamPlan:
         self.args: list[str] = []
         self.checks: list[str] = []
         self.parse_targets: list[str] = []
+        self.keep_alive: list[str] = []
         # Grouped so that `int x, y;` stays one line.  A pointer type is never
         # grouped: `urge::Rect* a, b;` would declare `b` as a `urge::Rect`.
         groups: list[tuple[str, str, list[str]]] = []
@@ -714,6 +1048,8 @@ class ParamPlan:
             self.checks.extend(checks)
             self.args.append(arg)
             for type_name, local in decls:
+                if type_name == "VALUE":
+                    self.keep_alive.append("RB_GC_GUARD(%s);" % local)
                 key = type_name if not type_name.endswith("*") else type_name + local
                 for known, _, names in groups:
                     if known == key:
@@ -736,10 +1072,9 @@ class ParamPlan:
 def return_slot(cpp_type: str) -> list[str]:
     """The declarations phase 1 must carry for phase 3 to convert the result.
 
-    Owning results are boxed: a `std::string` or a `std::vector` cannot live in
-    the phase-1/phase-3 frame, because that frame has to stay destructor free,
-    and it has to survive phase 2's scope.  The box is deleted in phase 3; it
-    leaks only if the Ruby conversion raises, which is NoMemoryError.
+    String/vector boxes and GC Root boxes survive phase 2 without introducing
+    destructors in the Ruby-capable phase-1/phase-3 frame. Phase 3 consumes the
+    box under rb_ensure, on success or any Ruby longjmp.
     """
     if cpp_type == "void":
         return []
@@ -756,9 +1091,9 @@ def return_slot(cpp_type: str) -> list[str]:
     element = vector_codec(cpp_type)
     if element is not None:
         return ["std::vector<%s>* result = nullptr;" % element]
-    inner = refptr_inner(cpp_type)
+    inner = object_inner(cpp_type)
     if inner is not None:
-        return ["urge::%s* result = nullptr;" % inner]
+        return [ROOT_SLOT]
     raise ValueError("no result slot for %r" % cpp_type)
 
 
@@ -787,15 +1122,13 @@ def emit_store(cpp_type: str, call: str, indent: str) -> list[str]:
     element = vector_codec(cpp_type)
     if element is not None:
         return emit_call("result = new std::vector<%s>(%s)" % (element, call), indent)
-    inner = refptr_inner(cpp_type)
+    inner = object_inner(cpp_type)
     if inner is not None:
-        # The `RefPtr` temporary dies with phase 2, so the slot takes its own
-        # reference; phase 3 releases it once the Ruby object owns one too.
+        # Park an address-registered native root before any Ruby allocation.
+        # The Ruby frame owns only the POD pointer; OwnedWrap consumes the box.
         return (
-            emit_call("urge::RefPtr<urge::%s> value = %s" % (inner, call), indent)
-            + [indent + "result = value.get();"]
-            + [indent + "if (result)"]
-            + [indent + "  result->AddRef();"]
+            emit_call("urge::%s* value = %s" % (inner, call), indent)
+            + [indent + "result = new urge::GarbageCollector::Root(value);"]
         )
     return emit_call("result = %s" % call, indent)
 
@@ -811,28 +1144,13 @@ def emit_convert(cpp_type: str, indent: str) -> list[str]:
     if cpp_type in ("float", "double"):
         return [indent + "return rb_float_new(result);"]
     if cpp_type == "std::string":
-        return [
-            indent + "VALUE value = rb_enc_str_new(",
-            indent + "    result->data(), static_cast<long>(result->size()),",
-            indent + "    rb_utf8_encoding());",
-            indent + "delete result;",
-            indent + "return value;",
-        ]
+        return [indent + "return OwnedWrapString(result);"]
     element = vector_codec(cpp_type)
     if element is not None:
-        return [
-            indent + "VALUE value = WrapVectorOf<%s>(*result);" % element,
-            indent + "delete result;",
-            indent + "return value;",
-        ]
-    inner = refptr_inner(cpp_type)
+        return [indent + "return OwnedWrapVector<%s>(result);" % element]
+    inner = object_inner(cpp_type)
     if inner is not None:
-        return [
-            indent + "VALUE value = WrapObject(result, k%sDataType);" % inner,
-            indent + "if (result)",
-            indent + "  result->Release();",
-            indent + "return value;",
-        ]
+        return [indent + "return OwnedWrapObject(result, k%sDataType);" % inner]
     if cpp_type in ("const char*", "char*"):
         # rubies this old have no rb_utf8_str_new_cstr, and the pointer may be
         # null, so measure it instead of relying on a NUL-terminated wrapper.
@@ -844,6 +1162,14 @@ def emit_convert(cpp_type: str, indent: str) -> list[str]:
             indent + "           : Qnil;",
         ]
     raise ValueError("no return conversion for %r" % cpp_type)
+
+
+def emit_failed_result_cleanup(cpp_type: str, indent: str) -> list[str]:
+    """Delete the result box BEFORE RaiseException can Ruby-longjmp."""
+    if (object_inner(cpp_type) is not None or cpp_type == "std::string"
+            or vector_codec(cpp_type) is not None):
+        return [indent + "DeleteFailedResult(result, exception_state);"]
+    return []
 
 
 def arity_map(overloads: list[dict]) -> dict[int, dict]:
@@ -954,7 +1280,9 @@ def emit_framework(
         lines.append(nested + "{")
         lines.extend(emit_store(return_type, call_of(args), nested + "  "))
         lines.append(nested + "}")
+        lines.extend(nested + guard for guard in plan.keep_alive)
         if has_exception:
+            lines.extend(emit_failed_result_cleanup(return_type, nested))
             lines.append(nested + "RaiseException(exception_state);")
         lines.append("")
         lines.extend(emit_convert(return_type, nested))
@@ -984,7 +1312,8 @@ def emit_framework(
 def emit_initialize(entry: dict) -> list[str]:
     name = entry["cpp_name"]
     dispatch = Dispatch(entry["constructors"])
-    lines = ["RB_FUNC(%s_initialize) {" % name]
+    lines = ["RB_FUNC(%s_initialize) {" % name,
+             "  CheckConstructorSelf(self, k%sDataType);" % name]
 
     def emit_arity(params, nested, has_exception):
         plan = ParamPlan(params)
@@ -994,43 +1323,38 @@ def emit_initialize(entry: dict) -> list[str]:
         lines.extend(plan.parse_args_lines(nested))
         lines.extend(nested + c for c in plan.checks)
         lines.append("")
-        lines.append(nested + "urge::%s* result = nullptr;" % name)
+        lines.append(nested + ROOT_SLOT)
         lines.append("")
         args = list(plan.args)
         if has_exception:
             args.insert(0, "exception_state")
         lines.append(nested + "{")
         inner = nested + "  "
-        # `MakeRefCounted` answers a `RefPtr` that dies with the scope, so the
-        # slot takes its own reference; the wrapper is handed that one.
         lines.extend(
             emit_call(
-                "urge::RefPtr<urge::%s> value = "
-                "urge::MakeRefCounted<urge::%s>(%s)"
+                "urge::%s* value = urge::MakeGarbageCollected<urge::%s>(%s)"
                 % (name, name, ", ".join(args)),
                 inner,
             )
         )
-        # Failed construction must release its temporary before Ruby longjmps.
-        result_expr = (
-            "exception_state.HadException() ? nullptr : value.get()"
-            if has_exception else "value.get()"
-        )
-        lines.append(inner + "result = %s;" % result_expr)
-        lines.append(inner + "if (result)")
-        lines.append(inner + "  result->AddRef();")
+        # Failed construction leaves an adopted object for native GC, not delete.
+        # Do not allocate a return root at all when the constructor reports failure.
+        if has_exception:
+            lines.append(inner + "if (!exception_state.HadException())")
+            lines.append(inner + "  result = new urge::GarbageCollector::Root(value);")
+        else:
+            lines.append(inner + "result = new urge::GarbageCollector::Root(value);")
         lines.append(nested + "}")
+        lines.extend(nested + guard for guard in plan.keep_alive)
         if has_exception:
             lines.append(nested + "RaiseException(exception_state);")
         lines.append("")
-        lines.append(nested + "VALUE object = SetupSelfData(self, result);")
-        lines.append(nested + "if (result)")
-        lines.append(nested + "  result->Release();")
-        lines.append(nested + "return object;")
+        lines.append(nested + "return OwnedSetupSelf(self, result);")
 
     variants = dispatch.variants_with_exception()
     if dispatch.simple:
         params, has_exception = variants[0]
+        lines.append("  CheckArgc(argc, %d);" % len(params))
         emit_arity(params, "  ", has_exception)
     else:
         nested = "    "
@@ -1064,23 +1388,24 @@ def emit_initialize_copy(entry: dict) -> list[str]:
             "  VALUE other_val = Qnil;",
             "  CheckArgc(argc, 1);",
             '  ParseArgs(argc, argv, "o", &other_val);',
+            "  if (self == other_val)",
+            "    return self;",
+            "  CheckConstructorSelf(self, k%sDataType);" % name,
             "  urge::%s* other_obj = CheckObject<urge::%s>(other_val, k%sDataType);"
             % (name, name, name),
             "  CheckDisposedInstanceData(other_val);",
             "",
-            "  urge::%s* result = nullptr;" % name,
+            "  " + ROOT_SLOT,
             "",
             "  {",
-            "    urge::RefPtr<urge::%s> value = "
-            "urge::MakeRefCounted<urge::%s>(%s);"
+            "    urge::%s* value = urge::MakeGarbageCollected<urge::%s>(%s);"
             % (name, name, ctor_args),
-            "    result = %s;" % (
-                "exception_state.HadException() ? nullptr : value.get()"
-                if has_exception else "value.get()"
-            ),
-            "    if (result)",
-            "      result->AddRef();",
+            *(["    if (!exception_state.HadException())",
+               "      result = new urge::GarbageCollector::Root(value);"]
+              if has_exception else
+              ["    result = new urge::GarbageCollector::Root(value);"]),
             "  }",
+            "  RB_GC_GUARD(other_val);",
         ]
     )
     if has_exception:
@@ -1088,10 +1413,7 @@ def emit_initialize_copy(entry: dict) -> list[str]:
     lines.extend(
         [
             "",
-            "  VALUE object = SetupSelfData(self, result);",
-            "  if (result)",
-            "    result->Release();",
-            "  return object;",
+            "  return OwnedSetupSelf(self, result);",
             "}",
         ]
     )
@@ -1112,8 +1434,7 @@ def emit_marshal(entry: dict) -> list[str]:
         "  std::string* result = nullptr;",
         "",
         "  {",
-        "    result = new std::string(urge::%s::MarshalDump("
-        "urge::RefPtr<urge::%s>(self_obj)));" % (name, name),
+        "    result = new std::string(urge::%s::MarshalDump(self_obj));" % name,
         "  }",
         "",
     ]
@@ -1126,27 +1447,21 @@ def emit_marshal(entry: dict) -> list[str]:
             "  VALUE data_val = Qnil;",
             "  CheckArgc(argc, 1);",
             '  ParseArgs(argc, argv, "o", &data_val);',
-            "  const char* data_data;",
-            "  size_t data_size;",
-            "  CheckString(data_val, &data_data, &data_size);",
+            "  data_val = CheckString(data_val);",
             "",
             "  urge::ExceptionState exception_state;",
-            "  urge::%s* result = nullptr;" % name,
+            "  " + ROOT_SLOT,
             "",
             "  {",
-            "    urge::RefPtr<urge::%s> value ="
-            " urge::%s::MarshalLoad(exception_state,"
-            " std::string(data_data, data_size));" % (name, name),
-            "    result = value.get();",
-            "    if (result)",
-            "      result->AddRef();",
+            "    urge::%s* value = urge::%s::MarshalLoad(exception_state,"
+            " TakeString(data_val));" % (name, name),
+            "    result = new urge::GarbageCollector::Root(value);",
             "  }",
+            "  RB_GC_GUARD(data_val);",
+            "  DeleteFailedResult(result, exception_state);",
             "  RaiseException(exception_state);",
             "",
-            "  VALUE object = SetupSelfData(rb_obj_alloc(self), result);",
-            "  if (result)",
-            "    result->Release();",
-            "  return object;",
+            "  return OwnedSetupSelf(self, result, true);",
             "}",
         ]
     )
@@ -1216,11 +1531,11 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
     name = attr["cpp_name"]
     owner = entry["cpp_name"]
     has_exception = attr.get("has_exception", False)
-    inner = refptr_inner(cpp_type)
+    inner = object_inner(cpp_type)
     if inner is not None:
         # The last argument names the phase-1 check, which is where the null
-        # contract of `ATTR(RefPtr<T>, ...)` vs `ATTR(MaybePtr<T>, ...)` lands.
-        check = "CheckMaybeObject" if refptr_is_maybe(cpp_type) else "CheckObject"
+        # contract of `ATTR(T*, ...)` vs `ATTR(MaybePtr<T>, ...)` lands.
+        check = "CheckMaybeObject" if object_is_maybe(cpp_type) else "CheckObject"
         if static:
             if has_exception:
                 raise ValueError("no static ATTR_EXC macro yet: %s.%s" %
@@ -1302,12 +1617,15 @@ def emit_init_function(entry: dict) -> list[str]:
         )
         lines.append('  auto klass = rb_define_class("%s", parent);' % name)
     lines.append("  rb_define_alloc_func(klass, ClassAllocate<&k%sDataType>);" % name)
+    lines.append("  RegisterNativeType<urge::%s>(klass, k%sDataType);" % (name, name))
     lines.append("")
 
     if entry["constructors"]:
         lines.append('  DefineMethod(klass, "initialize", %s_initialize);' % name)
     if entry["initialize_copy"]:
         lines.append('  DefineMethod(klass, "initialize_copy", %s_initialize_copy);' % name)
+    else:
+        lines.append('  DefineMethod(klass, "initialize_copy", RejectNativeCopy);')
     for group in group_overloads(entry["instance_methods"]):
         lines.append(
             '  DefineMethod(klass, "%s", %s_%s);'
@@ -1448,6 +1766,7 @@ def emit_module_attribute(klass: str, fn: dict) -> list[str]:
         lines.append("    %s(%s);" % (getter, ", ".join(
             (["exception_state"] if has_exception else []) + plan.args)))
         lines.append("  }")
+        lines.extend("  " + guard for guard in plan.keep_alive)
         if has_exception:
             lines.append("  RaiseException(exception_state);")
         lines.append("")
@@ -1470,6 +1789,7 @@ def emit_module_attribute(klass: str, fn: dict) -> list[str]:
         "    "))
     lines.append("  }")
     if has_exception:
+        lines.extend(emit_failed_result_cleanup(cpp_type, "  "))
         lines.append("  RaiseException(exception_state);")
     lines.append("")
     lines.extend(emit_convert(cpp_type, "  "))
@@ -1561,6 +1881,8 @@ def default_init_append(name: str) -> str:
     the class (`klass`) or module (`mod`) the initialiser built already in
     hand.
     """
+    if name in HANDWRITTEN_INIT_SEED:
+        return HANDWRITTEN_INIT_SEED[name].strip("\n")
     return "\n".join(
         [
             "// Runs at the end of Init%sBinding(), with the class (`klass`) or" % name,
@@ -1708,6 +2030,12 @@ void InitBindings();
     else:
         text = cc_template()
         handwritten = HANDWRITTEN_SEED.get("binding_init.cc", "").strip("\n")
+        # No prior output exists to preserve this non-IR declaration from.
+        # Seed the same includes block an incremental run leaves untouched.
+        text = splice(
+            text, HANDWRITTEN_INCLUDES_BEGIN, HANDWRITTEN_INCLUDES_END,
+            '#include "binding_win32api.h"\n',
+        )
 
     includes = ["#include \"binding_init.h\"", ""]
     includes += ['#include "binding_%s.h"' % snake(e["cpp_name"]) for e in model.all_entries()]
@@ -1727,6 +2055,7 @@ void InitBindings();
         "}  // namespace",
         "",
         "void InitBindings() {",
+        "  InitializeNativeGC();",
         "  DefineRGSSExceptions();",
         "",
     ]

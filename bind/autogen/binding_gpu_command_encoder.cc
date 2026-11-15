@@ -36,7 +36,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUCommandEncoder  (core/graphics/gpu.h:923-987)
+// GPUCommandEncoder  (core/graphics/gpu.h:929-992)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUCommandEncoder, GPUObject);
@@ -50,20 +50,15 @@ RB_FUNC(GPUCommandEncoder_BeginRenderPass) {
   ParseArgs(argc, argv, "o", &descriptor_val);
   descriptor = CheckObject<urge::GPURenderPassDescriptor>(descriptor_val, kGPURenderPassDescriptorDataType);
 
-  urge::GPURenderPassEncoder* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GPURenderPassEncoder> value = self_obj->BeginRenderPass(
-        descriptor);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::GPURenderPassEncoder* value = self_obj->BeginRenderPass(descriptor);
+    result = new urge::GarbageCollector::Root(value);
   }
+  RB_GC_GUARD(descriptor_val);
 
-  VALUE value = WrapObject(result, kGPURenderPassEncoderDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kGPURenderPassEncoderDataType);
 }
 
 RB_FUNC(GPUCommandEncoder_BeginComputePass) {
@@ -71,19 +66,14 @@ RB_FUNC(GPUCommandEncoder_BeginComputePass) {
 
   if (argc == 0) {
     // begin_compute_pass()
-    urge::GPUComputePassEncoder* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::GPUComputePassEncoder> value = self_obj->BeginComputePass();
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::GPUComputePassEncoder* value = self_obj->BeginComputePass();
+      result = new urge::GarbageCollector::Root(value);
     }
 
-    VALUE value = WrapObject(result, kGPUComputePassEncoderDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kGPUComputePassEncoderDataType);
   } else if (argc == 1) {
     // begin_compute_pass(descriptor)
     VALUE descriptor_val;
@@ -91,20 +81,16 @@ RB_FUNC(GPUCommandEncoder_BeginComputePass) {
     ParseArgs(argc, argv, "o", &descriptor_val);
     descriptor = CheckMaybeObject<urge::GPUComputePassDescriptor>(descriptor_val, kGPUComputePassDescriptorDataType);
 
-    urge::GPUComputePassEncoder* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::GPUComputePassEncoder> value = self_obj->BeginComputePass(
+      urge::GPUComputePassEncoder* value = self_obj->BeginComputePass(
           descriptor);
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(descriptor_val);
 
-    VALUE value = WrapObject(result, kGPUComputePassEncoderDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kGPUComputePassEncoderDataType);
   } else {
     ArgcError(argc);
   }
@@ -127,6 +113,8 @@ RB_FUNC(GPUCommandEncoder_CopyBufferToBuffer) {
     self_obj->CopyBufferToBuffer(source, source_offset, destination,
         destination_offset, size);
   }
+  RB_GC_GUARD(source_val);
+  RB_GC_GUARD(destination_val);
 
   return Qnil;
 }
@@ -151,6 +139,8 @@ RB_FUNC(GPUCommandEncoder_CopyBufferToTexture) {
           destination, destination_mip_level, destination_x, destination_y,
           width, height);
     }
+    RB_GC_GUARD(source_val);
+    RB_GC_GUARD(destination_val);
 
     return Qnil;
   } else if (argc == 10) {
@@ -171,6 +161,8 @@ RB_FUNC(GPUCommandEncoder_CopyBufferToTexture) {
           destination, destination_mip_level, destination_x, destination_y,
           width, height, depth_or_array_layers);
     }
+    RB_GC_GUARD(source_val);
+    RB_GC_GUARD(destination_val);
 
     return Qnil;
   } else {
@@ -197,6 +189,8 @@ RB_FUNC(GPUCommandEncoder_CopyTextureToBuffer) {
       self_obj->CopyTextureToBuffer(source, source_mip_level, source_x,
           source_y, destination, bytes_per_row, rows_per_image, width, height);
     }
+    RB_GC_GUARD(source_val);
+    RB_GC_GUARD(destination_val);
 
     return Qnil;
   } else if (argc == 10) {
@@ -216,6 +210,8 @@ RB_FUNC(GPUCommandEncoder_CopyTextureToBuffer) {
           source_y, destination, bytes_per_row, rows_per_image, width, height,
           depth_or_array_layers);
     }
+    RB_GC_GUARD(source_val);
+    RB_GC_GUARD(destination_val);
 
     return Qnil;
   } else {
@@ -243,6 +239,8 @@ RB_FUNC(GPUCommandEncoder_CopyTextureToTexture) {
           source_y, destination, destination_mip_level, destination_x,
           destination_y, width, height);
     }
+    RB_GC_GUARD(source_val);
+    RB_GC_GUARD(destination_val);
 
     return Qnil;
   } else if (argc == 11) {
@@ -263,6 +261,8 @@ RB_FUNC(GPUCommandEncoder_CopyTextureToTexture) {
           source_y, destination, destination_mip_level, destination_x,
           destination_y, width, height, depth_or_array_layers);
     }
+    RB_GC_GUARD(source_val);
+    RB_GC_GUARD(destination_val);
 
     return Qnil;
   } else {
@@ -288,6 +288,8 @@ RB_FUNC(GPUCommandEncoder_ResolveQuerySet) {
     self_obj->ResolveQuerySet(query_set, first_query, query_count, destination,
         destination_offset);
   }
+  RB_GC_GUARD(query_set_val);
+  RB_GC_GUARD(destination_val);
 
   return Qnil;
 }
@@ -305,6 +307,7 @@ RB_FUNC(GPUCommandEncoder_ClearBuffer) {
   {
     self_obj->ClearBuffer(buffer, offset, size);
   }
+  RB_GC_GUARD(buffer_val);
 
   return Qnil;
 }
@@ -314,15 +317,13 @@ RB_FUNC(GPUCommandEncoder_InsertDebugMarker) {
 
   CheckArgc(argc, 1);
   VALUE marker_label_val;
-  const char* marker_label_data;
-  size_t marker_label_size;
   ParseArgs(argc, argv, "o", &marker_label_val);
-  CheckString(marker_label_val, &marker_label_data, &marker_label_size);
+  marker_label_val = CheckString(marker_label_val);
 
   {
-    self_obj->InsertDebugMarker(
-        std::string(marker_label_data, marker_label_size));
+    self_obj->InsertDebugMarker(TakeString(marker_label_val));
   }
+  RB_GC_GUARD(marker_label_val);
 
   return Qnil;
 }
@@ -332,14 +333,13 @@ RB_FUNC(GPUCommandEncoder_PushDebugGroup) {
 
   CheckArgc(argc, 1);
   VALUE group_label_val;
-  const char* group_label_data;
-  size_t group_label_size;
   ParseArgs(argc, argv, "o", &group_label_val);
-  CheckString(group_label_val, &group_label_data, &group_label_size);
+  group_label_val = CheckString(group_label_val);
 
   {
-    self_obj->PushDebugGroup(std::string(group_label_data, group_label_size));
+    self_obj->PushDebugGroup(TakeString(group_label_val));
   }
+  RB_GC_GUARD(group_label_val);
 
   return Qnil;
 }
@@ -359,19 +359,14 @@ RB_FUNC(GPUCommandEncoder_Finish) {
   auto* self_obj = GetSelfData<urge::GPUCommandEncoder>(self);
 
   CheckArgc(argc, 0);
-  urge::GPUCommandBuffer* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::GPUCommandBuffer> value = self_obj->Finish();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::GPUCommandBuffer* value = self_obj->Finish();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kGPUCommandBufferDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kGPUCommandBufferDataType);
 }
 
 void InitGPUCommandEncoderBindingAppend(VALUE klass);
@@ -380,7 +375,9 @@ void InitGPUCommandEncoderBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUCommandEncoder", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUCommandEncoderDataType>);
+  RegisterNativeType<urge::GPUCommandEncoder>(klass, kGPUCommandEncoderDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "begin_render_pass", GPUCommandEncoder_BeginRenderPass);
   DefineMethod(klass, "begin_compute_pass", GPUCommandEncoder_BeginComputePass);
   DefineMethod(klass, "copy_buffer_to_buffer", GPUCommandEncoder_CopyBufferToBuffer);

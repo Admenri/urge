@@ -31,6 +31,11 @@
 
 namespace urge {
 
+void Camera3D::Trace(GCVisitor& visitor) const {
+  Node3D::Trace(visitor);
+  visitor.Trace(clear_color_);
+}
+
 namespace {
 
 float AspectOf(const glm::ivec2& size) {
@@ -198,7 +203,7 @@ std::vector<float> Camera3D::ShadowSplits(int32_t count,
   return ComputeSplits(count, lambda, max_distance);
 }
 
-std::vector<float> Camera3D::ShadowCascades(RefPtr<Vector3> light_direction,
+std::vector<float> Camera3D::ShadowCascades(Vector3* light_direction,
                                             int32_t count,
                                             float lambda,
                                             int32_t width,

@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Network  (core/network/network.h:183-203)
+// Network  (core/network/network.h:188-208)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Network_Update) {
@@ -46,52 +46,43 @@ RB_FUNC(Network_OpenWebSocket) {
     // websocket(url)
     urge::ExceptionState exception_state;
     VALUE url_val;
-    const char* url_data;
-    size_t url_size;
     ParseArgs(argc, argv, "o", &url_val);
-    CheckString(url_val, &url_data, &url_size);
+    url_val = CheckString(url_val);
 
-    urge::WebSocket* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::WebSocket> value = urge::Network::Get(
-          ).OpenWebSocket(exception_state, std::string(url_data, url_size));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::WebSocket* value = urge::Network::Get(
+          ).OpenWebSocket(exception_state, TakeString(url_val));
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(url_val);
+    DeleteFailedResult(result, exception_state);
     RaiseException(exception_state);
 
-    VALUE value = WrapObject(result, kWebSocketDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kWebSocketDataType);
   } else if (argc == 2) {
     // websocket(url, protocols)
     urge::ExceptionState exception_state;
     VALUE url_val, protocols_val;
-    const char* url_data;
-    size_t url_size;
     ParseArgs(argc, argv, "oo", &url_val, &protocols_val);
-    CheckString(url_val, &url_data, &url_size);
-    CheckVectorOf<std::string>(protocols_val);
+    url_val = CheckString(url_val);
+    protocols_val = CheckVectorOf<std::string>(protocols_val);
 
-    urge::WebSocket* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::WebSocket> value = urge::Network::Get(
-          ).OpenWebSocket(exception_state, std::string(url_data, url_size),
+      urge::WebSocket* value = urge::Network::Get(
+          ).OpenWebSocket(exception_state, TakeString(url_val),
           TakeVectorOf<std::string>(protocols_val));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(url_val);
+    RB_GC_GUARD(protocols_val);
+    DeleteFailedResult(result, exception_state);
     RaiseException(exception_state);
 
-    VALUE value = WrapObject(result, kWebSocketDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kWebSocketDataType);
   } else {
     ArgcError(argc);
   }
@@ -102,116 +93,92 @@ RB_FUNC(Network_OpenFetch) {
     // fetch(url)
     urge::ExceptionState exception_state;
     VALUE url_val;
-    const char* url_data;
-    size_t url_size;
     ParseArgs(argc, argv, "o", &url_val);
-    CheckString(url_val, &url_data, &url_size);
+    url_val = CheckString(url_val);
 
-    urge::Fetch* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(exception_state, std::string(url_data, url_size));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Fetch* value = urge::Network::Get().OpenFetch(exception_state,
+          TakeString(url_val));
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(url_val);
+    DeleteFailedResult(result, exception_state);
     RaiseException(exception_state);
 
-    VALUE value = WrapObject(result, kFetchDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kFetchDataType);
   } else if (argc == 2) {
     // fetch(url, method)
     urge::ExceptionState exception_state;
     VALUE url_val, method_val;
-    const char* url_data;
-    size_t url_size, method_size;
-    const char* method_data;
     ParseArgs(argc, argv, "oo", &url_val, &method_val);
-    CheckString(url_val, &url_data, &url_size);
-    CheckString(method_val, &method_data, &method_size);
+    url_val = CheckString(url_val);
+    method_val = CheckString(method_val);
 
-    urge::Fetch* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(exception_state, std::string(url_data, url_size),
-          std::string(method_data, method_size));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Fetch* value = urge::Network::Get().OpenFetch(exception_state,
+          TakeString(url_val), TakeString(method_val));
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(url_val);
+    RB_GC_GUARD(method_val);
+    DeleteFailedResult(result, exception_state);
     RaiseException(exception_state);
 
-    VALUE value = WrapObject(result, kFetchDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kFetchDataType);
   } else if (argc == 3) {
     // fetch(url, method, body)
     urge::ExceptionState exception_state;
     VALUE url_val, method_val, body_val;
-    const char* url_data;
-    size_t url_size, method_size, body_size;
-    const char* method_data;
-    const char* body_data;
     ParseArgs(argc, argv, "ooo", &url_val, &method_val, &body_val);
-    CheckString(url_val, &url_data, &url_size);
-    CheckString(method_val, &method_data, &method_size);
-    CheckString(body_val, &body_data, &body_size);
+    url_val = CheckString(url_val);
+    method_val = CheckString(method_val);
+    body_val = CheckString(body_val);
 
-    urge::Fetch* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(exception_state, std::string(url_data, url_size),
-          std::string(method_data, method_size),
-          std::string(body_data, body_size));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      urge::Fetch* value = urge::Network::Get().OpenFetch(exception_state,
+          TakeString(url_val), TakeString(method_val), TakeString(body_val));
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(url_val);
+    RB_GC_GUARD(method_val);
+    RB_GC_GUARD(body_val);
+    DeleteFailedResult(result, exception_state);
     RaiseException(exception_state);
 
-    VALUE value = WrapObject(result, kFetchDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kFetchDataType);
   } else if (argc == 4) {
     // fetch(url, method, body, headers)
     urge::ExceptionState exception_state;
     VALUE url_val, method_val, body_val, headers_val;
-    const char* url_data;
-    size_t url_size, method_size, body_size;
-    const char* method_data;
-    const char* body_data;
     ParseArgs(argc, argv, "oooo", &url_val, &method_val, &body_val,
         &headers_val);
-    CheckString(url_val, &url_data, &url_size);
-    CheckString(method_val, &method_data, &method_size);
-    CheckString(body_val, &body_data, &body_size);
-    CheckVectorOf<std::string>(headers_val);
+    url_val = CheckString(url_val);
+    method_val = CheckString(method_val);
+    body_val = CheckString(body_val);
+    headers_val = CheckVectorOf<std::string>(headers_val);
 
-    urge::Fetch* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::Fetch> value = urge::Network::Get(
-          ).OpenFetch(exception_state, std::string(url_data, url_size),
-          std::string(method_data, method_size),
-          std::string(body_data, body_size),
+      urge::Fetch* value = urge::Network::Get().OpenFetch(exception_state,
+          TakeString(url_val), TakeString(method_val), TakeString(body_val),
           TakeVectorOf<std::string>(headers_val));
-      result = value.get();
-      if (result)
-        result->AddRef();
+      result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(url_val);
+    RB_GC_GUARD(method_val);
+    RB_GC_GUARD(body_val);
+    RB_GC_GUARD(headers_val);
+    DeleteFailedResult(result, exception_state);
     RaiseException(exception_state);
 
-    VALUE value = WrapObject(result, kFetchDataType);
-    if (result)
-      result->Release();
-    return value;
+    return OwnedWrapObject(result, kFetchDataType);
   } else {
     ArgcError(argc);
   }

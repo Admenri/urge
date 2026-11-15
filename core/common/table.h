@@ -35,7 +35,7 @@ class Table : public Object {
   URGE_BINDING()
   Table(int32_t xsize, int32_t ysize = 1, int32_t zsize = 1);
   URGE_BINDING()
-  Table(RefPtr<Table> other);
+  Table(Table* other);
 
   URGE_BINDING()
   MARSHAL_DUMP(Table);

@@ -39,6 +39,11 @@
 
 namespace urge {
 
+void Effect::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(resources_);
+}
+
 namespace {
 
 constexpr std::string_view kVertexEntry = "vs_main";
@@ -113,7 +118,7 @@ Effect::Effect(URGE_EXCEPT,
                  std::move(blend_states));
 }
 
-Effect::Effect(URGE_EXCEPT, RefPtr<Effect> other) {
+Effect::Effect(URGE_EXCEPT, Effect* other) {
   holder_ = other->holder_;
   resources_ = other->resources_;
   vs_wgsl_ = other->vs_wgsl_;
@@ -134,14 +139,14 @@ void Effect::SetInt(URGE_EXCEPT, uint32_t slot, std::vector<int32_t> data) {
                  static_cast<uint32_t>(data.size() * sizeof(int32_t)));
 }
 
-void Effect::SetTexture(uint32_t slot, RefPtr<Bitmap> texture) {
+void Effect::SetTexture(uint32_t slot, Bitmap* texture) {
   SlotResource& resource = resources_[slot];
   resource.kind = SlotKind::kTexture;
   resource.bitmap = texture;
   binding_dirty_ = true;
 }
 
-void Effect::SetSampler(uint32_t slot, RefPtr<Bitmap> texture) {
+void Effect::SetSampler(uint32_t slot, Bitmap* texture) {
   SlotResource& resource = resources_[slot];
   resource.kind = SlotKind::kSampler;
   resource.bitmap = texture;
@@ -165,10 +170,10 @@ wgpu::BindGroup Effect::AcquireBindGroup(URGE_EXCEPT) {
   return binding_;
 }
 
-void Effect::SetFilterSource(RefPtr<Bitmap> texture) {
+void Effect::SetFilterSource(Bitmap* texture) {
   const auto stage = [&](uint32_t slot, SlotKind kind) {
     SlotResource& resource = resources_[slot];
-    if (resource.bitmap.get() == texture.get() && resource.kind == kind)
+    if (resource.bitmap.get() == texture && resource.kind == kind)
       return;
 
     resource.kind = kind;
@@ -237,7 +242,7 @@ void Effect::RebuildPipeline(URGE_EXCEPT) {
   const wgpu::RenderPipeline pipeline =
       shader.MakeState(primitive, *GetDepthStencilState(), {target});
 
-  auto holder = MakeRefCounted<PipelineHolder>();
+  auto holder = std::make_shared<PipelineHolder>();
   holder->pipeline = pipeline;
 
   holder_ = std::move(holder);

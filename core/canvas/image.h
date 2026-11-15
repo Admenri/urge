@@ -26,7 +26,7 @@
 
 #include "core/common/definition.h"
 #include "core/common/disposable.h"
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 #include "core/common/utility.h"
 
 namespace urge {
@@ -41,7 +41,7 @@ class Image : public Disposable {
   URGE_BINDING()
   Image(URGE_EXCEPT, std::string filename);
   URGE_BINDING()
-  Image(RefPtr<Image> other);
+  Image(Image* other);
   ~Image() override;
 
   URGE_BINDING()
@@ -50,9 +50,9 @@ class Image : public Disposable {
   int32_t Height();
 
   URGE_BINDING()
-  RefPtr<Color> GetPixel(URGE_EXCEPT, int32_t x, int32_t y);
+  Color* GetPixel(URGE_EXCEPT, int32_t x, int32_t y);
   URGE_BINDING()
-  void SetPixel(URGE_EXCEPT, int32_t x, int32_t y, RefPtr<Color> color);
+  void SetPixel(URGE_EXCEPT, int32_t x, int32_t y, Color* color);
 
   URGE_BINDING()
   void FillRect(URGE_EXCEPT,
@@ -60,22 +60,22 @@ class Image : public Disposable {
                 int32_t y,
                 int32_t width,
                 int32_t height,
-                RefPtr<Color> color);
+                Color* color);
   URGE_BINDING()
-  void FillRect(URGE_EXCEPT, RefPtr<Rect> rect, RefPtr<Color> color);
+  void FillRect(URGE_EXCEPT, Rect* rect, Color* color);
 
   URGE_BINDING()
   void Blt(URGE_EXCEPT,
            int32_t x,
            int32_t y,
-           RefPtr<Image> src_image,
-           RefPtr<Rect> src_rect,
+           Image* src_image,
+           Rect* src_rect,
            int32_t opacity = 255);
   URGE_BINDING()
   void StretchBlt(URGE_EXCEPT,
-                  RefPtr<Rect> dst_rect,
-                  RefPtr<Image> src_image,
-                  RefPtr<Rect> src_rect,
+                  Rect* dst_rect,
+                  Image* src_image,
+                  Rect* src_rect,
                   int32_t opacity = 255);
 
   URGE_BINDING()
@@ -84,14 +84,14 @@ class Image : public Disposable {
                         int32_t y,
                         int32_t width,
                         int32_t height,
-                        RefPtr<Color> color1,
-                        RefPtr<Color> color2,
+                        Color* color1,
+                        Color* color2,
                         bool vertical = false);
   URGE_BINDING()
   void GradientFillRect(URGE_EXCEPT,
-                        RefPtr<Rect> rect,
-                        RefPtr<Color> color1,
-                        RefPtr<Color> color2,
+                        Rect* rect,
+                        Color* color1,
+                        Color* color2,
                         bool vertical = false);
 
   URGE_BINDING()
@@ -103,10 +103,10 @@ class Image : public Disposable {
                  int32_t width,
                  int32_t height);
   URGE_BINDING()
-  void ClearRect(URGE_EXCEPT, RefPtr<Rect> rect);
+  void ClearRect(URGE_EXCEPT, Rect* rect);
 
   URGE_BINDING()
-  static RefPtr<Image> FromDump(URGE_EXCEPT, std::string data);
+  static Image* FromDump(URGE_EXCEPT, std::string data);
   URGE_BINDING()
   std::string ToDump(URGE_EXCEPT);
 

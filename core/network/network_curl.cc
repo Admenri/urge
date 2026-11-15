@@ -20,11 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "core/common/persistent.h"
 #include "core/network/network_backend.h"
 
 #include <curl/curl.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <deque>
 #include <memory>
@@ -54,18 +56,10 @@ std::size_t OnWrite(char* data,
   return total;
 }
 
-std::size_t OnHeader(char* data,
-                     std::size_t size,
-                     std::size_t count,
-                     void* user) {
-  auto* out = static_cast<std::vector<std::string>*>(user);
-  const std::size_t total = size * count;
-  out->push_back(std::string(data, total));
-  return total;
-}
-
-RefPtr<NetworkEvent> MakeEvent(int32_t type) {
-  auto event = MakeRefCounted<NetworkEvent>();
+Persistent<NetworkEvent> MakeEvent(int32_t type) {
+  // Keep the worker's raw factory result protected until its root is registered.
+  GarbageCollector::ConstructionScope construction;
+  Persistent<NetworkEvent> event = MakeGarbageCollected<NetworkEvent>();
   event->type_ = type;
   return event;
 }
@@ -101,20 +95,26 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
   void Start() {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (started_)
+    if (started_ || stopping_.load(std::memory_order_relaxed))
       return;
 
     started_ = true;
     worker_ = std::thread(&CurlWebSocketImpl::Run, this);
   }
 
+  void DetachBackend() {
+    backend_ = nullptr;
+    Stop();
+  }
+
   void Stop() {
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      stopping_ = true;
-    }
+    stopping_.store(true, std::memory_order_relaxed);
     if (worker_.joinable())
       worker_.join();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    ready_state_ = WebSocket::ClosedState;
+    outgoing_.clear();
   }
 
   void Poll(WebSocket& self) override {
@@ -136,7 +136,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
     while (static_cast<int32_t>(main_queue_.size()) > max_events_) {
       auto it = std::find_if(main_queue_.begin(), main_queue_.end(),
-                             [](const RefPtr<NetworkEvent>& event) {
+                             [](const Persistent<NetworkEvent>& event) {
                                return event->type_ != NetworkEvent::Close &&
                                       event->type_ != NetworkEvent::Error;
                              });
@@ -153,14 +153,14 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     max_events_ = max_events;
   }
 
-  RefPtr<NetworkEvent> NextEvent() override {
+  NetworkEvent* NextEvent() override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (main_queue_.empty())
       return nullptr;
 
     auto event = std::move(main_queue_.front());
     main_queue_.pop_front();
-    return event;
+    return event.get();
   }
 
   int32_t Pending() override {
@@ -194,9 +194,10 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     unsigned int flags = 0;
   };
 
-  void Join() {
-    if (worker_.joinable())
-      worker_.join();
+  static int OnTransfer(void* user, curl_off_t, curl_off_t, curl_off_t,
+                        curl_off_t) {
+    const auto* self = static_cast<CurlWebSocketImpl*>(user);
+    return self->stopping_.load(std::memory_order_relaxed) ? 1 : 0;
   }
 
   void QueueSend(std::string data, unsigned int flags) {
@@ -212,7 +213,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     outgoing_.push_back(Outgoing{std::move(data), flags});
   }
 
-  void PushEvent(RefPtr<NetworkEvent> event) {
+  void PushEvent(Persistent<NetworkEvent> event) {
     std::lock_guard<std::mutex> lock(mutex_);
     worker_queue_.push_back(std::move(event));
   }
@@ -318,6 +319,10 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     curl_easy_setopt(handle, CURLOPT_URL, url_.c_str());
     curl_easy_setopt(handle, CURLOPT_CONNECT_ONLY, 2L);
     curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+    // Stop must also interrupt a connecting socket, not just its receive loop.
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, OnTransfer);
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, this);
     ConfigureTls(handle);
 
     curl_easy_setopt(handle, CURLOPT_WS_OPTIONS, (long)CURLWS_NOAUTOPONG);
@@ -371,7 +376,8 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     for (;;) {
       {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (stopping_ || ready_state_ == WebSocket::ClosedState)
+        if (stopping_.load(std::memory_order_relaxed) ||
+            ready_state_ == WebSocket::ClosedState)
           break;
       }
 
@@ -408,7 +414,8 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
         {
           std::lock_guard<std::mutex> lock(mutex_);
-          if (ready_state_ == WebSocket::ClosedState)
+          if (stopping_.load(std::memory_order_relaxed) ||
+              ready_state_ == WebSocket::ClosedState)
             break;
         }
       }
@@ -430,7 +437,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
   mutable std::mutex mutex_;
   std::thread worker_;
   bool started_ = false;
-  bool stopping_ = false;
+  std::atomic<bool> stopping_{false};
 
   int32_t ready_state_ = WebSocket::Connecting;
   std::string error_;
@@ -442,26 +449,37 @@ class CurlWebSocketImpl final : public WebSocketImpl {
   bool in_message_ = false;
 
   std::deque<Outgoing> outgoing_;
-  std::deque<RefPtr<NetworkEvent>> worker_queue_;
-  std::deque<RefPtr<NetworkEvent>> main_queue_;
+  std::deque<Persistent<NetworkEvent>> worker_queue_;
+  std::deque<Persistent<NetworkEvent>> main_queue_;
 };
 
 class CurlFetchImpl final : public FetchImpl {
  public:
-  CurlFetchImpl(std::string url,
+  CurlFetchImpl(NetworkBackend* backend,
+                std::string url,
                 std::string method,
                 std::string body,
                 std::vector<std::string> headers)
-      : url_(std::move(url)),
+      : backend_(backend),
+        url_(std::move(url)),
         method_(std::move(method)),
         body_(std::move(body)),
         headers_(std::move(headers)) {}
 
-  ~CurlFetchImpl() override { Join(); }
+  ~CurlFetchImpl() override {
+    if (backend_)
+      backend_->Untrack(this);
+    Abort();
+  }
+
+  void DetachBackend() {
+    backend_ = nullptr;
+    Abort();
+  }
 
   void Start() override {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (started_)
+    if (started_ || aborted_.load(std::memory_order_relaxed))
       return;
 
     started_ = true;
@@ -469,10 +487,7 @@ class CurlFetchImpl final : public FetchImpl {
   }
 
   void Abort() override {
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      aborted_ = true;
-    }
+    aborted_.store(true, std::memory_order_relaxed);
     Join();
   }
 
@@ -495,6 +510,38 @@ class CurlFetchImpl final : public FetchImpl {
   }
 
  private:
+  struct TransferData {
+    CurlFetchImpl* self;
+    std::string body;
+    std::vector<std::string> headers;
+  };
+
+  static std::size_t OnWrite(char* data, std::size_t size, std::size_t count,
+                             void* user) {
+    auto* transfer = static_cast<TransferData*>(user);
+    if (transfer->self->aborted_.load(std::memory_order_relaxed))
+      return 0;
+    const std::size_t total = size * count;
+    transfer->body.append(data, total);
+    return total;
+  }
+
+  static std::size_t OnHeader(char* data, std::size_t size, std::size_t count,
+                              void* user) {
+    auto* transfer = static_cast<TransferData*>(user);
+    if (transfer->self->aborted_.load(std::memory_order_relaxed))
+      return 0;
+    const std::size_t total = size * count;
+    transfer->headers.emplace_back(data, total);
+    return total;
+  }
+
+  static int OnTransfer(void* user, curl_off_t, curl_off_t, curl_off_t,
+                        curl_off_t) {
+    const auto* self = static_cast<CurlFetchImpl*>(user);
+    return self->aborted_.load(std::memory_order_relaxed) ? 1 : 0;
+  }
+
   void Join() {
     if (worker_.joinable())
       worker_.join();
@@ -507,8 +554,7 @@ class CurlFetchImpl final : public FetchImpl {
       return;
     }
 
-    std::string body;
-    std::vector<std::string> header_lines;
+    TransferData transfer{this, {}, {}};
     curl_slist* request_headers = nullptr;
 
     curl_easy_setopt(handle, CURLOPT_URL, url_.c_str());
@@ -517,9 +563,14 @@ class CurlFetchImpl final : public FetchImpl {
     curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, "");
     curl_easy_setopt(handle, CURLOPT_USERAGENT, "URGE");
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, OnWrite);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, &body);
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, &transfer);
     curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, OnHeader);
-    curl_easy_setopt(handle, CURLOPT_HEADERDATA, &header_lines);
+    curl_easy_setopt(handle, CURLOPT_HEADERDATA, &transfer);
+    // Returning nonzero cancels the actual transfer, including idle periods;
+    // suppressing its eventual result alone would make Abort block in Join.
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, OnTransfer);
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, this);
     ConfigureTls(handle);
 
     if (method_ != "GET" && method_ != "get") {
@@ -546,12 +597,12 @@ class CurlFetchImpl final : public FetchImpl {
     curl_easy_cleanup(handle);
 
     std::lock_guard<std::mutex> lock(mutex_);
-    if (aborted_)
+    if (aborted_.load(std::memory_order_relaxed))
       return;
 
     result_status_ = static_cast<int32_t>(status);
-    result_body_ = std::move(body);
-    result_headers_ = std::move(header_lines);
+    result_body_ = std::move(transfer.body);
+    result_headers_ = std::move(transfer.headers);
     if (code != CURLE_OK)
       result_error_ = curl_easy_strerror(code);
     else
@@ -561,7 +612,7 @@ class CurlFetchImpl final : public FetchImpl {
 
   void FinishWithError(const char* message) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (aborted_)
+    if (aborted_.load(std::memory_order_relaxed))
       return;
 
     result_error_ = message;
@@ -603,6 +654,7 @@ class CurlFetchImpl final : public FetchImpl {
     }
   }
 
+  NetworkBackend* backend_ = nullptr;
   std::string url_;
   std::string method_;
   std::string body_;
@@ -611,7 +663,7 @@ class CurlFetchImpl final : public FetchImpl {
   std::mutex mutex_;
   std::thread worker_;
   bool started_ = false;
-  bool aborted_ = false;
+  std::atomic<bool> aborted_{false};
   bool finished_ = false;
 
   std::string result_body_;
@@ -623,9 +675,22 @@ class CurlFetchImpl final : public FetchImpl {
 
 class CurlNetworkBackend final : public NetworkBackend {
  public:
-  void GlobalInit() override { curl_global_init(CURL_GLOBAL_DEFAULT); }
+  ~CurlNetworkBackend() override { GlobalCleanup(); }
 
-  void GlobalCleanup() override { curl_global_cleanup(); }
+  void GlobalInit() override {
+    if (!initialized_)
+      initialized_ = curl_global_init(CURL_GLOBAL_DEFAULT) == CURLE_OK;
+  }
+
+  void GlobalCleanup() override {
+    // Workers (notably Schannel transfers) must finish before global TLS
+    // state is released. This also makes direct backend destruction safe.
+    CloseAll();
+    if (initialized_) {
+      curl_global_cleanup();
+      initialized_ = false;
+    }
+  }
 
   void Update() override {
     std::vector<CurlWebSocketImpl*> sockets;
@@ -645,10 +710,9 @@ class CurlNetworkBackend final : public NetworkBackend {
       socket->SetMaxEvents(max_events_);
   }
 
-  RefPtr<WebSocket> OpenWebSocket(
-      const std::string& url,
-      const std::vector<std::string>& protocols) override {
-    auto socket = MakeRefCounted<WebSocket>(url, protocols);
+  WebSocket* OpenWebSocket(const std::string& url,
+                           const std::vector<std::string>& protocols) override {
+    auto socket = MakeGarbageCollected<WebSocket>(url, protocols);
     auto impl = std::make_unique<CurlWebSocketImpl>(this, url, protocols);
     impl->SetMaxEvents(max_events_);
     CurlWebSocketImpl* raw = impl.get();
@@ -662,24 +726,37 @@ class CurlNetworkBackend final : public NetworkBackend {
     return socket;
   }
 
-  RefPtr<Fetch> OpenFetch(const std::string& url,
-                          const std::string& method,
-                          const std::string& body,
-                          const std::vector<std::string>& headers) override {
-    auto fetch = MakeRefCounted<Fetch>(url, method, body, headers);
-    fetch->Attach(std::make_unique<CurlFetchImpl>(url, method, body, headers));
+  Fetch* OpenFetch(const std::string& url,
+                   const std::string& method,
+                   const std::string& body,
+                   const std::vector<std::string>& headers) override {
+    auto fetch = MakeGarbageCollected<Fetch>(url, method, body, headers);
+    auto impl =
+        std::make_unique<CurlFetchImpl>(this, url, method, body, headers);
+    CurlFetchImpl* raw = impl.get();
+    fetch->Attach(std::move(impl));
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      fetches_.push_back(raw);
+    }
     return fetch;
   }
 
   void CloseAll() override {
     std::vector<CurlWebSocketImpl*> sockets;
+    std::vector<CurlFetchImpl*> fetches;
     {
       std::lock_guard<std::mutex> lock(mutex_);
       sockets.swap(sockets_);
+      fetches.swap(fetches_);
     }
 
+    // No worker calls back into the registry. Detach on the main thread and
+    // join outside its mutex; externally rooted wrappers may outlive us.
     for (auto* socket : sockets)
-      socket->Stop();
+      socket->DetachBackend();
+    for (auto* fetch : fetches)
+      fetch->DetachBackend();
   }
 
   void Untrack(WebSocketImpl* impl) override {
@@ -689,10 +766,20 @@ class CurlNetworkBackend final : public NetworkBackend {
                    sockets_.end());
   }
 
+  void Untrack(FetchImpl* impl) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto* fetch = static_cast<CurlFetchImpl*>(impl);
+    fetches_.erase(std::remove(fetches_.begin(), fetches_.end(), fetch),
+                   fetches_.end());
+  }
+
  private:
   std::mutex mutex_;
+  // Non-owning registries; WebSocket/Fetch wrappers own their implementations.
   std::vector<CurlWebSocketImpl*> sockets_;
+  std::vector<CurlFetchImpl*> fetches_;
   int32_t max_events_ = 1024;
+  bool initialized_ = false;
 };
 
 }

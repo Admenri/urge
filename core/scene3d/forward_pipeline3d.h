@@ -51,10 +51,8 @@ class ForwardPipeline3D : public RenderGraph3D {
   void SetQueueSplit(int32_t queue);
 
  private:
-  RefPtr<RenderGraphPass3D> shadow_pass_;
-  RefPtr<RenderGraphPass3D> opaque_pass_;
-  RefPtr<RenderGraphPass3D> transparent_back_pass_;
-  RefPtr<RenderGraphPass3D> transparent_pass_;
+  // Pass ownership and tracing live solely in RenderGraph3D::passes_.
+  // Resolve built-ins by name so Base RemovePass/Clear cannot leave aliases.
   int32_t queue_split_ = 2500;
 };
 

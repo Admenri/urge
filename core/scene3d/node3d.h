@@ -28,6 +28,7 @@
 #include "glm/glm.hpp"
 
 #include "core/common/definition.h"
+#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/common/utility.h"
 
@@ -40,6 +41,9 @@ class Node3D : public Object {
   Node3D();
   ~Node3D() override;
 
+  void Trace(GCVisitor& visitor) const override;
+  void PrepareForCollection() override;
+
   URGE_BINDING()
   ATTR(MaybePtr<Vector3>, Position) {
     if (value.has_value()) {
@@ -47,7 +51,7 @@ class Node3D : public Object {
         position_ = *value;
       return std::nullopt;
     }
-    return position_;
+    return position_.get();
   }
 
   URGE_BINDING()
@@ -57,7 +61,7 @@ class Node3D : public Object {
         rotation_ = *value;
       return std::nullopt;
     }
-    return rotation_;
+    return rotation_.get();
   }
 
   URGE_BINDING()
@@ -67,7 +71,7 @@ class Node3D : public Object {
         scale_ = *value;
       return std::nullopt;
     }
-    return scale_;
+    return scale_.get();
   }
 
   URGE_BINDING()
@@ -85,7 +89,7 @@ class Node3D : public Object {
   }
 
   URGE_BINDING(Name : "parent")
-  RefPtr<Node3D> GetParent() const { return parent_; }
+  Node3D* GetParent() const { return parent_.get(); }
   URGE_BINDING(Name : "parent=")
   void SetParent(MaybePtr<Node3D> value);
 
@@ -96,7 +100,7 @@ class Node3D : public Object {
   URGE_BINDING()
   int32_t ChildCount() const { return static_cast<int32_t>(children_.size()); }
   URGE_BINDING()
-  RefPtr<Node3D> ChildAt(int32_t index) const;
+  Node3D* ChildAt(int32_t index) const;
 
   glm::mat4 local_matrix() const;
   glm::mat4 world_matrix() const;
@@ -112,21 +116,24 @@ class Node3D : public Object {
   void SetLocalRotation(const glm::vec4& value) { rotation_->data = value; }
   void SetLocalScale(const glm::vec3& value) { scale_->data = value; }
 
-  const std::vector<RefPtr<Node3D>>& children() const { return children_; }
+  const std::vector<Member<Node3D>>& children() const { return children_; }
+  // Raw snapshot, not a binding entry. External consumers must root each
+  // element independently before crossing a collection boundary.
+  std::vector<Node3D*> NativeChildrenSnapshot() const;
   bool visible() const { return visible_; }
   uint32_t layers() const { return layers_; }
 
  private:
   void RemoveChildRaw(Node3D* child);
 
-  RefPtr<Vector3> position_;
-  RefPtr<Vector4> rotation_;
-  RefPtr<Vector3> scale_;
+  Member<Vector3> position_;
+  Member<Vector4> rotation_;
+  Member<Vector3> scale_;
   bool visible_ = true;
   uint32_t layers_ = 1;
 
-  Node3D* parent_ = nullptr;
-  std::vector<RefPtr<Node3D>> children_;
+  WeakMember<Node3D> parent_;
+  std::vector<Member<Node3D>> children_;
 };
 
 }

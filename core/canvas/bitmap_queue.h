@@ -26,10 +26,11 @@
 #include <functional>
 #include <vector>
 
+#include "core/common/persistent.h"
 #include "core/canvas/bitmap.h"
 #include "core/common/definition.h"
 #include "core/common/object.h"
-#include "core/common/refptr.h"
+#include "core/common/member.h"
 #include "core/render/device.h"
 #include "core/render/primitive.h"
 
@@ -44,9 +45,9 @@ struct BitmapDraw {
 
   Kind kind = Kind::kTexture;
 
-  RefPtr<Bitmap> target;
-  RefPtr<Bitmap> source;
-  RefPtr<Bitmap> mask;
+  Persistent<Bitmap> target;
+  Persistent<Bitmap> source;
+  Persistent<Bitmap> mask;
 
   wgpu::BindGroup text_group;
   // Optional module-owned pipeline and prebuilt triangle batch. The queue
@@ -78,7 +79,7 @@ class BitmapQueue : public Singleton<BitmapQueue> {
   void ApplyRadialBlur(Bitmap& target, float angle, float division);
 
  private:
-  void OpenPass(const RefPtr<Bitmap>& target);
+  void OpenPass(Bitmap* target);
   void ClosePass();
   void Record(const BitmapDraw& draw,
               std::uint32_t first_vertex,
@@ -100,7 +101,7 @@ class BitmapQueue : public Singleton<BitmapQueue> {
 
   wgpu::CommandEncoder encoder_;
   wgpu::RenderPassEncoder pass_;
-  RefPtr<Bitmap> target_;
+  Persistent<Bitmap> target_;
 
   PrimitiveEmitter vertices_;
 

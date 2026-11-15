@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -44,8 +45,9 @@ class Effect : public Object {
          std::string fs_wgsl,
          std::string blend_states = {});
   URGE_BINDING()
-  Effect(URGE_EXCEPT, RefPtr<Effect> other);
+  Effect(URGE_EXCEPT, Effect* other);
   ~Effect();
+  void Trace(GCVisitor& visitor) const override;
 
   URGE_BINDING()
   void SetFloat(URGE_EXCEPT, uint32_t slot, std::vector<float> data);
@@ -60,19 +62,21 @@ class Effect : public Object {
 
   wgpu::RenderPipeline AcquirePipeline(URGE_EXCEPT);
   wgpu::BindGroup AcquireBindGroup(URGE_EXCEPT);
-  void SetFilterSource(RefPtr<Bitmap> texture);
+  void SetFilterSource(Bitmap* texture);
 
  private:
-  struct PipelineHolder : public RefCounted<PipelineHolder> {
+  struct PipelineHolder {
     wgpu::RenderPipeline pipeline;
   };
 
   enum class SlotKind { kTexture, kSampler, kBuffer };
 
   struct SlotResource {
+    void Trace(GCVisitor& visitor) const { visitor.Trace(bitmap); }
+
     SlotKind kind = SlotKind::kBuffer;
     wgpu::Buffer buffer;
-    RefPtr<Bitmap> bitmap;
+    Member<Bitmap> bitmap;
     uint64_t size = 0;
   };
 
@@ -91,7 +95,8 @@ class Effect : public Object {
   std::string fs_wgsl_;
   std::string blend_states_;
 
-  RefPtr<PipelineHolder> holder_;
+  // Internal resource state has ordinary C++ ownership, not GC ownership.
+  std::shared_ptr<PipelineHolder> holder_;
   std::map<uint32_t, SlotResource> resources_;
   wgpu::BindGroup binding_;
 

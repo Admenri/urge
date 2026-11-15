@@ -32,13 +32,12 @@ VALUE AllocateBitmapsProxy(VALUE parent, const char* klass_name) {
   VALUE klass = rb_const_get(rb_cObject, rb_intern(klass_name));
   VALUE obj = rb_obj_alloc(klass);
   rb_iv_set(obj, "@parent", parent);
-  rb_iv_set(obj, "@values", rb_ary_new());
   rb_iv_set(parent, "_TilemapSlots", obj);
   return obj;
 }
 
-// Keep the parent and assigned Ruby Bitmaps alive, including after dispose.
-// Native getters are still consulted so direct set_bitmap calls stay visible.
+// The proxy owns its Ruby parent; Bitmap identity/liveness comes from the
+// canonical weak registry and the parent's traced native edges, not caches.
 RB_FUNC(TilemapBitmaps_Get) {
   CheckArgc(argc, 1);
   VALUE parent_val = rb_iv_get(self, "@parent");
@@ -48,15 +47,13 @@ RB_FUNC(TilemapBitmaps_Get) {
   if (index < 0 || index >= 9)
     return Qnil;
 
-  auto* result = parent->GetBitmap(index).get();
-  VALUE values = rb_iv_get(self, "@values");
-  Check_Type(values, T_ARRAY);
-  VALUE cached = rb_ary_entry(values, index);
-  if (CheckMaybeObject<urge::Bitmap>(cached, kBitmapDataType) == result)
-    return cached;
-  VALUE object = WrapObject(result, kBitmapDataType);
-  rb_ary_store(values, index, object);
-  return object;
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Bitmap* bitmap = parent->GetBitmap(index);
+    result = new urge::GarbageCollector::Root(bitmap);
+  }
+  RB_GC_GUARD(parent_val);
+  return OwnedWrapObject(result, kBitmapDataType);
 }
 
 RB_FUNC(TilemapBitmaps_Set) {
@@ -69,11 +66,8 @@ RB_FUNC(TilemapBitmaps_Set) {
   if (index < 0 || index >= 9)
     return Qnil;
   auto* bitmap = CheckMaybeObject<urge::Bitmap>(bitmap_val, kBitmapDataType);
-  VALUE values = rb_iv_get(self, "@values");
-  Check_Type(values, T_ARRAY);
-  // Update the GC root before passing the non-owning argument to the core.
-  rb_ary_store(values, index, bitmap_val);
   parent->SetBitmap(index, bitmap);
+  RB_GC_GUARD(parent_val);
   return bitmap_val;
 }
 
@@ -87,31 +81,28 @@ RB_FUNC(Tilemap_GetBitmaps) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// TilemapVX  (core/scene/tilemap_vx.h:56-88)
+// TilemapVX  (core/scene/tilemap_vx.h:56-89)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(TilemapVX, Node);
 
 RB_FUNC(TilemapVX_initialize) {
+  CheckConstructorSelf(self, kTilemapVXDataType);
   if (argc == 0) {
     // initialize()
     urge::ExceptionState exception_state;
 
-    urge::TilemapVX* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
+      urge::TilemapVX* value = urge::MakeGarbageCollected<urge::TilemapVX>(
           exception_state);
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 1) {
     // initialize(viewport)
     urge::ExceptionState exception_state;
@@ -120,21 +111,18 @@ RB_FUNC(TilemapVX_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::TilemapVX* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
+      urge::TilemapVX* value = urge::MakeGarbageCollected<urge::TilemapVX>(
           exception_state, viewport);
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(viewport_val);
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 2) {
     // initialize(viewport, tilesize)
     urge::ExceptionState exception_state;
@@ -144,21 +132,18 @@ RB_FUNC(TilemapVX_initialize) {
     ParseArgs(argc, argv, "oi", &viewport_val, &tilesize);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::TilemapVX* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::TilemapVX> value = urge::MakeRefCounted<urge::TilemapVX>(
+      urge::TilemapVX* value = urge::MakeGarbageCollected<urge::TilemapVX>(
           exception_state, viewport, tilesize);
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(viewport_val);
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -188,6 +173,7 @@ RB_FUNC(TilemapVX_SetBitmap) {
   {
     self_obj->SetBitmap(index, bitmap);
   }
+  RB_GC_GUARD(bitmap_val);
 
   return Qnil;
 }
@@ -199,19 +185,14 @@ RB_FUNC(TilemapVX_GetBitmap) {
   int index;
   ParseArgs(argc, argv, "i", &index);
 
-  urge::Bitmap* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Bitmap> value = self_obj->GetBitmap(index);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Bitmap* value = self_obj->GetBitmap(index);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kBitmapDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kBitmapDataType);
 }
 
 // Attribute: viewport (MaybePtr<Viewport>)
@@ -272,8 +253,10 @@ void InitTilemapVXBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("TilemapVX", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kTilemapVXDataType>);
+  RegisterNativeType<urge::TilemapVX>(klass, kTilemapVXDataType);
 
   DefineMethod(klass, "initialize", TilemapVX_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "update", TilemapVX_Update);
   DefineMethod(klass, "set_bitmap", TilemapVX_SetBitmap);
   DefineMethod(klass, "get_bitmap", TilemapVX_GetBitmap);

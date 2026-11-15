@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "core/common/persistent.h"
 #include "core/font/font.h"
 
 #include <algorithm>
@@ -33,6 +34,13 @@
 
 namespace urge {
 
+void Font::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(color_);
+  visitor.Trace(out_color_);
+  visitor.Trace(gradient_color_);
+}
+
 Font::Font(std::vector<std::string> names, int32_t size)
     : name_(names),
       size_(size > 0 ? size : *Attr_DefaultSize()),
@@ -41,9 +49,10 @@ Font::Font(std::vector<std::string> names, int32_t size)
       outline_(*Attr_DefaultOutline()),
       shadow_(*Attr_DefaultShadow()),
       solid_(*Attr_DefaultSolid()),
-      color_(MakeRefCounted<Color>(*Attr_DefaultColor())),
-      out_color_(MakeRefCounted<Color>(*Attr_DefaultOutColor())),
-      gradient_color_(MakeRefCounted<Color>(*Attr_DefaultGradientColor())) {
+      color_(MakeGarbageCollected<Color>(*Attr_DefaultColor())),
+      out_color_(MakeGarbageCollected<Color>(*Attr_DefaultOutColor())),
+      gradient_color_(
+          MakeGarbageCollected<Color>(*Attr_DefaultGradientColor())) {
   if (name_.empty()) {
     auto default_name = Attr_DefaultName();
     if (default_name.has_value() && !default_name->empty())
@@ -51,7 +60,7 @@ Font::Font(std::vector<std::string> names, int32_t size)
   }
 }
 
-Font::Font(RefPtr<Font> other)
+Font::Font(Font* other)
     : name_(other->name_),
       size_(other->size_),
       bold_(other->bold_),
@@ -59,9 +68,10 @@ Font::Font(RefPtr<Font> other)
       outline_(other->outline_),
       shadow_(other->shadow_),
       solid_(other->solid_),
-      color_(MakeRefCounted<Color>(other->color_)),
-      out_color_(MakeRefCounted<Color>(other->out_color_)),
-      gradient_color_(MakeRefCounted<Color>(other->gradient_color_)) {}
+      color_(MakeGarbageCollected<Color>(other->color_.get())),
+      out_color_(MakeGarbageCollected<Color>(other->out_color_.get())),
+      gradient_color_(
+          MakeGarbageCollected<Color>(other->gradient_color_.get())) {}
 
 bool Font::Existed(std::string name) {
   return FontContext::Get().FontExists(name);
@@ -130,30 +140,30 @@ ATTR_DEF(Font, bool, Solid) {
   }
 }
 
-ATTR_DEF(Font, RefPtr<Color>, Color) {
+ATTR_DEF(Font, Color*, Color) {
   if (value.has_value()) {
     color_ = *value;
     return std::nullopt;
   } else {
-    return color_;
+    return color_.get();
   }
 }
 
-ATTR_DEF(Font, RefPtr<Color>, OutColor) {
+ATTR_DEF(Font, Color*, OutColor) {
   if (value.has_value()) {
     out_color_ = *value;
     return std::nullopt;
   } else {
-    return out_color_;
+    return out_color_.get();
   }
 }
 
-ATTR_DEF(Font, RefPtr<Color>, GradientColor) {
+ATTR_DEF(Font, Color*, GradientColor) {
   if (value.has_value()) {
     gradient_color_ = *value;
     return std::nullopt;
   } else {
-    return gradient_color_;
+    return gradient_color_.get();
   }
 }
 
@@ -229,36 +239,36 @@ ATTR_DEF(Font, bool, DefaultSolid) {
   }
 }
 
-ATTR_DEF(Font, RefPtr<Color>, DefaultColor) {
-  static RefPtr<Color> default_color =
-      MakeRefCounted<Color>(255.0f, 255.0f, 255.0f, 255.0f);
+ATTR_DEF(Font, Color*, DefaultColor) {
+  static Persistent<Color> default_color =
+      MakeGarbageCollected<Color>(255.0f, 255.0f, 255.0f, 255.0f);
   if (value.has_value()) {
     default_color = *value;
     return std::nullopt;
   } else {
-    return default_color;
+    return default_color.get();
   }
 }
 
-ATTR_DEF(Font, RefPtr<Color>, DefaultOutColor) {
-  static RefPtr<Color> default_out_color =
-      MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 128.0f);
+ATTR_DEF(Font, Color*, DefaultOutColor) {
+  static Persistent<Color> default_out_color =
+      MakeGarbageCollected<Color>(0.0f, 0.0f, 0.0f, 128.0f);
   if (value.has_value()) {
     default_out_color = *value;
     return std::nullopt;
   } else {
-    return default_out_color;
+    return default_out_color.get();
   }
 }
 
-ATTR_DEF(Font, RefPtr<Color>, DefaultGradientColor) {
-  static RefPtr<Color> default_gradient_color =
-      MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 0.0f);
+ATTR_DEF(Font, Color*, DefaultGradientColor) {
+  static Persistent<Color> default_gradient_color =
+      MakeGarbageCollected<Color>(0.0f, 0.0f, 0.0f, 0.0f);
   if (value.has_value()) {
     default_gradient_color = *value;
     return std::nullopt;
   } else {
-    return default_gradient_color;
+    return default_gradient_color.get();
   }
 }
 

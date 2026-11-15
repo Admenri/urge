@@ -254,26 +254,22 @@ cd build/bind/test && cmake --build . --config Debug --target urge-binding-smoke
 当前规模：21 个类 + 4 个模块；无跳过项（未被 `URGE_BINDING()` 标记的内部构造不再进入
 IR，例如 `Node()`、`Image(SDL_Surface*)`、`Vector2/3/4(glm::vec*)`）。
 
-## 可空参数（`RefPtr<T>` 与 `MaybePtr<T>`）
+## 可空参数（`T*` 与 `MaybePtr<T>`）
 
-`core/common/definition.h` 里 `MaybePtr<T>` 就是 `RefPtr<T>` 的别名，**类型相同、契约不同**：
-它只用于告诉生成器这个参数接不接受 `nil`。
+`core/common/definition.h` 里 `MaybePtr<T>` 是 `T*` 的 nullable 契约别名，
+**类型相同、契约不同**；没有引用计数或兼容旧智能指针的行为。
 
 | 头文件写法 | Ruby 侧传 `nil` | 生成物 |
 | --- | --- | --- |
-| `RefPtr<T>` | `TypeError: wrong argument type nil (expected T)` | `CheckObject<urge::T>(...)` |
+| `T*` | `TypeError: wrong argument type nil (expected T)` | `CheckObject<urge::T>(...)` |
 | `MaybePtr<T>` | 通过，C++ 收到 `nullptr` | `CheckMaybeObject<urge::T>(...)` |
 
-**默认是必填。** 于是「参数不能为空」这条契约从 `core/` 的 `throw` 搬到了边界上：
-`RefPtr<T>` 参数在引擎里**不需要**再判空，对应的 `if (!x) throw ...` 一律删除；只有真正
-接受 `nil` 的参数才写 `MaybePtr`，引擎自己继续处理空指针。
+IR 先扫描所有头文件，识别已导出的 `GarbageCollected` 派生类，再判断对象指针。
+`const char*` / `char*` 保持字符串封送，`void*`、标量指针和外部资源指针不属于 GC 对象。
+传参全程为 raw pointer，不构造临时根；Ruby 参数 VALUE 在 native-only 调用之后仍有
+`RB_GC_GUARD`。只有显式 `MaybePtr<T>` 接受 `nil`，raw pointer 的默认值不改变契约。
 
-判据就是原来的 `throw`：有 `if (!x) throw` 的参数 = 必填（保留 `RefPtr`，删 `throw`）；
-没有的 = 可空（改 `MaybePtr`）。例外按「会崩」判，即使没有 `throw` 也算必填：
-`Bitmap::UpdateWithImage`、`Node::Render`、`ComputePass3D::SetTarget`、
-`AnimationStack3D::AddLayer`、`Viewport(RefPtr<Rect>)`——它们直接解引用参数。
-
-`ATTR` 同理：`ATTR(RefPtr<T>, X)` 的 setter 拒绝 `nil`，`ATTR(MaybePtr<T>, X)` 允许。
+`ATTR` 同理：`ATTR(T*, X)` 的 setter 拒绝 `nil`，`ATTR(MaybePtr<T>, X)` 允许。
 宏因此多一个末位参数（`CheckObject` / `CheckMaybeObject`），见 `cruby_utils.h` 的
 `BINDING_ATTR_OBJECT*`。
 
@@ -282,7 +278,7 @@ IR，例如 `Node()`、`Image(SDL_Surface*)`、`Vector2/3/4(glm::vec*)`）。
 
 ## 数据类型与分配器（重要）
 
-`RB_DEF_TYPE(Klass)` 生成 `kKlassDataType`（`RB_DATATYPE(Klass, #Klass, ReleaseDataType<urge::Klass>)`），
+`RB_DEF_TYPE(Klass)` 生成 `kKlassDataType`（`RB_DATATYPE(Klass, #Klass, NativeWrapperFree)`），
 头文件里用 `RB_DECL_TYPE(Klass)` 声明。每个类在 `rb_define_class` 之后**必须**调用：
 
 ```cpp
@@ -294,8 +290,10 @@ rb_define_alloc_func(klass, ClassAllocate<&kKlassDataType>);
 `rb_check_typeddata(v, &kChildDataType)`）时会被判定为 "wrong argument type"；`_load` 用
 `rb_obj_alloc(self)`，类缺少分配器时 Marshal 反序列化必然失败。
 
-`WrapObject` 通过 `type.wrap_struct_name` 反查 `rb_const_get(rb_cObject, ...)`，因此
-**Ruby 类名必须与 C++ 类名一致**并注册在顶层。
+类初始化还必须调用 `RegisterNativeType<T>(klass, kTDataType)`。TypedData 的 payload 是
+弱 capsule，而不是 native 指针或 native root；dfree 仅退休 capsule，不删除 native。
+`WrapObject` 查询唯一弱 canonical wrapper；没有现存 wrapper 时按注册的最派生匹配类型
+包装。自动 GC 的 dmark/compact 仅维护现有跨堆图，不为纯 C++ 对象制造 Ruby wrapper。
 
 模块（`Graphics`/`Input`）没有 C++ 实体，其头文件**不**声明 `RB_DECL_TYPE`。
 
@@ -423,10 +421,12 @@ A 和 B 说明这条规则和 try/catch 无关：**帧里只要有待析构的�
 
 | C++ 类型 | 阶段 1/3 持有 | 阶段 2 还原 |
 | --- | --- | --- |
-| `std::string` | `const char*` + `size_t`（`CheckString`） | `std::string(data, size)` |
-| `RefPtr<T>` | `T*`（`CheckObject`），返回值额外持一个守卫引用 | `RefPtr<T>(ptr)` 隐式 AddRef |
-| `std::vector<T>` | 原始 `VALUE`（`CheckVectorOf` 先验一遍） | `TakeVectorOf<T>(value)` |
-| 标量 / `void` / `const char*` | 同名标量 | 直接传 |
+| `std::string` | 私有冻结字符串 snapshot `VALUE`（`CheckString`） | `TakeString(snapshot)` |
+| `T*` / `MaybePtr<T>` 参数 | raw `T*` + 参数 `VALUE`（`CheckObject` / `CheckMaybeObject`） | raw pointer 直接传 |
+| GC 对象返回 | POD `GarbageCollector::Root*` heap box | raw `T*` 返回后 `new Root(value)` |
+| 数值 `std::vector<T>` | 私有冻结规范化字节 snapshot `VALUE` | `TakeVectorOf<T>(snapshot)` |
+| `const char*` 参数 | 私有冻结字符串 snapshot `VALUE`（`CheckCString`） | `RSTRING_PTR(snapshot)` |
+| 标量 / `void` | 同名标量 | 直接传 |
 
 D/E/F 说明 raise 可以在这个帧里 try 的前后，所以**三段同处一个函数就够了**，不需要拆成
 两个函数。阶段 2 反而可以持有任意 C++ 对象：它在真正的 EH 区里，析构正常跑。
@@ -435,23 +435,29 @@ D/E/F 说明 raise 可以在这个帧里 try 的前后，所以**三段同处一
 
 #### 拥有型返回值怎么过界
 
-`std::string`、`std::vector<T>` 不能待在阶段 1/3 的帧里，又必须活过阶段 2 的作用域，
-所以在阶段 2 里装箱（`new`），阶段 3 用完 `delete`：
+`std::string`、`std::vector<T>` 和 GC 根都不能待在阶段 1/3 的帧里。
+阶段 2 装箱，阶段 3 由 `OwnedWrapString` / `OwnedWrapVector` / `OwnedWrapObject`
+在 `rb_ensure` 下转换并删除 heap box，成功或任意 Ruby longjmp 都只清理一次。
 
 ```cpp
-  std::string* result = nullptr;
-  CPP_BEGIN {
-    result = new std::string(self_obj->Name());
-  } CPP_END;
-
-  VALUE value = rb_enc_str_new(result->data(), static_cast<long>(result->size()),
-                               rb_utf8_encoding());
-  delete result;                    // 转换 raise 时泄漏，只可能是 NoMemoryError
-  return value;
+  urge::GarbageCollector::Root* result = nullptr;  // POD slot
+  {
+    urge::T* value = self_obj->GetObject();       // native-only
+    result = new urge::GarbageCollector::Root(value);
+  }
+  return OwnedWrapObject(result, kTDataType);    // ensure deletes Root only
 ```
 
-`RefPtr<T>` 不需要箱子：槽里放 `T*`，阶段 2 末尾 `AddRef` 一次当守卫引用，阶段 3 在
-`WrapObject` 之后 `Release` 掉它。
+`Root` 是 RAII 地址登记，不是引用计数；删除 Root 永远不删除 native。
+有 `ExceptionState` 的返回先调用 `DeleteFailedResult(result, exception_state)`，
+再 `RaiseException`；构造/拷贝失败可以根本不创建 Root。native 的销毁只归 collector。
+`OwnedSetupSelf(self, Root*, allocate_self)` 同样 consume 根，Marshal 的 `rb_obj_alloc`
+必须留在 ensure body 中。公开 borrowed `WrapObject(T*, datatype)` 自行创建并 ensure
+删除临时 Root，不能依赖调用者恰好持有根。
+
+`Node3D.children` 是专用手写 API：先在 native-only scope 从 `vector<Node3D*>` snapshot
+构造 heap `vector<GarbageCollector::Root>`，再 ensure 转换/删除；raw snapshot 不得跨 Ruby GC。
+这不扩张一般 object-vector 的 IR/API 支持。
 
 #### 遗留的 `EXC_BEGIN`/`EXC_END`
 
@@ -510,13 +516,15 @@ RB_FUNC(Bitmap_Blt) {
 }
 ```
 
-构造函数与 `initialize_copy` 统一以两参形式返回：
+构造函数与 `initialize_copy` 用 `MakeGarbageCollected<T>` 创建新的 raw native，
+在 native-only scope 装箱根，再返回：
 
 ```cpp
-return SetupSelfData(self, obj.get());
+return OwnedSetupSelf(self, result);  // result 的类型为 GarbageCollector::Root*
 ```
 
-`SetupSelfData` 会 `AddRef()`，所以 `obj`（`RefPtr`）在函数返回时析构是安全的。
+canonical wrapper 不持有永久 native 根；现存 Ruby wrapper 的可达性由跨堆 tracing 提供。
+构造失败只丢弃临时根或不创建根，不能 `delete` managed native。
 
 `arity_map` 在生成期拒绝歧义：若两个重载在同一 `argc` 上都可调用，脚本直接报错退出，
 不会产出「按声明顺序碰运气」的代码。
@@ -569,7 +577,7 @@ gen_api_json: 'Plane' derives from 'Node' but is registered first (position 5 vs
 `Array<String>`），方法参数、构造函数参数、返回值、`ATTR` 属性四种位置都支持。
 `is_bindable_type` 因此不查 `SCALAR_TYPE_FORMAT`，而要求元素在 `VECTOR_ELEMENTS` 里有条目：
 **没有元素编解码器的 `std::vector` 就是内部类型**，照样记进 `meta.skipped`
-（`std::vector<RefPtr<T>>`、嵌套的 vector 都走这条路）。
+（`std::vector<T*>`、嵌套的 vector 都走这条路；`Node3D.children` 仅为手写特例）。
 
 支持的元素 = 胶水侧有 `VectorCodec` 特化的那些。加一个元素要**三处一起改**：
 `cruby_utils.h` 的 `VectorCodec`、`gen_api_json.py::VECTOR_ELEMENTS`、
@@ -609,22 +617,17 @@ DEFINE_VECTOR_CODEC(int32_t, NUM2INT(value), INT2NUM(value));
 | `float` / `double` | `BINDING_ATTR_FLOAT` |
 | `bool` | `BINDING_ATTR_BOOL` |
 | `std::vector<T>` | `BINDING_ATTR_VECTOR`（元素类型，见上一节） |
-| `RefPtr<Obj>` | 见下 |
+| `Obj*` / `MaybePtr<Obj>` | 见下 |
 
-`RefPtr<Obj>` 按**目标类是否可 Marshal** 选择：
+对象属性按**目标类是否可 Marshal** 选择：
 
-- 目标类同时带标记声明了 `MARSHAL_DUMP`/`MARSHAL_LOAD` → `BINDING_ATTR_OBJECT`
-  （每次读取新建包装对象，因为引擎可能换一个指针出来）
-- 否则 → `BINDING_ATTR_OBJECT_REF`（包装对象缓存在 `@_<name>` 实例变量里，重复读取
-  返回同一个 Ruby 对象，`equal?` 成立）
+- 同时声明 `MARSHAL_DUMP`/`MARSHAL_LOAD` → `BINDING_ATTR_OBJECT`
+- 否则 → `BINDING_ATTR_OBJECT_REF`，setter 保留旧 `FrozenError` 契约
 
-urge 中可 Marshal 的是 `Color`、`Rect`、`Tone`、`Table`；因此 `Sprite#src_rect`、
-`Sprite#color`、`Sprite#tone`、`Plane#color`、`Plane#tone`、`Viewport#rect`、
-`Viewport#color`、`Viewport#tone`、`Font#color`、`Font#out_color` 用 `BINDING_ATTR_OBJECT`，
-而 `Bitmap#font`、`Sprite#bitmap`/`#viewport`、`Plane#bitmap`/`#viewport`、
-`Viewport#color`(非 `RefPtr`)…等指向引擎持有对象的属性用 `BINDING_ATTR_OBJECT_REF`。
-`RefPtr<Vector3>`/`RefPtr<Vector4>`（`Node#position`/`#quaternion`/`#scale`）没有
-Marshal 定义，按同一规则走 `BINDING_ATTR_OBJECT_REF`。
+两个宏的 getter 都是 native edge → heap Root → `OwnedWrapObject`，复用唯一 canonical
+wrapper，**不**缓存 Ruby ivar、不复制 native。`_REF_EXC` 同样先删除失败的 Root，再 raise；
+setter 在 native mutation 前 `rb_check_frozen(self)`。可空性只由头文件 raw/MaybePtr 写法决定。
+`Vector3*` / `Vector4*` 属性没有 Marshal 定义，按同一规则走 `_REF` 宏。
 
 导出区同时声明 `MARSHAL_DUMP` 和 `MARSHAL_LOAD` 的类（`Color`、`Rect`、`Table`、`Tone`）
 生成 `_dump` 实例方法与 `_load` 类方法：
@@ -632,27 +635,29 @@ Marshal 定义，按同一规则走 `BINDING_ATTR_OBJECT_REF`。
 ```cpp
 RB_FUNC(Class__dump) {
   auto* self_obj = GetSelfData<urge::Class>(self);
-
-  EXC_BEGIN {
-    std::string result =
-        urge::Class::MarshalDump(urge::RefPtr<urge::Class>(self_obj));
-    return rb_str_new(result.data(), static_cast<long>(result.size()));
+  std::string* result = nullptr;
+  {
+    result = new std::string(urge::Class::MarshalDump(self_obj));
   }
-  EXC_END;
-  return Qnil;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(Class__load) {
-  std::string data;
-  ParseArgs(argc, argv, "s", &data);
-
-  EXC_BEGIN {
-    VALUE obj = rb_obj_alloc(self);
-    auto ptr = urge::Class::MarshalLoad(data);
-    return SetupSelfData(obj, ptr.get());
+  VALUE data_val = Qnil;
+  CheckArgc(argc, 1);
+  ParseArgs(argc, argv, "o", &data_val);
+  data_val = CheckString(data_val);
+  urge::ExceptionState exception_state;
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Class* value = urge::Class::MarshalLoad(
+        exception_state, TakeString(data_val));
+    result = new urge::GarbageCollector::Root(value);
   }
-  EXC_END;
-  return Qnil;
+  RB_GC_GUARD(data_val);
+  DeleteFailedResult(result, exception_state);
+  RaiseException(exception_state);
+  return OwnedSetupSelf(self, result, true);  // rb_obj_alloc inside ensure
 }
 ```
 
@@ -701,24 +706,31 @@ RB_FUNC(Class__equal) {
 
 ## 拷贝构造
 
-C++ 声明拷贝构造（`Class(RefPtr<Class>)`）时绑定为 `initialize_copy`（Ruby 的
-`dup`/`clone`）：
+C++ 声明 raw 同类参数构造（`Class(Class*)`）时绑定为 `initialize_copy`（Ruby 的
+`dup`/`clone`）；`MaybePtr<Class>` 不作为拷贝构造标记。
 
 ```cpp
 RB_FUNC(Class_initialize_copy) {
-  VALUE other;
+  VALUE other = Qnil;
+  CheckArgc(argc, 1);
   ParseArgs(argc, argv, "o", &other);
-
-  urge::RefPtr<urge::Class> obj = nullptr;
-  EXC_BEGIN {
-    auto other_obj = GetObject<urge::Class>(other, kClassDataType);
-    obj = urge::MakeRefCounted<urge::Class>(other_obj);
+  if (self == other)
+    return self;
+  CheckConstructorSelf(self, kClassDataType);
+  auto* other_obj = CheckObject<urge::Class>(other, kClassDataType);
+  CheckDisposedInstanceData(other);
+  urge::GarbageCollector::Root* result = nullptr;
+  {
+    urge::Class* value = urge::MakeGarbageCollected<urge::Class>(other_obj);
+    result = new urge::GarbageCollector::Root(value);
   }
-  EXC_END;
-
-  return SetupSelfData(self, obj.get());
+  RB_GC_GUARD(other);
+  return OwnedSetupSelf(self, result);
 }
 ```
+
+有 `URGE_EXCEPT` 的拷贝构造只在成功时创建 Root，之后再 raise。
+`dup`/`clone` 必须分配新 native，不能替源对象增加一个 wrapper。
 
 适用于 `Bitmap`、`Rect`、`Color`、`Tone`、`Vector2/3/4`、`Font`、`Table`。
 
@@ -772,14 +784,14 @@ URGE_BINDING()
 class Sprite : public Node {
  public:
   URGE_BINDING()
-  Sprite(RefPtr<Viewport> viewport = nullptr);
+  Sprite(MaybePtr<Viewport> viewport = nullptr);
   Sprite();                      // 无标记 → 不导出到 Ruby
 
   URGE_BINDING()
-  void Flash(RefPtr<Color> color, int32_t duration);
+  void Flash(MaybePtr<Color> color, int32_t duration);
 
   URGE_BINDING(Name : "rect")    // 导出 + 改名为 rect
-  RefPtr<Rect> GetRect();
+  Rect* GetRect();
 };
 ```
 
@@ -788,8 +800,8 @@ class Sprite : public Node {
   没有标记的声明留在引擎内部。类与成员各标各的，类没有标记则整类不进入 IR。
 - 空注解体与带 `Name : "..."` 的注解体都是导出标记；后者额外把 C++ 名映射成
   驼峰→下划线规则得不到的 Ruby 名（`Table#[]` / `#[]=`）。
-- 析构函数可以标记，但只为文档而导出：Ruby 侧不注册它，释放走 typed data 的
-  `Release`。
+- 析构函数可以标记，但只为文档而导出：Ruby 侧不注册它，只有 native collector
+  销毁不可达 native；typed data dfree 仅退休弱 capsule。
 - 带标记的声明仍走常规的签名分析（重载、默认参数照常）；含内部 C++ 类型的声明
   记入 `unsupported`。
 
@@ -952,7 +964,7 @@ class / module 条目字段：
 | `ruby_superclass` | `rb_define_class` 第二参数（`Disposable`/`Node`/`Object`）；模块为 `null` |
 | `header` / `export` | 来源头文件与标记行区间 `core/x.h:beg-end` |
 | `constructors` | `initialize` 每个重载的参数（`name`/`type`/`default`） |
-| `initialize_copy` | 拷贝构造 `Class(RefPtr<Class>)` → `initialize_copy` |
+| `initialize_copy` | raw 同类参数构造 `Class(Class*)` → `initialize_copy` |
 | `instance_methods` / `class_methods` | 实例/类方法（`static`），含 `return` 与 `params` |
 | `attributes` / `class_attributes` | `ATTR(...)` / `static ATTR(...)` → 读写对 |
 | `data_attributes` | 公开数据成员按同一规则生成读写对（urge 的头文件里没有这类声明） |
@@ -1031,12 +1043,11 @@ class / module 条目字段：
 绑定有两种形态，选错会编译失败而不是静默出错：
 
 - **模块**（`MODULE_CLASSES`）：靠 `Ty::Get()` 取单例，不产生 Ruby 对象。
-- **类**：走 `RB_DEF_TYPE` / `SetupSelfData`，模板里要求 `Release()` 与 `AddRef()`。
+- **类**：走 `RB_DEF_TYPE` / `OwnedSetupSelf`，实例必须是 `GarbageCollected` 派生类。
 
-`Singleton<T>`（`core/common/object.h`）两者都没有，所以它必须列进 `MODULE_CLASSES`。
-漏掉的症状是 `urge-binding` 报 `C2039: "Release": 不是 "urge::X" 的成员`，指在
-`cruby_utils.h` 的 `ReleaseDataType` / `SetupSelfData` 上，与出错的那个类看起来
-没有关系。现有模块：`Graphics`、`Input`、`Audio`、`Mouse`、`Network`、`Config`。
+`Singleton<T>`（`core/common/object.h`）不是 GC 实例，所以必须列进 `MODULE_CLASSES`。
+模块的指针不能作为 GC 对象参数/返回值。现有模块包括 `Graphics`、`Input`、`Audio`、
+`Mouse`、`Touch`、`GPU`、`Network`、`Config`。
 
 
 ## 与 lime 的差异
@@ -1048,7 +1059,7 @@ class / module 条目字段：
 | 命名空间 | `lime::` | `urge::` |
 | 单例取值 | `lime::X::Instance()` | `urge::X::Get()` |
 | 属性声明 | 裸 `ATTR(ty, name);` | `ATTR(ty, name) { ... }` 带内联函数体，常带 `virtual` |
-| `RB_DEF_TYPE` 释放 | `ReleaseDataType<lime::Klass>` | 同（`urge::RefCounted::Release`） |
+| `RB_DEF_TYPE` 释放 | lime 的旧计数释放 | `NativeWrapperFree` 只退休 capsule，native GC 负责回收 |
 | 异常类型 | 独立枚举 | `urge::Exception::Type`，多了 `kGPUError`（并入 `RGSSError`） |
 | 导出语法 | 无注解 | 类与成员前加 `URGE_BINDING()`（可带 `Name : "..."` 改名），只作用于紧邻的那条 |
 | 命名 | 覆盖表（脚本内的旧名 → Ruby 名映射） | **无覆盖表**：`camel_to_snake` + 注解，C++ 名直接决定 Ruby 名 |

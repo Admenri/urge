@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "core/common/persistent.h"
 #include "core/input/text_input.h"
 
 #include "SDL3/SDL_keyboard.h"
@@ -50,10 +51,12 @@ TextInput::TextInput() = default;
 TextInput::~TextInput() = default;
 
 bool TextInput::Enable(URGE_EXCEPT) {
-  return Enable(exception_state, RefPtr<Rect>());
+  return Enable(exception_state, nullptr);
 }
 
-bool TextInput::Enable(URGE_EXCEPT, RefPtr<Rect> region) {
+bool TextInput::Enable(URGE_EXCEPT, Rect* region) {
+  // Keep the native argument alive across platform text-input callbacks.
+  const Persistent<Rect> region_root(region);
   SDL_Window* window = CurrentWindow();
   if (!window)
     return false;

@@ -58,6 +58,7 @@ RB_FUNC(TextInput_Enable) {
     {
       result = urge::TextInput::Get().Enable(exception_state, region);
     }
+    RB_GC_GUARD(region_val);
     RaiseException(exception_state);
 
     return result ? Qtrue : Qfalse;
@@ -99,11 +100,7 @@ RB_FUNC(TextInput_Text) {
     result = new std::string(urge::TextInput::Get().Text());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(TextInput_Composition) {
@@ -114,11 +111,7 @@ RB_FUNC(TextInput_Composition) {
     result = new std::string(urge::TextInput::Get().Composition());
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(TextInput_EditingStart) {

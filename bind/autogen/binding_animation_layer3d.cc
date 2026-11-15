@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// AnimationLayer3D  (core/scene3d/animation_stack3d.h:40-76)
+// AnimationLayer3D  (core/scene3d/animation_stack3d.h:41-79)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(AnimationLayer3D);
@@ -40,19 +40,14 @@ RB_FUNC(AnimationLayer3D_GetAnimation) {
   auto* self_obj = GetSelfData<urge::AnimationLayer3D>(self);
 
   CheckArgc(argc, 0);
-  urge::Animation3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Animation3D> value = self_obj->GetAnimation();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Animation3D* value = self_obj->GetAnimation();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kAnimation3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kAnimation3DDataType);
 }
 
 // Attribute: weight (float)
@@ -80,7 +75,9 @@ void InitAnimationLayer3DBindingAppend(VALUE klass);
 void InitAnimationLayer3DBinding() {
   auto klass = rb_define_class("AnimationLayer3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kAnimationLayer3DDataType>);
+  RegisterNativeType<urge::AnimationLayer3D>(klass, kAnimationLayer3DDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "animation", AnimationLayer3D_GetAnimation);
   DefineMethod(klass, "weight", AnimationLayer3D_Weight);
   DefineMethod(klass, "weight=", AnimationLayer3D_WeightEqual);

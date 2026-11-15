@@ -31,13 +31,18 @@
 
 namespace urge {
 
+void AnimationStateMachine3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(states_);
+}
+
 AnimationStateMachine3D::AnimationStateMachine3D() = default;
 
 AnimationStateMachine3D::~AnimationStateMachine3D() = default;
 
 void AnimationStateMachine3D::AddState(URGE_EXCEPT,
                                        std::string name,
-                                       RefPtr<Animation3D> animation,
+                                       Animation3D* animation,
                                        bool loop) {
   if (name.empty()) {
     exception_state.Throw(ExceptionState::kRGSSError,
@@ -53,7 +58,7 @@ void AnimationStateMachine3D::AddState(URGE_EXCEPT,
   }
   State state;
   state.name = std::move(name);
-  state.animation = std::move(animation);
+  state.animation = animation;
   state.loop = loop;
   states_.push_back(std::move(state));
 }
@@ -142,7 +147,7 @@ bool AnimationStateMachine3D::Play(URGE_EXCEPT, std::string name) {
 }
 
 void AnimationStateMachine3D::Update(URGE_EXCEPT,
-                                     RefPtr<Skeleton3D> skeleton,
+                                     Skeleton3D* skeleton,
                                      float delta) {
   if (current_index_ < 0)
     return;

@@ -32,6 +32,7 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
+#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/common/utility.h"
 #include "core/render/uniform.h"
@@ -52,22 +53,24 @@ class RenderContext3D : public Object {
  public:
   RenderContext3D(URGE_EXCEPT,
                   wgpu::CommandEncoder encoder,
-                  RefPtr<RenderTarget3D> target);
+                  RenderTarget3D* target);
   ~RenderContext3D() override;
 
-  void BeginFrame(wgpu::CommandEncoder encoder, RefPtr<RenderTarget3D> target);
+  void Trace(GCVisitor& visitor) const override;
+
+  void BeginFrame(wgpu::CommandEncoder encoder, RenderTarget3D* target);
   void Collect(Node3D* root, Camera3D* camera);
   void Flush();
 
   URGE_BINDING(Name : "target")
-  RefPtr<RenderTarget3D> GetTarget() { return target_; }
+  RenderTarget3D* GetTarget() { return target_.get(); }
   URGE_BINDING(Name : "camera")
-  RefPtr<Camera3D> GetCamera() { return camera_; }
+  Camera3D* GetCamera() { return camera_.get(); }
   URGE_BINDING(Name : "queue")
-  RefPtr<RenderQueue3D> GetQueue() { return queue_; }
+  RenderQueue3D* GetQueue() { return queue_.get(); }
 
   URGE_BINDING(Name : "ambient")
-  RefPtr<Color> GetAmbient() const { return ambient_; }
+  Color* GetAmbient() const { return ambient_.get(); }
   URGE_BINDING(Name : "ambient=")
   void SetAmbient(MaybePtr<Color> value);
 
@@ -75,35 +78,35 @@ class RenderContext3D : public Object {
   void SetViewProjection(MaybePtr<Camera3D> camera);
   void SetViewOverride(const glm::mat4& view_proj);
 
-  void SetShadow(RefPtr<RenderTarget3D> target, const glm::mat4& view_proj);
-  void SetShadow(RefPtr<RenderTarget3D> target,
+  void SetShadow(RenderTarget3D* target, const glm::mat4& view_proj);
+  void SetShadow(RenderTarget3D* target,
                  const glm::mat4& view_proj,
                  int32_t cascade);
   void SetShadowSplits(std::vector<float> splits);
   void SetShadowCascades(int32_t count);
   void SetShadowFade(float ratio);
   void SetShadowLightIndex(int32_t index) { shadow_light_index_ = index; }
-  void SetPointShadow(RefPtr<RenderTarget3D> target,
+  void SetPointShadow(RenderTarget3D* target,
                       const std::vector<glm::mat4>& face_matrices,
                       int32_t light_index,
                       float range);
 
   URGE_BINDING()
   void BeginPass(URGE_EXCEPT,
-                 RefPtr<RenderTarget3D> target,
+                 RenderTarget3D* target,
                  MaybePtr<Color> clear = nullptr,
                  bool clear_depth = true);
   URGE_BINDING()
   void BeginPassEx(URGE_EXCEPT,
-                   RefPtr<RenderTarget3D> target,
-                   std::vector<RefPtr<Color>> clears,
+                   RenderTarget3D* target,
+                   std::vector<Color*> clears,
                    bool clear_depth,
                    bool clear_stencil,
                    int32_t layer);
   URGE_BINDING()
   void EndPass();
   URGE_BINDING(Name : "pass")
-  RefPtr<GPURenderPassEncoder> GetPass();
+  GPURenderPassEncoder* GetPass();
 
   URGE_BINDING()
   int32_t DrawFilter(URGE_EXCEPT,
@@ -116,7 +119,7 @@ class RenderContext3D : public Object {
   bool DrawItem(URGE_EXCEPT, int32_t index);
 
   void Draw(URGE_EXCEPT, const RenderQueue3D::Item& item);
-  void DrawFullscreen(URGE_EXCEPT, RefPtr<MaterialPass3D> pass);
+  void DrawFullscreen(URGE_EXCEPT, MaterialPass3D* pass);
   void SetShadowPassMode(bool value) { shadow_pass_mode_ = value; }
   void SetCullOverride(int32_t value) { cull_override_ = value; }
   void SetSortBackToFront(bool value) { sort_back_to_front_ = value; }
@@ -147,18 +150,18 @@ class RenderContext3D : public Object {
   wgpu::BindGroup GlobalsGroup(URGE_EXCEPT, int32_t slot);
 
   wgpu::CommandEncoder encoder_ = nullptr;
-  RefPtr<RenderTarget3D> target_;
-  RefPtr<Camera3D> camera_;
+  Member<RenderTarget3D> target_;
+  Member<Camera3D> camera_;
   glm::mat4 view_override_ = glm::mat4(1.0f);
   bool view_override_enabled_ = false;
-  RefPtr<RenderQueue3D> queue_;
+  Member<RenderQueue3D> queue_;
   glm::ivec2 pass_size_ = glm::ivec2(1);
   wgpu::RenderPassEncoder pass_ = nullptr;
   uint64_t frame_token_ = 0;
   int32_t pass_layer_ = 0;
 
-  RefPtr<Color> ambient_;
-  RefPtr<RenderTarget3D> shadow_target_;
+  Member<Color> ambient_;
+  Member<RenderTarget3D> shadow_target_;
   glm::mat4 shadow_matrix_ = glm::mat4(1.0f);
   glm::mat4 shadow_matrices_[kMaxCascades] = {};
   glm::vec4 shadow_splits_ = glm::vec4(0.0f);
@@ -166,7 +169,7 @@ class RenderContext3D : public Object {
   int32_t shadow_light_index_ = -1;
   float shadow_size_ = 1024.0f;
   float shadow_fade_ = 0.15f;
-  RefPtr<RenderTarget3D> point_shadow_target_;
+  Member<RenderTarget3D> point_shadow_target_;
   glm::mat4 point_faces_[6] = {};
   int32_t point_light_index_ = -1;
   float point_range_ = 10.0f;
@@ -182,6 +185,9 @@ class RenderContext3D : public Object {
   uint32_t view_stride_ = 0;
   wgpu::BindGroup view_group_ = nullptr;
   wgpu::BindGroup shadow_view_group_ = nullptr;
+  // Identity-only cache keys: never dereferenced. The corresponding target
+  // Members above own the actual graph edges and the bind group owns GPU
+  // handles.
   const void* view_group_shadow_target_ = nullptr;
   const void* view_group_point_target_ = nullptr;
 

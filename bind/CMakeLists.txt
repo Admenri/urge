@@ -15,19 +15,22 @@ add_library(urge-binding STATIC)
 #     set on this directory only: it is the one that depends on generated files.
 file(GLOB BINDING_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cc"
-  "${CMAKE_CURRENT_SOURCE_DIR}/autogen/*.cc")
+  "${GLUE_DIR}/*.cc")
 target_sources(urge-binding PRIVATE ${BINDING_SOURCES})
 add_subdirectory(legacy-ruby-compat)
 
-# CRuby's zlib extension is plain C, so the glob above misses it.
-target_sources(urge-binding PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/zlib.c")
+# CRuby's zlib extension and the narrow VM adapter are plain C. The adapter
+# uses the fixed vendored Ruby headers/definitions exported by ruby-static.
+target_sources(urge-binding PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/zlib.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/native_script_vm.c")
 
 # The generated files include each other by bare name ("binding_init.h"), and
 # cruby_main.cc includes them from the repository root ("bind/autogen/...",
 # which the top-level `include_directories` covers).
 target_include_directories(urge-binding PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/autogen)
+  ${GLUE_DIR})
 target_link_libraries(urge-binding PUBLIC ruby-static urge-core zlibstatic)
 
 # libffi backs the Win32API binding (binding_win32api.cc), which uses it to call

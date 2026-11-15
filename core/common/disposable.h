@@ -36,6 +36,11 @@ class Disposable : public Object {
   URGE_BINDING()
   void Dispose() { ReleaseSelf(); }
 
+  void PrepareForCollection() override {
+    Object::PrepareForCollection();
+    Dispose();
+  }
+
  public:
   bool Guard(URGE_EXCEPT) {
     if (disposed_)

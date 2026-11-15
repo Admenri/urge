@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUQuerySet  (core/graphics/gpu.h:893-901)
+// GPUQuerySet  (core/graphics/gpu.h:899-907)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUQuerySet, GPUObject);
@@ -76,7 +76,9 @@ void InitGPUQuerySetBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("GPUObject"));
   auto klass = rb_define_class("GPUQuerySet", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kGPUQuerySetDataType>);
+  RegisterNativeType<urge::GPUQuerySet>(klass, kGPUQuerySetDataType);
 
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "type", GPUQuerySet_Type);
   DefineMethod(klass, "count", GPUQuerySet_Count);
   DefineMethod(klass, "destroy", GPUQuerySet_Destroy);

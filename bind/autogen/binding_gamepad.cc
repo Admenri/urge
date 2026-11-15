@@ -40,49 +40,48 @@ RB_FUNC(Gamepad_available_devices) {
         urge::Gamepad::GetAvailableDevices());
   }
 
-  VALUE devices = rb_ary_new();
-  for (const auto& device : *result) {
-    VALUE info = rb_hash_new();
-    rb_hash_aset(info, rb_str_new2("id"), INT2NUM(device.id));
-    rb_hash_aset(info, rb_str_new2("name"), GamepadText(device.name));
-    rb_hash_aset(info, rb_str_new2("path"), GamepadText(device.path));
-    rb_hash_aset(info, rb_str_new2("player"), INT2NUM(device.player_index));
-    rb_hash_aset(info, rb_str_new2("guid"), GamepadText(device.guid));
-    rb_ary_push(devices, info);
-  }
-  delete result;
-
-  return devices;
+  return OwnedConvertBox<std::vector<urge::Gamepad::DeviceInfo>>(
+      result, [](const std::vector<urge::Gamepad::DeviceInfo>& values) -> VALUE {
+        VALUE devices = rb_ary_new();
+        for (const auto& device : values) {
+          VALUE info = rb_hash_new();
+          rb_hash_aset(info, rb_str_new2("id"), INT2NUM(device.id));
+          rb_hash_aset(info, rb_str_new2("name"), GamepadText(device.name));
+          rb_hash_aset(info, rb_str_new2("path"), GamepadText(device.path));
+          rb_hash_aset(info, rb_str_new2("player"), INT2NUM(device.player_index));
+          rb_hash_aset(info, rb_str_new2("guid"), GamepadText(device.guid));
+          rb_ary_push(devices, info);
+        }
+        return devices;
+      });
 }
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Gamepad  (core/input/gamepad.h:116-202)
+// Gamepad  (core/input/gamepad.h:116-203)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Gamepad);
 
 RB_FUNC(Gamepad_initialize) {
+  CheckConstructorSelf(self, kGamepadDataType);
+  CheckArgc(argc, 1);
   urge::ExceptionState exception_state;
   int device_id;
   ParseArgs(argc, argv, "i", &device_id);
 
-  urge::Gamepad* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Gamepad> value = urge::MakeRefCounted<urge::Gamepad>(
+    urge::Gamepad* value = urge::MakeGarbageCollected<urge::Gamepad>(
         exception_state, device_id);
-    result = exception_state.HadException() ? nullptr : value.get();
-    if (result)
-      result->AddRef();
+    if (!exception_state.HadException())
+      result = new urge::GarbageCollector::Root(value);
   }
   RaiseException(exception_state);
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(Gamepad_Update) {
@@ -209,9 +208,7 @@ RB_FUNC(Gamepad_GetPressedButtons) {
     result = new std::vector<int32_t>(self_obj->GetPressedButtons());
   }
 
-  VALUE value = WrapVectorOf<int32_t>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<int32_t>(result);
 }
 
 RB_FUNC(Gamepad_Rumble) {
@@ -257,8 +254,10 @@ void InitGamepadBindingAppend(VALUE klass);
 void InitGamepadBinding() {
   auto klass = rb_define_class("Gamepad", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kGamepadDataType>);
+  RegisterNativeType<urge::Gamepad>(klass, kGamepadDataType);
 
   DefineMethod(klass, "initialize", Gamepad_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "update", Gamepad_Update);
   DefineMethod(klass, "connect", Gamepad_Connect);
   DefineMethod(klass, "device_id", Gamepad_GetDeviceID);

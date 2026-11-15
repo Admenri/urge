@@ -47,7 +47,7 @@ class Rect : public Object {
   URGE_BINDING()
   Rect(int32_t xv, int32_t yv, int32_t wv, int32_t hv) : data(xv, yv, wv, hv) {}
   URGE_BINDING()
-  Rect(RefPtr<Rect> o) : data(o->data) {}
+  Rect(Rect* o) : data(o->data) {}
   URGE_BINDING()
   Rect() : data() {}
 
@@ -65,7 +65,7 @@ class Rect : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Rect> rect) {
+  void Set(Rect* rect) {
     data = rect->data;
     slot.ValueNotify();
   }
@@ -123,18 +123,18 @@ class Rect : public Object {
 URGE_BINDING()
 class Color : public Object {
  public:
-  static inline RefPtr<Color> White() {
-    return MakeRefCounted<Color>(255.0f, 255.0f, 255.0f, 255.0f);
+  static inline Color* White() {
+    return MakeGarbageCollected<Color>(255.0f, 255.0f, 255.0f, 255.0f);
   }
 
-  static inline RefPtr<Color> Black() {
-    return MakeRefCounted<Color>(0.0f, 0.0f, 0.0f, 255.0f);
+  static inline Color* Black() {
+    return MakeGarbageCollected<Color>(0.0f, 0.0f, 0.0f, 255.0f);
   }
 
   URGE_BINDING()
   Color(float r, float g, float b, float a = 255.f) : data(r, g, b, a) {}
   URGE_BINDING()
-  Color(RefPtr<Color> o) : data(o->data) {}
+  Color(Color* o) : data(o->data) {}
   URGE_BINDING()
   Color() : data(0.0f) {}
 
@@ -151,7 +151,7 @@ class Color : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Color> color) { data = color->data; }
+  void Set(Color* color) { data = color->data; }
 
   URGE_BINDING()
   ATTR(float, Red) {
@@ -199,7 +199,7 @@ class Tone : public Object {
   URGE_BINDING()
   Tone(float r, float g, float b, float a = 0.f) : data(r, g, b, a) {}
   URGE_BINDING()
-  Tone(RefPtr<Tone> o) : data(o->data) {}
+  Tone(Tone* o) : data(o->data) {}
   URGE_BINDING()
   Tone() : data(0.0f) {}
 
@@ -216,7 +216,7 @@ class Tone : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Tone> tone) { data = tone->data; }
+  void Set(Tone* tone) { data = tone->data; }
 
   URGE_BINDING()
   ATTR(float, Red) {
@@ -266,7 +266,7 @@ class Vector2 : public Object {
   URGE_BINDING()
   Vector2(float xv, float yv) : data(xv, yv) {}
   URGE_BINDING()
-  Vector2(RefPtr<Vector2> o) : data(o->data) {}
+  Vector2(Vector2* o) : data(o->data) {}
   URGE_BINDING()
   Vector2(float v) : data(v) {}
   URGE_BINDING()
@@ -276,7 +276,7 @@ class Vector2 : public Object {
   void Set(float xv, float yv) { data = glm::vec2(xv, yv); }
 
   URGE_BINDING()
-  void Set(RefPtr<Vector2> v) { data = v->data; }
+  void Set(Vector2* v) { data = v->data; }
 
   URGE_BINDING()
   ATTR(float, X) {
@@ -303,7 +303,7 @@ class Vector3 : public Object {
   URGE_BINDING()
   Vector3(float xv, float yv, float zv) : data(xv, yv, zv) {}
   URGE_BINDING()
-  Vector3(RefPtr<Vector3> o) : data(o->data) {}
+  Vector3(Vector3* o) : data(o->data) {}
   URGE_BINDING()
   Vector3(float v) : data(v) {}
   URGE_BINDING()
@@ -313,7 +313,7 @@ class Vector3 : public Object {
   void Set(float xv, float yv, float zv) { data = glm::vec3(xv, yv, zv); }
 
   URGE_BINDING()
-  void Set(RefPtr<Vector3> v) { data = v->data; }
+  void Set(Vector3* v) { data = v->data; }
 
   URGE_BINDING()
   ATTR(float, X) {
@@ -347,7 +347,7 @@ class Vector4 : public Object {
   URGE_BINDING()
   Vector4(float xv, float yv, float zv, float wv) : data(xv, yv, zv, wv) {}
   URGE_BINDING()
-  Vector4(RefPtr<Vector4> o) : data(o->data) {}
+  Vector4(Vector4* o) : data(o->data) {}
   URGE_BINDING()
   Vector4(float v) : data(v) {}
   URGE_BINDING()
@@ -359,7 +359,7 @@ class Vector4 : public Object {
   }
 
   URGE_BINDING()
-  void Set(RefPtr<Vector4> v) { data = v->data; }
+  void Set(Vector4* v) { data = v->data; }
 
   URGE_BINDING()
   ATTR(float, X) {

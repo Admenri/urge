@@ -28,6 +28,7 @@
 #include "webgpu/webgpu_cpp.hpp"
 
 #include "core/common/definition.h"
+#include "core/common/member.h"
 #include "core/scene/node.h"
 #include "core/scene3d/camera3d.h"
 #include "core/scene3d/forward_pipeline3d.h"
@@ -44,6 +45,9 @@ class World3D : public Node {
   URGE_BINDING()
   World3D(int32_t x, int32_t y, int32_t width, int32_t height);
   ~World3D() override;
+
+  void Trace(GCVisitor& visitor) const override;
+  void PrepareForCollection() override;
 
   URGE_BINDING(Name : "x")
   ATTR(int32_t, X) {
@@ -90,7 +94,7 @@ class World3D : public Node {
       scene_ = *value;
       return std::nullopt;
     }
-    return scene_;
+    return scene_.get();
   }
 
   URGE_BINDING(Name : "camera")
@@ -99,7 +103,7 @@ class World3D : public Node {
       camera_ = *value;
       return std::nullopt;
     }
-    return camera_;
+    return camera_.get();
   }
 
   URGE_BINDING(Name : "graph")
@@ -108,15 +112,15 @@ class World3D : public Node {
       graph_ = *value;
       return std::nullopt;
     }
-    return graph_;
+    return graph_.get();
   }
 
   URGE_BINDING(Name : "target")
-  RefPtr<RenderTarget3D> GetTarget() const { return target_; }
+  RenderTarget3D* GetTarget() const { return target_.get(); }
   URGE_BINDING(Name : "context")
-  RefPtr<RenderContext3D> GetContext() const { return context_; }
+  RenderContext3D* GetContext() const { return context_.get(); }
 
-  RefPtr<RenderGraph3D> ActiveGraph(URGE_EXCEPT);
+  RenderGraph3D* ActiveGraph(URGE_EXCEPT);
 
  protected:
   void DisposeObject() override;
@@ -136,12 +140,12 @@ class World3D : public Node {
   std::string format_ = "rgba8unorm";
   std::string last_render_error_;
 
-  RefPtr<Node3D> scene_;
-  RefPtr<Camera3D> camera_;
-  RefPtr<RenderGraph3D> graph_;
-  RefPtr<ForwardPipeline3D> default_graph_;
-  RefPtr<RenderTarget3D> target_;
-  RefPtr<RenderContext3D> context_;
+  Member<Node3D> scene_;
+  Member<Camera3D> camera_;
+  Member<RenderGraph3D> graph_;
+  Member<ForwardPipeline3D> default_graph_;
+  Member<RenderTarget3D> target_;
+  Member<RenderContext3D> context_;
 
   wgpu::RenderPipeline quad_pipeline_ = nullptr;
   wgpu::Buffer quad_uniform_ = nullptr;

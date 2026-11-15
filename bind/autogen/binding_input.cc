@@ -133,16 +133,15 @@ RB_FUNC(Input_Update) {
 RB_FUNC(Input_Pressed) {
   CheckArgc(argc, 1);
   VALUE sym_val;
-  const char* sym_data;
-  size_t sym_size;
   ParseArgs(argc, argv, "o", &sym_val);
-  CheckString(sym_val, &sym_data, &sym_size);
+  sym_val = CheckString(sym_val);
 
   bool result = false;
 
   {
-    result = urge::Input::Get().Pressed(std::string(sym_data, sym_size));
+    result = urge::Input::Get().Pressed(TakeString(sym_val));
   }
+  RB_GC_GUARD(sym_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -150,16 +149,15 @@ RB_FUNC(Input_Pressed) {
 RB_FUNC(Input_Triggered) {
   CheckArgc(argc, 1);
   VALUE sym_val;
-  const char* sym_data;
-  size_t sym_size;
   ParseArgs(argc, argv, "o", &sym_val);
-  CheckString(sym_val, &sym_data, &sym_size);
+  sym_val = CheckString(sym_val);
 
   bool result = false;
 
   {
-    result = urge::Input::Get().Triggered(std::string(sym_data, sym_size));
+    result = urge::Input::Get().Triggered(TakeString(sym_val));
   }
+  RB_GC_GUARD(sym_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -167,16 +165,15 @@ RB_FUNC(Input_Triggered) {
 RB_FUNC(Input_Repeated) {
   CheckArgc(argc, 1);
   VALUE sym_val;
-  const char* sym_data;
-  size_t sym_size;
   ParseArgs(argc, argv, "o", &sym_val);
-  CheckString(sym_val, &sym_data, &sym_size);
+  sym_val = CheckString(sym_val);
 
   bool result = false;
 
   {
-    result = urge::Input::Get().Repeated(std::string(sym_data, sym_size));
+    result = urge::Input::Get().Repeated(TakeString(sym_val));
   }
+  RB_GC_GUARD(sym_val);
 
   return result ? Qtrue : Qfalse;
 }
@@ -256,11 +253,7 @@ RB_FUNC(Input_GetKeyName) {
     result = new std::string(urge::Input::Get().GetKeyName(keycode));
   }
 
-  VALUE value = rb_enc_str_new(
-      result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
-  delete result;
-  return value;
+  return OwnedWrapString(result);
 }
 
 RB_FUNC(Input_Emulate) {

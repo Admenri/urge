@@ -32,26 +32,23 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// MeshRenderer3D  (core/scene3d/mesh_renderer3d.h:41-87)
+// MeshRenderer3D  (core/scene3d/mesh_renderer3d.h:42-90)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(MeshRenderer3D, Node3D);
 
 RB_FUNC(MeshRenderer3D_initialize) {
+  CheckConstructorSelf(self, kMeshRenderer3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::MeshRenderer3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::MeshRenderer3D> value = urge::MakeRefCounted<urge::MeshRenderer3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::MeshRenderer3D* value = urge::MakeGarbageCollected<urge::MeshRenderer3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(MeshRenderer3D_SetMaterial) {
@@ -68,6 +65,7 @@ RB_FUNC(MeshRenderer3D_SetMaterial) {
   {
     self_obj->SetMaterial(exception_state, slot, material);
   }
+  RB_GC_GUARD(material_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -80,19 +78,14 @@ RB_FUNC(MeshRenderer3D_GetMaterial) {
   int slot;
   ParseArgs(argc, argv, "i", &slot);
 
-  urge::Material3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::Material3D> value = self_obj->GetMaterial(slot);
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::Material3D* value = self_obj->GetMaterial(slot);
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE value = WrapObject(result, kMaterial3DDataType);
-  if (result)
-    result->Release();
-  return value;
+  return OwnedWrapObject(result, kMaterial3DDataType);
 }
 
 RB_FUNC(MeshRenderer3D_MaterialCount) {
@@ -118,9 +111,7 @@ RB_FUNC(MeshRenderer3D_BoundsCenter) {
     result = new std::vector<float>(self_obj->BoundsCenter());
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 RB_FUNC(MeshRenderer3D_BoundsRadius) {
@@ -133,9 +124,7 @@ RB_FUNC(MeshRenderer3D_BoundsRadius) {
     result = new std::vector<float>(self_obj->BoundsRadius());
   }
 
-  VALUE value = WrapVectorOf<float>(*result);
-  delete result;
-  return value;
+  return OwnedWrapVector<float>(result);
 }
 
 RB_FUNC(MeshRenderer3D_SetInstanceMatrices) {
@@ -145,12 +134,13 @@ RB_FUNC(MeshRenderer3D_SetInstanceMatrices) {
   CheckArgc(argc, 1);
   VALUE data_val;
   ParseArgs(argc, argv, "o", &data_val);
-  CheckVectorOf<float>(data_val);
+  data_val = CheckVectorOf<float>(data_val);
 
   {
     self_obj->SetInstanceMatrices(exception_state,
         TakeVectorOf<float>(data_val));
   }
+  RB_GC_GUARD(data_val);
   RaiseException(exception_state);
 
   return Qnil;
@@ -192,8 +182,10 @@ void InitMeshRenderer3DBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node3D"));
   auto klass = rb_define_class("MeshRenderer3D", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kMeshRenderer3DDataType>);
+  RegisterNativeType<urge::MeshRenderer3D>(klass, kMeshRenderer3DDataType);
 
   DefineMethod(klass, "initialize", MeshRenderer3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "set_material", MeshRenderer3D_SetMaterial);
   DefineMethod(klass, "get_material", MeshRenderer3D_GetMaterial);
   DefineMethod(klass, "material_count", MeshRenderer3D_MaterialCount);

@@ -24,15 +24,19 @@ namespace {
 struct LegacyDisposableType {
   const rb_data_type_t* type;
   const char* name;
-  bool (*is_disposed)(void*);
+  bool (*is_disposed)(urge::GarbageCollected*);
 };
 
 template <typename T>
-bool IsDisposed(void* ptr) {
-  return static_cast<T*>(ptr)->IsDisposed();
+bool IsDisposed(urge::GarbageCollected* ptr) {
+  auto* typed = dynamic_cast<T*>(ptr);
+  // A base initializer must not make a derived Ruby wrapper unsafe to inspect.
+  return !typed || typed->IsDisposed();
 }
 
 const LegacyDisposableType* LegacyType(VALUE object) {
+  if (!RTYPEDDATA_P(object))
+    return nullptr;
   static const LegacyDisposableType types[] = {
       {&kSpriteDataType, "sprite", IsDisposed<urge::Sprite>},
       {&kPlaneDataType, "plane", IsDisposed<urge::Plane>},
@@ -65,7 +69,8 @@ bool IsLegacyDisposable(VALUE self) {
 void CheckDisposedInstanceData(VALUE self) {
   // Keep URGE extension types on their existing lifecycle contract.
   const auto* type = LegacyType(self);
-  if (type && type->is_disposed(RTYPEDDATA_DATA(self)))
+  auto* native = type ? NativeInstanceData(RTYPEDDATA_DATA(self)) : nullptr;
+  if (type && (!native || type->is_disposed(native)))
     rb_raise(g_rgss_exception, "disposed %s", type->name);
 }
 

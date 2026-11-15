@@ -32,20 +32,17 @@ namespace binding {
 RB_DEF_TYPE(BoneMask3D);
 
 RB_FUNC(BoneMask3D_initialize) {
+  CheckConstructorSelf(self, kBoneMask3DDataType);
+  CheckArgc(argc, 0);
 
-  urge::BoneMask3D* result = nullptr;
+  urge::GarbageCollector::Root* result = nullptr;
 
   {
-    urge::RefPtr<urge::BoneMask3D> value = urge::MakeRefCounted<urge::BoneMask3D>();
-    result = value.get();
-    if (result)
-      result->AddRef();
+    urge::BoneMask3D* value = urge::MakeGarbageCollected<urge::BoneMask3D>();
+    result = new urge::GarbageCollector::Root(value);
   }
 
-  VALUE object = SetupSelfData(self, result);
-  if (result)
-    result->Release();
-  return object;
+  return OwnedSetupSelf(self, result);
 }
 
 RB_FUNC(BoneMask3D_Resize) {
@@ -125,8 +122,10 @@ void InitBoneMask3DBindingAppend(VALUE klass);
 void InitBoneMask3DBinding() {
   auto klass = rb_define_class("BoneMask3D", rb_cObject);
   rb_define_alloc_func(klass, ClassAllocate<&kBoneMask3DDataType>);
+  RegisterNativeType<urge::BoneMask3D>(klass, kBoneMask3DDataType);
 
   DefineMethod(klass, "initialize", BoneMask3D_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "resize", BoneMask3D_Resize);
   DefineMethod(klass, "fill", BoneMask3D_Fill);
   DefineMethod(klass, "set", BoneMask3D_Set);

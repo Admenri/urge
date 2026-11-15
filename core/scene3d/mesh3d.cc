@@ -35,6 +35,11 @@
 
 namespace urge {
 
+void Mesh3D::Trace(GCVisitor& visitor) const {
+  Object::Trace(visitor);
+  visitor.Trace(skeleton_);
+}
+
 namespace {
 
 constexpr size_t kFloatsPerVertex = 8;
@@ -48,13 +53,13 @@ Mesh3D::Mesh3D() = default;
 
 Mesh3D::~Mesh3D() = default;
 
-ATTR_DEF(Mesh3D, RefPtr<Skeleton3D>, Skeleton) {
+ATTR_DEF(Mesh3D, Skeleton3D*, Skeleton) {
   if (value.has_value()) {
     skeleton_ = *value;
     groups_.clear();
     return std::nullopt;
   } else {
-    return skeleton_;
+    return skeleton_.get();
   }
 }
 

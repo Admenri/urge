@@ -30,31 +30,28 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WindowVX  (core/scene/window_vx.h:36-91)
+// WindowVX  (core/scene/window_vx.h:36-92)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(WindowVX, Node);
 
 RB_FUNC(WindowVX_initialize) {
+  CheckConstructorSelf(self, kWindowVXDataType);
   if (argc == 0) {
     // initialize()
     urge::ExceptionState exception_state;
 
-    urge::WindowVX* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
+      urge::WindowVX* value = urge::MakeGarbageCollected<urge::WindowVX>(
           exception_state);
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 1) {
     // initialize(viewport)
     urge::ExceptionState exception_state;
@@ -63,42 +60,35 @@ RB_FUNC(WindowVX_initialize) {
     ParseArgs(argc, argv, "o", &viewport_val);
     viewport = CheckMaybeObject<urge::Viewport>(viewport_val, kViewportDataType);
 
-    urge::WindowVX* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
+      urge::WindowVX* value = urge::MakeGarbageCollected<urge::WindowVX>(
           exception_state, viewport);
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
+    RB_GC_GUARD(viewport_val);
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else if (argc == 4) {
     // initialize(x, y, width, height)
     urge::ExceptionState exception_state;
     int x, y, width, height;
     ParseArgs(argc, argv, "iiii", &x, &y, &width, &height);
 
-    urge::WindowVX* result = nullptr;
+    urge::GarbageCollector::Root* result = nullptr;
 
     {
-      urge::RefPtr<urge::WindowVX> value = urge::MakeRefCounted<urge::WindowVX>(
+      urge::WindowVX* value = urge::MakeGarbageCollected<urge::WindowVX>(
           exception_state, x, y, width, height);
-      result = exception_state.HadException() ? nullptr : value.get();
-      if (result)
-        result->AddRef();
+      if (!exception_state.HadException())
+        result = new urge::GarbageCollector::Root(value);
     }
     RaiseException(exception_state);
 
-    VALUE object = SetupSelfData(self, result);
-    if (result)
-      result->Release();
-    return object;
+    return OwnedSetupSelf(self, result);
   } else {
     ArgcError(argc);
   }
@@ -179,7 +169,7 @@ BINDING_ATTR_OBJECT_REF(WindowVX,
                         kBitmapDataType,
                         CheckMaybeObject);
 
-// Attribute: cursor_rect (RefPtr<Rect>)
+// Attribute: cursor_rect (Rect*)
 BINDING_ATTR_OBJECT(WindowVX,
                     urge::WindowVX,
                     CursorRect,
@@ -232,7 +222,7 @@ BINDING_ATTR_INT(WindowVX, urge::WindowVX, ContentsOpacity);
 // Attribute: openness (int32_t)
 BINDING_ATTR_INT(WindowVX, urge::WindowVX, Openness);
 
-// Attribute: tone (RefPtr<Tone>)
+// Attribute: tone (Tone*)
 BINDING_ATTR_OBJECT(WindowVX,
                     urge::WindowVX,
                     Tone,
@@ -246,8 +236,10 @@ void InitWindowVXBinding() {
   auto parent = rb_const_get(rb_cObject, rb_intern("Node"));
   auto klass = rb_define_class("WindowVX", parent);
   rb_define_alloc_func(klass, ClassAllocate<&kWindowVXDataType>);
+  RegisterNativeType<urge::WindowVX>(klass, kWindowVXDataType);
 
   DefineMethod(klass, "initialize", WindowVX_initialize);
+  DefineMethod(klass, "initialize_copy", RejectNativeCopy);
   DefineMethod(klass, "update", WindowVX_Update);
   DefineMethod(klass, "move", WindowVX_Move);
   DefineMethod(klass, "open?", WindowVX_Opened);

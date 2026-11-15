@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "core/common/definition.h"
+#include "core/common/member.h"
 #include "core/common/object.h"
 #include "core/scene3d/animation3d.h"
 #include "core/scene3d/bone_mask3d.h"
@@ -39,11 +40,13 @@ class Skeleton3D;
 URGE_BINDING()
 class AnimationLayer3D : public Object {
  public:
-  AnimationLayer3D(URGE_EXCEPT, RefPtr<Animation3D> animation, float weight);
+  AnimationLayer3D(URGE_EXCEPT, Animation3D* animation, float weight);
   ~AnimationLayer3D() override;
 
+  void Trace(GCVisitor& visitor) const override;
+
   URGE_BINDING(Name : "animation")
-  RefPtr<Animation3D> GetAnimation() const { return animation_; }
+  Animation3D* GetAnimation() const { return animation_.get(); }
 
   URGE_BINDING(Name : "weight")
   ATTR(float, Weight) {
@@ -77,19 +80,19 @@ class AnimationLayer3D : public Object {
   ATTR(MaybePtr<BoneMask3D>, Mask) {
     if (value.has_value())
       mask_ = *value;
-    return mask_;
+    return mask_.get();
   }
 
   float weight() const { return weight_; }
   float speed() const { return speed_; }
   bool playing() const { return playing_; }
   float time() const { return time_; }
-  RefPtr<Animation3D> animation() const { return animation_; }
-  RefPtr<BoneMask3D> mask() const { return mask_; }
+  Animation3D* animation() const { return animation_.get(); }
+  BoneMask3D* mask() const { return mask_.get(); }
 
  private:
-  RefPtr<Animation3D> animation_;
-  RefPtr<BoneMask3D> mask_;
+  Member<Animation3D> animation_;
+  Member<BoneMask3D> mask_;
   float weight_ = 1.0f;
   float speed_ = 1.0f;
   float time_ = 0.0f;
@@ -103,10 +106,10 @@ class AnimationStack3D : public Object {
   AnimationStack3D();
   ~AnimationStack3D() override;
 
+  void Trace(GCVisitor& visitor) const override;
+
   URGE_BINDING()
-  RefPtr<AnimationLayer3D> AddLayer(URGE_EXCEPT,
-                                    RefPtr<Animation3D> animation,
-                                    float weight);
+  AnimationLayer3D* AddLayer(URGE_EXCEPT, Animation3D* animation, float weight);
   URGE_BINDING()
   void RemoveLayer(MaybePtr<AnimationLayer3D> layer);
   URGE_BINDING()
@@ -114,10 +117,10 @@ class AnimationStack3D : public Object {
   URGE_BINDING()
   int32_t LayerCount() const { return static_cast<int32_t>(layers_.size()); }
   URGE_BINDING()
-  RefPtr<AnimationLayer3D> LayerAt(int32_t index) const;
+  AnimationLayer3D* LayerAt(int32_t index) const;
 
   URGE_BINDING()
-  void Update(URGE_EXCEPT, RefPtr<Skeleton3D> skeleton, float delta);
+  void Update(URGE_EXCEPT, Skeleton3D* skeleton, float delta);
 
   URGE_BINDING()
   std::vector<std::string> TakeEvents();
@@ -127,7 +130,7 @@ class AnimationStack3D : public Object {
  private:
   void CollectEvents(AnimationLayer3D* layer, float from, float to);
 
-  std::vector<RefPtr<AnimationLayer3D>> layers_;
+  std::vector<Member<AnimationLayer3D>> layers_;
   std::vector<std::string> events_;
 };
 
