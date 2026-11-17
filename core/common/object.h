@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 #include "core/common/refptr.h"
@@ -52,6 +53,13 @@ class Singleton {
 class Object : public RefCounted<Object> {
  public:
   virtual ~Object() = default;
+
+  // Opaque slot owned by the script binding layer; the core never interprets it.
+  std::uintptr_t script_tag() const { return script_tag_; }
+  void set_script_tag(std::uintptr_t tag) { script_tag_ = tag; }
+
+ private:
+  std::uintptr_t script_tag_ = 0;
 };
 
 }

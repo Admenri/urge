@@ -22,23 +22,29 @@
 #include "core/common/object.h"
 #include "core/common/refptr.h"
 
+// Exported objspace symbol (declared in Ruby's private internal/gc.h, absent
+// from the public headers). True for dead objects awaiting sweep; used to reject
+// a stale canonical-wrapper cache instead of resurrecting a collected object.
+extern "C" int rb_objspace_garbage_object_p(VALUE obj);
+
 namespace binding {
 
-#define RB_DATATYPE_PARENT(Klass, Name, Free, Parent) \
-  const rb_data_type_t k##Klass##DataType = {         \
-      Name, {nullptr, Free, nullptr, 0, {}}, Parent, nullptr, 0}
+#define RB_DATATYPE_PARENT(Klass, Name, Free, Compact, Parent) \
+  const rb_data_type_t k##Klass##DataType = {                  \
+      Name, {nullptr, Free, nullptr, Compact, {}}, Parent, nullptr, 0}
 
-#define RB_DATATYPE(Klass, Name, Free) \
-  RB_DATATYPE_PARENT(Klass, Name, Free, nullptr)
+#define RB_DATATYPE(Klass, Name, Free, Compact) \
+  RB_DATATYPE_PARENT(Klass, Name, Free, Compact, nullptr)
 
 #define RB_DECL_TYPE(Klass) extern const rb_data_type_t k##Klass##DataType;
 
 #define RB_DEF_TYPE(Klass) \
-  RB_DATATYPE(Klass, #Klass, ReleaseDataType<urge::Klass>)
+  RB_DATATYPE(Klass, #Klass, ReleaseDataType<urge::Klass>, \
+              CompactDataType<urge::Klass>)
 
 #define RB_DEF_TYPE_INHERIT(Klass, Parent)                        \
   RB_DATATYPE_PARENT(Klass, #Klass, ReleaseDataType<urge::Klass>, \
-                     &k##Parent##DataType)
+                     CompactDataType<urge::Klass>, &k##Parent##DataType)
 
 #define RB_FUNC(name) static VALUE name(int argc, VALUE* argv, VALUE self)
 
@@ -46,6 +52,18 @@ template <typename Ty>
 inline void ReleaseDataType(void* ptr) {
   if (ptr)
     static_cast<Ty*>(ptr)->Release();
+}
+
+// The cached wrapper is a weak reference (never marked), so it must be refreshed
+// when compaction relocates it. Stale/dead caches are rejected in WrapObject.
+template <typename Ty>
+inline void CompactDataType(void* ptr) {
+  if (!ptr)
+    return;
+  auto* obj = static_cast<Ty*>(ptr);
+  auto tag = static_cast<VALUE>(obj->script_tag());
+  if (tag)
+    obj->set_script_tag(rb_gc_location(tag));
 }
 
 extern VALUE g_reset_exception;
@@ -77,8 +95,10 @@ inline VALUE ClassAllocate(VALUE klass) {
 template <typename Ty>
 inline VALUE SetupSelfData(VALUE self, Ty* data) {
   RTYPEDDATA_DATA(self) = data;
-  if (data)
+  if (data) {
     data->AddRef();
+    data->set_script_tag(self);
+  }
   return self;
 }
 
@@ -101,6 +121,13 @@ template <typename Ty>
 inline VALUE WrapObject(Ty* ptr, const rb_data_type_t& type) {
   if (!ptr)
     return Qnil;
+  // Return the canonical wrapper so the same C++ object maps to the same Ruby
+  // object. The cache is weak: reject dead (awaiting sweep) or reused slots.
+  VALUE cached = static_cast<VALUE>(ptr->script_tag());
+  if (cached && !RB_SPECIAL_CONST_P(cached) &&
+      !rb_objspace_garbage_object_p(cached) && RTYPEDDATA_P(cached) &&
+      RTYPEDDATA_DATA(cached) == ptr)
+    return cached;
   VALUE klass = rb_const_get(rb_cObject, rb_intern(type.wrap_struct_name));
   VALUE object = rb_obj_alloc(klass);
   return SetupSelfData(object, ptr);
