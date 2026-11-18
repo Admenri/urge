@@ -11,6 +11,8 @@ import subprocess
 import tarfile
 import urllib.request
 
+from toolchain import toolchain_info
+
 REPO = Path(__file__).resolve().parents[2]
 MANIFEST = Path(__file__).with_name("dependencies.json")
 
@@ -30,9 +32,11 @@ def main():
     work = base / f"{args.arch}-{args.target}"
     prefix = work / "prefix"
     prefix.mkdir(parents=True, exist_ok=True)
-    sdk = subprocess.check_output(["xcrun", "--sdk", "macosx", "--show-sdk-path"], text=True).strip()
+    toolchain = toolchain_info()
+    sdk = toolchain["sdk"]
     env = os.environ.copy()
-    env.update(CC="/usr/bin/clang", CXX="/usr/bin/clang++", MACOSX_DEPLOYMENT_TARGET=args.target,
+    env.update(CC=toolchain["cc"], CXX=toolchain["cxx"], SDKROOT=sdk,
+               MACOSX_DEPLOYMENT_TARGET=args.target,
                PKG_CONFIG_LIBDIR=str(prefix / "lib/pkgconfig"), PKG_CONFIG_PATH=str(prefix / "lib/pkgconfig"))
     # Environment include/library overrides must not inject unrelated installations.
     for key in ("CPATH", "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH", "CPPFLAGS", "LDFLAGS"):
@@ -72,10 +76,9 @@ def main():
 
     def build(name, src, revision, options, *, subdir="", openssl=False):
         folder = work / name
-        folder.mkdir(parents=True, exist_ok=True)
         stamp = folder / ".installed.json"
         signature = dict(revision=revision, options=options, arch=args.arch, target=args.target,
-                         sdk=sdk, recipe=recipe)
+                         sdk=sdk, toolchain=toolchain, recipe=recipe)
         artifact = {"zlib": "libz.a", "png": "libpng16.a", "webp": "libwebp.a",
                     "aom": "libaom.a", "avif": "libavif.a", "brotli": "libbrotlidec.a",
                     "zstd": "libzstd.a", "nghttp2": "libnghttp2.a", "openssl": "libssl.a"}[name]
@@ -83,6 +86,12 @@ def main():
                 and (prefix / "lib" / artifact).is_file()):
             print(f"{name}: cached", flush=True)
             return
+        # CMake caches compiler probes and generated-file flags; PCH/object
+        # files can also survive a compiler replacement at the same path.
+        # This directory contains only this dependency's build artifacts.
+        if folder.exists():
+            shutil.rmtree(folder)
+        folder.mkdir(parents=True, exist_ok=True)
         if openssl:
             target = "darwin64-arm64-cc" if args.arch == "arm64" else "darwin64-x86_64-cc"
             run(["/usr/bin/perl", src / "Configure", target, "no-shared", "no-tests", "no-module",
@@ -94,7 +103,8 @@ def main():
             run(["cmake", "-S", src / subdir, "-B", folder, "-G", "Ninja",
                  "-DCMAKE_BUILD_TYPE=Release", f"-DCMAKE_INSTALL_PREFIX={prefix}", "-DCMAKE_INSTALL_LIBDIR=lib",
                  f"-DCMAKE_OSX_ARCHITECTURES={args.arch}", f"-DCMAKE_OSX_DEPLOYMENT_TARGET={args.target}",
-                 f"-DCMAKE_OSX_SYSROOT={sdk}", "-DCMAKE_C_COMPILER=/usr/bin/clang", "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+                 f"-DCMAKE_OSX_SYSROOT={sdk}", f"-DCMAKE_C_COMPILER={toolchain['cc']}",
+                 f"-DCMAKE_CXX_COMPILER={toolchain['cxx']}",
                  f"-DCMAKE_PREFIX_PATH={prefix}", "-DCMAKE_FIND_FRAMEWORK=LAST", "-DBUILD_SHARED_LIBS=OFF",
                  "-DCMAKE_IGNORE_PREFIX_PATH=/opt/homebrew;/usr/local;/Library/Frameworks/Mono.framework",
                  "-DCMAKE_POLICY_VERSION_MINIMUM=3.5", *options], env=env)

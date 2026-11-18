@@ -14,18 +14,40 @@ unset CMAKE_PREFIX_PATH CMAKE_INCLUDE_PATH CMAKE_LIBRARY_PATH CMAKE_FRAMEWORK_PA
 arch="$(uname -m)"
 "$tools/bin/python" "$repo/third_party/macos/prepare-deps.py" --arch "$arch" --target "$target"
 prefix="$repo/build/macos-deps/$arch-$target/prefix"
+toolchain="$("$tools/bin/python" "$repo/third_party/macos/toolchain.py")"
+cc="$(xcrun --sdk macosx --find clang)"
+cxx="$(xcrun --sdk macosx --find clang++)"
+sdk="$(xcrun --sdk macosx --show-sdk-path)"
 configure=(cmake)
+fresh=false
+# An Xcode upgrade can replace clang/SDK contents without changing their
+# paths. --fresh alone does not remove PCH or object files from the build tree.
+if [[ -f "$build/CMakeCache.txt" || -f "$build/build.ninja" ]] && \
+   { [[ ! -f "$build/.toolchain.json" ]] || [[ "$(cat "$build/.toolchain.json")" != "$toolchain" ]]; }; then
+  if [[ -f "$build/build.ninja" ]]; then
+    ninja -C "$build" -t clean
+  fi
+  # Cargo's host plugins and other intermediates are not Ninja outputs.
+  rm -rf "$build/cargo"
+  fresh=true
+fi
 # Discard dependency probes from the earlier system-library build once. In
 # particular, curl caches pkg-config results even if pkg-config is later off.
 if [[ ! -f "$build/.static-deps-version" ]] || [[ "$(cat "$build/.static-deps-version")" != "2:$prefix" ]]; then
-  configure+=(--fresh)
+  fresh=true
 fi
+if [[ "$fresh" == true ]]; then configure+=(--fresh); fi
 
 # Configure the native Metal engine with repository-built static dependencies.
 "${configure[@]}" -S "$repo" -B "$build" -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_OSX_ARCHITECTURES="$arch" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET="$target" \
+  -DCMAKE_OSX_SYSROOT="$sdk" \
+  -DCMAKE_C_COMPILER="$cc" \
+  -DCMAKE_CXX_COMPILER="$cxx" \
+  -DCMAKE_OBJC_COMPILER="$cc" \
+  -DCMAKE_OBJCXX_COMPILER="$cxx" \
   -DCMAKE_FIND_FRAMEWORK=LAST \
   -DCMAKE_C_FLAGS="-Werror=unguarded-availability -Werror=unguarded-availability-new" \
   -DCMAKE_CXX_FLAGS="-Werror=unguarded-availability -Werror=unguarded-availability-new" \
@@ -37,6 +59,7 @@ cmake --build "$build" --target Game --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-8
 "$tools/bin/python" "$repo/third_party/macos/audit-native.py" "$build/app/Game" \
   --target "$target" --archives-root "$prefix" --archives-root "$build"
 printf '2:%s\n' "$prefix" > "$build/.static-deps-version"
+printf '%s\n' "$toolchain" > "$build/.toolchain.json"
 
 cp -R "$prefix/share/urge/licenses" "$build/"
 cp "$repo/doc/Audio.md" "$build/licenses/audio-codecs.txt"

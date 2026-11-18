@@ -166,6 +166,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml
                          NO_DEFAULT_FEATURES FEATURES wgsl metal
                          CRATE_TYPES staticlib)
+  # Older Rust/LLVM strip can misalign Mach-O LINKEDIT string pools, which
+  # macOS 27 rejects when loading build-time proc-macro dylibs (Rust #157750).
+  # Preserve host build artifacts; the shipped staticlib keeps its profile.
+  corrosion_set_env_vars(wgpu_native
+    "CARGO_PROFILE_DEV_BUILD_OVERRIDE_STRIP=none"
+    "CARGO_PROFILE_RELEASE_BUILD_OVERRIDE_STRIP=none")
   find_library(URGE_METAL_FRAMEWORK Metal REQUIRED)
   find_library(URGE_QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
   find_library(URGE_FOUNDATION_FRAMEWORK Foundation REQUIRED)
