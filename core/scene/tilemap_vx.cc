@@ -717,9 +717,9 @@ void TilemapVX::CollectMapData(bool above, std::vector<TileQuad>* quads) {
         !waterfall_component && autotile_id != 2 && autotile_id != 3;
 
     if (waterfall_component) {
+      src_pos = waterfall_offset[(autotile_id - 5) / 2];
       src_pos.y += waterfall_anim_;
-      read_autotile_waterfall(pattern_id, bitmap,
-                              waterfall_offset[(autotile_id - 5) / 2], x, y);
+      read_autotile_waterfall(pattern_id, bitmap, src_pos, x, y);
     } else {
       if (regular_component)
         src_pos.x += 2 * regular_anim_;
