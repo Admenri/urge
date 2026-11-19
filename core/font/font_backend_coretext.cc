@@ -93,7 +93,10 @@ class CoreTextFace final : public Face {
     CTFontGetGlyphsForCharacters(font, &character, &glyph, 1);
     CTFontGetAdvancesForGlyphs(font, kCTFontOrientationHorizontal, &glyph,
                                &advance, 1);
-    Advance result{glyph, static_cast<float>(advance.width)};
+    // RGSS/GDI rounds each character advance before accumulating a line.
+    // Rounding only text_size's total lets per-character wrapping disagree
+    // with the measurement used to allocate its bitmap.
+    Advance result{glyph, static_cast<float>(std::round(advance.width))};
     if (advances.size() >= 4096)
       advances.erase(advances.begin());
     advances.emplace(c, result);
@@ -277,6 +280,10 @@ class CoreTextBackend final : public Backend {
         CTLineGetTypographicBounds(line.get(), nullptr, nullptr, nullptr));
     result.ascent = primary->cell.ascent;
     result.height = primary->cell.height;
+    // Keep native shaping and fallback, but use the same integer advances
+    // as the simple path. Apply the accumulated adjustment to glyph origins
+    // as well, so measuring and drawing share one layout.
+    double advance_adjustment = 0;
     CFArrayRef runs = CTLineGetGlyphRuns(line.get());
     for (CFIndex i = 0; i < CFArrayGetCount(runs); ++i) {
       auto run = static_cast<CTRunRef>(
@@ -287,14 +294,22 @@ class CoreTextBackend final : public Backend {
       auto face = RunFace(selected, font.bold_, font.italic_, font.size_);
       std::vector<CGGlyph> glyphs(count);
       std::vector<CGPoint> positions(count);
+      std::vector<CGSize> advances(count);
       CTRunGetGlyphs(run, CFRangeMake(0, 0), glyphs.data());
       CTRunGetPositions(run, CFRangeMake(0, 0), positions.data());
-      for (CFIndex j = 0; j < count; ++j)
+      CTRunGetAdvances(run, CFRangeMake(0, 0), advances.data());
+      for (CFIndex j = 0; j < count; ++j) {
         result.glyphs.push_back(
-            {face, glyphs[j], static_cast<float>(positions[j].x),
+            {face, glyphs[j],
+             static_cast<float>(std::round(positions[j].x + advance_adjustment)),
              static_cast<float>(-positions[j].y + face->cell.ascent -
                                 primary->cell.ascent)});
+        advance_adjustment +=
+            std::round(advances[j].width) - advances[j].width;
+      }
     }
+    result.width = static_cast<float>(
+        std::round(result.width + advance_adjustment));
     return result;
   }
 

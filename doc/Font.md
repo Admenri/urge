@@ -15,7 +15,7 @@ RGSS1/2/3 的默认字号分别为 22/20/24，单位为游戏逻辑像素的**�
 
 因此不再把 `font.size` 直接当作 OpenType 的 em 大小，也不使用固定 0.9 系数。SimHei 的单元高度恰好为 1 em，尺寸保持原样；Lolita 等单元高度大于 1 em 的字体按自身比例换算，避免字号 24 产生约 33 像素行高而被 24 像素绘制框截断。缺字回退字体也采用同一单元高度，分别定位其基线，macOS 的回退运行重新排版以保持测量和实际字形间距一致。
 
-字体布局与测量共用同一后端，`font.size` 属性和脚本行高不因这个换算而改变；描边、阴影不改变 `text_size` 的文字度量。这个尺寸契约与 [GDI 正字体高度的字符单元定义](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw) 一致。
+字体布局与测量共用同一后端，`font.size` 属性和脚本行高不因这个换算而改变。字形 advance 在累加前按游戏逻辑像素取整，绘制也使用相同的字距；避免整段测量只取整一次、逐字换行却反复向上取整，导致脚本按整段宽度创建的 Bitmap 容纳不下同一段文字。字距调整、连字等上下文排版仍可能使整段宽度不同于单字宽度之和。描边、阴影不改变 `text_size` 的文字度量。这个尺寸契约与 [GDI 正字体高度的字符单元定义](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw) 一致。
 
 ### `Bitmap#draw_text` 的 RGSS 缩放行为
 
@@ -23,7 +23,7 @@ RGSS1/2/3 手册均规定：文字超出传入矩形的宽度时自动横向压�
 
 - 按 `text_size` 的文字逻辑宽度与传入矩形的 `width` 比较；不按与 Bitmap 相交后剩余的可见宽度计算。描边和阴影不改变文字的逻辑度量。
 - 压缩比例为 `max(0.6, min(1.0, width / text_width))`，只压缩横向；不放大短文字，不改变 `font.size` 或 `text_size` 的返回值，也不重排换行。
-- 先按压缩后的文字宽度执行左/中/右对齐，居中的偏移取整；达到下限后仍超宽时从框的起点绘制并裁剪，避免负偏移截掉文字开头。
+- 对齐另外考虑字形的左右伸出、两侧描边留白和右侧阴影；左/中/右对齐均使用这个可见范围，居中的偏移取整。这些留白不加进 `text_size`，也不参与横向压缩的判断。达到缩放下限后仍超宽时从框的起点绘制并裁剪，避免负偏移截掉文字开头。
 - 垂直保持原始字号，空间足够时居中；高度不足时从框的顶部开始并裁剪，不为了适应高度而缩小字形。最终绘制受传入矩形和 Bitmap 边界共同裁剪。
 
 文档来源：[RGSS1 / XP](https://www.rpg-maker.fr/dl/monos/aide/xp/source/rgss/gc_bitmap.html)、[RGSS2 / VX](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rgss/gc_bitmap.html)、[RGSS3 / VX Ace 手册转载](https://pdfcoffee.com/rpg-maker-vx-ace-help-rgss3-reference-manual-4-pdf-free.html)。兼容以文档定义的缩放与布局语义为准。原版 GDI 会按整数字宽重新选字形，具体字体的最终字形宽度和像素结果可能与这里的连续几何压缩不同。
@@ -58,3 +58,5 @@ Linux 的 XDG 路径包括 `XDG_DATA_DIRS` 下的 `fonts` 和 `XDG_DATA_HOME/fon
 WASM 不枚举浏览器宿主的系统字库。字体栅格化代码与其他非 macOS 平台共用，不依赖浏览器字体枚举或本机字体授权接口。
 
 Bitmap 的字体在创建时取得当前默认设置；修改 `bitmap.font.name` 或 `size` 后，测量和绘制使用对应的新字体面及缓存。`bitmap.font = font` 与 `bitmap.clone` 都复制字体设置，副本可以独立修改字号。Window 的文字通过其 `contents` Bitmap 使用同一流程。
+
+`Window_Base#text_size` 等脚本封装最终调用 `contents.text_size`。Window 的 `padding` 位于窗口边框与 `contents` 之间，只影响内容区域的大小、显示位置和裁剪，不加入文字测量值，也不由 Bitmap 再次扣除；自定义脚本的 `text_width` / `text_rect` 同样取决于其对 `Bitmap#text_size` 的封装。

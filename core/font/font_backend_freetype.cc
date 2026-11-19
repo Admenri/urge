@@ -58,7 +58,9 @@ class FreeTypeFace final : public Face {
       return 0;
     if (bold)
       FT_GlyphSlot_Embolden(face->glyph);
-    float value = face->glyph->advance.x / 64.0f;
+    // Unhinted/light-hinted fonts still need RGSS's integer character
+    // advances. Keep their antialiased masks independent of layout rounding.
+    float value = std::round(face->glyph->advance.x / 64.0f);
     if (advances.size() >= 4096)
       advances.erase(advances.begin());
     advances.emplace(glyph, value);
