@@ -47,6 +47,7 @@ class FreeTypeFace final : public Face {
   FT_Face face = nullptr;
   CellMetrics cell;
   FT_Int32 load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
+  FT_Int32 metrics_load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
   bool bold = false, italic = false;
   std::unordered_map<uint32_t, float> advances;
   float Advance(uint32_t glyph) {
@@ -54,12 +55,18 @@ class FreeTypeFace final : public Face {
     if (found != advances.end())
       return found->second;
     FT_Set_Transform(face, nullptr, nullptr);
-    if (FT_Load_Glyph(face, glyph, load_flags))
+    // GDI-compatible layout needs hinted advances even when the font's
+    // gasp policy requests unhinted masks. Rounding the unhinted outline's
+    // advance alone loses per-glyph spacing adjustments (notably digits).
+    // Keep a mask-policy fallback for fonts with unusable hint programs.
+    if (FT_Load_Glyph(face, glyph, metrics_load_flags) &&
+        (metrics_load_flags == load_flags ||
+         FT_Load_Glyph(face, glyph, load_flags)))
       return 0;
     if (bold)
       FT_GlyphSlot_Embolden(face->glyph);
-    // Unhinted/light-hinted fonts still need RGSS's integer character
-    // advances. Keep their antialiased masks independent of layout rounding.
+    // Synthetic bold can add a fractional advance; quantize it before
+    // accumulation so text_size and per-character drawing agree.
     float value = std::round(face->glyph->advance.x / 64.0f);
     if (advances.size() >= 4096)
       advances.erase(advances.begin());
@@ -254,6 +261,8 @@ class FreeTypeBackend final : public Backend {
     face->load_flags = FT_LOAD_DEFAULT;
     if (FT_IS_SCALABLE(face->face))
       face->load_flags |= FT_LOAD_NO_BITMAP;
+    // Rasterization policy below must not change RGSS's layout metrics.
+    face->metrics_load_flags = face->load_flags;
     const int gasp = FT_Get_Gasp(face->face, face->face->size->metrics.y_ppem);
     if (gasp != FT_GASP_NO_TABLE && !(gasp & FT_GASP_DO_GRIDFIT)) {
       // Honour fonts such as Lolita that explicitly request gray coverage
