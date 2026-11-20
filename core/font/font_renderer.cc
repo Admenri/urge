@@ -488,22 +488,13 @@ void FontRenderer::Draw(Bitmap& bitmap,
   if (!layout || layout->glyphs.empty())
     return;
   state.EnsureGPU();
-  // RGSS1/2/3 squeeze horizontally, never by changing font size or height.
-  // Start with text_size's logical width, then fit any actual painted
-  // overhang below; do not reserve synthetic padding around every glyph.
-  const float width = std::ceil(layout->MeasureWidth());
-  const float height = layout->height;
+  const float logical_width = std::ceil(layout->MeasureWidth());
+  const float outline_extent = font.outline_ ? 2.0f : 0.0f;
+  float width = logical_width + outline_extent;
+  const float height = layout->height + outline_extent;
   float scale =
       width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
-  // Raster phase is unchanged by whole-pixel alignment. Compute decoration
-  // bounds from the prepared glyphs before choosing the final alignment.
   float left = region.x;
-  const float top =
-      region.y + std::floor(std::max(0.0f, region.height - height) / 2);
-  const auto clip =
-      MakeIntersect(region, RectI(0, 0, bitmap.size().x, bitmap.size().y));
-  if (clip.width <= 0 || clip.height <= 0)
-    return;
   std::vector<Prepared> fill, stroke;
   auto prepare = [&](int outline, std::vector<Prepared>& out) {
     for (const auto& glyph : layout->glyphs) {
@@ -530,30 +521,52 @@ void FontRenderer::Draw(Bitmap& bitmap,
   prepare(0, fill);
   if (font.outline_)
     prepare(1, stroke);
-  // Preserve the pen's natural side bearings. Existing whitespace can
-  // already accommodate an outline; adding padding unconditionally shifts
-  // every draw call and cuts tight character cells at their opposite edge.
-  float paint_left = 0, paint_right = std::ceil(layout->width);
-  const auto& decorated = font.outline_ ? stroke : fill;
-  for (const auto& item : decorated) {
-    paint_left = std::min(
-        paint_left, item.x + item.image.bearing_x + item.image.ink_left);
-    paint_right = std::max(
-        paint_right, item.x + item.image.bearing_x + item.image.ink_right +
-                         (font.shadow_ ? 1.0f : 0.0f));
+  // text_size excludes italic overhang. Keep that additional extent only
+  // for italic text; ordinary glyph ink and outline shapes must not change
+  // the layer dimensions or per-character alignment.
+  float origin = -std::min(0.0f, layout->bounds_left);
+  if (font.italic_) {
+    float ink_left = 0, ink_right = logical_width;
+    for (const auto& item : fill) {
+      ink_left = std::min(ink_left, origin + item.ink.x);
+      ink_right = std::max(ink_right, origin + item.ink.x + item.ink.width);
+    }
+    origin -= ink_left;
+    width = ink_right - ink_left + outline_extent;
   }
-  const float paint_width = paint_right - paint_left;
-  // text_size excludes decorations, but a box of exactly that width must
-  // still preserve the glyph. Squeeze its painted bounds instead of cutting
-  // off columns to make room for the outline.
-  if (paint_width * scale > region.width)
-    scale = std::max(0.6f, region.width / paint_width);
-  const float spare_width = std::max(0.0f, region.width - paint_width * scale);
-  left -= paint_left * scale;
-  if (align == 1)
-    left += std::floor(spare_width / 2);
-  else if (align == 2)
-    left += spare_width;
+  // RGSS3's outlined layer is two pixels larger on each axis. Shadow does
+  // not enlarge it. Align and squeeze this layer, not its visible strokes.
+  scale = width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
+  const float spare_width = std::max(0.0f, region.width - width * scale);
+  float box_left = region.x;
+  if (align == 1) {
+    // Plain text truncates a half-pixel center; an outlined layer rounds up.
+    const float center = spare_width / 2;
+    box_left += font.outline_ ? std::round(center) : std::floor(center);
+  } else if (align == 2) {
+    box_left += spare_width;
+  }
+  left = box_left + origin * scale;
+  // Vertical centering still applies when the line box is shorter.
+  const float top = region.y + std::floor((region.height - height) / 2);
+  // Clip the logical layer before compositing: a negative bearing must not
+  // expose extra pixels only when alignment moves it away from the rect edge.
+  // Bound to the bitmap before converting to integers (also for long strings).
+  const auto bounded_x = [&](float x) {
+    return static_cast<int32_t>(std::clamp(x, 0.0f,
+                                         static_cast<float>(bitmap.size().x)));
+  };
+  const auto bounded_y = [&](float y) {
+    return static_cast<int32_t>(std::clamp(y, 0.0f,
+                                         static_cast<float>(bitmap.size().y)));
+  };
+  const int32_t x0 = bounded_x(std::floor(box_left));
+  const int32_t y0 = bounded_y(top);
+  const int32_t x1 = bounded_x(std::ceil(box_left + width * scale));
+  const int32_t y1 = bounded_y(top + height);
+  const auto clip = MakeIntersect(region, RectI(x0, y0, x1 - x0, y1 - y0));
+  if (clip.width <= 0 || clip.height <= 0)
+    return;
   const std::array<float, 8> clipping = {
       static_cast<float>(clip.x), static_cast<float>(clip.y),
       static_cast<float>(clip.x + clip.width), static_cast<float>(clip.y + clip.height),
@@ -625,7 +638,8 @@ void FontRenderer::Draw(Bitmap& bitmap,
           auto c = PremultipliedColor(font.color_);
           if (font.gradient_color_ && font.gradient_color_->data.a > 0) {
             const float t =
-                std::clamp((yy - top) / std::max(1.0f, height), 0.0f, 1.0f) *
+                std::clamp((yy - top) / std::max(1.0f, static_cast<float>(layout->height)),
+                           0.0f, 1.0f) *
                 std::clamp(font.gradient_color_->data.a / 255.0f, 0.0f, 1.0f);
             const glm::vec3 g =
                 glm::clamp(glm::vec3(font.gradient_color_->data.r,

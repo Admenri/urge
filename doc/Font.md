@@ -11,22 +11,38 @@
 
 普通文字优先使用字体轮廓，跳过 SimHei 等字体中常见的内嵌单色位图，避免这些位图使灰度抗锯齿失效。描边同样由轮廓生成；透明文字使用单通道覆盖率，不使用会在彩色背景上产生色边的 LCD 子像素抗锯齿。`Font.solid` 仍显式选择单色输出。只有位图、没有轮廓的字体保留位图回退。
 
-RGSS1/2/3 的默认字号分别为 22/20/24，单位为游戏逻辑像素的**字符单元高度**。后端根据字体的 Windows ascent/descent（OpenType `OS/2` 表中的 `usWinAscent` / `usWinDescent`）换算 em 尺寸和基线；这些度量不可用时使用后端提供的 ascent/descent。字体的 line gap 不计入 RGSS 行框。
+RGSS 默认设置按游戏版本初始化，脚本之后修改 `Font.default_*` 仍然有效：
 
-因此不再把 `font.size` 直接当作 OpenType 的 em 大小，也不使用固定 0.9 系数。SimHei 的单元高度恰好为 1 em，尺寸保持原样；Lolita 等单元高度大于 1 em 的字体按自身比例换算，避免字号 24 产生约 33 像素行高而被 24 像素绘制框截断。缺字回退字体也采用同一单元高度，分别定位其基线，macOS 的回退运行重新排版以保持测量和实际字形间距一致。
+| 版本 | 字号 | 描边 | 阴影 |
+| --- | --- | --- | --- |
+| RGSS1 | 22 | 关闭 | 关闭 |
+| RGSS2 | 20 | 关闭 | 开启 |
+| RGSS3 | 24 | 开启 | 关闭 |
 
-字体布局与测量共用同一后端，`font.size` 属性和脚本行高不因这个换算而改变。FreeType 将换算后的 em 取整，测量、kerning 与栅格化共用这个尺寸，避免整数 em 的布局搭配小数 em 的字形，造成紧框裁切或横向挤压。实际字符单元的 ascent/descent 也按这个尺寸取整，因此 `text_size.height` 可能与请求字号相差一个像素；`font.size` 属性与脚本的行高不变。布局保留 hinting 后的字距，栅格化继续使用原有 `gasp` / 灰度抗锯齿策略。不能以未 hinting 轮廓的 advance 简单取整来替代布局度量，萝莉体等字体的数字尤其依赖这些字距调整。字形 advance 在累加前按游戏逻辑像素取整，绘制也使用相同的字距；避免整段测量只取整一次、逐字换行却反复向上取整，导致脚本按整段宽度创建的 Bitmap 容纳不下同一段文字。字距调整、连字等上下文排版仍可能使整段宽度不同于单字宽度之和。`text_size` 包含普通字形越过行起点的负左边距，描边、阴影和额外斜体伸出不加入测量。例如萝莉体字号 18 的 `"3"`、`"33"`、`"333"` 分别为 7、13、19 像素：额外的 1 像素只计入行首，整串测量不等于逐字宽度之和，不能据此修改内部字符的笔位置。这个尺寸契约与 [GDI 正字体高度的字符单元定义](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw) 一致。
+字号在游戏 Bitmap 的像素空间解释，不随显示 DPI 改变。URGE 为兼容原版度量，使用字体 Windows ascent/descent（OpenType `OS/2` 表中的 `usWinAscent` / `usWinDescent`）将请求字号换算为 em；缺失时回退到后端的 ascent/descent，line gap 不计入行框。这是后端的兼容策略，RGSS 手册没有公布原版字体映射器的内部参数，不能由 GDI 的一般文档直接推出原版的完整实现。
 
-### `Bitmap#draw_text` 的 RGSS 缩放行为
+不使用统一的 0.9 系数，也不把字号直接当作 em。SimHei 的 Windows 字符单元恰为 1 em；萝莉体等字符单元高于 1 em 的字体需按自身度量换算。FreeType 的测量、kerning 与栅格化共用整数 em，实际 ascent/descent 也按该尺寸换算；例如萝莉体请求字号22时，实际字符单元高度可能为21。`Font.size` 和脚本行高不变，实际笔画高度也不等于字符单元高度。
 
-RGSS1/2/3 手册均规定：文字超出传入矩形的宽度时自动横向压缩，最小为原宽的 60%。两个重载 `draw_text(x, y, width, height, str, align)` 与 `draw_text(rect, str, align)` 使用相同行为。
+布局保留 hinting 后的字距，栅格化继续使用 `gasp` / 灰度抗锯齿策略。字距在累加前按游戏像素取整，测量和绘制使用同一组笔位置；不在逐字测量和整段测量中分别重复向上取整。`text_size` 包含普通字形的负左边距，不包含描边、阴影或额外斜体伸出。比如萝莉体18号的 `"3"`、`"33"`、`"333"` 分别为7、13、19像素；行首的负边距只计入一次，不用于改变内部字符的笔位置。Kerning、连字等上下文排版也可能使整段宽度不同于单字宽度之和。
 
-- 首先按 `text_size` 的文字逻辑宽度与传入矩形的 `width` 比较；不按与 Bitmap 相交后剩余的可见宽度计算。描边和阴影不改变文字的逻辑度量。
-- 逻辑宽度的压缩比例为 `max(0.6, min(1.0, width / text_width))`；若实际字形、描边或阴影仍超出框宽，则继续在同一 60% 下限内横向适配可见范围，避免宽度恰好等于 `text_size` 的逐字输入框截掉数字笔画。只压缩横向，不放大短文字，不改变 `font.size` 或 `text_size` 的返回值，也不重排换行。
-- 左/中/右对齐使用笔移动范围与实际描边/阴影覆盖范围的并集，居中的偏移取整。字形本身的侧边距已经容纳描边时，不再额外添加两侧留白；这些装饰范围不加进 `text_size`。达到缩放下限后仍超宽时从框的起点绘制并裁剪，避免负偏移截掉文字开头。
-- 垂直保持原始字号，空间足够时居中；高度不足时从框的顶部开始并裁剪，不为了适应高度而缩小字形。最终绘制受传入矩形和 Bitmap 边界共同裁剪。仅在字形主体真正越过裁切边界时重建描边封口，刚好接触边界的有效笔画不会被封口覆盖。
+### `Bitmap#draw_text` 的布局契约
 
-文档来源：[RGSS1 / XP](https://www.rpg-maker.fr/dl/monos/aide/xp/source/rgss/gc_bitmap.html)、[RGSS2 / VX](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rgss/gc_bitmap.html)、[RGSS3 / VX Ace 手册转载](https://pdfcoffee.com/rpg-maker-vx-ace-help-rgss3-reference-manual-4-pdf-free.html)。兼容以文档定义的缩放与布局语义为准。原版 GDI 会按整数字宽重新选字形，具体字体的最终字形宽度和像素结果可能与这里的连续几何压缩不同。
+应分清三种尺寸：`text_size` 返回的逻辑文字尺寸、参与对齐和缩放的文字层尺寸，以及轮廓栅格化后的着墨范围。普通文字的着墨范围不用于反推文字层尺寸，否则不同字符、空格或描边形状会改变对齐和压缩比例。斜体另外包含被 `text_size` 排除的倾斜伸出，避免裁掉斜体轮廓；这部分不改变脚本取得的逻辑宽度。
+
+- 两个 `draw_text` 重载使用相同规则。超宽时只横向压缩，最小比例为60%；不放大，不改变字号、测量值或换行。
+- 无描边时，文字层尺寸等于逻辑尺寸。RGSS3 描边文字层的宽高各增加2像素；这不加进 `text_size`。阴影不再额外改变文字层尺寸。
+- 横向缩放使用 `max(0.6, min(1.0, rect.width / layer_width))`。左/中/右对齐使用缩放后的文字层宽度，不依赖某个字形的实际笔画边缘。普通文字居中的半像素向下取整，描边文字居中的半像素向上取整。最小压缩比例下仍超宽时，从框左端裁切。
+- 垂直位置为 `floor((rect.height - layer_height) / 2)`。行框比字体矮时仍居中裁切，不能将负偏移强行改成0；不做垂直缩放。
+- 文字层先约束自身字形的绘制范围，再与传入矩形和 Bitmap 求交裁切。负边距不能因文字居中或居右而突然露出不同的笔画；真正被裁切的边缘在裁切后重建描边封口，刚好接触边界的有效填充不被封口吞掉。
+- 对齐仍以调用者传入的矩形为准；矩形超出 Bitmap 时不自动改写为相交后的宽度再对齐。`Window` 的 padding 是独立的内容布局边距，不属于 Bitmap 文字层。
+
+### 依据与验证边界
+
+[RGSS1 手册](https://www.rpg-maker.fr/dl/monos/aide/xp/source/rgss/gc_bitmap.html)、[RGSS2 手册](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rgss/gc_bitmap.html)和[RGSS3 手册转载](https://pdfcoffee.com/rpg-maker-vx-ace-help-rgss3-reference-manual-4-pdf-free.html)规定了横向缩小、对齐、垂直居中以及 `text_size` 排除斜体伸出和描边的语义。上面的描边文字层增量、半像素取整和阴影不参与对齐，是原版运行时的行为对照结果，不能说是手册公开了内部算法，也不意味着 URGE 实际创建了整段文字纹理。
+
+[GDI CreateFont](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw)说明了字符单元与 em 高度的区别；[GetTextExtentPoint32](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-gettextextentpoint32w)说明测量不考虑裁切；[FreeType 度量文档](https://freetype.org/freetype2/docs/glyphs/glyphs-3.html)区分 advance、bearing 和字形包围盒，并说明 hinting 会影响度量。它们约束后端实现，但不能代替 RGSS 行为对照。
+
+回归对照需同时覆盖同一字体文件、字号、粗斜体、测量、逐字笔位置、宽框与紧框、三个对齐方向、描边/阴影、奇偶宽高及 Bitmap 边界；只比较 `text_size` 不能证明绘制兼容。macOS 上通过 CrossOver 运行的原版 RGSS 是兼容性参考，不等同于 Windows 实机的 GDI 栅格化。原版某些紧框还会按整数字宽重新选择字形，URGE 的连续几何压缩不承诺逐像素复刻该步进。
 
 这仍是在游戏原始分辨率的 Bitmap 中绘制文字。Retina 与窗口缩放继续由现有显示管线处理；本模块没有把整个游戏 Bitmap 改为高分辨率，也不保证任意放大后都如原生桌面 UI 一样平滑。
 

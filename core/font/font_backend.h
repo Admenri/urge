@@ -33,8 +33,9 @@ class Font;
 class FontContext;
 namespace font {
 
-// RGSS's positive GDI font height describes a character cell, not an em.
-// Keep the conversion shared so native and FreeType faces use one contract.
+// Compatibility policy: map RGSS pixel sizes through Windows cell metrics,
+// rather than treating the requested size as an OpenType em. The RGSS manual
+// does not specify the original font mapper's internal implementation.
 struct CellMetrics {
   double em_size = 0;
   int ascent = 0, height = 0;
