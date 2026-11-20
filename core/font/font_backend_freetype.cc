@@ -34,7 +34,6 @@
 #include FT_GASP_H
 #include FT_FONT_FORMATS_H
 #include FT_GLYPH_H
-#include FT_SIZES_H
 #include FT_STROKER_H
 #include FT_SYNTHESIS_H
 #include FT_TRUETYPE_TABLES_H
@@ -46,7 +45,6 @@ namespace {
 class FreeTypeFace final : public Face {
  public:
   FT_Face face = nullptr;
-  FT_Size metrics_size = nullptr;
   CellMetrics cell;
   FT_Int32 load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
   FT_Int32 metrics_load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
@@ -60,17 +58,12 @@ class FreeTypeFace final : public Face {
     if (found != glyph_metrics.end())
       return found->second;
     FT_Set_Transform(face, nullptr, nullptr);
-    const auto raster_size = face->size;
-    if (metrics_size)
-      FT_Activate_Size(metrics_size);
-    // GDI-compatible layout uses an integer em and hinted advances even
-    // when gasp requests unhinted masks. Keep a raster-policy fallback for
-    // fonts with unusable hint programs, then restore the raster size.
+    // Layout and masks use the same em size. Keep GDI-style hinted
+    // advances separate from the font's antialiasing policy, with a fallback
+    // for fonts whose hint programs cannot be loaded.
     auto error = FT_Load_Glyph(face, glyph, metrics_load_flags);
-    if (error) {
-      FT_Activate_Size(raster_size);
+    if (error && metrics_load_flags != load_flags)
       error = FT_Load_Glyph(face, glyph, load_flags);
-    }
     Metrics value;
     if (!error) {
       if (bold)
@@ -78,7 +71,6 @@ class FreeTypeFace final : public Face {
       value.advance = std::round(face->glyph->advance.x / 64.0f);
       value.left = face->glyph->metrics.horiBearingX / 64.0f;
     }
-    FT_Activate_Size(raster_size);
     if (error)
       return {};
     if (glyph_metrics.size() >= 4096)
@@ -213,13 +205,9 @@ class FreeTypeBackend final : public Backend {
       FT_Set_Transform(selected->face, nullptr, nullptr);
       if (previous == selected && previous_glyph && glyph &&
           FT_HAS_KERNING(selected->face)) {
-        const auto raster_size = selected->face->size;
-        if (selected->metrics_size)
-          FT_Activate_Size(selected->metrics_size);
         FT_Vector kern{};
         FT_Get_Kerning(selected->face, previous_glyph, glyph,
                        FT_KERNING_DEFAULT, &kern);
-        FT_Activate_Size(raster_size);
         result.width += kern.x / 64.0f;
       }
       result.glyphs.push_back(
@@ -262,24 +250,20 @@ class FreeTypeBackend final : public Backend {
       }
       face->cell = MakeCellMetrics(font.size_, face->face->units_per_EM, ascent,
                                    descent);
-      // Keep rasterization at the exact cell scale. The separate integer-em
-      // metrics size below must not enlarge masks beyond RGSS line boxes.
-      FT_Size_RequestRec request{};
-      request.type = FT_SIZE_REQUEST_TYPE_SCALES;
-      request.height = static_cast<FT_Long>(std::lround(
-          face->cell.em_size * 64 * 65536 / face->face->units_per_EM));
-      if (FT_Request_Size(face->face, &request))
+      // GDI maps the requested character cell to an integer em. Use that
+      // same size for metrics and masks: fractional masks paired with integer
+      // metrics can exceed a text_size-sized character box.
+      face->cell.em_size = std::max(1.0, std::round(face->cell.em_size));
+      if (std::isfinite(ascent + descent) && ascent >= 0 && descent >= 0 &&
+          ascent + descent > 0) {
+        face->cell.ascent = static_cast<int>(std::round(
+            face->cell.em_size * ascent / face->face->units_per_EM));
+        face->cell.height = std::max(1, face->cell.ascent + static_cast<int>(
+            std::round(face->cell.em_size * descent / face->face->units_per_EM)));
+      }
+      if (FT_Set_Pixel_Sizes(face->face, 0,
+                            static_cast<FT_UInt>(face->cell.em_size)))
         return {};
-      // GDI selects integer em pixels for layout. A second size preserves
-      // exact cell scaling and the existing antialiasing masks for drawing.
-      // Both size objects are owned and destroyed by the FT_Face.
-      const auto raster_size = face->face->size;
-      if (FT_New_Size(face->face, &face->metrics_size) ||
-          FT_Activate_Size(face->metrics_size) ||
-          FT_Set_Pixel_Sizes(face->face, 0,
-                            static_cast<FT_UInt>(std::lround(face->cell.em_size))))
-        return {};
-      FT_Activate_Size(raster_size);
     } else {
       if (FT_Set_Pixel_Sizes(face->face, 0, font.size_))
         return {};
