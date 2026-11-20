@@ -32,7 +32,14 @@
 #pragma warning(push)
 #pragma warning(disable:4067)    /* newline for __has_include_next */
 
-#if defined(__clang__) && __has_include_next(<stdatomic.h>)
+/* Keep the feature query out of MSVC's preprocessor expression. */
+#if defined(__clang__) && defined(__has_include_next)
+#  if __has_include_next(<stdatomic.h>)
+#    define DAV1D_MSVC_USE_CLANG_STDATOMIC
+#  endif
+#endif
+
+#ifdef DAV1D_MSVC_USE_CLANG_STDATOMIC
    /* use the clang stdatomic.h with clang-cl*/
 #  include_next <stdatomic.h>
 #else /* ! stdatomic.h */
@@ -74,6 +81,8 @@ static inline int atomic_compare_exchange_strong_int(LONG *obj, LONG *expected,
 #define atomic_fetch_add_explicit(p_a, inc, mo) atomic_fetch_add(p_a, inc)
 
 #endif /* ! stdatomic.h */
+
+#undef DAV1D_MSVC_USE_CLANG_STDATOMIC
 
 #pragma warning(pop)
 
