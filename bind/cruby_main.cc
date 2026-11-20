@@ -355,6 +355,9 @@ void BindingMain::InitializeInterpreter(urge::ExceptionState& exception_state) {
   // Set this for each game session before scripts can construct any fonts;
   // subsequent Font.default_size assignments retain their normal behavior.
   urge::Font::Attr_DefaultSize(config.xp() ? 22 : config.vx() ? 20 : 24);
+  // Outline is an RGSS3 default; only RGSS2 enables shadow by default.
+  urge::Font::Attr_DefaultOutline(!config.xp() && !config.vx());
+  urge::Font::Attr_DefaultShadow(config.vx());
 
   auto tilemap_klass = rb_const_get(
       rb_cObject, rb_intern(config.xp() ? "TilemapXP" : "TilemapVX"));
