@@ -34,6 +34,7 @@
 #include FT_GASP_H
 #include FT_FONT_FORMATS_H
 #include FT_GLYPH_H
+#include FT_SIZES_H
 #include FT_STROKER_H
 #include FT_SYNTHESIS_H
 #include FT_TRUETYPE_TABLES_H
@@ -45,32 +46,44 @@ namespace {
 class FreeTypeFace final : public Face {
  public:
   FT_Face face = nullptr;
+  FT_Size metrics_size = nullptr;
   CellMetrics cell;
   FT_Int32 load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
   FT_Int32 metrics_load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
   bool bold = false, italic = false;
-  std::unordered_map<uint32_t, float> advances;
-  float Advance(uint32_t glyph) {
-    auto found = advances.find(glyph);
-    if (found != advances.end())
+  struct Metrics {
+    float advance = 0, left = 0;
+  };
+  std::unordered_map<uint32_t, Metrics> glyph_metrics;
+  Metrics Measure(uint32_t glyph) {
+    auto found = glyph_metrics.find(glyph);
+    if (found != glyph_metrics.end())
       return found->second;
     FT_Set_Transform(face, nullptr, nullptr);
-    // GDI-compatible layout needs hinted advances even when the font's
-    // gasp policy requests unhinted masks. Rounding the unhinted outline's
-    // advance alone loses per-glyph spacing adjustments (notably digits).
-    // Keep a mask-policy fallback for fonts with unusable hint programs.
-    if (FT_Load_Glyph(face, glyph, metrics_load_flags) &&
-        (metrics_load_flags == load_flags ||
-         FT_Load_Glyph(face, glyph, load_flags)))
-      return 0;
-    if (bold)
-      FT_GlyphSlot_Embolden(face->glyph);
-    // Synthetic bold can add a fractional advance; quantize it before
-    // accumulation so text_size and per-character drawing agree.
-    float value = std::round(face->glyph->advance.x / 64.0f);
-    if (advances.size() >= 4096)
-      advances.erase(advances.begin());
-    advances.emplace(glyph, value);
+    const auto raster_size = face->size;
+    if (metrics_size)
+      FT_Activate_Size(metrics_size);
+    // GDI-compatible layout uses an integer em and hinted advances even
+    // when gasp requests unhinted masks. Keep a raster-policy fallback for
+    // fonts with unusable hint programs, then restore the raster size.
+    auto error = FT_Load_Glyph(face, glyph, metrics_load_flags);
+    if (error) {
+      FT_Activate_Size(raster_size);
+      error = FT_Load_Glyph(face, glyph, load_flags);
+    }
+    Metrics value;
+    if (!error) {
+      if (bold)
+        FT_GlyphSlot_Embolden(face->glyph);
+      value.advance = std::round(face->glyph->advance.x / 64.0f);
+      value.left = face->glyph->metrics.horiBearingX / 64.0f;
+    }
+    FT_Activate_Size(raster_size);
+    if (error)
+      return {};
+    if (glyph_metrics.size() >= 4096)
+      glyph_metrics.erase(glyph_metrics.begin());
+    glyph_metrics.emplace(glyph, value);
     return value;
   }
   ~FreeTypeFace() override {
@@ -200,15 +213,22 @@ class FreeTypeBackend final : public Backend {
       FT_Set_Transform(selected->face, nullptr, nullptr);
       if (previous == selected && previous_glyph && glyph &&
           FT_HAS_KERNING(selected->face)) {
+        const auto raster_size = selected->face->size;
+        if (selected->metrics_size)
+          FT_Activate_Size(selected->metrics_size);
         FT_Vector kern{};
         FT_Get_Kerning(selected->face, previous_glyph, glyph,
                        FT_KERNING_DEFAULT, &kern);
+        FT_Activate_Size(raster_size);
         result.width += kern.x / 64.0f;
       }
       result.glyphs.push_back(
           {selected, glyph, result.width,
            static_cast<float>(selected->cell.ascent - primary->cell.ascent)});
-      result.width += selected->Advance(glyph);
+      const auto metrics = selected->Measure(glyph);
+      result.bounds_left =
+          std::min(result.bounds_left, result.width + metrics.left);
+      result.width += metrics.advance;
       previous = selected;
       previous_glyph = glyph;
     }
@@ -242,14 +262,24 @@ class FreeTypeBackend final : public Backend {
       }
       face->cell = MakeCellMetrics(font.size_, face->face->units_per_EM, ascent,
                                    descent);
-      // Set an explicit design-unit scale: rounding the em size to an integer
-      // first makes fonts with tall Windows cells grow beyond RGSS line boxes.
+      // Keep rasterization at the exact cell scale. The separate integer-em
+      // metrics size below must not enlarge masks beyond RGSS line boxes.
       FT_Size_RequestRec request{};
       request.type = FT_SIZE_REQUEST_TYPE_SCALES;
       request.height = static_cast<FT_Long>(std::lround(
           face->cell.em_size * 64 * 65536 / face->face->units_per_EM));
       if (FT_Request_Size(face->face, &request))
         return {};
+      // GDI selects integer em pixels for layout. A second size preserves
+      // exact cell scaling and the existing antialiasing masks for drawing.
+      // Both size objects are owned and destroyed by the FT_Face.
+      const auto raster_size = face->face->size;
+      if (FT_New_Size(face->face, &face->metrics_size) ||
+          FT_Activate_Size(face->metrics_size) ||
+          FT_Set_Pixel_Sizes(face->face, 0,
+                            static_cast<FT_UInt>(std::lround(face->cell.em_size))))
+        return {};
+      FT_Activate_Size(raster_size);
     } else {
       if (FT_Set_Pixel_Sizes(face->face, 0, font.size_))
         return {};

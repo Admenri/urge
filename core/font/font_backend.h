@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -65,8 +66,15 @@ struct Glyph {
 };
 struct Layout {
   float width = 0;
+  // RGSS includes an upright negative left bearing in the measured width.
+  // Keep it separate from pen advance: it belongs to text_size,
+  // while an interior glyph must not shift the rest of the line.
+  float bounds_left = 0;
   int height = 0, ascent = 0;
   std::vector<Glyph> glyphs;
+  float MeasureWidth() const {
+    return width - std::min(0.0f, bounds_left);
+  }
 };
 class Backend {
  public:

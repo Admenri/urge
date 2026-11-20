@@ -243,8 +243,11 @@ struct FontRenderer::Impl {
     }
     auto layout = backend->Shape(f, text);
     ++stats.layouts;
+    const double measured_width = layout.MeasureWidth();
     if (layout.height <= 0 || !std::isfinite(layout.width) ||
-        layout.width < 0 || layout.width > std::numeric_limits<int32_t>::max())
+        layout.width < 0 || layout.width > std::numeric_limits<int32_t>::max() ||
+        !std::isfinite(measured_width) || measured_width < 0 ||
+        measured_width > std::numeric_limits<int32_t>::max())
       return nullptr;
     const size_t bytes = key.size() + sizeof(CachedLayout) +
                          layout.glyphs.size() * sizeof(font::Glyph);
@@ -470,7 +473,7 @@ bool FontRenderer::Measure(Font& font,
   if (!layout)
     return false;
   if (width)
-    *width = static_cast<int32_t>(std::ceil(layout->width));
+    *width = static_cast<int32_t>(std::ceil(layout->MeasureWidth()));
   if (height)
     *height = layout->height;
   return true;
@@ -488,7 +491,7 @@ void FontRenderer::Draw(Bitmap& bitmap,
   // RGSS1/2/3 squeeze only the text advance, never the font size or height.
   // Use the same logical metrics as text_size: decoration bearings must not
   // make a string shrink merely because outline/shadow was enabled.
-  const float width = std::ceil(layout->width);
+  const float width = std::ceil(layout->MeasureWidth());
   const float height = layout->height;
   const float scale =
       width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
@@ -532,7 +535,9 @@ void FontRenderer::Draw(Bitmap& bitmap,
   prepare(0, fill);
   if (font.outline_)
     prepare(1, stroke);
-  float ink_left = 0, ink_right = width;
+  // MeasureWidth already includes upright metric overhang. Start visual
+  // bounds from the pen advance so negative bearings aren't counted twice.
+  float ink_left = 0, ink_right = std::ceil(layout->width);
   for (const auto& item : fill) {
     ink_left = std::min(ink_left, item.x + item.image.bearing_x + item.image.ink_left);
     ink_right = std::max(ink_right, item.x + item.image.bearing_x + item.image.ink_right);
