@@ -488,15 +488,15 @@ void FontRenderer::Draw(Bitmap& bitmap,
   if (!layout || layout->glyphs.empty())
     return;
   state.EnsureGPU();
-  // RGSS1/2/3 squeeze only the text advance, never the font size or height.
-  // Use the same logical metrics as text_size: decoration bearings must not
-  // make a string shrink merely because outline/shadow was enabled.
+  // RGSS1/2/3 squeeze horizontally, never by changing font size or height.
+  // Start with text_size's logical width, then fit any actual painted
+  // overhang below; do not reserve synthetic padding around every glyph.
   const float width = std::ceil(layout->MeasureWidth());
   const float height = layout->height;
-  const float scale =
+  float scale =
       width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
   // Raster phase is unchanged by whole-pixel alignment. Compute decoration
-  // bounds from the prepared glyphs, keeping advance-only squeeze/text_size.
+  // bounds from the prepared glyphs before choosing the final alignment.
   float left = region.x;
   const float top =
       region.y + std::floor(std::max(0.0f, region.height - height) / 2);
@@ -504,11 +504,6 @@ void FontRenderer::Draw(Bitmap& bitmap,
       MakeIntersect(region, RectI(0, 0, bitmap.size().x, bitmap.size().y));
   if (clip.width <= 0 || clip.height <= 0)
     return;
-  const std::array<float, 8> clipping = {
-      static_cast<float>(clip.x), static_cast<float>(clip.y),
-      static_cast<float>(clip.x + clip.width), static_cast<float>(clip.y + clip.height),
-      scale, 1.0f, 0, 0};
-  auto& clip_state = state.Clipping(clipping);
   std::vector<Prepared> fill, stroke;
   auto prepare = [&](int outline, std::vector<Prepared>& out) {
     for (const auto& glyph : layout->glyphs) {
@@ -535,36 +530,48 @@ void FontRenderer::Draw(Bitmap& bitmap,
   prepare(0, fill);
   if (font.outline_)
     prepare(1, stroke);
-  // MeasureWidth already includes upright metric overhang. Start visual
-  // bounds from the pen advance so negative bearings aren't counted twice.
-  float ink_left = 0, ink_right = std::ceil(layout->width);
-  for (const auto& item : fill) {
-    ink_left = std::min(ink_left, item.x + item.image.bearing_x + item.image.ink_left);
-    ink_right = std::max(ink_right, item.x + item.image.bearing_x + item.image.ink_right);
+  // Preserve the pen's natural side bearings. Existing whitespace can
+  // already accommodate an outline; adding padding unconditionally shifts
+  // every draw call and cuts tight character cells at their opposite edge.
+  float paint_left = 0, paint_right = std::ceil(layout->width);
+  const auto& decorated = font.outline_ ? stroke : fill;
+  for (const auto& item : decorated) {
+    paint_left = std::min(
+        paint_left, item.x + item.image.bearing_x + item.image.ink_left);
+    paint_right = std::max(
+        paint_right, item.x + item.image.bearing_x + item.image.ink_right +
+                         (font.shadow_ ? 1.0f : 0.0f));
   }
-  // Reserve the outline on both sides, including for left alignment. Negative
-  // bearings and italic overhang belong to the rendered box, not its advance.
-  const float padding = font.outline_ ? 1.0f : 0.0f;
-  const float shadow = font.shadow_ ? 1.0f : 0.0f;
-  const float decorated_width = (ink_right - ink_left + 2 * padding + shadow) * scale;
-  const float spare_width = std::max(0.0f, region.width - decorated_width);
-  left += (padding - ink_left) * scale;
+  const float paint_width = paint_right - paint_left;
+  // text_size excludes decorations, but a box of exactly that width must
+  // still preserve the glyph. Squeeze its painted bounds instead of cutting
+  // off columns to make room for the outline.
+  if (paint_width * scale > region.width)
+    scale = std::max(0.6f, region.width / paint_width);
+  const float spare_width = std::max(0.0f, region.width - paint_width * scale);
+  left -= paint_left * scale;
   if (align == 1)
     left += std::floor(spare_width / 2);
   else if (align == 2)
     left += spare_width;
-  // A stroke merely touching the box is still a complete outline. Rebuild
-  // only edges touched by the body, never a normally padded glyph's border.
+  const std::array<float, 8> clipping = {
+      static_cast<float>(clip.x), static_cast<float>(clip.y),
+      static_cast<float>(clip.x + clip.width), static_cast<float>(clip.y + clip.height),
+      scale, 1.0f, 0, 0};
+  auto& clip_state = state.Clipping(clipping);
+  // Merely touching the boundary is not clipping. Rebuilding that edge
+  // would erase a valid fill column, notably the right edge of digits.
   for (auto* list : {&fill, &stroke})
     for (auto& item : *list) {
       const float x0 = left + item.ink.x * scale;
       const float x1 = x0 + item.ink.width * scale;
       const float y0 = top + item.ink.y;
       const float y1 = y0 + item.ink.height;
-      item.edges = (x0 < clip.x + scale ? 1 : 0) |
-                   (x1 > clip.x + clip.width - scale ? 2 : 0) |
-                   (y0 < clip.y + 1 ? 4 : 0) |
-                   (y1 > clip.y + clip.height - 1 ? 8 : 0);
+      constexpr float tolerance = 0.0001f;
+      item.edges = (x0 < clip.x - tolerance ? 1 : 0) |
+                   (x1 > clip.x + clip.width + tolerance ? 2 : 0) |
+                   (y0 < clip.y - tolerance ? 4 : 0) |
+                   (y1 > clip.y + clip.height + tolerance ? 8 : 0);
     }
   // Upload at queue flush, coalescing new cells across all text calls.
   BitmapDraw batch;
