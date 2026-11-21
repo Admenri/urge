@@ -433,6 +433,8 @@ def ruby_constant_name(cpp_name: str) -> str:
     could read them (`urge::NetworkEvent::Open` -> `OPEN`), so an enum declared
     in a header names its Ruby constants without an annotation.
     """
+    # `kTranslation` is the usual C++ constant spelling, not a Ruby prefix.
+    cpp_name = re.sub(r"^k(?=[A-Z])", "", cpp_name)
     return camel_to_snake(cpp_name).upper()
 
 
@@ -575,25 +577,30 @@ KLASS_EQUAL_RE = re.compile(r"^KLASS_EQUAL\s*\(\s*(?P<cls>\w+)\s*\)\s*;?$")
 
 # A `URGE_BINDING()` marked enum exports one Ruby constant per enumerator, the
 # Ruby name being SCREAMING_SNAKE of the C++ name (`MapWrite` -> `MAP_WRITE`).
-# The declaration is scoped (`enum class`) or not; only the body matters, and
-# an optional explicit value is carried through so a constant with no `=`
-# still gets a value from the C++ side (`urge::Owner::Enumerator`).
+# Scoped enumerators must be qualified with the enum's name on the C++ side.
+# Values remain source text for documentation, never Python-evaluated integers.
 ENUM_RE = re.compile(
-    r"^enum\s+(?:class\s+)?(?P<name>\w+)?\s*(?::\s*[\w:]+\s*)?"
-    r"\{(?P<body>.*)\}\s*;?\s*$",
+    r"^enum\s+(?P<scoped>class\s+|struct\s+)?(?P<name>\w+)?\s*"
+    r"(?::\s*[\w:\s]+)?\{(?P<body>.*)\}\s*;?\s*$",
     re.S,
 )
+
+# Only explicitly marked public integral constants are exported. Do not turn
+# an unmarked implementation capacity or a static data member into an API.
+CONSTANT_RE = re.compile(
+    r"^static\s+constexpr\s+(?P<type>[\w:\s]+?)\s+(?P<name>\w+)\s*"
+    r"=\s*(?P<value>.+?)\s*;\s*$", re.S,
+)
+ENUM_SENTINEL_RE = re.compile(r"(?:^|_)(?:FORCE_?32|COUNT)$")
 
 
 def _normalize_scopes(body: str) -> str:
     """Turn an access specifier into a statement boundary.
 
-    `split_statements` only breaks at `;` and balanced braces, so a body that
-    opens with `public:` would glue that label onto the first declaration and
-    hide its `URGE_BINDING()` annotation.  An access specifier is replaced by a
-    `;`, which is an empty statement at class scope.
+    Keep the access label as its own statement, so parse_class can reject
+    private/protected declarations even when accidentally marked for export.
     """
-    return re.sub(r"\b(?:public|protected|private)\s*:", ";\n", body)
+    return re.sub(r"\b(public|protected|private)\s*:", r";\1:;", body)
 
 
 def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
@@ -613,7 +620,11 @@ def take_annotation(stmt: str) -> tuple[Optional[dict], str]:
             break
         body = m.group("body")
         name = ANNOTATION_NAME_RE.search(body)
-        annotation = {"name": name.group("name") if name else None}
+        annotation = {
+            "name": name.group("name") if name else None,
+            "readonly": bool(re.search(r"\bReadOnly\s*:\s*true\b", body)),
+            "binary": bool(re.search(r"\bBinary\s*:\s*true\b", body)),
+        }
         stmt = stmt[m.end() :]
     return annotation, stmt.strip()
 
@@ -626,18 +637,25 @@ def parse_enum(match: re.Match) -> list[dict[str, Any]]:
     not evaluated here), `value` the source text after `=` or None.
     """
     constants = []
+    scope = (match.group("name") + "::") if match.group("scoped") else ""
     for part in split_top_level(match.group("body")):
-        part = part.strip()
+        annotation, part = take_annotation(part)
         if not part:
             continue
         enumerator, _, value = part.partition("=")
         enumerator = enumerator.strip()
-        if not enumerator:
+        if not re.fullmatch(r"\w+", enumerator):
+            raise ValueError("invalid enumerator: %r" % enumerator)
+        default_name = ruby_constant_name(enumerator)
+        if ENUM_SENTINEL_RE.search(default_name):
             continue
+        ruby_name = (annotation or {}).get("name") or default_name
+        if not re.fullmatch(r"[A-Z][A-Za-z0-9_]*", ruby_name):
+            raise ValueError("invalid Ruby constant name: %r" % ruby_name)
         constants.append(
             {
-                "name": ruby_constant_name(enumerator),
-                "cpp_name": enumerator,
+                "name": ruby_name,
+                "cpp_name": scope + enumerator,
                 "value": value.strip() or None,
             }
         )
@@ -685,9 +703,14 @@ def parse_class(
         "export": export,
     }
 
+    access = "private"  # exported declarations live in C++ classes, not structs
     for raw_stmt in split_statements(_normalize_scopes(strip_comments(inner))):
+        access_label = re.fullmatch(r"(public|protected|private)\s*:\s*;", raw_stmt)
+        if access_label:
+            access = access_label.group(1)
+            continue
         annotation, stmt = take_annotation(raw_stmt)
-        if annotation is None or not stmt:
+        if annotation is None or not stmt or access != "public":
             continue
         if re.match(r"^(struct|class|union)\b", stmt):
             continue
@@ -695,6 +718,24 @@ def parse_class(
         m = ENUM_RE.match(stmt)
         if m:
             result["constants"].extend(parse_enum(m))
+            continue
+
+        m = CONSTANT_RE.match(stmt)
+        if m:
+            cpp_type = m.group("type").strip()
+            if SCALAR_TYPE_FORMAT.get(cpp_type) not in ("i", "u", "l", "p"):
+                continue
+            default_name = ruby_constant_name(m.group("name"))
+            if ENUM_SENTINEL_RE.search(default_name):
+                continue
+            ruby_name = annotation["name"] or default_name
+            if not re.fullmatch(r"[A-Z][A-Za-z0-9_]*", ruby_name):
+                raise ValueError("invalid Ruby constant name: %r" % ruby_name)
+            result["constants"].append({
+                "name": ruby_name,
+                "cpp_name": m.group("name"),
+                "value": m.group("value").strip(),
+            })
             continue
 
         m = MARSHAL_DUMP_RE.match(stmt)
@@ -721,7 +762,7 @@ def parse_class(
             base = annotation["name"] or ruby_attr_base(cpp_name)
             attr = {
                 "name": base,
-                "setter": base + "=",
+                "setter": None if annotation["readonly"] else base + "=",
                 "cpp_name": cpp_name,
                 "cpp_type": cpp_type,
                 "ruby_type": map_ruby_type(cpp_type),
@@ -731,6 +772,8 @@ def parse_class(
                 "header_annotation": bool(annotation["name"]),
                 "export": export,
             }
+            if annotation["readonly"]:
+                attr["readonly"] = True
             if static:
                 result["class_attributes"].append(attr)
             else:
@@ -801,6 +844,9 @@ def parse_class(
             )
             continue
 
+        if annotation["binary"] and return_type != "std::string":
+            raise ValueError("Binary: true requires a std::string return: %s.%s" %
+                             (name, func_name))
         ruby_name = annotation["name"] or ruby_method_name(func_name)
 
         if ruby_name.startswith("["):
@@ -813,6 +859,7 @@ def parse_class(
             result["index"]["set" if ruby_name == "[]=" else "get"] = {
                 "ruby_name": ruby_name,
                 "cpp_name": func_name,
+                "return": {"cpp_type": return_type, "ruby_type": map_ruby_type(return_type)},
                 "params": params,
                 "has_exception": call["has_exception"],
                 "export": export,
@@ -828,11 +875,16 @@ def parse_class(
             "header_annotation": bool(annotation["name"]),
             "export": export,
         }
+        if annotation["binary"]:
+            entry["binary"] = True
         if call["is_static"]:
             result["class_methods"].append(entry)
         else:
             result["instance_methods"].append(entry)
 
+    constant_names = [c["name"] for c in result["constants"]]
+    if len(set(constant_names)) != len(constant_names):
+        raise ValueError("duplicate Ruby constant in %s" % name)
     return result
 
 
@@ -1015,9 +1067,13 @@ def build_document() -> dict[str, Any]:
                             "header_annotation": attr["header_annotation"],
                             "attr": True,
                             "attr_value_type": attr["cpp_type"],
+                            **({"has_exception": True} if attr["has_exception"] else {}),
+                            **({"readonly": True, "setter": None} if attr.get("readonly") else {}),
                             "export": attr["export"],
                         }
                     )
+                    if attr.get("readonly"):
+                        continue
                     desc["functions"].append(
                         {
                             "ruby_name": attr["setter"],
@@ -1034,6 +1090,7 @@ def build_document() -> dict[str, Any]:
                             "attr": True,
                             "setter": True,
                             "attr_value_type": attr["cpp_type"],
+                            **({"has_exception": True} if attr["has_exception"] else {}),
                             "export": attr["export"],
                         }
                     )

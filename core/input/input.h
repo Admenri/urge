@@ -35,25 +35,39 @@
 
 namespace urge {
 
-inline const struct {
-  std::string name;
-  int32_t key_id;
-} kKeyboardBindings[] = {
-    {"DOWN", 2},   {"LEFT", 4},  {"RIGHT", 6}, {"UP", 8},
-
-    {"A", 11},     {"B", 12},    {"C", 13},    {"X", 14},  {"Y", 15},
-    {"Z", 16},     {"L", 17},    {"R", 18},
-
-    {"SHIFT", 21}, {"CTRL", 22}, {"ALT", 23},
-
-    {"F5", 25},    {"F6", 26},   {"F7", 27},   {"F8", 28}, {"F9", 29},
-
-    {"W", 31},     {"S", 32},    {"D", 33},    {"Q", 34},  {"E", 35},
-};
-
 URGE_BINDING()
 class Input : public Singleton<Input> {
  public:
+  // RGSS logical key IDs, also used by the native key binding table below.
+  URGE_BINDING()
+  enum Key : int32_t {
+    DOWN = 2,
+    LEFT = 4,
+    RIGHT = 6,
+    UP = 8,
+    A = 11,
+    B = 12,
+    C = 13,
+    X = 14,
+    Y = 15,
+    Z = 16,
+    L = 17,
+    R = 18,
+    SHIFT = 21,
+    CTRL = 22,
+    ALT = 23,
+    F5 = 25,
+    F6 = 26,
+    F7 = 27,
+    F8 = 28,
+    F9 = 29,
+    W = 31,
+    S = 32,
+    D = 33,
+    Q = 34,
+    E = 35,
+  };
+
   Input(int32_t version);
   ~Input();
 
@@ -127,4 +141,19 @@ class Input : public Singleton<Input> {
   bool blocked_ = false;
 };
 
-}
+inline const struct {
+  std::string name;
+  int32_t key_id;
+} kKeyboardBindings[] = {
+    {"DOWN", Input::DOWN},   {"LEFT", Input::LEFT}, {"RIGHT", Input::RIGHT},
+    {"UP", Input::UP},       {"A", Input::A},       {"B", Input::B},
+    {"C", Input::C},         {"X", Input::X},       {"Y", Input::Y},
+    {"Z", Input::Z},         {"L", Input::L},       {"R", Input::R},
+    {"SHIFT", Input::SHIFT}, {"CTRL", Input::CTRL}, {"ALT", Input::ALT},
+    {"F5", Input::F5},       {"F6", Input::F6},     {"F7", Input::F7},
+    {"F8", Input::F8},       {"F9", Input::F9},     {"W", Input::W},
+    {"S", Input::S},         {"D", Input::D},       {"Q", Input::Q},
+    {"E", Input::E},
+};
+
+}  // namespace urge

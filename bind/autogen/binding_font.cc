@@ -135,7 +135,7 @@ RB_FUNC(Font_Existed) {
 BINDING_ATTR_VECTOR(Font, urge::Font, Name, std::string);
 
 // Attribute: size (int32_t)
-BINDING_ATTR_INT(Font, urge::Font, Size);
+BINDING_ATTR_INT_TYPED(Font, urge::Font, Size, int32_t);
 
 // Attribute: bold (bool)
 BINDING_ATTR_BOOL(Font, urge::Font, Bold);
@@ -180,7 +180,7 @@ BINDING_ATTR_OBJECT(Font,
 BINDING_CLASS_ATTR_VECTOR(Font, urge::Font, DefaultName, std::string);
 
 // Class attribute: default_size (int32_t)
-BINDING_CLASS_ATTR_INT(Font, urge::Font, DefaultSize);
+BINDING_CLASS_ATTR_INT_TYPED(Font, urge::Font, DefaultSize, int32_t);
 
 // Class attribute: default_bold (bool)
 BINDING_CLASS_ATTR_BOOL(Font, urge::Font, DefaultBold);

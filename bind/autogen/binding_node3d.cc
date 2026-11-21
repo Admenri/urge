@@ -197,7 +197,7 @@ BINDING_ATTR_OBJECT_REF(Node3D,
 BINDING_ATTR_BOOL(Node3D, urge::Node3D, Visible);
 
 // Attribute: layers (uint32_t)
-BINDING_ATTR_INT(Node3D, urge::Node3D, Layers);
+BINDING_ATTR_INT_TYPED(Node3D, urge::Node3D, Layers, uint32_t);
 
 void InitNode3DBindingAppend(VALUE klass);
 

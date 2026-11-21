@@ -178,16 +178,16 @@ BINDING_ATTR_OBJECT(Sprite,
                     CheckObject);
 
 // Attribute: x (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, X);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, X, int32_t);
 
 // Attribute: y (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, Y);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, Y, int32_t);
 
 // Attribute: ox (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, OX);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, OX, int32_t);
 
 // Attribute: oy (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, OY);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, OY, int32_t);
 
 // Attribute: zoom_x (float)
 BINDING_ATTR_FLOAT(Sprite, urge::Sprite, ZoomX);
@@ -199,13 +199,13 @@ BINDING_ATTR_FLOAT(Sprite, urge::Sprite, ZoomY);
 BINDING_ATTR_FLOAT(Sprite, urge::Sprite, Angle);
 
 // Attribute: wave_amp (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, WaveAmp);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, WaveAmp, int32_t);
 
 // Attribute: wave_length (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, WaveLength);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, WaveLength, int32_t);
 
 // Attribute: wave_speed (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, WaveSpeed);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, WaveSpeed, int32_t);
 
 // Attribute: wave_phase (float)
 BINDING_ATTR_FLOAT(Sprite, urge::Sprite, WavePhase);
@@ -214,16 +214,16 @@ BINDING_ATTR_FLOAT(Sprite, urge::Sprite, WavePhase);
 BINDING_ATTR_BOOL(Sprite, urge::Sprite, Mirror);
 
 // Attribute: bush_depth (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, BushDepth);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, BushDepth, int32_t);
 
 // Attribute: bush_opacity (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, BushOpacity);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, BushOpacity, int32_t);
 
 // Attribute: opacity (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, Opacity);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, Opacity, int32_t);
 
 // Attribute: blend_type (int32_t)
-BINDING_ATTR_INT(Sprite, urge::Sprite, BlendType);
+BINDING_ATTR_INT_TYPED(Sprite, urge::Sprite, BlendType, int32_t);
 
 // Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Sprite,

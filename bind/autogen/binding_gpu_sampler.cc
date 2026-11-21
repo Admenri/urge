@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUSampler  (core/graphics/gpu.h:810-810)
+// GPUSampler  (core/graphics/gpu.h:824-824)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUSampler, GPUObject);

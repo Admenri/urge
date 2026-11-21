@@ -40,23 +40,14 @@ RB_FUNC(NetworkEvent_Data) {
   return rb_enc_str_new(data, static_cast<long>(size),
                         rb_ascii8bit_encoding());
 }
-// The `Type` enum is registered by hand because the IR describes methods, not
-// constants.
-void DefineNetworkEventConstants(VALUE klass) {
-  rb_const_set(klass, rb_intern("OPEN"), LONG2NUM(urge::NetworkEvent::Open));
-  rb_const_set(klass, rb_intern("TEXT"), LONG2NUM(urge::NetworkEvent::Text));
-  rb_const_set(klass, rb_intern("BINARY"),
-               LONG2NUM(urge::NetworkEvent::Binary));
-  rb_const_set(klass, rb_intern("CLOSE"), LONG2NUM(urge::NetworkEvent::Close));
-  rb_const_set(klass, rb_intern("ERROR"), LONG2NUM(urge::NetworkEvent::Error));
-
+void DefineNetworkEventData(VALUE klass) {
   DefineMethod(klass, "data", NetworkEvent_Data);
 }
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// NetworkEvent  (core/network/network.h:41-63)
+// NetworkEvent  (core/network/network.h:41-64)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(NetworkEvent);
@@ -167,7 +158,17 @@ void InitNetworkEventBinding() {
   DefineMethod(klass, "code", NetworkEvent_GetCode);
   DefineMethod(klass, "reason", NetworkEvent_GetReason);
   DefineMethod(klass, "message", NetworkEvent_GetErrorMessage);
-  DefineNetworkEventConstants(klass);
+  rb_const_set(klass, rb_intern("OPEN"),
+               WrapConstant(urge::NetworkEvent::Open));
+  rb_const_set(klass, rb_intern("TEXT"),
+               WrapConstant(urge::NetworkEvent::Text));
+  rb_const_set(klass, rb_intern("BINARY"),
+               WrapConstant(urge::NetworkEvent::Binary));
+  rb_const_set(klass, rb_intern("CLOSE"),
+               WrapConstant(urge::NetworkEvent::Close));
+  rb_const_set(klass, rb_intern("ERROR"),
+               WrapConstant(urge::NetworkEvent::Error));
+  DefineNetworkEventData(klass);
   InitNetworkEventBindingAppend(klass);
 }
 // --- GENERATED END ---

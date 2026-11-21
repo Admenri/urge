@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUShaderModule  (core/graphics/gpu.h:821-821)
+// GPUShaderModule  (core/graphics/gpu.h:835-835)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUShaderModule, GPUObject);

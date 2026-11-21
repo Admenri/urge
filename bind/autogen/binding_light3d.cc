@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Light3D  (core/scene3d/light3d.h:36-73)
+// Light3D  (core/scene3d/light3d.h:36-79)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Light3D, Node3D);
@@ -53,7 +53,7 @@ RB_FUNC(Light3D_initialize) {
 }
 
 // Attribute: type (uint32_t)
-BINDING_ATTR_INT(Light3D, urge::Light3D, Type);
+BINDING_ATTR_INT_TYPED(Light3D, urge::Light3D, Type, uint32_t);
 
 // Attribute: color (MaybePtr<Color>)
 BINDING_ATTR_OBJECT(Light3D,
@@ -90,6 +90,10 @@ void InitLight3DBinding() {
   DefineMethod(klass, "range=", Light3D_RangeEqual);
   DefineMethod(klass, "cast_shadow", Light3D_CastShadow);
   DefineMethod(klass, "cast_shadow=", Light3D_CastShadowEqual);
+  rb_const_set(klass, rb_intern("DIRECTIONAL"),
+               WrapConstant(urge::Light3D::LightType::Directional));
+  rb_const_set(klass, rb_intern("POINT"),
+               WrapConstant(urge::Light3D::LightType::Point));
   InitLight3DBindingAppend(klass);
 }
 // --- GENERATED END ---

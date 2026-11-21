@@ -254,7 +254,7 @@ BINDING_ATTR_OBJECT_REF(TilemapXP,
 BINDING_ATTR_BOOL(TilemapXP, urge::TilemapXP, Visible);
 
 // Attribute: z (int32_t)
-BINDING_ATTR_INT(TilemapXP, urge::TilemapXP, Z);
+BINDING_ATTR_INT_TYPED(TilemapXP, urge::TilemapXP, Z, int32_t);
 
 // Attribute: map_data (MaybePtr<Table>)
 BINDING_ATTR_OBJECT(TilemapXP,
@@ -281,10 +281,10 @@ BINDING_ATTR_OBJECT(TilemapXP,
                     CheckMaybeObject);
 
 // Attribute: ox (int32_t)
-BINDING_ATTR_INT(TilemapXP, urge::TilemapXP, OX);
+BINDING_ATTR_INT_TYPED(TilemapXP, urge::TilemapXP, OX, int32_t);
 
 // Attribute: oy (int32_t)
-BINDING_ATTR_INT(TilemapXP, urge::TilemapXP, OY);
+BINDING_ATTR_INT_TYPED(TilemapXP, urge::TilemapXP, OY, int32_t);
 
 void InitTilemapXPBindingAppend(VALUE klass);
 

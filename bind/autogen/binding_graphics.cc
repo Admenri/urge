@@ -331,8 +331,9 @@ RB_FUNC(Graphics_FrameRate) {
 
 RB_FUNC(Graphics_FrameRateEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Graphics::Get().Attr_FrameRate(value);
@@ -355,8 +356,9 @@ RB_FUNC(Graphics_FrameCount) {
 
 RB_FUNC(Graphics_FrameCountEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Graphics::Get().Attr_FrameCount(value);
@@ -379,8 +381,9 @@ RB_FUNC(Graphics_Brightness) {
 
 RB_FUNC(Graphics_BrightnessEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Graphics::Get().Attr_Brightness(value);

@@ -152,7 +152,7 @@ BINDING_ATTR_OBJECT_REF(Geometry,
                         CheckMaybeObject);
 
 // Attribute: capacity (int32_t)
-BINDING_ATTR_INT_EXC(Geometry, urge::Geometry, Capacity);
+BINDING_ATTR_INT_TYPED_EXC(Geometry, urge::Geometry, Capacity, int32_t);
 
 // Attribute: bitmap (MaybePtr<Bitmap>)
 BINDING_ATTR_OBJECT_REF(Geometry,
@@ -163,7 +163,7 @@ BINDING_ATTR_OBJECT_REF(Geometry,
                         CheckMaybeObject);
 
 // Attribute: blend_type (int32_t)
-BINDING_ATTR_INT(Geometry, urge::Geometry, BlendType);
+BINDING_ATTR_INT_TYPED(Geometry, urge::Geometry, BlendType, int32_t);
 
 // Attribute: effect (MaybePtr<Effect>)
 BINDING_ATTR_OBJECT_REF(Geometry,

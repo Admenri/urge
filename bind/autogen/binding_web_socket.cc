@@ -24,22 +24,11 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// The `ReadyState` enum, registered by hand for the same reason as the event
-// types.
-void DefineWebSocketConstants(VALUE klass) {
-  rb_const_set(klass, rb_intern("CONNECTING"),
-               LONG2NUM(urge::WebSocket::Connecting));
-  rb_const_set(klass, rb_intern("OPEN"), LONG2NUM(urge::WebSocket::OpenState));
-  rb_const_set(klass, rb_intern("CLOSING"),
-               LONG2NUM(urge::WebSocket::Closing));
-  rb_const_set(klass, rb_intern("CLOSED"),
-               LONG2NUM(urge::WebSocket::ClosedState));
-}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WebSocket  (core/network/network.h:77-110)
+// WebSocket  (core/network/network.h:78-112)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WebSocket);
@@ -306,7 +295,14 @@ void InitWebSocketBinding() {
   DefineMethod(klass, "close", WebSocket_Close);
   DefineMethod(klass, "next_event", WebSocket_NextEvent);
   DefineMethod(klass, "pending", WebSocket_GetPending);
-  DefineWebSocketConstants(klass);
+  rb_const_set(klass, rb_intern("CONNECTING"),
+               WrapConstant(urge::WebSocket::Connecting));
+  rb_const_set(klass, rb_intern("OPEN"),
+               WrapConstant(urge::WebSocket::OpenState));
+  rb_const_set(klass, rb_intern("CLOSING"),
+               WrapConstant(urge::WebSocket::Closing));
+  rb_const_set(klass, rb_intern("CLOSED"),
+               WrapConstant(urge::WebSocket::ClosedState));
   InitWebSocketBindingAppend(klass);
 }
 // --- GENERATED END ---

@@ -85,30 +85,40 @@ RB_FUNC(GPUSamplerDescriptor_SetLabel) {
 }
 
 // Attribute: address_mode_u (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor,
-                 urge::GPUSamplerDescriptor,
-                 AddressModeU);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       AddressModeU,
+                       uint32_t);
 
 // Attribute: address_mode_v (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor,
-                 urge::GPUSamplerDescriptor,
-                 AddressModeV);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       AddressModeV,
+                       uint32_t);
 
 // Attribute: address_mode_w (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor,
-                 urge::GPUSamplerDescriptor,
-                 AddressModeW);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       AddressModeW,
+                       uint32_t);
 
 // Attribute: mag_filter (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor, urge::GPUSamplerDescriptor, MagFilter);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       MagFilter,
+                       uint32_t);
 
 // Attribute: min_filter (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor, urge::GPUSamplerDescriptor, MinFilter);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       MinFilter,
+                       uint32_t);
 
 // Attribute: mipmap_filter (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor,
-                 urge::GPUSamplerDescriptor,
-                 MipmapFilter);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       MipmapFilter,
+                       uint32_t);
 
 // Attribute: lod_min_clamp (float)
 BINDING_ATTR_FLOAT(GPUSamplerDescriptor,
@@ -121,12 +131,16 @@ BINDING_ATTR_FLOAT(GPUSamplerDescriptor,
                    LodMaxClamp);
 
 // Attribute: compare (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor, urge::GPUSamplerDescriptor, Compare);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       Compare,
+                       uint32_t);
 
 // Attribute: max_anisotropy (uint32_t)
-BINDING_ATTR_INT(GPUSamplerDescriptor,
-                 urge::GPUSamplerDescriptor,
-                 MaxAnisotropy);
+BINDING_ATTR_INT_TYPED(GPUSamplerDescriptor,
+                       urge::GPUSamplerDescriptor,
+                       MaxAnisotropy,
+                       uint32_t);
 
 void InitGPUSamplerDescriptorBindingAppend(VALUE klass);
 

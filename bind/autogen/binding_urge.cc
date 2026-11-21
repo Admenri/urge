@@ -375,15 +375,15 @@ void InitURGEBinding() {
   DefineModuleFunction(mod, "clipboard", URGE_Clipboard);
   DefineModuleFunction(mod, "clipboard=", URGE_ClipboardEqual);
   rb_const_set(mod, rb_intern("MESSAGEBOX_ERROR"),
-               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_ERROR)));
+               WrapConstant(urge::URGE::MESSAGEBOX_ERROR));
   rb_const_set(mod, rb_intern("MESSAGEBOX_WARNING"),
-               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_WARNING)));
+               WrapConstant(urge::URGE::MESSAGEBOX_WARNING));
   rb_const_set(mod, rb_intern("MESSAGEBOX_INFORMATION"),
-               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_INFORMATION)));
+               WrapConstant(urge::URGE::MESSAGEBOX_INFORMATION));
   rb_const_set(mod, rb_intern("MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT"),
-               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT)));
+               WrapConstant(urge::URGE::MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT));
   rb_const_set(mod, rb_intern("MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT"),
-               LONG2NUM(static_cast<long>(urge::URGE::MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT)));
+               WrapConstant(urge::URGE::MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT));
   InitURGEBindingAppend(mod);
 }
 // --- GENERATED END ---

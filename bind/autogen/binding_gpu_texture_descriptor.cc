@@ -85,32 +85,52 @@ RB_FUNC(GPUTextureDescriptor_SetLabel) {
 }
 
 // Attribute: usage (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor, urge::GPUTextureDescriptor, Usage);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       Usage,
+                       uint32_t);
 
 // Attribute: dimension (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor, urge::GPUTextureDescriptor, Dimension);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       Dimension,
+                       uint32_t);
 
 // Attribute: format (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor, urge::GPUTextureDescriptor, Format);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       Format,
+                       uint32_t);
 
 // Attribute: width (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor, urge::GPUTextureDescriptor, Width);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       Width,
+                       uint32_t);
 
 // Attribute: height (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor, urge::GPUTextureDescriptor, Height);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       Height,
+                       uint32_t);
 
 // Attribute: depth_or_array_layers (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor,
-                 urge::GPUTextureDescriptor,
-                 DepthOrArrayLayers);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       DepthOrArrayLayers,
+                       uint32_t);
 
 // Attribute: mip_level_count (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor,
-                 urge::GPUTextureDescriptor,
-                 MipLevelCount);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       MipLevelCount,
+                       uint32_t);
 
 // Attribute: sample_count (uint32_t)
-BINDING_ATTR_INT(GPUTextureDescriptor, urge::GPUTextureDescriptor, SampleCount);
+BINDING_ATTR_INT_TYPED(GPUTextureDescriptor,
+                       urge::GPUTextureDescriptor,
+                       SampleCount,
+                       uint32_t);
 
 void InitGPUTextureDescriptorBindingAppend(VALUE klass);
 

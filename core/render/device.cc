@@ -141,7 +141,7 @@ std::string FromStringView(const wgpu::StringView& view) {
   return std::string(view.data, view.length);
 }
 
-}
+}  // namespace
 
 DeviceInfo QueryDeviceInfo(const wgpu::Adapter& adapter) {
   DeviceInfo info;
@@ -355,6 +355,23 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   required_limits.maxTextureDimension2D = adapter_limits.maxTextureDimension2D;
   wgpu::DeviceDescriptor device_desc;
   device_desc.requiredLimits = &required_limits;
+  // Validation errors are recoverable. The native backend's default callback
+  // panics across the C ABI, bypassing both ExceptionState and Ruby rescue.
+  // Never raise a Ruby exception here: callbacks can run on a GPU worker.
+  device_desc.uncapturedErrorCallbackInfo.callback = [](const WGPUDevice*,
+                                                        WGPUErrorType type,
+                                                        WGPUStringView message,
+                                                        void*, void*) {
+    const std::string_view text =
+        message.data ? std::string_view(
+                           message.data,
+                           message.length == WGPU_STRLEN
+                               ? std::char_traits<char>::length(message.data)
+                               : message.length)
+                     : std::string_view();
+    LOGGER_ERROR("[GPU] validation/device error ({}): {}",
+                 static_cast<uint32_t>(type), text);
+  };
   adapter_.RequestDevice(&device_desc, device_callback);
 
 #if defined(OS_EMSCRIPTEN)
@@ -371,10 +388,12 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   wgpu::Limits device_limits;
   if (!device_ || !device_.GetLimits(&device_limits) ||
       !device_limits.maxTextureDimension2D) {
-    exception_state.Throw(ExceptionState::kGPUError,
-                          "could not create the GPU device or query its limits.");
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "could not create the GPU device or query its limits.");
     return;
   }
+  limits_ = device_limits;
   max_texture_dimension_2d_ = device_limits.maxTextureDimension2D;
   LOGGER_INFO("[GPU] Maximum 2D texture dimension: {} (adapter: {})",
               max_texture_dimension_2d_, adapter_limits.maxTextureDimension2D);
@@ -421,4 +440,4 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
   queue_ = device_.GetQueue();
 }
 
-}
+}  // namespace urge

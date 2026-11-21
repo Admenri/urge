@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUComputePipeline  (core/graphics/gpu.h:879-883)
+// GPUComputePipeline  (core/graphics/gpu.h:893-897)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUComputePipeline, GPUObject);

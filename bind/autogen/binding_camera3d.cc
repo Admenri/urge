@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Camera3D  (core/scene3d/camera3d.h:40-147)
+// Camera3D  (core/scene3d/camera3d.h:40-156)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(Camera3D, Node3D);
@@ -165,10 +165,10 @@ BINDING_ATTR_BOOL(Camera3D, urge::Camera3D, Orthographic);
 BINDING_ATTR_FLOAT(Camera3D, urge::Camera3D, OrthoSize);
 
 // Attribute: culling_mask (uint32_t)
-BINDING_ATTR_INT(Camera3D, urge::Camera3D, CullingMask);
+BINDING_ATTR_INT_TYPED(Camera3D, urge::Camera3D, CullingMask, uint32_t);
 
 // Attribute: clear_flags (uint32_t)
-BINDING_ATTR_INT(Camera3D, urge::Camera3D, ClearFlags);
+BINDING_ATTR_INT_TYPED(Camera3D, urge::Camera3D, ClearFlags, uint32_t);
 
 // Attribute: clear_color (MaybePtr<Color>)
 BINDING_ATTR_OBJECT(Camera3D,
@@ -179,7 +179,7 @@ BINDING_ATTR_OBJECT(Camera3D,
                     CheckMaybeObject);
 
 // Attribute: priority (int32_t)
-BINDING_ATTR_INT(Camera3D, urge::Camera3D, Priority);
+BINDING_ATTR_INT_TYPED(Camera3D, urge::Camera3D, Priority, int32_t);
 
 void InitCamera3DBindingAppend(VALUE klass);
 
@@ -212,6 +212,16 @@ void InitCamera3DBinding() {
   DefineMethod(klass, "clear_color=", Camera3D_ClearColorEqual);
   DefineMethod(klass, "priority", Camera3D_Priority);
   DefineMethod(klass, "priority=", Camera3D_PriorityEqual);
+  rb_const_set(klass, rb_intern("CLEAR_NONE"),
+               WrapConstant(urge::Camera3D::ClearFlag::ClearNone));
+  rb_const_set(klass, rb_intern("CLEAR_COLOR"),
+               WrapConstant(urge::Camera3D::ClearFlag::ClearColor));
+  rb_const_set(klass, rb_intern("CLEAR_DEPTH"),
+               WrapConstant(urge::Camera3D::ClearFlag::ClearDepth));
+  rb_const_set(klass, rb_intern("CLEAR_STENCIL"),
+               WrapConstant(urge::Camera3D::ClearFlag::ClearStencil));
+  rb_const_set(klass, rb_intern("CLEAR_ALL"),
+               WrapConstant(urge::Camera3D::ClearFlag::ClearAll));
   InitCamera3DBindingAppend(klass);
 }
 // --- GENERATED END ---

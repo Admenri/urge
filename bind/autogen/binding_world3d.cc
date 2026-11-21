@@ -136,16 +136,16 @@ RB_FUNC(World3D_GetContext) {
 }
 
 // Attribute: x (int32_t)
-BINDING_ATTR_INT(World3D, urge::World3D, X);
+BINDING_ATTR_INT_TYPED(World3D, urge::World3D, X, int32_t);
 
 // Attribute: y (int32_t)
-BINDING_ATTR_INT(World3D, urge::World3D, Y);
+BINDING_ATTR_INT_TYPED(World3D, urge::World3D, Y, int32_t);
 
 // Attribute: width (int32_t)
-BINDING_ATTR_INT(World3D, urge::World3D, Width);
+BINDING_ATTR_INT_TYPED(World3D, urge::World3D, Width, int32_t);
 
 // Attribute: height (int32_t)
-BINDING_ATTR_INT(World3D, urge::World3D, Height);
+BINDING_ATTR_INT_TYPED(World3D, urge::World3D, Height, int32_t);
 
 // Attribute: scene (MaybePtr<Node3D>)
 BINDING_ATTR_OBJECT_REF(World3D,

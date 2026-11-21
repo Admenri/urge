@@ -36,12 +36,14 @@ class Skeleton3D;
 URGE_BINDING()
 class Animation3D : public Object {
  public:
+  URGE_BINDING()
   enum Path {
     kTranslation = 0,
     kRotation = 1,
     kScale = 2,
   };
 
+  URGE_BINDING()
   enum Interpolation {
     kLinear = 0,
     kStep = 1,

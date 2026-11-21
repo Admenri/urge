@@ -161,13 +161,56 @@ def ruby_default(param: dict) -> str | None:
     return default
 
 
+def ruby_type(cpp_type: str, documented_type: str = "") -> str:
+    """Present IR types to Ruby readers; keep unknown C++ spellings visible.
+
+    Mirrors rubyType() in index.html and the scalar mappings in gen_api_json.py.
+    MaybePtr (unlike RefPtr) explicitly accepts nil at the binding boundary.
+    """
+    cpp_type = cpp_type.strip()
+    pointer = re.fullmatch(r"(RefPtr|MaybePtr)<\s*([\w:]+)\s*>", cpp_type)
+    optional = re.fullmatch(r"std::optional<\s*(.+?)\s*>", cpp_type)
+    if documented_type:
+        result = documented_type
+    elif cpp_type == "void":
+        result = "nil"
+    elif cpp_type == "bool":
+        result = "Boolean"
+    elif cpp_type in ("float", "double"):
+        result = "Float"
+    elif re.fullmatch(r"u?int(?:8|16|32|64)_t|int|unsigned int|void\*", cpp_type):
+        result = "Integer"
+    elif cpp_type in ("std::string", "const char*", "char*"):
+        result = "String"
+    elif pointer:
+        result = pointer.group(2).split("::")[-1]
+    elif optional:
+        result = ruby_type(optional.group(1))
+    else:
+        vector = re.fullmatch(r"std::vector<\s*(.+?)\s*>", cpp_type)
+        result = "Array<%s>" % ruby_type(vector.group(1)) if vector else cpp_type or "?"
+    if (pointer and pointer.group(1) == "MaybePtr") or optional:
+        if "nil" not in result.split(" | "):
+            result += " | nil"
+    return result
+
+
+def param_type(param: dict) -> str:
+    return ruby_type(param.get("type", ""), param.get("ruby_type", ""))
+
+
+def return_type(member: dict) -> str:
+    returns = member.get("return")
+    if not returns:
+        return "--"
+    return ruby_type(returns.get("cpp_type", ""), returns.get("ruby_type", ""))
+
+
 def _sig_param(param: dict) -> str:
-    """``x`` / ``x = 0`` -- the Ruby-ish spelling of one parameter."""
-    name = param.get("name", "?")
+    """``x: Integer`` / ``x: Integer = 0`` -- a typed reference signature."""
+    text = "%s: %s" % (param.get("name", "?"), param_type(param))
     default = ruby_default(param)
-    if default is None:
-        return name
-    return "%s = %s" % (name, default)
+    return "%s = %s" % (text, default) if default is not None else text
 
 
 def _param_list(params: list[dict]) -> str:
@@ -323,6 +366,7 @@ def iter_members(entry: dict) -> list[dict]:
                     node["ruby_name"],
                     cpp_name=node.get("cpp_name", ""),
                     params=node.get("params", []),
+                    returns=node.get("return"),
                     export=node.get("export", ""),
                     note=role,
                 )
@@ -361,6 +405,7 @@ def iter_members(entry: dict) -> list[dict]:
                 "initialize_copy",
                 "initialize_copy",
                 params=copy.get("params", []),
+                returns={"ruby_type": entry["name"]},
                 export=copy.get("export", ""),
                 note="private, driven by #dup and #clone",
             )
@@ -403,7 +448,7 @@ _BARE_KINDS = frozenset(
 
 
 def format_signature(member: dict) -> str:
-    """``Sprite#bitmap``, ``Sprite#update()``, ``Font.default_bold``."""
+    """A reference signature with Ruby parameter types and translated defaults."""
     if member["kind"] == "unsupported":
         return member["ruby_name"]
     if member["kind"] in _BARE_KINDS:
@@ -412,17 +457,15 @@ def format_signature(member: dict) -> str:
 
 
 def format_writer(member: dict) -> str | None:
-    """``Sprite#bitmap = value``, or None for anything that is not an ATTR()."""
-    return member.get("writer")
+    """A typed attribute writer, or None for anything that is not an ATTR()."""
+    writer = member.get("writer")
+    return "%s: %s" % (writer, return_type(member)) if writer else None
 
 
 def format_returns(member: dict) -> str:
-    returns = member.get("return")
-    if not returns:
-        return "--"
-    ruby = returns.get("ruby_type") or "--"
-    cpp = returns.get("cpp_type")
-    return "%s  (%s)" % (ruby, cpp) if cpp and cpp != "void" else ruby
+    cpp = (member.get("return") or {}).get("cpp_type")
+    ruby = return_type(member)
+    return "%s  (%s)" % (ruby, cpp) if cpp else ruby
 
 
 # --------------------------------------------------------------------------- #
@@ -486,12 +529,13 @@ def search(ir: dict, query: str, limit: int = 40) -> list[dict]:
     for entry in owners(ir):
         for member in iter_members(entry):
             returns = member.get("return") or {}
-            hay = "%s %s %s %s" % (
-                member["call"],
+            hay = " ".join((
+                format_signature(member),
                 member["cpp_name"],
-                returns.get("ruby_type") or "",
-                " ".join(p.get("name", "") + " " + p.get("type", "") for p in member["params"]),
-            )
+                return_type(member),
+                returns.get("cpp_type") or "",
+                " ".join(p.get("type", "") for p in member["params"]),
+            )).lower()
             name = member["ruby_name"].lower()
             call = member["call"].lower()
             if name == needle:
@@ -544,12 +588,14 @@ def render_owner(entry: dict) -> str:
     lines.append("")
     # Every member of a class shares that class's export range, so it is
     # stated once above rather than repeated on each row.
-    lines.append("%-16s %-46s %s" % ("KIND", "SIGNATURE", "RETURNS"))
-    lines.append("-" * 92)
-    for member in members:
+    signatures = [format_signature(member) for member in members]
+    width = max([46] + [len(signature) for signature in signatures])
+    lines.append("%-16s %-*s %s" % ("KIND", width, "SIGNATURE", "RETURNS"))
+    lines.append("-" * (width + 46))
+    for member, signature in zip(members, signatures):
         lines.append(
-            "%-16s %-46s %s"
-            % (member["kind_label"], format_signature(member), format_returns(member))
+            "%-16s %-*s %s"
+            % (member["kind_label"], width, signature, format_returns(member))
         )
     lines.append("")
     lines.append("%d members (%d exported, %d skipped)"
@@ -571,9 +617,9 @@ def render_member(entry: dict, member: dict) -> str:
     if member["params"]:
         lines.append("params")
         for param in member["params"]:
-            default = ruby_default(param)
-            suffix = " = %s" % default if default is not None else ""
-            lines.append("  %-12s %s%s" % (param.get("name", "?"), param.get("type", "?"), suffix))
+            native = param.get("type", "")
+            cpp = "  (C++: %s)" % native if native else ""
+            lines.append("  %s%s" % (_sig_param(param), cpp))
     if member["flags"]:
         lines.append("flags     %s" % ", ".join(member["flags"]))
     if member["cpp_type"]:
@@ -735,7 +781,8 @@ def cmd_search(args: argparse.Namespace) -> int:
         print("no match for %r" % args.query)
         return 1
     for member in hits:
-        print("%-40s %-14s %s" % (format_signature(member), member["kind_label"], member["export"]))
+        signature = "%s -> %s" % (format_signature(member), return_type(member))
+        print("%-40s %-14s %s" % (signature, member["kind_label"], member["export"]))
     print()
     print("%d match(es)" % len(hits))
     return 0

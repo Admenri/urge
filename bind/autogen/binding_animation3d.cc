@@ -31,7 +31,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Animation3D  (core/scene3d/animation3d.h:37-106)
+// Animation3D  (core/scene3d/animation3d.h:37-108)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Animation3D);
@@ -257,6 +257,16 @@ void InitAnimation3DBinding() {
   DefineMethod(klass, "loop=", Animation3D_LoopEqual);
   DefineMethod(klass, "speed", Animation3D_Speed);
   DefineMethod(klass, "speed=", Animation3D_SpeedEqual);
+  rb_const_set(klass, rb_intern("TRANSLATION"),
+               WrapConstant(urge::Animation3D::kTranslation));
+  rb_const_set(klass, rb_intern("ROTATION"),
+               WrapConstant(urge::Animation3D::kRotation));
+  rb_const_set(klass, rb_intern("SCALE"),
+               WrapConstant(urge::Animation3D::kScale));
+  rb_const_set(klass, rb_intern("LINEAR"),
+               WrapConstant(urge::Animation3D::kLinear));
+  rb_const_set(klass, rb_intern("STEP"),
+               WrapConstant(urge::Animation3D::kStep));
   InitAnimation3DBindingAppend(klass);
 }
 // --- GENERATED END ---

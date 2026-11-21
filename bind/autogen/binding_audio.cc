@@ -369,8 +369,9 @@ RB_FUNC(Audio_MasterVolume) {
 
 RB_FUNC(Audio_MasterVolumeEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Audio::Get().Attr_MasterVolume(value);
@@ -393,8 +394,9 @@ RB_FUNC(Audio_BGMVolume) {
 
 RB_FUNC(Audio_BGMVolumeEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Audio::Get().Attr_BGMVolume(value);
@@ -417,8 +419,9 @@ RB_FUNC(Audio_BGSVolume) {
 
 RB_FUNC(Audio_BGSVolumeEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Audio::Get().Attr_BGSVolume(value);
@@ -441,8 +444,9 @@ RB_FUNC(Audio_MEVolume) {
 
 RB_FUNC(Audio_MEVolumeEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Audio::Get().Attr_MEVolume(value);
@@ -465,8 +469,9 @@ RB_FUNC(Audio_SEVolume) {
 
 RB_FUNC(Audio_SEVolumeEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Audio::Get().Attr_SEVolume(value);

@@ -197,40 +197,40 @@ BINDING_ATTR_BOOL(WindowVX, urge::WindowVX, ArrowsVisible);
 BINDING_ATTR_BOOL(WindowVX, urge::WindowVX, Pause);
 
 // Attribute: x (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, X);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, X, int32_t);
 
 // Attribute: y (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Y);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, Y, int32_t);
 
 // Attribute: width (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Width);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, Width, int32_t);
 
 // Attribute: height (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Height);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, Height, int32_t);
 
 // Attribute: ox (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, OX);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, OX, int32_t);
 
 // Attribute: oy (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, OY);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, OY, int32_t);
 
 // Attribute: padding (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Padding);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, Padding, int32_t);
 
 // Attribute: padding_bottom (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, PaddingBottom);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, PaddingBottom, int32_t);
 
 // Attribute: opacity (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Opacity);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, Opacity, int32_t);
 
 // Attribute: back_opacity (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, BackOpacity);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, BackOpacity, int32_t);
 
 // Attribute: contents_opacity (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, ContentsOpacity);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, ContentsOpacity, int32_t);
 
 // Attribute: openness (int32_t)
-BINDING_ATTR_INT(WindowVX, urge::WindowVX, Openness);
+BINDING_ATTR_INT_TYPED(WindowVX, urge::WindowVX, Openness, int32_t);
 
 // Attribute: tone (RefPtr<Tone>)
 BINDING_ATTR_OBJECT(WindowVX,

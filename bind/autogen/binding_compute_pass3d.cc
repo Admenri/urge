@@ -142,13 +142,13 @@ RB_FUNC(ComputePass3D_SetTarget) {
 }
 
 // Attribute: dispatch_x (int32_t)
-BINDING_ATTR_INT(ComputePass3D, urge::ComputePass3D, DispatchX);
+BINDING_ATTR_INT_TYPED(ComputePass3D, urge::ComputePass3D, DispatchX, int32_t);
 
 // Attribute: dispatch_y (int32_t)
-BINDING_ATTR_INT(ComputePass3D, urge::ComputePass3D, DispatchY);
+BINDING_ATTR_INT_TYPED(ComputePass3D, urge::ComputePass3D, DispatchY, int32_t);
 
 // Attribute: dispatch_z (int32_t)
-BINDING_ATTR_INT(ComputePass3D, urge::ComputePass3D, DispatchZ);
+BINDING_ATTR_INT_TYPED(ComputePass3D, urge::ComputePass3D, DispatchZ, int32_t);
 
 void InitComputePass3DBindingAppend(VALUE klass);
 

@@ -192,16 +192,16 @@ RB_FUNC(Rect_Empty) {
 }
 
 // Attribute: x (int32_t)
-BINDING_ATTR_INT(Rect, urge::Rect, X);
+BINDING_ATTR_INT_TYPED(Rect, urge::Rect, X, int32_t);
 
 // Attribute: y (int32_t)
-BINDING_ATTR_INT(Rect, urge::Rect, Y);
+BINDING_ATTR_INT_TYPED(Rect, urge::Rect, Y, int32_t);
 
 // Attribute: width (int32_t)
-BINDING_ATTR_INT(Rect, urge::Rect, Width);
+BINDING_ATTR_INT_TYPED(Rect, urge::Rect, Width, int32_t);
 
 // Attribute: height (int32_t)
-BINDING_ATTR_INT(Rect, urge::Rect, Height);
+BINDING_ATTR_INT_TYPED(Rect, urge::Rect, Height, int32_t);
 
 void InitRectBindingAppend(VALUE klass);
 

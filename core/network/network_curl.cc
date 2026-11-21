@@ -25,6 +25,8 @@
 #include <curl/curl.h>
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <deque>
 #include <memory>
@@ -60,7 +62,11 @@ std::size_t OnHeader(char* data,
                      void* user) {
   auto* out = static_cast<std::vector<std::string>*>(user);
   const std::size_t total = size * count;
-  out->push_back(std::string(data, total));
+  std::string line(data, total);
+  // Redirects and informational responses begin a new header block.
+  if (line.compare(0, 5, "HTTP/") == 0)
+    out->clear();
+  out->push_back(std::move(line));
   return total;
 }
 
@@ -87,10 +93,12 @@ class CurlWebSocketImpl final : public WebSocketImpl {
  public:
   CurlWebSocketImpl(NetworkBackend* backend,
                     std::string url,
-                    std::vector<std::string> protocols)
+                    std::vector<std::string> protocols,
+                    int32_t timeout)
       : backend_(backend),
         url_(std::move(url)),
-        protocols_(std::move(protocols)) {}
+        protocols_(std::move(protocols)),
+        timeout_(timeout) {}
 
   ~CurlWebSocketImpl() override {
     if (backend_)
@@ -192,12 +200,8 @@ class CurlWebSocketImpl final : public WebSocketImpl {
   struct Outgoing {
     std::string data;
     unsigned int flags = 0;
+    std::size_t offset = 0;
   };
-
-  void Join() {
-    if (worker_.joinable())
-      worker_.join();
-  }
 
   void QueueSend(std::string data, unsigned int flags) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -205,6 +209,8 @@ class CurlWebSocketImpl final : public WebSocketImpl {
       return;
 
     outgoing_.push_back(Outgoing{std::move(data), flags});
+    if (flags & CURLWS_CLOSE)
+      ready_state_ = WebSocket::Closing;
   }
 
   void QueueControl(std::string data, unsigned int flags) {
@@ -223,12 +229,19 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     error_ = error;
   }
 
+  void Fail(const std::string& message) {
+    auto event = MakeEvent(NetworkEvent::Error);
+    event->message_ = message;
+    Finish(WebSocket::ClosedState, message);
+    PushEvent(std::move(event));
+  }
+
   bool DrainOutgoing(CURL* handle) {
     for (;;) {
       Outgoing item;
       {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (outgoing_.empty() || ready_state_ != WebSocket::OpenState)
+        if (outgoing_.empty() || ready_state_ == WebSocket::ClosedState)
           return true;
 
         item = std::move(outgoing_.front());
@@ -237,87 +250,100 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
       std::size_t sent = 0;
       const CURLcode code =
-          curl_ws_send(handle, item.data.data(), item.data.size(), &sent,
-                       static_cast<curl_off_t>(item.data.size()), item.flags);
-      if (code == CURLE_AGAIN) {
+          curl_ws_send(handle, item.data.data() + item.offset,
+                       item.data.size() - item.offset, &sent, 0, item.flags);
+      if (code != CURLE_OK && code != CURLE_AGAIN) {
+        Fail(curl_easy_strerror(code));
+        return false;
+      }
+      item.offset += sent;
+      if (code == CURLE_AGAIN || item.offset < item.data.size()) {
         std::lock_guard<std::mutex> lock(mutex_);
         outgoing_.push_front(std::move(item));
         return true;
       }
-      if (code != CURLE_OK) {
-        PushEvent(MakeEvent(NetworkEvent::Error));
-        Finish(WebSocket::ClosedState, curl_easy_strerror(code));
-        return false;
-      }
+      if (item.flags & CURLWS_CLOSE)
+        close_sent_ = true;
     }
   }
 
   void HandleFrame(const std::string& chunk, const struct curl_ws_frame* meta) {
-    if (meta->flags & CURLWS_PING) {
-      QueueControl(chunk, CURLWS_PONG);
-      return;
-    }
-
-    if (meta->flags & CURLWS_CLOSE) {
-      int32_t code = 1005;
-      std::string reason;
-      if (chunk.size() >= 2) {
-        code = (static_cast<unsigned char>(chunk[0]) << 8) |
-               static_cast<unsigned char>(chunk[1]);
-        reason = chunk.substr(2);
-      }
-
-      auto event = MakeEvent(NetworkEvent::Close);
-      event->code_ = code;
-      event->reason_ = reason;
-      PushEvent(std::move(event));
-      Finish(WebSocket::ClosedState, std::string());
-      return;
-    }
-
-    if (meta->flags & CURLWS_CONT) {
-      if (!in_message_)
+    if (meta->flags & (CURLWS_PING | CURLWS_PONG | CURLWS_CLOSE)) {
+      if (meta->offset == 0)
+        control_.clear();
+      control_ += chunk;
+      if (meta->bytesleft > 0)
         return;
-    } else if (meta->flags & (CURLWS_TEXT | CURLWS_BINARY)) {
-      if (!in_message_) {
-        in_message_ = true;
-        fragment_.clear();
-        fragment_type_ = (meta->flags & CURLWS_TEXT) ? NetworkEvent::Text
-                                                     : NetworkEvent::Binary;
+      if (meta->flags & CURLWS_PING) {
+        QueueControl(control_, CURLWS_PONG);
+      } else if (meta->flags & CURLWS_CLOSE) {
+        auto event = MakeEvent(NetworkEvent::Close);
+        event->code_ = 1005;
+        if (control_.size() >= 2) {
+          event->code_ = (static_cast<unsigned char>(control_[0]) << 8) |
+                         static_cast<unsigned char>(control_[1]);
+          event->reason_ = control_.substr(2);
+        }
+        // Reply to a server-initiated close before releasing the connection.
+        if (!close_sent_)
+          QueueControl(control_, CURLWS_CLOSE);
+        received_close_ = std::move(event);
+        std::lock_guard<std::mutex> lock(mutex_);
+        ready_state_ = WebSocket::Closing;
       }
+      return;  // Pongs are control frames, never Ruby data events.
     }
 
+    if (!(meta->flags & (CURLWS_TEXT | CURLWS_BINARY)))
+      return;
+    if (!in_message_) {
+      in_message_ = true;
+      fragment_.clear();
+      fragment_type_ = (meta->flags & CURLWS_TEXT) ? NetworkEvent::Text
+                                                   : NetworkEvent::Binary;
+    }
     fragment_ += chunk;
-
-    if (meta->bytesleft > 0)
+    // bytesleft describes the current frame; CONT means another frame follows.
+    if (meta->bytesleft > 0 || (meta->flags & CURLWS_CONT))
       return;
 
-    if (fragment_type_ == NetworkEvent::Text) {
-      auto event = MakeEvent(NetworkEvent::Text);
+    auto event = MakeEvent(fragment_type_);
+    if (fragment_type_ == NetworkEvent::Text)
       event->text_ = fragment_;
-      event->data_ = fragment_;
-      PushEvent(std::move(event));
-    } else {
-      auto event = MakeEvent(NetworkEvent::Binary);
-      event->data_ = fragment_;
-      PushEvent(std::move(event));
-    }
-
-    fragment_.clear();
+    event->data_ = std::move(fragment_);
+    PushEvent(std::move(event));
     in_message_ = false;
   }
 
   void Run() {
     CURL* handle = curl_easy_init();
     if (!handle) {
-      PushEvent(MakeEvent(NetworkEvent::Error));
-      Finish(WebSocket::ClosedState, "curl_easy_init failed");
+      Fail("curl_easy_init failed");
       return;
     }
 
     curl_easy_setopt(handle, CURLOPT_URL, url_.c_str());
+    connect_deadline_ =
+        std::chrono::steady_clock::now() + std::chrono::seconds(timeout_);
     curl_easy_setopt(handle, CURLOPT_CONNECT_ONLY, 2L);
     curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, static_cast<long>(timeout_));
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT,
+                     static_cast<long>(timeout_));
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, this);
+    curl_easy_setopt(
+        handle, CURLOPT_XFERINFOFUNCTION,
+        +[](void* user, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
+          auto* self = static_cast<CurlWebSocketImpl*>(user);
+          std::lock_guard<std::mutex> lock(self->mutex_);
+          return self->stopping_ ||
+                         (self->ready_state_ == WebSocket::Connecting &&
+                          std::chrono::steady_clock::now() >=
+                              self->connect_deadline_)
+                     ? 1
+                     : 0;
+        });
     ConfigureTls(handle);
 
     curl_easy_setopt(handle, CURLOPT_WS_OPTIONS, (long)CURLWS_NOAUTOPONG);
@@ -345,8 +371,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
       curl_slist_free_all(request_headers);
 
     if (handshake != CURLE_OK) {
-      PushEvent(MakeEvent(NetworkEvent::Error));
-      Finish(WebSocket::ClosedState, curl_easy_strerror(handshake));
+      Fail(curl_easy_strerror(handshake));
       curl_easy_cleanup(handle);
       return;
     }
@@ -354,8 +379,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     curl_socket_t sock = CURL_SOCKET_BAD;
     curl_easy_getinfo(handle, CURLINFO_ACTIVESOCKET, &sock);
     if (sock == CURL_SOCKET_BAD) {
-      PushEvent(MakeEvent(NetworkEvent::Error));
-      Finish(WebSocket::ClosedState, "the websocket has no active socket");
+      Fail("the websocket has no active socket");
       curl_easy_cleanup(handle);
       return;
     }
@@ -377,6 +401,19 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
       if (!DrainOutgoing(handle))
         break;
+      if (received_close_) {
+        bool drained = false;
+        {
+          std::lock_guard<std::mutex> lock(mutex_);
+          drained = outgoing_.empty();
+        }
+        if (drained) {
+          Finish(WebSocket::ClosedState, std::string());
+          PushEvent(std::move(received_close_));
+          break;
+        }
+        continue;
+      }
 
       fd_set read_set;
       FD_ZERO(&read_set);
@@ -388,8 +425,10 @@ class CurlWebSocketImpl final : public WebSocketImpl {
 
       const int ready = select(static_cast<int>(sock) + 1, &read_set, nullptr,
                                nullptr, &timeout);
-      if (ready < 0)
+      if (ready < 0) {
+        Fail("websocket select failed");
         break;
+      }
 
       for (;;) {
         std::size_t received = 0;
@@ -399,12 +438,13 @@ class CurlWebSocketImpl final : public WebSocketImpl {
         if (code == CURLE_AGAIN)
           break;
         if (code != CURLE_OK) {
-          PushEvent(MakeEvent(NetworkEvent::Error));
-          Finish(WebSocket::ClosedState, curl_easy_strerror(code));
+          Fail(curl_easy_strerror(code));
           break;
         }
 
         HandleFrame(std::string(buffer.data(), received), meta);
+        if (received_close_)
+          break;
 
         {
           std::lock_guard<std::mutex> lock(mutex_);
@@ -426,6 +466,8 @@ class CurlWebSocketImpl final : public WebSocketImpl {
   NetworkBackend* backend_ = nullptr;
   std::string url_;
   std::vector<std::string> protocols_;
+  int32_t timeout_ = 30;
+  std::chrono::steady_clock::time_point connect_deadline_;
 
   mutable std::mutex mutex_;
   std::thread worker_;
@@ -440,6 +482,9 @@ class CurlWebSocketImpl final : public WebSocketImpl {
   std::string fragment_;
   int32_t fragment_type_ = NetworkEvent::Text;
   bool in_message_ = false;
+  std::string control_;
+  bool close_sent_ = false;
+  RefPtr<NetworkEvent> received_close_;
 
   std::deque<Outgoing> outgoing_;
   std::deque<RefPtr<NetworkEvent>> worker_queue_;
@@ -451,13 +496,18 @@ class CurlFetchImpl final : public FetchImpl {
   CurlFetchImpl(std::string url,
                 std::string method,
                 std::string body,
-                std::vector<std::string> headers)
+                std::vector<std::string> headers,
+                int32_t timeout)
       : url_(std::move(url)),
         method_(std::move(method)),
         body_(std::move(body)),
-        headers_(std::move(headers)) {}
+        headers_(std::move(headers)),
+        timeout_(timeout) {}
 
-  ~CurlFetchImpl() override { Join(); }
+  ~CurlFetchImpl() override {
+    aborted_.store(true);
+    Join();
+  }
 
   void Start() override {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -469,15 +519,20 @@ class CurlFetchImpl final : public FetchImpl {
   }
 
   void Abort() override {
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      aborted_ = true;
-    }
-    Join();
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (completed_)
+      return;
+    aborted_.store(true);
+    started_ = true;  // Aborting an idle request must not allow a later start.
+    result_error_ = "the request was aborted";
+    completed_ = finished_ = true;
+    // The worker observes aborted_ in its progress callback; never block Ruby.
   }
 
   void Poll(Fetch& self) override {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (!self.done_)
+      self.progress_ = progress_.load();
     if (!finished_)
       return;
 
@@ -516,13 +571,28 @@ class CurlFetchImpl final : public FetchImpl {
     curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, "");
     curl_easy_setopt(handle, CURLOPT_USERAGENT, "URGE");
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, static_cast<long>(timeout_));
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, this);
+    curl_easy_setopt(
+        handle, CURLOPT_XFERINFOFUNCTION,
+        +[](void* user, curl_off_t total, curl_off_t received, curl_off_t,
+            curl_off_t) -> int {
+          auto* self = static_cast<CurlFetchImpl*>(user);
+          if (total > 0)
+            self->progress_.store(static_cast<float>(received) /
+                                  static_cast<float>(total));
+          return self->aborted_.load() ? 1 : 0;
+        });
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, OnWrite);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, &body);
     curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, OnHeader);
     curl_easy_setopt(handle, CURLOPT_HEADERDATA, &header_lines);
     ConfigureTls(handle);
 
-    if (method_ != "GET" && method_ != "get") {
+    if (method_ == "HEAD" || method_ == "head") {
+      curl_easy_setopt(handle, CURLOPT_NOBODY, 1L);
+    } else if (method_ != "GET" && method_ != "get") {
       curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, method_.c_str());
       if (!body_.empty()) {
         curl_easy_setopt(handle, CURLOPT_POSTFIELDS, body_.data());
@@ -554,9 +624,19 @@ class CurlFetchImpl final : public FetchImpl {
     result_headers_ = std::move(header_lines);
     if (code != CURLE_OK)
       result_error_ = curl_easy_strerror(code);
-    else
-      result_status_text_ = StatusText(result_status_);
-    finished_ = true;
+    else if (!result_headers_.empty()) {
+      const auto& status_line = result_headers_.front();
+      const auto first = status_line.find(' ');
+      const auto second = first == std::string::npos
+                              ? std::string::npos
+                              : status_line.find(' ', first + 1);
+      if (second != std::string::npos) {
+        result_status_text_ = status_line.substr(second + 1);
+        const auto end = result_status_text_.find_last_not_of("\r\n");
+        result_status_text_.resize(end == std::string::npos ? 0 : end + 1);
+      }
+    }
+    completed_ = finished_ = true;
   }
 
   void FinishWithError(const char* message) {
@@ -565,53 +645,21 @@ class CurlFetchImpl final : public FetchImpl {
       return;
 
     result_error_ = message;
-    finished_ = true;
-  }
-
-  static std::string StatusText(int32_t status) {
-    switch (status) {
-      case 200:
-        return "OK";
-      case 201:
-        return "Created";
-      case 204:
-        return "No Content";
-      case 301:
-        return "Moved Permanently";
-      case 302:
-        return "Found";
-      case 304:
-        return "Not Modified";
-      case 400:
-        return "Bad Request";
-      case 401:
-        return "Unauthorized";
-      case 403:
-        return "Forbidden";
-      case 404:
-        return "Not Found";
-      case 405:
-        return "Method Not Allowed";
-      case 500:
-        return "Internal Server Error";
-      case 502:
-        return "Bad Gateway";
-      case 503:
-        return "Service Unavailable";
-      default:
-        return std::string();
-    }
+    completed_ = finished_ = true;
   }
 
   std::string url_;
   std::string method_;
   std::string body_;
   std::vector<std::string> headers_;
+  int32_t timeout_ = 30;
 
   std::mutex mutex_;
   std::thread worker_;
   bool started_ = false;
-  bool aborted_ = false;
+  std::atomic_bool aborted_ = false;
+  std::atomic<float> progress_ = 0.0f;
+  bool completed_ = false;
   bool finished_ = false;
 
   std::string result_body_;
@@ -645,30 +693,28 @@ class CurlNetworkBackend final : public NetworkBackend {
       socket->SetMaxEvents(max_events_);
   }
 
-  RefPtr<WebSocket> OpenWebSocket(
+  std::unique_ptr<WebSocketImpl> CreateWebSocketImpl(
       const std::string& url,
-      const std::vector<std::string>& protocols) override {
-    auto socket = MakeRefCounted<WebSocket>(url, protocols);
-    auto impl = std::make_unique<CurlWebSocketImpl>(this, url, protocols);
+      const std::vector<std::string>& protocols,
+      int32_t timeout) override {
+    auto impl =
+        std::make_unique<CurlWebSocketImpl>(this, url, protocols, timeout);
     impl->SetMaxEvents(max_events_);
-    CurlWebSocketImpl* raw = impl.get();
-    socket->Attach(std::move(impl));
-
     {
       std::lock_guard<std::mutex> lock(mutex_);
-      sockets_.push_back(raw);
+      sockets_.push_back(impl.get());
     }
-    raw->Start();
-    return socket;
+    impl->Start();
+    return impl;
   }
 
-  RefPtr<Fetch> OpenFetch(const std::string& url,
-                          const std::string& method,
-                          const std::string& body,
-                          const std::vector<std::string>& headers) override {
-    auto fetch = MakeRefCounted<Fetch>(url, method, body, headers);
-    fetch->Attach(std::make_unique<CurlFetchImpl>(url, method, body, headers));
-    return fetch;
+  std::unique_ptr<FetchImpl> CreateFetchImpl(
+      const std::string& url,
+      const std::string& method,
+      const std::string& body,
+      const std::vector<std::string>& headers,
+      int32_t timeout) override {
+    return std::make_unique<CurlFetchImpl>(url, method, body, headers, timeout);
   }
 
   void CloseAll() override {
@@ -695,10 +741,10 @@ class CurlNetworkBackend final : public NetworkBackend {
   int32_t max_events_ = 1024;
 };
 
-}
+}  // namespace
 
 std::unique_ptr<NetworkBackend> CreateNetworkBackend() {
   return std::make_unique<CurlNetworkBackend>();
 }
 
-}
+}  // namespace urge

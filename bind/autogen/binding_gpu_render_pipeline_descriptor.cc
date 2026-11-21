@@ -30,7 +30,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPURenderPipelineDescriptor  (core/graphics/gpu.h:482-594)
+// GPURenderPipelineDescriptor  (core/graphics/gpu.h:482-599)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPURenderPipelineDescriptor, GPUObject);
@@ -157,14 +157,17 @@ RB_FUNC(GPURenderPipelineDescriptor_SetFragmentEntryPoint) {
 RB_FUNC(GPURenderPipelineDescriptor_AddVertexAttribute) {
   auto* self_obj = GetSelfData<urge::GPURenderPipelineDescriptor>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 4);
   uint32_t slot, location, format;
   uint64_t offset;
   ParseArgs(argc, argv, "uuup", &slot, &location, &format, &offset);
 
   {
-    self_obj->AddVertexAttribute(slot, location, format, offset);
+    self_obj->AddVertexAttribute(exception_state, slot, location, format,
+        offset);
   }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -174,24 +177,28 @@ RB_FUNC(GPURenderPipelineDescriptor_SetVertexBuffer) {
 
   if (argc == 2) {
     // set_vertex_buffer(slot, stride)
+    urge::ExceptionState exception_state;
     uint32_t slot;
     uint64_t stride;
     ParseArgs(argc, argv, "up", &slot, &stride);
 
     {
-      self_obj->SetVertexBuffer(slot, stride);
+      self_obj->SetVertexBuffer(exception_state, slot, stride);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 3) {
     // set_vertex_buffer(slot, stride, step_mode)
+    urge::ExceptionState exception_state;
     uint32_t slot, step_mode;
     uint64_t stride;
     ParseArgs(argc, argv, "upu", &slot, &stride, &step_mode);
 
     {
-      self_obj->SetVertexBuffer(slot, stride, step_mode);
+      self_obj->SetVertexBuffer(exception_state, slot, stride, step_mode);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else {
@@ -204,22 +211,26 @@ RB_FUNC(GPURenderPipelineDescriptor_AddColorTarget) {
 
   if (argc == 1) {
     // add_color_target(format)
+    urge::ExceptionState exception_state;
     uint32_t format;
     ParseArgs(argc, argv, "u", &format);
 
     {
-      self_obj->AddColorTarget(format);
+      self_obj->AddColorTarget(exception_state, format);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 2) {
     // add_color_target(format, write_mask)
+    urge::ExceptionState exception_state;
     uint32_t format, write_mask;
     ParseArgs(argc, argv, "uu", &format, &write_mask);
 
     {
-      self_obj->AddColorTarget(format, write_mask);
+      self_obj->AddColorTarget(exception_state, format, write_mask);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else {
@@ -232,48 +243,57 @@ RB_FUNC(GPURenderPipelineDescriptor_SetColorBlend) {
 
   if (argc == 4) {
     // set_color_blend(index, color_op, src_factor, dst_factor)
+    urge::ExceptionState exception_state;
     uint32_t index, color_op, src_factor, dst_factor;
     ParseArgs(argc, argv, "uuuu", &index, &color_op, &src_factor, &dst_factor);
 
     {
-      self_obj->SetColorBlend(index, color_op, src_factor, dst_factor);
+      self_obj->SetColorBlend(exception_state, index, color_op, src_factor,
+          dst_factor);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 5) {
     // set_color_blend(index, color_op, src_factor, dst_factor, alpha_op)
+    urge::ExceptionState exception_state;
     uint32_t index, color_op, src_factor, dst_factor, alpha_op;
     ParseArgs(argc, argv, "uuuuu", &index, &color_op, &src_factor, &dst_factor,
         &alpha_op);
 
     {
-      self_obj->SetColorBlend(index, color_op, src_factor, dst_factor,
-          alpha_op);
+      self_obj->SetColorBlend(exception_state, index, color_op, src_factor,
+          dst_factor, alpha_op);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 6) {
     // set_color_blend(index, color_op, src_factor, dst_factor, alpha_op, alpha_src)
+    urge::ExceptionState exception_state;
     uint32_t index, color_op, src_factor, dst_factor, alpha_op, alpha_src;
     ParseArgs(argc, argv, "uuuuuu", &index, &color_op, &src_factor, &dst_factor,
         &alpha_op, &alpha_src);
 
     {
-      self_obj->SetColorBlend(index, color_op, src_factor, dst_factor, alpha_op,
-          alpha_src);
+      self_obj->SetColorBlend(exception_state, index, color_op, src_factor,
+          dst_factor, alpha_op, alpha_src);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else if (argc == 7) {
     // set_color_blend(index, color_op, src_factor, dst_factor, alpha_op, alpha_src, alpha_dst)
+    urge::ExceptionState exception_state;
     uint32_t index, color_op, src_factor, dst_factor, alpha_op, alpha_src, alpha_dst;
     ParseArgs(argc, argv, "uuuuuuu", &index, &color_op, &src_factor,
         &dst_factor, &alpha_op, &alpha_src, &alpha_dst);
 
     {
-      self_obj->SetColorBlend(index, color_op, src_factor, dst_factor, alpha_op,
-          alpha_src, alpha_dst);
+      self_obj->SetColorBlend(exception_state, index, color_op, src_factor,
+          dst_factor, alpha_op, alpha_src, alpha_dst);
     }
+    RaiseException(exception_state);
 
     return Qnil;
   } else {
@@ -499,9 +519,10 @@ BINDING_ATTR_OBJECT_REF(GPURenderPipelineDescriptor,
                         CheckMaybeObject);
 
 // Attribute: topology (uint32_t)
-BINDING_ATTR_INT(GPURenderPipelineDescriptor,
-                 urge::GPURenderPipelineDescriptor,
-                 Topology);
+BINDING_ATTR_INT_TYPED(GPURenderPipelineDescriptor,
+                       urge::GPURenderPipelineDescriptor,
+                       Topology,
+                       uint32_t);
 
 void InitGPURenderPipelineDescriptorBindingAppend(VALUE klass);
 

@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Mouse  (core/input/mouse.h:38-101)
+// Mouse  (core/input/mouse.h:38-102)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Mouse_Update) {
@@ -392,6 +392,16 @@ void InitMouseBinding() {
   DefineModuleFunction(mod, "raw=", Mouse_RawEqual);
   DefineModuleFunction(mod, "speed_scale", Mouse_SpeedScale);
   DefineModuleFunction(mod, "speed_scale=", Mouse_SpeedScaleEqual);
+  rb_const_set(mod, rb_intern("LEFT"),
+               WrapConstant(urge::Mouse::Left));
+  rb_const_set(mod, rb_intern("MIDDLE"),
+               WrapConstant(urge::Mouse::Middle));
+  rb_const_set(mod, rb_intern("RIGHT"),
+               WrapConstant(urge::Mouse::Right));
+  rb_const_set(mod, rb_intern("X1"),
+               WrapConstant(urge::Mouse::X1));
+  rb_const_set(mod, rb_intern("X2"),
+               WrapConstant(urge::Mouse::X2));
   InitMouseBindingAppend(mod);
 }
 // --- GENERATED END ---
@@ -403,11 +413,7 @@ void InitMouseBinding() {
 // differs from its C++ one -- belong here. The block is preserved
 // verbatim; empty it and the generator writes this body back.
 void InitMouseBindingAppend(VALUE klass) {
-  rb_const_set(klass, rb_intern("LEFT"), INT2NUM(urge::Mouse::Left));
-  rb_const_set(klass, rb_intern("MIDDLE"), INT2NUM(urge::Mouse::Middle));
-  rb_const_set(klass, rb_intern("RIGHT"), INT2NUM(urge::Mouse::Right));
-  rb_const_set(klass, rb_intern("X1"), INT2NUM(urge::Mouse::X1));
-  rb_const_set(klass, rb_intern("X2"), INT2NUM(urge::Mouse::X2));
+  (void)klass;
 }
 // --- HANDWRITTEN INIT END ---
 

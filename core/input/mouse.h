@@ -40,6 +40,7 @@ class Mouse : public Singleton<Mouse> {
   Mouse();
   ~Mouse();
 
+  URGE_BINDING()
   enum Button {
     Left = SDL_BUTTON_LEFT,
     Middle = SDL_BUTTON_MIDDLE,

@@ -102,9 +102,10 @@ RB_FUNC(GPUPipelineLayoutDescriptor_AddBindGroupLayout) {
 }
 
 // Attribute: immediate_size (uint32_t)
-BINDING_ATTR_INT(GPUPipelineLayoutDescriptor,
-                 urge::GPUPipelineLayoutDescriptor,
-                 ImmediateSize);
+BINDING_ATTR_INT_TYPED(GPUPipelineLayoutDescriptor,
+                       urge::GPUPipelineLayoutDescriptor,
+                       ImmediateSize,
+                       uint32_t);
 
 void InitGPUPipelineLayoutDescriptorBindingAppend(VALUE klass);
 

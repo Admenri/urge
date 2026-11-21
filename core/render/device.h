@@ -64,8 +64,11 @@ class GPUDevice : public Singleton<GPUDevice> {
   wgpu::Queue queue() const { return queue_; }
 
   const DeviceInfo& info() const { return info_; }
+  const wgpu::Limits& limits() const { return limits_; }
 
-  uint32_t max_texture_dimension_2d() const { return max_texture_dimension_2d_; }
+  uint32_t max_texture_dimension_2d() const {
+    return max_texture_dimension_2d_;
+  }
 
   bool RefreshSurface();
 
@@ -94,7 +97,8 @@ class GPUDevice : public Singleton<GPUDevice> {
   wgpu::Queue queue_;
 
   DeviceInfo info_;
+  wgpu::Limits limits_;
   uint32_t max_texture_dimension_2d_ = 1;
 };
 
-}
+}  // namespace urge

@@ -542,19 +542,24 @@ class GPURenderPipelineDescriptor : public GPUObject {
   }
 
   URGE_BINDING()
-  void AddVertexAttribute(uint32_t slot,
+  void AddVertexAttribute(URGE_EXCEPT,
+                          uint32_t slot,
                           uint32_t location,
                           uint32_t format,
                           uint64_t offset);
 
   URGE_BINDING()
-  void SetVertexBuffer(uint32_t slot, uint64_t stride, uint32_t step_mode = 1);
+  void SetVertexBuffer(URGE_EXCEPT,
+                       uint32_t slot,
+                       uint64_t stride,
+                       uint32_t step_mode = 1);
 
   URGE_BINDING()
-  void AddColorTarget(uint32_t format, uint32_t write_mask = 0xF);
+  void AddColorTarget(URGE_EXCEPT, uint32_t format, uint32_t write_mask = 0xF);
 
   URGE_BINDING()
-  void SetColorBlend(uint32_t index,
+  void SetColorBlend(URGE_EXCEPT,
+                     uint32_t index,
                      uint32_t color_op,
                      uint32_t src_factor,
                      uint32_t dst_factor,
@@ -731,32 +736,41 @@ class GPUQuerySetDescriptor : public GPUObject {
 URGE_BINDING()
 class GPUBuffer : public GPUObject {
  public:
-  GPUBuffer(wgpu::Buffer buffer) : buffer_(buffer) {}
+  GPUBuffer(wgpu::Buffer buffer, bool mapped_at_creation = false);
 
   URGE_BINDING(Name : "size")
   uint64_t GetSize() { return buffer_.GetSize(); }
-  URGE_BINDING()
+  URGE_BINDING(ReadOnly : true)
   ATTR(uint32_t, Usage) { return static_cast<uint32_t>(buffer_.GetUsage()); }
-  URGE_BINDING()
+  URGE_BINDING(ReadOnly : true)
   ATTR(uint32_t, MapState) {
     return static_cast<uint32_t>(buffer_.GetMapState());
   }
 
   URGE_BINDING()
-  bool MapAsync(uint32_t mode, uint64_t offset, uint64_t size);
+  bool MapAsync(URGE_EXCEPT, uint32_t mode, uint64_t offset, uint64_t size);
   URGE_BINDING()
-  void Unmap() { buffer_.Unmap(); }
+  void Unmap();
+  URGE_BINDING(Binary : true)
+  std::string Read(URGE_EXCEPT, uint64_t offset, uint64_t size);
   URGE_BINDING()
-  std::string Read(uint64_t offset, uint64_t size);
+  void Write(URGE_EXCEPT, uint64_t offset, std::string data);
   URGE_BINDING()
-  void Write(uint64_t offset, std::string data);
-  URGE_BINDING()
-  void Destroy() { buffer_.Destroy(); }
+  void Destroy();
 
   wgpu::Buffer handle() const { return buffer_; }
 
  private:
+  bool NormalizeRange(URGE_EXCEPT, uint64_t offset, uint64_t& size) const;
+  bool CheckMappedRange(URGE_EXCEPT, uint64_t offset, uint64_t size) const;
+
   wgpu::Buffer buffer_;
+  bool mapped_ = false;
+  bool destroyed_ = false;
+  uint32_t mapped_mode_ = 0;
+  uint64_t mapped_offset_ = 0;
+  uint64_t mapped_size_ = 0;
+  const char* mapped_data_ = nullptr;
 };
 
 URGE_BINDING()
@@ -1108,41 +1122,51 @@ class GPU : public Singleton<GPU> {
  public:
   URGE_BINDING()
   enum MapMode {
-    MapRead = 1,
-    MapWrite = 2,
+    MapRead = static_cast<uint32_t>(wgpu::MapMode::Read),
+    MapWrite = static_cast<uint32_t>(wgpu::MapMode::Write),
+    MapNone = static_cast<uint32_t>(wgpu::MapMode::None),
   };
 
   URGE_BINDING()
   enum BufferUsage {
-    CopySrc = 4,
-    CopyDst = 8,
-    Index = 16,
-    Vertex = 32,
-    Uniform = 64,
-    Storage = 128,
-    Indirect = 256,
-    QueryResolve = 512,
+    CopySrc = static_cast<uint32_t>(wgpu::BufferUsage::CopySrc),
+    CopyDst = static_cast<uint32_t>(wgpu::BufferUsage::CopyDst),
+    Index = static_cast<uint32_t>(wgpu::BufferUsage::Index),
+    Vertex = static_cast<uint32_t>(wgpu::BufferUsage::Vertex),
+    Uniform = static_cast<uint32_t>(wgpu::BufferUsage::Uniform),
+    Storage = static_cast<uint32_t>(wgpu::BufferUsage::Storage),
+    Indirect = static_cast<uint32_t>(wgpu::BufferUsage::Indirect),
+    QueryResolve = static_cast<uint32_t>(wgpu::BufferUsage::QueryResolve),
+    BufferUsageNone = static_cast<uint32_t>(wgpu::BufferUsage::None),
+    // MAP_READ/MAP_WRITE above are also the buffer mapping usage bits.
   };
 
   URGE_BINDING()
   enum TextureUsage {
-    TextureBinding = 4,
-    TextureStorageBinding = 8,
-    TextureRenderAttachment = 16,
-    TextureCopySrc = 32,
-    TextureCopyDst = 64,
+    TextureBinding = static_cast<uint32_t>(wgpu::TextureUsage::TextureBinding),
+    TextureStorageBinding =
+        static_cast<uint32_t>(wgpu::TextureUsage::StorageBinding),
+    TextureRenderAttachment =
+        static_cast<uint32_t>(wgpu::TextureUsage::RenderAttachment),
+    TextureCopySrc = static_cast<uint32_t>(wgpu::TextureUsage::CopySrc),
+    TextureCopyDst = static_cast<uint32_t>(wgpu::TextureUsage::CopyDst),
+    TextureUsageNone = static_cast<uint32_t>(wgpu::TextureUsage::None),
+    TextureTransientAttachment =
+        static_cast<uint32_t>(wgpu::TextureUsage::TransientAttachment),
   };
 
   URGE_BINDING()
   enum LoadOp {
-    Load = 1,
-    Clear = 2,
+    Load = static_cast<uint32_t>(wgpu::LoadOp::Load),
+    Clear = static_cast<uint32_t>(wgpu::LoadOp::Clear),
+    LoadOpUndefined = static_cast<uint32_t>(wgpu::LoadOp::Undefined),
   };
 
   URGE_BINDING()
   enum StoreOp {
-    Store = 1,
-    Discard = 2,
+    Store = static_cast<uint32_t>(wgpu::StoreOp::Store),
+    Discard = static_cast<uint32_t>(wgpu::StoreOp::Discard),
+    StoreOpUndefined = static_cast<uint32_t>(wgpu::StoreOp::Undefined),
   };
 
   URGE_BINDING()
@@ -1193,10 +1217,25 @@ class GPU : public Singleton<GPU> {
     VertexFormatSint32x2 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32x2),
     VertexFormatSint32x3 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32x3),
     VertexFormatSint32x4 = static_cast<uint32_t>(wgpu::VertexFormat::Sint32x4),
+    VertexFormatUint8 = static_cast<uint32_t>(wgpu::VertexFormat::Uint8),
+    VertexFormatSint8 = static_cast<uint32_t>(wgpu::VertexFormat::Sint8),
+    VertexFormatUnorm8 = static_cast<uint32_t>(wgpu::VertexFormat::Unorm8),
+    VertexFormatSnorm8 = static_cast<uint32_t>(wgpu::VertexFormat::Snorm8),
+    VertexFormatUint16 = static_cast<uint32_t>(wgpu::VertexFormat::Uint16),
+    VertexFormatSint16 = static_cast<uint32_t>(wgpu::VertexFormat::Sint16),
+    VertexFormatUnorm16 = static_cast<uint32_t>(wgpu::VertexFormat::Unorm16),
+    VertexFormatSnorm16 = static_cast<uint32_t>(wgpu::VertexFormat::Snorm16),
+    VertexFormatFloat16 = static_cast<uint32_t>(wgpu::VertexFormat::Float16),
+    VertexFormatUnorm10_10_10_2 =
+        static_cast<uint32_t>(wgpu::VertexFormat::Unorm10_10_10_2),
+    VertexFormatUnorm8x4BGRA =
+        static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x4BGRA),
   };
 
   URGE_BINDING()
   enum VertexStepMode {
+    VertexStepModeUndefined =
+        static_cast<uint32_t>(wgpu::VertexStepMode::Undefined),
     VertexStepModeVertex = static_cast<uint32_t>(wgpu::VertexStepMode::Vertex),
     VertexStepModeInstance =
         static_cast<uint32_t>(wgpu::VertexStepMode::Instance),
@@ -1276,10 +1315,134 @@ class GPU : public Singleton<GPU> {
         static_cast<uint32_t>(wgpu::TextureFormat::Depth32Float),
     TextureFormatDepth32FloatStencil8 =
         static_cast<uint32_t>(wgpu::TextureFormat::Depth32FloatStencil8),
+    TextureFormatR16Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::R16Unorm),
+    TextureFormatR16Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::R16Snorm),
+    TextureFormatRg8Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG8Snorm),
+    TextureFormatRg16Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG16Unorm),
+    TextureFormatRg16Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RG16Snorm),
+    TextureFormatRgb10a2Uint =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGB10A2Uint),
+    TextureFormatRgb9e5Ufloat =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGB9E5Ufloat),
+    TextureFormatRgba16Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Unorm),
+    TextureFormatRgba16Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Snorm),
+    TextureFormatBc1RgbaUnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC1RGBAUnorm),
+    TextureFormatBc1RgbaUnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC1RGBAUnormSrgb),
+    TextureFormatBc2RgbaUnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC2RGBAUnorm),
+    TextureFormatBc2RgbaUnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC2RGBAUnormSrgb),
+    TextureFormatBc3RgbaUnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC3RGBAUnorm),
+    TextureFormatBc3RgbaUnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC3RGBAUnormSrgb),
+    TextureFormatBc4RUnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC4RUnorm),
+    TextureFormatBc4RSnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC4RSnorm),
+    TextureFormatBc5RgUnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC5RGUnorm),
+    TextureFormatBc5RgSnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC5RGSnorm),
+    TextureFormatBc6hRgbUfloat =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC6HRGBUfloat),
+    TextureFormatBc6hRgbFloat =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC6HRGBFloat),
+    TextureFormatBc7RgbaUnorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC7RGBAUnorm),
+    TextureFormatBc7RgbaUnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::BC7RGBAUnormSrgb),
+    TextureFormatEtc2Rgb8Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8Unorm),
+    TextureFormatEtc2Rgb8UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8UnormSrgb),
+    TextureFormatEtc2Rgb8a1Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8A1Unorm),
+    TextureFormatEtc2Rgb8a1UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8A1UnormSrgb),
+    TextureFormatEtc2Rgba8Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGBA8Unorm),
+    TextureFormatEtc2Rgba8UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGBA8UnormSrgb),
+    TextureFormatEacR11Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::EACR11Unorm),
+    TextureFormatEacR11Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::EACR11Snorm),
+    TextureFormatEacRg11Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::EACRG11Unorm),
+    TextureFormatEacRg11Snorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::EACRG11Snorm),
+    TextureFormatAstc4x4Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC4x4Unorm),
+    TextureFormatAstc4x4UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC4x4UnormSrgb),
+    TextureFormatAstc5x4Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x4Unorm),
+    TextureFormatAstc5x4UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x4UnormSrgb),
+    TextureFormatAstc5x5Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x5Unorm),
+    TextureFormatAstc5x5UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x5UnormSrgb),
+    TextureFormatAstc6x5Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x5Unorm),
+    TextureFormatAstc6x5UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x5UnormSrgb),
+    TextureFormatAstc6x6Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x6Unorm),
+    TextureFormatAstc6x6UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x6UnormSrgb),
+    TextureFormatAstc8x5Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x5Unorm),
+    TextureFormatAstc8x5UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x5UnormSrgb),
+    TextureFormatAstc8x6Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x6Unorm),
+    TextureFormatAstc8x6UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x6UnormSrgb),
+    TextureFormatAstc8x8Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x8Unorm),
+    TextureFormatAstc8x8UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x8UnormSrgb),
+    TextureFormatAstc10x5Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x5Unorm),
+    TextureFormatAstc10x5UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x5UnormSrgb),
+    TextureFormatAstc10x6Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x6Unorm),
+    TextureFormatAstc10x6UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x6UnormSrgb),
+    TextureFormatAstc10x8Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x8Unorm),
+    TextureFormatAstc10x8UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x8UnormSrgb),
+    TextureFormatAstc10x10Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x10Unorm),
+    TextureFormatAstc10x10UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x10UnormSrgb),
+    TextureFormatAstc12x10Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x10Unorm),
+    TextureFormatAstc12x10UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x10UnormSrgb),
+    TextureFormatAstc12x12Unorm =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x12Unorm),
+    TextureFormatAstc12x12UnormSrgb =
+        static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x12UnormSrgb),
   };
 
   URGE_BINDING()
   enum TextureDimension {
+    TextureDimensionUndefined =
+        static_cast<uint32_t>(wgpu::TextureDimension::Undefined),
     TextureDimension1D = static_cast<uint32_t>(wgpu::TextureDimension::e1D),
     TextureDimension2D = static_cast<uint32_t>(wgpu::TextureDimension::e2D),
     TextureDimension3D = static_cast<uint32_t>(wgpu::TextureDimension::e3D),
@@ -1287,6 +1450,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum TextureAspect {
+    TextureAspectUndefined =
+        static_cast<uint32_t>(wgpu::TextureAspect::Undefined),
     TextureAspectAll = static_cast<uint32_t>(wgpu::TextureAspect::All),
     TextureAspectStencilOnly =
         static_cast<uint32_t>(wgpu::TextureAspect::StencilOnly),
@@ -1296,6 +1461,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum TextureViewDimension {
+    TextureViewDimensionUndefined =
+        static_cast<uint32_t>(wgpu::TextureViewDimension::Undefined),
     TextureViewDimension1D =
         static_cast<uint32_t>(wgpu::TextureViewDimension::e1D),
     TextureViewDimension2D =
@@ -1312,6 +1479,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum TextureSampleType {
+    TextureSampleTypeUndefined =
+        static_cast<uint32_t>(wgpu::TextureSampleType::Undefined),
     TextureSampleTypeFloat =
         static_cast<uint32_t>(wgpu::TextureSampleType::Float),
     TextureSampleTypeUnfilterableFloat =
@@ -1326,6 +1495,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum SamplerBindingType {
+    SamplerBindingTypeUndefined =
+        static_cast<uint32_t>(wgpu::SamplerBindingType::Undefined),
     SamplerBindingTypeFiltering =
         static_cast<uint32_t>(wgpu::SamplerBindingType::Filtering),
     SamplerBindingTypeNonFiltering =
@@ -1344,6 +1515,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum PrimitiveTopology {
+    PrimitiveTopologyUndefined =
+        static_cast<uint32_t>(wgpu::PrimitiveTopology::Undefined),
     PrimitiveTopologyPointList =
         static_cast<uint32_t>(wgpu::PrimitiveTopology::PointList),
     PrimitiveTopologyLineList =
@@ -1358,6 +1531,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum CompareFunction {
+    CompareFunctionUndefined =
+        static_cast<uint32_t>(wgpu::CompareFunction::Undefined),
     CompareFunctionNever = static_cast<uint32_t>(wgpu::CompareFunction::Never),
     CompareFunctionLess = static_cast<uint32_t>(wgpu::CompareFunction::Less),
     CompareFunctionEqual = static_cast<uint32_t>(wgpu::CompareFunction::Equal),
@@ -1375,6 +1550,8 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum StencilOperation {
+    StencilOperationUndefined =
+        static_cast<uint32_t>(wgpu::StencilOperation::Undefined),
     StencilOperationKeep = static_cast<uint32_t>(wgpu::StencilOperation::Keep),
     StencilOperationZero = static_cast<uint32_t>(wgpu::StencilOperation::Zero),
     StencilOperationReplace =
@@ -1393,6 +1570,7 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum CullMode {
+    CullModeUndefined = static_cast<uint32_t>(wgpu::CullMode::Undefined),
     CullModeNone = static_cast<uint32_t>(wgpu::CullMode::None),
     CullModeFront = static_cast<uint32_t>(wgpu::CullMode::Front),
     CullModeBack = static_cast<uint32_t>(wgpu::CullMode::Back),
@@ -1400,12 +1578,15 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum FrontFace {
+    FrontFaceUndefined = static_cast<uint32_t>(wgpu::FrontFace::Undefined),
     FrontFaceCCW = static_cast<uint32_t>(wgpu::FrontFace::CCW),
     FrontFaceCW = static_cast<uint32_t>(wgpu::FrontFace::CW),
   };
 
   URGE_BINDING()
   enum BlendOperation {
+    BlendOperationUndefined =
+        static_cast<uint32_t>(wgpu::BlendOperation::Undefined),
     BlendOperationAdd = static_cast<uint32_t>(wgpu::BlendOperation::Add),
     BlendOperationSubtract =
         static_cast<uint32_t>(wgpu::BlendOperation::Subtract),
@@ -1417,6 +1598,13 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum BlendFactor {
+    BlendFactorUndefined = static_cast<uint32_t>(wgpu::BlendFactor::Undefined),
+    BlendFactorSrc1 = static_cast<uint32_t>(wgpu::BlendFactor::Src1),
+    BlendFactorOneMinusSrc1 =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusSrc1),
+    BlendFactorSrc1Alpha = static_cast<uint32_t>(wgpu::BlendFactor::Src1Alpha),
+    BlendFactorOneMinusSrc1Alpha =
+        static_cast<uint32_t>(wgpu::BlendFactor::OneMinusSrc1Alpha),
     BlendFactorZero = static_cast<uint32_t>(wgpu::BlendFactor::Zero),
     BlendFactorOne = static_cast<uint32_t>(wgpu::BlendFactor::One),
     BlendFactorSrc = static_cast<uint32_t>(wgpu::BlendFactor::Src),
@@ -1450,12 +1638,15 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum FilterMode {
+    FilterModeUndefined = static_cast<uint32_t>(wgpu::FilterMode::Undefined),
     FilterModeNearest = static_cast<uint32_t>(wgpu::FilterMode::Nearest),
     FilterModeLinear = static_cast<uint32_t>(wgpu::FilterMode::Linear),
   };
 
   URGE_BINDING()
   enum MipmapFilterMode {
+    MipmapFilterModeUndefined =
+        static_cast<uint32_t>(wgpu::MipmapFilterMode::Undefined),
     MipmapFilterModeNearest =
         static_cast<uint32_t>(wgpu::MipmapFilterMode::Nearest),
     MipmapFilterModeLinear =
@@ -1464,6 +1655,7 @@ class GPU : public Singleton<GPU> {
 
   URGE_BINDING()
   enum AddressMode {
+    AddressModeUndefined = static_cast<uint32_t>(wgpu::AddressMode::Undefined),
     AddressModeClampToEdge =
         static_cast<uint32_t>(wgpu::AddressMode::ClampToEdge),
     AddressModeRepeat = static_cast<uint32_t>(wgpu::AddressMode::Repeat),
@@ -1512,4 +1704,4 @@ class GPU : public Singleton<GPU> {
   RefPtr<GPUCommandEncoder> CreateCommandEncoder();
 };
 
-}
+}  // namespace urge

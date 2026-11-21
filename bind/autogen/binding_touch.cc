@@ -26,7 +26,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Touch  (core/input/touch.h:37-87)
+// Touch  (core/input/touch.h:37-88)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Touch_Update) {
@@ -288,6 +288,8 @@ void InitTouchBinding() {
   DefineModuleFunction(mod, "raw_y", Touch_RawY);
   DefineModuleFunction(mod, "enabled", Touch_Enabled);
   DefineModuleFunction(mod, "enabled=", Touch_EnabledEqual);
+  rb_const_set(mod, rb_intern("MAX_FINGERS"),
+               WrapConstant(urge::Touch::kMaxFingers));
   InitTouchBindingAppend(mod);
 }
 // --- GENERATED END ---

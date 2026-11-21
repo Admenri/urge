@@ -82,13 +82,16 @@ class NetworkBackend {
 
   virtual void SetMaxEvents(int32_t max_events) = 0;
 
-  virtual RefPtr<WebSocket> OpenWebSocket(
+  virtual std::unique_ptr<WebSocketImpl> CreateWebSocketImpl(
       const std::string& url,
-      const std::vector<std::string>& protocols) = 0;
-  virtual RefPtr<Fetch> OpenFetch(const std::string& url,
-                                  const std::string& method,
-                                  const std::string& body,
-                                  const std::vector<std::string>& headers) = 0;
+      const std::vector<std::string>& protocols,
+      int32_t timeout) = 0;
+  virtual std::unique_ptr<FetchImpl> CreateFetchImpl(
+      const std::string& url,
+      const std::string& method,
+      const std::string& body,
+      const std::vector<std::string>& headers,
+      int32_t timeout) = 0;
 
   virtual void CloseAll() = 0;
 
@@ -100,4 +103,4 @@ class NetworkBackend {
 
 std::unique_ptr<NetworkBackend> CreateNetworkBackend();
 
-}
+}  // namespace urge

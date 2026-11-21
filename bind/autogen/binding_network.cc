@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Network  (core/network/network.h:183-203)
+// Network  (core/network/network.h:185-205)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Network_Update) {
@@ -231,8 +231,9 @@ RB_FUNC(Network_Timeout) {
 
 RB_FUNC(Network_TimeoutEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Network::Get().Attr_Timeout(value);
@@ -255,8 +256,9 @@ RB_FUNC(Network_MaxEvents) {
 
 RB_FUNC(Network_MaxEventsEqual) {
   CheckArgc(argc, 1);
-  int value;
-  ParseArgs(argc, argv, "i", &value);
+  VALUE value_arg = Qnil;
+  ParseArgs(argc, argv, "o", &value_arg);
+  int32_t value = CheckInteger<int32_t>(value_arg);
 
   {
     urge::Network::Get().Attr_MaxEvents(value);

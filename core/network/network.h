@@ -40,6 +40,7 @@ class FetchImpl;
 URGE_BINDING()
 class NetworkEvent : public Object {
  public:
+  URGE_BINDING()
   enum Type {
     Open = 0,
     Text = 1,
@@ -76,11 +77,12 @@ class NetworkEvent : public Object {
 URGE_BINDING()
 class WebSocket : public Object {
  public:
+  URGE_BINDING()
   enum ReadyState {
     Connecting = 0,
-    OpenState = 1,
+    URGE_BINDING(Name : "OPEN") OpenState = 1,
     Closing = 2,
-    ClosedState = 3,
+    URGE_BINDING(Name : "CLOSED") ClosedState = 3,
   };
 
   URGE_BINDING()
@@ -158,7 +160,7 @@ class Fetch : public Object {
   URGE_BINDING(Name : "headers")
   std::vector<std::string> GetHeaders();
 
-  const std::string& body() const { return body_; }
+  const std::string& body();
 
   void Attach(std::unique_ptr<FetchImpl> impl);
 
@@ -206,9 +208,12 @@ class Network : public Singleton<Network> {
   void CloseAll();
 
  private:
+  friend class WebSocket;
+  friend class Fetch;
+
   std::unique_ptr<NetworkBackend> backend_;
   int32_t timeout_ = 30;
   int32_t max_events_ = 1024;
 };
 
-}
+}  // namespace urge

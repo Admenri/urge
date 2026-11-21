@@ -95,10 +95,10 @@ BINDING_ATTR_OBJECT_REF(Plane,
                         CheckMaybeObject);
 
 // Attribute: ox (int32_t)
-BINDING_ATTR_INT(Plane, urge::Plane, OX);
+BINDING_ATTR_INT_TYPED(Plane, urge::Plane, OX, int32_t);
 
 // Attribute: oy (int32_t)
-BINDING_ATTR_INT(Plane, urge::Plane, OY);
+BINDING_ATTR_INT_TYPED(Plane, urge::Plane, OY, int32_t);
 
 // Attribute: zoom_x (float)
 BINDING_ATTR_FLOAT(Plane, urge::Plane, ZoomX);
@@ -107,10 +107,10 @@ BINDING_ATTR_FLOAT(Plane, urge::Plane, ZoomX);
 BINDING_ATTR_FLOAT(Plane, urge::Plane, ZoomY);
 
 // Attribute: opacity (int32_t)
-BINDING_ATTR_INT(Plane, urge::Plane, Opacity);
+BINDING_ATTR_INT_TYPED(Plane, urge::Plane, Opacity, int32_t);
 
 // Attribute: blend_type (int32_t)
-BINDING_ATTR_INT(Plane, urge::Plane, BlendType);
+BINDING_ATTR_INT_TYPED(Plane, urge::Plane, BlendType, int32_t);
 
 // Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Plane,

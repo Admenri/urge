@@ -17,17 +17,6 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// RGSS key constants (`Input::DOWN`, `Input::A`, ...).  They come from the
-// table in core/input/input.h rather than from a declaration in the export
-// block, so they cannot be generated.
-void DefineInputKeyConstants(VALUE mod) {
-  for (const auto& binding : urge::kKeyboardBindings) {
-    ID key =
-        rb_intern2(binding.name.data(), static_cast<long>(binding.name.size()));
-    rb_const_set(mod, key, LONG2NUM(binding.key_id));
-  }
-}
-
 /* Resolves the argument of a query method to the key name, as raw bytes.  The
    storage is either the static binding table or Ruby's symbol table, both of
    which outlive the call, so phase 1 can carry a pointer instead of a
@@ -118,7 +107,7 @@ RB_FUNC(Input_RepeatedManual) {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Input  (core/input/input.h:55-82)
+// Input  (core/input/input.h:39-96)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Input_Update) {
@@ -324,7 +313,56 @@ void InitInputBinding() {
   DefineModuleFunction(mod, "key_repeat?", Input_KeyRepeated);
   DefineModuleFunction(mod, "get_key_name", Input_GetKeyName);
   DefineModuleFunction(mod, "emulate", Input_Emulate);
-  DefineInputKeyConstants(mod);
+  rb_const_set(mod, rb_intern("DOWN"),
+               WrapConstant(urge::Input::DOWN));
+  rb_const_set(mod, rb_intern("LEFT"),
+               WrapConstant(urge::Input::LEFT));
+  rb_const_set(mod, rb_intern("RIGHT"),
+               WrapConstant(urge::Input::RIGHT));
+  rb_const_set(mod, rb_intern("UP"),
+               WrapConstant(urge::Input::UP));
+  rb_const_set(mod, rb_intern("A"),
+               WrapConstant(urge::Input::A));
+  rb_const_set(mod, rb_intern("B"),
+               WrapConstant(urge::Input::B));
+  rb_const_set(mod, rb_intern("C"),
+               WrapConstant(urge::Input::C));
+  rb_const_set(mod, rb_intern("X"),
+               WrapConstant(urge::Input::X));
+  rb_const_set(mod, rb_intern("Y"),
+               WrapConstant(urge::Input::Y));
+  rb_const_set(mod, rb_intern("Z"),
+               WrapConstant(urge::Input::Z));
+  rb_const_set(mod, rb_intern("L"),
+               WrapConstant(urge::Input::L));
+  rb_const_set(mod, rb_intern("R"),
+               WrapConstant(urge::Input::R));
+  rb_const_set(mod, rb_intern("SHIFT"),
+               WrapConstant(urge::Input::SHIFT));
+  rb_const_set(mod, rb_intern("CTRL"),
+               WrapConstant(urge::Input::CTRL));
+  rb_const_set(mod, rb_intern("ALT"),
+               WrapConstant(urge::Input::ALT));
+  rb_const_set(mod, rb_intern("F5"),
+               WrapConstant(urge::Input::F5));
+  rb_const_set(mod, rb_intern("F6"),
+               WrapConstant(urge::Input::F6));
+  rb_const_set(mod, rb_intern("F7"),
+               WrapConstant(urge::Input::F7));
+  rb_const_set(mod, rb_intern("F8"),
+               WrapConstant(urge::Input::F8));
+  rb_const_set(mod, rb_intern("F9"),
+               WrapConstant(urge::Input::F9));
+  rb_const_set(mod, rb_intern("W"),
+               WrapConstant(urge::Input::W));
+  rb_const_set(mod, rb_intern("S"),
+               WrapConstant(urge::Input::S));
+  rb_const_set(mod, rb_intern("D"),
+               WrapConstant(urge::Input::D));
+  rb_const_set(mod, rb_intern("Q"),
+               WrapConstant(urge::Input::Q));
+  rb_const_set(mod, rb_intern("E"),
+               WrapConstant(urge::Input::E));
   InitInputBindingAppend(mod);
 }
 // --- GENERATED END ---

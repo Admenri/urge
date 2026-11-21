@@ -22,6 +22,7 @@
 
 #include "core/network/network_backend.h"
 
+#include <emscripten/emscripten.h>
 #include <emscripten/fetch.h>
 #include <emscripten/websocket.h>
 
@@ -48,10 +49,12 @@ class WebWebSocketImpl final : public WebSocketImpl {
  public:
   WebWebSocketImpl(NetworkBackend* backend,
                    std::string url,
-                   std::vector<std::string> protocols)
+                   std::vector<std::string> protocols,
+                   int32_t timeout)
       : backend_(backend),
         url_(std::move(url)),
-        protocols_(std::move(protocols)) {}
+        protocols_(std::move(protocols)),
+        timeout_(timeout) {}
 
   ~WebWebSocketImpl() override {
     if (backend_)
@@ -61,6 +64,8 @@ class WebWebSocketImpl final : public WebSocketImpl {
   }
 
   void Open() {
+    connect_deadline_ =
+        emscripten_get_now() + static_cast<double>(timeout_) * 1000;
     EmscriptenWebSocketCreateAttributes attributes;
     emscripten_websocket_init_create_attributes(&attributes);
     attributes.url = url_.c_str();
@@ -76,8 +81,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
 
     socket_ = emscripten_websocket_new(&attributes);
     if (socket_ <= 0) {
-      Finish(WebSocket::ClosedState, "the websocket could not be created");
-      PushEvent(MakeEvent(NetworkEvent::Error));
+      Fail("the websocket could not be created");
       socket_ = -1;
       return;
     }
@@ -89,6 +93,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
   }
 
   void Poll(WebSocket& self) override {
+    CheckTimeout();
     self.ready_state_ = ready_state_;
     self.dropped_ = dropped_;
     if (!error_.empty())
@@ -96,6 +101,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
   }
 
   void Swap() override {
+    CheckTimeout();
     while (!worker_queue_.empty()) {
       main_queue_.push_back(std::move(worker_queue_.front()));
       worker_queue_.pop_front();
@@ -151,8 +157,9 @@ class WebWebSocketImpl final : public WebSocketImpl {
     if (socket_ < 0)
       return;
 
-    emscripten_websocket_close(socket_, static_cast<unsigned short>(code),
-                               reason.c_str());
+    if (emscripten_websocket_close(socket_, static_cast<unsigned short>(code),
+                                   reason.c_str()) == EMSCRIPTEN_RESULT_SUCCESS)
+      ready_state_ = WebSocket::Closing;
   }
 
   void Stop() {
@@ -172,6 +179,14 @@ class WebWebSocketImpl final : public WebSocketImpl {
   }
 
  private:
+  void CheckTimeout() {
+    if (ready_state_ == WebSocket::Connecting &&
+        emscripten_get_now() >= connect_deadline_) {
+      Stop();
+      Fail("the websocket connection timed out");
+    }
+  }
+
   static bool OnOpen(int, const EmscriptenWebSocketOpenEvent*, void* user) {
     auto* self = static_cast<WebWebSocketImpl*>(user);
     if (self->stopped_)
@@ -218,8 +233,10 @@ class WebWebSocketImpl final : public WebSocketImpl {
   }
 
   void HandleMessage(const EmscriptenWebSocketMessageEvent* event) {
-    const std::string data(reinterpret_cast<const char*>(event->data),
-                           event->numBytes);
+    // Emscripten includes the terminating NUL in numBytes for text events.
+    const auto size = event->isText && event->numBytes > 0 ? event->numBytes - 1
+                                                           : event->numBytes;
+    const std::string data(reinterpret_cast<const char*>(event->data), size);
     if (event->isText) {
       auto text = MakeEvent(NetworkEvent::Text);
       text->text_ = data;
@@ -240,24 +257,21 @@ class WebWebSocketImpl final : public WebSocketImpl {
     ready_state_ = WebSocket::ClosedState;
   }
 
-  void HandleError() {
-    worker_queue_.push_back(MakeEvent(NetworkEvent::Error));
-    ready_state_ = WebSocket::ClosedState;
-    error_ = "the websocket reported an error";
-  }
+  void HandleError() { Fail("the websocket reported an error"); }
 
-  void PushEvent(RefPtr<NetworkEvent> event) {
+  void Fail(const std::string& message) {
+    auto event = MakeEvent(NetworkEvent::Error);
+    event->message_ = message;
     worker_queue_.push_back(std::move(event));
-  }
-
-  void Finish(int32_t state, const std::string& error) {
-    ready_state_ = state;
-    error_ = error;
+    ready_state_ = WebSocket::ClosedState;
+    error_ = message;
   }
 
   NetworkBackend* backend_ = nullptr;
   std::string url_;
   std::vector<std::string> protocols_;
+  int32_t timeout_ = 30;
+  double connect_deadline_ = 0;
   EMSCRIPTEN_WEBSOCKET_T socket_ = -1;
   bool stopped_ = false;
   int32_t ready_state_ = WebSocket::Connecting;
@@ -274,11 +288,13 @@ class WebFetchImpl final : public FetchImpl {
   WebFetchImpl(std::string url,
                std::string method,
                std::string body,
-               std::vector<std::string> headers)
+               std::vector<std::string> headers,
+               int32_t timeout)
       : url_(std::move(url)),
         method_(std::move(method)),
         body_(std::move(body)),
-        headers_(std::move(headers)) {}
+        headers_(std::move(headers)),
+        timeout_(timeout) {}
 
   ~WebFetchImpl() override {
     if (fetch_)
@@ -318,6 +334,9 @@ class WebFetchImpl final : public FetchImpl {
     attributes.onsuccess = OnSuccess;
     attributes.onerror = OnError;
     attributes.userData = this;
+    attributes.timeoutMSecs = static_cast<uint32_t>(
+        std::min<int64_t>(static_cast<int64_t>(timeout_) * 1000, UINT32_MAX));
+    attributes.onprogress = OnProgress;
     if (header_pointers_.size() > 1)
       attributes.requestHeaders = header_pointers_.data();
     if (!body_.empty()) {
@@ -331,13 +350,19 @@ class WebFetchImpl final : public FetchImpl {
   }
 
   void Abort() override {
+    if (completed_)
+      return;
     aborted_ = true;
+    started_ = true;
     if (fetch_)
       emscripten_fetch_close(fetch_);
     fetch_ = nullptr;
+    Finish("the request was aborted", 0, std::string());
   }
 
   void Poll(Fetch& self) override {
+    if (!self.done_)
+      self.progress_ = progress_;
     if (!done_)
       return;
 
@@ -354,6 +379,14 @@ class WebFetchImpl final : public FetchImpl {
   }
 
  private:
+  static void OnProgress(emscripten_fetch_t* fetch) {
+    auto* self = static_cast<WebFetchImpl*>(fetch->userData);
+    if (!self->aborted_ && fetch->totalBytes > 0)
+      self->progress_ =
+          static_cast<float>(fetch->dataOffset + fetch->numBytes) /
+          static_cast<float>(fetch->totalBytes);
+  }
+
   static void OnSuccess(emscripten_fetch_t* fetch) {
     auto* self = static_cast<WebFetchImpl*>(fetch->userData);
     if (self->aborted_)
@@ -371,25 +404,26 @@ class WebFetchImpl final : public FetchImpl {
   }
 
   void HandleSuccess(emscripten_fetch_t* fetch) {
-    body_result_.assign(fetch->data, fetch->numBytes);
+    if (fetch->numBytes > 0)
+      body_result_.assign(fetch->data, fetch->numBytes);
     status_ = fetch->status;
     status_text_ = fetch->statusText;
     ParseHeaders(fetch);
     error_.clear();
-    done_ = true;
+    completed_ = done_ = true;
   }
 
   void HandleError(emscripten_fetch_t* fetch) {
-    error_ = "the request failed";
-    status_ = fetch->status;
-    status_text_ = fetch->statusText;
-    done_ = true;
+    HandleSuccess(fetch);  // Non-2xx responses still have a body and headers.
+    if (fetch->status == 0)
+      error_ = "the request failed";
   }
 
   void ParseHeaders(emscripten_fetch_t* fetch) {
     const size_t length = emscripten_fetch_get_response_headers_length(fetch);
-    std::string raw(length, '\0');
-    emscripten_fetch_get_response_headers(fetch, raw.data(), length + 1);
+    std::string raw(length + 1, '\0');
+    emscripten_fetch_get_response_headers(fetch, raw.data(), raw.size());
+    raw.resize(length);
 
     std::size_t start = 0;
     while (start < raw.size()) {
@@ -406,7 +440,7 @@ class WebFetchImpl final : public FetchImpl {
     error_ = message;
     status_ = status;
     status_text_ = text;
-    done_ = true;
+    completed_ = done_ = true;
   }
 
   std::string url_;
@@ -419,7 +453,10 @@ class WebFetchImpl final : public FetchImpl {
 
   bool started_ = false;
   bool done_ = false;
+  bool completed_ = false;
   bool aborted_ = false;
+  float progress_ = 0.0f;
+  int32_t timeout_ = 30;
 
   emscripten_fetch_t* fetch_ = nullptr;
 
@@ -447,26 +484,25 @@ class WebNetworkBackend final : public NetworkBackend {
       socket->SetMaxEvents(max_events_);
   }
 
-  RefPtr<WebSocket> OpenWebSocket(
+  std::unique_ptr<WebSocketImpl> CreateWebSocketImpl(
       const std::string& url,
-      const std::vector<std::string>& protocols) override {
-    auto socket = MakeRefCounted<WebSocket>(url, protocols);
-    auto impl = std::make_unique<WebWebSocketImpl>(this, url, protocols);
+      const std::vector<std::string>& protocols,
+      int32_t timeout) override {
+    auto impl =
+        std::make_unique<WebWebSocketImpl>(this, url, protocols, timeout);
     impl->SetMaxEvents(max_events_);
-    WebWebSocketImpl* raw = impl.get();
-    socket->Attach(std::move(impl));
-    sockets_.push_back(raw);
-    raw->Open();
-    return socket;
+    sockets_.push_back(impl.get());
+    impl->Open();
+    return impl;
   }
 
-  RefPtr<Fetch> OpenFetch(const std::string& url,
-                          const std::string& method,
-                          const std::string& body,
-                          const std::vector<std::string>& headers) override {
-    auto fetch = MakeRefCounted<Fetch>(url, method, body, headers);
-    fetch->Attach(std::make_unique<WebFetchImpl>(url, method, body, headers));
-    return fetch;
+  std::unique_ptr<FetchImpl> CreateFetchImpl(
+      const std::string& url,
+      const std::string& method,
+      const std::string& body,
+      const std::vector<std::string>& headers,
+      int32_t timeout) override {
+    return std::make_unique<WebFetchImpl>(url, method, body, headers, timeout);
   }
 
   void CloseAll() override {
@@ -486,10 +522,10 @@ class WebNetworkBackend final : public NetworkBackend {
   int32_t max_events_ = 1024;
 };
 
-}
+}  // namespace
 
 std::unique_ptr<NetworkBackend> CreateNetworkBackend() {
   return std::make_unique<WebNetworkBackend>();
 }
 
-}
+}  // namespace urge

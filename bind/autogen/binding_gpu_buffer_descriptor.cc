@@ -112,7 +112,10 @@ RB_FUNC(GPUBufferDescriptor_SetSize) {
 }
 
 // Attribute: usage (uint32_t)
-BINDING_ATTR_INT(GPUBufferDescriptor, urge::GPUBufferDescriptor, Usage);
+BINDING_ATTR_INT_TYPED(GPUBufferDescriptor,
+                       urge::GPUBufferDescriptor,
+                       Usage,
+                       uint32_t);
 
 // Attribute: mapped_at_creation (bool)
 BINDING_ATTR_BOOL(GPUBufferDescriptor,

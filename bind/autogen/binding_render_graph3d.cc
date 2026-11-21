@@ -34,7 +34,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraph3D  (core/scene3d/render_graph3d.h:359-409)
+// RenderGraph3D  (core/scene3d/render_graph3d.h:375-425)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraph3D);
@@ -319,7 +319,7 @@ RB_FUNC(RenderGraph3D_SetAmbient) {
 }
 
 // Attribute: shadow_size (int32_t)
-BINDING_ATTR_INT(RenderGraph3D, urge::RenderGraph3D, ShadowSize);
+BINDING_ATTR_INT_TYPED(RenderGraph3D, urge::RenderGraph3D, ShadowSize, int32_t);
 
 // Attribute: camera (MaybePtr<Camera3D>)
 BINDING_ATTR_OBJECT_REF(RenderGraph3D,

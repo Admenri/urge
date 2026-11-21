@@ -41,7 +41,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// RenderGraphPass3D  (core/scene3d/render_graph3d.h:120-292)
+// RenderGraphPass3D  (core/scene3d/render_graph3d.h:120-308)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(RenderGraphPass3D);
@@ -419,13 +419,22 @@ RB_FUNC(RenderGraphPass3D_Height) {
 BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, Enabled);
 
 // Attribute: kind (uint32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Kind);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       Kind,
+                       uint32_t);
 
 // Attribute: clear_flags (uint32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, ClearFlags);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       ClearFlags,
+                       uint32_t);
 
 // Attribute: cull_override (int32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, CullOverride);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       CullOverride,
+                       int32_t);
 
 // Attribute: sort_back_to_front (bool)
 BINDING_ATTR_BOOL(RenderGraphPass3D, urge::RenderGraphPass3D, SortBackToFront);
@@ -442,16 +451,28 @@ BINDING_ATTR_OBJECT_REF(RenderGraphPass3D,
                         CheckMaybeObject);
 
 // Attribute: layers (uint32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Layers);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       Layers,
+                       uint32_t);
 
 // Attribute: queue_min (int32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, QueueMin);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       QueueMin,
+                       int32_t);
 
 // Attribute: queue_max (int32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, QueueMax);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       QueueMax,
+                       int32_t);
 
 // Attribute: cascades (int32_t)
-BINDING_ATTR_INT(RenderGraphPass3D, urge::RenderGraphPass3D, Cascades);
+BINDING_ATTR_INT_TYPED(RenderGraphPass3D,
+                       urge::RenderGraphPass3D,
+                       Cascades,
+                       int32_t);
 
 // Attribute: shadow_light (MaybePtr<Light3D>)
 BINDING_ATTR_OBJECT_REF(RenderGraphPass3D,
@@ -538,6 +559,22 @@ void InitRenderGraphPass3DBinding() {
   DefineMethod(klass, "split_lambda=", RenderGraphPass3D_SplitLambdaEqual);
   DefineMethod(klass, "shadow_distance", RenderGraphPass3D_ShadowDistance);
   DefineMethod(klass, "shadow_distance=", RenderGraphPass3D_ShadowDistanceEqual);
+  rb_const_set(klass, rb_intern("RASTER"),
+               WrapConstant(urge::RenderGraphPass3D::PassKind::Raster));
+  rb_const_set(klass, rb_intern("FULLSCREEN"),
+               WrapConstant(urge::RenderGraphPass3D::PassKind::Fullscreen));
+  rb_const_set(klass, rb_intern("COMPUTE"),
+               WrapConstant(urge::RenderGraphPass3D::PassKind::Compute));
+  rb_const_set(klass, rb_intern("CLEAR_NONE"),
+               WrapConstant(urge::RenderGraphPass3D::ClearFlag::ClearNone));
+  rb_const_set(klass, rb_intern("CLEAR_COLOR"),
+               WrapConstant(urge::RenderGraphPass3D::ClearFlag::ClearColor));
+  rb_const_set(klass, rb_intern("CLEAR_DEPTH"),
+               WrapConstant(urge::RenderGraphPass3D::ClearFlag::ClearDepth));
+  rb_const_set(klass, rb_intern("CLEAR_STENCIL"),
+               WrapConstant(urge::RenderGraphPass3D::ClearFlag::ClearStencil));
+  rb_const_set(klass, rb_intern("CLEAR_ALL"),
+               WrapConstant(urge::RenderGraphPass3D::ClearFlag::ClearAll));
   InitRenderGraphPass3DBindingAppend(klass);
 }
 // --- GENERATED END ---

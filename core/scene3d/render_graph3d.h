@@ -119,6 +119,22 @@ class ComputePass3D : public Object {
 URGE_BINDING()
 class RenderGraphPass3D : public Object {
  public:
+  URGE_BINDING()
+  enum class PassKind : uint32_t {
+    Raster = 0,
+    Fullscreen = 1,
+    Compute = 2,
+  };
+
+  URGE_BINDING()
+  enum class ClearFlag : uint32_t {
+    ClearNone = static_cast<uint32_t>(Camera3D::ClearFlag::ClearNone),
+    ClearColor = static_cast<uint32_t>(Camera3D::ClearFlag::ClearColor),
+    ClearDepth = static_cast<uint32_t>(Camera3D::ClearFlag::ClearDepth),
+    ClearStencil = static_cast<uint32_t>(Camera3D::ClearFlag::ClearStencil),
+    ClearAll = static_cast<uint32_t>(Camera3D::ClearFlag::ClearAll),
+  };
+
   explicit RenderGraphPass3D(std::string name);
   ~RenderGraphPass3D() override;
 

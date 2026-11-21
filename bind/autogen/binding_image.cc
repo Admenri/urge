@@ -450,6 +450,10 @@ RB_FUNC(Image_ToDump) {
   {
     result = new std::string(self_obj->ToDump(exception_state));
   }
+  if (exception_state.HadException()) {
+    delete result;
+    result = nullptr;
+  }
   RaiseException(exception_state);
 
   VALUE value = rb_enc_str_new(

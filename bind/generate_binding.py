@@ -295,19 +295,6 @@ RB_FUNC(Table_Set) {
 }
 """
 
-INPUT_MANUAL = """\
-// RGSS key constants (`Input::DOWN`, `Input::A`, ...).  They come from the
-// table in core/input/input.h rather than from a declaration in the export block,
-// so they cannot be generated.
-void DefineInputKeyConstants(VALUE mod) {
-  for (const auto& binding : urge::kKeyboardBindings) {
-    ID key =
-        rb_intern2(binding.name.data(), static_cast<long>(binding.name.size()));
-    rb_const_set(mod, key, LONG2NUM(binding.key_id));
-  }
-}
-"""
-
 VIDEO_MANUAL = """\
 // `Video#player_info` answers a Ruby Hash, and the generator has no `std::map`
 // codec, so both the body and its registration are hand written here.  The C++
@@ -351,31 +338,8 @@ RB_FUNC(NetworkEvent_Data) {
                         rb_ascii8bit_encoding());
 }
 
-// The `Type` enum is registered by hand because the IR describes methods, not
-// constants.
-void DefineNetworkEventConstants(VALUE klass) {
-  rb_const_set(klass, rb_intern("OPEN"), LONG2NUM(urge::NetworkEvent::Open));
-  rb_const_set(klass, rb_intern("TEXT"), LONG2NUM(urge::NetworkEvent::Text));
-  rb_const_set(klass, rb_intern("BINARY"),
-               LONG2NUM(urge::NetworkEvent::Binary));
-  rb_const_set(klass, rb_intern("CLOSE"), LONG2NUM(urge::NetworkEvent::Close));
-  rb_const_set(klass, rb_intern("ERROR"), LONG2NUM(urge::NetworkEvent::Error));
-
+void DefineNetworkEventData(VALUE klass) {
   DefineMethod(klass, "data", NetworkEvent_Data);
-}
-"""
-
-WEBSOCKET_MANUAL = """\
-// The `ReadyState` enum, registered by hand for the same reason as the event
-// types.
-void DefineWebSocketConstants(VALUE klass) {
-  rb_const_set(klass, rb_intern("CONNECTING"),
-               LONG2NUM(urge::WebSocket::Connecting));
-  rb_const_set(klass, rb_intern("OPEN"), LONG2NUM(urge::WebSocket::OpenState));
-  rb_const_set(klass, rb_intern("CLOSING"),
-               LONG2NUM(urge::WebSocket::Closing));
-  rb_const_set(klass, rb_intern("CLOSED"),
-               LONG2NUM(urge::WebSocket::ClosedState));
 }
 """
 
@@ -436,21 +400,17 @@ RB_FUNC(Gamepad_available_devices) {
 
 HANDWRITTEN_SEED = {
     "binding_table.cc": TABLE_MANUAL,
-    "binding_input.cc": INPUT_MANUAL,
     "binding_gamepad.cc": GAMEPAD_MANUAL,
     "binding_video.cc": VIDEO_MANUAL,
     "binding_network_event.cc": NETWORK_EVENT_MANUAL,
-    "binding_web_socket.cc": WEBSOCKET_MANUAL,
     "binding_fetch.cc": FETCH_MANUAL,
 }
 
 # Statements appended to the generated Init*Binding() body.
 EXTRA_INIT_CALLS = {
-    "Input": ["DefineInputKeyConstants(mod);"],
     "Gamepad": ['DefineClassMethod(klass, "available_devices", Gamepad_available_devices);'],
     "Video": ["DefineVideoPlayerInfo(klass);"],
-    "NetworkEvent": ["DefineNetworkEventConstants(klass);"],
-    "WebSocket": ["DefineWebSocketConstants(klass);"],
+    "NetworkEvent": ["DefineNetworkEventData(klass);"],
     "Fetch": ["DefineFetchBody(klass);"],
 }
 
@@ -800,8 +760,10 @@ def emit_store(cpp_type: str, call: str, indent: str) -> list[str]:
     return emit_call("result = %s" % call, indent)
 
 
-def emit_convert(cpp_type: str, indent: str) -> list[str]:
+def emit_convert(cpp_type: str, indent: str, binary: bool = False) -> list[str]:
     """Phase 3: turn the slot into a Ruby value (or a bare `nil`)."""
+    if binary and cpp_type != "std::string":
+        raise ValueError("Binary: true requires a std::string return")
     if cpp_type == "void":
         return [indent + "return Qnil;"]
     if cpp_type == "bool":
@@ -814,7 +776,7 @@ def emit_convert(cpp_type: str, indent: str) -> list[str]:
         return [
             indent + "VALUE value = rb_enc_str_new(",
             indent + "    result->data(), static_cast<long>(result->size()),",
-            indent + "    rb_utf8_encoding());",
+            indent + "    %s());" % ("rb_ascii8bit_encoding" if binary else "rb_utf8_encoding"),
             indent + "delete result;",
             indent + "return value;",
         ]
@@ -955,9 +917,19 @@ def emit_framework(
         lines.extend(emit_store(return_type, call_of(args), nested + "  "))
         lines.append(nested + "}")
         if has_exception:
+            if return_type == "std::string":
+                # A failed string-returning call still constructed the box.
+                # Free it before RaiseException longjmps out of this frame.
+                lines.extend([
+                    nested + "if (exception_state.HadException()) {",
+                    nested + "  delete result;",
+                    nested + "  result = nullptr;",
+                    nested + "}",
+                ])
             lines.append(nested + "RaiseException(exception_state);")
         lines.append("")
-        lines.extend(emit_convert(return_type, nested))
+        lines.extend(emit_convert(
+            return_type, nested, dispatch.covered[len(params)].get("binary", False)))
 
     variants = dispatch.variants_with_exception()
     if dispatch.simple:
@@ -1211,11 +1183,48 @@ def emit_method(entry: dict, group: list[dict], is_static: bool) -> list[str]:
     return lines
 
 
+def attr_readonly(attr: dict) -> bool:
+    return bool(attr.get("readonly")) or ("setter" in attr and attr["setter"] is None)
+
+
+def emit_attribute_getter(entry: dict, attr: dict, static: bool) -> list[str]:
+    """ReadOnly non-integer ATTRs use the usual return codec, with no setter."""
+    owner = entry["cpp_name"]
+    cpp_type = attr["cpp_type"]
+    has_exception = attr.get("has_exception", False)
+    receiver = "urge::%s::" % owner if static else "self_obj->"
+    lines = ["RB_FUNC(%s_%s) {" % (owner, attr["cpp_name"])]
+    if not static:
+        lines.append("  auto* self_obj = GetSelfData<urge::%s>(self);" % owner)
+    if has_exception:
+        lines.append("  urge::ExceptionState exception_state;")
+    lines.extend(["  CheckArgc(argc, 0);", ""])
+    lines.extend("  " + d for d in return_slot(cpp_type))
+    lines.extend(["", "  {"])
+    call = "(*%sAttr_%s(%s))" % (
+        receiver, attr["cpp_name"], "exception_state" if has_exception else "")
+    lines.extend(emit_store(cpp_type, call, "    "))
+    lines.append("  }")
+    if has_exception:
+        lines.append("  RaiseException(exception_state);")
+    lines.append("")
+    lines.extend(emit_convert(cpp_type, "  "))
+    lines.append("}")
+    return lines
+
+
 def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> str:
     cpp_type = attr["cpp_type"]
     name = attr["cpp_name"]
     owner = entry["cpp_name"]
     has_exception = attr.get("has_exception", False)
+    if cpp_type in INT_RETURNS:
+        prefix = "BINDING_CLASS_ATTR" if static else "BINDING_ATTR"
+        suffix = "_INT_TYPED" + ("_GET" if attr_readonly(attr) else "")
+        if has_exception:
+            suffix += "_EXC"
+        return "%s%s(%s, urge::%s, %s, %s);" % (
+            prefix, suffix, owner, owner, name, cpp_type)
     inner = refptr_inner(cpp_type)
     if inner is not None:
         # The last argument names the phase-1 check, which is where the null
@@ -1248,9 +1257,7 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
         return "%s_VECTOR(%s, urge::%s, %s, %s);" % (
             prefix, owner, owner, name, element,
         )
-    if cpp_type in INT_RETURNS:
-        suffix = "INT"
-    elif cpp_type in ("float", "double"):
+    if cpp_type in ("float", "double"):
         suffix = "FLOAT"
     elif cpp_type == "bool":
         suffix = "BOOL"
@@ -1268,9 +1275,9 @@ def attr_macro(entry: dict, attr: dict, static: bool, marshalable: set[str]) -> 
 def emit_constants(owner: str, entry: dict, receiver: str) -> list[str]:
     """`rb_const_set` for every `URGE_BINDING()` marked enum enumerator.
 
-    The value is read from the C++ enumerator (`urge::Owner::Enumerator`)
-    rather than re-evaluated from the header text, so an enum with an implicit
-    successor is right without the generator having to know C++ rules.
+    The IR qualifies scoped enumerators (`Enum::Enumerator`). Read the C++
+    value, never evaluate the source expression; WrapConstant preserves both
+    the signedness and the width of enums and integral constexpr constants.
     """
     lines: list[str] = []
     for const in entry.get("constants", []):
@@ -1278,7 +1285,7 @@ def emit_constants(owner: str, entry: dict, receiver: str) -> list[str]:
             '  rb_const_set(%s, rb_intern("%s"),' % (receiver, const["name"])
         )
         lines.append(
-            "               LONG2NUM(static_cast<long>(urge::%s::%s)));"
+            "               WrapConstant(urge::%s::%s));"
             % (owner, const["cpp_name"])
         )
     return lines
@@ -1333,17 +1340,19 @@ def emit_init_function(entry: dict) -> list[str]:
         )
     for attr in entry["attributes"]:
         lines.append('  DefineMethod(klass, "%s", %s_%s);' % (attr["name"], name, attr["cpp_name"]))
-        lines.append(
-            '  DefineMethod(klass, "%s", %s_%sEqual);' % (attr["setter"], name, attr["cpp_name"])
-        )
+        if not attr_readonly(attr):
+            lines.append(
+                '  DefineMethod(klass, "%s", %s_%sEqual);' % (attr["setter"], name, attr["cpp_name"])
+            )
     for attr in entry["class_attributes"]:
         lines.append(
             '  DefineClassMethod(klass, "%s", %s_%s);' % (attr["name"], name, attr["cpp_name"])
         )
-        lines.append(
-            '  DefineClassMethod(klass, "%s", %s_%sEqual);'
-            % (attr["setter"], name, attr["cpp_name"])
-        )
+        if not attr_readonly(attr):
+            lines.append(
+                '  DefineClassMethod(klass, "%s", %s_%sEqual);'
+                % (attr["setter"], name, attr["cpp_name"])
+            )
     lines.extend(emit_constants(name, entry, "klass"))
     lines.extend("  " + call for call in EXTRA_INIT_CALLS.get(name, []))
     lines.append("  Init%sBindingAppend(klass);" % name)
@@ -1390,11 +1399,17 @@ def emit_class(model: Model, entry: dict) -> list[str]:
         lines.append("")
     for attr in entry["attributes"]:
         lines.append("// Attribute: %s (%s)" % (attr["name"], attr["cpp_type"]))
-        lines.extend(format_macro(attr_macro(entry, attr, False, model.marshalable)))
+        if attr_readonly(attr) and attr["cpp_type"] not in INT_RETURNS:
+            lines.extend(emit_attribute_getter(entry, attr, False))
+        else:
+            lines.extend(format_macro(attr_macro(entry, attr, False, model.marshalable)))
         lines.append("")
     for attr in entry["class_attributes"]:
         lines.append("// Class attribute: %s (%s)" % (attr["name"], attr["cpp_type"]))
-        lines.extend(format_macro(attr_macro(entry, attr, True, model.marshalable)))
+        if attr_readonly(attr) and attr["cpp_type"] not in INT_RETURNS:
+            lines.extend(emit_attribute_getter(entry, attr, True))
+        else:
+            lines.extend(format_macro(attr_macro(entry, attr, True, model.marshalable)))
         lines.append("")
     lines.extend(emit_init_function(entry))
     return lines
@@ -1434,7 +1449,17 @@ def emit_module_attribute(klass: str, fn: dict) -> list[str]:
     symbol = "%s_%s" % (klass, fn["cpp_name"])
 
     if fn.get("setter"):
-        plan = ParamPlan([{"type": cpp_type, "name": "value"}])
+        if cpp_type in INT_RETURNS:
+            # ATTR bounds are those of its declared C++ type, not the wider
+            # ParseArgs storage used by ordinary method parameters.
+            plan = ParamPlan([])
+            plan.declarations = ["VALUE value_arg = Qnil;"]
+            plan.format = "o"
+            plan.parse_targets = ["value_arg"]
+            plan.checks = ["%s value = CheckInteger<%s>(value_arg);" % (cpp_type, cpp_type)]
+            plan.args = ["value"]
+        else:
+            plan = ParamPlan([{"type": cpp_type, "name": "value"}])
         has_exception = fn.get("has_exception", False)
         lines = ["RB_FUNC(%sEqual) {" % symbol]
         if has_exception:

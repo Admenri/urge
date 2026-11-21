@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUQuerySetDescriptor  (core/graphics/gpu.h:701-718)
+// GPUQuerySetDescriptor  (core/graphics/gpu.h:706-723)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUQuerySetDescriptor, GPUObject);
@@ -85,10 +85,16 @@ RB_FUNC(GPUQuerySetDescriptor_SetLabel) {
 }
 
 // Attribute: type (uint32_t)
-BINDING_ATTR_INT(GPUQuerySetDescriptor, urge::GPUQuerySetDescriptor, Type);
+BINDING_ATTR_INT_TYPED(GPUQuerySetDescriptor,
+                       urge::GPUQuerySetDescriptor,
+                       Type,
+                       uint32_t);
 
 // Attribute: count (uint32_t)
-BINDING_ATTR_INT(GPUQuerySetDescriptor, urge::GPUQuerySetDescriptor, Count);
+BINDING_ATTR_INT_TYPED(GPUQuerySetDescriptor,
+                       urge::GPUQuerySetDescriptor,
+                       Count,
+                       uint32_t);
 
 void InitGPUQuerySetDescriptorBindingAppend(VALUE klass);
 

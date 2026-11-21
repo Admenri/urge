@@ -23,6 +23,10 @@
 #include "core/graphics/gpu.h"
 
 #include <algorithm>
+#include <atomic>
+#include <climits>
+#include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -35,6 +39,38 @@ namespace {
 wgpu::StringView View(const std::string& text) {
   return wgpu::StringView(text);
 }
+
+uint32_t VertexBufferLimit() {
+  auto* device = GPUDevice::TryGet();
+  return device ? device->limits().maxVertexBuffers : 8;
+}
+
+uint32_t VertexAttributeLimit() {
+  auto* device = GPUDevice::TryGet();
+  return device ? device->limits().maxVertexAttributes : 16;
+}
+
+uint32_t ColorAttachmentLimit() {
+  auto* device = GPUDevice::TryGet();
+  return device ? device->limits().maxColorAttachments : 8;
+}
+
+bool CheckIndex(URGE_EXCEPT,
+                uint32_t index,
+                uint32_t limit,
+                std::string_view name) {
+  if (index < limit)
+    return true;
+  exception_state.Throw(ExceptionState::kGPUError,
+                        "{} index {} must be less than {}", name, index, limit);
+  return false;
+}
+
+struct BufferMapResult {
+  std::atomic_bool completed = false;
+  bool success = false;
+  std::string message;
+};
 
 wgpu::StencilFaceState DefaultStencilFace() {
   wgpu::StencilFaceState face;
@@ -70,7 +106,7 @@ wgpu::TexelCopyTextureInfo CopyTextureInfo(RefPtr<GPUTexture> texture,
   return info;
 }
 
-}
+}  // namespace
 
 void GPUBindGroupLayoutDescriptor::AddUniform(uint32_t binding,
                                               uint32_t visibility) {
@@ -159,12 +195,28 @@ void GPUBindGroupDescriptor::AddSampler(uint32_t binding,
   entries.push_back(entry);
 }
 
-void GPURenderPipelineDescriptor::AddVertexAttribute(uint32_t slot,
+void GPURenderPipelineDescriptor::AddVertexAttribute(URGE_EXCEPT,
+                                                     uint32_t slot,
                                                      uint32_t location,
                                                      uint32_t format,
                                                      uint64_t offset) {
+  const uint32_t attribute_limit = VertexAttributeLimit();
+  if (!CheckIndex(exception_state, slot, VertexBufferLimit(),
+                  "vertex buffer") ||
+      !CheckIndex(exception_state, location, attribute_limit,
+                  "vertex attribute"))
+    return;
+  std::size_t count = 0;
+  for (const auto& layout : vertex_buffers)
+    count += layout.attributes.size();
+  if (count >= attribute_limit) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "too many vertex attributes (limit {})",
+                          attribute_limit);
+    return;
+  }
   if (slot >= vertex_buffers.size())
-    vertex_buffers.resize(slot + 1);
+    vertex_buffers.resize(static_cast<std::size_t>(slot) + 1);
 
   wgpu::VertexAttribute attribute = {};
   attribute.shaderLocation = location;
@@ -173,32 +225,46 @@ void GPURenderPipelineDescriptor::AddVertexAttribute(uint32_t slot,
   vertex_buffers[slot].attributes.push_back(attribute);
 }
 
-void GPURenderPipelineDescriptor::SetVertexBuffer(uint32_t slot,
+void GPURenderPipelineDescriptor::SetVertexBuffer(URGE_EXCEPT,
+                                                  uint32_t slot,
                                                   uint64_t stride,
                                                   uint32_t step_mode) {
+  if (!CheckIndex(exception_state, slot, VertexBufferLimit(), "vertex buffer"))
+    return;
   if (slot >= vertex_buffers.size())
-    vertex_buffers.resize(slot + 1);
+    vertex_buffers.resize(static_cast<std::size_t>(slot) + 1);
   vertex_buffers[slot].stride = stride;
   vertex_buffers[slot].step_mode = step_mode;
 }
 
-void GPURenderPipelineDescriptor::AddColorTarget(uint32_t target_format,
+void GPURenderPipelineDescriptor::AddColorTarget(URGE_EXCEPT,
+                                                 uint32_t target_format,
                                                  uint32_t write_mask) {
+  if (color_targets.size() >= ColorAttachmentLimit()) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "too many color targets (limit {})",
+                          ColorAttachmentLimit());
+    return;
+  }
   ColorTarget target;
   target.format = target_format;
   target.write_mask = write_mask;
   color_targets.push_back(target);
 }
 
-void GPURenderPipelineDescriptor::SetColorBlend(uint32_t index,
+void GPURenderPipelineDescriptor::SetColorBlend(URGE_EXCEPT,
+                                                uint32_t index,
                                                 uint32_t color_op,
                                                 uint32_t src_factor,
                                                 uint32_t dst_factor,
                                                 uint32_t alpha_op,
                                                 uint32_t alpha_src,
                                                 uint32_t alpha_dst) {
+  if (!CheckIndex(exception_state, index, ColorAttachmentLimit(),
+                  "color target"))
+    return;
   if (index >= color_targets.size())
-    color_targets.resize(index + 1);
+    color_targets.resize(static_cast<std::size_t>(index) + 1);
 
   wgpu::BlendComponent color;
   color.operation = static_cast<wgpu::BlendOperation>(color_op);
@@ -346,44 +412,214 @@ void GPURenderPassDescriptor::SetOcclusionQuerySet(
   occlusion_query_set = query_set;
 }
 
-bool GPUBuffer::MapAsync(uint32_t mode, uint64_t offset, uint64_t size) {
-  bool success = false;
-  WGPUBufferMapCallbackInfo info = {};
-  info.mode = WGPUCallbackMode_AllowProcessEvents;
-  info.callback = [](WGPUMapAsyncStatus status, WGPUStringView message,
-                     void* userdata1, void* userdata2) {
-    *static_cast<bool*>(userdata1) = (status == WGPUMapAsyncStatus_Success);
-  };
-  info.userdata1 = &success;
-  wgpu::Future future =
-      buffer_.MapAsync(static_cast<wgpu::MapMode>(mode), offset, size, info);
-  GPUDevice::Get().WaitAny(future);
-  return success;
+GPUBuffer::GPUBuffer(wgpu::Buffer buffer, bool mapped_at_creation)
+    : buffer_(buffer),
+      mapped_(mapped_at_creation),
+      mapped_mode_(
+          mapped_at_creation ? static_cast<uint32_t>(wgpu::MapMode::Write) : 0),
+      mapped_size_(mapped_at_creation && buffer ? buffer.GetSize() : 0) {}
+
+bool GPUBuffer::NormalizeRange(URGE_EXCEPT,
+                               uint64_t offset,
+                               uint64_t& size) const {
+  if (!buffer_ || destroyed_) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the GPU buffer is destroyed or invalid");
+    return false;
+  }
+  const uint64_t buffer_size = buffer_.GetSize();
+  if (offset > buffer_size) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer offset exceeds its size");
+    return false;
+  }
+  if (size == WGPU_WHOLE_MAP_SIZE)
+    size = buffer_size - offset;
+  if (size > buffer_size - offset) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer range exceeds its size");
+    return false;
+  }
+  // The C mapping API takes size_t even though Ruby accepts uint64_t. Check
+  // before narrowing so wasm32 cannot silently map a different range.
+  constexpr uint64_t host_max = (std::numeric_limits<std::size_t>::max)();
+  if (offset > host_max || size > host_max - offset) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer range exceeds the host address space");
+    return false;
+  }
+  if (offset % 8 != 0 || size % 4 != 0) {
+    exception_state.Throw(
+        ExceptionState::kGPUError,
+        "mapping offsets must be multiples of 8 and sizes multiples of 4");
+    return false;
+  }
+  return true;
 }
 
-std::string GPUBuffer::Read(uint64_t offset, uint64_t size) {
-  if (!MapAsync(static_cast<uint32_t>(wgpu::MapMode::Read), offset, size)) {
-    LOGGER_ERROR("[GPU] buffer read: mapping {} bytes at {} failed", size,
-                 offset);
+bool GPUBuffer::CheckMappedRange(URGE_EXCEPT,
+                                 uint64_t offset,
+                                 uint64_t size) const {
+  if (offset < mapped_offset_ || offset - mapped_offset_ > mapped_size_ ||
+      size > mapped_size_ - (offset - mapped_offset_)) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "range is outside the active buffer mapping");
+    return false;
+  }
+  return true;
+}
+
+bool GPUBuffer::MapAsync(URGE_EXCEPT,
+                         uint32_t mode,
+                         uint64_t offset,
+                         uint64_t size) {
+  if (!NormalizeRange(exception_state, offset, size))
+    return false;
+  if (mapped_) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the GPU buffer is already mapped");
+    return false;
+  }
+  const auto read = static_cast<uint32_t>(wgpu::MapMode::Read);
+  const auto write = static_cast<uint32_t>(wgpu::MapMode::Write);
+  if (mode != read && mode != write) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "map mode must be MAP_READ or MAP_WRITE");
+    return false;
+  }
+  const auto usage = static_cast<uint32_t>(buffer_.GetUsage());
+  const auto required = static_cast<uint32_t>(
+      mode == read ? wgpu::BufferUsage::MapRead : wgpu::BufferUsage::MapWrite);
+  if (!(usage & required)) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer usage does not allow the requested mapping");
+    return false;
+  }
+
+  // Native queue writes are staged until Submit. Mapping is a synchronization
+  // boundary: ensure earlier writes reach the GPU before waiting for the map.
+  GPUDevice::Get().queue().Submit(0, nullptr);
+  auto result = std::make_shared<BufferMapResult>();
+  WGPUBufferMapCallbackInfo info = {};
+  info.mode = WGPUCallbackMode_AllowProcessEvents;
+  // The callback owns a shared reference, not a pointer to a stack local. A
+  // backend that fails to complete WaitAny must not later write into dead
+  // stack.
+  info.userdata1 = new std::shared_ptr<BufferMapResult>(result);
+  info.callback = [](WGPUMapAsyncStatus status, WGPUStringView message,
+                     void* userdata1, void*) {
+    std::unique_ptr<std::shared_ptr<BufferMapResult>> owner(
+        static_cast<std::shared_ptr<BufferMapResult>*>(userdata1));
+    auto& state = **owner;
+    state.success = status == WGPUMapAsyncStatus_Success;
+    if (message.data)
+      state.message.assign(message.data,
+                           message.length == WGPU_STRLEN
+                               ? std::char_traits<char>::length(message.data)
+                               : message.length);
+    state.completed.store(true, std::memory_order_release);
+  };
+  wgpu::Future future = buffer_.MapAsync(static_cast<wgpu::MapMode>(mode),
+                                         static_cast<std::size_t>(offset),
+                                         static_cast<std::size_t>(size), info);
+  GPUDevice::Get().WaitAny(future);
+  if (!result->completed.load(std::memory_order_acquire)) {
+    buffer_.Unmap();
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer mapping did not complete");
+    return false;
+  }
+  if (!result->success) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer mapping failed: {}", result->message);
+    return false;
+  }
+  mapped_ = true;
+  mapped_mode_ = mode;
+  mapped_offset_ = offset;
+  mapped_size_ = size;
+  mapped_data_ = nullptr;
+  return true;
+}
+
+void GPUBuffer::Unmap() {
+  if (!destroyed_ && buffer_)
+    buffer_.Unmap();
+  mapped_ = false;
+  mapped_mode_ = 0;
+  mapped_offset_ = mapped_size_ = 0;
+  mapped_data_ = nullptr;
+}
+
+void GPUBuffer::Destroy() {
+  if (!destroyed_ && buffer_)
+    buffer_.Destroy();
+  destroyed_ = true;
+  mapped_ = false;
+  mapped_mode_ = 0;
+  mapped_offset_ = mapped_size_ = 0;
+  mapped_data_ = nullptr;
+}
+
+std::string GPUBuffer::Read(URGE_EXCEPT, uint64_t offset, uint64_t size) {
+  if (!NormalizeRange(exception_state, offset, size))
+    return {};
+  if (size > static_cast<uint64_t>(LONG_MAX) ||
+      size > std::string().max_size()) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer read exceeds the Ruby string size limit");
     return {};
   }
+  if (size == 0)
+    return {};
+  const bool owns_mapping = !mapped_;
+  if (owns_mapping &&
+      !MapAsync(exception_state, static_cast<uint32_t>(wgpu::MapMode::Read),
+                offset, size))
+    return {};
+  if (!CheckMappedRange(exception_state, offset, size))
+    return {};
+  // Fetch the active range once. In a browser, repeated overlapping
+  // getMappedRange calls are invalid even when no second MapAsync is involved.
+  if (!mapped_data_)
+    mapped_data_ = static_cast<const char*>(
+        buffer_.GetConstMappedRange(static_cast<std::size_t>(mapped_offset_),
+                                    static_cast<std::size_t>(mapped_size_)));
   std::string result;
-  const void* data = buffer_.GetConstMappedRange(offset, size);
-  if (data)
-    result.assign(static_cast<const char*>(data), static_cast<size_t>(size));
-  buffer_.Unmap();
+  if (mapped_data_)
+    result.assign(
+        mapped_data_ + static_cast<std::size_t>(offset - mapped_offset_),
+        static_cast<std::size_t>(size));
+  else
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "buffer mapped range is unavailable");
+  if (owns_mapping)
+    Unmap();
   return result;
 }
 
-void GPUBuffer::Write(uint64_t offset, std::string data) {
-  if (!MapAsync(static_cast<uint32_t>(wgpu::MapMode::Write), offset,
-                static_cast<uint64_t>(data.size()))) {
-    LOGGER_ERROR("[GPU] buffer write: mapping {} bytes at {} failed",
-                 data.size(), offset);
+void GPUBuffer::Write(URGE_EXCEPT, uint64_t offset, std::string data) {
+  uint64_t size = data.size();
+  if (!NormalizeRange(exception_state, offset, size) || size == 0)
+    return;
+  const bool owns_mapping = !mapped_;
+  if (owns_mapping &&
+      !MapAsync(exception_state, static_cast<uint32_t>(wgpu::MapMode::Write),
+                offset, size))
+    return;
+  if (!CheckMappedRange(exception_state, offset, size))
+    return;
+  if (mapped_mode_ != static_cast<uint32_t>(wgpu::MapMode::Write)) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "the active buffer mapping is read-only");
     return;
   }
-  buffer_.WriteMappedRange(offset, data.data(), data.size());
-  buffer_.Unmap();
+  // Keep this entry point unchanged: support in the current native backend is
+  // deliberately deferred until the WebGPU implementation is replaced.
+  buffer_.WriteMappedRange(static_cast<std::size_t>(offset), data.data(),
+                           data.size());
+  if (owns_mapping)
+    Unmap();
 }
 
 RefPtr<GPUTextureView> GPUTexture::CreateView(
@@ -774,7 +1010,7 @@ RefPtr<GPUBuffer> GPU::CreateBuffer(RefPtr<GPUBufferDescriptor> descriptor) {
   desc.usage = static_cast<wgpu::BufferUsage>(descriptor->usage);
   desc.mappedAtCreation = descriptor->mapped_at_creation;
   wgpu::Buffer buffer = GPUDevice::Get().device().CreateBuffer(&desc);
-  return MakeRefCounted<GPUBuffer>(buffer);
+  return MakeRefCounted<GPUBuffer>(buffer, descriptor->mapped_at_creation);
 }
 
 RefPtr<GPUTexture> GPU::CreateTexture(RefPtr<GPUTextureDescriptor> descriptor) {
@@ -984,4 +1220,4 @@ RefPtr<GPUCommandEncoder> GPU::CreateCommandEncoder() {
   return MakeRefCounted<GPUCommandEncoder>(encoder);
 }
 
-}
+}  // namespace urge

@@ -184,7 +184,10 @@ BINDING_ATTR_BOOL(MeshRenderer3D, urge::MeshRenderer3D, CastShadow);
 BINDING_ATTR_BOOL(MeshRenderer3D, urge::MeshRenderer3D, ReceiveShadow);
 
 // Attribute: render_queue (int32_t)
-BINDING_ATTR_INT(MeshRenderer3D, urge::MeshRenderer3D, RenderQueue);
+BINDING_ATTR_INT_TYPED(MeshRenderer3D,
+                       urge::MeshRenderer3D,
+                       RenderQueue,
+                       int32_t);
 
 void InitMeshRenderer3DBindingAppend(VALUE klass);
 

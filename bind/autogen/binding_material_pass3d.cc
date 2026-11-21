@@ -391,10 +391,10 @@ RB_FUNC(MaterialPass3D_SlotNames) {
 }
 
 // Attribute: tag_id (int32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, TagId);
+BINDING_ATTR_INT_TYPED(MaterialPass3D, urge::MaterialPass3D, TagId, int32_t);
 
 // Attribute: queue (int32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Queue);
+BINDING_ATTR_INT_TYPED(MaterialPass3D, urge::MaterialPass3D, Queue, int32_t);
 
 // Attribute: skinned (bool)
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Skinned);
@@ -409,13 +409,19 @@ BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Fullscreen);
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthOnly);
 
 // Attribute: topology (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Topology);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       Topology,
+                       uint32_t);
 
 // Attribute: front_face (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, FrontFace);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       FrontFace,
+                       uint32_t);
 
 // Attribute: cull (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, Cull);
+BINDING_ATTR_INT_TYPED(MaterialPass3D, urge::MaterialPass3D, Cull, uint32_t);
 
 // Attribute: depth_test (bool)
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthTest);
@@ -424,10 +430,16 @@ BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthTest);
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, DepthWrite);
 
 // Attribute: depth_compare (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, DepthCompare);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       DepthCompare,
+                       uint32_t);
 
 // Attribute: depth_bias (int32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, DepthBias);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       DepthBias,
+                       int32_t);
 
 // Attribute: depth_bias_slope (float)
 BINDING_ATTR_FLOAT(MaterialPass3D, urge::MaterialPass3D, DepthBiasSlope);
@@ -439,40 +451,76 @@ BINDING_ATTR_FLOAT(MaterialPass3D, urge::MaterialPass3D, DepthBiasClamp);
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, Stencil);
 
 // Attribute: stencil_ref (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilRef);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilRef,
+                       uint32_t);
 
 // Attribute: stencil_read_mask (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilReadMask);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilReadMask,
+                       uint32_t);
 
 // Attribute: stencil_write_mask (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilWriteMask);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilWriteMask,
+                       uint32_t);
 
 // Attribute: stencil_front_compare (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontCompare);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilFrontCompare,
+                       uint32_t);
 
 // Attribute: stencil_front_fail (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontFail);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilFrontFail,
+                       uint32_t);
 
 // Attribute: stencil_front_depth_fail (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontDepthFail);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilFrontDepthFail,
+                       uint32_t);
 
 // Attribute: stencil_front_pass (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilFrontPass);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilFrontPass,
+                       uint32_t);
 
 // Attribute: stencil_back_compare (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackCompare);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilBackCompare,
+                       uint32_t);
 
 // Attribute: stencil_back_fail (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackFail);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilBackFail,
+                       uint32_t);
 
 // Attribute: stencil_back_depth_fail (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackDepthFail);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilBackDepthFail,
+                       uint32_t);
 
 // Attribute: stencil_back_pass (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, StencilBackPass);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       StencilBackPass,
+                       uint32_t);
 
 // Attribute: color_write_mask (uint32_t)
-BINDING_ATTR_INT(MaterialPass3D, urge::MaterialPass3D, ColorWriteMask);
+BINDING_ATTR_INT_TYPED(MaterialPass3D,
+                       urge::MaterialPass3D,
+                       ColorWriteMask,
+                       uint32_t);
 
 // Attribute: alpha_to_coverage (bool)
 BINDING_ATTR_BOOL(MaterialPass3D, urge::MaterialPass3D, AlphaToCoverage);

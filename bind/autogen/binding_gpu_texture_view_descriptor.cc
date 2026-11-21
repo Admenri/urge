@@ -85,39 +85,46 @@ RB_FUNC(GPUTextureViewDescriptor_SetLabel) {
 }
 
 // Attribute: format (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 Format);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       Format,
+                       uint32_t);
 
 // Attribute: dimension (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 Dimension);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       Dimension,
+                       uint32_t);
 
 // Attribute: base_mip_level (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 BaseMipLevel);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       BaseMipLevel,
+                       uint32_t);
 
 // Attribute: mip_level_count (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 MipLevelCount);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       MipLevelCount,
+                       uint32_t);
 
 // Attribute: base_array_layer (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 BaseArrayLayer);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       BaseArrayLayer,
+                       uint32_t);
 
 // Attribute: array_layer_count (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 ArrayLayerCount);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       ArrayLayerCount,
+                       uint32_t);
 
 // Attribute: aspect (uint32_t)
-BINDING_ATTR_INT(GPUTextureViewDescriptor,
-                 urge::GPUTextureViewDescriptor,
-                 Aspect);
+BINDING_ATTR_INT_TYPED(GPUTextureViewDescriptor,
+                       urge::GPUTextureViewDescriptor,
+                       Aspect,
+                       uint32_t);
 
 void InitGPUTextureViewDescriptorBindingAppend(VALUE klass);
 

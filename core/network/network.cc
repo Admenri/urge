@@ -71,7 +71,7 @@ std::string FindHeader(const std::vector<std::string>& lines,
   return std::string();
 }
 
-}
+}  // namespace
 
 NetworkEvent::NetworkEvent() = default;
 
@@ -98,7 +98,17 @@ std::string NetworkEvent::GetErrorMessage() {
 }
 
 WebSocket::WebSocket(std::string url, std::vector<std::string> protocols)
-    : url_(std::move(url)), protocols_(std::move(protocols)) {}
+    : url_(std::move(url)), protocols_(std::move(protocols)) {
+#if URGE_ENABLE_NETWORK
+  if (auto* network = Network::TryGet(); network && network->backend_) {
+    Attach(network->backend_->CreateWebSocketImpl(url_, protocols_,
+                                                  network->timeout_));
+    return;
+  }
+#endif
+  ready_state_ = ClosedState;
+  error_ = "network is not available in this build.";
+}
 
 WebSocket::~WebSocket() = default;
 
@@ -171,7 +181,17 @@ Fetch::Fetch(std::string url,
     : url_(std::move(url)),
       method_(std::move(method)),
       request_body_(std::move(body)),
-      request_headers_(std::move(headers)) {}
+      request_headers_(std::move(headers)) {
+#if URGE_ENABLE_NETWORK
+  if (auto* network = Network::TryGet(); network && network->backend_) {
+    Attach(network->backend_->CreateFetchImpl(
+        url_, method_, request_body_, request_headers_, network->timeout_));
+    return;
+  }
+#endif
+  done_ = true;
+  error_ = "network is not available in this build.";
+}
 
 Fetch::~Fetch() = default;
 
@@ -196,34 +216,56 @@ bool Fetch::IsDone() {
 }
 
 bool Fetch::IsSuccess() {
+  if (impl_)
+    impl_->Poll(*this);
   return success_;
 }
 
 int32_t Fetch::GetStatus() {
+  if (impl_)
+    impl_->Poll(*this);
   return status_;
 }
 
 std::string Fetch::GetStatusText() {
+  if (impl_)
+    impl_->Poll(*this);
   return status_text_;
 }
 
 std::string Fetch::GetText() {
+  if (impl_)
+    impl_->Poll(*this);
+  return body_;
+}
+
+const std::string& Fetch::body() {
+  if (impl_)
+    impl_->Poll(*this);
   return body_;
 }
 
 std::string Fetch::GetError() {
+  if (impl_)
+    impl_->Poll(*this);
   return error_;
 }
 
 float Fetch::GetProgress() {
+  if (impl_)
+    impl_->Poll(*this);
   return progress_;
 }
 
 std::string Fetch::GetHeader(std::string name) {
+  if (impl_)
+    impl_->Poll(*this);
   return FindHeader(headers_, name);
 }
 
 std::vector<std::string> Fetch::GetHeaders() {
+  if (impl_)
+    impl_->Poll(*this);
   return headers_;
 }
 
@@ -257,7 +299,7 @@ RefPtr<WebSocket> Network::OpenWebSocket(URGE_EXCEPT,
                                          std::string url,
                                          std::vector<std::string> protocols) {
 #if URGE_ENABLE_NETWORK
-  return backend_->OpenWebSocket(url, protocols);
+  return MakeRefCounted<WebSocket>(std::move(url), std::move(protocols));
 #else
   NetworkUnavailable(exception_state);
   return nullptr;
@@ -270,7 +312,8 @@ RefPtr<Fetch> Network::OpenFetch(URGE_EXCEPT,
                                  std::string body,
                                  std::vector<std::string> headers) {
 #if URGE_ENABLE_NETWORK
-  return backend_->OpenFetch(url, method, body, headers);
+  return MakeRefCounted<Fetch>(std::move(url), std::move(method),
+                               std::move(body), std::move(headers));
 #else
   NetworkUnavailable(exception_state);
   return nullptr;
@@ -298,4 +341,4 @@ ATTR_DEF(Network, int32_t, MaxEvents) {
   return max_events_;
 }
 
-}
+}  // namespace urge

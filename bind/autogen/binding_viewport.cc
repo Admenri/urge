@@ -138,10 +138,10 @@ BINDING_ATTR_OBJECT(Viewport,
                     CheckObject);
 
 // Attribute: ox (int32_t)
-BINDING_ATTR_INT(Viewport, urge::Viewport, OX);
+BINDING_ATTR_INT_TYPED(Viewport, urge::Viewport, OX, int32_t);
 
 // Attribute: oy (int32_t)
-BINDING_ATTR_INT(Viewport, urge::Viewport, OY);
+BINDING_ATTR_INT_TYPED(Viewport, urge::Viewport, OY, int32_t);
 
 // Attribute: color (RefPtr<Color>)
 BINDING_ATTR_OBJECT(Viewport,

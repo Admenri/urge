@@ -36,6 +36,7 @@ namespace urge {
 URGE_BINDING()
 class Touch : public Singleton<Touch> {
  public:
+  URGE_BINDING(Name : "MAX_FINGERS")
   static constexpr int32_t kMaxFingers = 16;
 
   Touch();

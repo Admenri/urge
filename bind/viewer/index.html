@@ -47,7 +47,7 @@
   .brand h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .01em; }
   .brand .sub { color: var(--muted); font-size: 12px; }
   .grow { flex: 1 1 auto; }
-  .searchbox { position: relative; width: min(380px, 100%); }
+  .searchbox { position: relative; width: min(520px, 100%); }
   .searchbox input {
     width: 100%; padding: 6px 10px 6px 30px; font: inherit; font-size: 13px;
     border: 1px solid var(--border-strong); border-radius: var(--radius);
@@ -68,7 +68,7 @@
     padding: 5px 10px; cursor: pointer; display: flex; gap: 10px; align-items: baseline;
   }
   #suggest .item:hover, #suggest .item.active { background: var(--accent-soft); }
-  #suggest .item .sig { font-family: var(--mono); font-size: 12.5px; flex: 1 1 auto; }
+  #suggest .item .sig { font-family: var(--mono); font-size: 12.5px; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
   #suggest .item .kind { color: var(--muted); font-size: 11px; white-space: nowrap; }
   #suggest .empty { padding: 8px 10px; color: var(--muted); font-size: 12.5px; }
 
@@ -128,10 +128,18 @@
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: 5px 10px 5px 0; vertical-align: top; border-bottom: 1px solid var(--border); }
   th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 650; }
-  td.sig { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
-  td.sig .nm { font-weight: 600; }
-  td.sig .pa { color: var(--muted); }
-  td.ret { font-family: var(--mono); font-size: 12px; color: var(--text); white-space: nowrap; }
+  .api-table { table-layout: fixed; }
+  .api-table th:nth-child(1) { width: 64%; }
+  .api-table th:nth-child(2) { width: 22%; }
+  .api-table th:nth-child(3) { width: 14%; }
+  .api-table td { overflow-wrap: anywhere; }
+  td.sig { font-family: var(--mono); font-size: 12.5px; }
+  .sig .nm { font-weight: 600; }
+  .sig .pa { color: var(--muted); }
+  .type { color: var(--accent); }
+  td.ret { font-family: var(--mono); font-size: 12px; }
+  .native-type { margin-top: 2px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .signature-hint { margin: 0 0 14px; font-size: 12px; }
   td.cpp { font-family: var(--mono); font-size: 12px; color: var(--muted); }
   tr.flag td { background: #fbfcfe; }
   tr:hover td { background: var(--accent-soft); }
@@ -328,7 +336,7 @@ function rubyDefault(p) {
   if (d === "{}" || d === "{ }") {
     if (ty.indexOf("vector") >= 0) return "[]";
     if (ty.indexOf("string") >= 0) return '""';
-    if (ty.indexOf("RefPtr") === 0) return "nil";
+    if (ty.indexOf("RefPtr") === 0 || ty.indexOf("MaybePtr") === 0) return "nil";
     return "{}";
   }
   if (d === "std::string()" || d === "std::string{}") return '""';
@@ -337,11 +345,44 @@ function rubyDefault(p) {
   if (m) return m[1] + (m[1].slice(-1) === "." ? "0" : "");
   return d;
 }
-function paramText(p) {
-  var d = rubyDefault(p);
-  return d === null ? p["name"] : p["name"] + " = " + d;
+/* Mirrors ruby_type() in viewer.py and the generator's scalar mappings.
+ * RefPtr parameters are required objects; MaybePtr explicitly accepts nil.
+ * Unknown spellings stay visible instead of being guessed. */
+function rubyType(cppType, documentedType) {
+  var ty = (cppType || "").trim();
+  var pointer = /^(RefPtr|MaybePtr)<\s*([\w:]+)\s*>$/.exec(ty);
+  var optional = /^std::optional<\s*(.+?)\s*>$/.exec(ty);
+  var result;
+  if (documentedType) result = documentedType;
+  else if (ty === "void") result = "nil";
+  else if (ty === "bool") result = "Boolean";
+  else if (ty === "float" || ty === "double") result = "Float";
+  else if (/^(?:u?int(?:8|16|32|64)_t|int|unsigned int|void\*)$/.test(ty)) result = "Integer";
+  else if (ty === "std::string" || ty === "const char*" || ty === "char*") result = "String";
+  else if (pointer) result = pointer[2].split("::").pop();
+  else if (optional) result = rubyType(optional[1]);
+  else {
+    var vector = /^std::vector<\s*(.+?)\s*>$/.exec(ty);
+    result = vector ? "Array<" + rubyType(vector[1]) + ">" : ty || "?";
+  }
+  if ((pointer && pointer[1] === "MaybePtr") || optional) {
+    if (result.split(" | ").indexOf("nil") < 0) result += " | nil";
+  }
+  return result;
 }
-function paramsText(ps) { return (ps || []).map(paramText).join(", "); }
+function paramType(p) { return rubyType(p.type, p.ruby_type); }
+function returnType(m) {
+  return m.ret ? rubyType(m.ret.cpp_type, m.ret.ruby_type) : "—";
+}
+function paramText(p, typed) {
+  var text = p.name || "?";
+  if (typed) text += ": " + paramType(p);
+  var d = rubyDefault(p);
+  return d === null ? text : text + " = " + d;
+}
+function paramsText(ps, typed) {
+  return (ps || []).map(function (p) { return paramText(p, typed); }).join(", ");
+}
 
 function mkMember(owner, kind, rubyName, o) {
   o = o || {};
@@ -414,13 +455,13 @@ function membersOf(entry) {
     if (entry.index.get) {
       var g = entry.index.get;
       out.push(mkMember(entry, "index", g.ruby_name, {
-        cppName: g.cpp_name, params: g.params, export: g.export, note: "reader"
+        cppName: g.cpp_name, params: g.params, ret: g["return"], export: g.export, note: "reader"
       }));
     }
     if (entry.index.set) {
       var s = entry.index.set;
       out.push(mkMember(entry, "index", s.ruby_name, {
-        cppName: s.cpp_name, params: s.params, export: s.export, note: "writer"
+        cppName: s.cpp_name, params: s.params, ret: s["return"], export: s.export, note: "writer"
       }));
     }
   }
@@ -467,7 +508,8 @@ function membersOf(entry) {
   }
   if (entry.initialize_copy) {
     out.push(mkMember(entry, "initialize_copy", "initialize_copy", {
-      params: entry.initialize_copy.params, export: entry.initialize_copy.export,
+      params: entry.initialize_copy.params, ret: { ruby_type: entry.name },
+      export: entry.initialize_copy.export,
       note: "private, driven by #dup and #clone"
     }));
   }
@@ -497,16 +539,12 @@ function bySection(a, b) {
   return SECTION_ORDER.indexOf(a.kind) - SECTION_ORDER.indexOf(b.kind);
 }
 
-function signatureOf(m) {
+/* Type annotations are reference notation, not Ruby call syntax.  Keep the
+ * untyped form for click-to-copy while tables and search show the typed form. */
+function signatureOf(m, typed) {
   if (m.kind === "unsupported") return m.rubyName;
   if (BARE_KINDS.indexOf(m.kind) >= 0) return m.call;
-  return m.call + "(" + paramsText(m.params) + ")";
-}
-function returnsOf(m) {
-  if (!m.ret) return "\u2014";
-  var ruby = m.ret.ruby_type || "\u2014";
-  var cpp = m.ret.cpp_type;
-  return (cpp && cpp !== "void") ? ruby + "   " + cpp : ruby;
+  return m.call + "(" + paramsText(m.params, typed) + ")";
 }
 
 /* ------------------------------------------------------------------ *
@@ -656,6 +694,26 @@ function sectionTitle(kind, n) {
   return '<section><h3>' + esc(KIND_LABELS[kind] || kind) + ' <span class="n">' + n + "</span></h3>";
 }
 
+function paramHTML(p) {
+  var html = esc(p.name || "?") + '<span class="type" title="C++: ' + esc(p.type || "—") + '">: ' +
+             esc(paramType(p)) + "</span>";
+  var d = rubyDefault(p);
+  return html + (d === null ? "" : '<span class="pa"> = ' + esc(d) + "</span>");
+}
+
+function signatureHTML(m) {
+  var html = '<span class="nm">' + esc(m.call) + "</span>";
+  if (BARE_KINDS.indexOf(m.kind) >= 0) return html;
+  return html + '<span class="pa">(</span>' + m.params.map(paramHTML).join(", ") +
+         '<span class="pa">)</span>';
+}
+
+function returnsHTML(m) {
+  var cpp = m.ret && m.ret.cpp_type;
+  return '<span class="type">' + esc(returnType(m)) + "</span>" +
+         (cpp ? '<div class="native-type">C++: ' + esc(cpp) + "</div>" : "");
+}
+
 function renderDetail(name, highlight) {
   var entry = ownerOf(name);
   if (!entry) return;
@@ -691,6 +749,10 @@ function renderDetail(name, highlight) {
     "<div class='cell'><div class='k'>Ruby superclass</div><div class='v'>" + esc(entry.ruby_superclass || "\u2014") + "</div></div>" +
     "</div>";
 
+  html += '<p class="hint signature-hint">Signatures use <code>name: Type = default</code> reference notation. ' +
+          'Hover over a parameter type for C++; click a signature to copy it without type annotations. ' +
+          '<code>Type | nil</code> means the value may be <code>nil</code>.</p>';
+
   var order = SECTION_ORDER.filter(function (k) { return k !== "unsupported"; });
   if (entry.kind === "module") order = ["module_function", "module_attribute"];
 
@@ -700,29 +762,21 @@ function renderDetail(name, highlight) {
     html += sectionTitle(kind, group.length);
     /* Every member of a class shares that class's export range, which the grid
      * above already states, so it is not repeated per row. */
-    html += "<table><thead><tr><th>Signature</th><th>Returns</th><th>C++</th></tr></thead><tbody>";
+    html += '<table class="api-table"><thead><tr><th>Signature / parameter types</th><th>Return type</th><th>C++ member</th></tr></thead><tbody>';
     group.forEach(function (m) {
       var isHit = highlight && m.rubyName === highlight && m.kind !== "new";
-      var sig;
-      if (m.kind === "unsupported") {
-        sig = esc(m.rubyName);
-      } else if (BARE_KINDS.indexOf(m.kind) >= 0) {
-        sig = '<span class="nm">' + esc(m.call) + "</span>";
-      } else {
-        /* Always show the parentheses, so a zero-arity row reads the same as
-         * the text this cell copies (signatureOf). */
-        sig = '<span class="nm">' + esc(m.call) + "</span>" +
-              '<span class="pa">(' + esc(paramsText(m.params)) + ")</span>";
-      }
+      var sig = signatureHTML(m);
       html += '<tr' + (isHit ? ' class="flag"' : "") + ">";
       html += '<td class="sig copy" title="click to copy" data-sig="' + esc(signatureOf(m)) + '">' + sig +
               (m.flags.length ? " " + m.flags.map(function (f) {
                 return '<span class="tag ' + (f === "override" ? "ov" : (f === "annotation" ? "an" : "")) + '">' + esc(f) + "</span>";
               }).join(" ") : "") +
-              (m.writer ? '<div class="hint mono" style="font-size:11.5px">' + esc(m.writer) + "</div>" : "") +
+              (m.writer ? '<div class="hint mono" style="font-size:11.5px">' + esc(m.writer) +
+                '<span class="type" title="C++: ' + esc(m.cppType || (m.ret && m.ret.cpp_type) || "—") + '">: ' +
+                esc(returnType(m)) + "</span></div>" : "") +
               (m.note ? '<div class="hint" style="font-size:11.5px">' + esc(m.note) + "</div>" : "") +
               "</td>";
-      html += '<td class="ret">' + esc(returnsOf(m)) + "</td>";
+      html += '<td class="ret">' + returnsHTML(m) + "</td>";
       html += '<td class="cpp">' + esc(m.cppName || "\u2014") + "</td>";
       html += "</tr>";
     });
@@ -784,8 +838,9 @@ function rank(m, needle) {
   if (name === needle) return 0;
   if (name.indexOf(needle) === 0) return 1;
   if (call.indexOf(needle) >= 0) return 2;
-  var hay = (m.cppName + " " + ((m.ret && m.ret.ruby_type) || "") + " " +
-             m.params.map(function (p) { return p.name + " " + p.type; }).join(" ")).toLowerCase();
+  var hay = (signatureOf(m, true) + " " + m.cppName + " " + returnType(m) + " " +
+             ((m.ret && m.ret.cpp_type) || "") + " " +
+             m.params.map(function (p) { return p.type || ""; }).join(" ")).toLowerCase();
   if ((m.owner + " " + hay).toLowerCase().indexOf(needle) >= 0) return 3;
   return -1;
 }
@@ -812,7 +867,8 @@ function renderSuggest(hits, query) {
   }
   suggestEl.innerHTML = hits.map(function (m) {
     return '<div class="item" data-owner="' + esc(m.owner) + '" data-name="' + esc(m.rubyName) + '">' +
-           '<span class="sig">' + esc(signatureOf(m)) + "</span>" +
+           '<span class="sig">' + signatureHTML(m) + '<span class="pa"> → </span>' +
+           '<span class="type">' + esc(returnType(m)) + "</span></span>" +
            '<span class="kind">' + esc(m.kindLabel) + "</span></div>";
   }).join("");
   suggestEl.classList.add("open");

@@ -250,7 +250,7 @@ RB_FUNC(Gamepad_Rumble) {
 }
 
 // Attribute: player_index (int32_t)
-BINDING_ATTR_INT(Gamepad, urge::Gamepad, PlayerIndex);
+BINDING_ATTR_INT_TYPED(Gamepad, urge::Gamepad, PlayerIndex, int32_t);
 
 void InitGamepadBindingAppend(VALUE klass);
 
@@ -272,69 +272,69 @@ void InitGamepadBinding() {
   DefineMethod(klass, "player_index", Gamepad_PlayerIndex);
   DefineMethod(klass, "player_index=", Gamepad_PlayerIndexEqual);
   rb_const_set(klass, rb_intern("AXIS_LEFTX"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::AXIS_LEFTX)));
+               WrapConstant(urge::Gamepad::AXIS_LEFTX));
   rb_const_set(klass, rb_intern("AXIS_LEFTY"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::AXIS_LEFTY)));
+               WrapConstant(urge::Gamepad::AXIS_LEFTY));
   rb_const_set(klass, rb_intern("AXIS_RIGHTX"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::AXIS_RIGHTX)));
+               WrapConstant(urge::Gamepad::AXIS_RIGHTX));
   rb_const_set(klass, rb_intern("AXIS_RIGHTY"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::AXIS_RIGHTY)));
+               WrapConstant(urge::Gamepad::AXIS_RIGHTY));
   rb_const_set(klass, rb_intern("AXIS_LEFT_TRIGGER"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::AXIS_LEFT_TRIGGER)));
+               WrapConstant(urge::Gamepad::AXIS_LEFT_TRIGGER));
   rb_const_set(klass, rb_intern("AXIS_RIGHT_TRIGGER"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::AXIS_RIGHT_TRIGGER)));
+               WrapConstant(urge::Gamepad::AXIS_RIGHT_TRIGGER));
   rb_const_set(klass, rb_intern("BUTTON_SOUTH"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_SOUTH)));
+               WrapConstant(urge::Gamepad::BUTTON_SOUTH));
   rb_const_set(klass, rb_intern("BUTTON_EAST"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_EAST)));
+               WrapConstant(urge::Gamepad::BUTTON_EAST));
   rb_const_set(klass, rb_intern("BUTTON_WEST"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_WEST)));
+               WrapConstant(urge::Gamepad::BUTTON_WEST));
   rb_const_set(klass, rb_intern("BUTTON_NORTH"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_NORTH)));
+               WrapConstant(urge::Gamepad::BUTTON_NORTH));
   rb_const_set(klass, rb_intern("BUTTON_BACK"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_BACK)));
+               WrapConstant(urge::Gamepad::BUTTON_BACK));
   rb_const_set(klass, rb_intern("BUTTON_GUIDE"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_GUIDE)));
+               WrapConstant(urge::Gamepad::BUTTON_GUIDE));
   rb_const_set(klass, rb_intern("BUTTON_START"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_START)));
+               WrapConstant(urge::Gamepad::BUTTON_START));
   rb_const_set(klass, rb_intern("BUTTON_LEFT_STICK"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_LEFT_STICK)));
+               WrapConstant(urge::Gamepad::BUTTON_LEFT_STICK));
   rb_const_set(klass, rb_intern("BUTTON_RIGHT_STICK"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_RIGHT_STICK)));
+               WrapConstant(urge::Gamepad::BUTTON_RIGHT_STICK));
   rb_const_set(klass, rb_intern("BUTTON_LEFT_SHOULDER"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_LEFT_SHOULDER)));
+               WrapConstant(urge::Gamepad::BUTTON_LEFT_SHOULDER));
   rb_const_set(klass, rb_intern("BUTTON_RIGHT_SHOULDER"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_RIGHT_SHOULDER)));
+               WrapConstant(urge::Gamepad::BUTTON_RIGHT_SHOULDER));
   rb_const_set(klass, rb_intern("BUTTON_DPAD_UP"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_DPAD_UP)));
+               WrapConstant(urge::Gamepad::BUTTON_DPAD_UP));
   rb_const_set(klass, rb_intern("BUTTON_DPAD_DOWN"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_DPAD_DOWN)));
+               WrapConstant(urge::Gamepad::BUTTON_DPAD_DOWN));
   rb_const_set(klass, rb_intern("BUTTON_DPAD_LEFT"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_DPAD_LEFT)));
+               WrapConstant(urge::Gamepad::BUTTON_DPAD_LEFT));
   rb_const_set(klass, rb_intern("BUTTON_DPAD_RIGHT"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_DPAD_RIGHT)));
+               WrapConstant(urge::Gamepad::BUTTON_DPAD_RIGHT));
   rb_const_set(klass, rb_intern("BUTTON_MISC1"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_MISC1)));
+               WrapConstant(urge::Gamepad::BUTTON_MISC1));
   rb_const_set(klass, rb_intern("BUTTON_MISC2"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_MISC2)));
+               WrapConstant(urge::Gamepad::BUTTON_MISC2));
   rb_const_set(klass, rb_intern("BUTTON_MISC3"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_MISC3)));
+               WrapConstant(urge::Gamepad::BUTTON_MISC3));
   rb_const_set(klass, rb_intern("BUTTON_MISC4"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_MISC4)));
+               WrapConstant(urge::Gamepad::BUTTON_MISC4));
   rb_const_set(klass, rb_intern("BUTTON_MISC5"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_MISC5)));
+               WrapConstant(urge::Gamepad::BUTTON_MISC5));
   rb_const_set(klass, rb_intern("BUTTON_MISC6"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_MISC6)));
+               WrapConstant(urge::Gamepad::BUTTON_MISC6));
   rb_const_set(klass, rb_intern("BUTTON_RIGHT_PADDLE1"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_RIGHT_PADDLE1)));
+               WrapConstant(urge::Gamepad::BUTTON_RIGHT_PADDLE1));
   rb_const_set(klass, rb_intern("BUTTON_RIGHT_PADDLE2"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_RIGHT_PADDLE2)));
+               WrapConstant(urge::Gamepad::BUTTON_RIGHT_PADDLE2));
   rb_const_set(klass, rb_intern("BUTTON_LEFT_PADDLE1"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_LEFT_PADDLE1)));
+               WrapConstant(urge::Gamepad::BUTTON_LEFT_PADDLE1));
   rb_const_set(klass, rb_intern("BUTTON_LEFT_PADDLE2"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_LEFT_PADDLE2)));
+               WrapConstant(urge::Gamepad::BUTTON_LEFT_PADDLE2));
   rb_const_set(klass, rb_intern("BUTTON_TOUCHPAD"),
-               LONG2NUM(static_cast<long>(urge::Gamepad::BUTTON_TOUCHPAD)));
+               WrapConstant(urge::Gamepad::BUTTON_TOUCHPAD));
   DefineClassMethod(klass, "available_devices", Gamepad_available_devices);
   InitGamepadBindingAppend(klass);
 }

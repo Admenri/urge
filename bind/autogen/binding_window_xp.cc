@@ -138,34 +138,34 @@ BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Active);
 BINDING_ATTR_BOOL(WindowXP, urge::WindowXP, Pause);
 
 // Attribute: x (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, X);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, X, int32_t);
 
 // Attribute: y (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, Y);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, Y, int32_t);
 
 // Attribute: width (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, Width);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, Width, int32_t);
 
 // Attribute: height (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, Height);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, Height, int32_t);
 
 // Attribute: ox (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, OX);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, OX, int32_t);
 
 // Attribute: oy (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, OY);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, OY, int32_t);
 
 // Attribute: opacity (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, Opacity);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, Opacity, int32_t);
 
 // Attribute: back_opacity (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, BackOpacity);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, BackOpacity, int32_t);
 
 // Attribute: contents_opacity (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, ContentsOpacity);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, ContentsOpacity, int32_t);
 
 // Attribute: z (int32_t)
-BINDING_ATTR_INT(WindowXP, urge::WindowXP, Z);
+BINDING_ATTR_INT_TYPED(WindowXP, urge::WindowXP, Z, int32_t);
 
 void InitWindowXPBindingAppend(VALUE klass);
 

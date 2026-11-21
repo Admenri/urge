@@ -330,8 +330,14 @@ return SetupSelfData(self, object.get());
 `RB_DATATYPE_*`，也不得手工访问 `argv[i]`。对象通过 `GetObject<T>(value, kTDataType)`
 转换，返回对象通过 `WrapObject(ptr, kTDataType)` 转换（`nullptr` 返回 `nil`）。
 
-返回 `std::string` 一律用 `rb_enc_str_new(ptr, len, rb_utf8_encoding())`——长度显式，
-不依赖 NUL 结尾；返回 C 字符串用
+返回 `std::string` 默认用 `rb_enc_str_new(ptr, len, rb_utf8_encoding())`——长度显式，
+不依赖 NUL 结尾。方法标记 `URGE_BINDING(Binary: true)` 时改用
+`rb_ascii8bit_encoding()`（ASCII-8BIT），保留 NUL 与非 UTF-8 字节；该注解仅用于
+`std::string` 返回值，IR 方法条目记录 `"binary": true`，其它返回类型会报生成错误。
+实例方法、静态方法、模块函数及各重载/默认参数分支均按自己的注解生成；未标记的文本
+返回值保持 UTF-8。带 `URGE_EXCEPT` 的 `std::string` 方法若记录异常，生成器先释放
+返回值的 heap box，再调用 `RaiseException`，避免 Ruby longjmp 泄漏错误结果。
+返回 C 字符串用
 `rb_enc_str_new(ptr, std::strlen(ptr), rb_utf8_encoding())`。4.0 虽然提供了
 `rb_utf8_str_new_cstr` / `rb_enc_str_new_cstr`，但生成器不用它们：前者假定 NUL 结尾，
 而 IR 里的 `const char*` 并不保证。
@@ -576,11 +582,32 @@ DEFINE_VECTOR_CODEC(int32_t, NUM2INT(value), INT2NUM(value));
 
 | C++ 属性类型 | 宏 |
 | --- | --- |
-| 整数（`int8/16/32`、`uint*`、`int64`、`uint64`） | `BINDING_ATTR_INT` |
+| 整数（`int8/16/32`、`uint*`、`int64`、`uint64`） | `BINDING_ATTR_INT_TYPED(Class, urge::Class, Name, CppType)` |
 | `float` / `double` | `BINDING_ATTR_FLOAT` |
 | `bool` | `BINDING_ATTR_BOOL` |
 | `std::vector<T>` | `BINDING_ATTR_VECTOR`（元素类型，见上一节） |
 | `RefPtr<Obj>` | 见下 |
+
+整数 ATTR 的结果槽与 setter 值都使用声明的 C++ 类型，不再统一为 `int32_t`。
+getter 用 `WrapConstant` 保留符号与位宽；setter 在 Ruby 边界调用 `CheckInteger<T>`，
+接受隐式整数转换（`to_int`），按 `numeric_limits<T>` 拒绝越界（`RangeError`）。
+unsigned 明确拒绝负数（含负浮点输入），不使用 `NUM2ULL` 的负数回绕行为；因此
+`uint32_t` 的 `0xffffffff`、`uint64_t` 的 `1 << 63` 与 `0xffffffffffffffff` 都合法。
+`static ATTR` 用 `BINDING_CLASS_ATTR_INT_TYPED`；`ATTR_EXC` 在宏后加 `_EXC`，两个组合
+同时支持。旧三参 `*_INT` 宏仍兼容，但从 C++ accessor 的 `optional::value_type` 推导
+真实类型。模块整数 ATTR 的 setter 也使用同一范围检查；普通方法参数规则不在此变更内。
+
+`URGE_BINDING(ReadOnly: true)` 可与 `Name` 组合，令 ATTR 只导出 getter；IR 属性增加
+`"readonly": true` 并记录 `"setter": null`。不标记时仍为原来的读写对。适用于实例、
+静态、模块属性及 `ATTR_EXC`；整数用 `*_INT_TYPED_GET[_EXC]`，其它类型用常规结果
+编解码器生成独立 getter。**不生成 setter 函数体，也不注册 `name=`**，只限制 Ruby
+导出面，不改变 C++ 的 ATTR 签名。模块 IR 只保留 getter 函数条目（同样带 readonly），
+不产生 setter 条目。
+
+窄范围回归：`python -I tools/tests/test_binding_attributes.py`。所有生成物均在临时目录；
+代码生成检查只读导出、二进制编码与重跑保留，另有 C++17 编译器时编译实际 typed 宏，
+用最小 Ruby API 替身检查整数边界（不运行真实引擎/VM）。常量回归仍由
+`test_binding_constants.py` 独立负责。
 
 `RefPtr<Obj>` 按**目标类是否可 Marshal** 选择：
 
@@ -730,11 +757,21 @@ class GPU : public Singleton<GPU> {
 GPU::MAP_READ | GPU::MAP_WRITE   # => 3
 ```
 
-- 生成器只读枚举项名，**值取自 C++ 侧**（`urge::GPU::MapRead`），所以隐式后继
-  （`enum { A, B }`）不需要生成器懂 C++ 求值规则，`enum` 与 `enum class` 都一样。
-- 标记只作用于紧跟的那一条声明，与 `ATTR`、方法一致；未标记的 `enum` 不进 IR。
-- 早先手写的常量表（`NetworkEvent`/`WebSocket` 的 `Define*Constants`）保持原样；
-  新代码用标记 enum 即可，不必再写手写块。
+- **值取自 C++ 侧**，隐式后继不需要 Python 求值。非作用域枚举的 `cpp_name` 是
+  `MapRead`；`enum class` / `enum struct` 必须保留枚举作用域，例如
+  `ClearFlag::ClearColor` → `urge::Camera3D::ClearFlag::ClearColor`。
+  `WrapConstant` 根据实际 C++ 类型保留整数的位宽与符号，不经 Windows 的 32 位 `long`。
+- 标记只作用于紧跟的声明；只有公开且带标记的枚举导出，私有/受保护或未标记的枚举不进 IR。
+  `Force32`、`Count` 及以这些名称结尾的哨兵不导出（即使另加 `Name`）。
+- 枚举项可单独用 `URGE_BINDING(Name : "OPEN") OpenState = 1` 保留旧 Ruby 名；没有覆盖时
+  去掉 C++ 约定的 `k` 前缀再转 SCREAMING_SNAKE（`kTranslation` → `TRANSLATION`）。
+  同一类/模块里重复的 Ruby 常量名会使生成失败，避免后注册值静默覆盖前值。
+- 公开且带标记的整数 `static constexpr` 也进入同一 `constants` 列表，例如
+  `Touch::kMaxFingers` → `Touch::MAX_FINGERS`。不自动导出内部容量、私有字段或其它常量类型。
+- `NetworkEvent`、`WebSocket`、`Mouse`、`Input` 的常量已迁入标记声明，冷生成与增量生成一致；
+  旧手写常量注册已移除，`NetworkEvent#data` 等非标准方法仍保留手写实现。
+- 窄范围回归：`python -I tools/tests/test_binding_constants.py`；加 `--ruby-checks` 可输出
+  真实 Ruby VM 的纯常量断言，不包含网络通信测试。
 
 ## `URGE_BINDING` 导出标记
 
@@ -772,8 +809,7 @@ class Sprite : public Node {
 | 覆盖项 | 内容 |
 | --- | --- |
 | `TABLE_MANUAL` | `Table#[]` / `#[]=` 的手写实现（写进 `binding_table.cc` 的手写区） |
-| `INPUT_MANUAL` | `Input::*` 键常量（写进 `binding_input.cc` 的手写区） |
-| `EXTRA_INIT_CALLS` | 追加到 `Init*Binding()` 末尾的语句（`Input` → `DefineInputKeyConstants(mod);`） |
+| `EXTRA_INIT_CALLS` | 追加到 `Init*Binding()` 末尾的语句（如 `NetworkEvent` → `DefineNetworkEventData(klass);`） |
 | `EXTRA_INIT_BINDING_CALLS` | 追加到**全局** `InitBindings()` 末尾的语句，用于 IR 里根本没有条目的绑定（`Win32API` → `InitWin32APIBinding();`） |
 | `HANDWRITTEN_SEED` | 新文件首次生成时播种的手写区内容 |
 
@@ -850,8 +886,8 @@ void InitTilemapVXBindingAppend(VALUE klass) {
 `Set(value, x, y, z)`，参数需要重排；越界读返回 `nil`、越界写忽略。`Table::Get` 返回
 `int16_t`，用 `INT2NUM`。
 
-`Input` 的键常量表在 `core/input/input.h` 的 `urge::kKeyboardBindings` 里，不从类体标记声明，
-因此用 `DefineInputKeyConstants(mod)` 遍历注册。
+`Input` 的键常量来自 `core/input/input.h` 中带标记的 `Input::Key` 枚举；
+`urge::kKeyboardBindings` 引用同一枚举值供原生输入逻辑使用，不再手写 Ruby 常量注册。
 
 ## 命名映射规则
 
@@ -925,9 +961,9 @@ class / module 条目字段：
 | `constructors` | `initialize` 每个重载的参数（`name`/`type`/`default`） |
 | `initialize_copy` | 拷贝构造 `Class(RefPtr<Class>)` → `initialize_copy` |
 | `instance_methods` / `class_methods` | 实例/类方法（`static`），含 `return` 与 `params` |
-| `attributes` / `class_attributes` | `ATTR(...)` / `static ATTR(...)` → 读写对 |
+| `attributes` / `class_attributes` | `ATTR(...)` / `static ATTR(...)` → 读写对；ReadOnly 时 `readonly: true`、`setter: null` |
 | `data_attributes` | 公开数据成员按同一规则生成读写对（urge 的头文件里没有这类声明） |
-| `constants` | `URGE_BINDING()` 标记 `enum` 的枚举项 → `{name, cpp_name, value}`，注册成类/模块常量 |
+| `constants` | 带标记的公开 `enum` 枚举项/整数 `static constexpr` → `{name, cpp_name, value}`；作用域枚举的 `cpp_name` 包含枚举名，注册成类/模块常量 |
 | `marshal` | `{dump, load}`，两者都为 `true` 才生成 `_dump`/`_load` |
 | `index` | `URGE_BINDING(Name:)` 标出的 `{get, set}`（`Table#[]`/`#[]=`） |
 | `functions` | 模块函数；属性读写对是两条 `attr: true` 条目，带 `setter` 与 `attr_value_type` |

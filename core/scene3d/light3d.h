@@ -36,6 +36,12 @@ URGE_BINDING()
 class Light3D : public Node3D {
  public:
   URGE_BINDING()
+  enum class LightType : uint32_t {
+    Directional = 0,
+    Point = 1,
+  };
+
+  URGE_BINDING()
   Light3D();
   ~Light3D() override;
 

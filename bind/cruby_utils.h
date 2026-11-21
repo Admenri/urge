@@ -6,6 +6,7 @@
 #include <limits>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "ruby.h"
@@ -78,6 +79,22 @@ inline void DefineClassMethod(VALUE klass, const char* name, RubyMethod func) {
 }
 inline void DefineModuleFunction(VALUE mod, const char* name, RubyMethod func) {
   rb_define_module_function(mod, name, RUBY_METHOD_FUNC(func), -1);
+}
+
+// Preserve the signedness and width of constants, including scoped enums.
+// `long` is only 32 bits on Windows; casting through it truncates uint64_t
+// masks and makes unsigned values above INT32_MAX negative.
+template <typename Ty>
+inline VALUE WrapConstant(Ty value) {
+  if constexpr (std::is_enum_v<Ty>) {
+    return WrapConstant(static_cast<std::underlying_type_t<Ty>>(value));
+  } else {
+    static_assert(std::is_integral_v<Ty>, "Ruby constants must be integers");
+    if constexpr (std::is_signed_v<Ty>)
+      return LL2NUM(static_cast<long long>(value));
+    else
+      return ULL2NUM(static_cast<unsigned long long>(value));
+  }
 }
 
 int ParseArgs(int argc, VALUE* argv, const char* fmt, ...);
@@ -309,26 +326,127 @@ bool IsValidUTF8(VALUE str);
 
 VALUE TagUTF8IfValid(VALUE str);
 
-#define BINDING_ATTR_INT(ty, selfty, cap)       \
-  RB_FUNC(ty##_##cap) {                         \
-    auto* self_obj = GetSelfData<selfty>(self); \
-    CheckArgc(argc, 0);                         \
-    int32_t result = 0;                         \
-    {                                           \
-      result = *self_obj->Attr_##cap();         \
-    }                                           \
-    return INT2NUM(result);                     \
-  }                                             \
-  RB_FUNC(ty##_##cap##Equal) {                  \
-    auto* self_obj = GetSelfData<selfty>(self); \
-    CheckArgc(argc, 1);                         \
-    int value = 0;                              \
-    ParseArgs(argc, argv, "i", &value);         \
-    {                                           \
-      self_obj->Attr_##cap(value);              \
-    }                                           \
-    return Qnil;                                \
+// NUM2ULL deliberately wraps negative Ruby integers. Check the sign before
+// converting, then check the actual attribute type's bounds before narrowing.
+// Like NUM2LL, this accepts Ruby's implicit integer conversion (to_int).
+// No owning C++ locals may live here: every Ruby call can raise/longjmp.
+template <typename Ty>
+inline Ty CheckInteger(VALUE value) {
+  static_assert(std::is_integral_v<Ty> && !std::is_same_v<Ty, bool>);
+  static_assert(sizeof(Ty) <= sizeof(unsigned long long));
+  if constexpr (std::is_unsigned_v<Ty>) {
+    // Reject negative fractional inputs too, before to_int truncates to zero.
+    if (RB_FLOAT_TYPE_P(value) && RFLOAT_VALUE(value) < 0)
+      rb_raise(rb_eRangeError, "negative value for unsigned attribute");
   }
+  VALUE integer = rb_to_int(value);
+  if constexpr (std::is_signed_v<Ty>) {
+    const long long number = NUM2LL(integer);
+    if (number < static_cast<long long>((std::numeric_limits<Ty>::min)()) ||
+        number > static_cast<long long>((std::numeric_limits<Ty>::max)()))
+      rb_raise(rb_eRangeError, "integer attribute out of range");
+    return static_cast<Ty>(number);
+  } else {
+    if ((RB_FIXNUM_P(integer) && FIX2LONG(integer) < 0) ||
+        (RB_TYPE_P(integer, T_BIGNUM) && RBIGNUM_NEGATIVE_P(integer)))
+      rb_raise(rb_eRangeError, "negative value for unsigned attribute");
+    const unsigned long long number = NUM2ULL(integer);
+    if (number > static_cast<unsigned long long>(
+                     (std::numeric_limits<Ty>::max)()))
+      rb_raise(rb_eRangeError, "integer attribute out of range");
+    return static_cast<Ty>(number);
+  }
+}
+
+// Integer accessors share a typed, destructor-free Ruby boundary. Separate
+// GET/SET macros let ReadOnly export no setter body at all. Setup/finish carry
+// the receiver and (for ATTR_EXC) its exception state; the C++ call alone runs
+// in the inner scope.
+#define BINDING_INT_GET(ty, cap, value_ty, setup, read, finish) \
+  RB_FUNC(ty##_##cap) {                                        \
+    setup;                                                     \
+    CheckArgc(argc, 0);                                        \
+    value_ty result = 0;                                       \
+    {                                                          \
+      const auto value = read;                                \
+      if (value)                                               \
+        result = *value;                                       \
+    }                                                          \
+    finish;                                                    \
+    return WrapConstant(result);                              \
+  }
+
+#define BINDING_INT_SET(ty, cap, value_ty, setup, write, finish) \
+  RB_FUNC(ty##_##cap##Equal) {                                  \
+    setup;                                                       \
+    CheckArgc(argc, 1);                                          \
+    VALUE value_arg = Qnil;                                     \
+    ParseArgs(argc, argv, "o", &value_arg);                     \
+    value_ty value = CheckInteger<value_ty>(value_arg);          \
+    {                                                            \
+      write;                                                     \
+    }                                                            \
+    finish;                                                      \
+    return Qnil;                                                 \
+  }
+
+#define BINDING_ATTR_INT_TYPED_GET(ty, selfty, cap, value_ty)           \
+  BINDING_INT_GET(ty, cap, value_ty,                                    \
+                  auto* self_obj = GetSelfData<selfty>(self),          \
+                  self_obj->Attr_##cap(), (void)0)
+#define BINDING_ATTR_INT_TYPED_SET(ty, selfty, cap, value_ty)           \
+  BINDING_INT_SET(ty, cap, value_ty,                                    \
+                  auto* self_obj = GetSelfData<selfty>(self),          \
+                  self_obj->Attr_##cap(value), (void)0)
+#define BINDING_ATTR_INT_TYPED(ty, selfty, cap, value_ty) \
+  BINDING_ATTR_INT_TYPED_GET(ty, selfty, cap, value_ty)    \
+  BINDING_ATTR_INT_TYPED_SET(ty, selfty, cap, value_ty)
+
+#define BINDING_CLASS_ATTR_INT_TYPED_GET(ty, selfty, cap, value_ty) \
+  BINDING_INT_GET(ty, cap, value_ty, (void)self,                     \
+                  selfty::Attr_##cap(), (void)0)
+#define BINDING_CLASS_ATTR_INT_TYPED_SET(ty, selfty, cap, value_ty) \
+  BINDING_INT_SET(ty, cap, value_ty, (void)self,                     \
+                  selfty::Attr_##cap(value), (void)0)
+#define BINDING_CLASS_ATTR_INT_TYPED(ty, selfty, cap, value_ty) \
+  BINDING_CLASS_ATTR_INT_TYPED_GET(ty, selfty, cap, value_ty)    \
+  BINDING_CLASS_ATTR_INT_TYPED_SET(ty, selfty, cap, value_ty)
+
+#define BINDING_ATTR_INT_TYPED_GET_EXC(ty, selfty, cap, value_ty)       \
+  BINDING_INT_GET(ty, cap, value_ty,                                    \
+                  urge::ExceptionState exception_state;              \
+                  auto* self_obj = GetSelfData<selfty>(self),          \
+                  self_obj->Attr_##cap(exception_state),             \
+                  RaiseException(exception_state))
+#define BINDING_ATTR_INT_TYPED_SET_EXC(ty, selfty, cap, value_ty)       \
+  BINDING_INT_SET(ty, cap, value_ty,                                    \
+                  urge::ExceptionState exception_state;              \
+                  auto* self_obj = GetSelfData<selfty>(self),          \
+                  self_obj->Attr_##cap(exception_state, value),       \
+                  RaiseException(exception_state))
+#define BINDING_ATTR_INT_TYPED_EXC(ty, selfty, cap, value_ty) \
+  BINDING_ATTR_INT_TYPED_GET_EXC(ty, selfty, cap, value_ty)    \
+  BINDING_ATTR_INT_TYPED_SET_EXC(ty, selfty, cap, value_ty)
+
+#define BINDING_CLASS_ATTR_INT_TYPED_GET_EXC(ty, selfty, cap, value_ty) \
+  BINDING_INT_GET(ty, cap, value_ty,                                    \
+                  urge::ExceptionState exception_state; (void)self,   \
+                  selfty::Attr_##cap(exception_state),               \
+                  RaiseException(exception_state))
+#define BINDING_CLASS_ATTR_INT_TYPED_SET_EXC(ty, selfty, cap, value_ty) \
+  BINDING_INT_SET(ty, cap, value_ty,                                    \
+                  urge::ExceptionState exception_state; (void)self,   \
+                  selfty::Attr_##cap(exception_state, value),         \
+                  RaiseException(exception_state))
+#define BINDING_CLASS_ATTR_INT_TYPED_EXC(ty, selfty, cap, value_ty) \
+  BINDING_CLASS_ATTR_INT_TYPED_GET_EXC(ty, selfty, cap, value_ty)    \
+  BINDING_CLASS_ATTR_INT_TYPED_SET_EXC(ty, selfty, cap, value_ty)
+
+// Compatibility for existing generated/hand-written three-argument calls:
+// infer the optional's value type instead of forcing every integer to int32_t.
+#define BINDING_ATTR_INT(ty, selfty, cap)                           \
+  BINDING_ATTR_INT_TYPED(ty, selfty, cap,                            \
+      typename decltype(std::declval<selfty&>().Attr_##cap())::value_type)
 
 #define BINDING_ATTR_FLOAT(ty, selfty, cap)            \
   RB_FUNC(ty##_##cap) {                                \
@@ -462,24 +580,9 @@ VALUE TagUTF8IfValid(VALUE str);
     return Qnil;                                                       \
   }
 
-#define BINDING_CLASS_ATTR_INT(ty, selfty, cap) \
-  RB_FUNC(ty##_##cap) {                         \
-    CheckArgc(argc, 0);                         \
-    int32_t result = 0;                         \
-    {                                           \
-      result = *selfty::Attr_##cap();           \
-    }                                           \
-    return INT2NUM(result);                     \
-  }                                             \
-  RB_FUNC(ty##_##cap##Equal) {                  \
-    CheckArgc(argc, 1);                         \
-    int value = 0;                              \
-    ParseArgs(argc, argv, "i", &value);         \
-    {                                           \
-      selfty::Attr_##cap(value);                \
-    }                                           \
-    return Qnil;                                \
-  }
+#define BINDING_CLASS_ATTR_INT(ty, selfty, cap)                     \
+  BINDING_CLASS_ATTR_INT_TYPED(ty, selfty, cap,                      \
+      typename decltype(selfty::Attr_##cap())::value_type)
 
 #define BINDING_CLASS_ATTR_FLOAT(ty, selfty, cap)    \
   RB_FUNC(ty##_##cap) {                              \
@@ -568,26 +671,15 @@ VALUE TagUTF8IfValid(VALUE str);
     return Qnil;                                                         \
   }
 
-#define BINDING_ATTR_INT_EXC(ty, selfty, cap)        \
-  RB_FUNC(ty##_##cap) {                              \
-    urge::ExceptionState exception_state;            \
-    auto* self_obj = GetSelfData<selfty>(self);      \
-    CheckArgc(argc, 0);                              \
-    int32_t result = 0;                              \
-    result = *self_obj->Attr_##cap(exception_state); \
-    RaiseException(exception_state);                 \
-    return INT2NUM(result);                          \
-  }                                                  \
-  RB_FUNC(ty##_##cap##Equal) {                       \
-    urge::ExceptionState exception_state;            \
-    auto* self_obj = GetSelfData<selfty>(self);      \
-    CheckArgc(argc, 1);                              \
-    int value = 0;                                   \
-    ParseArgs(argc, argv, "i", &value);              \
-    self_obj->Attr_##cap(exception_state, value);    \
-    RaiseException(exception_state);                 \
-    return Qnil;                                     \
-  }
+#define BINDING_ATTR_INT_EXC(ty, selfty, cap)                       \
+  BINDING_ATTR_INT_TYPED_EXC(ty, selfty, cap,                        \
+      typename decltype(std::declval<selfty&>().Attr_##cap(          \
+          std::declval<urge::ExceptionState&>()))::value_type)
+
+#define BINDING_CLASS_ATTR_INT_EXC(ty, selfty, cap)                 \
+  BINDING_CLASS_ATTR_INT_TYPED_EXC(ty, selfty, cap,                  \
+      typename decltype(selfty::Attr_##cap(                        \
+          std::declval<urge::ExceptionState&>()))::value_type)
 
 #define BINDING_ATTR_BOOL_EXC(ty, selfty, cap)         \
   RB_FUNC(ty##_##cap) {                                \

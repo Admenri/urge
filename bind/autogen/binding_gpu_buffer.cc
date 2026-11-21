@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// GPUBuffer  (core/graphics/gpu.h:732-753)
+// GPUBuffer  (core/graphics/gpu.h:737-758)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE_INHERIT(GPUBuffer, GPUObject);
@@ -49,6 +49,7 @@ RB_FUNC(GPUBuffer_GetSize) {
 RB_FUNC(GPUBuffer_MapAsync) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 3);
   uint32_t mode;
   uint64_t offset, size;
@@ -57,8 +58,9 @@ RB_FUNC(GPUBuffer_MapAsync) {
   bool result = false;
 
   {
-    result = self_obj->MapAsync(mode, offset, size);
+    result = self_obj->MapAsync(exception_state, mode, offset, size);
   }
+  RaiseException(exception_state);
 
   return result ? Qtrue : Qfalse;
 }
@@ -77,6 +79,7 @@ RB_FUNC(GPUBuffer_Unmap) {
 RB_FUNC(GPUBuffer_Read) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   uint64_t offset, size;
   ParseArgs(argc, argv, "pp", &offset, &size);
@@ -84,12 +87,17 @@ RB_FUNC(GPUBuffer_Read) {
   std::string* result = nullptr;
 
   {
-    result = new std::string(self_obj->Read(offset, size));
+    result = new std::string(self_obj->Read(exception_state, offset, size));
   }
+  if (exception_state.HadException()) {
+    delete result;
+    result = nullptr;
+  }
+  RaiseException(exception_state);
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
+      rb_ascii8bit_encoding());
   delete result;
   return value;
 }
@@ -97,6 +105,7 @@ RB_FUNC(GPUBuffer_Read) {
 RB_FUNC(GPUBuffer_Write) {
   auto* self_obj = GetSelfData<urge::GPUBuffer>(self);
 
+  urge::ExceptionState exception_state;
   CheckArgc(argc, 2);
   uint64_t offset;
   VALUE data_val;
@@ -106,8 +115,9 @@ RB_FUNC(GPUBuffer_Write) {
   CheckString(data_val, &data_data, &data_size);
 
   {
-    self_obj->Write(offset, std::string(data_data, data_size));
+    self_obj->Write(exception_state, offset, std::string(data_data, data_size));
   }
+  RaiseException(exception_state);
 
   return Qnil;
 }
@@ -124,10 +134,10 @@ RB_FUNC(GPUBuffer_Destroy) {
 }
 
 // Attribute: usage (uint32_t)
-BINDING_ATTR_INT(GPUBuffer, urge::GPUBuffer, Usage);
+BINDING_ATTR_INT_TYPED_GET(GPUBuffer, urge::GPUBuffer, Usage, uint32_t);
 
 // Attribute: map_state (uint32_t)
-BINDING_ATTR_INT(GPUBuffer, urge::GPUBuffer, MapState);
+BINDING_ATTR_INT_TYPED_GET(GPUBuffer, urge::GPUBuffer, MapState, uint32_t);
 
 void InitGPUBufferBindingAppend(VALUE klass);
 
@@ -143,9 +153,7 @@ void InitGPUBufferBinding() {
   DefineMethod(klass, "write", GPUBuffer_Write);
   DefineMethod(klass, "destroy", GPUBuffer_Destroy);
   DefineMethod(klass, "usage", GPUBuffer_Usage);
-  DefineMethod(klass, "usage=", GPUBuffer_UsageEqual);
   DefineMethod(klass, "map_state", GPUBuffer_MapState);
-  DefineMethod(klass, "map_state=", GPUBuffer_MapStateEqual);
   InitGPUBufferBindingAppend(klass);
 }
 // --- GENERATED END ---

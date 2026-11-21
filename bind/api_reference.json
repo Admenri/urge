@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-11-18T06:31:18Z",
+    "generated_at": "2026-11-21T14:08:48Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -55,18 +55,6 @@
       "core/render/texture_format.h",
       "core/render/uniform.h",
       "core/render/wgsl_reflect.h",
-      "core/scene/camera.h",
-      "core/scene/drawable.h",
-      "core/scene/geometry.h",
-      "core/scene/node.h",
-      "core/scene/plane.h",
-      "core/scene/sprite.h",
-      "core/scene/sprite_batch.h",
-      "core/scene/tilemap_vx.h",
-      "core/scene/tilemap_xp.h",
-      "core/scene/viewport.h",
-      "core/scene/window_vx.h",
-      "core/scene/window_xp.h",
       "core/scene3d/animation3d.h",
       "core/scene3d/animation_stack3d.h",
       "core/scene3d/animation_state_machine3d.h",
@@ -89,6 +77,18 @@
       "core/scene3d/shader_lib3d.h",
       "core/scene3d/skeleton3d.h",
       "core/scene3d/world3d.h",
+      "core/scene/camera.h",
+      "core/scene/drawable.h",
+      "core/scene/geometry.h",
+      "core/scene/node.h",
+      "core/scene/plane.h",
+      "core/scene/sprite.h",
+      "core/scene/sprite_batch.h",
+      "core/scene/tilemap_vx.h",
+      "core/scene/tilemap_xp.h",
+      "core/scene/viewport.h",
+      "core/scene/window_vx.h",
+      "core/scene/window_xp.h",
       "core/system/archive.h",
       "core/system/config.h",
       "core/system/filesystem.h",
@@ -630,97 +630,127 @@
         {
           "name": "MAP_READ",
           "cpp_name": "MapRead",
-          "value": "1"
+          "value": "static_cast<uint32_t>(wgpu::MapMode::Read)"
         },
         {
           "name": "MAP_WRITE",
           "cpp_name": "MapWrite",
-          "value": "2"
+          "value": "static_cast<uint32_t>(wgpu::MapMode::Write)"
+        },
+        {
+          "name": "MAP_NONE",
+          "cpp_name": "MapNone",
+          "value": "static_cast<uint32_t>(wgpu::MapMode::None)"
         },
         {
           "name": "COPY_SRC",
           "cpp_name": "CopySrc",
-          "value": "4"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::CopySrc)"
         },
         {
           "name": "COPY_DST",
           "cpp_name": "CopyDst",
-          "value": "8"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::CopyDst)"
         },
         {
           "name": "INDEX",
           "cpp_name": "Index",
-          "value": "16"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::Index)"
         },
         {
           "name": "VERTEX",
           "cpp_name": "Vertex",
-          "value": "32"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::Vertex)"
         },
         {
           "name": "UNIFORM",
           "cpp_name": "Uniform",
-          "value": "64"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::Uniform)"
         },
         {
           "name": "STORAGE",
           "cpp_name": "Storage",
-          "value": "128"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::Storage)"
         },
         {
           "name": "INDIRECT",
           "cpp_name": "Indirect",
-          "value": "256"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::Indirect)"
         },
         {
           "name": "QUERY_RESOLVE",
           "cpp_name": "QueryResolve",
-          "value": "512"
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::QueryResolve)"
+        },
+        {
+          "name": "BUFFER_USAGE_NONE",
+          "cpp_name": "BufferUsageNone",
+          "value": "static_cast<uint32_t>(wgpu::BufferUsage::None)"
         },
         {
           "name": "TEXTURE_BINDING",
           "cpp_name": "TextureBinding",
-          "value": "4"
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::TextureBinding)"
         },
         {
           "name": "TEXTURE_STORAGE_BINDING",
           "cpp_name": "TextureStorageBinding",
-          "value": "8"
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::StorageBinding)"
         },
         {
           "name": "TEXTURE_RENDER_ATTACHMENT",
           "cpp_name": "TextureRenderAttachment",
-          "value": "16"
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::RenderAttachment)"
         },
         {
           "name": "TEXTURE_COPY_SRC",
           "cpp_name": "TextureCopySrc",
-          "value": "32"
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::CopySrc)"
         },
         {
           "name": "TEXTURE_COPY_DST",
           "cpp_name": "TextureCopyDst",
-          "value": "64"
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::CopyDst)"
+        },
+        {
+          "name": "TEXTURE_USAGE_NONE",
+          "cpp_name": "TextureUsageNone",
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::None)"
+        },
+        {
+          "name": "TEXTURE_TRANSIENT_ATTACHMENT",
+          "cpp_name": "TextureTransientAttachment",
+          "value": "static_cast<uint32_t>(wgpu::TextureUsage::TransientAttachment)"
         },
         {
           "name": "LOAD",
           "cpp_name": "Load",
-          "value": "1"
+          "value": "static_cast<uint32_t>(wgpu::LoadOp::Load)"
         },
         {
           "name": "CLEAR",
           "cpp_name": "Clear",
-          "value": "2"
+          "value": "static_cast<uint32_t>(wgpu::LoadOp::Clear)"
+        },
+        {
+          "name": "LOAD_OP_UNDEFINED",
+          "cpp_name": "LoadOpUndefined",
+          "value": "static_cast<uint32_t>(wgpu::LoadOp::Undefined)"
         },
         {
           "name": "STORE",
           "cpp_name": "Store",
-          "value": "1"
+          "value": "static_cast<uint32_t>(wgpu::StoreOp::Store)"
         },
         {
           "name": "DISCARD",
           "cpp_name": "Discard",
-          "value": "2"
+          "value": "static_cast<uint32_t>(wgpu::StoreOp::Discard)"
+        },
+        {
+          "name": "STORE_OP_UNDEFINED",
+          "cpp_name": "StoreOpUndefined",
+          "value": "static_cast<uint32_t>(wgpu::StoreOp::Undefined)"
         },
         {
           "name": "INDEX_FORMAT_UNDEFINED",
@@ -886,6 +916,66 @@
           "name": "VERTEX_FORMAT_SINT32X4",
           "cpp_name": "VertexFormatSint32x4",
           "value": "static_cast<uint32_t>(wgpu::VertexFormat::Sint32x4)"
+        },
+        {
+          "name": "VERTEX_FORMAT_UINT8",
+          "cpp_name": "VertexFormatUint8",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Uint8)"
+        },
+        {
+          "name": "VERTEX_FORMAT_SINT8",
+          "cpp_name": "VertexFormatSint8",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Sint8)"
+        },
+        {
+          "name": "VERTEX_FORMAT_UNORM8",
+          "cpp_name": "VertexFormatUnorm8",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Unorm8)"
+        },
+        {
+          "name": "VERTEX_FORMAT_SNORM8",
+          "cpp_name": "VertexFormatSnorm8",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Snorm8)"
+        },
+        {
+          "name": "VERTEX_FORMAT_UINT16",
+          "cpp_name": "VertexFormatUint16",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Uint16)"
+        },
+        {
+          "name": "VERTEX_FORMAT_SINT16",
+          "cpp_name": "VertexFormatSint16",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Sint16)"
+        },
+        {
+          "name": "VERTEX_FORMAT_UNORM16",
+          "cpp_name": "VertexFormatUnorm16",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Unorm16)"
+        },
+        {
+          "name": "VERTEX_FORMAT_SNORM16",
+          "cpp_name": "VertexFormatSnorm16",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Snorm16)"
+        },
+        {
+          "name": "VERTEX_FORMAT_FLOAT16",
+          "cpp_name": "VertexFormatFloat16",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Float16)"
+        },
+        {
+          "name": "VERTEX_FORMAT_UNORM10_10_10_2",
+          "cpp_name": "VertexFormatUnorm10_10_10_2",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Unorm10_10_10_2)"
+        },
+        {
+          "name": "VERTEX_FORMAT_UNORM8X4BGRA",
+          "cpp_name": "VertexFormatUnorm8x4BGRA",
+          "value": "static_cast<uint32_t>(wgpu::VertexFormat::Unorm8x4BGRA)"
+        },
+        {
+          "name": "VERTEX_STEP_MODE_UNDEFINED",
+          "cpp_name": "VertexStepModeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::VertexStepMode::Undefined)"
         },
         {
           "name": "VERTEX_STEP_MODE_VERTEX",
@@ -1103,6 +1193,316 @@
           "value": "static_cast<uint32_t>(wgpu::TextureFormat::Depth32FloatStencil8)"
         },
         {
+          "name": "TEXTURE_FORMAT_R16_UNORM",
+          "cpp_name": "TextureFormatR16Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::R16Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_R16_SNORM",
+          "cpp_name": "TextureFormatR16Snorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::R16Snorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RG8_SNORM",
+          "cpp_name": "TextureFormatRg8Snorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RG8Snorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RG16_UNORM",
+          "cpp_name": "TextureFormatRg16Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RG16Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RG16_SNORM",
+          "cpp_name": "TextureFormatRg16Snorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RG16Snorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RGB10A2_UINT",
+          "cpp_name": "TextureFormatRgb10a2Uint",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RGB10A2Uint)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RGB9E5_UFLOAT",
+          "cpp_name": "TextureFormatRgb9e5Ufloat",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RGB9E5Ufloat)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RGBA16_UNORM",
+          "cpp_name": "TextureFormatRgba16Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_RGBA16_SNORM",
+          "cpp_name": "TextureFormatRgba16Snorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::RGBA16Snorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC1_RGBA_UNORM",
+          "cpp_name": "TextureFormatBc1RgbaUnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC1RGBAUnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC1_RGBA_UNORM_SRGB",
+          "cpp_name": "TextureFormatBc1RgbaUnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC1RGBAUnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC2_RGBA_UNORM",
+          "cpp_name": "TextureFormatBc2RgbaUnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC2RGBAUnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC2_RGBA_UNORM_SRGB",
+          "cpp_name": "TextureFormatBc2RgbaUnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC2RGBAUnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC3_RGBA_UNORM",
+          "cpp_name": "TextureFormatBc3RgbaUnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC3RGBAUnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC3_RGBA_UNORM_SRGB",
+          "cpp_name": "TextureFormatBc3RgbaUnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC3RGBAUnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC4R_UNORM",
+          "cpp_name": "TextureFormatBc4RUnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC4RUnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC4R_SNORM",
+          "cpp_name": "TextureFormatBc4RSnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC4RSnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC5_RG_UNORM",
+          "cpp_name": "TextureFormatBc5RgUnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC5RGUnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC5_RG_SNORM",
+          "cpp_name": "TextureFormatBc5RgSnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC5RGSnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC6H_RGB_UFLOAT",
+          "cpp_name": "TextureFormatBc6hRgbUfloat",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC6HRGBUfloat)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC6H_RGB_FLOAT",
+          "cpp_name": "TextureFormatBc6hRgbFloat",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC6HRGBFloat)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC7_RGBA_UNORM",
+          "cpp_name": "TextureFormatBc7RgbaUnorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC7RGBAUnorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB",
+          "cpp_name": "TextureFormatBc7RgbaUnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::BC7RGBAUnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ETC2_RGB8_UNORM",
+          "cpp_name": "TextureFormatEtc2Rgb8Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB",
+          "cpp_name": "TextureFormatEtc2Rgb8UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ETC2_RGB8A1_UNORM",
+          "cpp_name": "TextureFormatEtc2Rgb8a1Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8A1Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ETC2_RGB8A1_UNORM_SRGB",
+          "cpp_name": "TextureFormatEtc2Rgb8a1UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGB8A1UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ETC2_RGBA8_UNORM",
+          "cpp_name": "TextureFormatEtc2Rgba8Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGBA8Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB",
+          "cpp_name": "TextureFormatEtc2Rgba8UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ETC2RGBA8UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_EAC_R11_UNORM",
+          "cpp_name": "TextureFormatEacR11Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::EACR11Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_EAC_R11_SNORM",
+          "cpp_name": "TextureFormatEacR11Snorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::EACR11Snorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_EAC_RG11_UNORM",
+          "cpp_name": "TextureFormatEacRg11Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::EACRG11Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_EAC_RG11_SNORM",
+          "cpp_name": "TextureFormatEacRg11Snorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::EACRG11Snorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC4X4_UNORM",
+          "cpp_name": "TextureFormatAstc4x4Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC4x4Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc4x4UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC4x4UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC5X4_UNORM",
+          "cpp_name": "TextureFormatAstc5x4Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x4Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC5X4_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc5x4UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x4UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC5X5_UNORM",
+          "cpp_name": "TextureFormatAstc5x5Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x5Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC5X5_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc5x5UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC5x5UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC6X5_UNORM",
+          "cpp_name": "TextureFormatAstc6x5Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x5Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC6X5_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc6x5UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x5UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC6X6_UNORM",
+          "cpp_name": "TextureFormatAstc6x6Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x6Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC6X6_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc6x6UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC6x6UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC8X5_UNORM",
+          "cpp_name": "TextureFormatAstc8x5Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x5Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC8X5_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc8x5UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x5UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC8X6_UNORM",
+          "cpp_name": "TextureFormatAstc8x6Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x6Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC8X6_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc8x6UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x6UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC8X8_UNORM",
+          "cpp_name": "TextureFormatAstc8x8Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x8Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC8X8_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc8x8UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC8x8UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X5_UNORM",
+          "cpp_name": "TextureFormatAstc10x5Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x5Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X5_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc10x5UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x5UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X6_UNORM",
+          "cpp_name": "TextureFormatAstc10x6Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x6Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X6_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc10x6UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x6UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X8_UNORM",
+          "cpp_name": "TextureFormatAstc10x8Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x8Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X8_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc10x8UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x8UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X10_UNORM",
+          "cpp_name": "TextureFormatAstc10x10Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x10Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC10X10_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc10x10UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC10x10UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC12X10_UNORM",
+          "cpp_name": "TextureFormatAstc12x10Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x10Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC12X10_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc12x10UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x10UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC12X12_UNORM",
+          "cpp_name": "TextureFormatAstc12x12Unorm",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x12Unorm)"
+        },
+        {
+          "name": "TEXTURE_FORMAT_ASTC12X12_UNORM_SRGB",
+          "cpp_name": "TextureFormatAstc12x12UnormSrgb",
+          "value": "static_cast<uint32_t>(wgpu::TextureFormat::ASTC12x12UnormSrgb)"
+        },
+        {
+          "name": "TEXTURE_DIMENSION_UNDEFINED",
+          "cpp_name": "TextureDimensionUndefined",
+          "value": "static_cast<uint32_t>(wgpu::TextureDimension::Undefined)"
+        },
+        {
           "name": "TEXTURE_DIMENSION1D",
           "cpp_name": "TextureDimension1D",
           "value": "static_cast<uint32_t>(wgpu::TextureDimension::e1D)"
@@ -1118,6 +1518,11 @@
           "value": "static_cast<uint32_t>(wgpu::TextureDimension::e3D)"
         },
         {
+          "name": "TEXTURE_ASPECT_UNDEFINED",
+          "cpp_name": "TextureAspectUndefined",
+          "value": "static_cast<uint32_t>(wgpu::TextureAspect::Undefined)"
+        },
+        {
           "name": "TEXTURE_ASPECT_ALL",
           "cpp_name": "TextureAspectAll",
           "value": "static_cast<uint32_t>(wgpu::TextureAspect::All)"
@@ -1131,6 +1536,11 @@
           "name": "TEXTURE_ASPECT_DEPTH_ONLY",
           "cpp_name": "TextureAspectDepthOnly",
           "value": "static_cast<uint32_t>(wgpu::TextureAspect::DepthOnly)"
+        },
+        {
+          "name": "TEXTURE_VIEW_DIMENSION_UNDEFINED",
+          "cpp_name": "TextureViewDimensionUndefined",
+          "value": "static_cast<uint32_t>(wgpu::TextureViewDimension::Undefined)"
         },
         {
           "name": "TEXTURE_VIEW_DIMENSION1D",
@@ -1163,6 +1573,11 @@
           "value": "static_cast<uint32_t>(wgpu::TextureViewDimension::e3D)"
         },
         {
+          "name": "TEXTURE_SAMPLE_TYPE_UNDEFINED",
+          "cpp_name": "TextureSampleTypeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::TextureSampleType::Undefined)"
+        },
+        {
           "name": "TEXTURE_SAMPLE_TYPE_FLOAT",
           "cpp_name": "TextureSampleTypeFloat",
           "value": "static_cast<uint32_t>(wgpu::TextureSampleType::Float)"
@@ -1186,6 +1601,11 @@
           "name": "TEXTURE_SAMPLE_TYPE_UINT",
           "cpp_name": "TextureSampleTypeUint",
           "value": "static_cast<uint32_t>(wgpu::TextureSampleType::Uint)"
+        },
+        {
+          "name": "SAMPLER_BINDING_TYPE_UNDEFINED",
+          "cpp_name": "SamplerBindingTypeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::SamplerBindingType::Undefined)"
         },
         {
           "name": "SAMPLER_BINDING_TYPE_FILTERING",
@@ -1223,6 +1643,11 @@
           "value": "static_cast<uint32_t>(wgpu::ShaderStage::Compute)"
         },
         {
+          "name": "PRIMITIVE_TOPOLOGY_UNDEFINED",
+          "cpp_name": "PrimitiveTopologyUndefined",
+          "value": "static_cast<uint32_t>(wgpu::PrimitiveTopology::Undefined)"
+        },
+        {
           "name": "PRIMITIVE_TOPOLOGY_POINT_LIST",
           "cpp_name": "PrimitiveTopologyPointList",
           "value": "static_cast<uint32_t>(wgpu::PrimitiveTopology::PointList)"
@@ -1246,6 +1671,11 @@
           "name": "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP",
           "cpp_name": "PrimitiveTopologyTriangleStrip",
           "value": "static_cast<uint32_t>(wgpu::PrimitiveTopology::TriangleStrip)"
+        },
+        {
+          "name": "COMPARE_FUNCTION_UNDEFINED",
+          "cpp_name": "CompareFunctionUndefined",
+          "value": "static_cast<uint32_t>(wgpu::CompareFunction::Undefined)"
         },
         {
           "name": "COMPARE_FUNCTION_NEVER",
@@ -1288,6 +1718,11 @@
           "value": "static_cast<uint32_t>(wgpu::CompareFunction::Always)"
         },
         {
+          "name": "STENCIL_OPERATION_UNDEFINED",
+          "cpp_name": "StencilOperationUndefined",
+          "value": "static_cast<uint32_t>(wgpu::StencilOperation::Undefined)"
+        },
+        {
           "name": "STENCIL_OPERATION_KEEP",
           "cpp_name": "StencilOperationKeep",
           "value": "static_cast<uint32_t>(wgpu::StencilOperation::Keep)"
@@ -1328,6 +1763,11 @@
           "value": "static_cast<uint32_t>(wgpu::StencilOperation::DecrementWrap)"
         },
         {
+          "name": "CULL_MODE_UNDEFINED",
+          "cpp_name": "CullModeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::CullMode::Undefined)"
+        },
+        {
           "name": "CULL_MODE_NONE",
           "cpp_name": "CullModeNone",
           "value": "static_cast<uint32_t>(wgpu::CullMode::None)"
@@ -1343,6 +1783,11 @@
           "value": "static_cast<uint32_t>(wgpu::CullMode::Back)"
         },
         {
+          "name": "FRONT_FACE_UNDEFINED",
+          "cpp_name": "FrontFaceUndefined",
+          "value": "static_cast<uint32_t>(wgpu::FrontFace::Undefined)"
+        },
+        {
           "name": "FRONT_FACE_CCW",
           "cpp_name": "FrontFaceCCW",
           "value": "static_cast<uint32_t>(wgpu::FrontFace::CCW)"
@@ -1351,6 +1796,11 @@
           "name": "FRONT_FACE_CW",
           "cpp_name": "FrontFaceCW",
           "value": "static_cast<uint32_t>(wgpu::FrontFace::CW)"
+        },
+        {
+          "name": "BLEND_OPERATION_UNDEFINED",
+          "cpp_name": "BlendOperationUndefined",
+          "value": "static_cast<uint32_t>(wgpu::BlendOperation::Undefined)"
         },
         {
           "name": "BLEND_OPERATION_ADD",
@@ -1376,6 +1826,31 @@
           "name": "BLEND_OPERATION_MAX",
           "cpp_name": "BlendOperationMax",
           "value": "static_cast<uint32_t>(wgpu::BlendOperation::Max)"
+        },
+        {
+          "name": "BLEND_FACTOR_UNDEFINED",
+          "cpp_name": "BlendFactorUndefined",
+          "value": "static_cast<uint32_t>(wgpu::BlendFactor::Undefined)"
+        },
+        {
+          "name": "BLEND_FACTOR_SRC1",
+          "cpp_name": "BlendFactorSrc1",
+          "value": "static_cast<uint32_t>(wgpu::BlendFactor::Src1)"
+        },
+        {
+          "name": "BLEND_FACTOR_ONE_MINUS_SRC1",
+          "cpp_name": "BlendFactorOneMinusSrc1",
+          "value": "static_cast<uint32_t>(wgpu::BlendFactor::OneMinusSrc1)"
+        },
+        {
+          "name": "BLEND_FACTOR_SRC1_ALPHA",
+          "cpp_name": "BlendFactorSrc1Alpha",
+          "value": "static_cast<uint32_t>(wgpu::BlendFactor::Src1Alpha)"
+        },
+        {
+          "name": "BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA",
+          "cpp_name": "BlendFactorOneMinusSrc1Alpha",
+          "value": "static_cast<uint32_t>(wgpu::BlendFactor::OneMinusSrc1Alpha)"
         },
         {
           "name": "BLEND_FACTOR_ZERO",
@@ -1473,6 +1948,11 @@
           "value": "static_cast<uint32_t>(wgpu::ColorWriteMask::All)"
         },
         {
+          "name": "FILTER_MODE_UNDEFINED",
+          "cpp_name": "FilterModeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::FilterMode::Undefined)"
+        },
+        {
           "name": "FILTER_MODE_NEAREST",
           "cpp_name": "FilterModeNearest",
           "value": "static_cast<uint32_t>(wgpu::FilterMode::Nearest)"
@@ -1483,6 +1963,11 @@
           "value": "static_cast<uint32_t>(wgpu::FilterMode::Linear)"
         },
         {
+          "name": "MIPMAP_FILTER_MODE_UNDEFINED",
+          "cpp_name": "MipmapFilterModeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::MipmapFilterMode::Undefined)"
+        },
+        {
           "name": "MIPMAP_FILTER_MODE_NEAREST",
           "cpp_name": "MipmapFilterModeNearest",
           "value": "static_cast<uint32_t>(wgpu::MipmapFilterMode::Nearest)"
@@ -1491,6 +1976,11 @@
           "name": "MIPMAP_FILTER_MODE_LINEAR",
           "cpp_name": "MipmapFilterModeLinear",
           "value": "static_cast<uint32_t>(wgpu::MipmapFilterMode::Linear)"
+        },
+        {
+          "name": "ADDRESS_MODE_UNDEFINED",
+          "cpp_name": "AddressModeUndefined",
+          "value": "static_cast<uint32_t>(wgpu::AddressMode::Undefined)"
         },
         {
           "name": "ADDRESS_MODE_CLAMP_TO_EDGE",
@@ -1519,7 +2009,7 @@
         }
       ],
       "unsupported": [],
-      "export": "core/graphics/gpu.h:1107-1511",
+      "export": "core/graphics/gpu.h:1121-1703",
       "cpp_name": "GPU",
       "cpp_parent": "Singleton",
       "header": "core/graphics/gpu.h",
@@ -1537,7 +2027,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_buffer",
@@ -1555,7 +2045,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_texture",
@@ -1573,7 +2063,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_sampler",
@@ -1591,7 +2081,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_shader_module",
@@ -1609,7 +2099,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_bind_group_layout",
@@ -1627,7 +2117,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_pipeline_layout",
@@ -1645,7 +2135,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_bind_group",
@@ -1663,7 +2153,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_render_pipeline",
@@ -1681,7 +2171,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_compute_pipeline",
@@ -1699,7 +2189,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_query_set",
@@ -1717,7 +2207,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         },
         {
           "ruby_name": "create_command_encoder",
@@ -1729,7 +2219,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1107-1511"
+          "export": "core/graphics/gpu.h:1121-1703"
         }
       ]
     },
@@ -2180,9 +2670,135 @@
       ]
     },
     {
-      "constants": [],
+      "constants": [
+        {
+          "name": "DOWN",
+          "cpp_name": "DOWN",
+          "value": "2"
+        },
+        {
+          "name": "LEFT",
+          "cpp_name": "LEFT",
+          "value": "4"
+        },
+        {
+          "name": "RIGHT",
+          "cpp_name": "RIGHT",
+          "value": "6"
+        },
+        {
+          "name": "UP",
+          "cpp_name": "UP",
+          "value": "8"
+        },
+        {
+          "name": "A",
+          "cpp_name": "A",
+          "value": "11"
+        },
+        {
+          "name": "B",
+          "cpp_name": "B",
+          "value": "12"
+        },
+        {
+          "name": "C",
+          "cpp_name": "C",
+          "value": "13"
+        },
+        {
+          "name": "X",
+          "cpp_name": "X",
+          "value": "14"
+        },
+        {
+          "name": "Y",
+          "cpp_name": "Y",
+          "value": "15"
+        },
+        {
+          "name": "Z",
+          "cpp_name": "Z",
+          "value": "16"
+        },
+        {
+          "name": "L",
+          "cpp_name": "L",
+          "value": "17"
+        },
+        {
+          "name": "R",
+          "cpp_name": "R",
+          "value": "18"
+        },
+        {
+          "name": "SHIFT",
+          "cpp_name": "SHIFT",
+          "value": "21"
+        },
+        {
+          "name": "CTRL",
+          "cpp_name": "CTRL",
+          "value": "22"
+        },
+        {
+          "name": "ALT",
+          "cpp_name": "ALT",
+          "value": "23"
+        },
+        {
+          "name": "F5",
+          "cpp_name": "F5",
+          "value": "25"
+        },
+        {
+          "name": "F6",
+          "cpp_name": "F6",
+          "value": "26"
+        },
+        {
+          "name": "F7",
+          "cpp_name": "F7",
+          "value": "27"
+        },
+        {
+          "name": "F8",
+          "cpp_name": "F8",
+          "value": "28"
+        },
+        {
+          "name": "F9",
+          "cpp_name": "F9",
+          "value": "29"
+        },
+        {
+          "name": "W",
+          "cpp_name": "W",
+          "value": "31"
+        },
+        {
+          "name": "S",
+          "cpp_name": "S",
+          "value": "32"
+        },
+        {
+          "name": "D",
+          "cpp_name": "D",
+          "value": "33"
+        },
+        {
+          "name": "Q",
+          "cpp_name": "Q",
+          "value": "34"
+        },
+        {
+          "name": "E",
+          "cpp_name": "E",
+          "value": "35"
+        }
+      ],
       "unsupported": [],
-      "export": "core/input/input.h:55-82",
+      "export": "core/input/input.h:39-96",
       "cpp_name": "Input",
       "cpp_parent": "Singleton",
       "header": "core/input/input.h",
@@ -2200,7 +2816,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "pressed",
@@ -2218,7 +2834,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "triggered",
@@ -2236,7 +2852,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "repeated",
@@ -2254,7 +2870,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "dir4",
@@ -2266,7 +2882,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "dir8",
@@ -2278,7 +2894,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "key_press?",
@@ -2296,7 +2912,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "key_trigger?",
@@ -2314,7 +2930,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "key_repeat?",
@@ -2332,7 +2948,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "get_key_name",
@@ -2350,7 +2966,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         },
         {
           "ruby_name": "emulate",
@@ -2383,14 +2999,40 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/input.h:55-82"
+          "export": "core/input/input.h:39-96"
         }
       ]
     },
     {
-      "constants": [],
+      "constants": [
+        {
+          "name": "LEFT",
+          "cpp_name": "Left",
+          "value": "SDL_BUTTON_LEFT"
+        },
+        {
+          "name": "MIDDLE",
+          "cpp_name": "Middle",
+          "value": "SDL_BUTTON_MIDDLE"
+        },
+        {
+          "name": "RIGHT",
+          "cpp_name": "Right",
+          "value": "SDL_BUTTON_RIGHT"
+        },
+        {
+          "name": "X1",
+          "cpp_name": "X1",
+          "value": "SDL_BUTTON_X1"
+        },
+        {
+          "name": "X2",
+          "cpp_name": "X2",
+          "value": "SDL_BUTTON_X2"
+        }
+      ],
       "unsupported": [],
-      "export": "core/input/mouse.h:38-101",
+      "export": "core/input/mouse.h:38-102",
       "cpp_name": "Mouse",
       "cpp_parent": "Singleton",
       "header": "core/input/mouse.h",
@@ -2408,7 +3050,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "x",
@@ -2420,7 +3062,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "y",
@@ -2432,7 +3074,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "set_position",
@@ -2455,7 +3097,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "delta_x",
@@ -2467,7 +3109,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "delta_y",
@@ -2479,7 +3121,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "flush_delta",
@@ -2491,7 +3133,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "down?",
@@ -2509,7 +3151,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "up?",
@@ -2527,7 +3169,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "double?",
@@ -2545,7 +3187,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "press?",
@@ -2563,7 +3205,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "move?",
@@ -2581,7 +3223,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "scroll_x",
@@ -2593,7 +3235,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "scroll_y",
@@ -2605,7 +3247,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "set_cursor",
@@ -2633,7 +3275,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "capture",
@@ -2646,7 +3288,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "capture=",
@@ -2666,7 +3308,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "visible",
@@ -2679,7 +3321,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "visible=",
@@ -2699,7 +3341,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "relative",
@@ -2712,7 +3354,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "relative=",
@@ -2732,7 +3374,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "grab",
@@ -2745,7 +3387,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "grab=",
@@ -2765,7 +3407,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "raw",
@@ -2778,7 +3420,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "raw=",
@@ -2798,7 +3440,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "speed_scale",
@@ -2811,7 +3453,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "float",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         },
         {
           "ruby_name": "speed_scale=",
@@ -2831,14 +3473,14 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "float",
-          "export": "core/input/mouse.h:38-101"
+          "export": "core/input/mouse.h:38-102"
         }
       ]
     },
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/network/network.h:183-203",
+      "export": "core/network/network.h:185-205",
       "cpp_name": "Network",
       "cpp_parent": "Singleton",
       "header": "core/network/network.h",
@@ -2856,7 +3498,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         },
         {
           "ruby_name": "websocket",
@@ -2879,7 +3521,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         },
         {
           "ruby_name": "fetch",
@@ -2912,7 +3554,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         },
         {
           "ruby_name": "timeout",
@@ -2925,7 +3567,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         },
         {
           "ruby_name": "timeout=",
@@ -2945,7 +3587,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         },
         {
           "ruby_name": "max_events",
@@ -2958,7 +3600,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         },
         {
           "ruby_name": "max_events=",
@@ -2978,7 +3620,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:183-203"
+          "export": "core/network/network.h:185-205"
         }
       ]
     },
@@ -3110,9 +3752,15 @@
       ]
     },
     {
-      "constants": [],
+      "constants": [
+        {
+          "name": "MAX_FINGERS",
+          "cpp_name": "kMaxFingers",
+          "value": "16"
+        }
+      ],
       "unsupported": [],
-      "export": "core/input/touch.h:37-87",
+      "export": "core/input/touch.h:37-88",
       "cpp_name": "Touch",
       "cpp_parent": "Singleton",
       "header": "core/input/touch.h",
@@ -3130,7 +3778,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "count",
@@ -3142,7 +3790,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "ids",
@@ -3154,7 +3802,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "id_at",
@@ -3172,7 +3820,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "first_id",
@@ -3184,7 +3832,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "down?",
@@ -3202,7 +3850,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "press?",
@@ -3220,7 +3868,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "up?",
@@ -3238,7 +3886,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "move?",
@@ -3256,7 +3904,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "x",
@@ -3274,7 +3922,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "y",
@@ -3292,7 +3940,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "delta_x",
@@ -3310,7 +3958,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "delta_y",
@@ -3328,7 +3976,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "pressure",
@@ -3346,7 +3994,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "raw_x",
@@ -3364,7 +4012,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "raw_y",
@@ -3382,7 +4030,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "enabled",
@@ -3395,7 +4043,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "bool",
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         },
         {
           "ruby_name": "enabled=",
@@ -3415,7 +4063,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "bool",
-          "export": "core/input/touch.h:37-87"
+          "export": "core/input/touch.h:37-88"
         }
       ]
     },
@@ -5121,7 +5769,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         }
       ],
       "initialize_copy": null,
@@ -5136,7 +5784,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "label=",
@@ -5154,7 +5802,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "vertex_entry_point",
@@ -5166,7 +5814,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "vertex_entry_point=",
@@ -5184,7 +5832,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "fragment_entry_point",
@@ -5196,7 +5844,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "fragment_entry_point=",
@@ -5214,7 +5862,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "add_vertex_attribute",
@@ -5245,9 +5893,9 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_vertex_buffer",
@@ -5273,9 +5921,9 @@
               "default": "1"
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "add_color_target",
@@ -5296,9 +5944,9 @@
               "default": "0xF"
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_color_blend",
@@ -5344,9 +5992,9 @@
               "default": "0"
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_depth_stencil",
@@ -5389,7 +6037,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_stencil_front",
@@ -5422,7 +6070,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_stencil_back",
@@ -5455,7 +6103,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_stencil_masks",
@@ -5478,7 +6126,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_primitive",
@@ -5511,7 +6159,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "ruby_name": "set_multisample",
@@ -5539,7 +6187,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         }
       ],
       "attributes": [
@@ -5553,7 +6201,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "name": "vertex_module",
@@ -5565,7 +6213,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "name": "fragment_module",
@@ -5577,7 +6225,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         },
         {
           "name": "topology",
@@ -5589,7 +6237,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:482-594"
+          "export": "core/graphics/gpu.h:482-599"
         }
       ],
       "data_attributes": [],
@@ -5603,7 +6251,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:482-594",
+      "export": "core/graphics/gpu.h:482-599",
       "cpp_name": "GPURenderPipelineDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -5617,7 +6265,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         }
       ],
       "initialize_copy": null,
@@ -5632,7 +6280,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         },
         {
           "ruby_name": "label=",
@@ -5650,7 +6298,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         },
         {
           "ruby_name": "add_color_attachment",
@@ -5698,7 +6346,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         },
         {
           "ruby_name": "set_color_resolve",
@@ -5716,7 +6364,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         },
         {
           "ruby_name": "set_depth_stencil_attachment",
@@ -5774,7 +6422,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         },
         {
           "ruby_name": "set_occlusion_query_set",
@@ -5792,7 +6440,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:620-664"
+          "export": "core/graphics/gpu.h:625-669"
         }
       ],
       "attributes": [],
@@ -5807,7 +6455,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:620-664",
+      "export": "core/graphics/gpu.h:625-669",
       "cpp_name": "GPURenderPassDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -5821,7 +6469,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/graphics/gpu.h:686-693"
+          "export": "core/graphics/gpu.h:691-698"
         }
       ],
       "initialize_copy": null,
@@ -5836,7 +6484,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:686-693"
+          "export": "core/graphics/gpu.h:691-698"
         },
         {
           "ruby_name": "label=",
@@ -5854,7 +6502,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:686-693"
+          "export": "core/graphics/gpu.h:691-698"
         }
       ],
       "attributes": [],
@@ -5869,7 +6517,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:686-693",
+      "export": "core/graphics/gpu.h:691-698",
       "cpp_name": "GPUComputePassDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -5883,7 +6531,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/graphics/gpu.h:701-718"
+          "export": "core/graphics/gpu.h:706-723"
         }
       ],
       "initialize_copy": null,
@@ -5898,7 +6546,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:701-718"
+          "export": "core/graphics/gpu.h:706-723"
         },
         {
           "ruby_name": "label=",
@@ -5916,7 +6564,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:701-718"
+          "export": "core/graphics/gpu.h:706-723"
         }
       ],
       "attributes": [
@@ -5930,7 +6578,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:701-718"
+          "export": "core/graphics/gpu.h:706-723"
         },
         {
           "name": "count",
@@ -5942,7 +6590,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:701-718"
+          "export": "core/graphics/gpu.h:706-723"
         }
       ],
       "data_attributes": [],
@@ -5956,7 +6604,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:701-718",
+      "export": "core/graphics/gpu.h:706-723",
       "cpp_name": "GPUQuerySetDescriptor",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -5979,7 +6627,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758"
         },
         {
           "ruby_name": "map_async",
@@ -6005,9 +6653,9 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758"
         },
         {
           "ruby_name": "unmap",
@@ -6019,7 +6667,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758"
         },
         {
           "ruby_name": "read",
@@ -6040,9 +6688,10 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758",
+          "binary": true
         },
         {
           "ruby_name": "write",
@@ -6063,9 +6712,9 @@
               "default": null
             }
           ],
-          "has_exception": false,
+          "has_exception": true,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758"
         },
         {
           "ruby_name": "destroy",
@@ -6077,13 +6726,13 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758"
         }
       ],
       "attributes": [
         {
           "name": "usage",
-          "setter": "usage=",
+          "setter": null,
           "cpp_name": "Usage",
           "cpp_type": "uint32_t",
           "ruby_type": "Integer",
@@ -6091,11 +6740,12 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758",
+          "readonly": true
         },
         {
           "name": "map_state",
-          "setter": "map_state=",
+          "setter": null,
           "cpp_name": "MapState",
           "cpp_type": "uint32_t",
           "ruby_type": "Integer",
@@ -6103,7 +6753,8 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:732-753"
+          "export": "core/graphics/gpu.h:737-758",
+          "readonly": true
         }
       ],
       "data_attributes": [],
@@ -6117,7 +6768,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:732-753",
+      "export": "core/graphics/gpu.h:737-758",
       "cpp_name": "GPUBuffer",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6140,7 +6791,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "height",
@@ -6152,7 +6803,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "depth_or_array_layers",
@@ -6164,7 +6815,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "mip_level_count",
@@ -6176,7 +6827,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "sample_count",
@@ -6188,7 +6839,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "dimension",
@@ -6200,7 +6851,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "format",
@@ -6212,7 +6863,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "usage",
@@ -6224,7 +6875,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "create_view",
@@ -6242,7 +6893,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         },
         {
           "ruby_name": "destroy",
@@ -6254,7 +6905,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:763-789"
+          "export": "core/graphics/gpu.h:777-803"
         }
       ],
       "attributes": [],
@@ -6269,7 +6920,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:763-789",
+      "export": "core/graphics/gpu.h:777-803",
       "cpp_name": "GPUTexture",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6294,7 +6945,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:799-799",
+      "export": "core/graphics/gpu.h:813-813",
       "cpp_name": "GPUTextureView",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6319,7 +6970,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:810-810",
+      "export": "core/graphics/gpu.h:824-824",
       "cpp_name": "GPUSampler",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6344,7 +6995,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:821-821",
+      "export": "core/graphics/gpu.h:835-835",
       "cpp_name": "GPUShaderModule",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6369,7 +7020,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:832-832",
+      "export": "core/graphics/gpu.h:846-846",
       "cpp_name": "GPUBindGroupLayout",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6394,7 +7045,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:843-843",
+      "export": "core/graphics/gpu.h:857-857",
       "cpp_name": "GPUPipelineLayout",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6419,56 +7070,12 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:854-854",
+      "export": "core/graphics/gpu.h:868-868",
       "cpp_name": "GPUBindGroup",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
       "kind": "class",
       "name": "GPUBindGroup",
-      "ruby_superclass": "GPUObject",
-      "glue": true
-    },
-    {
-      "constructors": [],
-      "initialize_copy": null,
-      "instance_methods": [
-        {
-          "ruby_name": "get_bind_group_layout",
-          "cpp_name": "GetBindGroupLayout",
-          "return": {
-            "cpp_type": "RefPtr<GPUBindGroupLayout>",
-            "ruby_type": "GPUBindGroupLayout"
-          },
-          "params": [
-            {
-              "name": "group_index",
-              "type": "uint32_t",
-              "default": null
-            }
-          ],
-          "has_exception": false,
-          "header_annotation": false,
-          "export": "core/graphics/gpu.h:865-869"
-        }
-      ],
-      "attributes": [],
-      "data_attributes": [],
-      "class_methods": [],
-      "class_attributes": [],
-      "constants": [],
-      "marshal": {
-        "dump": false,
-        "load": false
-      },
-      "equal": false,
-      "index": null,
-      "unsupported": [],
-      "export": "core/graphics/gpu.h:865-869",
-      "cpp_name": "GPURenderPipeline",
-      "cpp_parent": "GPUObject",
-      "header": "core/graphics/gpu.h",
-      "kind": "class",
-      "name": "GPURenderPipeline",
       "ruby_superclass": "GPUObject",
       "glue": true
     },
@@ -6508,6 +7115,50 @@
       "index": null,
       "unsupported": [],
       "export": "core/graphics/gpu.h:879-883",
+      "cpp_name": "GPURenderPipeline",
+      "cpp_parent": "GPUObject",
+      "header": "core/graphics/gpu.h",
+      "kind": "class",
+      "name": "GPURenderPipeline",
+      "ruby_superclass": "GPUObject",
+      "glue": true
+    },
+    {
+      "constructors": [],
+      "initialize_copy": null,
+      "instance_methods": [
+        {
+          "ruby_name": "get_bind_group_layout",
+          "cpp_name": "GetBindGroupLayout",
+          "return": {
+            "cpp_type": "RefPtr<GPUBindGroupLayout>",
+            "ruby_type": "GPUBindGroupLayout"
+          },
+          "params": [
+            {
+              "name": "group_index",
+              "type": "uint32_t",
+              "default": null
+            }
+          ],
+          "has_exception": false,
+          "header_annotation": false,
+          "export": "core/graphics/gpu.h:893-897"
+        }
+      ],
+      "attributes": [],
+      "data_attributes": [],
+      "class_methods": [],
+      "class_attributes": [],
+      "constants": [],
+      "marshal": {
+        "dump": false,
+        "load": false
+      },
+      "equal": false,
+      "index": null,
+      "unsupported": [],
+      "export": "core/graphics/gpu.h:893-897",
       "cpp_name": "GPUComputePipeline",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6530,7 +7181,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:893-901"
+          "export": "core/graphics/gpu.h:907-915"
         },
         {
           "ruby_name": "count",
@@ -6542,7 +7193,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:893-901"
+          "export": "core/graphics/gpu.h:907-915"
         },
         {
           "ruby_name": "destroy",
@@ -6554,7 +7205,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:893-901"
+          "export": "core/graphics/gpu.h:907-915"
         }
       ],
       "attributes": [],
@@ -6569,7 +7220,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:893-901",
+      "export": "core/graphics/gpu.h:907-915",
       "cpp_name": "GPUQuerySet",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6594,7 +7245,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:911-911",
+      "export": "core/graphics/gpu.h:925-925",
       "cpp_name": "GPUCommandBuffer",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -6623,7 +7274,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "begin_compute_pass",
@@ -6641,7 +7292,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "copy_buffer_to_buffer",
@@ -6679,7 +7330,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "copy_buffer_to_texture",
@@ -6742,7 +7393,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "copy_texture_to_buffer",
@@ -6805,7 +7456,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "copy_texture_to_texture",
@@ -6873,7 +7524,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "resolve_query_set",
@@ -6911,7 +7562,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "clear_buffer",
@@ -6939,7 +7590,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "insert_debug_marker",
@@ -6957,7 +7608,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "push_debug_group",
@@ -6975,7 +7626,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "pop_debug_group",
@@ -6987,7 +7638,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         },
         {
           "ruby_name": "finish",
@@ -6999,7 +7650,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:923-987"
+          "export": "core/graphics/gpu.h:937-1001"
         }
       ],
       "attributes": [],
@@ -7014,7 +7665,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:923-987",
+      "export": "core/graphics/gpu.h:937-1001",
       "cpp_name": "GPUCommandEncoder",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -7043,7 +7694,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_bind_group",
@@ -7066,7 +7717,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_vertex_buffer",
@@ -7094,7 +7745,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_index_buffer",
@@ -7122,7 +7773,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "draw",
@@ -7155,7 +7806,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "draw_indexed",
@@ -7193,7 +7844,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "draw_indirect",
@@ -7216,7 +7867,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "draw_indexed_indirect",
@@ -7239,7 +7890,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_viewport",
@@ -7282,7 +7933,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_scissor_rect",
@@ -7315,7 +7966,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_stencil_reference",
@@ -7333,7 +7984,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "set_blend_constant",
@@ -7366,7 +8017,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "insert_debug_marker",
@@ -7384,7 +8035,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "push_debug_group",
@@ -7402,7 +8053,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "pop_debug_group",
@@ -7414,7 +8065,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         },
         {
           "ruby_name": "end",
@@ -7426,7 +8077,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:997-1049"
+          "export": "core/graphics/gpu.h:1011-1063"
         }
       ],
       "attributes": [],
@@ -7441,7 +8092,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:997-1049",
+      "export": "core/graphics/gpu.h:1011-1063",
       "cpp_name": "GPURenderPassEncoder",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -7470,7 +8121,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         },
         {
           "ruby_name": "set_bind_group",
@@ -7493,7 +8144,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         },
         {
           "ruby_name": "dispatch_workgroups",
@@ -7521,7 +8172,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         },
         {
           "ruby_name": "insert_debug_marker",
@@ -7539,7 +8190,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         },
         {
           "ruby_name": "push_debug_group",
@@ -7557,7 +8208,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         },
         {
           "ruby_name": "pop_debug_group",
@@ -7569,7 +8220,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         },
         {
           "ruby_name": "end",
@@ -7581,7 +8232,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1057-1073"
+          "export": "core/graphics/gpu.h:1071-1087"
         }
       ],
       "attributes": [],
@@ -7596,7 +8247,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:1057-1073",
+      "export": "core/graphics/gpu.h:1071-1087",
       "cpp_name": "GPUComputePassEncoder",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -7625,7 +8276,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1081-1089"
+          "export": "core/graphics/gpu.h:1095-1103"
         },
         {
           "ruby_name": "write_buffer",
@@ -7653,7 +8304,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1081-1089"
+          "export": "core/graphics/gpu.h:1095-1103"
         },
         {
           "ruby_name": "write_texture",
@@ -7711,7 +8362,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/graphics/gpu.h:1081-1089"
+          "export": "core/graphics/gpu.h:1095-1103"
         }
       ],
       "attributes": [],
@@ -7726,7 +8377,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/graphics/gpu.h:1081-1089",
+      "export": "core/graphics/gpu.h:1095-1103",
       "cpp_name": "GPUQueue",
       "cpp_parent": "GPUObject",
       "header": "core/graphics/gpu.h",
@@ -8091,7 +8742,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         }
       ],
       "initialize_copy": null,
@@ -8106,7 +8757,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "ruby_name": "target=",
@@ -8124,7 +8775,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "ruby_name": "shadow_splits",
@@ -8152,7 +8803,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "ruby_name": "shadow_cascades",
@@ -8200,7 +8851,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "ruby_name": "view_projection",
@@ -8223,7 +8874,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         }
       ],
       "attributes": [
@@ -8237,7 +8888,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "near",
@@ -8249,7 +8900,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "far",
@@ -8261,7 +8912,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "orthographic",
@@ -8273,7 +8924,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "ortho_size",
@@ -8285,7 +8936,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "culling_mask",
@@ -8297,7 +8948,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "clear_flags",
@@ -8309,7 +8960,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "clear_color",
@@ -8321,7 +8972,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         },
         {
           "name": "priority",
@@ -8333,13 +8984,39 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/camera3d.h:40-147"
+          "export": "core/scene3d/camera3d.h:40-156"
         }
       ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
-      "constants": [],
+      "constants": [
+        {
+          "name": "CLEAR_NONE",
+          "cpp_name": "ClearFlag::ClearNone",
+          "value": "0"
+        },
+        {
+          "name": "CLEAR_COLOR",
+          "cpp_name": "ClearFlag::ClearColor",
+          "value": "1"
+        },
+        {
+          "name": "CLEAR_DEPTH",
+          "cpp_name": "ClearFlag::ClearDepth",
+          "value": "2"
+        },
+        {
+          "name": "CLEAR_STENCIL",
+          "cpp_name": "ClearFlag::ClearStencil",
+          "value": "4"
+        },
+        {
+          "name": "CLEAR_ALL",
+          "cpp_name": "ClearFlag::ClearAll",
+          "value": "7"
+        }
+      ],
       "marshal": {
         "dump": false,
         "load": false
@@ -8347,7 +9024,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/camera3d.h:40-147",
+      "export": "core/scene3d/camera3d.h:40-156",
       "cpp_name": "Camera3D",
       "cpp_parent": "Node3D",
       "header": "core/scene3d/camera3d.h",
@@ -8361,7 +9038,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "export": "core/scene3d/light3d.h:36-79"
         }
       ],
       "initialize_copy": null,
@@ -8377,7 +9054,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "export": "core/scene3d/light3d.h:36-79"
         },
         {
           "name": "color",
@@ -8389,7 +9066,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "export": "core/scene3d/light3d.h:36-79"
         },
         {
           "name": "intensity",
@@ -8401,7 +9078,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "export": "core/scene3d/light3d.h:36-79"
         },
         {
           "name": "range",
@@ -8413,7 +9090,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "export": "core/scene3d/light3d.h:36-79"
         },
         {
           "name": "cast_shadow",
@@ -8425,13 +9102,24 @@
           "override": false,
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/light3d.h:36-73"
+          "export": "core/scene3d/light3d.h:36-79"
         }
       ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
-      "constants": [],
+      "constants": [
+        {
+          "name": "DIRECTIONAL",
+          "cpp_name": "LightType::Directional",
+          "value": "0"
+        },
+        {
+          "name": "POINT",
+          "cpp_name": "LightType::Point",
+          "value": "1"
+        }
+      ],
       "marshal": {
         "dump": false,
         "load": false
@@ -8439,7 +9127,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/light3d.h:36-73",
+      "export": "core/scene3d/light3d.h:36-79",
       "cpp_name": "Light3D",
       "cpp_parent": "Node3D",
       "header": "core/scene3d/light3d.h",
@@ -9006,7 +9694,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         }
       ],
       "initialize_copy": null,
@@ -9047,7 +9735,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "add_event",
@@ -9070,7 +9758,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "event_count",
@@ -9082,7 +9770,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "event_name",
@@ -9100,7 +9788,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "event_time",
@@ -9118,7 +9806,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "duration",
@@ -9130,7 +9818,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "track_count",
@@ -9142,7 +9830,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "apply",
@@ -9165,7 +9853,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "blend",
@@ -9193,7 +9881,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "ruby_name": "blend_masked",
@@ -9226,7 +9914,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         }
       ],
       "attributes": [
@@ -9240,7 +9928,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         },
         {
           "name": "speed",
@@ -9252,13 +9940,39 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/animation3d.h:37-106"
+          "export": "core/scene3d/animation3d.h:37-108"
         }
       ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
-      "constants": [],
+      "constants": [
+        {
+          "name": "TRANSLATION",
+          "cpp_name": "kTranslation",
+          "value": "0"
+        },
+        {
+          "name": "ROTATION",
+          "cpp_name": "kRotation",
+          "value": "1"
+        },
+        {
+          "name": "SCALE",
+          "cpp_name": "kScale",
+          "value": "2"
+        },
+        {
+          "name": "LINEAR",
+          "cpp_name": "kLinear",
+          "value": "0"
+        },
+        {
+          "name": "STEP",
+          "cpp_name": "kStep",
+          "value": "1"
+        }
+      ],
       "marshal": {
         "dump": false,
         "load": false
@@ -9266,7 +9980,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/animation3d.h:37-106",
+      "export": "core/scene3d/animation3d.h:37-108",
       "cpp_name": "Animation3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/animation3d.h",
@@ -11883,7 +12597,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "colors",
@@ -11895,7 +12609,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "colors=",
@@ -11913,7 +12627,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "clear_color",
@@ -11925,7 +12639,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "clear_color=",
@@ -11943,7 +12657,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "tags",
@@ -11955,7 +12669,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "tags=",
@@ -11973,7 +12687,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "tag_ids",
@@ -11985,7 +12699,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "tag_ids=",
@@ -12003,7 +12717,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "bind_texture",
@@ -12026,7 +12740,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "bindings",
@@ -12038,7 +12752,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "reads",
@@ -12050,7 +12764,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "reads=",
@@ -12068,7 +12782,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "material",
@@ -12080,7 +12794,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "material=",
@@ -12098,7 +12812,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "compute",
@@ -12110,7 +12824,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "compute=",
@@ -12128,7 +12842,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "texture",
@@ -12146,7 +12860,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "pass",
@@ -12158,7 +12872,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "context",
@@ -12170,7 +12884,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "width",
@@ -12182,7 +12896,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "ruby_name": "height",
@@ -12194,7 +12908,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         }
       ],
       "attributes": [
@@ -12208,7 +12922,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "kind",
@@ -12220,7 +12934,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "clear_flags",
@@ -12232,7 +12946,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "cull_override",
@@ -12244,7 +12958,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "sort_back_to_front",
@@ -12256,7 +12970,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "depth_only",
@@ -12268,7 +12982,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "camera",
@@ -12280,7 +12994,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "layers",
@@ -12292,7 +13006,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "queue_min",
@@ -12304,7 +13018,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "queue_max",
@@ -12316,7 +13030,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "cascades",
@@ -12328,7 +13042,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "shadow_light",
@@ -12340,7 +13054,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "point_shadow_light",
@@ -12352,7 +13066,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "cascade_fade",
@@ -12364,7 +13078,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "split_lambda",
@@ -12376,7 +13090,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         },
         {
           "name": "shadow_distance",
@@ -12388,13 +13102,54 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:120-292"
+          "export": "core/scene3d/render_graph3d.h:120-308"
         }
       ],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
-      "constants": [],
+      "constants": [
+        {
+          "name": "RASTER",
+          "cpp_name": "PassKind::Raster",
+          "value": "0"
+        },
+        {
+          "name": "FULLSCREEN",
+          "cpp_name": "PassKind::Fullscreen",
+          "value": "1"
+        },
+        {
+          "name": "COMPUTE",
+          "cpp_name": "PassKind::Compute",
+          "value": "2"
+        },
+        {
+          "name": "CLEAR_NONE",
+          "cpp_name": "ClearFlag::ClearNone",
+          "value": "static_cast<uint32_t>(Camera3D::ClearFlag::ClearNone)"
+        },
+        {
+          "name": "CLEAR_COLOR",
+          "cpp_name": "ClearFlag::ClearColor",
+          "value": "static_cast<uint32_t>(Camera3D::ClearFlag::ClearColor)"
+        },
+        {
+          "name": "CLEAR_DEPTH",
+          "cpp_name": "ClearFlag::ClearDepth",
+          "value": "static_cast<uint32_t>(Camera3D::ClearFlag::ClearDepth)"
+        },
+        {
+          "name": "CLEAR_STENCIL",
+          "cpp_name": "ClearFlag::ClearStencil",
+          "value": "static_cast<uint32_t>(Camera3D::ClearFlag::ClearStencil)"
+        },
+        {
+          "name": "CLEAR_ALL",
+          "cpp_name": "ClearFlag::ClearAll",
+          "value": "static_cast<uint32_t>(Camera3D::ClearFlag::ClearAll)"
+        }
+      ],
       "marshal": {
         "dump": false,
         "load": false
@@ -12402,7 +13157,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:120-292",
+      "export": "core/scene3d/render_graph3d.h:120-308",
       "cpp_name": "RenderGraphPass3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",
@@ -12416,7 +13171,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         }
       ],
       "initialize_copy": null,
@@ -12437,7 +13192,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "get_pass",
@@ -12455,7 +13210,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "remove_pass",
@@ -12473,7 +13228,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "clear",
@@ -12485,7 +13240,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "pass_count",
@@ -12497,7 +13252,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "pass_at",
@@ -12515,7 +13270,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "add_texture",
@@ -12543,7 +13298,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "add_storage_texture",
@@ -12566,7 +13321,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "set_texture_scale",
@@ -12589,7 +13344,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "get_texture",
@@ -12607,7 +13362,7 @@
           ],
           "has_exception": true,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "texture_names",
@@ -12619,7 +13374,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "ambient",
@@ -12631,7 +13386,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "ruby_name": "ambient=",
@@ -12649,7 +13404,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         }
       ],
       "attributes": [
@@ -12663,7 +13418,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         },
         {
           "name": "camera",
@@ -12675,7 +13430,7 @@
           "override": false,
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/scene3d/render_graph3d.h:359-409"
+          "export": "core/scene3d/render_graph3d.h:375-425"
         }
       ],
       "data_attributes": [],
@@ -12689,7 +13444,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/scene3d/render_graph3d.h:359-409",
+      "export": "core/scene3d/render_graph3d.h:375-425",
       "cpp_name": "RenderGraph3D",
       "cpp_parent": "Object",
       "header": "core/scene3d/render_graph3d.h",
@@ -16194,6 +16949,10 @@
         "get": {
           "ruby_name": "[]",
           "cpp_name": "Get",
+          "return": {
+            "cpp_type": "int16_t",
+            "ruby_type": "Integer"
+          },
           "params": [
             {
               "name": "x",
@@ -16217,6 +16976,10 @@
         "set": {
           "ruby_name": "[]=",
           "cpp_name": "Set",
+          "return": {
+            "cpp_type": "void",
+            "ruby_type": "nil"
+          },
           "params": [
             {
               "name": "value",
@@ -18711,7 +19474,7 @@
         {
           "params": [],
           "has_exception": false,
-          "export": "core/network/network.h:41-63"
+          "export": "core/network/network.h:41-64"
         }
       ],
       "initialize_copy": null,
@@ -18726,7 +19489,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-63"
+          "export": "core/network/network.h:41-64"
         },
         {
           "ruby_name": "text",
@@ -18738,7 +19501,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-63"
+          "export": "core/network/network.h:41-64"
         },
         {
           "ruby_name": "code",
@@ -18750,7 +19513,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-63"
+          "export": "core/network/network.h:41-64"
         },
         {
           "ruby_name": "reason",
@@ -18762,7 +19525,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-63"
+          "export": "core/network/network.h:41-64"
         },
         {
           "ruby_name": "message",
@@ -18774,14 +19537,40 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-63"
+          "export": "core/network/network.h:41-64"
         }
       ],
       "attributes": [],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
-      "constants": [],
+      "constants": [
+        {
+          "name": "OPEN",
+          "cpp_name": "Open",
+          "value": "0"
+        },
+        {
+          "name": "TEXT",
+          "cpp_name": "Text",
+          "value": "1"
+        },
+        {
+          "name": "BINARY",
+          "cpp_name": "Binary",
+          "value": "2"
+        },
+        {
+          "name": "CLOSE",
+          "cpp_name": "Close",
+          "value": "3"
+        },
+        {
+          "name": "ERROR",
+          "cpp_name": "Error",
+          "value": "4"
+        }
+      ],
       "marshal": {
         "dump": false,
         "load": false
@@ -18789,7 +19578,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:41-63",
+      "export": "core/network/network.h:41-64",
       "cpp_name": "NetworkEvent",
       "cpp_parent": "Object",
       "header": "core/network/network.h",
@@ -18814,7 +19603,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         }
       ],
       "initialize_copy": null,
@@ -18829,7 +19618,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "ready_state",
@@ -18841,7 +19630,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "error",
@@ -18853,7 +19642,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "dropped",
@@ -18865,7 +19654,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "send_text",
@@ -18883,7 +19672,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "send_binary",
@@ -18901,7 +19690,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "send_ping",
@@ -18919,7 +19708,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "close",
@@ -18942,7 +19731,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "next_event",
@@ -18954,7 +19743,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         },
         {
           "ruby_name": "pending",
@@ -18966,14 +19755,35 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:77-110"
+          "export": "core/network/network.h:78-112"
         }
       ],
       "attributes": [],
       "data_attributes": [],
       "class_methods": [],
       "class_attributes": [],
-      "constants": [],
+      "constants": [
+        {
+          "name": "CONNECTING",
+          "cpp_name": "Connecting",
+          "value": "0"
+        },
+        {
+          "name": "OPEN",
+          "cpp_name": "OpenState",
+          "value": "1"
+        },
+        {
+          "name": "CLOSING",
+          "cpp_name": "Closing",
+          "value": "2"
+        },
+        {
+          "name": "CLOSED",
+          "cpp_name": "ClosedState",
+          "value": "3"
+        }
+      ],
       "marshal": {
         "dump": false,
         "load": false
@@ -18981,7 +19791,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:77-110",
+      "export": "core/network/network.h:78-112",
       "cpp_name": "WebSocket",
       "cpp_parent": "Object",
       "header": "core/network/network.h",
@@ -19016,7 +19826,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         }
       ],
       "initialize_copy": null,
@@ -19031,7 +19841,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "abort",
@@ -19043,7 +19853,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "done?",
@@ -19055,7 +19865,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "success?",
@@ -19067,7 +19877,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "status",
@@ -19079,7 +19889,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "status_text",
@@ -19091,7 +19901,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "text",
@@ -19103,7 +19913,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "error",
@@ -19115,7 +19925,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "progress",
@@ -19127,7 +19937,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "header",
@@ -19145,7 +19955,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         },
         {
           "ruby_name": "headers",
@@ -19157,7 +19967,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:126-158"
+          "export": "core/network/network.h:128-160"
         }
       ],
       "attributes": [],
@@ -19172,7 +19982,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:126-158",
+      "export": "core/network/network.h:128-160",
       "cpp_name": "Fetch",
       "cpp_parent": "Object",
       "header": "core/network/network.h",

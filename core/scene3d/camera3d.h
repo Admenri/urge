@@ -40,6 +40,15 @@ URGE_BINDING()
 class Camera3D : public Node3D {
  public:
   URGE_BINDING()
+  enum class ClearFlag : uint32_t {
+    ClearNone = 0,
+    ClearColor = 1,
+    ClearDepth = 2,
+    ClearStencil = 4,
+    ClearAll = 7,
+  };
+
+  URGE_BINDING()
   Camera3D();
   ~Camera3D() override;
 

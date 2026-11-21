@@ -110,7 +110,7 @@ RB_FUNC(Node_Render) {
 }
 
 // Attribute: z (int32_t)
-BINDING_ATTR_INT(Node, urge::Node, Z);
+BINDING_ATTR_INT_TYPED(Node, urge::Node, Z, int32_t);
 
 // Attribute: visible (bool)
 BINDING_ATTR_BOOL(Node, urge::Node, Visible);

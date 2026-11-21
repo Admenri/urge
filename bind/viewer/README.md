@@ -121,8 +121,14 @@ python bind/viewer/viewer.py stats --json
 
 - **属性**是读写对，显示为读取侧 `Sprite#bitmap`，下一行给出写入侧 `Sprite#bitmap = value`。
   两条共用同一条 IR 记录。
-- **构造**显示为 `Sprite.new(viewport = nil)`。有重载的类（`Bitmap`、`Color`、`Rect`、
+- **类型**直接标在参数名后，例如 `Bitmap#blt(x: Integer, y: Integer, src_bitmap: Bitmap, src_rect: Rect, opacity: Integer = 255, blend_type: Integer = 0)`。
+  返回值列优先显示 Ruby 类型，下一行保留 C++ 原始类型；悬停参数类型可查看其 C++ 拼写。
+  `std::vector<float>` 显示为 `Array<Float>`，`MaybePtr<T>` 显示为 `T | nil`，与不接受 `nil` 的 `RefPtr<T>` 区分。
+  属性写入侧也会显示 `value` 的类型；缺失的类型显示为 `?`，缺失的返回值信息显示为 `—`（CLI 为 `--`），不猜测。
+- **构造**显示为 `Sprite.new(viewport: Viewport | nil = nil)`，返回值为构造的类。有重载的类（`Bitmap`、`Color`、`Rect`、
   `Tone`、`Vector2/3/4`、`Viewport`、`Image`）会列出全部重载。
+- **复制签名**仍使用不带类型注解的调用形式（例如 `Sprite.new(viewport = nil)`），因为 `name: Type` 是参考记法，不是 Ruby 调用语法。
+  长签名会自动换行；搜索建议与命令行输出同样展示参数和返回值类型，搜索支持 Ruby 与 C++ 类型名。
 - **默认值**按脚本作者会写的字面量呈现：IR 里的 C++ 拼写 `nullptr` / `{}` / `255.f`
   分别显示为 `nil` / `[]`（或 `""`）/ `255.0`。未映射的形状原样保留，不做猜测。
 - **未能导出**的声明单独用醒目样式列出，并给出原因（例如 `internal parameter type: glm::vec2`）。
