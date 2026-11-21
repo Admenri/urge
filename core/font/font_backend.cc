@@ -40,8 +40,13 @@ CellMetrics MakeCellMetrics(int size,
   if (!std::isfinite(em_size) || em_size <= 0 || em_size > 512)
     return cell;
   cell.em_size = em_size;
+  // Round the GDI-compatible ascent and descent separately. Half-pixel
+  // values may make the device cell one pixel taller than the requested size
+  // (for example, SimHei at 32 pixels), matching RGSS text_size.
   cell.ascent =
-      std::clamp(static_cast<int>(std::ceil(size * ascent / height)), 0, size);
+      std::clamp(static_cast<int>(std::round(size * ascent / height)), 0, size);
+  cell.height = std::max(1, cell.ascent +
+      static_cast<int>(std::round(size * descent / height)));
   return cell;
 }
 bool DecodeUTF8(const std::string& text, std::vector<uint32_t>& out) {

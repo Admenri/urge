@@ -47,7 +47,8 @@ class FreeTypeFace final : public Face {
   FT_Face face = nullptr;
   CellMetrics cell;
   FT_Int32 load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
-  FT_Int32 metrics_load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
+  FT_Int32 metrics_load_flags = FT_LOAD_NO_BITMAP | FT_LOAD_NO_AUTOHINT;
+  bool linear_metrics = false;
   bool bold = false, italic = false;
   struct Metrics {
     float advance = 0, left = 0;
@@ -58,18 +59,28 @@ class FreeTypeFace final : public Face {
     if (found != glyph_metrics.end())
       return found->second;
     FT_Set_Transform(face, nullptr, nullptr);
-    // Layout and masks use the same em size. Keep GDI-style hinted
-    // advances separate from the font's antialiasing policy, with a fallback
-    // for fonts whose hint programs cannot be loaded.
+    // Do not let FreeType's auto-hinter invent GDI layout metrics. For
+    // unhinted faces retain the 16.16 linear advance until the final pixel
+    // rounding: rounding the 26.6 advance first loses near-half-pixel values.
     auto error = FT_Load_Glyph(face, glyph, metrics_load_flags);
     if (error && metrics_load_flags != load_flags)
       error = FT_Load_Glyph(face, glyph, load_flags);
     Metrics value;
     if (!error) {
-      if (bold)
+      const bool scalable = FT_IS_SCALABLE(face);
+      if (bold && !scalable)
         FT_GlyphSlot_Embolden(face->glyph);
-      value.advance = std::round(face->glyph->advance.x / 64.0f);
-      value.left = face->glyph->metrics.horiBearingX / 64.0f;
+      const double advance = linear_metrics
+          ? face->glyph->linearHoriAdvance / 65536.0
+          : face->glyph->advance.x / 64.0;
+      value.advance = static_cast<float>(std::round(advance));
+      // GDI's synthetic bold adds one device pixel after advance rounding.
+      // It must not depend on FreeType's outline emboldening strength.
+      if (bold && scalable)
+        value.advance += 1;
+      // A negative glyph origin expands the measured run once; it is not
+      // spacing to insert before each interior character.
+      value.left = std::floor(face->glyph->metrics.horiBearingX / 64.0f);
     }
     if (error)
       return {};
@@ -250,19 +261,14 @@ class FreeTypeBackend final : public Backend {
       }
       face->cell = MakeCellMetrics(font.size_, face->face->units_per_EM, ascent,
                                    descent);
-      // GDI maps the requested character cell to an integer em. Use that
-      // same size for metrics and masks: fractional masks paired with integer
-      // metrics can exceed a text_size-sized character box.
-      face->cell.em_size = std::max(1.0, std::round(face->cell.em_size));
-      if (std::isfinite(ascent + descent) && ascent >= 0 && descent >= 0 &&
-          ascent + descent > 0) {
-        face->cell.ascent = static_cast<int>(std::round(
-            face->cell.em_size * ascent / face->face->units_per_EM));
-        face->cell.height = std::max(1, face->cell.ascent + static_cast<int>(
-            std::round(face->cell.em_size * descent / face->face->units_per_EM)));
-      }
-      if (FT_Set_Pixel_Sizes(face->face, 0,
-                            static_cast<FT_UInt>(face->cell.em_size)))
+      // Keep the exact requested character-cell scale. Pre-rounding em
+      // changes a 22-pixel Lolita CJK advance from 17 to 16 pixels. Layout
+      // and masks share this one size; only advances are rounded in Measure.
+      FT_Size_RequestRec request{};
+      request.type = FT_SIZE_REQUEST_TYPE_SCALES;
+      request.height = static_cast<FT_Long>(std::lround(
+          face->cell.em_size * 64 * 65536 / face->face->units_per_EM));
+      if (FT_Request_Size(face->face, &request))
         return {};
     } else {
       if (FT_Set_Pixel_Sizes(face->face, 0, font.size_))
@@ -275,16 +281,11 @@ class FreeTypeBackend final : public Backend {
     face->load_flags = FT_LOAD_DEFAULT;
     if (FT_IS_SCALABLE(face->face))
       face->load_flags |= FT_LOAD_NO_BITMAP;
-    // Rasterization policy below must not change RGSS's layout metrics.
-    face->metrics_load_flags = face->load_flags;
-    const int gasp = FT_Get_Gasp(face->face, face->face->size->metrics.y_ppem);
-    if (gasp != FT_GASP_NO_TABLE && !(gasp & FT_GASP_DO_GRIDFIT)) {
-      // Honour fonts such as Lolita that explicitly request gray coverage
-      // without grid fitting. Auto-hinting can distort their thin joins.
-      face->load_flags |= FT_LOAD_NO_HINTING;
-    } else if (gasp == FT_GASP_NO_TABLE &&
-               std::string_view(FT_Get_Font_Format(face->face) ?
-                   FT_Get_Font_Format(face->face) : "") == "TrueType") {
+    // Fonts without native instructions have linear device metrics. The
+    // auto-hinter can change them even when gasp explicitly disables hints.
+    bool no_native_hints = false;
+    const char* format = FT_Get_Font_Format(face->face);
+    if (format && std::string_view(format) == "TrueType") {
       FT_ULong program = 0, preparation = 0;
       FT_Load_Sfnt_Table(face->face, FT_MAKE_TAG('f', 'p', 'g', 'm'),
                         0, nullptr, &program);
@@ -292,9 +293,22 @@ class FreeTypeBackend final : public Backend {
                         0, nullptr, &preparation);
       const auto* profile = static_cast<const TT_MaxProfile*>(
           FT_Get_Sfnt_Table(face->face, ft_sfnt_maxp));
-      if (!program && !preparation && (!profile || !profile->maxSizeOfInstructions))
-        face->load_flags |= FT_LOAD_TARGET_LIGHT;
+      no_native_hints = !program && !preparation &&
+                        (!profile || !profile->maxSizeOfInstructions);
     }
+    const int gasp = FT_Get_Gasp(face->face, face->face->size->metrics.y_ppem);
+    if (gasp != FT_GASP_NO_TABLE && !(gasp & FT_GASP_DO_GRIDFIT)) {
+      // Preserve the font's existing grayscale rasterization policy.
+      face->load_flags |= FT_LOAD_NO_HINTING;
+    } else if (gasp == FT_GASP_NO_TABLE && no_native_hints) {
+      face->load_flags |= FT_LOAD_TARGET_LIGHT;
+    }
+    face->linear_metrics = FT_IS_SCALABLE(face->face) &&
+        !FT_IS_TRICKY(face->face) &&
+        (no_native_hints || (face->load_flags & FT_LOAD_NO_HINTING));
+    face->metrics_load_flags = face->load_flags | FT_LOAD_NO_AUTOHINT;
+    if (face->linear_metrics)
+      face->metrics_load_flags |= FT_LOAD_NO_HINTING;
     face->bold = font.bold_;
     face->italic = font.italic_;
     face->id = ++next_id_;
