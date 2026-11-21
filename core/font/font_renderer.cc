@@ -521,19 +521,18 @@ void FontRenderer::Draw(Bitmap& bitmap,
   prepare(0, fill);
   if (font.outline_)
     prepare(1, stroke);
-  // text_size excludes italic overhang. Keep that additional extent only
-  // for italic text; ordinary glyph ink and outline shapes must not change
-  // the layer dimensions or per-character alignment.
-  float origin = -std::min(0.0f, layout->bounds_left);
-  if (font.italic_) {
-    float ink_left = 0, ink_right = logical_width;
-    for (const auto& item : fill) {
-      ink_left = std::min(ink_left, origin + item.ink.x);
-      ink_right = std::max(ink_right, origin + item.ink.x + item.ink.width);
-    }
-    origin -= ink_left;
-    width = ink_right - ink_left + outline_extent;
+  // Advance and raster bounds are different quantities (GDI's cell advance
+  // versus black box). Keep every fill pixel, including ordinary underhangs
+  // and right overhangs, without changing text_size or any glyph pen position.
+  // The logical width already includes its own negative-bearing allowance;
+  // do not add that allowance again when shifting the actual raster bounds.
+  float fill_left = 0, fill_right = 0;
+  for (const auto& item : fill) {
+    fill_left = std::min(fill_left, item.ink.x);
+    fill_right = std::max(fill_right, item.ink.x + item.ink.width);
   }
+  const float origin = -fill_left;
+  width = std::max(logical_width, fill_right + origin) + outline_extent;
   // RGSS3's outlined layer is two pixels larger on each axis. Shadow does
   // not enlarge it. Align and squeeze this layer, not its visible strokes.
   scale = width > region.width ? std::max(0.6f, region.width / width) : 1.0f;
@@ -547,8 +546,10 @@ void FontRenderer::Draw(Bitmap& bitmap,
     box_left += spare_width;
   }
   left = box_left + origin * scale;
-  // Vertical centering still applies when the line box is shorter.
-  const float top = region.y + std::floor((region.height - height) / 2);
+  // Native RGSS3 keeps the layer at the requested top when its outlined
+  // height exceeds the line box, instead of shifting short lines upward.
+  const float top = region.y +
+      std::max(0.0f, std::floor((region.height - height) / 2));
   // Clip the logical layer before compositing: a negative bearing must not
   // expose extra pixels only when alignment moves it away from the rect edge.
   // Bound to the bitmap before converting to integers (also for long strings).
@@ -572,8 +573,10 @@ void FontRenderer::Draw(Bitmap& bitmap,
       static_cast<float>(clip.x + clip.width), static_cast<float>(clip.y + clip.height),
       scale, 1.0f, 0, 0};
   auto& clip_state = state.Clipping(clipping);
-  // Merely touching the boundary is not clipping. Rebuilding that edge
-  // would erase a valid fill column, notably the right edge of digits.
+  // Native RGSS3 reference images retain an outline-colored border pixel
+  // even when the fill only touches that pixel without crossing the edge.
+  // Reproduce that observed behavior in the shader's one-source-pixel bands,
+  // including the closed left contour of 7, 9 and question marks.
   for (auto* list : {&fill, &stroke})
     for (auto& item : *list) {
       const float x0 = left + item.ink.x * scale;
@@ -581,10 +584,10 @@ void FontRenderer::Draw(Bitmap& bitmap,
       const float y0 = top + item.ink.y;
       const float y1 = y0 + item.ink.height;
       constexpr float tolerance = 0.0001f;
-      item.edges = (x0 < clip.x - tolerance ? 1 : 0) |
-                   (x1 > clip.x + clip.width + tolerance ? 2 : 0) |
-                   (y0 < clip.y - tolerance ? 4 : 0) |
-                   (y1 > clip.y + clip.height + tolerance ? 8 : 0);
+      item.edges = (x0 < clip.x + scale - tolerance ? 1 : 0) |
+                   (x1 > clip.x + clip.width - scale + tolerance ? 2 : 0) |
+                   (y0 < clip.y + 1 - tolerance ? 4 : 0) |
+                   (y1 > clip.y + clip.height - 1 + tolerance ? 8 : 0);
     }
   // Upload at queue flush, coalescing new cells across all text calls.
   BitmapDraw batch;
