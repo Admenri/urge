@@ -550,9 +550,19 @@ void FontRenderer::Draw(Bitmap& bitmap,
   // height exceeds the line box, instead of shifting short lines upward.
   const float top = region.y +
       std::max(0.0f, std::floor((region.height - height) / 2));
-  // Clip the logical layer before compositing: a negative bearing must not
-  // expose extra pixels only when alignment moves it away from the rect edge.
-  // Bound to the bitmap before converting to integers (also for long strings).
+  // Close outlines at source text-layer/caller edges before compositing.
+  // Clipping that result to the destination Bitmap must only crop pixels:
+  // it must not rebuild an outline along a new Bitmap edge (for example y<0).
+  // Keep source edges as floats until the separate destination clamp, also
+  // avoiding integer overflow for large caller positions or long strings.
+  const float sx0 = std::max(static_cast<float>(region.x), std::floor(box_left));
+  const float sy0 = std::max(static_cast<float>(region.y), top);
+  const float sx1 = std::min(static_cast<float>(region.x) + region.width,
+                             std::ceil(box_left + width * scale));
+  const float sy1 = std::min(static_cast<float>(region.y) + region.height,
+                             top + height);
+  if (sx1 <= sx0 || sy1 <= sy0)
+    return;
   const auto bounded_x = [&](float x) {
     return static_cast<int32_t>(std::clamp(x, 0.0f,
                                          static_cast<float>(bitmap.size().x)));
@@ -561,17 +571,13 @@ void FontRenderer::Draw(Bitmap& bitmap,
     return static_cast<int32_t>(std::clamp(y, 0.0f,
                                          static_cast<float>(bitmap.size().y)));
   };
-  const int32_t x0 = bounded_x(std::floor(box_left));
-  const int32_t y0 = bounded_y(top);
-  const int32_t x1 = bounded_x(std::ceil(box_left + width * scale));
-  const int32_t y1 = bounded_y(top + height);
-  const auto clip = MakeIntersect(region, RectI(x0, y0, x1 - x0, y1 - y0));
+  const int32_t x0 = bounded_x(sx0), y0 = bounded_y(sy0);
+  const int32_t x1 = bounded_x(sx1), y1 = bounded_y(sy1);
+  const RectI clip(x0, y0, x1 - x0, y1 - y0);
   if (clip.width <= 0 || clip.height <= 0)
     return;
   const std::array<float, 8> clipping = {
-      static_cast<float>(clip.x), static_cast<float>(clip.y),
-      static_cast<float>(clip.x + clip.width), static_cast<float>(clip.y + clip.height),
-      scale, 1.0f, 0, 0};
+      sx0, sy0, sx1, sy1, scale, 1.0f, 0, 0};
   auto& clip_state = state.Clipping(clipping);
   // Native RGSS3 reference images retain an outline-colored border pixel
   // even when the fill only touches that pixel without crossing the edge.
@@ -584,10 +590,10 @@ void FontRenderer::Draw(Bitmap& bitmap,
       const float y0 = top + item.ink.y;
       const float y1 = y0 + item.ink.height;
       constexpr float tolerance = 0.0001f;
-      item.edges = (x0 < clip.x + scale - tolerance ? 1 : 0) |
-                   (x1 > clip.x + clip.width - scale + tolerance ? 2 : 0) |
-                   (y0 < clip.y + 1 - tolerance ? 4 : 0) |
-                   (y1 > clip.y + clip.height - 1 + tolerance ? 8 : 0);
+      item.edges = (x0 < sx0 + scale - tolerance ? 1 : 0) |
+                   (x1 > sx1 - scale + tolerance ? 2 : 0) |
+                   (y0 < sy0 + 1 - tolerance ? 4 : 0) |
+                   (y1 > sy1 - 1 + tolerance ? 8 : 0);
     }
   // Upload at queue flush, coalescing new cells across all text calls.
   BitmapDraw batch;

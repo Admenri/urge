@@ -33,7 +33,7 @@ RGSS 默认设置按游戏版本初始化，脚本之后修改 `Font.default_*` 
 - 无描边时，文字层宽度取逻辑宽度与补偿负左边距后的填充范围的较大值；高度使用字符单元高度。RGSS3 描边文字层的宽高各增加2像素；这不加进 `text_size`。阴影不再额外改变文字层尺寸。
 - 横向缩放使用 `max(0.6, min(1.0, rect.width / layer_width))`。左/中/右对齐使用缩放后的文字层宽度，不依赖某个字形的实际笔画边缘。普通文字居中的半像素向下取整，描边文字居中的半像素向上取整。最小压缩比例下仍超宽时，从框左端裁切。
 - 垂直位置为 `max(0, floor((rect.height - layer_height) / 2))`。行框比文字层矮时从框顶开始绘制，再按行框裁切；描边使文字层增高时也不能把整行文字向上推。不做垂直缩放。
-- 文字层先约束自身字形的绘制范围，再与传入矩形和 Bitmap 求交裁切。负边距不能因文字居中或居右而突然露出不同的笔画；裁切后在边缘的一个源像素宽度内重建描边封口。Windows 原版样本中，填充刚好进入第一列时，这一列同样会保留描边颜色；不能通过整体右移字形来补偿。
+- 源文字层按自身范围与传入矩形裁切，并在边缘的一个源像素宽度内重建描边封口。负边距不能因文字居中或居右而突然露出不同的笔画。这个结果写入目标 Bitmap 时，超出 Bitmap 的部分只裁掉像素，不能沿 Bitmap 边界再次描边；例如负 `y` 坐标不能使 Bitmap 第0行的白色横笔变成黑色。Window 内容区滚动、padding 和后续显示裁切同样不负责重新生成文字描边。Windows 原版源文字层样本中，填充刚好进入第一列时，这一列会保留描边颜色；不能通过整体右移字形来补偿。
 - 对齐仍以调用者传入的矩形为准；矩形超出 Bitmap 时不自动改写为相交后的宽度再对齐。`Window` 的 padding 是独立的内容布局边距，不属于 Bitmap 文字层。
 
 ### 依据与验证边界
@@ -42,7 +42,7 @@ RGSS 默认设置按游戏版本初始化，脚本之后修改 `Font.default_*` 
 
 [GDI CreateFont](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw)说明了字符单元与 em 高度的区别；[GetTextExtentPoint32](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-gettextextentpoint32w)说明测量不考虑裁切；[GetCharABCWidths](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-getcharabcwidthsw)与[GetGlyphOutline](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-getglyphoutlinew)区分字符推进量、字形原点和像素黑盒，普通字体也允许负边距；[FreeType 字形文档](https://freetype.org/freetype2/docs/reference/ft2-glyph_retrieval.html)明确区分16.16的线性 advance 与受 hinting 影响的26.6 advance。它们约束后端实现，但不能代替 RGSS 行为对照。
 
-回归对照需同时覆盖同一字体文件、字号、粗斜体、测量、逐字笔位置、宽框与紧框、三个对齐方向、描边/阴影、奇偶宽高及 Bitmap 边界；只比较 `text_size` 不能证明绘制兼容。当前对照基于真实 Windows 上的原版 RGSS3 与 GDI，使用相同字体文件，并核验 GDI 实际选中字库的 SHA256；不使用 CrossOver 结果作为 Windows 基准。萝莉体和黑体18–32号、普通/粗体的576组文字测量宽高均已核对，另外覆盖紧框数字、问号、描边和实际帮助窗口的逐字排版。灰度栅格化与压缩采样仍可能存在像素差异，不承诺所有字体逐像素相同。
+回归对照需同时覆盖同一字体文件、字号、粗斜体、测量、逐字笔位置、宽框与紧框、三个对齐方向、描边/阴影、奇偶宽高及 Bitmap 边界；只比较 `text_size` 不能证明绘制兼容。当前对照基于真实 Windows 上的原版 RGSS3 与 GDI，使用相同字体文件，并核验 GDI 实际选中字库的 SHA256；不使用 CrossOver 结果作为 Windows 基准。萝莉体和黑体18–32号、普通/粗体的576组文字测量宽高均已核对，另外覆盖紧框数字、问号、描边和实际帮助窗口的逐字排版。萝莉体、黑体与 Impact 的负坐标及目标 Bitmap 四边裁切还单独与“正常位置绘制后做像素裁切”对照，以区分源文字封口与目标边界裁切。灰度栅格化与压缩采样仍可能存在像素差异，不承诺所有字体逐像素相同。
 
 这仍是在游戏原始分辨率的 Bitmap 中绘制文字。Retina 与窗口缩放继续由现有显示管线处理；本模块没有把整个游戏 Bitmap 改为高分辨率，也不保证任意放大后都如原生桌面 UI 一样平滑。
 
