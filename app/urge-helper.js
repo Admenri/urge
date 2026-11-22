@@ -58,6 +58,12 @@
   // Real paths that are already in the in-memory filesystem, or on their way.
   const cached = new Set();
 
+  // Keep each transfer separate: preloads run in parallel, and a completed
+  // file must not replace the progress of another file that is still loading.
+  const downloads = new Map();
+  const wasmDownload = Symbol("Game.wasm");
+  let wasmURL = "";
+
   function index(entry) {
     const path = entry.path;
     const lower = path.toLowerCase();
@@ -159,36 +165,62 @@
     const xhr = new XMLHttpRequest();
     xhr.responseType = "arraybuffer";
 
+    const progress = { path: entry.path, loaded: 0, total: entry.size || 0 };
+    downloads.set(entry.path, progress);
     Module.addRunDependency(url);
 
+    let finished = false;
     const finish = (ok) => {
+      if (finished) return;
+      finished = true;
+      downloads.delete(entry.path);
       if (!ok) cached.delete(entry.path);
       Module.removeRunDependency(url);
       done();
     };
 
-    xhr.onload = function () {
-      // Status 0 is a `file://` load, which a game opened from disk still gets.
-      if (xhr.status === 200 || xhr.status === 0) {
-        materialize(entry, new Uint8Array(xhr.response));
-        console.log("[URGE] loaded " + entry.path + " (" + entry.size + " B)");
-        finish(true);
-      } else {
-        console.error("[URGE] " + xhr.status + " " + xhr.statusText + ": " +
-                      url);
-        finish(false);
-      }
+    xhr.onprogress = function (event) {
+      if (finished) return;
+      progress.loaded = event.loaded;
+      // The manifest still supplies a size when the server omits
+      // Content-Length. Prefer the browser's total when it is available (it
+      // can differ from the file size, for example with HTTP compression).
+      progress.total = event.lengthComputable ? event.total : entry.size || 0;
+      showProgress();
     };
 
-    xhr.onerror = function () {
+    xhr.onload = function () {
+      let ok = false;
+      try {
+        // Status 0 is a `file://` load, which a game opened from disk still gets.
+        if (xhr.status === 200 || xhr.status === 0) {
+          materialize(entry, new Uint8Array(xhr.response));
+          console.log("[URGE] loaded " + entry.path + " (" + entry.size + " B)");
+          ok = true;
+        } else {
+          console.error("[URGE] " + xhr.status + " " + xhr.statusText + ": " +
+                        url);
+        }
+      } catch (error) {
+        console.error("[URGE] failed to store " + url, error);
+      }
+      finish(ok);
+    };
+
+    xhr.onerror = xhr.onabort = xhr.ontimeout = function () {
       console.error("[URGE] failed to load " + url);
       finish(false);
     };
 
     // encodeURI keeps non-ASCII resource names -- CJK file names are common in
     // RGSS games -- as valid request targets instead of raw bytes.
-    xhr.open("GET", encodeURI(url));
-    xhr.send();
+    try {
+      xhr.open("GET", encodeURI(url));
+      xhr.send();
+    } catch (error) {
+      console.error("[URGE] failed to request " + url, error);
+      finish(false);
+    }
   }
 
   // ---- The engine's side of the bridge -------------------------------------
@@ -257,27 +289,145 @@
 
     // Nothing was queued -- no manifest, or nothing marked `preload` -- so the
     // loading UI would otherwise stay up for the rest of the run.
-    if (window.Module.totalDependencies === 0) showProgress(0);
+    showProgress();
   }
 
   const spinnerElement = document.getElementById("spinner");
   const statusElement = document.getElementById("status");
+  let dependenciesLeft = 0;
+  let runtimeStatus = "";
 
-  function showProgress(left) {
-    if (!spinnerElement || !statusElement) return;
-    if (left) {
-      statusElement.innerHTML = "Preparing... (" +
-        (Module.totalDependencies - left) + "/" + Module.totalDependencies +
-        ")";
+  function formatBytes(bytes) {
+    const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+    let unit = 0;
+    while (bytes >= 1024 && unit < units.length - 1) {
+      bytes /= 1024;
+      ++unit;
     }
-    spinnerElement.hidden = !left;
-    statusElement.hidden = !left;
+    return bytes.toFixed(unit ? 1 : 0) + " " + units[unit];
+  }
+
+  function formatDownload(loaded, total) {
+    if (!(total > 0)) return formatBytes(loaded) + " downloaded";
+    const percent = Math.min(100, loaded / total * 100).toFixed(1);
+    return percent + "% (" + formatBytes(loaded) + " / " +
+      formatBytes(total) + ")";
+  }
+
+  function showProgress() {
+    if (!spinnerElement || !statusElement) return;
+    let text = runtimeStatus;
+    if (downloads.size) {
+      text = "Downloading...\n" + Array.from(downloads.values(), (progress) =>
+        progress.path + ": " + formatDownload(progress.loaded, progress.total)
+      ).join("\n");
+    } else if (!text && dependenciesLeft) {
+      text = "Preparing... (" +
+        (Module.totalDependencies - dependenciesLeft) + "/" +
+        Module.totalDependencies + ")";
+    }
+    // Resource names are text, not HTML (a manifest can contain '<' or '&').
+    statusElement.textContent = text;
+    spinnerElement.hidden = !text;
+    statusElement.hidden = !text;
+  }
+
+  // Emscripten fetches the Wasm binary itself, without reporting byte progress
+  // through setStatus. Wrap only that resolved URL and pass its body through a
+  // counted stream: instantiateStreaming can still compile while it downloads,
+  // and Emscripten keeps ownership of instantiation and its fallback/error path.
+  async function fetchWasm(browserFetch, receiver, input, init) {
+    const progress = { path: "Game.wasm", loaded: 0, total: 0 };
+    downloads.set(wasmDownload, progress);
+    showProgress();
+
+    const finish = () => {
+      // A streaming compile can fall back to a second fetch. An older response
+      // must not clear the progress of that newer request.
+      if (downloads.get(wasmDownload) !== progress) return;
+      downloads.delete(wasmDownload);
+      showProgress();
+    };
+
+    try {
+      const response = await browserFetch.call(receiver, input, init);
+      if (!response.ok || !response.body || typeof ReadableStream === "undefined") {
+        finish();
+        return response;
+      }
+
+      // Fetch streams decoded bytes, but Content-Length describes the encoded
+      // transfer. A gzip/br length would give a misleading percentage.
+      const encoding = response.headers.get("Content-Encoding");
+      const total = Number(response.headers.get("Content-Length"));
+      if ((!encoding || encoding.toLowerCase() === "identity") &&
+          Number.isFinite(total) && total > 0) {
+        progress.total = total;
+      }
+      showProgress();
+
+      const reader = response.body.getReader();
+      const body = new ReadableStream({
+        async pull(controller) {
+          try {
+            const { done, value } = await reader.read();
+            if (done) {
+              reader.releaseLock();
+              finish();
+              controller.close();
+              return;
+            }
+            progress.loaded += value.byteLength;
+            showProgress();
+            controller.enqueue(value);
+          } catch (error) {
+            finish();
+            controller.error(error);
+          }
+        },
+        cancel(reason) {
+          finish();
+          return reader.cancel(reason);
+        },
+      });
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    } catch (error) {
+      finish();
+      throw error;
+    }
+  }
+
+  const browserFetch = window.fetch;
+  if (typeof browserFetch === "function") {
+    window.fetch = function (input, init) {
+      let url = "";
+      if (wasmURL) {
+        try {
+          url = new URL(input && input.url || input, document.baseURI).href;
+        } catch (error) {
+          // Invalid requests still go through the browser's own error path.
+        }
+      }
+      if (url !== wasmURL || !wasmURL) {
+        return browserFetch.call(this, input, init);
+      }
+      return fetchWasm(browserFetch, this, input, init);
+    };
   }
 
   // The module object.  It has to exist before `Game.js` runs -- the runtime
   // reads `Module.canvas` and `Module.preRun` as it initializes -- which is why
   // this file is loaded ahead of it in the shell.
   window.Module = {
+    locateFile(path, prefix) {
+      const url = prefix + path;
+      if (path === "Game.wasm") wasmURL = new URL(url, document.baseURI).href;
+      return url;
+    },
     canvas: document.getElementById("canvas"),
     preRun: [resourcePreload],
     totalDependencies: 0,
@@ -289,11 +439,19 @@
     },
     setStatus(text) {
       if (text) console.log(text);
+      // Emscripten reports embedded Game.data downloads through setStatus,
+      // rather than the lazy asset bridge's XMLHttpRequests.
+      const progress = text && text.match(
+        /^(Downloading.*?)\s*\((\d+(?:\.\d+)?)\/(\d+)\)$/);
+      runtimeStatus = progress ? progress[1] + " " +
+        formatDownload(Number(progress[2]), Number(progress[3])) : text || "";
+      showProgress();
     },
     monitorRunDependencies(left) {
+      dependenciesLeft = left;
       window.Module.totalDependencies =
         Math.max(window.Module.totalDependencies, left);
-      showProgress(left);
+      showProgress();
     },
   };
 })();
