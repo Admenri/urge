@@ -72,6 +72,13 @@
       color: black;
       padding: 4px 12px;
       border-radius: 4px;
+      max-width: calc(100vw - 128px);
+      max-height: 40vh;
+      overflow: auto;
+      white-space: pre-line;
+      overflow-wrap: anywhere;
+      font-family: sans-serif;
+      font-variant-numeric: tabular-nums;
     }
 
     #fullscreen {
@@ -98,7 +105,7 @@
   <figure style="overflow:visible;" id="spinner">
     <div class="spinner"></div>
   </figure>
-  <div id="status">Loading...</div>
+  <div id="status" role="status">Loading...</div>
   <div onclick="toggleFullscreen()" id="fullscreen">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
       <path fill="white"
