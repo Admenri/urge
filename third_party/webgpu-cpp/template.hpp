@@ -553,12 +553,11 @@ static_assert(offsetof(ChainedStruct, sType) ==
 {% set is_chained_struct = (struct_members[0]["type"] == "WGPUChainedStruct") %}
 {% set is_manual_free = (struct_name + "FreeMembers") in json_data["function"].keys() %}
 struct {{struct_name}}{{" : ChainedStruct" if is_chained_struct else ""}} {
-{% if is_chained_struct %}
+{% if is_chained_struct or is_manual_free %}
   inline {{struct_name}}();
 {% endif %}
   inline operator const WGPU{{struct_name}}&() const noexcept;
 {% if is_manual_free %}
-  inline {{struct_name}}();
   inline ~{{struct_name}}();
   {{struct_name}}(const {{struct_name}}&) = delete;
   {{struct_name}}& operator=(const {{struct_name}}&) = delete;
@@ -603,14 +602,20 @@ struct {{struct_name}}{{" : ChainedStruct" if is_chained_struct else ""}} {
 
 {% endif %}
 {% if is_manual_free %}
+{% if not is_chained_struct %}
 {{struct_name}}::{{struct_name}}() = default;
 
+{% endif %}
 {{struct_name}}::~{{struct_name}}() {
   FreeMembers();
 }
 
 {% set init_members = [] %}
+{% if is_chained_struct %}
+{% do init_members.append("ChainedStruct(rhs)") %}
+{% endif %}
 {% for member in struct_members %}
+{% if is_chained_struct and loop.first %}{% continue %}{% endif %}
 {% do init_members.append(member["name"] + "(rhs." + member["name"] + ")") %}
 {% endfor %}
 {{struct_name}}::{{struct_name}}({{struct_name}}&& rhs)
@@ -622,7 +627,11 @@ struct {{struct_name}}{{" : ChainedStruct" if is_chained_struct else ""}} {
   if (&rhs == this)
     return *this;
   FreeMembers();
+{% if is_chained_struct %}
+  static_cast<ChainedStruct&>(*this) = static_cast<const ChainedStruct&>(rhs);
+{% endif %}
 {% for member in struct_members %}
+{% if is_chained_struct and loop.first %}{% continue %}{% endif %}
   detail::AsNonConstReference(this->{{member["name"]}}) = std::move(rhs.{{member["name"]}});
 {% endfor %}
   Reset(rhs);
@@ -636,7 +645,11 @@ void {{struct_name}}::FreeMembers() {
 // static
 void {{struct_name}}::Reset({{struct_name}}& value) {
   {{struct_name}} defaultValue = {};
+{% if is_chained_struct %}
+  static_cast<ChainedStruct&>(value) = static_cast<const ChainedStruct&>(defaultValue);
+{% endif %}
 {% for member in struct_members %}
+{% if is_chained_struct and loop.first %}{% continue %}{% endif %}
   detail::AsNonConstReference(value.{{member["name"]}}) = defaultValue.{{member["name"]}};
 {% endfor %}
 }
