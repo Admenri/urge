@@ -27,22 +27,22 @@ RGSS 默认设置按游戏版本初始化，脚本之后修改 `Font.default_*` 
 
 ### `Bitmap#draw_text` 的布局契约
 
-应分清三种尺寸：`text_size` 返回的逻辑文字尺寸、参与对齐和缩放的文字层尺寸，以及轮廓栅格化后的着墨范围。文字层保留逻辑宽度，同时容纳实际填充像素的左右伸出；普通字形也可能有负左边距或右侧超出 advance。绘制原点按实际填充的负左边距补偿，负边距不能重复加入层宽；斜体伸出也由同一流程处理。这些绘制范围不改变脚本取得的逻辑宽度或内部字符的推进位置。
+应分清三种尺寸：`text_size` 返回的逻辑文字尺寸、参与对齐和缩放的文字层尺寸，以及轮廓栅格化后的着墨范围。文字层保留逻辑宽度，同时容纳实际填充像素的左右伸出；普通字形也可能有负左边距或右侧超出 advance。绘制原点按实际填充的负左边距补偿，负边距不能重复加入层宽；斜体伸出也由同一流程处理。这些绘制范围不改变脚本取得的逻辑宽度或内部字符的推进位置。布局层只负责定位和缩放，不用作字形或描边的额外裁切边界。
 
 - 两个 `draw_text` 重载使用相同规则。超宽时只横向压缩，最小比例为60%；不放大，不改变字号、测量值或换行。
-- 无描边时，文字层宽度取逻辑宽度与补偿负左边距后的填充范围的较大值；高度使用字符单元高度。RGSS3 描边文字层的宽高各增加2像素；这不加进 `text_size`。阴影不再额外改变文字层尺寸。
+- 无描边时，文字层宽度取逻辑宽度与补偿负左边距后的填充范围的较大值；高度使用字符单元高度。描边文字层的宽高各增加2像素，字身在其中向右、向下各留1个源像素的描边余量；横向压缩时，水平余量按相同比例缩小。这不加进 `text_size` 或字符 advance。阴影不再额外改变文字层尺寸。
 - 横向缩放使用 `max(0.6, min(1.0, rect.width / layer_width))`。左/中/右对齐使用缩放后的文字层宽度，不依赖某个字形的实际笔画边缘。普通文字居中的半像素向下取整，描边文字居中的半像素向上取整。最小压缩比例下仍超宽时，从框左端裁切。
 - 垂直位置为 `max(0, floor((rect.height - layer_height) / 2))`。行框比文字层矮时从框顶开始绘制，再按行框裁切；描边使文字层增高时也不能把整行文字向上推。不做垂直缩放。
-- 源文字层按自身范围与传入矩形裁切，并在边缘的一个源像素宽度内重建描边封口。负边距不能因文字居中或居右而突然露出不同的笔画。这个结果写入目标 Bitmap 时，超出 Bitmap 的部分只裁掉像素，不能沿 Bitmap 边界再次描边；例如负 `y` 坐标不能使 Bitmap 第0行的白色横笔变成黑色。Window 内容区滚动、padding 和后续显示裁切同样不负责重新生成文字描边。Windows 原版源文字层样本中，填充刚好进入第一列时，这一列会保留描边颜色；不能通过整体右移字形来补偿。
+- 完整的字身、描边和阴影遮罩直接裁到传入矩形与目标 Bitmap 的交集，不再裁到内部布局层，也不在边缘重建描边封口或用描边色替换字身。描边留白参考旧版 SDL_ttf 路径，以保留萝莉体问号等贴边圆弧；这是一项明确的渲染策略选择，不复刻原版 RGSS3 在源文字边缘的封口像素。紧框仍可能裁掉描边，实际 Bitmap 边界也始终严格裁切。Window 内容区滚动、padding 和后续显示裁切保持独立，不会重新生成文字描边。
 - 对齐仍以调用者传入的矩形为准；矩形超出 Bitmap 时不自动改写为相交后的宽度再对齐。`Window` 的 padding 是独立的内容布局边距，不属于 Bitmap 文字层。
 
 ### 依据与验证边界
 
-[RGSS1 手册](https://www.rpg-maker.fr/dl/monos/aide/xp/source/rgss/gc_bitmap.html)、[RGSS2 手册](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rgss/gc_bitmap.html)和[RGSS3 手册转载](https://pdfcoffee.com/rpg-maker-vx-ace-help-rgss3-reference-manual-4-pdf-free.html)规定了横向缩小、对齐、垂直居中以及 `text_size` 排除斜体伸出和描边的语义。上面的描边文字层增量、半像素取整和阴影不参与对齐，是原版运行时的行为对照结果，不能说是手册公开了内部算法，也不意味着 URGE 实际创建了整段文字纹理。
+[RGSS1 手册](https://www.rpg-maker.fr/dl/monos/aide/xp/source/rgss/gc_bitmap.html)、[RGSS2 手册](https://www.rpg-maker.fr/dl/monos/aide/vx/source/rgss/gc_bitmap.html)和[RGSS3 手册转载](https://pdfcoffee.com/rpg-maker-vx-ace-help-rgss3-reference-manual-4-pdf-free.html)规定了横向缩小、对齐、垂直居中以及 `text_size` 排除斜体伸出和描边的语义。上面的描边文字层增量、半像素取整和阴影不参与对齐，是原版运行时的行为对照结果，不能说是手册公开了内部算法，也不意味着 URGE 实际创建了整段文字纹理。描边额外留白与取消源边缘封口则参考了 [SDL_ttf 的描边边距](https://github.com/libsdl-org/SDL_ttf/blob/5aeb0091923d09d9be6b7b49612697308d8238d1/src/SDL_ttf.c#L3816-L3841)与 [Skia 的 advance / bounds 分离](https://api.skia.org/classSkFont.html)，优先保留完整轮廓，同时不改变排版度量。
 
 [GDI CreateFont](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw)说明了字符单元与 em 高度的区别；[GetTextExtentPoint32](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-gettextextentpoint32w)说明测量不考虑裁切；[GetCharABCWidths](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-getcharabcwidthsw)与[GetGlyphOutline](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-getglyphoutlinew)区分字符推进量、字形原点和像素黑盒，普通字体也允许负边距；[FreeType 字形文档](https://freetype.org/freetype2/docs/reference/ft2-glyph_retrieval.html)明确区分16.16的线性 advance 与受 hinting 影响的26.6 advance。它们约束后端实现，但不能代替 RGSS 行为对照。
 
-回归对照需同时覆盖同一字体文件、字号、粗斜体、测量、逐字笔位置、宽框与紧框、三个对齐方向、描边/阴影、奇偶宽高及 Bitmap 边界；只比较 `text_size` 不能证明绘制兼容。当前对照基于真实 Windows 上的原版 RGSS3 与 GDI，使用相同字体文件，并核验 GDI 实际选中字库的 SHA256；不使用 CrossOver 结果作为 Windows 基准。萝莉体和黑体18–32号、普通/粗体的576组文字测量宽高均已核对，另外覆盖紧框数字、问号、描边和实际帮助窗口的逐字排版。萝莉体、黑体与 Impact 的负坐标及目标 Bitmap 四边裁切还单独与“正常位置绘制后做像素裁切”对照，以区分源文字封口与目标边界裁切。灰度栅格化与压缩采样仍可能存在像素差异，不承诺所有字体逐像素相同。
+回归对照需同时覆盖同一字体文件、字号、粗斜体、测量、逐字笔位置、宽框与紧框、三个对齐方向、描边/阴影、奇偶宽高及 Bitmap 边界；只比较 `text_size` 不能证明绘制兼容。当前对照基于真实 Windows 上的原版 RGSS3 与 GDI，使用相同字体文件，并核验 GDI 实际选中字库的 SHA256；不使用 CrossOver 结果作为 Windows 基准。萝莉体和黑体18–32号、普通/粗体的576组文字测量宽高均已核对，另外覆盖紧框数字、问号、描边和实际帮助窗口的逐字排版。萝莉体、黑体与 Impact 的负坐标及目标 Bitmap 四边裁切还单独与“正常位置绘制后做像素裁切”对照。后续选择保留完整轮廓时，不再以原版源边缘封口作为像素一致性目标；仍需验证测量、对齐、横向缩放与调用矩形、Bitmap、Window contents 边界。灰度栅格化与压缩采样仍可能存在像素差异，不承诺所有字体逐像素相同。
 
 这仍是在游戏原始分辨率的 Bitmap 中绘制文字。Retina 与窗口缩放继续由现有显示管线处理；本模块没有把整个游戏 Bitmap 改为高分辨率，也不保证任意放大后都如原生桌面 UI 一样平滑。
 
