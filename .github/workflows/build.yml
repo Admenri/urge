@@ -157,6 +157,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
+    env:
+      # Pin the SDK and share its cache across push and release workflows.
+      EMSDK_VERSION: "7.0.1"
+
     steps:
       - uses: actions/checkout@v7
         with:
@@ -171,8 +175,12 @@ jobs:
 
       - uses: emscripten-core/setup-emsdk@v16
         with:
-          version: latest
+          version: ${{ env.EMSDK_VERSION }}
           actions-cache-folder: emsdk-cache
+          cache-key: urge-emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Verify Emscripten version
+        run: emcc --version
 
       - uses: lukka/get-cmake@latest
 
