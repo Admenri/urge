@@ -180,6 +180,16 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 elseif(WIN32)
   corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml)
   set(OS_LIBRARIES d3dcompiler ws2_32 userenv bcrypt ntdll opengl32 Propsys RuntimeObject)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # SDL supplies X11 or Wayland window handles. Vulkan is the default native
+  # backend; GLES remains available for drivers without usable Vulkan support.
+  # The engine accepts WGSL only, so omit the unused shader front ends and
+  # foreign platform backends, and build just the archive linked into Game.
+  corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml
+                         NO_DEFAULT_FEATURES FEATURES wgsl vulkan gles
+                         CRATE_TYPES staticlib)
+  find_package(Threads REQUIRED)
+  set(OS_LIBRARIES Threads::Threads ${CMAKE_DL_LIBS} m)
 else()
   message(FATAL_ERROR unsupported platform)
 endif()

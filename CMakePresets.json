@@ -29,6 +29,21 @@
       "inherits": "win64-base"
     },
     {
+      "name": "linux-amd64",
+      "displayName": "Linux amd64 (native)",
+      "description": "Native x86_64 Linux build with bundled CRuby and wgpu-native (Vulkan / OpenGL). Requires a C++20 compiler with std::format, Ninja, NASM, libclang and SDL / OpenSSL development packages; see app/platform/linux/README.md. Run inside Linux or WSL2, not the Windows host.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
       "name": "emscripten-wasm32",
       "displayName": "WebAssembly (Emscripten)",
       "description": "Cross-compiles the engine for wasm32 with the Emscripten SDK. The SDK is found by cmake/emscripten.toolchain.cmake ($EMSDK, or $EMSCRIPTEN), so nothing machine specific is recorded here: source emsdk_env (or export EMSDK) first. Ninja is needed as well. Set URGE_WEB_ASSETS to a game directory: it is published beside the module as assets/ and indexed by app/build_mapping.py, so the game loads its resources on demand instead of the page waiting for all of them.",
@@ -84,6 +99,12 @@
       "displayName": "Build Game (bundled CRuby, Debug)",
       "configurePreset": "win64-vendored-ruby",
       "configuration": "Debug"
+    },
+    {
+      "name": "linux-amd64",
+      "displayName": "Build Game (Linux amd64, RelWithDebInfo)",
+      "configurePreset": "linux-amd64",
+      "targets": ["Game"]
     },
     {
       "name": "emscripten-wasm32",

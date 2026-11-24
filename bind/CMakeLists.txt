@@ -21,6 +21,11 @@ add_subdirectory(legacy-ruby-compat)
 
 # CRuby's zlib extension is plain C, so the glob above misses it.
 target_sources(urge-binding PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/zlib.c")
+if(NOT MSVC)
+  # Match CRuby's C11 mode: C23 (the GCC 15 default) changes an empty parameter
+  # list to mean void, breaking Ruby's pre-C23 ANYARGS method registrations.
+  set_target_properties(urge-binding PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON)
+endif()
 
 # The generated files include each other by bare name ("binding_init.h"), and
 # cruby_main.cc includes them from the repository root ("bind/autogen/...",

@@ -70,6 +70,146 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  linux:
+    name: linux-amd64
+    # Keep the glibc baseline stable instead of following ubuntu-latest.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    env:
+      CC: gcc-14
+      CXX: g++-14
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Native dependencies
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-14 g++-14 \
+            ninja-build nasm pkg-config libclang-dev python3-venv libssl-dev \
+            zlib1g-dev libasound2-dev libpulse-dev libx11-dev libxcursor-dev \
+            libxext-dev libxi-dev libxrandr-dev libxss-dev libxtst-dev \
+            libwayland-dev libxkbcommon-dev libdecor-0-dev libdrm-dev libgbm-dev \
+            libegl1-mesa-dev libpng-dev libtiff-dev libavif-dev \
+            xvfb xauth libvulkan1 mesa-vulkan-drivers
+
+      - name: Python packages
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Configure
+        run: cmake --preset linux-amd64
+
+      - name: Build native executable
+        run: |
+          set -euo pipefail
+          cmake --build --preset linux-amd64 2>&1 | tee build-linux.log
+
+      - name: Package and verify
+        run: |
+          set -euo pipefail
+          native=build/linux-amd64
+          package=dist/urge-linux-amd64
+          mkdir -p "$package/licenses"
+          install -m 755 "$native/app/Game" "$package/Game"
+          # Strip the distribution copy only; preserve build-tree debug info.
+          strip --strip-unneeded "$package/Game"
+          cp LICENSE.txt "$package/"
+          cp app/platform/linux/README.md "$package/README.md"
+          cp "$native/app/audio-codec-licenses.txt" "$package/licenses/"
+          cp "$native/app/ruby-encoding-licenses.txt" "$package/licenses/"
+          for item in \
+            'third_party/SDL/LICENSE.txt:sdl.txt' \
+            'third_party/SDL_image/LICENSE.txt:sdl-image.txt' \
+            'third_party/SDL/src/video/yuv2rgb/LICENSE:sdl-yuv.txt' \
+            'third_party/miniaudio/LICENSE:miniaudio.txt' \
+            'third_party/SDL_image/external/libwebp/COPYING:webp.txt' \
+            'third_party/SDL_ttf/external/freetype/LICENSE.TXT:freetype-license.txt' \
+            'third_party/SDL_ttf/external/freetype/docs/FTL.TXT:freetype.txt' \
+            'third_party/SDL_ttf/external/freetype/docs/GPLv2.TXT:freetype-gpl.txt' \
+            'third_party/physfs/LICENSE.txt:physfs.txt' \
+            'third_party/ruby/COPYING:ruby.txt' \
+            'third_party/ruby/BSDL:ruby-bsd.txt' \
+            'third_party/wgpu-cmake/wgpu-native/LICENSE.MIT:wgpu-mit.txt' \
+            'third_party/wgpu-cmake/wgpu-native/LICENSE.APACHE:wgpu-apache.txt' \
+            'third_party/wgpu-cmake/wgpu-native/ffi/webgpu-headers/LICENSE:webgpu-headers.txt' \
+            'third_party/imgui/LICENSE.txt:imgui.txt' \
+            'third_party/glm/copying.txt:glm.txt' \
+            'third_party/zlib/LICENSE:zlib.txt' \
+            'third_party/curl/COPYING:curl.txt' \
+            'third_party/dav1d/COPYING:dav1d.txt' \
+            'third_party/webm/LICENSE.TXT:webm.txt' \
+            'third_party/monocypher/monocypher.h:monocypher.txt'; do
+            cp "${item%%:*}" "$package/licenses/${item#*:}"
+          done
+          tar -czf dist/urge-linux-amd64.tar.gz -C dist urge-linux-amd64
+          check=build/linux-artifact-check
+          mkdir -p "$check"
+          tar -xzf dist/urge-linux-amd64.tar.gz -C "$check"
+          test -x "$check/urge-linux-amd64/Game"
+          cmp "$package/Game" "$check/urge-linux-amd64/Game"
+          file "$check/urge-linux-amd64/Game"
+          ldd "$check/urge-linux-amd64/Game" | tee build/linux-runtime-libraries.txt
+          if grep -q 'not found' build/linux-runtime-libraries.txt; then exit 1; fi
+
+      - name: Software Vulkan runtime
+        run: |
+          set -euo pipefail
+          # Mesa's filename differs between distributions/revisions.
+          icds=(/usr/share/vulkan/icd.d/lvp_icd*.json)
+          test -f "${icds[0]}"
+          echo "VK_DRIVER_FILES=${icds[0]}" >> "$GITHUB_ENV"
+          runtime="$RUNNER_TEMP/urge-xdg-runtime"
+          mkdir -p "$runtime"
+          chmod 700 "$runtime"
+          echo "XDG_RUNTIME_DIR=$runtime" >> "$GITHUB_ENV"
+
+      - name: Test packaged executable
+        run: |
+          set -euo pipefail
+          engine=build/linux-artifact-check/urge-linux-amd64/Game
+          xvfb-run -a python tools/tests/gpu/run.py --engine "$engine" --backend vulkan
+          xvfb-run -a python tools/tests/gpu/run.py --engine "$engine" --backend opengl
+          xvfb-run -a python tools/tests/network/run.py --engine "$engine" --backend vulkan
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: urge-linux-amd64
+          path: dist/urge-linux-amd64.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: linux-native-build-log
+          path: |
+            build-linux.log
+            build/linux-runtime-libraries.txt
+            build/gpu-integration/**/engine-output.txt
+            build/gpu-integration/**/gpu-results.txt
+            build/gpu-integration/**/Game.log
+            build/network-integration/**/engine-output.txt
+            build/network-integration/**/network-results.txt
+            build/network-integration/**/Game.log
+          retention-days: 7
+
   macos:
     name: macos-arm64
     runs-on: macos-26

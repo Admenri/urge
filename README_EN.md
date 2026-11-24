@@ -42,7 +42,7 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | WebAssembly (WebGPU-capable browser) | `Game.html` + `Game.wasm` | Browser WebGPU | Video off by default; networking available |
 | Android 9+ (API 28, arm64-v8a / x86_64) | APK | Vulkan 1.1 | Video and networking on by default; TLS via the vendored mbedTLS |
 | MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O executable) / `URGE.app` (App package) | wgpu-native → Metal | Experimental |
-| Linux native engine | — | — | No build presets yet |
+| Linux (amd64, glibc 2.39+) | `Game` (ELF) / `urge-linux-amd64.tar.gz` | wgpu-native → Vulkan / OpenGL; X11 / Wayland | Video and networking on by default; builds in WSL2 |
 
 ### Ruby Script API
 
@@ -109,7 +109,7 @@ If the clone is missing submodules:
 git submodule update --init --recursive
 ```
 
-The repository ships `.github/workflows/build.yml`: pushes to `master`, `v*` tags and manual runs build the Windows x64 executable, an Emscripten bundle (including `build_mapping.py`) and an Android arm64 APK, all downloadable from the run's Artifacts.
+The repository ships `.github/workflows/build.yml`: pushes to `master` and manual runs build Windows x64, Linux amd64, macOS arm64, an Emscripten bundle (including `build_mapping.py`) and an Android arm64 APK, downloadable from the run's Artifacts. `v*` tags use `.github/workflows/release.yml` to call the same build workflow and attach the artifacts to GitHub Release. Linux builds use Ubuntu 24.04, preserve executable permissions, and test the extracted binary under Xvfb / Mesa software Vulkan.
 
 ### 2.3 Windows (x64)
 
@@ -194,6 +194,29 @@ cd android
 The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`. The game files are placed in the APK's `assets/` and unpacked into the app's private directory on first launch.
 
 Release builds need signing parameters (`urgeStoreFile`, `urgeStorePassword`, `urgeKeyAlias`, `urgeKeyPassword`, supplied through `local.properties`, `-P` or the environment); without them the APK is left unsigned.
+
+### 2.6 Linux (amd64 / WSL2)
+
+Install CMake ≥ 3.30, GCC ≥ 13 (with `std::format`), stable Rust, Ninja, NASM,
+libclang and the SDL / OpenSSL development dependencies, then:
+
+```sh
+python3 -m venv build/linux-tools
+. build/linux-tools/bin/activate
+python -m pip install -r requirements.txt
+cmake --preset linux-amd64
+cmake --build --preset linux-amd64 --parallel 4
+```
+
+The local output is `build/linux-amd64/app/Game`; CI packages the executable and
+license notices as `urge-linux-amd64.tar.gz`.
+Place `Game` beside the game's `Game.ini` and run it. Both X11 and Wayland are
+supported; Vulkan is preferred, with `[GFX] Backend=opengl` available. Windows
+users run these commands inside WSL2 and use WSLg for the display. Release
+binaries use Ubuntu 24.04 (glibc 2.39); build locally on older distributions.
+
+See the [Linux / WSL2 guide](app/platform/linux/README.md) for dependency packages,
+runtime limitations and regression commands.
 
 ### macOS Native and Local Signing
 

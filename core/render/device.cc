@@ -93,7 +93,7 @@ bool BackendAvailable(wgpu::BackendType backend) {
     case wgpu::BackendType::OpenGL:
     case wgpu::BackendType::OpenGLES:
       return true;
-#elif defined(SDL_PLATFORM_ANDROID)
+#elif defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_LINUX)
     case wgpu::BackendType::Vulkan:
     case wgpu::BackendType::OpenGL:
     case wgpu::BackendType::OpenGLES:
@@ -169,6 +169,29 @@ GPUDevice::GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend) {
   instance_extras.chain.sType =
       static_cast<WGPUSType>(WGPUSType_InstanceExtras);
   instance_extras.flags = WGPUInstanceFlag_Empty;
+#if defined(SDL_PLATFORM_LINUX)
+  // wgpu's EGL backend needs the display at instance creation, not just the
+  // surface handles later. Otherwise Mesa chooses a surfaceless display and
+  // cannot present to SDL's X11/Wayland window.
+  if (window) {
+    const SDL_PropertiesID properties = SDL_GetWindowProperties(window);
+    const char* driver = SDL_GetCurrentVideoDriver();
+    auto& display = instance_extras.displayHandle;
+    if (driver && SDL_strcmp(driver, "x11") == 0) {
+      display.data.xlib.display = SDL_GetPointerProperty(
+          properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+      display.data.xlib.screen = static_cast<int>(SDL_GetNumberProperty(
+          properties, SDL_PROP_WINDOW_X11_SCREEN_NUMBER, 0));
+      if (display.data.xlib.display)
+        display.type = WGPUNativeDisplayHandleType_Xlib;
+    } else if (driver && SDL_strcmp(driver, "wayland") == 0) {
+      display.data.wayland.display = SDL_GetPointerProperty(
+          properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
+      if (display.data.wayland.display)
+        display.type = WGPUNativeDisplayHandleType_Wayland;
+    }
+  }
+#endif
   instance_desc.nextInChain =
       reinterpret_cast<wgpu::ChainedStruct*>(&instance_extras.chain);
 #endif
@@ -186,9 +209,20 @@ GPUDevice::GPUDevice(URGE_EXCEPT, SDL_Window* window, std::string backend) {
 #endif
   instance_ = wgpu::CreateInstance(&instance_desc);
 
+  if (!instance_) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "cannot create the WebGPU instance");
+    return;
+  }
+
   window_ = window;
-  if (window_ != nullptr)
-    CreateSurfaceFromWindow();
+  if (window_ != nullptr && !CreateSurfaceFromWindow()) {
+    exception_state.Throw(ExceptionState::kGPUError,
+                          "cannot create a WebGPU surface for SDL driver '{}'",
+                          SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver()
+                                                      : "unavailable");
+    return;
+  }
 
   CreateDevice(exception_state, backend);
 }
@@ -246,6 +280,33 @@ bool GPUDevice::CreateSurfaceFromWindow() {
   if (!metal_source.layer)
     return false;
   surface_desc.nextInChain = &metal_source;
+#elif defined(SDL_PLATFORM_LINUX)
+  const SDL_PropertiesID window_prop = SDL_GetWindowProperties(window_);
+  const char* driver = SDL_GetCurrentVideoDriver();
+  // Keep both descriptors alive until CreateSurface below has consumed the
+  // chain. Native handles are obtained from SDL, with no direct X11/Wayland
+  // calls and no assumptions about which desktop session owns the window.
+  wgpu::SurfaceSourceXlibWindow xlib_source;
+  wgpu::SurfaceSourceWaylandSurface wayland_source;
+  if (driver && SDL_strcmp(driver, "x11") == 0) {
+    xlib_source.display = SDL_GetPointerProperty(
+        window_prop, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+    xlib_source.window = static_cast<uint64_t>(SDL_GetNumberProperty(
+        window_prop, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
+    if (!xlib_source.display || !xlib_source.window)
+      return false;
+    surface_desc.nextInChain = &xlib_source;
+  } else if (driver && SDL_strcmp(driver, "wayland") == 0) {
+    wayland_source.display = SDL_GetPointerProperty(
+        window_prop, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
+    wayland_source.surface = SDL_GetPointerProperty(
+        window_prop, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+    if (!wayland_source.display || !wayland_source.surface)
+      return false;
+    surface_desc.nextInChain = &wayland_source;
+  } else {
+    return false;
+  }
 #else
 #error not support
 #endif
@@ -296,6 +357,12 @@ void GPUDevice::CreateDevice(URGE_EXCEPT, std::string backend) {
                                  void* userdata1, void* userdata2) {
     auto* host = static_cast<GPUDevice*>(userdata1);
     host->adapter_ = wgpu::Adapter::Acquire(adapter);
+    if (status != WGPURequestAdapterStatus_Success && message.data) {
+      LOGGER_ERROR("[GPU] adapter request failed: {}",
+                   std::string_view(message.data, message.length == WGPU_STRLEN
+                                                      ? SDL_strlen(message.data)
+                                                      : message.length));
+    }
   };
   adapter_callback.userdata1 = this;
 

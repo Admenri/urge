@@ -237,6 +237,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(CURL_CA_PATH none CACHE STRING "" FORCE)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID)
+  # curl's OpenSSL probes run in isolated try_compile projects: ZLIB::ZLIB
+  # must be an imported system target, not the unexportable alias created by
+  # the vendored zlib below. Ruby still links that vendored zlibstatic target.
+  # Do not create zlib's unused shared target, whose alias would collide.
+  set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Build shared zlib" FORCE)
+  set(ZLIB_BUILD_TESTING OFF CACHE BOOL "Build zlib tests" FORCE)
+  find_package(ZLIB MODULE REQUIRED)
+endif()
+
 add_subdirectory(glm)
 # Desktop Unix provides legacy INI code pages through the OS iconv. Windows
 # uses its code-page APIs, Android Java Charset, and Web TextDecoder; SDL's

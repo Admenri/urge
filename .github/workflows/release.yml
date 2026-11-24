@@ -45,6 +45,7 @@ jobs:
           set -euo pipefail
           mkdir -p release-assets
           find artifacts -type f \( -name 'urge-macos-arm64-*.zip' \
+            -o -name urge-linux-amd64.tar.gz \
             -o -name urge-emscripten-wasm32.zip \
             -o -name urge-android-aarch64.apk \) -exec cp -t release-assets/ {} +
           # The windows artifact is a loose executable plus its license files.
@@ -52,7 +53,7 @@ jobs:
           test -n "$windows_dir"
           (cd "$(dirname "$windows_dir")" \
             && zip -9 -qr "$OLDPWD/release-assets/urge-windows-x64.zip" .)
-          for asset in urge-windows-x64.zip urge-macos-arm64-game.zip \
+          for asset in urge-windows-x64.zip urge-linux-amd64.tar.gz urge-macos-arm64-game.zip \
                        urge-macos-arm64-app.zip urge-emscripten-wasm32.zip \
                        urge-android-aarch64.apk; do
             test -f "release-assets/$asset"

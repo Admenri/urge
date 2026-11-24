@@ -42,7 +42,7 @@
 | WebAssembly（支持 WebGPU 的浏览器） | `Game.html` + `Game.wasm` | 浏览器 WebGPU | 视频默认关闭；网络可用 |
 | Android 9+（API 28，arm64-v8a / x86_64） | APK | Vulkan 1.1 | 视频与网络默认开启；TLS 使用内置 mbedTLS |
 | MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O可执行文件) / `URGE.app` (App包) | wgpu-native → Metal | 实验性支持 |
-| Linux 原生引擎 | — | — | 尚未提供构建预设 |
+| Linux（amd64，glibc 2.39+） | `Game`（ELF）/ `urge-linux-amd64.tar.gz` | wgpu-native → Vulkan / OpenGL；X11 / Wayland | 视频与网络默认开启；可在 WSL2 构建 |
 
 ### Ruby 脚本 API
 
@@ -109,7 +109,7 @@ cd urge
 git submodule update --init --recursive
 ```
 
-仓库自带 `.github/workflows/build.yml`：推送 `master`、打 `v*` 标签或手动触发时，会构建 Windows x64 可执行文件、Emscripten 包（含 `build_mapping.py`）与 Android arm64 APK，产物在 Actions 运行页面的 Artifacts 中下载。
+仓库自带 `.github/workflows/build.yml`：推送 `master` 或手动触发时，构建 Windows x64、Linux amd64、macOS arm64、Emscripten 包（含 `build_mapping.py`）与 Android arm64 APK，产物在 Actions 的 Artifacts 中下载。`v*` 标签通过 `.github/workflows/release.yml` 调用同一构建流程，并将产物附加到 GitHub Release。Linux 包使用 Ubuntu 24.04 构建，保留可执行权限，并在 Xvfb / Mesa 软件 Vulkan 下测试解包后的程序。
 
 ### 2.3 Windows（x64）
 
@@ -194,6 +194,22 @@ cd android
 产物位于 `android/app/build/outputs/apk/debug/app-debug.apk`。游戏文件会进入 APK 的 `assets/`，并在首次启动时解包到应用的私有目录。
 
 发布构建需要签名参数（`urgeStoreFile`、`urgeStorePassword`、`urgeKeyAlias`、`urgeKeyPassword`，可写在 `local.properties` 或通过 `-P` / 环境变量提供）；缺失时 APK 保持未签名。
+
+### 2.6 Linux（amd64 / WSL2）
+
+安装 CMake ≥ 3.30、GCC ≥ 13（含 `std::format`）、stable Rust、Ninja、NASM、libclang 与 SDL / OpenSSL 开发依赖后：
+
+```sh
+python3 -m venv build/linux-tools
+. build/linux-tools/bin/activate
+python -m pip install -r requirements.txt
+cmake --preset linux-amd64
+cmake --build --preset linux-amd64 --parallel 4
+```
+
+本地构建产物为 `build/linux-amd64/app/Game`；CI 会将程序与许可说明打包为 `urge-linux-amd64.tar.gz`。把 `Game` 放到游戏目录（与 `Game.ini` 同级）后运行。支持 X11 / Wayland，默认优先 Vulkan，可设置 `[GFX] Backend=opengl`。Windows 用户需在 WSL2 内运行以上命令；WSLg 提供图形桌面。发布包基于 Ubuntu 24.04（glibc 2.39），更旧的发行版请本地编译。
+
+完整依赖安装、运行限制与验证命令见 [Linux / WSL2 指南](app/platform/linux/README.md)。
 
 ### macOS Native 与本地签名
 

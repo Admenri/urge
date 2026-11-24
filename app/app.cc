@@ -345,6 +345,18 @@ bool Initialize(AppState& state,
      converted to UTF-8 once. */
 #if defined(_WIN32)
   const std::filesystem::path executable = platform::win32::GetExecutablePath();
+#elif defined(__linux__)
+  // argv[0] can be a bare PATH lookup or a relative name. Resolve the running
+  // ELF image before changing cwd, so assets and saves stay beside Game.
+  std::error_code executable_error;
+  const std::filesystem::path executable =
+      std::filesystem::read_symlink("/proc/self/exe", executable_error);
+  if (executable_error) {
+    exception_state.Throw(urge::ExceptionState::kIOError,
+                          "Cannot resolve executable path: {}",
+                          executable_error.message());
+    return false;
+  }
 #else
   const std::filesystem::path executable = std::filesystem::path(argv[0]);
 #endif
